@@ -1,9 +1,9 @@
 import { ApolloServer } from "@apollo/server";
 import { startServerAndCreateNextHandler } from '@as-integrations/next';
 import { ApolloServerPluginLandingPageLocalDefault, ApolloServerPluginLandingPageProductionDefault } from '@apollo/server/plugin/landingPage/default';
-import { NextApiRequest, NextApiResponse } from "next";
 import { typeDefs } from "@/graphql/generated/graphql-types";
 import resolvers from "@/graphql/resolvers/oidc-resolvers";
+import { NextApiRequest, NextApiResponse } from "next";
 
 const server = new ApolloServer(
     {
@@ -27,7 +27,7 @@ export default startServerAndCreateNextHandler(server, {
         return {
             req,
             res,
-            authToken: ""        
+            authToken: "auth token here"
         }
     }
 });

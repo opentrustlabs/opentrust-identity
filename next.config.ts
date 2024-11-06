@@ -4,7 +4,8 @@ const nextConfig: NextConfig = {
   
   /* config options here */
   
-  logging: false
+  logging: false,
+  
 
 };
 

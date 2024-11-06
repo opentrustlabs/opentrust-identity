@@ -118,13 +118,15 @@ type Key {
 }
 
 # 1.    rateLimitId
-# 2.    rateLimitDomain  -  User-defined name of the context or other identifier which will be used by the application
+# 2.    tenantId         -  Required. Write once read many
+# 3.    rateLimitDomain  -  User-defined name of the context or other identifier which will be used by the application
 #                           to make rate limiting decisions. If you need just one then it can be global.
-# 3.    rateLimitDescription  -  
-# 4.    allowUnlimitedRate  -  true | false
-# 5.    rateLimit  -  Number of requests per period.
+# 4.    rateLimitDescription  -  
+# 5.    allowUnlimitedRate  -  true | false
+# 6.    rateLimit  -  Number of requests per period.
 type RateLimit {
     rateLimitId: String!
+    tenantId: String!
     rateLimitDomain: String!
     rateLimitDescription: String
     allowUnlimitedRate: Boolean

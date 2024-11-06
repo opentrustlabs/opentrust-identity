@@ -23,7 +23,8 @@ const resolvers: Resolvers = {
         }
     },
     Mutation: {
-        createTenant: () => {
+        createTenant: (_: any, __: any, { authToken }) => {
+            console.log('auth token is: ' + authToken);
             return {
                 allowedScopeValues: ["scope.update"],
                 claimsSupported: ["email"],
