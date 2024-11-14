@@ -1,9 +1,15 @@
-import { Client, Group, Key, LoginGroup, RateLimit, Scope, Tenant } from "@/graphql/generated/graphql-types";
+import { Client, ClientTenantScopeRel, Group, Key, LoginGroup, LoginGroupClientRel, RateLimit, Scope, Tenant, TenantRateLimitRel, TenantScopeRel, UserGroupRel } from "@/graphql/generated/graphql-types";
 
 
 abstract class TenantDao {
 
     /////////////////   TENANTS   ///////////////////////
+    abstract getRootTenant(): Promise<Tenant>;
+
+    abstract createRootTenant(tenant: Tenant): Promise<Tenant>;
+
+    abstract updateRootTenant(tenant: Tenant): Promise<Tenant>;
+
     abstract getTenants(): Promise<Array<Tenant>>;
  
     abstract getTenantById(tenantId: string): Promise<Tenant | null>;
@@ -16,11 +22,9 @@ abstract class TenantDao {
 
 
     /////////////////   CLIENTS   ///////////////////////
-    abstract getClients(): Promise<Array<Client>>;
+    abstract getClients(tenantId?: string): Promise<Array<Client>>;
     
     abstract getClientById(clientId: string): Promise<Client | null>;
-
-    abstract getClientsByTenant(tenantId: string): Promise<Array<Client>>;
 
     abstract createClient(client: Client): Promise<Client>;
 
@@ -30,7 +34,7 @@ abstract class TenantDao {
 
 
     /////////////////   SIGNING KEYS   ///////////////////////
-    abstract getSigningKeysByTenant(tenantId: string): Promise<Array<Key>>;
+    abstract getSigningKeys(tenantId?: string): Promise<Array<Key>>;
 
     abstract getSigningKeyById(keyId: string): Promise<Key>;
 
@@ -40,7 +44,7 @@ abstract class TenantDao {
 
 
     /////////////////   RATE LIMITS   ///////////////////////
-    abstract getRateLimitsByTenant(tenantId: string): Promise<Array<RateLimit>>;
+    abstract getRateLimits(tenantId?: string): Promise<Array<RateLimit>>;
 
     abstract createRateLimit(rateLimit: RateLimit): Promise<RateLimit>;
 
@@ -50,9 +54,15 @@ abstract class TenantDao {
 
     abstract deleteRateLimit(rateLimitId: string): Promise<RateLimit>;
 
+    abstract assignRateLimitToTenant(tenantId: string, rateLimitId: string, allowUnlimited: boolean, rateLimit: number, rateLimitPeriodMinutes: number): Promise<TenantRateLimitRel>;
+
+    abstract updateRateLimitForTenant(tenantId: string, rateLimitId: string, allowUnlimited: boolean, rateLimit: number, rateLimitPeriodMinutes: number): Promise<TenantRateLimitRel>;
+
+    abstract removeRateLimitFromTenant(tenantId: string, rateLimitId: string): Promise<TenantRateLimitRel>;
+
 
     /////////////////   SCOPE   ///////////////////////
-    abstract getScopeForTenant(tenantId: string): Promise<Array<Scope>>;
+    abstract getScope(tenantId?: string): Promise<Array<Scope>>;
 
     abstract getScopeById(scopeId: string): Promise<Scope>;
 
@@ -62,9 +72,17 @@ abstract class TenantDao {
 
     abstract deleteScope(scopeId: string): Promise<Scope>;
 
+    abstract assignScopeToTenant(tenantId: string, scopeId: string): Promise<TenantScopeRel>;
+
+    abstract removeScopeFromTenant(tenantId: string, scopeId: string): Promise<TenantScopeRel>;
+
+    abstract assignScopeToClient(tenantId: string, clientId: string, scopeId: string): Promise<ClientTenantScopeRel>;
+
+    abstract removeScopeFromClient(tenantId: string, clientId: string, scopeId: string): Promise<ClientTenantScopeRel>;
+
 
     /////////////////   LOGIN GROUPS   ///////////////////////
-    abstract getLoginGroupsForTenant(tenantId: string): Promise<Array<LoginGroup>>;
+    abstract getLoginGroups(tenantId?: string): Promise<Array<LoginGroup>>;
 
     abstract getLoginGroupById(loginGroupId: string): Promise<LoginGroup>;
 
@@ -74,9 +92,13 @@ abstract class TenantDao {
 
     abstract deleteLoginGroup(loginGroupId: string): Promise<LoginGroup>;
 
+    abstract assignLoginGroupToClient(loginGroupId: string, clientId: string): Promise<LoginGroupClientRel>;
+
+    abstract removeLoginGroupFromClient(loginGroupId: string, clientId: string): Promise<LoginGroupClientRel>;
+
 
     /////////////////   GROUPS   ///////////////////////
-    abstract getGroupsForTenant(tenantId: string): Promise<Array<Group>>;
+    abstract getGroups(tenantId?: string): Promise<Array<Group>>;
     
     abstract getGroupById(groupId: string): Promise<Group>;
 
@@ -84,7 +106,11 @@ abstract class TenantDao {
 
     abstract updateGroup(group: Group): Promise<Group>;
 
-    abstract deleteGroup(groupId: string): Promise<Group>
+    abstract deleteGroup(groupId: string): Promise<Group>;
+
+    abstract addUserToGroup(userId: string, groupId: string): Promise<UserGroupRel>;
+
+    abstract removeUserFromGroup(userId: string, groupId: string): Promise<UserGroupRel>;
    
 
 }

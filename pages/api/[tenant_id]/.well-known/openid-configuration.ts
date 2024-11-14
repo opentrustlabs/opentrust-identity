@@ -1,0 +1,80 @@
+import type { NextApiRequest, NextApiResponse } from 'next'
+ 
+const {
+    AUTH_DOMAIN
+} = process.env;
+
+export default function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
+
+    const { 
+            tenant_id
+        } = req.query;
+
+    const tenantId = tenant_id as string;
+
+    // TODO
+    // Check that the tenant exists and is enabled and can perform auth
+    // If not, return 404
+    res.status(200).json({
+        issuer: `${AUTH_DOMAIN}/${tenantId}`,
+        authorization_endpoint: `${AUTH_DOMAIN}/${tenantId}/oidc/authorize`,
+        token_endpoint: `${AUTH_DOMAIN}/${tenantId}/oidc/token`,
+        revocation_endpoint: `${AUTH_DOMAIN}/${tenantId}/oidc/revoke`,
+        userinfo_endpoint: `${AUTH_DOMAIN}/${tenantId}/oidc/userinfo`,
+        jwks_uri: `${AUTH_DOMAIN}/${tenantId}/oidc/keys`,
+        token_endpoint_auth_methods_supported: [
+            "client_secret_post",
+            "client_secret_basic",
+            "client_secret_jwt",
+            "none"
+        ],
+        token_endpoint_auth_signing_alg_values_supported: [
+            "RS256"
+        ],
+        claims_supported: [
+            "sub",
+            "name",
+            "given_name",
+            "family_name",
+            "middle_name",
+            "nickname",
+            "preferred_username",
+            "profile",
+            "phone_number",
+            "address",
+            "updated_at",
+            "email",
+            "country_code"
+          ],
+        claims_parameter_supported: false,
+        scopes_supported: [],
+        response_types_supported: [
+            "code"
+        ],
+        subject_types_supported: [
+            "public"
+        ],
+        id_token_signing_alg_values_supported: [
+            "RS256"
+        ],
+        request_object_signing_alg_values_supported: [
+            "none"
+        ],
+        claim_types_supported: [
+            "normal"
+        ],
+        grant_types_supported: [
+            "authorization_code",
+            "refresh_token",
+            "client_credentials"
+        ],
+        code_challenge_methods_supported: [
+            "S256"
+        ]
+
+    })
+
+}

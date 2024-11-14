@@ -1,4 +1,4 @@
-import { Tenant, Client, Key, RateLimit, Group, LoginGroup, Scope } from "@/graphql/generated/graphql-types";
+import { Tenant, Client, Key, RateLimit, Group, LoginGroup, Scope, ClientTenantScopeRel, LoginGroupClientRel, TenantRateLimitRel, TenantScopeRel, UserGroupRel } from "@/graphql/generated/graphql-types";
 import TenantDAO from "./tenant-dao";
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import path from "node:path";
@@ -9,7 +9,38 @@ const dataDir = process.env.FS_BASED_DATA_DIR ?? path.join(__dirname);
 
 class FSBasedTenantDao extends TenantDAO {
 
+    public async getRootTenant(): Promise<Tenant> {
+        const tenant: Tenant = JSON.parse(this.getFileContents(`${dataDir}/root-tenant.json`, "{}"));
+        if(!tenant?.tenantId){
+            throw new GraphQLError("ERROR_ROOT_TENANT_DOES_NOT_EXIST");
+        }
+        return Promise.resolve(tenant);
+    }
+    public async createRootTenant(tenant: Tenant): Promise<Tenant> {
+        tenant.tenantId = randomUUID().toString();
+        writeFileSync(`${dataDir}/root-tenant.json`, JSON.stringify(tenant), {encoding: "utf-8"});
+        return Promise.resolve(tenant);
+        
+    }
+    public async updateRootTenant(tenant: Tenant): Promise<Tenant> {
+        
+        const rootTenant: Tenant = await this.getRootTenant();
+        rootTenant.allowUnlimitedRate = tenant.allowUnlimitedRate;
+        rootTenant.claimsSupported = tenant.claimsSupported;
+        rootTenant.delegateAuthentication = tenant.delegateAuthentication;
+        rootTenant.delegatedOIDCClientDef = tenant.delegatedOIDCClientDef;
+        
+        // TODO - check to make sure that any email domains do not already belong to
+        // another tenant
+        rootTenant.emailDomains = tenant.emailDomains;
+        rootTenant.enabled = tenant.enabled;
+        rootTenant.tenantDescription = tenant.tenantDescription;
+        rootTenant.tenantName = tenant.tenantName;
+        
+        writeFileSync(`${dataDir}/root-tenant.json`, JSON.stringify(rootTenant), {encoding: "utf-8"});
+        return Promise.resolve(rootTenant);       
 
+    }
         
     public async getTenants(): Promise<Array<Tenant>> {
         const tenants: Array<Tenant> = JSON.parse(this.getFileContents(`${dataDir}/tenants.json`, "[]"));
@@ -54,6 +85,7 @@ class FSBasedTenantDao extends TenantDAO {
         tenantToUpdate.allowUnlimitedRate = tenant.allowUnlimitedRate;
         tenantToUpdate.claimsSupported = tenant.claimsSupported;
         tenantToUpdate.enabled = tenant.enabled;
+        
         writeFileSync(`${dataDir}/tenants.json`, JSON.stringify(tenants), {encoding: "utf-8"});
 
         return Promise.resolve(tenant);
@@ -118,13 +150,13 @@ class FSBasedTenantDao extends TenantDAO {
     }
 
 
-    public async getSigningKeysByTenant(tenantId: string): Promise<Array<Key>> {
+    // SIGNING KEYS METHODS
+    getSigningKeys(tenantId?: string): Promise<Array<Key>> {
         throw new Error("Method not implemented.");
-    }
+    }    
     createSigningKey(key: Key): Promise<Key> {
         throw new Error("Method not implemented.");
-    }
-    
+    }    
     getSigningKeyById(keyId: string): Promise<Key> {
         throw new Error("Method not implemented.");
     }
@@ -132,8 +164,8 @@ class FSBasedTenantDao extends TenantDAO {
         throw new Error("Method not implemented.");
     }
 
- 
-    getRateLimitsByTenant(tenantId: string): Promise<Array<RateLimit>> {
+    // RATE LIMIT METHODS
+    getRateLimits(tenantId?: string): Promise<Array<RateLimit>> {
         throw new Error("Method not implemented.");
     }
     createRateLimit(rateLimit: RateLimit): Promise<RateLimit> {
@@ -147,10 +179,20 @@ class FSBasedTenantDao extends TenantDAO {
     }
     deleteRateLimit(rateLimitId: string): Promise<RateLimit> {
         throw new Error("Method not implemented.");
+    }    
+    assignRateLimitToTenant(tenantId: string, rateLimitId: string, allowUnlimited: boolean, rateLimit: number, rateLimitPeriodMinutes: number): Promise<TenantRateLimitRel> {
+        throw new Error("Method not implemented.");
+    }
+    updateRateLimitForTenant(tenantId: string, rateLimitId: string, allowUnlimited: boolean, rateLimit: number, rateLimitPeriodMinutes: number): Promise<TenantRateLimitRel> {
+        throw new Error("Method not implemented.");
+    }
+    removeRateLimitFromTenant(tenantId: string, rateLimitId: string): Promise<TenantRateLimitRel> {
+        throw new Error("Method not implemented.");
     }
 
 
-    getScopeForTenant(tenantId: string): Promise<Array<Scope>> {
+    // SCOPE METHODS
+    getScope(tenantId?: string): Promise<Array<Scope>> {
         throw new Error("Method not implemented.");
     }
     getScopeById(scopeId: string): Promise<Scope> {
@@ -164,12 +206,25 @@ class FSBasedTenantDao extends TenantDAO {
     }
     deleteScope(scopeId: string): Promise<Scope> {
         throw new Error("Method not implemented.");
-    }
-
-
-    getLoginGroupsForTenant(tenantId: string): Promise<Array<LoginGroup>> {
+    }    
+    assignScopeToTenant(tenantId: string, scopeId: string): Promise<TenantScopeRel> {
         throw new Error("Method not implemented.");
     }
+    removeScopeFromTenant(tenantId: string, scopeId: string): Promise<TenantScopeRel> {
+        throw new Error("Method not implemented.");
+    }
+    assignScopeToClient(tenantId: string, clientId: string, scopeId: string): Promise<ClientTenantScopeRel> {
+        throw new Error("Method not implemented.");
+    }
+    removeScopeFromClient(tenantId: string, clientId: string, scopeId: string): Promise<ClientTenantScopeRel> {
+        throw new Error("Method not implemented.");
+    }
+
+
+    // LOGIN GROUPS METHODS
+    getLoginGroups(tenantId?: string): Promise<Array<LoginGroup>> {
+        throw new Error("Method not implemented.");
+    }    
     getLoginGroupById(loginGroupId: string): Promise<LoginGroup> {
         throw new Error("Method not implemented.");
     }
@@ -182,9 +237,16 @@ class FSBasedTenantDao extends TenantDAO {
     deleteLoginGroup(loginGroupId: string): Promise<LoginGroup> {
         throw new Error("Method not implemented.");
     }
+    assignLoginGroupToClient(loginGroupId: string, clientId: string): Promise<LoginGroupClientRel> {
+        throw new Error("Method not implemented.");
+    }
+    removeLoginGroupFromClient(loginGroupId: string, clientId: string): Promise<LoginGroupClientRel> {
+        throw new Error("Method not implemented.");
+    }
 
 
-    getGroupsForTenant(tenantId: string): Promise<Array<Group>> {
+    // GROUPS METHODS
+    getGroups(tenantId?: string): Promise<Array<Group>> {
         throw new Error("Method not implemented.");
     }
     getGroupById(groupId: string): Promise<Group> {
@@ -197,6 +259,12 @@ class FSBasedTenantDao extends TenantDAO {
         throw new Error("Method not implemented.");
     }
     deleteGroup(groupId: string): Promise<Group> {
+        throw new Error("Method not implemented.");
+    }    
+    addUserToGroup(userId: string, groupId: string): Promise<UserGroupRel> {
+        throw new Error("Method not implemented.");
+    }
+    removeUserFromGroup(userId: string, groupId: string): Promise<UserGroupRel> {
         throw new Error("Method not implemented.");
     }
 

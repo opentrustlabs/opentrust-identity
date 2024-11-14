@@ -55,19 +55,46 @@ type Tenant {
     enabled: Boolean!
     claimsSupported: [String!]!
     allowUnlimitedRate: Boolean
+    delegateAuthentication: Boolean!
+    delegatedOIDCClientDef: OIDCClientDefinition
+    emailDomains: [String!]
+}
+
+enum ClientAuthType {
+    CLIENT_SECRET_POST
+    CLIENT_SECRET_BASIC
+    CLIENT_SECRET_JWT
+    NONE
+}
+
+# Either client secret should be defined or usePkce should be set to true
+type OIDCClientDefinition {
+    tenantId: String!
+    clientId: String!
+    clientSecret: String
+    wellKnownUri: String!
+    usePkce: Boolean!
+    clientAuthType: ClientAuthType
+}
+
+
+enum ClientType {
+    SERVICE_ACCOUNT_ONLY
+    SERVICE_ACCOUNT_AND_USER_DELEGATED_PERMISSIONS
+    USER_DELEGATED_PERMISSIONS_ONLY
 }
 
 
 # 1.    tenantId -      Parent tenant (write once, read only)
 # 2.    clientId -      GUID
 # 3.    clientSecret -  A 256-bit hex-encoded value
-# 4.    enabled -       true | false
-# 5.    scope -         Subset list of scope values from the parent tenant to allow for this client
-# 6.    redirectUris - List of redirect URIs for authorization
-# 7.    loginGroupId - List of groupd ids (default is empty, which implies ALL users in the userAccounts property)
-#                      where each group id will contain a list of user ids to allow for SSO for this client.
+# 4.    clientName
+# 5.    clientDescription
+# 6.    enabled -       true | false
+# 7.    redirectUris - List of redirect URIs for authorization
 # 8.    oidcEnabled -  Allow SSO for this client
-
+# 9.    pkceEnabled
+# 10.   clientType
 type Client {
     tenantId: String!
     clientId: String!
@@ -78,8 +105,8 @@ type Client {
     redirectUris: [String!]
     oidcEnabled: Boolean!
     pkceEnabled: Boolean!
+    clientType: ClientType!
 }
-
 
 
 type User {
@@ -115,7 +142,7 @@ type LoginGroupUserRel {
 }
 
 type Group {
-    tenantId: String
+    tenantId: String!
     groupId: String!
     groupName: String!
 }
@@ -159,24 +186,32 @@ type Key {
 # 5.    allowUnlimitedRate  -  true | false
 # 6.    rateLimit  -  Number of requests per period.
 type RateLimit {
-    tenantId: String!
     rateLimitId: String!
     rateLimitDomain: String!
     rateLimitDescription: String
+}
+
+type TenantRateLimitRel {
+    tenantId: String!
+    rateLimitId: String!
     allowUnlimitedRate: Boolean
     rateLimit: Int
     rateLimitPeriodMinutes: Int
 }
 
-
 type Scope {
-    tenantId: String!
     scopeId: String!
     scopeName: String!
     scopeDescription: String
 }
 
-type ClientScopeRel {
+type TenantScopeRel {
+    tenantId: String!
+    scopeId: String!
+}
+
+type ClientTenantScopeRel {
+    tenantId: String!
     clientId: String!
     scopeId: String!
 }
@@ -187,12 +222,24 @@ type ClientScopeRel {
 ################ INPUT TYPES AND RESPONSES FOR MUTATATIONS #################
 ############################################################################
 
+input OIDCClientDefinitionInput {
+    tenantId: String!
+    clientId: String!
+    clientSecret: String
+    wellKnownUri: String!
+    usePkce: Boolean!
+    clientAuthType: ClientAuthType
+}
+
 input TenantCreateInput {
     tenantName: String!
     tenantDescription: String
     enabled: Boolean!
     claimsSupported: [String!]!
     allowUnlimitedRate: Boolean
+    delegateAuthentication: Boolean!
+    delegatedOIDCClientDef: OIDCClientDefinitionInput
+    emailDomains: [String]
 }
 
 input TenantUpdateInput {
@@ -202,6 +249,9 @@ input TenantUpdateInput {
     enabled: Boolean!
     claimsSupported: [String!]!
     allowUnlimitedRate: Boolean
+    delegateAuthentication: Boolean!
+    delegatedOIDCClientDef: OIDCClientDefinitionInput
+    emailDomains: [String]
 }
 
 input ClientCreateInput {
@@ -212,6 +262,7 @@ input ClientCreateInput {
     redirectUris: [String!]
     oidcEnabled: Boolean
     pkceEnabled: Boolean
+    clientType: ClientType!
 }
 
 input ClientUpdateInput {
@@ -223,4 +274,5 @@ input ClientUpdateInput {
     redirectUris: [String!]
     oidcEnabled: Boolean
     pkceEnabled: Boolean
+    clientType: ClientType!
 }
