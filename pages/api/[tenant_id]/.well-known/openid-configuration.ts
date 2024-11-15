@@ -31,11 +31,20 @@ export default function handler(
             "client_secret_jwt",
             "none"
         ],
+        response_modes_supported: [
+            "query",
+            "fragment"
+        ],
         token_endpoint_auth_signing_alg_values_supported: [
             "RS256"
         ],
         claims_supported: [
             "sub",
+            "iss",
+            "aud",
+            "iat",
+            "exp",
+            "at_hash",
             "name",
             "given_name",
             "family_name",
@@ -50,7 +59,11 @@ export default function handler(
             "country_code"
           ],
         claims_parameter_supported: false,
-        scopes_supported: [],
+        scopes_supported: [
+            "openid",
+            "profile",
+            "email"
+        ],
         response_types_supported: [
             "code"
         ],

@@ -85,18 +85,37 @@ class FSBasedTenantDao extends TenantDAO {
         tenantToUpdate.allowUnlimitedRate = tenant.allowUnlimitedRate;
         tenantToUpdate.claimsSupported = tenant.claimsSupported;
         tenantToUpdate.enabled = tenant.enabled;
-        
+
         writeFileSync(`${dataDir}/tenants.json`, JSON.stringify(tenants), {encoding: "utf-8"});
 
         return Promise.resolve(tenant);
     }
 
     public async deleteTenant(tenantId: string): Promise<void> {
+        // delete all clients
+        // delete all groups
+        // delete all users
+        // delete all login groups
+        // delete all LoginGroupClientRel
+        // delete all LoginGroupUserRel
+        // delete all UserGroupRel
+        // UserCredential
+        // UserCredentialHistory
+        // Key
+        // TenantRateLimitRel
+        // TenantScopeRel
+        // ClientTenantScopeRel
+        // delete tenant
         throw new Error("Method not implemented.");
     }
 
-    public async getClients(): Promise<Array<Client>> {
-        const clients: Array<Client> = JSON.parse(this.getFileContents(`${dataDir}/clients.json`, "[]"));
+    public async getClients(tenantId?: string): Promise<Array<Client>> {
+        let clients: Array<Client> = JSON.parse(this.getFileContents(`${dataDir}/clients.json`, "[]"));
+        if(tenantId){
+            clients = clients.filter(
+                (c: Client) => c.tenantId === tenantId
+            )
+        }
         return Promise.resolve(clients);
     }
 
@@ -146,40 +165,110 @@ class FSBasedTenantDao extends TenantDAO {
     }
 
     public async deleteClient(clientId: string): Promise<void> {
+        // delete all LoginGroupClientRel
+        // ClientTenantScopeRel
+        // delete client
         throw new Error("Method not implemented.");
     }
 
 
     // SIGNING KEYS METHODS
-    getSigningKeys(tenantId?: string): Promise<Array<Key>> {
-        throw new Error("Method not implemented.");
+    public async getSigningKeys(tenantId?: string): Promise<Array<Key>> {
+        let keys: Array<Key> = JSON.parse(this.getFileContents(`${dataDir}/keys.json`, "[]"));
+        if(tenantId){
+            keys = keys.filter(
+                (k: Key) => k.tenantId === tenantId
+            )
+        }
+        return Promise.resolve(keys);
     }    
-    createSigningKey(key: Key): Promise<Key> {
-        throw new Error("Method not implemented.");
+
+    public async createSigningKey(key: Key): Promise<Key> {
+        const tenant: Tenant | null = await this.getTenantById(key.tenantId);
+        if(!tenant){
+            throw new GraphQLError("ERROR_TENANT_NOT_FOUND", {
+
+            })
+        }
+
+        const keys = await this.getSigningKeys();
+        key.keyId = randomUUID().toString();
+        keys.push(key);
+        writeFileSync(`${dataDir}/keys.json`, JSON.stringify(keys), {encoding: "utf-8"});
+        return Promise.resolve(key);
     }    
-    getSigningKeyById(keyId: string): Promise<Key> {
-        throw new Error("Method not implemented.");
+
+    public async getSigningKeyById(keyId: string): Promise<Key | null> {
+        const keys: Array<Key> = await this.getSigningKeys();
+        const key = keys.find(
+            (k: Key) => k.keyId === keyId
+        )
+        return key === undefined ? Promise.resolve(null) : Promise.resolve(key);
     }
-    deleteSigningKey(keyId: String): Promise<Key> {
-        throw new Error("Method not implemented.");
+
+    public async deleteSigningKey(keyId: String): Promise<void> {
+        const keys: Array<Key> = await this.getSigningKeys();
+        const a: Array<Key> = keys.filter(
+            (k: Key) => k.keyId !== keyId
+        );
+        writeFileSync(`${dataDir}/keys.json`, JSON.stringify(a), {encoding: "utf-8"})
+        
     }
 
     // RATE LIMIT METHODS
-    getRateLimits(tenantId?: string): Promise<Array<RateLimit>> {
-        throw new Error("Method not implemented.");
+    public async getRateLimits(tenantId?: string): Promise<Array<RateLimit>> {
+        let rateLimits: Array<RateLimit> = JSON.parse(this.getFileContents(`${dataDir}/rate-limits.json`, "[]"));
+        if(tenantId){
+            const tenantRateLimts: Array<TenantRateLimitRel> = await this.getRateLimitTenantRel(tenantId);
+            rateLimits = rateLimits.filter(
+                (r: RateLimit) => tenantRateLimts.find( (t: TenantRateLimitRel ) => t.rateLimitId === r.rateLimitId)
+            )
+        }
+        return Promise.resolve(rateLimits);
     }
-    createRateLimit(rateLimit: RateLimit): Promise<RateLimit> {
-        throw new Error("Method not implemented.");
+
+    public async createRateLimit(rateLimit: RateLimit): Promise<RateLimit> {
+        const rateLimits: Array<RateLimit> = await this.getRateLimits();
+        rateLimit.rateLimitId = randomUUID().toString();
+        rateLimits.push(rateLimit);
+        writeFileSync(`${dataDir}/rate-limits.json`, JSON.stringify(rateLimits), {encoding: "utf-8"});
+        return Promise.resolve(rateLimit);
     }
-    getRateLimitById(rateLimitId: string): Promise<RateLimit> {
-        throw new Error("Method not implemented.");
+
+    public async getRateLimitById(rateLimitId: string): Promise<RateLimit | null> {
+        const rateLimits: Array<RateLimit> = await this.getRateLimits();
+        const rateLimit = rateLimits.find(
+            (r: RateLimit) => r.rateLimitId === rateLimitId
+        )
+        return rateLimit === undefined ? Promise.resolve(null) : Promise.resolve(rateLimit);
     }
-    updateRateLimit(rateLimit: RateLimit): Promise<RateLimit> {
-        throw new Error("Method not implemented.");
+
+    public async updateRateLimit(rateLimit: RateLimit): Promise<RateLimit> {
+        const rateLimits: Array<RateLimit> = await this.getRateLimits();
+        const rateLimitToUpdate = rateLimits.find( (r: RateLimit) => r.rateLimitId === rateLimit.rateLimitId);
+        if(!rateLimitToUpdate){
+            throw new GraphQLError("ERROR_RATE_LIMIT_NOT_FOUND");
+        }
+        rateLimitToUpdate.rateLimitDescription = rateLimit.rateLimitDescription;
+        rateLimitToUpdate.rateLimitDomain = rateLimit.rateLimitDomain;
+        writeFileSync(`${dataDir}/rate-limits.json`, JSON.stringify(rateLimits), {encoding: "utf-8"});
+        return Promise.resolve(rateLimit);
     }
-    deleteRateLimit(rateLimitId: string): Promise<RateLimit> {
+
+    public async deleteRateLimit(rateLimitId: string): Promise<RateLimit> {
+        // delete TenantRateLimitRel
+        // delete RateLimit
         throw new Error("Method not implemented.");
-    }    
+    } 
+    
+    public async getRateLimitTenantRel(tenantId: string): Promise<Array<TenantRateLimitRel>> {
+        let tenantRateLimitRels = JSON.parse(this.getFileContents(`${dataDir}/tenant-rate-limit-rel.json`, "[]"));
+        tenantRateLimitRels = tenantRateLimitRels.filter(
+            (t: TenantRateLimitRel) => t.tenantId === tenantId
+        )
+        return Promise.resolve(tenantRateLimitRels);
+    }
+
     assignRateLimitToTenant(tenantId: string, rateLimitId: string, allowUnlimited: boolean, rateLimit: number, rateLimitPeriodMinutes: number): Promise<TenantRateLimitRel> {
         throw new Error("Method not implemented.");
     }
