@@ -3,7 +3,7 @@ import { Client, ClientTenantScopeRel, Group, Key, LoginGroup, LoginGroupClientR
 
 abstract class TenantDao {
 
-    /////////////////   TENANTS   ///////////////////////
+
     abstract getRootTenant(): Promise<Tenant>;
 
     abstract createRootTenant(tenant: Tenant): Promise<Tenant>;
@@ -19,101 +19,7 @@ abstract class TenantDao {
     abstract updateTenant(tenant: Tenant): Promise<Tenant>;
 
     abstract deleteTenant(tenantId: string): Promise<void>;
-
-
-    /////////////////   CLIENTS   ///////////////////////
-    abstract getClients(tenantId?: string): Promise<Array<Client>>;
-    
-    abstract getClientById(clientId: string): Promise<Client | null>;
-
-    abstract createClient(client: Client): Promise<Client>;
-
-    abstract updateClient(client: Client): Promise<Client>;
-
-    abstract deleteClient(clientId: string): Promise<void>;
-
-
-    /////////////////   SIGNING KEYS   ///////////////////////
-    abstract getSigningKeys(tenantId?: string): Promise<Array<Key>>;
-
-    abstract getSigningKeyById(keyId: string): Promise<Key | null>;
-
-    abstract createSigningKey(key: Key): Promise<Key>;
-
-    abstract deleteSigningKey(keyId: String): Promise<void>;
-
-
-    /////////////////   RATE LIMITS   ///////////////////////
-    abstract getRateLimits(tenantId?: string): Promise<Array<RateLimit>>;
-
-    abstract createRateLimit(rateLimit: RateLimit): Promise<RateLimit>;
-
-    abstract getRateLimitById(rateLimitId: string): Promise<RateLimit | null>;
-
-    abstract updateRateLimit(rateLimit: RateLimit): Promise<RateLimit>;
-
-    abstract deleteRateLimit(rateLimitId: string): Promise<void>;
-
-    abstract getRateLimitTenantRel(tenantId: string): Promise<Array<TenantRateLimitRel>>;
-
-    abstract assignRateLimitToTenant(tenantId: string, rateLimitId: string, allowUnlimited: boolean, limit: number, rateLimitPeriodMinutes: number): Promise<TenantRateLimitRel>;
-
-    abstract updateRateLimitForTenant(tenantId: string, rateLimitId: string, allowUnlimited: boolean, limit: number, rateLimitPeriodMinutes: number): Promise<TenantRateLimitRel>;
-
-    abstract removeRateLimitFromTenant(tenantId: string, rateLimitId: string): Promise<void>;
-
-
-    /////////////////   SCOPE   ///////////////////////
-    abstract getScope(tenantId?: string): Promise<Array<Scope>>;
-
-    abstract getScopeById(scopeId: string): Promise<Scope | null>;
-
-    abstract createScope(scope: Scope): Promise<Scope>;
-
-    abstract updateScope(scope: Scope): Promise<Scope>;
-
-    abstract deleteScope(scopeId: string): Promise<void>;
-
-    abstract assignScopeToTenant(tenantId: string, scopeId: string): Promise<TenantScopeRel>;
-
-    abstract removeScopeFromTenant(tenantId: string, scopeId: string): Promise<void>;
-
-    abstract assignScopeToClient(tenantId: string, clientId: string, scopeId: string): Promise<ClientTenantScopeRel>;
-
-    abstract removeScopeFromClient(tenantId: string, clientId: string, scopeId: string): Promise<void>;
-
-
-    /////////////////   LOGIN GROUPS   ///////////////////////
-    abstract getLoginGroups(tenantId?: string): Promise<Array<LoginGroup>>;
-
-    abstract getLoginGroupById(loginGroupId: string): Promise<LoginGroup | null>;
-
-    abstract createLoginGroup(loginGroup: LoginGroup): Promise<LoginGroup>;
-
-    abstract updateLoginGroup(loginGroup: LoginGroup): Promise<LoginGroup>;
-
-    abstract deleteLoginGroup(loginGroupId: string): Promise<void>;
-
-    abstract assignLoginGroupToClient(loginGroupId: string, clientId: string): Promise<LoginGroupClientRel>;
-
-    abstract removeLoginGroupFromClient(loginGroupId: string, clientId: string): Promise<void>;
-
-
-    /////////////////   GROUPS   ///////////////////////
-    abstract getGroups(tenantId?: string): Promise<Array<Group>>;
-    
-    abstract getGroupById(groupId: string): Promise<Group | null>;
-
-    abstract createGroup(group: Group): Promise<Group>;
-
-    abstract updateGroup(group: Group): Promise<Group>;
-
-    abstract deleteGroup(groupId: string): Promise<void>;
-
-    abstract addUserToGroup(userId: string, groupId: string): Promise<UserGroupRel>;
-
-    abstract removeUserFromGroup(userId: string, groupId: string): Promise<void>;
-   
+  
 
 }
 

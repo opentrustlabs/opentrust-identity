@@ -10,7 +10,7 @@ type Query {
     getClientById(clientId: String!): Client
 
     ## Users
-    getUsers(tenantId: String!): [User!]!
+    getUsers(tenantId: String): [User!]!
     getUserById(userId: String!): User
     
     
@@ -79,9 +79,18 @@ type Mutation {
     removeScopeFromClient(tenantId: String!, clientId: String!, scopeId: String!): String
 
     ## LoginGroups
-
-
+    createLoginGroup(loginGroupInput: LoginGroupCreateInput!): LoginGroup
+    updateLoginGroup(loginGroupInput: LoginGroupUpdateInput!): LoginGroup
+    deleteLoginGroup(loginGroupId: String!): String!
+    assignLoginGroupToClient(loginGroupId: String!, clientId: String!): LoginGroupClientRel
+    removeLoginGroupFromClient(loginGroupId: String!, clientId: String!): String
+    
     ## Groups
+    createGroup(groupInput: GroupCreateInput!): Group
+    updateGroup(groupInput: GroupUpdateInput!): Group
+    deleteGroup(groupId: String!): String!
+    addUserToGroup(userId: String!, groupId: String): UserGroupRel
+    removeUserFromGroup(userId: String!, groupId!: String): String
 
 }
 
@@ -140,6 +149,7 @@ enum ClientType {
 # 8.    oidcEnabled -  Allow SSO for this client
 # 9.    pkceEnabled
 # 10.   clientType
+# 11.   userTokenTTLSeconds default is 60 minutes, configurable up to 12 hours
 type Client {
     tenantId: String!
     clientId: String!
@@ -151,6 +161,7 @@ type Client {
     oidcEnabled: Boolean!
     pkceEnabled: Boolean!
     clientType: ClientType!
+    userTokenTTLSeconds: Int
 }
 
 

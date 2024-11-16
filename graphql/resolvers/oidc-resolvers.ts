@@ -1,29 +1,31 @@
+import ClientService from "@/lib/service/client-service";
+import TenantService from "@/lib/service/tenant-service";
 import { Resolvers, QueryResolvers, MutationResolvers, Tenant, Client } from "../generated/graphql-types";
-import TenantDao from "@/lib/dao/tenant-dao";
-import { getTenantDaoImpl } from "@/utils/dao-utils";
-
-
-const tenantDao: TenantDao = getTenantDaoImpl();
 
 
 const resolvers: Resolvers = {
     Query: {
-        getTenants: (_, __, { authToken }) => {
-            return tenantDao.getTenants();
+        getTenants: (_, __, oidcContext) => {
+            const tenantService: TenantService = new TenantService(oidcContext);
+            return tenantService.getTenants();
         },
-        getTenantById: (_: any, { tenantId }, { authToekn }: any ) => {
-            return tenantDao.getTenantById(tenantId);
+        getTenantById: (_: any, { tenantId }, oidcContext: any ) => {
+            const tenantService: TenantService = new TenantService(oidcContext);
+            return tenantService.getTenantById(tenantId);
         },
-        getClients: (_, { tenantId }, {authToken }) => {
-            return tenantDao.getClients(tenantId);
+        getClients: (_, { tenantId }, oidcContext) => {
+            const clientService: ClientService = new ClientService(oidcContext);
+            return clientService.getClients(tenantId);
         },        
-        getClientById: (_: any, { clientId }, { authToken }: any) => {
-            return tenantDao.getClientById(clientId);
+        getClientById: (_: any, { clientId }, oidcContext: any) => {
+            const clientService: ClientService = new ClientService(oidcContext);
+            return clientService.getClientById(clientId);
         }
     },
     Mutation: {
-        createTenant: async (_: any, { tenantInput }, { authToken }) => {
-            console.log('auth token is: ' + authToken);
+        createTenant: async (_: any, { tenantInput }, oidcContext) => {
+            const tenantService: TenantService = new TenantService(oidcContext);
+            console.log('auth token is: ' + oidcContext.authToken);
             let tenant: Tenant = {
                 claimsSupported: tenantInput.claimsSupported,
                 enabled: true,
@@ -35,10 +37,11 @@ const resolvers: Resolvers = {
                 delegatedOIDCClientDef: tenantInput.delegatedOIDCClientDef,
                 emailDomains: tenantInput.emailDomains
             }
-            await tenantDao.createTenant(tenant);
+            await tenantService.createTenant(tenant);
             return tenant; 
         },
-        updateTenant: async (_: any, { tenantInput }, { authToken }) => {
+        updateTenant: async (_: any, { tenantInput }, oidcContext) => {
+            const tenantService: TenantService = new TenantService(oidcContext);
             let tenant: Tenant = {
                 tenantId: tenantInput.tenantId,
                 claimsSupported: tenantInput.claimsSupported,
@@ -50,10 +53,11 @@ const resolvers: Resolvers = {
                 emailDomains: tenantInput.emailDomains,
                 tenantDescription: tenantInput.tenantDescription
             }
-            const updatedTenant: Tenant = await tenantDao.updateTenant(tenant);
+            const updatedTenant: Tenant = await tenantService.updateTenant(tenant);
             return updatedTenant;
         },
-        createClient: async (_: any, { clientInput }, { authToken }) => {
+        createClient: async (_: any, { clientInput }, oidcContext) => {
+            const clientService: ClientService = new ClientService(oidcContext);
             let client: Client = {
                 clientId: "",
                 clientSecret: "",
@@ -66,10 +70,11 @@ const resolvers: Resolvers = {
                 pkceEnabled: clientInput.pkceEnabled ?? true,
                 clientType: clientInput.clientType
             }
-            await tenantDao.createClient(client);
+            await clientService.createClient(client);
             return client;
         },
-        updateClient: async (_: any, { clientInput }, { authToken }) => {
+        updateClient: async (_: any, { clientInput }, oidcContext) => {
+            const clientService: ClientService = new ClientService(oidcContext);
             let client: Client = {
                 clientId: clientInput.clientId,
                 clientSecret: "",                
@@ -82,7 +87,7 @@ const resolvers: Resolvers = {
                 pkceEnabled: clientInput.pkceEnabled ?? true,
                 clientType: clientInput.clientType
             }
-            await tenantDao.updateClient(client);
+            await clientService.updateClient(client);
             return client;
         }
     }

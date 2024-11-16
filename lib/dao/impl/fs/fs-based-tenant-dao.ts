@@ -1,30 +1,19 @@
-import { Tenant, Client, Key, RateLimit, Group, LoginGroup, Scope, ClientTenantScopeRel, LoginGroupClientRel, TenantRateLimitRel, TenantScopeRel, UserGroupRel } from "@/graphql/generated/graphql-types";
-import TenantDAO from "./tenant-dao";
-import { readFileSync, writeFileSync, existsSync } from "node:fs";
+import { Tenant, Client, Key, RateLimit, Group, LoginGroup, Scope, ClientTenantScopeRel, LoginGroupClientRel, TenantRateLimitRel, TenantScopeRel, UserGroupRel, ClientType } from "@/graphql/generated/graphql-types";
+import TenantDAO from "../../tenant-dao";
+import { writeFileSync } from "node:fs";
 import path from "node:path";
 import { randomUUID } from 'crypto'; 
 import { GraphQLError } from "graphql";
+import { CLIENT_TENANT_SCOPE_REL_FILE, GROUP_FILE, KEY_FILE, LOGIN_GROUP_CLIENT_REL_FILE, LOGIN_GROUP_FILE, RATE_LIMIT_FILE, ROOT_TENANT_FILE, SCOPE_FILE, TENANT_FILE, TENANT_RATE_LIMIT_REL_FILE, TENANT_SCOPE_REL_FILE } from "@/utils/consts";
+import { getFileContents } from "@/utils/dao-utils";
 
 const dataDir = process.env.FS_BASED_DATA_DIR ?? path.join(__dirname);
-
-const ROOT_TENANT_FILE = "root-tenant.json";
-const TENANT_FILE = "tenants.json";
-const CLIENT_FILE = "clients.json";
-const KEY_FILE = "keys.json";
-const RATE_LIMIT_FILE = "rate-limits.json";
-const TENANT_RATE_LIMIT_REL_FILE = "tenant-rate-limit-rel.json";
-const SCOPE_FILE = "scope.json";
-const TENANT_SCOPE_REL_FILE = "tenant-scope-rel.json";
-const CLIENT_TENANT_SCOPE_REL_FILE = "client-tenant-scope-rel.json";
-const LOGIN_GROUP_FILE = "login-groups.json";
-const LOGIN_GROUP_CLIENT_REL_FILE = "login-groups-client-rel.json";
-const GROUP_FILE = "groups.json";
 
 
 class FSBasedTenantDao extends TenantDAO {
 
     public async getRootTenant(): Promise<Tenant> {
-        const tenant: Tenant = JSON.parse(this.getFileContents(`${dataDir}/${ROOT_TENANT_FILE}`, "{}"));
+        const tenant: Tenant = JSON.parse(getFileContents(`${dataDir}/${ROOT_TENANT_FILE}`, "{}"));
         if(!tenant?.tenantId){
             throw new GraphQLError("ERROR_ROOT_TENANT_DOES_NOT_EXIST");
         }
@@ -57,7 +46,7 @@ class FSBasedTenantDao extends TenantDAO {
     }
         
     public async getTenants(): Promise<Array<Tenant>> {
-        const tenants: Array<Tenant> = JSON.parse(this.getFileContents(`${dataDir}/${TENANT_FILE}`, "[]"));
+        const tenants: Array<Tenant> = JSON.parse(getFileContents(`${dataDir}/${TENANT_FILE}`, "[]"));
         return Promise.resolve(tenants);        
     }
 
@@ -69,14 +58,6 @@ class FSBasedTenantDao extends TenantDAO {
         return tenant === undefined ? Promise.resolve(null) : Promise.resolve(tenant);
     }
 
-
-    public async getClientsByTenant(tenantId: string): Promise<Array<Client>> {
-        const allClients = await this.getClients();
-        const clients: Array<Client> = allClients.filter(
-            (client: Client) => client.tenantId === tenantId
-        );
-        return Promise.resolve(clients)
-    }
 
     public async createTenant(tenant: Tenant): Promise<Tenant | null> {
         const tenants: Array<Tenant> = await this.getTenants();
@@ -123,74 +104,12 @@ class FSBasedTenantDao extends TenantDAO {
         throw new Error("Method not implemented.");
     }
 
-    public async getClients(tenantId?: string): Promise<Array<Client>> {
-        let clients: Array<Client> = JSON.parse(this.getFileContents(`${dataDir}/${CLIENT_FILE}`, "[]"));
-        if(tenantId){
-            clients = clients.filter(
-                (c: Client) => c.tenantId === tenantId
-            )
-        }
-        return Promise.resolve(clients);
-    }
-
-    public async getClientById(clientId: string): Promise<Client | null> {
-        const clients = await this.getClients();
-        const client: Client | undefined = clients.find(
-            (client: Client) => client.clientId === clientId
-        );
-        return client === undefined ? Promise.resolve(null) : Promise.resolve(client);
-
-    }
-
-    public async createClient(client: Client): Promise<Client> {
-        const tenant: Tenant | null = await this.getTenantById(client.tenantId);
-        if(!tenant){
-            throw new GraphQLError("ERROR_TENANT_NOT_FOUND", {
-
-            })
-        }
-
-        const clients = await this.getClients();
-        client.clientId = randomUUID().toString();
-        clients.push(client);
-        writeFileSync(`${dataDir}/${CLIENT_FILE}`, JSON.stringify(clients), {encoding: "utf-8"});
-        return Promise.resolve(client)
-    }
-
-    public async updateClient(client: Client): Promise<Client> {
-        const clients: Array<Client> = await this.getClients();
-        const clientToUpdate = clients.find(
-            (c: Client) => {
-                return c.clientId === client.clientId
-            }
-        );
-        if(!clientToUpdate){
-            throw new GraphQLError("ERROR_CLIENT_NOT_FOUND")
-        }
-        // tenantId is a write-only-read-only property, no updates regardless of what the client has sent
-        // same for client secret
-        clientToUpdate.clientDescription = client.clientDescription;
-        clientToUpdate.clientName = client.clientName;
-        clientToUpdate.enabled = client.enabled;
-        clientToUpdate.oidcEnabled = client.oidcEnabled;
-        clientToUpdate.pkceEnabled = client.pkceEnabled;
-        clientToUpdate.redirectUris = client.redirectUris;
-        writeFileSync(`${dataDir}/${CLIENT_FILE}`, JSON.stringify(clients), {encoding: "utf-8"});
-
-        return Promise.resolve(client);
-    }
-
-    public async deleteClient(clientId: string): Promise<void> {
-        // delete all LoginGroupClientRel
-        // ClientTenantScopeRel
-        // delete client
-        throw new Error("Method not implemented.");
-    }
+    
 
 
     // SIGNING KEYS METHODS
     public async getSigningKeys(tenantId?: string): Promise<Array<Key>> {
-        let keys: Array<Key> = JSON.parse(this.getFileContents(`${dataDir}/${KEY_FILE}`, "[]"));
+        let keys: Array<Key> = JSON.parse(getFileContents(`${dataDir}/${KEY_FILE}`, "[]"));
         if(tenantId){
             keys = keys.filter(
                 (k: Key) => k.tenantId === tenantId
@@ -233,7 +152,7 @@ class FSBasedTenantDao extends TenantDAO {
 
     // RATE LIMIT METHODS
     public async getRateLimits(tenantId?: string): Promise<Array<RateLimit>> {
-        let rateLimits: Array<RateLimit> = JSON.parse(this.getFileContents(`${dataDir}/${RATE_LIMIT_FILE}`, "[]"));
+        let rateLimits: Array<RateLimit> = JSON.parse(getFileContents(`${dataDir}/${RATE_LIMIT_FILE}`, "[]"));
         if(tenantId){
             const tenantRateLimts: Array<TenantRateLimitRel> = await this.getRateLimitTenantRel(tenantId);
             rateLimits = rateLimits.filter(
@@ -279,7 +198,7 @@ class FSBasedTenantDao extends TenantDAO {
     
         
     public async getRateLimitTenantRel(tenantId: string): Promise<Array<TenantRateLimitRel>> {
-        let tenantRateLimitRels = JSON.parse(this.getFileContents(`${dataDir}/${TENANT_RATE_LIMIT_REL_FILE}`, "[]"));
+        let tenantRateLimitRels = JSON.parse(getFileContents(`${dataDir}/${TENANT_RATE_LIMIT_REL_FILE}`, "[]"));
         tenantRateLimitRels = tenantRateLimitRels.filter(
             (t: TenantRateLimitRel) => t.tenantId === tenantId
         )
@@ -303,7 +222,7 @@ class FSBasedTenantDao extends TenantDAO {
         if(existingRateLimitRel){
             throw new GraphQLError("ERROR_TENENT_IS_ALREADY_ASSIGNED_RATE_LIMIT");
         }
-        const a: Array<TenantRateLimitRel> = JSON.parse(this.getFileContents(`${dataDir}/${TENANT_RATE_LIMIT_REL_FILE}`, "[]"));
+        const a: Array<TenantRateLimitRel> = JSON.parse(getFileContents(`${dataDir}/${TENANT_RATE_LIMIT_REL_FILE}`, "[]"));
         const rel: TenantRateLimitRel = {
             tenantId: tenantId,
             rateLimitId: rateLimitId,
@@ -317,7 +236,7 @@ class FSBasedTenantDao extends TenantDAO {
     }
 
     public async updateRateLimitForTenant(tenantId: string, rateLimitId: string, allowUnlimited: boolean, limit: number, rateLimitPeriodMinutes: number): Promise<TenantRateLimitRel> {
-        const tenantRateLimitRels: Array<TenantRateLimitRel> = JSON.parse(this.getFileContents(`${dataDir}/${TENANT_RATE_LIMIT_REL_FILE}`, "[]"))
+        const tenantRateLimitRels: Array<TenantRateLimitRel> = JSON.parse(getFileContents(`${dataDir}/${TENANT_RATE_LIMIT_REL_FILE}`, "[]"))
         const existingRel: TenantRateLimitRel | undefined = tenantRateLimitRels.find(
             (r: TenantRateLimitRel) => r.rateLimitId === rateLimitId && r.tenantId === tenantId
         );
@@ -332,7 +251,7 @@ class FSBasedTenantDao extends TenantDAO {
     }
 
     public async removeRateLimitFromTenant(tenantId: string, rateLimitId: string): Promise<void> {
-        let tenantRateLimitRels: Array<TenantRateLimitRel> = JSON.parse(this.getFileContents(`${dataDir}/${TENANT_RATE_LIMIT_REL_FILE}`, "[]"));
+        let tenantRateLimitRels: Array<TenantRateLimitRel> = JSON.parse(getFileContents(`${dataDir}/${TENANT_RATE_LIMIT_REL_FILE}`, "[]"));
         const existingRel: TenantRateLimitRel | undefined = tenantRateLimitRels.find(
             (r: TenantRateLimitRel) => r.rateLimitId === rateLimitId && r.tenantId === tenantId
         );
@@ -347,7 +266,7 @@ class FSBasedTenantDao extends TenantDAO {
     
     // SCOPE METHODS
     public async getScope(tenantId?: string): Promise<Array<Scope>> {
-        let scopes: Array<Scope> = JSON.parse(this.getFileContents(`${dataDir}/${SCOPE_FILE}`, "[]"));
+        let scopes: Array<Scope> = JSON.parse(getFileContents(`${dataDir}/${SCOPE_FILE}`, "[]"));
         if(tenantId){
             const rels: Array<TenantScopeRel> = await this.getTenantScopeRel(tenantId);
             scopes = scopes.filter(
@@ -399,7 +318,7 @@ class FSBasedTenantDao extends TenantDAO {
         
 
     protected async getTenantScopeRel(tenantId?: String): Promise<Array<TenantScopeRel>> {
-        const tenantScopeRels: Array<TenantScopeRel> = JSON.parse(this.getFileContents(`${dataDir}/${TENANT_SCOPE_REL_FILE}`, "[]"));
+        const tenantScopeRels: Array<TenantScopeRel> = JSON.parse(getFileContents(`${dataDir}/${TENANT_SCOPE_REL_FILE}`, "[]"));
         if(tenantId){
             return Promise.resolve(
                 tenantScopeRels.filter(
@@ -467,7 +386,7 @@ class FSBasedTenantDao extends TenantDAO {
         if(!rel){
             throw new GraphQLError("ERROR_SCOPE_IS_NOT_ASSIGNED_TO_THE_TENANT");
         }
-        const clientTenantScopeRels: Array<ClientTenantScopeRel> = this.getFileContents(`${dataDir}/${CLIENT_TENANT_SCOPE_REL_FILE}`, "[]");
+        const clientTenantScopeRels: Array<ClientTenantScopeRel> = getFileContents(`${dataDir}/${CLIENT_TENANT_SCOPE_REL_FILE}`, "[]");
         const existingRel = clientTenantScopeRels.find(
             (r: ClientTenantScopeRel) => r.tenantId === tenantId && r.clientId === clientId && r.scopeId === scopeId
         )
@@ -485,7 +404,7 @@ class FSBasedTenantDao extends TenantDAO {
 
     }
     public async removeScopeFromClient(tenantId: string, clientId: string, scopeId: string): Promise<void> {
-        let clientTenantScopeRels: Array<ClientTenantScopeRel> = this.getFileContents(`${dataDir}/${CLIENT_TENANT_SCOPE_REL_FILE}`, "[]");
+        let clientTenantScopeRels: Array<ClientTenantScopeRel> = getFileContents(`${dataDir}/${CLIENT_TENANT_SCOPE_REL_FILE}`, "[]");
         clientTenantScopeRels = clientTenantScopeRels.filter(
             (r: ClientTenantScopeRel) => !(r.tenantId === tenantId && r.clientId === clientId && r.scopeId === scopeId)
         )
@@ -495,7 +414,7 @@ class FSBasedTenantDao extends TenantDAO {
 
     // LOGIN GROUPS METHODS
     public async getLoginGroups(tenantId?: string): Promise<Array<LoginGroup>> {
-        const loginGroups: Array<LoginGroup> = JSON.parse(this.getFileContents(`${dataDir}/${LOGIN_GROUP_FILE}`, "[]"));
+        const loginGroups: Array<LoginGroup> = JSON.parse(getFileContents(`${dataDir}/${LOGIN_GROUP_FILE}`, "[]"));
         if(tenantId){
             return Promise.resolve(
                 loginGroups.filter(
@@ -548,6 +467,18 @@ class FSBasedTenantDao extends TenantDAO {
         writeFileSync(`${dataDir}/${LOGIN_GROUP_FILE}`, JSON.stringify(a), {encoding: "utf-8"});
     }
 
+    async getClientById(clientId: string): Promise<Client> {
+        return Promise.resolve({
+            clientId: "",
+            clientName: "",
+            clientSecret: "",
+            clientType: ClientType.ServiceAccountAndUserDelegatedPermissions,
+            oidcEnabled: true,
+            pkceEnabled: true,
+            tenantId: ""
+        })
+    }
+
     public async assignLoginGroupToClient(loginGroupId: string, clientId: string): Promise<LoginGroupClientRel> {
         const client: Client | null = await this.getClientById(clientId);
         if(!client){
@@ -561,7 +492,7 @@ class FSBasedTenantDao extends TenantDAO {
         if(loginGroup.tenantId !== client.tenantId){
             throw new GraphQLError("ERROR_CANNOT_ASSIGN_LOGIN_GROUP_TO_CLIENT")
         }
-        const rels: Array<LoginGroupClientRel> = JSON.parse(this.getFileContents(`${dataDir}/${LOGIN_GROUP_CLIENT_REL_FILE}`));
+        const rels: Array<LoginGroupClientRel> = JSON.parse(getFileContents(`${dataDir}/${LOGIN_GROUP_CLIENT_REL_FILE}`));
         const existingRel = rels.find(
             (r: LoginGroupClientRel) => r.clientId === clientId && r.loginGroupId === loginGroupId
         )
@@ -577,7 +508,7 @@ class FSBasedTenantDao extends TenantDAO {
         return Promise.resolve(newRel);
     }
     public async removeLoginGroupFromClient(loginGroupId: string, clientId: string): Promise<void> {
-        let rels: Array<LoginGroupClientRel> = JSON.parse(this.getFileContents(`${dataDir}/${LOGIN_GROUP_CLIENT_REL_FILE}`));
+        let rels: Array<LoginGroupClientRel> = JSON.parse(getFileContents(`${dataDir}/${LOGIN_GROUP_CLIENT_REL_FILE}`));
         rels = rels.filter(
             (r: LoginGroupClientRel) => !(r.clientId === clientId && r.loginGroupId === loginGroupId)
         )
@@ -587,7 +518,7 @@ class FSBasedTenantDao extends TenantDAO {
 
     // GROUPS METHODS
     public async getGroups(tenantId?: string): Promise<Array<Group>> {
-        const groups: Array<Group> = JSON.parse(this.getFileContents(`${dataDir}/${GROUP_FILE}`, "[]"));
+        const groups: Array<Group> = JSON.parse(getFileContents(`${dataDir}/${GROUP_FILE}`, "[]"));
         if(tenantId){
             return Promise.resolve(
                 groups.filter(
@@ -645,18 +576,7 @@ class FSBasedTenantDao extends TenantDAO {
         throw new Error("Method not implemented.");
     }
 
-    protected getFileContents(fileName: string, defaultContents?: string): any {
-        let fileContents; 
-
-        if(!existsSync(fileName)){
-            writeFileSync(fileName, defaultContents ?? "", {encoding: "utf-8"});
-            fileContents = defaultContents ?? "";
-        }
-        else{
-            fileContents = readFileSync(fileName, {encoding: "utf-8"});
-        }
-        return fileContents;
-    }
+    
 
 }
 

@@ -1,67 +1,16 @@
+import { User } from "@/graphql/generated/graphql-types";
 
 abstract class IdentityDao {
 
-    public async getUsersByClientId(clientId: string){
+    abstract getUsers(clientId: string): Promise<Array<User>>;
 
-    }
+    abstract loginUser(username: string, password: string): Promise<User>;
 
-    public async loginUser(){
+    abstract createUser(user: User): Promise<User>;
 
-    }
+    abstract updateUser(user: User): Promise<User>;
 
-    public async createUser(){
-
-    }
-
-    public async updateUser(){
-
-    }
-
-    public async deleteUser(){
-
-    }
-
-    public async createGroup(){
-
-    }
-
-    public async updateGroup(groupId: string){
-
-    }
-
-    public async deleteGroup(groupId: string){
-
-    }
-
-    public async createLoginGroup(){
-
-    }
-
-    public async updateLoginGroup(loginGroupId: string){
-
-    }
-
-    public async deleteLoginGroup(loginGroupId: string){
-
-    }
-
-    public async assignGroupToUser(){
-
-    }
-
-    public async removeGroupFromUser(){
-
-    }
-
-    public async assignUserToLoginGroup(){
-
-    }
-
-    public async removeUserFromLoginGroup(){
-
-    }
-
-
+    abstract deleteUser(userId: string): Promise<void>;
 
 }
 
