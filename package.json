@@ -6,7 +6,7 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "gql-gen": "graphql-codegen --config ./config/codegen.yml",
+    "gql-gen": "graphql-codegen --verbose --config ./config/codegen.yml",
     "lint": "next lint"
   },
   "dependencies": {

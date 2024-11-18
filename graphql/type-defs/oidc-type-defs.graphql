@@ -89,8 +89,8 @@ type Mutation {
     createGroup(groupInput: GroupCreateInput!): Group
     updateGroup(groupInput: GroupUpdateInput!): Group
     deleteGroup(groupId: String!): String!
-    addUserToGroup(userId: String!, groupId: String): UserGroupRel
-    removeUserFromGroup(userId: String!, groupId!: String): String
+    addUserToGroup(userId: String!, groupId: String!): UserGroupRel
+    removeUserFromGroup(userId: String!, groupId: String!): String
 
 }
 
@@ -110,8 +110,7 @@ type Tenant {
     claimsSupported: [String!]!
     allowUnlimitedRate: Boolean
     delegateAuthentication: Boolean!
-    delegatedOIDCClientDef: OIDCClientDefinition
-    emailDomains: [String!]
+    oidcClientDefinitionId: String
 }
 
 enum ClientAuthType {
@@ -122,11 +121,17 @@ enum ClientAuthType {
 }
 
 # Either client secret should be defined or usePkce should be set to true
+# if no client secret, then client auth type should be NONE
+# refreshTokenAllowed - does the external provider allow for refresh tokens? default false 
 type OIDCClientDefinition {
-    tenantId: String!
-    clientId: String!
-    clientSecret: String
-    wellKnownUri: String!
+    oidcClientDefinitionId: String!
+    oidcClientName: String!
+    oidcClientDescription: String
+    oidcClientTenantId: String
+    oidcProviderClientId: String!
+    oidcProviderClientSecret: String
+    oidcProviderWellKnownUri: String!
+    refreshTokenAllowed: Boolean!
     usePkce: Boolean!
     clientAuthType: ClientAuthType
 }
@@ -150,6 +155,8 @@ enum ClientType {
 # 9.    pkceEnabled
 # 10.   clientType
 # 11.   userTokenTTLSeconds default is 60 minutes, configurable up to 12 hours
+# 12.   allowUserSelfRegistration default false
+# 13.   allowDelegatedAuthentication default false
 type Client {
     tenantId: String!
     clientId: String!
@@ -162,12 +169,20 @@ type Client {
     pkceEnabled: Boolean!
     clientType: ClientType!
     userTokenTTLSeconds: Int
+    allowUserSelfRegistration: Boolean!
+    allowDelegatedAuthentication: Boolean!
+}
+
+type DomainOIDCClientDefinitionRel {
+    domain: String!
+    oidcClientDefinitionId: String!
 }
 
 
 type User {
     tenantId: String!
     userId: String!
+    externalOIDCProviderSubjectId: String
     email: String!
     firstName: String!
     lastName: String!
@@ -371,4 +386,28 @@ input ScopeUpdateInput {
     scopeId: String!
     scopeName: String!
     scopeDescription: String
+}
+
+input LoginGroupCreateInput {
+    tenantId: String!
+    loginGroupName: String!
+    loginGroupDescription: String
+}
+
+input LoginGroupUpdateInput {
+    tenantId: String!
+    loginGroupId: String!
+    loginGroupName: String!
+    loginGroupDescription: String
+}
+
+input GroupCreateInput {
+    tenantId: String!
+    groupName: String!
+}
+
+input GroupUpdateInput {
+    tenantId: String!
+    groupId: String!
+    groupName: String!
 }
