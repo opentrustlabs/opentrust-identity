@@ -1,7 +1,8 @@
 import ClientService from "@/lib/service/client-service";
 import TenantService from "@/lib/service/tenant-service";
-import { Resolvers, QueryResolvers, MutationResolvers, Tenant, Client, Key } from "../generated/graphql-types";
+import { Resolvers, QueryResolvers, MutationResolvers, Tenant, Client, Key, Scope } from "../generated/graphql-types";
 import SigningKeysService from "@/lib/service/keys-service";
+import ScopeService from "@/lib/service/scope-service";
 
 
 const resolvers: Resolvers = {
@@ -29,6 +30,14 @@ const resolvers: Resolvers = {
         getSigningKeyById: (_: any, { signingKeyId }, oidcContext: any) => {
             const keysService: SigningKeysService = new SigningKeysService(oidcContext);
             return keysService.getSigningKeyById(signingKeyId);
+        },
+        getScope: (_: any, __: any, oidcContext) => {
+            const scopeService: ScopeService = new ScopeService(oidcContext);
+            return scopeService.getScope();
+        },
+        getScopeById: (_: any, { scopeId }, oidcContext) => {
+            const scopeService: ScopeService = new ScopeService(oidcContext);
+            return scopeService.getScopeById(scopeId);
         }
     },
     Mutation: {
@@ -130,7 +139,48 @@ const resolvers: Resolvers = {
             const keysService: SigningKeysService = new SigningKeysService(oidcContext);
             await keysService.deleteSigningKey(keyId);
             return keyId;
+        },
+        createScope: async(_: any, { scopeInput }, oidcContext) => {
+            const scopeService: ScopeService = new ScopeService(oidcContext);
+            const scope: Scope = {
+                scopeId: "",
+                scopeName: scopeInput.scopeName,
+                scopeDescription: scopeInput.scopeDescription
+            };
+            await scopeService.createScope(scope);
+            return scope;
+        },
+        updateScope: async(_: any, { scopeInput }, oidcContext) => {
+            const scopeService: ScopeService = new ScopeService(oidcContext);
+            const scope: Scope = {
+                scopeId: scopeInput.scopeId,
+                scopeName: scopeInput.scopeName,
+                scopeDescription: scopeInput.scopeDescription
+            };
+            await scopeService.updateScope(scope);
+            return scope;
+        },
+        assignScopeToTenant: async(_: any, { scopeId, tenantId }, oidcContext) => {
+            const scopeService: ScopeService = new ScopeService(oidcContext);
+            const rel = await scopeService.assignScopeToTenant(tenantId, scopeId);
+            return rel;
+        },
+        removeScopeFromTenant: async(_: any, { scopeId, tenantId }, oidcContext ) => {
+            const scopeService: ScopeService = new ScopeService(oidcContext);
+            await scopeService.removeScopeFromTenant(tenantId, scopeId);
+            return scopeId;
+        },
+        assignScopeToClient: async(_: any, { scopeId, clientId, tenantId }, oidcContext) => {
+            const scopeService: ScopeService = new ScopeService(oidcContext);
+            const rel = await scopeService.assignScopeToClient(tenantId, clientId, scopeId);
+            return rel;
+        },
+        removeScopeFromClient: async(_: any, { scopeId, tenantId, clientId }, oidcContext) => {
+            const scopeService: ScopeService = new ScopeService(oidcContext);
+            await scopeService.removeScopeFromClient(tenantId, clientId, scopeId);
+            return scopeId;
         }
+
         
     }
 }

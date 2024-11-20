@@ -2,9 +2,11 @@ import ClientDao from "@/lib/dao/client-dao";
 import FSBasedClientDao from "@/lib/dao/impl/fs/fs-based-client-dao";
 import FSBasedSigningKeysDao from "@/lib/dao/impl/fs/fs-based-keys-dao";
 import FSBasedRateLimitDao from "@/lib/dao/impl/fs/fs-based-rate-limit-dao";
+import FSBasedScopeDao from "@/lib/dao/impl/fs/fs-based-scope-dao";
 import FSBasedTenantDao from "@/lib/dao/impl/fs/fs-based-tenant-dao";
 import SigningKeysDao from "@/lib/dao/keys-dao";
 import RateLimitDao from "@/lib/dao/rate-limit-dao";
+import ScopeDao from "@/lib/dao/scope-dao";
 import TenantDao from "@/lib/dao/tenant-dao";
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 
@@ -55,4 +57,12 @@ export function getRateLimitDaoImpl(): RateLimitDao {
         return new FSBasedRateLimitDao();
     }
     return new FSBasedRateLimitDao();
+}
+
+export function getScopeDaoImpl(): ScopeDao {
+    const daoStrategy = process.env.DAO_STRATEGY ?? "filesystem";
+    if(daoStrategy === "filesystem"){
+        return new FSBasedScopeDao();
+    }
+    return new FSBasedScopeDao();
 }

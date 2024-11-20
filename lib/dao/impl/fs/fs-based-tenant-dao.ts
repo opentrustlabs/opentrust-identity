@@ -1,10 +1,10 @@
-import { Tenant, Client, Key, RateLimit, Group, LoginGroup, Scope, ClientTenantScopeRel, LoginGroupClientRel, TenantRateLimitRel, TenantScopeRel, UserGroupRel, ClientType } from "@/graphql/generated/graphql-types";
+import { Tenant, Client, Group, LoginGroup,LoginGroupClientRel, UserGroupRel, ClientType } from "@/graphql/generated/graphql-types";
 import TenantDAO from "../../tenant-dao";
 import { writeFileSync } from "node:fs";
 import path from "node:path";
 import { randomUUID } from 'crypto'; 
 import { GraphQLError } from "graphql";
-import { CLIENT_TENANT_SCOPE_REL_FILE, GROUP_FILE, KEY_FILE, LOGIN_GROUP_CLIENT_REL_FILE, LOGIN_GROUP_FILE, RATE_LIMIT_FILE, ROOT_TENANT_FILE, SCOPE_FILE, TENANT_FILE, TENANT_RATE_LIMIT_REL_FILE, TENANT_SCOPE_REL_FILE } from "@/utils/consts";
+import { GROUP_FILE, LOGIN_GROUP_CLIENT_REL_FILE, LOGIN_GROUP_FILE, ROOT_TENANT_FILE, TENANT_FILE } from "@/utils/consts";
 import { getFileContents } from "@/utils/dao-utils";
 
 const dataDir = process.env.FS_BASED_DATA_DIR ?? path.join(__dirname);
@@ -101,161 +101,7 @@ class FSBasedTenantDao extends TenantDAO {
         throw new Error("Method not implemented.");
     }
 
-    
-
-
-
-
-    
-
-    
-    // SCOPE METHODS
-    public async getScope(tenantId?: string): Promise<Array<Scope>> {
-        let scopes: Array<Scope> = JSON.parse(getFileContents(`${dataDir}/${SCOPE_FILE}`, "[]"));
-        if(tenantId){
-            const rels: Array<TenantScopeRel> = await this.getTenantScopeRel(tenantId);
-            scopes = scopes.filter(
-                (s: Scope) => rels.find(
-                    (r: TenantScopeRel) => r.tenantId === tenantId
-                )
-            )
-        }
-        return Promise.resolve(scopes);
-    }
-
-    public async getScopeById(scopeId: string): Promise<Scope | null> {
-        const scopes: Array<Scope> = await this.getScope();
-        const scope: Scope | undefined = scopes.find(
-            (s: Scope) => s.scopeId === scopeId
-        )
-        return scope === undefined ? Promise.resolve(null) : Promise.resolve(scope);
-    }
-
-    public async createScope(scope: Scope): Promise<Scope> {
-        const scopes: Array<Scope> = await this.getScope();
-        scope.scopeId = randomUUID().toString();
-        scopes.push(scope);
-        writeFileSync(`${dataDir}/${SCOPE_FILE}`, JSON.stringify(scopes), {encoding: "utf-8"});
-        return Promise.resolve(scope);
-    }
-
-    public async updateScope(scope: Scope): Promise<Scope> {
-        const scopes: Array<Scope> = await this.getScope();
-        const existingScope = scopes.find(
-            (s: Scope) => s.scopeId === scope.scopeId
-        )
-        if(!existingScope){
-            throw new GraphQLError("ERROR_SCOPE_NOT_FOUND");
-        }
-        existingScope.scopeDescription = scope.scopeDescription;
-        existingScope.scopeName = scope.scopeName;
-        writeFileSync(`${dataDir}/${SCOPE_FILE}`, JSON.stringify(scopes), {encoding: "utf-8"});
-        return Promise.resolve(existingScope);
-    }
-
-    public async deleteScope(scopeId: string): Promise<void> {
-        let scopes: Array<Scope> = await this.getScope();
-        scopes = scopes.filter(
-            (s: Scope) => s.scopeId !== scopeId
-        )
-        writeFileSync(`${dataDir}/${SCOPE_FILE}`, JSON.stringify(scopes), {encoding: "utf-8"});
-    }
         
-
-    protected async getTenantScopeRel(tenantId?: String): Promise<Array<TenantScopeRel>> {
-        const tenantScopeRels: Array<TenantScopeRel> = JSON.parse(getFileContents(`${dataDir}/${TENANT_SCOPE_REL_FILE}`, "[]"));
-        if(tenantId){
-            return Promise.resolve(
-                tenantScopeRels.filter(
-                    (t: TenantScopeRel) => t.tenantId === tenantId
-                )
-            );
-        }
-        else {
-            return Promise.resolve(tenantScopeRels);
-        }
-    }
-    
-    public async assignScopeToTenant(tenantId: string, scopeId: string): Promise<TenantScopeRel> {
-        const tenant: Tenant | null = await this.getTenantById(tenantId);
-        if(!tenant){
-            throw new GraphQLError("ERROR_CANNOT_FIND_TENANT_FOR_SCOPE_ASSIGNMENT");
-        }
-        const scope: Scope | null = await this.getScopeById(scopeId);
-        if(!scope){
-            throw new GraphQLError("ERROR_CANNOT_FIND_SCOPE_TO_ASSIGN_TO_TENANT");
-        }
-        const a: Array<TenantScopeRel> = await this.getTenantScopeRel();
-        const existingRel = a.find(
-            (r: TenantScopeRel) => r.tenantId === tenantId && r.scopeId === scopeId
-        )
-        if(existingRel){
-            return Promise.resolve(existingRel);
-        }
-        const rel: TenantScopeRel = {
-            tenantId: tenantId,
-            scopeId: scopeId
-        }
-        a.push(rel);
-        writeFileSync(`${dataDir}/${TENANT_SCOPE_REL_FILE}`, JSON.stringify(a), {encoding: "utf-8"});
-        return Promise.resolve(rel);
-
-    }
-
-    public async removeScopeFromTenant(tenantId: string, scopeId: string): Promise<void> {
-        let a: Array<TenantScopeRel> = await this.getTenantScopeRel();
-        a = a.filter(
-            (rel: TenantScopeRel) => !(rel.tenantId === tenantId && rel.scopeId === scopeId)
-        );
-        writeFileSync(`${dataDir}/${TENANT_SCOPE_REL_FILE}`, JSON.stringify(a), {encoding: "utf-8"});
-    }
-
-    public async assignScopeToClient(tenantId: string, clientId: string, scopeId: string): Promise<ClientTenantScopeRel> {
-        const client: Client | null = await this.getClientById(clientId);
-        if(!client){
-            throw new GraphQLError("ERROR_CLIENT_NOT_FOUND_FOR_SCOPE_ASSIGNMENT");
-        }
-        if(client.tenantId !== tenantId){
-            throw new GraphQLError("ERROR_CLIENT_DOES_NOT_BELONG_TO_TENANT");
-        }
-        const scope: Scope | null = await this.getScopeById(scopeId);
-        if(!scope){
-            throw new GraphQLError("ERROR_SCOPE_ID_NOT_FOUND_FOR_CLIENT_ASSIGNMENT");
-        }
-        // the scope needs to be assigned to the tenant overall, in order to be assigned to
-        // the client
-        const tenantScopes: Array<TenantScopeRel> = await this.getTenantScopeRel(tenantId);
-        const rel = tenantScopes.find(
-            (t: TenantScopeRel) => t.scopeId === scopeId
-        )
-        if(!rel){
-            throw new GraphQLError("ERROR_SCOPE_IS_NOT_ASSIGNED_TO_THE_TENANT");
-        }
-        const clientTenantScopeRels: Array<ClientTenantScopeRel> = getFileContents(`${dataDir}/${CLIENT_TENANT_SCOPE_REL_FILE}`, "[]");
-        const existingRel = clientTenantScopeRels.find(
-            (r: ClientTenantScopeRel) => r.tenantId === tenantId && r.clientId === clientId && r.scopeId === scopeId
-        )
-        if(existingRel){
-            return Promise.resolve(existingRel);
-        }
-        const newRel: ClientTenantScopeRel = {
-            tenantId: tenantId,
-            clientId: clientId,
-            scopeId: scopeId
-        }
-        clientTenantScopeRels.push(newRel);
-        writeFileSync(`${dataDir}/${CLIENT_TENANT_SCOPE_REL_FILE}`, JSON.stringify(clientTenantScopeRels), {encoding: "utf-8"});
-        return Promise.resolve(newRel);
-
-    }
-    public async removeScopeFromClient(tenantId: string, clientId: string, scopeId: string): Promise<void> {
-        let clientTenantScopeRels: Array<ClientTenantScopeRel> = getFileContents(`${dataDir}/${CLIENT_TENANT_SCOPE_REL_FILE}`, "[]");
-        clientTenantScopeRels = clientTenantScopeRels.filter(
-            (r: ClientTenantScopeRel) => !(r.tenantId === tenantId && r.clientId === clientId && r.scopeId === scopeId)
-        )
-        writeFileSync(`${dataDir}/${CLIENT_TENANT_SCOPE_REL_FILE}`, JSON.stringify(clientTenantScopeRels), {encoding: "utf-8"});
-    }
-
 
     // LOGIN GROUPS METHODS
     public async getLoginGroups(tenantId?: string): Promise<Array<LoginGroup>> {
