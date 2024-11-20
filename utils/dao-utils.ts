@@ -1,6 +1,10 @@
 import ClientDao from "@/lib/dao/client-dao";
 import FSBasedClientDao from "@/lib/dao/impl/fs/fs-based-client-dao";
+import FSBasedSigningKeysDao from "@/lib/dao/impl/fs/fs-based-keys-dao";
+import FSBasedRateLimitDao from "@/lib/dao/impl/fs/fs-based-rate-limit-dao";
 import FSBasedTenantDao from "@/lib/dao/impl/fs/fs-based-tenant-dao";
+import SigningKeysDao from "@/lib/dao/keys-dao";
+import RateLimitDao from "@/lib/dao/rate-limit-dao";
 import TenantDao from "@/lib/dao/tenant-dao";
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 
@@ -35,4 +39,20 @@ export function getClientDaoImpl(): ClientDao {
         return new FSBasedClientDao();
     }
     return new FSBasedClientDao();
+}
+
+export function getSigningKeysDaoImpl(): SigningKeysDao {
+    const daoStrategy = process.env.DAO_STRATEGY ?? "filesystem";
+    if(daoStrategy === "filesystem"){
+        return new FSBasedSigningKeysDao();
+    }
+    return new FSBasedSigningKeysDao();
+}
+
+export function getRateLimitDaoImpl(): RateLimitDao {
+    const daoStrategy = process.env.DAO_STRATEGY ?? "filesystem";
+    if(daoStrategy === "filesystem"){
+        return new FSBasedRateLimitDao();
+    }
+    return new FSBasedRateLimitDao();
 }

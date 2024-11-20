@@ -60,6 +60,7 @@ type Mutation {
     ## Keys
     createSigningKey(keyInput: KeyCreateInput!): Key
     updateSigningKey(keyInput: KeyUpdateInput!): Key
+    deleteSigningKey(keyId: String!): String!
 
     ## RateLimit
     createRateLimit(rateLimitInput: RateLimitCreateInput!): RateLimit
@@ -94,6 +95,16 @@ type Mutation {
 
 }
 
+
+# NOT_ALLOWED - No external OIDC provider can be attached to this tenant
+# EXCLUSIVE   - Use ONLY the single OIDC provider that is configured in the Rel table
+# PERMISSIVE  - Allow many different external OIDC providers to be attached to this tenant
+enum DelegatedAuthenticationConstraint {
+    NOT_ALLOWED
+    EXCLUSIVE
+    PERMISSIVE
+}
+
 ########
 # 1.    tenantId -           Write once, read only
 # 2.    enabled -            true | false
@@ -108,9 +119,10 @@ type Tenant {
     tenantDescription: String
     enabled: Boolean!
     claimsSupported: [String!]!
-    allowUnlimitedRate: Boolean
-    delegateAuthentication: Boolean!
-    oidcClientDefinitionId: String
+    allowUnlimitedRate: Boolean!
+    allowUserSelfRegistration: Boolean!
+    delegatedAuthenticationConstraint: DelegatedAuthenticationConstraint!
+    markForDelete: Boolean!
 }
 
 enum ClientAuthType {
@@ -123,17 +135,23 @@ enum ClientAuthType {
 # Either client secret should be defined or usePkce should be set to true
 # if no client secret, then client auth type should be NONE
 # refreshTokenAllowed - does the external provider allow for refresh tokens? default false 
-type OIDCClientDefinition {
-    oidcClientDefinitionId: String!
-    oidcClientName: String!
-    oidcClientDescription: String
-    oidcClientTenantId: String
-    oidcProviderClientId: String!
-    oidcProviderClientSecret: String
-    oidcProviderWellKnownUri: String!
+type ExternalOIDCProvider {
+    externalOIDCProviderId: String!
+    externalOIDCProviderName: String!
+    externalOIDCProviderDescription: String
+    externalOIDCProviderTenantId: String
+    externalOIDCProviderClientId: String!
+    externalOIDCProviderClientSecret: String
+    externalOIDCProviderWellKnownUri: String!
     refreshTokenAllowed: Boolean!
     usePkce: Boolean!
     clientAuthType: ClientAuthType
+}
+
+type ExternalOIDCProviderTenantDomainRel {    
+    externalOIDCProviderId: String!
+    tenantId: String!
+    domain: String!
 }
 
 
@@ -168,20 +186,13 @@ type Client {
     oidcEnabled: Boolean!
     pkceEnabled: Boolean!
     clientType: ClientType!
-    userTokenTTLSeconds: Int
-    allowUserSelfRegistration: Boolean!
-    allowDelegatedAuthentication: Boolean!
+    userTokenTTLSeconds: Int!
 }
 
-type DomainOIDCClientDefinitionRel {
-    domain: String!
-    oidcClientDefinitionId: String!
-}
 
 
 # 1.    domain is just the domain part of the email
 type User {
-    tenantId: String!
     userId: String!
     externalOIDCProviderSubjectId: String
     email: String!
@@ -196,6 +207,11 @@ type User {
     updatedDate: String
     countryCode: String
     preferredLanguageCode: String    
+}
+
+type UserTenantRel {
+    userId: String!
+    tenantId: String!
 }
 
 type LoginGroup {
@@ -293,24 +309,43 @@ type ClientTenantScopeRel {
 ################ INPUT TYPES AND RESPONSES FOR MUTATATIONS #################
 ############################################################################
 
-input OIDCClientDefinitionInput {
-    tenantId: String!
-    clientId: String!
-    clientSecret: String
-    wellKnownUri: String!
+input ExternalOIDCProviderCreateInput {
+    externalOIDCProviderId: String!
+    externalOIDCProviderName: String!
+    externalOIDCProviderDescription: String
+    externalOIDCProviderTenantId: String
+    externalOIDCProviderClientId: String!
+    externalOIDCProviderClientSecret: String
+    externalOIDCProviderWellKnownUri: String!
+    refreshTokenAllowed: Boolean!
+    usePkce: Boolean!
+    clientAuthType: ClientAuthType
+}
+
+input ExternalOIDCProviderUpdateInput {
+    externalOIDCProviderId: String!
+    externalOIDCProviderName: String!
+    externalOIDCProviderDescription: String
+    externalOIDCProviderTenantId: String
+    externalOIDCProviderClientId: String!
+    externalOIDCProviderClientSecret: String
+    externalOIDCProviderWellKnownUri: String!
+    refreshTokenAllowed: Boolean!
     usePkce: Boolean!
     clientAuthType: ClientAuthType
 }
 
 input TenantCreateInput {
+    tenantId: String!
     tenantName: String!
     tenantDescription: String
     enabled: Boolean!
     claimsSupported: [String!]!
-    allowUnlimitedRate: Boolean
-    delegateAuthentication: Boolean!
-    delegatedOIDCClientDef: OIDCClientDefinitionInput
-    emailDomains: [String!]
+    allowUnlimitedRate: Boolean!
+    allowUserSelfRegistration: Boolean!
+    delegatedAuthenticationConstraint: DelegatedAuthenticationConstraint!
+    externalOIDCProviderId: String
+    domains: [String]
 }
 
 input TenantUpdateInput {
@@ -319,10 +354,12 @@ input TenantUpdateInput {
     tenantDescription: String
     enabled: Boolean!
     claimsSupported: [String!]!
-    allowUnlimitedRate: Boolean
-    delegateAuthentication: Boolean!
-    delegatedOIDCClientDef: OIDCClientDefinitionInput
-    emailDomains: [String!]
+    allowUnlimitedRate: Boolean!
+    allowUserSelfRegistration: Boolean!
+    delegatedAuthenticationConstraint: DelegatedAuthenticationConstraint!
+    externalOIDCProviderId: String
+    domains: [String]
+    markForDelete: Boolean!
 }
 
 input ClientCreateInput {
@@ -334,6 +371,7 @@ input ClientCreateInput {
     oidcEnabled: Boolean
     pkceEnabled: Boolean
     clientType: ClientType!
+    userTokenTTLSeconds: Int
 }
 
 input ClientUpdateInput {
@@ -346,6 +384,7 @@ input ClientUpdateInput {
     oidcEnabled: Boolean
     pkceEnabled: Boolean
     clientType: ClientType!
+    userTokenTTLSeconds: Int
 }
 
 input KeyCreateInput {
