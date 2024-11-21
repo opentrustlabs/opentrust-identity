@@ -278,7 +278,8 @@ type UserCredentialHistory {
     userId: String!
     salt: String!
     hashedPassword: String!
-    dateCreated: String!
+    hashingAlgorithm: String!
+    dateCreated: String!    
 }
 
 type Key {
