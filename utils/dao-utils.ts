@@ -1,10 +1,14 @@
 import ClientDao from "@/lib/dao/client-dao";
+import GroupDao from "@/lib/dao/group-dao";
 import FSBasedClientDao from "@/lib/dao/impl/fs/fs-based-client-dao";
+import FSBasedGroupDao from "@/lib/dao/impl/fs/fs-based-group-dao";
 import FSBasedSigningKeysDao from "@/lib/dao/impl/fs/fs-based-keys-dao";
+import FSBasedLoginGroupDao from "@/lib/dao/impl/fs/fs-based-login-group-dao";
 import FSBasedRateLimitDao from "@/lib/dao/impl/fs/fs-based-rate-limit-dao";
 import FSBasedScopeDao from "@/lib/dao/impl/fs/fs-based-scope-dao";
 import FSBasedTenantDao from "@/lib/dao/impl/fs/fs-based-tenant-dao";
 import SigningKeysDao from "@/lib/dao/keys-dao";
+import LoginGroupsDao from "@/lib/dao/login-group-dao";
 import RateLimitDao from "@/lib/dao/rate-limit-dao";
 import ScopeDao from "@/lib/dao/scope-dao";
 import TenantDao from "@/lib/dao/tenant-dao";
@@ -65,4 +69,20 @@ export function getScopeDaoImpl(): ScopeDao {
         return new FSBasedScopeDao();
     }
     return new FSBasedScopeDao();
+}
+
+export function getLoginGroupDaoImpl(): LoginGroupsDao {
+    const daoStrategy = process.env.DAO_STRATEGY ?? "filesystem";
+    if(daoStrategy === "filesystem"){
+        return new FSBasedLoginGroupDao();
+    }
+    return new FSBasedLoginGroupDao();
+}
+
+export function getGroupDaoImpl(): GroupDao {
+    const daoStrategy = process.env.DAO_STRATEGY ?? "filesystem";
+    if(daoStrategy === "filesystem"){
+        return new FSBasedGroupDao();
+    }
+    return new FSBasedGroupDao();
 }
