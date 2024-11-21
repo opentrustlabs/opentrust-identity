@@ -91,10 +91,12 @@ type Mutation {
     ## Scope constraint schemas
     createScopeConstraintSchema(scopeConstraintSchemaInput: ScopeConstraintSchemaCreateInput!): ScopeConstraintSchema
     updateScopeConstraintSchema(scopeConstraintSchemaInput: ScopeConstraintSchemaUpdateInput!): ScopeConstraintSchema
+    deleteScopeConstraingSchema(scopeConstraintSchemaId: String!): String!
 
     ## Access rules
     createAccessRule(accessRuleInput: AccessRuleCreateInput!): AccessRule
     updateAccessRule(accessRuleInput: AccessRuleUpdateInput!): AccessRule
+    deleteAccessRule(accessRuleId: String!): String!
 
     ## LoginGroups
     createLoginGroup(loginGroupInput: LoginGroupCreateInput!): LoginGroup

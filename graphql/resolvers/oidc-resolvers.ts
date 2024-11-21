@@ -162,7 +162,8 @@ const resolvers: Resolvers = {
             const scope: Scope = {
                 scopeId: "",
                 scopeName: scopeInput.scopeName,
-                scopeDescription: scopeInput.scopeDescription
+                scopeDescription: scopeInput.scopeDescription,
+                scopeConstraintSchemaId: scopeInput.scopeConstraintSchemaId
             };
             await scopeService.createScope(scope);
             return scope;
@@ -172,10 +173,16 @@ const resolvers: Resolvers = {
             const scope: Scope = {
                 scopeId: scopeInput.scopeId,
                 scopeName: scopeInput.scopeName,
-                scopeDescription: scopeInput.scopeDescription
+                scopeDescription: scopeInput.scopeDescription,
+                scopeConstraintSchemaId: scopeInput.scopeConstraintSchemaId
             };
             await scopeService.updateScope(scope);
             return scope;
+        },
+        deleteScope: async(_: any, { scopeId }, oidcContext) => {
+            const scopeService: ScopeService = new ScopeService(oidcContext);
+            await scopeService.deleteScope(scopeId);
+            return scopeId;
         },
         assignScopeToTenant: async(_: any, { scopeId, tenantId }, oidcContext) => {
             const scopeService: ScopeService = new ScopeService(oidcContext);
