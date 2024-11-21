@@ -13,7 +13,6 @@ type Query {
     getUsers(tenantId: String): [User!]!
     getUserById(userId: String!): User
     
-    
     ## Keys
     getSigningKeys(tenantId: String): [Key!]!
     getSigningKeyById(signingKeyId: String!): Key
@@ -22,21 +21,25 @@ type Query {
     getRateLimits(tenantId: String): [RateLimit!]!
     getRateLimitById(rateLimitId: String!): RateLimit
 
-
     ## Scope
     getScope(tenantId: String): [Scope!]!
     getScopeById(scopeId: String!): Scope
 
+    ## Scope constraints
+    getScopeConstraintSchemas: [ScopeConstraintSchema!]!
+    getScopeConstraintSchemaById(scopeConstraintSchemaId: String): ScopeConstraintSchema
+
+    ## Access rules
+    getAccessRules(tenantId: String): [AccessRule!]!
+    getAccessRuleById(accessRuleId: String!): AccessRule
 
     ## LoginGroups
     getLoginGroups(tenantId: String): [LoginGroup!]!
     getLoginGroupById(loginGroupId: String!): LoginGroup!
-    
 
     ## Groups
     getGroups: [Group!]!
     getUserGroups(userId: String!): [Group!]!
-
 
     ## External OIDC Providers
     getExternalOIDCProviders(tenantId: String): [ExternalOIDCProvider!]!
@@ -83,6 +86,14 @@ type Mutation {
     removeScopeFromTenant(tenantId: String!, scopeId: String!): String
     assignScopeToClient(tenantId: String!, clientId: String!, scopeId: String!): ClientTenantScopeRel
     removeScopeFromClient(tenantId: String!, clientId: String!, scopeId: String!): String
+
+    ## Scope constraint schemas
+    createScopeConstraintSchema(scopeConstraintSchemaInput: ScopeConstraintSchemaCreateInput!): ScopeConstraintSchema
+    updateScopeConstraintSchema(scopeConstraintSchemaInput: ScopeConstraintSchemaUpdateInput!): ScopeConstraintSchema
+
+    ## Access rules
+    createAccessRule(accessRuleInput: AccessRuleCreateInput!): AccessRule
+    updateAccessRule(accessRuleInput: AccessRuleUpdateInput!): AccessRule
 
     ## LoginGroups
     createLoginGroup(loginGroupInput: LoginGroupCreateInput!): LoginGroup
@@ -243,10 +254,13 @@ type LoginGroupUserRel {
     userId: String!
 }
 
+# default - for newly registered or created users within the tenant, assign to any group 
+# in the tenant that is marked with default
 type Group {
     tenantId: String!
     groupId: String!
     groupName: String!
+    default: Boolean!
 }
 
 type UserGroupRel {
@@ -298,15 +312,23 @@ type TenantRateLimitRel {
     rateLimitPeriodMinutes: Int
 }
 
+# Can optionally have a constraint definition tied to this scope.
+# Not a requirement, but if one exists, then you MAY, if you choose,
+# create an access rule that you can apply to the tenant (and so the 
+# client and groups which belong to the tenant) which have this scope.
 type Scope {
     scopeId: String!
     scopeName: String!
     scopeDescription: String
+    scopeConstraintSchemaId: String
 }
 
+# Access rules CAN be applied at the tenant level for any non-Root tenant
+# Any client or group will automatically inherit these restrictions
 type TenantScopeRel {
     tenantId: String!
     scopeId: String!
+    accessRuleId: String
 }
 
 type ClientTenantScopeRel {
@@ -315,6 +337,24 @@ type ClientTenantScopeRel {
     scopeId: String!
 }
 
+type GroupScopeRel {
+    groupId: String!
+    tenantId: String!
+    scopeId: String!
+}
+
+type ScopeConstraintSchema {
+    scopeConstraintSchemaId: String!
+    scopeId: String!
+    schema: String!
+}
+
+type AccessRule {
+    accessRuleId: String!
+    scopeId: String!
+    scopeConstraintSchemaId: String!
+    accessRuleDefinition: String!
+}
 
 
 ############################################################################
@@ -434,12 +474,14 @@ input RateLimitUpdateInput {
 input ScopeCreateInput {
     scopeName: String!
     scopeDescription: String
+    scopeConstraintSchemaId: String
 }
 
 input ScopeUpdateInput {
     scopeId: String!
     scopeName: String!
     scopeDescription: String
+    scopeConstraintSchemaId: String
 }
 
 input LoginGroupCreateInput {
@@ -458,10 +500,38 @@ input LoginGroupUpdateInput {
 input GroupCreateInput {
     tenantId: String!
     groupName: String!
+    default: Boolean!
 }
 
 input GroupUpdateInput {
     tenantId: String!
     groupId: String!
     groupName: String!
+    default: Boolean!
+}
+
+## Scope constraint schemas
+input ScopeConstraintSchemaCreateInput {
+    scopeId: String!
+    schema: String!
+}
+
+input ScopeConstraintSchemaUpdateInput {
+    scopeConstraintSchemaId: String!
+    scopeId: String!
+    schema: String!
+}
+
+## Access rules
+input AccessRuleCreateInput {
+    scopeId: String!
+    scopeConstraintSchemaId: String!
+    accessRuleDefinition: String!
+}
+
+input AccessRuleUpdateInput {
+    accessRuleId: String!
+    scopeId: String!
+    scopeConstraintSchemaId: String!
+    accessRuleDefinition: String!
 }
