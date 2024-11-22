@@ -69,8 +69,11 @@ const resolvers: Resolvers = {
                 tenantName: tenantInput.tenantName,
                 tenantDescription: tenantInput.tenantDescription ?? "",
                 allowUserSelfRegistration: tenantInput.allowUserSelfRegistration,
+                verifyEmailOnSelfRegistration: tenantInput.verifyEmailOnSelfRegistration,
                 delegatedAuthenticationConstraint: tenantInput.delegatedAuthenticationConstraint,
-                markForDelete: false
+                markForDelete: false,
+                externalOIDCProviderId: tenantInput.externalOIDCProviderId,
+                maxRefreshTokenCount: tenantInput.maxRefreshTokenCount
             }
             await tenantService.createTenant(tenant);
             return tenant; 
@@ -85,8 +88,11 @@ const resolvers: Resolvers = {
                 allowUnlimitedRate: tenantInput.allowUnlimitedRate,
                 tenantDescription: tenantInput.tenantDescription,
                 allowUserSelfRegistration: tenantInput.allowUserSelfRegistration,
+                verifyEmailOnSelfRegistration: tenantInput.verifyEmailOnSelfRegistration,
                 delegatedAuthenticationConstraint: tenantInput.delegatedAuthenticationConstraint,
-                markForDelete: tenantInput.markForDelete
+                markForDelete: tenantInput.markForDelete,
+                externalOIDCProviderId: tenantInput.externalOIDCProviderId,
+                maxRefreshTokenCount: tenantInput.maxRefreshTokenCount
             }
             const updatedTenant: Tenant = await tenantService.updateTenant(tenant);
             return updatedTenant;

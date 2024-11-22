@@ -147,8 +147,11 @@ type Tenant {
     claimsSupported: [String!]!
     allowUnlimitedRate: Boolean!
     allowUserSelfRegistration: Boolean!
+    verifyEmailOnSelfRegistration: Boolean!
     delegatedAuthenticationConstraint: DelegatedAuthenticationConstraint!
     markForDelete: Boolean!
+    externalOIDCProviderId: String
+    maxRefreshTokenCount: Int
 }
 
 enum ClientAuthType {
@@ -215,7 +218,13 @@ type Client {
     userTokenTTLSeconds: Int!
 }
 
-
+enum TwoFactorAuthType {
+    NONE
+    TEXT
+    EMAIL
+    TIME_BASED_OTP
+    HARDWARE
+}
 
 # 1.    domain is just the domain part of the email
 type User {
@@ -232,7 +241,8 @@ type User {
     createdDate: String!
     updatedDate: String
     countryCode: String
-    preferredLanguageCode: String    
+    preferredLanguageCode: String
+    twoFactorAuthType: TwoFactorAuthType
 }
 
 type UserTenantRel {
@@ -399,9 +409,10 @@ input TenantCreateInput {
     claimsSupported: [String!]!
     allowUnlimitedRate: Boolean!
     allowUserSelfRegistration: Boolean!
+    verifyEmailOnSelfRegistration: Boolean!
     delegatedAuthenticationConstraint: DelegatedAuthenticationConstraint!
     externalOIDCProviderId: String
-    domains: [String]
+    maxRefreshTokenCount: Int
 }
 
 input TenantUpdateInput {
@@ -412,10 +423,11 @@ input TenantUpdateInput {
     claimsSupported: [String!]!
     allowUnlimitedRate: Boolean!
     allowUserSelfRegistration: Boolean!
+    verifyEmailOnSelfRegistration: Boolean!
     delegatedAuthenticationConstraint: DelegatedAuthenticationConstraint!
     externalOIDCProviderId: String
-    domains: [String]
     markForDelete: Boolean!
+    maxRefreshTokenCount: Int
 }
 
 input ClientCreateInput {
