@@ -30,6 +30,26 @@ export const AUTHENTICATION_GROUP_CLIENT_REL_FILE = "authentication-groups-clien
 export const GROUP_FILE = "groups.json";
 
 
+// ************************************************************************** //
+// 
+//                    OIDC-SPECIFIC SCOPE CONSTANTS
+// 
+// ************************************************************************** //
+// These are just the scope values defined by the OIDC specification. They are
+// not related to the scope values for managing this application or other
+// services which are exposed to clients.
+export const OIDC_OPENID_SCOPE="openid";
+export const OIDC_EMAIL_SCOPE="email";
+export const OIDC_PROFILE_SCOPE="profile";
+export const OIDC_OFFLINE_ACCESS_SCOPE="offline_access";
+export const ALL_OIDC_SUPPORTED_SCOPE_VALUES = [
+    OIDC_OPENID_SCOPE,
+    OIDC_EMAIL_SCOPE,
+    OIDC_PROFILE_SCOPE,
+    OIDC_OFFLINE_ACCESS_SCOPE
+];
+
+
 
 // ************************************************************************** //
 // 

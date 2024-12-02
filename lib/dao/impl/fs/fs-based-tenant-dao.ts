@@ -17,13 +17,13 @@ class FSBasedTenantDao extends TenantDAO {
         }
         return Promise.resolve(tenant);
     }
-    public async createRootTenant(tenant: Tenant, externalOIDCProviderId?: string, domains?: Array<string>): Promise<Tenant> {
+    public async createRootTenant(tenant: Tenant): Promise<Tenant> {
         tenant.tenantId = randomUUID().toString();
         writeFileSync(`${dataDir}/${ROOT_TENANT_FILE}`, JSON.stringify(tenant), {encoding: "utf-8"});
         return Promise.resolve(tenant);
         
     }
-    public async updateRootTenant(tenant: Tenant, externalOIDCProviderId?: string, domains?: Array<string>): Promise<Tenant> {
+    public async updateRootTenant(tenant: Tenant): Promise<Tenant> {
         
         const rootTenant: Tenant = await this.getRootTenant();
         rootTenant.allowUnlimitedRate = tenant.allowUnlimitedRate;

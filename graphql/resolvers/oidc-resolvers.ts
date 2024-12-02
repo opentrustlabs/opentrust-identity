@@ -9,6 +9,10 @@ import AuthenticationGroupService from "@/lib/service/authentication-group-servi
 
 const resolvers: Resolvers = {
     Query: {
+        getRootTenant: (_, __, oidcContext) => {
+            const tenantService: TenantService = new TenantService(oidcContext);
+            return tenantService.getRootTenant();
+        },
         getTenants: (_, __, oidcContext) => {
             const tenantService: TenantService = new TenantService(oidcContext);
             return tenantService.getTenants();
@@ -59,6 +63,42 @@ const resolvers: Resolvers = {
         }
     },
     Mutation: {
+        createRootTenant: async(_: any, { tenantInput }, oidcContext) => {
+            const tenantService: TenantService = new TenantService(oidcContext);
+            let tenant: Tenant = {
+                claimsSupported: tenantInput.claimsSupported,
+                enabled: true,
+                tenantId: "",
+                allowUnlimitedRate: tenantInput.allowUnlimitedRate,
+                tenantName: tenantInput.tenantName,
+                tenantDescription: tenantInput.tenantDescription ?? "",
+                allowUserSelfRegistration: tenantInput.allowUserSelfRegistration,
+                verifyEmailOnSelfRegistration: tenantInput.verifyEmailOnSelfRegistration,
+                delegatedAuthenticationConstraint: tenantInput.delegatedAuthenticationConstraint,
+                markForDelete: false,
+                externalOIDCProviderId: tenantInput.externalOIDCProviderId
+            };
+            await tenantService.createRootTenant(tenant);
+            return tenant;
+        },
+        updateRootTenant: async(_: any, { tenantInput }, oidcContext) => {
+            const tenantService: TenantService = new TenantService(oidcContext);
+            let tenant: Tenant = {
+                tenantId: tenantInput.tenantId,
+                claimsSupported: tenantInput.claimsSupported,
+                enabled: tenantInput.enabled,
+                tenantName: tenantInput.tenantName,
+                allowUnlimitedRate: tenantInput.allowUnlimitedRate,
+                tenantDescription: tenantInput.tenantDescription,
+                allowUserSelfRegistration: tenantInput.allowUserSelfRegistration,
+                verifyEmailOnSelfRegistration: tenantInput.verifyEmailOnSelfRegistration,
+                delegatedAuthenticationConstraint: tenantInput.delegatedAuthenticationConstraint,
+                markForDelete: tenantInput.markForDelete,
+                externalOIDCProviderId: tenantInput.externalOIDCProviderId
+            }
+            await tenantService.updateRootTenant(tenant);
+            return tenant;
+        },
         createTenant: async (_: any, { tenantInput }, oidcContext) => {
             const tenantService: TenantService = new TenantService(oidcContext);
             let tenant: Tenant = {

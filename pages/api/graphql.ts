@@ -4,6 +4,8 @@ import { ApolloServerPluginLandingPageLocalDefault, ApolloServerPluginLandingPag
 import { typeDefs } from "@/graphql/generated/graphql-types";
 import resolvers from "@/graphql/resolvers/oidc-resolvers";
 import { NextApiRequest, NextApiResponse } from "next";
+import { ErrorResponseBody } from "@/lib/models/error";
+
 
 const server = new ApolloServer(
     {
@@ -24,6 +26,7 @@ const server = new ApolloServer(
 
 export default startServerAndCreateNextHandler(server, {
     context: async(req: NextApiRequest, res: NextApiResponse) => {
+        
         return {
             req,
             res,
