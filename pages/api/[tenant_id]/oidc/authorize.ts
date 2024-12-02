@@ -1,4 +1,4 @@
-import { Tenant, Client } from '@/graphql/generated/graphql-types';
+import { Tenant, Client, DelegatedAuthenticationConstraint } from '@/graphql/generated/graphql-types';
 import ClientDao from '@/lib/dao/client-dao';
 import TenantDao from '@/lib/dao/tenant-dao';
 import { ALL_OIDC_SUPPORTED_SCOPE_VALUES, OIDC_OPENID_SCOPE } from '@/utils/consts';
@@ -81,7 +81,8 @@ export default async function handler(
     return;
   }
 
-  // 3. Does the tenant exist and are they enabled
+  // 3. Does the tenant exist and are they enabled. Also, is the tenant defined to use
+  //    an external OIDC provider itself, exclusively? Is so, then redirect immediaely.
   const tenant: Tenant | null = await tenantDao.getTenantById(tenantId);
   if (!tenant) {
     res.status(302).setHeader("location", `/authorize/login?tenant_id=${tenantId}&client_id=${clientId}&state=${oidcState}&error=invalid_request&error_message=ERROR_INVALID_TENANT&redirect_uri=${redirectUri}&scope=${oidcScope}`);
@@ -92,6 +93,16 @@ export default async function handler(
     res.status(302).setHeader("location", `/authorize/login?tenant_id=${tenantId}&client_id=${clientId}&state=${oidcState}&error=unauthorized_client&error_message=ERROR_TENANT_NOT_ENABLED&redirect_uri=${redirectUri}&scope=${oidcScope}`);
     res.end();
     return;
+  }
+  if(tenant.delegatedAuthenticationConstraint === DelegatedAuthenticationConstraint.Exclusive){
+    if(!tenant.externalOIDCProviderId){
+      res.status(302).setHeader("location", `/authorize/login?tenant_id=${tenantId}&client_id=${clientId}&state=${oidcState}&error=unauthorized_client&error_message=ERROR_TENANT_INCORRECTLY_CONFIGURED_FOR_EXTERNAL_OIDC_PROVIDER&redirect_uri=${redirectUri}&scope=${oidcScope}`);
+      res.end();
+      return;
+    }
+    // TODO
+    // Lookup the external OIDC provider and redirect the user immediately. Need to
+    // Set the state, scope, client, response type, etc and save it for later use.
   }
 
   // 4. Does the client exist and do they belong to the tenant and is the client enabled
