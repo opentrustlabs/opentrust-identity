@@ -1,10 +1,10 @@
 import ClientService from "@/lib/service/client-service";
 import TenantService from "@/lib/service/tenant-service";
-import { Resolvers, QueryResolvers, MutationResolvers, Tenant, Client, Key, Scope, LoginGroup, Group } from "../generated/graphql-types";
+import { Resolvers, QueryResolvers, MutationResolvers, Tenant, Client, Key, Scope, AuthenticationGroup, Group } from "../generated/graphql-types";
 import SigningKeysService from "@/lib/service/keys-service";
 import ScopeService from "@/lib/service/scope-service";
-import LoginGroupService from "@/lib/service/login-group-service";
 import GroupService from "@/lib/service/group-service";
+import AuthenticationGroupService from "@/lib/service/authentication-group-service";
 
 
 const resolvers: Resolvers = {
@@ -41,13 +41,13 @@ const resolvers: Resolvers = {
             const scopeService: ScopeService = new ScopeService(oidcContext);
             return scopeService.getScopeById(scopeId);
         },
-        getLoginGroups: (_: any, __: any, oidcContext) => {
-            const loginGroupService: LoginGroupService = new LoginGroupService(oidcContext);
-            return loginGroupService.getLoginGroups();
+        getAuthenticationGroups: (_: any, __: any, oidcContext) => {
+            const authenticationGroupService: AuthenticationGroupService = new AuthenticationGroupService(oidcContext);
+            return authenticationGroupService.getAuthenticationGroups();
         },
-        getLoginGroupById: (_: any, { loginGroupId }, oidcContext) => {
-            const loginGroupService: LoginGroupService = new LoginGroupService(oidcContext);
-            return loginGroupService.getLoginGroupById(loginGroupId);
+        getAuthenticationGroupById: (_: any, { authenticationGroupId }, oidcContext) => {
+            const authenticationGroupService: AuthenticationGroupService = new AuthenticationGroupService(oidcContext);
+            return authenticationGroupService.getAuthenticationGroupById(authenticationGroupId);
         },
         getGroups: (_: any, __: any, oidcContext) => {
             const groupService: GroupService = new GroupService(oidcContext);
@@ -72,8 +72,7 @@ const resolvers: Resolvers = {
                 verifyEmailOnSelfRegistration: tenantInput.verifyEmailOnSelfRegistration,
                 delegatedAuthenticationConstraint: tenantInput.delegatedAuthenticationConstraint,
                 markForDelete: false,
-                externalOIDCProviderId: tenantInput.externalOIDCProviderId,
-                maxRefreshTokenCount: tenantInput.maxRefreshTokenCount
+                externalOIDCProviderId: tenantInput.externalOIDCProviderId
             }
             await tenantService.createTenant(tenant);
             return tenant; 
@@ -91,8 +90,7 @@ const resolvers: Resolvers = {
                 verifyEmailOnSelfRegistration: tenantInput.verifyEmailOnSelfRegistration,
                 delegatedAuthenticationConstraint: tenantInput.delegatedAuthenticationConstraint,
                 markForDelete: tenantInput.markForDelete,
-                externalOIDCProviderId: tenantInput.externalOIDCProviderId,
-                maxRefreshTokenCount: tenantInput.maxRefreshTokenCount
+                externalOIDCProviderId: tenantInput.externalOIDCProviderId
             }
             const updatedTenant: Tenant = await tenantService.updateTenant(tenant);
             return updatedTenant;
@@ -115,7 +113,8 @@ const resolvers: Resolvers = {
                 oidcEnabled: clientInput.oidcEnabled ?? true,
                 pkceEnabled: clientInput.pkceEnabled ?? true,
                 clientType: clientInput.clientType,
-                userTokenTTLSeconds: clientInput.userTokenTTLSeconds || 0
+                userTokenTTLSeconds: clientInput.userTokenTTLSeconds || 0,
+                maxRefreshTokenCount: clientInput.maxRefreshTokenCount
             }
             await clientService.createClient(client);
             return client;
@@ -133,7 +132,8 @@ const resolvers: Resolvers = {
                 oidcEnabled: clientInput.oidcEnabled ?? true,
                 pkceEnabled: clientInput.pkceEnabled ?? true,
                 clientType: clientInput.clientType,
-                userTokenTTLSeconds: clientInput.userTokenTTLSeconds || 0
+                userTokenTTLSeconds: clientInput.userTokenTTLSeconds || 0,
+                maxRefreshTokenCount: clientInput.maxRefreshTokenCount
             }
             await clientService.updateClient(client);
             return client;
@@ -210,42 +210,42 @@ const resolvers: Resolvers = {
             await scopeService.removeScopeFromClient(tenantId, clientId, scopeId);
             return scopeId;
         },
-        createLoginGroup: async(_: any, { loginGroupInput }, oidcContext) => {
-            const loginGroupService: LoginGroupService = new LoginGroupService(oidcContext);
-            const loginGroup: LoginGroup = {
-                loginGroupId: "",
-                loginGroupName: loginGroupInput.loginGroupName,
-                loginGroupDescription: loginGroupInput.loginGroupDescription,
-                tenantId: loginGroupInput.tenantId
+        createAuthenticationGroup: async(_: any, { authenticationGroupInput }, oidcContext) => {
+            const authenticationGroupService: AuthenticationGroupService = new AuthenticationGroupService(oidcContext);
+            const authenticationGroup: AuthenticationGroup = {
+                authenticationGroupId: "",
+                authenticationGroupName: authenticationGroupInput.authenticationGroupName,
+                authenticationGroupDescription: authenticationGroupInput.authenticationGroupDescription,
+                tenantId: authenticationGroupInput.tenantId
             }
-            await loginGroupService.createLoginGroup(loginGroup);
-            return loginGroup;
+            await authenticationGroupService.createAuthenticationGroup(authenticationGroup);
+            return authenticationGroup;
         },
-        updateLoginGroup: async(_: any, { loginGroupInput }, oidcContext) => {
-            const loginGroupService: LoginGroupService = new LoginGroupService(oidcContext);
-            const loginGroup: LoginGroup = {
-                loginGroupId: loginGroupInput.loginGroupId,
-                loginGroupName: loginGroupInput.loginGroupName,
-                loginGroupDescription: loginGroupInput.loginGroupDescription,
-                tenantId: loginGroupInput.tenantId
+        updateAuthenticationGroup: async(_: any, { authenticationGroupInput }, oidcContext) => {
+            const authenticationGroupService: AuthenticationGroupService = new AuthenticationGroupService(oidcContext);
+            const authenticationGroup: AuthenticationGroup = {
+                authenticationGroupId: authenticationGroupInput.authenticationGroupId,
+                authenticationGroupName: authenticationGroupInput.authenticationGroupName,
+                authenticationGroupDescription: authenticationGroupInput.authenticationGroupDescription,
+                tenantId: authenticationGroupInput.tenantId
             }
-            await loginGroupService.updateLoginGroup(loginGroup);
-            return loginGroup;
+            await authenticationGroupService.updateAuthenticationGroup(authenticationGroup);
+            return authenticationGroupInput;
         },
-        deleteLoginGroup: async(_: any, { loginGroupId }, oidcContext) => {
-            const loginGroupService: LoginGroupService = new LoginGroupService(oidcContext);
-            await loginGroupService.deleteLoginGroup(loginGroupId);
-            return loginGroupId;
+        deleteAuthenticationGroup: async(_: any, { authenticationGroupId }, oidcContext) => {
+            const authenticationGroupService: AuthenticationGroupService = new AuthenticationGroupService(oidcContext);
+            await authenticationGroupService.deleteAuthenticationGroup(authenticationGroupId);
+            return authenticationGroupId;
         },
-        assignLoginGroupToClient: async(_: any, { loginGroupId, clientId }, oidcContext) => {
-            const loginGroupService: LoginGroupService = new LoginGroupService(oidcContext);
-            const res = await loginGroupService.assignLoginGroupToClient(loginGroupId, clientId);
+        assignAuthenticationGroupToClient: async(_: any, { authenticationGroupId, clientId }, oidcContext) => {
+            const authenticationGroupService: AuthenticationGroupService = new AuthenticationGroupService(oidcContext);
+            const res = await authenticationGroupService.assignAuthenticationGroupToClient(authenticationGroupId, clientId);
             return res;
         },
-        removeLoginGroupFromClient: async(_: any, { loginGroupId, clientId }, oidcContext) => {
-            const loginGroupService: LoginGroupService = new LoginGroupService(oidcContext);
-            await loginGroupService.removeLoginGroupFromClient(loginGroupId, clientId);
-            return loginGroupId;
+        removeAuthenticationGroupFromClient: async(_: any, { authenticationGroupId, clientId }, oidcContext) => {
+            const authenticationGroupService: AuthenticationGroupService = new AuthenticationGroupService(oidcContext);
+            await authenticationGroupService.removeAuthenticationGroupFromClient(authenticationGroupId, clientId);
+            return authenticationGroupId;
         },
         createGroup: async(_: any, { groupInput }, oidcContext) => {
             const groupService: GroupService = new GroupService(oidcContext);

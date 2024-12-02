@@ -33,9 +33,9 @@ type Query {
     getAccessRules(tenantId: String): [AccessRule!]!
     getAccessRuleById(accessRuleId: String!): AccessRule
 
-    ## LoginGroups
-    getLoginGroups(tenantId: String): [LoginGroup!]!
-    getLoginGroupById(loginGroupId: String!): LoginGroup
+    ## AuthenticationGroups
+    getAuthenticationGroups(tenantId: String): [AuthenticationGroup!]!
+    getAuthenticationGroupById(authenticationGroupId: String!): AuthenticationGroup
 
     ## Groups
     getGroups: [Group!]!
@@ -98,12 +98,12 @@ type Mutation {
     updateAccessRule(accessRuleInput: AccessRuleUpdateInput!): AccessRule
     deleteAccessRule(accessRuleId: String!): String!
 
-    ## LoginGroups
-    createLoginGroup(loginGroupInput: LoginGroupCreateInput!): LoginGroup
-    updateLoginGroup(loginGroupInput: LoginGroupUpdateInput!): LoginGroup
-    deleteLoginGroup(loginGroupId: String!): String!
-    assignLoginGroupToClient(loginGroupId: String!, clientId: String!): LoginGroupClientRel
-    removeLoginGroupFromClient(loginGroupId: String!, clientId: String!): String
+    ## AuthenticationGroups
+    createAuthenticationGroup(authenticationGroupInput: AuthenticationGroupCreateInput!): AuthenticationGroup
+    updateAuthenticationGroup(authenticationGroupInput: AuthenticationGroupUpdateInput!): AuthenticationGroup
+    deleteAuthenticationGroup(authenticationGroupId: String!): String!
+    assignAuthenticationGroupToClient(authenticationGroupId: String!, clientId: String!): AuthenticationGroupClientRel
+    removeAuthenticationGroupFromClient(authenticationGroupId: String!, clientId: String!): String
     
     ## Groups
     createGroup(groupInput: GroupCreateInput!): Group
@@ -151,7 +151,6 @@ type Tenant {
     delegatedAuthenticationConstraint: DelegatedAuthenticationConstraint!
     markForDelete: Boolean!
     externalOIDCProviderId: String
-    maxRefreshTokenCount: Int
 }
 
 enum ClientAuthType {
@@ -216,6 +215,7 @@ type Client {
     pkceEnabled: Boolean!
     clientType: ClientType!
     userTokenTTLSeconds: Int!
+    maxRefreshTokenCount: Int
 }
 
 enum TwoFactorAuthType {
@@ -250,20 +250,20 @@ type UserTenantRel {
     tenantId: String!
 }
 
-type LoginGroup {
+type AuthenticationGroup {
     tenantId: String!
-    loginGroupId: String!
-    loginGroupName: String!
-    loginGroupDescription: String
+    authenticationGroupId: String!
+    authenticationGroupName: String!
+    authenticationGroupDescription: String
 }
 
-type LoginGroupClientRel {
+type AuthenticationGroupClientRel {
     clientId: String!
-    loginGroupId: String!
+    authenticationGroupId: String!
 }
 
-type LoginGroupUserRel {
-    loginGroupId: String!
+type AuthenticationGroupUserRel {
+    authenticationGroupId: String!
     userId: String!
 }
 
@@ -359,6 +359,7 @@ type GroupScopeRel {
 
 type ScopeConstraintSchema {
     scopeConstraintSchemaId: String!
+    schemaVersion: Int!
     scopeId: String!
     schema: String!
 }
@@ -440,6 +441,7 @@ input ClientCreateInput {
     pkceEnabled: Boolean
     clientType: ClientType!
     userTokenTTLSeconds: Int
+    maxRefreshTokenCount: Int
 }
 
 input ClientUpdateInput {
@@ -453,6 +455,7 @@ input ClientUpdateInput {
     pkceEnabled: Boolean
     clientType: ClientType!
     userTokenTTLSeconds: Int
+    maxRefreshTokenCount: Int
 }
 
 input KeyCreateInput {
@@ -500,17 +503,17 @@ input ScopeUpdateInput {
     scopeConstraintSchemaId: String
 }
 
-input LoginGroupCreateInput {
+input AuthenticationGroupCreateInput {
     tenantId: String!
-    loginGroupName: String!
-    loginGroupDescription: String
+    authenticationGroupName: String!
+    authenticationGroupDescription: String
 }
 
-input LoginGroupUpdateInput {
+input AuthenticationGroupUpdateInput {
     tenantId: String!
-    loginGroupId: String!
-    loginGroupName: String!
-    loginGroupDescription: String
+    authenticationGroupId: String!
+    authenticationGroupName: String!
+    authenticationGroupDescription: String
 }
 
 input GroupCreateInput {

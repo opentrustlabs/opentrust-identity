@@ -25,8 +25,8 @@ export const TENANT_RATE_LIMIT_REL_FILE = "tenant-rate-limit-rel.json";
 export const SCOPE_FILE = "scope.json";
 export const TENANT_SCOPE_REL_FILE = "tenant-scope-rel.json";
 export const CLIENT_TENANT_SCOPE_REL_FILE = "client-tenant-scope-rel.json";
-export const LOGIN_GROUP_FILE = "login-groups.json";
-export const LOGIN_GROUP_CLIENT_REL_FILE = "login-groups-client-rel.json";
+export const AUTHENTICATION_GROUP_FILE = "authentication-groups.json";
+export const AUTHENTICATION_GROUP_CLIENT_REL_FILE = "authentication-groups-client-rel.json";
 export const GROUP_FILE = "groups.json";
 
 
