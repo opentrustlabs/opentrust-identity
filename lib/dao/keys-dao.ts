@@ -1,13 +1,13 @@
-import { Key } from "@/graphql/generated/graphql-types";
+import { SigningKey } from "@/graphql/generated/graphql-types";
 
 
 abstract class SigningKeysDao {
     
-    abstract getSigningKeys(tenantId?: string): Promise<Array<Key>>;
+    abstract getSigningKeys(tenantId?: string): Promise<Array<SigningKey>>;
 
-    abstract getSigningKeyById(keyId: string): Promise<Key | null>;
+    abstract getSigningKeyById(keyId: string): Promise<SigningKey | null>;
 
-    abstract createSigningKey(key: Key): Promise<Key>;
+    abstract createSigningKey(key: SigningKey): Promise<SigningKey>;
 
     abstract deleteSigningKey(keyId: String): Promise<void>;
 

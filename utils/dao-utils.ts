@@ -13,6 +13,8 @@ import TenantDao from "@/lib/dao/tenant-dao";
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import AuthenticationGroupDao from "@/lib/dao/authentication-group-dao";
 import FSBasedAuthenticationGroupDao from "@/lib/dao/impl/fs/fs-based-authentication-group-dao";
+import ExternalOIDCProviderDao from "@/lib/dao/external-oidc-provider-dao";
+import FSBasedExternalOIDCProviderDao from "@/lib/dao/impl/fs/fs-based-external-oidc-provider-dao";
 
 
 export function getFileContents(fileName: string, defaultContents?: string): any {
@@ -85,4 +87,12 @@ export function getGroupDaoImpl(): GroupDao {
         return new FSBasedGroupDao();
     }
     return new FSBasedGroupDao();
+}
+
+export function getExternalOIDCProvicerDaoImpl(): ExternalOIDCProviderDao {
+    const daoStrategy = process.env.DAO_STRATEGY ?? "filesystem";
+    if(daoStrategy === "filesystem"){
+        return new FSBasedExternalOIDCProviderDao();
+    }
+    return new FSBasedExternalOIDCProviderDao();
 }

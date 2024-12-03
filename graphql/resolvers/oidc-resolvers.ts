@@ -1,6 +1,6 @@
 import ClientService from "@/lib/service/client-service";
 import TenantService from "@/lib/service/tenant-service";
-import { Resolvers, QueryResolvers, MutationResolvers, Tenant, Client, Key, Scope, AuthenticationGroup, Group } from "../generated/graphql-types";
+import { Resolvers, QueryResolvers, MutationResolvers, Tenant, Client, SigningKey, Scope, AuthenticationGroup, Group } from "../generated/graphql-types";
 import SigningKeysService from "@/lib/service/keys-service";
 import ScopeService from "@/lib/service/scope-service";
 import GroupService from "@/lib/service/group-service";
@@ -185,15 +185,14 @@ const resolvers: Resolvers = {
         },
         createSigningKey: async(_: any, { keyInput }, oidcContext) => {
             const keysService: SigningKeysService = new SigningKeysService(oidcContext);
-            const key: Key = {
-                e: keyInput.e,
-                exp: keyInput.exp,
+            const key: SigningKey = {
                 keyType: keyInput.keyType,
-                n: keyInput.n,
                 tenantId: keyInput.tenantId,
                 use: keyInput.use,
-                x5c: keyInput.x5c,
-                keyId: ""
+                keyId: "",
+                certificate: keyInput.certificate,
+                privateKey: keyInput.privateKey,
+                password: keyInput.password
             };
             await keysService.createSigningKey(key);
             return key;

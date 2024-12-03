@@ -1,4 +1,4 @@
-import { Key, Tenant } from "@/graphql/generated/graphql-types";
+import { SigningKey, Tenant } from "@/graphql/generated/graphql-types";
 import { getSigningKeysDaoImpl, getTenantDaoImpl } from "@/utils/dao-utils";
 import { GraphQLError } from "graphql/error/GraphQLError";
 import { randomUUID } from 'crypto'; 
@@ -15,11 +15,11 @@ class SigningKeysService {
         this.oidcContext = oidcContext;
     }
    
-    public async getSigningKeys(tenantId?: string): Promise<Array<Key>> {
+    public async getSigningKeys(tenantId?: string): Promise<Array<SigningKey>> {
         return signingKeysDao.getSigningKeys(tenantId);
     }    
 
-    public async createSigningKey(key: Key): Promise<Key> {
+    public async createSigningKey(key: SigningKey): Promise<SigningKey> {
         const tenant: Tenant | null = await tenantDao.getTenantById(key.tenantId);
         if(!tenant){
             throw new GraphQLError("ERROR_TENANT_NOT_FOUND", {
@@ -33,7 +33,7 @@ class SigningKeysService {
         return Promise.resolve(key);        
     }    
 
-    public async getSigningKeyById(keyId: string): Promise<Key | null> {
+    public async getSigningKeyById(keyId: string): Promise<SigningKey | null> {
         return signingKeysDao.getSigningKeyById(keyId);
     }
     

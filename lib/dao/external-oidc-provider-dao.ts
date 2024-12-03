@@ -1,5 +1,5 @@
 
-import { ExternalOidcProvider, ExternalOidcProviderTenantDomainRel } from "@/graphql/generated/graphql-types";
+import { ExternalOidcProvider, ExternalOidcProviderTenantRel, ExternalOidcProviderDomainRel } from "@/graphql/generated/graphql-types";
 
 
 abstract class ExternalOIDCProviderDao {
@@ -12,9 +12,19 @@ abstract class ExternalOIDCProviderDao {
 
     abstract updateExternalOIDCProvider(externalOIDCProvider: ExternalOidcProvider): Promise<ExternalOidcProvider>;
 
-    abstract assignExternalOIDCProviderToTenant(externalOIDCProviderId: string, tenantId: string, domains: Array<string>): Promise<Array<ExternalOidcProviderTenantDomainRel>>;
+    abstract getExternalOIDCProviderTenantRels(tenantId?: string): Promise<Array<ExternalOidcProviderTenantRel>>;
 
-    abstract removeExternalOIDCProviderFromTenant(externalOIDCProviderId: string, tenantId: string, domains: Array<string>): Promise<Array<ExternalOidcProviderTenantDomainRel>>;
+    abstract getExternalOIDCProviderByDomain(domain: string): Promise<ExternalOidcProvider | null>;
+
+    abstract assignExternalOIDCProviderToTenant(externalOIDCProviderId: string, tenantId: string): Promise<ExternalOidcProviderTenantRel>;
+
+    abstract removeExternalOIDCProviderFromTenant(externalOIDCProviderId: string, tenantId: string): Promise<ExternalOidcProviderTenantRel>;
+
+    abstract getExternalOIDCProviderDomainRels(): Promise<Array<ExternalOidcProviderDomainRel>>;
+
+    abstract assignExternalOIDCProviderToDomain(externalOIDCProviderId: string, domain: string): Promise<ExternalOidcProviderDomainRel>;
+
+    abstract removeExternalOIDCProviderFromDomain(externalOIDCProviderId: string, domain: string): Promise<ExternalOidcProviderDomainRel>;
 
     abstract deleteExternalOIDCProvider(externalOIDCProviderId: string): Promise<void>;
 

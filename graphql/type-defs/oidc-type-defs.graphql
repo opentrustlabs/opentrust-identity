@@ -14,8 +14,8 @@ type Query {
     getUserById(userId: String!): User
     
     ## Keys
-    getSigningKeys(tenantId: String): [Key!]!
-    getSigningKeyById(signingKeyId: String!): Key
+    getSigningKeys(tenantId: String): [SigningKey!]!
+    getSigningKeyById(signingKeyId: String!): SigningKey
 
     ## RateLimit
     getRateLimits(tenantId: String): [RateLimit!]!
@@ -67,8 +67,7 @@ type Mutation {
 
     
     ## Keys
-    createSigningKey(keyInput: KeyCreateInput!): Key
-    # updateSigningKey(keyInput: KeyUpdateInput!): Key
+    createSigningKey(keyInput: SigningKeyCreateInput!): SigningKey!
     deleteSigningKey(keyId: String!): String!
 
     ## RateLimit
@@ -115,8 +114,10 @@ type Mutation {
     ## External OIDC Providers
     createExternalOIDCProvider(oidcProviderInput: ExternalOIDCProviderCreateInput!): ExternalOIDCProvider
     updateExternalOIDCProvider(oidcProviderInput: ExternalOIDCProviderUpdateInput!): ExternalOIDCProvider
-    assignExternalOIDCProviderToTenant(externalOIDCProviderId: String!, tenantId: String!, domains: [String!]!): [ExternalOIDCProviderTenantDomainRel!]!
-    removeExternalOIDCProviderFromTenant(externalOIDCProviderId: String!, tenantId: String!, domains: [String!]!): [ExternalOIDCProviderTenantDomainRel!]!
+    assignExternalOIDCProviderToTenant(externalOIDCProviderId: String!, tenantId: String!): ExternalOIDCProviderTenantRel!
+    removeExternalOIDCProviderFromTenant(externalOIDCProviderId: String!, tenantId: String!): ExternalOIDCProviderTenantRel!
+    assignExternalOIDCProviderToDomain(externalOIDCProviderId: String!, domain: String!): ExternalOIDCProviderDomainRel!
+    removeExternalOIDCProviderFromDomain(externalOIDCProviderId: String!, domain: String!): ExternalOIDCProviderDomainRel!
     deleteExternalOIDCProvider(externalOIDCProviderId: String!): String!
 
 }
@@ -176,9 +177,13 @@ type ExternalOIDCProvider {
     clientAuthType: ClientAuthType
 }
 
-type ExternalOIDCProviderTenantDomainRel {    
+type ExternalOIDCProviderTenantRel {    
     externalOIDCProviderId: String!
     tenantId: String!
+}
+
+type ExternalOIDCProviderDomainRel {
+    externalOIDCProviderId: String!
     domain: String!
 }
 
@@ -295,15 +300,18 @@ type UserCredentialHistory {
     dateCreated: String!    
 }
 
-type Key {
-    tenantId: String!
+enum KeyType {
+    RSA,
+    EC
+}
+type SigningKey {
     keyId: String!
-    keyType: String!
+    tenantId: String!    
+    keyType: KeyType!
     use: String!
-    n: String!
-    e: String!
-    x5c: [String!]!
-    exp: String!
+    privateKey: String!
+    password: String
+    certificate: String!
 }
 
 
@@ -458,27 +466,15 @@ input ClientUpdateInput {
     maxRefreshTokenCount: Int
 }
 
-input KeyCreateInput {
-    tenantId: String!
-    keyType: String!
+input SigningKeyCreateInput {
+    tenantId: String!    
+    keyType: KeyType!
     use: String!
-    n: String!
-    e: String!
-    x5c: [String!]!
-    exp: String!
+    privateKey: String!
+    password: String
+    certificate: String!
 }
 
-
-input KeyUpdateInput {
-    tenantId: String!
-    keyId: String!
-    keyType: String!
-    use: String!
-    n: String!
-    e: String!
-    x5c: [String!]!
-    exp: String!
-}
 
 input RateLimitCreateInput {
     rateLimitDomain: String!

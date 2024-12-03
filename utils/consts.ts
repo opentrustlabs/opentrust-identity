@@ -28,6 +28,9 @@ export const CLIENT_TENANT_SCOPE_REL_FILE = "client-tenant-scope-rel.json";
 export const AUTHENTICATION_GROUP_FILE = "authentication-groups.json";
 export const AUTHENTICATION_GROUP_CLIENT_REL_FILE = "authentication-groups-client-rel.json";
 export const GROUP_FILE = "groups.json";
+export const EXTERNAL_OIDC_PROVIDER_FILE = "external-oidc-provider.json";
+export const EXTERNAL_OIDC_PROVIDER_TENANT_REL_FILE = "external-oidc-provider-tenant-rel.json";
+export const EXTERNAL_OIDC_PROVIDER_DOMAIN_REL_FILE = "external-oidc-provider-domain-rel.json";
 
 
 // ************************************************************************** //
