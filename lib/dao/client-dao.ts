@@ -12,6 +12,10 @@ abstract class ClientDao {
         abstract updateClient(client: Client): Promise<Client>;
     
         abstract deleteClient(clientId: string): Promise<void>;
+
+        abstract validateClientAuthCredentials(clientId: string, clientSecret: string): Promise<boolean>;
+
+        abstract validateClientAuthJwt(jwt: string): Promise<boolean>;
         
 }
 

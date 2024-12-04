@@ -1,6 +1,6 @@
 import ClientService from "@/lib/service/client-service";
 import TenantService from "@/lib/service/tenant-service";
-import { Resolvers, QueryResolvers, MutationResolvers, Tenant, Client, SigningKey, Scope, AuthenticationGroup, Group } from "../generated/graphql-types";
+import { Resolvers, QueryResolvers, MutationResolvers, Tenant, Client, SigningKey, Scope, AuthenticationGroup, Group, SigningKeyStatus } from "../generated/graphql-types";
 import SigningKeysService from "@/lib/service/keys-service";
 import ScopeService from "@/lib/service/scope-service";
 import GroupService from "@/lib/service/group-service";
@@ -192,7 +192,9 @@ const resolvers: Resolvers = {
                 keyId: "",
                 certificate: keyInput.certificate,
                 privateKey: keyInput.privateKey,
-                password: keyInput.password
+                password: keyInput.password,
+                expiresAt: "", // TODO - derive from the certificate's expiration
+                status: SigningKeyStatus.Active
             };
             await keysService.createSigningKey(key);
             return key;

@@ -124,12 +124,18 @@ type Mutation {
 
 
 # NOT_ALLOWED - No external OIDC provider can be attached to this tenant
-# EXCLUSIVE   - Use ONLY the single OIDC provider that is configured in the Rel table
+# EXCLUSIVE   - Use ONLY the single OIDC provider that is configured
 # PERMISSIVE  - Allow many different external OIDC providers to be attached to this tenant
 enum DelegatedAuthenticationConstraint {
     NOT_ALLOWED
     EXCLUSIVE
     PERMISSIVE
+}
+
+enum TenantType {
+    CLIENT_IDENTITY_SELF_MANAGEMENT_ONLY
+    CLIENT_IDENTITY_SELF_MANAGEMENT_AND_SERVICES
+    SERVICES_ONLY
 }
 
 ########
@@ -152,6 +158,12 @@ type Tenant {
     delegatedAuthenticationConstraint: DelegatedAuthenticationConstraint!
     markForDelete: Boolean!
     externalOIDCProviderId: String
+    tenantType: TenantType!
+}
+
+type TenantManagementDomainRel {
+    tenantId: String!
+    domain: String!
 }
 
 enum ClientAuthType {
@@ -304,6 +316,12 @@ enum KeyType {
     RSA,
     EC
 }
+
+enum SigningKeyStatus {
+    ACTIVE
+    REVOKED
+}
+
 type SigningKey {
     keyId: String!
     tenantId: String!    
@@ -312,6 +330,8 @@ type SigningKey {
     privateKey: String!
     password: String
     certificate: String!
+    expiresAt: String!
+    status: SigningKeyStatus!
 }
 
 
@@ -378,6 +398,54 @@ type AccessRule {
     scopeConstraintSchemaId: String!
     accessRuleDefinition: String!
 }
+
+type PreAuthenticationState {
+    token: String!
+    state: String
+    redirectUri: String!
+    codeChallenge: String
+    codeChallengeMethod: String
+    responseMode: String!
+    scope: String!
+    tenantId: String!
+    clientId: String!
+    expiresAt: String!
+}
+
+type AuthorizationState {
+    code: String!
+    redirectUri: String!
+    clientId: String!
+    tenantId: String!
+    scope: String!
+    codeChallengeMethod: String
+    codeChallenge: String
+    userId: String!
+    expiresAt: String!
+}
+
+type RefreshData {
+    refreshToken: String!
+    tenantId: String!
+    clientId: String!
+    userId: String!
+    refreshCount: Int!
+}
+
+type ExternalOIDCAuthorizationRel {
+    state: String!
+    externalOIDCProviderId: String!
+    initState: String!
+    initRedirectUri: String!
+    initTenantId: String!
+    initClientId: String!
+    initScope: String!
+    initCodeChallengeMethod: String
+    initCodeChallenge: String
+    initResponseMode: String!
+    expiresAt: String!
+}
+
 
 
 ############################################################################

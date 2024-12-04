@@ -11,10 +11,13 @@ import RateLimitDao from "@/lib/dao/rate-limit-dao";
 import ScopeDao from "@/lib/dao/scope-dao";
 import TenantDao from "@/lib/dao/tenant-dao";
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
+import { randomBytes } from "node:crypto";
 import AuthenticationGroupDao from "@/lib/dao/authentication-group-dao";
 import FSBasedAuthenticationGroupDao from "@/lib/dao/impl/fs/fs-based-authentication-group-dao";
 import ExternalOIDCProviderDao from "@/lib/dao/external-oidc-provider-dao";
 import FSBasedExternalOIDCProviderDao from "@/lib/dao/impl/fs/fs-based-external-oidc-provider-dao";
+import AuthDao from "@/lib/dao/auth-dao";
+import FSBasedAuthDao from "@/lib/dao/impl/fs/fs-based-auth-dao";
 
 
 export function getFileContents(fileName: string, defaultContents?: string): any {
@@ -28,6 +31,15 @@ export function getFileContents(fileName: string, defaultContents?: string): any
         fileContents = readFileSync(fileName, {encoding: "utf-8"});
     }
     return fileContents;
+}
+
+export type TokenEncodingType = "hex" | "base64"
+
+export function generateToken(length: number, encoding?: TokenEncodingType){
+    if(!encoding){
+        encoding = "base64";
+    }
+    return randomBytes(length).toString(encoding);
 }
 
 export function getTenantDaoImpl(): TenantDao {
@@ -95,4 +107,12 @@ export function getExternalOIDCProvicerDaoImpl(): ExternalOIDCProviderDao {
         return new FSBasedExternalOIDCProviderDao();
     }
     return new FSBasedExternalOIDCProviderDao();
+}
+
+export function getAuthDaoImpl(): AuthDao {
+    const daoStrategy = process.env.DAO_STRATEGY ?? "filesystem";
+    if(daoStrategy === "filesystem"){
+        return new FSBasedAuthDao();
+    }
+    return new FSBasedAuthDao();
 }

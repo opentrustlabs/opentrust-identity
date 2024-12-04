@@ -1,12 +1,14 @@
-import { Tenant, Client, DelegatedAuthenticationConstraint } from '@/graphql/generated/graphql-types';
+import { Tenant, Client, DelegatedAuthenticationConstraint, ExternalOidcProvider } from '@/graphql/generated/graphql-types';
 import ClientDao from '@/lib/dao/client-dao';
+import ExternalOIDCProviderDao from '@/lib/dao/external-oidc-provider-dao';
 import TenantDao from '@/lib/dao/tenant-dao';
 import { ALL_OIDC_SUPPORTED_SCOPE_VALUES, OIDC_OPENID_SCOPE } from '@/utils/consts';
-import { getClientDaoImpl, getTenantDaoImpl } from '@/utils/dao-utils';
+import { getClientDaoImpl, getExternalOIDCProvicerDaoImpl, getTenantDaoImpl } from '@/utils/dao-utils';
 import type { NextApiRequest, NextApiResponse } from 'next'
 
 const tenantDao: TenantDao = getTenantDaoImpl();
 const clientDao: ClientDao = getClientDaoImpl();
+const externalOIDCProviderDao: ExternalOIDCProviderDao = getExternalOIDCProvicerDaoImpl();
 
 
 export default async function handler(
@@ -14,7 +16,6 @@ export default async function handler(
 	res: NextApiResponse
 ) {
 
-    
 	const {
 		tenant_id,
 		client_id,
@@ -159,6 +160,19 @@ export default async function handler(
 		// TODO
 		// Lookup the external OIDC provider and redirect the user immediately. Need to
 		// Set the state, scope, client, response type, etc and save it for later use.
+        const externalOIDCProvider: ExternalOidcProvider | null = await externalOIDCProviderDao.getExternalOIDCProviderById(tenant.externalOIDCProviderId);
+        if(!externalOIDCProvider){
+            res.status(302).setHeader("location", `/authorize/login?tenant_id=${tenantId}&client_id=${clientId}&state=${oidcState}&error=unauthorized_client&error_message=ERROR_TENANT_INCORRECTLY_CONFIGURED_FOR_EXTERNAL_OIDC_PROVIDER&redirect_uri=${redirectUri}&scope=${oidcScope}`);
+			res.end();
+			return;
+        }
+        else {
+            // create state, etc, and save that data with the incoming state, etc.
+
+            res.status(302).setHeader("location", `?tenant_id=${tenantId}&client_id=${clientId}&state=${oidcState}&error=unauthorized_client&error_message=ERROR_TENANT_INCORRECTLY_CONFIGURED_FOR_EXTERNAL_OIDC_PROVIDER&redirect_uri=${redirectUri}&scope=${oidcScope}`);
+			res.end();
+			return;
+        }
 	}
 
 	// TODO
@@ -172,6 +186,5 @@ export default async function handler(
 
 	res.status(302).setHeader("location", `/authorize/login?tenant_id=${tenantId}&client_id=${clientId}&state=${oidcState}&redirect_uri=${redirectUri}&scope=${oidcScope}`);
 	res.end();
-
 
 }

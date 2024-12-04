@@ -11,6 +11,14 @@ const dataDir = process.env.FS_BASED_DATA_DIR ?? path.join(__dirname);
 
 class FSBasedClientDao extends ClientDao {
 
+   
+    validateClientAuthCredentials(clientId: string, clientSecret: string): Promise<boolean> {
+        throw new Error("Method not implemented.");
+    }
+    validateClientAuthJwt(jwt: string): Promise<boolean> {
+        throw new Error("Method not implemented.");
+    }
+
     public async getClients(tenantId?: string): Promise<Array<Client>> {
         let clients: Array<Client> = JSON.parse(getFileContents(`${dataDir}/${CLIENT_FILE}`, "[]"));
         if(tenantId){

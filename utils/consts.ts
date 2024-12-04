@@ -31,6 +31,11 @@ export const GROUP_FILE = "groups.json";
 export const EXTERNAL_OIDC_PROVIDER_FILE = "external-oidc-provider.json";
 export const EXTERNAL_OIDC_PROVIDER_TENANT_REL_FILE = "external-oidc-provider-tenant-rel.json";
 export const EXTERNAL_OIDC_PROVIDER_DOMAIN_REL_FILE = "external-oidc-provider-domain-rel.json";
+export const PRE_AUTHENTICATION_STATE_FILE = "pre-authentication-state.json";
+export const AUTHORIZATION_STATE_FILE = "authorization-state.json";
+export const REFRESH_TOKEN_FILE = "refresh-token.json";
+export const EXTERNAL_OIDC_AUTHORIZATION_REL_FILE = "external-oidc-authorization-rel.json";
+
 
 
 // ************************************************************************** //
