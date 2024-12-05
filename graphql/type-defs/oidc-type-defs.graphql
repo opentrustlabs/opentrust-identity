@@ -56,7 +56,9 @@ type Mutation {
     createTenant(tenantInput: TenantCreateInput!): Tenant
     updateTenant(tenantInput: TenantUpdateInput!): Tenant
     deleteTenant(tenantId: String!): String
-
+    addDomainToTenantManagement(tenantId: String!, domain: String!): String
+    removeDomainFromTenantManagement(tenantId: String!, domain: String!): String
+    
     ## Clients
     createClient(clientInput: ClientCreateInput!): Client
     updateClient(clientInput: ClientUpdateInput!): Client
@@ -133,9 +135,9 @@ enum DelegatedAuthenticationConstraint {
 }
 
 enum TenantType {
-    CLIENT_IDENTITY_SELF_MANAGEMENT_ONLY
-    CLIENT_IDENTITY_SELF_MANAGEMENT_AND_SERVICES
-    SERVICES_ONLY
+    IDENTITY_MANAGEMENT
+    IDENTITY_MANAGEMENT_AND_SERVICES
+    SERVICES
 }
 
 ########
@@ -161,6 +163,8 @@ type Tenant {
     tenantType: TenantType!
 }
 
+# Does the tenant have certain users with email domains that can
+# manage the tenant?
 type TenantManagementDomainRel {
     tenantId: String!
     domain: String!
@@ -490,6 +494,7 @@ input TenantCreateInput {
     delegatedAuthenticationConstraint: DelegatedAuthenticationConstraint!
     externalOIDCProviderId: String
     maxRefreshTokenCount: Int
+    tenantType: TenantType!
 }
 
 input TenantUpdateInput {
@@ -505,6 +510,7 @@ input TenantUpdateInput {
     externalOIDCProviderId: String
     markForDelete: Boolean!
     maxRefreshTokenCount: Int
+    tenantType: TenantType!
 }
 
 input ClientCreateInput {

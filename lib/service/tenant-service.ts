@@ -2,6 +2,7 @@ import { Tenant } from "@/graphql/generated/graphql-types";
 import { OIDCContext } from "@/graphql/graphql-context";
 import TenantDao from "@/lib/dao/tenant-dao";
 import { getTenantDaoImpl } from "@/utils/dao-utils";
+import { GraphQLError } from "graphql";
 
 
 const tenantDao: TenantDao = getTenantDaoImpl();
@@ -55,8 +56,22 @@ class TenantService {
         // TenantRateLimitRel
         // TenantScopeRel
         // ClientTenantScopeRel
+        // TenantManagementDomainRel
         // delete tenant
         throw new Error("Method not implemented.");
+    }
+
+    public async addDomainToTenantManagement(tenantId: string, domain: string): Promise<string | null> {
+
+        const tenant: Tenant | null = await this.getTenantById(tenantId);
+        if(!tenant){
+            throw new GraphQLError("ERROR_TENANT_DOES_NOT_EXIST");
+        }
+        return tenantDao.addDomainToTenantManagement(tenantId, domain);
+        
+    }
+    public async  removeDomainFromTenantManagement(tenantId: string, domain: string): Promise<string | null> {
+        return tenantDao.removeDomainFromTenantManagement(tenantId, domain);
     }
 
 }

@@ -1,6 +1,6 @@
 import ClientService from "@/lib/service/client-service";
 import TenantService from "@/lib/service/tenant-service";
-import { Resolvers, QueryResolvers, MutationResolvers, Tenant, Client, SigningKey, Scope, AuthenticationGroup, Group, SigningKeyStatus } from "../generated/graphql-types";
+import { Resolvers, QueryResolvers, MutationResolvers, Tenant, Client, SigningKey, Scope, AuthenticationGroup, Group, SigningKeyStatus, TenantType } from "../generated/graphql-types";
 import SigningKeysService from "@/lib/service/keys-service";
 import ScopeService from "@/lib/service/scope-service";
 import GroupService from "@/lib/service/group-service";
@@ -76,7 +76,8 @@ const resolvers: Resolvers = {
                 verifyEmailOnSelfRegistration: tenantInput.verifyEmailOnSelfRegistration,
                 delegatedAuthenticationConstraint: tenantInput.delegatedAuthenticationConstraint,
                 markForDelete: false,
-                externalOIDCProviderId: tenantInput.externalOIDCProviderId
+                externalOIDCProviderId: tenantInput.externalOIDCProviderId,
+                tenantType: TenantType.IdentityManagement
             };
             await tenantService.createRootTenant(tenant);
             return tenant;
@@ -94,7 +95,8 @@ const resolvers: Resolvers = {
                 verifyEmailOnSelfRegistration: tenantInput.verifyEmailOnSelfRegistration,
                 delegatedAuthenticationConstraint: tenantInput.delegatedAuthenticationConstraint,
                 markForDelete: tenantInput.markForDelete,
-                externalOIDCProviderId: tenantInput.externalOIDCProviderId
+                externalOIDCProviderId: tenantInput.externalOIDCProviderId,
+                tenantType: TenantType.IdentityManagement
             }
             await tenantService.updateRootTenant(tenant);
             return tenant;
@@ -112,7 +114,8 @@ const resolvers: Resolvers = {
                 verifyEmailOnSelfRegistration: tenantInput.verifyEmailOnSelfRegistration,
                 delegatedAuthenticationConstraint: tenantInput.delegatedAuthenticationConstraint,
                 markForDelete: false,
-                externalOIDCProviderId: tenantInput.externalOIDCProviderId
+                externalOIDCProviderId: tenantInput.externalOIDCProviderId,
+                tenantType: tenantInput.tenantType
             }
             await tenantService.createTenant(tenant);
             return tenant; 
@@ -130,7 +133,8 @@ const resolvers: Resolvers = {
                 verifyEmailOnSelfRegistration: tenantInput.verifyEmailOnSelfRegistration,
                 delegatedAuthenticationConstraint: tenantInput.delegatedAuthenticationConstraint,
                 markForDelete: tenantInput.markForDelete,
-                externalOIDCProviderId: tenantInput.externalOIDCProviderId
+                externalOIDCProviderId: tenantInput.externalOIDCProviderId,
+                tenantType: tenantInput.tenantType
             }
             const updatedTenant: Tenant = await tenantService.updateTenant(tenant);
             return updatedTenant;

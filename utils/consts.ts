@@ -18,6 +18,7 @@ export const MIN_END_USER_TOKEN_TTL_SECONDS = 900; // 15 minutes
 // ************************************************************************** //
 export const ROOT_TENANT_FILE = "root-tenant.json";
 export const TENANT_FILE = "tenants.json";
+export const TENANT_MANAGEMENT_DOMAIN_REL_FILE = "tenant-management-domain-rel.json";
 export const CLIENT_FILE = "clients.json";
 export const KEY_FILE = "keys.json";
 export const RATE_LIMIT_FILE = "rate-limits.json";

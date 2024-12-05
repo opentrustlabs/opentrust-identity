@@ -1,4 +1,4 @@
-import { Tenant } from "@/graphql/generated/graphql-types";
+import { Tenant, TenantManagementDomainRel } from "@/graphql/generated/graphql-types";
 
 
 abstract class TenantDao {
@@ -19,7 +19,12 @@ abstract class TenantDao {
     abstract updateTenant(tenant: Tenant): Promise<Tenant>;
 
     abstract deleteTenant(tenantId: string): Promise<void>;
-  
+
+    abstract getDomainTenantManagementRels(tenantId?: string): Promise<Array<TenantManagementDomainRel>>;
+
+    abstract addDomainToTenantManagement(tenantId: string, domain: string): Promise<TenantManagementDomainRel | null>;
+
+    abstract removeDomainFromTenantManagement(tenantId: string, domain: string): Promise<TenantManagementDomainRel | null>;  
 
 }
 

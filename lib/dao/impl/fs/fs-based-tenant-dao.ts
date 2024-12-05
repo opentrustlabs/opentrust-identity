@@ -1,14 +1,48 @@
-import { Tenant } from "@/graphql/generated/graphql-types";
+import { Tenant, TenantManagementDomainRel } from "@/graphql/generated/graphql-types";
 import TenantDAO from "../../tenant-dao";
 import { writeFileSync } from "node:fs";
 import path from "node:path";
 import { randomUUID } from 'crypto'; 
 import { GraphQLError } from "graphql";
-import { ROOT_TENANT_FILE, TENANT_FILE } from "@/utils/consts";
+import { ROOT_TENANT_FILE, TENANT_FILE, TENANT_MANAGEMENT_DOMAIN_REL_FILE } from "@/utils/consts";
 import { getFileContents } from "@/utils/dao-utils";
 
 const dataDir = process.env.FS_BASED_DATA_DIR ?? path.join(__dirname);
 class FSBasedTenantDao extends TenantDAO {
+
+
+    public async addDomainToTenantManagement(tenantId: string, domain: string): Promise<TenantManagementDomainRel | null> {
+        const rels: Array<TenantManagementDomainRel> = await this.getDomainTenantManagementRels(); 
+        const newRel: TenantManagementDomainRel = {
+            tenantId: tenantId,
+            domain: domain
+        }
+        rels.push(newRel);
+        writeFileSync(`${dataDir}/${TENANT_MANAGEMENT_DOMAIN_REL_FILE}`, JSON.stringify(rels), {encoding: "utf-8"});
+        return Promise.resolve(newRel);
+
+    }
+    public async removeDomainFromTenantManagement(tenantId: string, domain: string): Promise<TenantManagementDomainRel | null> {
+        let rels: Array<TenantManagementDomainRel> = await this.getDomainTenantManagementRels(); 
+        rels = rels.filter(
+            (rel: TenantManagementDomainRel) => rel.tenantId === tenantId && rel.domain === domain
+        );
+        writeFileSync(`${dataDir}/${TENANT_MANAGEMENT_DOMAIN_REL_FILE}`, JSON.stringify(rels), {encoding: "utf-8"});
+        return Promise.resolve({
+            tenantId: tenantId,
+            domain: domain
+        });
+    }
+
+    public async getDomainTenantManagementRels(tenantId?: string): Promise<Array<TenantManagementDomainRel>>{
+        let rels: Array<TenantManagementDomainRel> = JSON.parse(getFileContents(`${dataDir}/${TENANT_MANAGEMENT_DOMAIN_REL_FILE}`, "[]"));
+        if(tenantId){
+            rels = rels.filter(
+                (rel: TenantManagementDomainRel) => rel.tenantId === tenantId
+            )
+        }
+        return Promise.resolve(rels);
+    }
 
     public async getRootTenant(): Promise<Tenant> {
         const tenant: Tenant = JSON.parse(getFileContents(`${dataDir}/${ROOT_TENANT_FILE}`, "{}"));
