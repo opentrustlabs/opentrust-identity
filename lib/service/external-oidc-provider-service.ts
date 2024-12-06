@@ -25,12 +25,12 @@ class ExternalOIDCProviderService {
     }
 
     public async createExternalOIDCProvider(externalOIDCProvider: ExternalOidcProvider): Promise<ExternalOidcProvider>{
-        externalOIDCProvider.externalOIDCProviderId = randomUUID.toString();
         const { valid, errorMessage } = this.validateOIDCProviderInput(externalOIDCProvider);
         if(!valid){
             throw new GraphQLError(errorMessage);
         }
         externalOIDCProvider.externalOIDCProviderId = randomUUID().toString();
+        await externalOIDCProviderDao.createExternalOIDCProvider(externalOIDCProvider);
         return Promise.resolve(externalOIDCProvider);
     }
 
@@ -55,7 +55,7 @@ class ExternalOIDCProviderService {
         if(!valid){
             throw new GraphQLError(errorMessage);
         }
-        externalOIDCProviderDao.updateExternalOIDCProvider(externalOIDCProvider);
+        await externalOIDCProviderDao.updateExternalOIDCProvider(externalOIDCProvider);
         return Promise.resolve(externalOIDCProvider);
     }
 

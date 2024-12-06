@@ -6,7 +6,7 @@ type Query {
     getTenantById(tenantId: String!): Tenant
 
     ## Clients
-    getClients(tenantId: String!): [Client!]!
+    getClients(tenantId: String): [Client!]!
     getClientById(clientId: String!): Client
 
     ## Users
@@ -58,7 +58,7 @@ type Mutation {
     deleteTenant(tenantId: String!): String
     addDomainToTenantManagement(tenantId: String!, domain: String!): String
     removeDomainFromTenantManagement(tenantId: String!, domain: String!): String
-    
+
     ## Clients
     createClient(clientInput: ClientCreateInput!): Client
     updateClient(clientInput: ClientUpdateInput!): Client
@@ -135,6 +135,7 @@ enum DelegatedAuthenticationConstraint {
 }
 
 enum TenantType {
+    ROOT_TENANT
     IDENTITY_MANAGEMENT
     IDENTITY_MANAGEMENT_AND_SERVICES
     SERVICES
@@ -164,7 +165,7 @@ type Tenant {
 }
 
 # Does the tenant have certain users with email domains that can
-# manage the tenant?
+# manage the tenant for themselves?
 type TenantManagementDomainRel {
     tenantId: String!
     domain: String!

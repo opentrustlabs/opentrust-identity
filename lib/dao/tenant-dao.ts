@@ -20,7 +20,7 @@ abstract class TenantDao {
 
     abstract deleteTenant(tenantId: string): Promise<void>;
 
-    abstract getDomainTenantManagementRels(tenantId?: string): Promise<Array<TenantManagementDomainRel>>;
+    abstract getDomainTenantManagementRels(tenantId?: string, domain?: string): Promise<Array<TenantManagementDomainRel>>;
 
     abstract addDomainToTenantManagement(tenantId: string, domain: string): Promise<TenantManagementDomainRel | null>;
 

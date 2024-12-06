@@ -35,7 +35,7 @@ export function getFileContents(fileName: string, defaultContents?: string): any
 
 export type TokenEncodingType = "hex" | "base64"
 
-export function generateToken(length: number, encoding?: TokenEncodingType){
+export function generateRandomToken(length: number, encoding?: TokenEncodingType){
     if(!encoding){
         encoding = "base64";
     }

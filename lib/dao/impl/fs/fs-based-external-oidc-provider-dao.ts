@@ -41,7 +41,7 @@ class FSBasedExternalOIDCProviderDao extends ExternalOIDCProviderDao {
     public async createExternalOIDCProvider(externalOIDCProvider: ExternalOidcProvider): Promise<ExternalOidcProvider> {
         const providers = await this.getExternalOIDCProviders();
         providers.push(externalOIDCProvider);
-        writeFileSync(`${dataDir}/EXTERNAL_OIDC_PROVIDER_FILE`, JSON.stringify(providers), {encoding: "utf-8"});
+        writeFileSync(`${dataDir}/${EXTERNAL_OIDC_PROVIDER_FILE}`, JSON.stringify(providers), {encoding: "utf-8"});
         return Promise.resolve(externalOIDCProvider);
     }
 
@@ -62,7 +62,7 @@ class FSBasedExternalOIDCProviderDao extends ExternalOIDCProviderDao {
         provider.externalOIDCProviderWellKnownUri = externalOIDCProvider.externalOIDCProviderWellKnownUri;
         provider.refreshTokenAllowed = externalOIDCProvider.refreshTokenAllowed;
         provider.usePkce = externalOIDCProvider.usePkce;
-        writeFileSync(`${dataDir}/EXTERNAL_OIDC_PROVIDER_FILE`, JSON.stringify(providers), {encoding: "utf-8"});
+        writeFileSync(`${dataDir}/${EXTERNAL_OIDC_PROVIDER_FILE}`, JSON.stringify(providers), {encoding: "utf-8"});
         return Promise.resolve(externalOIDCProvider);
     }
 

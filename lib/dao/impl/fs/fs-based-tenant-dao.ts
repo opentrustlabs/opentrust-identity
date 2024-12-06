@@ -11,39 +11,6 @@ const dataDir = process.env.FS_BASED_DATA_DIR ?? path.join(__dirname);
 class FSBasedTenantDao extends TenantDAO {
 
 
-    public async addDomainToTenantManagement(tenantId: string, domain: string): Promise<TenantManagementDomainRel | null> {
-        const rels: Array<TenantManagementDomainRel> = await this.getDomainTenantManagementRels(); 
-        const newRel: TenantManagementDomainRel = {
-            tenantId: tenantId,
-            domain: domain
-        }
-        rels.push(newRel);
-        writeFileSync(`${dataDir}/${TENANT_MANAGEMENT_DOMAIN_REL_FILE}`, JSON.stringify(rels), {encoding: "utf-8"});
-        return Promise.resolve(newRel);
-
-    }
-    public async removeDomainFromTenantManagement(tenantId: string, domain: string): Promise<TenantManagementDomainRel | null> {
-        let rels: Array<TenantManagementDomainRel> = await this.getDomainTenantManagementRels(); 
-        rels = rels.filter(
-            (rel: TenantManagementDomainRel) => rel.tenantId === tenantId && rel.domain === domain
-        );
-        writeFileSync(`${dataDir}/${TENANT_MANAGEMENT_DOMAIN_REL_FILE}`, JSON.stringify(rels), {encoding: "utf-8"});
-        return Promise.resolve({
-            tenantId: tenantId,
-            domain: domain
-        });
-    }
-
-    public async getDomainTenantManagementRels(tenantId?: string): Promise<Array<TenantManagementDomainRel>>{
-        let rels: Array<TenantManagementDomainRel> = JSON.parse(getFileContents(`${dataDir}/${TENANT_MANAGEMENT_DOMAIN_REL_FILE}`, "[]"));
-        if(tenantId){
-            rels = rels.filter(
-                (rel: TenantManagementDomainRel) => rel.tenantId === tenantId
-            )
-        }
-        return Promise.resolve(rels);
-    }
-
     public async getRootTenant(): Promise<Tenant> {
         const tenant: Tenant = JSON.parse(getFileContents(`${dataDir}/${ROOT_TENANT_FILE}`, "{}"));
         if(!tenant?.tenantId){
@@ -131,6 +98,51 @@ class FSBasedTenantDao extends TenantDAO {
         // ClientTenantScopeRel
         // delete tenant
         throw new Error("Method not implemented.");
+    }
+
+    public async addDomainToTenantManagement(tenantId: string, domain: string): Promise<TenantManagementDomainRel | null> {
+        const rels: Array<TenantManagementDomainRel> = await this.getDomainTenantManagementRels(); 
+        const newRel: TenantManagementDomainRel = {
+            tenantId: tenantId,
+            domain: domain
+        }
+        rels.push(newRel);
+        writeFileSync(`${dataDir}/${TENANT_MANAGEMENT_DOMAIN_REL_FILE}`, JSON.stringify(rels), {encoding: "utf-8"});
+        return Promise.resolve(newRel);
+    }
+
+    public async removeDomainFromTenantManagement(tenantId: string, domain: string): Promise<TenantManagementDomainRel | null> {
+        let rels: Array<TenantManagementDomainRel> = await this.getDomainTenantManagementRels(); 
+        rels = rels.filter(
+            (rel: TenantManagementDomainRel) => rel.tenantId === tenantId && rel.domain === domain
+        );
+        writeFileSync(`${dataDir}/${TENANT_MANAGEMENT_DOMAIN_REL_FILE}`, JSON.stringify(rels), {encoding: "utf-8"});
+        return Promise.resolve({
+            tenantId: tenantId,
+            domain: domain
+        });
+    }
+
+    public async getDomainTenantManagementRels(tenantId?: string, domain?: string): Promise<Array<TenantManagementDomainRel>>{
+        let rels: Array<TenantManagementDomainRel> = JSON.parse(getFileContents(`${dataDir}/${TENANT_MANAGEMENT_DOMAIN_REL_FILE}`, "[]"));
+        rels = rels.filter(
+            (rel: TenantManagementDomainRel) => {
+                if(tenantId && domain){
+                    return rel.tenantId === tenantId && rel.domain === domain;
+                }
+                else if(domain && !tenantId){
+                    return rel.domain === domain;
+                }
+                else if(tenantId && !domain){
+                    return rel.tenantId === tenantId;
+                }
+                else{
+                    return true;
+                }
+            }
+        )
+        
+        return Promise.resolve(rels);
     }
     
 

@@ -1,10 +1,11 @@
 import ClientService from "@/lib/service/client-service";
 import TenantService from "@/lib/service/tenant-service";
-import { Resolvers, QueryResolvers, MutationResolvers, Tenant, Client, SigningKey, Scope, AuthenticationGroup, Group, SigningKeyStatus, TenantType } from "../generated/graphql-types";
+import { Resolvers, QueryResolvers, MutationResolvers, Tenant, Client, SigningKey, Scope, AuthenticationGroup, Group, SigningKeyStatus, TenantType, ExternalOidcProvider, ClientAuthType } from "../generated/graphql-types";
 import SigningKeysService from "@/lib/service/keys-service";
 import ScopeService from "@/lib/service/scope-service";
 import GroupService from "@/lib/service/group-service";
 import AuthenticationGroupService from "@/lib/service/authentication-group-service";
+import ExternalOIDCProviderService from "@/lib/service/external-oidc-provider-service";
 
 
 const resolvers: Resolvers = {
@@ -23,7 +24,7 @@ const resolvers: Resolvers = {
         },
         getClients: (_, { tenantId }, oidcContext) => {
             const clientService: ClientService = new ClientService(oidcContext);
-            return clientService.getClients(tenantId);
+            return clientService.getClients(tenantId || undefined);
         },        
         getClientById: (_: any, { clientId }, oidcContext: any) => {
             const clientService: ClientService = new ClientService(oidcContext);
@@ -60,6 +61,14 @@ const resolvers: Resolvers = {
         getGroupById: (_: any, { groupId }, oidcContext) => {
             const groupService: GroupService = new GroupService(oidcContext);
             return groupService.getGroupById(groupId);
+        },
+        getExternalOIDCProviders: (_: any, { tenantId }, oidcContext) => {
+            const providerService: ExternalOIDCProviderService = new ExternalOIDCProviderService(oidcContext);
+            return providerService.getExternalOIDCProviders(tenantId || undefined);
+        },
+        getExternalOIDCProviderById: (_: any, { externalOIDCProviderId }, oidcContext) => {
+            const providerService: ExternalOIDCProviderService = new ExternalOIDCProviderService(oidcContext);
+            return providerService.getExternalOIDCProviderById(externalOIDCProviderId);
         }
     },
     Mutation: {
@@ -77,7 +86,7 @@ const resolvers: Resolvers = {
                 delegatedAuthenticationConstraint: tenantInput.delegatedAuthenticationConstraint,
                 markForDelete: false,
                 externalOIDCProviderId: tenantInput.externalOIDCProviderId,
-                tenantType: TenantType.IdentityManagement
+                tenantType: TenantType.RootTenant
             };
             await tenantService.createRootTenant(tenant);
             return tenant;
@@ -96,7 +105,7 @@ const resolvers: Resolvers = {
                 delegatedAuthenticationConstraint: tenantInput.delegatedAuthenticationConstraint,
                 markForDelete: tenantInput.markForDelete,
                 externalOIDCProviderId: tenantInput.externalOIDCProviderId,
-                tenantType: TenantType.IdentityManagement
+                tenantType: TenantType.RootTenant
             }
             await tenantService.updateRootTenant(tenant);
             return tenant;
@@ -328,6 +337,45 @@ const resolvers: Resolvers = {
             const groupService: GroupService = new GroupService(oidcContext);
             await groupService.removeUserFromGroup(userId, groupId);
             return userId;
+        },
+        createExternalOIDCProvider: async(_: any, { oidcProviderInput }, oidcContext) => {
+            const oidcProvider: ExternalOidcProvider = {
+                externalOIDCProviderClientId: oidcProviderInput.externalOIDCProviderClientId,
+                externalOIDCProviderId: "", // to be assigned by the service class
+                externalOIDCProviderName: oidcProviderInput.externalOIDCProviderName,
+                externalOIDCProviderWellKnownUri: oidcProviderInput.externalOIDCProviderWellKnownUri,
+                refreshTokenAllowed: oidcProviderInput.refreshTokenAllowed,
+                usePkce: oidcProviderInput.usePkce,
+                clientAuthType: oidcProviderInput.clientAuthType || ClientAuthType.ClientSecretPost,
+                externalOIDCProviderClientSecret: oidcProviderInput.externalOIDCProviderClientSecret,
+                externalOIDCProviderDescription: oidcProviderInput.externalOIDCProviderDescription,
+                externalOIDCProviderTenantId: oidcProviderInput.externalOIDCProviderTenantId
+            };
+            const providerService: ExternalOIDCProviderService = new ExternalOIDCProviderService(oidcContext);
+            await providerService.createExternalOIDCProvider(oidcProvider);
+            return oidcProvider;
+        },
+        updateExternalOIDCProvider: async(_: any, { oidcProviderInput }, oidcContext) => {
+            const oidcProvider: ExternalOidcProvider = {
+                externalOIDCProviderClientId: oidcProviderInput.externalOIDCProviderClientId,
+                externalOIDCProviderId: oidcProviderInput.externalOIDCProviderId,
+                externalOIDCProviderName: oidcProviderInput.externalOIDCProviderName,
+                externalOIDCProviderWellKnownUri: oidcProviderInput.externalOIDCProviderWellKnownUri,
+                refreshTokenAllowed: oidcProviderInput.refreshTokenAllowed,
+                usePkce: oidcProviderInput.usePkce,
+                clientAuthType: oidcProviderInput.clientAuthType || ClientAuthType.ClientSecretPost,
+                externalOIDCProviderClientSecret: oidcProviderInput.externalOIDCProviderClientSecret,
+                externalOIDCProviderDescription: oidcProviderInput.externalOIDCProviderDescription,
+                externalOIDCProviderTenantId: oidcProviderInput.externalOIDCProviderTenantId
+            };
+            const providerService: ExternalOIDCProviderService = new ExternalOIDCProviderService(oidcContext);
+            await providerService.updateExternalOIDCProvider(oidcProvider);
+            return oidcProvider;
+        },
+        deleteExternalOIDCProvider: async(_: any, { externalOIDCProviderId }, oidcContext) => {
+            const providerService: ExternalOIDCProviderService = new ExternalOIDCProviderService(oidcContext);
+            await providerService.deleteExternalOIDCProvider(externalOIDCProviderId);
+            return externalOIDCProviderId;
         }
     }
 }

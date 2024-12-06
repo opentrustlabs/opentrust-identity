@@ -1,15 +1,23 @@
-import { Tenant, Client, DelegatedAuthenticationConstraint, ExternalOidcProvider } from '@/graphql/generated/graphql-types';
+import { Tenant, Client, DelegatedAuthenticationConstraint, ExternalOidcProvider, ExternalOidcAuthorizationRel } from '@/graphql/generated/graphql-types';
+import AuthDao from '@/lib/dao/auth-dao';
 import ClientDao from '@/lib/dao/client-dao';
 import ExternalOIDCProviderDao from '@/lib/dao/external-oidc-provider-dao';
 import TenantDao from '@/lib/dao/tenant-dao';
+import { WellknownConfig } from '@/lib/models/wellknown-config';
+import OIDCServiceClient from '@/lib/service/oidc-service-client';
 import { ALL_OIDC_SUPPORTED_SCOPE_VALUES, OIDC_OPENID_SCOPE } from '@/utils/consts';
-import { getClientDaoImpl, getExternalOIDCProvicerDaoImpl, getTenantDaoImpl } from '@/utils/dao-utils';
+import { generateRandomToken, getAuthDaoImpl, getClientDaoImpl, getExternalOIDCProvicerDaoImpl, getTenantDaoImpl } from '@/utils/dao-utils';
 import type { NextApiRequest, NextApiResponse } from 'next'
 
 const tenantDao: TenantDao = getTenantDaoImpl();
 const clientDao: ClientDao = getClientDaoImpl();
 const externalOIDCProviderDao: ExternalOIDCProviderDao = getExternalOIDCProvicerDaoImpl();
+const authDao: AuthDao = getAuthDaoImpl();
+const oidcServiceClient: OIDCServiceClient = new OIDCServiceClient();
 
+const {
+    AUTH_DOMAIN
+} = process.env;
 
 export default async function handler(
 	req: NextApiRequest,
@@ -26,6 +34,20 @@ export default async function handler(
 		code_challenge_method,
 		response_type,
 		response_mode } = req.query;
+    // https://api.sigmaaldrich.com/auth/v1/openid/keys
+    // https://login.microsoftonline.com/common/discovery/v2.0/keys
+    // https://login.microsoftonline.com/common/v2.0/.well-known/openid-configuration
+    // const wellKnownConfig = await oidcServiceClient.getWellKnownConfig("https://login.microsoftonline.com/common/v2.0/.well-known/openid-configuration");
+    // const wellKnownConfig = await oidcServiceClient.getWellKnownConfig("https://api.sigmaaldrich.com/auth/.well-known/openid-configuration");
+    // console.log(JSON.stringify(wellKnownConfig));
+    // const msKeys: Jwks | null = await oidcServiceClient.getJwksKeys("https://login.microsoftonline.com/common/discovery/v2.0/keys");
+    // console.log(msKeys);
+    // if(msKeys){
+    //     console.log(msKeys.keys[0].x5c[0]);
+    // }
+
+    // const sialKeys = await oidcServiceClient.getJwksKeys("https://api.sigmaaldrich.com/auth/v1/openid/keys");
+    // console.log(sialKeys);
 
 	const tenantId = tenant_id as string;
 	const clientId = client_id as string;
@@ -87,12 +109,12 @@ export default async function handler(
 	//		an external OIDC provider itself, exclusively? Is so, then redirect immediaely.
 	const tenant: Tenant | null = await tenantDao.getTenantById(tenantId);
 	if (!tenant) {
-		res.status(302).setHeader("location", `/authorize/login?tenant_id=${tenantId}&client_id=${clientId}&state=${oidcState}&error=invalid_request&error_message=ERROR_INVALID_TENANT&redirect_uri=${redirectUri}&scope=${oidcScope}`);
+		res.status(302).setHeader("location", `/authorize/login?tenant_id=${tenantId}&client_id=${clientId}&state=${oidcState}&error=invalid_request&error_message=ERROR_INVALID_TENANT&redirect_uri=${redirectUri}&scope=${oidcScope}&response_type=${responseType}`);
 		res.end();
 		return;
 	}
 	if (!tenant?.enabled) {
-		res.status(302).setHeader("location", `/authorize/login?tenant_id=${tenantId}&client_id=${clientId}&state=${oidcState}&error=unauthorized_client&error_message=ERROR_TENANT_NOT_ENABLED&redirect_uri=${redirectUri}&scope=${oidcScope}`);
+		res.status(302).setHeader("location", `/authorize/login?tenant_id=${tenantId}&client_id=${clientId}&state=${oidcState}&error=unauthorized_client&error_message=ERROR_TENANT_NOT_ENABLED&redirect_uri=${redirectUri}&scope=${oidcScope}&response_type=${responseType}`);
 		res.end();
 		return;
 	}
@@ -100,29 +122,29 @@ export default async function handler(
 	// 4. Does the client exist and do they belong to the tenant and is the client enabled
 	const client: Client | null = await clientDao.getClientById(clientId);
 	if (!client) {
-		res.status(302).setHeader("location", `/authorize/login?tenant_id=${tenantId}&client_id=${clientId}&state=${oidcState}&error=unauthorized_client&error_message=ERROR_INVALID_CLIENT&redirect_uri=${redirectUri}&scope=${oidcScope}`);
+		res.status(302).setHeader("location", `/authorize/login?tenant_id=${tenantId}&client_id=${clientId}&state=${oidcState}&error=unauthorized_client&error_message=ERROR_INVALID_CLIENT&redirect_uri=${redirectUri}&scope=${oidcScope}&response_type=${responseType}`);
 		res.end();
 		return;
 	}
 	if (client.tenantId !== tenantId) {
-		res.status(302).setHeader("location", `/authorize/login?tenant_id=${tenantId}&client_id=${clientId}&state=${oidcState}&error=unauthorized_client&error_message=ERROR_INVALID_CLIENT&redirect_uri=${redirectUri}&scope=${oidcScope}`);
+		res.status(302).setHeader("location", `/authorize/login?tenant_id=${tenantId}&client_id=${clientId}&state=${oidcState}&error=unauthorized_client&error_message=ERROR_INVALID_CLIENT&redirect_uri=${redirectUri}&scope=${oidcScope}&response_type=${responseType}`);
 		res.end();
 		return;
 	}
 	if (!client.enabled) {
-			res.status(302).setHeader("location", `/authorize/login?tenant_id=${tenantId}&client_id=${clientId}&state=${oidcState}&error=unauthorized_client&error_message=ERROR_CLIENT_NOT_ENABLED&redirect_uri=${redirectUri}&scope=${oidcScope}`);
+			res.status(302).setHeader("location", `/authorize/login?tenant_id=${tenantId}&client_id=${clientId}&state=${oidcState}&error=unauthorized_client&error_message=ERROR_CLIENT_NOT_ENABLED&redirect_uri=${redirectUri}&scope=${oidcScope}&response_type=${responseType}`);
 			res.end();
 			return;
 	}
 
 	// 5. Is the client enabled for SSO and is the redirect URI registered with the client?
 	if (!client.oidcEnabled) {
-		res.status(302).setHeader("location", `/authorize/login?tenant_id=${tenantId}&client_id=${clientId}&state=${oidcState}&error=unauthorized_client&error_message=ERROR_CLIENT_NOT_ENABLED_FOR_SSO&redirect_uri=${redirectUri}&scope=${oidcScope}`);
+		res.status(302).setHeader("location", `/authorize/login?tenant_id=${tenantId}&client_id=${clientId}&state=${oidcState}&error=unauthorized_client&error_message=ERROR_CLIENT_NOT_ENABLED_FOR_SSO&redirect_uri=${redirectUri}&scope=${oidcScope}&response_type=${responseType}`);
 		res.end();
 		return;
 	}
 	if (!redirectUri || !client.redirectUris?.includes(redirectUri)) {
-		res.status(302).setHeader("location", `/authorize/login?tenant_id=${tenantId}&client_id=${clientId}&state=${oidcState}&error=unauthorized_client&error_message=ERROR_INVALID_REDIRECT_URI&redirect_uri=${redirectUri}&scope=${oidcScope}`);
+		res.status(302).setHeader("location", `/authorize/login?tenant_id=${tenantId}&client_id=${clientId}&state=${oidcState}&error=unauthorized_client&error_message=ERROR_INVALID_REDIRECT_URI&redirect_uri=${redirectUri}&scope=${oidcScope}&response_type=${responseType}`);
 		res.end();
 		return;
 	}
@@ -133,12 +155,12 @@ export default async function handler(
 		(codeChallenge || codeChallengeMethod) &&
 		(!client.pkceEnabled)
 	) {
-		res.status(302).setHeader("location", `/authorize/login?tenant_id=${tenantId}&client_id=${clientId}&state=${oidcState}&error=unauthorized_client&error_message=ERROR_PKCE_NOT_ENABLED_FOR_CLIENT&redirect_uri=${redirectUri}&scope=${oidcScope}`);
+		res.status(302).setHeader("location", `/authorize/login?tenant_id=${tenantId}&client_id=${clientId}&state=${oidcState}&error=unauthorized_client&error_message=ERROR_PKCE_NOT_ENABLED_FOR_CLIENT&redirect_uri=${redirectUri}&scope=${oidcScope}&response_type=${responseType}`);
 		res.end();
 		return;
 	}
 	if (codeChallengeMethod && !(codeChallengeMethod === "S256")) {
-		res.status(302).setHeader("location", `/authorize/login?tenant_id=${tenantId}&client_id=${clientId}&state=${oidcState}&error=unauthorized_client&error_message=ERROR_INVALID_CODE_CHALLENGE_METHOD&redirect_uri=${redirectUri}&scope=${oidcScope}`);
+		res.status(302).setHeader("location", `/authorize/login?tenant_id=${tenantId}&client_id=${clientId}&state=${oidcState}&error=unauthorized_client&error_message=ERROR_INVALID_CODE_CHALLENGE_METHOD&redirect_uri=${redirectUri}&scope=${oidcScope}&response_type=${responseType}`);
 		res.end();
 		return;
 	}
@@ -147,13 +169,13 @@ export default async function handler(
 		(codeChallengeMethod && !codeChallenge) ||
 		(!codeChallengeMethod && codeChallenge)
 	) {
-		res.status(302).setHeader("location", `/authorize/login?tenant_id=${tenantId}&client_id=${clientId}&state=${oidcState}&error=unauthorized_client&error_message=ERROR_INVALID_CODE_CHALLENGE_PARAMETERS_MISSING_ONE_OR_MORE&redirect_uri=${redirectUri}&scope=${oidcScope}`);
+		res.status(302).setHeader("location", `/authorize/login?tenant_id=${tenantId}&client_id=${clientId}&state=${oidcState}&error=unauthorized_client&error_message=ERROR_INVALID_CODE_CHALLENGE_PARAMETERS_MISSING_ONE_OR_MORE&redirect_uri=${redirectUri}&scope=${oidcScope}&response_type=${responseType}`);
 		res.end();
 		return;
 	}
 	if (tenant.delegatedAuthenticationConstraint === DelegatedAuthenticationConstraint.Exclusive) {
 		if (!tenant.externalOIDCProviderId) {
-			res.status(302).setHeader("location", `/authorize/login?tenant_id=${tenantId}&client_id=${clientId}&state=${oidcState}&error=unauthorized_client&error_message=ERROR_TENANT_INCORRECTLY_CONFIGURED_FOR_EXTERNAL_OIDC_PROVIDER&redirect_uri=${redirectUri}&scope=${oidcScope}`);
+			res.status(302).setHeader("location", `/authorize/login?tenant_id=${tenantId}&client_id=${clientId}&state=${oidcState}&error=unauthorized_client&error_message=ERROR_TENANT_INCORRECTLY_CONFIGURED_FOR_EXTERNAL_OIDC_PROVIDER_01&redirect_uri=${redirectUri}&scope=${oidcScope}&response_type=${responseType}`);
 			res.end();
 			return;
 		}
@@ -162,14 +184,37 @@ export default async function handler(
 		// Set the state, scope, client, response type, etc and save it for later use.
         const externalOIDCProvider: ExternalOidcProvider | null = await externalOIDCProviderDao.getExternalOIDCProviderById(tenant.externalOIDCProviderId);
         if(!externalOIDCProvider){
-            res.status(302).setHeader("location", `/authorize/login?tenant_id=${tenantId}&client_id=${clientId}&state=${oidcState}&error=unauthorized_client&error_message=ERROR_TENANT_INCORRECTLY_CONFIGURED_FOR_EXTERNAL_OIDC_PROVIDER&redirect_uri=${redirectUri}&scope=${oidcScope}`);
+            res.status(302).setHeader("location", `/authorize/login?tenant_id=${tenantId}&client_id=${clientId}&state=${oidcState}&error=unauthorized_client&error_message=ERROR_TENANT_INCORRECTLY_CONFIGURED_FOR_EXTERNAL_OIDC_PROVIDER_02&redirect_uri=${redirectUri}&scope=${oidcScope}&response_type=${responseType}`);
 			res.end();
 			return;
         }
         else {
             // create state, etc, and save that data with the incoming state, etc.
+            const wellKnownConfig: WellknownConfig | null = await oidcServiceClient.getWellKnownConfig(
+                externalOIDCProvider.externalOIDCProviderWellKnownUri
+                //"https://api.sigmaaldrich.com/auth/.well-known/openid-configuration"
+            );
+            if(!wellKnownConfig){
+                res.status(302).setHeader("location", `/authorize/login?tenant_id=${tenantId}&client_id=${clientId}&state=${oidcState}&error=unauthorized_client&error_message=ERROR_TENANT_INCORRECTLY_CONFIGURED_FOR_EXTERNAL_OIDC_PROVIDER_03&redirect_uri=${redirectUri}&scope=${oidcScope}&response_type=${responseType}`);
+                res.end();
+                return;
+            }
+            const externalOidcAuthorizationRel: ExternalOidcAuthorizationRel = {
+                expiresAt: new Date().getTime().toString(),
+                externalOIDCProviderId: externalOIDCProvider.externalOIDCProviderId,
+                initClientId: clientId,
+                initRedirectUri: redirectUri,
+                initResponseMode: responseMode,
+                initScope: oidcScope,
+                initState: oidcState,
+                initTenantId: tenantId,
+                state: generateRandomToken(32, "hex")
+            }
 
-            res.status(302).setHeader("location", `?tenant_id=${tenantId}&client_id=${clientId}&state=${oidcState}&error=unauthorized_client&error_message=ERROR_TENANT_INCORRECTLY_CONFIGURED_FOR_EXTERNAL_OIDC_PROVIDER&redirect_uri=${redirectUri}&scope=${oidcScope}`);
+            await authDao.saveExternalOIDCAuthorizationRel(externalOidcAuthorizationRel)
+            res.status(302).setHeader("location", `${wellKnownConfig.authorization_endpoint}?client_id=${externalOIDCProvider.externalOIDCProviderClientId}&state=${externalOidcAuthorizationRel.state}&response_type=code&redirect_uri=${AUTH_DOMAIN}${"/api/openid/return&scope=openid%20email%20profile%20offline_access"}`);
+            //res.status(302).setHeader("location", `${wellKnownConfig.authorization_endpoint}?&client_id=${externalOIDCProvider.externalOIDCProviderClientId}&state=${externalOidcAuthorizationRel.state}&redirect_uri=${AUTH_DOMAIN}${"/api/openid/return&scope=openid%20email%20profile%20offline_access"}`);
+
 			res.end();
 			return;
         }
