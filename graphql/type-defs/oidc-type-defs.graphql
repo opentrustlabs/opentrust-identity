@@ -439,6 +439,7 @@ type RefreshData {
 
 type ExternalOIDCAuthorizationRel {
     state: String!
+    codeVerifier: String
     externalOIDCProviderId: String!
     initState: String!
     initRedirectUri: String!

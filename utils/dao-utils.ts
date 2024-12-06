@@ -11,7 +11,7 @@ import RateLimitDao from "@/lib/dao/rate-limit-dao";
 import ScopeDao from "@/lib/dao/scope-dao";
 import TenantDao from "@/lib/dao/tenant-dao";
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
-import { randomBytes } from "node:crypto";
+import { randomBytes, hash } from "node:crypto";
 import AuthenticationGroupDao from "@/lib/dao/authentication-group-dao";
 import FSBasedAuthenticationGroupDao from "@/lib/dao/impl/fs/fs-based-authentication-group-dao";
 import ExternalOIDCProviderDao from "@/lib/dao/external-oidc-provider-dao";
@@ -20,6 +20,12 @@ import AuthDao from "@/lib/dao/auth-dao";
 import FSBasedAuthDao from "@/lib/dao/impl/fs/fs-based-auth-dao";
 
 
+/**
+ * 
+ * @param fileName 
+ * @param defaultContents 
+ * @returns 
+ */
 export function getFileContents(fileName: string, defaultContents?: string): any {
     let fileContents; 
 
@@ -35,11 +41,30 @@ export function getFileContents(fileName: string, defaultContents?: string): any
 
 export type TokenEncodingType = "hex" | "base64"
 
+/**
+ * 
+ * @param length 
+ * @param encoding 
+ * @returns 
+ */
 export function generateRandomToken(length: number, encoding?: TokenEncodingType){
     if(!encoding){
         encoding = "base64";
     }
     return randomBytes(length).toString(encoding);
+}
+
+/**
+ * 
+ * @returns 
+ */
+export function generateCodeVerifierAndChallenge(): {verifier: string, challenge: string} {
+    const verifier: string = generateRandomToken(32, "base64").replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+    const challenge = hash("sha256", verifier, "base64url");
+    return ({
+        verifier,
+        challenge
+    });
 }
 
 export function getTenantDaoImpl(): TenantDao {
