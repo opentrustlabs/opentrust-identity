@@ -60,11 +60,20 @@ export function generateRandomToken(length: number, encoding?: TokenEncodingType
  */
 export function generateCodeVerifierAndChallenge(): {verifier: string, challenge: string} {
     const verifier: string = generateRandomToken(32, "base64").replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-    const challenge = hash("sha256", verifier, "base64url");
+    const challenge = generateChallenge(verifier); 
     return ({
         verifier,
         challenge
     });
+}
+
+/**
+ * 
+ * @param verifier 
+ * @returns 
+ */
+export function generateChallenge(verifier: string): string {
+    return hash("sha256", verifier, "base64url");
 }
 
 export function getTenantDaoImpl(): TenantDao {

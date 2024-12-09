@@ -1,6 +1,6 @@
-import { PreAuthenticationState, AuthorizationState, RefreshData, ExternalOidcAuthorizationRel } from "@/graphql/generated/graphql-types";
+import { PreAuthenticationState, AuthorizationCodeData, RefreshData, ExternalOidcAuthorizationRel } from "@/graphql/generated/graphql-types";
 import AuthDao from "@/lib/dao/auth-dao";
-import { AUTHORIZATION_STATE_FILE, EXTERNAL_OIDC_AUTHORIZATION_REL_FILE, PRE_AUTHENTICATION_STATE_FILE } from "@/utils/consts";
+import { AUTHORIZATION_CODE_DATA_FILE, EXTERNAL_OIDC_AUTHORIZATION_REL_FILE, PRE_AUTHENTICATION_STATE_FILE } from "@/utils/consts";
 import { getFileContents } from "@/utils/dao-utils";
 import { writeFileSync } from "node:fs";
 import path from "node:path";
@@ -9,14 +9,14 @@ const dataDir = process.env.FS_BASED_DATA_DIR ?? path.join(__dirname);
 
 class FSBasedAuthDao extends AuthDao {
 
-    savePreAuthenticationState(preAuthenticationState: PreAuthenticationState): Promise<PreAuthenticationState> {
+    public async savePreAuthenticationState(preAuthenticationState: PreAuthenticationState): Promise<PreAuthenticationState> {
         const states: Array<PreAuthenticationState> = JSON.parse(getFileContents(`${dataDir}/${PRE_AUTHENTICATION_STATE_FILE}`, "[]"));
         states.push(preAuthenticationState);
         writeFileSync(`${dataDir}/${PRE_AUTHENTICATION_STATE_FILE}`, JSON.stringify(states), {encoding: "utf-8"});
         return Promise.resolve(preAuthenticationState);
     }
 
-    getPreAuthenticationState(tk: string): Promise<PreAuthenticationState | null> {
+    public async getPreAuthenticationState(tk: string): Promise<PreAuthenticationState | null> {
         const states: Array<PreAuthenticationState> = JSON.parse(getFileContents(`${dataDir}/${PRE_AUTHENTICATION_STATE_FILE}`, "[]"));
         const state: PreAuthenticationState | undefined = states.find(
             (state: PreAuthenticationState) => state.token === tk
@@ -24,7 +24,7 @@ class FSBasedAuthDao extends AuthDao {
         return state ? Promise.resolve(state) :  Promise.resolve(null);
     }
 
-    deletePreAuthenticationState(tk: String): Promise<void> {
+    public async deletePreAuthenticationState(tk: String): Promise<void> {
         let states: Array<PreAuthenticationState> = JSON.parse(getFileContents(`${dataDir}/${PRE_AUTHENTICATION_STATE_FILE}`, "[]"));
         states = states.filter(
             (state: PreAuthenticationState) => state.token !== tk
@@ -34,48 +34,48 @@ class FSBasedAuthDao extends AuthDao {
     }
 
     
-    saveAuthorizationState(authorizationState: AuthorizationState): Promise<AuthorizationState> {
-        const authCodes: Array<AuthorizationState> = JSON.parse(getFileContents(`${dataDir}/${AUTHORIZATION_STATE_FILE}`, "[]"));
+    public async saveAuthorizationCodeData(authorizationState: AuthorizationCodeData): Promise<AuthorizationCodeData> {
+        const authCodes: Array<AuthorizationCodeData> = JSON.parse(getFileContents(`${dataDir}/${AUTHORIZATION_CODE_DATA_FILE}`, "[]"));
         authCodes.push(authorizationState);
-        writeFileSync(`${dataDir}/${AUTHORIZATION_STATE_FILE}`, JSON.stringify(authCodes), {encoding: "utf-8"});
+        writeFileSync(`${dataDir}/${AUTHORIZATION_CODE_DATA_FILE}`, JSON.stringify(authCodes), {encoding: "utf-8"});
         return Promise.resolve(authorizationState);
     }
-    getAuthorizationState(code: string): Promise<AuthorizationState | null> {
-        const authCodes: Array<AuthorizationState> = JSON.parse(getFileContents(`${dataDir}/${AUTHORIZATION_STATE_FILE}`, "[]"));
-        const authCode: AuthorizationState | undefined = authCodes.find(
-            (a: AuthorizationState) => a.code === code
+    public async getAuthorizationCodeData(code: string): Promise<AuthorizationCodeData | null> {
+        const authCodes: Array<AuthorizationCodeData> = JSON.parse(getFileContents(`${dataDir}/${AUTHORIZATION_CODE_DATA_FILE}`, "[]"));
+        const authCode: AuthorizationCodeData | undefined = authCodes.find(
+            (a: AuthorizationCodeData) => a.code === code
         );
         return authCode ? Promise.resolve(authCode) : Promise.resolve(null);
     }
-    deleteAuthorizationState(code: string): Promise<void> {
-        let authCodes: Array<AuthorizationState> = JSON.parse(getFileContents(`${dataDir}/${AUTHORIZATION_STATE_FILE}`, "[]"));
+    public async deleteAuthorizationCodeData(code: string): Promise<void> {
+        let authCodes: Array<AuthorizationCodeData> = JSON.parse(getFileContents(`${dataDir}/${AUTHORIZATION_CODE_DATA_FILE}`, "[]"));
         authCodes = authCodes.filter(
-            (a: AuthorizationState) => a.code !== code
+            (a: AuthorizationCodeData) => a.code !== code
         )
-        writeFileSync(`${dataDir}/${AUTHORIZATION_STATE_FILE}`, JSON.stringify(authCodes), {encoding: "utf-8"});
+        writeFileSync(`${dataDir}/${AUTHORIZATION_CODE_DATA_FILE}`, JSON.stringify(authCodes), {encoding: "utf-8"});
         return Promise.resolve();
     }
 
 
-    saveRefreshData(refreshData: RefreshData): Promise<RefreshData> {
+    public async saveRefreshData(refreshData: RefreshData): Promise<RefreshData> {
         throw new Error("Method not implemented.");
     }
-    getRefreshData(refreshToken: string): Promise<RefreshData | null> {
+    public async getRefreshData(refreshToken: string): Promise<RefreshData | null> {
         throw new Error("Method not implemented.");
     }
-    deleteRefreshData(refreshToken: string): Promise<void> {
+    public async deleteRefreshData(refreshToken: string): Promise<void> {
         throw new Error("Method not implemented.");
     }
 
 
-    saveExternalOIDCAuthorizationRel(externalOIDCAuthorizationRel: ExternalOidcAuthorizationRel): Promise<ExternalOidcAuthorizationRel> {
+    public async saveExternalOIDCAuthorizationRel(externalOIDCAuthorizationRel: ExternalOidcAuthorizationRel): Promise<ExternalOidcAuthorizationRel> {
         const rels: Array<ExternalOidcAuthorizationRel> = JSON.parse(getFileContents(`${dataDir}/${EXTERNAL_OIDC_AUTHORIZATION_REL_FILE}`, "[]"));
         rels.push(externalOIDCAuthorizationRel);
         writeFileSync(`${dataDir}/${EXTERNAL_OIDC_AUTHORIZATION_REL_FILE}`, JSON.stringify(rels), {encoding: "utf-8"});
         return Promise.resolve(externalOIDCAuthorizationRel);        
     }
 
-    getExternalOIDCAuthorizationRel(state: string): Promise<ExternalOidcAuthorizationRel | null> {
+    public async getExternalOIDCAuthorizationRel(state: string): Promise<ExternalOidcAuthorizationRel | null> {
         const rels: Array<ExternalOidcAuthorizationRel> = JSON.parse(getFileContents(`${dataDir}/${EXTERNAL_OIDC_AUTHORIZATION_REL_FILE}`, "[]"));
         const rel: ExternalOidcAuthorizationRel | undefined = rels.find(
             (rel: ExternalOidcAuthorizationRel) => rel.state === state
@@ -83,7 +83,7 @@ class FSBasedAuthDao extends AuthDao {
         return rel ? Promise.resolve(rel) : Promise.resolve(null);
     }
 
-    deleteExternalOIDCAuthorizationRel(state: string): Promise<void> {
+    public async deleteExternalOIDCAuthorizationRel(state: string): Promise<void> {
         let rels: Array<ExternalOidcAuthorizationRel> = JSON.parse(getFileContents(`${dataDir}/${EXTERNAL_OIDC_AUTHORIZATION_REL_FILE}`, "[]"));
         rels = rels.filter(
             (rel: ExternalOidcAuthorizationRel) => rel.state !== state

@@ -411,13 +411,14 @@ type PreAuthenticationState {
     codeChallenge: String
     codeChallengeMethod: String
     responseMode: String!
+    responseType: String!
     scope: String!
     tenantId: String!
     clientId: String!
     expiresAt: String!
 }
 
-type AuthorizationState {
+type AuthorizationCodeData {
     code: String!
     redirectUri: String!
     clientId: String!
@@ -429,11 +430,17 @@ type AuthorizationState {
     expiresAt: String!
 }
 
+enum RefreshTokenClientType {
+    PKCE
+    SECURE_CLIENT
+}
+
 type RefreshData {
     refreshToken: String!
     tenantId: String!
     clientId: String!
     userId: String!
+    refreshTokenClientType: RefreshTokenClientType!
     refreshCount: Int!
 }
 

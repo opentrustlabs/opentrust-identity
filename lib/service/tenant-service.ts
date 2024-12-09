@@ -1,11 +1,14 @@
-import { Tenant, TenantManagementDomainRel } from "@/graphql/generated/graphql-types";
+import { DelegatedAuthenticationConstraint, ExternalOidcProvider, Tenant, TenantManagementDomainRel } from "@/graphql/generated/graphql-types";
 import { OIDCContext } from "@/graphql/graphql-context";
 import TenantDao from "@/lib/dao/tenant-dao";
-import { getTenantDaoImpl } from "@/utils/dao-utils";
+import { getExternalOIDCProvicerDaoImpl, getTenantDaoImpl } from "@/utils/dao-utils";
 import { GraphQLError } from "graphql";
+import { randomUUID } from 'crypto'; 
+import ExternalOIDCProviderDao from "../dao/external-oidc-provider-dao";
 
 
 const tenantDao: TenantDao = getTenantDaoImpl();
+const externalOIDCProviderDao: ExternalOIDCProviderDao = getExternalOIDCProvicerDaoImpl();
 
 class TenantService {
 
@@ -19,10 +22,15 @@ class TenantService {
         return tenantDao.getRootTenant();
     }
     public async createRootTenant(tenant: Tenant): Promise<Tenant> {
+        tenant.tenantId = randomUUID().toString();
         return tenantDao.createRootTenant(tenant);
         
     }
     public async updateRootTenant(tenant: Tenant): Promise<Tenant> {
+        const {valid, errorMessage} = await this.validateTenantInput(tenant);
+        if(!valid){
+            throw new GraphQLError(errorMessage);
+        }
         return tenantDao.updateRootTenant(tenant);
     }
         
@@ -35,10 +43,33 @@ class TenantService {
     }
 
     public async createTenant(tenant: Tenant): Promise<Tenant | null> {
+        const {valid, errorMessage} = await this.validateTenantInput(tenant);
+        if(!valid){
+            throw new GraphQLError(errorMessage);
+        }
+        
+        tenant.tenantId = randomUUID().toString();
         return tenantDao.createTenant(tenant);
     }
     
+    protected async validateTenantInput(tenant: Tenant): Promise<{valid: boolean, errorMessage: string}> {
+        if(tenant.delegatedAuthenticationConstraint === DelegatedAuthenticationConstraint.Exclusive && (!tenant.externalOIDCProviderId || "" === tenant.externalOIDCProviderId)){
+            return {valid: false, errorMessage: "ERROR_MISSING_EXTERNAL_OIDC_PROVIDER"};
+        }
+        if(tenant.externalOIDCProviderId && "" !== tenant.externalOIDCProviderId){
+            const oidcProvider: ExternalOidcProvider | null = await externalOIDCProviderDao.getExternalOIDCProviderById(tenant.externalOIDCProviderId);
+            if(!oidcProvider){
+                return {valid: false, errorMessage: "ERROR_INVALID_OIDC_PROVIDER"};
+            }
+        }
+        return {valid: true, errorMessage: ""};
+    }
+
     public async updateTenant(tenant: Tenant): Promise<Tenant> {
+        const {valid, errorMessage} = await this.validateTenantInput(tenant);
+        if(!valid){
+            throw new GraphQLError(errorMessage);
+        }
         return tenantDao.updateTenant(tenant);
     }
 

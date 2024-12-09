@@ -8,7 +8,14 @@ export const DEFAULT_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS = 600; // 10 minutes
 export const DEFAULT_END_USER_TOKEN_TTL_SECONDS = 3600; // 1 hour
 export const MAX_END_USER_TOKEN_TTL_SECONDS = 43200; // 12 hours
 export const MIN_END_USER_TOKEN_TTL_SECONDS = 900; // 15 minutes
-
+export const GRANT_TYPE_AUTHORIZATION_CODE = "authorization_code";
+export const GRANT_TYPE_REFRESH_TOKEN = "refresh_token";
+export const GRANT_TYPE_CLIENT_CREDENTIALS = "client_credentials";
+export const GRANT_TYPES_SUPPORTED: Array<string> = [
+    GRANT_TYPE_AUTHORIZATION_CODE,
+    GRANT_TYPE_REFRESH_TOKEN,
+    GRANT_TYPE_CLIENT_CREDENTIALS
+]
 
 
 // ************************************************************************** //
@@ -33,7 +40,7 @@ export const EXTERNAL_OIDC_PROVIDER_FILE = "external-oidc-provider.json";
 export const EXTERNAL_OIDC_PROVIDER_TENANT_REL_FILE = "external-oidc-provider-tenant-rel.json";
 export const EXTERNAL_OIDC_PROVIDER_DOMAIN_REL_FILE = "external-oidc-provider-domain-rel.json";
 export const PRE_AUTHENTICATION_STATE_FILE = "pre-authentication-state.json";
-export const AUTHORIZATION_STATE_FILE = "authorization-state.json";
+export const AUTHORIZATION_CODE_DATA_FILE = "authorization-code-data.json";
 export const REFRESH_TOKEN_FILE = "refresh-token.json";
 export const EXTERNAL_OIDC_AUTHORIZATION_REL_FILE = "external-oidc-authorization-rel.json";
 

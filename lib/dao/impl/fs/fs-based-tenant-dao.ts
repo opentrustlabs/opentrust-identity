@@ -2,7 +2,7 @@ import { Tenant, TenantManagementDomainRel } from "@/graphql/generated/graphql-t
 import TenantDAO from "../../tenant-dao";
 import { writeFileSync } from "node:fs";
 import path from "node:path";
-import { randomUUID } from 'crypto'; 
+//import { randomUUID } from 'crypto'; 
 import { GraphQLError } from "graphql";
 import { ROOT_TENANT_FILE, TENANT_FILE, TENANT_MANAGEMENT_DOMAIN_REL_FILE } from "@/utils/consts";
 import { getFileContents } from "@/utils/dao-utils";
@@ -19,7 +19,6 @@ class FSBasedTenantDao extends TenantDAO {
         return Promise.resolve(tenant);
     }
     public async createRootTenant(tenant: Tenant): Promise<Tenant> {
-        tenant.tenantId = randomUUID().toString();
         writeFileSync(`${dataDir}/${ROOT_TENANT_FILE}`, JSON.stringify(tenant), {encoding: "utf-8"});
         return Promise.resolve(tenant);
         
@@ -55,15 +54,14 @@ class FSBasedTenantDao extends TenantDAO {
     }
 
 
-    public async createTenant(tenant: Tenant, externalOIDCProviderId?: string, domains?: Array<string>): Promise<Tenant | null> {
+    public async createTenant(tenant: Tenant): Promise<Tenant | null> {
         const tenants: Array<Tenant> = await this.getTenants();
-        tenant.tenantId = randomUUID().toString();
         tenants.push(tenant);
         writeFileSync(`${dataDir}/${TENANT_FILE}`, JSON.stringify(tenants), {encoding: "utf-8"});
         return Promise.resolve(tenant);
     }
 
-    public async updateTenant(tenant: Tenant, externalOIDCProviderId?: string, domains?: Array<string>): Promise<Tenant> {
+    public async updateTenant(tenant: Tenant): Promise<Tenant> {
         const tenants: Array<Tenant> = await this.getTenants();
         const tenantToUpdate: Tenant | undefined = tenants.find(
             (t: Tenant) => t.tenantId === tenant.tenantId
@@ -76,7 +74,13 @@ class FSBasedTenantDao extends TenantDAO {
         tenantToUpdate.allowUnlimitedRate = tenant.allowUnlimitedRate;
         tenantToUpdate.claimsSupported = tenant.claimsSupported;
         tenantToUpdate.enabled = tenant.enabled;
-
+        tenantToUpdate.allowUserSelfRegistration = tenant.allowUserSelfRegistration;
+        tenantToUpdate.delegatedAuthenticationConstraint = tenant.delegatedAuthenticationConstraint;
+        tenantToUpdate.externalOIDCProviderId = tenant.externalOIDCProviderId;
+        tenantToUpdate.markForDelete = tenant.markForDelete;
+        tenantToUpdate.tenantType = tenant.tenantType;
+        tenantToUpdate.verifyEmailOnSelfRegistration = tenant.verifyEmailOnSelfRegistration;
+        
         writeFileSync(`${dataDir}/${TENANT_FILE}`, JSON.stringify(tenants), {encoding: "utf-8"});
 
         return Promise.resolve(tenant);

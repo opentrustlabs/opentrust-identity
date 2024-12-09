@@ -3,7 +3,7 @@ import TenantDao from "../../../../lib/dao/tenant-dao";
 import { getTenantDaoImpl } from "../../../..//utils/dao-utils";
 import { Tenant } from '../../../../graphql/generated/graphql-types';
 import { ErrorResponseBody } from '../../../..//lib/models/error';
-
+import { GRANT_TYPES_SUPPORTED } from "../../../../utils/consts";
 
 const {
     AUTH_DOMAIN
@@ -103,11 +103,7 @@ export default async function handler(
             claim_types_supported: [
                 "normal"
             ],
-            grant_types_supported: [
-                "authorization_code",
-                "refresh_token",
-                "client_credentials"
-            ],
+            grant_types_supported: GRANT_TYPES_SUPPORTED,
             code_challenge_methods_supported: [
                 "S256"
             ]
