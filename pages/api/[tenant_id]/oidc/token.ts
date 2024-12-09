@@ -1,4 +1,4 @@
-import { Tenant, Client, DelegatedAuthenticationConstraint, ExternalOidcProvider, ExternalOidcAuthorizationRel, PreAuthenticationState, AuthorizationCodeData, ClientType } from '@/graphql/generated/graphql-types';
+import { Tenant, Client, DelegatedAuthenticationConstraint, ExternalOidcProvider, ExternalOidcAuthorizationRel, PreAuthenticationState, AuthorizationCodeData, ClientType, RefreshData, RefreshTokenClientType } from '@/graphql/generated/graphql-types';
 import AuthDao from '@/lib/dao/auth-dao';
 import ClientDao from '@/lib/dao/client-dao';
 import ExternalOIDCProviderDao from '@/lib/dao/external-oidc-provider-dao';
@@ -172,6 +172,8 @@ async function handleAuthorizationCodeGrant(tokenData: TokenData, res: NextApiRe
         }
         return res.status(401).json(error);
     }
+    // Delete the authorization code immediately so that it cannot be reused. No need to wait.
+    authDao.deleteAuthorizationCodeData(tokenData.code || "");
 
     if(d.tenantId !== tokenData.tenantId){
 
@@ -188,6 +190,7 @@ async function handleAuthorizationCodeGrant(tokenData: TokenData, res: NextApiRe
     if(d.scope !== tokenData.scope){
 
     }
+
 
     // Validate the code challenge if it exists or validate the
     // client authentication using either client secret or signed jwt
@@ -255,9 +258,148 @@ async function handleAuthorizationCodeGrant(tokenData: TokenData, res: NextApiRe
         }
     }
     // TODO
-    // Retrieve the user and issue the token response
+    // Retrieve the user and issue the token response and save the refresh token if the account is enabled for it.
 }
 async function handleRefreshTokenGrant(tokenData: TokenData, res: NextApiResponse){
+
+    if(!tokenData.refreshToken){
+        const error: ErrorResponseBody = {
+            statusCode: 401,
+            errorDetails: [{
+                errorKey: "ERROR_TOKEN_REQUEST_FAILED_WITH_MISSING_REFRESH_TOKEN",
+                errorMessageCanonical: "",
+                errorMessageTranslated: ""
+            }]
+        }
+        return res.status(401).json(error);
+    }
+
+    const refreshTokenData: RefreshData | null = await authDao.getRefreshData(tokenData.refreshToken);
+    if(!refreshTokenData){
+        const error: ErrorResponseBody = {
+            statusCode: 401,
+            errorDetails: [{
+                errorKey: "ERROR_TOKEN_REQUEST_FAILED_WITH_INVALID_REFRESH_TOKEN",
+                errorMessageCanonical: "",
+                errorMessageTranslated: ""
+            }]
+        }
+        return res.status(401).json(error);
+    }
+
+    // authDao.deleteRefreshData(tokenData.refreshToken);
+
+    const client: Client | null = await clientDao.getClientById(refreshTokenData.clientId);
+    if(!client){
+        const error: ErrorResponseBody = {
+            statusCode: 401,
+            errorDetails: [{
+                errorKey: "ERROR_TOKEN_REQUEST_FAILED_WITH_MISSING_CLIENT",
+                errorMessageCanonical: "",
+                errorMessageTranslated: ""
+            }]
+        }
+        return res.status(401).json(error);
+    }
+    if(client.enabled !== true){
+        const error: ErrorResponseBody = {
+            statusCode: 401,
+            errorDetails: [{
+                errorKey: "ERROR_TOKEN_REQUEST_FAILED_WITH_INVALID_CLIENT",
+                errorMessageCanonical: "",
+                errorMessageTranslated: ""
+            }]
+        }
+        return res.status(401).json(error);
+    }
+    if(client.tenantId !== tokenData.tenantId){
+        const error: ErrorResponseBody = {
+            statusCode: 401,
+            errorDetails: [{
+                errorKey: "ERROR_TOKEN_REQUEST_FAILED_WITH_INVALID_TENANT_AND_CLIENT",
+                errorMessageCanonical: "",
+                errorMessageTranslated: ""
+            }]
+        }
+        return res.status(401).json(error);
+    }
+    if(client.clientType === ClientType.ServiceAccountOnly){
+        const error: ErrorResponseBody = {
+            statusCode: 401,
+            errorDetails: [{
+                errorKey: "ERROR_TOKEN_REQUEST_FAILED_WITH_INVALID_CLIENT_TYPE_FOR_REFRESH_TOKEN_GRANT",
+                errorMessageCanonical: "",
+                errorMessageTranslated: ""
+            }]
+        }
+        return res.status(401).json(error);        
+    }
+    
+    // Validate the client credentials if this is not a PKCE enabled refresh token
+    if(refreshTokenData.refreshTokenClientType !== RefreshTokenClientType.Pkce){
+        if(tokenData.authHeader === null && tokenData.clientSecret === null){
+            const error: ErrorResponseBody = {
+                statusCode: 401,
+                errorDetails: [{
+                    errorKey: "ERROR_TOKEN_REQUEST_FAILED_WITH_MISSING_CLIENT_CREDENTIALS",
+                    errorMessageCanonical: "",
+                    errorMessageTranslated: ""
+                }]
+            }
+            return res.status(401).json(error);
+        }
+        let credentialIsValid: boolean = false;
+        if(tokenData.clientSecret){
+            credentialIsValid = await clientDao.validateClientAuthCredentials(tokenData.clientId, tokenData.clientSecret || "");
+        }
+        else {
+            credentialIsValid = await clientDao.validateClientAuthJwt(tokenData.authHeader || "");
+        }
+        if(!credentialIsValid){
+            const error: ErrorResponseBody = {
+                statusCode: 401,
+                errorDetails: [{
+                    errorKey: "ERROR_TOKEN_REQUEST_FAILED_WITH_INVALID_CLIENT_CREDENTIALS",
+                    errorMessageCanonical: "",
+                    errorMessageTranslated: ""
+                }]
+            }
+            return res.status(401).json(error);
+        }
+    }
+
+    // Finally, have we maxed out the number of refresh tokens that can be issued?
+    if(client.maxRefreshTokenCount && refreshTokenData.refreshCount > client.maxRefreshTokenCount){
+
+        // Delete the refresh token ONLY in this error case, since in the others
+        // there is still a possibility that the client was malicious or misconfigured
+        // and so we should maintain the refresh token in the meantime.
+        authDao.deleteRefreshData(tokenData.refreshToken);
+        
+        const error: ErrorResponseBody = {
+            statusCode: 401,
+            errorDetails: [{
+                errorKey: "ERROR_TOKEN_REQUEST_FAILED_WITH_MAXIMUM_REFRESH_COUNT_REACHED",
+                errorMessageCanonical: "",
+                errorMessageTranslated: ""
+            }]
+        }
+        return res.status(401).json(error);
+    }
+
+    const newRefreshData: RefreshData = {
+        clientId: refreshTokenData.clientId,
+        refreshCount: refreshTokenData.refreshCount + 1,
+        refreshToken: generateRandomToken(32, "base64"),
+        refreshTokenClientType: refreshTokenData.refreshTokenClientType,
+        tenantId: refreshTokenData.tenantId,
+        userId: refreshTokenData.userId
+    };
+    await authDao.deleteRefreshData(refreshTokenData.refreshToken);
+    await authDao.saveRefreshData(newRefreshData);
+
+
+    
 
 }
 async function handleClientCredentialsGrant(tokenData: TokenData, res: NextApiResponse){
