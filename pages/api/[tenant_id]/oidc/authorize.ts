@@ -1,17 +1,17 @@
-import { Tenant, Client, DelegatedAuthenticationConstraint, ExternalOidcProvider, ExternalOidcAuthorizationRel, PreAuthenticationState, ClientType } from '@/graphql/generated/graphql-types';
+import { Tenant, Client, DelegatedAuthenticationConstraint, FederatedOidcProvider, FederatedOidcAuthorizationRel, PreAuthenticationState, ClientType } from '@/graphql/generated/graphql-types';
 import AuthDao from '@/lib/dao/auth-dao';
 import ClientDao from '@/lib/dao/client-dao';
-import ExternalOIDCProviderDao from '@/lib/dao/external-oidc-provider-dao';
+import FederatedOIDCProviderDao from '@/lib/dao/federated-oidc-provider-dao';
 import TenantDao from '@/lib/dao/tenant-dao';
 import { WellknownConfig } from '@/lib/models/wellknown-config';
 import OIDCServiceClient from '@/lib/service/oidc-service-client';
 import { ALL_OIDC_SUPPORTED_SCOPE_VALUES, OIDC_OPENID_SCOPE } from '@/utils/consts';
-import { generateCodeVerifierAndChallenge, generateRandomToken, getAuthDaoImpl, getClientDaoImpl, getExternalOIDCProvicerDaoImpl, getTenantDaoImpl } from '@/utils/dao-utils';
+import { generateCodeVerifierAndChallenge, generateRandomToken, getAuthDaoImpl, getClientDaoImpl, getFederatedOIDCProvicerDaoImpl, getTenantDaoImpl } from '@/utils/dao-utils';
 import type { NextApiRequest, NextApiResponse } from 'next'
 
 const tenantDao: TenantDao = getTenantDaoImpl();
 const clientDao: ClientDao = getClientDaoImpl();
-const externalOIDCProviderDao: ExternalOIDCProviderDao = getExternalOIDCProvicerDaoImpl();
+const federatedOIDCProviderDao: FederatedOIDCProviderDao = getFederatedOIDCProvicerDaoImpl();
 const authDao: AuthDao = getAuthDaoImpl();
 const oidcServiceClient: OIDCServiceClient = new OIDCServiceClient();
 
@@ -106,7 +106,7 @@ export default async function handler(
 	}
 
 	// 3. Does the tenant exist and are they enabled. Also, is the tenant defined to use
-	//		an external OIDC provider itself, exclusively? Is so, then redirect immediaely.
+	//		an federated OIDC provider itself, exclusively? Is so, then redirect immediaely.
 	const tenant: Tenant | null = await tenantDao.getTenantById(tenantId);
 	if (!tenant) {
 		res.status(302).setHeader("location", `/authorize/login?tenant_id=${tenantId}&client_id=${clientId}&state=${oidcState}&error=invalid_request&error_message=ERROR_INVALID_TENANT&redirect_uri=${redirectUri}&scope=${oidcScope}&response_type=${responseType}&response_mode=${responseMode}`);
@@ -179,16 +179,16 @@ export default async function handler(
 		return;
 	}
 	if (tenant.delegatedAuthenticationConstraint === DelegatedAuthenticationConstraint.Exclusive) {
-		if (!tenant.externalOIDCProviderId) {
+		if (!tenant.federatedOIDCProviderId) {
 			res.status(302).setHeader("location", `/authorize/login?tenant_id=${tenantId}&client_id=${clientId}&state=${oidcState}&error=unauthorized_client&error_message=ERROR_TENANT_INCORRECTLY_CONFIGURED_FOR_EXTERNAL_OIDC_PROVIDER_INVALID_PROVIDER_ID&redirect_uri=${redirectUri}&scope=${oidcScope}&response_type=${responseType}&response_mode=${responseMode}`);
 			res.end();
 			return;
 		}
 		// TODO
-		// Lookup the external OIDC provider and redirect the user immediately. Need to
+		// Lookup the federated OIDC provider and redirect the user immediately. Need to
 		// Set the state, scope, client, response type, etc and save it for later use.
-        const externalOIDCProvider: ExternalOidcProvider | null = await externalOIDCProviderDao.getExternalOIDCProviderById(tenant.externalOIDCProviderId);
-        if(!externalOIDCProvider){
+        const federatedOIDCProvider: FederatedOidcProvider | null = await federatedOIDCProviderDao.getFederatedOidcProviderById(tenant.federatedOIDCProviderId || "");
+        if(!federatedOIDCProvider){
             res.status(302).setHeader("location", `/authorize/login?tenant_id=${tenantId}&client_id=${clientId}&state=${oidcState}&error=unauthorized_client&error_message=ERROR_TENANT_INCORRECTLY_CONFIGURED_FOR_EXTERNAL_OIDC_PROVIDER_INVALID_PROVIDER&redirect_uri=${redirectUri}&scope=${oidcScope}&response_type=${responseType}&response_mode=${responseMode}`);
 			res.end();
 			return;
@@ -196,7 +196,7 @@ export default async function handler(
         else {
             // create state, etc, and save that data with the incoming state, etc.
             const wellKnownConfig: WellknownConfig | null = await oidcServiceClient.getWellKnownConfig(
-                externalOIDCProvider.externalOIDCProviderWellKnownUri
+                federatedOIDCProvider.federatedOIDCProviderWellKnownUri
                 //"https://api.sigmaaldrich.com/auth/.well-known/openid-configuration"
             );
             if(!wellKnownConfig){
@@ -206,15 +206,15 @@ export default async function handler(
             }
 
             // If we are supposed to use PKCE, then we need to generate the code challenge and save it too.
-            const {verifier, challenge} = externalOIDCProvider.usePkce ? generateCodeVerifierAndChallenge() : {verifier: null, challenge: null}; 
+            const {verifier, challenge} = federatedOIDCProvider.usePkce ? generateCodeVerifierAndChallenge() : {verifier: null, challenge: null}; 
             console.log("verifier is: " + verifier);
             console.log("challenge is: " + challenge);
             
-            const externalOidcAuthorizationRel: ExternalOidcAuthorizationRel = {
+            const federatedOidcAuthorizationRel: FederatedOidcAuthorizationRel = {
                 state: generateRandomToken(32, "hex"),
                 codeVerifier: verifier,
                 expiresAt: new Date().getTime().toString(),
-                externalOIDCProviderId: externalOIDCProvider.externalOIDCProviderId,
+                federatedOIDCProviderId: federatedOIDCProvider.federatedOIDCProviderId,
                 initClientId: clientId,
                 initRedirectUri: redirectUri,
                 initResponseMode: responseMode,
@@ -224,10 +224,10 @@ export default async function handler(
                 initCodeChallenge: codeChallenge,
                 initCodeChallengeMethod: codeChallengeMethod
             }
-            await authDao.saveExternalOIDCAuthorizationRel(externalOidcAuthorizationRel);
+            await authDao.saveFederatedOIDCAuthorizationRel(federatedOidcAuthorizationRel);
             
-            const codeChallengeQueryParams = externalOIDCProvider.usePkce ? `&code_challenge=${challenge}&code_challenge_method=S256` : "";
-            res.status(302).setHeader("location", `${wellKnownConfig.authorization_endpoint}?client_id=${externalOIDCProvider.externalOIDCProviderClientId}&state=${externalOidcAuthorizationRel.state}&response_type=code&response_mode=query&redirect_uri=${AUTH_DOMAIN}${"/api/openid/return&scope=openid%20email%20profile%20offline_access"}${codeChallengeQueryParams}`);
+            const codeChallengeQueryParams = federatedOIDCProvider.usePkce ? `&code_challenge=${challenge}&code_challenge_method=S256` : "";
+            res.status(302).setHeader("location", `${wellKnownConfig.authorization_endpoint}?client_id=${federatedOIDCProvider.federatedOIDCProviderClientId}&state=${federatedOidcAuthorizationRel.state}&response_type=code&response_mode=query&redirect_uri=${AUTH_DOMAIN}${"/api/openid/return&scope=openid%20email%20profile%20offline_access"}${codeChallengeQueryParams}`);
 			res.end();
 			return;
         }

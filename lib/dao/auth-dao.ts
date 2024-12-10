@@ -1,4 +1,4 @@
-import { AuthorizationCodeData, ExternalOidcAuthorizationRel, PreAuthenticationState, RefreshData } from "@/graphql/generated/graphql-types";
+import { AuthorizationCodeData, FederatedOidcAuthorizationRel, PreAuthenticationState, RefreshData } from "@/graphql/generated/graphql-types";
 
 abstract class AuthDao {
 
@@ -20,11 +20,11 @@ abstract class AuthDao {
 
     abstract deleteRefreshData(refreshToken: string): Promise<void>;
 
-    abstract saveExternalOIDCAuthorizationRel(externalOIDCAuthorizationRel: ExternalOidcAuthorizationRel): Promise<ExternalOidcAuthorizationRel>;
+    abstract saveFederatedOIDCAuthorizationRel(externalOIDCAuthorizationRel: FederatedOidcAuthorizationRel): Promise<FederatedOidcAuthorizationRel>;
 
-    abstract getExternalOIDCAuthorizationRel(state: string): Promise<ExternalOidcAuthorizationRel | null>;
+    abstract getFederatedOIDCAuthorizationRel(state: string): Promise<FederatedOidcAuthorizationRel | null>;
 
-    abstract deleteExternalOIDCAuthorizationRel(state: string): Promise<void>;
+    abstract deleteFederatedOIDCAuthorizationRel(state: string): Promise<void>;
 
 }
 

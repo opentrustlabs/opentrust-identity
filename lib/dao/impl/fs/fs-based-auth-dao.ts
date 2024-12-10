@@ -1,4 +1,4 @@
-import { PreAuthenticationState, AuthorizationCodeData, RefreshData, ExternalOidcAuthorizationRel } from "@/graphql/generated/graphql-types";
+import { PreAuthenticationState, AuthorizationCodeData, RefreshData, FederatedOidcAuthorizationRel } from "@/graphql/generated/graphql-types";
 import AuthDao from "@/lib/dao/auth-dao";
 import { AUTHORIZATION_CODE_DATA_FILE, EXTERNAL_OIDC_AUTHORIZATION_REL_FILE, PRE_AUTHENTICATION_STATE_FILE } from "@/utils/consts";
 import { getFileContents } from "@/utils/dao-utils";
@@ -68,25 +68,25 @@ class FSBasedAuthDao extends AuthDao {
     }
 
 
-    public async saveExternalOIDCAuthorizationRel(externalOIDCAuthorizationRel: ExternalOidcAuthorizationRel): Promise<ExternalOidcAuthorizationRel> {
-        const rels: Array<ExternalOidcAuthorizationRel> = JSON.parse(getFileContents(`${dataDir}/${EXTERNAL_OIDC_AUTHORIZATION_REL_FILE}`, "[]"));
+    public async saveFederatedOIDCAuthorizationRel(externalOIDCAuthorizationRel: FederatedOidcAuthorizationRel): Promise<FederatedOidcAuthorizationRel> {
+        const rels: Array<FederatedOidcAuthorizationRel> = JSON.parse(getFileContents(`${dataDir}/${EXTERNAL_OIDC_AUTHORIZATION_REL_FILE}`, "[]"));
         rels.push(externalOIDCAuthorizationRel);
         writeFileSync(`${dataDir}/${EXTERNAL_OIDC_AUTHORIZATION_REL_FILE}`, JSON.stringify(rels), {encoding: "utf-8"});
         return Promise.resolve(externalOIDCAuthorizationRel);        
     }
 
-    public async getExternalOIDCAuthorizationRel(state: string): Promise<ExternalOidcAuthorizationRel | null> {
-        const rels: Array<ExternalOidcAuthorizationRel> = JSON.parse(getFileContents(`${dataDir}/${EXTERNAL_OIDC_AUTHORIZATION_REL_FILE}`, "[]"));
-        const rel: ExternalOidcAuthorizationRel | undefined = rels.find(
-            (rel: ExternalOidcAuthorizationRel) => rel.state === state
+    public async getFederatedOIDCAuthorizationRel(state: string): Promise<FederatedOidcAuthorizationRel | null> {
+        const rels: Array<FederatedOidcAuthorizationRel> = JSON.parse(getFileContents(`${dataDir}/${EXTERNAL_OIDC_AUTHORIZATION_REL_FILE}`, "[]"));
+        const rel: FederatedOidcAuthorizationRel | undefined = rels.find(
+            (rel: FederatedOidcAuthorizationRel) => rel.state === state
         )
         return rel ? Promise.resolve(rel) : Promise.resolve(null);
     }
 
-    public async deleteExternalOIDCAuthorizationRel(state: string): Promise<void> {
-        let rels: Array<ExternalOidcAuthorizationRel> = JSON.parse(getFileContents(`${dataDir}/${EXTERNAL_OIDC_AUTHORIZATION_REL_FILE}`, "[]"));
+    public async deleteFederatedOIDCAuthorizationRel(state: string): Promise<void> {
+        let rels: Array<FederatedOidcAuthorizationRel> = JSON.parse(getFileContents(`${dataDir}/${EXTERNAL_OIDC_AUTHORIZATION_REL_FILE}`, "[]"));
         rels = rels.filter(
-            (rel: ExternalOidcAuthorizationRel) => rel.state !== state
+            (rel: FederatedOidcAuthorizationRel) => rel.state !== state
         )
         writeFileSync(`${dataDir}/${EXTERNAL_OIDC_AUTHORIZATION_REL_FILE}`, JSON.stringify(rels), {encoding: "utf-8"});
         return Promise.resolve();

@@ -15,7 +15,7 @@ abstract class ClientDao {
 
         abstract validateClientAuthCredentials(clientId: string, clientSecret: string): Promise<boolean>;
 
-        abstract validateClientAuthJwt(jwt: string): Promise<boolean>;
+        abstract validateClientAuthJwt(jwt: string, tenantId: string): Promise<boolean>;
         
 }
 

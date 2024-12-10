@@ -153,11 +153,11 @@ export enum DelegatedAuthenticationConstraint {
   Permissive = 'PERMISSIVE'
 }
 
-export type ExternalOidcAuthorizationRel = {
-  __typename?: 'ExternalOIDCAuthorizationRel';
+export type FederatedOidcAuthorizationRel = {
+  __typename?: 'FederatedOIDCAuthorizationRel';
   codeVerifier?: Maybe<Scalars['String']['output']>;
   expiresAt: Scalars['String']['output'];
-  externalOIDCProviderId: Scalars['String']['output'];
+  federatedOIDCProviderId: Scalars['String']['output'];
   initClientId: Scalars['String']['output'];
   initCodeChallenge?: Maybe<Scalars['String']['output']>;
   initCodeChallengeMethod?: Maybe<Scalars['String']['output']>;
@@ -169,54 +169,54 @@ export type ExternalOidcAuthorizationRel = {
   state: Scalars['String']['output'];
 };
 
-export type ExternalOidcProvider = {
-  __typename?: 'ExternalOIDCProvider';
+export type FederatedOidcProvider = {
+  __typename?: 'FederatedOIDCProvider';
   clientAuthType?: Maybe<ClientAuthType>;
-  externalOIDCProviderClientId: Scalars['String']['output'];
-  externalOIDCProviderClientSecret?: Maybe<Scalars['String']['output']>;
-  externalOIDCProviderDescription?: Maybe<Scalars['String']['output']>;
-  externalOIDCProviderId: Scalars['String']['output'];
-  externalOIDCProviderName: Scalars['String']['output'];
-  externalOIDCProviderTenantId?: Maybe<Scalars['String']['output']>;
-  externalOIDCProviderWellKnownUri: Scalars['String']['output'];
+  federatedOIDCProviderClientId: Scalars['String']['output'];
+  federatedOIDCProviderClientSecret?: Maybe<Scalars['String']['output']>;
+  federatedOIDCProviderDescription?: Maybe<Scalars['String']['output']>;
+  federatedOIDCProviderId: Scalars['String']['output'];
+  federatedOIDCProviderName: Scalars['String']['output'];
+  federatedOIDCProviderTenantId?: Maybe<Scalars['String']['output']>;
+  federatedOIDCProviderWellKnownUri: Scalars['String']['output'];
   refreshTokenAllowed: Scalars['Boolean']['output'];
   usePkce: Scalars['Boolean']['output'];
 };
 
-export type ExternalOidcProviderCreateInput = {
+export type FederatedOidcProviderCreateInput = {
   clientAuthType?: InputMaybe<ClientAuthType>;
-  externalOIDCProviderClientId: Scalars['String']['input'];
-  externalOIDCProviderClientSecret?: InputMaybe<Scalars['String']['input']>;
-  externalOIDCProviderDescription?: InputMaybe<Scalars['String']['input']>;
-  externalOIDCProviderId: Scalars['String']['input'];
-  externalOIDCProviderName: Scalars['String']['input'];
-  externalOIDCProviderTenantId?: InputMaybe<Scalars['String']['input']>;
-  externalOIDCProviderWellKnownUri: Scalars['String']['input'];
+  federatedOIDCProviderClientId: Scalars['String']['input'];
+  federatedOIDCProviderClientSecret?: InputMaybe<Scalars['String']['input']>;
+  federatedOIDCProviderDescription?: InputMaybe<Scalars['String']['input']>;
+  federatedOIDCProviderId: Scalars['String']['input'];
+  federatedOIDCProviderName: Scalars['String']['input'];
+  federatedOIDCProviderTenantId?: InputMaybe<Scalars['String']['input']>;
+  federatedOIDCProviderWellKnownUri: Scalars['String']['input'];
   refreshTokenAllowed: Scalars['Boolean']['input'];
   usePkce: Scalars['Boolean']['input'];
 };
 
-export type ExternalOidcProviderDomainRel = {
-  __typename?: 'ExternalOIDCProviderDomainRel';
+export type FederatedOidcProviderDomainRel = {
+  __typename?: 'FederatedOIDCProviderDomainRel';
   domain: Scalars['String']['output'];
-  externalOIDCProviderId: Scalars['String']['output'];
+  federatedOIDCProviderId: Scalars['String']['output'];
 };
 
-export type ExternalOidcProviderTenantRel = {
-  __typename?: 'ExternalOIDCProviderTenantRel';
-  externalOIDCProviderId: Scalars['String']['output'];
+export type FederatedOidcProviderTenantRel = {
+  __typename?: 'FederatedOIDCProviderTenantRel';
+  federatedOIDCProviderId: Scalars['String']['output'];
   tenantId: Scalars['String']['output'];
 };
 
-export type ExternalOidcProviderUpdateInput = {
+export type FederatedOidcProviderUpdateInput = {
   clientAuthType?: InputMaybe<ClientAuthType>;
-  externalOIDCProviderClientId: Scalars['String']['input'];
-  externalOIDCProviderClientSecret?: InputMaybe<Scalars['String']['input']>;
-  externalOIDCProviderDescription?: InputMaybe<Scalars['String']['input']>;
-  externalOIDCProviderId: Scalars['String']['input'];
-  externalOIDCProviderName: Scalars['String']['input'];
-  externalOIDCProviderTenantId?: InputMaybe<Scalars['String']['input']>;
-  externalOIDCProviderWellKnownUri: Scalars['String']['input'];
+  federatedOIDCProviderClientId: Scalars['String']['input'];
+  federatedOIDCProviderClientSecret?: InputMaybe<Scalars['String']['input']>;
+  federatedOIDCProviderDescription?: InputMaybe<Scalars['String']['input']>;
+  federatedOIDCProviderId: Scalars['String']['input'];
+  federatedOIDCProviderName: Scalars['String']['input'];
+  federatedOIDCProviderTenantId?: InputMaybe<Scalars['String']['input']>;
+  federatedOIDCProviderWellKnownUri: Scalars['String']['input'];
   refreshTokenAllowed: Scalars['Boolean']['input'];
   usePkce: Scalars['Boolean']['input'];
 };
@@ -259,15 +259,15 @@ export type Mutation = {
   addDomainToTenantManagement?: Maybe<Scalars['String']['output']>;
   addUserToGroup?: Maybe<UserGroupRel>;
   assignAuthenticationGroupToClient?: Maybe<AuthenticationGroupClientRel>;
-  assignExternalOIDCProviderToDomain: ExternalOidcProviderDomainRel;
-  assignExternalOIDCProviderToTenant: ExternalOidcProviderTenantRel;
+  assignFederatedOIDCProviderToDomain: FederatedOidcProviderDomainRel;
+  assignFederatedOIDCProviderToTenant: FederatedOidcProviderTenantRel;
   assignRateLimitToTenant?: Maybe<TenantRateLimitRel>;
   assignScopeToClient?: Maybe<ClientTenantScopeRel>;
   assignScopeToTenant?: Maybe<TenantScopeRel>;
   createAccessRule?: Maybe<AccessRule>;
   createAuthenticationGroup?: Maybe<AuthenticationGroup>;
   createClient?: Maybe<Client>;
-  createExternalOIDCProvider?: Maybe<ExternalOidcProvider>;
+  createFederatedOIDCProvider?: Maybe<FederatedOidcProvider>;
   createGroup?: Maybe<Group>;
   createRateLimit?: Maybe<RateLimit>;
   createRootTenant?: Maybe<Tenant>;
@@ -278,7 +278,7 @@ export type Mutation = {
   deleteAccessRule: Scalars['String']['output'];
   deleteAuthenticationGroup: Scalars['String']['output'];
   deleteClient?: Maybe<Scalars['String']['output']>;
-  deleteExternalOIDCProvider: Scalars['String']['output'];
+  deleteFederatedOIDCProvider: Scalars['String']['output'];
   deleteGroup: Scalars['String']['output'];
   deleteRateLimit?: Maybe<Scalars['String']['output']>;
   deleteScope?: Maybe<Scalars['String']['output']>;
@@ -287,8 +287,8 @@ export type Mutation = {
   deleteTenant?: Maybe<Scalars['String']['output']>;
   removeAuthenticationGroupFromClient?: Maybe<Scalars['String']['output']>;
   removeDomainFromTenantManagement?: Maybe<Scalars['String']['output']>;
-  removeExternalOIDCProviderFromDomain: ExternalOidcProviderDomainRel;
-  removeExternalOIDCProviderFromTenant: ExternalOidcProviderTenantRel;
+  removeFederatedOIDCProviderFromDomain: FederatedOidcProviderDomainRel;
+  removeFederatedOIDCProviderFromTenant: FederatedOidcProviderTenantRel;
   removeRateLimitFromTenant?: Maybe<Scalars['String']['output']>;
   removeScopeFromClient?: Maybe<Scalars['String']['output']>;
   removeScopeFromTenant?: Maybe<Scalars['String']['output']>;
@@ -296,7 +296,7 @@ export type Mutation = {
   updateAccessRule?: Maybe<AccessRule>;
   updateAuthenticationGroup?: Maybe<AuthenticationGroup>;
   updateClient?: Maybe<Client>;
-  updateExternalOIDCProvider?: Maybe<ExternalOidcProvider>;
+  updateFederatedOIDCProvider?: Maybe<FederatedOidcProvider>;
   updateGroup?: Maybe<Group>;
   updateRateLimit?: Maybe<RateLimit>;
   updateRateLimitForTenant?: Maybe<TenantRateLimitRel>;
@@ -325,14 +325,14 @@ export type MutationAssignAuthenticationGroupToClientArgs = {
 };
 
 
-export type MutationAssignExternalOidcProviderToDomainArgs = {
+export type MutationAssignFederatedOidcProviderToDomainArgs = {
   domain: Scalars['String']['input'];
-  externalOIDCProviderId: Scalars['String']['input'];
+  federatedOIDCProviderId: Scalars['String']['input'];
 };
 
 
-export type MutationAssignExternalOidcProviderToTenantArgs = {
-  externalOIDCProviderId: Scalars['String']['input'];
+export type MutationAssignFederatedOidcProviderToTenantArgs = {
+  federatedOIDCProviderId: Scalars['String']['input'];
   tenantId: Scalars['String']['input'];
 };
 
@@ -374,8 +374,8 @@ export type MutationCreateClientArgs = {
 };
 
 
-export type MutationCreateExternalOidcProviderArgs = {
-  oidcProviderInput: ExternalOidcProviderCreateInput;
+export type MutationCreateFederatedOidcProviderArgs = {
+  oidcProviderInput: FederatedOidcProviderCreateInput;
 };
 
 
@@ -429,8 +429,8 @@ export type MutationDeleteClientArgs = {
 };
 
 
-export type MutationDeleteExternalOidcProviderArgs = {
-  externalOIDCProviderId: Scalars['String']['input'];
+export type MutationDeleteFederatedOidcProviderArgs = {
+  federatedOIDCProviderId: Scalars['String']['input'];
 };
 
 
@@ -476,14 +476,14 @@ export type MutationRemoveDomainFromTenantManagementArgs = {
 };
 
 
-export type MutationRemoveExternalOidcProviderFromDomainArgs = {
+export type MutationRemoveFederatedOidcProviderFromDomainArgs = {
   domain: Scalars['String']['input'];
-  externalOIDCProviderId: Scalars['String']['input'];
+  federatedOIDCProviderId: Scalars['String']['input'];
 };
 
 
-export type MutationRemoveExternalOidcProviderFromTenantArgs = {
-  externalOIDCProviderId: Scalars['String']['input'];
+export type MutationRemoveFederatedOidcProviderFromTenantArgs = {
+  federatedOIDCProviderId: Scalars['String']['input'];
   tenantId: Scalars['String']['input'];
 };
 
@@ -528,8 +528,8 @@ export type MutationUpdateClientArgs = {
 };
 
 
-export type MutationUpdateExternalOidcProviderArgs = {
-  oidcProviderInput: ExternalOidcProviderUpdateInput;
+export type MutationUpdateFederatedOidcProviderArgs = {
+  oidcProviderInput: FederatedOidcProviderUpdateInput;
 };
 
 
@@ -594,8 +594,8 @@ export type Query = {
   getAuthenticationGroups: Array<AuthenticationGroup>;
   getClientById?: Maybe<Client>;
   getClients: Array<Client>;
-  getExternalOIDCProviderById?: Maybe<ExternalOidcProvider>;
-  getExternalOIDCProviders: Array<ExternalOidcProvider>;
+  getFederatedOIDCProviderById?: Maybe<FederatedOidcProvider>;
+  getFederatedOIDCProviders: Array<FederatedOidcProvider>;
   getGroupById?: Maybe<Group>;
   getGroups: Array<Group>;
   getRateLimitById?: Maybe<RateLimit>;
@@ -645,12 +645,12 @@ export type QueryGetClientsArgs = {
 };
 
 
-export type QueryGetExternalOidcProviderByIdArgs = {
-  externalOIDCProviderId: Scalars['String']['input'];
+export type QueryGetFederatedOidcProviderByIdArgs = {
+  federatedOIDCProviderId: Scalars['String']['input'];
 };
 
 
-export type QueryGetExternalOidcProvidersArgs = {
+export type QueryGetFederatedOidcProvidersArgs = {
   tenantId?: InputMaybe<Scalars['String']['input']>;
 };
 
@@ -821,7 +821,7 @@ export type Tenant = {
   claimsSupported: Array<Scalars['String']['output']>;
   delegatedAuthenticationConstraint: DelegatedAuthenticationConstraint;
   enabled: Scalars['Boolean']['output'];
-  externalOIDCProviderId?: Maybe<Scalars['String']['output']>;
+  federatedOIDCProviderId?: Maybe<Scalars['String']['output']>;
   markForDelete: Scalars['Boolean']['output'];
   tenantDescription?: Maybe<Scalars['String']['output']>;
   tenantId: Scalars['String']['output'];
@@ -836,7 +836,7 @@ export type TenantCreateInput = {
   claimsSupported: Array<Scalars['String']['input']>;
   delegatedAuthenticationConstraint: DelegatedAuthenticationConstraint;
   enabled: Scalars['Boolean']['input'];
-  externalOIDCProviderId?: InputMaybe<Scalars['String']['input']>;
+  federatedOIDCProviderId?: InputMaybe<Scalars['String']['input']>;
   maxRefreshTokenCount?: InputMaybe<Scalars['Int']['input']>;
   tenantDescription?: InputMaybe<Scalars['String']['input']>;
   tenantId: Scalars['String']['input'];
@@ -880,7 +880,7 @@ export type TenantUpdateInput = {
   claimsSupported: Array<Scalars['String']['input']>;
   delegatedAuthenticationConstraint: DelegatedAuthenticationConstraint;
   enabled: Scalars['Boolean']['input'];
-  externalOIDCProviderId?: InputMaybe<Scalars['String']['input']>;
+  federatedOIDCProviderId?: InputMaybe<Scalars['String']['input']>;
   markForDelete: Scalars['Boolean']['input'];
   maxRefreshTokenCount?: InputMaybe<Scalars['Int']['input']>;
   tenantDescription?: InputMaybe<Scalars['String']['input']>;
@@ -906,7 +906,7 @@ export type User = {
   domain: Scalars['String']['output'];
   email: Scalars['String']['output'];
   emailVerified: Scalars['Boolean']['output'];
-  externalOIDCProviderSubjectId?: Maybe<Scalars['String']['output']>;
+  federatedOIDCProviderSubjectId?: Maybe<Scalars['String']['output']>;
   firstName: Scalars['String']['output'];
   lastName: Scalars['String']['output'];
   middleName?: Maybe<Scalars['String']['output']>;
@@ -1034,12 +1034,12 @@ export type ResolversTypes = ResolversObject<{
   ClientType: ClientType;
   ClientUpdateInput: ClientUpdateInput;
   DelegatedAuthenticationConstraint: DelegatedAuthenticationConstraint;
-  ExternalOIDCAuthorizationRel: ResolverTypeWrapper<ExternalOidcAuthorizationRel>;
-  ExternalOIDCProvider: ResolverTypeWrapper<ExternalOidcProvider>;
-  ExternalOIDCProviderCreateInput: ExternalOidcProviderCreateInput;
-  ExternalOIDCProviderDomainRel: ResolverTypeWrapper<ExternalOidcProviderDomainRel>;
-  ExternalOIDCProviderTenantRel: ResolverTypeWrapper<ExternalOidcProviderTenantRel>;
-  ExternalOIDCProviderUpdateInput: ExternalOidcProviderUpdateInput;
+  FederatedOIDCAuthorizationRel: ResolverTypeWrapper<FederatedOidcAuthorizationRel>;
+  FederatedOIDCProvider: ResolverTypeWrapper<FederatedOidcProvider>;
+  FederatedOIDCProviderCreateInput: FederatedOidcProviderCreateInput;
+  FederatedOIDCProviderDomainRel: ResolverTypeWrapper<FederatedOidcProviderDomainRel>;
+  FederatedOIDCProviderTenantRel: ResolverTypeWrapper<FederatedOidcProviderTenantRel>;
+  FederatedOIDCProviderUpdateInput: FederatedOidcProviderUpdateInput;
   Group: ResolverTypeWrapper<Group>;
   GroupCreateInput: GroupCreateInput;
   GroupScopeRel: ResolverTypeWrapper<GroupScopeRel>;
@@ -1095,12 +1095,12 @@ export type ResolversParentTypes = ResolversObject<{
   ClientCreateInput: ClientCreateInput;
   ClientTenantScopeRel: ClientTenantScopeRel;
   ClientUpdateInput: ClientUpdateInput;
-  ExternalOIDCAuthorizationRel: ExternalOidcAuthorizationRel;
-  ExternalOIDCProvider: ExternalOidcProvider;
-  ExternalOIDCProviderCreateInput: ExternalOidcProviderCreateInput;
-  ExternalOIDCProviderDomainRel: ExternalOidcProviderDomainRel;
-  ExternalOIDCProviderTenantRel: ExternalOidcProviderTenantRel;
-  ExternalOIDCProviderUpdateInput: ExternalOidcProviderUpdateInput;
+  FederatedOIDCAuthorizationRel: FederatedOidcAuthorizationRel;
+  FederatedOIDCProvider: FederatedOidcProvider;
+  FederatedOIDCProviderCreateInput: FederatedOidcProviderCreateInput;
+  FederatedOIDCProviderDomainRel: FederatedOidcProviderDomainRel;
+  FederatedOIDCProviderTenantRel: FederatedOidcProviderTenantRel;
+  FederatedOIDCProviderUpdateInput: FederatedOidcProviderUpdateInput;
   Group: Group;
   GroupCreateInput: GroupCreateInput;
   GroupScopeRel: GroupScopeRel;
@@ -1199,10 +1199,10 @@ export type ClientTenantScopeRelResolvers<ContextType = OIDCContext, ParentType 
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
-export type ExternalOidcAuthorizationRelResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['ExternalOIDCAuthorizationRel'] = ResolversParentTypes['ExternalOIDCAuthorizationRel']> = ResolversObject<{
+export type FederatedOidcAuthorizationRelResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['FederatedOIDCAuthorizationRel'] = ResolversParentTypes['FederatedOIDCAuthorizationRel']> = ResolversObject<{
   codeVerifier?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   expiresAt?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  externalOIDCProviderId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  federatedOIDCProviderId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   initClientId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   initCodeChallenge?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   initCodeChallengeMethod?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
@@ -1215,28 +1215,28 @@ export type ExternalOidcAuthorizationRelResolvers<ContextType = OIDCContext, Par
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
-export type ExternalOidcProviderResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['ExternalOIDCProvider'] = ResolversParentTypes['ExternalOIDCProvider']> = ResolversObject<{
+export type FederatedOidcProviderResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['FederatedOIDCProvider'] = ResolversParentTypes['FederatedOIDCProvider']> = ResolversObject<{
   clientAuthType?: Resolver<Maybe<ResolversTypes['ClientAuthType']>, ParentType, ContextType>;
-  externalOIDCProviderClientId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  externalOIDCProviderClientSecret?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  externalOIDCProviderDescription?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  externalOIDCProviderId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  externalOIDCProviderName?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  externalOIDCProviderTenantId?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  externalOIDCProviderWellKnownUri?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  federatedOIDCProviderClientId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  federatedOIDCProviderClientSecret?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  federatedOIDCProviderDescription?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  federatedOIDCProviderId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  federatedOIDCProviderName?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  federatedOIDCProviderTenantId?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  federatedOIDCProviderWellKnownUri?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   refreshTokenAllowed?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   usePkce?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
-export type ExternalOidcProviderDomainRelResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['ExternalOIDCProviderDomainRel'] = ResolversParentTypes['ExternalOIDCProviderDomainRel']> = ResolversObject<{
+export type FederatedOidcProviderDomainRelResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['FederatedOIDCProviderDomainRel'] = ResolversParentTypes['FederatedOIDCProviderDomainRel']> = ResolversObject<{
   domain?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  externalOIDCProviderId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  federatedOIDCProviderId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
-export type ExternalOidcProviderTenantRelResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['ExternalOIDCProviderTenantRel'] = ResolversParentTypes['ExternalOIDCProviderTenantRel']> = ResolversObject<{
-  externalOIDCProviderId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+export type FederatedOidcProviderTenantRelResolvers<ContextType = OIDCContext, ParentType extends ResolversParentTypes['FederatedOIDCProviderTenantRel'] = ResolversParentTypes['FederatedOIDCProviderTenantRel']> = ResolversObject<{
+  federatedOIDCProviderId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   tenantId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
@@ -1260,15 +1260,15 @@ export type MutationResolvers<ContextType = OIDCContext, ParentType extends Reso
   addDomainToTenantManagement?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType, RequireFields<MutationAddDomainToTenantManagementArgs, 'domain' | 'tenantId'>>;
   addUserToGroup?: Resolver<Maybe<ResolversTypes['UserGroupRel']>, ParentType, ContextType, RequireFields<MutationAddUserToGroupArgs, 'groupId' | 'userId'>>;
   assignAuthenticationGroupToClient?: Resolver<Maybe<ResolversTypes['AuthenticationGroupClientRel']>, ParentType, ContextType, RequireFields<MutationAssignAuthenticationGroupToClientArgs, 'authenticationGroupId' | 'clientId'>>;
-  assignExternalOIDCProviderToDomain?: Resolver<ResolversTypes['ExternalOIDCProviderDomainRel'], ParentType, ContextType, RequireFields<MutationAssignExternalOidcProviderToDomainArgs, 'domain' | 'externalOIDCProviderId'>>;
-  assignExternalOIDCProviderToTenant?: Resolver<ResolversTypes['ExternalOIDCProviderTenantRel'], ParentType, ContextType, RequireFields<MutationAssignExternalOidcProviderToTenantArgs, 'externalOIDCProviderId' | 'tenantId'>>;
+  assignFederatedOIDCProviderToDomain?: Resolver<ResolversTypes['FederatedOIDCProviderDomainRel'], ParentType, ContextType, RequireFields<MutationAssignFederatedOidcProviderToDomainArgs, 'domain' | 'federatedOIDCProviderId'>>;
+  assignFederatedOIDCProviderToTenant?: Resolver<ResolversTypes['FederatedOIDCProviderTenantRel'], ParentType, ContextType, RequireFields<MutationAssignFederatedOidcProviderToTenantArgs, 'federatedOIDCProviderId' | 'tenantId'>>;
   assignRateLimitToTenant?: Resolver<Maybe<ResolversTypes['TenantRateLimitRel']>, ParentType, ContextType, RequireFields<MutationAssignRateLimitToTenantArgs, 'rateLimitId' | 'tenantId'>>;
   assignScopeToClient?: Resolver<Maybe<ResolversTypes['ClientTenantScopeRel']>, ParentType, ContextType, RequireFields<MutationAssignScopeToClientArgs, 'clientId' | 'scopeId' | 'tenantId'>>;
   assignScopeToTenant?: Resolver<Maybe<ResolversTypes['TenantScopeRel']>, ParentType, ContextType, RequireFields<MutationAssignScopeToTenantArgs, 'scopeId' | 'tenantId'>>;
   createAccessRule?: Resolver<Maybe<ResolversTypes['AccessRule']>, ParentType, ContextType, RequireFields<MutationCreateAccessRuleArgs, 'accessRuleInput'>>;
   createAuthenticationGroup?: Resolver<Maybe<ResolversTypes['AuthenticationGroup']>, ParentType, ContextType, RequireFields<MutationCreateAuthenticationGroupArgs, 'authenticationGroupInput'>>;
   createClient?: Resolver<Maybe<ResolversTypes['Client']>, ParentType, ContextType, RequireFields<MutationCreateClientArgs, 'clientInput'>>;
-  createExternalOIDCProvider?: Resolver<Maybe<ResolversTypes['ExternalOIDCProvider']>, ParentType, ContextType, RequireFields<MutationCreateExternalOidcProviderArgs, 'oidcProviderInput'>>;
+  createFederatedOIDCProvider?: Resolver<Maybe<ResolversTypes['FederatedOIDCProvider']>, ParentType, ContextType, RequireFields<MutationCreateFederatedOidcProviderArgs, 'oidcProviderInput'>>;
   createGroup?: Resolver<Maybe<ResolversTypes['Group']>, ParentType, ContextType, RequireFields<MutationCreateGroupArgs, 'groupInput'>>;
   createRateLimit?: Resolver<Maybe<ResolversTypes['RateLimit']>, ParentType, ContextType, RequireFields<MutationCreateRateLimitArgs, 'rateLimitInput'>>;
   createRootTenant?: Resolver<Maybe<ResolversTypes['Tenant']>, ParentType, ContextType, RequireFields<MutationCreateRootTenantArgs, 'tenantInput'>>;
@@ -1279,7 +1279,7 @@ export type MutationResolvers<ContextType = OIDCContext, ParentType extends Reso
   deleteAccessRule?: Resolver<ResolversTypes['String'], ParentType, ContextType, RequireFields<MutationDeleteAccessRuleArgs, 'accessRuleId'>>;
   deleteAuthenticationGroup?: Resolver<ResolversTypes['String'], ParentType, ContextType, RequireFields<MutationDeleteAuthenticationGroupArgs, 'authenticationGroupId'>>;
   deleteClient?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType, RequireFields<MutationDeleteClientArgs, 'clientId'>>;
-  deleteExternalOIDCProvider?: Resolver<ResolversTypes['String'], ParentType, ContextType, RequireFields<MutationDeleteExternalOidcProviderArgs, 'externalOIDCProviderId'>>;
+  deleteFederatedOIDCProvider?: Resolver<ResolversTypes['String'], ParentType, ContextType, RequireFields<MutationDeleteFederatedOidcProviderArgs, 'federatedOIDCProviderId'>>;
   deleteGroup?: Resolver<ResolversTypes['String'], ParentType, ContextType, RequireFields<MutationDeleteGroupArgs, 'groupId'>>;
   deleteRateLimit?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType, RequireFields<MutationDeleteRateLimitArgs, 'rateLimitId'>>;
   deleteScope?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType, RequireFields<MutationDeleteScopeArgs, 'scopeId'>>;
@@ -1288,8 +1288,8 @@ export type MutationResolvers<ContextType = OIDCContext, ParentType extends Reso
   deleteTenant?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType, RequireFields<MutationDeleteTenantArgs, 'tenantId'>>;
   removeAuthenticationGroupFromClient?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType, RequireFields<MutationRemoveAuthenticationGroupFromClientArgs, 'authenticationGroupId' | 'clientId'>>;
   removeDomainFromTenantManagement?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType, RequireFields<MutationRemoveDomainFromTenantManagementArgs, 'domain' | 'tenantId'>>;
-  removeExternalOIDCProviderFromDomain?: Resolver<ResolversTypes['ExternalOIDCProviderDomainRel'], ParentType, ContextType, RequireFields<MutationRemoveExternalOidcProviderFromDomainArgs, 'domain' | 'externalOIDCProviderId'>>;
-  removeExternalOIDCProviderFromTenant?: Resolver<ResolversTypes['ExternalOIDCProviderTenantRel'], ParentType, ContextType, RequireFields<MutationRemoveExternalOidcProviderFromTenantArgs, 'externalOIDCProviderId' | 'tenantId'>>;
+  removeFederatedOIDCProviderFromDomain?: Resolver<ResolversTypes['FederatedOIDCProviderDomainRel'], ParentType, ContextType, RequireFields<MutationRemoveFederatedOidcProviderFromDomainArgs, 'domain' | 'federatedOIDCProviderId'>>;
+  removeFederatedOIDCProviderFromTenant?: Resolver<ResolversTypes['FederatedOIDCProviderTenantRel'], ParentType, ContextType, RequireFields<MutationRemoveFederatedOidcProviderFromTenantArgs, 'federatedOIDCProviderId' | 'tenantId'>>;
   removeRateLimitFromTenant?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType, RequireFields<MutationRemoveRateLimitFromTenantArgs, 'rateLimitId' | 'tenantId'>>;
   removeScopeFromClient?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType, RequireFields<MutationRemoveScopeFromClientArgs, 'clientId' | 'scopeId' | 'tenantId'>>;
   removeScopeFromTenant?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType, RequireFields<MutationRemoveScopeFromTenantArgs, 'scopeId' | 'tenantId'>>;
@@ -1297,7 +1297,7 @@ export type MutationResolvers<ContextType = OIDCContext, ParentType extends Reso
   updateAccessRule?: Resolver<Maybe<ResolversTypes['AccessRule']>, ParentType, ContextType, RequireFields<MutationUpdateAccessRuleArgs, 'accessRuleInput'>>;
   updateAuthenticationGroup?: Resolver<Maybe<ResolversTypes['AuthenticationGroup']>, ParentType, ContextType, RequireFields<MutationUpdateAuthenticationGroupArgs, 'authenticationGroupInput'>>;
   updateClient?: Resolver<Maybe<ResolversTypes['Client']>, ParentType, ContextType, RequireFields<MutationUpdateClientArgs, 'clientInput'>>;
-  updateExternalOIDCProvider?: Resolver<Maybe<ResolversTypes['ExternalOIDCProvider']>, ParentType, ContextType, RequireFields<MutationUpdateExternalOidcProviderArgs, 'oidcProviderInput'>>;
+  updateFederatedOIDCProvider?: Resolver<Maybe<ResolversTypes['FederatedOIDCProvider']>, ParentType, ContextType, RequireFields<MutationUpdateFederatedOidcProviderArgs, 'oidcProviderInput'>>;
   updateGroup?: Resolver<Maybe<ResolversTypes['Group']>, ParentType, ContextType, RequireFields<MutationUpdateGroupArgs, 'groupInput'>>;
   updateRateLimit?: Resolver<Maybe<ResolversTypes['RateLimit']>, ParentType, ContextType, RequireFields<MutationUpdateRateLimitArgs, 'rateLimitInput'>>;
   updateRateLimitForTenant?: Resolver<Maybe<ResolversTypes['TenantRateLimitRel']>, ParentType, ContextType, RequireFields<MutationUpdateRateLimitForTenantArgs, 'rateLimitId' | 'tenantId'>>;
@@ -1329,8 +1329,8 @@ export type QueryResolvers<ContextType = OIDCContext, ParentType extends Resolve
   getAuthenticationGroups?: Resolver<Array<ResolversTypes['AuthenticationGroup']>, ParentType, ContextType, Partial<QueryGetAuthenticationGroupsArgs>>;
   getClientById?: Resolver<Maybe<ResolversTypes['Client']>, ParentType, ContextType, RequireFields<QueryGetClientByIdArgs, 'clientId'>>;
   getClients?: Resolver<Array<ResolversTypes['Client']>, ParentType, ContextType, Partial<QueryGetClientsArgs>>;
-  getExternalOIDCProviderById?: Resolver<Maybe<ResolversTypes['ExternalOIDCProvider']>, ParentType, ContextType, RequireFields<QueryGetExternalOidcProviderByIdArgs, 'externalOIDCProviderId'>>;
-  getExternalOIDCProviders?: Resolver<Array<ResolversTypes['ExternalOIDCProvider']>, ParentType, ContextType, Partial<QueryGetExternalOidcProvidersArgs>>;
+  getFederatedOIDCProviderById?: Resolver<Maybe<ResolversTypes['FederatedOIDCProvider']>, ParentType, ContextType, RequireFields<QueryGetFederatedOidcProviderByIdArgs, 'federatedOIDCProviderId'>>;
+  getFederatedOIDCProviders?: Resolver<Array<ResolversTypes['FederatedOIDCProvider']>, ParentType, ContextType, Partial<QueryGetFederatedOidcProvidersArgs>>;
   getGroupById?: Resolver<Maybe<ResolversTypes['Group']>, ParentType, ContextType, RequireFields<QueryGetGroupByIdArgs, 'groupId'>>;
   getGroups?: Resolver<Array<ResolversTypes['Group']>, ParentType, ContextType>;
   getRateLimitById?: Resolver<Maybe<ResolversTypes['RateLimit']>, ParentType, ContextType, RequireFields<QueryGetRateLimitByIdArgs, 'rateLimitId'>>;
@@ -1401,7 +1401,7 @@ export type TenantResolvers<ContextType = OIDCContext, ParentType extends Resolv
   claimsSupported?: Resolver<Array<ResolversTypes['String']>, ParentType, ContextType>;
   delegatedAuthenticationConstraint?: Resolver<ResolversTypes['DelegatedAuthenticationConstraint'], ParentType, ContextType>;
   enabled?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
-  externalOIDCProviderId?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  federatedOIDCProviderId?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   markForDelete?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   tenantDescription?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   tenantId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
@@ -1440,7 +1440,7 @@ export type UserResolvers<ContextType = OIDCContext, ParentType extends Resolver
   domain?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   email?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   emailVerified?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
-  externalOIDCProviderSubjectId?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  federatedOIDCProviderSubjectId?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   firstName?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   lastName?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   middleName?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
@@ -1488,10 +1488,10 @@ export type Resolvers<ContextType = OIDCContext> = ResolversObject<{
   AuthorizationCodeData?: AuthorizationCodeDataResolvers<ContextType>;
   Client?: ClientResolvers<ContextType>;
   ClientTenantScopeRel?: ClientTenantScopeRelResolvers<ContextType>;
-  ExternalOIDCAuthorizationRel?: ExternalOidcAuthorizationRelResolvers<ContextType>;
-  ExternalOIDCProvider?: ExternalOidcProviderResolvers<ContextType>;
-  ExternalOIDCProviderDomainRel?: ExternalOidcProviderDomainRelResolvers<ContextType>;
-  ExternalOIDCProviderTenantRel?: ExternalOidcProviderTenantRelResolvers<ContextType>;
+  FederatedOIDCAuthorizationRel?: FederatedOidcAuthorizationRelResolvers<ContextType>;
+  FederatedOIDCProvider?: FederatedOidcProviderResolvers<ContextType>;
+  FederatedOIDCProviderDomainRel?: FederatedOidcProviderDomainRelResolvers<ContextType>;
+  FederatedOIDCProviderTenantRel?: FederatedOidcProviderTenantRelResolvers<ContextType>;
   Group?: GroupResolvers<ContextType>;
   GroupScopeRel?: GroupScopeRelResolvers<ContextType>;
   Mutation?: MutationResolvers<ContextType>;
@@ -1516,4 +1516,4 @@ export type Resolvers<ContextType = OIDCContext> = ResolversObject<{
 
 
 import gql from 'graphql-tag';
-export const typeDefs = gql(`schema{query:Query mutation:Mutation}type AccessRule{accessRuleDefinition:String!accessRuleId:String!scopeConstraintSchemaId:String!scopeId:String!}input AccessRuleCreateInput{accessRuleDefinition:String!scopeConstraintSchemaId:String!scopeId:String!}input AccessRuleUpdateInput{accessRuleDefinition:String!accessRuleId:String!scopeConstraintSchemaId:String!scopeId:String!}type AuthenticationGroup{authenticationGroupDescription:String authenticationGroupId:String!authenticationGroupName:String!tenantId:String!}type AuthenticationGroupClientRel{authenticationGroupId:String!clientId:String!}input AuthenticationGroupCreateInput{authenticationGroupDescription:String authenticationGroupName:String!tenantId:String!}input AuthenticationGroupUpdateInput{authenticationGroupDescription:String authenticationGroupId:String!authenticationGroupName:String!tenantId:String!}type AuthenticationGroupUserRel{authenticationGroupId:String!userId:String!}type AuthorizationCodeData{clientId:String!code:String!codeChallenge:String codeChallengeMethod:String expiresAt:String!redirectUri:String!scope:String!tenantId:String!userId:String!}type Client{clientDescription:String clientId:String!clientName:String!clientSecret:String!clientType:ClientType!enabled:Boolean maxRefreshTokenCount:Int oidcEnabled:Boolean!pkceEnabled:Boolean!redirectUris:[String!]tenantId:String!userTokenTTLSeconds:Int!}enum ClientAuthType{CLIENT_SECRET_BASIC CLIENT_SECRET_JWT CLIENT_SECRET_POST NONE}input ClientCreateInput{clientDescription:String clientName:String!clientType:ClientType!enabled:Boolean maxRefreshTokenCount:Int oidcEnabled:Boolean pkceEnabled:Boolean redirectUris:[String!]tenantId:String!userTokenTTLSeconds:Int}type ClientTenantScopeRel{clientId:String!scopeId:String!tenantId:String!}enum ClientType{SERVICE_ACCOUNT_AND_USER_DELEGATED_PERMISSIONS SERVICE_ACCOUNT_ONLY USER_DELEGATED_PERMISSIONS_ONLY}input ClientUpdateInput{clientDescription:String clientId:String!clientName:String!clientType:ClientType!enabled:Boolean maxRefreshTokenCount:Int oidcEnabled:Boolean pkceEnabled:Boolean redirectUris:[String!]tenantId:String!userTokenTTLSeconds:Int}enum DelegatedAuthenticationConstraint{EXCLUSIVE NOT_ALLOWED PERMISSIVE}type ExternalOIDCAuthorizationRel{codeVerifier:String expiresAt:String!externalOIDCProviderId:String!initClientId:String!initCodeChallenge:String initCodeChallengeMethod:String initRedirectUri:String!initResponseMode:String!initScope:String!initState:String!initTenantId:String!state:String!}type ExternalOIDCProvider{clientAuthType:ClientAuthType externalOIDCProviderClientId:String!externalOIDCProviderClientSecret:String externalOIDCProviderDescription:String externalOIDCProviderId:String!externalOIDCProviderName:String!externalOIDCProviderTenantId:String externalOIDCProviderWellKnownUri:String!refreshTokenAllowed:Boolean!usePkce:Boolean!}input ExternalOIDCProviderCreateInput{clientAuthType:ClientAuthType externalOIDCProviderClientId:String!externalOIDCProviderClientSecret:String externalOIDCProviderDescription:String externalOIDCProviderId:String!externalOIDCProviderName:String!externalOIDCProviderTenantId:String externalOIDCProviderWellKnownUri:String!refreshTokenAllowed:Boolean!usePkce:Boolean!}type ExternalOIDCProviderDomainRel{domain:String!externalOIDCProviderId:String!}type ExternalOIDCProviderTenantRel{externalOIDCProviderId:String!tenantId:String!}input ExternalOIDCProviderUpdateInput{clientAuthType:ClientAuthType externalOIDCProviderClientId:String!externalOIDCProviderClientSecret:String externalOIDCProviderDescription:String externalOIDCProviderId:String!externalOIDCProviderName:String!externalOIDCProviderTenantId:String externalOIDCProviderWellKnownUri:String!refreshTokenAllowed:Boolean!usePkce:Boolean!}type Group{default:Boolean!groupId:String!groupName:String!tenantId:String!}input GroupCreateInput{default:Boolean!groupName:String!tenantId:String!}type GroupScopeRel{groupId:String!scopeId:String!tenantId:String!}input GroupUpdateInput{default:Boolean!groupId:String!groupName:String!tenantId:String!}enum KeyType{EC RSA}type Mutation{addDomainToTenantManagement(domain:String!tenantId:String!):String addUserToGroup(groupId:String!userId:String!):UserGroupRel assignAuthenticationGroupToClient(authenticationGroupId:String!clientId:String!):AuthenticationGroupClientRel assignExternalOIDCProviderToDomain(domain:String!externalOIDCProviderId:String!):ExternalOIDCProviderDomainRel!assignExternalOIDCProviderToTenant(externalOIDCProviderId:String!tenantId:String!):ExternalOIDCProviderTenantRel!assignRateLimitToTenant(allowUnlimited:Boolean limit:Int rateLimitId:String!rateLimitPeriodMinutes:Int tenantId:String!):TenantRateLimitRel assignScopeToClient(clientId:String!scopeId:String!tenantId:String!):ClientTenantScopeRel assignScopeToTenant(scopeId:String!tenantId:String!):TenantScopeRel createAccessRule(accessRuleInput:AccessRuleCreateInput!):AccessRule createAuthenticationGroup(authenticationGroupInput:AuthenticationGroupCreateInput!):AuthenticationGroup createClient(clientInput:ClientCreateInput!):Client createExternalOIDCProvider(oidcProviderInput:ExternalOIDCProviderCreateInput!):ExternalOIDCProvider createGroup(groupInput:GroupCreateInput!):Group createRateLimit(rateLimitInput:RateLimitCreateInput!):RateLimit createRootTenant(tenantInput:TenantCreateInput!):Tenant createScope(scopeInput:ScopeCreateInput!):Scope createScopeConstraintSchema(scopeConstraintSchemaInput:ScopeConstraintSchemaCreateInput!):ScopeConstraintSchema createSigningKey(keyInput:SigningKeyCreateInput!):SigningKey!createTenant(tenantInput:TenantCreateInput!):Tenant deleteAccessRule(accessRuleId:String!):String!deleteAuthenticationGroup(authenticationGroupId:String!):String!deleteClient(clientId:String!):String deleteExternalOIDCProvider(externalOIDCProviderId:String!):String!deleteGroup(groupId:String!):String!deleteRateLimit(rateLimitId:String!):String deleteScope(scopeId:String!):String deleteScopeConstraingSchema(scopeConstraintSchemaId:String!):String!deleteSigningKey(keyId:String!):String!deleteTenant(tenantId:String!):String removeAuthenticationGroupFromClient(authenticationGroupId:String!clientId:String!):String removeDomainFromTenantManagement(domain:String!tenantId:String!):String removeExternalOIDCProviderFromDomain(domain:String!externalOIDCProviderId:String!):ExternalOIDCProviderDomainRel!removeExternalOIDCProviderFromTenant(externalOIDCProviderId:String!tenantId:String!):ExternalOIDCProviderTenantRel!removeRateLimitFromTenant(rateLimitId:String!tenantId:String!):String removeScopeFromClient(clientId:String!scopeId:String!tenantId:String!):String removeScopeFromTenant(scopeId:String!tenantId:String!):String removeUserFromGroup(groupId:String!userId:String!):String updateAccessRule(accessRuleInput:AccessRuleUpdateInput!):AccessRule updateAuthenticationGroup(authenticationGroupInput:AuthenticationGroupUpdateInput!):AuthenticationGroup updateClient(clientInput:ClientUpdateInput!):Client updateExternalOIDCProvider(oidcProviderInput:ExternalOIDCProviderUpdateInput!):ExternalOIDCProvider updateGroup(groupInput:GroupUpdateInput!):Group updateRateLimit(rateLimitInput:RateLimitUpdateInput!):RateLimit updateRateLimitForTenant(allowUnlimited:Boolean limit:Int rateLimitId:String!rateLimitPeriodMinutes:Int tenantId:String!):TenantRateLimitRel updateRootTenant(tenantInput:TenantUpdateInput!):Tenant updateScope(scopeInput:ScopeUpdateInput!):Scope updateScopeConstraintSchema(scopeConstraintSchemaInput:ScopeConstraintSchemaUpdateInput!):ScopeConstraintSchema updateTenant(tenantInput:TenantUpdateInput!):Tenant}type PreAuthenticationState{clientId:String!codeChallenge:String codeChallengeMethod:String expiresAt:String!redirectUri:String!responseMode:String!responseType:String!scope:String!state:String tenantId:String!token:String!}type Query{getAccessRuleById(accessRuleId:String!):AccessRule getAccessRules(tenantId:String):[AccessRule!]!getAuthenticationGroupById(authenticationGroupId:String!):AuthenticationGroup getAuthenticationGroups(tenantId:String):[AuthenticationGroup!]!getClientById(clientId:String!):Client getClients(tenantId:String):[Client!]!getExternalOIDCProviderById(externalOIDCProviderId:String!):ExternalOIDCProvider getExternalOIDCProviders(tenantId:String):[ExternalOIDCProvider!]!getGroupById(groupId:String!):Group getGroups:[Group!]!getRateLimitById(rateLimitId:String!):RateLimit getRateLimits(tenantId:String):[RateLimit!]!getRootTenant:Tenant!getScope(tenantId:String):[Scope!]!getScopeById(scopeId:String!):Scope getScopeConstraintSchemaById(scopeConstraintSchemaId:String):ScopeConstraintSchema getScopeConstraintSchemas:[ScopeConstraintSchema!]!getSigningKeyById(signingKeyId:String!):SigningKey getSigningKeys(tenantId:String):[SigningKey!]!getTenantById(tenantId:String!):Tenant getTenants:[Tenant!]!getUserById(userId:String!):User getUserGroups(userId:String!):[Group!]!getUsers(tenantId:String):[User!]!}type RateLimit{rateLimitDescription:String rateLimitDomain:String!rateLimitId:String!}input RateLimitCreateInput{rateLimitDescription:String rateLimitDomain:String!}input RateLimitUpdateInput{rateLimitDescription:String rateLimitDomain:String!rateLimitId:String!}type RefreshData{clientId:String!refreshCount:Int!refreshToken:String!refreshTokenClientType:RefreshTokenClientType!tenantId:String!userId:String!}enum RefreshTokenClientType{PKCE SECURE_CLIENT}type Scope{scopeConstraintSchemaId:String scopeDescription:String scopeId:String!scopeName:String!}type ScopeConstraintSchema{schema:String!schemaVersion:Int!scopeConstraintSchemaId:String!scopeId:String!}input ScopeConstraintSchemaCreateInput{schema:String!scopeId:String!}input ScopeConstraintSchemaUpdateInput{schema:String!scopeConstraintSchemaId:String!scopeId:String!}input ScopeCreateInput{scopeConstraintSchemaId:String scopeDescription:String scopeName:String!}input ScopeUpdateInput{scopeConstraintSchemaId:String scopeDescription:String scopeId:String!scopeName:String!}type SigningKey{certificate:String!expiresAt:String!keyId:String!keyType:KeyType!password:String privateKey:String!status:SigningKeyStatus!tenantId:String!use:String!}input SigningKeyCreateInput{certificate:String!keyType:KeyType!password:String privateKey:String!tenantId:String!use:String!}enum SigningKeyStatus{ACTIVE REVOKED}type Tenant{allowUnlimitedRate:Boolean!allowUserSelfRegistration:Boolean!claimsSupported:[String!]!delegatedAuthenticationConstraint:DelegatedAuthenticationConstraint!enabled:Boolean!externalOIDCProviderId:String markForDelete:Boolean!tenantDescription:String tenantId:String!tenantName:String!tenantType:TenantType!verifyEmailOnSelfRegistration:Boolean!}input TenantCreateInput{allowUnlimitedRate:Boolean!allowUserSelfRegistration:Boolean!claimsSupported:[String!]!delegatedAuthenticationConstraint:DelegatedAuthenticationConstraint!enabled:Boolean!externalOIDCProviderId:String maxRefreshTokenCount:Int tenantDescription:String tenantId:String!tenantName:String!tenantType:TenantType!verifyEmailOnSelfRegistration:Boolean!}type TenantManagementDomainRel{domain:String!tenantId:String!}type TenantRateLimitRel{allowUnlimitedRate:Boolean rateLimit:Int rateLimitId:String!rateLimitPeriodMinutes:Int tenantId:String!}type TenantScopeRel{accessRuleId:String scopeId:String!tenantId:String!}enum TenantType{IDENTITY_MANAGEMENT IDENTITY_MANAGEMENT_AND_SERVICES ROOT_TENANT SERVICES}input TenantUpdateInput{allowUnlimitedRate:Boolean!allowUserSelfRegistration:Boolean!claimsSupported:[String!]!delegatedAuthenticationConstraint:DelegatedAuthenticationConstraint!enabled:Boolean!externalOIDCProviderId:String markForDelete:Boolean!maxRefreshTokenCount:Int tenantDescription:String tenantId:String!tenantName:String!tenantType:TenantType!verifyEmailOnSelfRegistration:Boolean!}enum TwoFactorAuthType{EMAIL HARDWARE NONE TEXT TIME_BASED_OTP}type User{address:String countryCode:String createdDate:String!domain:String!email:String!emailVerified:Boolean!externalOIDCProviderSubjectId:String firstName:String!lastName:String!middleName:String phoneNumber:String preferredLanguageCode:String twoFactorAuthType:TwoFactorAuthType updatedDate:String userId:String!}type UserCredential{hashedPassword:String!salt:String!userId:String!}type UserCredentialHistory{dateCreated:String!hashedPassword:String!hashingAlgorithm:String!salt:String!userId:String!}type UserGroupRel{groupId:String!userId:String!}type UserTenantRel{tenantId:String!userId:String!}`);
+export const typeDefs = gql(`schema{query:Query mutation:Mutation}type AccessRule{accessRuleDefinition:String!accessRuleId:String!scopeConstraintSchemaId:String!scopeId:String!}input AccessRuleCreateInput{accessRuleDefinition:String!scopeConstraintSchemaId:String!scopeId:String!}input AccessRuleUpdateInput{accessRuleDefinition:String!accessRuleId:String!scopeConstraintSchemaId:String!scopeId:String!}type AuthenticationGroup{authenticationGroupDescription:String authenticationGroupId:String!authenticationGroupName:String!tenantId:String!}type AuthenticationGroupClientRel{authenticationGroupId:String!clientId:String!}input AuthenticationGroupCreateInput{authenticationGroupDescription:String authenticationGroupName:String!tenantId:String!}input AuthenticationGroupUpdateInput{authenticationGroupDescription:String authenticationGroupId:String!authenticationGroupName:String!tenantId:String!}type AuthenticationGroupUserRel{authenticationGroupId:String!userId:String!}type AuthorizationCodeData{clientId:String!code:String!codeChallenge:String codeChallengeMethod:String expiresAt:String!redirectUri:String!scope:String!tenantId:String!userId:String!}type Client{clientDescription:String clientId:String!clientName:String!clientSecret:String!clientType:ClientType!enabled:Boolean maxRefreshTokenCount:Int oidcEnabled:Boolean!pkceEnabled:Boolean!redirectUris:[String!]tenantId:String!userTokenTTLSeconds:Int!}enum ClientAuthType{CLIENT_SECRET_BASIC CLIENT_SECRET_JWT CLIENT_SECRET_POST NONE}input ClientCreateInput{clientDescription:String clientName:String!clientType:ClientType!enabled:Boolean maxRefreshTokenCount:Int oidcEnabled:Boolean pkceEnabled:Boolean redirectUris:[String!]tenantId:String!userTokenTTLSeconds:Int}type ClientTenantScopeRel{clientId:String!scopeId:String!tenantId:String!}enum ClientType{SERVICE_ACCOUNT_AND_USER_DELEGATED_PERMISSIONS SERVICE_ACCOUNT_ONLY USER_DELEGATED_PERMISSIONS_ONLY}input ClientUpdateInput{clientDescription:String clientId:String!clientName:String!clientType:ClientType!enabled:Boolean maxRefreshTokenCount:Int oidcEnabled:Boolean pkceEnabled:Boolean redirectUris:[String!]tenantId:String!userTokenTTLSeconds:Int}enum DelegatedAuthenticationConstraint{EXCLUSIVE NOT_ALLOWED PERMISSIVE}type FederatedOIDCAuthorizationRel{codeVerifier:String expiresAt:String!federatedOIDCProviderId:String!initClientId:String!initCodeChallenge:String initCodeChallengeMethod:String initRedirectUri:String!initResponseMode:String!initScope:String!initState:String!initTenantId:String!state:String!}type FederatedOIDCProvider{clientAuthType:ClientAuthType federatedOIDCProviderClientId:String!federatedOIDCProviderClientSecret:String federatedOIDCProviderDescription:String federatedOIDCProviderId:String!federatedOIDCProviderName:String!federatedOIDCProviderTenantId:String federatedOIDCProviderWellKnownUri:String!refreshTokenAllowed:Boolean!usePkce:Boolean!}input FederatedOIDCProviderCreateInput{clientAuthType:ClientAuthType federatedOIDCProviderClientId:String!federatedOIDCProviderClientSecret:String federatedOIDCProviderDescription:String federatedOIDCProviderId:String!federatedOIDCProviderName:String!federatedOIDCProviderTenantId:String federatedOIDCProviderWellKnownUri:String!refreshTokenAllowed:Boolean!usePkce:Boolean!}type FederatedOIDCProviderDomainRel{domain:String!federatedOIDCProviderId:String!}type FederatedOIDCProviderTenantRel{federatedOIDCProviderId:String!tenantId:String!}input FederatedOIDCProviderUpdateInput{clientAuthType:ClientAuthType federatedOIDCProviderClientId:String!federatedOIDCProviderClientSecret:String federatedOIDCProviderDescription:String federatedOIDCProviderId:String!federatedOIDCProviderName:String!federatedOIDCProviderTenantId:String federatedOIDCProviderWellKnownUri:String!refreshTokenAllowed:Boolean!usePkce:Boolean!}type Group{default:Boolean!groupId:String!groupName:String!tenantId:String!}input GroupCreateInput{default:Boolean!groupName:String!tenantId:String!}type GroupScopeRel{groupId:String!scopeId:String!tenantId:String!}input GroupUpdateInput{default:Boolean!groupId:String!groupName:String!tenantId:String!}enum KeyType{EC RSA}type Mutation{addDomainToTenantManagement(domain:String!tenantId:String!):String addUserToGroup(groupId:String!userId:String!):UserGroupRel assignAuthenticationGroupToClient(authenticationGroupId:String!clientId:String!):AuthenticationGroupClientRel assignFederatedOIDCProviderToDomain(domain:String!federatedOIDCProviderId:String!):FederatedOIDCProviderDomainRel!assignFederatedOIDCProviderToTenant(federatedOIDCProviderId:String!tenantId:String!):FederatedOIDCProviderTenantRel!assignRateLimitToTenant(allowUnlimited:Boolean limit:Int rateLimitId:String!rateLimitPeriodMinutes:Int tenantId:String!):TenantRateLimitRel assignScopeToClient(clientId:String!scopeId:String!tenantId:String!):ClientTenantScopeRel assignScopeToTenant(scopeId:String!tenantId:String!):TenantScopeRel createAccessRule(accessRuleInput:AccessRuleCreateInput!):AccessRule createAuthenticationGroup(authenticationGroupInput:AuthenticationGroupCreateInput!):AuthenticationGroup createClient(clientInput:ClientCreateInput!):Client createFederatedOIDCProvider(oidcProviderInput:FederatedOIDCProviderCreateInput!):FederatedOIDCProvider createGroup(groupInput:GroupCreateInput!):Group createRateLimit(rateLimitInput:RateLimitCreateInput!):RateLimit createRootTenant(tenantInput:TenantCreateInput!):Tenant createScope(scopeInput:ScopeCreateInput!):Scope createScopeConstraintSchema(scopeConstraintSchemaInput:ScopeConstraintSchemaCreateInput!):ScopeConstraintSchema createSigningKey(keyInput:SigningKeyCreateInput!):SigningKey!createTenant(tenantInput:TenantCreateInput!):Tenant deleteAccessRule(accessRuleId:String!):String!deleteAuthenticationGroup(authenticationGroupId:String!):String!deleteClient(clientId:String!):String deleteFederatedOIDCProvider(federatedOIDCProviderId:String!):String!deleteGroup(groupId:String!):String!deleteRateLimit(rateLimitId:String!):String deleteScope(scopeId:String!):String deleteScopeConstraingSchema(scopeConstraintSchemaId:String!):String!deleteSigningKey(keyId:String!):String!deleteTenant(tenantId:String!):String removeAuthenticationGroupFromClient(authenticationGroupId:String!clientId:String!):String removeDomainFromTenantManagement(domain:String!tenantId:String!):String removeFederatedOIDCProviderFromDomain(domain:String!federatedOIDCProviderId:String!):FederatedOIDCProviderDomainRel!removeFederatedOIDCProviderFromTenant(federatedOIDCProviderId:String!tenantId:String!):FederatedOIDCProviderTenantRel!removeRateLimitFromTenant(rateLimitId:String!tenantId:String!):String removeScopeFromClient(clientId:String!scopeId:String!tenantId:String!):String removeScopeFromTenant(scopeId:String!tenantId:String!):String removeUserFromGroup(groupId:String!userId:String!):String updateAccessRule(accessRuleInput:AccessRuleUpdateInput!):AccessRule updateAuthenticationGroup(authenticationGroupInput:AuthenticationGroupUpdateInput!):AuthenticationGroup updateClient(clientInput:ClientUpdateInput!):Client updateFederatedOIDCProvider(oidcProviderInput:FederatedOIDCProviderUpdateInput!):FederatedOIDCProvider updateGroup(groupInput:GroupUpdateInput!):Group updateRateLimit(rateLimitInput:RateLimitUpdateInput!):RateLimit updateRateLimitForTenant(allowUnlimited:Boolean limit:Int rateLimitId:String!rateLimitPeriodMinutes:Int tenantId:String!):TenantRateLimitRel updateRootTenant(tenantInput:TenantUpdateInput!):Tenant updateScope(scopeInput:ScopeUpdateInput!):Scope updateScopeConstraintSchema(scopeConstraintSchemaInput:ScopeConstraintSchemaUpdateInput!):ScopeConstraintSchema updateTenant(tenantInput:TenantUpdateInput!):Tenant}type PreAuthenticationState{clientId:String!codeChallenge:String codeChallengeMethod:String expiresAt:String!redirectUri:String!responseMode:String!responseType:String!scope:String!state:String tenantId:String!token:String!}type Query{getAccessRuleById(accessRuleId:String!):AccessRule getAccessRules(tenantId:String):[AccessRule!]!getAuthenticationGroupById(authenticationGroupId:String!):AuthenticationGroup getAuthenticationGroups(tenantId:String):[AuthenticationGroup!]!getClientById(clientId:String!):Client getClients(tenantId:String):[Client!]!getFederatedOIDCProviderById(federatedOIDCProviderId:String!):FederatedOIDCProvider getFederatedOIDCProviders(tenantId:String):[FederatedOIDCProvider!]!getGroupById(groupId:String!):Group getGroups:[Group!]!getRateLimitById(rateLimitId:String!):RateLimit getRateLimits(tenantId:String):[RateLimit!]!getRootTenant:Tenant!getScope(tenantId:String):[Scope!]!getScopeById(scopeId:String!):Scope getScopeConstraintSchemaById(scopeConstraintSchemaId:String):ScopeConstraintSchema getScopeConstraintSchemas:[ScopeConstraintSchema!]!getSigningKeyById(signingKeyId:String!):SigningKey getSigningKeys(tenantId:String):[SigningKey!]!getTenantById(tenantId:String!):Tenant getTenants:[Tenant!]!getUserById(userId:String!):User getUserGroups(userId:String!):[Group!]!getUsers(tenantId:String):[User!]!}type RateLimit{rateLimitDescription:String rateLimitDomain:String!rateLimitId:String!}input RateLimitCreateInput{rateLimitDescription:String rateLimitDomain:String!}input RateLimitUpdateInput{rateLimitDescription:String rateLimitDomain:String!rateLimitId:String!}type RefreshData{clientId:String!refreshCount:Int!refreshToken:String!refreshTokenClientType:RefreshTokenClientType!tenantId:String!userId:String!}enum RefreshTokenClientType{PKCE SECURE_CLIENT}type Scope{scopeConstraintSchemaId:String scopeDescription:String scopeId:String!scopeName:String!}type ScopeConstraintSchema{schema:String!schemaVersion:Int!scopeConstraintSchemaId:String!scopeId:String!}input ScopeConstraintSchemaCreateInput{schema:String!scopeId:String!}input ScopeConstraintSchemaUpdateInput{schema:String!scopeConstraintSchemaId:String!scopeId:String!}input ScopeCreateInput{scopeConstraintSchemaId:String scopeDescription:String scopeName:String!}input ScopeUpdateInput{scopeConstraintSchemaId:String scopeDescription:String scopeId:String!scopeName:String!}type SigningKey{certificate:String!expiresAt:String!keyId:String!keyType:KeyType!password:String privateKey:String!status:SigningKeyStatus!tenantId:String!use:String!}input SigningKeyCreateInput{certificate:String!keyType:KeyType!password:String privateKey:String!tenantId:String!use:String!}enum SigningKeyStatus{ACTIVE REVOKED}type Tenant{allowUnlimitedRate:Boolean!allowUserSelfRegistration:Boolean!claimsSupported:[String!]!delegatedAuthenticationConstraint:DelegatedAuthenticationConstraint!enabled:Boolean!federatedOIDCProviderId:String markForDelete:Boolean!tenantDescription:String tenantId:String!tenantName:String!tenantType:TenantType!verifyEmailOnSelfRegistration:Boolean!}input TenantCreateInput{allowUnlimitedRate:Boolean!allowUserSelfRegistration:Boolean!claimsSupported:[String!]!delegatedAuthenticationConstraint:DelegatedAuthenticationConstraint!enabled:Boolean!federatedOIDCProviderId:String maxRefreshTokenCount:Int tenantDescription:String tenantId:String!tenantName:String!tenantType:TenantType!verifyEmailOnSelfRegistration:Boolean!}type TenantManagementDomainRel{domain:String!tenantId:String!}type TenantRateLimitRel{allowUnlimitedRate:Boolean rateLimit:Int rateLimitId:String!rateLimitPeriodMinutes:Int tenantId:String!}type TenantScopeRel{accessRuleId:String scopeId:String!tenantId:String!}enum TenantType{IDENTITY_MANAGEMENT IDENTITY_MANAGEMENT_AND_SERVICES ROOT_TENANT SERVICES}input TenantUpdateInput{allowUnlimitedRate:Boolean!allowUserSelfRegistration:Boolean!claimsSupported:[String!]!delegatedAuthenticationConstraint:DelegatedAuthenticationConstraint!enabled:Boolean!federatedOIDCProviderId:String markForDelete:Boolean!maxRefreshTokenCount:Int tenantDescription:String tenantId:String!tenantName:String!tenantType:TenantType!verifyEmailOnSelfRegistration:Boolean!}enum TwoFactorAuthType{EMAIL HARDWARE NONE TEXT TIME_BASED_OTP}type User{address:String countryCode:String createdDate:String!domain:String!email:String!emailVerified:Boolean!federatedOIDCProviderSubjectId:String firstName:String!lastName:String!middleName:String phoneNumber:String preferredLanguageCode:String twoFactorAuthType:TwoFactorAuthType updatedDate:String userId:String!}type UserCredential{hashedPassword:String!salt:String!userId:String!}type UserCredentialHistory{dateCreated:String!hashedPassword:String!hashingAlgorithm:String!salt:String!userId:String!}type UserGroupRel{groupId:String!userId:String!}type UserTenantRel{tenantId:String!userId:String!}`);

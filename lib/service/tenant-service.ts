@@ -4,7 +4,7 @@ import TenantDao from "@/lib/dao/tenant-dao";
 import { getExternalOIDCProvicerDaoImpl, getTenantDaoImpl } from "@/utils/dao-utils";
 import { GraphQLError } from "graphql";
 import { randomUUID } from 'crypto'; 
-import ExternalOIDCProviderDao from "../dao/external-oidc-provider-dao";
+import ExternalOIDCProviderDao from "../dao/federated-oidc-provider-dao";
 
 
 const tenantDao: TenantDao = getTenantDaoImpl();

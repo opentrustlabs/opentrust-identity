@@ -14,8 +14,8 @@ import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { randomBytes, hash } from "node:crypto";
 import AuthenticationGroupDao from "@/lib/dao/authentication-group-dao";
 import FSBasedAuthenticationGroupDao from "@/lib/dao/impl/fs/fs-based-authentication-group-dao";
-import ExternalOIDCProviderDao from "@/lib/dao/external-oidc-provider-dao";
-import FSBasedExternalOIDCProviderDao from "@/lib/dao/impl/fs/fs-based-external-oidc-provider-dao";
+import FederatedOIDCProviderDao from "@/lib/dao/federated-oidc-provider-dao";
+import FSBasedFederatedOidcProviderDao from "@/lib/dao/impl/fs/fs-based-federated-oidc-provider-dao";
 import AuthDao from "@/lib/dao/auth-dao";
 import FSBasedAuthDao from "@/lib/dao/impl/fs/fs-based-auth-dao";
 
@@ -39,17 +39,17 @@ export function getFileContents(fileName: string, defaultContents?: string): any
     return fileContents;
 }
 
-export type TokenEncodingType = "hex" | "base64"
-
+export type TokenEncodingType = "hex" | "base64" | "base64url";
+export type HashAlgorithm = "sha256" | "sha384" | "sha512"; 
 /**
  * 
  * @param length 
- * @param encoding 
+ * @param encoding defaults to base64url
  * @returns 
  */
 export function generateRandomToken(length: number, encoding?: TokenEncodingType){
     if(!encoding){
-        encoding = "base64";
+        encoding = "base64url";
     }
     return randomBytes(length).toString(encoding);
 }
@@ -59,8 +59,8 @@ export function generateRandomToken(length: number, encoding?: TokenEncodingType
  * @returns 
  */
 export function generateCodeVerifierAndChallenge(): {verifier: string, challenge: string} {
-    const verifier: string = generateRandomToken(32, "base64").replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-    const challenge = generateChallenge(verifier); 
+    const verifier: string = generateRandomToken(32);
+    const challenge = generateHash(verifier); 
     return ({
         verifier,
         challenge
@@ -69,11 +69,19 @@ export function generateCodeVerifierAndChallenge(): {verifier: string, challenge
 
 /**
  * 
- * @param verifier 
+ * @param data
+ * @param hashAlgorithm optional defaults to sha256
+ * @param encoding optional defaults to base64url
  * @returns 
  */
-export function generateChallenge(verifier: string): string {
-    return hash("sha256", verifier, "base64url");
+export function generateHash(data: string, hashAlgorithm?: HashAlgorithm, encoding?: TokenEncodingType): string {
+    if(!encoding){
+        encoding = "base64url";
+    }
+    if(!hashAlgorithm){
+        hashAlgorithm = "sha256"
+    }
+    return hash(hashAlgorithm, data, encoding);
 }
 
 export function getTenantDaoImpl(): TenantDao {
@@ -135,12 +143,12 @@ export function getGroupDaoImpl(): GroupDao {
     return new FSBasedGroupDao();
 }
 
-export function getExternalOIDCProvicerDaoImpl(): ExternalOIDCProviderDao {
+export function getFederatedOIDCProvicerDaoImpl(): FederatedOIDCProviderDao {
     const daoStrategy = process.env.DAO_STRATEGY ?? "filesystem";
     if(daoStrategy === "filesystem"){
-        return new FSBasedExternalOIDCProviderDao();
+        return new FSBasedFederatedOidcProviderDao();
     }
-    return new FSBasedExternalOIDCProviderDao();
+    return new FSBasedFederatedOidcProviderDao();
 }
 
 export function getAuthDaoImpl(): AuthDao {

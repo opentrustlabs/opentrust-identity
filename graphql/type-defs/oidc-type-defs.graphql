@@ -43,8 +43,8 @@ type Query {
     getUserGroups(userId: String!): [Group!]!
 
     ## External OIDC Providers
-    getExternalOIDCProviders(tenantId: String): [ExternalOIDCProvider!]!
-    getExternalOIDCProviderById(externalOIDCProviderId: String!): ExternalOIDCProvider
+    getFederatedOIDCProviders(tenantId: String): [FederatedOIDCProvider!]!
+    getFederatedOIDCProviderById(federatedOIDCProviderId: String!): FederatedOIDCProvider
     
 }
 
@@ -114,13 +114,13 @@ type Mutation {
     removeUserFromGroup(userId: String!, groupId: String!): String
 
     ## External OIDC Providers
-    createExternalOIDCProvider(oidcProviderInput: ExternalOIDCProviderCreateInput!): ExternalOIDCProvider
-    updateExternalOIDCProvider(oidcProviderInput: ExternalOIDCProviderUpdateInput!): ExternalOIDCProvider
-    assignExternalOIDCProviderToTenant(externalOIDCProviderId: String!, tenantId: String!): ExternalOIDCProviderTenantRel!
-    removeExternalOIDCProviderFromTenant(externalOIDCProviderId: String!, tenantId: String!): ExternalOIDCProviderTenantRel!
-    assignExternalOIDCProviderToDomain(externalOIDCProviderId: String!, domain: String!): ExternalOIDCProviderDomainRel!
-    removeExternalOIDCProviderFromDomain(externalOIDCProviderId: String!, domain: String!): ExternalOIDCProviderDomainRel!
-    deleteExternalOIDCProvider(externalOIDCProviderId: String!): String!
+    createFederatedOIDCProvider(oidcProviderInput: FederatedOIDCProviderCreateInput!): FederatedOIDCProvider
+    updateFederatedOIDCProvider(oidcProviderInput: FederatedOIDCProviderUpdateInput!): FederatedOIDCProvider
+    assignFederatedOIDCProviderToTenant(federatedOIDCProviderId: String!, tenantId: String!): FederatedOIDCProviderTenantRel!
+    removeFederatedOIDCProviderFromTenant(federatedOIDCProviderId: String!, tenantId: String!): FederatedOIDCProviderTenantRel!
+    assignFederatedOIDCProviderToDomain(federatedOIDCProviderId: String!, domain: String!): FederatedOIDCProviderDomainRel!
+    removeFederatedOIDCProviderFromDomain(federatedOIDCProviderId: String!, domain: String!): FederatedOIDCProviderDomainRel!
+    deleteFederatedOIDCProvider(federatedOIDCProviderId: String!): String!
 
 }
 
@@ -160,7 +160,7 @@ type Tenant {
     verifyEmailOnSelfRegistration: Boolean!
     delegatedAuthenticationConstraint: DelegatedAuthenticationConstraint!
     markForDelete: Boolean!
-    externalOIDCProviderId: String
+    federatedOIDCProviderId: String
     tenantType: TenantType!
 }
 
@@ -181,26 +181,26 @@ enum ClientAuthType {
 # Either client secret should be defined or usePkce should be set to true
 # if no client secret, then client auth type should be NONE
 # refreshTokenAllowed - does the external provider allow for refresh tokens? default false 
-type ExternalOIDCProvider {
-    externalOIDCProviderId: String!
-    externalOIDCProviderName: String!
-    externalOIDCProviderDescription: String
-    externalOIDCProviderTenantId: String
-    externalOIDCProviderClientId: String!
-    externalOIDCProviderClientSecret: String
-    externalOIDCProviderWellKnownUri: String!
+type FederatedOIDCProvider {
+    federatedOIDCProviderId: String!
+    federatedOIDCProviderName: String!
+    federatedOIDCProviderDescription: String
+    federatedOIDCProviderTenantId: String
+    federatedOIDCProviderClientId: String!
+    federatedOIDCProviderClientSecret: String
+    federatedOIDCProviderWellKnownUri: String!
     refreshTokenAllowed: Boolean!
     usePkce: Boolean!
     clientAuthType: ClientAuthType
 }
 
-type ExternalOIDCProviderTenantRel {    
-    externalOIDCProviderId: String!
+type FederatedOIDCProviderTenantRel {    
+    federatedOIDCProviderId: String!
     tenantId: String!
 }
 
-type ExternalOIDCProviderDomainRel {
-    externalOIDCProviderId: String!
+type FederatedOIDCProviderDomainRel {
+    federatedOIDCProviderId: String!
     domain: String!
 }
 
@@ -251,7 +251,7 @@ enum TwoFactorAuthType {
 # 1.    domain is just the domain part of the email
 type User {
     userId: String!
-    externalOIDCProviderSubjectId: String
+    federatedOIDCProviderSubjectId: String
     email: String!
     emailVerified: Boolean!
     domain: String!
@@ -444,10 +444,10 @@ type RefreshData {
     refreshCount: Int!
 }
 
-type ExternalOIDCAuthorizationRel {
+type FederatedOIDCAuthorizationRel {
     state: String!
     codeVerifier: String
-    externalOIDCProviderId: String!
+    federatedOIDCProviderId: String!
     initState: String!
     initRedirectUri: String!
     initTenantId: String!
@@ -465,27 +465,27 @@ type ExternalOIDCAuthorizationRel {
 ################ INPUT TYPES AND RESPONSES FOR MUTATATIONS #################
 ############################################################################
 
-input ExternalOIDCProviderCreateInput {
-    externalOIDCProviderId: String!
-    externalOIDCProviderName: String!
-    externalOIDCProviderDescription: String
-    externalOIDCProviderTenantId: String
-    externalOIDCProviderClientId: String!
-    externalOIDCProviderClientSecret: String
-    externalOIDCProviderWellKnownUri: String!
+input FederatedOIDCProviderCreateInput {
+    federatedOIDCProviderId: String!
+    federatedOIDCProviderName: String!
+    federatedOIDCProviderDescription: String
+    federatedOIDCProviderTenantId: String
+    federatedOIDCProviderClientId: String!
+    federatedOIDCProviderClientSecret: String
+    federatedOIDCProviderWellKnownUri: String!
     refreshTokenAllowed: Boolean!
     usePkce: Boolean!
     clientAuthType: ClientAuthType
 }
 
-input ExternalOIDCProviderUpdateInput {
-    externalOIDCProviderId: String!
-    externalOIDCProviderName: String!
-    externalOIDCProviderDescription: String
-    externalOIDCProviderTenantId: String
-    externalOIDCProviderClientId: String!
-    externalOIDCProviderClientSecret: String
-    externalOIDCProviderWellKnownUri: String!
+input FederatedOIDCProviderUpdateInput {
+    federatedOIDCProviderId: String!
+    federatedOIDCProviderName: String!
+    federatedOIDCProviderDescription: String
+    federatedOIDCProviderTenantId: String
+    federatedOIDCProviderClientId: String!
+    federatedOIDCProviderClientSecret: String
+    federatedOIDCProviderWellKnownUri: String!
     refreshTokenAllowed: Boolean!
     usePkce: Boolean!
     clientAuthType: ClientAuthType
@@ -501,7 +501,7 @@ input TenantCreateInput {
     allowUserSelfRegistration: Boolean!
     verifyEmailOnSelfRegistration: Boolean!
     delegatedAuthenticationConstraint: DelegatedAuthenticationConstraint!
-    externalOIDCProviderId: String
+    federatedOIDCProviderId: String
     maxRefreshTokenCount: Int
     tenantType: TenantType!
 }
@@ -516,7 +516,7 @@ input TenantUpdateInput {
     allowUserSelfRegistration: Boolean!
     verifyEmailOnSelfRegistration: Boolean!
     delegatedAuthenticationConstraint: DelegatedAuthenticationConstraint!
-    externalOIDCProviderId: String
+    federatedOIDCProviderId: String
     markForDelete: Boolean!
     maxRefreshTokenCount: Int
     tenantType: TenantType!

@@ -3,7 +3,7 @@
 import { Tenant, Client, DelegatedAuthenticationConstraint, ExternalOidcProvider, ExternalOidcAuthorizationRel, PreAuthenticationState } from '@/graphql/generated/graphql-types';
 import AuthDao from '@/lib/dao/auth-dao';
 import ClientDao from '@/lib/dao/client-dao';
-import ExternalOIDCProviderDao from '@/lib/dao/external-oidc-provider-dao';
+import ExternalOIDCProviderDao from '@/lib/dao/federated-oidc-provider-dao';
 import TenantDao from '@/lib/dao/tenant-dao';
 import { WellknownConfig } from '@/lib/models/wellknown-config';
 import OIDCServiceClient from '@/lib/service/oidc-service-client';

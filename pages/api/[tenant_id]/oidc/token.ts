@@ -1,18 +1,18 @@
-import { Tenant, Client, DelegatedAuthenticationConstraint, ExternalOidcProvider, ExternalOidcAuthorizationRel, PreAuthenticationState, AuthorizationCodeData, ClientType, RefreshData, RefreshTokenClientType } from '@/graphql/generated/graphql-types';
+import { Tenant, Client, DelegatedAuthenticationConstraint, FederatedOidcProvider, FederatedOidcAuthorizationRel, PreAuthenticationState, AuthorizationCodeData, ClientType, RefreshData, RefreshTokenClientType } from '@/graphql/generated/graphql-types';
 import AuthDao from '@/lib/dao/auth-dao';
 import ClientDao from '@/lib/dao/client-dao';
-import ExternalOIDCProviderDao from '@/lib/dao/external-oidc-provider-dao';
+import FederatedOIDCProviderDao from '@/lib/dao/federated-oidc-provider-dao';
 import TenantDao from '@/lib/dao/tenant-dao';
 import { ErrorResponseBody } from '@/lib/models/error';
 import { WellknownConfig } from '@/lib/models/wellknown-config';
 import OIDCServiceClient from '@/lib/service/oidc-service-client';
 import { ALL_OIDC_SUPPORTED_SCOPE_VALUES, GRANT_TYPE_AUTHORIZATION_CODE, GRANT_TYPE_CLIENT_CREDENTIALS, GRANT_TYPE_REFRESH_TOKEN, GRANT_TYPES_SUPPORTED, OIDC_OPENID_SCOPE } from '@/utils/consts';
-import { generateChallenge, generateCodeVerifierAndChallenge, generateRandomToken, getAuthDaoImpl, getClientDaoImpl, getExternalOIDCProvicerDaoImpl, getTenantDaoImpl } from '@/utils/dao-utils';
+import { generateHash, generateCodeVerifierAndChallenge, generateRandomToken, getAuthDaoImpl, getClientDaoImpl, getFederatedOIDCProvicerDaoImpl, getTenantDaoImpl } from '@/utils/dao-utils';
 import type { NextApiRequest, NextApiResponse } from 'next'
 
 const tenantDao: TenantDao = getTenantDaoImpl();
 const clientDao: ClientDao = getClientDaoImpl();
-const externalOIDCProviderDao: ExternalOIDCProviderDao = getExternalOIDCProvicerDaoImpl();
+const federatedOIDCProviderDao: FederatedOIDCProviderDao = getFederatedOIDCProvicerDaoImpl();
 const authDao: AuthDao = getAuthDaoImpl();
 const oidcServiceClient: OIDCServiceClient = new OIDCServiceClient();
 
@@ -213,7 +213,7 @@ async function handleAuthorizationCodeGrant(tokenData: TokenData, res: NextApiRe
             }
             return res.status(401).json(error);
         }
-        const hashedVerifier = generateChallenge(tokenData.codeVerifier);
+        const hashedVerifier = generateHash(tokenData.codeVerifier);
         if(hashedVerifier !== d.codeChallenge){
             const error: ErrorResponseBody = {
                 statusCode: 401,
@@ -243,7 +243,7 @@ async function handleAuthorizationCodeGrant(tokenData: TokenData, res: NextApiRe
             credentialIsValid = await clientDao.validateClientAuthCredentials(tokenData.clientId, tokenData.clientSecret || "");
         }
         else {
-            credentialIsValid = await clientDao.validateClientAuthJwt(tokenData.authHeader || "");
+            credentialIsValid = await clientDao.validateClientAuthJwt(tokenData.authHeader || "", tokenData.tenantId);
         }
         if(!credentialIsValid){
             const error: ErrorResponseBody = {
@@ -260,6 +260,13 @@ async function handleAuthorizationCodeGrant(tokenData: TokenData, res: NextApiRe
     // TODO
     // Retrieve the user and issue the token response and save the refresh token if the account is enabled for it.
 }
+
+/**
+ * 
+ * @param tokenData 
+ * @param res 
+ * @returns 
+ */
 async function handleRefreshTokenGrant(tokenData: TokenData, res: NextApiResponse){
 
     if(!tokenData.refreshToken){
@@ -274,7 +281,10 @@ async function handleRefreshTokenGrant(tokenData: TokenData, res: NextApiRespons
         return res.status(401).json(error);
     }
 
-    const refreshTokenData: RefreshData | null = await authDao.getRefreshData(tokenData.refreshToken);
+    // We always store the refresh token by its hashed value so that anybody who has access
+    // to the raw data would NOT be able to misuse them.
+    const hashedRefreshToken: string = generateHash(tokenData.refreshToken);
+    const refreshTokenData: RefreshData | null = await authDao.getRefreshData(hashedRefreshToken);
     if(!refreshTokenData){
         const error: ErrorResponseBody = {
             statusCode: 401,
@@ -286,8 +296,6 @@ async function handleRefreshTokenGrant(tokenData: TokenData, res: NextApiRespons
         }
         return res.status(401).json(error);
     }
-
-    // authDao.deleteRefreshData(tokenData.refreshToken);
 
     const client: Client | null = await clientDao.getClientById(refreshTokenData.clientId);
     if(!client){
@@ -353,7 +361,7 @@ async function handleRefreshTokenGrant(tokenData: TokenData, res: NextApiRespons
             credentialIsValid = await clientDao.validateClientAuthCredentials(tokenData.clientId, tokenData.clientSecret || "");
         }
         else {
-            credentialIsValid = await clientDao.validateClientAuthJwt(tokenData.authHeader || "");
+            credentialIsValid = await clientDao.validateClientAuthJwt(tokenData.authHeader || "", tokenData.tenantId);
         }
         if(!credentialIsValid){
             const error: ErrorResponseBody = {
@@ -387,15 +395,17 @@ async function handleRefreshTokenGrant(tokenData: TokenData, res: NextApiRespons
         return res.status(401).json(error);
     }
 
+    const newRefreshToken: string = generateRandomToken(32);
+
     const newRefreshData: RefreshData = {
         clientId: refreshTokenData.clientId,
         refreshCount: refreshTokenData.refreshCount + 1,
-        refreshToken: generateRandomToken(32, "base64"),
+        refreshToken: generateHash(newRefreshToken),
         refreshTokenClientType: refreshTokenData.refreshTokenClientType,
         tenantId: refreshTokenData.tenantId,
         userId: refreshTokenData.userId
     };
-    await authDao.deleteRefreshData(refreshTokenData.refreshToken);
+    await authDao.deleteRefreshData(hashedRefreshToken);
     await authDao.saveRefreshData(newRefreshData);
 
 
@@ -457,7 +467,7 @@ async function handleClientCredentialsGrant(tokenData: TokenData, res: NextApiRe
         credentialIsValid = await clientDao.validateClientAuthCredentials(tokenData.clientId, tokenData.clientSecret || "");
     }
     else {
-        credentialIsValid = await clientDao.validateClientAuthJwt(tokenData.authHeader || "");
+        credentialIsValid = await clientDao.validateClientAuthJwt(tokenData.authHeader || "", tokenData.tenantId);
     }
     if(!credentialIsValid){
         const error: ErrorResponseBody = {
