@@ -5,6 +5,7 @@ import FederatedOIDCProviderDao from '@/lib/dao/federated-oidc-provider-dao';
 import TenantDao from '@/lib/dao/tenant-dao';
 import { ErrorResponseBody } from '@/lib/models/error';
 import { WellknownConfig } from '@/lib/models/wellknown-config';
+import JwtService from '@/lib/service/client-auth-validation-service';
 import OIDCServiceClient from '@/lib/service/oidc-service-client';
 import { ALL_OIDC_SUPPORTED_SCOPE_VALUES, GRANT_TYPE_AUTHORIZATION_CODE, GRANT_TYPE_CLIENT_CREDENTIALS, GRANT_TYPE_REFRESH_TOKEN, GRANT_TYPES_SUPPORTED, OIDC_OPENID_SCOPE } from '@/utils/consts';
 import { generateHash, generateCodeVerifierAndChallenge, generateRandomToken, getAuthDaoImpl, getClientDaoImpl, getFederatedOIDCProvicerDaoImpl, getTenantDaoImpl } from '@/utils/dao-utils';
@@ -15,6 +16,7 @@ const clientDao: ClientDao = getClientDaoImpl();
 const federatedOIDCProviderDao: FederatedOIDCProviderDao = getFederatedOIDCProvicerDaoImpl();
 const authDao: AuthDao = getAuthDaoImpl();
 const oidcServiceClient: OIDCServiceClient = new OIDCServiceClient();
+const jwtService: JwtService = new JwtService();
 
 interface TokenData {
     tenantId: string,
@@ -240,10 +242,10 @@ async function handleAuthorizationCodeGrant(tokenData: TokenData, res: NextApiRe
         }
         let credentialIsValid: boolean = false;
         if(tokenData.clientSecret){
-            credentialIsValid = await clientDao.validateClientAuthCredentials(tokenData.clientId, tokenData.clientSecret || "");
+            credentialIsValid = await jwtService.validateClientAuthCredentials(tokenData.clientId, tokenData.clientSecret || "");
         }
         else {
-            credentialIsValid = await clientDao.validateClientAuthJwt(tokenData.authHeader || "", tokenData.tenantId);
+            credentialIsValid = await jwtService.validateClientAuthJwt(tokenData.authHeader || "", tokenData.clientId, tokenData.tenantId);
         }
         if(!credentialIsValid){
             const error: ErrorResponseBody = {
@@ -358,10 +360,10 @@ async function handleRefreshTokenGrant(tokenData: TokenData, res: NextApiRespons
         }
         let credentialIsValid: boolean = false;
         if(tokenData.clientSecret){
-            credentialIsValid = await clientDao.validateClientAuthCredentials(tokenData.clientId, tokenData.clientSecret || "");
+            credentialIsValid = await jwtService.validateClientAuthCredentials(tokenData.clientId, tokenData.clientSecret || "");
         }
         else {
-            credentialIsValid = await clientDao.validateClientAuthJwt(tokenData.authHeader || "", tokenData.tenantId);
+            credentialIsValid = await jwtService.validateClientAuthJwt(tokenData.authHeader || "", tokenData.clientId, tokenData.tenantId);
         }
         if(!credentialIsValid){
             const error: ErrorResponseBody = {
@@ -464,10 +466,10 @@ async function handleClientCredentialsGrant(tokenData: TokenData, res: NextApiRe
     }
     let credentialIsValid: boolean = false;
     if(tokenData.clientSecret){
-        credentialIsValid = await clientDao.validateClientAuthCredentials(tokenData.clientId, tokenData.clientSecret || "");
+        credentialIsValid = await jwtService.validateClientAuthCredentials(tokenData.clientId, tokenData.clientSecret || "");
     }
     else {
-        credentialIsValid = await clientDao.validateClientAuthJwt(tokenData.authHeader || "", tokenData.tenantId);
+        credentialIsValid = await jwtService.validateClientAuthJwt(tokenData.authHeader || "", tokenData.clientId, tokenData.tenantId);
     }
     if(!credentialIsValid){
         const error: ErrorResponseBody = {

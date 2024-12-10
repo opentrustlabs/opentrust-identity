@@ -459,7 +459,12 @@ type FederatedOIDCAuthorizationRel {
     expiresAt: String!
 }
 
-
+type ClientAuthHistory {
+    jti: String!
+    clientId: String!
+    tenantId: String!
+    exp: Int!
+}
 
 ############################################################################
 ################ INPUT TYPES AND RESPONSES FOR MUTATATIONS #################

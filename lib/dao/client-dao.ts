@@ -1,4 +1,4 @@
-import { Client } from "@/graphql/generated/graphql-types";
+import { Client, ClientAuthHistory } from "@/graphql/generated/graphql-types";
 
 
 abstract class ClientDao {
@@ -13,9 +13,11 @@ abstract class ClientDao {
     
         abstract deleteClient(clientId: string): Promise<void>;
 
-        abstract validateClientAuthCredentials(clientId: string, clientSecret: string): Promise<boolean>;
+        abstract getClientAuthHistoryByJti(jti: string): Promise<ClientAuthHistory | null>;
 
-        abstract validateClientAuthJwt(jwt: string, tenantId: string): Promise<boolean>;
+        abstract saveClientAuthHistory(clientAuthHistory: ClientAuthHistory): Promise<void>;
+
+        abstract deleteClientAuthHistory(jti: string): Promise<void>;
         
 }
 

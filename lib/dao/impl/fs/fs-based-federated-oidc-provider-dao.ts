@@ -3,7 +3,7 @@ import FederatedOidcProviderDao from "../../federated-oidc-provider-dao";
 import { writeFileSync } from "node:fs";
 import path from "node:path";
 import { GraphQLError } from "graphql";
-import { EXTERNAL_OIDC_PROVIDER_FILE, EXTERNAL_OIDC_PROVIDER_TENANT_REL_FILE, EXTERNAL_OIDC_PROVIDER_DOMAIN_REL_FILE } from "@/utils/consts";
+import { FEDERATED_OIDC_PROVIDER_FILE, FEDERATED_OIDC_PROVIDER_TENANT_REL_FILE, FEDERATED_OIDC_PROVIDER_DOMAIN_REL_FILE } from "@/utils/consts";
 import { getFileContents } from "@/utils/dao-utils";
 
 const dataDir = process.env.FS_BASED_DATA_DIR ?? path.join(__dirname);
@@ -11,7 +11,7 @@ const dataDir = process.env.FS_BASED_DATA_DIR ?? path.join(__dirname);
 class FSBasedFederatedOidcProviderDao extends FederatedOidcProviderDao {
 
     public async getFederatedOidcProviders(tenantId?: string): Promise<Array<FederatedOidcProvider>> {
-        let providers: Array<FederatedOidcProvider> = JSON.parse(getFileContents(`${dataDir}/${EXTERNAL_OIDC_PROVIDER_FILE}`, "[]"));
+        let providers: Array<FederatedOidcProvider> = JSON.parse(getFileContents(`${dataDir}/${FEDERATED_OIDC_PROVIDER_FILE}`, "[]"));
         if(tenantId){
             const rels: Array<FederatedOidcProviderTenantRel> = await this.getFederatedOidcProviderTenantRels(tenantId);
             providers = providers.filter(
@@ -41,12 +41,12 @@ class FSBasedFederatedOidcProviderDao extends FederatedOidcProviderDao {
     public async createFederatedOidcProvider(FederatedOidcProvider: FederatedOidcProvider): Promise<FederatedOidcProvider> {
         const providers = await this.getFederatedOidcProviders();
         providers.push(FederatedOidcProvider);
-        writeFileSync(`${dataDir}/${EXTERNAL_OIDC_PROVIDER_FILE}`, JSON.stringify(providers), {encoding: "utf-8"});
+        writeFileSync(`${dataDir}/${FEDERATED_OIDC_PROVIDER_FILE}`, JSON.stringify(providers), {encoding: "utf-8"});
         return Promise.resolve(FederatedOidcProvider);
     }
 
     public async updateFederatedOidcProvider(FederatedOidcProvider: FederatedOidcProvider): Promise<FederatedOidcProvider> {
-        const providers: Array<FederatedOidcProvider> = JSON.parse(getFileContents(`${dataDir}/${EXTERNAL_OIDC_PROVIDER_FILE}`, "[]"));
+        const providers: Array<FederatedOidcProvider> = JSON.parse(getFileContents(`${dataDir}/${FEDERATED_OIDC_PROVIDER_FILE}`, "[]"));
         const provider: FederatedOidcProvider | undefined = providers.find(
             (p: FederatedOidcProvider) => p.federatedOIDCProviderId === FederatedOidcProvider.federatedOIDCProviderId
         )
@@ -62,12 +62,12 @@ class FSBasedFederatedOidcProviderDao extends FederatedOidcProviderDao {
         provider.federatedOIDCProviderWellKnownUri = FederatedOidcProvider.federatedOIDCProviderWellKnownUri;
         provider.refreshTokenAllowed = FederatedOidcProvider.refreshTokenAllowed;
         provider.usePkce = FederatedOidcProvider.usePkce;
-        writeFileSync(`${dataDir}/${EXTERNAL_OIDC_PROVIDER_FILE}`, JSON.stringify(providers), {encoding: "utf-8"});
+        writeFileSync(`${dataDir}/${FEDERATED_OIDC_PROVIDER_FILE}`, JSON.stringify(providers), {encoding: "utf-8"});
         return Promise.resolve(FederatedOidcProvider);
     }
 
     public async getFederatedOidcProviderTenantRels(tenantId?: string): Promise<Array<FederatedOidcProviderTenantRel>> {
-        let rels: Array<FederatedOidcProviderTenantRel> = JSON.parse(getFileContents(`${dataDir}/${EXTERNAL_OIDC_PROVIDER_TENANT_REL_FILE}`, "[]"));
+        let rels: Array<FederatedOidcProviderTenantRel> = JSON.parse(getFileContents(`${dataDir}/${FEDERATED_OIDC_PROVIDER_TENANT_REL_FILE}`, "[]"));
         if(tenantId){
             rels = rels.filter(
                 (rel: FederatedOidcProviderTenantRel) => rel.tenantId === tenantId
@@ -100,7 +100,7 @@ class FSBasedFederatedOidcProviderDao extends FederatedOidcProviderDao {
             federatedOIDCProviderId: federatedOIDCProviderId
         }
         rels.push(newRel);
-        writeFileSync(`${dataDir}/${EXTERNAL_OIDC_PROVIDER_TENANT_REL_FILE}`, JSON.stringify(rels), {encoding: "utf-8"});
+        writeFileSync(`${dataDir}/${FEDERATED_OIDC_PROVIDER_TENANT_REL_FILE}`, JSON.stringify(rels), {encoding: "utf-8"});
         return Promise.resolve(newRel);
     }
 
@@ -109,7 +109,7 @@ class FSBasedFederatedOidcProviderDao extends FederatedOidcProviderDao {
         rels = rels.filter(
             (r: FederatedOidcProviderTenantRel) => !(r.tenantId === tenantId && r.federatedOIDCProviderId === federatedOIDCProviderId)
         );
-        writeFileSync(`${dataDir}/${EXTERNAL_OIDC_PROVIDER_TENANT_REL_FILE}`, JSON.stringify(rels), {encoding: "utf-8"});
+        writeFileSync(`${dataDir}/${FEDERATED_OIDC_PROVIDER_TENANT_REL_FILE}`, JSON.stringify(rels), {encoding: "utf-8"});
         return Promise.resolve({
             tenantId: tenantId,
             federatedOIDCProviderId: federatedOIDCProviderId
@@ -117,7 +117,7 @@ class FSBasedFederatedOidcProviderDao extends FederatedOidcProviderDao {
     }
 
     public async getFederatedOidcProviderDomainRels(): Promise<Array<FederatedOidcProviderDomainRel>>{
-        const domainRels: Array<FederatedOidcProviderDomainRel> = JSON.parse(getFileContents(`${dataDir}/${EXTERNAL_OIDC_PROVIDER_DOMAIN_REL_FILE}`, "[]"));
+        const domainRels: Array<FederatedOidcProviderDomainRel> = JSON.parse(getFileContents(`${dataDir}/${FEDERATED_OIDC_PROVIDER_DOMAIN_REL_FILE}`, "[]"));
         return Promise.resolve(domainRels);
     }
 
@@ -134,7 +134,7 @@ class FSBasedFederatedOidcProviderDao extends FederatedOidcProviderDao {
             federatedOIDCProviderId: federatedOIDCProviderId
         }
         domainRels.push(newRel);
-        writeFileSync(`${dataDir}/${EXTERNAL_OIDC_PROVIDER_DOMAIN_REL_FILE}`, JSON.stringify(domainRels), {encoding: "utf-8"});
+        writeFileSync(`${dataDir}/${FEDERATED_OIDC_PROVIDER_DOMAIN_REL_FILE}`, JSON.stringify(domainRels), {encoding: "utf-8"});
         return Promise.resolve(newRel);
     }
 
@@ -143,7 +143,7 @@ class FSBasedFederatedOidcProviderDao extends FederatedOidcProviderDao {
         domainRels.filter(
             (r: FederatedOidcProviderDomainRel) => !(r.domain === domain && r.federatedOIDCProviderId === federatedOIDCProviderId)
         );
-        writeFileSync(`${dataDir}/${EXTERNAL_OIDC_PROVIDER_DOMAIN_REL_FILE}`, JSON.stringify(domainRels), {encoding: "utf-8"});
+        writeFileSync(`${dataDir}/${FEDERATED_OIDC_PROVIDER_DOMAIN_REL_FILE}`, JSON.stringify(domainRels), {encoding: "utf-8"});
         return Promise.resolve({
             domain: domain,
             federatedOIDCProviderId: federatedOIDCProviderId

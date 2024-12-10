@@ -24,6 +24,18 @@ export default async function handler(
 
     const tenantId = tenant_id as string;
 
+    if(!req.method || req.method.toUpperCase() !== "GET"){
+        const e: ErrorResponseBody =  {
+            statusCode: 405,
+            errorDetails: [{
+                errorKey: "ERROR_METHOD_NOT_ALLOWED",
+                errorMessageCanonical: "Method not allowed",
+                errorMessageTranslated: ""
+            }]
+        };
+        res.status(405).json(e)
+    }
+
     // Check that the tenant exists and is enabled and can perform auth
     // If not, return 404
     const tenant: Tenant | null = await tenantDao.getTenantById(tenantId);

@@ -1,14 +1,14 @@
-import { DelegatedAuthenticationConstraint, ExternalOidcProvider, Tenant, TenantManagementDomainRel } from "@/graphql/generated/graphql-types";
+import { DelegatedAuthenticationConstraint, FederatedOidcProvider, Tenant, TenantManagementDomainRel } from "@/graphql/generated/graphql-types";
 import { OIDCContext } from "@/graphql/graphql-context";
 import TenantDao from "@/lib/dao/tenant-dao";
-import { getExternalOIDCProvicerDaoImpl, getTenantDaoImpl } from "@/utils/dao-utils";
+import { getFederatedOIDCProvicerDaoImpl, getTenantDaoImpl } from "@/utils/dao-utils";
 import { GraphQLError } from "graphql";
 import { randomUUID } from 'crypto'; 
 import ExternalOIDCProviderDao from "../dao/federated-oidc-provider-dao";
 
 
 const tenantDao: TenantDao = getTenantDaoImpl();
-const externalOIDCProviderDao: ExternalOIDCProviderDao = getExternalOIDCProvicerDaoImpl();
+const federatedOIDCProviderDao: ExternalOIDCProviderDao = getFederatedOIDCProvicerDaoImpl();
 
 class TenantService {
 
@@ -53,11 +53,11 @@ class TenantService {
     }
     
     protected async validateTenantInput(tenant: Tenant): Promise<{valid: boolean, errorMessage: string}> {
-        if(tenant.delegatedAuthenticationConstraint === DelegatedAuthenticationConstraint.Exclusive && (!tenant.externalOIDCProviderId || "" === tenant.externalOIDCProviderId)){
+        if(tenant.delegatedAuthenticationConstraint === DelegatedAuthenticationConstraint.Exclusive && (!tenant.federatedOIDCProviderId || "" === tenant.federatedOIDCProviderId)){
             return {valid: false, errorMessage: "ERROR_MISSING_EXTERNAL_OIDC_PROVIDER"};
         }
-        if(tenant.externalOIDCProviderId && "" !== tenant.externalOIDCProviderId){
-            const oidcProvider: ExternalOidcProvider | null = await externalOIDCProviderDao.getExternalOIDCProviderById(tenant.externalOIDCProviderId);
+        if(tenant.federatedOIDCProviderId && "" !== tenant.federatedOIDCProviderId){
+            const oidcProvider: FederatedOidcProvider | null = await federatedOIDCProviderDao.getFederatedOidcProviderById(tenant.federatedOIDCProviderId || "");
             if(!oidcProvider){
                 return {valid: false, errorMessage: "ERROR_INVALID_OIDC_PROVIDER"};
             }

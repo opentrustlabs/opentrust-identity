@@ -36,14 +36,14 @@ export const CLIENT_TENANT_SCOPE_REL_FILE = "client-tenant-scope-rel.json";
 export const AUTHENTICATION_GROUP_FILE = "authentication-groups.json";
 export const AUTHENTICATION_GROUP_CLIENT_REL_FILE = "authentication-groups-client-rel.json";
 export const GROUP_FILE = "groups.json";
-export const EXTERNAL_OIDC_PROVIDER_FILE = "external-oidc-provider.json";
-export const EXTERNAL_OIDC_PROVIDER_TENANT_REL_FILE = "external-oidc-provider-tenant-rel.json";
-export const EXTERNAL_OIDC_PROVIDER_DOMAIN_REL_FILE = "external-oidc-provider-domain-rel.json";
+export const FEDERATED_OIDC_PROVIDER_FILE = "federated-oidc-provider.json";
+export const FEDERATED_OIDC_PROVIDER_TENANT_REL_FILE = "federated-oidc-provider-tenant-rel.json";
+export const FEDERATED_OIDC_PROVIDER_DOMAIN_REL_FILE = "federated-oidc-provider-domain-rel.json";
 export const PRE_AUTHENTICATION_STATE_FILE = "pre-authentication-state.json";
 export const AUTHORIZATION_CODE_DATA_FILE = "authorization-code-data.json";
 export const REFRESH_TOKEN_FILE = "refresh-token.json";
-export const EXTERNAL_OIDC_AUTHORIZATION_REL_FILE = "external-oidc-authorization-rel.json";
-
+export const FEDERATED_OIDC_AUTHORIZATION_REL_FILE = "federated-oidc-authorization-rel.json";
+export const CLIENT_AUTH_HISTORY_FILE = "client-auth-history.json";
 
 
 // ************************************************************************** //
@@ -141,12 +141,12 @@ export const USER_UPDATE_SCOPE="user.update";
 export const USER_DELETE_SCOPE="user.delete";
 export const USER_READ_SCOPE="user.read";
 
-export const EXTERNAL_OIDC_PROVIDER_CREATE_SCOPE="externaloidcprovider.create";
-export const EXTERNAL_OIDC_PROVIDER_UPDATE_SCOPE="externaloidcprovider.update";
-export const EXTERNAL_OIDC_PROVIDER_DELETE_SCOPE="externaloidcprovider.delete";
-export const EXTERNAL_OIDC_PROVIDER_READ_SCOPE="externaloidcprovider.read";
-export const EXTERNAL_OIDC_PROVIDER_TENANT_ASSIGN_SCOPE="externaloidcprovider.tenant.assign";
-export const EXTERNAL_OIDC_PROVIDER_TENANT_REMOVE_SCOPE="externaloidcprovider.tenant.remove";
+export const FEDERATED_OIDC_PROVIDER_CREATE_SCOPE="federatedoidcprovider.create";
+export const FEDERATED_OIDC_PROVIDER_UPDATE_SCOPE="federatedoidcprovider.update";
+export const FEDERATED_OIDC_PROVIDER_DELETE_SCOPE="federatedoidcprovider.delete";
+export const FEDERATED_OIDC_PROVIDER_READ_SCOPE="federatedoidcprovider.read";
+export const FEDERATED_OIDC_PROVIDER_TENANT_ASSIGN_SCOPE="federatedoidcprovider.tenant.assign";
+export const FEDERATED_OIDC_PROVIDER_TENANT_REMOVE_SCOPE="federatedoidcprovider.tenant.remove";
 
 
 // These are for the exclusive use of the application and cannot be changed. The names
@@ -176,7 +176,7 @@ export const ALL_INTERNAL_SCOPE_NAMES = [
     // Users
     USER_CREATE_SCOPE, USER_UPDATE_SCOPE, USER_DELETE_SCOPE, USER_READ_SCOPE,
     // External OIDC providers
-    EXTERNAL_OIDC_PROVIDER_CREATE_SCOPE, EXTERNAL_OIDC_PROVIDER_UPDATE_SCOPE, EXTERNAL_OIDC_PROVIDER_DELETE_SCOPE, EXTERNAL_OIDC_PROVIDER_READ_SCOPE, EXTERNAL_OIDC_PROVIDER_TENANT_ASSIGN_SCOPE, EXTERNAL_OIDC_PROVIDER_TENANT_REMOVE_SCOPE
+    FEDERATED_OIDC_PROVIDER_CREATE_SCOPE, FEDERATED_OIDC_PROVIDER_UPDATE_SCOPE, FEDERATED_OIDC_PROVIDER_DELETE_SCOPE, FEDERATED_OIDC_PROVIDER_READ_SCOPE, FEDERATED_OIDC_PROVIDER_TENANT_ASSIGN_SCOPE, FEDERATED_OIDC_PROVIDER_TENANT_REMOVE_SCOPE
 ];
 
 
@@ -194,7 +194,7 @@ export const ROOT_TENANT_EXCLUSIVE_INTERNAL_SCOPE_NAMES = [
     // Rate limits
     RATE_LIMIT_CREATE_SCOPE, RATE_LIMIT_UPDATE_SCOPE, RATE_LIMIT_DELETE_SCOPE, RATE_LIMIT_TENANT_ASSIGN_SCOPE, RATE_LIMIT_TENANT_REMOVE_SCOPE, RATE_LIMIT_TENANT_UPDATE_SCOPE,
     // External OIDC providers
-    EXTERNAL_OIDC_PROVIDER_CREATE_SCOPE, EXTERNAL_OIDC_PROVIDER_UPDATE_SCOPE, EXTERNAL_OIDC_PROVIDER_DELETE_SCOPE, EXTERNAL_OIDC_PROVIDER_TENANT_ASSIGN_SCOPE, EXTERNAL_OIDC_PROVIDER_TENANT_REMOVE_SCOPE
+    FEDERATED_OIDC_PROVIDER_CREATE_SCOPE, FEDERATED_OIDC_PROVIDER_UPDATE_SCOPE, FEDERATED_OIDC_PROVIDER_DELETE_SCOPE, FEDERATED_OIDC_PROVIDER_TENANT_ASSIGN_SCOPE, FEDERATED_OIDC_PROVIDER_TENANT_REMOVE_SCOPE
 ];
 
 // These are the scope values which can be used WITHIN a tenant. So actions such as 
@@ -227,7 +227,7 @@ export const DEFAULT_TENANT_BOUND_INTERNAL_SCOPE_NAMES = [
     // Users
     USER_CREATE_SCOPE, USER_UPDATE_SCOPE, USER_DELETE_SCOPE, USER_READ_SCOPE,
     // External OIDC providers
-    EXTERNAL_OIDC_PROVIDER_READ_SCOPE
+    FEDERATED_OIDC_PROVIDER_READ_SCOPE
 ];
 
 
@@ -258,7 +258,7 @@ export const ROOT_TENANT_VIEW_GROUP_SCOPE_NAMES = [
     LOGIN_GROUP_READ_SCOPE,
     GROUP_READ_SCOPE,
     USER_READ_SCOPE,
-    EXTERNAL_OIDC_PROVIDER_READ_SCOPE
+    FEDERATED_OIDC_PROVIDER_READ_SCOPE
 ];
 
 
@@ -278,3 +278,7 @@ export const PASSWORD_SALT_LENGTH=96;
 export const PASSWORD_MINIMUM_LENGTH=10;
 export const PASSWORD_MAXIMUM_LENGTH=64;
 export const PASSWORD_PATTERN="[A-Za-z0-9_-!@#]";
+
+
+// Client-related constants
+export const CLIENT_SECRET_ENCODING = "base64";

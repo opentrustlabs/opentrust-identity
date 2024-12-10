@@ -1,10 +1,11 @@
 import { Client, Tenant } from "@/graphql/generated/graphql-types";
 import { OIDCContext } from "@/graphql/graphql-context";
 import ClientDao from "@/lib/dao/client-dao";
-import { getClientDaoImpl, getTenantDaoImpl } from "@/utils/dao-utils";
+import { generateRandomToken, getClientDaoImpl, getTenantDaoImpl } from "@/utils/dao-utils";
 import TenantDao from "@/lib/dao/tenant-dao";
 import { GraphQLError } from "graphql/error/GraphQLError";
 import { randomUUID } from 'crypto'; 
+import { CLIENT_SECRET_ENCODING } from "@/utils/consts";
 
 const clientDao: ClientDao = getClientDaoImpl();
 const tenantDao: TenantDao = getTenantDaoImpl();
@@ -46,6 +47,7 @@ class ClientService {
             })
         }
         client.clientId = randomUUID().toString();
+        client.clientSecret = generateRandomToken(32, CLIENT_SECRET_ENCODING);
         return clientDao.createClient(client);                
     }
 
