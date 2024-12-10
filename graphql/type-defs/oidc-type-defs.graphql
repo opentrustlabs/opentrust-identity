@@ -335,7 +335,7 @@ type SigningKey {
     privateKey: String!
     password: String
     certificate: String!
-    expiresAt: String!
+    expiresAtMs: Float!
     status: SigningKeyStatus!
 }
 
@@ -415,7 +415,7 @@ type PreAuthenticationState {
     scope: String!
     tenantId: String!
     clientId: String!
-    expiresAt: String!
+    expiresAtMs: Float!
 }
 
 type AuthorizationCodeData {
@@ -427,7 +427,7 @@ type AuthorizationCodeData {
     codeChallengeMethod: String
     codeChallenge: String
     userId: String!
-    expiresAt: String!
+    expiresAtMs: Float!
 }
 
 enum RefreshTokenClientType {
@@ -456,14 +456,14 @@ type FederatedOIDCAuthorizationRel {
     initCodeChallengeMethod: String
     initCodeChallenge: String
     initResponseMode: String!
-    expiresAt: String!
+    expiresAtMs: Float!
 }
 
 type ClientAuthHistory {
     jti: String!
     clientId: String!
     tenantId: String!
-    exp: Int!
+    expiresAtSeconds: Float!
 }
 
 ############################################################################

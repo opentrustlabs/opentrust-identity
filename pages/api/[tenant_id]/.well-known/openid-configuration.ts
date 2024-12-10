@@ -62,7 +62,6 @@ export default async function handler(
             jwks_uri: `${AUTH_DOMAIN}/${tenantId}/oidc/keys`,
             token_endpoint_auth_methods_supported: [
                 "client_secret_post",
-                "client_secret_basic",
                 "client_secret_jwt",
                 "none"
             ],

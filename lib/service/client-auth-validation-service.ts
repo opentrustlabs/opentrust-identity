@@ -111,7 +111,7 @@ class JwtService {
             return Promise.resolve(false);
         }
         // even if the token itself is not signed correctly, save the history of this jti to prevent replay
-        clientDao.saveClientAuthHistory({jti, clientId: payload.sub, tenantId, exp: payload.exp});
+        clientDao.saveClientAuthHistory({jti, clientId: payload.sub, tenantId, expiresAtSeconds: payload.exp});
         const secretKey = createSecretKey(client.clientSecret, CLIENT_SECRET_ENCODING);
         
         const p: JWTVerifyResult = await jwtVerify(jwt, secretKey, {});

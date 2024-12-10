@@ -1,21 +1,16 @@
-import { Tenant, Client, DelegatedAuthenticationConstraint, FederatedOidcProvider, FederatedOidcAuthorizationRel, PreAuthenticationState, AuthorizationCodeData, ClientType, RefreshData, RefreshTokenClientType } from '@/graphql/generated/graphql-types';
+import { Tenant, Client, AuthorizationCodeData, ClientType, RefreshData, RefreshTokenClientType } from '@/graphql/generated/graphql-types';
 import AuthDao from '@/lib/dao/auth-dao';
 import ClientDao from '@/lib/dao/client-dao';
-import FederatedOIDCProviderDao from '@/lib/dao/federated-oidc-provider-dao';
 import TenantDao from '@/lib/dao/tenant-dao';
 import { ErrorResponseBody } from '@/lib/models/error';
-import { WellknownConfig } from '@/lib/models/wellknown-config';
 import JwtService from '@/lib/service/client-auth-validation-service';
-import OIDCServiceClient from '@/lib/service/oidc-service-client';
-import { ALL_OIDC_SUPPORTED_SCOPE_VALUES, GRANT_TYPE_AUTHORIZATION_CODE, GRANT_TYPE_CLIENT_CREDENTIALS, GRANT_TYPE_REFRESH_TOKEN, GRANT_TYPES_SUPPORTED, OIDC_OPENID_SCOPE } from '@/utils/consts';
-import { generateHash, generateCodeVerifierAndChallenge, generateRandomToken, getAuthDaoImpl, getClientDaoImpl, getFederatedOIDCProvicerDaoImpl, getTenantDaoImpl } from '@/utils/dao-utils';
+import { GRANT_TYPE_AUTHORIZATION_CODE, GRANT_TYPE_CLIENT_CREDENTIALS, GRANT_TYPE_REFRESH_TOKEN, GRANT_TYPES_SUPPORTED } from '@/utils/consts';
+import { generateHash, generateRandomToken, getAuthDaoImpl, getClientDaoImpl, getTenantDaoImpl } from '@/utils/dao-utils';
 import type { NextApiRequest, NextApiResponse } from 'next'
 
 const tenantDao: TenantDao = getTenantDaoImpl();
 const clientDao: ClientDao = getClientDaoImpl();
-const federatedOIDCProviderDao: FederatedOIDCProviderDao = getFederatedOIDCProvicerDaoImpl();
 const authDao: AuthDao = getAuthDaoImpl();
-const oidcServiceClient: OIDCServiceClient = new OIDCServiceClient();
 const jwtService: JwtService = new JwtService();
 
 interface TokenData {
@@ -28,12 +23,8 @@ interface TokenData {
     code: string | null,
     refreshToken: string | null,
     clientSecret: string | null,
-    authHeader: string | null
+    bearerToken: string | null
 }
-
-const {
-    AUTH_DOMAIN
-} = process.env;
 
 export default async function handler(
 	req: NextApiRequest,
@@ -83,17 +74,6 @@ export default async function handler(
     } = req.body;
 
     const authHeader: string | null = req.headers.authorization || null;
-
-    console.log("tenant_id " + tenant_id as string);
-    console.log("client_id: " + client_id as string);
-    console.log("scope: " + scope as string);
-    console.log("redirect_uri: " + redirect_uri as string);
-    console.log("grant_type: " + grant_type as string);
-    console.log("code_verifier: " + code_verifier as string);
-    console.log("code: " + code as string);
-    console.log("client_secret: " + client_secret as string);
-    console.log("authorization header: " + authHeader);
-
     const tenantId = tenant_id as string;
     const clientId = client_id ? client_id as string : null;
     const clientSecret = client_secret ? client_secret as string : null;
@@ -138,7 +118,7 @@ export default async function handler(
         clientSecret,
         code: oidcCode,
         codeVerifier,
-        authHeader: authHeader !== null ? authHeader.replace(/^Bearer\s+/, ""): null,
+        bearerToken: authHeader !== null ? authHeader.replace(/^Bearer\s+/, ""): null,
         grantType,
         redirectUri,
         refreshToken,
@@ -186,7 +166,7 @@ async function handleAuthorizationCodeGrant(tokenData: TokenData, res: NextApiRe
     if(d.redirectUri !== tokenData.redirectUri){
 
     }
-    if(d.expiresAt !== ""){
+    if(d.expiresAtMs < Date.now()){
 
     }
     if(d.scope !== tokenData.scope){
@@ -229,7 +209,7 @@ async function handleAuthorizationCodeGrant(tokenData: TokenData, res: NextApiRe
         }
     }
     else{
-        if(tokenData.authHeader === null && tokenData.clientSecret === null){
+        if(tokenData.bearerToken === null && tokenData.clientSecret === null){
             const error: ErrorResponseBody = {
                 statusCode: 401,
                 errorDetails: [{
@@ -245,7 +225,7 @@ async function handleAuthorizationCodeGrant(tokenData: TokenData, res: NextApiRe
             credentialIsValid = await jwtService.validateClientAuthCredentials(tokenData.clientId, tokenData.clientSecret || "");
         }
         else {
-            credentialIsValid = await jwtService.validateClientAuthJwt(tokenData.authHeader || "", tokenData.clientId, tokenData.tenantId);
+            credentialIsValid = await jwtService.validateClientAuthJwt(tokenData.bearerToken || "", tokenData.clientId, tokenData.tenantId);
         }
         if(!credentialIsValid){
             const error: ErrorResponseBody = {
@@ -347,7 +327,7 @@ async function handleRefreshTokenGrant(tokenData: TokenData, res: NextApiRespons
     
     // Validate the client credentials if this is not a PKCE enabled refresh token
     if(refreshTokenData.refreshTokenClientType !== RefreshTokenClientType.Pkce){
-        if(tokenData.authHeader === null && tokenData.clientSecret === null){
+        if(tokenData.bearerToken === null && tokenData.clientSecret === null){
             const error: ErrorResponseBody = {
                 statusCode: 401,
                 errorDetails: [{
@@ -363,7 +343,7 @@ async function handleRefreshTokenGrant(tokenData: TokenData, res: NextApiRespons
             credentialIsValid = await jwtService.validateClientAuthCredentials(tokenData.clientId, tokenData.clientSecret || "");
         }
         else {
-            credentialIsValid = await jwtService.validateClientAuthJwt(tokenData.authHeader || "", tokenData.clientId, tokenData.tenantId);
+            credentialIsValid = await jwtService.validateClientAuthJwt(tokenData.bearerToken || "", tokenData.clientId, tokenData.tenantId);
         }
         if(!credentialIsValid){
             const error: ErrorResponseBody = {
@@ -453,7 +433,7 @@ async function handleClientCredentialsGrant(tokenData: TokenData, res: NextApiRe
         }
         return res.status(401).json(error);
     }
-    if(tokenData.authHeader === null && tokenData.clientSecret === null){
+    if(tokenData.bearerToken === null && tokenData.clientSecret === null){
         const error: ErrorResponseBody = {
             statusCode: 401,
             errorDetails: [{
@@ -469,7 +449,7 @@ async function handleClientCredentialsGrant(tokenData: TokenData, res: NextApiRe
         credentialIsValid = await jwtService.validateClientAuthCredentials(tokenData.clientId, tokenData.clientSecret || "");
     }
     else {
-        credentialIsValid = await jwtService.validateClientAuthJwt(tokenData.authHeader || "", tokenData.clientId, tokenData.tenantId);
+        credentialIsValid = await jwtService.validateClientAuthJwt(tokenData.bearerToken || "", tokenData.clientId, tokenData.tenantId);
     }
     if(!credentialIsValid){
         const error: ErrorResponseBody = {

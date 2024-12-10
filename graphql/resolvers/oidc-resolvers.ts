@@ -206,7 +206,7 @@ const resolvers: Resolvers = {
                 certificate: keyInput.certificate,
                 privateKey: keyInput.privateKey,
                 password: keyInput.password,
-                expiresAt: "", // TODO - derive from the certificate's expiration
+                expiresAtMs: 0, // TODO - derive from the certificate's expiration
                 status: SigningKeyStatus.Active
             };
             await keysService.createSigningKey(key);

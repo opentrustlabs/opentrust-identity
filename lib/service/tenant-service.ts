@@ -4,11 +4,11 @@ import TenantDao from "@/lib/dao/tenant-dao";
 import { getFederatedOIDCProvicerDaoImpl, getTenantDaoImpl } from "@/utils/dao-utils";
 import { GraphQLError } from "graphql";
 import { randomUUID } from 'crypto'; 
-import ExternalOIDCProviderDao from "../dao/federated-oidc-provider-dao";
+import FederatedOIDCProviderDao from "../dao/federated-oidc-provider-dao";
 
 
 const tenantDao: TenantDao = getTenantDaoImpl();
-const federatedOIDCProviderDao: ExternalOIDCProviderDao = getFederatedOIDCProvicerDaoImpl();
+const federatedOIDCProviderDao: FederatedOIDCProviderDao = getFederatedOIDCProvicerDaoImpl();
 
 class TenantService {
 

@@ -34,6 +34,7 @@ export default async function handler(
 		code_challenge_method,
 		response_type,
 		response_mode } = req.query;
+        
     // https://api.sigmaaldrich.com/auth/v1/openid/keys
     // https://login.microsoftonline.com/common/discovery/v2.0/keys
     // https://login.microsoftonline.com/common/v2.0/.well-known/openid-configuration
@@ -207,13 +208,11 @@ export default async function handler(
 
             // If we are supposed to use PKCE, then we need to generate the code challenge and save it too.
             const {verifier, challenge} = federatedOIDCProvider.usePkce ? generateCodeVerifierAndChallenge() : {verifier: null, challenge: null}; 
-            console.log("verifier is: " + verifier);
-            console.log("challenge is: " + challenge);
-            
+                        
             const federatedOidcAuthorizationRel: FederatedOidcAuthorizationRel = {
                 state: generateRandomToken(32, "hex"),
                 codeVerifier: verifier,
-                expiresAt: new Date().getTime().toString(),
+                expiresAtMs: Date.now() + 5 /* minutes */ * 60 /* seconds/min  */ * 1000 /* ms/sec */,
                 federatedOIDCProviderId: federatedOIDCProvider.federatedOIDCProviderId,
                 initClientId: clientId,
                 initRedirectUri: redirectUri,
@@ -244,7 +243,7 @@ export default async function handler(
 
     const preAuthenticationState: PreAuthenticationState = {
         clientId: clientId,
-        expiresAt: new Date().getTime().toString(),
+        expiresAtMs: Date.now() + 5 /* minutes */ * 60 /* seconds/min  */ * 1000 /* ms/sec */,
         redirectUri: redirectUri,
         responseMode: responseMode,
         responseType: responseType,

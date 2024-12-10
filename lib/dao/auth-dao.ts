@@ -20,7 +20,7 @@ abstract class AuthDao {
 
     abstract deleteRefreshData(refreshToken: string): Promise<void>;
 
-    abstract saveFederatedOIDCAuthorizationRel(externalOIDCAuthorizationRel: FederatedOidcAuthorizationRel): Promise<FederatedOidcAuthorizationRel>;
+    abstract saveFederatedOIDCAuthorizationRel(federatedOIDCAuthorizationRel: FederatedOidcAuthorizationRel): Promise<FederatedOidcAuthorizationRel>;
 
     abstract getFederatedOIDCAuthorizationRel(state: string): Promise<FederatedOidcAuthorizationRel | null>;
 
