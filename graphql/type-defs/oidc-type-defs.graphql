@@ -141,6 +141,23 @@ enum TenantType {
     SERVICES
 }
 
+enum LoginFailurePolicyType {
+    LOCK_USER_ACCOUNT
+    PAUSE
+    PAUSE_THEN_LOCK
+    BACKOFF
+    BACKOFF_THEN_LOCK    
+}
+
+type LoginFailurePolicy {
+    loginFailurePolicyType: LoginFailurePolicyType!
+    failureThreshold: Int!
+    pauseDurationMinutes: Int
+    numberOfPauseCyclesBeforeLocking: Int
+    initBackoffDurationMinutes: Int
+    numberOfBackoffCyclesBeforeLocking: Int
+}
+
 ########
 # 1.    tenantId -           Write once, read only
 # 2.    enabled -            true | false
@@ -256,6 +273,11 @@ enum TwoFactorAuthType {
     HARDWARE
 }
 
+enum NameOrder {
+    EASTERN_NAME_ORDER
+    WESTERN_NAME_ORDER
+}
+
 # 1.    domain is just the domain part of the email
 type User {
     userId: String!
@@ -273,6 +295,8 @@ type User {
     countryCode: String
     preferredLanguageCode: String
     twoFactorAuthType: TwoFactorAuthType
+    locked: Boolean!
+    nameOrder: NameOrder!
 }
 
 type UserTenantRel {
@@ -450,6 +474,7 @@ type RefreshData {
     userId: String!
     refreshTokenClientType: RefreshTokenClientType!
     refreshCount: Int!
+    scope: String!
 }
 
 type FederatedOIDCAuthorizationRel {
@@ -515,7 +540,6 @@ input TenantCreateInput {
     verifyEmailOnSelfRegistration: Boolean!
     federatedAuthenticationConstraint: FederatedAuthenticationConstraint!
     federatedOIDCProviderId: String
-    maxRefreshTokenCount: Int
     tenantType: TenantType!
 }
 
@@ -531,7 +555,6 @@ input TenantUpdateInput {
     federatedAuthenticationConstraint: FederatedAuthenticationConstraint!
     federatedOIDCProviderId: String
     markForDelete: Boolean!
-    maxRefreshTokenCount: Int
     tenantType: TenantType!
 }
 

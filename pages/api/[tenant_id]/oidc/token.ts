@@ -1,13 +1,15 @@
-import { Tenant, Client, AuthorizationCodeData, ClientType, RefreshData, RefreshTokenClientType } from '@/graphql/generated/graphql-types';
+import { Tenant, Client, AuthorizationCodeData, ClientType, RefreshData, RefreshTokenClientType, User } from '@/graphql/generated/graphql-types';
 import AuthDao from '@/lib/dao/auth-dao';
 import ClientDao from '@/lib/dao/client-dao';
 import TenantDao from '@/lib/dao/tenant-dao';
 import { OIDCErrorResponseBody } from '@/lib/models/error';
-import JwtService from '@/lib/service/client-auth-validation-service';
+import ClientAuthValidationService from '@/lib/service/client-auth-validation-service';
 import { GRANT_TYPE_AUTHORIZATION_CODE, GRANT_TYPE_CLIENT_CREDENTIALS, GRANT_TYPE_REFRESH_TOKEN, GRANT_TYPES_SUPPORTED, OIDC_TOKEN_ERROR_INVALID_CLIENT, OIDC_TOKEN_ERROR_INVALID_GRANT, OIDC_TOKEN_ERROR_INVALID_REQUEST, OIDC_TOKEN_ERROR_UNAUTHORIZED_CLIENT, OidcTokenErrorType } from '@/utils/consts';
-import { generateHash, generateRandomToken, getAuthDaoImpl, getClientDaoImpl, getTenantDaoImpl } from '@/utils/dao-utils';
+import { generateHash, generateRandomToken, getAuthDaoImpl, getClientDaoImpl, getIdentityDaoImpl, getTenantDaoImpl } from '@/utils/dao-utils';
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { randomUUID } from 'crypto'; 
+import JwtService from '@/lib/service/jwt-service';
+import { OIDCTokenResponse } from '@/lib/models/token-response';
 
 
 // TODO 
@@ -20,6 +22,7 @@ import { randomUUID } from 'crypto';
 const tenantDao: TenantDao = getTenantDaoImpl();
 const clientDao: ClientDao = getClientDaoImpl();
 const authDao: AuthDao = getAuthDaoImpl();
+const clientAuthValidationService: ClientAuthValidationService = new ClientAuthValidationService();
 const jwtService: JwtService = new JwtService();
 
 interface TokenData {
@@ -68,7 +71,7 @@ export default async function handler(
         return res.status(400).json(error);
     }
 
-    // read the tenant id from the query params in the request
+    // read the tenant id from the query params (in this case, the path params) in the request
     const {
 		tenant_id
     } = req.query;
@@ -239,10 +242,10 @@ async function handleAuthorizationCodeGrant(tokenData: TokenData, res: NextApiRe
         }
         let credentialIsValid: boolean = false;
         if(tokenData.clientSecret){
-            credentialIsValid = await jwtService.validateClientAuthCredentials(tokenData.clientId, tokenData.clientSecret || "");
+            credentialIsValid = await clientAuthValidationService.validateClientAuthCredentials(tokenData.clientId, tokenData.clientSecret || "");
         }
         else {
-            credentialIsValid = await jwtService.validateClientAuthJwt(tokenData.clientAssertion || "", tokenData.clientId, tokenData.tenantId);
+            credentialIsValid = await clientAuthValidationService.validateClientAuthJwt(tokenData.clientAssertion || "", tokenData.clientId, tokenData.tenantId);
         }
         if(!credentialIsValid){
             const error: OIDCErrorResponseBody = {
@@ -256,8 +259,36 @@ async function handleAuthorizationCodeGrant(tokenData: TokenData, res: NextApiRe
             return res.status(400).json(error);
         }
     }
-    // TODO
-    // Retrieve the user and issue the token response and save the refresh token if the account is enabled for it.
+    
+    const oidcTokenResponse: OIDCTokenResponse | null = await jwtService.signUserJwt(d.userId, d.clientId, d.tenantId, d.scope);
+    
+    if(!oidcTokenResponse){
+        const error: OIDCErrorResponseBody = {
+            error: OIDC_TOKEN_ERROR_UNAUTHORIZED_CLIENT,
+            error_code: "0000721",
+            error_description: "ERROR_TOKEN_REQUEST_FAILED_WITH_INVALID_USER",
+            error_uri: "",
+            timestamp: Date.now(),
+            trace_id: tokenData.traceId
+        }
+        return res.status(400).json(error);
+    }
+
+    if(oidcTokenResponse.refresh_token){
+        const refreshData: RefreshData = {
+            clientId: d.clientId,
+            refreshCount: 1,
+            refreshToken: generateHash(oidcTokenResponse.refresh_token),
+            refreshTokenClientType: d.codeChallenge ? RefreshTokenClientType.Pkce : RefreshTokenClientType.SecureClient,
+            tenantId: d.tenantId,
+            userId: d.userId,
+            scope: d.scope
+        }
+        await authDao.saveRefreshData(refreshData);
+    };
+
+    return res.status(200).json(oidcTokenResponse);
+    
 }
 
 /**
@@ -271,7 +302,7 @@ async function handleRefreshTokenGrant(tokenData: TokenData, res: NextApiRespons
     if(!tokenData.refreshToken){
         const error: OIDCErrorResponseBody = {
             error: OIDC_TOKEN_ERROR_INVALID_REQUEST,
-            error_code: "0000721",
+            error_code: "0000722",
             error_description: "ERROR_TOKEN_REQUEST_FAILED_WITH_MISSING_REFRESH_TOKEN",
             error_uri: "",
             timestamp: Date.now(),
@@ -287,7 +318,7 @@ async function handleRefreshTokenGrant(tokenData: TokenData, res: NextApiRespons
     if(!refreshTokenData){
         const error: OIDCErrorResponseBody = {
             error: OIDC_TOKEN_ERROR_INVALID_REQUEST,
-            error_code: "0000722",
+            error_code: "0000723",
             error_description: "ERROR_TOKEN_REQUEST_FAILED_WITH_INVALID_REFRESH_TOKEN",
             error_uri: "",
             timestamp: Date.now(),
@@ -300,7 +331,7 @@ async function handleRefreshTokenGrant(tokenData: TokenData, res: NextApiRespons
     if(!client){
         const error: OIDCErrorResponseBody = {
             error: OIDC_TOKEN_ERROR_INVALID_REQUEST,
-            error_code: "0000723",
+            error_code: "0000724",
             error_description: "ERROR_TOKEN_REQUEST_FAILED_WITH_MISSING_CLIENT",
             error_uri: "",
             timestamp: Date.now(),
@@ -311,7 +342,7 @@ async function handleRefreshTokenGrant(tokenData: TokenData, res: NextApiRespons
     if(client.enabled !== true){
         const error: OIDCErrorResponseBody = {
             error: OIDC_TOKEN_ERROR_INVALID_CLIENT,
-            error_code: "0000724",
+            error_code: "0000725",
             error_description: "ERROR_TOKEN_REQUEST_FAILED_WITH_INVALID_CLIENT",
             error_uri: "",
             timestamp: Date.now(),
@@ -322,7 +353,7 @@ async function handleRefreshTokenGrant(tokenData: TokenData, res: NextApiRespons
     if(client.tenantId !== tokenData.tenantId){
         const error: OIDCErrorResponseBody = {
             error: OIDC_TOKEN_ERROR_INVALID_CLIENT,
-            error_code: "0000725",
+            error_code: "0000726",
             error_description: "ERROR_TOKEN_REQUEST_FAILED_WITH_INVALID_TENANT_AND_CLIENT",
             error_uri: "",
             timestamp: Date.now(),
@@ -333,7 +364,7 @@ async function handleRefreshTokenGrant(tokenData: TokenData, res: NextApiRespons
     if(client.clientType === ClientType.ServiceAccountOnly){        
         const error: OIDCErrorResponseBody = {
             error: OIDC_TOKEN_ERROR_INVALID_CLIENT,
-            error_code: "0000726",
+            error_code: "0000727",
             error_description: "ERROR_TOKEN_REQUEST_FAILED_WITH_INVALID_CLIENT_TYPE_FOR_REFRESH_TOKEN_GRANT",
             error_uri: "",
             timestamp: Date.now(),
@@ -347,7 +378,7 @@ async function handleRefreshTokenGrant(tokenData: TokenData, res: NextApiRespons
         if(tokenData.clientAssertion === null && tokenData.clientSecret === null){
             const error: OIDCErrorResponseBody = {
                 error: OIDC_TOKEN_ERROR_INVALID_REQUEST,
-                error_code: "0000727",
+                error_code: "0000728",
                 error_description: "ERROR_TOKEN_REQUEST_FAILED_WITH_MISSING_CLIENT_CREDENTIALS",
                 error_uri: "",
                 timestamp: Date.now(),
@@ -357,15 +388,15 @@ async function handleRefreshTokenGrant(tokenData: TokenData, res: NextApiRespons
         }
         let credentialIsValid: boolean = false;
         if(tokenData.clientSecret){
-            credentialIsValid = await jwtService.validateClientAuthCredentials(tokenData.clientId, tokenData.clientSecret || "");
+            credentialIsValid = await clientAuthValidationService.validateClientAuthCredentials(tokenData.clientId, tokenData.clientSecret || "");
         }
         else {
-            credentialIsValid = await jwtService.validateClientAuthJwt(tokenData.clientAssertion || "", tokenData.clientId, tokenData.tenantId);
+            credentialIsValid = await clientAuthValidationService.validateClientAuthJwt(tokenData.clientAssertion || "", tokenData.clientId, tokenData.tenantId);
         }
         if(!credentialIsValid){
             const error: OIDCErrorResponseBody = {
                 error: OIDC_TOKEN_ERROR_INVALID_CLIENT,
-                error_code: "0000728",
+                error_code: "0000729",
                 error_description: "ERROR_TOKEN_REQUEST_FAILED_WITH_INVALID_CLIENT_CREDENTIALS",
                 error_uri: "",
                 timestamp: Date.now(),
@@ -381,10 +412,10 @@ async function handleRefreshTokenGrant(tokenData: TokenData, res: NextApiRespons
         // Delete the refresh token ONLY in this error case, since in the others
         // there is still a possibility that the client was malicious or misconfigured
         // and so we should maintain the refresh token in the meantime.
-        authDao.deleteRefreshData(tokenData.refreshToken);
+        authDao.deleteRefreshData(hashedRefreshToken);
         const error: OIDCErrorResponseBody = {
             error: OIDC_TOKEN_ERROR_INVALID_REQUEST,
-            error_code: "0000729",
+            error_code: "0000730",
             error_description: "ERROR_TOKEN_REQUEST_FAILED_WITH_MAXIMUM_REFRESH_COUNT_REACHED",
             error_uri: "",
             timestamp: Date.now(),
@@ -393,21 +424,33 @@ async function handleRefreshTokenGrant(tokenData: TokenData, res: NextApiRespons
         return res.status(400).json(error);
     }
 
-    const newRefreshToken: string = generateRandomToken(32);
-
-    const newRefreshData: RefreshData = {
-        clientId: refreshTokenData.clientId,
-        refreshCount: refreshTokenData.refreshCount + 1,
-        refreshToken: generateHash(newRefreshToken),
-        refreshTokenClientType: refreshTokenData.refreshTokenClientType,
-        tenantId: refreshTokenData.tenantId,
-        userId: refreshTokenData.userId
+    const oidcTokenResponse: OIDCTokenResponse | null = await jwtService.signUserJwt(refreshTokenData.userId, refreshTokenData.clientId, refreshTokenData.tenantId, refreshTokenData.scope);
+    if(!oidcTokenResponse){
+        const error: OIDCErrorResponseBody = {
+            error: OIDC_TOKEN_ERROR_INVALID_REQUEST,
+            error_code: "0000731",
+            error_description: "ERROR_TOKEN_REQUEST_FAILED_WITH_INVALID_USER",
+            error_uri: "",
+            timestamp: Date.now(),
+            trace_id: tokenData.traceId
+        }
+        return res.status(400).json(error);
+    }
+    if(oidcTokenResponse.refresh_token){
+        const newRefreshData: RefreshData = {
+            clientId: refreshTokenData.clientId,
+            refreshCount: refreshTokenData.refreshCount + 1,
+            refreshToken: generateHash(oidcTokenResponse.refresh_token),
+            refreshTokenClientType: refreshTokenData.refreshTokenClientType,
+            tenantId: refreshTokenData.tenantId,
+            userId: refreshTokenData.userId,
+            scope: refreshTokenData.scope
+        }
+        await authDao.saveRefreshData(newRefreshData);
     };
     await authDao.deleteRefreshData(hashedRefreshToken);
-    await authDao.saveRefreshData(newRefreshData);
-
-
     
+    return res.status(200).json(oidcTokenResponse);
 
 }
 async function handleClientCredentialsGrant(tokenData: TokenData, res: NextApiResponse){
@@ -416,7 +459,7 @@ async function handleClientCredentialsGrant(tokenData: TokenData, res: NextApiRe
     if(!tenant || tenant.enabled !== true){
         const error: OIDCErrorResponseBody = {
             error: OIDC_TOKEN_ERROR_INVALID_CLIENT,
-            error_code: "0000730",
+            error_code: "0000732",
             error_description: "ERROR_TOKEN_REQUEST_FAILED_WITH_INVALID_TENANT",
             error_uri: "",
             timestamp: Date.now(),
@@ -429,7 +472,7 @@ async function handleClientCredentialsGrant(tokenData: TokenData, res: NextApiRe
     if(!client || client.enabled !== true || client.tenantId !== tenant.tenantId ){
         const error: OIDCErrorResponseBody = {
             error: OIDC_TOKEN_ERROR_INVALID_CLIENT,
-            error_code: "0000731",
+            error_code: "0000733",
             error_description: "ERROR_TOKEN_REQUEST_FAILED_WITH_INVALID_CLIENT",
             error_uri: "",
             timestamp: Date.now(),
@@ -441,7 +484,7 @@ async function handleClientCredentialsGrant(tokenData: TokenData, res: NextApiRe
     if(client.clientType === ClientType.UserDelegatedPermissionsOnly){
         const error: OIDCErrorResponseBody = {
             error: OIDC_TOKEN_ERROR_INVALID_CLIENT,
-            error_code: "0000732",
+            error_code: "0000734",
             error_description: "ERROR_TOKEN_REQUEST_FAILED_WITH_INVALID_CLIENT_TYPE_FOR_CLIENT_CREDENTIALS_GRANT",
             error_uri: "",
             timestamp: Date.now(),
@@ -452,7 +495,7 @@ async function handleClientCredentialsGrant(tokenData: TokenData, res: NextApiRe
     if(tokenData.clientAssertion === null && tokenData.clientSecret === null){
         const error: OIDCErrorResponseBody = {
             error: OIDC_TOKEN_ERROR_INVALID_REQUEST,
-            error_code: "0000733",
+            error_code: "0000735",
             error_description: "ERROR_TOKEN_REQUEST_FAILED_WITH_MISSING_CLIENT_CREDENTIALS",
             error_uri: "",
             timestamp: Date.now(),
@@ -462,15 +505,15 @@ async function handleClientCredentialsGrant(tokenData: TokenData, res: NextApiRe
     }
     let credentialIsValid: boolean = false;
     if(tokenData.clientSecret){
-        credentialIsValid = await jwtService.validateClientAuthCredentials(tokenData.clientId, tokenData.clientSecret || "");
+        credentialIsValid = await clientAuthValidationService.validateClientAuthCredentials(tokenData.clientId, tokenData.clientSecret || "");
     }
     else {
-        credentialIsValid = await jwtService.validateClientAuthJwt(tokenData.clientAssertion || "", tokenData.clientId, tokenData.tenantId);
+        credentialIsValid = await clientAuthValidationService.validateClientAuthJwt(tokenData.clientAssertion || "", tokenData.clientId, tokenData.tenantId);
     }
     if(!credentialIsValid){
         const error: OIDCErrorResponseBody = {
             error: OIDC_TOKEN_ERROR_INVALID_CLIENT,
-            error_code: "0000734",
+            error_code: "0000736",
             error_description: "ERROR_TOKEN_REQUEST_FAILED_WITH_INVALID_CLIENT_CREDENTIALS",
             error_uri: "",
             timestamp: Date.now(),
@@ -480,6 +523,19 @@ async function handleClientCredentialsGrant(tokenData: TokenData, res: NextApiRe
     }
     // TODO
     // Issue the JWT based on the client id
+    const oidcTokenResponse: OIDCTokenResponse | null = await jwtService.signClientJwt(client, tenant);
+    if(!oidcTokenResponse){
+        const error: OIDCErrorResponseBody = {
+            error: OIDC_TOKEN_ERROR_INVALID_CLIENT,
+            error_code: "0000737",
+            error_description: "ERROR_TOKEN_REQUEST_FAILED_WITH_INVALID_CLIENT",
+            error_uri: "",
+            timestamp: Date.now(),
+            trace_id: tokenData.traceId
+        }
+        return res.status(400).json(error);
+    }
 
+    return res.status(200).json(oidcTokenResponse);
 
 }

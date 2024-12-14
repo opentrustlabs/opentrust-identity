@@ -10,6 +10,7 @@ import SigningKeysDao from "@/lib/dao/keys-dao";
 import RateLimitDao from "@/lib/dao/rate-limit-dao";
 import ScopeDao from "@/lib/dao/scope-dao";
 import TenantDao from "@/lib/dao/tenant-dao";
+import IdentityDao from "@/lib/dao/identity-dao";
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { randomBytes, hash } from "node:crypto";
 import AuthenticationGroupDao from "@/lib/dao/authentication-group-dao";
@@ -18,6 +19,7 @@ import FederatedOIDCProviderDao from "@/lib/dao/federated-oidc-provider-dao";
 import FSBasedFederatedOidcProviderDao from "@/lib/dao/impl/fs/fs-based-federated-oidc-provider-dao";
 import AuthDao from "@/lib/dao/auth-dao";
 import FSBasedAuthDao from "@/lib/dao/impl/fs/fs-based-auth-dao";
+import FSBasedIdentityDao from "@/lib/dao/impl/fs/fs-based-identity-dao";
 
 
 /**
@@ -157,4 +159,12 @@ export function getAuthDaoImpl(): AuthDao {
         return new FSBasedAuthDao();
     }
     return new FSBasedAuthDao();
+}
+
+export function getIdentityDaoImpl(): IdentityDao {
+    const daoStrategy = process.env.DAO_STRATEGY ?? "filesystem";
+    if(daoStrategy === "filesystem"){
+        return new FSBasedIdentityDao();
+    }
+    return new FSBasedIdentityDao();
 }

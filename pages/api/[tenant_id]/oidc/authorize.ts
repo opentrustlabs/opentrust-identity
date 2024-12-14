@@ -1,4 +1,4 @@
-import { Tenant, Client, DelegatedAuthenticationConstraint, FederatedOidcProvider, FederatedOidcAuthorizationRel, PreAuthenticationState, ClientType, FederatedAuthenticationConstraint } from '@/graphql/generated/graphql-types';
+import { Tenant, Client, FederatedAuthenticationConstraint, FederatedOidcProvider, FederatedOidcAuthorizationRel, PreAuthenticationState, ClientType } from '@/graphql/generated/graphql-types';
 import AuthDao from '@/lib/dao/auth-dao';
 import ClientDao from '@/lib/dao/client-dao';
 import FederatedOIDCProviderDao from '@/lib/dao/federated-oidc-provider-dao';
@@ -180,45 +180,37 @@ export default async function handler(
 		return;
 	}
 	if (tenant.federatedAuthenticationConstraint === FederatedAuthenticationConstraint.Exclusive) {
-
-        // TODO
         // 1.   Need to look up all of the federated IdPs associated to this tenant.
         // 2.   If there is just one, then redirect immediately.
-        // 3.   Otherwise, show the login page.
-		if (!tenant.federatedOIDCProviderId) {
-			res.status(302).setHeader("location", `/authorize/login?tenant_id=${tenantId}&client_id=${clientId}&state=${oidcState}&error=unauthorized_client&error_message=ERROR_TENANT_INCORRECTLY_CONFIGURED_FOR_EXTERNAL_OIDC_PROVIDER_INVALID_PROVIDER_ID&redirect_uri=${redirectUri}&scope=${oidcScope}&response_type=${responseType}&response_mode=${responseMode}`);
-			res.end();
-			return;
-		}
-		// TODO
-		// Lookup the federated OIDC provider and redirect the user immediately. Need to
-		// Set the state, scope, client, response type, etc and save it for later use.
-        const federatedOIDCProvider: FederatedOidcProvider | null = await federatedOIDCProviderDao.getFederatedOidcProviderById(tenant.federatedOIDCProviderId || "");
-        if(!federatedOIDCProvider){
-            res.status(302).setHeader("location", `/authorize/login?tenant_id=${tenantId}&client_id=${clientId}&state=${oidcState}&error=unauthorized_client&error_message=ERROR_TENANT_INCORRECTLY_CONFIGURED_FOR_EXTERNAL_OIDC_PROVIDER_INVALID_PROVIDER&redirect_uri=${redirectUri}&scope=${oidcScope}&response_type=${responseType}&response_mode=${responseMode}`);
+        // 3.   Otherwise, show the login page as below with the saved temporary token -> incoming data relationship.
+        const oidcProviders: Array<FederatedOidcProvider> = await federatedOIDCProviderDao.getFederatedOidcProviders(tenantId);
+        if(!oidcProviders || oidcProviders.length === 0){
+            res.status(302).setHeader("location", `/authorize/login?tenant_id=${tenantId}&client_id=${clientId}&state=${oidcState}&error=unauthorized_client&error_message=ERROR_TENANT_INCORRECTLY_CONFIGURED_FOR_FEDERATED_OIDC_PROVIDER_NO_PROVIDERS_DEFINED&redirect_uri=${redirectUri}&scope=${oidcScope}&response_type=${responseType}&response_mode=${responseMode}`);
 			res.end();
 			return;
         }
-        else {
+		// Use the only OIDC provider and redirect the user immediately. Need to
+		// Set the state, scope, client, response type, etc and save it for later use.
+        if(oidcProviders.length === 1){
             // create state, etc, and save that data with the incoming state, etc.
             const wellKnownConfig: WellknownConfig | null = await oidcServiceClient.getWellKnownConfig(
-                federatedOIDCProvider.federatedOIDCProviderWellKnownUri
+                oidcProviders[0].federatedOIDCProviderWellKnownUri
                 //"https://api.sigmaaldrich.com/auth/.well-known/openid-configuration"
             );
             if(!wellKnownConfig){
-                res.status(302).setHeader("location", `/authorize/login?tenant_id=${tenantId}&client_id=${clientId}&state=${oidcState}&error=unauthorized_client&error_message=ERROR_TENANT_INCORRECTLY_CONFIGURED_FOR_EXTERNAL_OIDC_PROVIDER_INVALID_WELL_KNOWN_URI&redirect_uri=${redirectUri}&scope=${oidcScope}&response_type=${responseType}&response_mode=${responseMode}`);
+                res.status(302).setHeader("location", `/authorize/login?tenant_id=${tenantId}&client_id=${clientId}&state=${oidcState}&error=unauthorized_client&error_message=ERROR_TENANT_INCORRECTLY_CONFIGURED_FOR_FEDERATED_OIDC_PROVIDER_INVALID_WELL_KNOWN_URI&redirect_uri=${redirectUri}&scope=${oidcScope}&response_type=${responseType}&response_mode=${responseMode}`);
                 res.end();
                 return;
             }
 
             // If we are supposed to use PKCE, then we need to generate the code challenge and save it too.
-            const {verifier, challenge} = federatedOIDCProvider.usePkce ? generateCodeVerifierAndChallenge() : {verifier: null, challenge: null}; 
+            const {verifier, challenge} = oidcProviders[0].usePkce ? generateCodeVerifierAndChallenge() : {verifier: null, challenge: null}; 
                         
             const federatedOidcAuthorizationRel: FederatedOidcAuthorizationRel = {
                 state: generateRandomToken(32, "hex"),
                 codeVerifier: verifier,
                 expiresAtMs: Date.now() + 5 /* minutes */ * 60 /* seconds/min  */ * 1000 /* ms/sec */,
-                federatedOIDCProviderId: federatedOIDCProvider.federatedOIDCProviderId,
+                federatedOIDCProviderId: oidcProviders[0].federatedOIDCProviderId,
                 initClientId: clientId,
                 initRedirectUri: redirectUri,
                 initResponseMode: responseMode,
@@ -230,14 +222,14 @@ export default async function handler(
             }
             await authDao.saveFederatedOIDCAuthorizationRel(federatedOidcAuthorizationRel);
             
-            const codeChallengeQueryParams = federatedOIDCProvider.usePkce ? `&code_challenge=${challenge}&code_challenge_method=S256` : "";
-            res.status(302).setHeader("location", `${wellKnownConfig.authorization_endpoint}?client_id=${federatedOIDCProvider.federatedOIDCProviderClientId}&state=${federatedOidcAuthorizationRel.state}&response_type=code&response_mode=query&redirect_uri=${AUTH_DOMAIN}${"/api/openid/return&scope=openid%20email%20profile%20offline_access"}${codeChallengeQueryParams}`);
+            const codeChallengeQueryParams = oidcProviders[0].usePkce ? `&code_challenge=${challenge}&code_challenge_method=S256` : "";
+            res.status(302).setHeader("location", `${wellKnownConfig.authorization_endpoint}?client_id=${oidcProviders[0].federatedOIDCProviderClientId}&state=${federatedOidcAuthorizationRel.state}&response_type=code&response_mode=query&redirect_uri=${AUTH_DOMAIN}${"/api/openid/return&scope=openid%20email%20profile%20offline_access"}${codeChallengeQueryParams}`);
 			res.end();
-			return;
+			return;            
         }
 	}
 
-	// TODO
+
 	// In the success case, create a unique key for the query parameter which maps 
 	// all of the incoming values to a single record and return it instead of the multiple 
 	// query params.

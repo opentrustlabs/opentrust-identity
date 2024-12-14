@@ -3,7 +3,7 @@ import { decodeJwt, JWTPayload, jwtVerify, JWTVerifyResult } from "jose";
 import TenantDao from "@/lib/dao/tenant-dao";
 import ClientDao from "@/lib/dao/client-dao";
 import { getClientDaoImpl, getTenantDaoImpl } from "@/utils/dao-utils";
-import { createSecretKey } from "node:crypto";
+import { createSecretKey, KeyObject } from "node:crypto";
 import { CLIENT_SECRET_ENCODING } from "@/utils/consts";
 
 const {
@@ -13,7 +13,7 @@ const {
 const tenantDao: TenantDao = getTenantDaoImpl();
 const clientDao: ClientDao = getClientDaoImpl();
 
-class JwtService {
+class ClientAuthValidationService {
 
 
     /**
@@ -112,7 +112,7 @@ class JwtService {
         }
         // even if the token itself is not signed correctly, save the history of this jti to prevent replay
         clientDao.saveClientAuthHistory({jti, clientId: payload.sub, tenantId, expiresAtSeconds: payload.exp});
-        const secretKey = createSecretKey(client.clientSecret, CLIENT_SECRET_ENCODING);
+        const secretKey: KeyObject = createSecretKey(client.clientSecret, CLIENT_SECRET_ENCODING);
         
         const p: JWTVerifyResult = await jwtVerify(jwt, secretKey, {});
         if(!p.payload){
@@ -125,4 +125,4 @@ class JwtService {
 
 }
 
-export default JwtService;
+export default ClientAuthValidationService;
