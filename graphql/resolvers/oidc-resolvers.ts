@@ -84,8 +84,9 @@ const resolvers: Resolvers = {
                 allowUserSelfRegistration: tenantInput.allowUserSelfRegistration,
                 verifyEmailOnSelfRegistration: tenantInput.verifyEmailOnSelfRegistration,
                 federatedAuthenticationConstraint: tenantInput.federatedAuthenticationConstraint,
-                markForDelete: false,                
-                tenantType: TenantType.RootTenant
+                markForDelete: false,
+                tenantType: TenantType.RootTenant,
+                allowSocialLogin: false
             };
             await tenantService.createRootTenant(tenant);
             return tenant;
@@ -103,7 +104,8 @@ const resolvers: Resolvers = {
                 verifyEmailOnSelfRegistration: tenantInput.verifyEmailOnSelfRegistration,
                 federatedAuthenticationConstraint: tenantInput.federatedAuthenticationConstraint,
                 markForDelete: tenantInput.markForDelete,
-                tenantType: TenantType.RootTenant
+                tenantType: TenantType.RootTenant,
+                allowSocialLogin: false
             }
             await tenantService.updateRootTenant(tenant);
             return tenant;
@@ -121,7 +123,8 @@ const resolvers: Resolvers = {
                 verifyEmailOnSelfRegistration: tenantInput.verifyEmailOnSelfRegistration,
                 federatedAuthenticationConstraint: tenantInput.federatedAuthenticationConstraint,
                 markForDelete: false,
-                tenantType: tenantInput.tenantType
+                tenantType: tenantInput.tenantType,
+                allowSocialLogin: tenantInput.allowSocialLogin
             }
             await tenantService.createTenant(tenant);
             return tenant; 
@@ -139,7 +142,8 @@ const resolvers: Resolvers = {
                 verifyEmailOnSelfRegistration: tenantInput.verifyEmailOnSelfRegistration,
                 federatedAuthenticationConstraint: tenantInput.federatedAuthenticationConstraint,
                 markForDelete: tenantInput.markForDelete,
-                tenantType: tenantInput.tenantType
+                tenantType: tenantInput.tenantType,
+                allowSocialLogin: tenantInput.allowSocialLogin
             }
             const updatedTenant: Tenant = await tenantService.updateTenant(tenant);
             return updatedTenant;
@@ -346,7 +350,8 @@ const resolvers: Resolvers = {
                 federatedOIDCProviderClientSecret: oidcProviderInput.federatedOIDCProviderClientSecret,
                 federatedOIDCProviderDescription: oidcProviderInput.federatedOIDCProviderDescription,
                 federatedOIDCProviderTenantId: oidcProviderInput.federatedOIDCProviderTenantId,
-                scopes: []
+                scopes: [],
+                federatedOIDCProviderType: oidcProviderInput.federatedOIDCProviderType
             };
             const providerService: FederatedOIDCProviderService = new FederatedOIDCProviderService(oidcContext);
             await providerService.createFederatedOIDCProvider(oidcProvider);
@@ -364,7 +369,8 @@ const resolvers: Resolvers = {
                 federatedOIDCProviderClientSecret: oidcProviderInput.federatedOIDCProviderClientSecret,
                 federatedOIDCProviderDescription: oidcProviderInput.federatedOIDCProviderDescription,
                 federatedOIDCProviderTenantId: oidcProviderInput.federatedOIDCProviderTenantId,
-                scopes: []
+                scopes: [],
+                federatedOIDCProviderType: oidcProviderInput.federatedOIDCProviderType
             };
             const providerService: FederatedOIDCProviderService = new FederatedOIDCProviderService(oidcContext);
             await providerService.updateFederatedOIDCProvider(oidcProvider);

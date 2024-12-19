@@ -2,7 +2,6 @@ import { Tenant, TenantManagementDomainRel } from "@/graphql/generated/graphql-t
 import TenantDAO from "../../tenant-dao";
 import { writeFileSync } from "node:fs";
 import path from "node:path";
-//import { randomUUID } from 'crypto'; 
 import { GraphQLError } from "graphql";
 import { ROOT_TENANT_FILE, TENANT_FILE, TENANT_MANAGEMENT_DOMAIN_REL_FILE } from "@/utils/consts";
 import { getFileContents } from "@/utils/dao-utils";
@@ -28,10 +27,8 @@ class FSBasedTenantDao extends TenantDAO {
         const rootTenant: Tenant = await this.getRootTenant();
         rootTenant.allowUnlimitedRate = tenant.allowUnlimitedRate;
         rootTenant.claimsSupported = tenant.claimsSupported;
-        
-        // TODO - check to make sure that any email domains do not already belong to
-        // another tenant
-        rootTenant.enabled = tenant.enabled;
+                
+        //rootTenant.enabled = tenant.enabled;
         rootTenant.tenantDescription = tenant.tenantDescription;
         rootTenant.tenantName = tenant.tenantName;
         

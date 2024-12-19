@@ -125,9 +125,11 @@ type Mutation {
 }
 
 
-# NOT_ALLOWED - No external OIDC provider can be attached to this tenant
-# EXCLUSIVE   - Use ONLY the single OIDC provider that is configured
-# PERMISSIVE  - Allow many different external OIDC providers to be attached to this tenant
+# NOT_ALLOWED - No federated OIDC provider can be attached to this tenant
+# EXCLUSIVE   - Use ONLY the OIDC providers that are configured. Typically this will be a single OIDC provider,
+#               but may be more than one in cases of collaboration within a tenant among many different
+#               organizations.
+# PERMISSIVE  - Allow many different federated OIDC providers to be attached to this tenant
 enum FederatedAuthenticationConstraint {
     NOT_ALLOWED
     EXCLUSIVE
@@ -174,10 +176,12 @@ type Tenant {
     claimsSupported: [String!]!
     allowUnlimitedRate: Boolean!
     allowUserSelfRegistration: Boolean!
+    allowSocialLogin: Boolean!
     verifyEmailOnSelfRegistration: Boolean!
     federatedAuthenticationConstraint: FederatedAuthenticationConstraint!
     markForDelete: Boolean!
     tenantType: TenantType!
+
 }
 
 # Does the tenant have certain users with email domains that can
@@ -194,13 +198,17 @@ enum OIDCClientAuthType {
     NONE
 }
 
-
+enum FederatedOIDCProviderType {
+    SOCIAL
+    ENTERPRISE
+}
 
 # Either client secret should be defined or usePkce should be set to true
 # if no client secret, then client auth type should be NONE
 # refreshTokenAllowed - does the external provider allow for refresh tokens? default false 
 #
-# icon -> in case the login screen wants to display a "Sign in with Google/Facebook/Twitter + <Google/Facebook/Twitter Icon>"
+# socialLoginIcon -> social login, in case the login screen wants to display a "Sign in with Google/Facebook/Twitter + <Google/Facebook/Twitter Icon>"
+# socialLoginDisplayName -> social login, the name to display 
 type FederatedOIDCProvider {
     federatedOIDCProviderId: String!
     federatedOIDCProviderName: String!
@@ -212,13 +220,18 @@ type FederatedOIDCProvider {
     refreshTokenAllowed: Boolean!
     scopes: [String!]!
     usePkce: Boolean!
-    clientAuthType: OIDCClientAuthType
-    icon: String
-    displayName: String
+    clientAuthType: OIDCClientAuthType!
+    federatedOIDCProviderType: FederatedOIDCProviderType!
+    socialLoginIcon: String
+    socialLoginDisplayName: String
 }
 
-
 type FederatedOIDCProviderTenantRel {    
+    federatedOIDCProviderId: String!
+    tenantId: String!
+}
+
+type SocialOIDCProviderTenantRel {
     federatedOIDCProviderId: String!
     tenantId: String!
 }
@@ -520,7 +533,8 @@ input FederatedOIDCProviderCreateInput {
     federatedOIDCProviderWellKnownUri: String!
     refreshTokenAllowed: Boolean!
     usePkce: Boolean!
-    clientAuthType: OIDCClientAuthType
+    federatedOIDCProviderType: FederatedOIDCProviderType!
+    clientAuthType: OIDCClientAuthType!
 }
 
 input FederatedOIDCProviderUpdateInput {
@@ -533,7 +547,8 @@ input FederatedOIDCProviderUpdateInput {
     federatedOIDCProviderWellKnownUri: String!
     refreshTokenAllowed: Boolean!
     usePkce: Boolean!
-    clientAuthType: OIDCClientAuthType
+    federatedOIDCProviderType: FederatedOIDCProviderType!
+    clientAuthType: OIDCClientAuthType!
 }
 
 input TenantCreateInput {
@@ -545,6 +560,7 @@ input TenantCreateInput {
     allowUnlimitedRate: Boolean!
     allowUserSelfRegistration: Boolean!
     verifyEmailOnSelfRegistration: Boolean!
+    allowSocialLogin: Boolean!
     federatedAuthenticationConstraint: FederatedAuthenticationConstraint!
     federatedOIDCProviderId: String
     tenantType: TenantType!
@@ -559,6 +575,7 @@ input TenantUpdateInput {
     allowUnlimitedRate: Boolean!
     allowUserSelfRegistration: Boolean!
     verifyEmailOnSelfRegistration: Boolean!
+    allowSocialLogin: Boolean!
     federatedAuthenticationConstraint: FederatedAuthenticationConstraint!
     federatedOIDCProviderId: String
     markForDelete: Boolean!

@@ -158,12 +158,19 @@ export default async function handler(
     // const encryptedData: string | null = await kms.encryptWithKeyWrapping(dataToEncrypt, "additionalauthenticateddata");
     // const decryptedData = await kms.decryptWithKeyWrapping(encryptedData || "", "additionalauthenticateddata");
     
-    const encryptedData: string | null = await kms.encrypt(dataToEncrypt, "additionalauthenticateddata");
-    const decryptedData = await kms.decrypt(encryptedData || "", "additionalauthenticateddata");
+    // const encryptedData: string | null = await kms.encrypt(dataToEncrypt, "additionalauthenticateddata");
+    // const decryptedData = await kms.decrypt(encryptedData || "", "additionalauthenticateddata");
+
+    // const encryptedData: Buffer | null = await kms.encryptBufferWithKeyWrapping(Buffer.from(dataToEncrypt, "utf-8"), "additionalauthenticateddata");
+    // const decryptedData: Buffer | null = encryptedData ? await kms.decryptBufferWithKeyWrapping(encryptedData, "additionalauthenticateddata") : null;
+
+    const encryptedData: Buffer | null = await kms.encryptBuffer(Buffer.from(dataToEncrypt, "utf-8"), "additionalauthenticateddata");
+    const decryptedData: Buffer | null = encryptedData ? await kms.decryptBuffer(encryptedData, "additionalauthenticateddata") : null;
+
     const obj = {
         data: dataToEncrypt,
-        encryptedData,
-        decryptedData
+        encryptedData: encryptedData ? encryptedData.toString("base64") : null,
+        decryptedData: decryptedData ? decryptedData.toString("utf-8") : null
     }
 
     return res.status(200).json(obj);

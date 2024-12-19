@@ -16,13 +16,14 @@ const allKeys: Array<KmsKey> = JSON.parse(getFileContents(`${dataDir}/${KMS_KEYS
 
 class FSBasedKms extends BaseKms {
 
+
     /**
      * 
-     * @param data 
+     * @param data Max length of data is 64K
      * @param aad 
      * @returns 
      */
-    public async encrypt(data: string, aad?: string): Promise<string | null>{
+    public async  encryptBuffer(data: Buffer, aad?: string): Promise<Buffer | null> {
 
         if(data.length > MAX_ENCRYPTION_LENGTH){
             return Promise.resolve(null);
@@ -43,7 +44,7 @@ class FSBasedKms extends BaseKms {
             cipher.setAAD(Buffer.from(aad));
         }
         // utf-8 is the input encoding
-        let encrypted: Buffer = cipher.update(data, "utf-8");
+        let encrypted: Buffer = cipher.update(data);
         encrypted = Buffer.concat([encrypted, cipher.final()]);
         const authTag: Buffer = cipher.getAuthTag();
 
@@ -56,6 +57,7 @@ class FSBasedKms extends BaseKms {
         // 5. encryption algorithm as buffer (for example: Buffer.from("aes-256-gcm"))
         // 6. auth tag length
         // 7. auth tag
+        // 8. encrypted data
 
         // Not nice that NodeJS Buffers cannot just be appended to one another (?because
         // they are of a fixed size and cannot be expanded?)
@@ -82,18 +84,36 @@ class FSBasedKms extends BaseKms {
             authTag,
             encrypted
         ]);
+        return Promise.resolve(encryptedData);
+    }
+    
 
-        const ret: string = encryptedData.toString("base64");
-        return Promise.resolve(ret);
+    /**
+     * 
+     * @param data Max length of data is 64K
+     * @param aad 
+     * @returns 
+     */
+    public async encrypt(data: string, aad?: string): Promise<string | null>{
+
+        if(data.length > MAX_ENCRYPTION_LENGTH){
+            return Promise.resolve(null);
+        }
+        const encryptedData: Buffer | null = await this.encryptBuffer(Buffer.from(data, "utf-8"), aad);
+        if(!encryptedData){
+            return Promise.resolve(null);
+        }
+        return Promise.resolve(encryptedData.toString("base64"));
+       
     }
 
     /**
      * 
-     * @param data 
+     * @param data The buffer previously encrypted with the call to encryptBuffer
      * @param aad 
      * @returns 
      */
-    public async decrypt(data: string, aad?: string): Promise<string | null> {
+    public async decryptBuffer(buffer: Buffer, aad?: string): Promise<Buffer | null> {
 
         // The format will be:
         // 1. key id - (stored in 2 bytes)
@@ -106,7 +126,6 @@ class FSBasedKms extends BaseKms {
         // 8. the encrypted data
 
         try{
-            const buffer: Buffer = Buffer.from(data, "base64");
             
             const kid: number = buffer.readUint16BE(0);
             const kmsKey: KmsKey | undefined = allKeys.find(
@@ -151,13 +170,27 @@ class FSBasedKms extends BaseKms {
                 deCipher.final()
             ]);
             
-            const ret: string = outputBuffer.toString("utf-8");
-            return Promise.resolve(ret);
+            return Promise.resolve(outputBuffer);
         }
         catch(error){
             return Promise.resolve(null);
         }
-        
+    }
+
+    /**
+     * 
+     * @param data Base64 encoded data previous encrypted by the encrypt() method
+     * @param aad 
+     * @returns 
+     */
+    public async decrypt(data: string, aad?: string): Promise<string | null> {
+
+        const decryptedData: Buffer | null = await this.decryptBuffer(Buffer.from(data, "base64"), aad);
+        if(!decryptedData){
+            return Promise.resolve(null);
+        }
+        return Promise.resolve(decryptedData.toString("utf-8"));
+
     }
 
 }
