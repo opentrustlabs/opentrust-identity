@@ -35,6 +35,14 @@ create TABLE tenant (
     tenanttype VARCHAR(128) NOT NULL
 );
 
+create TABLE tenant_email_contact_rel (
+    tenantid VARCHAR(64) NOT NULL,
+    email VARCHAR(128) NOT NULL,
+    PRIMARY KEY(tenantid, email),
+    FOREIGN KEY (tenantid) REFERENCES tenant(tenantid)
+);
+CREATE INDEX tenant_email_contact_rel_email_idx ON tenant_email_contact_rel(email);
+
 create TABLE login_failure_policy (
     loginfailurepolicytype VARCHAR(128) NOT NULL,
     failurethreshold INT,
@@ -99,6 +107,14 @@ create TABLE client_redirect_uri_rel (
     PRIMARY KEY (clientid, redirecturi),
     FOREIGN KEY (clientid) REFERENCES client(clientid)
 );
+
+create TABLE client_email_contact_rel (
+    clientid VARCHAR(64) NOT NULL,
+    email VARCHAR(128) NOT NULL,
+    PRIMARY KEY(clientid, email),
+    FOREIGN KEY (clientid) REFERENCES client(clientid)
+);
+CREATE INDEX client_email_contact_rel_email_idx ON client_email_contact_rel(email);
 
 create TABLE user (
     userid VARCHAR(64) PRIMARY KEY,
