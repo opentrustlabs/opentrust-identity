@@ -38,9 +38,9 @@ type Query {
     getAuthenticationGroupById(authenticationGroupId: String!): AuthenticationGroup
 
     ## Groups
-    getGroups: [Group!]!
-    getGroupById(groupId: String!): Group
-    getUserGroups(userId: String!): [Group!]!
+    getAuthorizationGroups: [AuthorizationGroup!]!
+    getAuthorizationGroupById(groupId: String!): AuthorizationGroup
+    getUserAuthorizationGroups(userId: String!): [AuthorizationGroup!]!
 
     ## External OIDC Providers
     getFederatedOIDCProviders(tenantId: String): [FederatedOIDCProvider!]!
@@ -107,11 +107,11 @@ type Mutation {
     removeAuthenticationGroupFromClient(authenticationGroupId: String!, clientId: String!): String
     
     ## Groups
-    createGroup(groupInput: GroupCreateInput!): Group
-    updateGroup(groupInput: GroupUpdateInput!): Group
-    deleteGroup(groupId: String!): String!
-    addUserToGroup(userId: String!, groupId: String!): UserGroupRel
-    removeUserFromGroup(userId: String!, groupId: String!): String
+    createAuthorizationGroup(groupInput: AuthorizationGroupCreateInput!): AuthorizationGroup
+    updateAuthorizationGroup(groupInput: AuthorizationGroupUpdateInput!): AuthorizationGroup
+    deleteAuthorizationGroup(groupId: String!): String!
+    addUserToAuthorizationGroup(userId: String!, groupId: String!): UserAuthorizationGroupRel
+    removeUserFromAuthorizationGroup(userId: String!, groupId: String!): String
 
     ## External OIDC Providers
     createFederatedOIDCProvider(oidcProviderInput: FederatedOIDCProviderCreateInput!): FederatedOIDCProvider
@@ -342,25 +342,19 @@ type AuthenticationGroupUserRel {
 
 # default - for newly registered or created users within the tenant, assign to any group 
 # in the tenant that is marked with default
-type Group {
+type AuthorizationGroup {
     tenantId: String!
     groupId: String!
     groupName: String!
     default: Boolean!
 }
 
-type UserGroupRel {
+type UserAuthorizationGroupRel {
     userId: String!
     groupId: String!
 }
 
 type UserCredential {
-    userId: String!
-    salt: String!
-    hashedPassword: String!
-}
-
-type UserCredentialHistory {
     userId: String!
     salt: String!
     hashedPassword: String!
@@ -382,7 +376,7 @@ type SigningKey {
     keyId: String!
     tenantId: String!    
     keyType: KeyType!
-    use: String!
+    keyuse: String!
     privateKeyPkcs8: String!
     password: String
     certificate: String
@@ -391,16 +385,48 @@ type SigningKey {
     status: SigningKeyStatus!
 }
 
+# Can optionally have a constraint definition tied to this scope.
+# Not a requirement, but if one exists, then you MAY, if you choose,
+# create an access rule that you can apply to the tenant (and so the 
+# client and groups which belong to the tenant) which have this scope.
 
+type Scope {
+    scopeId: String!
+    scopeName: String!
+    scopeDescription: String
+}
 
-# 1.    rateLimitId
-# 2.    rateLimitDomain  -  User-defined name of the context or other identifier which will be used by the application
-#                           to make rate limiting decisions. If you need just one then it can be global.
-# 3.    rateLimitDescription  -  
+type ScopeConstraintSchema {
+    scopeConstraintSchemaId: String!
+    schemaVersion: Int!
+    scopeconstraintschemaname: String!
+    scopeId: String!
+    scopeconstraintschema: String!
+}
+
+type AccessRule {
+    accessRuleId: String!
+    accessrulename: String!
+    scopeId: String!
+    scopeConstraintSchemaId: String!
+    accessRuleDefinition: String!
+}
+
+type ServiceGroup {
+    servicegroupid: String!
+    servicegroupname: String!
+    servicegroupdescription: String    
+}
+
+type ServiceGroupScopeRel {
+    servicegroupid: String!
+    scopeid: String!
+}
+
 type RateLimit {
-    rateLimitId: String!
-    rateLimitDomain: String!
-    rateLimitDescription: String
+    ratelimitid: String!
+    ratelimitname: String!
+    servicegroupid: String!
 }
 
 type TenantRateLimitRel {
@@ -409,17 +435,6 @@ type TenantRateLimitRel {
     allowUnlimitedRate: Boolean
     rateLimit: Int
     rateLimitPeriodMinutes: Int
-}
-
-# Can optionally have a constraint definition tied to this scope.
-# Not a requirement, but if one exists, then you MAY, if you choose,
-# create an access rule that you can apply to the tenant (and so the 
-# client and groups which belong to the tenant) which have this scope.
-type Scope {
-    scopeId: String!
-    scopeName: String!
-    scopeDescription: String
-    scopeConstraintSchemaId: String
 }
 
 # Access rules CAN be applied at the tenant level for any non-Root tenant
@@ -436,24 +451,10 @@ type ClientTenantScopeRel {
     scopeId: String!
 }
 
-type GroupScopeRel {
+type AuthorizationGroupScopeRel {
     groupId: String!
     tenantId: String!
     scopeId: String!
-}
-
-type ScopeConstraintSchema {
-    scopeConstraintSchemaId: String!
-    schemaVersion: Int!
-    scopeId: String!
-    schema: String!
-}
-
-type AccessRule {
-    accessRuleId: String!
-    scopeId: String!
-    scopeConstraintSchemaId: String!
-    accessRuleDefinition: String!
 }
 
 type PreAuthenticationState {
@@ -492,6 +493,7 @@ type RefreshData {
     tenantId: String!
     clientId: String!
     userId: String!
+    redirecturi: String!
     refreshTokenClientType: RefreshTokenClientType!
     refreshCount: Int!
     scope: String!
@@ -500,6 +502,7 @@ type RefreshData {
 type FederatedOIDCAuthorizationRel {
     state: String!
     codeVerifier: String
+    codechallengemethod: String
     federatedOIDCProviderId: String!
     initState: String!
     initRedirectUri: String!
@@ -509,6 +512,7 @@ type FederatedOIDCAuthorizationRel {
     initCodeChallengeMethod: String
     initCodeChallenge: String
     initResponseMode: String!
+    initResponseType: String!
     expiresAtMs: Float!
 }
 
@@ -517,6 +521,54 @@ type ClientAuthHistory {
     clientId: String!
     tenantId: String!
     expiresAtSeconds: Float!
+}
+
+enum ChangeEventType {
+    CREATE
+    UPDATE
+    DELETE
+    CREATE_REL
+    REMOVE_REL
+}
+
+enum ChangeEventClass {
+    LOGIN_FAILURE_POLICY
+    TENANT
+    TENANT_MANAGEMENT_DOMAIN_REL    
+    CLIENT
+    OIDC_PROVIDER
+    OIDC_PROVIDER_TENANT_REL
+    SOCIAL_OIDC_PROVIDER_TENANT_REL
+    OIDC_PROVIDER_DOMAIN_REL
+    USER
+    GROUP
+    AUTHENTICATION_GROUP
+    USER_GROUP_REL
+    SIGNING_KEY
+    RATE_LIMIT
+    TENANT_RATE_LIMIT_REL
+    SCOPE
+    TENANT_SCOPE_REL
+    CLIENT_TENANT_SCOPE_REL
+    SCOPE_CONSTRAINT_SCHEMA
+    ACCESS_RULE
+}
+
+type ChangeEventData {
+    changeeventid: String!
+    objecttype: String!
+    objectid: String!
+    data: String!
+}
+
+type ChangeEvent {
+    changeeventid: String!
+    changeeventtype: ChangeEventType!
+    changeeventclass: ChangeEventClass!
+    changetimestamp: Float!
+    changedbyid: String!
+    changeeventdata: [ChangeEventData!]!
+    signature: String!
 }
 
 ############################################################################
@@ -657,13 +709,13 @@ input AuthenticationGroupUpdateInput {
     authenticationGroupDescription: String
 }
 
-input GroupCreateInput {
+input AuthorizationGroupCreateInput {
     tenantId: String!
     groupName: String!
     default: Boolean!
 }
 
-input GroupUpdateInput {
+input AuthorizationGroupUpdateInput {
     tenantId: String!
     groupId: String!
     groupName: String!
