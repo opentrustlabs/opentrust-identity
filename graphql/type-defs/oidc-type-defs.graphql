@@ -617,6 +617,7 @@ input TenantCreateInput {
     federatedAuthenticationConstraint: FederatedAuthenticationConstraint!
     federatedOIDCProviderId: String
     tenantType: TenantType!
+    contactemaillist: [String!]!
 }
 
 input TenantUpdateInput {
@@ -633,6 +634,7 @@ input TenantUpdateInput {
     federatedOIDCProviderId: String
     markForDelete: Boolean!
     tenantType: TenantType!
+    contactemaillist: [String!]!
 }
 
 input ClientCreateInput {
@@ -647,6 +649,7 @@ input ClientCreateInput {
     userTokenTTLSeconds: Int
     clientTokenTTLSeconds: Int
     maxRefreshTokenCount: Int
+    contactemaillist: [String!]!
 }
 
 input ClientUpdateInput {
@@ -662,6 +665,7 @@ input ClientUpdateInput {
     userTokenTTLSeconds: Int
     clientTokenTTLSeconds: Int
     maxRefreshTokenCount: Int
+    contactemaillist: [String!]!
 }
 
 input SigningKeyCreateInput {
