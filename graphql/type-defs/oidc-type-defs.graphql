@@ -181,7 +181,7 @@ type Tenant {
     federatedAuthenticationConstraint: FederatedAuthenticationConstraint!
     markForDelete: Boolean!
     tenantType: TenantType!
-
+    contactemaillist: [String!]!
 }
 
 # Does the tenant have certain users with email domains that can
@@ -282,6 +282,7 @@ type Client {
     userTokenTTLSeconds: Int
     clientTokenTTLSeconds: Int
     maxRefreshTokenCount: Int
+    contactemaillist: [String!]!
 }
 
 enum TwoFactorAuthType {
