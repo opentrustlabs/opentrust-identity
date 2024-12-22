@@ -28,6 +28,7 @@ create TABLE tenant (
     claimssupported VARCHAR(1024),
     allowunlimitedrate BOOLEAN NOT NULL,
     allowuserselfregistration BOOLEAN NOT NULL,
+    allowanonymoususers BOOLEAN NOT NULL,
     allowsociallogin BOOLEAN NOT NULL,
     verifyemailonselfregistration BOOLEAN NOT NULL,
     federatedauthenticationrestraint VARCHAR(128) NOT NULL,
@@ -133,6 +134,7 @@ create TABLE user (
     preferredlanguagecode VARCHAR(8),
     twofactorauthtype VARCHAR(64),
     locked BOOLEAN,
+    enabled BOOLEAN NOT NULL,
     nameorder VARCHAR(64)
 );
 
@@ -223,12 +225,12 @@ create TABLE signing_key (
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid)
 );
 
-create TABLE service_group (
+create TABLE rate_limit_service_group (
     servicegroupid VARCHAR(64) PRIMARY KEY,
     servicegroupname VARCHAR(128) NOT NULL,
     servicegroupdescription VARCHAR(256)    
 );
-CREATE INDEX service_group_servicegroupname_idx on service_group(servicegroupname);
+CREATE INDEX rate_limit_service_group_servicegroupname_idx on rate_limit_service_group(servicegroupname);
 
 create TABLE scope (
     scopeid VARCHAR(64) PRIMARY KEY,
@@ -255,11 +257,11 @@ create TABLE access_rule (
     FOREIGN KEY (scopeconstraintschemaid) REFERENCES  scope_constraint_schema(scopeconstraintschemaid)
 );
 
-create TABLE service_group_scope_rel (
+create TABLE rate_limit_service_group_scope_rel (
     servicegroupid VARCHAR(64) NOT NULL,
     scopeid VARCHAR(64) NOT NULL,
     PRIMARY KEY(servicegroupid, scopeid),
-    FOREIGN KEY (servicegroupid) REFERENCES service_group(servicegroupid),
+    FOREIGN KEY (servicegroupid) REFERENCES rate_limit_service_group(servicegroupid),
     FOREIGN KEY (scopeid) REFERENCES scope(scopeid)    
 );
 
@@ -267,7 +269,7 @@ create TABLE rate_limit (
     ratelimitid VARCHAR(64) PRIMARY KEY,
     ratelimitname VARCHAR(128) NOT NULL,
     servicegroupid VARCHAR(64) NOT NULL,
-    FOREIGN KEY (servicegroupid) REFERENCES service_group(servicegroupid)
+    FOREIGN KEY (servicegroupid) REFERENCES rate_limit_service_group(servicegroupid)
 );
 
 create TABLE tenant_rate_limit_rel (
@@ -308,6 +310,19 @@ create TABLE authorization_group_scope_rel (
     FOREIGN KEY (scopeid) REFERENCES scope(scopeid),
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid),
     FOREIGN KEY (groupid) REFERENCES authorization_group(groupid)
+);
+
+
+create TABLE user_scope_rel (
+    userid VARCHAR(64) NOT NULL,
+    tenantid VARCHAR(64) NOT NULL,
+    scopeid VARCHAR(64) NOT NULL,
+    accessruleid VARCHAR(64) NOT NULL,
+    PRIMARY KEY (userid, tenantid, scopeid),
+    FOREIGN KEY (userid) REFERENCES user(userid),
+    FOREIGN KEY (tenantid) REFERENCES tenant(tenantid),
+    FOREIGN KEY (scopeid) REFERENCES scope(scopeid),
+    FOREIGN KEY (accessruleid) REFERENCES access_rule(accessruleid)
 );
 
 
@@ -402,3 +417,19 @@ create TABLE change_event_data (
     FOREIGN KEY (changeeventid) REFERENCES change_event(changeeventid)
 );
 CREATE INDEX change_event_data_changeeventid_idx ON change_event_data(changeeventid);
+
+create TABLE anonymous_user_configuration (
+    anonymoususerconfigurationid VARCHAR(64) PRIMARY KEY,
+    defaultcountrycode VARCHAR(8) NOT NULL,
+    defaultlanguagecode VARCHAR(8) NOT NULL,
+    scopeids VARCHAR(4096),
+    groupid VARCHAR(4096)    
+);
+
+create TABLE tenant_anonymous_user_configuration_rel (
+    tenantid VARCHAR(64) NOT NULL,
+    anonymoususerconfigurationid VARCHAR(64) NOT NULL,
+    PRIMARY KEY(tenantid, anonymoususerconfigurationid),
+    FOREIGN KEY (tenantid) REFERENCES tenant(tenantid),
+    FOREIGN KEY (anonymoususerconfigurationid) REFERENCES anonymous_user_configuration(anonymoususerconfigurationid)
+);

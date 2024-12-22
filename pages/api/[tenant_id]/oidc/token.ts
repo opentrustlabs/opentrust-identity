@@ -282,7 +282,9 @@ async function handleAuthorizationCodeGrant(tokenData: TokenData, res: NextApiRe
             refreshTokenClientType: d.codeChallenge ? RefreshTokenClientType.Pkce : RefreshTokenClientType.SecureClient,
             tenantId: d.tenantId,
             userId: d.userId,
-            scope: d.scope
+            scope: d.scope,            
+            redirecturi: d.redirectUri
+            
         }
         await authDao.saveRefreshData(refreshData);
     };
@@ -444,7 +446,8 @@ async function handleRefreshTokenGrant(tokenData: TokenData, res: NextApiRespons
             refreshTokenClientType: refreshTokenData.refreshTokenClientType,
             tenantId: refreshTokenData.tenantId,
             userId: refreshTokenData.userId,
-            scope: refreshTokenData.scope
+            scope: refreshTokenData.scope,
+            redirecturi: ''
         }
         await authDao.saveRefreshData(newRefreshData);
     };

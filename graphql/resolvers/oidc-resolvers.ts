@@ -1,6 +1,6 @@
 import ClientService from "@/lib/service/client-service";
 import TenantService from "@/lib/service/tenant-service";
-import { Resolvers, QueryResolvers, MutationResolvers, Tenant, Client, SigningKey, Scope, AuthenticationGroup, Group, SigningKeyStatus, TenantType, FederatedOidcProvider, OidcClientAuthType } from "../generated/graphql-types";
+import { Resolvers, QueryResolvers, MutationResolvers, Tenant, Client, SigningKey, Scope, AuthenticationGroup, AuthorizationGroup, SigningKeyStatus, TenantType, FederatedOidcProvider, OidcClientAuthType } from "../generated/graphql-types";
 import SigningKeysService from "@/lib/service/keys-service";
 import ScopeService from "@/lib/service/scope-service";
 import GroupService from "@/lib/service/group-service";
@@ -54,11 +54,11 @@ const resolvers: Resolvers = {
             const authenticationGroupService: AuthenticationGroupService = new AuthenticationGroupService(oidcContext);
             return authenticationGroupService.getAuthenticationGroupById(authenticationGroupId);
         },
-        getGroups: (_: any, __: any, oidcContext) => {
+        getAuthorizationGroups: (_: any, __: any, oidcContext) => {
             const groupService: GroupService = new GroupService(oidcContext);
             return groupService.getGroups();
         },
-        getGroupById: (_: any, { groupId }, oidcContext) => {
+        getAuthorizationGroupById: (_: any, { groupId }, oidcContext) => {
             const groupService: GroupService = new GroupService(oidcContext);
             return groupService.getGroupById(groupId);
         },
@@ -86,7 +86,9 @@ const resolvers: Resolvers = {
                 federatedAuthenticationConstraint: tenantInput.federatedAuthenticationConstraint,
                 markForDelete: false,
                 tenantType: TenantType.RootTenant,
-                allowSocialLogin: false
+                allowSocialLogin: false,
+                allowAnonymousUsers: false,
+                contactemaillist: []
             };
             await tenantService.createRootTenant(tenant);
             return tenant;
@@ -105,7 +107,9 @@ const resolvers: Resolvers = {
                 federatedAuthenticationConstraint: tenantInput.federatedAuthenticationConstraint,
                 markForDelete: tenantInput.markForDelete,
                 tenantType: TenantType.RootTenant,
-                allowSocialLogin: false
+                allowSocialLogin: false,
+                allowAnonymousUsers: false,
+                contactemaillist: []
             }
             await tenantService.updateRootTenant(tenant);
             return tenant;
@@ -124,7 +128,9 @@ const resolvers: Resolvers = {
                 federatedAuthenticationConstraint: tenantInput.federatedAuthenticationConstraint,
                 markForDelete: false,
                 tenantType: tenantInput.tenantType,
-                allowSocialLogin: tenantInput.allowSocialLogin
+                allowSocialLogin: tenantInput.allowSocialLogin,
+                allowAnonymousUsers: false,
+                contactemaillist: []
             }
             await tenantService.createTenant(tenant);
             return tenant; 
@@ -143,7 +149,9 @@ const resolvers: Resolvers = {
                 federatedAuthenticationConstraint: tenantInput.federatedAuthenticationConstraint,
                 markForDelete: tenantInput.markForDelete,
                 tenantType: tenantInput.tenantType,
-                allowSocialLogin: tenantInput.allowSocialLogin
+                allowSocialLogin: tenantInput.allowSocialLogin,
+                allowAnonymousUsers: false,
+                contactemaillist: []
             }
             const updatedTenant: Tenant = await tenantService.updateTenant(tenant);
             return updatedTenant;
@@ -167,7 +175,8 @@ const resolvers: Resolvers = {
                 pkceEnabled: clientInput.pkceEnabled ?? true,
                 clientType: clientInput.clientType,
                 userTokenTTLSeconds: clientInput.userTokenTTLSeconds || 0,
-                maxRefreshTokenCount: clientInput.maxRefreshTokenCount
+                maxRefreshTokenCount: clientInput.maxRefreshTokenCount,
+                contactemaillist: []
             }
             await clientService.createClient(client);
             return client;
@@ -176,7 +185,7 @@ const resolvers: Resolvers = {
             const clientService: ClientService = new ClientService(oidcContext);
             let client: Client = {
                 clientId: clientInput.clientId,
-                clientSecret: "",                
+                clientSecret: "",
                 clientName: clientInput.clientName,
                 clientDescription: clientInput.clientDescription,
                 tenantId: clientInput.tenantId,
@@ -186,7 +195,8 @@ const resolvers: Resolvers = {
                 pkceEnabled: clientInput.pkceEnabled ?? true,
                 clientType: clientInput.clientType,
                 userTokenTTLSeconds: clientInput.userTokenTTLSeconds || 0,
-                maxRefreshTokenCount: clientInput.maxRefreshTokenCount
+                maxRefreshTokenCount: clientInput.maxRefreshTokenCount,
+                contactemaillist: []
             }
             await clientService.updateClient(client);
             return client;
@@ -201,7 +211,7 @@ const resolvers: Resolvers = {
             const key: SigningKey = {
                 keyType: keyInput.keyType,
                 tenantId: keyInput.tenantId,
-                use: keyInput.use,
+                keyuse: keyInput.use,
                 keyId: "",
                 certificate: keyInput.certificate,
                 privateKeyPkcs8: keyInput.privateKey,
@@ -222,8 +232,7 @@ const resolvers: Resolvers = {
             const scope: Scope = {
                 scopeId: "",
                 scopeName: scopeInput.scopeName,
-                scopeDescription: scopeInput.scopeDescription,
-                scopeConstraintSchemaId: scopeInput.scopeConstraintSchemaId
+                scopeDescription: scopeInput.scopeDescription
             };
             await scopeService.createScope(scope);
             return scope;
@@ -233,8 +242,7 @@ const resolvers: Resolvers = {
             const scope: Scope = {
                 scopeId: scopeInput.scopeId,
                 scopeName: scopeInput.scopeName,
-                scopeDescription: scopeInput.scopeDescription,
-                scopeConstraintSchemaId: scopeInput.scopeConstraintSchemaId
+                scopeDescription: scopeInput.scopeDescription
             };
             await scopeService.updateScope(scope);
             return scope;
@@ -301,9 +309,9 @@ const resolvers: Resolvers = {
             await authenticationGroupService.removeAuthenticationGroupFromClient(authenticationGroupId, clientId);
             return authenticationGroupId;
         },
-        createGroup: async(_: any, { groupInput }, oidcContext) => {
+        createAuthorizationGroup: async(_: any, { groupInput }, oidcContext) => {
             const groupService: GroupService = new GroupService(oidcContext);
-            const group: Group = {
+            const group: AuthorizationGroup = {
                 default: groupInput.default,
                 groupId: "",
                 groupName: groupInput.groupName,
@@ -312,9 +320,9 @@ const resolvers: Resolvers = {
             await groupService.createGroup(group);
             return group;
         },
-        updateGroup: async(_: any, { groupInput }, oidcContext) => {
+        updateAuthorizationGroup: async(_: any, { groupInput }, oidcContext) => {
             const groupService: GroupService = new GroupService(oidcContext);
-            const group: Group = {
+            const group: AuthorizationGroup = {
                 default: groupInput.default,
                 groupId: groupInput.groupId,
                 groupName: groupInput.groupName,
@@ -323,17 +331,17 @@ const resolvers: Resolvers = {
             await groupService.updateGroup(group);
             return group;
         },
-        deleteGroup: async(_: any, { groupId }, oidcContext ) => {
+        deleteAuthorizationGroup: async(_: any, { groupId }, oidcContext ) => {
             const groupService: GroupService = new GroupService(oidcContext);
             await groupService.deleteGroup(groupId);
             return groupId;
         },
-        addUserToGroup: async(_: any, { groupId, userId }, oidcContext) => {
+        addUserToAuthorizationGroup: async(_: any, { groupId, userId }, oidcContext) => {
             const groupService: GroupService = new GroupService(oidcContext);
             const res = await groupService.addUserToGroup(userId, groupId);
             return res;
         },
-        removeUserFromGroup: async(_: any, { groupId, userId }, oidcContext) => {
+        removeUserFromAuthorizationGroup: async(_: any, { groupId, userId }, oidcContext) => {
             const groupService: GroupService = new GroupService(oidcContext);
             await groupService.removeUserFromGroup(userId, groupId);
             return userId;

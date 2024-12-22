@@ -177,12 +177,29 @@ type Tenant {
     allowUnlimitedRate: Boolean!
     allowUserSelfRegistration: Boolean!
     allowSocialLogin: Boolean!
+    allowAnonymousUsers: Boolean!
     verifyEmailOnSelfRegistration: Boolean!
     federatedAuthenticationConstraint: FederatedAuthenticationConstraint!
     markForDelete: Boolean!
     tenantType: TenantType!
     contactemaillist: [String!]!
 }
+
+
+type AnonymousUserConfiguration {
+    anonymoususerconfigurationid: String!
+    defaultcountrycode: String!
+    defaultlangugecode: String!
+    tokenttlseconds: Int!
+    scopeids: [String]
+    groupids: [String]
+}
+
+type TenantAnonymousUserConfigurationRel {
+    tenantid: String!
+    anonymoususerconfigurationid: String!
+}
+
 
 # Does the tenant have certain users with email domains that can
 # manage the tenant for themselves?
@@ -250,8 +267,9 @@ enum ClientType {
 }
 
 enum TokenType {
-    SERVICE_ACCOUNT_TOKEN,
+    SERVICE_ACCOUNT_TOKEN
     END_USER_TOKEN
+    ANONYMOUS_USER
 }
 
 
@@ -316,6 +334,7 @@ type User {
     preferredLanguageCode: String
     twoFactorAuthType: TwoFactorAuthType
     locked: Boolean!
+    enabled: Boolean!
     nameOrder: NameOrder!
 }
 
@@ -413,13 +432,13 @@ type AccessRule {
     accessRuleDefinition: String!
 }
 
-type ServiceGroup {
+type RateLimitServiceGroup {
     servicegroupid: String!
     servicegroupname: String!
     servicegroupdescription: String    
 }
 
-type ServiceGroupScopeRel {
+type RateLimitServiceGroupScopeRel {
     servicegroupid: String!
     scopeid: String!
 }
@@ -438,8 +457,15 @@ type TenantRateLimitRel {
     rateLimitPeriodMinutes: Int
 }
 
+
 # Access rules CAN be applied at the tenant level for any non-Root tenant
-# Any client or group will automatically inherit these restrictions
+# Any client or group will automatically inherit these restrictions.
+# Access rule order of precendence:
+# 1. Defined on the user, inherits others from group membership, client and tenant
+# 2. Defined on the group, inherits others from client and tenant
+# 3. Defined on the client, inherits others from tenant
+# 4. Defined on the tenant
+
 type TenantScopeRel {
     tenantId: String!
     scopeId: String!
@@ -450,12 +476,22 @@ type ClientTenantScopeRel {
     tenantId: String!
     clientId: String!
     scopeId: String!
+    accessruleid: String
 }
+
 
 type AuthorizationGroupScopeRel {
     groupId: String!
     tenantId: String!
     scopeId: String!
+    accessruleid: String
+}
+
+type UserScopeRel {
+    userid: String!
+    tenantid: String!
+    scopeid: String!
+    accessruleid: String
 }
 
 type PreAuthenticationState {
