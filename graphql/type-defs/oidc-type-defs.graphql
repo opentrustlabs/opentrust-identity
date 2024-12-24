@@ -608,6 +608,26 @@ type ChangeEvent {
     signature: String!
 }
 
+type TenantLookAndFeel {
+    tenantid: String!
+    adminheaderbackgroundcolor: String
+    adminheadertextcolor: String
+    adminlogo: String
+    adminheadertext: String
+    authenticationheaderbackgroundcolor: String
+    authenticationheadertextcolor: String
+    authenticationlogo: String
+    authenticationheadertext: String
+    footerlinks: [FooterLink]
+}
+
+type FooterLink {
+    footerlinkid: String!
+    tenantid: String!
+    linktext: String!
+    uri: String!
+}
+
 ############################################################################
 ################ INPUT TYPES AND RESPONSES FOR MUTATATIONS #################
 ############################################################################

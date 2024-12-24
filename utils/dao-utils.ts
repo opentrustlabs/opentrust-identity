@@ -1,12 +1,12 @@
 import ClientDao from "@/lib/dao/client-dao";
-import GroupDao from "@/lib/dao/group-dao";
+import GroupDao from "@/lib/dao/authorization-group-dao";
 import FSBasedClientDao from "@/lib/dao/impl/fs/fs-based-client-dao";
-import FSBasedGroupDao from "@/lib/dao/impl/fs/fs-based-group-dao";
-import FSBasedSigningKeysDao from "@/lib/dao/impl/fs/fs-based-keys-dao";
+import FSBasedGroupDao from "@/lib/dao/impl/fs/fs-based-authorization-group-dao";
+import FSBasedSigningKeysDao from "@/lib/dao/impl/fs/fs-based-signing-keys-dao";
 import FSBasedRateLimitDao from "@/lib/dao/impl/fs/fs-based-rate-limit-dao";
 import FSBasedScopeDao from "@/lib/dao/impl/fs/fs-based-scope-dao";
 import FSBasedTenantDao from "@/lib/dao/impl/fs/fs-based-tenant-dao";
-import SigningKeysDao from "@/lib/dao/keys-dao";
+import SigningKeysDao from "@/lib/dao/signing-keys-dao";
 import RateLimitDao from "@/lib/dao/rate-limit-dao";
 import ScopeDao from "@/lib/dao/scope-dao";
 import TenantDao from "@/lib/dao/tenant-dao";
@@ -20,6 +20,7 @@ import FSBasedFederatedOidcProviderDao from "@/lib/dao/impl/fs/fs-based-federate
 import AuthDao from "@/lib/dao/auth-dao";
 import FSBasedAuthDao from "@/lib/dao/impl/fs/fs-based-auth-dao";
 import FSBasedIdentityDao from "@/lib/dao/impl/fs/fs-based-identity-dao";
+import DBTenantDao from "@/lib/dao/impl/db/db-tenant-dao";
 
 
 /**
@@ -87,13 +88,16 @@ export function generateHash(data: string, hashAlgorithm?: HashAlgorithm, encodi
 }
 
 export function getTenantDaoImpl(): TenantDao {
+    console.log('getting tenant dao impl')
     // DAO_STRATEGY is one of filesystem | postgresql | mysql | oracle | mssql | cassandra | mongodb
     const daoStrategy = process.env.DAO_STRATEGY ?? "filesystem";
-
+    //new DBTenantDao();
     if(daoStrategy === "filesystem"){
-        return new FSBasedTenantDao();
+        //return new FSBasedTenantDao();
+        return new DBTenantDao();
     }
-    else return new FSBasedTenantDao();
+    return new DBTenantDao();
+    //return new FSBasedTenantDao();
 }
 
 export function getClientDaoImpl(): ClientDao {

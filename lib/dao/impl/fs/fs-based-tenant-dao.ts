@@ -1,4 +1,4 @@
-import { Tenant, TenantManagementDomainRel } from "@/graphql/generated/graphql-types";
+import { AnonymousUserConfiguration, Tenant, TenantLookAndFeel, TenantManagementDomainRel } from "@/graphql/generated/graphql-types";
 import TenantDAO from "../../tenant-dao";
 import { writeFileSync } from "node:fs";
 import path from "node:path";
@@ -8,6 +8,28 @@ import { getFileContents } from "@/utils/dao-utils";
 
 const dataDir = process.env.FS_BASED_DATA_DIR ?? path.join(__dirname);
 class FSBasedTenantDao extends TenantDAO {
+
+
+    public async createTenantLookAndFeel(tenantLookAndFeel: TenantLookAndFeel): Promise<TenantLookAndFeel> {
+        throw new Error("Method not implemented.");
+    }
+    public async updateTenantLookAndFeel(tenantLookAndFeel: TenantLookAndFeel): Promise<TenantLookAndFeel> {
+        throw new Error("Method not implemented.");
+    }
+    public async deleteTenantLookAndFeel(tenantId: string): Promise<void> {
+        throw new Error("Method not implemented.");
+    }
+
+
+    public async createAnonymousUserConfiguration(tenantId: string, anonymousUserConfiguration: AnonymousUserConfiguration): Promise<AnonymousUserConfiguration> {
+        throw new Error("Method not implemented.");
+    }
+    public async updateAnonymousUserConfiguration(anonymousUserConfiguration: AnonymousUserConfiguration): Promise<AnonymousUserConfiguration> {
+        throw new Error("Method not implemented.");
+    }
+    public async deleteAnonymousUserConfiguration(configurationId: string): Promise<void> {
+        throw new Error("Method not implemented.");
+    }
 
 
     public async getRootTenant(): Promise<Tenant> {

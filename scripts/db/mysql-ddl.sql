@@ -31,7 +31,23 @@ create TABLE tenant (
     allowanonymoususers BOOLEAN NOT NULL,
     allowsociallogin BOOLEAN NOT NULL,
     verifyemailonselfregistration BOOLEAN NOT NULL,
-    federatedauthenticationrestraint VARCHAR(128) NOT NULL,
+    federatedauthenticationconstraint VARCHAR(128) NOT NULL,
+    markfordelete BOOLEAN NOT NULL,
+    tenanttype VARCHAR(128) NOT NULL
+);
+
+create TABLE root_tenant (
+    tenantid VARCHAR(64) PRIMARY KEY,
+    tenantname VARCHAR(128) NOT NULL,
+    tenantdescription VARCHAR(256),
+    enabled BOOLEAN NOT NULL,
+    claimssupported VARCHAR(1024),
+    allowunlimitedrate BOOLEAN NOT NULL,
+    allowuserselfregistration BOOLEAN NOT NULL,
+    allowanonymoususers BOOLEAN NOT NULL,
+    allowsociallogin BOOLEAN NOT NULL,
+    verifyemailonselfregistration BOOLEAN NOT NULL,
+    federatedauthenticationconstraint VARCHAR(128) NOT NULL,
     markfordelete BOOLEAN NOT NULL,
     tenanttype VARCHAR(128) NOT NULL
 );
@@ -422,6 +438,7 @@ create TABLE anonymous_user_configuration (
     anonymoususerconfigurationid VARCHAR(64) PRIMARY KEY,
     defaultcountrycode VARCHAR(8) NOT NULL,
     defaultlanguagecode VARCHAR(8) NOT NULL,
+    tokenttlseconds INT NOT NULL,
     scopeids VARCHAR(4096),
     groupid VARCHAR(4096)    
 );
@@ -433,3 +450,25 @@ create TABLE tenant_anonymous_user_configuration_rel (
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid),
     FOREIGN KEY (anonymoususerconfigurationid) REFERENCES anonymous_user_configuration(anonymoususerconfigurationid)
 );
+
+create TABLE tenant_look_and_feel (
+    tenantid VARCHAR(64) PRIMARY KEY,
+    adminheaderbackgroundcolor VARCHAR(32),
+    adminheadertextcolor VARCHAR(32),
+    adminlogo BLOB,
+    adminheadertext VARCHAR(128),
+    authenticationheaderbackgroundcolor VARCHAR(32),
+    authenticationheadertextcolor VARCHAR(32),
+    authenticationlogo BLOB,
+    authenticationheadertext VARCHAR(128),    
+    FOREIGN KEY (tenantid) REFERENCES tenant(tenantid)
+);
+
+create TABLE footer_link (
+    footerlinkid VARCHAR(64) PRIMARY KEY,
+    tenantid VARCHAR(64) NOT NULL,
+    linktext VARCHAR(256) NOT NULL,
+    uri VARCHAR(256) NOT NULL,
+    FOREIGN KEY (tenantid) REFERENCES tenant(tenantid)
+);
+

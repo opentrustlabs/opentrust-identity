@@ -4,7 +4,7 @@ import TenantDao from "@/lib/dao/tenant-dao";
 import { getGroupDaoImpl, getTenantDaoImpl } from "@/utils/dao-utils";
 import { GraphQLError } from "graphql/error/GraphQLError";
 import { randomUUID } from 'crypto'; 
-import GroupDao from "../dao/group-dao";
+import GroupDao from "../dao/authorization-group-dao";
 
 const tenantDao: TenantDao = getTenantDaoImpl();
 const groupDao: GroupDao = getGroupDaoImpl();

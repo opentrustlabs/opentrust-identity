@@ -1,5 +1,5 @@
 import { SigningKey } from "@/graphql/generated/graphql-types";
-import SigningKeysDao from "../../keys-dao";
+import SigningKeysDao from "../../signing-keys-dao";
 import { KEY_FILE } from "@/utils/consts";
 import { getFileContents } from "@/utils/dao-utils";
 import { writeFileSync } from "node:fs";
