@@ -172,3 +172,15 @@ export function getIdentityDaoImpl(): IdentityDao {
     }
     return new FSBasedIdentityDao();
 }
+
+
+
+// To retrieve the key in an enum. This can then be used as an index into the enum
+export function getKeyByValue<T extends Record<string, string>>(enumObj: T, value: string): keyof T {
+    for (const key in enumObj) {
+        if (enumObj[key] === value) {
+            return key as keyof T;
+        }
+    }
+    return enumObj[""];
+}

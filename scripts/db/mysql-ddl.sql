@@ -52,13 +52,6 @@ create TABLE root_tenant (
     tenanttype VARCHAR(128) NOT NULL
 );
 
-create TABLE tenant_email_contact_rel (
-    tenantid VARCHAR(64) NOT NULL,
-    email VARCHAR(128) NOT NULL,
-    PRIMARY KEY(tenantid, email),
-    FOREIGN KEY (tenantid) REFERENCES tenant(tenantid)
-);
-CREATE INDEX tenant_email_contact_rel_email_idx ON tenant_email_contact_rel(email);
 
 create TABLE login_failure_policy (
     loginfailurepolicytype VARCHAR(128) NOT NULL,
@@ -124,14 +117,6 @@ create TABLE client_redirect_uri_rel (
     PRIMARY KEY (clientid, redirecturi),
     FOREIGN KEY (clientid) REFERENCES client(clientid)
 );
-
-create TABLE client_email_contact_rel (
-    clientid VARCHAR(64) NOT NULL,
-    email VARCHAR(128) NOT NULL,
-    PRIMARY KEY(clientid, email),
-    FOREIGN KEY (clientid) REFERENCES client(clientid)
-);
-CREATE INDEX client_email_contact_rel_email_idx ON client_email_contact_rel(email);
 
 create TABLE user (
     userid VARCHAR(64) PRIMARY KEY,
@@ -205,14 +190,6 @@ create TABLE user_authorization_group_rel (
     PRIMARY KEY (userid, groupid),
     FOREIGN KEY (userid) REFERENCES user(userid),
     FOREIGN KEY (groupid) REFERENCES authorization_group(groupid) 
-);
-
-create TABLE user_credential (
-    userid VARCHAR(64) NOT NULL,
-    salt varchar(256) NOT NULL,
-    hashedpassword VARCHAR(256) NOT NULL,
-    PRIMARY KEY (userid),
-    FOREIGN KEY (userid) REFERENCES user(userid)    
 );
 
 create TABLE user_credential (
@@ -381,7 +358,7 @@ create TABLE refresh_data (
     userid VARCHAR(64) NOT NULL,
     scope VARCHAR(128) NOT NULL,
     refreshtokenclienttype VARCHAR(128) NOT NULL,
-    refreshcount INT
+    refreshcount INT,
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid),
     FOREIGN KEY (clientid) REFERENCES client(clientid),
     FOREIGN KEY (userid) REFERENCES user(userid)
@@ -471,4 +448,15 @@ create TABLE footer_link (
     uri VARCHAR(256) NOT NULL,
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid)
 );
+
+create TABLE contact (
+    objectid VARCHAR(64) NOT NULL,
+    objecttype VARCHAR(64) NOT NULL,
+    email VARCHAR(128) NOT NULL,
+    name VARCHAR(128) NOT NULL,
+    userid VARCHAR(64),
+    PRIMARY KEY(objectid, email)
+);
+CREATE INDEX contact_objectid_idx ON contact(objectid);
+CREATE INDEX contact_email_idx ON contact(email);
 

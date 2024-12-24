@@ -87,8 +87,7 @@ const resolvers: Resolvers = {
                 markForDelete: false,
                 tenantType: TenantType.RootTenant,
                 allowSocialLogin: false,
-                allowAnonymousUsers: false,
-                contactemaillist: []
+                allowAnonymousUsers: false
             };
             await tenantService.createRootTenant(tenant);
             return tenant;
@@ -108,8 +107,7 @@ const resolvers: Resolvers = {
                 markForDelete: tenantInput.markForDelete,
                 tenantType: TenantType.RootTenant,
                 allowSocialLogin: false,
-                allowAnonymousUsers: false,
-                contactemaillist: []
+                allowAnonymousUsers: false
             }
             await tenantService.updateRootTenant(tenant);
             return tenant;
@@ -129,8 +127,7 @@ const resolvers: Resolvers = {
                 markForDelete: false,
                 tenantType: tenantInput.tenantType,
                 allowSocialLogin: tenantInput.allowSocialLogin,
-                allowAnonymousUsers: false,
-                contactemaillist: []
+                allowAnonymousUsers: false
             }
             await tenantService.createTenant(tenant);
             return tenant; 
@@ -150,8 +147,7 @@ const resolvers: Resolvers = {
                 markForDelete: tenantInput.markForDelete,
                 tenantType: tenantInput.tenantType,
                 allowSocialLogin: tenantInput.allowSocialLogin,
-                allowAnonymousUsers: false,
-                contactemaillist: []
+                allowAnonymousUsers: false
             }
             const updatedTenant: Tenant = await tenantService.updateTenant(tenant);
             return updatedTenant;
@@ -175,8 +171,7 @@ const resolvers: Resolvers = {
                 pkceEnabled: clientInput.pkceEnabled ?? true,
                 clientType: clientInput.clientType,
                 userTokenTTLSeconds: clientInput.userTokenTTLSeconds || 0,
-                maxRefreshTokenCount: clientInput.maxRefreshTokenCount,
-                contactemaillist: []
+                maxRefreshTokenCount: clientInput.maxRefreshTokenCount
             }
             await clientService.createClient(client);
             return client;
@@ -195,8 +190,7 @@ const resolvers: Resolvers = {
                 pkceEnabled: clientInput.pkceEnabled ?? true,
                 clientType: clientInput.clientType,
                 userTokenTTLSeconds: clientInput.userTokenTTLSeconds || 0,
-                maxRefreshTokenCount: clientInput.maxRefreshTokenCount,
-                contactemaillist: []
+                maxRefreshTokenCount: clientInput.maxRefreshTokenCount
             }
             await clientService.updateClient(client);
             return client;

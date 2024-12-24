@@ -182,7 +182,6 @@ type Tenant {
     federatedAuthenticationConstraint: FederatedAuthenticationConstraint!
     markForDelete: Boolean!
     tenantType: TenantType!
-    contactemaillist: [String!]!
 }
 
 
@@ -300,7 +299,6 @@ type Client {
     userTokenTTLSeconds: Int
     clientTokenTTLSeconds: Int
     maxRefreshTokenCount: Int
-    contactemaillist: [String!]!
 }
 
 enum TwoFactorAuthType {
@@ -558,6 +556,14 @@ type ClientAuthHistory {
     clientId: String!
     tenantId: String!
     expiresAtSeconds: Float!
+}
+
+type Contact {
+    objectid: String!
+    objecttype: String!
+    email: String!
+    name: String!
+    userid: String
 }
 
 enum ChangeEventType {

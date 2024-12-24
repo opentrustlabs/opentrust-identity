@@ -2,6 +2,7 @@ import { Tenant, TenantManagementDomainRel, AnonymousUserConfiguration, TenantLo
 import TenantDao from "../../tenant-dao";
 import { TenantEntity } from "@/lib/entities/tenant-entity";
 import connection  from "@/lib/data-sources/db";
+import { getKeyByValue } from "@/utils/dao-utils";
 
 
 
@@ -23,6 +24,9 @@ class DBTenantDao extends TenantDao {
     updateRootTenant(tenant: Tenant): Promise<Tenant> {
         throw new Error("Method not implemented.");
     }
+
+
+
     public async getTenants(): Promise<Array<Tenant>> {
         const em = connection.em.fork();
         const tenantEntities: Array<TenantEntity> = await em.findAll(TenantEntity);
@@ -35,12 +39,11 @@ class DBTenantDao extends TenantDao {
                     allowUnlimitedRate: e.allowunlimitedrate,
                     allowUserSelfRegistration: e.allowuserselfregistration,
                     claimsSupported: e.claimssupported ? e.claimssupported.split(",") : [],
-                    contactemaillist: [],
                     enabled: e.enabled,
-                    federatedAuthenticationConstraint: FederatedAuthenticationConstraint[e.federatedauthenticationconstraint as keyof typeof FederatedAuthenticationConstraint],
+                    federatedAuthenticationConstraint: FederatedAuthenticationConstraint[getKeyByValue(FederatedAuthenticationConstraint, e.federatedauthenticationconstraint)],
                     markForDelete: e.markfordelete,
                     tenantName: e.tenantname,
-                    tenantType: TenantType[e.tenanttype as keyof typeof TenantType],
+                    tenantType: TenantType[getKeyByValue(TenantType, e.tenanttype)],
                     verifyEmailOnSelfRegistration: e.verifyemailonselfregistration
                 }                
                 return t;
@@ -65,7 +68,7 @@ class DBTenantDao extends TenantDao {
         e.federatedauthenticationconstraint = tenant.federatedAuthenticationConstraint;
         e.markfordelete = tenant.markForDelete;
         e.tenanttype = tenant.tenantType;
-        e.claimssupported = tenant.claimsSupported.join(";"),
+        e.claimssupported = tenant.claimsSupported.join(","),
         e.tenantdescription = tenant.tenantDescription || "";
         em.persist(e);
         await em.flush();
