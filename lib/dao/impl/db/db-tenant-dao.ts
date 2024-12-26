@@ -30,7 +30,7 @@ class DBTenantDao extends TenantDao {
         const em = connection.em.fork();
         const tenantEntity: TenantEntity | null = await em.findOne(TenantEntity, {tenantid: tenantId});
         if(tenantEntity){
-            return tenantEntity.toTenantModel();
+            return tenantEntity.toModel();
         }
         else{
             return null;

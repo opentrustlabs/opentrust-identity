@@ -64,7 +64,7 @@ export class TenantEntity {
     @Property()
     tenanttype: string;
 
-    toTenantModel(): Tenant {
+    public toModel(): Tenant {
         const t: Tenant = {
             allowAnonymousUsers: this.allowanonymoususers,
             allowSocialLogin: this.allowsociallogin,

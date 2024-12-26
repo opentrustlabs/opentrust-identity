@@ -16,6 +16,7 @@
     "@emotion/react": "^11.13.3",
     "@emotion/styled": "^11.13.0",
     "@mikro-orm/core": "^6.4.2",
+    "@mikro-orm/mssql": "^6.4.2",
     "@mikro-orm/mysql": "^6.4.2",
     "@mikro-orm/reflection": "^6.4.2",
     "@mui/material": "^6.1.6",
