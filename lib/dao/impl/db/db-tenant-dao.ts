@@ -2,19 +2,9 @@ import { Tenant, TenantManagementDomainRel, AnonymousUserConfiguration, TenantLo
 import TenantDao from "../../tenant-dao";
 import { TenantEntity } from "@/lib/entities/tenant-entity";
 import connection  from "@/lib/data-sources/db";
-import { getKeyByValue } from "@/utils/dao-utils";
-
-
-
-
-
 
 class DBTenantDao extends TenantDao {
 
-    constructor(){
-        super();
-        console.log("constructing db tenant dao");
-    }
     getRootTenant(): Promise<Tenant> {
         throw new Error("Method not implemented.");
     }
@@ -25,61 +15,54 @@ class DBTenantDao extends TenantDao {
         throw new Error("Method not implemented.");
     }
 
-
-
     public async getTenants(): Promise<Array<Tenant>> {
         const em = connection.em.fork();
         const tenantEntities: Array<TenantEntity> = await em.findAll(TenantEntity);
         const tenants: Array<Tenant> = tenantEntities.map(
             (e: TenantEntity) => {
-                const t: Tenant = {
-                    tenantId: e.tenantid,
-                    allowAnonymousUsers: e.allowanonymoususers,
-                    allowSocialLogin: e.allowsociallogin,
-                    allowUnlimitedRate: e.allowunlimitedrate,
-                    allowUserSelfRegistration: e.allowuserselfregistration,
-                    claimsSupported: e.claimssupported ? e.claimssupported.split(",") : [],
-                    enabled: e.enabled,
-                    federatedAuthenticationConstraint: e.federatedauthenticationconstraint,
-                    markForDelete: e.markfordelete,
-                    tenantName: e.tenantname,
-                    tenantType: e.tenanttype,
-                    verifyEmailOnSelfRegistration: e.verifyemailonselfregistration
-                }                
-                return t;
+                return e.toTenantModel();
             }
         );
         return Promise.resolve(tenants);
     }
-    getTenantById(tenantId: string): Promise<Tenant | null> {
-        throw new Error("Method not implemented.");
+
+    public async getTenantById(tenantId: string): Promise<Tenant | null> {
+        const em = connection.em.fork();
+        const tenantEntity: TenantEntity | null = await em.findOne(TenantEntity, {tenantid: tenantId});
+        if(tenantEntity){
+            return tenantEntity.toTenantModel();
+        }
+        else{
+            return null;
+        }
     }
+
     public async createTenant(tenant: Tenant): Promise<Tenant | null> {
         const em = connection.em.fork();
-        const e: TenantEntity = new TenantEntity();
-        e.tenantid = tenant.tenantId;
-        e.tenantname = tenant.tenantName;
-        e.enabled = tenant.enabled;
-        e.allowunlimitedrate = tenant.allowUnlimitedRate;
-        e.allowuserselfregistration = tenant.allowUserSelfRegistration;
-        e.allowanonymoususers = tenant.allowAnonymousUsers;
-        e.allowsociallogin = tenant.allowSocialLogin;
-        e.verifyemailonselfregistration = tenant.verifyEmailOnSelfRegistration;
-        e.federatedauthenticationconstraint = tenant.federatedAuthenticationConstraint;
-        e.markfordelete = tenant.markForDelete;
-        e.tenanttype = tenant.tenantType;
-        e.claimssupported = tenant.claimsSupported.join(","),
-        e.tenantdescription = tenant.tenantDescription || "";
+        const e: TenantEntity = new TenantEntity(tenant);        
         em.persist(e);
         await em.flush();
         return Promise.resolve(tenant);
     }
-    updateTenant(tenant: Tenant): Promise<Tenant> {
-        throw new Error("Method not implemented.");
+
+    public async updateTenant(tenant: Tenant): Promise<Tenant> {
+        const em = connection.em.fork();
+        const e: TenantEntity = new TenantEntity(tenant);
+        em.upsert(e);
+        await em.flush();
+        return Promise.resolve(tenant);    
     }
-    deleteTenant(tenantId: string): Promise<void> {
-        throw new Error("Method not implemented.");
+
+    public async deleteTenant(tenantId: string): Promise<void> {
+        const em = connection.em.fork();
+        const tenantEntity: TenantEntity | null = await em.findOne(TenantEntity, {tenantid: tenantId});
+        if(tenantEntity){
+            tenantEntity.markfordelete = true;
+            em.persist(tenantEntity);
+            await em.flush();
+        }
     }
+
     getDomainTenantManagementRels(tenantId?: string, domain?: string): Promise<Array<TenantManagementDomainRel>> {
         throw new Error("Method not implemented.");
     }
@@ -89,6 +72,7 @@ class DBTenantDao extends TenantDao {
     removeDomainFromTenantManagement(tenantId: string, domain: string): Promise<TenantManagementDomainRel | null> {
         throw new Error("Method not implemented.");
     }
+    
     createAnonymousUserConfiguration(tenantId: string, anonymousUserConfiguration: AnonymousUserConfiguration): Promise<AnonymousUserConfiguration> {
         throw new Error("Method not implemented.");
     }
@@ -98,6 +82,8 @@ class DBTenantDao extends TenantDao {
     deleteAnonymousUserConfiguration(configurationId: string): Promise<void> {
         throw new Error("Method not implemented.");
     }
+
+
     createTenantLookAndFeel(tenantLookAndFeel: TenantLookAndFeel): Promise<TenantLookAndFeel> {
         throw new Error("Method not implemented.");
     }

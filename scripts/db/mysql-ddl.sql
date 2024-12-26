@@ -14,7 +14,7 @@ create TABLE federated_oidc_provider(
     refreshtokenallowed BOOLEAN NOT NULL,
     scopes varchar(256),
     usepkce BOOLEAN NOT NULL,
-    clienttypeauth varchar(128) NOT NULL,
+    clientauthtype varchar(128) NOT NULL,
     federatedoidcprovidertype varchar(128) NOT NULL,
     socialloginicon BLOB,
     sociallogindisplayname varchar(128)

@@ -55,6 +55,9 @@ class FederatedOIDCProviderService {
         if(!valid){
             throw new GraphQLError(errorMessage);
         }
+        if(!this.getFederatedOIDCProviderById(federatedOIDCProvider.federatedOIDCProviderId)){
+            throw new GraphQLError("ERROR_NO_FEDERATED_OIDC_PROVIDER_FOUND");
+        }
         await federatedOIDCProviderDao.updateFederatedOidcProvider(federatedOIDCProvider);
         return Promise.resolve(federatedOIDCProvider);
     }

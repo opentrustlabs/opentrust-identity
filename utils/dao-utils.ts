@@ -21,6 +21,7 @@ import AuthDao from "@/lib/dao/auth-dao";
 import FSBasedAuthDao from "@/lib/dao/impl/fs/fs-based-auth-dao";
 import FSBasedIdentityDao from "@/lib/dao/impl/fs/fs-based-identity-dao";
 import DBTenantDao from "@/lib/dao/impl/db/db-tenant-dao";
+import DBFederatedOIDCProviderDao from "@/lib/dao/impl/db/db-federated-oidc-provider-dao";
 
 
 /**
@@ -89,15 +90,15 @@ export function generateHash(data: string, hashAlgorithm?: HashAlgorithm, encodi
 
 export function getTenantDaoImpl(): TenantDao {
     console.log('getting tenant dao impl')
-    // DAO_STRATEGY is one of filesystem | postgresql | mysql | oracle | mssql | cassandra | mongodb
+    // DAO_STRATEGY is one of filesystem | postgresql | mysql | mssql | oracle | cassandra | mongodb
     const daoStrategy = process.env.DAO_STRATEGY ?? "filesystem";
-    //new DBTenantDao();
     if(daoStrategy === "filesystem"){
-        //return new FSBasedTenantDao();
+        return new FSBasedTenantDao();        
+    }
+    else if(daoStrategy === "postgresql" || daoStrategy === "mysql" || daoStrategy === "mssql"){
         return new DBTenantDao();
     }
-    return new DBTenantDao();
-    //return new FSBasedTenantDao();
+    return new FSBasedTenantDao();
 }
 
 export function getClientDaoImpl(): ClientDao {
@@ -153,6 +154,9 @@ export function getFederatedOIDCProvicerDaoImpl(): FederatedOIDCProviderDao {
     const daoStrategy = process.env.DAO_STRATEGY ?? "filesystem";
     if(daoStrategy === "filesystem"){
         return new FSBasedFederatedOidcProviderDao();
+    }
+    else if(daoStrategy === "postgresql" || daoStrategy === "mysql" || daoStrategy === "mssql"){
+        return new DBFederatedOIDCProviderDao();
     }
     return new FSBasedFederatedOidcProviderDao();
 }

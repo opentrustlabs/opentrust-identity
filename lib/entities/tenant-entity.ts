@@ -6,30 +6,41 @@ import { Entity, PrimaryKey, Property } from '@mikro-orm/core';
 })
 export class TenantEntity {
     
-  
-
-    constructor(tenant?: Tenant){
+      constructor(tenant?: Tenant){
         if(tenant){
-
+            this.allowanonymoususers = tenant.allowAnonymousUsers;
+            this.allowsociallogin = tenant.allowSocialLogin;
+            this.allowunlimitedrate = tenant.allowUnlimitedRate
+            this.allowuserselfregistration = tenant.allowUserSelfRegistration;
+            this.claimssupported = tenant.claimsSupported ? tenant.claimsSupported.join(",") : "";
+            this.enabled = tenant.enabled;
+            this.federatedauthenticationconstraint = tenant.federatedAuthenticationConstraint;
+            this.markfordelete = tenant.markForDelete;
+            this.tenantid = tenant.tenantId;
+            this.tenantname = tenant.tenantName;
+            this.tenanttype = tenant.tenantType;
+            this.verifyemailonselfregistration = tenant.verifyEmailOnSelfRegistration;
+            this.tenantdescription = tenant.tenantDescription || "";
+            this.federatedauthenticationconstraint = tenant.federatedAuthenticationConstraint            
         }
     }
     
-    @PrimaryKey("tenantid")
+    @PrimaryKey()
     tenantid: string;
 
-    @Property("tenantame")
+    @Property()
     tenantname: string;
 
-    @Property("tenantdescription")
+    @Property()
     tenantdescription?: string;
 
-    @Property("enabled")
+    @Property()
     enabled: boolean;
 
-    @Property("claimssupported")
+    @Property()
     claimssupported?: string;
 
-    @Property("allowunlimitedrate")
+    @Property()
     allowunlimitedrate: boolean;
 
     @Property()
@@ -55,18 +66,21 @@ export class TenantEntity {
 
     toTenantModel(): Tenant {
         const t: Tenant = {
-            allowAnonymousUsers: false,
-            allowSocialLogin: false,
-            allowUnlimitedRate: false,
-            allowUserSelfRegistration: false,
-            claimsSupported: [],
-            enabled: false,
-            federatedAuthenticationConstraint: "c:/Users/David/git/open-certs-oidc/graphql/generated/graphql-types",
-            markForDelete: false,
-            tenantId: '',
-            tenantName: '',
-            tenantType: "c:/Users/David/git/open-certs-oidc/graphql/generated/graphql-types",
-            verifyEmailOnSelfRegistration: false
+            allowAnonymousUsers: this.allowanonymoususers,
+            allowSocialLogin: this.allowsociallogin,
+            allowUnlimitedRate: this.allowunlimitedrate,
+            allowUserSelfRegistration: this.allowuserselfregistration,
+            claimsSupported: this.claimssupported ? this.claimssupported.split(",") : [],
+            enabled: this.enabled,
+            federatedAuthenticationConstraint: this.federatedauthenticationconstraint,
+            markForDelete: this.markfordelete,
+            tenantId: this.tenantid,
+            tenantName: this.tenantname,
+            tenantType: this.tenanttype,
+            verifyEmailOnSelfRegistration: this.verifyemailonselfregistration,
+            tenantDescription: this.tenantdescription,
+            federatedauthenticationconstraintid: "",
+            tenanttypeid: ""
         }
         return t;
     }
