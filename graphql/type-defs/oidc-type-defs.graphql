@@ -125,34 +125,9 @@ type Mutation {
 }
 
 
-# NOT_ALLOWED - No federated OIDC provider can be attached to this tenant
-# EXCLUSIVE   - Use ONLY the OIDC providers that are configured. Typically this will be a single OIDC provider,
-#               but may be more than one in cases of collaboration within a tenant among many different
-#               organizations.
-# PERMISSIVE  - Allow many different federated OIDC providers to be attached to this tenant
-enum FederatedAuthenticationConstraint {
-    NOT_ALLOWED
-    EXCLUSIVE
-    PERMISSIVE
-}
-
-enum TenantType {
-    ROOT_TENANT
-    IDENTITY_MANAGEMENT
-    IDENTITY_MANAGEMENT_AND_SERVICES
-    SERVICES
-}
-
-enum LoginFailurePolicyType {
-    LOCK_USER_ACCOUNT
-    PAUSE
-    PAUSE_THEN_LOCK
-    BACKOFF
-    BACKOFF_THEN_LOCK    
-}
-
 type LoginFailurePolicy {
-    loginFailurePolicyType: LoginFailurePolicyType!
+    loginFailurePolicyType: String!
+    loginfailurepolicytypeid: String
     failureThreshold: Int!
     pauseDurationMinutes: Int
     numberOfPauseCyclesBeforeLocking: Int
@@ -179,9 +154,11 @@ type Tenant {
     allowSocialLogin: Boolean!
     allowAnonymousUsers: Boolean!
     verifyEmailOnSelfRegistration: Boolean!
-    federatedAuthenticationConstraint: FederatedAuthenticationConstraint!
+    federatedAuthenticationConstraint: String!
+    federatedauthenticationconstraintid: String
     markForDelete: Boolean!
-    tenantType: TenantType!
+    tenantType: String!
+    tenanttypeid: String
 }
 
 
@@ -207,18 +184,6 @@ type TenantManagementDomainRel {
     domain: String!
 }
 
-enum OIDCClientAuthType {
-    CLIENT_SECRET_POST
-    CLIENT_SECRET_BASIC
-    CLIENT_SECRET_JWT
-    NONE
-}
-
-enum FederatedOIDCProviderType {
-    SOCIAL
-    ENTERPRISE
-}
-
 # Either client secret should be defined or usePkce should be set to true
 # if no client secret, then client auth type should be NONE
 # refreshTokenAllowed - does the external provider allow for refresh tokens? default false 
@@ -236,8 +201,10 @@ type FederatedOIDCProvider {
     refreshTokenAllowed: Boolean!
     scopes: [String!]!
     usePkce: Boolean!
-    clientAuthType: OIDCClientAuthType!
-    federatedOIDCProviderType: FederatedOIDCProviderType!
+    clientAuthType: String!
+    clientauthtypeid: String
+    federatedOIDCProviderType: String!
+    federatedoidcprovidertypeid: String
     socialLoginIcon: String
     socialLoginDisplayName: String
 }
@@ -256,19 +223,6 @@ type SocialOIDCProviderTenantRel {
 type FederatedOIDCProviderDomainRel {
     federatedOIDCProviderId: String!
     domain: String!
-}
-
-
-enum ClientType {
-    SERVICE_ACCOUNT_ONLY
-    SERVICE_ACCOUNT_AND_USER_DELEGATED_PERMISSIONS
-    USER_DELEGATED_PERMISSIONS_ONLY
-}
-
-enum TokenType {
-    SERVICE_ACCOUNT_TOKEN
-    END_USER_TOKEN
-    ANONYMOUS_USER
 }
 
 
@@ -295,24 +249,13 @@ type Client {
     redirectUris: [String!]
     oidcEnabled: Boolean!
     pkceEnabled: Boolean!
-    clientType: ClientType!
+    clientType: String!
+    clienttypeid: String
     userTokenTTLSeconds: Int
     clientTokenTTLSeconds: Int
     maxRefreshTokenCount: Int
 }
 
-enum TwoFactorAuthType {
-    NONE
-    TEXT
-    EMAIL
-    TIME_BASED_OTP
-    HARDWARE
-}
-
-enum NameOrder {
-    EASTERN_NAME_ORDER
-    WESTERN_NAME_ORDER
-}
 
 # 1.    domain is just the domain part of the email
 type User {
@@ -330,10 +273,10 @@ type User {
     updatedDate: String
     countryCode: String
     preferredLanguageCode: String
-    twoFactorAuthType: TwoFactorAuthType
+    twoFactorAuthType: String
     locked: Boolean!
     enabled: Boolean!
-    nameOrder: NameOrder!
+    nameOrder: String!
 }
 
 type UserTenantRel {
@@ -380,27 +323,19 @@ type UserCredential {
     dateCreated: String!    
 }
 
-enum KeyType {
-    RSA,
-    EC
-}
-
-enum SigningKeyStatus {
-    ACTIVE
-    REVOKED
-}
-
 type SigningKey {
     keyId: String!
     tenantId: String!    
-    keyType: KeyType!
+    keyType: String!
+    keytypeid: String
     keyuse: String!
     privateKeyPkcs8: String!
     password: String
     certificate: String
     publicKey: String
     expiresAtMs: Float!
-    status: SigningKeyStatus!
+    status: String!
+    statusid: String
 }
 
 # Can optionally have a constraint definition tied to this scope.
@@ -518,18 +453,14 @@ type AuthorizationCodeData {
     expiresAtMs: Float!
 }
 
-enum RefreshTokenClientType {
-    PKCE
-    SECURE_CLIENT
-}
-
 type RefreshData {
     refreshToken: String!
     tenantId: String!
     clientId: String!
     userId: String!
     redirecturi: String!
-    refreshTokenClientType: RefreshTokenClientType!
+    refreshTokenClientType: String!
+    refreshtokenclienttypeid: String
     refreshCount: Int!
     scope: String!
 }
@@ -566,37 +497,6 @@ type Contact {
     userid: String
 }
 
-enum ChangeEventType {
-    CREATE
-    UPDATE
-    DELETE
-    CREATE_REL
-    REMOVE_REL
-}
-
-enum ChangeEventClass {
-    LOGIN_FAILURE_POLICY
-    TENANT
-    TENANT_MANAGEMENT_DOMAIN_REL    
-    CLIENT
-    OIDC_PROVIDER
-    OIDC_PROVIDER_TENANT_REL
-    SOCIAL_OIDC_PROVIDER_TENANT_REL
-    OIDC_PROVIDER_DOMAIN_REL
-    USER
-    GROUP
-    AUTHENTICATION_GROUP
-    USER_GROUP_REL
-    SIGNING_KEY
-    RATE_LIMIT
-    TENANT_RATE_LIMIT_REL
-    SCOPE
-    TENANT_SCOPE_REL
-    CLIENT_TENANT_SCOPE_REL
-    SCOPE_CONSTRAINT_SCHEMA
-    ACCESS_RULE
-}
-
 type ChangeEventData {
     changeeventid: String!
     objecttype: String!
@@ -606,8 +506,10 @@ type ChangeEventData {
 
 type ChangeEvent {
     changeeventid: String!
-    changeeventtype: ChangeEventType!
-    changeeventclass: ChangeEventClass!
+    changeeventtype: String!
+    changeeventtypeid: String
+    changeeventclass: String!
+    changeeventclassid: String
     changetimestamp: Float!
     changedbyid: String!
     changeeventdata: [ChangeEventData!]!
@@ -648,8 +550,10 @@ input FederatedOIDCProviderCreateInput {
     federatedOIDCProviderWellKnownUri: String!
     refreshTokenAllowed: Boolean!
     usePkce: Boolean!
-    federatedOIDCProviderType: FederatedOIDCProviderType!
-    clientAuthType: OIDCClientAuthType!
+    federatedOIDCProviderType: String!
+    federatedoidcprovidertypeid: String
+    clientAuthType: String!
+    clientauthtypeid: String
 }
 
 input FederatedOIDCProviderUpdateInput {
@@ -662,8 +566,10 @@ input FederatedOIDCProviderUpdateInput {
     federatedOIDCProviderWellKnownUri: String!
     refreshTokenAllowed: Boolean!
     usePkce: Boolean!
-    federatedOIDCProviderType: FederatedOIDCProviderType!
-    clientAuthType: OIDCClientAuthType!
+    federatedOIDCProviderType: String!
+    federatedoidcprovidertypeid: String
+    clientAuthType: String!
+    clientauthtypeid: String
 }
 
 input TenantCreateInput {
@@ -676,9 +582,9 @@ input TenantCreateInput {
     allowUserSelfRegistration: Boolean!
     verifyEmailOnSelfRegistration: Boolean!
     allowSocialLogin: Boolean!
-    federatedAuthenticationConstraint: FederatedAuthenticationConstraint!
+    federatedAuthenticationConstraint: String!
     federatedOIDCProviderId: String
-    tenantType: TenantType!
+    tenantType: String!
     contactemaillist: [String!]!
 }
 
@@ -692,10 +598,10 @@ input TenantUpdateInput {
     allowUserSelfRegistration: Boolean!
     verifyEmailOnSelfRegistration: Boolean!
     allowSocialLogin: Boolean!
-    federatedAuthenticationConstraint: FederatedAuthenticationConstraint!
+    federatedAuthenticationConstraint: String!
     federatedOIDCProviderId: String
     markForDelete: Boolean!
-    tenantType: TenantType!
+    tenantType: String!
     contactemaillist: [String!]!
 }
 
@@ -707,7 +613,8 @@ input ClientCreateInput {
     redirectUris: [String!]
     oidcEnabled: Boolean
     pkceEnabled: Boolean
-    clientType: ClientType!
+    clientType: String!
+    clienttypeid: String
     userTokenTTLSeconds: Int
     clientTokenTTLSeconds: Int
     maxRefreshTokenCount: Int
@@ -723,7 +630,8 @@ input ClientUpdateInput {
     redirectUris: [String!]
     oidcEnabled: Boolean
     pkceEnabled: Boolean
-    clientType: ClientType!
+    clientType: String!
+    clienttypeid: String
     userTokenTTLSeconds: Int
     clientTokenTTLSeconds: Int
     maxRefreshTokenCount: Int
@@ -732,7 +640,8 @@ input ClientUpdateInput {
 
 input SigningKeyCreateInput {
     tenantId: String!    
-    keyType: KeyType!
+    keyType: String!
+    keytypeid: String
     use: String!
     privateKey: String!
     password: String

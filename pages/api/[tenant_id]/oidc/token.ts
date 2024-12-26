@@ -1,10 +1,10 @@
-import { Tenant, Client, AuthorizationCodeData, ClientType, RefreshData, RefreshTokenClientType, User } from '@/graphql/generated/graphql-types';
+import { Tenant, Client, AuthorizationCodeData, RefreshData } from '@/graphql/generated/graphql-types';
 import AuthDao from '@/lib/dao/auth-dao';
 import ClientDao from '@/lib/dao/client-dao';
 import TenantDao from '@/lib/dao/tenant-dao';
 import { OIDCErrorResponseBody } from '@/lib/models/error';
 import ClientAuthValidationService from '@/lib/service/client-auth-validation-service';
-import { GRANT_TYPE_AUTHORIZATION_CODE, GRANT_TYPE_CLIENT_CREDENTIALS, GRANT_TYPE_REFRESH_TOKEN, GRANT_TYPES_SUPPORTED, OIDC_TOKEN_ERROR_INVALID_CLIENT, OIDC_TOKEN_ERROR_INVALID_GRANT, OIDC_TOKEN_ERROR_INVALID_REQUEST, OIDC_TOKEN_ERROR_UNAUTHORIZED_CLIENT, OidcTokenErrorType } from '@/utils/consts';
+import { CLIENT_TYPE_SERVICE_ACCOUNT_ONLY, CLIENT_TYPE_USER_DELEGATED_PERMISSIONS_ONLY, GRANT_TYPE_AUTHORIZATION_CODE, GRANT_TYPE_CLIENT_CREDENTIALS, GRANT_TYPE_REFRESH_TOKEN, GRANT_TYPES_SUPPORTED, OIDC_TOKEN_ERROR_INVALID_CLIENT, OIDC_TOKEN_ERROR_INVALID_GRANT, OIDC_TOKEN_ERROR_INVALID_REQUEST, OIDC_TOKEN_ERROR_UNAUTHORIZED_CLIENT, OidcTokenErrorType, REFRESH_TOKEN_CLIENT_TYPE_PKCE, REFRESH_TOKEN_CLIENT_TYPE_SECURE_CLIENT } from '@/utils/consts';
 import { generateHash, getAuthDaoImpl, getClientDaoImpl, getTenantDaoImpl } from '@/utils/dao-utils';
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { randomUUID } from 'crypto'; 
@@ -279,7 +279,7 @@ async function handleAuthorizationCodeGrant(tokenData: TokenData, res: NextApiRe
             clientId: d.clientId,
             refreshCount: 1,
             refreshToken: generateHash(oidcTokenResponse.refresh_token),
-            refreshTokenClientType: d.codeChallenge ? RefreshTokenClientType.Pkce : RefreshTokenClientType.SecureClient,
+            refreshTokenClientType: d.codeChallenge ? REFRESH_TOKEN_CLIENT_TYPE_PKCE : REFRESH_TOKEN_CLIENT_TYPE_SECURE_CLIENT,
             tenantId: d.tenantId,
             userId: d.userId,
             scope: d.scope,            
@@ -363,7 +363,7 @@ async function handleRefreshTokenGrant(tokenData: TokenData, res: NextApiRespons
         }
         return res.status(400).json(error);
     }
-    if(client.clientType === ClientType.ServiceAccountOnly){        
+    if(client.clientType === CLIENT_TYPE_SERVICE_ACCOUNT_ONLY){        
         const error: OIDCErrorResponseBody = {
             error: OIDC_TOKEN_ERROR_INVALID_CLIENT,
             error_code: "0000727",
@@ -376,7 +376,7 @@ async function handleRefreshTokenGrant(tokenData: TokenData, res: NextApiRespons
     }
     
     // Validate the client credentials if this is not a PKCE enabled refresh token
-    if(refreshTokenData.refreshTokenClientType !== RefreshTokenClientType.Pkce){
+    if(refreshTokenData.refreshTokenClientType !== REFRESH_TOKEN_CLIENT_TYPE_PKCE){
         if(tokenData.clientAssertion === null && tokenData.clientSecret === null){
             const error: OIDCErrorResponseBody = {
                 error: OIDC_TOKEN_ERROR_INVALID_REQUEST,
@@ -484,7 +484,7 @@ async function handleClientCredentialsGrant(tokenData: TokenData, res: NextApiRe
         return res.status(400).json(error);
     }
     
-    if(client.clientType === ClientType.UserDelegatedPermissionsOnly){
+    if(client.clientType === CLIENT_TYPE_USER_DELEGATED_PERMISSIONS_ONLY){
         const error: OIDCErrorResponseBody = {
             error: OIDC_TOKEN_ERROR_INVALID_CLIENT,
             error_code: "0000734",

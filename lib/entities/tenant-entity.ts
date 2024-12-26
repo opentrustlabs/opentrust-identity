@@ -1,26 +1,35 @@
+import type { Tenant } from '@/graphql/generated/graphql-types';
 import { Entity, PrimaryKey, Property } from '@mikro-orm/core';
 
 @Entity({
     tableName: "tenant"
 })
-export class TenantEntity {    
+export class TenantEntity {
     
-    @PrimaryKey()
+  
+
+    constructor(tenant?: Tenant){
+        if(tenant){
+
+        }
+    }
+    
+    @PrimaryKey("tenantid")
     tenantid: string;
 
-    @Property()
+    @Property("tenantame")
     tenantname: string;
 
-    @Property()
+    @Property("tenantdescription")
     tenantdescription?: string;
 
-    @Property()
+    @Property("enabled")
     enabled: boolean;
 
-    @Property()
+    @Property("claimssupported")
     claimssupported?: string;
 
-    @Property()
+    @Property("allowunlimitedrate")
     allowunlimitedrate: boolean;
 
     @Property()
@@ -43,5 +52,23 @@ export class TenantEntity {
 
     @Property()
     tenanttype: string;
+
+    toTenantModel(): Tenant {
+        const t: Tenant = {
+            allowAnonymousUsers: false,
+            allowSocialLogin: false,
+            allowUnlimitedRate: false,
+            allowUserSelfRegistration: false,
+            claimsSupported: [],
+            enabled: false,
+            federatedAuthenticationConstraint: "c:/Users/David/git/open-certs-oidc/graphql/generated/graphql-types",
+            markForDelete: false,
+            tenantId: '',
+            tenantName: '',
+            tenantType: "c:/Users/David/git/open-certs-oidc/graphql/generated/graphql-types",
+            verifyEmailOnSelfRegistration: false
+        }
+        return t;
+    }
 
 }
