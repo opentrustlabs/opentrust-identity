@@ -1,11 +1,11 @@
-import { Tenant, Client, FederatedAuthenticationConstraint, FederatedOidcProvider, FederatedOidcAuthorizationRel, PreAuthenticationState, ClientType } from '@/graphql/generated/graphql-types';
+import { Tenant, Client, FederatedOidcProvider, FederatedOidcAuthorizationRel, PreAuthenticationState } from '@/graphql/generated/graphql-types';
 import AuthDao from '@/lib/dao/auth-dao';
 import ClientDao from '@/lib/dao/client-dao';
 import FederatedOIDCProviderDao from '@/lib/dao/federated-oidc-provider-dao';
 import TenantDao from '@/lib/dao/tenant-dao';
 import { WellknownConfig } from '@/lib/models/wellknown-config';
 import OIDCServiceClient from '@/lib/service/oidc-service-client';
-import { ALL_OIDC_SUPPORTED_SCOPE_VALUES, OIDC_OPENID_SCOPE } from '@/utils/consts';
+import { ALL_OIDC_SUPPORTED_SCOPE_VALUES, CLIENT_TYPE_SERVICE_ACCOUNT_ONLY, FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE, OIDC_OPENID_SCOPE } from '@/utils/consts';
 import { generateCodeVerifierAndChallenge, generateRandomToken, getAuthDaoImpl, getClientDaoImpl, getFederatedOIDCProvicerDaoImpl, getTenantDaoImpl } from '@/utils/dao-utils';
 import type { NextApiRequest, NextApiResponse } from 'next'
 
@@ -137,7 +137,7 @@ export default async function handler(
         res.end();
         return;
 	}
-    if(client.clientType === ClientType.ServiceAccountOnly){
+    if(client.clientType === CLIENT_TYPE_SERVICE_ACCOUNT_ONLY){
         res.status(302).setHeader("location", `/authorize/login?tenant_id=${tenantId}&client_id=${clientId}&state=${oidcState}&error=unauthorized_client&error_message=ERROR_CLIENT_NOT_ENABLED_FOR_SSO&redirect_uri=${redirectUri}&scope=${oidcScope}&response_type=${responseType}&response_mode=${responseMode}`);
         res.end();
         return;
@@ -179,7 +179,7 @@ export default async function handler(
 		res.end();
 		return;
 	}
-	if (tenant.federatedAuthenticationConstraint === FederatedAuthenticationConstraint.Exclusive) {
+	if (tenant.federatedAuthenticationConstraint === FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE) {
         // 1.   Need to look up all of the federated IdPs associated to this tenant.
         // 2.   If there is just one, then redirect immediately.
         // 3.   Otherwise, show the login page as below with the saved temporary token -> incoming data relationship.
@@ -216,9 +216,10 @@ export default async function handler(
                 initResponseMode: responseMode,
                 initScope: oidcScope,
                 initState: oidcState,
-                initTenantId: tenantId,                
+                initTenantId: tenantId,
                 initCodeChallenge: codeChallenge,
-                initCodeChallengeMethod: codeChallengeMethod
+                initCodeChallengeMethod: codeChallengeMethod,
+                initResponseType: responseType
             }
             await authDao.saveFederatedOIDCAuthorizationRel(federatedOidcAuthorizationRel);
             

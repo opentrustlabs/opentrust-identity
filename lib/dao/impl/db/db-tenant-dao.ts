@@ -1,4 +1,4 @@
-import { Tenant, TenantManagementDomainRel, AnonymousUserConfiguration, TenantLookAndFeel, FederatedAuthenticationConstraint, TenantType } from "@/graphql/generated/graphql-types";
+import { Tenant, TenantManagementDomainRel, AnonymousUserConfiguration, TenantLookAndFeel } from "@/graphql/generated/graphql-types";
 import TenantDao from "../../tenant-dao";
 import { TenantEntity } from "@/lib/entities/tenant-entity";
 import connection  from "@/lib/data-sources/db";
@@ -40,10 +40,10 @@ class DBTenantDao extends TenantDao {
                     allowUserSelfRegistration: e.allowuserselfregistration,
                     claimsSupported: e.claimssupported ? e.claimssupported.split(",") : [],
                     enabled: e.enabled,
-                    federatedAuthenticationConstraint: FederatedAuthenticationConstraint[getKeyByValue(FederatedAuthenticationConstraint, e.federatedauthenticationconstraint)],
+                    federatedAuthenticationConstraint: e.federatedauthenticationconstraint,
                     markForDelete: e.markfordelete,
                     tenantName: e.tenantname,
-                    tenantType: TenantType[getKeyByValue(TenantType, e.tenanttype)],
+                    tenantType: e.tenanttype,
                     verifyEmailOnSelfRegistration: e.verifyemailonselfregistration
                 }                
                 return t;

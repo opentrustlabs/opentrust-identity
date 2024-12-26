@@ -1,11 +1,12 @@
 import ClientService from "@/lib/service/client-service";
 import TenantService from "@/lib/service/tenant-service";
-import { Resolvers, QueryResolvers, MutationResolvers, Tenant, Client, SigningKey, Scope, AuthenticationGroup, AuthorizationGroup, SigningKeyStatus, TenantType, FederatedOidcProvider, OidcClientAuthType } from "../generated/graphql-types";
+import { Resolvers, QueryResolvers, MutationResolvers, Tenant, Client, SigningKey, Scope, AuthenticationGroup, AuthorizationGroup, FederatedOidcProvider } from "../generated/graphql-types";
 import SigningKeysService from "@/lib/service/keys-service";
 import ScopeService from "@/lib/service/scope-service";
 import GroupService from "@/lib/service/group-service";
 import AuthenticationGroupService from "@/lib/service/authentication-group-service";
 import FederatedOIDCProviderService from "@/lib/service/federated-oidc-provider-service";
+import { OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_POST, SIGNING_KEY_STATUS_ACTIVE, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 
 
 const resolvers: Resolvers = {
@@ -85,7 +86,7 @@ const resolvers: Resolvers = {
                 verifyEmailOnSelfRegistration: tenantInput.verifyEmailOnSelfRegistration,
                 federatedAuthenticationConstraint: tenantInput.federatedAuthenticationConstraint,
                 markForDelete: false,
-                tenantType: TenantType.RootTenant,
+                tenantType: TENANT_TYPE_ROOT_TENANT,
                 allowSocialLogin: false,
                 allowAnonymousUsers: false
             };
@@ -105,7 +106,7 @@ const resolvers: Resolvers = {
                 verifyEmailOnSelfRegistration: tenantInput.verifyEmailOnSelfRegistration,
                 federatedAuthenticationConstraint: tenantInput.federatedAuthenticationConstraint,
                 markForDelete: tenantInput.markForDelete,
-                tenantType: TenantType.RootTenant,
+                tenantType: TENANT_TYPE_ROOT_TENANT,
                 allowSocialLogin: false,
                 allowAnonymousUsers: false
             }
@@ -211,7 +212,7 @@ const resolvers: Resolvers = {
                 privateKeyPkcs8: keyInput.privateKey,
                 password: keyInput.password,
                 expiresAtMs: 0, // TODO - derive from the certificate's expiration
-                status: SigningKeyStatus.Active
+                status: SIGNING_KEY_STATUS_ACTIVE
             };
             await keysService.createSigningKey(key);
             return key;
@@ -348,7 +349,7 @@ const resolvers: Resolvers = {
                 federatedOIDCProviderWellKnownUri: oidcProviderInput.federatedOIDCProviderWellKnownUri,
                 refreshTokenAllowed: oidcProviderInput.refreshTokenAllowed,
                 usePkce: oidcProviderInput.usePkce,
-                clientAuthType: oidcProviderInput.clientAuthType || OidcClientAuthType.ClientSecretPost,
+                clientAuthType: oidcProviderInput.clientAuthType || OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_POST,
                 federatedOIDCProviderClientSecret: oidcProviderInput.federatedOIDCProviderClientSecret,
                 federatedOIDCProviderDescription: oidcProviderInput.federatedOIDCProviderDescription,
                 federatedOIDCProviderTenantId: oidcProviderInput.federatedOIDCProviderTenantId,
@@ -367,7 +368,7 @@ const resolvers: Resolvers = {
                 federatedOIDCProviderWellKnownUri: oidcProviderInput.federatedOIDCProviderWellKnownUri,
                 refreshTokenAllowed: oidcProviderInput.refreshTokenAllowed,
                 usePkce: oidcProviderInput.usePkce,
-                clientAuthType: oidcProviderInput.clientAuthType || OidcClientAuthType.ClientSecretPost,
+                clientAuthType: oidcProviderInput.clientAuthType || OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_POST,
                 federatedOIDCProviderClientSecret: oidcProviderInput.federatedOIDCProviderClientSecret,
                 federatedOIDCProviderDescription: oidcProviderInput.federatedOIDCProviderDescription,
                 federatedOIDCProviderTenantId: oidcProviderInput.federatedOIDCProviderTenantId,

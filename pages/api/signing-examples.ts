@@ -2,11 +2,11 @@ import type { NextApiRequest, NextApiResponse } from 'next'
 import { generateKeyPairSync, createPublicKey, KeyObject, PrivateKeyInput, createPrivateKey } from "node:crypto";
 import { pem, sha256, hmac, pki } from "node-forge";
 import { OIDCPrincipal } from '@/lib/models/principal';
-import { ClientType, TokenType } from '@/graphql/generated/graphql-types';
 import JwtService from '@/lib/service/jwt-service';
 import { JWTPayload,  } from 'jose';
 import { generateRandomToken } from '@/utils/dao-utils';
 import FSBasedKms from '@/lib/kms/fs-based-kms';
+import { CLIENT_TYPE_SERVICE_ACCOUNT_AND_USER_DELEGATED_PERMISSIONS, TOKEN_TYPE_END_USER_TOKEN } from '@/utils/consts';
 
 const jwtService: JwtService = new JwtService();
 
@@ -35,8 +35,8 @@ const oidcPrincipal: JWTPayload = {
     tenant_name: 'Test Tenant',
     client_id: '7654321',
     client_name: 'Test Client',
-    client_type: ClientType.ServiceAccountAndUserDelegatedPermissions,
-    token_type: TokenType.EndUserToken
+    client_type: CLIENT_TYPE_SERVICE_ACCOUNT_AND_USER_DELEGATED_PERMISSIONS,
+    token_type: TOKEN_TYPE_END_USER_TOKEN
 }
 
 // **************************************************************************** //
