@@ -382,10 +382,15 @@ create TABLE client_auth_history (
 create TABLE change_event (
     changeeventid VARCHAR(64) NOT NULL PRIMARY KEY,
     changeeventtype VARCHAR(128) NOT NULL,
+	changeeventtypeid VARCHAR(64),
     changeeventclass VARCHAR(128) NOT NULL,
-    changetimestamp TIMESTAMP NOT NULL,
-    changedbyid VARCHAR(64) NOT NULL,    
-    FOREIGN KEY (changedbyid) REFERENCES user(userid)
+	changeeventclassid VARCHAR(64),
+    changetimestamp BIGINT NOT NULL,
+    changedbyid VARCHAR(64) NOT NULL,
+	signature BLOB NOT NULL,
+	keyid VARCHAR(64) NOT NULL,
+	FOREIGN KEY (changedbyid) REFERENCES user(userid),
+	FOREIGN KEY (keyid) REFERENCES signing_key(keyid)
 );
 
 create TABLE change_event_data (
@@ -393,9 +398,12 @@ create TABLE change_event_data (
     objecttype VARCHAR(128) NOT NULL,
     objectid VARCHAR(64) NOT NULL,
     data BLOB NOT NULL,
+    PRIMARY KEY (changeeventid, objectid),
     FOREIGN KEY (changeeventid) REFERENCES change_event(changeeventid)
 );
 CREATE INDEX change_event_data_changeeventid_idx ON change_event_data(changeeventid);
+CREATE INDEX change_event_data_objectid_idx ON change_event_data(objectid);
+CREATE INDEX change_event_data_objecttype_idx ON change_event_data(objecttype);
 
 create TABLE anonymous_user_configuration (
     anonymoususerconfigurationid VARCHAR(64) PRIMARY KEY,
@@ -403,7 +411,7 @@ create TABLE anonymous_user_configuration (
     defaultlanguagecode VARCHAR(8) NOT NULL,
     tokenttlseconds INT NOT NULL,
     scopeids VARCHAR(4096),
-    groupid VARCHAR(4096)    
+    groupids VARCHAR(4096)    
 );
 
 create TABLE tenant_anonymous_user_configuration_rel (

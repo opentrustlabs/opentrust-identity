@@ -503,15 +503,15 @@ type ChangeEventData {
 }
 
 type ChangeEvent {
-    changeeventid: String!
-    changeeventtype: String!
-    changeeventtypeid: String
-    changeeventclass: String!
-    changeeventclassid: String
-    changetimestamp: Float!
-    changedbyid: String!
-    changeeventdata: [ChangeEventData!]!
+    changeEventId: String!
+    changeEventType: String!
+    changeEventTypeId: String
+    changeEventClass: String!
+    changeEventClassId: String
+    changeTimestamp: Float!
+    changedById: String!
     signature: String!
+	keyId: String!
 }
 
 type TenantLookAndFeel {
