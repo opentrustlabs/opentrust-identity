@@ -1,4 +1,4 @@
-import { FederatedAuthenticationConstraint, FederatedOidcProvider, Tenant, TenantManagementDomainRel } from "@/graphql/generated/graphql-types";
+import { FederatedOidcProvider, Tenant, TenantManagementDomainRel } from "@/graphql/generated/graphql-types";
 import { OIDCContext } from "@/graphql/graphql-context";
 import TenantDao from "@/lib/dao/tenant-dao";
 import { getFederatedOIDCProvicerDaoImpl, getTenantDaoImpl } from "@/utils/dao-utils";

@@ -20,7 +20,7 @@ class DBTenantDao extends TenantDao {
         const tenantEntities: Array<TenantEntity> = await em.findAll(TenantEntity);
         const tenants: Array<Tenant> = tenantEntities.map(
             (e: TenantEntity) => {
-                return e.toTenantModel();
+                return e.toModel();
             }
         );
         return Promise.resolve(tenants);

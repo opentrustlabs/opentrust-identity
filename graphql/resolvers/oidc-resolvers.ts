@@ -172,7 +172,9 @@ const resolvers: Resolvers = {
                 pkceEnabled: clientInput.pkceEnabled ?? true,
                 clientType: clientInput.clientType,
                 userTokenTTLSeconds: clientInput.userTokenTTLSeconds || 0,
-                maxRefreshTokenCount: clientInput.maxRefreshTokenCount
+                maxRefreshTokenCount: clientInput.maxRefreshTokenCount,
+                clientTokenTTLSeconds: clientInput.clientTokenTTLSeconds,
+                clienttypeid: ""
             }
             await clientService.createClient(client);
             return client;
@@ -191,7 +193,9 @@ const resolvers: Resolvers = {
                 pkceEnabled: clientInput.pkceEnabled ?? true,
                 clientType: clientInput.clientType,
                 userTokenTTLSeconds: clientInput.userTokenTTLSeconds || 0,
-                maxRefreshTokenCount: clientInput.maxRefreshTokenCount
+                maxRefreshTokenCount: clientInput.maxRefreshTokenCount,
+                clientTokenTTLSeconds: clientInput.clientTokenTTLSeconds,
+                clienttypeid: ""
             }
             await clientService.updateClient(client);
             return client;

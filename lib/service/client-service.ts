@@ -32,10 +32,7 @@ class ClientService {
     }
 
     public async getClientById(clientId: string): Promise<Client | null> {
-        const clients = await this.getClients();
-        const client: Client | undefined = clients.find(
-            (client: Client) => client.clientId === clientId
-        );
+        const client = await clientDao.getClientById(clientId);        
         return client === undefined ? Promise.resolve(null) : Promise.resolve(client);
     }
 

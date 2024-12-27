@@ -35,23 +35,7 @@ create TABLE tenant (
     markfordelete BOOLEAN NOT NULL,
     tenanttype VARCHAR(128) NOT NULL
 );
-
-create TABLE root_tenant (
-    tenantid VARCHAR(64) PRIMARY KEY,
-    tenantname VARCHAR(128) NOT NULL,
-    tenantdescription VARCHAR(256),
-    enabled BOOLEAN NOT NULL,
-    claimssupported VARCHAR(1024),
-    allowunlimitedrate BOOLEAN NOT NULL,
-    allowuserselfregistration BOOLEAN NOT NULL,
-    allowanonymoususers BOOLEAN NOT NULL,
-    allowsociallogin BOOLEAN NOT NULL,
-    verifyemailonselfregistration BOOLEAN NOT NULL,
-    federatedauthenticationconstraint VARCHAR(128) NOT NULL,
-    markfordelete BOOLEAN NOT NULL,
-    tenanttype VARCHAR(128) NOT NULL
-);
-
+CREATE INDEX tenant_tenant_type_idx ON tenant(tenanttype);
 
 create TABLE login_failure_policy (
     loginfailurepolicytype VARCHAR(128) NOT NULL,
@@ -64,7 +48,7 @@ create TABLE login_failure_policy (
 
 create TABLE tenant_management_domain_rel (
     tenantid VARCHAR(64) NOT NULL,
-    domain VARCHAR(64) NOT NULL,
+    domain VARCHAR(128) NOT NULL,
     PRIMARY KEY (tenantid, domain),
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid)
 );
@@ -89,7 +73,7 @@ create TABLE social_oidc_provider_tenant_rel (
 
 create TABLE federated_oidc_provider_domain_rel (
     federatedoidcproviderid VARCHAR(64) NOT NULL,
-    domain VARCHAR(64) NOT NULL UNIQUE,
+    domain VARCHAR(128) NOT NULL UNIQUE,
     PRIMARY KEY (federatedoidcproviderid, domain),
     FOREIGN KEY (federatedoidcproviderid) REFERENCES federated_oidc_provider(federatedoidcproviderid)
 );
@@ -129,14 +113,12 @@ create TABLE user (
     middlename VARCHAR(128),
     phonenumber VARCHAR(64),
     address VARCHAR(128),
-    createddate TIMESTAMP NOT NULL,
-    updateddate TIMESTAMP,
     countrycode VARCHAR(8),
     preferredlanguagecode VARCHAR(8),
     twofactorauthtype VARCHAR(64),
     locked BOOLEAN,
     enabled BOOLEAN NOT NULL,
-    nameorder VARCHAR(64)
+    nameorder VARCHAR(64) NOT NULL
 );
 
 CREATE INDEX user_email_idx on user(email);

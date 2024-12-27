@@ -1,28 +1,29 @@
-import { FederatedOidcProviderTenantRel } from "@/graphql/generated/graphql-types";
-import { PrimaryKey } from "@mikro-orm/core";
+import type { FederatedOidcProviderTenantRel } from "@/graphql/generated/graphql-types";
+import { Entity, PrimaryKey } from "@mikro-orm/core";
 
 
-class FederatedOIDCProviderTenantRelEntity {
+@Entity({
+    tableName: "federated_oidc_provider_tenant_rel"
+})
+class FederatedOIDCProviderTenantRelEntity implements FederatedOidcProviderTenantRel {
 
     constructor(federatedOidcProviderTenantRel?: FederatedOidcProviderTenantRel){
         if(federatedOidcProviderTenantRel){
-            this.federatedoidcproviderid = federatedOidcProviderTenantRel.federatedOIDCProviderId;
-            this.tenantid = federatedOidcProviderTenantRel.tenantId;
+            //Object.assign(this, federatedOidcProviderTenantRel);
+            this.federatedOIDCProviderId = federatedOidcProviderTenantRel.federatedOIDCProviderId;
+            this.tenantId = federatedOidcProviderTenantRel.tenantId;
+            
         }
     }
 
-    @PrimaryKey()
-    federatedoidcproviderid: string;
+    __typename?: "FederatedOIDCProviderTenantRel" | undefined;
+    
+    @PrimaryKey({fieldName: "federatedoidcproviderid"})
+    federatedOIDCProviderId: string;
+    
+    @PrimaryKey({fieldName: "tenantid"})
+    tenantId: string;
 
-    @PrimaryKey()
-    tenantid: string;
-
-    public toModel(): FederatedOidcProviderTenantRel {
-        return {
-            federatedOIDCProviderId: this.federatedoidcproviderid,
-            tenantId: this.tenantid
-        }
-    }
 
 }
 

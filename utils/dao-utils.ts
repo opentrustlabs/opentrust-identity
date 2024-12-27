@@ -22,6 +22,7 @@ import FSBasedAuthDao from "@/lib/dao/impl/fs/fs-based-auth-dao";
 import FSBasedIdentityDao from "@/lib/dao/impl/fs/fs-based-identity-dao";
 import DBTenantDao from "@/lib/dao/impl/db/db-tenant-dao";
 import DBFederatedOIDCProviderDao from "@/lib/dao/impl/db/db-federated-oidc-provider-dao";
+import DBClientDao from "@/lib/dao/impl/db/db-client-dao";
 
 
 /**
@@ -103,9 +104,12 @@ export function getTenantDaoImpl(): TenantDao {
 
 export function getClientDaoImpl(): ClientDao {
     const daoStrategy = process.env.DAO_STRATEGY ?? "filesystem";
-
+    // DAO_STRATEGY is one of filesystem | postgresql | mysql | mssql | oracle | cassandra | mongodb
     if(daoStrategy === "filesystem"){
         return new FSBasedClientDao();
+    }
+    else if(daoStrategy === "postgresql" || daoStrategy === "mysql" || daoStrategy === "mssql"){
+        return new DBClientDao();
     }
     return new FSBasedClientDao();
 }

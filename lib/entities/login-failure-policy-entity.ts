@@ -1,7 +1,10 @@
-import { LoginFailurePolicy } from "@/graphql/generated/graphql-types";
-import { PrimaryKey, Property } from "@mikro-orm/core";
+import type { LoginFailurePolicy } from "@/graphql/generated/graphql-types";
+import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
 
 
+@Entity({
+    tableName: "login_failure_policy"
+})
 class LoginFailurePolicyEntity {
 
     constructor(loginFailurePolicy?: LoginFailurePolicy){

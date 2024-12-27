@@ -1,7 +1,9 @@
-import { TenantManagementDomainRel } from "@/graphql/generated/graphql-types";
-import { PrimaryKey } from "@mikro-orm/core";
+import type { TenantManagementDomainRel } from "@/graphql/generated/graphql-types";
+import { Entity, PrimaryKey } from "@mikro-orm/core";
 
-
+@Entity({
+    tableName: "tenant_management_domain_rel"
+})
 class TenantManagementDomainRelEntity {
 
     constructor(tenantManagementDomainRel?: TenantManagementDomainRel){

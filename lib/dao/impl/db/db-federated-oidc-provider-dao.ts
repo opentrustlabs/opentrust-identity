@@ -2,6 +2,7 @@ import { FederatedOidcProvider, FederatedOidcProviderTenantRel, FederatedOidcPro
 import FederatedOIDCProviderDao from "../../federated-oidc-provider-dao";
 import connection  from "@/lib/data-sources/db";
 import { FederatedOIDCProviderEntity } from "@/lib/entities/federated-oidc-provider-entity";
+import FederatedOIDCProviderTenantRelEntity from "@/lib/entities/federated-oidc-provider-tenant-rel-entity";
 
 class DBFederatedOIDCProviderDao extends FederatedOIDCProviderDao {
 
@@ -17,13 +18,14 @@ class DBFederatedOIDCProviderDao extends FederatedOIDCProviderDao {
         // .orWhere('1 = 2')
         // .limit(2, 1);
         // console.log(qb.getQuery());
-
-        const tenantEntities: Array<FederatedOIDCProviderEntity> = await em.findAll(FederatedOIDCProviderEntity);
-            // tenantId? 
-            //     await em.find(FederatedOIDCProviderEntity, {federatedoidcprovidertenantid: tenantId}) :
-            //     await em.findAll(FederatedOIDCProviderEntity)            
-            // ;
-        const tenants: Array<FederatedOidcProvider> = tenantEntities.map(
+        const b: Array<FederatedOidcProviderTenantRel> = tenantId ? await this.getFederatedOidcProviderTenantRels(tenantId) : [];
+        const t: Array<FederatedOIDCProviderEntity> = tenantId ?
+             await em.find(FederatedOIDCProviderEntity, {federatedoidcproviderid: b.map(e => e.federatedOIDCProviderId)})
+             :
+             await em.findAll(FederatedOIDCProviderEntity)
+             ;
+       
+        const tenants: Array<FederatedOidcProvider> = t.map(
             (e: FederatedOIDCProviderEntity) => {
                 return e.toModel();
             }
@@ -61,26 +63,36 @@ class DBFederatedOIDCProviderDao extends FederatedOIDCProviderDao {
     }
 
     public async getFederatedOidcProviderTenantRels(tenantId?: string): Promise<Array<FederatedOidcProviderTenantRel>> {
-        throw new Error("Method not implemented.");
+        const em = connection.em.fork();
+        const whereClause = tenantId ? { tenantId: tenantId } : {};
+        const a: Array<FederatedOIDCProviderTenantRelEntity> = await em.find(FederatedOIDCProviderTenantRelEntity, whereClause);
+        return Promise.resolve(a)        ;
     }
+
     public async getFederatedOidcProviderByDomain(domain: string): Promise<FederatedOidcProvider | null> {
         throw new Error("Method not implemented.");
     }
+
     public async assignFederatedOidcProviderToTenant(federatedOIDCProviderId: string, tenantId: string): Promise<FederatedOidcProviderTenantRel> {
         throw new Error("Method not implemented.");
     }
+
     public async removeFederatedOidcProviderFromTenant(federatedOIDCProviderId: string, tenantId: string): Promise<FederatedOidcProviderTenantRel> {
         throw new Error("Method not implemented.");
     }
+
     public async getFederatedOidcProviderDomainRels(): Promise<Array<FederatedOidcProviderDomainRel>> {
         throw new Error("Method not implemented.");
     }
+
     public async assignFederatedOidcProviderToDomain(federatedOIDCProviderId: string, domain: string): Promise<FederatedOidcProviderDomainRel> {
         throw new Error("Method not implemented.");
     }
+
     public async removeFederatedOidcProviderFromDomain(federatedOIDCProviderId: string, domain: string): Promise<FederatedOidcProviderDomainRel> {
         throw new Error("Method not implemented.");
     }
+
     public async deleteFederatedOidcProvider(federatedOIDCProviderId: string): Promise<void> {
         throw new Error("Method not implemented.");
     }

@@ -269,8 +269,6 @@ type User {
     middleName: String
     phoneNumber: String
     address: String
-    createdDate: String!
-    updatedDate: String
     countryCode: String
     preferredLanguageCode: String
     twoFactorAuthType: String
