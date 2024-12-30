@@ -1,6 +1,9 @@
-import { AuthenticationGroupClientRel } from "@/graphql/generated/graphql-types";
-import { PrimaryKey } from "@mikro-orm/core";
+import type { AuthenticationGroupClientRel } from "@/graphql/generated/graphql-types";
+import { Entity, PrimaryKey } from "@mikro-orm/core";
 
+@Entity({
+    tableName: "authentication_group_client_rel"
+})
 class AuthenticationGroupClientRelEntity implements AuthenticationGroupClientRel {
 
     constructor(authenticationGroupClientRel?: AuthenticationGroupClientRel){

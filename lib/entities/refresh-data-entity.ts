@@ -1,7 +1,9 @@
-import { Maybe, RefreshData } from "@/graphql/generated/graphql-types";
-import { PrimaryKey, Property, Ref } from "@mikro-orm/core";
+import type { Maybe, RefreshData } from "@/graphql/generated/graphql-types";
+import { Entity, PrimaryKey, Property, Ref } from "@mikro-orm/core";
 
-
+@Entity({
+    tableName: "refresh_data"
+})
 class RefreshDataEntity implements RefreshData {
 
     constructor(m?: RefreshData){

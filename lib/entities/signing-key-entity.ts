@@ -1,7 +1,9 @@
-import { Maybe, SigningKey } from "@/graphql/generated/graphql-types";
-import { PrimaryKey, Property } from "@mikro-orm/core";
+import type { Maybe, SigningKey } from "@/graphql/generated/graphql-types";
+import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
 
-
+@Entity({
+    tableName: "signing_key"
+})
 class SigningKeyEntity {
 
     constructor(signingKey?: SigningKey){

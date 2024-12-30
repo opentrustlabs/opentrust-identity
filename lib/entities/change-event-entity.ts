@@ -1,7 +1,9 @@
-import { ChangeEvent, Maybe } from "@/graphql/generated/graphql-types";
-import { PrimaryKey, Property } from "@mikro-orm/core";
+import type { ChangeEvent, Maybe } from "@/graphql/generated/graphql-types";
+import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
 
-
+@Entity({
+    tableName: "change_event"
+})
 class ChangeEventEntity {
 
     constructor(m?: ChangeEvent){

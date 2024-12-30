@@ -1,7 +1,9 @@
-import { FooterLink } from "@/graphql/generated/graphql-types";
-import { PrimaryKey, Property } from "@mikro-orm/core";
+import type { FooterLink } from "@/graphql/generated/graphql-types";
+import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
 
-
+@Entity({
+    tableName: "footer_link"
+})
 class FooterLinkEntity implements FooterLink {
 
     constructor(m?: FooterLink){

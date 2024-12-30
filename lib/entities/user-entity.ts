@@ -1,7 +1,9 @@
-import { Maybe, User } from "@/graphql/generated/graphql-types";
-import { PrimaryKey, Property } from "@mikro-orm/core";
+import type { Maybe, User } from "@/graphql/generated/graphql-types";
+import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
 
-
+@Entity({
+    tableName: "user"
+})
 class UserEntity implements User {
 
     constructor(user?: User){

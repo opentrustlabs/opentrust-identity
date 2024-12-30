@@ -1,7 +1,9 @@
-import { Maybe, PreAuthenticationState } from "@/graphql/generated/graphql-types";
-import { PrimaryKey, Property } from "@mikro-orm/core";
+import type { Maybe, PreAuthenticationState } from "@/graphql/generated/graphql-types";
+import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
 
-
+@Entity({
+    tableName: "preauthentication_state"
+})
 class PreAuthenticationStateEntity implements PreAuthenticationState {
     
     constructor(m?: PreAuthenticationState){

@@ -1,7 +1,9 @@
-import { Maybe, RateLimitServiceGroup } from "@/graphql/generated/graphql-types";
-import { PrimaryKey, Property } from "@mikro-orm/core";
+import type { Maybe, RateLimitServiceGroup } from "@/graphql/generated/graphql-types";
+import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
 
-
+@Entity({
+    tableName: "rate_limit_service_group"
+})
 class RateLimitServiceGroupEntity implements RateLimitServiceGroup {
 
     constructor(rateLimitServiceGroup?: RateLimitServiceGroup){

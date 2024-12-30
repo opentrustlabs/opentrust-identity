@@ -1,7 +1,9 @@
-import { Maybe, TenantRateLimitRel } from "@/graphql/generated/graphql-types";
-import { PrimaryKey, Property } from "@mikro-orm/core";
+import type { Maybe, TenantRateLimitRel } from "@/graphql/generated/graphql-types";
+import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
 
-
+@Entity({
+    tableName: "tenant_rate_limit_rel"
+})
 class TenantRateLimitRelEntity implements TenantRateLimitRel {
 
     constructor(tenantRateLimitRel?: TenantRateLimitRel){
