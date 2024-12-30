@@ -1,4 +1,4 @@
-import { Client, ClientAuthHistory } from "@/graphql/generated/graphql-types";
+import { Client, ClientAuthHistory, Contact } from "@/graphql/generated/graphql-types";
 import ClientDao from "@/lib/dao/client-dao";
 import { CLIENT_FILE } from "@/utils/consts";
 import path from "node:path";
@@ -10,6 +10,11 @@ import { GraphQLError } from "graphql/error/GraphQLError";
 const dataDir = process.env.FS_BASED_DATA_DIR ?? path.join(__dirname);
 
 class FSBasedClientDao extends ClientDao {
+    
+    
+    public async assignContactsToClient(clientId: string, contactList: Array<Contact>): Promise<Array<Contact>> {
+        throw new Error("Method not implemented.");
+    }
 
    
     public async getClients(tenantId?: string): Promise<Array<Client>> {

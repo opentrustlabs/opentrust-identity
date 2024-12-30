@@ -3,6 +3,7 @@ import FederatedOIDCProviderDao from "../../federated-oidc-provider-dao";
 import connection  from "@/lib/data-sources/db";
 import { FederatedOIDCProviderEntity } from "@/lib/entities/federated-oidc-provider-entity";
 import FederatedOIDCProviderTenantRelEntity from "@/lib/entities/federated-oidc-provider-tenant-rel-entity";
+import FederatedOIDCProviderDomainRelEntity from "@/lib/entities/federated-oidc-provider-domain-rel-entity";
 
 class DBFederatedOIDCProviderDao extends FederatedOIDCProviderDao {
 
@@ -70,27 +71,81 @@ class DBFederatedOIDCProviderDao extends FederatedOIDCProviderDao {
     }
 
     public async getFederatedOidcProviderByDomain(domain: string): Promise<FederatedOidcProvider | null> {
-        throw new Error("Method not implemented.");
+        const em = connection.em.fork();
+        const federatedOIDCProviderDomainRelEntity: FederatedOIDCProviderDomainRelEntity | null = await em.findOne(
+            FederatedOIDCProviderDomainRelEntity,
+            {
+                domain: domain
+            }
+        );
+        if(!federatedOIDCProviderDomainRelEntity){
+            return Promise.resolve(null);
+        }
+        const federatedOIDCProviderEntity: FederatedOIDCProviderEntity | null = await em.findOne(
+            FederatedOIDCProviderEntity,
+            {
+                federatedoidcproviderid: federatedOIDCProviderDomainRelEntity.federatedoidcproviderid
+            }
+        );
+        if(!federatedOIDCProviderEntity){
+            return Promise.resolve(null);
+        }
+        return Promise.resolve(federatedOIDCProviderEntity.toModel());
     }
 
     public async assignFederatedOidcProviderToTenant(federatedOIDCProviderId: string, tenantId: string): Promise<FederatedOidcProviderTenantRel> {
-        throw new Error("Method not implemented.");
+        const federatedOidcProviderTenantRel: FederatedOIDCProviderTenantRelEntity = new FederatedOIDCProviderTenantRelEntity({
+            tenantId,
+            federatedOIDCProviderId
+        });
+        const em = connection.em.fork();
+        em.persist(federatedOidcProviderTenantRel);
+        await em.flush();
+        return Promise.resolve(federatedOidcProviderTenantRel);
+
     }
 
     public async removeFederatedOidcProviderFromTenant(federatedOIDCProviderId: string, tenantId: string): Promise<FederatedOidcProviderTenantRel> {
-        throw new Error("Method not implemented.");
+        const federatedOidcProviderTenantRel: FederatedOIDCProviderTenantRelEntity = new FederatedOIDCProviderTenantRelEntity({
+            tenantId,
+            federatedOIDCProviderId
+        });
+        const em = connection.em.fork();
+        em.nativeDelete(FederatedOIDCProviderTenantRelEntity, {federatedOIDCProviderId: federatedOIDCProviderId, tenantId: tenantId});
+        await em.flush();
+        return Promise.resolve(federatedOidcProviderTenantRel);
+
     }
 
     public async getFederatedOidcProviderDomainRels(): Promise<Array<FederatedOidcProviderDomainRel>> {
-        throw new Error("Method not implemented.");
+        const em = connection.em.fork();
+        const entities: Array<FederatedOIDCProviderDomainRelEntity> = await em.findAll(FederatedOIDCProviderDomainRelEntity);
+        const models = entities.map(
+            (e: FederatedOIDCProviderDomainRelEntity) => e.toModel()
+        );
+        return Promise.resolve(models);
     }
 
     public async assignFederatedOidcProviderToDomain(federatedOIDCProviderId: string, domain: string): Promise<FederatedOidcProviderDomainRel> {
-        throw new Error("Method not implemented.");
+        const em = connection.em.fork();
+        const federatedOIDCProviderDomainRel: FederatedOidcProviderDomainRel = {
+            federatedOIDCProviderId: federatedOIDCProviderId,
+            domain: domain
+        };
+        const entity: FederatedOIDCProviderDomainRelEntity = new FederatedOIDCProviderDomainRelEntity(federatedOIDCProviderDomainRel);
+        await em.persist(entity).flush();
+        return Promise.resolve(federatedOIDCProviderDomainRel);
+
     }
 
     public async removeFederatedOidcProviderFromDomain(federatedOIDCProviderId: string, domain: string): Promise<FederatedOidcProviderDomainRel> {
-        throw new Error("Method not implemented.");
+        const em = connection.em.fork();
+        em.nativeDelete(FederatedOIDCProviderDomainRelEntity, {federatedoidcproviderid: federatedOIDCProviderId, domain: domain});
+        await em.flush();
+        return Promise.resolve({
+            federatedOIDCProviderId,
+            domain
+        });
     }
 
     public async deleteFederatedOidcProvider(federatedOIDCProviderId: string): Promise<void> {

@@ -1,10 +1,14 @@
-import { Client, ClientAuthHistory } from "@/graphql/generated/graphql-types";
+import { Client, ClientAuthHistory, Contact } from "@/graphql/generated/graphql-types";
 import ClientDao from "@/lib/dao/client-dao";
 import connection  from "@/lib/data-sources/db";
+import ClientAuthHistoryEntity from "@/lib/entities/client-auth-history-entity";
 import ClientEntity from "@/lib/entities/client-entity";
 import ClientRedirectUriRelEntity from "@/lib/entities/client-redirect-uri-rel-entity";
+import ContactEntity from "@/lib/entities/contact-entity";
+import { CONTACT_TYPE_FOR_CLIENT } from "@/utils/consts";
 
 class DBClientDao extends ClientDao {
+
 
     public async getClients(tenantId?: string): Promise<Array<Client>> {
         const em = connection.em.fork();
@@ -40,10 +44,7 @@ class DBClientDao extends ClientDao {
                 em.persist(uriEntity);
                 await em.flush();
             }            
-        }
-        // TODO
-        // Delete then Add contacts
-        
+        }        
         return Promise.resolve(client);
     }
 
@@ -61,8 +62,6 @@ class DBClientDao extends ClientDao {
                 await em.flush();
             }            
         }
-        // TODO
-        // Delete then Add contacts
         return Promise.resolve(client);    
     }
 
@@ -70,16 +69,48 @@ class DBClientDao extends ClientDao {
         throw new Error("Method not implemented.");
     }
 
+    public async assignContactsToClient(clientId: string, contactList: Array<Contact>): Promise<Array<Contact>> {
+        const em = connection.em.fork();
+        await em.nativeDelete(
+            ContactEntity, {
+                objectid: clientId
+            }
+        );
+        await em.flush();
+        const entities: Array<ContactEntity> = contactList.map(
+            (m: Contact) => {
+                m.objectid = clientId;
+                m.objecttype = CONTACT_TYPE_FOR_CLIENT;
+                return new ContactEntity(m);
+            }
+        );
+        for(let i = 0; i < entities.length; i++){
+            await em.persistAndFlush(entities[i]);
+        }
+        return Promise.resolve(contactList);
+    }
+
     public async getClientAuthHistoryByJti(jti: string): Promise<ClientAuthHistory | null> {
-        throw new Error("Method not implemented.");
+        const em = connection.em.fork();
+        const entity: ClientAuthHistoryEntity | null = await em.findOne(ClientAuthHistoryEntity, {
+            jti: jti
+        });
+        return Promise.resolve(entity);
     }
 
     public async saveClientAuthHistory(clientAuthHistory: ClientAuthHistory): Promise<void> {
-        throw new Error("Method not implemented.");
+        const em = connection.em.fork();
+        const entity: ClientAuthHistoryEntity = new  ClientAuthHistoryEntity(clientAuthHistory);
+        await em.persistAndFlush(entity);
+        return Promise.resolve();
     }
 
     public async deleteClientAuthHistory(jti: string): Promise<void> {
-        throw new Error("Method not implemented.");
+        const em = connection.em.fork();
+        await em.nativeDelete(ClientAuthHistoryEntity, {
+            jti: jti
+        });
+        return Promise.resolve();
     }
 
 }
