@@ -23,7 +23,7 @@ class ClientTenantScopeRelEntity implements ClientTenantScopeRel {
     @PrimaryKey({fieldName: "tenantid"})
     tenantId: string;
 
-    @Property({fieldName: "accessruleid"})
+    @Property({fieldName: "accessruleid", nullable: true})
     accessruleid?: Maybe<string> | undefined;
  
 }

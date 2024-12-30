@@ -22,10 +22,10 @@ class AuthorizationCodeDataEntity implements AuthorizationCodeData {
     @Property({fieldName: "tenantid"})
     tenantId: string;
 
-    @Property({fieldName: "codechallenge"})
+    @Property({fieldName: "codechallenge", nullable: true})
     codeChallenge?: Maybe<string> | undefined;
 
-    @Property({fieldName: "codechallengemethod"})
+    @Property({fieldName: "codechallengemethod", nullable: true})
     codeChallengeMethod?: Maybe<string> | undefined;
 
     @Property({fieldName: "expiresatms"})

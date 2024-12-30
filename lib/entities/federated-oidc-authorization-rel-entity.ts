@@ -16,10 +16,10 @@ class FederatedOIDCAuthorizationRelEntity implements FederatedOidcAuthorizationR
     @PrimaryKey({fieldName: "state"})
     state: string;
 
-    @Property({fieldName: "codeverifier"})
+    @Property({fieldName: "codeverifier", nullable: true})
     codeVerifier?: Maybe<string> | undefined;
 
-    @Property({fieldName: "codechallengemethod"})
+    @Property({fieldName: "codechallengemethod", nullable: true})
     codechallengemethod?: Maybe<string> | undefined;
 
     @Property({fieldName: "expiresatms"})

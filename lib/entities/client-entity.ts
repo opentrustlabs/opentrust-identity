@@ -14,7 +14,7 @@ class ClientEntity implements Client {
     __typename?: "Client" | undefined;
 
 
-    @Property({fieldName: "clientdescription"})
+    @Property({fieldName: "clientdescription", nullable: true})
     clientDescription?: Maybe<string> | undefined | null;
     
     @PrimaryKey({fieldName: "clientid"})
@@ -26,7 +26,7 @@ class ClientEntity implements Client {
     @Property({fieldName: "clientsecret"})
     clientSecret: string;
 
-    @Property({fieldName: "clienttokenttlseconds"})
+    @Property({fieldName: "clienttokenttlseconds", nullable: true})
     clientTokenTTLSeconds?: Maybe<number> | undefined | null;
 
     @Property({fieldName: "clienttype"})
@@ -35,7 +35,7 @@ class ClientEntity implements Client {
     //@Property("clienttypeid")
     clienttypeid?: Maybe<string> | undefined | null;
 
-    @Property({fieldName: "maxrefreshtokencount"})
+    @Property({fieldName: "maxrefreshtokencount", nullable: true})
     maxRefreshTokenCount?: Maybe<number> | undefined | null;
 
     @Property({fieldName: "enabled"})
@@ -50,7 +50,7 @@ class ClientEntity implements Client {
     @Property({fieldName: "tenantid"})
     tenantId: string;
 
-    @Property({fieldName: "usertokenttlseconds"})
+    @Property({fieldName: "usertokenttlseconds", nullable: true})
     userTokenTTLSeconds?: Maybe<number> | undefined | null;
 
 }

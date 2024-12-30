@@ -251,9 +251,9 @@ const resolvers: Resolvers = {
             await scopeService.deleteScope(scopeId);
             return scopeId;
         },
-        assignScopeToTenant: async(_: any, { scopeId, tenantId }, oidcContext) => {
+        assignScopeToTenant: async(_: any, { scopeId, tenantId, accessRuleId }, oidcContext) => {
             const scopeService: ScopeService = new ScopeService(oidcContext);
-            const rel = await scopeService.assignScopeToTenant(tenantId, scopeId);
+            const rel = await scopeService.assignScopeToTenant(tenantId, scopeId, accessRuleId || null);
             return rel;
         },
         removeScopeFromTenant: async(_: any, { scopeId, tenantId }, oidcContext ) => {

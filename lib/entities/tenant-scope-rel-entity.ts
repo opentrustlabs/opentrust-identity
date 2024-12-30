@@ -20,8 +20,8 @@ class TenantScopeRelEntity implements TenantScopeRel {
     @PrimaryKey({fieldName: "scopeid"})
     scopeId: string;
     
-    @Property({fieldName: "accessruleid"})
-    accessRuleId?: Maybe<string> | undefined;
+    @Property({fieldName: "accessruleid", nullable: true})
+    accessRuleId: string | undefined | null;
    
 }
 

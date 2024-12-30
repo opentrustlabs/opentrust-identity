@@ -60,9 +60,9 @@ class DBScopeDao extends ScopeDao {
         }
     }
 
-    public async assignScopeToTenant(tenantId: string, scopeId: string): Promise<TenantScopeRel> {
+    public async assignScopeToTenant(tenantId: string, scopeId: string, accessRuleId: string | null): Promise<TenantScopeRel> {
         const em = connection.em.fork();
-        const entity: TenantScopeRelEntity = new TenantScopeRelEntity({tenantId, scopeId});
+        const entity: TenantScopeRelEntity = new TenantScopeRelEntity({tenantId, scopeId, accessRuleId: accessRuleId});
         await em.persistAndFlush(entity);
         return Promise.resolve(entity);
     }

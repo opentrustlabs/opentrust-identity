@@ -1,16 +1,17 @@
-import { Client, ClientTenantScopeRel, Scope, Tenant, TenantScopeRel } from "@/graphql/generated/graphql-types";
+import { AccessRule, Client, ClientTenantScopeRel, Scope, Tenant, TenantScopeRel } from "@/graphql/generated/graphql-types";
 import { OIDCContext } from "@/graphql/graphql-context";
-import { getClientDaoImpl, getScopeDaoImpl, getTenantDaoImpl } from "@/utils/dao-utils";
+import { getAccessRuleDaoImpl, getClientDaoImpl, getScopeDaoImpl, getTenantDaoImpl } from "@/utils/dao-utils";
 import { GraphQLError } from "graphql/error/GraphQLError";
 import ScopeDao from "../dao/scope-dao";
 import { randomUUID } from 'crypto'; 
 import TenantDao from "../dao/tenant-dao";
 import ClientDao from "../dao/client-dao";
+import AccessRuleDao from "../dao/access-rule-dao";
 
 const scopeDao: ScopeDao = getScopeDaoImpl();
 const tenantDao: TenantDao = getTenantDaoImpl();
 const clientDao: ClientDao = getClientDaoImpl();
-
+const accessRuleDao: AccessRuleDao = getAccessRuleDaoImpl();
 
 class ScopeService {
 
@@ -51,7 +52,7 @@ class ScopeService {
     }
         
     
-    public async assignScopeToTenant(tenantId: string, scopeId: string): Promise<TenantScopeRel> {
+    public async assignScopeToTenant(tenantId: string, scopeId: string, accessRuleId: string | null): Promise<TenantScopeRel> {
         const tenant: Tenant | null = await tenantDao.getTenantById(tenantId);
         if(!tenant){
             throw new GraphQLError("ERROR_CANNOT_FIND_TENANT_FOR_SCOPE_ASSIGNMENT");
@@ -60,7 +61,13 @@ class ScopeService {
         if(!scope){
             throw new GraphQLError("ERROR_CANNOT_FIND_SCOPE_TO_ASSIGN_TO_TENANT");
         }
-        return scopeDao.assignScopeToTenant(tenantId, scopeId);
+        if(accessRuleId){
+            const accessRule: AccessRule | null = await accessRuleDao.getAccessRuleById(accessRuleId);
+            if(!accessRule){
+                throw new GraphQLError("ERROR_CANNOT_FIND_ACCESS_RULE_ID")
+            }
+        }
+        return scopeDao.assignScopeToTenant(tenantId, scopeId, accessRuleId);
     }
 
 

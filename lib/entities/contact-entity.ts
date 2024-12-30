@@ -25,7 +25,7 @@ class  ContactEntity implements Contact {
     @Property({fieldName: "name"})
     name: string;
     
-    @Property({fieldName: "userid"})
+    @Property({fieldName: "userid", nullable: true})
     userid?: Maybe<string> | undefined;
    
 }

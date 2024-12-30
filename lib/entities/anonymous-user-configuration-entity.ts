@@ -25,7 +25,7 @@ class AnonymousUserConfigurationEntity implements AnonymousUserConfiguration {
     @Property({fieldName: "groupids"})
     groupids?: Maybe<Maybe<string>[]> | undefined;
 
-    @Property({fieldName: "scopeids"})
+    @Property({fieldName: "scopeids", nullable: true})
     scopeids?: Maybe<Maybe<string>[]> | undefined;
 
     @Property({fieldName: "tokenttlseconds"})

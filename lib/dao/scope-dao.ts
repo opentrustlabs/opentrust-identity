@@ -16,7 +16,7 @@ abstract class ScopeDao {
     
         abstract getTenantScopeRel(tenantId?: String): Promise<Array<TenantScopeRel>>;
         
-        abstract assignScopeToTenant(tenantId: string, scopeId: string): Promise<TenantScopeRel>;
+        abstract assignScopeToTenant(tenantId: string, scopeId: string, accessRuleId: string | null): Promise<TenantScopeRel>;
     
         abstract removeScopeFromTenant(tenantId: string, scopeId: string): Promise<void>;
     

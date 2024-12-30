@@ -29,6 +29,8 @@ import DBAuthDao from "@/lib/dao/impl/db/db-auth-dao";
 import DBRateLimitDao from "@/lib/dao/impl/db/db-rate-limit-dao";
 import DBScopeDao from "@/lib/dao/impl/db/db-scope-dao";
 import DBAuthorizationGroupDao from "@/lib/dao/impl/db/db-authorization-group-dao";
+import AccessRuleDao from "@/lib/dao/access-rule-dao";
+import DBAccessRuleDao from "@/lib/dao/impl/db/db-access-rule-dao";
 
 
 /**
@@ -205,7 +207,10 @@ export function getIdentityDaoImpl(): IdentityDao {
     return new FSBasedIdentityDao();
 }
 
-
+export function getAccessRuleDaoImpl(): AccessRuleDao {
+    const daoStrategy = process.env.DAO_STRATEGY ?? "filesystem";
+    return new DBAccessRuleDao();
+}
 
 // To retrieve the key in an enum. This can then be used as an index into the enum
 export function getKeyByValue<T extends Record<string, string>>(enumObj: T, value: string): keyof T {

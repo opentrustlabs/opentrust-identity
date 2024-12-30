@@ -76,7 +76,7 @@ class FSBasedScopeDao extends ScopeDao {
         }
     }
     
-    public async assignScopeToTenant(tenantId: string, scopeId: string): Promise<TenantScopeRel> {
+    public async assignScopeToTenant(tenantId: string, scopeId: string, accessRuleId?: string): Promise<TenantScopeRel> {
         
         const a: Array<TenantScopeRel> = await this.getTenantScopeRel();
         const existingRel = a.find(

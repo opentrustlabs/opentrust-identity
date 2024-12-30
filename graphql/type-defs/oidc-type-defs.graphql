@@ -84,7 +84,7 @@ type Mutation {
     createScope(scopeInput: ScopeCreateInput!): Scope
     updateScope(scopeInput: ScopeUpdateInput!): Scope
     deleteScope(scopeId: String!): String
-    assignScopeToTenant(tenantId: String!, scopeId: String!): TenantScopeRel
+    assignScopeToTenant(tenantId: String!, scopeId: String!, accessRuleId: String): TenantScopeRel
     removeScopeFromTenant(tenantId: String!, scopeId: String!): String
     assignScopeToClient(tenantId: String!, clientId: String!, scopeId: String!): ClientTenantScopeRel
     removeScopeFromClient(tenantId: String!, clientId: String!, scopeId: String!): String
