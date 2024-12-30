@@ -33,7 +33,7 @@ import RefreshDataEntity from '../entities/refresh-data-entity';
 import ScopeConstraintSchemaEntity from '../entities/scope-constraint-schema-entity';
 import ScopeEntity from '../entities/scope-entity';
 import SigningKeyEntity from '../entities/signing-key-entity';
-import TenantAnonymousUserConfigurationRelEntity from '../entities/tenant-anonymouse-user-configuration-rel-entity';
+import TenantAnonymousUserConfigurationRelEntity from '../entities/tenant-anonymous-user-configuration-rel-entity';
 import TenantLookAndFeelEntity from '../entities/tenant-look-and-feel-entity';
 import TenantRateLimitRelEntity from '../entities/tenant-rate-limit-rel-entity';
 import TenantScopeRelEntity from '../entities/tenant-scope-rel-entity';

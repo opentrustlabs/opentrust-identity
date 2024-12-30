@@ -1,4 +1,4 @@
-import { SigningKey } from "@/graphql/generated/graphql-types";
+import { Contact, SigningKey } from "@/graphql/generated/graphql-types";
 import SigningKeysDao from "../../signing-keys-dao";
 import { KEY_FILE } from "@/utils/consts";
 import { getFileContents } from "@/utils/dao-utils";
@@ -8,6 +8,11 @@ import path from "node:path";
 const dataDir = process.env.FS_BASED_DATA_DIR ?? path.join(__dirname);
 
 class FSBasedSigningKeysDao extends SigningKeysDao {
+    
+    
+    public async assignContactsToSigningKey(keyId: string, contactList: Array<Contact>): Promise<Array<Contact>> {
+        throw new Error("Method not implemented.");
+    }
 
 
     public async getSigningKeys(tenantId?: string): Promise<Array<SigningKey>> {

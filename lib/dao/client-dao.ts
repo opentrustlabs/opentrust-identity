@@ -1,9 +1,9 @@
-import { Client, ClientAuthHistory } from "@/graphql/generated/graphql-types";
+import { Client, ClientAuthHistory, Contact } from "@/graphql/generated/graphql-types";
 
 
 abstract class ClientDao {
 
-        abstract getClients(tenantId?: string): Promise<Array<Client>>;
+        abstract getClients(tenantId?: string, clientIds?: Array<string>): Promise<Array<Client>>;
     
         abstract getClientById(clientId: string): Promise<Client | null>;
     
@@ -12,6 +12,8 @@ abstract class ClientDao {
         abstract updateClient(client: Client): Promise<Client>;
     
         abstract deleteClient(clientId: string): Promise<void>;
+
+        abstract assignContactsToClient(clientId: string, contactList: Array<Contact>): Promise<Array<Contact>>;
 
         abstract getClientAuthHistoryByJti(jti: string): Promise<ClientAuthHistory | null>;
 
