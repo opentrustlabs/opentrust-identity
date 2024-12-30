@@ -1,4 +1,4 @@
-import { User, Tenant, Client, SigningKey, NameOrder, ClientAuthHistory, TokenType } from "@/graphql/generated/graphql-types";
+import { User, Tenant, Client, SigningKey, ClientAuthHistory } from "@/graphql/generated/graphql-types";
 import { getTenantDaoImpl, getClientDaoImpl, getIdentityDaoImpl, getSigningKeysDaoImpl, generateRandomToken } from "@/utils/dao-utils";
 import ClientDao from "@/lib/dao/client-dao";
 import TenantDao from "@/lib/dao/tenant-dao";
@@ -9,7 +9,7 @@ import SigningKeysDao from "../dao/signing-keys-dao";
 import { OIDCPrincipal } from "../models/principal";
 import { randomUUID, createPrivateKey, PrivateKeyInput, KeyObject, createSecretKey, createPublicKey, PublicKeyInput } from "node:crypto"; 
 import NodeCache from "node-cache";
-import { CLIENT_SECRET_ENCODING, DEFAULT_END_USER_TOKEN_TTL_SECONDS, DEFAULT_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS } from "@/utils/consts";
+import { CLIENT_SECRET_ENCODING, DEFAULT_END_USER_TOKEN_TTL_SECONDS, DEFAULT_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS, NAME_ORDER_WESTERN, TOKEN_TYPE_END_USER_TOKEN, TOKEN_TYPE_SERVICE_ACCOUNT_TOKEN } from "@/utils/consts";
 
 const SIGNING_KEY_ARRAY_CACHE_KEY = "SIGNING_KEY_ARRAY_CACHE_KEY"
 interface CachedSigningKeyData {
@@ -66,7 +66,7 @@ class JwtService {
             iat: now / 1000,
             exp: client.userTokenTTLSeconds ? ( now / 1000 ) + client.userTokenTTLSeconds : ( now / 1000 ) + DEFAULT_END_USER_TOKEN_TTL_SECONDS,
             at_hash: "",
-            name: user.nameOrder === NameOrder.WesternNameOrder ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`,
+            name: user.nameOrder === NAME_ORDER_WESTERN ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`,
             given_name: user.firstName,
             family_name: user.lastName,
             middle_name: "",
@@ -75,7 +75,7 @@ class JwtService {
             profile: "",
             phone_number: user.phoneNumber,
             address: user.address,
-            updated_at: user.updatedDate,
+            updated_at: "", // TODO get the history of the updates to the user
             email: user.email,
             country_code: user.countryCode,
             language_code: user.preferredLanguageCode,
@@ -85,7 +85,7 @@ class JwtService {
             client_id: clientId,
             client_name: client.clientName,
             client_type: client.clientType,
-            token_type: TokenType.EndUserToken
+            token_type: TOKEN_TYPE_END_USER_TOKEN
         };
 
         const cachedSigningKeyData: CachedSigningKeyData | null = await this.getCachedSigningKey();
@@ -145,7 +145,7 @@ class JwtService {
             client_id: client.clientId,
             client_name: client.clientName,
             client_type: client.clientType,
-            token_type: TokenType.ServiceAccountToken
+            token_type: TOKEN_TYPE_SERVICE_ACCOUNT_TOKEN
         };
 
         const cachedSigningKeyData: CachedSigningKeyData | null = await this.getCachedSigningKey();

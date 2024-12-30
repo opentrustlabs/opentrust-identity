@@ -1,13 +1,13 @@
-import { Group, Tenant, UserGroupRel } from "@/graphql/generated/graphql-types";
+import { AuthorizationGroup, Tenant, UserAuthorizationGroupRel } from "@/graphql/generated/graphql-types";
 import { OIDCContext } from "@/graphql/graphql-context";
 import TenantDao from "@/lib/dao/tenant-dao";
-import { getGroupDaoImpl, getTenantDaoImpl } from "@/utils/dao-utils";
+import { getAuthorizationGroupDaoImpl, getTenantDaoImpl } from "@/utils/dao-utils";
 import { GraphQLError } from "graphql/error/GraphQLError";
 import { randomUUID } from 'crypto'; 
 import GroupDao from "../dao/authorization-group-dao";
 
 const tenantDao: TenantDao = getTenantDaoImpl();
-const groupDao: GroupDao = getGroupDaoImpl();
+const groupDao: GroupDao = getAuthorizationGroupDaoImpl();
 
 class GroupService {
 
@@ -17,43 +17,43 @@ class GroupService {
         this.oidcContext = oidcContext;
     }
 
-    public async getGroups(tenantId?: string): Promise<Array<Group>> {
-        return groupDao.getGroups(tenantId);
+    public async getGroups(tenantId?: string): Promise<Array<AuthorizationGroup>> {
+        return groupDao.getAuthorizationGroups(tenantId);
     }
 
-    public async getGroupById(groupId: string): Promise<Group> {
+    public async getGroupById(groupId: string): Promise<AuthorizationGroup> {
         
-        const group: Group | null = await groupDao.getGroupById(groupId);
+        const group: AuthorizationGroup | null = await groupDao.getAuthorizationGroupById(groupId);
         if(!group){
             throw new GraphQLError("ERROR_GROUP_NOT_FOUND");
         }
         return Promise.resolve(group);        
     }
 
-    public async createGroup(group: Group): Promise<Group> {
+    public async createGroup(group: AuthorizationGroup): Promise<AuthorizationGroup> {
         const tenant: Tenant | null = await tenantDao.getTenantById(group.tenantId);
         if(!tenant){
             throw new GraphQLError("ERROR_TENANT_NOT_FOUND_FOR_GROUP_CREATION");
         }
         group.groupId = randomUUID().toString();
-        return groupDao.createGroup(group);
+        return groupDao.createAuthorizationGroup(group);
     }
 
-    public async updateGroup(group: Group): Promise<Group> {
-        const existingGroup: Group | null = await groupDao.getGroupById(group.groupId);
+    public async updateGroup(group: AuthorizationGroup): Promise<AuthorizationGroup> {
+        const existingGroup: AuthorizationGroup | null = await groupDao.getAuthorizationGroupById(group.groupId);
         if(!existingGroup){
             throw new GraphQLError("ERROR_GROUP_NOT_FOUND");
         }
         existingGroup.groupName = group.groupName;
         existingGroup.default = group.default;
-        return groupDao.updateGroup(group);
+        return groupDao.updateAuthorizationGroup(group);
     }
 
     public async deleteGroup(groupId: string): Promise<void> {
         throw new Error("Method not implemented.");
     }
 
-    public async addUserToGroup(userId: string, groupId: string): Promise<UserGroupRel> {
+    public async addUserToGroup(userId: string, groupId: string): Promise<UserAuthorizationGroupRel> {
         throw new Error("Method not implemented.");
     }
     

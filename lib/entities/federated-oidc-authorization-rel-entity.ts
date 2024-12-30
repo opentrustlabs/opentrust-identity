@@ -1,7 +1,9 @@
-import { FederatedOidcAuthorizationRel, Maybe } from "@/graphql/generated/graphql-types";
-import { PrimaryKey, Property } from "@mikro-orm/core";
+import type { FederatedOidcAuthorizationRel, Maybe } from "@/graphql/generated/graphql-types";
+import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
 
-
+@Entity({
+    tableName: "federated_oidc_authorization_rel"
+})
 class FederatedOIDCAuthorizationRelEntity implements FederatedOidcAuthorizationRel {
 
     constructor(m?: FederatedOidcAuthorizationRel){

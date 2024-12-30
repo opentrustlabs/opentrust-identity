@@ -1,7 +1,9 @@
-import { UserAuthorizationGroupRel } from "@/graphql/generated/graphql-types";
-import { PrimaryKey } from "@mikro-orm/core";
+import type { UserAuthorizationGroupRel } from "@/graphql/generated/graphql-types";
+import { Entity, PrimaryKey } from "@mikro-orm/core";
 
-
+@Entity({
+    tableName: "user_authorization_group_rel"
+})
 class UserAuthorizationGroupRelEntity implements UserAuthorizationGroupRel {
 
     constructor(userAuthorizationGroupRel?: UserAuthorizationGroupRel){

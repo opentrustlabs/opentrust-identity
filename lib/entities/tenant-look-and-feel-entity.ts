@@ -1,7 +1,9 @@
-import { FooterLink, Maybe, TenantLookAndFeel } from "@/graphql/generated/graphql-types";
-import { PrimaryKey, Property } from "@mikro-orm/core";
+import type { FooterLink, Maybe, TenantLookAndFeel } from "@/graphql/generated/graphql-types";
+import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
 
-
+@Entity({
+    tableName: "tenant_look_and_feel"
+})
 class TenantLookAndFeelEntity {
 
     constructor(m?: TenantLookAndFeel){

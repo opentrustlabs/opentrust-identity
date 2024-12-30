@@ -38,7 +38,7 @@ class SigningKeysService {
     }
     
 
-    public async deleteSigningKey(keyId: String): Promise<void> {
+    public async deleteSigningKey(keyId: string): Promise<void> {
         await signingKeysDao.deleteSigningKey(keyId);
         
     }

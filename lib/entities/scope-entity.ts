@@ -1,7 +1,9 @@
-import { Maybe, Scope } from "@/graphql/generated/graphql-types";
-import { PrimaryKey, Property } from "@mikro-orm/core";
+import type { Maybe, Scope } from "@/graphql/generated/graphql-types";
+import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
 
-
+@Entity({
+    tableName: "scope"
+})
 class ScopeEntity implements Scope {
 
     constructor(scope?: Scope){

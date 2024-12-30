@@ -1,7 +1,9 @@
-import { AuthorizationGroup } from "@/graphql/generated/graphql-types"
-import { PrimaryKey, Property } from "@mikro-orm/core";
+import type { AuthorizationGroup } from "@/graphql/generated/graphql-types"
+import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
 
-
+@Entity({
+    tableName: "authorization_group"
+})
 class AuthorizationGroupEntity implements AuthorizationGroup {
 
     constructor(authorizationGroup?: AuthorizationGroup){

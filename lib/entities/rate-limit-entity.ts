@@ -1,7 +1,9 @@
-import { RateLimit } from "@/graphql/generated/graphql-types";
-import { PrimaryKey, Property } from "@mikro-orm/core";
+import type { RateLimit } from "@/graphql/generated/graphql-types";
+import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
 
-
+@Entity({
+    tableName: "rate_limit"
+})
 class RateLimitEntity implements RateLimit {
 
     constructor(rateLimit?: RateLimit){

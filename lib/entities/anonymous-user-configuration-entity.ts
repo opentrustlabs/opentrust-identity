@@ -1,7 +1,9 @@
-import { AnonymousUserConfiguration, Maybe } from "@/graphql/generated/graphql-types";
-import { PrimaryKey, Property } from "@mikro-orm/core";
+import type { AnonymousUserConfiguration, Maybe } from "@/graphql/generated/graphql-types";
+import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
 
-
+@Entity({
+    tableName: "anonymous_user_configuration"
+})
 class AnonymousUserConfigurationEntity implements AnonymousUserConfiguration {
 
     constructor(m?: AnonymousUserConfiguration){

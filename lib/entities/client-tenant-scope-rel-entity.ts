@@ -1,7 +1,9 @@
-import { ClientTenantScopeRel, Maybe } from "@/graphql/generated/graphql-types";
-import { PrimaryKey, Property } from "@mikro-orm/core";
+import type { ClientTenantScopeRel, Maybe } from "@/graphql/generated/graphql-types";
+import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
 
-
+@Entity({
+    tableName: "client_tenant_scope_rel"
+})
 class ClientTenantScopeRelEntity implements ClientTenantScopeRel {
     
     constructor(m?: ClientTenantScopeRel){

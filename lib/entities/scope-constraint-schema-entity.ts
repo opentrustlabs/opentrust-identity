@@ -1,7 +1,9 @@
-import { ScopeConstraintSchema } from "@/graphql/generated/graphql-types";
-import { PrimaryKey, Property } from "@mikro-orm/core";
+import type { ScopeConstraintSchema } from "@/graphql/generated/graphql-types";
+import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
 
-
+@Entity({
+    tableName: "scope_constraint_schema"
+})
 class ScopeConstraintSchemaEntity {
 
     constructor(scopeConstraintSchema?: ScopeConstraintSchema){

@@ -1,7 +1,9 @@
-import { ChangeEventData } from "@/graphql/generated/graphql-types";
-import { PrimaryKey, Property } from "@mikro-orm/core";
+import type { ChangeEventData } from "@/graphql/generated/graphql-types";
+import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
 
-
+@Entity({
+    tableName: "change_event_data"
+})
 class ChangeEventDataEntity {
 
     constructor(m?: ChangeEventData){

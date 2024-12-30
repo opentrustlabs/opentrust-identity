@@ -1,7 +1,9 @@
-import { AuthorizationCodeData, Maybe } from "@/graphql/generated/graphql-types";
-import { PrimaryKey, Property } from "@mikro-orm/core";
+import type { AuthorizationCodeData, Maybe } from "@/graphql/generated/graphql-types";
+import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
 
-
+@Entity({
+    tableName: "authorization_code_data"
+})
 class AuthorizationCodeDataEntity implements AuthorizationCodeData {
 
     constructor(m?: AuthorizationCodeData){

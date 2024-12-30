@@ -1,7 +1,9 @@
-import { TenantAnonymousUserConfigurationRel } from "@/graphql/generated/graphql-types";
-import { PrimaryKey } from "@mikro-orm/core";
+import type { TenantAnonymousUserConfigurationRel } from "@/graphql/generated/graphql-types";
+import { Entity, PrimaryKey } from "@mikro-orm/core";
 
-
+@Entity({
+    tableName: "tenant_anonymous_user_configuration_rel"
+})
 class TenantAnonymousUserConfigurationRelEntity implements TenantAnonymousUserConfigurationRel {
 
     constructor(m?: TenantAnonymousUserConfigurationRel){

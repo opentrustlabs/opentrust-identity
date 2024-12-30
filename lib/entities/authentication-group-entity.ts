@@ -1,7 +1,9 @@
-import { AuthenticationGroup, Maybe } from "@/graphql/generated/graphql-types";
-import { PrimaryKey, Property } from "@mikro-orm/core";
+import type { AuthenticationGroup, Maybe } from "@/graphql/generated/graphql-types";
+import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
 
-
+@Entity({
+    tableName: "authentication_group"
+})
 class AuthenticationGroupEntity implements AuthenticationGroup {
 
     constructor(authenticationGroup?: AuthenticationGroup){

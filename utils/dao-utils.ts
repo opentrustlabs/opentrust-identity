@@ -1,7 +1,7 @@
 import ClientDao from "@/lib/dao/client-dao";
-import GroupDao from "@/lib/dao/authorization-group-dao";
+import AuthorizationGroupDao from "@/lib/dao/authorization-group-dao";
 import FSBasedClientDao from "@/lib/dao/impl/fs/fs-based-client-dao";
-import FSBasedGroupDao from "@/lib/dao/impl/fs/fs-based-authorization-group-dao";
+import FSBasedAuthorizationGroupDao from "@/lib/dao/impl/fs/fs-based-authorization-group-dao";
 import FSBasedSigningKeysDao from "@/lib/dao/impl/fs/fs-based-signing-keys-dao";
 import FSBasedRateLimitDao from "@/lib/dao/impl/fs/fs-based-rate-limit-dao";
 import FSBasedScopeDao from "@/lib/dao/impl/fs/fs-based-scope-dao";
@@ -23,6 +23,12 @@ import FSBasedIdentityDao from "@/lib/dao/impl/fs/fs-based-identity-dao";
 import DBTenantDao from "@/lib/dao/impl/db/db-tenant-dao";
 import DBFederatedOIDCProviderDao from "@/lib/dao/impl/db/db-federated-oidc-provider-dao";
 import DBClientDao from "@/lib/dao/impl/db/db-client-dao";
+import DBSigningKeysDao from "@/lib/dao/impl/db/db-signing-keys-dao";
+import DBAuthenticationGroupDao from "@/lib/dao/impl/db/db-authentication-group-dao";
+import DBAuthDao from "@/lib/dao/impl/db/db-auth-dao";
+import DBRateLimitDao from "@/lib/dao/impl/db/db-rate-limit-dao";
+import DBScopeDao from "@/lib/dao/impl/db/db-scope-dao";
+import DBAuthorizationGroupDao from "@/lib/dao/impl/db/db-authorization-group-dao";
 
 
 /**
@@ -119,6 +125,9 @@ export function getSigningKeysDaoImpl(): SigningKeysDao {
     if(daoStrategy === "filesystem"){
         return new FSBasedSigningKeysDao();
     }
+    else if(daoStrategy === "postgresql" || daoStrategy === "mysql" || daoStrategy === "mssql"){
+        return new DBSigningKeysDao();
+    }
     return new FSBasedSigningKeysDao();
 }
 
@@ -126,6 +135,9 @@ export function getRateLimitDaoImpl(): RateLimitDao {
     const daoStrategy = process.env.DAO_STRATEGY ?? "filesystem";
     if(daoStrategy === "filesystem"){
         return new FSBasedRateLimitDao();
+    }
+    else if(daoStrategy === "postgresql" || daoStrategy === "mysql" || daoStrategy === "mssql"){
+        return new DBRateLimitDao();
     }
     return new FSBasedRateLimitDao();
 }
@@ -135,6 +147,9 @@ export function getScopeDaoImpl(): ScopeDao {
     if(daoStrategy === "filesystem"){
         return new FSBasedScopeDao();
     }
+    else if(daoStrategy === "postgresql" || daoStrategy === "mysql" || daoStrategy === "mssql"){
+        return new DBScopeDao();
+    }   
     return new FSBasedScopeDao();
 }
 
@@ -143,15 +158,21 @@ export function getAuthenticationGroupDaoImpl(): AuthenticationGroupDao {
     if(daoStrategy === "filesystem"){
         return new FSBasedAuthenticationGroupDao();
     }
+    else if(daoStrategy === "postgresql" || daoStrategy === "mysql" || daoStrategy === "mssql"){
+        return new DBAuthenticationGroupDao();
+    }
     return new FSBasedAuthenticationGroupDao();
 }
 
-export function getGroupDaoImpl(): GroupDao {
+export function getAuthorizationGroupDaoImpl(): AuthorizationGroupDao {
     const daoStrategy = process.env.DAO_STRATEGY ?? "filesystem";
     if(daoStrategy === "filesystem"){
-        return new FSBasedGroupDao();
+        return new FSBasedAuthorizationGroupDao();
     }
-    return new FSBasedGroupDao();
+    else if(daoStrategy === "postgresql" || daoStrategy === "mysql" || daoStrategy === "mssql"){
+        return new DBAuthorizationGroupDao();
+    }
+    return new FSBasedAuthorizationGroupDao();
 }
 
 export function getFederatedOIDCProvicerDaoImpl(): FederatedOIDCProviderDao {
@@ -169,6 +190,9 @@ export function getAuthDaoImpl(): AuthDao {
     const daoStrategy = process.env.DAO_STRATEGY ?? "filesystem";
     if(daoStrategy === "filesystem"){
         return new FSBasedAuthDao();
+    }
+    else if(daoStrategy === "postgresql" || daoStrategy === "mysql" || daoStrategy === "mssql"){
+        return new DBAuthDao();
     }
     return new FSBasedAuthDao();
 }

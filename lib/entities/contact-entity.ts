@@ -1,8 +1,10 @@
-import { Contact, Maybe } from "@/graphql/generated/graphql-types";
-import { PrimaryKey, Property } from "@mikro-orm/core";
+import type { Contact, Maybe } from "@/graphql/generated/graphql-types";
+import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
 
-
-class ContactEntity implements Contact {
+@Entity({
+    tableName: "contact"
+})
+class  ContactEntity implements Contact {
 
     constructor(m?: Contact){
         if(m){

@@ -1,7 +1,9 @@
-import { UserCredential } from "@/graphql/generated/graphql-types";
-import { PrimaryKey, Property } from "@mikro-orm/core";
+import type { UserCredential } from "@/graphql/generated/graphql-types";
+import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
 
-
+@Entity({
+    tableName: "user_credential"
+})
 class UserCredentialEntity {
 
     constructor(userCredential?: UserCredential){

@@ -1,6 +1,9 @@
-import { AccessRule } from "@/graphql/generated/graphql-types";
-import { PrimaryKey, Property } from "@mikro-orm/core";
+import type { AccessRule } from "@/graphql/generated/graphql-types";
+import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
 
+@Entity({
+    tableName: "access_rule"
+})
 class AccessRuleEntity {
 
     constructor(accessRule?: AccessRule){
