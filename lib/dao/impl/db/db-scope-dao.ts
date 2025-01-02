@@ -1,9 +1,9 @@
-import { Scope, TenantScopeRel, ClientTenantScopeRel } from "@/graphql/generated/graphql-types";
+import { Scope, TenantScopeRel, ClientScopeRel } from "@/graphql/generated/graphql-types";
 import ScopeDao from "../../scope-dao";
 import connection  from "@/lib/data-sources/db";
 import ScopeEntity from "@/lib/entities/scope-entity";
 import TenantScopeRelEntity from "@/lib/entities/tenant-scope-rel-entity";
-import ClientTenantScopeRelEntity from "@/lib/entities/client-tenant-scope-rel-entity";
+import ClientScopeRelEntity from "@/lib/entities/client-tenant-scope-rel-entity";
 
 class DBScopeDao extends ScopeDao {
 
@@ -76,9 +76,9 @@ class DBScopeDao extends ScopeDao {
         return Promise.resolve();
     }
 
-    public async assignScopeToClient(tenantId: string, clientId: string, scopeId: string): Promise<ClientTenantScopeRel> {
+    public async assignScopeToClient(tenantId: string, clientId: string, scopeId: string): Promise<ClientScopeRel> {
         const em = connection.em.fork();
-        const entity: ClientTenantScopeRelEntity = new ClientTenantScopeRelEntity({
+        const entity: ClientScopeRelEntity = new ClientScopeRelEntity({
             tenantId: tenantId,
             scopeId: scopeId,
             clientId: clientId        
@@ -89,7 +89,7 @@ class DBScopeDao extends ScopeDao {
 
     public async removeScopeFromClient(tenantId: string, clientId: string, scopeId: string): Promise<void> {
         const em = connection.em.fork();
-        await em.nativeDelete(ClientTenantScopeRelEntity, {
+        await em.nativeDelete(ClientScopeRelEntity, {
             tenantId: tenantId,
             clientId: clientId,
             scopeId: scopeId

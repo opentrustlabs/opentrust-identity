@@ -267,7 +267,7 @@ create TABLE tenant_scope_rel (
     FOREIGN KEY (accessruleid) REFERENCES access_rule(accessruleid)
 );
 
-create TABLE client_tenant_scope_rel (
+create TABLE client_scope_rel (
     scopeid VARCHAR(64) NOT NULL,
     tenantid VARCHAR(64) NOT NULL,
     clientid VARCHAR(64) NOT NULL,
@@ -380,30 +380,24 @@ create TABLE client_auth_history (
 );
 
 create TABLE change_event (
-    changeeventid VARCHAR(64) NOT NULL PRIMARY KEY,
+    changeeventid VARCHAR(64) NOT NULL,
+    objectid VARCHAR(64) NOT NULL,
+    objecttype VARCHAR(128) NOT NULL,
     changeeventtype VARCHAR(128) NOT NULL,
 	changeeventtypeid VARCHAR(64),
     changeeventclass VARCHAR(128) NOT NULL,
 	changeeventclassid VARCHAR(64),
     changetimestamp BIGINT NOT NULL,
     changedbyid VARCHAR(64) NOT NULL,
+    data BLOB NOT NULL,
 	signature BLOB NOT NULL,
 	keyid VARCHAR(64) NOT NULL,
+    PRIMARY KEY (changeeventid, objectid), 
 	FOREIGN KEY (changedbyid) REFERENCES user(userid),
 	FOREIGN KEY (keyid) REFERENCES signing_key(keyid)
 );
-
-create TABLE change_event_data (
-    changeeventid VARCHAR(64) NOT NULL,
-    objecttype VARCHAR(128) NOT NULL,
-    objectid VARCHAR(64) NOT NULL,
-    data BLOB NOT NULL,
-    PRIMARY KEY (changeeventid, objectid),
-    FOREIGN KEY (changeeventid) REFERENCES change_event(changeeventid)
-);
-CREATE INDEX change_event_data_changeeventid_idx ON change_event_data(changeeventid);
-CREATE INDEX change_event_data_objectid_idx ON change_event_data(objectid);
-CREATE INDEX change_event_data_objecttype_idx ON change_event_data(objecttype);
+CREATE INDEX change_event_objectid_idx ON change_event(objectid);
+CREATE INDEX change_event_objecttype_idx ON change_event(objecttype);
 
 create TABLE anonymous_user_configuration (
     anonymoususerconfigurationid VARCHAR(64) PRIMARY KEY,

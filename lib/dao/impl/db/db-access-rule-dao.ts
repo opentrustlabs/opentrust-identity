@@ -1,24 +1,43 @@
 import { AccessRule } from "@/graphql/generated/graphql-types";
 import AccessRuleDao from "../../access-rule-dao";
-
+import connection  from "@/lib/data-sources/db";
+import AccessRuleEntity from "@/lib/entities/access-rule-entity";
 
 class DBAccessRuleDao extends AccessRuleDao {
 
-    getAccessRules(tenant?: string): Promise<Array<AccessRule>> {
-        return Promise.resolve([]);
+    public async getAccessRules(tenant?: string): Promise<Array<AccessRule>> {
+        const em = connection.em.fork();
+        const arr: Array<AccessRuleEntity> = await em.findAll(AccessRuleEntity);
+        return Promise.resolve(arr.map(a => a.toModel()));
     }
 
-    getAccessRuleById(accessRuleId: string): Promise<AccessRule | null> {
-        return Promise.resolve(null);
-        
+    public async getAccessRuleById(accessRuleId: string): Promise<AccessRule | null> {
+        const em = connection.em.fork();
+        const entity: AccessRuleEntity | null = await em.findOne(AccessRuleEntity, {accessRuleId: accessRuleId});
+        if(!entity){
+            return Promise.resolve(null);
+        }
+        return Promise.resolve(entity.toModel());        
     }
-    createAccessRule(accessRule: AccessRule): Promise<AccessRule> {
-        throw new Error("Method not implemented.");
+
+    public async createAccessRule(accessRule: AccessRule): Promise<AccessRule> {
+        const em = connection.em.fork();
+        const entity: AccessRuleEntity = new AccessRuleEntity(accessRule);
+        await em.persistAndFlush(entity);
+        return Promise.resolve(accessRule);
     }
-    updateAccessRule(accessRule: AccessRule): Promise<AccessRule> {
-        throw new Error("Method not implemented.");
+
+    public async updateAccessRule(accessRule: AccessRule): Promise<AccessRule> {
+        const em = connection.em.fork();
+        const entity: AccessRuleEntity = new AccessRuleEntity(accessRule);
+        await em.upsert(entity);
+        await em.flush();
+        return Promise.resolve(accessRule);
     }
-    deleteAccessRule(accessRuleId: string): Promise<void> {
+
+    public async deleteAccessRule(accessRuleId: string): Promise<void> {
+        // TODO
+        // DELETE RELATIONSHIPS
         throw new Error("Method not implemented.");
     }
     

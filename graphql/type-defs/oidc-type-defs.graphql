@@ -86,8 +86,12 @@ type Mutation {
     deleteScope(scopeId: String!): String
     assignScopeToTenant(tenantId: String!, scopeId: String!, accessRuleId: String): TenantScopeRel
     removeScopeFromTenant(tenantId: String!, scopeId: String!): String
-    assignScopeToClient(tenantId: String!, clientId: String!, scopeId: String!): ClientTenantScopeRel
-    removeScopeFromClient(tenantId: String!, clientId: String!, scopeId: String!): String
+    assignScopeToClient(clientId: String!, tenantId: String!, scopeId: String!, accessRuleId: String): ClientScopeRel
+    removeScopeFromClient(clientId: String!, tenantId: String!, scopeId: String!): String
+    assignScopeToAuthorizationGroup(groupId: String!, scopeId: String!, accessRuleId: String): AuthorizationGroupScopeRel
+    removeScopeFromAuthorizationGroup(groupId: String!, scopeId: String!): String
+    assignScopeToUser(userId: String!, tenantId: String!, scopeId: String! accessRuleId: String): UserScopeRel
+    removeScopeFromUser(userId: String!, tenantId: String!, scopeId: String!): String
 
     ## Scope constraint schemas
     createScopeConstraintSchema(scopeConstraintSchemaInput: ScopeConstraintSchemaCreateInput!): ScopeConstraintSchema
@@ -105,6 +109,8 @@ type Mutation {
     deleteAuthenticationGroup(authenticationGroupId: String!): String!
     assignAuthenticationGroupToClient(authenticationGroupId: String!, clientId: String!): AuthenticationGroupClientRel
     removeAuthenticationGroupFromClient(authenticationGroupId: String!, clientId: String!): String
+    addUserToAuthenticationGroup(authenticationGroupId: String, userId: String!): AuthenticationGroupUserRel
+    removeUserFromAuthenticationGroup(authenticationGroupId: String, userId: String!): String
     
     ## Groups
     createAuthorizationGroup(groupInput: AuthorizationGroupCreateInput!): AuthorizationGroup
@@ -403,7 +409,7 @@ type TenantScopeRel {
     accessRuleId: String
 }
 
-type ClientTenantScopeRel {
+type ClientScopeRel {
     tenantId: String!
     clientId: String!
     scopeId: String!
@@ -495,21 +501,17 @@ type Contact {
     userid: String
 }
 
-type ChangeEventData {
-    changeeventid: String!
-    objecttype: String!
-    objectid: String!
-    data: String!
-}
-
 type ChangeEvent {
     changeEventId: String!
+    objectid: String!
+    objecttype: String!
     changeEventType: String!
     changeEventTypeId: String
     changeEventClass: String!
     changeEventClassId: String
     changeTimestamp: Float!
     changedById: String!
+    data: String!
     signature: String!
 	keyId: String!
 }
