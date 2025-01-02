@@ -12,7 +12,7 @@ import ScopeDao from "@/lib/dao/scope-dao";
 import TenantDao from "@/lib/dao/tenant-dao";
 import IdentityDao from "@/lib/dao/identity-dao";
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
-import { randomBytes, hash } from "node:crypto";
+import { randomBytes, hash, createHash, pbkdf2Sync } from "node:crypto";
 import AuthenticationGroupDao from "@/lib/dao/authentication-group-dao";
 import FSBasedAuthenticationGroupDao from "@/lib/dao/impl/fs/fs-based-authentication-group-dao";
 import FederatedOIDCProviderDao from "@/lib/dao/federated-oidc-provider-dao";
@@ -31,7 +31,7 @@ import DBScopeDao from "@/lib/dao/impl/db/db-scope-dao";
 import DBAuthorizationGroupDao from "@/lib/dao/impl/db/db-authorization-group-dao";
 import AccessRuleDao from "@/lib/dao/access-rule-dao";
 import DBAccessRuleDao from "@/lib/dao/impl/db/db-access-rule-dao";
-
+import bcrypt from "bcrypt";
 
 /**
  * 
@@ -56,15 +56,15 @@ export type TokenEncodingType = "hex" | "base64" | "base64url";
 export type HashAlgorithm = "sha256" | "sha384" | "sha512"; 
 /**
  * 
- * @param length 
+ * @param lengthInBytes
  * @param encoding defaults to base64url
  * @returns 
  */
-export function generateRandomToken(length: number, encoding?: TokenEncodingType){
+export function generateRandomToken(lengthInBytes: number, encoding?: TokenEncodingType){
     if(!encoding){
         encoding = "base64url";
     }
-    return randomBytes(length).toString(encoding);
+    return randomBytes(lengthInBytes).toString(encoding);
 }
 
 /**
@@ -95,6 +95,34 @@ export function generateHash(data: string, hashAlgorithm?: HashAlgorithm, encodi
         hashAlgorithm = "sha256"
     }
     return hash(hashAlgorithm, data, encoding);
+}
+
+/**
+ * AI Overview Implementation?
+ * @param password 
+ * @param salt 
+ * @param iterations 
+ */
+export function sha256HashPassword(password: string, salt: string, iterations: number): string {
+    let hash = createHash("sha256").update(`${password}${salt}`).digest("base64");
+    for(let i = 1; i < iterations; i++){
+        hash = createHash("sha256").update(hash).digest("base64");
+    }
+    return hash;
+}
+
+export function bcryptHashPassword(password: string, rounds: number): string {
+    const hashedPassword = bcrypt.hashSync(password, rounds);
+    return hashedPassword;
+}
+
+export function bcryptValidatePassword(password: string, hash: string): boolean {
+    return bcrypt.compareSync(password, hash);
+}
+
+export function pbkdf2HashPassword(password: string, salt: string, iterations: number): string {
+    const hashed: Buffer = pbkdf2Sync(password, salt, iterations, 32, "sha256");
+    return hashed.toString("base64");
 }
 
 export function getTenantDaoImpl(): TenantDao {

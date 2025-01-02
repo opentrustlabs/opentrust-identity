@@ -289,11 +289,12 @@ export const ROOT_TENANT_VIEW_GROUP_SCOPE_NAMES = [
 export const PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS="password-hash-sha-256-64k-iterations";
 export const PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS="password-hash-sha-256-128k-iterations";
 export const PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS="password-hash-bcrypt-10-rounds";
+export const PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS="password-hash-bcrypt-11-rounds";
 export const PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS="password-hash-bcrypt-12-rounds";
-export const PASSWORD_HASHING_ALGORITHM_PBKDF2_10000_ITERATIONS="password-hash-pbkdf2-10000-iterations";
-export const PASSWORD_HASHING_ALGORITHM_PBKDF2_20000_ITERATIONS="password-hash-pbkdf2-20000-iterations";
-// 96 byte salt (minimum recommended by NIST is 32)
-export const PASSWORD_SALT_LENGTH=96; 
+export const PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS="password-hash-pbkdf2-128k-iterations";
+export const PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS="password-hash-pbkdf2-256k-iterations";
+// 16 byte salt (minimum recommended by NIST is 32 bits / 4 bytes)
+export const PASSWORD_SALT_LENGTH=16; 
 export const PASSWORD_MINIMUM_LENGTH=10;
 export const PASSWORD_MAXIMUM_LENGTH=64;
 export const PASSWORD_PATTERN="[A-Za-z0-9_-!@#]";
