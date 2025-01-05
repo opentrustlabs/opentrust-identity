@@ -243,7 +243,7 @@ type TenantPasswordConfig {
     passwordHashingAlgorithm: String!
     requireUpperCase: Boolean!
 	requireLowerCase: Boolean!
-	requireMumbers: Boolean!
+	requireNumbers: Boolean!
 	requireSpecialCharacters: Boolean!
 	specialCharactersAllowed: String
 }
@@ -303,6 +303,7 @@ type User {
 type UserTenantRel {
     userId: String!
     tenantId: String!
+    enabled: Boolean!
 }
 
 type AuthenticationGroup {

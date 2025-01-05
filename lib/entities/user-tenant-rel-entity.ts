@@ -1,5 +1,5 @@
 import type { UserTenantRel } from "@/graphql/generated/graphql-types";
-import { Entity, PrimaryKey } from "@mikro-orm/core";
+import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
 
 @Entity({
     tableName: "user_tenant_rel"
@@ -17,7 +17,10 @@ class UserTenantRelEntity implements UserTenantRel {
     tenantId: string;
 
     @PrimaryKey({fieldName: "userid"})
-    userId: string;    
+    userId: string; 
+    
+    @Property({fieldName: "enabled"})
+    enabled: boolean;
     
 }
 

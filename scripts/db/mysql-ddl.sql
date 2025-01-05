@@ -138,6 +138,7 @@ CREATE INDEX user_last_name_idx on user(lastname);
 create TABLE user_tenant_rel (
     userid VARCHAR(64) NOT NULL,
     tenantid VARCHAR(64) NOT NULL,
+    enabled BOOLEAN NOT NULL,
     PRIMARY KEY (userid, tenantid),
     FOREIGN KEY (userid) REFERENCES user(userid),
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid)
