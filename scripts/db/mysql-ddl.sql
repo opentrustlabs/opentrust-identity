@@ -52,8 +52,17 @@ create TABLE tenant_management_domain_rel (
     PRIMARY KEY (tenantid, domain),
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid)
 );
-
 CREATE INDEX tenant_management_domain_rel_domain_idx ON tenant_management_domain_rel (domain);
+
+
+create TABLE tenant_authentication_domain_rel (
+    tenantid VARCHAR(64) NOT NULL,
+    domain VARCHAR(128) NOT NULL,
+    PRIMARY KEY (tenantid, domain),
+    FOREIGN KEY (tenantid) REFERENCES tenant(tenantid)
+);
+CREATE INDEX tenant_authentication_domain_rel_domain_idx ON tenant_authentication_domain_rel (domain);
+
 
 create TABLE federated_oidc_provider_tenant_rel (
     federatedoidcproviderid VARCHAR(64) NOT NULL,
@@ -448,3 +457,29 @@ create TABLE contact (
 CREATE INDEX contact_objectid_idx ON contact(objectid);
 CREATE INDEX contact_email_idx ON contact(email);
 
+
+create TABLE scheduler_lock (
+    lockname VARCHAR(128) NOT NULL,
+    lockinstanceid VARCHAR(128) NOT NULL,
+    lockstarttimems BIGINT NOT NULL,
+    lockexpiresat BIGINT NOT NULL,
+    PRIMARY KEY (lockname, lockinstanceid)
+);
+
+create TABLE tenant_password_config (
+    tenantid VARCHAR(64) NOT NULL,
+    passwordminlength INT NOT NULL,
+    passwordmaxlength INT NOT NULL,
+    passwordhashingalgorithm VARCHAR(128) NOT NULL,
+    requireuppercase BOOLEAN NOT NULL,
+	requirelowercase BOOLEAN NOT NULL,
+	requirenumbers BOOLEAN NOT NULL,
+	requirespecialcharacters BOOLEAN NOT NULL,
+	specialcharactersallowed VARCHAR(64),
+    PRIMARY KEY (tenantid),
+    FOREIGN KEY (tenantid) references tenant(tenantid)
+);
+
+create TABLE prohibited_passwords (
+    password VARCHAR(128) NOT NULL PRIMARY KEY
+);

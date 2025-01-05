@@ -190,6 +190,11 @@ type TenantManagementDomainRel {
     domain: String!
 }
 
+type TenantAuthenticationDomainRel {
+    tenantId: String!
+    domain: String!
+}
+
 # Either client secret should be defined or usePkce should be set to true
 # if no client secret, then client auth type should be NONE
 # refreshTokenAllowed - does the external provider allow for refresh tokens? default false 
@@ -229,6 +234,18 @@ type SocialOIDCProviderTenantRel {
 type FederatedOIDCProviderDomainRel {
     federatedOIDCProviderId: String!
     domain: String!
+}
+
+type TenantPasswordConfig {
+    tenantId: String!
+    passwordMinLength: Int!
+    passwordMaxLength: Int! 
+    passwordHashingAlgorithm: String!
+    requireUpperCase: Boolean!
+	requireLowerCase: Boolean!
+	requireMumbers: Boolean!
+	requireSpecialCharacters: Boolean!
+	specialCharactersAllowed: String
 }
 
 
@@ -535,6 +552,15 @@ type FooterLink {
     linktext: String!
     uri: String!
 }
+
+type SchedulerLock {
+    lockName: String!
+    lockInstanceId: String!
+    lockStartTimeMS: Float!
+    lockExpiresAtMS: Float!
+}
+
+
 
 ############################################################################
 ################ INPUT TYPES AND RESPONSES FOR MUTATATIONS #################
