@@ -493,7 +493,7 @@ create TABLE user_failed_login_attempts (
 );
 
 create TABLE user_password_reset_token (
-    resettoken VARCHAR(256),
+    resettoken VARCHAR(256) PRIMARY KEY,
     userid VARCHAR(64) NOT NULL,
     issuedatms BIGINT NOT NULL,    
     FOREIGN KEY (userid) REFERENCES user(userid)
