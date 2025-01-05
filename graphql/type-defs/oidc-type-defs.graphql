@@ -190,7 +190,7 @@ type TenantManagementDomainRel {
     domain: String!
 }
 
-type TenantAuthenticationDomainRel {
+type TenantRestrictedAuthenticationDomainRel {
     tenantId: String!
     domain: String!
 }

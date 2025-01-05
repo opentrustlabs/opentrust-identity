@@ -55,13 +55,13 @@ create TABLE tenant_management_domain_rel (
 CREATE INDEX tenant_management_domain_rel_domain_idx ON tenant_management_domain_rel (domain);
 
 
-create TABLE tenant_authentication_domain_rel (
+create TABLE tenant_restricted_authentication_domain_rel (
     tenantid VARCHAR(64) NOT NULL,
     domain VARCHAR(128) NOT NULL,
     PRIMARY KEY (tenantid, domain),
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid)
 );
-CREATE INDEX tenant_authentication_domain_rel_domain_idx ON tenant_authentication_domain_rel (domain);
+CREATE INDEX tenant_restricted_authentication_domain_rel_domain_idx ON tenant_restricted_authentication_domain_rel (domain);
 
 
 create TABLE federated_oidc_provider_tenant_rel (
@@ -483,4 +483,18 @@ create TABLE tenant_password_config (
 
 create TABLE prohibited_passwords (
     password VARCHAR(128) NOT NULL PRIMARY KEY
+);
+
+create TABLE user_failed_login_attempts (
+    userid VARCHAR(64) NOT NULL,
+    failureatms BIGINT NOT NULL,
+    PRIMARY KEY (userid, failureatms),
+    FOREIGN KEY (userid) REFERENCES user(userid)
+);
+
+create TABLE user_password_reset_token (
+    resettoken VARCHAR(256),
+    userid VARCHAR(64) NOT NULL,
+    issuedatms BIGINT NOT NULL,    
+    FOREIGN KEY (userid) REFERENCES user(userid)
 );
