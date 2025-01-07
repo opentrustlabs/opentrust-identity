@@ -410,21 +410,15 @@ CREATE INDEX change_event_objectid_idx ON change_event(objectid);
 CREATE INDEX change_event_objecttype_idx ON change_event(objecttype);
 
 create TABLE anonymous_user_configuration (
-    anonymoususerconfigurationid VARCHAR(64) PRIMARY KEY,
+    tenantid VARCHAR(64) PRIMARY KEY,
     defaultcountrycode VARCHAR(8) NOT NULL,
     defaultlanguagecode VARCHAR(8) NOT NULL,
     tokenttlseconds INT NOT NULL,
     scopeids VARCHAR(4096),
-    groupids VARCHAR(4096)    
+    groupids VARCHAR(4096),
+    FOREIGN KEY (tenantid) REFERENCES tenant(tenantid)
 );
 
-create TABLE tenant_anonymous_user_configuration_rel (
-    tenantid VARCHAR(64) NOT NULL,
-    anonymoususerconfigurationid VARCHAR(64) NOT NULL,
-    PRIMARY KEY(tenantid, anonymoususerconfigurationid),
-    FOREIGN KEY (tenantid) REFERENCES tenant(tenantid),
-    FOREIGN KEY (anonymoususerconfigurationid) REFERENCES anonymous_user_configuration(anonymoususerconfigurationid)
-);
 
 create TABLE tenant_look_and_feel (
     tenantid VARCHAR(64) PRIMARY KEY,
@@ -492,9 +486,11 @@ create TABLE user_failed_login_attempts (
     FOREIGN KEY (userid) REFERENCES user(userid)
 );
 
-create TABLE user_password_reset_token (
-    resettoken VARCHAR(256) PRIMARY KEY,
+create TABLE user_verification_token (
+    token VARCHAR(256) PRIMARY KEY,
     userid VARCHAR(64) NOT NULL,
-    issuedatms BIGINT NOT NULL,    
+    verificationtype VARCHAR(64) NOT NULL,
+    issuedatms BIGINT NOT NULL,
+    expiresatms BIGINT NOT NULL,
     FOREIGN KEY (userid) REFERENCES user(userid)
 );

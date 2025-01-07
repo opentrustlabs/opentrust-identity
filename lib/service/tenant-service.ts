@@ -1,14 +1,12 @@
-import { FederatedOidcProvider, Tenant, TenantManagementDomainRel } from "@/graphql/generated/graphql-types";
+import { AnonymousUserConfiguration, Contact, Tenant, TenantLookAndFeel, TenantManagementDomainRel, TenantPasswordConfig } from "@/graphql/generated/graphql-types";
 import { OIDCContext } from "@/graphql/graphql-context";
 import TenantDao from "@/lib/dao/tenant-dao";
-import { getFederatedOIDCProvicerDaoImpl, getTenantDaoImpl } from "@/utils/dao-utils";
+import { getTenantDaoImpl } from "@/utils/dao-utils";
 import { GraphQLError } from "graphql";
 import { randomUUID } from 'crypto'; 
-import FederatedOIDCProviderDao from "../dao/federated-oidc-provider-dao";
-
+import { CONTACT_TYPE_FOR_TENANT } from "@/utils/consts";
 
 const tenantDao: TenantDao = getTenantDaoImpl();
-const federatedOIDCProviderDao: FederatedOIDCProviderDao = getFederatedOIDCProvicerDaoImpl();
 
 class TenantService {
 
@@ -122,6 +120,62 @@ class TenantService {
 
     public async getDomainTenantManagementRels(tenantId?: string, domain?: string): Promise<Array<TenantManagementDomainRel>>{
         return tenantDao.getDomainTenantManagementRels(tenantId, domain);
+    }
+
+    public async assignContactsToTenant(tenantId: string, contactList: Array<Contact>): Promise<Array<Contact>>{
+        contactList.forEach(
+            (c: Contact) => {
+                c.objectid = tenantId;
+                c.objecttype = CONTACT_TYPE_FOR_TENANT
+            }
+        );
+        const invalidContacts = contactList.filter(
+            (c: Contact) => {
+                if(c.email === null || c.email === "" || c.email.length < 3 || c.email.indexOf("@") < 0){
+                    return true;
+                }
+                if(c.name === null || c.name === "" || c.name.length < 3){
+                    return true;
+                }
+                return false;
+            }
+        );
+        if(invalidContacts.length > 0){
+            throw new GraphQLError("ERROR_INVALID_CONTACT_INFORMATION");
+        }
+        return tenantDao.assignContactsToTenant(tenantId, contactList);
+    }
+
+    public async createAnonymousUserConfiguration(tenantId: string, anonymousUserConfiguration: AnonymousUserConfiguration): Promise<AnonymousUserConfiguration>{
+        return tenantDao.createAnonymousUserConfiguration(tenantId, anonymousUserConfiguration);
+    }
+
+    public async updateAnonymousUserConfiguration(anonymousUserConfiguration: AnonymousUserConfiguration): Promise<AnonymousUserConfiguration>{
+        return tenantDao.updateAnonymousUserConfiguration(anonymousUserConfiguration);
+    }
+
+    public async deleteAnonymousUserConfiguration(tenantId: string): Promise<void>{
+        return tenantDao.deleteAnonymousUserConfiguration(tenantId);
+    }
+
+    public async createTenantLookAndFeel(tenantLookAndFeel: TenantLookAndFeel): Promise<TenantLookAndFeel>{
+        return tenantDao.createTenantLookAndFeel(tenantLookAndFeel);
+    }
+
+    public async updateTenantLookAndFeel(tenantLookAndFeel: TenantLookAndFeel): Promise<TenantLookAndFeel>{
+        return tenantDao.updateTenantLookAndFeel(tenantLookAndFeel);
+    }
+
+    public async deleteTenantLookAndFeel(tenantId: string): Promise<void>{
+        return tenantDao.deleteTenantLookAndFeel(tenantId);
+    }
+
+    public async assignPasswordConfigToTenant(tenantId: string, tenantPasswordConfig: TenantPasswordConfig): Promise<TenantPasswordConfig>{
+        return tenantDao.assignPasswordConfigToTenant(tenantId, tenantPasswordConfig);
+    }
+
+    public async removePasswordConfigFromTenant(tenantId: string): Promise<void>{
+        return tenantDao.removePasswordConfigFromTenant(tenantId);
     }
 
 

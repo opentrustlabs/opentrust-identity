@@ -13,6 +13,7 @@ type Query {
     getUsers(tenantId: String): [User!]!
     getUserById(userId: String!): User
     
+    
     ## Keys
     getSigningKeys(tenantId: String): [SigningKey!]!
     getSigningKeyById(signingKeyId: String!): SigningKey
@@ -24,6 +25,10 @@ type Query {
     ## Scope
     getScope(tenantId: String): [Scope!]!
     getScopeById(scopeId: String!): Scope
+    getClientScopes(clientId: String!): [Scope!]!
+    getAuthorizationGroupScopes(groupId: String!): [Scope!]!
+    getUserScopes(userId: String!): [Scope!]!
+
 
     ## Scope constraints
     getScopeConstraintSchemas: [ScopeConstraintSchema!]!
@@ -46,6 +51,15 @@ type Query {
     getFederatedOIDCProviders(tenantId: String): [FederatedOIDCProvider!]!
     getFederatedOIDCProviderById(federatedOIDCProviderId: String!): FederatedOIDCProvider
     
+    ## Change events
+    getChangeEvents(objectId: String!): [ChangeEvent!]!
+
+    ## Login Failure Configuration
+    getLoginFailurePolicy: LoginFailurePolicy!
+
+    ## Scheduler
+    getSchedulerLocks: [SchedulerLock]
+
 }
 
 type Mutation {
@@ -58,6 +72,8 @@ type Mutation {
     deleteTenant(tenantId: String!): String
     addDomainToTenantManagement(tenantId: String!, domain: String!): String
     removeDomainFromTenantManagement(tenantId: String!, domain: String!): String
+    addDomainToTenantRestrictedAuthentication(tenantId: String!, domain: String!): String
+    removeDomainFromTenantRestrictedAuthentication(tenantId: String, domain: String!): String
 
     ## Clients
     createClient(clientInput: ClientCreateInput!): Client
@@ -66,6 +82,10 @@ type Mutation {
     deleteClient(clientId: String!): String
 
     ## Users
+    logout(userId: String): String
+    login(username: String!, password: String!): String
+    createUser(userInput: UserCreateInput!): User!
+    updateUser(userInput: UserUpdateInput!): User!
 
     
     ## Keys
@@ -128,6 +148,14 @@ type Mutation {
     removeFederatedOIDCProviderFromDomain(federatedOIDCProviderId: String!, domain: String!): FederatedOIDCProviderDomainRel!
     deleteFederatedOIDCProvider(federatedOIDCProviderId: String!): String!
 
+    ## Login failure policy
+    setLoginFailurePolicy(loginFailurePolicyInput: LoginFailurePolicyInput!): LoginFailurePolicy!
+
+    ## Scheduler locks
+    deleteSchedulerLock(instanceId: String!): String!
+
+
+
 }
 
 
@@ -169,17 +197,12 @@ type Tenant {
 
 
 type AnonymousUserConfiguration {
-    anonymoususerconfigurationid: String!
-    defaultcountrycode: String!
-    defaultlangugecode: String!
+    tenantId: String!
+    defaultcountrycode: String
+    defaultlangugecode: String
     tokenttlseconds: Int!
     scopeids: [String]
     groupids: [String]
-}
-
-type TenantAnonymousUserConfigurationRel {
-    tenantid: String!
-    anonymoususerconfigurationid: String!
 }
 
 
@@ -390,13 +413,10 @@ type AccessRule {
 type RateLimitServiceGroup {
     servicegroupid: String!
     servicegroupname: String!
-    servicegroupdescription: String    
+    servicegroupdescription: String
+    scopeids: [String!]!
 }
 
-type RateLimitServiceGroupScopeRel {
-    servicegroupid: String!
-    scopeid: String!
-}
 
 type RateLimit {
     ratelimitid: String!
@@ -599,6 +619,32 @@ input FederatedOIDCProviderUpdateInput {
     clientauthtypeid: String
 }
 
+
+input ContactInput {
+    email: String!
+    name: String!
+    userid: String
+}
+
+input PasswordConfigInput {
+    passwordMinLength: Int!
+    passwordMaxLength: Int! 
+    passwordHashingAlgorithm: String!
+    requireUpperCase: Boolean!
+	requireLowerCase: Boolean!
+	requireNumbers: Boolean!
+	requireSpecialCharacters: Boolean!
+	specialCharactersAllowed: String    
+}
+
+input AnonymousUserConfigInput {
+    defaultcountrycode: String
+    defaultlangugecode: String
+    tokenttlseconds: Int!
+    scopeids: [String]
+    groupids: [String]
+}
+
 input TenantCreateInput {
     tenantId: String!
     tenantName: String!
@@ -607,12 +653,14 @@ input TenantCreateInput {
     claimsSupported: [String!]!
     allowUnlimitedRate: Boolean!
     allowUserSelfRegistration: Boolean!
+    allowAnonymousUsers: Boolean!
     verifyEmailOnSelfRegistration: Boolean!
     allowSocialLogin: Boolean!
-    federatedAuthenticationConstraint: String!
-    federatedOIDCProviderId: String
+    federatedAuthenticationConstraint: String!    
     tenantType: String!
-    contactemaillist: [String!]!
+    contactInput: [ContactInput!]!
+    passwordConfigInput: PasswordConfigInput
+    anonymousUserConfigInput: AnonymousUserConfigInput
 }
 
 input TenantUpdateInput {
@@ -623,13 +671,15 @@ input TenantUpdateInput {
     claimsSupported: [String!]!
     allowUnlimitedRate: Boolean!
     allowUserSelfRegistration: Boolean!
+    allowAnonymousUsers: Boolean!
     verifyEmailOnSelfRegistration: Boolean!
     allowSocialLogin: Boolean!
-    federatedAuthenticationConstraint: String!
-    federatedOIDCProviderId: String
+    federatedAuthenticationConstraint: String!    
     markForDelete: Boolean!
     tenantType: String!
-    contactemaillist: [String!]!
+    contactInput: [ContactInput!]!
+    passwordConfigInput: PasswordConfigInput
+    anonymousUserConfigInput: AnonymousUserConfigInput
 }
 
 input ClientCreateInput {
@@ -645,7 +695,7 @@ input ClientCreateInput {
     userTokenTTLSeconds: Int
     clientTokenTTLSeconds: Int
     maxRefreshTokenCount: Int
-    contactemaillist: [String!]!
+    contactInput: [ContactInput!]!
 }
 
 input ClientUpdateInput {
@@ -662,7 +712,7 @@ input ClientUpdateInput {
     userTokenTTLSeconds: Int
     clientTokenTTLSeconds: Int
     maxRefreshTokenCount: Int
-    contactemaillist: [String!]!
+    contactInput: [ContactInput!]!
 }
 
 input SigningKeyCreateInput {
@@ -749,4 +799,51 @@ input AccessRuleUpdateInput {
     scopeId: String!
     scopeConstraintSchemaId: String!
     accessRuleDefinition: String!
+}
+
+input LoginFailurePolicyInput {
+    loginFailurePolicyType: String!
+    loginfailurepolicytypeid: String
+    failureThreshold: Int!
+    pauseDurationMinutes: Int
+    numberOfPauseCyclesBeforeLocking: Int
+    initBackoffDurationMinutes: Int
+    numberOfBackoffCyclesBeforeLocking: Int
+}
+
+input UserCreateInput {
+    federatedOIDCProviderSubjectId: String
+    email: String!
+    emailVerified: Boolean!
+    domain: String!
+    firstName: String!
+    lastName: String!
+    middleName: String
+    phoneNumber: String
+    address: String
+    countryCode: String
+    preferredLanguageCode: String
+    twoFactorAuthType: String
+    locked: Boolean!
+    enabled: Boolean!
+    nameOrder: String!
+}
+
+input UserUpdateInput {
+    userId: String!
+    federatedOIDCProviderSubjectId: String
+    email: String!
+    emailVerified: Boolean!
+    domain: String!
+    firstName: String!
+    lastName: String!
+    middleName: String
+    phoneNumber: String
+    address: String
+    countryCode: String
+    preferredLanguageCode: String
+    twoFactorAuthType: String
+    locked: Boolean!
+    enabled: Boolean!
+    nameOrder: String!
 }

@@ -42,7 +42,7 @@ class DBAuthorizationGroupDao extends AuthorizationGroupDao {
     public async deleteAuthorizationGroup(groupId: string): Promise<void> {
         const em = connection.em.fork();
         // TODO
-        // DELETE THE RELATIONSHIP
+        // DELETE THE RELATIONSHIPS
     }
 
     public async addUserToAuthorizationGroup(userId: string, groupId: string): Promise<UserAuthorizationGroupRel> {

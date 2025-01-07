@@ -1,4 +1,4 @@
-import { AnonymousUserConfiguration, Contact, Tenant, TenantLookAndFeel, TenantManagementDomainRel } from "@/graphql/generated/graphql-types";
+import { AnonymousUserConfiguration, Contact, Tenant, TenantLookAndFeel, TenantManagementDomainRel, TenantPasswordConfig } from "@/graphql/generated/graphql-types";
 import TenantDAO from "../../tenant-dao";
 import { writeFileSync } from "node:fs";
 import path from "node:path";
@@ -8,7 +8,8 @@ import { getFileContents } from "@/utils/dao-utils";
 
 const dataDir = process.env.FS_BASED_DATA_DIR ?? path.join(__dirname);
 class FSBasedTenantDao extends TenantDAO {
-    
+
+   
     public async assignContactsToTenant(tenantId: string, contactList: Array<Contact>): Promise<Array<Contact>> {
         throw new Error("Method not implemented.");
     }
@@ -171,6 +172,13 @@ class FSBasedTenantDao extends TenantDAO {
         return Promise.resolve(rels);
     }
     
+    public async assignPasswordConfigToTenant(tenantId: string, tenantPasswordConfig: TenantPasswordConfig): Promise<TenantPasswordConfig> {
+        throw new Error("Method not implemented.");
+    }
+
+    public async removePasswordConfigFromTenant(tenantId: string): Promise<void> {
+        throw new Error("Method not implemented.");
+    }
 
 }
 

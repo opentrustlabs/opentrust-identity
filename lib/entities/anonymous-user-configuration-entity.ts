@@ -13,8 +13,8 @@ class AnonymousUserConfigurationEntity implements AnonymousUserConfiguration {
     }
     __typename?: "AnonymousUserConfiguration";
 
-    @PrimaryKey({fieldName: "anonymoususerconfigurationid"})
-    anonymoususerconfigurationid: string;
+    @PrimaryKey({fieldName: "tenantid"})
+    tenantId: string;
 
     @Property({fieldName: "defaultcountrycode"})
     defaultcountrycode: string;

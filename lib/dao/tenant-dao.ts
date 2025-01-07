@@ -1,4 +1,4 @@
-import { AnonymousUserConfiguration, Contact, Tenant, TenantLookAndFeel, TenantManagementDomainRel } from "@/graphql/generated/graphql-types";
+import { AnonymousUserConfiguration, Contact, Tenant, TenantLookAndFeel, TenantManagementDomainRel, TenantPasswordConfig } from "@/graphql/generated/graphql-types";
 
 
 abstract class TenantDao {
@@ -39,6 +39,11 @@ abstract class TenantDao {
     abstract updateTenantLookAndFeel(tenantLookAndFeel: TenantLookAndFeel): Promise<TenantLookAndFeel>;
 
     abstract deleteTenantLookAndFeel(tenantId: string): Promise<void>;
+
+    abstract assignPasswordConfigToTenant(tenantId: string, tenantPasswordConfig: TenantPasswordConfig): Promise<TenantPasswordConfig>;
+
+    abstract removePasswordConfigFromTenant(tenantId: string): Promise<void>;
+    
 
 }
 

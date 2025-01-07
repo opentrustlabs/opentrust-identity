@@ -1,11 +1,11 @@
-import { Client, Tenant } from "@/graphql/generated/graphql-types";
+import { Client, Contact, Tenant } from "@/graphql/generated/graphql-types";
 import { OIDCContext } from "@/graphql/graphql-context";
 import ClientDao from "@/lib/dao/client-dao";
 import { generateRandomToken, getClientDaoImpl, getTenantDaoImpl } from "@/utils/dao-utils";
 import TenantDao from "@/lib/dao/tenant-dao";
 import { GraphQLError } from "graphql/error/GraphQLError";
 import { randomUUID } from 'crypto'; 
-import { CLIENT_SECRET_ENCODING } from "@/utils/consts";
+import { CLIENT_SECRET_ENCODING, CONTACT_TYPE_FOR_CLIENT } from "@/utils/consts";
 
 const clientDao: ClientDao = getClientDaoImpl();
 const tenantDao: TenantDao = getTenantDaoImpl();
@@ -70,6 +70,30 @@ class ClientService {
         // ClientTenantScopeRel
         // delete client
         throw new Error("Method not implemented.");
+    }
+
+    public async assignContactsToClient(clientId: string, contactList: Array<Contact>): Promise<Array<Contact>>{
+        contactList.forEach(
+            (c: Contact) => {
+                c.objectid = clientId;
+                c.objecttype = CONTACT_TYPE_FOR_CLIENT
+            }
+        );
+        const invalidContacts = contactList.filter(
+            (c: Contact) => {
+                if(c.email === null || c.email === "" || c.email.length < 3 || c.email.indexOf("@") < 0){
+                    return true;
+                }
+                if(c.name === null || c.name === "" || c.name.length < 3){
+                    return true;
+                }
+                return false;
+            }
+        );
+        if(invalidContacts.length > 0){
+            throw new GraphQLError("ERROR_INVALID_CONTACT_INFORMATION");
+        }
+        return clientDao.assignContactsToClient(clientId, contactList);
     }
 }
 

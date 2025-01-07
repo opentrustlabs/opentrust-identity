@@ -1,6 +1,6 @@
 import ClientService from "@/lib/service/client-service";
 import TenantService from "@/lib/service/tenant-service";
-import { Resolvers, QueryResolvers, MutationResolvers, Tenant, Client, SigningKey, Scope, AuthenticationGroup, AuthorizationGroup, FederatedOidcProvider } from "../generated/graphql-types";
+import { Resolvers, QueryResolvers, MutationResolvers, Tenant, Client, SigningKey, Scope, AuthenticationGroup, AuthorizationGroup, FederatedOidcProvider, ContactInput, Contact } from "../generated/graphql-types";
 import SigningKeysService from "@/lib/service/keys-service";
 import ScopeService from "@/lib/service/scope-service";
 import GroupService from "@/lib/service/group-service";
@@ -91,6 +91,30 @@ const resolvers: Resolvers = {
                 allowAnonymousUsers: false
             };
             await tenantService.createRootTenant(tenant);
+            const contacts: Array<Contact> = tenantInput.contactInput.map((i: ContactInput) => { return {email: i.email, name: i.name, objectid: tenant.tenantId, objecttype:""}});
+            await tenantService.assignContactsToTenant(tenant.tenantId, contacts);
+            if(tenantInput.anonymousUserConfigInput){
+                await tenantService.createAnonymousUserConfiguration(tenant.tenantId, {
+                    tenantId: tenant.tenantId,
+                    tokenttlseconds: tenantInput.anonymousUserConfigInput.tokenttlseconds,
+                    defaultcountrycode: tenantInput.anonymousUserConfigInput.defaultcountrycode,
+                    defaultlangugecode: tenantInput.anonymousUserConfigInput.defaultlangugecode,
+                    groupids: tenantInput.anonymousUserConfigInput.groupids,
+                    scopeids: tenantInput.anonymousUserConfigInput.scopeids
+                });                
+            }
+            if(tenantInput.passwordConfigInput){
+                await tenantService.assignPasswordConfigToTenant(tenant.tenantId, {
+                    passwordHashingAlgorithm: tenantInput.passwordConfigInput.passwordHashingAlgorithm,
+                    passwordMaxLength: tenantInput.passwordConfigInput.passwordMaxLength,
+                    passwordMinLength: tenantInput.passwordConfigInput.passwordMinLength,
+                    requireLowerCase: tenantInput.passwordConfigInput.requireLowerCase,
+                    requireNumbers: tenantInput.passwordConfigInput.requireNumbers,
+                    requireSpecialCharacters: tenantInput.passwordConfigInput.requireSpecialCharacters,
+                    requireUpperCase: tenantInput.passwordConfigInput.requireUpperCase,
+                    tenantId: tenant.tenantId
+                });
+            }
             return tenant;
         },
         updateRootTenant: async(_: any, { tenantInput }, oidcContext) => {
@@ -111,6 +135,30 @@ const resolvers: Resolvers = {
                 allowAnonymousUsers: false
             }
             await tenantService.updateRootTenant(tenant);
+            const contacts: Array<Contact> = tenantInput.contactInput.map((i: ContactInput) => { return {email: i.email, name: i.name, objectid: tenant.tenantId, objecttype:""}});
+            await tenantService.assignContactsToTenant(tenant.tenantId, contacts);
+            if(tenantInput.anonymousUserConfigInput){
+                await tenantService.createAnonymousUserConfiguration(tenant.tenantId, {
+                    tenantId: tenant.tenantId,
+                    tokenttlseconds: tenantInput.anonymousUserConfigInput.tokenttlseconds,
+                    defaultcountrycode: tenantInput.anonymousUserConfigInput.defaultcountrycode,
+                    defaultlangugecode: tenantInput.anonymousUserConfigInput.defaultlangugecode,
+                    groupids: tenantInput.anonymousUserConfigInput.groupids,
+                    scopeids: tenantInput.anonymousUserConfigInput.scopeids
+                });                
+            }
+            if(tenantInput.passwordConfigInput){
+                await tenantService.assignPasswordConfigToTenant(tenant.tenantId, {
+                    passwordHashingAlgorithm: tenantInput.passwordConfigInput.passwordHashingAlgorithm,
+                    passwordMaxLength: tenantInput.passwordConfigInput.passwordMaxLength,
+                    passwordMinLength: tenantInput.passwordConfigInput.passwordMinLength,
+                    requireLowerCase: tenantInput.passwordConfigInput.requireLowerCase,
+                    requireNumbers: tenantInput.passwordConfigInput.requireNumbers,
+                    requireSpecialCharacters: tenantInput.passwordConfigInput.requireSpecialCharacters,
+                    requireUpperCase: tenantInput.passwordConfigInput.requireUpperCase,
+                    tenantId: tenant.tenantId
+                });
+            }
             return tenant;
         },
         createTenant: async (_: any, { tenantInput }, oidcContext) => {
@@ -131,6 +179,30 @@ const resolvers: Resolvers = {
                 allowAnonymousUsers: false
             }
             await tenantService.createTenant(tenant);
+            const contacts: Array<Contact> = tenantInput.contactInput.map((i: ContactInput) => { return {email: i.email, name: i.name, objectid: tenant.tenantId, objecttype:""}});
+            await tenantService.assignContactsToTenant(tenant.tenantId, contacts);
+            if(tenantInput.anonymousUserConfigInput){
+                await tenantService.createAnonymousUserConfiguration(tenant.tenantId, {
+                    tenantId: tenant.tenantId,
+                    tokenttlseconds: tenantInput.anonymousUserConfigInput.tokenttlseconds,
+                    defaultcountrycode: tenantInput.anonymousUserConfigInput.defaultcountrycode,
+                    defaultlangugecode: tenantInput.anonymousUserConfigInput.defaultlangugecode,
+                    groupids: tenantInput.anonymousUserConfigInput.groupids,
+                    scopeids: tenantInput.anonymousUserConfigInput.scopeids
+                });                
+            }
+            if(tenantInput.passwordConfigInput){
+                await tenantService.assignPasswordConfigToTenant(tenant.tenantId, {
+                    passwordHashingAlgorithm: tenantInput.passwordConfigInput.passwordHashingAlgorithm,
+                    passwordMaxLength: tenantInput.passwordConfigInput.passwordMaxLength,
+                    passwordMinLength: tenantInput.passwordConfigInput.passwordMinLength,
+                    requireLowerCase: tenantInput.passwordConfigInput.requireLowerCase,
+                    requireNumbers: tenantInput.passwordConfigInput.requireNumbers,
+                    requireSpecialCharacters: tenantInput.passwordConfigInput.requireSpecialCharacters,
+                    requireUpperCase: tenantInput.passwordConfigInput.requireUpperCase,
+                    tenantId: tenant.tenantId
+                });
+            }
             return tenant; 
         },
         updateTenant: async (_: any, { tenantInput }, oidcContext) => {
@@ -151,6 +223,30 @@ const resolvers: Resolvers = {
                 allowAnonymousUsers: false
             }
             const updatedTenant: Tenant = await tenantService.updateTenant(tenant);
+            const contacts: Array<Contact> = tenantInput.contactInput.map((i: ContactInput) => { return {email: i.email, name: i.name, objectid: tenant.tenantId, objecttype:""}});
+            await tenantService.assignContactsToTenant(tenant.tenantId, contacts);
+            if(tenantInput.anonymousUserConfigInput){
+                await tenantService.createAnonymousUserConfiguration(tenant.tenantId, {
+                    tenantId: tenant.tenantId,
+                    tokenttlseconds: tenantInput.anonymousUserConfigInput.tokenttlseconds,
+                    defaultcountrycode: tenantInput.anonymousUserConfigInput.defaultcountrycode,
+                    defaultlangugecode: tenantInput.anonymousUserConfigInput.defaultlangugecode,
+                    groupids: tenantInput.anonymousUserConfigInput.groupids,
+                    scopeids: tenantInput.anonymousUserConfigInput.scopeids
+                });                
+            }
+            if(tenantInput.passwordConfigInput){
+                await tenantService.assignPasswordConfigToTenant(tenant.tenantId, {
+                    passwordHashingAlgorithm: tenantInput.passwordConfigInput.passwordHashingAlgorithm,
+                    passwordMaxLength: tenantInput.passwordConfigInput.passwordMaxLength,
+                    passwordMinLength: tenantInput.passwordConfigInput.passwordMinLength,
+                    requireLowerCase: tenantInput.passwordConfigInput.requireLowerCase,
+                    requireNumbers: tenantInput.passwordConfigInput.requireNumbers,
+                    requireSpecialCharacters: tenantInput.passwordConfigInput.requireSpecialCharacters,
+                    requireUpperCase: tenantInput.passwordConfigInput.requireUpperCase,
+                    tenantId: tenant.tenantId
+                });
+            }
             return updatedTenant;
         },
         deleteTenant: async (_: any, { tenantId }, oidcContext) => {
@@ -177,6 +273,8 @@ const resolvers: Resolvers = {
                 clienttypeid: ""
             }
             await clientService.createClient(client);
+            const contacts: Array<Contact> = clientInput.contactInput.map((i: ContactInput) => { return {email: i.email, name: i.name, objectid: client.clientId, objecttype:""}});
+            await clientService.assignContactsToClient(client.clientId, contacts);
             return client;
         },
         updateClient: async (_: any, { clientInput }, oidcContext) => {
@@ -198,6 +296,8 @@ const resolvers: Resolvers = {
                 clienttypeid: ""
             }
             await clientService.updateClient(client);
+            const contacts: Array<Contact> = clientInput.contactInput.map((i: ContactInput) => { return {email: i.email, name: i.name, objectid: client.clientId, objecttype:""}});
+            await clientService.assignContactsToClient(client.clientId, contacts);
             return client;
         },
         deleteClient: async(_: any, { clientId }, oidcContext) => {

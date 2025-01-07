@@ -9,6 +9,7 @@ import UserEntity from "@/lib/entities/user-entity";
 import UserCredentialEntity from "@/lib/entities/user-credential-entity";
 import { QueryOrder } from "@mikro-orm/core";
 import { PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS } from "@/utils/consts";
+import { bcryptValidatePassword, pbkdf2HashPassword, sha256HashPassword } from "@/utils/dao-utils";
 
 class DBIdentityDao extends IdentityDao {
 
@@ -42,32 +43,41 @@ class DBIdentityDao extends IdentityDao {
         if(!userCredential){
             return new Error("ERROR_UNABLE_TO_LOGIN_USER");
         }
-        if(userCredential.hashingAlgorithm === PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS){
-
-        }
-        else if(userCredential.hashingAlgorithm === PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS){
-            
-        }
-        else if(userCredential.hashingAlgorithm === PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS){
-
+        // Note that the bcrypt hashing algorithm CAN automatically generate a random salt
+        // and save both the salt value and the iteration value as part of the hashed password,
+        // so we do NOT need to pass both those pieces of information to the validation
+        // function.
+        let valid: boolean = false;
+        if(
+            userCredential.hashingAlgorithm === PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS ||
+            userCredential.hashingAlgorithm === PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS ||
+            userCredential.hashingAlgorithm === PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS
+        ){
+            valid = bcryptValidatePassword(password, userCredential.hashedPassword)
         }
         else if(userCredential.hashingAlgorithm === PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS){
-
+            const hashedPassword = sha256HashPassword(password, userCredential.salt, 64000);
+            valid = hashedPassword === userCredential.hashedPassword;
         }
         else if(userCredential.hashingAlgorithm === PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS){
-        
+            const hashedPassword = sha256HashPassword(password, userCredential.salt, 128000);
+            valid = hashedPassword === userCredential.hashedPassword;
         }
         else if(userCredential.hashingAlgorithm === PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS){
-
+            const hashedPassword = pbkdf2HashPassword(password, userCredential.hashedPassword, 128000);
+            valid = hashedPassword === userCredential.hashedPassword;
         }
         else if(userCredential.hashingAlgorithm === PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS){
-
+            const hashedPassword = pbkdf2HashPassword(password, userCredential.hashedPassword, 256000);
+            valid = hashedPassword === userCredential.hashedPassword;
         }
         else{
             return new Error("ERROR_UNABLE_TO_LOGIN_USER");
         }
-        return new Error("ERROR_")
-
+        if(!valid){
+            throw new Error("ERROR_AUTHENTICATING_USER");
+        }
+        return Promise.resolve(user);
     }
 
     public async getLoginAttempts(userId: string): Promise<number> {

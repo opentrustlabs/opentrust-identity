@@ -1,4 +1,4 @@
-import { Tenant, TenantManagementDomainRel, AnonymousUserConfiguration, TenantLookAndFeel, Contact } from "@/graphql/generated/graphql-types";
+import { Tenant, TenantManagementDomainRel, AnonymousUserConfiguration, TenantLookAndFeel, Contact, TenantPasswordConfig } from "@/graphql/generated/graphql-types";
 import TenantDao from "../../tenant-dao";
 import { TenantEntity } from "@/lib/entities/tenant-entity";
 import connection  from "@/lib/data-sources/db";
@@ -7,13 +7,11 @@ import { GraphQLError } from "graphql";
 import TenantManagementDomainRelEntity from "@/lib/entities/tenant-management-domain-rel-entity";
 import AnonymousUserConfigurationEntity from "@/lib/entities/anonymous-user-configuration-entity";
 import TenantAnonymousUserConfigurationRelEntity from "@/lib/entities/tenant-anonymous-user-configuration-rel-entity";
+import TenantPasswordConfigEntity from "@/lib/entities/tenant-password-config-entity";
+import TenantLookAndFeelEntity from "@/lib/entities/tenant-look-and-feel-entity";
+import ContactEntity from "@/lib/entities/contact-entity";
 
 class DBTenantDao extends TenantDao {
-
-
-    public async assignContactsToTenant(tenantId: string, contactList: Array<Contact>): Promise<Array<Contact>> {
-        throw new Error("Method not implemented.");
-    }
 
     public async getRootTenant(): Promise<Tenant> {
         const em = connection.em.fork();
@@ -95,6 +93,19 @@ class DBTenantDao extends TenantDao {
         }
     }
 
+    public async assignContactsToTenant(tenantId: string, contactList: Array<Contact>): Promise<Array<Contact>> {
+        const em = connection.em.fork();
+        await em.nativeDelete(ContactEntity, {
+            objectid: tenantId
+        });
+        for(let i = 0; i < contactList.length; i++){
+            const entity: ContactEntity = new ContactEntity(contactList[i]);
+            em.persist(entity);
+        }
+        await em.flush();
+        return Promise.resolve(contactList);
+    }
+    
     public async getDomainTenantManagementRels(tenantId?: string, domain?: string): Promise<Array<TenantManagementDomainRel>> {
         const em = connection.em.fork();
         const queryParams: any = {};
@@ -143,12 +154,6 @@ class DBTenantDao extends TenantDao {
         const em = connection.em.fork();
         const configEntity: AnonymousUserConfigurationEntity = new AnonymousUserConfigurationEntity(anonymousUserConfiguration);
         await em.persistAndFlush(configEntity);
-
-        const relEntity: TenantAnonymousUserConfigurationRelEntity = new TenantAnonymousUserConfigurationRelEntity({
-            tenantid: tenantId,
-            anonymoususerconfigurationid: anonymousUserConfiguration.anonymoususerconfigurationid
-        });
-        em.persistAndFlush(relEntity);
         return Promise.resolve(anonymousUserConfiguration);
     }
 
@@ -160,29 +165,52 @@ class DBTenantDao extends TenantDao {
         return Promise.resolve(e);
     }
 
-    public async deleteAnonymousUserConfiguration(configurationId: string): Promise<void> {
-        const em = connection.em.fork();
-        await em.nativeDelete(TenantAnonymousUserConfigurationRelEntity, {
-            anonymoususerconfigurationid: configurationId
+    public async deleteAnonymousUserConfiguration(tenantId: string): Promise<void> {
+        const em = connection.em.fork();        
+        await em.nativeDelete(AnonymousUserConfigurationEntity, {
+            tenantId: tenantId
         });
         await em.flush();
-        await em.nativeDelete(AnonymousUserConfigurationEntity, {
-            anonymoususerconfigurationid: configurationId
-        })
         return Promise.resolve();
     }
 
+    public async assignPasswordConfigToTenant(tenantId: string, tenantPasswordConfig: TenantPasswordConfig): Promise<TenantPasswordConfig> {
+        const em = connection.em.fork();
+        tenantPasswordConfig.tenantId = tenantId;
+        const entity: TenantPasswordConfigEntity = new TenantPasswordConfigEntity(tenantPasswordConfig);
+        await em.persistAndFlush(entity);
+        return Promise.resolve(tenantPasswordConfig);
+    }
+
+    public async removePasswordConfigFromTenant(tenantId: string): Promise<void> {
+        const em = connection.em.fork();
+        await em.nativeDelete(TenantPasswordConfigEntity, {
+            tenantId: tenantId
+        });
+        return Promise.resolve();
+    }
 
     public async createTenantLookAndFeel(tenantLookAndFeel: TenantLookAndFeel): Promise<TenantLookAndFeel> {
-        throw new Error("Method not implemented.");
+        const em = connection.em.fork();
+        const entity: TenantLookAndFeelEntity = new TenantLookAndFeelEntity(tenantLookAndFeel);
+        await em.persistAndFlush(entity);
+        return Promise.resolve(tenantLookAndFeel);
     }
 
     public async updateTenantLookAndFeel(tenantLookAndFeel: TenantLookAndFeel): Promise<TenantLookAndFeel> {
-        throw new Error("Method not implemented.");
+        const em = connection.em.fork();
+        const entity: TenantLookAndFeelEntity = new TenantLookAndFeelEntity(tenantLookAndFeel);
+        await em.upsert(entity);
+        await em.flush()
+        return Promise.resolve(tenantLookAndFeel);
     }
 
     public async deleteTenantLookAndFeel(tenantId: string): Promise<void> {
-        throw new Error("Method not implemented.");
+        const em = connection.em.fork();
+        await em.nativeDelete(TenantLookAndFeelEntity, {
+            tenantid: tenantId
+        });
+        return Promise.resolve();
     }
 
 }
