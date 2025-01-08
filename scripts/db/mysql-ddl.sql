@@ -494,3 +494,31 @@ create TABLE user_verification_token (
     expiresatms BIGINT NOT NULL,
     FOREIGN KEY (userid) REFERENCES user(userid)
 );
+
+create TABLE user_mfa_rel (
+    userid VARCHAR(64) NOT NULL,
+    primarymfa BOOLEAN NOT NULL,
+    mfatype VARCHAR(64) NOT NULL,
+    totpsecret VARCHAR(1024),
+    fido2publickey VARCHAR(4000),
+    fido2credentialid VARCHAR(1024),
+    fido2algorithm VARCHAR(1024),
+    fido2transports VARCHAR(1024),
+    fido2keysupportscounters BOOLEAN,
+    PRIMARY KEY (userid, mfatype),
+    FOREIGN KEY (userid) REFERENCES user(userid)
+);
+
+create TABLE user_fido2_counter_rel (
+    userid VARCHAR(64) PRIMARY KEY,
+    fido2counter BIGINT,
+    FOREIGN KEY (userid) REFERENCES user(userid)
+);
+
+create TABLE user_fido2_challenge (
+    userid VARCHAR(64) PRIMARY KEY,
+    challenge VARCHAR(2048) NOT NULL,
+    issuedatms BIGINT NOT NULL,
+    expiresatms BIGINT NOT NULL,
+    FOREIGN KEY (userid) REFERENCES user(userid)
+);
