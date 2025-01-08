@@ -48,6 +48,9 @@ import TenantPasswordConfigEntity from '@/lib/entities/tenant-password-config-en
 import TenantRestrictedAuthenticationDomainRelEntity from '@/lib/entities/tenant-restricted-authentication-domain-rel-entity';
 import UserFailedLoginAttemptsEntity from '@/lib/entities/user-failed-login-attempts-entity';
 import UserVerificationTokenEntity from '@/lib/entities/user-verification-token-entity';
+import UserFido2ChallengeEntity from '@/lib/entities/user-fido2-challenge-entity';
+import UserFido2CounterRelEntity from '@/lib/entities/user-fido2-counter-rel-entity';
+import UserMfaRelEntity from '@/lib/entities/user-mfa-rel-entity';
 
 
 const connection = MikroORM.initSync(
@@ -107,9 +110,12 @@ const connection = MikroORM.initSync(
             TenantRestrictedAuthenticationDomainRelEntity,
             TenantScopeRelEntity,
             UserAuthorizationGroupRelEntity,
-            UserCredentialEntity,
+            UserCredentialEntity,            
             UserFailedLoginAttemptsEntity,
+            UserFido2ChallengeEntity,
+            UserFido2CounterRelEntity,
             UserEntity,
+            UserMfaRelEntity,
             UserVerificationTokenEntity,
             UserScopeRelEntity,
             UserTenantRelEntity
