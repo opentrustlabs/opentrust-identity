@@ -21,7 +21,8 @@ export class TenantEntity {
             this.tenanttype = tenant.tenantType;
             this.verifyemailonselfregistration = tenant.verifyEmailOnSelfRegistration;
             this.tenantdescription = tenant.tenantDescription || "";
-            this.federatedauthenticationconstraint = tenant.federatedAuthenticationConstraint            
+            this.federatedauthenticationconstraint = tenant.federatedAuthenticationConstraint;
+            this.migrateLegacyUsers = tenant.migrateLegacyUsers;         
         }
     }
     
@@ -64,6 +65,9 @@ export class TenantEntity {
     @Property()
     tenanttype: string;
 
+    @Property()
+    migrateLegacyUsers: boolean
+
     public toModel(): Tenant {
         const t: Tenant = {
             allowAnonymousUsers: this.allowanonymoususers,
@@ -80,7 +84,8 @@ export class TenantEntity {
             verifyEmailOnSelfRegistration: this.verifyemailonselfregistration,
             tenantDescription: this.tenantdescription,
             federatedauthenticationconstraintid: "",
-            tenanttypeid: ""
+            tenanttypeid: "",
+            migrateLegacyUsers: this.migrateLegacyUsers
         }
         return t;
     }

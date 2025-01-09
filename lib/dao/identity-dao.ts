@@ -1,4 +1,4 @@
-import { AuthenticationGroup, User, AuthorizationGroup } from "@/graphql/generated/graphql-types";
+import { AuthenticationGroup, User, AuthorizationGroup, SuccessfulLoginResponse, UserFailedLoginAttempts } from "@/graphql/generated/graphql-types";
 
 abstract class IdentityDao {
 
@@ -8,9 +8,9 @@ abstract class IdentityDao {
 
     abstract getUserAuthenticationGroups(userId: string): Promise<Array<AuthenticationGroup>>;
 
-    abstract loginUser(username: string, password: string): Promise<User | Error>;
+    abstract loginUser(username: string, password: string): Promise<SuccessfulLoginResponse | Error>;
 
-    abstract getLoginAttempts(userId: string): Promise<number>;
+    abstract getLoginAttempts(userId: string): Promise<Array<UserFailedLoginAttempts>>;
 
     abstract incrementLoginAttempts(userId: string): Promise<void>;
 
@@ -21,7 +21,17 @@ abstract class IdentityDao {
 
     abstract getUserById(userId: string): Promise<User | null>;
 
-    abstract saveForgotPasswordToken(userId: string, token: string): Promise<void>;
+    abstract savePasswordResetToken(userId: string, token: string): Promise<void>;
+
+    abstract getUserByPasswordResetToken(userId: string): Promise<User | null>;
+
+    abstract deletePasswordResetToken(token: string): Promise<void>;
+
+    abstract saveEmailConfirmationToken(userId: string, token: string): Promise<void>;
+
+    abstract getUserByEmailConfirmationToken(userId: string): Promise<User | null>;
+
+    abstract deleteEmailConfirmationToken(token: string): Promise<void>;
 
     abstract createUser(user: User): Promise<User>;
 

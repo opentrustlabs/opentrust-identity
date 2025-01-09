@@ -1,11 +1,31 @@
-import { AuthenticationGroup, Group, User } from "@/graphql/generated/graphql-types";
+import { AuthenticationGroup, AuthorizationGroup, SuccessfulLoginResponse, User, UserFailedLoginAttempts } from "@/graphql/generated/graphql-types";
 import IdentityDao from "../../identity-dao";
 
 class FSBasedIdentityDao extends IdentityDao {
-    
-    getLoginAttempts(userId: string): Promise<number> {
+
+    getLoginAttempts(userId: string): Promise<Array<UserFailedLoginAttempts>> {
         throw new Error("Method not implemented.");
     }
+    savePasswordResetToken(userId: string, token: string): Promise<void> {
+        throw new Error("Method not implemented.");
+    }
+    getUserByPasswordResetToken(userId: string): Promise<User | null> {
+        throw new Error("Method not implemented.");
+    }
+    deletePasswordResetToken(token: string): Promise<void> {
+        throw new Error("Method not implemented.");
+    }
+    saveEmailConfirmationToken(userId: string, token: string): Promise<void> {
+        throw new Error("Method not implemented.");
+    }
+    getUserByEmailConfirmationToken(userId: string): Promise<User | null> {
+        throw new Error("Method not implemented.");
+    }
+    deleteEmailConfirmationToken(token: string): Promise<void> {
+        throw new Error("Method not implemented.");
+    }
+    
+
     incrementLoginAttempts(userId: string): Promise<void> {
         throw new Error("Method not implemented.");
     }
@@ -29,7 +49,7 @@ class FSBasedIdentityDao extends IdentityDao {
         throw new Error("Method not implemented.");
     }
     
-    getUserGroups(userId: string): Promise<Array<Group>> {
+    getUserGroups(userId: string): Promise<Array<AuthorizationGroup>> {
         throw new Error("Method not implemented.");
     }
     getUserLoginGroups(userId: string): Promise<Array<AuthenticationGroup>> {
@@ -39,7 +59,8 @@ class FSBasedIdentityDao extends IdentityDao {
     getUsers(clientId: string): Promise<Array<User>> {
         throw new Error("Method not implemented.");
     }
-    loginUser(username: string, password: string): Promise<User> {
+
+    loginUser(username: string, password: string): Promise<SuccessfulLoginResponse | Error> {
         throw new Error("Method not implemented.");
     }
     createUser(user: User): Promise<User> {

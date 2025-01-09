@@ -88,7 +88,8 @@ const resolvers: Resolvers = {
                 markForDelete: false,
                 tenantType: TENANT_TYPE_ROOT_TENANT,
                 allowSocialLogin: false,
-                allowAnonymousUsers: false
+                allowAnonymousUsers: false,
+                migrateLegacyUsers: false
             };
             await tenantService.createRootTenant(tenant);
             const contacts: Array<Contact> = tenantInput.contactInput.map((i: ContactInput) => { return {email: i.email, name: i.name, objectid: tenant.tenantId, objecttype:""}});
@@ -132,7 +133,8 @@ const resolvers: Resolvers = {
                 markForDelete: tenantInput.markForDelete,
                 tenantType: TENANT_TYPE_ROOT_TENANT,
                 allowSocialLogin: false,
-                allowAnonymousUsers: false
+                allowAnonymousUsers: false,
+                migrateLegacyUsers: false
             }
             await tenantService.updateRootTenant(tenant);
             const contacts: Array<Contact> = tenantInput.contactInput.map((i: ContactInput) => { return {email: i.email, name: i.name, objectid: tenant.tenantId, objecttype:""}});
@@ -176,7 +178,8 @@ const resolvers: Resolvers = {
                 markForDelete: false,
                 tenantType: tenantInput.tenantType,
                 allowSocialLogin: tenantInput.allowSocialLogin,
-                allowAnonymousUsers: false
+                allowAnonymousUsers: tenantInput.allowAnonymousUsers,
+                migrateLegacyUsers: tenantInput.migrateLegacyUsers
             }
             await tenantService.createTenant(tenant);
             const contacts: Array<Contact> = tenantInput.contactInput.map((i: ContactInput) => { return {email: i.email, name: i.name, objectid: tenant.tenantId, objecttype:""}});
@@ -220,7 +223,8 @@ const resolvers: Resolvers = {
                 markForDelete: tenantInput.markForDelete,
                 tenantType: tenantInput.tenantType,
                 allowSocialLogin: tenantInput.allowSocialLogin,
-                allowAnonymousUsers: false
+                allowAnonymousUsers: tenantInput.allowAnonymousUsers,
+                migrateLegacyUsers: tenantInput.migrateLegacyUsers
             }
             const updatedTenant: Tenant = await tenantService.updateTenant(tenant);
             const contacts: Array<Contact> = tenantInput.contactInput.map((i: ContactInput) => { return {email: i.email, name: i.name, objectid: tenant.tenantId, objecttype:""}});
@@ -377,7 +381,8 @@ const resolvers: Resolvers = {
                 authenticationGroupId: "",
                 authenticationGroupName: authenticationGroupInput.authenticationGroupName,
                 authenticationGroupDescription: authenticationGroupInput.authenticationGroupDescription,
-                tenantId: authenticationGroupInput.tenantId
+                tenantId: authenticationGroupInput.tenantId,
+                defaultGroup: authenticationGroupInput.defaultGroup
             }
             await authenticationGroupService.createAuthenticationGroup(authenticationGroup);
             return authenticationGroup;
@@ -388,7 +393,8 @@ const resolvers: Resolvers = {
                 authenticationGroupId: authenticationGroupInput.authenticationGroupId,
                 authenticationGroupName: authenticationGroupInput.authenticationGroupName,
                 authenticationGroupDescription: authenticationGroupInput.authenticationGroupDescription,
-                tenantId: authenticationGroupInput.tenantId
+                tenantId: authenticationGroupInput.tenantId,
+                defaultGroup: authenticationGroupInput.defaultGroup
             }
             await authenticationGroupService.updateAuthenticationGroup(authenticationGroup);
             return authenticationGroupInput;

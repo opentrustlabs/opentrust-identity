@@ -193,6 +193,7 @@ type Tenant {
     markForDelete: Boolean!
     tenantType: String!
     tenanttypeid: String
+    migrateLegacyUsers: Boolean!
 }
 
 
@@ -334,6 +335,7 @@ type AuthenticationGroup {
     authenticationGroupId: String!
     authenticationGroupName: String!
     authenticationGroupDescription: String
+    defaultGroup: Boolean!
 }
 
 type AuthenticationGroupClientRel {
@@ -495,6 +497,13 @@ type AuthorizationCodeData {
     expiresAtMs: Float!
 }
 
+type SuccessfulLoginResponse {
+    mfaEnabled: Boolean!
+    userId: String!
+    mfaType: String
+    challenge: String
+}
+
 type RefreshData {
     refreshToken: String!
     tenantId: String!
@@ -581,7 +590,10 @@ type SchedulerLock {
     lockExpiresAtMS: Float!
 }
 
-
+type UserFailedLoginAttempts {
+    userId: String!
+    failureAtMS: Float!
+}
 
 ############################################################################
 ################ INPUT TYPES AND RESPONSES FOR MUTATATIONS #################
@@ -661,6 +673,7 @@ input TenantCreateInput {
     contactInput: [ContactInput!]!
     passwordConfigInput: PasswordConfigInput
     anonymousUserConfigInput: AnonymousUserConfigInput
+    migrateLegacyUsers: Boolean!
 }
 
 input TenantUpdateInput {
@@ -680,6 +693,7 @@ input TenantUpdateInput {
     contactInput: [ContactInput!]!
     passwordConfigInput: PasswordConfigInput
     anonymousUserConfigInput: AnonymousUserConfigInput
+    migrateLegacyUsers: Boolean!
 }
 
 input ClientCreateInput {
@@ -753,6 +767,7 @@ input AuthenticationGroupCreateInput {
     tenantId: String!
     authenticationGroupName: String!
     authenticationGroupDescription: String
+    defaultGroup: Boolean!
 }
 
 input AuthenticationGroupUpdateInput {
@@ -760,6 +775,7 @@ input AuthenticationGroupUpdateInput {
     authenticationGroupId: String!
     authenticationGroupName: String!
     authenticationGroupDescription: String
+    defaultGroup: Boolean!
 }
 
 input AuthorizationGroupCreateInput {

@@ -33,7 +33,8 @@ create TABLE tenant (
     verifyemailonselfregistration BOOLEAN NOT NULL,
     federatedauthenticationconstraint VARCHAR(128) NOT NULL,
     markfordelete BOOLEAN NOT NULL,
-    tenanttype VARCHAR(128) NOT NULL
+    tenanttype VARCHAR(128) NOT NULL,
+    migratelegacyusers BOOLEAN NOT NULL
 );
 CREATE INDEX tenant_tenant_type_idx ON tenant(tenanttype);
 
@@ -149,6 +150,7 @@ create TABLE authentication_group (
     tenantid VARCHAR(64) NOT NULL,
     authenticationgroupname VARCHAR(128) NOT NULL,
     authenticationgroupdescription VARCHAR(256),
+    defaultgroup BOOLEAN NOT NULL,
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid)
 );
 
@@ -521,4 +523,11 @@ create TABLE user_fido2_challenge (
     issuedatms BIGINT NOT NULL,
     expiresatms BIGINT NOT NULL,
     FOREIGN KEY (userid) REFERENCES user(userid)
+);
+
+create TABLE tenant_legacy_user_migration_config (
+    tenantid VARCHAR(64) PRIMARY KEY,
+    authenticationuri VARCHAR(256) NOT NULL,
+    userprofileuri VARCHAR(256) NOT NULL,
+    FOREIGN KEY (tenantid) REFERENCES tenant(tenantid)
 );

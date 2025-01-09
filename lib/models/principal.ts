@@ -1,4 +1,3 @@
-import { ClientType, TokenType } from "@/graphql/generated/graphql-types";
 
 export interface OIDCPrincipal {
     sub: string,
@@ -25,6 +24,6 @@ export interface OIDCPrincipal {
     tenant_name: string,
     client_id: string,
     client_name: string,
-    client_type: ClientType
-    token_type: TokenType
+    client_type: string
+    token_type: string
 }

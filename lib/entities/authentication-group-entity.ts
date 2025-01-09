@@ -24,7 +24,10 @@ class AuthenticationGroupEntity implements AuthenticationGroup {
     authenticationGroupName: string;
 
     @Property({fieldName: "authenticationgroupdescription"})
-    authenticationGroupDescription?: Maybe<string> | undefined;    
+    authenticationGroupDescription?: Maybe<string> | undefined;
+
+    @Property({fieldName: "defaultgroup"})
+    defaultGroup: boolean;
     
 }
 
