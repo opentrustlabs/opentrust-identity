@@ -1,9 +1,12 @@
 "use client";
-import type { Metadata } from "next";
+//import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import { ApolloProvider } from '@apollo/client';
 import client from "@/components/apollo-client/apollo-client";
+import { usePathname } from 'next/navigation'
+import AuthenticationLayout from "@/components/layout/authentication-layout";
+import ManagementLayout from "@/components/layout/management-layout";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -26,11 +29,21 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+
+
+    const pathName = usePathname();
+    
+
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
         <ApolloProvider client={client}>
-            {children}
+            {pathName === "/authorize/login" &&
+                <AuthenticationLayout>{children}</AuthenticationLayout>
+            }
+            {pathName !== "/authorize/login" &&
+                <ManagementLayout>{children}</ManagementLayout>                
+            }            
         </ApolloProvider>
       </body>
     </html>
