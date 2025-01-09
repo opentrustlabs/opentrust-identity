@@ -22,7 +22,8 @@ export class TenantEntity {
             this.verifyemailonselfregistration = tenant.verifyEmailOnSelfRegistration;
             this.tenantdescription = tenant.tenantDescription || "";
             this.federatedauthenticationconstraint = tenant.federatedAuthenticationConstraint;
-            this.migrateLegacyUsers = tenant.migrateLegacyUsers;         
+            this.migrateLegacyUsers = tenant.migrateLegacyUsers;
+            this.allowLoginByPhoneNumber = tenant.allowLoginByPhoneNumber;     
         }
     }
     
@@ -66,7 +67,10 @@ export class TenantEntity {
     tenanttype: string;
 
     @Property()
-    migrateLegacyUsers: boolean
+    migrateLegacyUsers: boolean;
+
+    @Property()
+    allowLoginByPhoneNumber: boolean;
 
     public toModel(): Tenant {
         const t: Tenant = {
@@ -85,7 +89,8 @@ export class TenantEntity {
             tenantDescription: this.tenantdescription,
             federatedauthenticationconstraintid: "",
             tenanttypeid: "",
-            migrateLegacyUsers: this.migrateLegacyUsers
+            migrateLegacyUsers: this.migrateLegacyUsers,
+            allowLoginByPhoneNumber: this.allowLoginByPhoneNumber
         }
         return t;
     }

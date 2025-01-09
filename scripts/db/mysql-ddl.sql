@@ -34,7 +34,8 @@ create TABLE tenant (
     federatedauthenticationconstraint VARCHAR(128) NOT NULL,
     markfordelete BOOLEAN NOT NULL,
     tenanttype VARCHAR(128) NOT NULL,
-    migratelegacyusers BOOLEAN NOT NULL
+    migratelegacyusers BOOLEAN NOT NULL,
+    allowloginbyphonenumber BOOLEAN NOT NULL
 );
 CREATE INDEX tenant_tenant_type_idx ON tenant(tenanttype);
 
