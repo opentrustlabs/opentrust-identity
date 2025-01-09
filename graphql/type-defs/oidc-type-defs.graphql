@@ -194,6 +194,7 @@ type Tenant {
     tenantType: String!
     tenanttypeid: String
     migrateLegacyUsers: Boolean!
+    allowLoginByPhoneNumber: Boolean!
 }
 
 
@@ -674,6 +675,7 @@ input TenantCreateInput {
     passwordConfigInput: PasswordConfigInput
     anonymousUserConfigInput: AnonymousUserConfigInput
     migrateLegacyUsers: Boolean!
+    allowLoginByPhoneNumber: Boolean!
 }
 
 input TenantUpdateInput {
@@ -694,6 +696,7 @@ input TenantUpdateInput {
     passwordConfigInput: PasswordConfigInput
     anonymousUserConfigInput: AnonymousUserConfigInput
     migrateLegacyUsers: Boolean!
+    allowLoginByPhoneNumber: Boolean!
 }
 
 input ClientCreateInput {
