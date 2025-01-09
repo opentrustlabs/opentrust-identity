@@ -1,4 +1,5 @@
-import React from "react";
+"use client";
+import React, { useEffect } from "react";
 import Image from "next/image";
 import styles from "./page.module.css";
 
@@ -39,6 +40,14 @@ import styles from "./page.module.css";
 
 
 const Home: React.FC = () => {
+
+    useEffect(
+        () => {
+            document.title = "This is the age"
+        },
+        []
+    );
+
   return (
     <div className={styles.page}>
       <main className={styles.main}>
