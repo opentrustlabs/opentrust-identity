@@ -90,7 +90,8 @@ const resolvers: Resolvers = {
                 allowSocialLogin: false,
                 allowAnonymousUsers: false,
                 migrateLegacyUsers: false,
-                allowLoginByPhoneNumber: false
+                allowLoginByPhoneNumber: false,
+                allowForgotPassword: false
             };
             await tenantService.createRootTenant(tenant);
             const contacts: Array<Contact> = tenantInput.contactInput.map((i: ContactInput) => { return {email: i.email, name: i.name, objectid: tenant.tenantId, objecttype:""}});
@@ -136,7 +137,8 @@ const resolvers: Resolvers = {
                 allowSocialLogin: false,
                 allowAnonymousUsers: false,
                 migrateLegacyUsers: false,
-                allowLoginByPhoneNumber: false
+                allowLoginByPhoneNumber: false,
+                allowForgotPassword: false
             }
             await tenantService.updateRootTenant(tenant);
             const contacts: Array<Contact> = tenantInput.contactInput.map((i: ContactInput) => { return {email: i.email, name: i.name, objectid: tenant.tenantId, objecttype:""}});
@@ -182,7 +184,8 @@ const resolvers: Resolvers = {
                 allowSocialLogin: tenantInput.allowSocialLogin,
                 allowAnonymousUsers: tenantInput.allowAnonymousUsers,
                 migrateLegacyUsers: tenantInput.migrateLegacyUsers,
-                allowLoginByPhoneNumber: tenantInput.allowLoginByPhoneNumber
+                allowLoginByPhoneNumber: tenantInput.allowLoginByPhoneNumber,
+                allowForgotPassword: tenantInput.allowForgotPassword
             }
             await tenantService.createTenant(tenant);
             const contacts: Array<Contact> = tenantInput.contactInput.map((i: ContactInput) => { return {email: i.email, name: i.name, objectid: tenant.tenantId, objecttype:""}});
@@ -228,7 +231,8 @@ const resolvers: Resolvers = {
                 allowSocialLogin: tenantInput.allowSocialLogin,
                 allowAnonymousUsers: tenantInput.allowAnonymousUsers,
                 migrateLegacyUsers: tenantInput.migrateLegacyUsers,
-                allowLoginByPhoneNumber: tenantInput.allowLoginByPhoneNumber
+                allowLoginByPhoneNumber: tenantInput.allowLoginByPhoneNumber,
+                allowForgotPassword: tenantInput.allowForgotPassword
             }
             const updatedTenant: Tenant = await tenantService.updateTenant(tenant);
             const contacts: Array<Contact> = tenantInput.contactInput.map((i: ContactInput) => { return {email: i.email, name: i.name, objectid: tenant.tenantId, objecttype:""}});

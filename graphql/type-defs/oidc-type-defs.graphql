@@ -195,6 +195,7 @@ type Tenant {
     tenanttypeid: String
     migrateLegacyUsers: Boolean!
     allowLoginByPhoneNumber: Boolean!
+    allowForgotPassword: Boolean!
 }
 
 
@@ -532,6 +533,7 @@ type FederatedOIDCAuthorizationRel {
     initResponseMode: String!
     initResponseType: String!
     expiresAtMs: Float!
+    returnUri: String
 }
 
 type ClientAuthHistory {
@@ -676,6 +678,7 @@ input TenantCreateInput {
     anonymousUserConfigInput: AnonymousUserConfigInput
     migrateLegacyUsers: Boolean!
     allowLoginByPhoneNumber: Boolean!
+    allowForgotPassword: Boolean!
 }
 
 input TenantUpdateInput {
@@ -697,6 +700,7 @@ input TenantUpdateInput {
     anonymousUserConfigInput: AnonymousUserConfigInput
     migrateLegacyUsers: Boolean!
     allowLoginByPhoneNumber: Boolean!
+    allowForgotPassword: Boolean!
 }
 
 input ClientCreateInput {

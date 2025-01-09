@@ -23,7 +23,8 @@ export class TenantEntity {
             this.tenantdescription = tenant.tenantDescription || "";
             this.federatedauthenticationconstraint = tenant.federatedAuthenticationConstraint;
             this.migrateLegacyUsers = tenant.migrateLegacyUsers;
-            this.allowLoginByPhoneNumber = tenant.allowLoginByPhoneNumber;     
+            this.allowLoginByPhoneNumber = tenant.allowLoginByPhoneNumber;    
+            this.allowForgotPassword = tenant.allowForgotPassword; 
         }
     }
     
@@ -72,6 +73,9 @@ export class TenantEntity {
     @Property()
     allowLoginByPhoneNumber: boolean;
 
+    @Property()
+    allowForgotPassword: boolean;
+
     public toModel(): Tenant {
         const t: Tenant = {
             allowAnonymousUsers: this.allowanonymoususers,
@@ -90,7 +94,8 @@ export class TenantEntity {
             federatedauthenticationconstraintid: "",
             tenanttypeid: "",
             migrateLegacyUsers: this.migrateLegacyUsers,
-            allowLoginByPhoneNumber: this.allowLoginByPhoneNumber
+            allowLoginByPhoneNumber: this.allowLoginByPhoneNumber,
+            allowForgotPassword: this.allowForgotPassword
         }
         return t;
     }

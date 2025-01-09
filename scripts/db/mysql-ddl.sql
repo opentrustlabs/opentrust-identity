@@ -35,7 +35,8 @@ create TABLE tenant (
     markfordelete BOOLEAN NOT NULL,
     tenanttype VARCHAR(128) NOT NULL,
     migratelegacyusers BOOLEAN NOT NULL,
-    allowloginbyphonenumber BOOLEAN NOT NULL
+    allowloginbyphonenumber BOOLEAN NOT NULL,
+    allowforgotpassword BOOLEAN NOT NULL
 );
 CREATE INDEX tenant_tenant_type_idx ON tenant(tenanttype);
 
@@ -115,14 +116,14 @@ create TABLE client_redirect_uri_rel (
 
 create TABLE user (
     userid VARCHAR(64) PRIMARY KEY,
-    federatedoidcprovidersubjectid VARCHAR(64),
+    federatedoidcprovidersubjectid VARCHAR(128),
     email VARCHAR(128) UNIQUE NOT NULL,
     emailverified BOOLEAN NOT NULL,
     domain VARCHAR(128) NOT NULL,
     firstname VARCHAR(128) NOT NULL,
     lastname VARCHAR(128) NOT NULL,
     middlename VARCHAR(128),
-    phonenumber VARCHAR(64),
+    phonenumber VARCHAR(64) UNIQUE,
     address VARCHAR(128),
     countrycode VARCHAR(8),
     preferredlanguagecode VARCHAR(8),
@@ -136,6 +137,8 @@ CREATE INDEX user_email_idx on user(email);
 CREATE INDEX user_domain_idx on user(domain);
 CREATE INDEX user_first_name_idx on user(firstname);
 CREATE INDEX user_last_name_idx on user(lastname);
+CREATE INDEX user_phone_number_idx on user(phonenumber);
+
 
 create TABLE user_tenant_rel (
     userid VARCHAR(64) NOT NULL,
