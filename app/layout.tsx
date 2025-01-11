@@ -36,7 +36,7 @@ export default function RootLayout({
 
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable}`}>
+      <body  className={`${geistSans.variable} ${geistMono.variable}`}>
         <ApolloProvider client={client}>
             {pathName === "/authorize/login" &&
                 <AuthenticationLayout>{children}</AuthenticationLayout>
