@@ -19,17 +19,12 @@ const AuthenticationLayout: React.FC<LayoutProps> = ({
 
     const params = useSearchParams();
     const tenantId = params.get(QUERY_PARAM_PREAUTH_TENANT_ID);
-    console.log("will query the db with tenant id of " + tenantId)
 
     const {data, error, loading} = useQuery(TENANT_META_DATA_QUERY, {
         variables: {
             tenantId: tenantId
         },
-        skip: tenantId === null || tenantId === undefined,
-        onCompleted(data) {
-            console.log("completed gql call with data");
-            console.log(data);
-        },
+        skip: tenantId === null || tenantId === undefined
     });
 
     if(loading) return <div />

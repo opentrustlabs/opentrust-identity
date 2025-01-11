@@ -7,7 +7,6 @@ export interface AuthenticationHeaderProps {
     tenantMetaData: TenantMetaData
 }
 
-// style={{backgroundColor: "#0313fc", width: "100%", height: "5vh", color: "white"}}
 const AuthenticationHeader: React.FC<AuthenticationHeaderProps> = ({
     tenantMetaData
 }) => {

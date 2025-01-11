@@ -533,5 +533,6 @@ create TABLE tenant_legacy_user_migration_config (
     tenantid VARCHAR(64) PRIMARY KEY,
     authenticationuri VARCHAR(256) NOT NULL,
     userprofileuri VARCHAR(256) NOT NULL,
+    usernamecheckuri VARCHAR (256) NOT NULL,
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid)
 );
