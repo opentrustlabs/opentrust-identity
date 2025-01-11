@@ -9,6 +9,11 @@ import { getFileContents } from "@/utils/dao-utils";
 const dataDir = process.env.FS_BASED_DATA_DIR ?? path.join(__dirname);
 class FSBasedTenantDao extends TenantDAO {
 
+    
+    getTenantLookAndFeed(tenantId: string): Promise<TenantLookAndFeel | null> {
+        throw new Error("Method not implemented.");
+    }
+
    
     public async assignContactsToTenant(tenantId: string, contactList: Array<Contact>): Promise<Array<Contact>> {
         throw new Error("Method not implemented.");

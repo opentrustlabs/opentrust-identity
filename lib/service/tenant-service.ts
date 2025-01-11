@@ -1,10 +1,10 @@
-import { AnonymousUserConfiguration, Contact, Tenant, TenantLookAndFeel, TenantManagementDomainRel, TenantPasswordConfig } from "@/graphql/generated/graphql-types";
+import { AnonymousUserConfiguration, Contact, Tenant, TenantLookAndFeel, TenantManagementDomainRel, TenantMetaData, TenantPasswordConfig } from "@/graphql/generated/graphql-types";
 import { OIDCContext } from "@/graphql/graphql-context";
 import TenantDao from "@/lib/dao/tenant-dao";
 import { getTenantDaoImpl } from "@/utils/dao-utils";
 import { GraphQLError } from "graphql";
 import { randomUUID } from 'crypto'; 
-import { CONTACT_TYPE_FOR_TENANT } from "@/utils/consts";
+import { CONTACT_TYPE_FOR_TENANT, DEFAULT_TENANT_META_DATA } from "@/utils/consts";
 
 const tenantDao: TenantDao = getTenantDaoImpl();
 
@@ -156,6 +156,20 @@ class TenantService {
 
     public async deleteAnonymousUserConfiguration(tenantId: string): Promise<void>{
         return tenantDao.deleteAnonymousUserConfiguration(tenantId);
+    }
+
+    public async getTenantMetaData(tenantId: string): Promise<TenantMetaData | null> {
+        const tenant: Tenant | null = await this.getTenantById(tenantId);
+        if(!tenant){
+            throw new GraphQLError("ERROR_TENANT_DOES_NOT_EXIST");
+        }
+        const tenantLookAndFeel: TenantLookAndFeel | null = await tenantDao.getTenantLookAndFeed(tenantId);
+        return Promise.resolve(
+            {
+                tenant: tenant,
+                tenantLookAndFeel: tenantLookAndFeel ? tenantLookAndFeel : DEFAULT_TENANT_META_DATA.tenantLookAndFeel
+            }
+        );
     }
 
     public async createTenantLookAndFeel(tenantLookAndFeel: TenantLookAndFeel): Promise<TenantLookAndFeel>{

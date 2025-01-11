@@ -4,6 +4,7 @@ type Query {
     getRootTenant: Tenant!
     getTenants: [Tenant!]!
     getTenantById(tenantId: String!): Tenant
+    getTenantMetaData(tenantId: String!): TenantMetaData
 
     ## Clients
     getClients(tenantId: String): [Client!]!
@@ -584,6 +585,11 @@ type FooterLink {
     tenantid: String!
     linktext: String!
     uri: String!
+}
+
+type TenantMetaData {
+    tenantLookAndFeel: TenantLookAndFeel
+    tenant: Tenant!
 }
 
 type SchedulerLock {

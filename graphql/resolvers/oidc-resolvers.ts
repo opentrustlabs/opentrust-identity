@@ -23,6 +23,10 @@ const resolvers: Resolvers = {
             const tenantService: TenantService = new TenantService(oidcContext);
             return tenantService.getTenantById(tenantId);
         },
+        getTenantMetaData: (_: any, { tenantId }, oidcContext: any ) => {
+            const tenantService: TenantService = new TenantService(oidcContext);
+            return tenantService.getTenantMetaData(tenantId);
+        },
         getClients: (_, { tenantId }, oidcContext) => {
             const clientService: ClientService = new ClientService(oidcContext);
             return clientService.getClients(tenantId || undefined);

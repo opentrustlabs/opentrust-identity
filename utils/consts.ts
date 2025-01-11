@@ -3,6 +3,9 @@
 // 
 //                    AUTH-TOKEN-RELATED CONSTANTS
 // 
+
+import { TenantMetaData } from "@/graphql/generated/graphql-types";
+
 // ************************************************************************** //
 export const DEFAULT_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS = 600; // 10 minutes 
 export const MAX_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS = 1200; // 20 minutes
@@ -501,3 +504,51 @@ export const FEDERATED_OIDC_PROVIDER_TYEPS=[
 export const CONTACT_TYPE_FOR_TENANT="TENANT_CONTACT";
 export const CONTACT_TYPE_FOR_CLIENT="CLIENT_CONTACT";
 export const CONTACT_TYPE_FOR_SIGNING_KEY="SIGNING_KEY_CONTACT"
+
+
+// ************************************************************************** //
+// 
+//                  URI QUERY CONSTANTS
+// 
+// ************************************************************************** //
+export const QUERY_PARAM_PREAUTHN_TOKEN="_tk";
+export const QUERY_PARAM_PREAUTH_TENANT_ID="_tid";
+
+
+
+
+export const DEFAULT_TENANT_META_DATA: TenantMetaData = {
+    tenant: {
+        __typename: undefined,
+        allowAnonymousUsers: false,
+        allowForgotPassword: false,
+        allowLoginByPhoneNumber: false,
+        allowSocialLogin: false,
+        allowUnlimitedRate: false,
+        allowUserSelfRegistration: false,
+        claimsSupported: [],
+        enabled: true,
+        federatedAuthenticationConstraint: "",
+        federatedauthenticationconstraintid: undefined,
+        markForDelete: false,
+        migrateLegacyUsers: false,
+        tenantDescription: undefined,
+        tenantId: "",
+        tenantName: "",
+        tenantType: "",
+        tenanttypeid: undefined,
+        verifyEmailOnSelfRegistration: true
+    },
+    tenantLookAndFeel: {
+        tenantid: "",
+        adminheaderbackgroundcolor: "",
+        adminheadertextcolor: "white",
+        adminlogo: null,
+        adminheadertext: "",
+        authenticationheaderbackgroundcolor: "#1976d2",
+        authenticationheadertextcolor: "white",
+        authenticationlogo: null,
+        authenticationheadertext: "",
+        footerlinks: []
+    }
+}

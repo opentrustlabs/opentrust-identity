@@ -1,19 +1,39 @@
 "use client";
+import { TenantMetaData } from "@/graphql/generated/graphql-types";
 import Container from "@mui/material/Container";
 import React from "react";
 
-const AuthenticationFooter: React.FC = () => {
+
+export interface AuthenticationFooterProps {
+    tenantMetaData: TenantMetaData
+}
+
+const AuthenticationFooter: React.FC<AuthenticationFooterProps> = ({
+    tenantMetaData
+}) => {
 
 
     return (
         <div 
-            style={{backgroundColor: "#0313fc", width: "100%", height: "5vh", color: "white"}}
+            style={{
+                backgroundColor: tenantMetaData.tenantLookAndFeel?.authenticationheaderbackgroundcolor || "#1976d2", 
+                width: "100%", 
+                height: "8vh", 
+                color: tenantMetaData.tenantLookAndFeel?.authenticationheadertextcolor || "white"
+            }}
 
         >
+        
             <Container
                 maxWidth="xl"
             >
-                <div></div>
+                <div>
+                    {
+                        /* TODO
+                            Add footer links
+                        */
+                    }
+                </div>
             </Container>
         </div>
 

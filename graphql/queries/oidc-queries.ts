@@ -17,3 +17,41 @@ export const TENANTS_QUERY = gql(`
         }
     }    
 `);
+
+export const TENANT_META_DATA_QUERY = gql(`
+    query getTenantMetaData($tenantId: String!) {
+        getTenantMetaData(tenantId: $tenantId) {
+            tenantLookAndFeel {
+                tenantid
+                adminheaderbackgroundcolor
+                adminheadertextcolor
+                adminlogo
+                adminheadertext
+                authenticationheaderbackgroundcolor
+                authenticationheadertextcolor
+                authenticationlogo
+                authenticationheadertext
+            }
+            tenant {
+                tenantId
+                tenantName
+                tenantDescription
+                enabled
+                claimsSupported
+                allowUnlimitedRate
+                allowUserSelfRegistration
+                allowSocialLogin
+                allowAnonymousUsers
+                verifyEmailOnSelfRegistration
+                federatedAuthenticationConstraint
+                federatedauthenticationconstraintid
+                markForDelete
+                tenantType
+                tenanttypeid
+                migrateLegacyUsers
+                allowLoginByPhoneNumber
+                allowForgotPassword            
+            }
+        }
+    }
+`);

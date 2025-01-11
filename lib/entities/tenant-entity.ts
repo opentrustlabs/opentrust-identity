@@ -67,13 +67,13 @@ export class TenantEntity {
     @Property()
     tenanttype: string;
 
-    @Property()
+    @Property({fieldName: "migratelegacyusers"})
     migrateLegacyUsers: boolean;
 
-    @Property()
+    @Property({fieldName: "allowloginbyphonenumber"})
     allowLoginByPhoneNumber: boolean;
 
-    @Property()
+    @Property({fieldName: "allowforgotpassword"})
     allowForgotPassword: boolean;
 
     public toModel(): Tenant {

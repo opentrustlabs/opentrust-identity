@@ -5,7 +5,7 @@ import FederatedOIDCProviderDao from '@/lib/dao/federated-oidc-provider-dao';
 import TenantDao from '@/lib/dao/tenant-dao';
 import { WellknownConfig } from '@/lib/models/wellknown-config';
 import OIDCServiceClient from '@/lib/service/oidc-service-client';
-import { ALL_OIDC_SUPPORTED_SCOPE_VALUES, CLIENT_TYPE_SERVICE_ACCOUNT_ONLY, FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE, OIDC_OPENID_SCOPE } from '@/utils/consts';
+import { ALL_OIDC_SUPPORTED_SCOPE_VALUES, CLIENT_TYPE_SERVICE_ACCOUNT_ONLY, FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE, OIDC_OPENID_SCOPE, QUERY_PARAM_PREAUTH_TENANT_ID, QUERY_PARAM_PREAUTHN_TOKEN } from '@/utils/consts';
 import { generateCodeVerifierAndChallenge, generateRandomToken, getAuthDaoImpl, getClientDaoImpl, getFederatedOIDCProvicerDaoImpl, getTenantDaoImpl } from '@/utils/dao-utils';
 import type { NextApiRequest, NextApiResponse } from 'next'
 
@@ -254,7 +254,7 @@ export default async function handler(
     }
     await authDao.savePreAuthenticationState(preAuthenticationState);
 
-	res.status(302).setHeader("location", `/authorize/login?_tk=${preAuthenticationState.token}`);
+	res.status(302).setHeader("location", `/authorize/login?${QUERY_PARAM_PREAUTHN_TOKEN}=${preAuthenticationState.token}&${QUERY_PARAM_PREAUTH_TENANT_ID}=${tenantId}`);
 	res.end();
 
 }
