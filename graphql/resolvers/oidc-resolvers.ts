@@ -1,6 +1,6 @@
 import ClientService from "@/lib/service/client-service";
 import TenantService from "@/lib/service/tenant-service";
-import { Resolvers, QueryResolvers, MutationResolvers, Tenant, Client, SigningKey, Scope, AuthenticationGroup, AuthorizationGroup, FederatedOidcProvider, ContactInput, Contact } from "../generated/graphql-types";
+import { Resolvers, QueryResolvers, MutationResolvers, Tenant, Client, SigningKey, Scope, AuthenticationGroup, AuthorizationGroup, FederatedOidcProvider, ContactInput, Contact, LoginUserNameHandlerResponse, LoginUserNameHandlerAction } from "@/graphql/generated/graphql-types";
 import SigningKeysService from "@/lib/service/keys-service";
 import ScopeService from "@/lib/service/scope-service";
 import GroupService from "@/lib/service/group-service";
@@ -74,6 +74,28 @@ const resolvers: Resolvers = {
         getFederatedOIDCProviderById: (_: any, { federatedOIDCProviderId }, oidcContext) => {
             const providerService: FederatedOIDCProviderService = new FederatedOIDCProviderService(oidcContext);
             return providerService.getFederatedOIDCProviderById(federatedOIDCProviderId);
+        },
+        getLoginUserNameHandler: (_: any, { username, tenantId, preauthToken }, oidcContext) => {
+            const response: LoginUserNameHandlerResponse = {
+                action: LoginUserNameHandlerAction.EnterPassword,
+                oidcRedirectActionHandlerConfig: {
+                    clientId: "",
+                    redirectUri: "",
+                    responseMode: "query",
+                    responseType: "code",
+                    state: "",
+                    codeChallenge: "",
+                    codeChallengeMethod: "",
+                    scope: ""
+                },
+                errorActionHandler: {
+                    errorCode: "403",
+                    errorMessage: ""
+                    
+                }
+            }
+            return response;
+            //(username: String!, tenantId: String, preauthToken: String): LoginUserNameHandlerResponse!
         }
     },
     Mutation: {

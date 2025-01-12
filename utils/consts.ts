@@ -513,7 +513,7 @@ export const CONTACT_TYPE_FOR_SIGNING_KEY="SIGNING_KEY_CONTACT"
 // ************************************************************************** //
 export const QUERY_PARAM_PREAUTHN_TOKEN="_tk";
 export const QUERY_PARAM_PREAUTH_TENANT_ID="_tid";
-
+export const QUERY_PARAM_PREAUTH_REDIRECT_URI="redirect_uri";
 
 
 

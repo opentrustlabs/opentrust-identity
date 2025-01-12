@@ -1,30 +1,24 @@
 "use client";
-import React, { useState } from "react";
+import React, { MouseEventHandler, useState } from "react";
 import { Button, CircularProgress, Divider, Grid2, Paper, Stack, TextField } from "@mui/material";
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { DEFAULT_TENANT_META_DATA, QUERY_PARAM_PREAUTH_TENANT_ID, QUERY_PARAM_PREAUTHN_TOKEN } from "@/utils/consts";
+import { DEFAULT_TENANT_META_DATA, QUERY_PARAM_PREAUTH_REDIRECT_URI, QUERY_PARAM_PREAUTH_TENANT_ID, QUERY_PARAM_PREAUTHN_TOKEN } from "@/utils/consts";
 import { TENANT_META_DATA_QUERY } from "@/graphql/queries/oidc-queries";
-import { useQuery } from "@apollo/client";
+import { useLazyQuery, useQuery } from "@apollo/client";
 
 
 // TODO
-// 1.   add handlers for buttons
-// 2.   retrieve the tenant information if present, in order to show
+// 1.   retrieve the tenant information if present, in order to show
 //      background colors and logos
-// 3.   if there is tenant information, then are the following enabled?
-//      a.  forgot password allowed
-//      b.  registration allowed
-//      c.  phone number as username allowed
-// 4.   Show the cancel button only when there is a _tk parameter, (which
-//      means that the user is coming from a known client and is doing
-//      the oauth2 protocol and so may want to cancel and go back to
-//      where they came from.
+
+const MIN_USERNAME_LENGTH = 6;
+
 const Login: React.FC = () => {
 
-    
+    const [userName, setUserName] = useState<string | null>(null);
 
     const theme = useTheme();
     const isMd: boolean = useMediaQuery(theme.breakpoints.down("md"));
@@ -33,6 +27,7 @@ const Login: React.FC = () => {
     const params = useSearchParams();
     const preauthToken = params.get(QUERY_PARAM_PREAUTHN_TOKEN);
     const tenantId = params.get(QUERY_PARAM_PREAUTH_TENANT_ID);
+    const redirectUri = params.get(QUERY_PARAM_PREAUTH_REDIRECT_URI);
 
     const [tenantMetaData, setTenantMetaData] = useState(tenantId ? null : DEFAULT_TENANT_META_DATA);
     const {loading} = useQuery(TENANT_META_DATA_QUERY, {
@@ -48,9 +43,27 @@ const Login: React.FC = () => {
         }
     });
 
-    if(loading) return <CircularProgress />
+    // const {data: nextActionData, loading: nextActionLoading, error: nextActionError } = useLazyQuery(
+
+    // );
+
 
     const maxWidth = isSm ? "90vw" : isMd ? "80vw" : "650px";
+
+    const handleNextClick = (evt: any) => {
+        console.log(evt);
+    }
+    const handleEnterButtonPress = (evt: React.KeyboardEvent) => {
+        console.log(evt.key.valueOf());
+        if(evt.key.valueOf().toLowerCase() === "enter"){
+            if(userName && userName.length > MIN_USERNAME_LENGTH){
+                
+            }
+        }
+    }
+    
+
+    if(loading) return <CircularProgress />   
     
     if(tenantMetaData){
         return (
@@ -69,6 +82,8 @@ const Login: React.FC = () => {
                             label={tenantMetaData.tenant.allowLoginByPhoneNumber ? "Email or phone number" : "Email"}
                             name="email"
                             fullWidth
+                            onChange={(evt) => setUserName(evt.target.value)}
+                            onKeyDown={handleEnterButtonPress}
                         >
                         </TextField>
                     </Grid2>
@@ -86,16 +101,19 @@ const Login: React.FC = () => {
                             direction={"row-reverse"}
                         >
                             <Button
-                                disabled={false}
+                                disabled={userName === null || userName.length < MIN_USERNAME_LENGTH || (!tenantMetaData.tenant.allowLoginByPhoneNumber && userName.indexOf("@") < 1)}
                                 variant="contained"
                                 sx={{ height: "100%", padding: "8px 32px 8px 32px", marginLeft: "8px" }}
+                                onClick={handleNextClick}
                             >Next</Button>
                             {preauthToken &&
+                                <a href={`${redirectUri}?error=access_denied`}>
                                 <Button
                                     disabled={false}
                                     variant="contained"
                                     sx={{ height: "100%", padding: "8px 32px 8px 32px" }}
                                 >Cancel</Button>
+                                </a>
                             }
 
                         </Stack>
@@ -111,12 +129,14 @@ const Login: React.FC = () => {
                                     direction={"row-reverse"}
                                     justifyItems={"center"}
                                     alignItems={"center"}
-                                >                        
-                                    <Button
-                                        disabled={false}
-                                        variant="contained"
-                                        sx={{ height: "100%", padding: "8px 32px 8px 32px", marginLeft: "8px" }}
-                                    >Register</Button>
+                                >   
+                                    <a href="/authorize/register">
+                                        <Button
+                                            disabled={false}
+                                            variant="contained"
+                                            sx={{ height: "100%", padding: "8px 32px 8px 32px", marginLeft: "8px" }}
+                                        >Register</Button>
+                                    </a>
 
                                     <div style={{verticalAlign: "center"}}>Need to create an account?</div>
                                 </Stack>
