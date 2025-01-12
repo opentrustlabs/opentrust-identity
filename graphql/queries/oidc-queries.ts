@@ -58,9 +58,9 @@ export const TENANT_META_DATA_QUERY = gql(`
 
 export const LOGIN_USERNAME_HANDLER_QUERY = gql(`
     query getLoginUserNameHandler($username: String!, $tenantId: String, $preauthToken: String) {
-        logonUserNameHandler (username: $username, tenantId: $tenantId, preauthToken: $preauthToken) {
+        getLoginUserNameHandler (username: $username, tenantId: $tenantId, preauthToken: $preauthToken) {
             action
-            oidcRedirectConfig {
+            oidcRedirectActionHandlerConfig {
                 redirectUri
                 state
                 clientId
@@ -70,7 +70,7 @@ export const LOGIN_USERNAME_HANDLER_QUERY = gql(`
                 responseType
                 responseMode
             }
-            error {
+            errorActionHandler {
                 errorCode
                 errorMessage
             }

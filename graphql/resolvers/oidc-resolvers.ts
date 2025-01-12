@@ -77,20 +77,20 @@ const resolvers: Resolvers = {
         },
         getLoginUserNameHandler: (_: any, { username, tenantId, preauthToken }, oidcContext) => {
             const response: LoginUserNameHandlerResponse = {
-                action: LoginUserNameHandlerAction.EnterPassword,
+                action: LoginUserNameHandlerAction.Error,
                 oidcRedirectActionHandlerConfig: {
-                    clientId: "",
-                    redirectUri: "",
+                    clientId: "12343218723894",
+                    redirectUri: "http://localhost:3000/authorize/oidc/redirect",
                     responseMode: "query",
                     responseType: "code",
-                    state: "",
+                    state: "928374839029817341234",
                     codeChallenge: "",
                     codeChallengeMethod: "",
-                    scope: ""
+                    scope: "email id profile offline"
                 },
                 errorActionHandler: {
                     errorCode: "403",
-                    errorMessage: ""
+                    errorMessage: "This is an error message. You do not have access to this client or tenant."
                     
                 }
             }

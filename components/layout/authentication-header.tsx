@@ -50,8 +50,7 @@ const AuthenticationHeader: React.FC<AuthenticationHeaderProps> = ({
                 <Stack 
                     direction={"row"}
                     justifyItems={"center"}
-                    alignItems={"center"}
-                    
+                    alignItems={"center"}                    
                 >
                     {tenantMetaData.tenantLookAndFeel?.authenticationlogo &&
                         <div style={{verticalAlign: "center"}}><img style={{display: "block"}} src={tenantMetaData.tenantLookAndFeel.authenticationlogo} height="32px" ></img></div>
