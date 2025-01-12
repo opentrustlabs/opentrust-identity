@@ -13,7 +13,7 @@ type Query {
     ## Users
     getUsers(tenantId: String): [User!]!
     getUserById(userId: String!): User
-    
+    getLoginUserNameHandler(username: String!, tenantId: String, preauthToken: String): LoginUserNameHandlerResponse!
     
     ## Keys
     getSigningKeys(tenantId: String): [SigningKey!]!
@@ -602,6 +602,34 @@ type SchedulerLock {
 type UserFailedLoginAttempts {
     userId: String!
     failureAtMS: Float!
+}
+
+enum LoginUserNameHandlerAction {
+    OIDC_REDIRECT
+    ERROR
+    ENTER_PASSWORD
+}
+
+type OIDCRedirectActionHandlerConfig {
+    redirectUri: String!
+    state: String!
+    clientId: String!
+    codeChallenge: String
+    codeChallengeMethod: String
+    scope: String
+    responseType: String!
+    responseMode: String!
+}
+
+type ErrorActionHandler {
+    errorCode: String!
+    errorMessage: String!
+}
+
+type LoginUserNameHandlerResponse {
+    action: LoginUserNameHandlerAction!
+    oidcRedirectActionHandlerConfig: OIDCRedirectActionHandlerConfig
+    errorActionHandler: ErrorActionHandler
 }
 
 ############################################################################
