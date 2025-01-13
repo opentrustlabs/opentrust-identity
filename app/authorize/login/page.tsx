@@ -7,13 +7,14 @@ import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { DEFAULT_TENANT_META_DATA, QUERY_PARAM_PREAUTH_REDIRECT_URI, QUERY_PARAM_PREAUTH_TENANT_ID, QUERY_PARAM_PREAUTHN_TOKEN } from "@/utils/consts";
 import { LOGIN_USERNAME_HANDLER_QUERY, TENANT_META_DATA_QUERY } from "@/graphql/queries/oidc-queries";
-import { useLazyQuery, useQuery } from "@apollo/client";
-import { LoginUserNameHandlerAction, LoginUserNameHandlerResponse } from "@/graphql/generated/graphql-types";
+import { useLazyQuery, useMutation, useQuery } from "@apollo/client";
+import { LoginAuthenticationHandlerAction, LoginAuthenticationHandlerResponse, LoginUserNameHandlerAction, LoginUserNameHandlerResponse } from "@/graphql/generated/graphql-types";
 import Alert from '@mui/material/Alert';
+import { LOGIN_MUTATION } from "@/graphql/mutations/oidc-mutations";
 
 // TODO
 // 1.   retrieve the tenant information if present, in order to show
-//      background colors and logos
+//      background colors on buttons
 
 const MIN_USERNAME_LENGTH = 6;
 const USERNAME_COMPONENT = "USERNAME_COMPONENT";
@@ -21,11 +22,18 @@ const PASSWORD_COMPONENT = "PASSWORD_COMPONENT";
 
 const Login: React.FC = () => {
 
+
+    // QUERY PARAMS
+    const params = useSearchParams();
+    const preauthToken = params.get(QUERY_PARAM_PREAUTHN_TOKEN);
+    const tenantId = params.get(QUERY_PARAM_PREAUTH_TENANT_ID);
+    const redirectUri = params.get(QUERY_PARAM_PREAUTH_REDIRECT_URI);
+
     // PAGE STATE MANAGEMENT VARIABLES
     const [username, setUsername] = useState<string | null>("");
     const [password, setPassword] = useState<string | null>("");
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
+    const [tenantMetaData, setTenantMetaData] = useState(tenantId ? null : DEFAULT_TENANT_META_DATA);
     // To toggle between USERNAME_COMPONENT and PASSWORD_COMPONENT for display
     const [displayComponent, setDisplayComponent] = useState<string>(USERNAME_COMPONENT);
 
@@ -36,13 +44,10 @@ const Login: React.FC = () => {
     const isSm: boolean = useMediaQuery(theme.breakpoints.down("sm"));
     const maxWidth = isSm ? "90vw" : isMd ? "80vw" : "650px";
 
-    const params = useSearchParams();
-    const preauthToken = params.get(QUERY_PARAM_PREAUTHN_TOKEN);
-    const tenantId = params.get(QUERY_PARAM_PREAUTH_TENANT_ID);
-    const redirectUri = params.get(QUERY_PARAM_PREAUTH_REDIRECT_URI);
 
-    // GRAPHQL FUNCTIONS
-    const [tenantMetaData, setTenantMetaData] = useState(tenantId ? null : DEFAULT_TENANT_META_DATA);
+    // GRAPHQL FUNCTIONS    
+    // TODO -> Need to add the token to this query and get the redirect uri if it exists
+    // Need to get password min length from password config, or use default min length
     const { loading } = useQuery(TENANT_META_DATA_QUERY, {
         variables: {
             tenantId: tenantId
@@ -58,43 +63,77 @@ const Login: React.FC = () => {
 
     const [getLoginUsernameHandler, {  }] = useLazyQuery(
         LOGIN_USERNAME_HANDLER_QUERY, {
-        fetchPolicy: "network-only",
-        onCompleted(data) {
-            const response: LoginUserNameHandlerResponse = data.getLoginUserNameHandler as LoginUserNameHandlerResponse;
-            console.log(response);
-            if (response.action === LoginUserNameHandlerAction.EnterPassword) {
-                setDisplayComponent(PASSWORD_COMPONENT);
-            }
-            else if (response.action === LoginUserNameHandlerAction.OidcRedirect) {
-                let redirectUri = `${response.oidcRedirectActionHandlerConfig?.redirectUri}?`;
-                const params = new URLSearchParams({
-                    client_id: response.oidcRedirectActionHandlerConfig?.clientId || "",
-                    state: response.oidcRedirectActionHandlerConfig?.state || "",
-                    redirect_uri: response.oidcRedirectActionHandlerConfig?.redirectUri || "",
-                    response_type: response.oidcRedirectActionHandlerConfig?.responseType || ""
-                })
-                if(response.oidcRedirectActionHandlerConfig?.responseMode){
-                    params.set("response_mode", response.oidcRedirectActionHandlerConfig?.responseMode);
-                }                
-                if(response.oidcRedirectActionHandlerConfig?.codeChallenge){
-                    params.set("code_challenge", response.oidcRedirectActionHandlerConfig.codeChallenge);
-                    params.set("code_challenge_method", response.oidcRedirectActionHandlerConfig.codeChallengeMethod || "");
+            fetchPolicy: "network-only",
+            onCompleted(data) {
+                const response: LoginUserNameHandlerResponse = data.getLoginUserNameHandler as LoginUserNameHandlerResponse;
+                if (response.action === LoginUserNameHandlerAction.EnterPassword) {
+                    setDisplayComponent(PASSWORD_COMPONENT);
                 }
-                if(response.oidcRedirectActionHandlerConfig?.scope){
-                    params.set("scope", response.oidcRedirectActionHandlerConfig.scope);
+                else if (response.action === LoginUserNameHandlerAction.OidcRedirect) {
+                    let redirectUri = `${response.oidcRedirectActionHandlerConfig?.redirectUri}?`;
+                    const params = new URLSearchParams({
+                        client_id: response.oidcRedirectActionHandlerConfig?.clientId || "",
+                        state: response.oidcRedirectActionHandlerConfig?.state || "",
+                        redirect_uri: response.oidcRedirectActionHandlerConfig?.redirectUri || "",
+                        response_type: response.oidcRedirectActionHandlerConfig?.responseType || ""
+                    })
+                    if(response.oidcRedirectActionHandlerConfig?.responseMode){
+                        params.set("response_mode", response.oidcRedirectActionHandlerConfig?.responseMode);
+                    }                
+                    if(response.oidcRedirectActionHandlerConfig?.codeChallenge){
+                        params.set("code_challenge", response.oidcRedirectActionHandlerConfig.codeChallenge);
+                        params.set("code_challenge_method", response.oidcRedirectActionHandlerConfig.codeChallengeMethod || "");
+                    }
+                    if(response.oidcRedirectActionHandlerConfig?.scope){
+                        params.set("scope", response.oidcRedirectActionHandlerConfig.scope);
+                    }
+                    router.push(redirectUri + params.toString());
                 }
-                router.push(redirectUri + params.toString());
+                else {
+                    setErrorMessage(response.errorActionHandler?.errorMessage || "Error with the user account. It is either disabled or not permitted for this tenant or client.");
+                }
             }
-            else {
-                setErrorMessage(response.errorActionHandler?.errorMessage || "Error with the user account. It is either disabled or not permitted for this tenant or client.");
+        }            
+    );
+
+    const [getPasswordAuthenticationResponse, {}] = useMutation(
+        LOGIN_MUTATION,
+        {
+            onCompleted(data) {
+                const response: LoginAuthenticationHandlerResponse = data.login as LoginAuthenticationHandlerResponse;
+                if(response.status === LoginAuthenticationHandlerAction.SecondFactorInput){
+                    router.push(`/authorize/mfa?mfa_type=${response.secondFactorType}`);
+                }
+                else if(response.status === LoginAuthenticationHandlerAction.Authenticated){
+                    let redirectUri = `${response.successConfig?.redirectUri}`
+                    if(response.successConfig?.responseMode && response.successConfig.responseMode === "fragment"){
+                        redirectUri = redirectUri + "#";
+                    }
+                    else{
+                        redirectUri = redirectUri + "?";
+                    }
+                    const params = new URLSearchParams({
+                        code: response.successConfig?.code || "",
+                    });
+                    if(response.successConfig?.state){
+                        params.set("state", response.successConfig.state);
+                    }
+                    router.push(redirectUri + params.toString());
+                }
+                else {
+                    setErrorMessage(response.errorActionHandler?.errorMessage || "Error with authentication. Either the user name or password is incorrect.")
+                }
+                
+            },
+            onError() {
+                setErrorMessage("Error with authentication. Either the user name or password is incorrect, or the system is unable to perform authentication.")
             }
-        },
-    });
+        }
+    );
 
 
     // EVENT HANDLERS
     const handleNextClick = (evt: any) => {
-        console.log(evt);
         getLoginUsernameHandler({
             variables: {
                 username: username,
@@ -103,12 +142,9 @@ const Login: React.FC = () => {
             }
         });
     }
-    const handleEnterButtonPress = (evt: React.KeyboardEvent) => {
-        console.log(evt.key.valueOf());
+    const handleEnterButtonPress = (evt: React.KeyboardEvent) => {        
         if (evt.key.valueOf().toLowerCase() === "enter") {
-            console.log("hit enter key?")
             if (username && username.length > MIN_USERNAME_LENGTH) {
-                console.log("will call handler")
                 getLoginUsernameHandler({
                     variables: {
                         username: username,
@@ -118,14 +154,41 @@ const Login: React.FC = () => {
                 });
             }
         }
+        // Remove the error message if the user makes any changes to the user name
+        else{
+            if(errorMessage !== null){
+                setErrorMessage(null);
+            }
+        }
     }
 
-    const handleEnterButtonLogin = (evt: React.KeyboardEvent) => {
-        console.log("will login")
+    const enterKeyLoginHandler = (evt: React.KeyboardEvent) => {
+        if (evt.key.valueOf().toLowerCase() === "enter") {
+            if (username && username.length > MIN_USERNAME_LENGTH && password && password.length >= 8) {
+                getPasswordAuthenticationResponse({
+                    variables: {
+                        username: username,
+                        password: password
+                    }
+                });
+            }
+        }
+        // Remove the error message if the user makes any changes to the password
+        else{
+            if(errorMessage !== null){
+                setErrorMessage(null);
+            }
+        }
+        
     }
 
-    const handleLoginButton = () => {
-        console.log("will login")
+    const buttonLoginHandler = () => {
+        getPasswordAuthenticationResponse({
+            variables: {
+                username: username,
+                password: password
+            }
+        });
     }
 
     if (loading) return <CircularProgress />
@@ -179,7 +242,8 @@ const Login: React.FC = () => {
                                 name="password"
                                 fullWidth
                                 onChange={(evt) => setPassword(evt.target.value)}
-                                onKeyDown={handleEnterButtonLogin}
+                                onKeyDown={enterKeyLoginHandler}
+                                value={password}
                             >
                             </TextField>
                         }
@@ -224,13 +288,13 @@ const Login: React.FC = () => {
                                     disabled={password === null || password.length < MIN_USERNAME_LENGTH}
                                     variant="contained"
                                     sx={{ height: "100%", padding: "8px 32px 8px 32px", marginLeft: "8px" }}
-                                    onClick={handleLoginButton}
+                                    onClick={buttonLoginHandler}
                                 >Login</Button>
                                 <Button
                                     disabled={false}
                                     variant="contained"
                                     sx={{ height: "100%", padding: "8px 32px 8px 32px", marginLeft: "8px" }}
-                                    onClick={() => setDisplayComponent(USERNAME_COMPONENT)}
+                                    onClick={() => {setErrorMessage(null); setPassword(""); setDisplayComponent(USERNAME_COMPONENT);}}
                                 >Back</Button>
                                 {preauthToken &&
                                     <a href={`${redirectUri}?error=access_denied`}>

@@ -1,6 +1,6 @@
 import ClientService from "@/lib/service/client-service";
 import TenantService from "@/lib/service/tenant-service";
-import { Resolvers, QueryResolvers, MutationResolvers, Tenant, Client, SigningKey, Scope, AuthenticationGroup, AuthorizationGroup, FederatedOidcProvider, ContactInput, Contact, LoginUserNameHandlerResponse, LoginUserNameHandlerAction } from "@/graphql/generated/graphql-types";
+import { Resolvers, QueryResolvers, MutationResolvers, Tenant, Client, SigningKey, Scope, AuthenticationGroup, AuthorizationGroup, FederatedOidcProvider, ContactInput, Contact, LoginUserNameHandlerResponse, LoginUserNameHandlerAction, LoginAuthenticationHandlerResponse, LoginAuthenticationHandlerAction, SecondFactorType } from "@/graphql/generated/graphql-types";
 import SigningKeysService from "@/lib/service/keys-service";
 import ScopeService from "@/lib/service/scope-service";
 import GroupService from "@/lib/service/group-service";
@@ -77,7 +77,7 @@ const resolvers: Resolvers = {
         },
         getLoginUserNameHandler: (_: any, { username, tenantId, preauthToken }, oidcContext) => {
             const response: LoginUserNameHandlerResponse = {
-                action: LoginUserNameHandlerAction.Error,
+                action: LoginUserNameHandlerAction.EnterPassword,
                 oidcRedirectActionHandlerConfig: {
                     clientId: "12343218723894",
                     redirectUri: "http://localhost:3000/authorize/oidc/redirect",
@@ -527,6 +527,23 @@ const resolvers: Resolvers = {
             const providerService: FederatedOIDCProviderService = new FederatedOIDCProviderService(oidcContext);
             await providerService.deleteFederatedOIDCProvider(federatedOIDCProviderId);
             return federatedOIDCProviderId;
+        },
+        login: async(_: any, { username, password }, oidcContext ) => {
+            const response: LoginAuthenticationHandlerResponse = {
+                status: LoginAuthenticationHandlerAction.Error,
+                successConfig: {
+                    code: "123412341234",
+                    redirectUri: "http://localhost:3000/not/avalid/uri",
+                    responseMode: "fragment",
+                    state: "347820198273401987324"
+                },
+                secondFactorType: SecondFactorType.Totp,
+                errorActionHandler: {
+                    errorCode: "error code",
+                    errorMessage: "Authentication failed"
+                }
+            }
+            return response;
         }
     }
 }

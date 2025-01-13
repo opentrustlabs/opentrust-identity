@@ -84,7 +84,7 @@ type Mutation {
 
     ## Users
     logout(userId: String): String
-    login(username: String!, password: String!): String
+    login(username: String!, password: String!): LoginAuthenticationHandlerResponse!
     createUser(userInput: UserCreateInput!): User!
     updateUser(userInput: UserUpdateInput!): User!
 
@@ -629,6 +629,33 @@ type ErrorActionHandler {
 type LoginUserNameHandlerResponse {
     action: LoginUserNameHandlerAction!
     oidcRedirectActionHandlerConfig: OIDCRedirectActionHandlerConfig
+    errorActionHandler: ErrorActionHandler
+}
+
+enum LoginAuthenticationHandlerAction {
+    ERROR
+    AUTHENTICATED
+    SECOND_FACTOR_INPUT
+}
+
+enum SecondFactorType {
+    EMAIL
+    SMS
+    TOTP
+    SECURITY_KEY
+}
+
+type LoginAuthenticationSuccessConfig {
+    code: String!
+    redirectUri: String!
+    responseMode: String
+    state: String
+}
+
+type LoginAuthenticationHandlerResponse {
+    status: LoginAuthenticationHandlerAction!
+    secondFactorType: SecondFactorType
+    successConfig: LoginAuthenticationSuccessConfig
     errorActionHandler: ErrorActionHandler
 }
 
