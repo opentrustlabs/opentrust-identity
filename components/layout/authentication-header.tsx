@@ -38,7 +38,7 @@ const AuthenticationHeader: React.FC<AuthenticationHeaderProps> = ({
                         </div>
                     }
                     {tenantMetaData.tenantLookAndFeel?.authenticationheadertext &&                        
-                        <div style={{verticalAlign: "center", fontWeight: "bold", marginLeft: "16px", fontSize: "1.2em"}}>{tenantMetaData.tenantLookAndFeel?.authenticationheadertext}</div>                        
+                        <div style={{verticalAlign: "center", fontWeight: "bold", marginLeft: "24px"}}>{tenantMetaData.tenantLookAndFeel?.authenticationheadertext}</div>                        
                     }
                 </Stack>
             </Container>
