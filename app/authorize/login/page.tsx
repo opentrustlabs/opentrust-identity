@@ -231,6 +231,26 @@ const Login: React.FC = () => {
                                 onChange={(evt) => setUsername(evt.target.value)}
                                 onKeyDown={handleEnterButtonPress}
                                 value={username}
+                                sx={{                                    
+                                    "& .MuiOutlinedInput-root": {
+                                        "&.Mui-focused fieldset": {
+                                            borderColor: 
+                                                (tenantMetaData.tenantLookAndFeel?.authenticationheaderbackgroundcolor === "white" ||
+                                                tenantMetaData.tenantLookAndFeel?.authenticationheaderbackgroundcolor === "FFF" ||
+                                                tenantMetaData.tenantLookAndFeel?.authenticationheaderbackgroundcolor === "fff") ?
+                                                "lightgray" :
+                                                tenantMetaData.tenantLookAndFeel?.authenticationheaderbackgroundcolor
+                                                
+                                        }
+                                    },
+                                    "& .MuiFormLabel-root": {
+                                        "&.MuiInputLabel-root": {
+                                            "&.Mui-focused": {
+                                                color: "black"
+                                            }
+                                        }
+                                    }                                
+                                }}
                             >
                             </TextField>
                         }
@@ -246,6 +266,25 @@ const Login: React.FC = () => {
                                 onChange={(evt) => setPassword(evt.target.value)}
                                 onKeyDown={enterKeyLoginHandler}
                                 value={password}
+                                sx={{
+                                    "& .MuiOutlinedInput-root": {
+                                        "&.Mui-focused fieldset": {
+                                            borderColor: 
+                                                (tenantMetaData.tenantLookAndFeel?.authenticationheaderbackgroundcolor === "white" ||
+                                                tenantMetaData.tenantLookAndFeel?.authenticationheaderbackgroundcolor === "FFF" ||
+                                                tenantMetaData.tenantLookAndFeel?.authenticationheaderbackgroundcolor === "fff") ?
+                                                "lightgray" :
+                                                tenantMetaData.tenantLookAndFeel?.authenticationheaderbackgroundcolor
+                                        }
+                                    },
+                                    "& .MuiFormLabel-root": {
+                                        "&.MuiInputLabel-root": {
+                                            "&.Mui-focused": {
+                                                color: "black"
+                                            }
+                                        }
+                                    }
+                                }}
                             >
                             </TextField>
                         }
@@ -255,7 +294,7 @@ const Login: React.FC = () => {
                             <Stack
                                 direction={"row-reverse"}
                             >
-                                <span><Link href="/authorize/forgot-password" style={{ color: "#1976d2" }}>Forgot password?</Link></span>
+                                <span><Link href="/authorize/forgot-password" style={{ color: "black", fontWeight: "bold", fontSize: "0.9em"}}>Forgot password?</Link></span>
                             </Stack>
                         </Grid2>
                     }
@@ -268,8 +307,10 @@ const Login: React.FC = () => {
                                     disabled={username === null || username.length < MIN_USERNAME_LENGTH || (!tenantMetaData.tenant.allowLoginByPhoneNumber && username.indexOf("@") < 1)}
                                     variant="contained"
                                     sx={{ height: "100%", padding: "8px 32px 8px 32px", marginLeft: "8px", 
-                                        backgroundColor: tenantMetaData.tenantLookAndFeel?.authenticationheaderbackgroundcolor, 
-                                        color: tenantMetaData.tenantLookAndFeel?.authenticationheadertextcolor
+                                        backgroundColor: tenantMetaData.tenantLookAndFeel?.authenticationheaderbackgroundcolor,
+                                        color: tenantMetaData.tenantLookAndFeel?.authenticationheadertextcolor,
+                                        fontWeight: "bold",
+                                        fontSize: "0.9em"
                                     }}
                                     onClick={handleNextClick}
                                 >Next</Button>
@@ -279,8 +320,10 @@ const Login: React.FC = () => {
                                             disabled={false}
                                             variant="contained"
                                             sx={{ height: "100%", padding: "8px 32px 8px 32px", 
-                                                backgroundColor: tenantMetaData.tenantLookAndFeel?.authenticationheaderbackgroundcolor, 
-                                                color: tenantMetaData.tenantLookAndFeel?.authenticationheadertextcolor
+                                                backgroundColor: tenantMetaData.tenantLookAndFeel?.authenticationheaderbackgroundcolor,
+                                                color: tenantMetaData.tenantLookAndFeel?.authenticationheadertextcolor,
+                                                fontWeight: "bold",
+                                                fontSize: "0.9em"
                                             }}
                                         >Cancel</Button>
                                     </a>
@@ -296,8 +339,10 @@ const Login: React.FC = () => {
                                     disabled={password === null || password.length < MIN_USERNAME_LENGTH}
                                     variant="contained"
                                     sx={{ height: "100%", padding: "8px 32px 8px 32px", marginLeft: "8px",
-                                        backgroundColor: tenantMetaData.tenantLookAndFeel?.authenticationheaderbackgroundcolor, 
-                                        color: tenantMetaData.tenantLookAndFeel?.authenticationheadertextcolor
+                                        backgroundColor: tenantMetaData.tenantLookAndFeel?.authenticationheaderbackgroundcolor,
+                                        color: tenantMetaData.tenantLookAndFeel?.authenticationheadertextcolor,
+                                        fontWeight: "bold",
+                                        fontSize: "0.9em"
                                     }}
                                     onClick={buttonLoginHandler}
                                 >Login</Button>
@@ -305,8 +350,10 @@ const Login: React.FC = () => {
                                     disabled={false}
                                     variant="contained"
                                     sx={{ height: "100%", padding: "8px 32px 8px 32px", marginLeft: "8px",
-                                        backgroundColor: tenantMetaData.tenantLookAndFeel?.authenticationheaderbackgroundcolor, 
-                                        color: tenantMetaData.tenantLookAndFeel?.authenticationheadertextcolor
+                                        backgroundColor: tenantMetaData.tenantLookAndFeel?.authenticationheaderbackgroundcolor,
+                                        color: tenantMetaData.tenantLookAndFeel?.authenticationheadertextcolor,
+                                        fontWeight: "bold",
+                                        fontSize: "0.9em"
                                     }}
                                     onClick={() => {setErrorMessage(null); setPassword(""); setDisplayComponent(USERNAME_COMPONENT);}}
                                 >Back</Button>
@@ -316,13 +363,14 @@ const Login: React.FC = () => {
                                             disabled={false}
                                             variant="contained"
                                             sx={{ height: "100%", padding: "8px 32px 8px 32px",
-                                                backgroundColor: tenantMetaData.tenantLookAndFeel?.authenticationheaderbackgroundcolor, 
-                                                color: tenantMetaData.tenantLookAndFeel?.authenticationheadertextcolor
+                                                backgroundColor: tenantMetaData.tenantLookAndFeel?.authenticationheaderbackgroundcolor,
+                                                color: tenantMetaData.tenantLookAndFeel?.authenticationheadertextcolor,
+                                                fontWeight: "bold",
+                                                fontSize: "0.9em"
                                             }}
                                         >Cancel</Button>
                                     </a>
                                 }
-
                             </Stack>
                         }
                     </Grid2>
@@ -343,13 +391,15 @@ const Login: React.FC = () => {
                                             disabled={false}
                                             variant="contained"
                                             sx={{ height: "100%", padding: "8px 32px 8px 32px", marginLeft: "8px",
-                                                backgroundColor: tenantMetaData.tenantLookAndFeel?.authenticationheaderbackgroundcolor, 
-                                                color: tenantMetaData.tenantLookAndFeel?.authenticationheadertextcolor
+                                                backgroundColor: tenantMetaData.tenantLookAndFeel?.authenticationheaderbackgroundcolor,
+                                                color: tenantMetaData.tenantLookAndFeel?.authenticationheadertextcolor,
+                                                fontWeight: "bold",
+                                                fontSize: "0.9em"
                                             }}
                                         >Register</Button>
                                     </a>
 
-                                    <div style={{ verticalAlign: "center" }}>Need to create an account?</div>
+                                    <div style={{ verticalAlign: "center", fontWeight: "bold", fontSize: "0.9em" }}>Need to create an account?</div>
                                 </Stack>
                             </Grid2>
                         </>
