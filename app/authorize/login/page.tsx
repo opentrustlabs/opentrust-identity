@@ -12,9 +12,6 @@ import { LoginAuthenticationHandlerAction, LoginAuthenticationHandlerResponse, L
 import Alert from '@mui/material/Alert';
 import { LOGIN_MUTATION } from "@/graphql/mutations/oidc-mutations";
 
-// TODO
-// 1.   retrieve the tenant information if present, in order to show
-//      background colors on buttons
 
 const MIN_USERNAME_LENGTH = 6;
 const USERNAME_COMPONENT = "USERNAME_COMPONENT";
@@ -191,6 +188,11 @@ const Login: React.FC = () => {
         });
     }
 
+    const style = {
+        backgroundColor: "black",
+        color: "white"
+    }
+
     if (loading) return <CircularProgress />
 
     if (tenantMetaData) {
@@ -265,7 +267,10 @@ const Login: React.FC = () => {
                                 <Button
                                     disabled={username === null || username.length < MIN_USERNAME_LENGTH || (!tenantMetaData.tenant.allowLoginByPhoneNumber && username.indexOf("@") < 1)}
                                     variant="contained"
-                                    sx={{ height: "100%", padding: "8px 32px 8px 32px", marginLeft: "8px" }}
+                                    sx={{ height: "100%", padding: "8px 32px 8px 32px", marginLeft: "8px", 
+                                        backgroundColor: tenantMetaData.tenantLookAndFeel?.authenticationheaderbackgroundcolor, 
+                                        color: tenantMetaData.tenantLookAndFeel?.authenticationheadertextcolor
+                                    }}
                                     onClick={handleNextClick}
                                 >Next</Button>
                                 {preauthToken &&
@@ -273,7 +278,10 @@ const Login: React.FC = () => {
                                         <Button
                                             disabled={false}
                                             variant="contained"
-                                            sx={{ height: "100%", padding: "8px 32px 8px 32px" }}
+                                            sx={{ height: "100%", padding: "8px 32px 8px 32px", 
+                                                backgroundColor: tenantMetaData.tenantLookAndFeel?.authenticationheaderbackgroundcolor, 
+                                                color: tenantMetaData.tenantLookAndFeel?.authenticationheadertextcolor
+                                            }}
                                         >Cancel</Button>
                                     </a>
                                 }
@@ -287,13 +295,19 @@ const Login: React.FC = () => {
                                 <Button
                                     disabled={password === null || password.length < MIN_USERNAME_LENGTH}
                                     variant="contained"
-                                    sx={{ height: "100%", padding: "8px 32px 8px 32px", marginLeft: "8px" }}
+                                    sx={{ height: "100%", padding: "8px 32px 8px 32px", marginLeft: "8px",
+                                        backgroundColor: tenantMetaData.tenantLookAndFeel?.authenticationheaderbackgroundcolor, 
+                                        color: tenantMetaData.tenantLookAndFeel?.authenticationheadertextcolor
+                                    }}
                                     onClick={buttonLoginHandler}
                                 >Login</Button>
                                 <Button
                                     disabled={false}
                                     variant="contained"
-                                    sx={{ height: "100%", padding: "8px 32px 8px 32px", marginLeft: "8px" }}
+                                    sx={{ height: "100%", padding: "8px 32px 8px 32px", marginLeft: "8px",
+                                        backgroundColor: tenantMetaData.tenantLookAndFeel?.authenticationheaderbackgroundcolor, 
+                                        color: tenantMetaData.tenantLookAndFeel?.authenticationheadertextcolor
+                                    }}
                                     onClick={() => {setErrorMessage(null); setPassword(""); setDisplayComponent(USERNAME_COMPONENT);}}
                                 >Back</Button>
                                 {preauthToken &&
@@ -301,7 +315,10 @@ const Login: React.FC = () => {
                                         <Button
                                             disabled={false}
                                             variant="contained"
-                                            sx={{ height: "100%", padding: "8px 32px 8px 32px" }}
+                                            sx={{ height: "100%", padding: "8px 32px 8px 32px",
+                                                backgroundColor: tenantMetaData.tenantLookAndFeel?.authenticationheaderbackgroundcolor, 
+                                                color: tenantMetaData.tenantLookAndFeel?.authenticationheadertextcolor
+                                            }}
                                         >Cancel</Button>
                                     </a>
                                 }
@@ -325,7 +342,10 @@ const Login: React.FC = () => {
                                         <Button
                                             disabled={false}
                                             variant="contained"
-                                            sx={{ height: "100%", padding: "8px 32px 8px 32px", marginLeft: "8px" }}
+                                            sx={{ height: "100%", padding: "8px 32px 8px 32px", marginLeft: "8px",
+                                                backgroundColor: tenantMetaData.tenantLookAndFeel?.authenticationheaderbackgroundcolor, 
+                                                color: tenantMetaData.tenantLookAndFeel?.authenticationheadertextcolor
+                                            }}
                                         >Register</Button>
                                     </a>
 

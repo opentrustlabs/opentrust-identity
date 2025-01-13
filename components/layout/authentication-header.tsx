@@ -11,41 +11,20 @@ const AuthenticationHeader: React.FC<AuthenticationHeaderProps> = ({
     tenantMetaData
 }) => {
 
-//     const image = '<svg xmlns="http://www.w3.org/2000/svg" version="1.2" baseProfile="tiny" width="47.4" height="40.65" viewBox="21 18.5 158 135.5"><path d="M25,50 l150,0 0,100 -150,0 z" stroke-width="4" stroke="black" fill="rgb(128,224,255)" fill-opacity="1" ></path><path d="M25,50 L175,150 M25,150 L175,50" stroke-width="4" stroke="black" fill="black" ></path><g transform="translate(0,0)" stroke-width="4" stroke="black" fill="none" ><circle cx="100" cy="30" r="7.5" fill="black" ></circle><circle cx="70" cy="30" r="7.5" fill="black" ></circle><circle cx="130" cy="30" r="7.5" fill="black" ></circle></g></svg>';
-      
-//     const image = `
-// <svg width="52px" height="32px" viewBox="0 0 52 32" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-//     <!-- Generator: Sketch 55.2 (78181) - https://sketchapp.com -->
-//     <title>MC-logo-52</title>
-//     <desc>Created with Sketch.</desc>
-//     <g id="Components---Sprint-3" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-//         <g id="assets-/-logo-/-mastercard-/-symbol">
-//             <polygon id="Fill-1" fill="#FF5F00" points="18.7752605 28.537934 32.6926792 28.537934 32.6926792 3.41596003 18.7752605 3.41596003"></polygon>
-//             <path d="M19.6590387,15.976947 C19.6590387,10.8803009 22.03472,6.34107274 25.7341024,3.41596003 C23.0283795,1.27638054 19.6148564,0 15.9044284,0 C7.12054904,0 0.000132546844,7.15323422 0.000132546844,15.976947 C0.000132546844,24.8006598 7.12054904,31.953894 15.9044284,31.953894 C19.6148564,31.953894 23.0283795,30.6775135 25.7341024,28.537934 C22.03472,25.6123775 19.6590387,21.0735931 19.6590387,15.976947" id="Fill-2" fill="#EB001B"></path>
-//             <path d="M50.9714634,25.8771954 L50.9714634,25.257201 L50.8101981,25.257201 L50.6250744,25.6836968 L50.4395088,25.257201 L50.2782434,25.257201 L50.2782434,25.8771954 L50.3917919,25.8771954 L50.3917919,25.4094258 L50.5658701,25.8128438 L50.6838368,25.8128438 L50.857915,25.4085382 L50.857915,25.8771954 L50.9714634,25.8771954 Z M49.9504109,25.8771954 L49.9504109,25.3628264 L50.157184,25.3628264 L50.157184,25.2580887 L49.6314148,25.2580887 L49.6314148,25.3628264 L49.8377461,25.3628264 L49.8377461,25.8771954 L49.9504109,25.8771954 Z M51.4680723,15.9768139 C51.4680723,24.8005266 44.347214,31.9537609 35.5637764,31.9537609 C31.8533484,31.9537609 28.4393835,30.6773803 25.7341024,28.5378008 C29.4334848,25.6126881 31.8091661,21.07346 31.8091661,15.9768139 C31.8091661,10.8806116 29.4334848,6.34138341 25.7341024,3.41582689 C28.4393835,1.2762474 31.8533484,-0.000133141225 35.5637764,-0.000133141225 C44.347214,-0.000133141225 51.4680723,7.15310107 51.4680723,15.9768139 L51.4680723,15.9768139 Z" id="Fill-4" fill="#F79E1B"></path>
-//         </g>
-//     </g>
-// </svg>    
-//     `;
-
-// {/* <div>
-// <img src={`data:image/svg+xml;utf8,${encodeURIComponent(image)}`} />
-// </div> */}
-
     return (
         <div 
             style={{
                 backgroundColor: tenantMetaData.tenantLookAndFeel?.authenticationheaderbackgroundcolor || "#1976d2", 
                 width: "100%", 
                 height: "8vh", 
-                color: tenantMetaData.tenantLookAndFeel?.authenticationheadertextcolor || "white"
+                color: tenantMetaData.tenantLookAndFeel?.authenticationheadertextcolor || "white",
+                borderBottom: "1px solid grey"
             }}
 
         >
             <Container
                 maxWidth="xl"
-                sx={{height: "100%", alignItems: "center", display: "flex"}}
-                
+                sx={{height: "100%", alignItems: "center", display: "flex"}}                
             >
                 <Stack 
                     direction={"row"}
@@ -53,12 +32,13 @@ const AuthenticationHeader: React.FC<AuthenticationHeaderProps> = ({
                     alignItems={"center"}                    
                 >
                     {tenantMetaData.tenantLookAndFeel?.authenticationlogo &&
-                        <div style={{verticalAlign: "center"}}><img style={{display: "block"}} src={tenantMetaData.tenantLookAndFeel.authenticationlogo} height="32px" ></img></div>
+                        <div style={{verticalAlign: "center"}}>
+                            <img style={{display: "block"}} src={`data:image/svg+xml;utf8,${encodeURIComponent(tenantMetaData.tenantLookAndFeel.authenticationlogo)}`} height="32px" >
+                            </img>
+                        </div>
                     }
-                    {tenantMetaData.tenantLookAndFeel?.authenticationheadertext &&
-                        
-                        <div style={{verticalAlign: "center", fontWeight: "bold", marginLeft: "16px", fontSize: "1.2em"}}>{tenantMetaData.tenantLookAndFeel?.authenticationheadertext}</div>
-                        
+                    {tenantMetaData.tenantLookAndFeel?.authenticationheadertext &&                        
+                        <div style={{verticalAlign: "center", fontWeight: "bold", marginLeft: "16px", fontSize: "1.2em"}}>{tenantMetaData.tenantLookAndFeel?.authenticationheadertext}</div>                        
                     }
                 </Stack>
             </Container>
