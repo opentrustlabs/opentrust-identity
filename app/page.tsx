@@ -43,12 +43,15 @@ const Home: React.FC = () => {
 
     useEffect(
         () => {
+            console.log("checkpoint 1");
             document.title = "This is the age"
         },
         []
     );
 
+    console.log("checkpoint 2")
   return (
+    
     <div className={styles.page}>
       <main className={styles.main}>
         <Image

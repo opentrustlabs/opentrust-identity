@@ -141,7 +141,12 @@ const resolvers: Resolvers = {
                     requireNumbers: tenantInput.passwordConfigInput.requireNumbers,
                     requireSpecialCharacters: tenantInput.passwordConfigInput.requireSpecialCharacters,
                     requireUpperCase: tenantInput.passwordConfigInput.requireUpperCase,
-                    tenantId: tenant.tenantId
+                    tenantId: tenant.tenantId,
+                    requireMfa: tenantInput.passwordConfigInput.requireMfa,
+                    mfaTypesRequired: tenantInput.passwordConfigInput.mfaTypesRequired,
+                    allowMfa: tenantInput.passwordConfigInput.allowMfa,
+                    mfaTypesAllowed: tenantInput.passwordConfigInput.mfaTypesAllowed
+
                 });
             }
             return tenant;
@@ -188,7 +193,11 @@ const resolvers: Resolvers = {
                     requireNumbers: tenantInput.passwordConfigInput.requireNumbers,
                     requireSpecialCharacters: tenantInput.passwordConfigInput.requireSpecialCharacters,
                     requireUpperCase: tenantInput.passwordConfigInput.requireUpperCase,
-                    tenantId: tenant.tenantId
+                    tenantId: tenant.tenantId,
+                    requireMfa: tenantInput.passwordConfigInput.requireMfa,
+                    mfaTypesRequired: tenantInput.passwordConfigInput.mfaTypesRequired,
+                    allowMfa: tenantInput.passwordConfigInput.allowMfa,
+                    mfaTypesAllowed: tenantInput.passwordConfigInput.mfaTypesAllowed
                 });
             }
             return tenant;
@@ -235,7 +244,11 @@ const resolvers: Resolvers = {
                     requireNumbers: tenantInput.passwordConfigInput.requireNumbers,
                     requireSpecialCharacters: tenantInput.passwordConfigInput.requireSpecialCharacters,
                     requireUpperCase: tenantInput.passwordConfigInput.requireUpperCase,
-                    tenantId: tenant.tenantId
+                    tenantId: tenant.tenantId,
+                    requireMfa: tenantInput.passwordConfigInput.requireMfa,
+                    mfaTypesRequired: tenantInput.passwordConfigInput.mfaTypesRequired,
+                    allowMfa: tenantInput.passwordConfigInput.allowMfa,
+                    mfaTypesAllowed: tenantInput.passwordConfigInput.mfaTypesAllowed
                 });
             }
             return tenant; 
@@ -282,7 +295,11 @@ const resolvers: Resolvers = {
                     requireNumbers: tenantInput.passwordConfigInput.requireNumbers,
                     requireSpecialCharacters: tenantInput.passwordConfigInput.requireSpecialCharacters,
                     requireUpperCase: tenantInput.passwordConfigInput.requireUpperCase,
-                    tenantId: tenant.tenantId
+                    tenantId: tenant.tenantId,
+                    requireMfa: tenantInput.passwordConfigInput.requireMfa,
+                    mfaTypesRequired: tenantInput.passwordConfigInput.mfaTypesRequired,
+                    allowMfa: tenantInput.passwordConfigInput.allowMfa,
+                    mfaTypesAllowed: tenantInput.passwordConfigInput.mfaTypesAllowed
                 });
             }
             return updatedTenant;

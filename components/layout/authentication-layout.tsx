@@ -50,13 +50,10 @@ const AuthenticationLayout: React.FC<LayoutProps> = ({
                         justifyContent={"center"}
                         sx={{minHeight: "84vh"}}
                     >
-                        <Grid2 
-                            
-                        >
+                        <Grid2>
                             <div>{children}</div>
                         </Grid2>
-                    </Grid2>
-                
+                    </Grid2>                
                 </Container>
                 <AuthenticationFooter
                     tenantMetaData={

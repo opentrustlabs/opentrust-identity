@@ -514,9 +514,25 @@ export const CONTACT_TYPE_FOR_SIGNING_KEY="SIGNING_KEY_CONTACT"
 export const QUERY_PARAM_PREAUTHN_TOKEN="_tk";
 export const QUERY_PARAM_PREAUTH_TENANT_ID="_tid";
 export const QUERY_PARAM_PREAUTH_REDIRECT_URI="redirect_uri";
+export const QUERY_PARAM_AUTHENTICATE_TO_PORTAL="_pa";
+export const QUERY_PARAM_COUNTRY_CODE="country_code";
+export const QUERY_PARAM_LANGUAGE_CODE="language_code";
 
 
 
+export const AUTHENTICATION_LAYOUT_PAGES = [
+    "/authorize/login",
+    "/authorize/forgot-password",
+    "/authorize/register"
+]
+
+
+
+// ************************************************************************** //
+// 
+//                  DEFAULT CONSTANTS
+// 
+// ************************************************************************** //
 export const DEFAULT_TENANT_META_DATA: TenantMetaData = {
     tenant: {
         __typename: undefined,

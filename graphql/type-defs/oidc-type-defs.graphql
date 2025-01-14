@@ -14,6 +14,9 @@ type Query {
     getUsers(tenantId: String): [User!]!
     getUserById(userId: String!): User
     getLoginUserNameHandler(username: String!, tenantId: String, preauthToken: String): LoginUserNameHandlerResponse!
+
+    ## For tenant management and access
+    me: PortalUserProfile
     
     ## Keys
     getSigningKeys(tenantId: String): [SigningKey!]!
@@ -273,6 +276,10 @@ type TenantPasswordConfig {
 	requireNumbers: Boolean!
 	requireSpecialCharacters: Boolean!
 	specialCharactersAllowed: String
+    requireMfa: Boolean!
+    mfaTypesRequired: String
+    allowMfa: Boolean!
+    mfaTypesAllowed: String
 }
 
 
@@ -306,6 +313,28 @@ type Client {
     maxRefreshTokenCount: Int
 }
 
+type PortalUserProfile {
+    userId: String!
+    federatedOIDCProviderSubjectId: String
+    email: String!
+    emailVerified: Boolean!
+    domain: String!
+    firstName: String!
+    lastName: String!
+    middleName: String
+    phoneNumber: String
+    address: String
+    countryCode: String
+    preferredLanguageCode: String
+    twoFactorAuthType: String
+    locked: Boolean!
+    enabled: Boolean!
+    nameOrder: String!
+    scope: [Scope!]!
+    tenantId: String!
+    tenantName: String!
+    managementAccessTenantId: String
+}
 
 # 1.    domain is just the domain part of the email
 type User {
@@ -710,7 +739,11 @@ input PasswordConfigInput {
 	requireLowerCase: Boolean!
 	requireNumbers: Boolean!
 	requireSpecialCharacters: Boolean!
-	specialCharactersAllowed: String    
+	specialCharactersAllowed: String
+    requireMfa: Boolean!
+    mfaTypesRequired: String
+    allowMfa: Boolean!
+    mfaTypesAllowed: String
 }
 
 input AnonymousUserConfigInput {

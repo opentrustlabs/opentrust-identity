@@ -188,9 +188,15 @@ const Login: React.FC = () => {
         });
     }
 
-    const style = {
-        backgroundColor: "black",
-        color: "white"
+    const getQueryParams = (): string => {
+        const params = new URLSearchParams();
+        if(tenantId){
+            params.set("_tid", tenantId);
+        }
+        if(preauthToken){
+            params.set("_tk", preauthToken)
+        }
+        return params.toString();
     }
 
     if (loading) return <CircularProgress />
@@ -294,7 +300,7 @@ const Login: React.FC = () => {
                             <Stack
                                 direction={"row-reverse"}
                             >
-                                <span><Link href="/authorize/forgot-password" style={{ color: "black", fontWeight: "bold", fontSize: "0.9em"}}>Forgot password?</Link></span>
+                                <span><Link prefetch={false} href={`/authorize/forgot-password?${getQueryParams()}`} style={{ color: "black", fontWeight: "bold", fontSize: "0.9em"}}>Forgot password?</Link></span>
                             </Stack>
                         </Grid2>
                     }
@@ -386,7 +392,7 @@ const Login: React.FC = () => {
                                     justifyItems={"center"}
                                     alignItems={"center"}
                                 >
-                                    <a href="/authorize/register">
+                                    <Link prefetch={false} href={`/authorize/register?${getQueryParams()}`}>
                                         <Button
                                             disabled={false}
                                             variant="contained"
@@ -397,7 +403,7 @@ const Login: React.FC = () => {
                                                 fontSize: "0.9em"
                                             }}
                                         >Register</Button>
-                                    </a>
+                                    </Link>
 
                                     <div style={{ verticalAlign: "center", fontWeight: "bold", fontSize: "0.9em" }}>Need to create an account?</div>
                                 </Stack>

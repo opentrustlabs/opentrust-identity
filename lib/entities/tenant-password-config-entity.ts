@@ -11,6 +11,7 @@ class TenantPasswordConfigEntity implements TenantPasswordConfig {
             Object.assign(this, tenantPasswordConfig)
         }
     }
+    
     __typename?: "TenantPasswordConfig";
 
     @PrimaryKey({fieldName: "tenantid"})
@@ -39,6 +40,18 @@ class TenantPasswordConfigEntity implements TenantPasswordConfig {
 
     @Property({fieldName: "specialcharactersallowed"})
     specialCharactersAllowed?: Maybe<string> | undefined;
+
+    @Property({fieldName: "allowmfa"})
+    allowMfa: boolean;
+
+    @Property({fieldName: "mfatypesallowed"})
+    mfaTypesAllowed?: Maybe<string> | undefined;
+
+    @Property({fieldName: "requiremfa"})
+    requireMfa: boolean;
+
+    @Property({fieldName: "mfatypesrequired"})
+    mfaTypesRequired?: Maybe<string> | undefined;
 
 }
 

@@ -477,6 +477,10 @@ create TABLE tenant_password_config (
 	requirenumbers BOOLEAN NOT NULL,
 	requirespecialcharacters BOOLEAN NOT NULL,
 	specialcharactersallowed VARCHAR(64),
+    requiremfa BOOLEAN NOT NULL,
+    allowmfa BOOLEAN NOT NULL,
+    mfatypesrequired VARCHAR(128),
+    mfatypesallowed VARCHAR(128),
     PRIMARY KEY (tenantid),
     FOREIGN KEY (tenantid) references tenant(tenantid)
 );
