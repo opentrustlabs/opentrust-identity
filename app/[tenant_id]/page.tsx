@@ -27,6 +27,7 @@ const TenantLandingPage: React.FC = () => {
      // QUERY PARAMS
     const params = useSearchParams();
     const section = params?.get("section");
+    console.log("section is " + section);
 
     //const maxWidth = isSm ? "90vw" : isMd ? "80vw" : "650px";
 
@@ -61,7 +62,7 @@ const TenantLandingPage: React.FC = () => {
                     }
                 </Grid2>
                 <Grid2  size={{xs: 12, sm: 12, md: 9, lg: 10, xl: 10}} sx={{padding: "8px", minHeight: "88vh"}}>
-                    {section === null || section === "tenants" &&
+                    {(section === null || section === "tenants") &&
                         <TenantList />
                     }
                 </Grid2>
