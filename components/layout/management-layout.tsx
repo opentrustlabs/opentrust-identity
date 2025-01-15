@@ -24,7 +24,7 @@ const ManagementLayout: React.FC<LayoutProps> = ({
 
     // Hooks
     const params = useParams();
-    const tenantIdFromPath = params.tenant_id;
+    const tenantIdFromPath = params ? params.tenant_id : null;
     console.log("tenant id from path is: " + tenantIdFromPath);
     const router = useRouter();
 
@@ -60,6 +60,8 @@ const ManagementLayout: React.FC<LayoutProps> = ({
     let needsRedirect = true;
     let redirectUri: string = `/authorize/login?${QUERY_PARAM_AUTHENTICATE_TO_PORTAL}=true`;;
     
+    // TODO
+    // Add return URI in cases where the profile is null.
     if(tenantIdFromPath === null && profile === null){
         if(tenantIdFromLocalStorage){
             redirectUri = `/authorize/login?${QUERY_PARAM_AUTHENTICATE_TO_PORTAL}=true&${QUERY_PARAM_PREAUTH_TENANT_ID}=${tenantIdFromLocalStorage}`;
@@ -119,7 +121,7 @@ interface Props {
 const Layout: React.FC<Props> = ({tenantId, children}) => {
     
     // State management variables
-    const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
+    // const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
     const {data, error, loading} = useQuery(TENANT_META_DATA_QUERY, {
         variables: {
             tenantId: tenantId
@@ -163,7 +165,7 @@ const Layout: React.FC<Props> = ({tenantId, children}) => {
                     spacing={0}
                     alignItems={"center"}
                     justifyContent={"center"}
-                    sx={{minHeight: "84vh"}}
+                    sx={{minHeight: "88vh"}}
                 >
                     <Grid2>
                         <div>{JSON.stringify(error)}</div>
@@ -188,22 +190,13 @@ const Layout: React.FC<Props> = ({tenantId, children}) => {
                     tenantMetaData={
                         data.getTenantMetaData
                     }
-                />
-                
+                />                
                 <Container
-                    maxWidth="xl"
-                >
-                    <Grid2 
-                        container
-                        spacing={0}
-                        alignItems={"center"}
-                        justifyContent={"center"}
-                        sx={{minHeight: "84vh"}}
-                    >
-                        <Grid2>
-                            <div>{children}</div>
-                        </Grid2>
-                    </Grid2>                
+                    maxWidth="xl"                    
+                    disableGutters={true}
+                    sx={{minHeight: "88vh"}}
+                >{children}
+                    
                 </Container>
                 <ManagementFooter
                     tenantMetaData={

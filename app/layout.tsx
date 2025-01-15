@@ -38,7 +38,7 @@ export default function RootLayout({
 
 
     const pathName = usePathname();
-    const isAuthenticationLayoutPage: boolean = AUTHENTICATION_LAYOUT_PAGES.includes(pathName);
+    const isAuthenticationLayoutPage: boolean = AUTHENTICATION_LAYOUT_PAGES.includes(pathName || "");
 
     return (
         <html lang="en">

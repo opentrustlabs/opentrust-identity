@@ -19,8 +19,6 @@ const AuthContextProvider: React.FC<AuthContextProps> = ({
     children
 }) => {
 
-    const [profile, setProfile] = React.useState<PortalUserProfile | null>(DEFAULT_PROFILE);
-
     const {data, error, loading, previousData} = useQuery(
         ME_QUERY, {
             //pollInterval: 15000,
