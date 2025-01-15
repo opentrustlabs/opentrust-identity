@@ -4,7 +4,8 @@ import { useQuery } from "@apollo/client";
 import { CircularProgress } from "@mui/material";
 import React from "react";
 
-const TenantListDeprecated: React.FC = () => {
+
+const TenantList: React.FC = () => {
 
 
     const {data, error, loading } = useQuery(TENANTS_QUERY, {
@@ -19,4 +20,4 @@ const TenantListDeprecated: React.FC = () => {
     )
 }
 
-export default TenantListDeprecated;
+export default TenantList;
