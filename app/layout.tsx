@@ -8,6 +8,8 @@ import { usePathname } from 'next/navigation'
 import AuthenticationLayout from "@/components/layout/authentication-layout";
 import ManagementLayout from "@/components/layout/management-layout";
 import { AUTHENTICATION_LAYOUT_PAGES } from "@/utils/consts";
+import PageTitleContextProvider from "@/components/contexts/page-title-context";
+import AuthContextProvider from "@/components/contexts/auth-context";
 
 const geistSans = localFont({
     src: "./fonts/GeistVF.woff",
@@ -42,12 +44,16 @@ export default function RootLayout({
         <html lang="en">
             <body className={`${geistSans.variable} ${geistMono.variable}`}>
                 <ApolloProvider client={client}>
-                    {isAuthenticationLayoutPage &&
-                        <AuthenticationLayout>{children}</AuthenticationLayout>
-                    }
-                    {!isAuthenticationLayoutPage &&
-                        <ManagementLayout>{children}</ManagementLayout>
-                    }
+                    <PageTitleContextProvider>
+                        {isAuthenticationLayoutPage &&
+                            <AuthenticationLayout>{children}</AuthenticationLayout>
+                        }
+                        {!isAuthenticationLayoutPage &&
+                            <AuthContextProvider>
+                                <ManagementLayout>{children}</ManagementLayout>
+                            </AuthContextProvider>
+                        }
+                    </PageTitleContextProvider>
                 </ApolloProvider>
             </body>
         </html>

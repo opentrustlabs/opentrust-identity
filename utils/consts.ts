@@ -517,13 +517,15 @@ export const QUERY_PARAM_PREAUTH_REDIRECT_URI="redirect_uri";
 export const QUERY_PARAM_AUTHENTICATE_TO_PORTAL="_pa";
 export const QUERY_PARAM_COUNTRY_CODE="country_code";
 export const QUERY_PARAM_LANGUAGE_CODE="language_code";
+export const QUERY_PARAM_RETURN_URI="return_uri";
 
 
 
 export const AUTHENTICATION_LAYOUT_PAGES = [
     "/authorize/login",
     "/authorize/forgot-password",
-    "/authorize/register"
+    "/authorize/register",
+    "/access-error"
 ]
 
 

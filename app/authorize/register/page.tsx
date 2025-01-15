@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import { Button, CircularProgress, Divider, Grid2, Paper, Stack, TextField } from "@mui/material";
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
@@ -11,6 +11,7 @@ import { useLazyQuery, useMutation, useQuery } from "@apollo/client";
 import { LoginAuthenticationHandlerAction, LoginAuthenticationHandlerResponse, LoginUserNameHandlerAction, LoginUserNameHandlerResponse } from "@/graphql/generated/graphql-types";
 import Alert from '@mui/material/Alert';
 import { LOGIN_MUTATION } from "@/graphql/mutations/oidc-mutations";
+import { PageTitleContext } from "@/components/contexts/page-title-context";
 
 
 const MIN_USERNAME_LENGTH = 6;
@@ -19,6 +20,9 @@ const PASSWORD_COMPONENT = "PASSWORD_COMPONENT";
 
 const ForgotPassword: React.FC = () => {
 
+    // Context objects
+    const titleSetter = useContext(PageTitleContext);
+    titleSetter.setPageTitle("Register");
 
     // QUERY PARAMS
     const params = useSearchParams();

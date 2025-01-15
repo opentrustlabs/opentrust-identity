@@ -1,16 +1,40 @@
 import ClientService from "@/lib/service/client-service";
 import TenantService from "@/lib/service/tenant-service";
-import { Resolvers, QueryResolvers, MutationResolvers, Tenant, Client, SigningKey, Scope, AuthenticationGroup, AuthorizationGroup, FederatedOidcProvider, ContactInput, Contact, LoginUserNameHandlerResponse, LoginUserNameHandlerAction, LoginAuthenticationHandlerResponse, LoginAuthenticationHandlerAction, SecondFactorType } from "@/graphql/generated/graphql-types";
+import { Resolvers, QueryResolvers, MutationResolvers, Tenant, Client, SigningKey, Scope, AuthenticationGroup, AuthorizationGroup, FederatedOidcProvider, ContactInput, Contact, LoginUserNameHandlerResponse, LoginUserNameHandlerAction, LoginAuthenticationHandlerResponse, LoginAuthenticationHandlerAction, SecondFactorType, PortalUserProfile } from "@/graphql/generated/graphql-types";
 import SigningKeysService from "@/lib/service/keys-service";
 import ScopeService from "@/lib/service/scope-service";
 import GroupService from "@/lib/service/group-service";
 import AuthenticationGroupService from "@/lib/service/authentication-group-service";
 import FederatedOIDCProviderService from "@/lib/service/federated-oidc-provider-service";
-import { OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_POST, SIGNING_KEY_STATUS_ACTIVE, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
+import { NAME_ORDER_WESTERN, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_POST, SIGNING_KEY_STATUS_ACTIVE, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 
 
 const resolvers: Resolvers = {
     Query: {
+        me: (_, __, oidcContext) => {
+            const profile: PortalUserProfile = {
+                domain: "charter.net",
+                email: "dhayek@charter.net",
+                emailVerified: true,
+                enabled: true,
+                firstName: "David",
+                lastName: "Hayek",
+                locked: false,
+                nameOrder: NAME_ORDER_WESTERN,
+                scope: [{
+                    scopeId: "id",
+                    scopeName: "all",
+                    scopeDescription: ""
+                }],
+                tenantId: "8256c1db-cd40-48d1-914f-71672b4d42fa",
+                tenantName: "First Tenant",
+                userId: "8256c1db-cd40-48d1-914f-71672b4d42fa",
+                countryCode: "US",
+                preferredLanguageCode: "en",
+                managementAccessTenantId: "8256c1db-cd40-48d1-914f-71672b4d42fa"
+            }
+            return profile;
+        },
         getRootTenant: (_, __, oidcContext) => {
             const tenantService: TenantService = new TenantService(oidcContext);
             return tenantService.getRootTenant();

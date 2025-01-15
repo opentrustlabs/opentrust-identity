@@ -77,3 +77,34 @@ export const LOGIN_USERNAME_HANDLER_QUERY = gql(`
         }
     }
 `);
+
+export const ME_QUERY = gql(`
+    query me {
+        me {
+            address
+            countryCode
+            domain
+            email
+            emailVerified
+            enabled
+            federatedOIDCProviderSubjectId
+            firstName
+            lastName
+            locked
+            managementAccessTenantId
+            middleName
+            nameOrder
+            phoneNumber
+            preferredLanguageCode
+            scope {
+                scopeDescription
+                scopeId
+                scopeName
+            }
+            tenantId
+            tenantName
+            twoFactorAuthType
+            userId
+        }
+    }
+`);
