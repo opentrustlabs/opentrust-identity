@@ -11,6 +11,7 @@ import Link from "next/link";
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import { ResponsiveBreakpoints, ResponsiveContext } from "../contexts/responsive-context";
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
+import { TENANT_TYPES_DISPLAY } from "@/utils/consts";
 
 const TenantList: React.FC = () => {
 
@@ -85,7 +86,7 @@ const TenantList: React.FC = () => {
                             }
                         }} 
                     />
-                </div>                
+                </div>           
             </Stack>
             {c.isMedium &&
                 <>
@@ -128,7 +129,7 @@ const TenantList: React.FC = () => {
                                             <Grid2 size={12}>{tenant.tenantDescription}</Grid2>
                                             
                                             <Grid2 sx={{textDecoration: "underline"}} size={12}>Tenant Type</Grid2>
-                                            <Grid2 size={12}>{tenant.tenantType}</Grid2>
+                                            <Grid2 size={12}>{TENANT_TYPES_DISPLAY.get(tenant.tenantType)}</Grid2>
                                             
                                             <Grid2 sx={{textDecoration: "underline"}}  size={12}>Object ID</Grid2>
                                             <Grid2 size={12} display={"inline-flex"}><div style={{marginRight: "8px"}}>{tenant.tenantId}</div><ContentCopyIcon /></Grid2>
@@ -136,18 +137,6 @@ const TenantList: React.FC = () => {
                                     </Grid2>
                                 }
                             </Typography>                                
-                        )
-                    )}
-                    {data.getTenants.map(
-                        (tenant: Tenant) => (
-                            <Typography key={`${tenant.tenantId}asdfasdf`} component={"div"} fontSize={"0.9em"}>
-                                <Divider></Divider>                        
-                                <Grid2  margin={"8px 0px 8px 0px"} container size={12} spacing={1}>
-                                    <Grid2 size={9}><Link style={{color: "", fontWeight: "bold", textDecoration: "underline" }}  href={`${tenant.tenantId}/tenants/${tenant.tenantId}`}>{tenant.tenantName}</Link></Grid2>
-                                    <Grid2 size={2}>{tenant.enabled ? "true" : "false"}</Grid2>
-                                    <Grid2 size={1}><UnfoldMoreOutlinedIcon /></Grid2>
-                                </Grid2>
-                            </Typography>                            
                         )
                     )}
                 </>
@@ -171,28 +160,12 @@ const TenantList: React.FC = () => {
                                 <Divider></Divider>                        
                                 <Grid2  margin={"8px 0px 8px 0px"} container size={12} spacing={1}>
                                     <Grid2 size={2}><Link style={{color: "", fontWeight: "bold", textDecoration: "underline" }} href={`${tenant.tenantId}/tenants/${tenant.tenantId}`}>{tenant.tenantName}</Link></Grid2>
-                                    <Grid2 size={4}>{tenant.tenantDescription}{tenant.tenantDescription}{tenant.tenantDescription}{tenant.tenantDescription}</Grid2>
-                                    <Grid2 size={2}>{tenant.tenantType}</Grid2>
+                                    <Grid2 size={4}>{tenant.tenantDescription}</Grid2>
+                                    <Grid2 size={2}>{TENANT_TYPES_DISPLAY.get(tenant.tenantType)}</Grid2>
                                     <Grid2 size={1}>{tenant.enabled ? "true" : "false"}</Grid2>
                                     <Grid2 size={3} display={"inline-flex"} columnGap={1} ><div>{tenant.tenantId}</div><div><ContentCopyIcon /></div></Grid2>
                                 </Grid2>
-                            </Typography>
-                                
-                        )
-                    )}
-                    {data.getTenants.map(
-                        (tenant: Tenant) => (
-                            <Typography key={`${tenant.tenantId}asdfasdf`} component={"div"} fontSize={"0.9em"}>
-                                <Divider></Divider>                        
-                                <Grid2  margin={"8px 0px 8px 0px"} container size={12} spacing={1}>
-                                    <Grid2 size={2}><Link style={{fontWeight: "bold", textDecoration: "underline" }} href={`tenants/${tenant.tenantId}`}>{tenant.tenantName}</Link></Grid2>
-                                    <Grid2 size={4}>{tenant.tenantDescription}{tenant.tenantDescription}{tenant.tenantDescription}{tenant.tenantDescription}</Grid2>
-                                    <Grid2 size={2}>{tenant.tenantType}</Grid2>
-                                    <Grid2 size={1}>{tenant.enabled ? "true" : "false"}</Grid2>
-                                    <Grid2 size={3} display={"inline-flex"} columnGap={1} ><div>{tenant.tenantId}</div><div><ContentCopyIcon /></div></Grid2>
-                                </Grid2>
-                            </Typography>
-                            
+                            </Typography>                                
                         )
                     )}
                 </>

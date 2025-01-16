@@ -17,6 +17,7 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import AutoAwesomeMosaicIcon from '@mui/icons-material/AutoAwesomeMosaic';
 import SpeedIcon from '@mui/icons-material/Speed';
 import TenantList from "@/components/tenants/tenant-list";
+import ClientList from "@/components/clients/client-list";
 
 const TenantLandingPage: React.FC = () => {
 
@@ -63,6 +64,9 @@ const TenantLandingPage: React.FC = () => {
                 <Grid2  size={{xs: 12, sm: 12, md: 9, lg: 10, xl: 10}} sx={{padding: "8px", minHeight: "88vh"}}>
                     {(section === null || section === "tenants") &&
                         <TenantList />
+                    }
+                    {section === "clients" &&
+                        <ClientList />
                     }
                 </Grid2>
 
@@ -235,35 +239,35 @@ const NavigationMobile: React.FC<NavigationProps> = ({section}) => {
                     </div>
                     <div style={{display: "inline-flex", alignItems: "center"}}>
                         <SettingsSystemDaydreamIcon sx={{marginRight: "8px"}}/>
-                        <Link href={`?section=clients`} >Clients</Link>
+                        <Link href={`?section=clients`} onClick={() => setDrawerOpen(false)}>Clients</Link>
                     </div>
                     <div style={{display: "inline-flex", alignItems: "center"}}>
                         <PersonIcon sx={{marginRight: "8px"}} />
-                        <Link href={`?section=users`} >Users</Link>
+                        <Link href={`?section=users`} onClick={() => setDrawerOpen(false)}>Users</Link>
                     </div>
                     <div style={{display: "inline-flex", alignItems: "center"}}>
                         <PeopleIcon sx={{marginRight: "8px"}} />
-                        <Link href={`?section=authorization-groups`} >Authorization Groups</Link>
+                        <Link href={`?section=authorization-groups`} onClick={() => setDrawerOpen(false)}>Authorization Groups</Link>
                     </div>
                     <div style={{display: "inline-flex", alignItems: "center"}}>
                         <GroupIcon sx={{marginRight: "8px"}} />
-                        <Link href={`?section=authentication-groups`} >Authentication Groups</Link>
+                        <Link href={`?section=authentication-groups`} onClick={() => setDrawerOpen(false)}>Authentication Groups</Link>
                     </div>
                     <div style={{display: "inline-flex", alignItems: "center"}}>
                         <SettingsIcon sx={{marginRight: "8px"}} />
-                        <Link href={`?section=scope-access-control`} >Scope/Access Control</Link>
+                        <Link href={`?section=scope-access-control`} onClick={() => setDrawerOpen(false)}>Scope/Access Control</Link>
                     </div>
                     <div style={{display: "inline-flex", alignItems: "center"}}>
                         <AutoAwesomeMosaicIcon sx={{marginRight: "8px"}} />
-                        <Link href={`?section=oidc-providers`} >OIDC Providers</Link>
+                        <Link href={`?section=oidc-providers`} onClick={() => setDrawerOpen(false)}>OIDC Providers</Link>
                     </div>
                     <div style={{display: "inline-flex", alignItems: "center"}}>
                         <SpeedIcon sx={{marginRight: "8px"}} />
-                        <Link href={`?section=rate-limits`} >Rate Limits</Link>
+                        <Link href={`?section=rate-limits`} onClick={() => setDrawerOpen(false)}>Rate Limits</Link>
                     </div>
                     <div style={{display: "inline-flex", alignItems: "center"}}>
                         <KeyIcon sx={{marginRight: "8px"}} />
-                        <Link href={`?section=keys`} >Keys</Link>
+                        <Link href={`?section=keys`} onClick={() => setDrawerOpen(false)}>Keys</Link>
                     </div>
                 </Stack>
             </Drawer>
