@@ -353,6 +353,14 @@ export const TENANT_TYPES=[
     TENANT_TYPE_IDENTITY_MANAGEMENT_AND_SERVICES,
     TENANT_TYPE_SERVICES
 ];
+export const TENANT_TYPES_DISPLAY = new Map<string, string>(
+    [
+        [TENANT_TYPE_ROOT_TENANT, "Root Tenant"],
+        [TENANT_TYPE_IDENTITY_MANAGEMENT, "Identity Management Only"],
+        [TENANT_TYPE_IDENTITY_MANAGEMENT_AND_SERVICES, "Identity Management And Services"],
+        [TENANT_TYPE_SERVICES, "Services Only"]
+    ]
+);
 
 export const LOGIN_FAILURE_POLICY_LOCK_USER_ACCOUNT="LOCK_USER_ACCOUNT";
 export const LOGIN_FAILURE_POLICY_PAUSE="PAUSE";
@@ -386,6 +394,14 @@ export const CLIENT_TYPES=[
     CLIENT_TYPE_SERVICE_ACCOUNT_AND_USER_DELEGATED_PERMISSIONS,
     CLIENT_TYPE_USER_DELEGATED_PERMISSIONS_ONLY
 ];
+
+export const CLIENT_TYPES_DISPLAY = new Map<string, string>(
+    [ 
+        [CLIENT_TYPE_SERVICE_ACCOUNT_ONLY, "Service Account Only"],
+        [CLIENT_TYPE_SERVICE_ACCOUNT_AND_USER_DELEGATED_PERMISSIONS, "Service Account and User Delegated Permissions"],
+        [CLIENT_TYPE_USER_DELEGATED_PERMISSIONS_ONLY, "User Delegated Permissions Only"]
+    ]
+);
 
 export const TOKEN_TYPE_SERVICE_ACCOUNT_TOKEN="SERVICE_ACCOUNT_TOKEN";
 export const TOKEN_TYPE_END_USER_TOKEN="END_USER_TOKEN";
