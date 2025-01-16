@@ -101,7 +101,6 @@ const ManagementLayout: React.FC<LayoutProps> = ({
     }
 
     useEffect(() => {
-        console.log("in use efffect");
         if(needsRedirect){
             console.log("should redirect");
             router.push(redirectUri);

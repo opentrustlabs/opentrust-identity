@@ -22,7 +22,6 @@ const TenantLandingPage: React.FC = () => {
 
     const theme = useTheme();
     const isMd: boolean = useMediaQuery(theme.breakpoints.down("md"));
-    const isSm: boolean = useMediaQuery(theme.breakpoints.down("sm"));
     
      // QUERY PARAMS
     const params = useSearchParams();

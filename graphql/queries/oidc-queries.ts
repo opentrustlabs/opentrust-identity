@@ -6,6 +6,7 @@ export const TENANTS_QUERY = gql(`
             tenantId
             tenantName
             tenantDescription
+            tenantType
             enabled
             claimsSupported
             allowUnlimitedRate

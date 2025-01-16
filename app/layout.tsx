@@ -10,6 +10,7 @@ import ManagementLayout from "@/components/layout/management-layout";
 import { AUTHENTICATION_LAYOUT_PAGES } from "@/utils/consts";
 import PageTitleContextProvider from "@/components/contexts/page-title-context";
 import AuthContextProvider from "@/components/contexts/auth-context";
+import ResponsiveContextProvider from "@/components/contexts/responsive-context";
 
 const geistSans = localFont({
     src: "./fonts/GeistVF.woff",
@@ -44,16 +45,18 @@ export default function RootLayout({
         <html lang="en">
             <body className={`${geistSans.variable} ${geistMono.variable}`}>
                 <ApolloProvider client={client}>
-                    <PageTitleContextProvider>
-                        {isAuthenticationLayoutPage &&
-                            <AuthenticationLayout>{children}</AuthenticationLayout>
-                        }
-                        {!isAuthenticationLayoutPage &&
-                            <AuthContextProvider>
-                                <ManagementLayout>{children}</ManagementLayout>
-                            </AuthContextProvider>
-                        }
-                    </PageTitleContextProvider>
+                    <ResponsiveContextProvider>
+                        <PageTitleContextProvider>
+                            {isAuthenticationLayoutPage &&
+                                <AuthenticationLayout>{children}</AuthenticationLayout>
+                            }
+                            {!isAuthenticationLayoutPage &&
+                                <AuthContextProvider>
+                                    <ManagementLayout>{children}</ManagementLayout>
+                                </AuthContextProvider>
+                            }
+                        </PageTitleContextProvider>
+                    </ResponsiveContextProvider>
                 </ApolloProvider>
             </body>
         </html>
