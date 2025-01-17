@@ -13,7 +13,7 @@ import { ResponsiveBreakpoints, ResponsiveContext } from "../contexts/responsive
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
 import CheckOutlinedIcon from '@mui/icons-material/CheckOutlined';
 import DeleteForeverOutlinedIcon from '@mui/icons-material/DeleteForeverOutlined';
-import { TenantBean, TenantContext } from "../contexts/tenant-context";
+import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
 
 
 const AuthorizationGroupList: React.FC = () => {
@@ -23,7 +23,7 @@ const AuthorizationGroupList: React.FC = () => {
     const [filterValue, setFilerValue] = React.useState("");
     // HOOKS
     const c: ResponsiveBreakpoints = useContext(ResponsiveContext);
-    const tenantBean: TenantBean  = useContext(TenantContext);
+    const tenantBean: TenantMetaDataBean  = useContext(TenantContext);
     
     // GRAPHQL FUNCTION
     const {data, error, loading } = useQuery(AUTHORIZATION_GROUPS_QUERY, {
@@ -110,7 +110,7 @@ const AuthorizationGroupList: React.FC = () => {
                                 <Divider></Divider>                        
                                 <Grid2  margin={"8px 0px 8px 0px"} container size={12} spacing={1}>
                                     <Grid2 size={1}><DeleteForeverOutlinedIcon /></Grid2>
-                                    <Grid2 size={8}><Link style={{color: "", fontWeight: "bold", textDecoration: "underline" }} href={`/${tenantBean.getCurrentTenant()}/authorization-groups/${authorizationGroup.groupId}`}>{authorizationGroup.groupName}</Link></Grid2>
+                                    <Grid2 size={8}><Link style={{color: "", fontWeight: "bold", textDecoration: "underline" }} href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/authorization-groups/${authorizationGroup.groupId}`}>{authorizationGroup.groupName}</Link></Grid2>
                                     <Grid2 size={2}>
                                         {authorizationGroup.default &&                                         
                                             <CheckOutlinedIcon />
@@ -135,7 +135,7 @@ const AuthorizationGroupList: React.FC = () => {
                                         <Grid2 size={1}></Grid2>
                                         <Grid2 size={11} container>
                                             <Grid2 sx={{textDecoration: "underline"}} size={12}>Tenant</Grid2>
-                                            <Grid2 size={12}><Link href={`/${tenantBean.getCurrentTenant()}/authorization-groups/${authorizationGroup.groupId}`}>{authorizationGroup.tenantId}</Link></Grid2>
+                                            <Grid2 size={12}><Link href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/authorization-groups/${authorizationGroup.groupId}`}>{authorizationGroup.tenantId}</Link></Grid2>
                                             <Grid2 sx={{textDecoration: "underline"}}  size={12}>Object ID</Grid2>
                                             <Grid2 size={12} display={"inline-flex"}><div style={{marginRight: "8px"}}>{authorizationGroup.groupId}</div><ContentCopyIcon /></Grid2>
                                         </Grid2>
@@ -166,13 +166,13 @@ const AuthorizationGroupList: React.FC = () => {
                                 <Divider></Divider>                        
                                 <Grid2  margin={"8px 0px 8px 0px"} container size={12} spacing={1}>
                                     <Grid2 size={0.3}><DeleteForeverOutlinedIcon /></Grid2>
-                                    <Grid2 size={2.7}><Link style={{color: "", fontWeight: "bold", textDecoration: "underline" }} href={`/${tenantBean.getCurrentTenant()}/authorization-groups/${authorizationGroup.groupId}`}>{authorizationGroup.groupName}</Link></Grid2>
+                                    <Grid2 size={2.7}><Link style={{color: "", fontWeight: "bold", textDecoration: "underline" }} href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/authorization-groups/${authorizationGroup.groupId}`}>{authorizationGroup.groupName}</Link></Grid2>
                                     <Grid2 size={3}>
                                         {authorizationGroup.default &&                                         
                                             <CheckOutlinedIcon />
                                         }
                                     </Grid2>
-                                    <Grid2 size={2}><Link href={`/${tenantBean.getCurrentTenant()}/tenants/${authorizationGroup.tenantId}`}>{authorizationGroup.tenantId}</Link></Grid2>
+                                    <Grid2 size={2}><Link href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/tenants/${authorizationGroup.tenantId}`}>{authorizationGroup.tenantId}</Link></Grid2>
                                     <Grid2 size={3} display={"inline-flex"} columnGap={1} ><div>{authorizationGroup.groupId}</div><div><ContentCopyIcon /></div></Grid2>
                                     <Grid2 size={1}></Grid2>
                                 </Grid2>

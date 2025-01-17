@@ -31,7 +31,7 @@ const resolvers: Resolvers = {
                 userId: "8256c1db-cd40-48d1-914f-71672b4d42fa",
                 countryCode: "US",
                 preferredLanguageCode: "en",
-                managementAccessTenantId: "8256c1db-cd40-48d1-914f-71672b4d42fa"
+                managementAccessTenantId: "ad3e45b1-3e62-4fe2-ba59-530d35ae93d5"
             }
             return profile;
         },

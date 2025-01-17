@@ -20,7 +20,6 @@ const AuthenticationHeader: React.FC<AuthenticationHeaderProps> = ({
                 color: tenantMetaData.tenantLookAndFeel?.authenticationheadertextcolor || "white",
                 borderBottom: "1px solid grey"
             }}
-
         >
             <Container
                 maxWidth="xl"

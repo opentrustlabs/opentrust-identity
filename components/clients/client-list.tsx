@@ -14,16 +14,17 @@ import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
 import DeleteForeverOutlinedIcon from '@mui/icons-material/DeleteForeverOutlined';
 import CheckOutlinedIcon from '@mui/icons-material/CheckOutlined';
 import { CLIENT_TYPES_DISPLAY } from "@/utils/consts";
-import { TenantBean, TenantContext } from "../contexts/tenant-context";
+import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
 
 const ClientList: React.FC = () => {
 
     // STATE VARIABLES
     const [mapViewExpanded, setMapViewExpanded] = React.useState(new Map());
     const [filterValue, setFilerValue] = React.useState("");
-    // HOOKS
+    
+    // CONTEXT HOOKS
     const c: ResponsiveBreakpoints = useContext(ResponsiveContext);
-    const tenantBean: TenantBean  = useContext(TenantContext);
+    const tenantBean: TenantMetaDataBean  = useContext(TenantContext);
 
     // GRAPHQL FUNCTION
     const {data, error, loading } = useQuery(CLIENTS_QUERY, {
@@ -117,7 +118,7 @@ const ClientList: React.FC = () => {
                                 <Divider></Divider>                        
                                 <Grid2  margin={"8px 0px 8px 0px"} container size={12} spacing={1}>
                                     <Grid2 size={1}><DeleteForeverOutlinedIcon /></Grid2>
-                                    <Grid2 size={8}><Link style={{color: "", fontWeight: "bold", textDecoration: "underline" }} href={`/${tenantBean.getCurrentTenant()}/clients/${client.clientId}`}>{client.clientName}</Link></Grid2>
+                                    <Grid2 size={8}><Link style={{color: "", fontWeight: "bold", textDecoration: "underline" }} href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/clients/${client.clientId}`}>{client.clientName}</Link></Grid2>
                                     <Grid2 size={2}>
                                         {client.enabled  &&
                                             <CheckOutlinedIcon />    
@@ -185,7 +186,7 @@ const ClientList: React.FC = () => {
                                 <Divider></Divider>                        
                                 <Grid2  margin={"8px 0px 8px 0px"} container size={12} spacing={1}>
                                     <Grid2 size={0.3}><DeleteForeverOutlinedIcon /></Grid2>
-                                    <Grid2 size={2.7}><Link style={{color: "", fontWeight: "bold", textDecoration: "underline" }} href={`/${tenantBean.getCurrentTenant()}/clients/${client.clientId}`}>{client.clientName}</Link></Grid2>
+                                    <Grid2 size={2.7}><Link style={{color: "", fontWeight: "bold", textDecoration: "underline" }} href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/clients/${client.clientId}`}>{client.clientName}</Link></Grid2>
                                     <Grid2 size={3}>{client.clientDescription}</Grid2>
                                     <Grid2 size={2}>{CLIENT_TYPES_DISPLAY.get(client.clientType)}</Grid2>
                                     <Grid2 size={1}>

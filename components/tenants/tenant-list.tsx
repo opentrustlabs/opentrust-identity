@@ -13,7 +13,7 @@ import { ResponsiveBreakpoints, ResponsiveContext } from "../contexts/responsive
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
 import CheckOutlinedIcon from '@mui/icons-material/CheckOutlined';
 import { TENANT_TYPES_DISPLAY } from "@/utils/consts";
-import { TenantBean, TenantContext } from "../contexts/tenant-context";
+import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
 
 const TenantList: React.FC = () => {
 
@@ -22,7 +22,7 @@ const TenantList: React.FC = () => {
     const [filterValue, setFilerValue] = React.useState("");
     // HOOKS
     const c: ResponsiveBreakpoints = useContext(ResponsiveContext);
-    const tenantBean: TenantBean  = useContext(TenantContext);
+    const tenantBean: TenantMetaDataBean  = useContext(TenantContext);
 
     // GRAPHQL FUNCTION
     const {data, error, loading } = useQuery(TENANTS_QUERY, {
@@ -107,7 +107,7 @@ const TenantList: React.FC = () => {
                             <Typography key={`${tenant.tenantId}`} component={"div"} fontSize={"0.9em"}>
                                 <Divider></Divider>                        
                                 <Grid2  margin={"8px 0px 8px 0px"} container size={12} spacing={1}>
-                                    <Grid2 size={9}><Link style={{color: "", fontWeight: "bold", textDecoration: "underline" }} href={`/${tenantBean.getCurrentTenant()}/tenants/${tenant.tenantId}`}>{tenant.tenantName}</Link></Grid2>
+                                    <Grid2 size={9}><Link style={{color: "", fontWeight: "bold", textDecoration: "underline" }} href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/tenants/${tenant.tenantId}`}>{tenant.tenantName}</Link></Grid2>
                                     <Grid2 size={2}>
                                         {tenant.enabled &&
                                             <CheckOutlinedIcon />
@@ -166,7 +166,7 @@ const TenantList: React.FC = () => {
                             <Typography key={`${tenant.tenantId}`} component={"div"} fontSize={"0.9em"}>
                                 <Divider></Divider>                        
                                 <Grid2  margin={"8px 0px 8px 0px"} container size={12} spacing={1}>
-                                    <Grid2 size={2}><Link style={{color: "", fontWeight: "bold", textDecoration: "underline" }} href={`/${tenantBean.getCurrentTenant()}/tenants/${tenant.tenantId}`}>{tenant.tenantName}</Link></Grid2>
+                                    <Grid2 size={2}><Link style={{color: "", fontWeight: "bold", textDecoration: "underline" }} href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/tenants/${tenant.tenantId}`}>{tenant.tenantName}</Link></Grid2>
                                     <Grid2 size={4}>{tenant.tenantDescription}</Grid2>
                                     <Grid2 size={2}>{TENANT_TYPES_DISPLAY.get(tenant.tenantType)}</Grid2>
                                     <Grid2 size={1}>

@@ -8,9 +8,9 @@ import { useQuery } from "@apollo/client";
 import { TENANT_META_DATA_QUERY } from "@/graphql/queries/oidc-queries";
 import ManagementHeader from "./management-header";
 import ManagementFooter from "./management-footer";
-import { PortalUserProfile } from "@/graphql/generated/graphql-types";
+import { PortalUserProfile, TenantMetaData } from "@/graphql/generated/graphql-types";
 import { AuthContext } from "../contexts/auth-context";
-import { TenantBean, TenantContext } from "../contexts/tenant-context";
+import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
 
 interface LayoutProps {
     children: ReactNode
@@ -21,7 +21,7 @@ const ManagementLayout: React.FC<LayoutProps> = ({
 
     // Context objects
     const profile: PortalUserProfile | null = useContext(AuthContext);
-    const tenantBean: TenantBean  = useContext(TenantContext);
+    
 
     // Hooks
     const params = useParams();
@@ -106,11 +106,6 @@ const ManagementLayout: React.FC<LayoutProps> = ({
         if(needsRedirect){
             router.push(redirectUri);
         }
-        else{
-            if(tenantIdFromPath){
-                tenantBean.setCurrentTenant(tenantIdFromPath)
-            }
-        }
     }, [profile, tenantIdFromPath]);
 
 
@@ -128,6 +123,11 @@ const Layout: React.FC<Props> = ({tenantId, children}) => {
     
     // State management variables
     // const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
+
+    // CONTEXT OBJECTS
+    const tenantBean: TenantMetaDataBean  = useContext(TenantContext);
+
+    // GRAPHQL QUERIES
     const {data, error, loading} = useQuery(TENANT_META_DATA_QUERY, {
         variables: {
             tenantId: tenantId
@@ -136,6 +136,9 @@ const Layout: React.FC<Props> = ({tenantId, children}) => {
         onCompleted(data) {
             if(data.getTenantMetaData === null){
                 //setErrorMessage("No tenant to display")
+            }
+            else{
+                tenantBean.setTenantMetaData(data.getTenantMetaData);
             }
         },
         onError(error) {
@@ -178,8 +181,7 @@ const Layout: React.FC<Props> = ({tenantId, children}) => {
                     </Grid2>
                 </Grid2>                
             </Container>
-            <ManagementFooter
-                
+            <ManagementFooter                
                 tenantMetaData={
                     DEFAULT_TENANT_META_DATA
                 }

@@ -3,7 +3,7 @@ import React from "react";
 import { useParams } from 'next/navigation';
 
 
-const ClientDetail: React.FC = () => {
+const ClientDetailPage: React.FC = () => {
 
     const params = useParams();
     const clientId = params?.id as string;
@@ -14,4 +14,4 @@ const ClientDetail: React.FC = () => {
 
 }
 
-export default ClientDetail;
+export default ClientDetailPage;

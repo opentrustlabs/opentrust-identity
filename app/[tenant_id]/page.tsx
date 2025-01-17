@@ -18,10 +18,16 @@ import TenantList from "@/components/tenants/tenant-list";
 import ClientList from "@/components/clients/client-list";
 import AuthorizationGroupList from "@/components/authorization-groups/authorization-group-list";
 import { ResponsiveBreakpoints, ResponsiveContext } from "@/components/contexts/responsive-context";
+import { TenantContext, TenantMetaDataBean } from "@/components/contexts/tenant-context";
+import { TenantMetaData } from "@/graphql/generated/graphql-types";
+import { TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
+import TenantDetail from "@/components/tenants/tenant-detail";
 
 
 const TenantLandingPage: React.FC = () => {
 
+    // CONTEXT HOOKS
+    const tenantBean: TenantMetaDataBean  = useContext(TenantContext);
     const breakPoints: ResponsiveBreakpoints = useContext(ResponsiveContext);
     
      // QUERY PARAMS
@@ -29,7 +35,6 @@ const TenantLandingPage: React.FC = () => {
     const section = params?.get("section");
     
 
-    //const maxWidth = isSm ? "90vw" : isMd ? "80vw" : "650px";
 
     /*
         In the content section for the landing page for the tenant, we will
@@ -55,15 +60,19 @@ const TenantLandingPage: React.FC = () => {
                     }
                 }>
                     {breakPoints.isMedium &&
-                        <NavigationMobile section={section || "tenants"} />
+                        <NavigationMobile section={section || "tenants"} tenantMetaData={tenantBean.getTenantMetaData()} />
                     }
                     {!breakPoints.isMedium &&
-                        <NavigationFull section={section || "tenants"} />
+                        <NavigationFull section={section || "tenants"} tenantMetaData={tenantBean.getTenantMetaData()} />
                     }
                 </Grid2>
+                
                 <Grid2  size={{xs: 12, sm: 12, md: 9, lg: 10, xl: 10}} sx={{padding: "8px", minHeight: breakPoints.isMedium ? "86vh" : "94vh"}}>
-                    {(section === null || section === "tenants") &&
+                    {tenantBean.getTenantMetaData().tenant.tenantType === TENANT_TYPE_ROOT_TENANT && (section === null || section === "tenants") &&
                         <TenantList />
+                    }
+                    {tenantBean.getTenantMetaData().tenant.tenantType !== TENANT_TYPE_ROOT_TENANT && (section === null || section === "tenants") &&
+                        <TenantDetail tenantId={tenantBean.getTenantMetaData().tenant.tenantId}/>    
                     }
                     {section === "clients" &&
                         <ClientList />
@@ -72,7 +81,7 @@ const TenantLandingPage: React.FC = () => {
                         <AuthorizationGroupList />
                     }
                 </Grid2>
-
+                
             </Grid2>
         </Box>
     )
@@ -82,10 +91,11 @@ const TenantLandingPage: React.FC = () => {
 
 
 interface NavigationProps {
-    section: string | null
+    section: string | null,
+    tenantMetaData: TenantMetaData
 }
 
-const NavigationFull: React.FC<NavigationProps> = ({section}) => {
+const NavigationFull: React.FC<NavigationProps> = ({section, tenantMetaData}) => {
 
     const [searchTerm, setSearchTerm] = React.useState<string | null>(null);
 
@@ -133,11 +143,13 @@ const NavigationFull: React.FC<NavigationProps> = ({section}) => {
 
             <Stack spacing={2} padding={"8px"} fontSize={"0.85em"} fontWeight={"bolder"} marginTop={"8px"} >
                 <Divider />
-                <div style={{display: "inline-flex", alignItems: "center", textDecoration: section === "tenants" ? "underline" : ""}}>
-                    <SettingsApplicationsIcon sx={{marginRight: "8px"}} />
-                    <Link href={`?section=tenants`} >Tenants</Link>
-                    
-                </div>                
+                {tenantMetaData.tenant.tenantType === TENANT_TYPE_ROOT_TENANT &&
+                    <div style={{display: "inline-flex", alignItems: "center", textDecoration: section === "tenants" ? "underline" : ""}}>
+                        <SettingsApplicationsIcon sx={{marginRight: "8px"}} />
+                        <Link href={`?section=tenants`} >Tenants</Link>
+                        
+                    </div>                
+                }                
                 <div style={{display: "inline-flex", alignItems: "center"}}>
                     <SettingsSystemDaydreamIcon sx={{marginRight: "8px"}}/>
                     <Link href={`?section=clients`} >Clients</Link>
@@ -176,7 +188,7 @@ const NavigationFull: React.FC<NavigationProps> = ({section}) => {
     )
 }
 
-const NavigationMobile: React.FC<NavigationProps> = ({section}) => {
+const NavigationMobile: React.FC<NavigationProps> = ({section, tenantMetaData}) => {
 
     const [searchTerm, setSearchTerm] = React.useState<string | null>(null);
 
@@ -236,11 +248,12 @@ const NavigationMobile: React.FC<NavigationProps> = ({section}) => {
             </Stack>
             <Drawer open={drawerOpen} onClose={toggleDrawer(false)}>
                 <Stack spacing={2} padding={"8px"} fontSize={"0.85em"} fontWeight={"bolder"} marginTop={"8px"} >
-                    
-                    <div style={{display: "inline-flex", alignItems: "center"}}>                
-                        <SettingsApplicationsIcon sx={{marginRight: "8px"}} />
-                        <Link href={`?section=tenants`} onClick={() => setDrawerOpen(false)} >Tenants</Link>                
-                    </div>
+                    {tenantMetaData.tenant.tenantType === TENANT_TYPE_ROOT_TENANT &&
+                        <div style={{display: "inline-flex", alignItems: "center"}}>                
+                            <SettingsApplicationsIcon sx={{marginRight: "8px"}} />
+                            <Link href={`?section=tenants`} onClick={() => setDrawerOpen(false)} >Tenants</Link>                
+                        </div>
+                    }
                     <div style={{display: "inline-flex", alignItems: "center"}}>
                         <SettingsSystemDaydreamIcon sx={{marginRight: "8px"}}/>
                         <Link href={`?section=clients`} onClick={() => setDrawerOpen(false)}>Clients</Link>

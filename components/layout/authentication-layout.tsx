@@ -18,7 +18,7 @@ const AuthenticationLayout: React.FC<LayoutProps> = ({
 
 
     const params = useSearchParams();
-    const tenantId = params.get(QUERY_PARAM_PREAUTH_TENANT_ID);
+    const tenantId = params?.get(QUERY_PARAM_PREAUTH_TENANT_ID);
 
     const {data, error, loading} = useQuery(TENANT_META_DATA_QUERY, {
         variables: {
