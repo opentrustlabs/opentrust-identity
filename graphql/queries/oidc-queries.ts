@@ -122,3 +122,14 @@ export const ME_QUERY = gql(`
         }
     }
 `);
+
+export const AUTHORIZATION_GROUPS_QUERY = gql(`
+    query getAuthorizationGroups {
+        getAuthorizationGroups {
+            tenantId
+            groupId
+            groupName
+            default
+        }
+    }    
+`);

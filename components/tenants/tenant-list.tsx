@@ -11,7 +11,9 @@ import Link from "next/link";
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import { ResponsiveBreakpoints, ResponsiveContext } from "../contexts/responsive-context";
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
+import CheckOutlinedIcon from '@mui/icons-material/CheckOutlined';
 import { TENANT_TYPES_DISPLAY } from "@/utils/consts";
+import { TenantBean, TenantContext } from "../contexts/tenant-context";
 
 const TenantList: React.FC = () => {
 
@@ -20,6 +22,7 @@ const TenantList: React.FC = () => {
     const [filterValue, setFilerValue] = React.useState("");
     // HOOKS
     const c: ResponsiveBreakpoints = useContext(ResponsiveContext);
+    const tenantBean: TenantBean  = useContext(TenantContext);
 
     // GRAPHQL FUNCTION
     const {data, error, loading } = useQuery(TENANTS_QUERY, {
@@ -104,8 +107,12 @@ const TenantList: React.FC = () => {
                             <Typography key={`${tenant.tenantId}`} component={"div"} fontSize={"0.9em"}>
                                 <Divider></Divider>                        
                                 <Grid2  margin={"8px 0px 8px 0px"} container size={12} spacing={1}>
-                                    <Grid2 size={9}><Link style={{color: "", fontWeight: "bold", textDecoration: "underline" }} href={`tenants/${tenant.tenantId}`}>{tenant.tenantName}</Link></Grid2>
-                                    <Grid2 size={2}>{tenant.enabled ? "true" : "false"}</Grid2>
+                                    <Grid2 size={9}><Link style={{color: "", fontWeight: "bold", textDecoration: "underline" }} href={`/${tenantBean.getCurrentTenant()}/tenants/${tenant.tenantId}`}>{tenant.tenantName}</Link></Grid2>
+                                    <Grid2 size={2}>
+                                        {tenant.enabled &&
+                                            <CheckOutlinedIcon />
+                                        }
+                                    </Grid2>
                                     <Grid2 size={1}>
                                         {mapViewExpanded.has(tenant.tenantId) && 
                                             <UnfoldLessOutlinedIcon 
@@ -159,10 +166,14 @@ const TenantList: React.FC = () => {
                             <Typography key={`${tenant.tenantId}`} component={"div"} fontSize={"0.9em"}>
                                 <Divider></Divider>                        
                                 <Grid2  margin={"8px 0px 8px 0px"} container size={12} spacing={1}>
-                                    <Grid2 size={2}><Link style={{color: "", fontWeight: "bold", textDecoration: "underline" }} href={`${tenant.tenantId}/tenants/${tenant.tenantId}`}>{tenant.tenantName}</Link></Grid2>
+                                    <Grid2 size={2}><Link style={{color: "", fontWeight: "bold", textDecoration: "underline" }} href={`/${tenantBean.getCurrentTenant()}/tenants/${tenant.tenantId}`}>{tenant.tenantName}</Link></Grid2>
                                     <Grid2 size={4}>{tenant.tenantDescription}</Grid2>
                                     <Grid2 size={2}>{TENANT_TYPES_DISPLAY.get(tenant.tenantType)}</Grid2>
-                                    <Grid2 size={1}>{tenant.enabled ? "true" : "false"}</Grid2>
+                                    <Grid2 size={1}>
+                                        {tenant.enabled &&
+                                            <CheckOutlinedIcon />
+                                        }
+                                    </Grid2>
                                     <Grid2 size={3} display={"inline-flex"} columnGap={1} ><div>{tenant.tenantId}</div><div><ContentCopyIcon /></div></Grid2>
                                 </Grid2>
                             </Typography>                                

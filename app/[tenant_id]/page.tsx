@@ -1,8 +1,6 @@
 "use client";
-import React from "react";
+import React, { useContext } from "react";
 import { Box, Divider, Drawer, Grid2, InputAdornment, Stack, TextField } from "@mui/material";
-import { useTheme } from '@mui/material/styles';
-import useMediaQuery from '@mui/material/useMediaQuery';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from "next/link";
 import SearchIcon from '@mui/icons-material/Search';
@@ -18,16 +16,18 @@ import AutoAwesomeMosaicIcon from '@mui/icons-material/AutoAwesomeMosaic';
 import SpeedIcon from '@mui/icons-material/Speed';
 import TenantList from "@/components/tenants/tenant-list";
 import ClientList from "@/components/clients/client-list";
+import AuthorizationGroupList from "@/components/authorization-groups/authorization-group-list";
+import { ResponsiveBreakpoints, ResponsiveContext } from "@/components/contexts/responsive-context";
+
 
 const TenantLandingPage: React.FC = () => {
 
-    const theme = useTheme();
-    const isMd: boolean = useMediaQuery(theme.breakpoints.down("md"));
+    const breakPoints: ResponsiveBreakpoints = useContext(ResponsiveContext);
     
      // QUERY PARAMS
     const params = useSearchParams();
     const section = params?.get("section");
-    console.log("section is " + section);
+    
 
     //const maxWidth = isSm ? "90vw" : isMd ? "80vw" : "650px";
 
@@ -44,29 +44,32 @@ const TenantLandingPage: React.FC = () => {
     */
 
     return (
-        <Box sx={{ flexGrow: 1 }}>
+        <Box sx={{ flexGrow: 1,  }}>
             <Grid2 size={12} container spacing={1} sx={{}}>                
                 <Grid2 size={{xs: 12, sm: 12, md: 3, lg: 2, xl: 2}} 
                     sx={{
                         backgroundColor: "#fefefe", 
                         padding: "8px",
-                        borderBottom: isMd ? "solid 1px lightgrey" : "",
-                        borderRight: !isMd ? "solid 1px lightgrey" : ""
+                        borderBottom: breakPoints.isMedium ? "solid 1px lightgrey" : "",
+                        borderRight: !breakPoints.isMedium? "solid 1px lightgrey" : ""
                     }
                 }>
-                    {isMd &&
+                    {breakPoints.isMedium &&
                         <NavigationMobile section={section || "tenants"} />
                     }
-                    {!isMd &&
+                    {!breakPoints.isMedium &&
                         <NavigationFull section={section || "tenants"} />
                     }
                 </Grid2>
-                <Grid2  size={{xs: 12, sm: 12, md: 9, lg: 10, xl: 10}} sx={{padding: "8px", minHeight: "88vh"}}>
+                <Grid2  size={{xs: 12, sm: 12, md: 9, lg: 10, xl: 10}} sx={{padding: "8px", minHeight: breakPoints.isMedium ? "86vh" : "94vh"}}>
                     {(section === null || section === "tenants") &&
                         <TenantList />
                     }
                     {section === "clients" &&
                         <ClientList />
+                    }
+                    {section === "authorization-groups" &&
+                        <AuthorizationGroupList />
                     }
                 </Grid2>
 
@@ -130,10 +133,11 @@ const NavigationFull: React.FC<NavigationProps> = ({section}) => {
 
             <Stack spacing={2} padding={"8px"} fontSize={"0.85em"} fontWeight={"bolder"} marginTop={"8px"} >
                 <Divider />
-                <div style={{display: "inline-flex", alignItems: "center"}}>                
+                <div style={{display: "inline-flex", alignItems: "center", textDecoration: section === "tenants" ? "underline" : ""}}>
                     <SettingsApplicationsIcon sx={{marginRight: "8px"}} />
-                    <Link href={`?section=tenants`} >Tenants</Link>                
-                </div>
+                    <Link href={`?section=tenants`} >Tenants</Link>
+                    
+                </div>                
                 <div style={{display: "inline-flex", alignItems: "center"}}>
                     <SettingsSystemDaydreamIcon sx={{marginRight: "8px"}}/>
                     <Link href={`?section=clients`} >Clients</Link>

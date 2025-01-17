@@ -10,6 +10,7 @@ import ManagementHeader from "./management-header";
 import ManagementFooter from "./management-footer";
 import { PortalUserProfile } from "@/graphql/generated/graphql-types";
 import { AuthContext } from "../contexts/auth-context";
+import { TenantBean, TenantContext } from "../contexts/tenant-context";
 
 interface LayoutProps {
     children: ReactNode
@@ -20,12 +21,12 @@ const ManagementLayout: React.FC<LayoutProps> = ({
 
     // Context objects
     const profile: PortalUserProfile | null = useContext(AuthContext);
-
+    const tenantBean: TenantBean  = useContext(TenantContext);
 
     // Hooks
     const params = useParams();
-    const tenantIdFromPath = params ? params.tenant_id : null;
-    console.log("tenant id from path is: " + tenantIdFromPath);
+    const tenantIdFromPath: string | null = params ? params.tenant_id as string : null;
+    
     const router = useRouter();
 
     // TODO? 
@@ -81,7 +82,7 @@ const ManagementLayout: React.FC<LayoutProps> = ({
         redirectUri = `/authorize/login?${QUERY_PARAM_AUTHENTICATE_TO_PORTAL}=true&${QUERY_PARAM_PREAUTH_TENANT_ID}=${tenantIdFromPath}`;
     }
     else if(tenantIdFromPath !== null && profile !== null){
-        console.log("tenant id is not null and profile is not null");
+        
         if(!profile.managementAccessTenantId){
             redirectUri = `/access-error?access_error_code=00025`;
         }
@@ -100,12 +101,18 @@ const ManagementLayout: React.FC<LayoutProps> = ({
         }
     }
 
+    // If either of the profile or the tenant id change, update the tenant context
     useEffect(() => {
         if(needsRedirect){
-            console.log("should redirect");
             router.push(redirectUri);
         }
-    }, [profile]);
+        else{
+            if(tenantIdFromPath){
+                tenantBean.setCurrentTenant(tenantIdFromPath)
+            }
+        }
+    }, [profile, tenantIdFromPath]);
+
 
 
     if(!needsRedirect) return <Layout tenantId={tenantIdFromPath as string} children={children} />
@@ -172,6 +179,7 @@ const Layout: React.FC<Props> = ({tenantId, children}) => {
                 </Grid2>                
             </Container>
             <ManagementFooter
+                
                 tenantMetaData={
                     DEFAULT_TENANT_META_DATA
                 }
@@ -193,15 +201,11 @@ const Layout: React.FC<Props> = ({tenantId, children}) => {
                 <Container
                     maxWidth="xl"                    
                     disableGutters={true}
-                    sx={{minHeight: "88vh"}}
+                    sx={{minHeight: "94vh"}}
                 >{children}
                     
                 </Container>
-                <ManagementFooter
-                    tenantMetaData={
-                        data.getTenantMetaData
-                    }
-                ></ManagementFooter>
+
                 
             </div>
         )

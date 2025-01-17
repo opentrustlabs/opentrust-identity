@@ -1,7 +1,7 @@
 "use client";
 import React, { useContext } from "react";
-import { Client, Tenant } from "@/graphql/generated/graphql-types";
-import { CLIENTS_QUERY } from "@/graphql/queries/oidc-queries";
+import { AuthorizationGroup } from "@/graphql/generated/graphql-types";
+import { AUTHORIZATION_GROUPS_QUERY } from "@/graphql/queries/oidc-queries";
 import { useQuery } from "@apollo/client";
 import { CircularProgress, Divider, Grid2, InputAdornment, Stack, TextField, Typography } from "@mui/material";
 import AddBoxIcon from '@mui/icons-material/AddBox';
@@ -11,12 +11,12 @@ import Link from "next/link";
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import { ResponsiveBreakpoints, ResponsiveContext } from "../contexts/responsive-context";
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
-import DeleteForeverOutlinedIcon from '@mui/icons-material/DeleteForeverOutlined';
 import CheckOutlinedIcon from '@mui/icons-material/CheckOutlined';
-import { CLIENT_TYPES_DISPLAY } from "@/utils/consts";
+import DeleteForeverOutlinedIcon from '@mui/icons-material/DeleteForeverOutlined';
 import { TenantBean, TenantContext } from "../contexts/tenant-context";
 
-const ClientList: React.FC = () => {
+
+const AuthorizationGroupList: React.FC = () => {
 
     // STATE VARIABLES
     const [mapViewExpanded, setMapViewExpanded] = React.useState(new Map());
@@ -24,9 +24,9 @@ const ClientList: React.FC = () => {
     // HOOKS
     const c: ResponsiveBreakpoints = useContext(ResponsiveContext);
     const tenantBean: TenantBean  = useContext(TenantContext);
-
+    
     // GRAPHQL FUNCTION
-    const {data, error, loading } = useQuery(CLIENTS_QUERY, {
+    const {data, error, loading } = useQuery(AUTHORIZATION_GROUPS_QUERY, {
 
     });
 
@@ -66,7 +66,7 @@ const ClientList: React.FC = () => {
             <Stack spacing={1} justifyContent={"space-between"} direction={"row"} fontWeight={"bold"} fontSize={"0.95em"} margin={"8px 0px 24px 0px"}>
                 <div style={{display: "inline-flex", alignItems: "center"}}>    
                     <AddBoxIcon sx={{marginRight: "8px", cursor: "pointer"}} />
-                    <span>New Client</span>
+                    <span>New Authorization Group</span>
                 </div>                
             </Stack>
             <Stack spacing={1} justifyContent={"space-between"} direction={"row"} fontWeight={"bold"} fontSize={"0.95em"} margin={"8px 0px 24px 0px"}>
@@ -97,59 +97,47 @@ const ClientList: React.FC = () => {
                     <Typography component={"div"} fontWeight={"bold"} fontSize={"0.9em"}>
                         <Grid2 container size={12} spacing={1} marginBottom={"16px"} >
                             <Grid2 size={1}></Grid2>
-                            <Grid2 size={8}>Client Name</Grid2>
-                            <Grid2 size={2}>Enabled</Grid2>
+                            <Grid2 size={8}>Group Name</Grid2>
+                            <Grid2 size={2}>Default</Grid2>
                             <Grid2 size={1}></Grid2>                                
                         </Grid2>
                     </Typography>
                     <Divider></Divider>
-                    {data.getClients.length < 1 &&
-                        <Typography component={"div"} fontSize={"0.9em"}>
-                            <Grid2  margin={"8px 0px 8px 0px"} textAlign={"center"} size={12} spacing={1}>
-                                No clients to display
-                            </Grid2>
-                        </Typography>
-                    }
             
-                    {data.getClients.map(
-                        (client: Client) => (
-                            <Typography key={`${client.clientId}`} component={"div"} fontSize={"0.9em"}>
+                    {data.getAuthorizationGroups.map(
+                        (authorizationGroup: AuthorizationGroup) => (
+                            <Typography key={`${authorizationGroup.groupId}`} component={"div"} fontSize={"0.9em"}>
                                 <Divider></Divider>                        
                                 <Grid2  margin={"8px 0px 8px 0px"} container size={12} spacing={1}>
                                     <Grid2 size={1}><DeleteForeverOutlinedIcon /></Grid2>
-                                    <Grid2 size={8}><Link style={{color: "", fontWeight: "bold", textDecoration: "underline" }} href={`/${tenantBean.getCurrentTenant()}/clients/${client.clientId}`}>{client.clientName}</Link></Grid2>
+                                    <Grid2 size={8}><Link style={{color: "", fontWeight: "bold", textDecoration: "underline" }} href={`/${tenantBean.getCurrentTenant()}/authorization-groups/${authorizationGroup.groupId}`}>{authorizationGroup.groupName}</Link></Grid2>
                                     <Grid2 size={2}>
-                                        {client.enabled  &&
-                                            <CheckOutlinedIcon />    
-                                        }
-                                    </Grid2>
+                                        {authorizationGroup.default &&                                         
+                                            <CheckOutlinedIcon />
+                                        }</Grid2>
                                     <Grid2 size={1}>
-                                        {mapViewExpanded.has(client.clientId) && 
+                                        {mapViewExpanded.has(authorizationGroup.groupId) && 
                                             <UnfoldLessOutlinedIcon 
                                                 sx={{cursor: "pointer"}}
-                                                onClick={() => removeExpanded(client.clientId)}
+                                                onClick={() => removeExpanded(authorizationGroup.groupId)}
                                             />
                                         }
-                                        {!mapViewExpanded.has(client.clientId) &&
+                                        {!mapViewExpanded.has(authorizationGroup.groupId) &&
                                             <UnfoldMoreOutlinedIcon 
                                                 sx={{cursor: "pointer"}}
-                                                onClick={() => setExpanded(client.clientId)}
+                                                onClick={() => setExpanded(authorizationGroup.groupId)}
                                             />
                                         }                                        
                                     </Grid2>
                                 </Grid2>
-                                {mapViewExpanded.has(client.clientId) &&
+                                {mapViewExpanded.has(authorizationGroup.groupId) &&
                                     <Grid2 container size={12} spacing={0.5} marginBottom={"8px"}>
                                         <Grid2 size={1}></Grid2>
                                         <Grid2 size={11} container>
-                                            <Grid2 sx={{textDecoration: "underline"}} size={12}>Description</Grid2>
-                                            <Grid2 size={12}>{client.clientDescription}</Grid2>
-                                            
-                                            <Grid2 sx={{textDecoration: "underline"}} size={12}>Client Type</Grid2>
-                                            <Grid2 size={12}>{CLIENT_TYPES_DISPLAY.get(client.clientType)}</Grid2>
-                                            
+                                            <Grid2 sx={{textDecoration: "underline"}} size={12}>Tenant</Grid2>
+                                            <Grid2 size={12}><Link href={`/${tenantBean.getCurrentTenant()}/authorization-groups/${authorizationGroup.groupId}`}>{authorizationGroup.tenantId}</Link></Grid2>
                                             <Grid2 sx={{textDecoration: "underline"}}  size={12}>Object ID</Grid2>
-                                            <Grid2 size={12} display={"inline-flex"}><div style={{marginRight: "8px"}}>{client.clientId}</div><ContentCopyIcon /></Grid2>
+                                            <Grid2 size={12} display={"inline-flex"}><div style={{marginRight: "8px"}}>{authorizationGroup.groupId}</div><ContentCopyIcon /></Grid2>
                                         </Grid2>
                                     </Grid2>
                                 }
@@ -163,37 +151,30 @@ const ClientList: React.FC = () => {
                     <Typography component={"div"} fontWeight={"bold"} fontSize={"0.9em"}>
                         <Grid2 container size={12} spacing={1} marginBottom={"16px"} >                
                                 <Grid2 size={0.3}></Grid2>
-                                <Grid2 size={2.7}>Client Name</Grid2>
-                                <Grid2 size={3}>Description</Grid2>
-                                <Grid2 size={2}>Client Type</Grid2>
-                                <Grid2 size={1}>Enabled</Grid2>
+                                <Grid2 size={2.7}>Group Name</Grid2>
+                                <Grid2 size={3}>Is Default</Grid2>
+                                <Grid2 size={2}>Tenant</Grid2>                                
                                 <Grid2 size={3}>Object ID</Grid2>
+                                <Grid2 size={1}></Grid2>
                         </Grid2>
                     </Typography>
                     <Divider></Divider>
-                    {data.getClients.length < 1 &&
-                        <Typography component={"div"} fontSize={"0.9em"}>
-                            <Grid2  margin={"8px 0px 8px 0px"} textAlign={"center"} size={12} spacing={1}>
-                                No clients to display
-                            </Grid2>
-                        </Typography>
-                    }
             
-                    {data.getClients.map(
-                        (client: Client) => (
-                            <Typography key={`${client.clientId}`} component={"div"} fontSize={"0.9em"}>
+                    {data.getAuthorizationGroups.map(
+                        (authorizationGroup: AuthorizationGroup) => (
+                            <Typography key={`${authorizationGroup.groupId}`} component={"div"} fontSize={"0.9em"}>
                                 <Divider></Divider>                        
                                 <Grid2  margin={"8px 0px 8px 0px"} container size={12} spacing={1}>
                                     <Grid2 size={0.3}><DeleteForeverOutlinedIcon /></Grid2>
-                                    <Grid2 size={2.7}><Link style={{color: "", fontWeight: "bold", textDecoration: "underline" }} href={`/${tenantBean.getCurrentTenant()}/clients/${client.clientId}`}>{client.clientName}</Link></Grid2>
-                                    <Grid2 size={3}>{client.clientDescription}</Grid2>
-                                    <Grid2 size={2}>{CLIENT_TYPES_DISPLAY.get(client.clientType)}</Grid2>
-                                    <Grid2 size={1}>
-                                        {client.enabled  &&
-                                            <CheckOutlinedIcon />    
+                                    <Grid2 size={2.7}><Link style={{color: "", fontWeight: "bold", textDecoration: "underline" }} href={`/${tenantBean.getCurrentTenant()}/authorization-groups/${authorizationGroup.groupId}`}>{authorizationGroup.groupName}</Link></Grid2>
+                                    <Grid2 size={3}>
+                                        {authorizationGroup.default &&                                         
+                                            <CheckOutlinedIcon />
                                         }
                                     </Grid2>
-                                    <Grid2 size={3} display={"inline-flex"} columnGap={1} ><div>{client.clientId}</div><div><ContentCopyIcon /></div></Grid2>
+                                    <Grid2 size={2}><Link href={`/${tenantBean.getCurrentTenant()}/tenants/${authorizationGroup.tenantId}`}>{authorizationGroup.tenantId}</Link></Grid2>
+                                    <Grid2 size={3} display={"inline-flex"} columnGap={1} ><div>{authorizationGroup.groupId}</div><div><ContentCopyIcon /></div></Grid2>
+                                    <Grid2 size={1}></Grid2>
                                 </Grid2>
                             </Typography>
                                 
@@ -206,4 +187,4 @@ const ClientList: React.FC = () => {
     )
 }
 
-export default ClientList;
+export default AuthorizationGroupList;

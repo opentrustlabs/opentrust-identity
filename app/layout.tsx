@@ -11,6 +11,7 @@ import { AUTHENTICATION_LAYOUT_PAGES } from "@/utils/consts";
 import PageTitleContextProvider from "@/components/contexts/page-title-context";
 import AuthContextProvider from "@/components/contexts/auth-context";
 import ResponsiveContextProvider from "@/components/contexts/responsive-context";
+import TenantContextProvider from "@/components/contexts/tenant-context";
 
 const geistSans = localFont({
     src: "./fonts/GeistVF.woff",
@@ -52,7 +53,9 @@ export default function RootLayout({
                             }
                             {!isAuthenticationLayoutPage &&
                                 <AuthContextProvider>
-                                    <ManagementLayout>{children}</ManagementLayout>
+                                    <TenantContextProvider>
+                                        <ManagementLayout>{children}</ManagementLayout>
+                                    </TenantContextProvider>
                                 </AuthContextProvider>
                             }
                         </PageTitleContextProvider>
