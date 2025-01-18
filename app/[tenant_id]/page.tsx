@@ -146,10 +146,15 @@ const NavigationFull: React.FC<NavigationProps> = ({section, tenantMetaData}) =>
                 {tenantMetaData.tenant.tenantType === TENANT_TYPE_ROOT_TENANT &&
                     <div style={{display: "inline-flex", alignItems: "center", textDecoration: section === "tenants" ? "underline" : ""}}>
                         <SettingsApplicationsIcon sx={{marginRight: "8px"}} />
-                        <Link href={`?section=tenants`} >Tenants</Link>
-                        
+                        <Link href={`?section=tenants`} >Tenants</Link>                        
                     </div>                
-                }                
+                }      
+                {tenantMetaData.tenant.tenantType !== TENANT_TYPE_ROOT_TENANT &&
+                    <div style={{display: "inline-flex", alignItems: "center", textDecoration: section === "tenants" ? "underline" : ""}}>
+                        <SettingsApplicationsIcon sx={{marginRight: "8px"}} />
+                        <Link href={`?section=tenants`} >My Tenant</Link>                        
+                    </div>                
+                }           
                 <div style={{display: "inline-flex", alignItems: "center"}}>
                     <SettingsSystemDaydreamIcon sx={{marginRight: "8px"}}/>
                     <Link href={`?section=clients`} >Clients</Link>
