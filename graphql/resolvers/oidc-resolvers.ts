@@ -33,6 +33,9 @@ const resolvers: Resolvers = {
                 preferredLanguageCode: "en",
                 managementAccessTenantId: "ad3e45b1-3e62-4fe2-ba59-530d35ae93d5"
             }
+            // home depot: 2a303f6d-0ebc-4590-9d12-7ebab6531d7e
+            // root tenant: ad3e45b1-3e62-4fe2-ba59-530d35ae93d5
+            // airbnb: c42c29cb-1bf7-4f6a-905e-5f74760218e2
             return profile;
         },
         getRootTenant: (_, __, oidcContext) => {

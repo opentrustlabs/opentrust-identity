@@ -7,7 +7,7 @@ import { TENANT_META_DATA_QUERY } from "@/graphql/queries/oidc-queries";
 import { PortalUserProfile } from "@/graphql/generated/graphql-types";
 import { AuthContext } from "./auth-context";
 import { TenantMetaDataBean, TenantContext } from "./tenant-context";
-import ManagementLayout from "../layout/management-layout";
+
 
 interface LayoutProps {
     children: ReactNode
@@ -26,10 +26,9 @@ const ManagementTenantFilter: React.FC<LayoutProps> = ({
     
     const router = useRouter();
 
-    // TODO? 
-    // Maybe, move this complicated logic to the AuthContextProvider?
+
     // If tenantIdFromPath is null or undefined, then we may redirect to the login screen. 
-    // Bur first we will check some things:
+    // But first we will check some things:
     //
     // 1.   Have we saved a tenant id in local stored to which the user has management access?
     // 2.   What is the user profile from the "me" call. Is there a valid user?
