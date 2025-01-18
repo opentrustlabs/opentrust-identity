@@ -11,6 +11,7 @@ const ManagementHeader: React.FC<ManagementHeaderProps> = ({
     tenantMetaData
 }) => {
 
+    console.log("will render the header");
     return (
         <div 
             style={{
