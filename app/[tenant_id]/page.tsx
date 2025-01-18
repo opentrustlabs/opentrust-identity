@@ -22,6 +22,7 @@ import { TenantContext, TenantMetaDataBean } from "@/components/contexts/tenant-
 import { TenantMetaData } from "@/graphql/generated/graphql-types";
 import { TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import TenantDetail from "@/components/tenants/tenant-detail";
+import TenantLeftNavigation from "@/components/left-navigation/tenant-left-navigation";
 
 
 const TenantLandingPage: React.FC = () => {
@@ -59,12 +60,12 @@ const TenantLandingPage: React.FC = () => {
                         borderRight: !breakPoints.isMedium? "solid 1px lightgrey" : ""
                     }
                 }>
-                    {breakPoints.isMedium &&
-                        <NavigationMobile section={section || "tenants"} tenantMetaData={tenantBean.getTenantMetaData()} />
-                    }
-                    {!breakPoints.isMedium &&
-                        <NavigationFull section={section || "tenants"} tenantMetaData={tenantBean.getTenantMetaData()} />
-                    }
+                    <TenantLeftNavigation 
+                        section={section || "tenants"} 
+                        tenantMetaData={tenantBean.getTenantMetaData()}
+                        breakPoints={breakPoints}
+
+                    />                    
                 </Grid2>
                 
                 <Grid2  size={{xs: 12, sm: 12, md: 9, lg: 10, xl: 10}} sx={{padding: "8px", minHeight: breakPoints.isMedium ? "86vh" : "94vh"}}>
@@ -90,213 +91,213 @@ const TenantLandingPage: React.FC = () => {
 }
 
 
-interface NavigationProps {
-    section: string | null,
-    tenantMetaData: TenantMetaData
-}
+// interface NavigationProps {
+//     section: string | null,
+//     tenantMetaData: TenantMetaData
+// }
 
-const NavigationFull: React.FC<NavigationProps> = ({section, tenantMetaData}) => {
+// const NavigationFull: React.FC<NavigationProps> = ({section, tenantMetaData}) => {
 
-    const [searchTerm, setSearchTerm] = React.useState<string | null>(null);
+//     const [searchTerm, setSearchTerm] = React.useState<string | null>(null);
 
-    const handleKeyPressSearch = (evt: React.KeyboardEvent) => {        
-        if (evt.key.valueOf().toLowerCase() === "enter") {
-            if(searchTerm && searchTerm.length > 2){
-                // DO SEARCH
-                console.log("will do search")
-            }
-        }
-    }
+//     const handleKeyPressSearch = (evt: React.KeyboardEvent) => {        
+//         if (evt.key.valueOf().toLowerCase() === "enter") {
+//             if(searchTerm && searchTerm.length > 2){
+//                 // DO SEARCH
+//                 console.log("will do search")
+//             }
+//         }
+//     }
 
-    const handleSearch = (evt: any) => {
-        console.log("search button was clicked");
-    }
+//     const handleSearch = (evt: any) => {
+//         console.log("search button was clicked");
+//     }
     
 
-    return (
-        <>
-            <Stack spacing={0} fontSize={"0.8em"}  direction={"row"} paddingTop={"8px"}>
-                <div>
-                    <TextField   
-                        size="small"
-                        name="searchinput"
-                        id="searchinput"
-                        onKeyDown={handleKeyPressSearch}
-                        onChange={(evt) => setSearchTerm(evt.target.value)}
-                        fullWidth={true}
-                        label={"Search"}
-                        slotProps={{
-                            input: {
-                                endAdornment: (
-                                    <InputAdornment position="end">
-                                        <SearchIcon 
-                                            onClick={handleSearch}
-                                            sx={{cursor: "pointer"}}
-                                        />
-                                    </InputAdornment>
-                                )
-                            }
-                        }}                                    
-                    />
-                </div>
-            </Stack>
+//     return (
+//         <>
+//             <Stack spacing={0} fontSize={"0.8em"}  direction={"row"} paddingTop={"8px"}>
+//                 <div>
+//                     <TextField   
+//                         size="small"
+//                         name="searchinput"
+//                         id="searchinput"
+//                         onKeyDown={handleKeyPressSearch}
+//                         onChange={(evt) => setSearchTerm(evt.target.value)}
+//                         fullWidth={true}
+//                         label={"Search"}
+//                         slotProps={{
+//                             input: {
+//                                 endAdornment: (
+//                                     <InputAdornment position="end">
+//                                         <SearchIcon 
+//                                             onClick={handleSearch}
+//                                             sx={{cursor: "pointer"}}
+//                                         />
+//                                     </InputAdornment>
+//                                 )
+//                             }
+//                         }}                                    
+//                     />
+//                 </div>
+//             </Stack>
 
-            <Stack spacing={2} padding={"8px"} fontSize={"0.85em"} fontWeight={"bolder"} marginTop={"8px"} >
-                <Divider />
-                {tenantMetaData.tenant.tenantType === TENANT_TYPE_ROOT_TENANT &&
-                    <div style={{display: "inline-flex", alignItems: "center", textDecoration: section === "tenants" ? "underline" : ""}}>
-                        <SettingsApplicationsIcon sx={{marginRight: "8px"}} />
-                        <Link href={`?section=tenants`} >Tenants</Link>                        
-                    </div>                
-                }      
-                {tenantMetaData.tenant.tenantType !== TENANT_TYPE_ROOT_TENANT &&
-                    <div style={{display: "inline-flex", alignItems: "center", textDecoration: section === "tenants" ? "underline" : ""}}>
-                        <SettingsApplicationsIcon sx={{marginRight: "8px"}} />
-                        <Link href={`?section=tenants`} >My Tenant</Link>                        
-                    </div>                
-                }           
-                <div style={{display: "inline-flex", alignItems: "center"}}>
-                    <SettingsSystemDaydreamIcon sx={{marginRight: "8px"}}/>
-                    <Link href={`?section=clients`} >Clients</Link>
-                </div>
-                <div style={{display: "inline-flex", alignItems: "center"}}>
-                    <PersonIcon sx={{marginRight: "8px"}} />
-                    <Link href={`?section=users`} >Users</Link>
-                </div>
-                <div style={{display: "inline-flex", alignItems: "center"}}>
-                    <PeopleIcon sx={{marginRight: "8px"}} />
-                    <Link href={`?section=authorization-groups`} >Authorization Groups</Link>
-                </div>
-                <div style={{display: "inline-flex", alignItems: "center"}}>
-                    <GroupIcon sx={{marginRight: "8px"}} />
-                    <Link href={`?section=authentication-groups`} >Authentication Groups</Link>
-                </div>
-                <div style={{display: "inline-flex", alignItems: "center"}}>
-                    <SettingsIcon sx={{marginRight: "8px"}} />
-                    <Link href={`?section=scope-access-control`} >Scope/Access Control</Link>
-                </div>
-                <div style={{display: "inline-flex", alignItems: "center"}}>
-                    <AutoAwesomeMosaicIcon sx={{marginRight: "8px"}} />
-                    <Link href={`?section=oidc-providers`} >OIDC Providers</Link>
-                </div>
-                <div style={{display: "inline-flex", alignItems: "center"}}>
-                    <SpeedIcon sx={{marginRight: "8px"}} />
-                    <Link href={`?section=rate-limits`} >Rate Limits</Link>
-                </div>
-                <div style={{display: "inline-flex", alignItems: "center"}}>
-                    <KeyIcon sx={{marginRight: "8px"}} />
-                    <Link href={`?section=keys`} >Keys</Link>
-                </div>
-            </Stack>
-        </>
+//             <Stack spacing={2} padding={"8px"} fontSize={"0.85em"} fontWeight={"bolder"} marginTop={"8px"} >
+//                 <Divider />
+//                 {tenantMetaData.tenant.tenantType === TENANT_TYPE_ROOT_TENANT &&
+//                     <div style={{display: "inline-flex", alignItems: "center", textDecoration: section === "tenants" ? "underline" : ""}}>
+//                         <SettingsApplicationsIcon sx={{marginRight: "8px"}} />
+//                         <Link href={`?section=tenants`} >Tenants</Link>                        
+//                     </div>                
+//                 }      
+//                 {tenantMetaData.tenant.tenantType !== TENANT_TYPE_ROOT_TENANT &&
+//                     <div style={{display: "inline-flex", alignItems: "center", textDecoration: section === "tenants" ? "underline" : ""}}>
+//                         <SettingsApplicationsIcon sx={{marginRight: "8px"}} />
+//                         <Link href={`?section=tenants`} >My Tenant</Link>                        
+//                     </div>                
+//                 }           
+//                 <div style={{display: "inline-flex", alignItems: "center"}}>
+//                     <SettingsSystemDaydreamIcon sx={{marginRight: "8px"}}/>
+//                     <Link href={`?section=clients`} >Clients</Link>
+//                 </div>
+//                 <div style={{display: "inline-flex", alignItems: "center"}}>
+//                     <PersonIcon sx={{marginRight: "8px"}} />
+//                     <Link href={`?section=users`} >Users</Link>
+//                 </div>
+//                 <div style={{display: "inline-flex", alignItems: "center"}}>
+//                     <PeopleIcon sx={{marginRight: "8px"}} />
+//                     <Link href={`?section=authorization-groups`} >Authorization Groups</Link>
+//                 </div>
+//                 <div style={{display: "inline-flex", alignItems: "center"}}>
+//                     <GroupIcon sx={{marginRight: "8px"}} />
+//                     <Link href={`?section=authentication-groups`} >Authentication Groups</Link>
+//                 </div>
+//                 <div style={{display: "inline-flex", alignItems: "center"}}>
+//                     <SettingsIcon sx={{marginRight: "8px"}} />
+//                     <Link href={`?section=scope-access-control`} >Scope/Access Control</Link>
+//                 </div>
+//                 <div style={{display: "inline-flex", alignItems: "center"}}>
+//                     <AutoAwesomeMosaicIcon sx={{marginRight: "8px"}} />
+//                     <Link href={`?section=oidc-providers`} >OIDC Providers</Link>
+//                 </div>
+//                 <div style={{display: "inline-flex", alignItems: "center"}}>
+//                     <SpeedIcon sx={{marginRight: "8px"}} />
+//                     <Link href={`?section=rate-limits`} >Rate Limits</Link>
+//                 </div>
+//                 <div style={{display: "inline-flex", alignItems: "center"}}>
+//                     <KeyIcon sx={{marginRight: "8px"}} />
+//                     <Link href={`?section=keys`} >Keys</Link>
+//                 </div>
+//             </Stack>
+//         </>
         
-    )
-}
+//     )
+// }
 
-const NavigationMobile: React.FC<NavigationProps> = ({section, tenantMetaData}) => {
+// const NavigationMobile: React.FC<NavigationProps> = ({section, tenantMetaData}) => {
 
-    const [searchTerm, setSearchTerm] = React.useState<string | null>(null);
+//     const [searchTerm, setSearchTerm] = React.useState<string | null>(null);
 
-    const [drawerOpen, setDrawerOpen] = React.useState(false);
+//     const [drawerOpen, setDrawerOpen] = React.useState(false);
 
-    const toggleDrawer = (newOpen: boolean) => () => {
-        setDrawerOpen(newOpen);
-    };
+//     const toggleDrawer = (newOpen: boolean) => () => {
+//         setDrawerOpen(newOpen);
+//     };
 
-    const handleKeyPressSearch = (evt: React.KeyboardEvent) => {        
-        if (evt.key.valueOf().toLowerCase() === "enter") {
-            if(searchTerm && searchTerm.length > 2){
-                // DO SEARCH
-                console.log("will do search")
-            }
-        }
-    }
+//     const handleKeyPressSearch = (evt: React.KeyboardEvent) => {        
+//         if (evt.key.valueOf().toLowerCase() === "enter") {
+//             if(searchTerm && searchTerm.length > 2){
+//                 // DO SEARCH
+//                 console.log("will do search")
+//             }
+//         }
+//     }
 
-    const handleSearch = (evt: any) => {
-        console.log("search button was clicked");
-    }
+//     const handleSearch = (evt: any) => {
+//         console.log("search button was clicked");
+//     }
 
-    const showMenuItems = () => {
-        console.log("will show menu items")
-        setDrawerOpen(true);
-    }
+//     const showMenuItems = () => {
+//         console.log("will show menu items")
+//         setDrawerOpen(true);
+//     }
 
 
-    return (
-        <>
-            <Stack direction={"row"}  spacing={2} alignItems={"center"}>
-                <MenuIcon 
-                    sx={{cursor: "pointer"}}
-                    onClick={showMenuItems}
-                />
-                <TextField   
-                        size="small"
-                        name="searchinput"
-                        id="searchinput"
-                        onKeyDown={handleKeyPressSearch}
-                        onChange={(evt) => setSearchTerm(evt.target.value)}
-                        fullWidth={true}
-                        label={"Search"}
-                        slotProps={{
-                            input: {
-                                endAdornment: (
-                                    <InputAdornment position="end">
-                                        <SearchIcon 
-                                            onClick={handleSearch}
-                                            sx={{cursor: "pointer"}}
-                                        />
-                                    </InputAdornment>
-                                )
-                            }
-                        }}                                    
-                    />
-            </Stack>
-            <Drawer open={drawerOpen} onClose={toggleDrawer(false)}>
-                <Stack spacing={2} padding={"8px"} fontSize={"0.85em"} fontWeight={"bolder"} marginTop={"8px"} >
-                    {tenantMetaData.tenant.tenantType === TENANT_TYPE_ROOT_TENANT &&
-                        <div style={{display: "inline-flex", alignItems: "center"}}>                
-                            <SettingsApplicationsIcon sx={{marginRight: "8px"}} />
-                            <Link href={`?section=tenants`} onClick={() => setDrawerOpen(false)} >Tenants</Link>                
-                        </div>
-                    }
-                    <div style={{display: "inline-flex", alignItems: "center"}}>
-                        <SettingsSystemDaydreamIcon sx={{marginRight: "8px"}}/>
-                        <Link href={`?section=clients`} onClick={() => setDrawerOpen(false)}>Clients</Link>
-                    </div>
-                    <div style={{display: "inline-flex", alignItems: "center"}}>
-                        <PersonIcon sx={{marginRight: "8px"}} />
-                        <Link href={`?section=users`} onClick={() => setDrawerOpen(false)}>Users</Link>
-                    </div>
-                    <div style={{display: "inline-flex", alignItems: "center"}}>
-                        <PeopleIcon sx={{marginRight: "8px"}} />
-                        <Link href={`?section=authorization-groups`} onClick={() => setDrawerOpen(false)}>Authorization Groups</Link>
-                    </div>
-                    <div style={{display: "inline-flex", alignItems: "center"}}>
-                        <GroupIcon sx={{marginRight: "8px"}} />
-                        <Link href={`?section=authentication-groups`} onClick={() => setDrawerOpen(false)}>Authentication Groups</Link>
-                    </div>
-                    <div style={{display: "inline-flex", alignItems: "center"}}>
-                        <SettingsIcon sx={{marginRight: "8px"}} />
-                        <Link href={`?section=scope-access-control`} onClick={() => setDrawerOpen(false)}>Scope/Access Control</Link>
-                    </div>
-                    <div style={{display: "inline-flex", alignItems: "center"}}>
-                        <AutoAwesomeMosaicIcon sx={{marginRight: "8px"}} />
-                        <Link href={`?section=oidc-providers`} onClick={() => setDrawerOpen(false)}>OIDC Providers</Link>
-                    </div>
-                    <div style={{display: "inline-flex", alignItems: "center"}}>
-                        <SpeedIcon sx={{marginRight: "8px"}} />
-                        <Link href={`?section=rate-limits`} onClick={() => setDrawerOpen(false)}>Rate Limits</Link>
-                    </div>
-                    <div style={{display: "inline-flex", alignItems: "center"}}>
-                        <KeyIcon sx={{marginRight: "8px"}} />
-                        <Link href={`?section=keys`} onClick={() => setDrawerOpen(false)}>Keys</Link>
-                    </div>
-                </Stack>
-            </Drawer>
-        </>
+//     return (
+//         <>
+//             <Stack direction={"row"}  spacing={2} alignItems={"center"}>
+//                 <MenuIcon 
+//                     sx={{cursor: "pointer"}}
+//                     onClick={showMenuItems}
+//                 />
+//                 <TextField   
+//                         size="small"
+//                         name="searchinput"
+//                         id="searchinput"
+//                         onKeyDown={handleKeyPressSearch}
+//                         onChange={(evt) => setSearchTerm(evt.target.value)}
+//                         fullWidth={true}
+//                         label={"Search"}
+//                         slotProps={{
+//                             input: {
+//                                 endAdornment: (
+//                                     <InputAdornment position="end">
+//                                         <SearchIcon 
+//                                             onClick={handleSearch}
+//                                             sx={{cursor: "pointer"}}
+//                                         />
+//                                     </InputAdornment>
+//                                 )
+//                             }
+//                         }}                                    
+//                     />
+//             </Stack>
+//             <Drawer open={drawerOpen} onClose={toggleDrawer(false)}>
+//                 <Stack spacing={2} padding={"8px"} fontSize={"0.85em"} fontWeight={"bolder"} marginTop={"8px"} >
+//                     {tenantMetaData.tenant.tenantType === TENANT_TYPE_ROOT_TENANT &&
+//                         <div style={{display: "inline-flex", alignItems: "center"}}>                
+//                             <SettingsApplicationsIcon sx={{marginRight: "8px"}} />
+//                             <Link href={`?section=tenants`} onClick={() => setDrawerOpen(false)} >Tenants</Link>                
+//                         </div>
+//                     }
+//                     <div style={{display: "inline-flex", alignItems: "center"}}>
+//                         <SettingsSystemDaydreamIcon sx={{marginRight: "8px"}}/>
+//                         <Link href={`?section=clients`} onClick={() => setDrawerOpen(false)}>Clients</Link>
+//                     </div>
+//                     <div style={{display: "inline-flex", alignItems: "center"}}>
+//                         <PersonIcon sx={{marginRight: "8px"}} />
+//                         <Link href={`?section=users`} onClick={() => setDrawerOpen(false)}>Users</Link>
+//                     </div>
+//                     <div style={{display: "inline-flex", alignItems: "center"}}>
+//                         <PeopleIcon sx={{marginRight: "8px"}} />
+//                         <Link href={`?section=authorization-groups`} onClick={() => setDrawerOpen(false)}>Authorization Groups</Link>
+//                     </div>
+//                     <div style={{display: "inline-flex", alignItems: "center"}}>
+//                         <GroupIcon sx={{marginRight: "8px"}} />
+//                         <Link href={`?section=authentication-groups`} onClick={() => setDrawerOpen(false)}>Authentication Groups</Link>
+//                     </div>
+//                     <div style={{display: "inline-flex", alignItems: "center"}}>
+//                         <SettingsIcon sx={{marginRight: "8px"}} />
+//                         <Link href={`?section=scope-access-control`} onClick={() => setDrawerOpen(false)}>Scope/Access Control</Link>
+//                     </div>
+//                     <div style={{display: "inline-flex", alignItems: "center"}}>
+//                         <AutoAwesomeMosaicIcon sx={{marginRight: "8px"}} />
+//                         <Link href={`?section=oidc-providers`} onClick={() => setDrawerOpen(false)}>OIDC Providers</Link>
+//                     </div>
+//                     <div style={{display: "inline-flex", alignItems: "center"}}>
+//                         <SpeedIcon sx={{marginRight: "8px"}} />
+//                         <Link href={`?section=rate-limits`} onClick={() => setDrawerOpen(false)}>Rate Limits</Link>
+//                     </div>
+//                     <div style={{display: "inline-flex", alignItems: "center"}}>
+//                         <KeyIcon sx={{marginRight: "8px"}} />
+//                         <Link href={`?section=keys`} onClick={() => setDrawerOpen(false)}>Keys</Link>
+//                     </div>
+//                 </Stack>
+//             </Drawer>
+//         </>
         
-    )
-}
+//     )
+// }
 
 
 export default TenantLandingPage;
