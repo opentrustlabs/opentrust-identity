@@ -266,6 +266,13 @@ type FederatedOIDCProviderDomainRel {
     domain: String!
 }
 
+## TODO
+## Change this to TenantRegistrationConfig
+## and add
+## 1.   requireAccessTermsAndConditions    Boolean!
+## 2.   termsAncConditionsUri              String
+## 3.   requireCaptchaOnRegistration       Boolean!
+## 4.   captchaConfig                      To be determined
 type TenantPasswordConfig {
     tenantId: String!
     passwordMinLength: Int!
@@ -282,6 +289,13 @@ type TenantPasswordConfig {
     mfaTypesAllowed: String
 }
 
+
+type TenantLegacyUserMigrationConfig {
+    tenantId: String!
+    authenticationUri: String!
+    userProfileUri: String!
+    usernameCheckUri: String!
+}
 
 # 1.    tenantId -      Parent tenant (write once, read only)
 # 2.    clientId -      GUID
