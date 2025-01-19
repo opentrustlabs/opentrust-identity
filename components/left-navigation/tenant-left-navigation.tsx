@@ -90,46 +90,46 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
                         {tenantMetaData.tenant.tenantType === TENANT_TYPE_ROOT_TENANT &&
                             <div style={{display: "inline-flex", alignItems: "center", textDecoration: section === "tenants" ? "underline" : ""}}>
                                 <SettingsApplicationsIcon sx={{marginRight: "8px"}} />
-                                <Link href={`?section=tenants`} >Tenants</Link>                        
+                                <Link href={`/${tenantMetaData.tenant.tenantId}?section=tenants`} >Tenants</Link>                        
                             </div>                
                         }      
                         {tenantMetaData.tenant.tenantType !== TENANT_TYPE_ROOT_TENANT &&
                             <div style={{display: "inline-flex", alignItems: "center", textDecoration: section === "tenants" ? "underline" : ""}}>
                                 <SettingsApplicationsIcon sx={{marginRight: "8px"}} />
-                                <Link href={`?section=tenants`} >My Tenant</Link>                        
+                                <Link href={`/${tenantMetaData.tenant.tenantId}?section=tenants`} >My Tenant</Link>                        
                             </div>                
                         }           
                         <div style={{display: "inline-flex", alignItems: "center"}}>
                             <SettingsSystemDaydreamIcon sx={{marginRight: "8px"}}/>
-                            <Link href={`?section=clients`} >Clients</Link>
+                            <Link href={`/${tenantMetaData.tenant.tenantId}?section=clients`} >Clients</Link>
                         </div>
                         <div style={{display: "inline-flex", alignItems: "center"}}>
                             <PersonIcon sx={{marginRight: "8px"}} />
-                            <Link href={`?section=users`} >Users</Link>
+                            <Link href={`/${tenantMetaData.tenant.tenantId}?section=users`} >Users</Link>
                         </div>
                         <div style={{display: "inline-flex", alignItems: "center"}}>
                             <PeopleIcon sx={{marginRight: "8px"}} />
-                            <Link href={`?section=authorization-groups`} >Authorization Groups</Link>
+                            <Link href={`/${tenantMetaData.tenant.tenantId}?section=authorization-groups`} >Authorization Groups</Link>
                         </div>
                         <div style={{display: "inline-flex", alignItems: "center"}}>
                             <GroupIcon sx={{marginRight: "8px"}} />
-                            <Link href={`?section=authentication-groups`} >Authentication Groups</Link>
+                            <Link href={`/${tenantMetaData.tenant.tenantId}?section=authentication-groups`} >Authentication Groups</Link>
                         </div>
                         <div style={{display: "inline-flex", alignItems: "center"}}>
                             <SettingsIcon sx={{marginRight: "8px"}} />
-                            <Link href={`?section=scope-access-control`} >Scope/Access Control</Link>
+                            <Link href={`/${tenantMetaData.tenant.tenantId}?section=scope-access-control`} >Scope/Access Control</Link>
                         </div>
                         <div style={{display: "inline-flex", alignItems: "center"}}>
                             <AutoAwesomeMosaicIcon sx={{marginRight: "8px"}} />
-                            <Link href={`?section=oidc-providers`} >OIDC Providers</Link>
+                            <Link href={`/${tenantMetaData.tenant.tenantId}?section=oidc-providers`} >OIDC Providers</Link>
                         </div>
                         <div style={{display: "inline-flex", alignItems: "center"}}>
                             <SpeedIcon sx={{marginRight: "8px"}} />
-                            <Link href={`?section=rate-limits`} >Rate Limits</Link>
+                            <Link href={`/${tenantMetaData.tenant.tenantId}?section=rate-limits`} >Rate Limits</Link>
                         </div>
                         <div style={{display: "inline-flex", alignItems: "center"}}>
                             <KeyIcon sx={{marginRight: "8px"}} />
-                            <Link href={`?section=keys`} >Keys</Link>
+                            <Link href={`/${tenantMetaData.tenant.tenantId}?section=keys`} >Keys</Link>
                         </div>
                     </Stack>
                 </>
@@ -168,40 +168,40 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
                             {tenantMetaData.tenant.tenantType === TENANT_TYPE_ROOT_TENANT &&
                                 <div style={{display: "inline-flex", alignItems: "center"}}>                
                                     <SettingsApplicationsIcon sx={{marginRight: "8px"}} />
-                                    <Link href={`?section=tenants`} onClick={() => setDrawerOpen(false)} >Tenants</Link>                
+                                    <Link href={`/${tenantMetaData.tenant.tenantId}?section=tenants`} onClick={() => setDrawerOpen(false)} >Tenants</Link>                
                                 </div>
                             }
                             <div style={{display: "inline-flex", alignItems: "center"}}>
                                 <SettingsSystemDaydreamIcon sx={{marginRight: "8px"}}/>
-                                <Link href={`?section=clients`} onClick={() => setDrawerOpen(false)}>Clients</Link>
+                                <Link href={`/${tenantMetaData.tenant.tenantId}?section=clients`} onClick={() => setDrawerOpen(false)}>Clients</Link>
                             </div>
                             <div style={{display: "inline-flex", alignItems: "center"}}>
                                 <PersonIcon sx={{marginRight: "8px"}} />
-                                <Link href={`?section=users`} onClick={() => setDrawerOpen(false)}>Users</Link>
+                                <Link href={`/${tenantMetaData.tenant.tenantId}?section=users`} onClick={() => setDrawerOpen(false)}>Users</Link>
                             </div>
                             <div style={{display: "inline-flex", alignItems: "center"}}>
                                 <PeopleIcon sx={{marginRight: "8px"}} />
-                                <Link href={`?section=authorization-groups`} onClick={() => setDrawerOpen(false)}>Authorization Groups</Link>
+                                <Link href={`/${tenantMetaData.tenant.tenantId}?section=authorization-groups`} onClick={() => setDrawerOpen(false)}>Authorization Groups</Link>
                             </div>
                             <div style={{display: "inline-flex", alignItems: "center"}}>
                                 <GroupIcon sx={{marginRight: "8px"}} />
-                                <Link href={`?section=authentication-groups`} onClick={() => setDrawerOpen(false)}>Authentication Groups</Link>
+                                <Link href={`/${tenantMetaData.tenant.tenantId}?section=authentication-groups`} onClick={() => setDrawerOpen(false)}>Authentication Groups</Link>
                             </div>
                             <div style={{display: "inline-flex", alignItems: "center"}}>
                                 <SettingsIcon sx={{marginRight: "8px"}} />
-                                <Link href={`?section=scope-access-control`} onClick={() => setDrawerOpen(false)}>Scope/Access Control</Link>
+                                <Link href={`/${tenantMetaData.tenant.tenantId}?section=scope-access-control`} onClick={() => setDrawerOpen(false)}>Scope/Access Control</Link>
                             </div>
                             <div style={{display: "inline-flex", alignItems: "center"}}>
                                 <AutoAwesomeMosaicIcon sx={{marginRight: "8px"}} />
-                                <Link href={`?section=oidc-providers`} onClick={() => setDrawerOpen(false)}>OIDC Providers</Link>
+                                <Link href={`/${tenantMetaData.tenant.tenantId}?section=oidc-providers`} onClick={() => setDrawerOpen(false)}>OIDC Providers</Link>
                             </div>
                             <div style={{display: "inline-flex", alignItems: "center"}}>
                                 <SpeedIcon sx={{marginRight: "8px"}} />
-                                <Link href={`?section=rate-limits`} onClick={() => setDrawerOpen(false)}>Rate Limits</Link>
+                                <Link href={`/${tenantMetaData.tenant.tenantId}?section=rate-limits`} onClick={() => setDrawerOpen(false)}>Rate Limits</Link>
                             </div>
                             <div style={{display: "inline-flex", alignItems: "center"}}>
                                 <KeyIcon sx={{marginRight: "8px"}} />
-                                <Link href={`?section=keys`} onClick={() => setDrawerOpen(false)}>Keys</Link>
+                                <Link href={`/${tenantMetaData.tenant.tenantId}?section=keys`} onClick={() => setDrawerOpen(false)}>Keys</Link>
                             </div>
                         </Stack>
                     </Drawer>

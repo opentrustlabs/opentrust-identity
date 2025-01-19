@@ -1,28 +1,13 @@
 "use client";
 import React, { useContext } from "react";
-import { Box, Divider, Drawer, Grid2, InputAdornment, Stack, TextField } from "@mui/material";
-import { useSearchParams, useRouter } from 'next/navigation';
-import Link from "next/link";
-import SearchIcon from '@mui/icons-material/Search';
-import MenuIcon from '@mui/icons-material/Menu';
-import GroupIcon from '@mui/icons-material/Group';
-import PeopleIcon from '@mui/icons-material/People';
-import KeyIcon from '@mui/icons-material/Key';
-import PersonIcon from '@mui/icons-material/Person';
-import SettingsApplicationsIcon from '@mui/icons-material/SettingsApplications';
-import SettingsSystemDaydreamIcon from '@mui/icons-material/SettingsSystemDaydream';
-import SettingsIcon from '@mui/icons-material/Settings';
-import AutoAwesomeMosaicIcon from '@mui/icons-material/AutoAwesomeMosaic';
-import SpeedIcon from '@mui/icons-material/Speed';
+import { useSearchParams } from 'next/navigation';
 import TenantList from "@/components/tenants/tenant-list";
 import ClientList from "@/components/clients/client-list";
 import AuthorizationGroupList from "@/components/authorization-groups/authorization-group-list";
 import { ResponsiveBreakpoints, ResponsiveContext } from "@/components/contexts/responsive-context";
 import { TenantContext, TenantMetaDataBean } from "@/components/contexts/tenant-context";
-import { TenantMetaData } from "@/graphql/generated/graphql-types";
 import { TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import TenantDetail from "@/components/tenants/tenant-detail";
-import TenantLeftNavigation from "@/components/left-navigation/tenant-left-navigation";
 
 
 const TenantLandingPage: React.FC = () => {
@@ -50,44 +35,23 @@ const TenantLandingPage: React.FC = () => {
     */
 
     return (
-        <Box sx={{ flexGrow: 1,  }}>
-            <Grid2 size={12} container spacing={1} sx={{}}>                
-                <Grid2 size={{xs: 12, sm: 12, md: 3, lg: 2, xl: 2}} 
-                    sx={{
-                        backgroundColor: "#fefefe", 
-                        padding: "8px",
-                        borderBottom: breakPoints.isMedium ? "solid 1px lightgrey" : "",
-                        borderRight: !breakPoints.isMedium? "solid 1px lightgrey" : ""
-                    }
-                }>
-                    <TenantLeftNavigation 
-                        section={section || "tenants"} 
-                        tenantMetaData={tenantBean.getTenantMetaData()}
-                        breakPoints={breakPoints}
-
-                    />                    
-                </Grid2>
-                
-                <Grid2  size={{xs: 12, sm: 12, md: 9, lg: 10, xl: 10}} sx={{padding: "8px", minHeight: breakPoints.isMedium ? "86vh" : "94vh"}}>
-                    {tenantBean.getTenantMetaData().tenant.tenantType === TENANT_TYPE_ROOT_TENANT && (section === null || section === "tenants") &&
-                        <TenantList />
-                    }
-                    {tenantBean.getTenantMetaData().tenant.tenantType !== TENANT_TYPE_ROOT_TENANT && (section === null || section === "tenants") &&
-                        <TenantDetail tenantId={tenantBean.getTenantMetaData().tenant.tenantId}/>    
-                    }
-                    {section === "clients" &&
-                        <ClientList />
-                    }
-                    {section === "authorization-groups" &&
-                        <AuthorizationGroupList />
-                    }
-                </Grid2>
-                
-            </Grid2>
-        </Box>
+        <>
+            {tenantBean.getTenantMetaData().tenant.tenantType === TENANT_TYPE_ROOT_TENANT && (section === null || section === "tenants") &&
+                <TenantList />
+            }
+            {tenantBean.getTenantMetaData().tenant.tenantType !== TENANT_TYPE_ROOT_TENANT && (section === null || section === "tenants") &&
+                <TenantDetail tenantId={tenantBean.getTenantMetaData().tenant.tenantId} />
+            }
+            {section === "clients" &&
+                <ClientList />
+            }
+            {section === "authorization-groups" &&
+                <AuthorizationGroupList />
+            }
+        </>
     )
 
-    
+
 }
 
 
