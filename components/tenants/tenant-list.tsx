@@ -35,14 +35,7 @@ const TenantList: React.FC = () => {
         setFilerValue(evt.target.value);
     }
 
-    const isExpanded = (section: string): boolean => {
-        console.log("is expanded")
-        if(mapViewExpanded.has(section)){
-            return true;
-        }
-        return false;
-    }
-
+  
     const setExpanded = (section: string): void => {
         console.log("set is expanded")
         mapViewExpanded.set(section, true);

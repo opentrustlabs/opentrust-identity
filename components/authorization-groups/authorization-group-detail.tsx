@@ -1,37 +1,18 @@
 "use client";
-import React, { useContext } from "react";
+import React from "react";
 import { Divider, List, ListItem, Paper, Stack } from "@mui/material";
 import Grid2 from "@mui/material/Grid2";
 import Typography from "@mui/material/Typography";
-import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 
-import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
-import BreadcrumbComponent from "../breadcrumbs/breadcrumbs";
-import { TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 
-export interface ClientDetailProps {
-    clientId: string
+export interface AuthorizationGroupDetailProps {
+    authorizationGroupId: string
 }
-const ClientDetail: React.FC<ClientDetailProps> = ({ clientId }) => {
 
-    const tenantBean: TenantMetaDataBean = useContext(TenantContext);
+const AuthorizationGroupDetail: React.FC<AuthorizationGroupDetailProps> = ({authorizationGroupId}) => {
 
     return (
         <Typography component={"div"} fontSize={"0.9em"}>
-            <BreadcrumbComponent  breadCrumbs={[
-                    {
-                        href: `/${tenantBean.getTenantMetaData().tenant.tenantId}`,
-                        linkText: tenantBean.getTenantMetaData().tenant.tenantType === TENANT_TYPE_ROOT_TENANT ? `Tenant List` : `${tenantBean.getTenantMetaData().tenant.tenantName}`
-                    },
-                    {
-                        href: `/${tenantBean.getTenantMetaData().tenant.tenantId}/clients`,
-                        linkText: "Clients"
-                    },
-                    {
-                        href: null,
-                        linkText: "Prod Client For Amgen"
-                    }
-                ]} />
             <Grid2 container size={12} spacing={3} marginBottom={"16px"}>
                 <Grid2 size={9}>
                     <Grid2 container size={12} spacing={2}>
@@ -51,19 +32,14 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ clientId }) => {
 
                             </Paper>
                         </Grid2>
-                        
-                        <Grid2 className="detail-page-subheader" size={12}>Redirect URIs</Grid2>
-                        <Grid2 size={12}>
-                            <div style={{ height: "128px", backgroundColor: "lightgray" }}></div>
-                            
-                        </Grid2>
+                                                
 
                         <Grid2 className="detail-page-subheader" size={12}>Access Control</Grid2>
                         <Grid2 size={12}>
                             <div style={{ height: "128px", backgroundColor: "lightgray" }}></div>
                         </Grid2>
 
-                        <Grid2 className="detail-page-subheader" size={12}>Authentication Groups</Grid2>
+                        <Grid2 className="detail-page-subheader" size={12}>Users</Grid2>
                         <Grid2 size={12}>
                             <div style={{ height: "128px", backgroundColor: "lightgray" }}></div>
                         </Grid2>
@@ -80,4 +56,4 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ clientId }) => {
     )
 }
 
-export default ClientDetail;
+export default AuthorizationGroupDetail;
