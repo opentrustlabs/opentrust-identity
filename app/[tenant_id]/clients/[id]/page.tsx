@@ -1,6 +1,7 @@
 "use client";
 import React from "react";
 import { useParams } from 'next/navigation';
+import ClientDetail from "@/components/clients/client-detail";
 
 
 const ClientDetailPage: React.FC = () => {
@@ -9,7 +10,7 @@ const ClientDetailPage: React.FC = () => {
     const clientId = params?.id as string;
 
     return (
-        <div>Client id is {clientId}</div>
+        <ClientDetail clientId={clientId} />
     )
 
 }

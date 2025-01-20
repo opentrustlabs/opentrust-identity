@@ -14,6 +14,7 @@ import ResponsiveContextProvider from "@/components/contexts/responsive-context"
 import TenantContextProvider from "@/components/contexts/tenant-context";
 import ManagementTenantFilter from "@/components/contexts/management-tenant-filter";
 
+
 const geistSans = localFont({
     src: "./fonts/GeistVF.woff",
     variable: "--font-geist-sans",
