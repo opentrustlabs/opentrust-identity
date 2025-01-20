@@ -1,16 +1,16 @@
 "use client";
+import TenantDetail from '@/components/tenants/tenant-detail';
 import { useParams } from 'next/navigation';
 import React from "react";
 
-const TenantDetail: React.FC = () => {
+const TenantDetailPage: React.FC = () => {
 
     const params = useParams();
     const tenantId = params?.id as string;
 
     return (
-
-        <div>Tenant id is {tenantId}</div>
+        <TenantDetail tenantId={tenantId} />
     )
 }
 
-export default TenantDetail;
+export default TenantDetailPage;
