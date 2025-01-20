@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect } from "react";
+import React from "react";
 import Image from "next/image";
 import styles from "./page.module.css";
 
@@ -41,15 +41,6 @@ import styles from "./page.module.css";
 
 const Home: React.FC = () => {
 
-    useEffect(
-        () => {
-            console.log("checkpoint 1");
-            document.title = "This is the age"
-        },
-        []
-    );
-
-    console.log("checkpoint 2")
   return (
     
     <div className={styles.page}>

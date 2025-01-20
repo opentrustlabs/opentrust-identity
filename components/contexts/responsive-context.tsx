@@ -3,12 +3,13 @@ import React, { Context, ReactNode } from "react";
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 
-export interface ResponsiveBreakpoints {
+export interface ResponsiveBreakpoints {    
     isExtraSmall: boolean,
     isSmall: boolean,
     isMedium: boolean,
     isLarge: boolean,
-    isExtraLarge: boolean
+    isExtraLarge: boolean,
+    isGreaterThanExtraLarge: boolean;
 }
 
 export interface ResponsiveContextProps {
@@ -17,6 +18,7 @@ export interface ResponsiveContextProps {
 
 
 export const ResponsiveContext: Context<ResponsiveBreakpoints> = React.createContext<ResponsiveBreakpoints>({
+    isGreaterThanExtraLarge: false,
     isExtraLarge: true,
     isLarge: false,
     isMedium: false,
@@ -35,12 +37,14 @@ const ResponsiveContextProvider: React.FC<ResponsiveContextProps> = ({
     const isMedium: boolean = useMediaQuery(theme.breakpoints.down("md"));
     const isLarge: boolean = useMediaQuery(theme.breakpoints.down("lg"));
     const isExtraLarge: boolean = useMediaQuery(theme.breakpoints.down("xl"));
+    const isGreaterThanExtraLarge: boolean = useMediaQuery(theme.breakpoints.up("xl"));
     const r: ResponsiveBreakpoints = {
         isExtraSmall,
         isSmall,
         isMedium,
         isLarge,
-        isExtraLarge
+        isExtraLarge,
+        isGreaterThanExtraLarge
     }
 
     return (

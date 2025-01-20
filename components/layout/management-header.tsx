@@ -1,7 +1,8 @@
 "use client";
 import { TenantMetaData } from "@/graphql/generated/graphql-types";
 import { Container, Stack } from "@mui/material";
-import React from "react";
+import React, { useContext } from "react";
+import { ResponsiveBreakpoints, ResponsiveContext } from "../contexts/responsive-context";
 
 export interface ManagementHeaderProps {
     tenantMetaData: TenantMetaData
@@ -11,6 +12,7 @@ const ManagementHeader: React.FC<ManagementHeaderProps> = ({
     tenantMetaData
 }) => {
 
+    const responsiveBreakpoints: ResponsiveBreakpoints = useContext(ResponsiveContext);
     return (
         <div 
             style={{
@@ -23,7 +25,7 @@ const ManagementHeader: React.FC<ManagementHeaderProps> = ({
 
         >
             <Container
-                maxWidth="xl"
+                maxWidth={responsiveBreakpoints.isGreaterThanExtraLarge ? "xl" : "lg"}
                 sx={{height: "100%", alignItems: "center", display: "flex"}}                
             >
                 <Stack 

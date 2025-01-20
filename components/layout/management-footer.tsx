@@ -25,7 +25,7 @@ const ManagementFooter: React.FC<ManagementFooterProps> = ({
 
         >        
             <Container
-                maxWidth="xl"
+                maxWidth={false}
             >
                 <div>
                     {

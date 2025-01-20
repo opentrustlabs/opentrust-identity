@@ -7,6 +7,7 @@ import { TENANT_META_DATA_QUERY } from "@/graphql/queries/oidc-queries";
 import { PortalUserProfile } from "@/graphql/generated/graphql-types";
 import { AuthContext } from "./auth-context";
 import { TenantMetaDataBean, TenantContext } from "./tenant-context";
+import { Backdrop, Box, CircularProgress } from "@mui/material";
 
 
 interface LayoutProps {
@@ -104,19 +105,22 @@ const ManagementTenantFilter: React.FC<LayoutProps> = ({
         }
     }, [profile, tenantIdFromPath]);
 
+    const [isComplete, setIsComplete] = React.useState(false);
 
     // GRAPHQL QUERIES
-    const {data, error, loading} = useQuery(TENANT_META_DATA_QUERY, {
+    const {data, error, loading, } = useQuery(TENANT_META_DATA_QUERY, {
         variables: {
             tenantId: tenantIdFromPath
         },
         skip: needsRedirect,
+        ssr: false,
         onCompleted(data) {
             if(data.getTenantMetaData === null){
                 //setErrorMessage("No tenant to display")
             }
             else{
                 tenantBean.setTenantMetaData(data.getTenantMetaData);
+                setIsComplete(true);
             }
         },
         onError(error) {
@@ -132,11 +136,10 @@ const ManagementTenantFilter: React.FC<LayoutProps> = ({
         },
     });
 
-    if(!needsRedirect && loading) return <>TODO Add Loading view</> 
-    //if(!needsRedirect && data) return <ManagementLayout  children={children} />
-    if(!needsRedirect && data) return <>{children}</>
-    if(!needsRedirect && error) return <>TODO Error message here</>
-    return <></>
+    if(!needsRedirect && loading) return <div></div>
+    else if(!needsRedirect && data && isComplete) return <>{children}</>
+    else if(!needsRedirect && error) return <>TODO Error message here</>
+    else return <></>
     
 }
 

@@ -7,7 +7,6 @@ import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
 import TenantLeftNavigation from "../left-navigation/tenant-left-navigation";
 import { ResponsiveBreakpoints, ResponsiveContext } from "../contexts/responsive-context";
 import { useSearchParams } from "next/navigation";
-import BreadcrumbComponent from "../breadcrumbs/breadcrumbs";
 
 
 interface Props {
@@ -34,7 +33,7 @@ const ManagementLayout: React.FC<Props> = ({children}) => {
                 }
             />             
             <Container
-                maxWidth="xl"                    
+                maxWidth={breakPoints.isGreaterThanExtraLarge ? "xl" : "lg"}
                 disableGutters={true}
                 sx={{minHeight: "94vh"}}
             >
@@ -59,7 +58,7 @@ const ManagementLayout: React.FC<Props> = ({children}) => {
                         
                         <Grid2  
                             size={{xs: 12, sm: 12, md: 9, lg: 10, xl: 10}} 
-                            sx={{paddingTop: "8px", minHeight: breakPoints.isMedium ? "86vh" : "94vh"}}
+                            sx={{padding: breakPoints.isMedium ? "8px" : "8px 0px 0px 8px", minHeight: breakPoints.isMedium ? "86vh" : "94vh"}}
                         >                            
                             <Grid2>{children}</Grid2>                            
                         </Grid2>                        

@@ -4,7 +4,6 @@ import { useSearchParams } from 'next/navigation';
 import TenantList from "@/components/tenants/tenant-list";
 import ClientList from "@/components/clients/client-list";
 import AuthorizationGroupList from "@/components/authorization-groups/authorization-group-list";
-import { ResponsiveBreakpoints, ResponsiveContext } from "@/components/contexts/responsive-context";
 import { TenantContext, TenantMetaDataBean } from "@/components/contexts/tenant-context";
 import { TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import TenantDetail from "@/components/tenants/tenant-detail";
@@ -33,10 +32,10 @@ const TenantLandingPage: React.FC = () => {
 
     return (
         <>
-            {tenantBean.getTenantMetaData().tenant.tenantType === TENANT_TYPE_ROOT_TENANT && (section === null || section === "tenants") &&
+            {(section === null || section === "tenants") && tenantBean.getTenantMetaData().tenant.tenantType === TENANT_TYPE_ROOT_TENANT && 
                 <TenantList />
             }
-            {tenantBean.getTenantMetaData().tenant.tenantType !== TENANT_TYPE_ROOT_TENANT && (section === null || section === "tenants") &&
+            {(section === null || section === "tenants") && tenantBean.getTenantMetaData().tenant.tenantType !== TENANT_TYPE_ROOT_TENANT && 
                 <TenantDetail tenantId={tenantBean.getTenantMetaData().tenant.tenantId} />
             }
             {section === "clients" &&

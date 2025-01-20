@@ -17,6 +17,7 @@ import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
 
 const TenantList: React.FC = () => {
 
+
     // STATE VARIABLES
     const [mapViewExpanded, setMapViewExpanded] = React.useState(new Map());
     const [filterValue, setFilerValue] = React.useState("");
