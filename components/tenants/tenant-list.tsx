@@ -152,12 +152,12 @@ const TenantList: React.FC = () => {
                 <>
                     <Typography component={"div"} fontWeight={"bold"} fontSize={"0.9em"}>
                         <Grid2 container size={12} spacing={1} marginBottom={"16px"} >                
-                                <Grid2 size={2}>Tenant Name</Grid2>
-                                <Grid2 size={3.8}>Tenant Description</Grid2>
-                                <Grid2 size={2}>Tenant Type</Grid2>
-                                <Grid2 size={1}>Enabled</Grid2>
-                                <Grid2 size={3}>Object ID</Grid2>
-                                <Grid2 size={0.2}></Grid2>
+                            <Grid2 size={2}>Tenant Name</Grid2>
+                            <Grid2 size={3.8}>Tenant Description</Grid2>
+                            <Grid2 size={2}>Tenant Type</Grid2>
+                            <Grid2 size={1}>Enabled</Grid2>
+                            <Grid2 size={3}>Object ID</Grid2>
+                            <Grid2 size={0.2}></Grid2>
                         </Grid2>
                     </Typography>
                     <Divider></Divider>

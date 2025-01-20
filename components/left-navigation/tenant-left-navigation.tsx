@@ -1,6 +1,6 @@
 "use client";
-import React, { useContext } from "react";
-import { Divider, Drawer, Grid2, InputAdornment, Stack, TextField } from "@mui/material";
+import React from "react";
+import { Divider, Drawer, InputAdornment, Stack, TextField } from "@mui/material";
 import Link from "next/link";
 import SearchIcon from '@mui/icons-material/Search';
 import MenuIcon from '@mui/icons-material/Menu';

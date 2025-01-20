@@ -15,7 +15,7 @@ interface Props {
 const ManagementLayout: React.FC<Props> = ({children}) => {
   
 
-    // // CONTEXT OBJECTS
+    // CONTEXT OBJECTS
     const tenantBean: TenantMetaDataBean  = useContext(TenantContext);
     const breakPoints: ResponsiveBreakpoints = useContext(ResponsiveContext);
 
@@ -39,14 +39,15 @@ const ManagementLayout: React.FC<Props> = ({children}) => {
             >
                 <Box sx={{ flexGrow: 1,  }}>
                     <Grid2 size={12} container spacing={1} sx={{}}>                
-                        <Grid2 size={{xs: 12, sm: 12, md: 3, lg: 2, xl: 2}} 
+                        <Grid2 
+                            size={{xs: 12, sm: 12, md: 3, lg: 2, xl: 2}} 
                             sx={{
                                 backgroundColor: "#fefefe", 
                                 padding: "8px",
                                 borderBottom: breakPoints.isMedium ? "solid 1px lightgrey" : "",
                                 borderRight: !breakPoints.isMedium? "solid 1px lightgrey" : ""
-                            }
-                        }>
+                            }}
+                        >
                             <TenantLeftNavigation 
                                 section={section || "tenants"} 
                                 tenantMetaData={tenantBean.getTenantMetaData()}
@@ -55,8 +56,14 @@ const ManagementLayout: React.FC<Props> = ({children}) => {
                             />                    
                         </Grid2>
                         
-                        <Grid2  size={{xs: 12, sm: 12, md: 9, lg: 10, xl: 10}} sx={{padding: "8px", minHeight: breakPoints.isMedium ? "86vh" : "94vh"}}>
-                            {children}
+                        <Grid2  
+                            size={{xs: 12, sm: 12, md: 9, lg: 10, xl: 10}} 
+                            sx={{paddingTop: "8px", minHeight: breakPoints.isMedium ? "86vh" : "94vh"}}
+                        >
+                            <Grid2>
+                                <div style={{height: "40px"}}>Breadcrumbs go here</div>
+                            </Grid2>
+                            <Grid2>{children}</Grid2>                            
                         </Grid2>                        
                     </Grid2>
                 </Box>
