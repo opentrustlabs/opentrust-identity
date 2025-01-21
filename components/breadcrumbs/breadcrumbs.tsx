@@ -17,13 +17,17 @@ const BreadcrumbComponent: React.FC<BreadcrumbComponentProps> = ({breadCrumbs}) 
     return (
         <Breadcrumbs sx={{height: "40px", paddingTop: "8px"}}>
             {breadCrumbs.map(
-                (breadCrumb: BreadcrumbDetail) => (                   
+                (breadCrumb: BreadcrumbDetail) => (
+                    
                     <Link
                         key={breadCrumb.linkText}
                         href={breadCrumb.href || ""}
+                        aria-disabled={breadCrumb.href === null ? true : false}
+                        style={{cursor: breadCrumb.href !== null ? "pointer" : "not-allowed"}}
                     >
                         {breadCrumb.linkText}
                     </Link>
+                                     
                 )
             )}
         </Breadcrumbs>

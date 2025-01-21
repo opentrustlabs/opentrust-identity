@@ -81,7 +81,7 @@ const ManagementTenantFilter: React.FC<LayoutProps> = ({
     else if(tenantIdFromPath !== null && profile !== null){
         
         if(!profile.managementAccessTenantId){
-            redirectUri = `/access-error?access_error_code=00025`;
+            redirectUri = `/access-error?access_error_code=00023`;
         }
         else{
             if(profile.managementAccessTenantId !== tenantIdFromPath){
@@ -116,7 +116,7 @@ const ManagementTenantFilter: React.FC<LayoutProps> = ({
         ssr: false,
         onCompleted(data) {
             if(data.getTenantMetaData === null){
-                //setErrorMessage("No tenant to display")
+                router.push(`/access-error?access_error_code=00024&extended_message=${data.error.message}`);
             }
             else{
                 tenantBean.setTenantMetaData(data.getTenantMetaData);
@@ -125,6 +125,7 @@ const ManagementTenantFilter: React.FC<LayoutProps> = ({
         },
         onError(error) {
             console.log("will set error message");
+            router.push(`/access-error?access_error_code=00024&extended_message=${error.message}`)
             // TODO
             // Need to inspect the error message and redirect the user to the
             // access-error page with an appropriate message. This should almost
@@ -137,8 +138,7 @@ const ManagementTenantFilter: React.FC<LayoutProps> = ({
     });
 
     if(!needsRedirect && loading) return <div></div>
-    else if(!needsRedirect && data && isComplete) return <>{children}</>
-    else if(!needsRedirect && error) return <>TODO Error message here</>
+    else if(!needsRedirect && data && isComplete) return <>{children}</>    
     else return <></>
     
 }
