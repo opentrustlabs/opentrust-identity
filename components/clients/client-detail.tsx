@@ -24,7 +24,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ clientId }) => {
                         linkText: tenantBean.getTenantMetaData().tenant.tenantType === TENANT_TYPE_ROOT_TENANT ? `Tenant List` : `${tenantBean.getTenantMetaData().tenant.tenantName}`
                     },
                     {
-                        href: `/${tenantBean.getTenantMetaData().tenant.tenantId}/clients`,
+                        href: `/${tenantBean.getTenantMetaData().tenant.tenantId}?section=clients`,
                         linkText: "Clients"
                     },
                     {

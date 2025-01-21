@@ -13,8 +13,9 @@ import { ResponsiveBreakpoints, ResponsiveContext } from "../contexts/responsive
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
 import DeleteForeverOutlinedIcon from '@mui/icons-material/DeleteForeverOutlined';
 import CheckOutlinedIcon from '@mui/icons-material/CheckOutlined';
-import { CLIENT_TYPES_DISPLAY } from "@/utils/consts";
+import { CLIENT_TYPES_DISPLAY, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
+import BreadcrumbComponent from "../breadcrumbs/breadcrumbs";
 
 const ClientList: React.FC = () => {
 
@@ -59,11 +60,27 @@ const ClientList: React.FC = () => {
         setMapViewExpanded(newMap);
     }
 
+    const arrBreadcrumbs = [];
+    if(tenantBean.getTenantMetaData().tenant.tenantType === TENANT_TYPE_ROOT_TENANT){
+        arrBreadcrumbs.push({
+            href: `/${tenantBean.getTenantMetaData().tenant.tenantId}`,
+            linkText: `Tenant List`
+        })
+    }
+    
+    arrBreadcrumbs.push({
+        linkText: "Client List",
+        href: null
+    });
+    
+    
+
     if(loading) return <CircularProgress />
     if(error) return <div>There was an error. ${error.stack}</div>
     if(data) return (
       
         <main >
+            <BreadcrumbComponent breadCrumbs={arrBreadcrumbs} />
             <Stack spacing={1} justifyContent={"space-between"} direction={"row"} fontWeight={"bold"} fontSize={"0.95em"} margin={"8px 0px 24px 0px"}>
                 <div style={{display: "inline-flex", alignItems: "center"}}>    
                     <AddBoxIcon sx={{marginRight: "8px", cursor: "pointer"}} />
