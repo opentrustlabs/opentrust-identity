@@ -133,3 +133,40 @@ export const AUTHORIZATION_GROUPS_QUERY = gql(`
         }
     }    
 `);
+
+export const TENANT_DETAIL_QUERY = gql(`
+    query tenantDetailQuery($tenantId: String!){
+        getTenantById(tenantId: $tenantId) {
+            tenantId
+            tenantName
+            tenantDescription
+            enabled
+            claimsSupported
+            allowUnlimitedRate
+            allowUserSelfRegistration
+            allowSocialLogin
+            allowAnonymousUsers
+            verifyEmailOnSelfRegistration
+            federatedAuthenticationConstraint
+            federatedauthenticationconstraintid
+            markForDelete
+            tenantType
+            tenanttypeid
+            migrateLegacyUsers
+            allowLoginByPhoneNumber
+            allowForgotPassword             
+        }       
+        
+    }
+`);
+/*
+getLoginFailurePolicy {        
+            loginFailurePolicyType
+            loginfailurepolicytypeid
+            failureThreshold
+            pauseDurationMinutes
+            numberOfPauseCyclesBeforeLocking
+            initBackoffDurationMinutes
+            numberOfBackoffCyclesBeforeLocking
+        }
+*/

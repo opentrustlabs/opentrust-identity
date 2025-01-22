@@ -5,7 +5,12 @@ type Query {
     getTenants: [Tenant!]!
     getTenantById(tenantId: String!): Tenant
     getTenantMetaData(tenantId: String!): TenantMetaData
-
+    getDomainsForTenantManagement(tenantId: String!): [String]
+    getDomainsForTenantAuthentication(tenantId: String!): [String]
+    getAnonymousUserConfiguration(tenantId: String!): AnonymousUserConfiguration
+    getLegacyUserMigrationConfiguration(tenantId: String!): TenantLegacyUserMigrationConfig
+    getTenantLookAndFeel(tenantId: String!): TenantLookAndFeel
+    
     ## Clients
     getClients(tenantId: String): [Client!]!
     getClientById(clientId: String!): Client
@@ -43,16 +48,17 @@ type Query {
     getAccessRuleById(accessRuleId: String!): AccessRule
 
     ## AuthenticationGroups
-    getAuthenticationGroups(tenantId: String): [AuthenticationGroup!]!
+    getAuthenticationGroups(tenantId: String, clientId: String): [AuthenticationGroup!]!
     getAuthenticationGroupById(authenticationGroupId: String!): AuthenticationGroup
 
     ## Groups
-    getAuthorizationGroups: [AuthorizationGroup!]!
+    getAuthorizationGroups(tenantId: String): [AuthorizationGroup!]!
     getAuthorizationGroupById(groupId: String!): AuthorizationGroup
     getUserAuthorizationGroups(userId: String!): [AuthorizationGroup!]!
 
     ## External OIDC Providers
     getFederatedOIDCProviders(tenantId: String): [FederatedOIDCProvider!]!
+    getSocialOIDCProviders(tenantId: String): [FederatedOIDCProvider!]!
     getFederatedOIDCProviderById(federatedOIDCProviderId: String!): FederatedOIDCProvider
     
     ## Change events
