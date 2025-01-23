@@ -13,6 +13,8 @@ import { useQuery } from "@apollo/client";
 import { TENANT_DETAIL_QUERY } from "@/graphql/queries/oidc-queries";
 import DataLoading from "../layout/data-loading";
 import ErrorComponent from "../error/error-component";
+import PasswordIcon from '@mui/icons-material/Password';
+
 
 export interface TenantDetailProps {
     tenantId: string
@@ -121,6 +123,60 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                             <Grid2 size={2}><Checkbox /></Grid2>
                                         </Grid2>
                                     </Grid2>
+                                </Grid2>
+                            </Paper>
+                        </Grid2>
+
+                        <Grid2 size={{xs: 12, sm: 12, md: 6, lg: 4, xl: 4}} flexGrow={"inherit"} display={"flex"} width={"100px"}>
+                            <Paper sx={{ padding: "8px", width: "100%"}} elevation={3} >
+                                <Grid2 container size={12} >
+                                    <Grid2 size={2}><PasswordIcon /></Grid2>
+                                    <Grid2 size={10}><div style={{backgroundColor: "white", fontWeight: "bold"}}>Login Failure Configuration</div></Grid2>
+                                </Grid2>
+                            </Paper>
+                        </Grid2>
+
+                        <Grid2 size={{xs: 12, sm: 12, md: 6, lg: 4, xl: 4}} flexGrow={"inherit"} display={"flex"} width={"100px"}>
+                            <Paper sx={{ padding: "8px", width: "100%"}} elevation={3} >
+                                <Grid2 container size={12}>
+                                    <Grid2 size={2}><PasswordIcon /></Grid2>
+                                    <Grid2 size={10}><div style={{minHeight: "275px", backgroundColor: "white", fontWeight: "bold"}}>Password Configuration</div></Grid2>
+                                </Grid2>
+                            </Paper>
+                        </Grid2>
+                        
+                        <Grid2 size={{xs: 12, sm: 12, md: 6, lg: 4, xl: 4}} flexGrow={"inherit"} display={"flex"} width={"100px"}>
+                            <Paper sx={{ padding: "8px", width: "100%"}} elevation={3} >
+                                <Grid2 container size={12}>
+                                    <Grid2 size={2}><PasswordIcon /></Grid2>
+                                    <Grid2 size={10}><div style={{height: "125px", backgroundColor: "white", fontWeight: "bold"}}>Anonymous User Configuration</div></Grid2>
+                                </Grid2>
+                            </Paper>
+                        </Grid2>
+                        
+                        <Grid2 size={{xs: 12, sm: 12, md: 6, lg: 4, xl: 4}} flexGrow={"inherit"} display={"flex"} width={"100px"}>
+                            <Paper sx={{ padding: "8px", width: "100%"}} elevation={3} >
+                                <Grid2 container size={12}>
+                                    <Grid2 size={2}><PasswordIcon /></Grid2>
+                                    <Grid2 size={10}><div style={{height: "125px", backgroundColor: "white", fontWeight: "bold"}}>Legacy User Migration Configuration</div></Grid2>
+                                </Grid2>
+                            </Paper>
+                        </Grid2>
+                        
+                        <Grid2 size={{xs: 12, sm: 12, md: 6, lg: 4, xl: 4}} flexGrow={"inherit"} display={"flex"} width={"100px"}>
+                            <Paper sx={{ padding: "8px", width: "100%"}} elevation={3} >
+                                <Grid2 container size={12}>
+                                    <Grid2 size={2}><PasswordIcon /></Grid2>
+                                    <Grid2 size={10}><div style={{height: "125px", backgroundColor: "white", fontWeight: "bold"}}>Tenant Look And Feel</div></Grid2>
+                                </Grid2>
+                            </Paper>
+                        </Grid2>
+                        
+                        <Grid2 size={{xs: 12, sm: 12, md: 6, lg: 4, xl: 4}} flexGrow={"inherit"} display={"flex"} width={"100px"}>
+                            <Paper sx={{ padding: "8px" }} elevation={3}>
+                                <Grid2 container size={12}>
+                                    <Grid2 size={2}><PasswordIcon /></Grid2>
+                                    <Grid2 size={10}><div style={{height: "125px", backgroundColor: "lightgrey"}}></div></Grid2>
                                 </Grid2>
                             </Paper>
                         </Grid2>
