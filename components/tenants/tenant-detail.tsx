@@ -70,7 +70,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
             <Grid2 container size={12} spacing={3} marginBottom={"16px"}>
                 <Grid2 size={{ xs: 12, sm: 12, md: 12, lg: 9, xl: 9 }}>
                     <Grid2 container size={12} spacing={2}>
-                        <Grid2 className="detail-page-subheader" size={12}>Basic Information</Grid2>
+                        <Grid2 className="detail-page-subheader" size={12}>Overview</Grid2>
                         <Grid2 size={12}>
                             <Paper sx={{ padding: "8px" }} elevation={3}>
                                 <Grid2 container size={12} spacing={2}>
@@ -99,26 +99,26 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                     </Grid2>
                                     <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
                                         <Grid2 borderLeft={"dotted 1px lightgrey"} paddingLeft={"8px"} container size={12}>
-                                            <Grid2 alignContent={"center"} size={6}>Enabled</Grid2>
-                                            <Grid2 size={6}><Checkbox /></Grid2>
-                                            <Grid2 alignContent={"center"} size={6}>Mark for delete</Grid2>
-                                            <Grid2 size={6}><Checkbox /></Grid2>
-                                            <Grid2 alignContent={"center"} size={6}>Allow unlimited rate</Grid2>
-                                            <Grid2 size={6}><Checkbox /></Grid2>
-                                            <Grid2 alignContent={"center"} size={6}>Allow user self-registration</Grid2>
-                                            <Grid2 size={6}><Checkbox /></Grid2>
-                                            <Grid2 alignContent={"center"} size={6}>Allow anonymous users</Grid2>
-                                            <Grid2 size={6}><Checkbox /></Grid2>
-                                            <Grid2 alignContent={"center"} size={6}>Allow social login</Grid2>
-                                            <Grid2 size={6}><Checkbox /></Grid2>
-                                            <Grid2 alignContent={"center"} size={6}>Verify email on registration</Grid2>
-                                            <Grid2 size={6}><Checkbox /></Grid2>
-                                            <Grid2 alignContent={"center"} size={6}>Migrate legacy users</Grid2>
-                                            <Grid2 size={6}><Checkbox /></Grid2>
-                                            <Grid2 alignContent={"center"} size={6}>Allow login by phone number</Grid2>
-                                            <Grid2 size={6}><Checkbox /></Grid2>
-                                            <Grid2 alignContent={"center"} size={6}>Allow password recovery</Grid2>
-                                            <Grid2 size={6}><Checkbox /></Grid2>
+                                            <Grid2 alignContent={"center"} size={10}>Enabled</Grid2>
+                                            <Grid2 size={2}><Checkbox /></Grid2>
+                                            <Grid2 alignContent={"center"} size={10}>Mark for delete</Grid2>
+                                            <Grid2 size={2}><Checkbox /></Grid2>
+                                            <Grid2 alignContent={"center"} size={10}>Allow unlimited rate</Grid2>
+                                            <Grid2 size={2}><Checkbox /></Grid2>
+                                            <Grid2 alignContent={"center"} size={10}>Allow user self-registration</Grid2>
+                                            <Grid2 size={2}><Checkbox /></Grid2>
+                                            <Grid2 alignContent={"center"} size={10}>Allow anonymous users</Grid2>
+                                            <Grid2 size={2}><Checkbox /></Grid2>
+                                            <Grid2 alignContent={"center"} size={10}>Allow social login</Grid2>
+                                            <Grid2 size={2}><Checkbox /></Grid2>
+                                            <Grid2 alignContent={"center"} size={10}>Verify email on registration</Grid2>
+                                            <Grid2 size={2}><Checkbox /></Grid2>
+                                            <Grid2 alignContent={"center"} size={10}>Migrate legacy users</Grid2>
+                                            <Grid2 size={2}><Checkbox /></Grid2>
+                                            <Grid2 alignContent={"center"} size={10}>Allow login by phone number</Grid2>
+                                            <Grid2 size={2}><Checkbox /></Grid2>
+                                            <Grid2 alignContent={"center"} size={10}>Allow password recovery</Grid2>
+                                            <Grid2 size={2}><Checkbox /></Grid2>
                                         </Grid2>
                                     </Grid2>
                                 </Grid2>
@@ -130,60 +130,159 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                         <Grid2 size={12}>
                             <Paper sx={{ padding: "8px" }} elevation={3}>
                                 <Grid2 container size={12} spacing={2}>
-                                    <Grid2 marginBottom={"16px"} size={{sm: 12, xs: 12, md: 12, lg: 6, xl: 6}} >
+                                    <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
                                         <div>Login Failure Policy Type</div>
                                         <TextField name="tenantType" id="tenantType" value={"Lock"} fullWidth={true} size="small" />
                                     </Grid2>
-                                    <Grid2 marginBottom={"16px"} size={{sm: 12, xs: 12, md: 12, lg: 6, xl: 6}} >
+                                    <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
                                         <div>Failure Threshold</div>
                                         <TextField name="tenantType" id="tenantType" value={"6"} fullWidth={true} size="small" />
                                     </Grid2>
-                                    <Grid2 marginBottom={"16px"} size={{sm: 12, xs: 12, md: 12, lg: 6, xl: 6}} >
+                                    <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
                                         <div>Pause Duration (in minutes)</div>
                                         <TextField name="tenantType" id="tenantType" value={"30"} fullWidth={true} size="small" />
                                     </Grid2>
-                                    <Grid2 marginBottom={"16px"} size={{sm: 12, xs: 12, md: 12, lg: 6, xl: 6}} >
+                                    <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
                                         <div>Number of pause cycles before locking</div>
                                         <TextField name="tenantType" id="tenantType" value={"5"} fullWidth={true} size="small" />
                                     </Grid2>
-                                    <Grid2 marginBottom={"16px"} size={{sm: 12, xs: 12, md: 12, lg: 6, xl: 6}} >
+                                    <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
                                         <div>Initial backoff duration (in minutes)</div>
                                         <TextField name="tenantType" id="tenantType" value={"4"} fullWidth={true} size="small" />
                                     </Grid2>
-                                    <Grid2 marginBottom={"16px"} size={{sm: 12, xs: 12, md: 12, lg: 6, xl: 6}} >
+                                    <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
                                         <div>Number of backoff cycles before locking</div>
                                         <TextField name="tenantType" id="tenantType" value={"4"} fullWidth={true} size="small" />
                                     </Grid2>
                                 </Grid2>
-
                             </Paper>
                         </Grid2>
 
                         <Grid2 className="detail-page-subheader" size={12}>Password Configuration</Grid2>
                         <Grid2 size={12}>
                             <Paper sx={{ padding: "8px" }} elevation={3}>
-                            <div style={{ height: "128px", backgroundColor: "lightgray" }}></div>
+                                <Grid2 container size={12} spacing={2}>
+                                    <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
+                                        <Grid2 marginBottom={"16px"}>
+                                            <div>Password Minimum Length</div>
+                                            <TextField name="tenantType" id="tenantType" value={"8"} fullWidth={true} size="small" />
+                                        </Grid2>
+                                        <Grid2 marginBottom={"16px"} >
+                                            <div>Password Maximum Length</div>
+                                            <TextField name="tenantType" id="tenantType" value={"64"} fullWidth={true} size="small" />
+                                        </Grid2>
+                                        <Grid2 marginBottom={"16px"} >
+                                            <div>Maximum Consecutive Length Of Identical Characters</div>
+                                            <TextField name="tenantType" id="tenantType" value={"2"} fullWidth={true} size="small" />
+                                        </Grid2>
+                                        <Grid2 marginBottom={"16px"} >
+                                            <div>Password Hashing Algorithm</div>
+                                            <TextField name="tenantType" id="tenantType" value={"Blowfish 12 Rounds"} fullWidth={true} size="small" />
+                                        </Grid2>
+                                    </Grid2>
+
+                                    <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
+                                        <Grid2 borderLeft={"dotted 1px lightgrey"} paddingLeft={"8px"} container size={12}>
+                                            <Grid2 alignContent={"center"} size={10}>
+                                                Require Uppercase
+                                            </Grid2>
+                                            <Grid2 size={2}><Checkbox /></Grid2>
+
+                                            <Grid2 alignContent={"center"} size={10}>
+                                                Require Lowercase
+                                            </Grid2>
+                                            <Grid2 size={2}><Checkbox /></Grid2>
+
+                                            <Grid2 alignContent={"center"} size={10}>
+                                                Require Numbers
+                                            </Grid2>
+                                            <Grid2 size={2}><Checkbox /></Grid2>
+
+                                            <Grid2 alignContent={"center"} size={10}>
+                                                Require Special Characters
+                                            </Grid2>
+                                            <Grid2 size={2}><Checkbox /></Grid2>
+
+                                            <Grid2 marginTop={"8px"} alignContent={"center"} size={10}>
+                                                <div>Special Characters Allowed</div>
+                                                <TextField name="tenantType" id="tenantType" value={"4"} fullWidth={true} size="small" />
+                                            </Grid2>
+                                        </Grid2>
+                                    </Grid2>
+                                </Grid2>
+                                <Divider sx={{marginTop: "16px"}}/>
+                                <Grid2 marginTop={"24px"} container size={12} spacing={2}>
+                                    <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
+                                        <Grid2 container size={12}>
+                                            <Grid2 alignContent={"center"} size={12}>Allow Or Require Multi-factor Auth Dropdown?</Grid2>
+                                            <Grid2 marginBottom={"16px"} alignContent={"center"} size={12}>
+                                                <TextField name="tenantType" id="tenantType" value={"30"} fullWidth={true} size="small" />
+                                            </Grid2>
+                                            <Grid2 alignContent={"center"} size={12}>
+                                                MFA Auth Types Allowed/Required
+                                            </Grid2>                                            
+                                            <Grid2 alignContent={"center"} size={12}>
+                                                <TextField name="tenantType" id="tenantType" value={"30"} fullWidth={true} size="small" />
+                                            </Grid2>
+                                            
+                                        </Grid2>                                        
+                                    </Grid2>                                    
+                                </Grid2>
                             </Paper>
                         </Grid2>
 
                         <Grid2 className="detail-page-subheader" size={12}>Anonymous User Configuration</Grid2>
                         <Grid2 size={12}>
                             <Paper sx={{ padding: "8px" }} elevation={3}>
-                            <div style={{ height: "128px", backgroundColor: "lightgray" }}></div>
+                                <Grid2 container size={12} spacing={2}>
+                                    <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
+                                        <div>Default Country Code</div>
+                                        <TextField name="tenantType" id="tenantType" value={"US"} fullWidth={true} size="small" />
+                                    </Grid2>
+                                    <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
+                                        <div>Default Language Code</div>
+                                        <TextField name="tenantType" id="tenantType" value={"en"} fullWidth={true} size="small" />
+                                    </Grid2>
+                                    <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
+                                        <div>Token Time-To-Live (in seconds)</div>
+                                        <TextField name="tenantType" id="tenantType" value={"30000000"} fullWidth={true} size="small" />
+                                    </Grid2>
+                                    <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
+                                        <div>Scope Values</div>
+                                        <TextField name="tenantType" id="tenantType" value={"5"} fullWidth={true} size="small" />
+                                    </Grid2>
+                                    <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
+                                        <div>Member Groups</div>
+                                        <TextField name="tenantType" id="tenantType" value={"4"} fullWidth={true} size="small" />
+                                    </Grid2>                                    
+                                </Grid2>
                             </Paper>
                         </Grid2>
 
                         <Grid2 className="detail-page-subheader" size={12}>Legacy User Migration Configuration</Grid2>
                         <Grid2 size={12}>
                             <Paper sx={{ padding: "8px" }} elevation={3}>
-                            <div style={{ height: "128px", backgroundColor: "lightgray" }}></div>
+                                <Grid2 container size={12} spacing={2}>
+                                    <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
+                                        <div>Authentication URI</div>
+                                        <TextField name="tenantType" id="tenantType" value={"https://sigmaaldrich.com/ecommerce/users/login"} fullWidth={true} size="small" />
+                                    </Grid2>
+                                    <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
+                                        <div>User Profile URI</div>
+                                        <TextField name="tenantType" id="tenantType" value={"https://sigmaaldrich.com/ecommerce/users/profile"} fullWidth={true} size="small" />
+                                    </Grid2>
+                                    <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
+                                        <div>User Name-Check URI</div>
+                                        <TextField name="tenantType" id="tenantType" value={"https://sigmaaldrich.com/ecommerce/users/userexists"} fullWidth={true} size="small" />
+                                    </Grid2>                                    
+                                </Grid2>
                             </Paper>
                         </Grid2>
 
                         <Grid2 className="detail-page-subheader" size={12}>Tenant Look And Feel</Grid2>
                         <Grid2 size={12}>
                             <Paper sx={{ padding: "8px" }} elevation={3}>
-                            <div style={{ height: "128px", backgroundColor: "lightgray" }}></div>
+                                <div style={{ height: "128px", backgroundColor: "lightgray" }}></div>
                             </Paper>
                         </Grid2>
                     </Grid2>
@@ -191,7 +290,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
 
                 <Grid2 spacing={2} size={{ xs: 12, sm: 12, md: 12, lg: 3, xl: 3 }}>
                     <Grid2 container spacing={2} size={12}>
-                        <Grid2 size={12} >
+                        <Grid2 size={{ xs: 12, sm: 6, lg: 12, md: 6, xl: 12 }} >
                             <div className="detail-page-subheader">Tenant Management Domains</div>
                             <Paper elevation={3} sx={{ padding: "8px" }}>
                                 <List>
@@ -210,7 +309,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                         </Grid2>
 
 
-                        <Grid2 size={12}>
+                        <Grid2 size={{ xs: 12, sm: 6, lg: 12, md: 6, xl: 12 }} >
                             <div className="detail-page-subheader">Tenant Authentication Domains</div>
                             <Paper elevation={3} sx={{ padding: "8px" }}>
                                 <List>
@@ -227,7 +326,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                         </Grid2>
 
 
-                        <Grid2 size={12}>
+                        <Grid2 size={{ xs: 12, sm: 6, lg: 12, md: 6, xl: 12 }} >
                             <div className="detail-page-subheader">Federated OIDC Providers</div>
                             <Paper elevation={3} sx={{ padding: "8px" }}>
                                 <List>
@@ -244,7 +343,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                         </Grid2>
 
 
-                        <Grid2 size={12}>
+                        <Grid2 size={{ xs: 12, sm: 6, lg: 12, md: 6, xl: 12 }} >
                             <div className="detail-page-subheader">Social Identity Providers</div>
                             <Paper elevation={3} sx={{ padding: "8px" }}>
                                 <List>

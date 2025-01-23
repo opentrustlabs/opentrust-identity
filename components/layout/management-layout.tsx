@@ -40,7 +40,7 @@ const ManagementLayout: React.FC<Props> = ({children}) => {
                 <Box sx={{ flexGrow: 1,  }}>
                     <Grid2 size={12} container spacing={1} sx={{}}>                
                         <Grid2 
-                            size={{xs: 12, sm: 12, md: 3, lg: 2, xl: 2}} 
+                            size={{xs: 12, sm: 12, md: 3, lg: 2.4, xl: 2}} 
                             sx={{
                                 backgroundColor: "#fefefe", 
                                 padding: "8px",
@@ -57,7 +57,7 @@ const ManagementLayout: React.FC<Props> = ({children}) => {
                         </Grid2>
                         
                         <Grid2  
-                            size={{xs: 12, sm: 12, md: 9, lg: 10, xl: 10}} 
+                            size={{xs: 12, sm: 12, md: 9, lg: 9.6, xl: 10}} 
                             sx={{padding: breakPoints.isMedium ? "8px" : "8px 4px 0px 0px", minHeight: breakPoints.isMedium ? "86vh" : "94vh"}}
                         >                            
                             <Grid2>{children}</Grid2>                            
