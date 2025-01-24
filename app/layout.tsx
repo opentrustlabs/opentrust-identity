@@ -13,7 +13,14 @@ import AuthContextProvider from "@/components/contexts/auth-context";
 import ResponsiveContextProvider from "@/components/contexts/responsive-context";
 import TenantContextProvider from "@/components/contexts/tenant-context";
 import ManagementTenantFilter from "@/components/contexts/management-tenant-filter";
+import { createTheme } from '@mui/material/styles';
+import { ThemeProvider } from '@mui/material/styles';
 
+const theme = createTheme({
+    typography: {
+      fontSize: 12
+    },
+  });
 
 const geistSans = localFont({
     src: "./fonts/GeistVF.woff",
@@ -52,7 +59,9 @@ export default function RootLayout({
                                 <AuthContextProvider>
                                     <TenantContextProvider>
                                         <ManagementTenantFilter>
-                                            <ManagementLayout>{children}</ManagementLayout>
+                                            <ThemeProvider theme={theme}>
+                                                <ManagementLayout>{children}</ManagementLayout>
+                                            </ThemeProvider>
                                         </ManagementTenantFilter>
                                     </TenantContextProvider>
                                 </AuthContextProvider>

@@ -78,6 +78,7 @@ const TenantList: React.FC = () => {
                     <span>New Tenant</span>
                 </div>                
             </Stack>
+
             <Stack spacing={1} justifyContent={"space-between"} direction={"row"} fontWeight={"bold"} fontSize={"0.95em"} margin={"8px 0px 24px 0px"}>
                 <div style={{display: "inline-flex", alignItems: "center"}}>    
                     <TextField 
