@@ -159,6 +159,28 @@ export const TENANT_DETAIL_QUERY = gql(`
         
     }
 `);
+
+export const CLIENT_DETAIL_QUERY = gql(`
+    query clientDetailQuery($clientId: String!){
+        getClientById(clientId: $clientId){
+            tenantId
+            clientId
+            clientSecret
+            clientName
+            clientDescription
+            enabled
+            redirectUris
+            oidcEnabled
+            pkceEnabled
+            clientType
+            clienttypeid
+            userTokenTTLSeconds
+            clientTokenTTLSeconds
+            maxRefreshTokenCount
+        }
+    }
+`);
+
 /*
 getLoginFailurePolicy {        
             loginFailurePolicyType

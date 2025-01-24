@@ -1,6 +1,6 @@
 "use client";
 import React, { useContext } from "react";
-import { Accordion, AccordionDetails, AccordionSummary, Box, Button, Checkbox, Divider, List, ListItem, Paper, Stack, TextField } from "@mui/material";
+import { Accordion, AccordionDetails, AccordionSummary, Button, Checkbox, Divider, List, ListItem, Paper, Stack, TextField } from "@mui/material";
 import Grid2 from "@mui/material/Grid2";
 import Typography from "@mui/material/Typography";
 import MoreHorizOutlinedIcon from '@mui/icons-material/MoreHorizOutlined';
@@ -19,7 +19,7 @@ import FaceIcon from '@mui/icons-material/Face';
 import InputIcon from '@mui/icons-material/Input';
 import DisplaySettingsIcon from '@mui/icons-material/DisplaySettings';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import UnfoldMoreIcon from '@mui/icons-material/UnfoldMore';
+
 
 export interface TenantDetailProps {
     tenantId: string
@@ -51,11 +51,6 @@ interface InnerComponentProps {
     tenant: Tenant
 }
 
-const TENANT_CONFIGURATION_CARD_VIEW_STYLE = {
-    padding: "8px",
-    width: "100%"
-}
-
 const InnerComponent: React.FC<InnerComponentProps> = ({
     tenant
 }) => {
@@ -82,7 +77,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
             <Grid2 container size={12} spacing={3} marginBottom={"16px"} >
                 <Grid2 size={{ xs: 12, sm: 12, md: 12, lg: 9, xl: 9 }}>
                     <Grid2 container size={12} spacing={2}>
-                        <Grid2 className="detail-page-subheader" size={12}>Overview</Grid2>
+                        <Grid2 className="detail-page-subheader" fontWeight={"bold"} size={12}>Overview</Grid2>
                         <Grid2 size={12}>
                             <Paper sx={{ padding: "8px" }} elevation={1}>
                                 <Grid2 container size={12} spacing={2}>
@@ -131,6 +126,8 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                             <Grid2 size={2}><Checkbox /></Grid2>
                                             <Grid2 alignContent={"center"} size={10}>Allow password recovery</Grid2>
                                             <Grid2 size={2}><Checkbox /></Grid2>
+                                            <Grid2 alignContent={"center"} size={10}>Require CAPTCHA on Registration</Grid2>
+                                            <Grid2 size={2}><Checkbox /></Grid2>
                                         </Grid2>
                                     </Grid2>                                    
                                 </Grid2>
@@ -145,10 +142,12 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                 <AccordionSummary
                                     expandIcon={<ExpandMoreIcon />}
                                     id={"login-failure-configuration"}
-                                    sx={{ fontWeight: "bold"}}
+                                    sx={{ fontWeight: "bold", backgroundColor: "#f9f9f9", display: "flex", justifyContent: "center", alignItems: "center"}}
 
                                 >
-                                    Login Failure Configuration
+                                    <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
+                                        <LoginIcon /><div style={{marginLeft: "8px"}}>Login Failure Configuration</div>
+                                    </div>
                                 </AccordionSummary>
                                 <AccordionDetails>
 
@@ -191,9 +190,11 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                 <AccordionSummary
                                     expandIcon={<ExpandMoreIcon />}
                                     id={"password-rules-configuration"}
-                                    sx={{ fontWeight: "bold" }}
+                                    sx={{ fontWeight: "bold", backgroundColor: "#f9f9f9" }}
                                 >
-                                    Password Rules Configuration
+                                    <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
+                                        <PasswordIcon /><div style={{marginLeft: "8px"}}>Password Rules Configuration</div>
+                                    </div>                                    
                                 </AccordionSummary>
                                 <AccordionDetails>
 
@@ -210,6 +211,14 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                             <Grid2 marginBottom={"16px"} >
                                                 <div>Maximum Consecutive Length Of Identical Characters</div>
                                                 <TextField name="tenantType" id="tenantType" value={"2"} fullWidth={true} size="small" />
+                                            </Grid2>
+                                            <Grid2 marginBottom={"16px"} >
+                                                <div>Password Reuse Period</div>
+                                                <TextField name="tenantType" id="tenantType" value={"20"} fullWidth={true} size="small" />
+                                            </Grid2>
+                                            <Grid2 marginBottom={"16px"} >
+                                                <div>Change Password Period (days)</div>
+                                                <TextField name="tenantType" id="tenantType" value={"720"} fullWidth={true} size="small" />
                                             </Grid2>
                                             <Grid2 marginBottom={"16px"} >
                                                 <div>Password Hashing Algorithm</div>
@@ -277,9 +286,12 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                 <AccordionSummary
                                     expandIcon={<ExpandMoreIcon />}
                                     id={"anonymous-user-configuration"}
-                                    sx={{ fontWeight: "bold" }}
+                                    sx={{ fontWeight: "bold", backgroundColor: "#f9f9f9" }}
                                 >
-                                    Anonymous User Configuration
+                                    <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
+                                        <FaceIcon /><div style={{marginLeft: "8px"}}>Anonymous User Configuration</div>
+                                    </div>
+                                    
                                 </AccordionSummary>
                                 <AccordionDetails>
 
@@ -319,9 +331,12 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                 <AccordionSummary
                                     expandIcon={<ExpandMoreIcon />}
                                     id={"legacy-user-migration-configuration"}
-                                    sx={{ fontWeight: "bold" }}
+                                    sx={{ fontWeight: "bold", backgroundColor: "#f9f9f9" }}
                                 >
-                                    Legacy User Migration Configuration
+                                    <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
+                                        <InputIcon /><div style={{marginLeft: "8px"}}>Legacy User Migration Configuration</div>
+                                    </div>
+                                    
                                 </AccordionSummary>
                                 <AccordionDetails>
 
@@ -353,9 +368,12 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                 <AccordionSummary
                                     expandIcon={<ExpandMoreIcon />}
                                     id={"tenant-look-and-feel-configuration"}
-                                    sx={{ fontWeight: "bold" }}
+                                    sx={{ fontWeight: "bold", backgroundColor: "#f9f9f9" }}
                                 >
-                                    Tenant Look and Feel
+                                    <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
+                                        <DisplaySettingsIcon /><div style={{marginLeft: "8px"}}>Tenant Look and Feel</div>
+                                    </div>
+                                    
                                 </AccordionSummary>
                                 <AccordionDetails>
                                     <Grid2 container size={12} spacing={2}>
