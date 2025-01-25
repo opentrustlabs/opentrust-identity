@@ -46,6 +46,8 @@ a {
 }
 
 .detail-page-subheader {
-    font-weight: bold;    
+    font-weight: bold;
+    padding: 8px;
+    background-color: #f7f7f7;    
 }
 
