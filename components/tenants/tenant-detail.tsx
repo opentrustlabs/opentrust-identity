@@ -71,13 +71,13 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
 
     return (
 
-        <Typography component={"div"} fontSize={"0.9em"}>
+        <Typography component={"div"}>
             <BreadcrumbComponent breadCrumbs={arrBreadcrumbs} />
 
             <Grid2 container size={12} spacing={3} marginBottom={"16px"} >
                 <Grid2 size={{ xs: 12, sm: 12, md: 12, lg: 9, xl: 9 }}>
                     <Grid2 container size={12} spacing={2}>
-                        <Grid2 className="detail-page-subheader" fontWeight={"bold"} size={12}>Overview</Grid2>
+                        <Grid2 className="detail-page-subheader" sx={{backgroundColor: "#1976d2", color: "white", padding: "8px", borderRadius: "2px"}}  fontWeight={"bold"} size={12}>Overview</Grid2>
                         <Grid2 size={12}>
                             <Paper sx={{ padding: "8px" }} elevation={1}>
                                 <Grid2 container size={12} spacing={2}>
@@ -142,7 +142,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                 <AccordionSummary
                                     expandIcon={<ExpandMoreIcon />}
                                     id={"login-failure-configuration"}
-                                    sx={{ fontWeight: "bold", backgroundColor: "#f9f9f9", display: "flex", justifyContent: "center", alignItems: "center"}}
+                                    sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center"}}
 
                                 >
                                     <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
@@ -190,7 +190,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                 <AccordionSummary
                                     expandIcon={<ExpandMoreIcon />}
                                     id={"password-rules-configuration"}
-                                    sx={{ fontWeight: "bold", backgroundColor: "#f9f9f9" }}
+                                    sx={{ fontWeight: "bold" }}
                                 >
                                     <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
                                         <PasswordIcon /><div style={{marginLeft: "8px"}}>Password Rules Configuration</div>
@@ -286,7 +286,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                 <AccordionSummary
                                     expandIcon={<ExpandMoreIcon />}
                                     id={"anonymous-user-configuration"}
-                                    sx={{ fontWeight: "bold", backgroundColor: "#f9f9f9" }}
+                                    sx={{ fontWeight: "bold" }}
                                 >
                                     <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
                                         <FaceIcon /><div style={{marginLeft: "8px"}}>Anonymous User Configuration</div>
@@ -331,7 +331,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                 <AccordionSummary
                                     expandIcon={<ExpandMoreIcon />}
                                     id={"legacy-user-migration-configuration"}
-                                    sx={{ fontWeight: "bold", backgroundColor: "#f9f9f9" }}
+                                    sx={{ fontWeight: "bold"}}
                                 >
                                     <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
                                         <InputIcon /><div style={{marginLeft: "8px"}}>Legacy User Migration Configuration</div>
@@ -368,7 +368,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                 <AccordionSummary
                                     expandIcon={<ExpandMoreIcon />}
                                     id={"tenant-look-and-feel-configuration"}
-                                    sx={{ fontWeight: "bold", backgroundColor: "#f9f9f9" }}
+                                    sx={{ fontWeight: "bold" }}
                                 >
                                     <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
                                         <DisplaySettingsIcon /><div style={{marginLeft: "8px"}}>Tenant Look and Feel</div>
@@ -394,9 +394,9 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                 <Grid2 spacing={2} size={{ xs: 12, sm: 12, md: 12, lg: 3, xl: 3 }}>
                     <Grid2 container spacing={2} size={12}>
                         <Grid2 size={{ xs: 12, sm: 6, lg: 12, md: 6, xl: 12 }} >                            
-                            <Paper elevation={3} sx={{ padding: "8px" }}>
+                            <Paper elevation={3} >
                                 <div className="detail-page-subheader">Tenant Management Domains</div>
-                                <List>
+                                <List sx={{padding: "8px"}}>
                                     <ListItem disablePadding>opentrust.org</ListItem>
                                     <ListItem disablePadding>opentrust.com</ListItem>
                                     <ListItem disablePadding>megacorp.com</ListItem>
@@ -404,7 +404,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                 </List>
 
                                 <Divider />
-                                <Stack direction={"row"} flexDirection={"row-reverse"} >
+                                <Stack sx={{ padding: "8px" }} direction={"row"} flexDirection={"row-reverse"} >
                                     <EditOutlinedIcon />
                                 </Stack>
                             </Paper>
@@ -413,16 +413,16 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
 
 
                         <Grid2 size={{ xs: 12, sm: 6, lg: 12, md: 6, xl: 12 }} >                            
-                            <Paper elevation={3} sx={{ padding: "8px" }}>
+                            <Paper elevation={3} >
                             <div className="detail-page-subheader">Tenant Authentication Domains</div>
-                                <List>
+                                <List sx={{ padding: "8px" }}>
                                     <ListItem disablePadding>opentrust.org</ListItem>
                                     <ListItem disablePadding>opentrust.com</ListItem>
                                     <ListItem disablePadding>megacorp.com</ListItem>
                                 </List>
 
                                 <Divider />
-                                <Stack direction={"row"} flexDirection={"row-reverse"} >
+                                <Stack sx={{ padding: "8px" }} direction={"row"} flexDirection={"row-reverse"} >
                                     <EditOutlinedIcon />
                                 </Stack>
                             </Paper>
@@ -430,16 +430,16 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
 
 
                         <Grid2 size={{ xs: 12, sm: 6, lg: 12, md: 6, xl: 12 }} >                            
-                            <Paper elevation={3} sx={{ padding: "8px" }}>
+                            <Paper elevation={3} >
                             <div className="detail-page-subheader">Federated OIDC Providers</div>
-                                <List>
+                                <List sx={{ padding: "8px" }}>
                                     <ListItem disablePadding>opentrust.org</ListItem>
                                     <ListItem disablePadding>opentrust.com</ListItem>
                                     <ListItem disablePadding>megacorp.com</ListItem>
                                 </List>
 
                                 <Divider />
-                                <Stack direction={"row"} flexDirection={"row-reverse"} >
+                                <Stack sx={{ padding: "8px" }} direction={"row"} flexDirection={"row-reverse"} >
                                     <EditOutlinedIcon />
                                 </Stack>
                             </Paper>
@@ -447,16 +447,16 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
 
 
                         <Grid2 size={{ xs: 12, sm: 6, lg: 12, md: 6, xl: 12 }} >
-                            <Paper elevation={3} sx={{ padding: "8px" }}>                                
+                            <Paper elevation={3} >                                
                                 <div className="detail-page-subheader">Social Identity Providers</div>
-                                <List>
+                                <List sx={{ padding: "8px" }}>
                                     <ListItem disablePadding>opentrust.org</ListItem>
                                     <ListItem disablePadding>opentrust.com</ListItem>
                                     <ListItem disablePadding>megacorp.com</ListItem>
                                 </List>
 
                                 <Divider />
-                                <Stack direction={"row"} flexDirection={"row-reverse"} paddingTop={"8px"} >
+                                <Stack sx={{ padding: "8px" }} direction={"row"} flexDirection={"row-reverse"} paddingTop={"8px"} >
                                     <EditOutlinedIcon />
                                 </Stack>
                             </Paper>

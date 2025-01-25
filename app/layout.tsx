@@ -17,7 +17,39 @@ import { createTheme } from '@mui/material/styles';
 import { ThemeProvider } from '@mui/material/styles';
 
 const theme = createTheme({
-    typography: {
+    
+    components: {
+        MuiAccordion: {
+            styleOverrides: {
+                heading: {
+                    backgroundColor: "#f8f8f8",
+                    
+                }                
+            }
+        },
+        MuiAccordionSummary: {           
+            styleOverrides: { 
+                root: {
+                    backgroundColor: "#f8f8f8"                    
+                },
+                content: {
+                    backgroundColor: "#f8f8f8"
+                }
+            }
+        },
+        MuiTypography: {
+            styleOverrides: {
+                root: {
+                    fontSize: "0.9em"
+                }
+            },
+            defaultProps: {
+                
+                fontSize: "0.9em"
+            }
+        }
+    },
+    typography: {        
       fontSize: 12
     },
   });

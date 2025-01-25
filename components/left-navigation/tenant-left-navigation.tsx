@@ -11,6 +11,7 @@ import PersonIcon from '@mui/icons-material/Person';
 import SettingsApplicationsIcon from '@mui/icons-material/SettingsApplications';
 import SettingsSystemDaydreamIcon from '@mui/icons-material/SettingsSystemDaydream';
 import SettingsIcon from '@mui/icons-material/Settings';
+import PolicyIcon from '@mui/icons-material/Policy';
 import AutoAwesomeMosaicIcon from '@mui/icons-material/AutoAwesomeMosaic';
 import SpeedIcon from '@mui/icons-material/Speed';
 import { ResponsiveBreakpoints } from "@/components/contexts/responsive-context";
@@ -59,7 +60,7 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
         <>
             {!breakPoints.isMedium && 
                 <>
-                    <Stack spacing={0} fontSize={"0.8em"}  direction={"row"} paddingTop={"8px"}>
+                    <Stack spacing={0} fontSize={"0.9em"}  direction={"row"} paddingTop={"8px"}>
                         <div>
                             <TextField   
                                 size="small"
@@ -85,7 +86,7 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
                         </div>
                     </Stack>
 
-                    <Stack spacing={2} padding={"8px"} fontSize={"0.85em"} fontWeight={"bolder"} marginTop={"8px"} >
+                    <Stack spacing={2} padding={"8px"} fontSize={"0.9em"} fontWeight={"bolder"} marginTop={"8px"} >
                         <Divider />
                         {tenantMetaData.tenant.tenantType === TENANT_TYPE_ROOT_TENANT &&
                             <div style={{display: "inline-flex", alignItems: "center", textDecoration: section === "tenants" ? "underline" : ""}}>
@@ -116,7 +117,7 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
                             <Link href={`/${tenantMetaData.tenant.tenantId}?section=authentication-groups`} >Authentication Groups</Link>
                         </div>
                         <div style={{display: "inline-flex", alignItems: "center"}}>
-                            <SettingsIcon sx={{marginRight: "8px"}} />
+                            <PolicyIcon sx={{marginRight: "8px"}} />
                             <Link href={`/${tenantMetaData.tenant.tenantId}?section=scope-access-control`} >Scope/Access Control</Link>
                         </div>
                         <div style={{display: "inline-flex", alignItems: "center"}}>
