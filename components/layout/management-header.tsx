@@ -25,7 +25,8 @@ const ManagementHeader: React.FC<ManagementHeaderProps> = ({
 
         >
             <Container
-                maxWidth={responsiveBreakpoints.isGreaterThanExtraLarge ? "xl" : "lg"}
+                maxWidth={responsiveBreakpoints.isGreaterThanExtraLarge ? "xl" : "xl"}
+                disableGutters={true}
                 sx={{height: "100%", alignItems: "center", display: "flex"}}                
             >
                 <Stack 
@@ -40,7 +41,10 @@ const ManagementHeader: React.FC<ManagementHeaderProps> = ({
                         </div>
                     }
                     {tenantMetaData.tenantLookAndFeel?.adminheadertext &&                        
-                        <div style={{verticalAlign: "center", fontWeight: "bold", marginLeft: "24px"}}>{tenantMetaData.tenantLookAndFeel?.adminheadertext}</div>                        
+                        <div style={{verticalAlign: "center", fontWeight: "bold", marginLeft: "8px"}}>{tenantMetaData.tenantLookAndFeel?.adminheadertext}</div>                        
+                    }
+                    {!tenantMetaData.tenantLookAndFeel?.adminheadertext &&                        
+                        <div style={{verticalAlign: "center", fontWeight: "bold", padding: "8px"}}>OpenTrust Identity</div>                        
                     }
                 </Stack>
             </Container>

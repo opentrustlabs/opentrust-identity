@@ -132,7 +132,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                         </Grid2>
 
                         
-                        <Grid2 size={12}>
+                        <Grid2 size={12} marginBottom={"16px"}>
                             <Accordion >
                                 <AccordionSummary
                                     expandIcon={<ExpandMoreIcon />}
@@ -172,7 +172,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                             </Accordion>
                         </Grid2>
 
-                        <Grid2 size={12}>
+                        <Grid2 size={12} marginBottom={"16px"}>
                             <Accordion >
                                 <AccordionSummary
                                     expandIcon={<ExpandMoreIcon />}
