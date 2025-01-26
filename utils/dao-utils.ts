@@ -32,6 +32,7 @@ import DBAuthorizationGroupDao from "@/lib/dao/impl/db/db-authorization-group-da
 import AccessRuleDao from "@/lib/dao/access-rule-dao";
 import DBAccessRuleDao from "@/lib/dao/impl/db/db-access-rule-dao";
 import bcrypt from "bcrypt";
+import DBIdentityDao from "@/lib/dao/impl/db/db-identity-dao";
 
 /**
  * 
@@ -231,6 +232,9 @@ export function getIdentityDaoImpl(): IdentityDao {
     const daoStrategy = process.env.DAO_STRATEGY ?? "filesystem";
     if(daoStrategy === "filesystem"){
         return new FSBasedIdentityDao();
+    }
+    else if(daoStrategy === "postgresql" || daoStrategy === "mysql" || daoStrategy === "mssql"){
+        return new DBIdentityDao();
     }
     return new FSBasedIdentityDao();
 }

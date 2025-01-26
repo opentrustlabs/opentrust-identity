@@ -17,10 +17,12 @@ const ManagementHeader: React.FC<ManagementHeaderProps> = ({
         <div 
             style={{
                 backgroundColor: tenantMetaData.tenantLookAndFeel?.adminheaderbackgroundcolor || "#1976d2", 
+                backgroundImage: "linear-gradient(#34111194, #1976d2)",
                 width: "100%", 
                 height: "6vh", 
                 color: tenantMetaData.tenantLookAndFeel?.adminheadertextcolor || "white",
-                borderBottom: "1px solid lightgray"
+                borderBottom: "1px solid lightgray",
+                boxShadow: "0px 0px 3vh 0px grey"
             }}
 
         >
