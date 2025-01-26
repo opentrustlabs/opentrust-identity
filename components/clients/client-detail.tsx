@@ -23,7 +23,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
 
     return (
-        <Typography component={"div"} fontSize={"0.9em"}>
+        <Typography component={"div"} >
             <BreadcrumbComponent breadCrumbs={[
                 {
                     href: `/${tenantBean.getTenantMetaData().tenant.tenantId}`,

@@ -4,7 +4,7 @@
 //                    AUTH-TOKEN-RELATED CONSTANTS
 // 
 
-import { TenantMetaData } from "@/graphql/generated/graphql-types";
+import { TenantMetaData, TenantPasswordConfig } from "@/graphql/generated/graphql-types";
 
 // ************************************************************************** //
 export const DEFAULT_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS = 600; // 10 minutes 
@@ -585,4 +585,20 @@ export const DEFAULT_TENANT_META_DATA: TenantMetaData = {
         authenticationheadertext: "",
         footerlinks: []
     }
+}
+
+export const DEFAULT_TENANT_PASSWORD_CONFIGURATION: TenantPasswordConfig = {
+    allowMfa: true,
+    passwordHashingAlgorithm: PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS,
+    passwordMaxLength: 64,
+    passwordMinLength: 10,
+    requireLowerCase: true,
+    requireMfa: false,
+    requireNumbers: true,
+    requireSpecialCharacters: false,
+    requireUpperCase: true,
+    tenantId: "",
+    mfaTypesAllowed: MFA_FACTOR_AUTH_TYPE_TIME_BASED_OTP,
+    mfaTypesRequired: "",
+    specialCharactersAllowed: "_-!@#[]<>=?+*.,%/:;"
 }
