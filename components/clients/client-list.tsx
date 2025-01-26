@@ -63,13 +63,12 @@ const ClientList: React.FC = () => {
     }
 
     const arrBreadcrumbs = [];
-    if (tenantBean.getTenantMetaData().tenant.tenantType === TENANT_TYPE_ROOT_TENANT) {
-        arrBreadcrumbs.push({
-            href: `/${tenantBean.getTenantMetaData().tenant.tenantId}`,
-            linkText: `Tenant List`
-        })
-    }
-
+    
+    arrBreadcrumbs.push({
+        href: `/${tenantBean.getTenantMetaData().tenant.tenantId}`,
+        linkText: tenantBean.getTenantMetaData().tenant.tenantType === TENANT_TYPE_ROOT_TENANT ? `Tenant List` : `${tenantBean.getTenantMetaData().tenant.tenantName}`
+    },);
+    
     arrBreadcrumbs.push({
         linkText: "Client List",
         href: null

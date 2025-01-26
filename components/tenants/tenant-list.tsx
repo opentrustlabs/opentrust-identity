@@ -3,7 +3,7 @@ import React, { useContext } from "react";
 import { Tenant } from "@/graphql/generated/graphql-types";
 import { TENANTS_QUERY } from "@/graphql/queries/oidc-queries";
 import { useQuery } from "@apollo/client";
-import { CircularProgress, Divider, Grid2, InputAdornment, Stack, TextField, Typography } from "@mui/material";
+import { Divider, Grid2, InputAdornment, Stack, TextField, Typography } from "@mui/material";
 import AddBoxIcon from '@mui/icons-material/AddBox';
 import UnfoldMoreOutlinedIcon from '@mui/icons-material/UnfoldMoreOutlined';
 import UnfoldLessOutlinedIcon from '@mui/icons-material/UnfoldLessOutlined';

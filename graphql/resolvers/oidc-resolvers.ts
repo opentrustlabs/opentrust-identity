@@ -31,7 +31,7 @@ const resolvers: Resolvers = {
                 userId: "8256c1db-cd40-48d1-914f-71672b4d42fa",
                 countryCode: "US",
                 preferredLanguageCode: "en",
-                managementAccessTenantId: "ad3e45b1-3e62-4fe2-ba59-530d35ae93d5"
+                managementAccessTenantId: "2a303f6d-0ebc-4590-9d12-7ebab6531d7e"
             }
             // home depot: 2a303f6d-0ebc-4590-9d12-7ebab6531d7e
             // root tenant: ad3e45b1-3e62-4fe2-ba59-530d35ae93d5

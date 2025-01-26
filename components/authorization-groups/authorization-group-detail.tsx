@@ -25,20 +25,18 @@ const AuthorizationGroupDetail: React.FC<AuthorizationGroupDetailProps> = ({auth
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
     
     const arrBreadcrumbs = [];
-        if (tenantBean.getTenantMetaData().tenant.tenantType === TENANT_TYPE_ROOT_TENANT) {
-            arrBreadcrumbs.push({
-                href: `/${tenantBean.getTenantMetaData().tenant.tenantId}`,
-                linkText: `Tenant List`
-            })
-        }
-        arrBreadcrumbs.push({
-            linkText: "Authorization Groups",
-            href: `/${tenantBean.getTenantMetaData().tenant.tenantId}/authorization-groups`
-        });
-        arrBreadcrumbs.push({
-            linkText: authorizationGroup.groupName,
-            href: null
-        })
+    arrBreadcrumbs.push({
+        href: `/${tenantBean.getTenantMetaData().tenant.tenantId}`,
+        linkText: tenantBean.getTenantMetaData().tenant.tenantType === TENANT_TYPE_ROOT_TENANT ? `Tenant List` : `${tenantBean.getTenantMetaData().tenant.tenantName}`
+    },);
+    arrBreadcrumbs.push({
+        linkText: "Authorization Groups",
+        href: `/${tenantBean.getTenantMetaData().tenant.tenantId}?section=authorization-groups`
+    });
+    arrBreadcrumbs.push({
+        linkText: authorizationGroup.groupName,
+        href: null
+    })
 
 
     return (
