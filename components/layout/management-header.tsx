@@ -22,7 +22,7 @@ const ManagementHeader: React.FC<ManagementHeaderProps> = ({
                 height: "6vh", 
                 color: tenantMetaData.tenantLookAndFeel?.adminheadertextcolor || "white",
                 borderBottom: "1px solid lightgray",
-                boxShadow: "0px 0px 3vh 0px grey"
+                boxShadow: "0px 0px 2vh 0px grey"
             }}
 
         >

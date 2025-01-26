@@ -15,7 +15,7 @@ export interface BreadcrumbComponentProps {
 const BreadcrumbComponent: React.FC<BreadcrumbComponentProps> = ({breadCrumbs}) => {
 
     return (
-        <Breadcrumbs sx={{height: "40px", paddingTop: "8px"}}>
+        <Breadcrumbs sx={{minHeight: "40px", paddingTop: "8px"}}>
             {breadCrumbs.map(
                 (breadCrumb: BreadcrumbDetail) => (
                     

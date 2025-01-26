@@ -181,6 +181,16 @@ export const CLIENT_DETAIL_QUERY = gql(`
     }
 `);
 
+export const AUTHORIZATION_GROUP_DETAIL_QUERY = gql(`
+    query getAuthorizationGroupById($groupId: String!) {
+        getAuthorizationGroupById(groupId: $groupId) {
+            groupId
+            groupName
+            default
+        }
+    }
+`);
+
 /*
 getLoginFailurePolicy {        
             loginFailurePolicyType
