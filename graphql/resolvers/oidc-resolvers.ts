@@ -7,6 +7,7 @@ import GroupService from "@/lib/service/group-service";
 import AuthenticationGroupService from "@/lib/service/authentication-group-service";
 import FederatedOIDCProviderService from "@/lib/service/federated-oidc-provider-service";
 import { NAME_ORDER_WESTERN, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_POST, SIGNING_KEY_STATUS_ACTIVE, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
+import SearchService from "@/lib/service/search-service";
 
 
 const resolvers: Resolvers = {
@@ -37,6 +38,10 @@ const resolvers: Resolvers = {
             // root tenant: ad3e45b1-3e62-4fe2-ba59-530d35ae93d5
             // airbnb: c42c29cb-1bf7-4f6a-905e-5f74760218e2
             return profile;
+        },
+        search: (_, { searchInput }, oidcContenxt) => {
+            const searchService: SearchService = new SearchService(oidcContenxt);
+            return searchService.search(searchInput);
         },
         getRootTenant: (_, __, oidcContext) => {
             const tenantService: TenantService = new TenantService(oidcContext);
