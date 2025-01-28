@@ -1,5 +1,11 @@
 
 type Query {
+
+
+    ## Search
+    search(searchInput: SearchInput!): SearchResults!
+    lookahead(term: String!): [LookaheadResult]
+
     ## Tenants
     getRootTenant: Tenant!
     getTenants: [Tenant!]!
@@ -10,7 +16,7 @@ type Query {
     getAnonymousUserConfiguration(tenantId: String!): AnonymousUserConfiguration
     getLegacyUserMigrationConfiguration(tenantId: String!): TenantLegacyUserMigrationConfig
     getTenantLookAndFeel(tenantId: String!): TenantLookAndFeel
-    
+
     ## Clients
     getClients(tenantId: String): [Client!]!
     getClientById(clientId: String!): Client
@@ -708,9 +714,77 @@ type LoginAuthenticationHandlerResponse {
     errorActionHandler: ErrorActionHandler
 }
 
+
+# union SearchResultType = Tenant | Client | User | AuthenticationGroup | AuthorizationGroup | Scope | FederatedOIDCProvider
+
+enum SearchResultType {
+    TENANT
+    CLIENT
+    USER
+    AUTHORIZATION_GROUP
+    AUTHENTICATION_GROUP
+    ACCESS_CONTROL
+    OIDC_PROVIDERS
+    RATE_LIMITS
+    KEYS
+}
+
+type SearchResultItem {
+    id: String!
+    resultType: SearchResultType
+    name: String!
+    description: String
+    enabled: Boolean
+}
+
+
+type SearchResults {
+    startTime: Float!
+    endTime: Float!
+    took: Int!
+    page: Int!
+    perPage: Int!
+    total: Int!
+    resultList: [SearchResultItem]
+}
+
+type LookaheadItem {
+    id: String!
+    matchingString: String
+    displayValue: String!
+}
+
+type LookaheadResult {
+    category: String!
+    resultList: [LookaheadItem]
+}
+
 ############################################################################
 ################ INPUT TYPES AND RESPONSES FOR MUTATATIONS #################
 ############################################################################
+
+
+enum SearchFilterInputObjectType {
+    TENANT_ID
+    CLIENT_ID
+    USER_ID
+    AUTHORIZATION_GROUP_ID
+    AUTHENTICATION_GROUP_ID
+}
+
+input SearchFilterInput {
+    objectType: SearchFilterInputObjectType!
+    objectValue: String!
+}
+
+
+input SearchInput {
+    term: String
+    resultType: SearchResultType
+    filters: [SearchFilterInput]
+    page: Int!
+    perPage: Int!
+}
 
 input FederatedOIDCProviderCreateInput {
     federatedOIDCProviderId: String!
@@ -984,3 +1058,4 @@ input UserUpdateInput {
     enabled: Boolean!
     nameOrder: String!
 }
+

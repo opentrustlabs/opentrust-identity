@@ -191,6 +191,26 @@ export const AUTHORIZATION_GROUP_DETAIL_QUERY = gql(`
     }
 `);
 
+
+export const USER_SEARCH_QUERY = gql(`
+    query search($searchInput: SearchInput!){
+        search(searchInput: $searchInput) {
+            startTime
+            endTime
+            took
+            page
+            perPage
+            total
+            resultList {
+                id
+                resultType
+                name
+                description
+                enabled
+            }
+        }
+    }
+`);
 /*
 getLoginFailurePolicy {        
             loginFailurePolicyType
