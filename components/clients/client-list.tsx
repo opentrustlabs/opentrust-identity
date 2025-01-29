@@ -3,7 +3,7 @@ import React, { useContext } from "react";
 import { Client, Tenant } from "@/graphql/generated/graphql-types";
 import { CLIENTS_QUERY } from "@/graphql/queries/oidc-queries";
 import { useQuery } from "@apollo/client";
-import { CircularProgress, Divider, Grid2, InputAdornment, Stack, TextField, Typography } from "@mui/material";
+import { Divider, Grid2, InputAdornment, Stack, TextField, Typography } from "@mui/material";
 import AddBoxIcon from '@mui/icons-material/AddBox';
 import UnfoldMoreOutlinedIcon from '@mui/icons-material/UnfoldMoreOutlined';
 import UnfoldLessOutlinedIcon from '@mui/icons-material/UnfoldLessOutlined';
@@ -31,21 +31,13 @@ const ClientList: React.FC = () => {
 
     // GRAPHQL FUNCTION
     const { data, error, loading } = useQuery(CLIENTS_QUERY, {
-
+        
     });
 
     // HANDLER FUNCTIONS
 
     const handleFilterChange = (evt: any) => {
         setFilerValue(evt.target.value);
-    }
-
-    const isExpanded = (section: string): boolean => {
-        console.log("is expanded")
-        if (mapViewExpanded.has(section)) {
-            return true;
-        }
-        return false;
     }
 
     const setExpanded = (section: string): void => {
