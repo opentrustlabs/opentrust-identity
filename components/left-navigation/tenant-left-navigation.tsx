@@ -86,7 +86,7 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
                         </div>
                     </Stack>
 
-                    <Stack spacing={2} padding={"8px"} fontSize={"0.9em"} fontWeight={"bolder"} marginTop={"8px"} >
+                    <Stack spacing={2} padding={"8px"} color={"#616161"} fontSize={"0.9em"} fontWeight={"bolder"} marginTop={"8px"} >
                         <Divider />
                         {tenantMetaData.tenant.tenantType === TENANT_TYPE_ROOT_TENANT &&
                             <div style={{display: "inline-flex", alignItems: "center", textDecoration: section === "tenants" ? "underline" : ""}}>

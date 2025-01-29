@@ -20,12 +20,15 @@ class SearchService {
         if(searchInput.resultType === SearchResultType.Client){
 
         }
+        const page: number = searchInput.page;
+        const searchTerm = searchInput.term;
+
 
         const items: Array<SearchResultItem> = [];
         for(let i = 0; i < 25; i++){
             items.push({
                 id: randomUUID().toString(),
-                name: `${firstNames[i % firstNames.length]} ${lastnames[i % lastnames.length]}`,
+                name: searchTerm && searchTerm.length > 3 ? `Fred ${lastnames[(i + page) % lastnames.length]}` : `${firstNames[ (i + page)  % firstNames.length]} ${lastnames[(i + page) % lastnames.length]}`,
                 description: "",
                 enabled: true,
                 resultType: SearchResultType.User
@@ -39,7 +42,7 @@ class SearchService {
             perPage: 30,
             startTime: now,
             took: 45,
-            total: 25,
+            total: searchTerm && searchTerm.length > 3 ? 234 : 3456,
             resultList: items
         }
 
