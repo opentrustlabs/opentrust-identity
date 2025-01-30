@@ -15,6 +15,7 @@ import PersonIcon from '@mui/icons-material/Person';
 import PolicyIcon from '@mui/icons-material/Policy';
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
 import Link from "next/link";
+import UserList from "../users/user-list";
 
 export interface AuthorizationGroupDetailProps {
     authorizationGroup: AuthorizationGroup
@@ -89,51 +90,23 @@ const AuthorizationGroupDetail: React.FC<AuthorizationGroupDetailProps> = ({auth
                                 </AccordionSummary>
                                 <AccordionDetails>
                                     <Typography component={"div"} fontWeight={"bold"} >
-                                        <Stack spacing={1} justifyContent={"space-between"} direction={"row"} fontWeight={"bold"} fontSize={"0.95em"} margin={"8px 0px 24px 0px"}>
-                                            <div style={{ display: "inline-flex", alignItems: "center" }}>
-                                                <TextField
-                                                    label={"Filter Users"}
-                                                    size={"small"}
-                                                    name={"filter"}
-                                                    value={""}
-                                                    
-                                                    slotProps={{
-                                                        input: {
-                                                            endAdornment: (
-                                                                <InputAdornment position="end">
-                                                                    <CloseOutlinedIcon
-                                                                        sx={{ cursor: "pointer" }}
-                                                                       
-                                                                    />
-                                                                </InputAdornment>
-                                                            )
-                                                        }
-                                                    }}
-                                                />
-                                            </div>
-                                        </Stack>
-                                        <Grid2 container size={12} spacing={1} marginBottom={"16px"} >
-                                            <Stack spacing={1} justifyContent={"space-between"} direction={"row"} fontWeight={"bold"} fontSize={"0.95em"} margin={"8px 0px 24px 0px"}>
+                                        <Grid2 container size={12} spacing={1} marginBottom={"8px"} >
+                                            <Stack spacing={1} justifyContent={"space-between"} direction={"row"} fontWeight={"bold"} fontSize={"0.95em"} margin={"8px 0px 16px 0px"}>
                                                 <div style={{ display: "inline-flex", alignItems: "center" }}>
                                                     <AddBoxIcon sx={{ marginRight: "8px", cursor: "pointer" }} />
                                                     <span>Add User</span>
                                                 </div>
                                             </Stack>
-                                        </Grid2>
+                                        </Grid2>                                        
                                     </Typography>
-                                    <Divider></Divider>
-                                    {["http://localhost:8080/oidc/return", "https://qa.opentrust.org/oidc/return"].map(
-                                        (uri: string) => (
-                                            <Typography key={`${uri}`} component={"div"} fontSize={"0.9em"} fontWeight={"bold"}>
-                                                <Divider></Divider>
-                                                <Grid2 margin={"8px 0px 8px 0px"} container size={12} spacing={1}>
-                                                    <Grid2 size={11}>{uri}</Grid2>
-                                                    <Grid2 size={1}><DeleteForeverOutlinedIcon /></Grid2>
-                                                </Grid2>
-                                            </Typography>
-                                        )
-                                    )}
-                                    <Divider></Divider>
+                                    <UserList 
+                                        tenantId={tenantBean.getTenantMetaData().tenant.tenantId} 
+                                        authorizationGroupId={authorizationGroup.groupId} 
+                                        authenticationGroupId={null}
+                                        page={0}
+                                        perPage={10}
+                                        embedded={true}                                    
+                                    />                 
                             </AccordionDetails>
                             </Accordion>
                         </Grid2>

@@ -202,8 +202,8 @@ export const USER_SEARCH_QUERY = gql(`
             perPage
             total
             resultList {
-                id
-                resultType
+                objectId
+                objectType
                 name
                 description
                 enabled
