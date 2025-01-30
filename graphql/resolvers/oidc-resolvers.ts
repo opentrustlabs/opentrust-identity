@@ -398,6 +398,7 @@ const resolvers: Resolvers = {
                 keyType: keyInput.keyType,
                 tenantId: keyInput.tenantId,
                 keyuse: keyInput.use,
+                keyName: keyInput.keyName,
                 keyId: "",
                 certificate: keyInput.certificate,
                 privateKeyPkcs8: keyInput.privateKey,

@@ -165,7 +165,8 @@ type Mutation {
     deleteFederatedOIDCProvider(federatedOIDCProviderId: String!): String!
 
     ## Login failure policy
-    setLoginFailurePolicy(loginFailurePolicyInput: LoginFailurePolicyInput!): LoginFailurePolicy!
+    createLoginFailurePolicy(loginFailurePolicyInput: LoginFailurePolicyInput!): LoginFailurePolicy!
+    updateLoginFailurePolicy(loginFailurePolicyInput: LoginFailurePolicyInput!): LoginFailurePolicy!
 
     ## Scheduler locks
     deleteSchedulerLock(instanceId: String!): String!
@@ -176,6 +177,7 @@ type Mutation {
 
 
 type LoginFailurePolicy {
+    tenantId: String!
     loginFailurePolicyType: String!
     loginfailurepolicytypeid: String
     failureThreshold: Int!
@@ -386,6 +388,7 @@ type UserTenantRel {
     userId: String!
     tenantId: String!
     enabled: Boolean!
+    relType: String!
 }
 
 type AuthenticationGroup {
@@ -432,6 +435,7 @@ type SigningKey {
     keyId: String!
     tenantId: String!    
     keyType: String!
+    keyName: String!
     keytypeid: String
     keyuse: String!
     privateKeyPkcs8: String!
@@ -715,8 +719,6 @@ type LoginAuthenticationHandlerResponse {
 }
 
 
-# union SearchResultType = Tenant | Client | User | AuthenticationGroup | AuthorizationGroup | Scope | FederatedOIDCProvider
-
 enum SearchResultType {
     TENANT
     CLIENT
@@ -724,19 +726,25 @@ enum SearchResultType {
     AUTHORIZATION_GROUP
     AUTHENTICATION_GROUP
     ACCESS_CONTROL
-    OIDC_PROVIDERS
-    RATE_LIMITS
-    KEYS
+    OIDC_PROVIDER
+    RATE_LIMIT
+    KEY
 }
 
 type SearchResultItem {
-    id: String!
-    resultType: SearchResultType
+    objectId: String!    
+    objectType: SearchResultType!
+    owningTenantId: String
+    owningClientId: String
     name: String!
     description: String
+    subTypeKey: String
+    subType: String
+    email: String
     enabled: Boolean
 }
 
+# union SearchResultItem = GenericSearchResultItem | Tenant | Client | User | AuthenticationGroup | AuthorizationGroup | Scope | FederatedOIDCProvider
 
 type SearchResults {
     startTime: Float!
@@ -745,7 +753,7 @@ type SearchResults {
     page: Int!
     perPage: Int!
     total: Int!
-    resultList: [SearchResultItem]
+    resultList: [SearchResultItem!]!
 }
 
 type LookaheadItem {
@@ -930,6 +938,7 @@ input SigningKeyCreateInput {
     tenantId: String!    
     keyType: String!
     keytypeid: String
+    keyName: String!
     use: String!
     privateKey: String!
     password: String
@@ -1015,6 +1024,7 @@ input AccessRuleUpdateInput {
 }
 
 input LoginFailurePolicyInput {
+    tenantId: String!
     loginFailurePolicyType: String!
     loginfailurepolicytypeid: String
     failureThreshold: Int!

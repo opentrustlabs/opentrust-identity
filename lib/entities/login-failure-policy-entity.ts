@@ -9,6 +9,7 @@ class LoginFailurePolicyEntity {
 
     constructor(loginFailurePolicy?: LoginFailurePolicy){
         if(loginFailurePolicy){
+            this.tenantId = loginFailurePolicy.tenantId;
             this.loginfailurepolicytype = loginFailurePolicy.loginFailurePolicyType;
             this.failurethreshold = loginFailurePolicy.failureThreshold;
             this.pausedurationminutes = loginFailurePolicy.pauseDurationMinutes || undefined;
@@ -19,7 +20,10 @@ class LoginFailurePolicyEntity {
         }
     }
 
-    @PrimaryKey()
+    @PrimaryKey({fieldName: "tenantid"})
+    tenantId: string;
+
+    @Property()
     loginfailurepolicytype: string;
 
     @Property()
@@ -39,6 +43,7 @@ class LoginFailurePolicyEntity {
 
     toModel(): LoginFailurePolicy{
         const l: LoginFailurePolicy = {
+            tenantId: this.tenantId,
             failureThreshold: this.failurethreshold,
             loginFailurePolicyType: this.loginfailurepolicytype,
             initBackoffDurationMinutes: this.initbackoffdurationminutes,

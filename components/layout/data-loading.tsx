@@ -6,7 +6,7 @@ import React from "react";
 export type DataLoadingSizeType = "full-page" | "xl" | "lg" | "md" | "sm" | "xs";
 
 export interface DataLoadingProps {
-    dataLoadingSize: DataLoadingSizeType,
+    dataLoadingSize: DataLoadingSizeType | string,
     color: string | null
 }
 
@@ -16,15 +16,19 @@ const DataLoading: React.FC<DataLoadingProps> = ({
     color
 }) => {
 
-    let height = "86vh"; // default is full page height
+    let height = dataLoadingSize; // default is whatever the client set.
     let circularProgressSize = "40px"; // default for full page down to md
     switch (dataLoadingSize) {
+        case "xl" : {
+            height = "84vh";
+            break;
+        }
         case "lg" : {
             height = "70vh";
             break;
         }
         case "md" : {
-            height = "60vh";
+            height = "40vh";
             break;
         }
         case "sm" : {
@@ -38,6 +42,7 @@ const DataLoading: React.FC<DataLoadingProps> = ({
             break;
         }
     }
+    
 
     
     

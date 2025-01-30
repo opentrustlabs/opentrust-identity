@@ -21,17 +21,18 @@ class SearchService {
 
         }
         const page: number = searchInput.page;
+        const perPage: number = searchInput.perPage;
         const searchTerm = searchInput.term;
 
 
         const items: Array<SearchResultItem> = [];
-        for(let i = 0; i < 25; i++){
+        for(let i = 0; i < perPage; i++){
             items.push({
-                id: randomUUID().toString(),
-                name: searchTerm && searchTerm.length > 3 ? `Fred ${lastnames[(i + page) % lastnames.length]}` : `${firstNames[ (i + page)  % firstNames.length]} ${lastnames[(i + page) % lastnames.length]}`,
+                objectId: `${page} - element ${i}`,
+                name: searchTerm && searchTerm.length >= 3 ? `Fred ${lastnames[(i + page) % lastnames.length]}` : `${firstNames[ (i + page)  % firstNames.length]} ${lastnames[(i + page) % lastnames.length]}`,
                 description: "",
                 enabled: true,
-                resultType: SearchResultType.User
+                objectType: SearchResultType.User
             })
         }
         const now = Date.now();

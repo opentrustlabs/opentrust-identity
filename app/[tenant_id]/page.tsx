@@ -43,7 +43,7 @@ const TenantLandingPage: React.FC = () => {
                 <ClientList />
             }
             {section === "users" &&
-                <UserList tenantId={tenantBean.getTenantMetaData().tenant.tenantId} authorizationGroupId={""} authenticationGroupId={""} embedded={false} />
+                <UserList tenantId={tenantBean.getTenantMetaData().tenant.tenantId} authorizationGroupId={""} authenticationGroupId={""}  page={0} perPage={20} embedded={false}/>
             }
             {section === "authorization-groups" &&
                 <AuthorizationGroupList />

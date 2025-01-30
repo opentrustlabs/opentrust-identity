@@ -12,6 +12,7 @@ class SigningKeyEntity {
             this.keyId = signingKey.keyId;
             this.keyType = signingKey.keyType;
             this.keyuse = signingKey.keyuse;
+            this.keyName = signingKey.keyName;
             this.status = signingKey.status;
             this.tenantId = signingKey.tenantId;
             this.certificate = Buffer.from(signingKey.certificate ? signingKey.certificate : "");
@@ -27,9 +28,11 @@ class SigningKeyEntity {
 
     @Property({fieldName: "keytype"})
     keyType: string;
-
     
     keytypeid?: Maybe<string> | undefined;
+
+    @Property({fieldName: "keyname"})
+    keyName: string;
     
     @Property({fieldName: "keyuse"})
     keyuse: string;
@@ -72,6 +75,7 @@ class SigningKeyEntity {
             publicKey: this.publicKey?.toString("utf-8"),
             keytypeid: "",
             statusid: "",
+            keyName: this.keyName,
             __typename: "SigningKey"
         }
         return m;

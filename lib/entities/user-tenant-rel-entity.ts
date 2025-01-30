@@ -21,6 +21,9 @@ class UserTenantRelEntity implements UserTenantRel {
     
     @Property({fieldName: "enabled"})
     enabled: boolean;
+
+    @Property({fieldName: "reltype"})
+    relType: string;
     
 }
 

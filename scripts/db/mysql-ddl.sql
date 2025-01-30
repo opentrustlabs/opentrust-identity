@@ -41,12 +41,14 @@ create TABLE tenant (
 CREATE INDEX tenant_tenant_type_idx ON tenant(tenanttype);
 
 create TABLE login_failure_policy (
+    tenantid VARCHAR(64) PRIMARY KEY,
     loginfailurepolicytype VARCHAR(128) NOT NULL,
     failurethreshold INT,
     pausedurationminutes INT,
     numberofpausecyclesbeforelocking INT,
     initbackoffdurationminutes INT,
-    numberofbackoffcyclesbeforelocking INT
+    numberofbackoffcyclesbeforelocking INT,    
+    FOREIGN KEY (tenantid) references tenant(tenantid)
 );
 
 create TABLE tenant_management_domain_rel (
