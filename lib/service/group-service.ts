@@ -1,4 +1,4 @@
-import { AuthorizationGroup, Tenant, UserAuthorizationGroupRel } from "@/graphql/generated/graphql-types";
+import { AuthorizationGroup, AuthorizationGroupUserRel, Tenant } from "@/graphql/generated/graphql-types";
 import { OIDCContext } from "@/graphql/graphql-context";
 import TenantDao from "@/lib/dao/tenant-dao";
 import { getAuthorizationGroupDaoImpl, getTenantDaoImpl } from "@/utils/dao-utils";
@@ -53,7 +53,7 @@ class GroupService {
         throw new Error("Method not implemented.");
     }
 
-    public async addUserToGroup(userId: string, groupId: string): Promise<UserAuthorizationGroupRel> {
+    public async addUserToGroup(userId: string, groupId: string): Promise<AuthorizationGroupUserRel> {
         throw new Error("Method not implemented.");
     }
     

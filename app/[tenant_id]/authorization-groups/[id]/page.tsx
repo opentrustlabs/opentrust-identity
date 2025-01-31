@@ -13,7 +13,6 @@ const AuthorizationGroupDetailPage: React.FC = () => {
 
     const params = useParams();
     const authorizationGroupId = params?.id as string;
-    console.log("authorization group id is: " + authorizationGroupId)
 
     const {data, loading, error} = useQuery(
         AUTHORIZATION_GROUP_DETAIL_QUERY,

@@ -54,7 +54,7 @@ type Query {
     getAccessRuleById(accessRuleId: String!): AccessRule
 
     ## AuthenticationGroups
-    getAuthenticationGroups(tenantId: String, clientId: String): [AuthenticationGroup!]!
+    getAuthenticationGroups(tenantId: String, clientId: String, userId: String): [AuthenticationGroup!]!
     getAuthenticationGroupById(authenticationGroupId: String!): AuthenticationGroup
 
     ## Groups

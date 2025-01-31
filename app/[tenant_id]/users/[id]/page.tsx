@@ -10,8 +10,6 @@ import React from "react";
 
 const UserDetailPage: React.FC = () => {
 
-
-
     const params = useParams();
     const userId = params?.id as string;
 

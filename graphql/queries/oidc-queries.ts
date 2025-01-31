@@ -234,6 +234,30 @@ export const USER_DETAIL_QUERY = gql(`
         }
     }    
 `);
+
+export const AUTHENTICATION_GROUPS_QUERY = gql(`
+    query getAuthenticationGroups($tenantId: String, $clientId: String, $userId: String) {
+        getAuthenticationGroups(tenantId: $tenantId, clientId: $clientId, userId: $userId) {
+            tenantId
+            authenticationGroupId
+            authenticationGroupName
+            authenticationGroupDescription
+            defaultGroup
+        }
+    }
+`);
+
+export const AUTHENTICATION_GROUP_DETAIL_QUERY = gql(`
+    query getAuthenticationGroupById($authenticationGroupId: String!) {
+        getAuthenticationGroupById(authenticationGroupId: $authenticationGroupId) {
+            tenantId
+            authenticationGroupId
+            authenticationGroupName
+            authenticationGroupDescription
+            defaultGroup
+        }
+    }
+`);
 /*
 getLoginFailurePolicy {        
             loginFailurePolicyType
