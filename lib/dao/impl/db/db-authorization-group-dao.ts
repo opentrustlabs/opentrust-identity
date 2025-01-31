@@ -1,8 +1,8 @@
-import { AuthorizationGroup, UserAuthorizationGroupRel } from "@/graphql/generated/graphql-types";
+import { AuthorizationGroup, AuthorizationGroupUserRel } from "@/graphql/generated/graphql-types";
 import AuthorizationGroupDao from "../../authorization-group-dao";
 import connection  from "@/lib/data-sources/db";
 import AuthorizationGroupEntity from "@/lib/entities/authorization-group-entity";
-import UserAuthorizationGroupRelEntity from "@/lib/entities/user-authorization-group-rel-entity";
+import AuthorizationGroupUserRelEntity from "@/lib/entities/authorization-group-user-rel-entity";
 
 class DBAuthorizationGroupDao extends AuthorizationGroupDao {
 
@@ -45,9 +45,9 @@ class DBAuthorizationGroupDao extends AuthorizationGroupDao {
         // DELETE THE RELATIONSHIPS
     }
 
-    public async addUserToAuthorizationGroup(userId: string, groupId: string): Promise<UserAuthorizationGroupRel> {
+    public async addUserToAuthorizationGroup(userId: string, groupId: string): Promise<AuthorizationGroupUserRel> {
         const em = connection.em.fork();
-        const entity: UserAuthorizationGroupRel = new UserAuthorizationGroupRelEntity({
+        const entity: AuthorizationGroupUserRel = new AuthorizationGroupUserRelEntity({
             userId: userId,
             groupId: groupId
         });
@@ -58,7 +58,7 @@ class DBAuthorizationGroupDao extends AuthorizationGroupDao {
 
     public async removeUserFromAuthorizationGroup(userId: string, groupId: string): Promise<void> {
         const em = connection.em.fork();
-        await em.nativeDelete(UserAuthorizationGroupRelEntity, {
+        await em.nativeDelete(AuthorizationGroupUserRelEntity, {
             userId: userId,
             groupId: groupId
         });
@@ -68,7 +68,7 @@ class DBAuthorizationGroupDao extends AuthorizationGroupDao {
 
     public async getUserAuthorizationGroups(userId: string): Promise<Array<AuthorizationGroup>> {
         const em = connection.em.fork();
-        const rels = await em.find(UserAuthorizationGroupRelEntity, {userId: userId});
+        const rels = await em.find(AuthorizationGroupUserRelEntity, {userId: userId});
         const inClause = rels.map(r => r.groupId);
         const entities = await em.find(AuthorizationGroupEntity, {groupId: inClause});
         return Promise.resolve(entities);

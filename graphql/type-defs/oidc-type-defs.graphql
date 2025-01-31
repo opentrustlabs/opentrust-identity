@@ -152,7 +152,7 @@ type Mutation {
     createAuthorizationGroup(groupInput: AuthorizationGroupCreateInput!): AuthorizationGroup
     updateAuthorizationGroup(groupInput: AuthorizationGroupUpdateInput!): AuthorizationGroup
     deleteAuthorizationGroup(groupId: String!): String!
-    addUserToAuthorizationGroup(userId: String!, groupId: String!): UserAuthorizationGroupRel
+    addUserToAuthorizationGroup(userId: String!, groupId: String!): AuthorizationGroupUserRel
     removeUserFromAuthorizationGroup(userId: String!, groupId: String!): String
 
     ## External OIDC Providers
@@ -418,10 +418,11 @@ type AuthorizationGroup {
     default: Boolean!
 }
 
-type UserAuthorizationGroupRel {
+type AuthorizationGroupUserRel {
     userId: String!
     groupId: String!
 }
+
 
 type UserCredential {
     userId: String!

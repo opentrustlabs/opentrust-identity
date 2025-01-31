@@ -1,7 +1,7 @@
 import { User, AuthenticationGroup, AuthorizationGroup, AuthenticationGroupUserRel, SuccessfulLoginResponse, UserFailedLoginAttempts } from "@/graphql/generated/graphql-types";
 import IdentityDao from "../../identity-dao";
 import connection  from "@/lib/data-sources/db";
-import UserAuthorizationGroupRelEntity from "@/lib/entities/user-authorization-group-rel-entity";
+import UserAuthorizationGroupRelEntity from "@/lib/entities/authorization-group-user-rel-entity";
 import AuthorizationGroupEntity from "@/lib/entities/authorization-group-entity";
 import AuthenticationGroupUserRelEntity from "@/lib/entities/authentication-group-user-rel-entity";
 import AuthenticationGroupEntity from "@/lib/entities/authentication-group-entity";

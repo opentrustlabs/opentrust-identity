@@ -1,4 +1,4 @@
-import { AuthorizationGroup, UserAuthorizationGroupRel } from "@/graphql/generated/graphql-types";
+import { AuthorizationGroup, AuthorizationGroupUserRel } from "@/graphql/generated/graphql-types";
 
 
 abstract class AuthorizationGroupDao {
@@ -13,7 +13,7 @@ abstract class AuthorizationGroupDao {
     
         abstract deleteAuthorizationGroup(groupId: string): Promise<void>;
     
-        abstract addUserToAuthorizationGroup(userId: string, groupId: string): Promise<UserAuthorizationGroupRel>;
+        abstract addUserToAuthorizationGroup(userId: string, groupId: string): Promise<AuthorizationGroupUserRel>;
     
         abstract removeUserFromAuthorizationGroup(userId: string, groupId: string): Promise<void>;
 

@@ -1,6 +1,6 @@
 import ClientService from "@/lib/service/client-service";
 import TenantService from "@/lib/service/tenant-service";
-import { Resolvers, QueryResolvers, MutationResolvers, Tenant, Client, SigningKey, Scope, AuthenticationGroup, AuthorizationGroup, FederatedOidcProvider, ContactInput, Contact, LoginUserNameHandlerResponse, LoginUserNameHandlerAction, LoginAuthenticationHandlerResponse, LoginAuthenticationHandlerAction, SecondFactorType, PortalUserProfile } from "@/graphql/generated/graphql-types";
+import { Resolvers, QueryResolvers, MutationResolvers, Tenant, Client, SigningKey, Scope, AuthenticationGroup, AuthorizationGroup, FederatedOidcProvider, ContactInput, Contact, LoginUserNameHandlerResponse, LoginUserNameHandlerAction, LoginAuthenticationHandlerResponse, LoginAuthenticationHandlerAction, SecondFactorType, PortalUserProfile, User } from "@/graphql/generated/graphql-types";
 import SigningKeysService from "@/lib/service/keys-service";
 import ScopeService from "@/lib/service/scope-service";
 import GroupService from "@/lib/service/group-service";
@@ -38,6 +38,26 @@ const resolvers: Resolvers = {
             // root tenant: ad3e45b1-3e62-4fe2-ba59-530d35ae93d5
             // airbnb: c42c29cb-1bf7-4f6a-905e-5f74760218e2
             return profile;
+        },
+        getUserById: (_, { userId }, oidcContext) => {
+            const user: User = {
+                domain: "charter.net",
+                email: "alessandro.barbero@charter.net",
+                emailVerified: true,
+                enabled: true,
+                firstName: "Alessandro",
+                lastName: "Barbero",
+                locked: false,
+                nameOrder: NAME_ORDER_WESTERN,
+                userId: "23478928374982734",
+                address: "118 Via Milano",
+                countryCode: "IT",
+                preferredLanguageCode: "it",
+                federatedOIDCProviderSubjectId: "",
+                middleName: "Ricardo",
+                twoFactorAuthType: "NONE"
+            }
+            return user;
         },
         search: (_, { searchInput }, oidcContenxt) => {
             const searchService: SearchService = new SearchService(oidcContenxt);

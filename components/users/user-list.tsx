@@ -48,6 +48,9 @@ const UserList: React.FC<UserListProps> = ({
     // const pp = params?.get("per_page");
     // const term = params?.get("term");
 
+    // REF OBJECTS
+    const topOfSearchList = useRef<HTMLDivElement | null>(null);
+
     // STATE VARIABLES
     const [filterTerm, setFilterTerm] = React.useState<string>("");
     const [doFilterTerm, setDoFilterTerm] = React.useState<string>("");
@@ -107,9 +110,9 @@ const UserList: React.FC<UserListProps> = ({
                 resultType: SearchResultType.User
             }
         });
-        // topOfSearchList.current?.scrollIntoView({
-        //     behavior: "smooth"
-        // })
+        topOfSearchList.current?.scrollIntoView({
+            behavior: "smooth"
+        })
     }
 
 
@@ -161,6 +164,7 @@ const UserList: React.FC<UserListProps> = ({
                             }}
                         />
                     </div>
+                    <div ref={topOfSearchList}></div>
                 </Stack>
                 {
                     /*  Need to  divide this component into 2 (one managing filters, pagination, queries and the other managing just the display), 
@@ -189,14 +193,27 @@ const UserList: React.FC<UserListProps> = ({
                 
                 <Grid2 container size={12} spacing={1} marginTop={"16px"} marginBottom={"16px"} >
                 <Grid2 size={embedded ? 12 : 9}>
-                    <TablePagination
-                        component={"div"}
-                        page={page}
-                        rowsPerPage={perPage}
-                        count={loading && previousData ? previousData.search.total : data.search.total}
-                        onPageChange={handlePageChange}
-                        rowsPerPageOptions={[]}
-                    />
+                    {loading && previousData &&
+                        <TablePagination
+                            component={"div"}
+                            page={page}
+                            rowsPerPage={perPage}
+                            count={previousData.search.total}
+                            onPageChange={handlePageChange}
+                            rowsPerPageOptions={[]}
+                        />
+                    }
+                    {data &&
+                        <TablePagination
+                            component={"div"}
+                            page={page}
+                            rowsPerPage={perPage}
+                            count={data.search.total}
+                            onPageChange={handlePageChange}
+                            rowsPerPageOptions={[]}
+                        />
+                    }
+                    
                 </Grid2>
             </Grid2>
 
@@ -217,8 +234,7 @@ const UserResultList: React.FC<UserResultListProps> = ({
     embedded
 }) => {
 
-    // REF OBJECTS
-    const topOfSearchList = useRef<HTMLDivElement | null>(null);
+
 
     // CONTEXT HOOKS
     const c: ResponsiveBreakpoints = useContext(ResponsiveContext);
@@ -243,12 +259,8 @@ const UserResultList: React.FC<UserResultListProps> = ({
         setMapViewExpanded(newMap);
     }
 
-
-
-
-
     return (
-        <div ref={topOfSearchList}>
+        <div>
             {c.isMedium &&
                 <>
                     <Typography component={"div"} fontWeight={"bold"} fontSize={"0.9em"}>

@@ -184,7 +184,7 @@ create TABLE authorization_group (
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid) 
 );
 
-create TABLE user_authorization_group_rel (
+create TABLE authorization_group_user_rel (
     userid VARCHAR(64) NOT NULL,
     groupid VARCHAR(64) NOT NULL,
     PRIMARY KEY (userid, groupid),

@@ -7,7 +7,6 @@ import { TENANT_META_DATA_QUERY } from "@/graphql/queries/oidc-queries";
 import { PortalUserProfile } from "@/graphql/generated/graphql-types";
 import { AuthContext } from "./auth-context";
 import { TenantMetaDataBean, TenantContext } from "./tenant-context";
-import { Backdrop, Box, CircularProgress } from "@mui/material";
 
 
 interface LayoutProps {

@@ -211,6 +211,29 @@ export const USER_SEARCH_QUERY = gql(`
         }
     }
 `);
+
+export const USER_DETAIL_QUERY = gql(`
+    query getUserById($userId: String!) {
+        getUserById(userId: $userId) {
+            userId
+            federatedOIDCProviderSubjectId
+            email
+            emailVerified
+            domain
+            firstName
+            lastName
+            middleName
+            phoneNumber
+            address
+            countryCode
+            preferredLanguageCode
+            twoFactorAuthType
+            locked
+            enabled
+            nameOrder
+        }
+    }    
+`);
 /*
 getLoginFailurePolicy {        
             loginFailurePolicyType

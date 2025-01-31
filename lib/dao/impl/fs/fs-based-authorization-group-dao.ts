@@ -1,5 +1,4 @@
-import GroupDao from "../../authorization-group-dao";
-import { AuthorizationGroup, UserAuthorizationGroupRel } from "@/graphql/generated/graphql-types";
+import { AuthorizationGroup, AuthorizationGroupUserRel } from "@/graphql/generated/graphql-types";
 import { writeFileSync } from "node:fs";
 import path from "node:path";
 import { GraphQLError } from "graphql";
@@ -58,7 +57,7 @@ class FSBasedAuthorizationGroupDao extends AuthorizationGroupDao {
         throw new Error("Method not implemented.");
     }
 
-    public async addUserToAuthorizationGroup(userId: string, groupId: string): Promise<UserAuthorizationGroupRel> {
+    public async addUserToAuthorizationGroup(userId: string, groupId: string): Promise<AuthorizationGroupUserRel> {
         throw new Error("Method not implemented.");
     }
 
