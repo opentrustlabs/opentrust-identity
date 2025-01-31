@@ -8,6 +8,7 @@ import { TenantContext, TenantMetaDataBean } from "@/components/contexts/tenant-
 import { TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import TenantDetail from "@/components/tenants/tenant-detail";
 import UserList from "@/components/users/user-list";
+import AuthenticationGroupList from "@/components/authentication-groups/authentication-group-list";
 
 
 const TenantLandingPage: React.FC = () => {
@@ -47,6 +48,9 @@ const TenantLandingPage: React.FC = () => {
             }
             {section === "authorization-groups" &&
                 <AuthorizationGroupList />
+            }
+            {section === "authentication-groups" &&
+                <AuthenticationGroupList />
             }
         </>
     )

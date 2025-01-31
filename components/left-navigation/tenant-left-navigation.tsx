@@ -137,20 +137,20 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
             }
             {breakPoints.isMedium &&
                 <>
-                    <Stack direction={"row"}  spacing={2} alignItems={"center"}>
+                    <Stack direction={"row"} padding="4px" spacing={2} alignItems={"center"} color={"white"} sx={{boxShadow: "0px 0px 1vh 0px grey", backgroundColor: "#1976d2", backgroundImage: "linear-gradient(#34111194, #1976d2)",}}>
                         <MenuIcon 
                             sx={{cursor: "pointer"}}
                             onClick={showMenuItems}
                         />
+                        <div>OpenTrust</div>
                         <TextField   
                                 size="small"
                                 name="searchinput"
                                 id="searchinput"
                                 onKeyDown={handleKeyPressSearch}
                                 onChange={(evt) => setSearchTerm(evt.target.value)}
-                                fullWidth={true}
-                                label={"Search"}
-                                slotProps={{
+                                fullWidth={true}                                
+                                slotProps={{                                    
                                     input: {
                                         endAdornment: (
                                             <InputAdornment position="end">
@@ -159,7 +159,10 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
                                                     sx={{cursor: "pointer"}}
                                                 />
                                             </InputAdornment>
-                                        )
+                                        ),
+                                        style: {
+                                            backgroundColor: "white"
+                                        }
                                     }
                                 }}                                    
                             />

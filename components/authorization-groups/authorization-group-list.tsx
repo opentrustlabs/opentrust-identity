@@ -167,8 +167,8 @@ const AuthorizationGroupList: React.FC = () => {
                             <Grid2 container size={12} spacing={1} marginBottom={"16px"} >
                                 <Grid2 size={0.3}></Grid2>
                                 <Grid2 size={2.7}>Group Name</Grid2>
-                                <Grid2 size={3}>Is Default</Grid2>
-                                <Grid2 size={2}>Tenant</Grid2>
+                                <Grid2 size={2}>Is Default</Grid2>
+                                <Grid2 size={3}>Tenant</Grid2>
                                 <Grid2 size={3}>Object ID</Grid2>
                                 <Grid2 size={1}></Grid2>
                             </Grid2>
@@ -182,12 +182,12 @@ const AuthorizationGroupList: React.FC = () => {
                                     <Grid2 margin={"8px 0px 8px 0px"} container size={12} spacing={1}>
                                         <Grid2 size={0.3}><DeleteForeverOutlinedIcon /></Grid2>
                                         <Grid2 size={2.7}><Link style={{ color: "", fontWeight: "bold", textDecoration: "underline" }} href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/authorization-groups/${authorizationGroup.groupId}`}>{authorizationGroup.groupName}</Link></Grid2>
-                                        <Grid2 size={3}>
+                                        <Grid2 size={2}>
                                             {authorizationGroup.default &&
                                                 <CheckOutlinedIcon />
                                             }
                                         </Grid2>
-                                        <Grid2 size={2}><Link href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/tenants/${authorizationGroup.tenantId}`}>{authorizationGroup.tenantId}</Link></Grid2>
+                                        <Grid2 size={3}><Link href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/tenants/${authorizationGroup.tenantId}`}>{authorizationGroup.tenantId}</Link></Grid2>
                                         <Grid2 size={3} display={"inline-flex"} columnGap={1} ><div>{authorizationGroup.groupId}</div><div><ContentCopyIcon /></div></Grid2>
                                         <Grid2 size={1}></Grid2>
                                     </Grid2>

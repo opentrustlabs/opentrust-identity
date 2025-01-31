@@ -42,7 +42,7 @@ const ManagementLayout: React.FC<Props> = ({children}) => {
                         <Grid2 
                             size={{xs: 12, sm: 12, md: 3, lg: 2.4, xl: 2}} 
                             sx={{
-                                padding: "8px",
+                                padding: breakPoints.isMedium ? "0px" : "8px",
                                 borderBottom: breakPoints.isMedium ? "solid 1px lightgrey" : "",
                                 borderRight: !breakPoints.isMedium? "solid 1px lightgrey" : ""
                             }}

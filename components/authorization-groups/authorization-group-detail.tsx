@@ -21,10 +21,10 @@ export interface AuthorizationGroupDetailProps {
     authorizationGroup: AuthorizationGroup
 }
 
-const AuthorizationGroupDetail: React.FC<AuthorizationGroupDetailProps> = ({authorizationGroup}) => {
+const AuthorizationGroupDetail: React.FC<AuthorizationGroupDetailProps> = ({ authorizationGroup }) => {
 
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
-    
+
     const arrBreadcrumbs = [];
     arrBreadcrumbs.push({
         href: `/${tenantBean.getTenantMetaData().tenant.tenantId}`,
@@ -46,7 +46,7 @@ const AuthorizationGroupDetail: React.FC<AuthorizationGroupDetailProps> = ({auth
             <Grid2 container size={12} spacing={3} marginBottom={"16px"}>
                 <Grid2 size={{ xs: 12, sm: 12, md: 12, lg: 9, xl: 9 }}>
                     <Grid2 container size={12} spacing={2}>
-                        <Grid2 className="detail-page-subheader" sx={{backgroundColor: "#1976d2", color: "white", padding: "8px", borderRadius: "2px"}}  size={12}>Overview</Grid2>
+                        <Grid2 className="detail-page-subheader" sx={{ backgroundColor: "#1976d2", color: "white", padding: "8px", borderRadius: "2px" }} size={12}>Overview</Grid2>
                         <Grid2 size={12} marginBottom={"16px"}>
                             <Paper elevation={0} sx={{ padding: "8px" }}>
                                 <Grid2 container size={12} spacing={2}>
@@ -57,19 +57,19 @@ const AuthorizationGroupDetail: React.FC<AuthorizationGroupDetailProps> = ({auth
                                         </Grid2>
                                         <Grid2 container size={12} marginBottom={"16px"}>
                                             <Grid2 alignContent={"center"} size={10}>Default</Grid2>
-                                            <Grid2 size={2}><Checkbox /></Grid2>                                            
+                                            <Grid2 size={2}><Checkbox /></Grid2>
                                         </Grid2>
                                         <Grid2 >Object ID</Grid2>
                                         <Grid2 container size={12} marginBottom={"16px"}>
                                             <Grid2 alignContent={"center"} size={10}>{authorizationGroup.groupId}</Grid2>
-                                            <Grid2 size={2}><ContentCopyIcon /></Grid2>                                            
+                                            <Grid2 size={2}><ContentCopyIcon /></Grid2>
                                         </Grid2>
                                         <Stack sx={{ marginTop: "8px" }} direction={"row"} flexDirection={"row-reverse"} >
-                                        <Button sx={{ border: "solid 1px lightgrey", borderRadius: "4px", color: "black" }} >Update</Button>
-                                    </Stack>
+                                            <Button sx={{ border: "solid 1px lightgrey", borderRadius: "4px", color: "black" }} >Update</Button>
+                                        </Stack>
                                     </Grid2>
                                     <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
-                                        
+
                                     </Grid2>
                                 </Grid2>
                             </Paper>
@@ -80,11 +80,11 @@ const AuthorizationGroupDetail: React.FC<AuthorizationGroupDetailProps> = ({auth
                                 <AccordionSummary
                                     expandIcon={<ExpandMoreIcon />}
                                     id={"redirect-uri-configuration"}
-                                    sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center"}}
+                                    sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center" }}
 
                                 >
-                                    <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
-                                        <PersonIcon /><div style={{marginLeft: "8px"}}>Users</div>
+                                    <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+                                        <PersonIcon /><div style={{ marginLeft: "8px" }}>Users</div>
                                     </div>
                                 </AccordionSummary>
                                 <AccordionDetails>
@@ -96,31 +96,31 @@ const AuthorizationGroupDetail: React.FC<AuthorizationGroupDetailProps> = ({auth
                                                     <span>Add User</span>
                                                 </div>
                                             </Stack>
-                                        </Grid2>                                        
+                                        </Grid2>
                                     </Typography>
-                                    <UserList 
-                                        tenantId={tenantBean.getTenantMetaData().tenant.tenantId} 
-                                        authorizationGroupId={authorizationGroup.groupId} 
+                                    <UserList
+                                        tenantId={tenantBean.getTenantMetaData().tenant.tenantId}
+                                        authorizationGroupId={authorizationGroup.groupId}
                                         authenticationGroupId={null}
                                         page={0}
                                         perPage={10}
-                                        embedded={true}                                    
-                                    />                 
-                            </AccordionDetails>
+                                        embedded={true}
+                                    />
+                                </AccordionDetails>
                             </Accordion>
                         </Grid2>
-                        
+
 
                         <Grid2 size={12} marginBottom={"16px"}>
                             <Accordion >
                                 <AccordionSummary
                                     expandIcon={<ExpandMoreIcon />}
                                     id={"redirect-uri-configuration"}
-                                    sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center"}}
+                                    sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center" }}
 
                                 >
-                                    <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
-                                        <PolicyIcon /><div style={{marginLeft: "8px"}}>Access Control</div>
+                                    <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+                                        <PolicyIcon /><div style={{ marginLeft: "8px" }}>Access Control</div>
                                     </div>
                                 </AccordionSummary>
                                 <AccordionDetails>
@@ -146,18 +146,18 @@ const AuthorizationGroupDetail: React.FC<AuthorizationGroupDetailProps> = ({auth
                                             </Typography>
                                         )
                                     )}
-                                    
+
                                 </AccordionDetails>
                             </Accordion>
-                        </Grid2>  
+                        </Grid2>
 
-                        
+
 
                     </Grid2>
                 </Grid2>
 
                 <Grid2 spacing={2} size={3}>
-                    
+
                 </Grid2>
 
             </Grid2>
