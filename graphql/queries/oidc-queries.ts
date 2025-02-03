@@ -270,6 +270,29 @@ export const FEDERATED_OIDC_PROVIDERS_QUERY = gql(`
         }
     }
 `)
+
+export const FEDERATED_OIDC_PROVIDER_DETAIL_QUERY = gql(`
+    query getFederatedOIDCProviderById($federatedOIDCProviderId: String!) {
+        getFederatedOIDCProviderById(federatedOIDCProviderId: $federatedOIDCProviderId) {
+            federatedOIDCProviderId
+            federatedOIDCProviderName
+            federatedOIDCProviderDescription
+            federatedOIDCProviderType
+            federatedOIDCProviderClientId
+            federatedOIDCProviderClientSecret
+            federatedOIDCProviderWellKnownUri
+            refreshTokenAllowed
+            scopes
+            usePkce
+            clientAuthType
+            clientauthtypeid
+            federatedOIDCProviderTenantId	
+            federatedoidcprovidertypeid
+            socialLoginIcon
+            socialLoginDisplayName        
+        }
+    }
+`);
 /*
 getLoginFailurePolicy {        
             loginFailurePolicyType
