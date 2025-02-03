@@ -13,7 +13,6 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import DeleteForeverOutlinedIcon from '@mui/icons-material/DeleteForeverOutlined';
 import PersonIcon from '@mui/icons-material/Person';
 import PolicyIcon from '@mui/icons-material/Policy';
-import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
 import Link from "next/link";
 import UserList from "../users/user-list";
 
@@ -93,7 +92,7 @@ const AuthorizationGroupDetail: React.FC<AuthorizationGroupDetailProps> = ({ aut
                                             <Stack spacing={1} justifyContent={"space-between"} direction={"row"} fontWeight={"bold"} fontSize={"0.95em"} margin={"8px 0px 16px 0px"}>
                                                 <div style={{ display: "inline-flex", alignItems: "center" }}>
                                                     <AddBoxIcon sx={{ marginRight: "8px", cursor: "pointer" }} />
-                                                    <span>Add User</span>
+                                                    <span>Add User To Authorization Group</span>
                                                 </div>
                                             </Stack>
                                         </Grid2>

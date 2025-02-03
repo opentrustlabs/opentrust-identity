@@ -41,14 +41,12 @@ const ClientList: React.FC = () => {
     }
 
     const setExpanded = (section: string): void => {
-        console.log("set is expanded")
         mapViewExpanded.set(section, true);
         const newMap = new Map(mapViewExpanded)
         setMapViewExpanded(newMap);
     }
 
     const removeExpanded = (section: string): void => {
-        console.log("remove is expanded")
         mapViewExpanded.delete(section);
         const newMap = new Map(mapViewExpanded)
         setMapViewExpanded(newMap);

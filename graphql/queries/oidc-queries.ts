@@ -258,6 +258,18 @@ export const AUTHENTICATION_GROUP_DETAIL_QUERY = gql(`
         }
     }
 `);
+
+
+export const FEDERATED_OIDC_PROVIDERS_QUERY = gql(`
+    query getFederatedOIDCProviders($tenantId: String){
+        getFederatedOIDCProviders(tenantId: $tenantId) {
+            federatedOIDCProviderId
+            federatedOIDCProviderName
+            federatedOIDCProviderDescription
+            federatedOIDCProviderType
+        }
+    }
+`)
 /*
 getLoginFailurePolicy {        
             loginFailurePolicyType

@@ -168,11 +168,11 @@ const TenantList: React.FC = () => {
                         <Typography component={"div"} fontWeight={"bold"} fontSize={"0.9em"}>
                             <Grid2 container size={12} spacing={1} marginBottom={"16px"} >
                                 <Grid2 size={2}>Tenant Name</Grid2>
-                                <Grid2 size={3.8}>Tenant Description</Grid2>
+                                <Grid2 size={3.6}>Tenant Description</Grid2>
                                 <Grid2 size={2}>Tenant Type</Grid2>
                                 <Grid2 size={1}>Enabled</Grid2>
                                 <Grid2 size={3}>Object ID</Grid2>
-                                <Grid2 size={0.2}></Grid2>
+                                <Grid2 size={0.4}></Grid2>
                             </Grid2>
                         </Typography>
                         <Divider></Divider>
@@ -183,15 +183,15 @@ const TenantList: React.FC = () => {
                                     <Divider></Divider>
                                     <Grid2 margin={"8px 0px 8px 0px"} container size={12} spacing={1}>
                                         <Grid2 size={2}><Link style={{ color: "", fontWeight: "bold", textDecoration: "underline" }} href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/tenants/${tenant.tenantId}`}>{tenant.tenantName}</Link></Grid2>
-                                        <Grid2 size={3.8}>{tenant.tenantDescription}</Grid2>
+                                        <Grid2 size={3.6}>{tenant.tenantDescription}</Grid2>
                                         <Grid2 size={2}>{TENANT_TYPES_DISPLAY.get(tenant.tenantType)}</Grid2>
                                         <Grid2 size={1}>
                                             {tenant.enabled &&
                                                 <CheckOutlinedIcon />
                                             }
                                         </Grid2>
-                                        <Grid2 size={3} display={"inline-flex"} columnGap={1} >{tenant.tenantId}</Grid2>
-                                        <Grid2 size={0.2}><ContentCopyIcon /></Grid2>
+                                        <Grid2 size={3} columnGap={1} >{tenant.tenantId}</Grid2>
+                                        <Grid2 size={0.4}><ContentCopyIcon /></Grid2>
                                     </Grid2>
                                 </Typography>
                             )

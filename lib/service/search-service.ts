@@ -28,7 +28,7 @@ class SearchService {
         const items: Array<SearchResultItem> = [];
         for(let i = 0; i < perPage; i++){
             items.push({
-                objectId: randomUUID().toString(),
+                objectId: `page ${page + 1} -> row ${i + 1}`,
                 name: searchTerm && searchTerm.length >= 3 ? `Fred ${lastnames[(i + page) % lastnames.length]}` : `${firstNames[ (i + page)  % firstNames.length]} ${lastnames[(i + page) % lastnames.length]}`,
                 description: "",
                 enabled: true,

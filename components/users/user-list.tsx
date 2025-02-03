@@ -43,17 +43,11 @@ const UserList: React.FC<UserListProps> = ({
     embedded
 }) => {
 
-    // const params = useSearchParams();
-    // const p = params?.get("page");
-    // const pp = params?.get("per_page");
-    // const term = params?.get("term");
-
     // REF OBJECTS
     const topOfSearchList = useRef<HTMLDivElement | null>(null);
 
     // STATE VARIABLES
     const [filterTerm, setFilterTerm] = React.useState<string>("");
-    const [doFilterTerm, setDoFilterTerm] = React.useState<string>("");
     const [page, setPage] = React.useState<number>(p  || 0);
     const [perPage, setPerPage] = React.useState<number>(pp || 30);
     
@@ -118,17 +112,12 @@ const UserList: React.FC<UserListProps> = ({
 
 
     const handleFilterTermChange = async (evt: any) => {
-        const term = evt.target.value;
-        setFilterTerm(term);
-        console.log("setting filter term to: " + term);
+        const term = evt.target.value || "";        
+        setFilterTerm(term);      
         if (term && term.length >= 3) {
-            setDoFilterTerm(term);
-            console.log('setting page to 0')
             setPage(0);
         }
         if (!term || term.length < 3) {
-            setDoFilterTerm("");
-            console.log('setting page to 0')
             setPage(0);
         }
     }
@@ -156,7 +145,7 @@ const UserList: React.FC<UserListProps> = ({
                                         <InputAdornment position="end">
                                             <CloseOutlinedIcon
                                                 sx={{ cursor: "pointer" }}
-                                                onClick={() => { setFilterTerm(""); setDoFilterTerm(""); setPage(0) }}
+                                                onClick={() => { setFilterTerm(""); setPage(0) }}
                                             />
                                         </InputAdornment>
                                     )
@@ -235,17 +224,13 @@ const UserResultList: React.FC<UserResultListProps> = ({
 }) => {
 
 
-
     // CONTEXT HOOKS
     const c: ResponsiveBreakpoints = useContext(ResponsiveContext);
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
 
     // STATE VARIABLES
-    // const [page, setPage] = React.useState<number>(p || 0);
-    // const [perPage, setPerPage] = React.useState<number>(pp || 30);
     const [mapViewExpanded, setMapViewExpanded] = React.useState(new Map());
-    //const [filterTerm, setFilterTerm] = React.useState<string>(ft || "");
-
+    
     // HANDLER FUNCTIONS
     const setExpanded = (section: string): void => {
         mapViewExpanded.set(section, true);
@@ -259,9 +244,10 @@ const UserResultList: React.FC<UserResultListProps> = ({
         setMapViewExpanded(newMap);
     }
 
+    const isMobileAndNotEmbedded: boolean = c.isMedium && !embedded;
     return (
         <div>
-            {c.isMedium &&
+            {isMobileAndNotEmbedded &&
                 <>
                     <Typography component={"div"} fontWeight={"bold"} fontSize={"0.9em"}>
                         <Grid2 container size={12} spacing={1} marginBottom={"16px"} >
@@ -320,15 +306,25 @@ const UserResultList: React.FC<UserResultListProps> = ({
                     )}
                 </>
             }
-            {!c.isMedium &&
+            {!isMobileAndNotEmbedded &&
                 <Grid2 size={embedded ? 12 : 9}>
                     <Typography component={"div"} fontWeight={"bold"} fontSize={"0.9em"}>
                         <Grid2 container size={12} spacing={1} marginBottom={"16px"} >
-                            <Grid2 size={0.4}></Grid2>
-                            <Grid2 size={4.6}>User Name</Grid2>
-                            <Grid2 size={2}>Enabled</Grid2>
-                            <Grid2 size={4}>Object ID</Grid2>
-                            <Grid2 size={1}></Grid2>
+                            {!embedded &&
+                            <>                            
+                                <Grid2 size={4.6}>User Name</Grid2>
+                                <Grid2 size={2}>Enabled</Grid2>
+                                <Grid2 size={4}>Object ID</Grid2>
+                                <Grid2 size={1}></Grid2>
+                            </>
+                            }
+                            {embedded &&
+                                <>                                    
+                                    <Grid2 size={6.6}>User Name</Grid2>
+                                    <Grid2 size={4.3}>Enabled</Grid2>                                    
+                                    <Grid2 size={1.1}></Grid2>
+                                </>
+                            }
                         </Grid2>
                     </Typography>
                     <Divider></Divider>
@@ -344,17 +340,30 @@ const UserResultList: React.FC<UserResultListProps> = ({
                         (user: SearchResultItem) => (
                             <Typography key={`${user.objectId}`} component={"div"} fontSize={"0.9em"}>
                                 <Divider></Divider>
-                                <Grid2 margin={"8px 0px 8px 0px"} container size={12} spacing={1}>
-                                    <Grid2 size={0.4}><DeleteForeverOutlinedIcon /></Grid2>
-                                    <Grid2 size={4.6}><Link style={{ color: "", fontWeight: "bold", textDecoration: "underline" }} href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/users/${user.objectId}`}>{user.name}</Link></Grid2>
-                                    <Grid2 size={2}>
-                                        {user.enabled &&
-                                            <CheckOutlinedIcon />
-                                        }
+                                {!embedded &&
+                                    <Grid2 margin={"8px 0px 8px 0px"} container size={12} spacing={1}>
+                                        <Grid2 size={0.4}><DeleteForeverOutlinedIcon /></Grid2>
+                                        <Grid2 size={4.6}><Link style={{ color: "", fontWeight: "bold", textDecoration: "underline" }} href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/users/${user.objectId}`}>{user.name}</Link></Grid2>
+                                        <Grid2 size={2}>
+                                            {user.enabled &&
+                                                <CheckOutlinedIcon />
+                                            }
+                                        </Grid2>
+                                        <Grid2 size={4} display={"inline-flex"} columnGap={1} ><div>{user.objectId}</div></Grid2>
+                                        <Grid2 size={1} ><ContentCopyIcon /></Grid2>
                                     </Grid2>
-                                    <Grid2 size={4} display={"inline-flex"} columnGap={1} ><div>{user.objectId}</div></Grid2>
-                                    <Grid2 size={1} ><ContentCopyIcon /></Grid2>
-                                </Grid2>
+                                }
+                                {embedded &&
+                                    <Grid2 margin={"8px 0px 8px 0px"} container size={12} spacing={1}>                                        
+                                        <Grid2 size={6.6}><Link style={{ color: "", fontWeight: "bold", textDecoration: "underline" }} href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/users/${user.objectId}`}>{user.name}</Link></Grid2>
+                                        <Grid2 size={4.3}>
+                                            {user.enabled &&
+                                                <CheckOutlinedIcon />
+                                            }
+                                        </Grid2>
+                                        <Grid2 size={1.1}><DeleteForeverOutlinedIcon /></Grid2>                                        
+                                    </Grid2>
+                                }                                
                             </Typography>
                         )
                     )}
