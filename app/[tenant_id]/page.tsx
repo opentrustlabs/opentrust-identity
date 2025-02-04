@@ -10,6 +10,7 @@ import TenantDetail from "@/components/tenants/tenant-detail";
 import UserList from "@/components/users/user-list";
 import AuthenticationGroupList from "@/components/authentication-groups/authentication-group-list";
 import FederatedOIDCProviderList from "@/components/oidc-providers/oidc-provider-list";
+import SigningKeyList from "@/components/signing-keys/signing-key-list";
 
 
 const TenantLandingPage: React.FC = () => {
@@ -55,6 +56,9 @@ const TenantLandingPage: React.FC = () => {
             }
             {section === "oidc-providers" &&
                 <FederatedOIDCProviderList  />
+            }
+            {section === "signing-keys" &&
+                <SigningKeyList />
             }
         </>
     )

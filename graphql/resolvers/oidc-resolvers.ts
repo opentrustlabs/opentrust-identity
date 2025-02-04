@@ -417,14 +417,17 @@ const resolvers: Resolvers = {
             const key: SigningKey = {
                 keyType: keyInput.keyType,
                 tenantId: keyInput.tenantId,
-                keyuse: keyInput.use,
+                keyUse: keyInput.keyUse,
                 keyName: keyInput.keyName,
                 keyId: "",
                 certificate: keyInput.certificate,
-                privateKeyPkcs8: keyInput.privateKey,
+                privateKeyPkcs8: keyInput.privateKeyPkcs8,
                 password: keyInput.password,
-                expiresAtMs: 0, // TODO - derive from the certificate's expiration
-                status: SIGNING_KEY_STATUS_ACTIVE
+                expiresAtMs: keyInput.expiresAtMs ? keyInput.expiresAtMs : Date.now() + (120 * 24 * 60 * 60 * 1000), // TODO - derive from the certificate's expiration
+                status: SIGNING_KEY_STATUS_ACTIVE,
+                keyTypeId: "",
+                publicKey: keyInput.publicKey,
+                statusId: ""
             };
             await keysService.createSigningKey(key);
             return key;

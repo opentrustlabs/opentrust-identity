@@ -293,6 +293,43 @@ export const FEDERATED_OIDC_PROVIDER_DETAIL_QUERY = gql(`
         }
     }
 `);
+
+export const SIGNING_KEYS_QUERY = gql(`
+    query getSigningKeys($tenantId: String) {
+        getSigningKeys(tenantId: $tenantId) {
+            keyId
+            tenantId
+            keyType
+            keyName
+            keyUse
+            expiresAtMs
+            status
+        }
+    }
+`);
+
+
+export const SIGNING_KEY_DETAIL_QUERY = gql(`
+    query getSigningKeyById($signingKeyId: String!){
+        getSigningKeyById(signingKeyId: $signingKeyId){
+            keyId
+            tenantId
+            keyType
+            keyName
+            keyTypeId
+            keyUse
+            privateKeyPkcs8
+            password
+            certificate
+            publicKey
+            expiresAtMs
+            status
+            statusId
+        }
+    }
+`);
+
+
 /*
 getLoginFailurePolicy {        
             loginFailurePolicyType
