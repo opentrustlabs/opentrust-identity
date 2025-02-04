@@ -1,7 +1,6 @@
 "use client";
 import React from "react";
 import { useParams } from 'next/navigation';
-import ClientDetail from "@/components/clients/client-detail";
 import { FEDERATED_OIDC_PROVIDER_DETAIL_QUERY } from "@/graphql/queries/oidc-queries";
 import { useQuery } from "@apollo/client";
 import DataLoading from "@/components/layout/data-loading";
@@ -9,7 +8,7 @@ import ErrorComponent from "@/components/error/error-component";
 import FederatedOIDCProviderDetail from "@/components/oidc-providers/oidc-provider-detail";
 
 
-const ClientDetailPage: React.FC = () => {
+const FederatedOIDCProviderDetailPage: React.FC = () => {
 
     const params = useParams();
     const federatedOIDCProviderId = params?.id as string;
@@ -33,4 +32,4 @@ const ClientDetailPage: React.FC = () => {
 
 }
 
-export default ClientDetailPage;
+export default FederatedOIDCProviderDetailPage;

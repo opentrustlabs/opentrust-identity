@@ -106,6 +106,7 @@ type Mutation {
     
     ## Keys
     createSigningKey(keyInput: SigningKeyCreateInput!): SigningKey!
+    updateSigningKey(keyInput: SigningKeyUpdateInput!): SigningKey!
     deleteSigningKey(keyId: String!): String!
 
     ## RateLimit
@@ -437,15 +438,15 @@ type SigningKey {
     tenantId: String!    
     keyType: String!
     keyName: String!
-    keytypeid: String
-    keyuse: String!
+    keyTypeId: String
+    keyUse: String!
     privateKeyPkcs8: String!
     password: String
     certificate: String
     publicKey: String
     expiresAtMs: Float!
     status: String!
-    statusid: String
+    statusId: String
 }
 
 # Can optionally have a constraint definition tied to this scope.
@@ -938,12 +939,21 @@ input ClientUpdateInput {
 input SigningKeyCreateInput {
     tenantId: String!    
     keyType: String!
-    keytypeid: String
+    keyTypeId: String
     keyName: String!
-    use: String!
-    privateKey: String!
+    keyUse: String!
+    privateKeyPkcs8: String!
     password: String
-    certificate: String!
+    certificate: String
+    publicKey: String
+    expiresAtMs: Float
+}
+
+input SigningKeyUpdateInput {
+    keyId: String!
+    status: String!
+    keyName: String
+    keyUse: String
 }
 
 

@@ -130,7 +130,7 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
                         </div>
                         <div style={{display: "inline-flex", alignItems: "center"}}>
                             <KeyIcon sx={{marginRight: "8px"}} />
-                            <Link href={`/${tenantMetaData.tenant.tenantId}?section=keys`} >Keys</Link>
+                            <Link href={`/${tenantMetaData.tenant.tenantId}?section=signing-keys`} >Keys</Link>
                         </div>
                     </Stack>
                 </>
@@ -203,9 +203,9 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
                                 <SpeedIcon sx={{marginRight: "8px"}} />
                                 <Link href={`/${tenantMetaData.tenant.tenantId}?section=rate-limits`} onClick={() => setDrawerOpen(false)}>Rate Limits</Link>
                             </div>
-                            <div style={{display: "inline-flex", alignItems: "center"}}>
+                            <div style={{display: "inline-flex", alignItems: "center"}}> 
                                 <KeyIcon sx={{marginRight: "8px"}} />
-                                <Link href={`/${tenantMetaData.tenant.tenantId}?section=keys`} onClick={() => setDrawerOpen(false)}>Keys</Link>
+                                <Link href={`/${tenantMetaData.tenant.tenantId}?section=signing-keys`} onClick={() => setDrawerOpen(false)}>Keys</Link>
                             </div>
                         </Stack>
                     </Drawer>

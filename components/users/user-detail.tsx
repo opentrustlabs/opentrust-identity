@@ -18,6 +18,8 @@ import DeleteForeverOutlinedIcon from '@mui/icons-material/DeleteForeverOutlined
 import GroupIcon from '@mui/icons-material/Group';
 import PeopleIcon from '@mui/icons-material/People';
 import SettingsApplicationsIcon from '@mui/icons-material/SettingsApplications';
+import PolicyIcon from '@mui/icons-material/Policy';
+import Link from "next/link";
 
 export interface UserDetailProps {
     user: User;
@@ -28,26 +30,6 @@ const UserDetail: React.FC<UserDetailProps> = ({
 }) => {
 
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
-
-    /*
-                userId
-                federatedOIDCProviderSubjectId
-                email
-                emailVerified
-                domain
-                firstName
-                lastName
-                middleName
-                phoneNumber
-                address
-                countryCode
-                preferredLanguageCode
-                twoFactorAuthType
-                locked
-                enabled
-                nameOrder
-    
-    */
 
     return (
         <Typography component={"div"} >
@@ -226,6 +208,45 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                 </AccordionDetails>
                             </Accordion>
                         </Grid2>
+                        <Grid2 size={12} marginBottom={"16px"}>
+                            <Accordion >
+                                <AccordionSummary
+                                    expandIcon={<ExpandMoreIcon />}
+                                    id={"redirect-uri-configuration"}
+                                    sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center" }}
+
+                                >
+                                    <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+                                        <PolicyIcon /><div style={{ marginLeft: "8px" }}>Access Control</div>
+                                    </div>
+                                </AccordionSummary>
+                                <AccordionDetails>
+                                    <Typography component={"div"} fontWeight={"bold"} >
+                                        <Grid2 container size={12} spacing={1} marginBottom={"16px"} >
+                                            <Stack spacing={1} justifyContent={"space-between"} direction={"row"} fontWeight={"bold"} fontSize={"0.95em"} margin={"8px 0px 24px 0px"}>
+                                                <div style={{ display: "inline-flex", alignItems: "center" }}>
+                                                    <AddBoxIcon sx={{ marginRight: "8px", cursor: "pointer" }} />
+                                                    <span>Add Access Control Rule</span>
+                                                </div>
+                                            </Stack>
+                                        </Grid2>
+                                    </Typography>
+                                    <Divider></Divider>
+                                    {["Read Reports in QA", "Update Reports in QA", "Delete Reports in QA"].map(
+                                        (uri: string) => (
+                                            <Typography key={`${uri}`} component={"div"} fontSize={"0.9em"} fontWeight={"bold"}>
+                                                <Divider></Divider>
+                                                <Grid2 margin={"8px 0px 8px 0px"} container size={12} spacing={1}>
+                                                    <Grid2 size={11}><Link href={`/123412341234/authentication-groups/1234372987349`}>{uri}</Link></Grid2>
+                                                    <Grid2 size={1}><DeleteForeverOutlinedIcon /></Grid2>
+                                                </Grid2>
+                                            </Typography>
+                                        )
+                                    )}
+
+                                </AccordionDetails>
+                            </Accordion>
+                        </Grid2>
                         <Grid2 size={12}>
                             <Accordion defaultExpanded={false}  >
                                 <AccordionSummary
@@ -247,8 +268,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                         </Grid2>
                                     </Typography>
                                     <Divider />
-                                    {["Project Managers US", "Planning Tool Admin", "Server Room Access", "Gira User", "Confluence User", "Ordering Customer",
-                                        "Training Coordinators US", "Evacuation Leader St. Louis", "B2B Tool User", "OpenTrust User", "Ordering Manager"].map(                                            
+                                    {["Ameran Prod Tenant", "WEB UI Tenant"].map(                                            
                                         (name: string, idx: number) => (
                                             <Typography key={`${name}`} component={"div"} fontSize={"0.9em"} fontWeight={"bold"}>
                                                 <Divider></Divider>

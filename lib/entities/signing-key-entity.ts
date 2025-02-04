@@ -11,17 +11,17 @@ class SigningKeyEntity {
             this.expiresAtMs = signingKey.expiresAtMs;
             this.keyId = signingKey.keyId;
             this.keyType = signingKey.keyType;
-            this.keyuse = signingKey.keyuse;
+            this.keyUse = signingKey.keyUse;
             this.keyName = signingKey.keyName;
             this.status = signingKey.status;
             this.tenantId = signingKey.tenantId;
             this.certificate = Buffer.from(signingKey.certificate ? signingKey.certificate : "");
             this.privateKeyPkcs8 = Buffer.from(signingKey.privateKeyPkcs8);
             this.publicKey = Buffer.from(signingKey.publicKey ? signingKey.publicKey : "");
-
+            this.password = signingKey.password;
         }
     }
-    __typename?: "SigningKey" | undefined;
+    __typename?: "SigningKey";
 
     @PrimaryKey({fieldName: "keyid"})
     keyId: string;
@@ -35,7 +35,7 @@ class SigningKeyEntity {
     keyName: string;
     
     @Property({fieldName: "keyuse"})
-    keyuse: string;
+    keyUse: string;
     
     @Property({fieldName: "privatekeypkcs8"})
     privateKeyPkcs8: Buffer;
@@ -55,9 +55,6 @@ class SigningKeyEntity {
     @Property({fieldName: "status"})
     status: string;
 
-    @Property({fieldName: ""})
-    statusid?: Maybe<string> | undefined;
-
     @Property({fieldName: "tenantid"})
     tenantId: string;
 
@@ -66,15 +63,15 @@ class SigningKeyEntity {
             expiresAtMs: this.expiresAtMs,
             keyId: this.keyId,
             keyType: this.keyType,
-            keyuse: this.keyuse,
+            keyUse: this.keyUse,
             privateKeyPkcs8: this.privateKeyPkcs8.toString("utf-8"),
             status: this.status,
             tenantId: this.tenantId,
             certificate: this.certificate?.toString("utf-8"),
             password: this.password,
             publicKey: this.publicKey?.toString("utf-8"),
-            keytypeid: "",
-            statusid: "",
+            keyTypeId: "",
+            statusId: "",
             keyName: this.keyName,
             __typename: "SigningKey"
         }
