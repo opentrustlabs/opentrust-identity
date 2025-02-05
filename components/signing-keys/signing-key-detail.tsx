@@ -3,18 +3,22 @@ import { SigningKey } from "@/graphql/generated/graphql-types";
 import Typography from "@mui/material/Typography";
 import React, { useContext } from "react";
 import { DetailPageContainer, DetailPageMainContentContainer, DetailPageRightNavContainer } from "../layout/detail-page-container";
-import { TENANT_TYPE_ROOT_TENANT, NAME_ORDER_WESTERN } from "@/utils/consts";
-import { Grid2, Paper, TextField } from "@mui/material";
+import { TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
+import { Divider, Grid2, Paper, TextField } from "@mui/material";
 import BreadcrumbComponent from "../breadcrumbs/breadcrumbs";
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
-
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import { ResponsiveBreakpoints, ResponsiveContext } from "../contexts/responsive-context";
+import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 
 export interface SigningKeyDetailProps {
     signingKey: SigningKey
 }
 const SigningKeyDetail: React.FC<SigningKeyDetailProps> = ({ signingKey }) => {
 
+    // CONTEXT VARS
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
+    const breakPoints: ResponsiveBreakpoints = useContext(ResponsiveContext);
 
     return (
         <Typography component={"div"} >
@@ -69,14 +73,66 @@ const SigningKeyDetail: React.FC<SigningKeyDetailProps> = ({ signingKey }) => {
                                         <Grid2 marginBottom={"8px"}>
                                             <div>Expires</div>
                                             <TextField name="tenantDescription" id="tenantDescription" value={""} fullWidth={true} size="small" />
-                                        </Grid2>                                       
+                                        </Grid2> 
+                                        <Grid2 marginBottom={"8px"}>
+                                            <div>Owning Tenant</div> {/* TODO Make this conditional: if we are in the root tenant then show, otherwise hide */}
+                                            <TextField name="tenantDescription" id="tenantDescription" value={""} fullWidth={true} size="small" />
+                                        </Grid2>                                         
                                     </Grid2>
                                 </Grid2>
                             </Paper>
                         </Grid2>
-                        <div>{JSON.stringify(signingKey)}</div>
+                        <Grid2 size={12}>
+                            {/* 
+                                TODO Display logic based on the value of the private key. Is it encrypted? Then show the key and
+                                hide the password. Show an "eye" icon for the password, which the user can click if they have
+                                permissions to see it.
 
+                                If not encrypted, then show an "eye" icon which will allow the user to view the private based
+                                on their permissions and which will require a service call.
 
+                            */}
+                            <Paper sx={{ padding: "8px" }} elevation={1}>
+                                <Grid2 container size={12} spacing={2}>     
+                                    
+                                    <Grid2 size={{xs: 12, sm: 2, md: 2, lg: 2, xl: 2}} sx={{textDecoration: breakPoints.isSmall ? "underline": "none"}}>
+                                        <Grid2 container>                                            
+                                            <Grid2 size={9}>Private Key</Grid2>
+                                            <Grid2 size={3}><ContentCopyIcon /></Grid2>                                            
+                                        </Grid2>
+                                    </Grid2>
+                                    <Grid2 size={{xs: 12, sm: 10, md: 10, lg: 10, xl: 10}}>
+                                        <pre style={{fontSize: breakPoints.isSmall ? "0.8em" : "1.0em"}}>{signingKey.privateKeyPkcs8}</pre>
+                                    </Grid2>
+
+                                    <Grid2 size={12}><Divider></Divider></Grid2>
+
+                                    <Grid2 size={{xs: 3, sm: 3, md: 2, lg: 2, xl: 2}}>
+                                        Password
+                                    </Grid2>
+                                    <Grid2 size={{xs: 9, sm: 9, md: 10, lg: 10, xl: 10}}><VisibilityOutlinedIcon /><><pre>{signingKey.password}</pre></></Grid2>
+
+                                    <Grid2 size={12}><Divider></Divider></Grid2>
+
+                                    <Grid2 size={{xs: 12, sm: 2, md: 2, lg: 2, xl: 2}} sx={{textDecoration: breakPoints.isSmall ? "underline": "none"}}>
+                                        <Grid2 container>
+                                            <Grid2 size={9}>
+                                                {signingKey.certificate &&
+                                                    <>Certificate</>
+                                                }
+                                                {signingKey.publicKey &&
+                                                    <>Public Key</>
+                                                }  
+                                            </Grid2>
+                                            <Grid2 size={3}><ContentCopyIcon /></Grid2>
+                                        </Grid2>                                                                              
+                                    </Grid2>
+                                    <Grid2 size={{xs: 12, sm: 10, md: 10, lg: 10, xl: 10}}>
+                                        <pre style={{fontSize: breakPoints.isSmall ? "0.8em" : "1.0em"}}>{signingKey.certificate ? signingKey.certificate : signingKey.publicKey}</pre>
+                                    </Grid2>
+                                </Grid2>
+                            </Paper>
+                        </Grid2>
                     </Grid2>
                 </DetailPageMainContentContainer>
                 <DetailPageRightNavContainer><div></div></DetailPageRightNavContainer>

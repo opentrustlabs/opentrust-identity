@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { Divider, Drawer, InputAdornment, Stack, TextField } from "@mui/material";
+import { Divider, Drawer, Grid2, InputAdornment, Stack, TextField } from "@mui/material";
 import Link from "next/link";
 import SearchIcon from '@mui/icons-material/Search';
 import MenuIcon from '@mui/icons-material/Menu';
@@ -137,13 +137,27 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
             }
             {breakPoints.isMedium &&
                 <>
-                    <Stack direction={"row"} padding="4px" spacing={2} alignItems={"center"} color={"white"} sx={{boxShadow: "0px 0px 1vh 0px grey", backgroundColor: "#1976d2", backgroundImage: "linear-gradient(#34111194, #1976d2)",}}>
-                        <MenuIcon 
-                            sx={{cursor: "pointer"}}
-                            onClick={showMenuItems}
-                        />
-                        <div>OpenTrust</div>
-                        <TextField   
+                    <Grid2 
+                        container 
+                        size={12}
+                        color={"white"} 
+                        padding={"4px"}
+                        spacing={2}
+                        alignItems={"center"}
+                        sx={{boxShadow: "0px 0px 1vh 0px grey", backgroundColor: "#1976d2", backgroundImage: "linear-gradient(#34111194, #1976d2)",}}
+
+                    >
+                        <Grid2 size={1}>
+                            <MenuIcon 
+                                sx={{cursor: "pointer"}}
+                                onClick={showMenuItems}
+                            />    
+                        </Grid2>
+                        <Grid2 size={breakPoints.isSmall ? 5 : 4}>
+                            OpenTrust Identity
+                        </Grid2>
+                        <Grid2 size={breakPoints.isSmall? 6: 7}>
+                            <TextField   
                                 size="small"
                                 name="searchinput"
                                 id="searchinput"
@@ -165,8 +179,9 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
                                         }
                                     }
                                 }}                                    
-                            />
-                    </Stack>
+                            />                            
+                        </Grid2>
+                    </Grid2>
                     <Drawer open={drawerOpen} onClose={toggleDrawer(false)}>
                         <Stack spacing={2} padding={"8px"} fontSize={"0.85em"} fontWeight={"bolder"} marginTop={"8px"} >
                             {tenantMetaData.tenant.tenantType === TENANT_TYPE_ROOT_TENANT &&
@@ -175,6 +190,12 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
                                     <Link href={`/${tenantMetaData.tenant.tenantId}?section=tenants`} onClick={() => setDrawerOpen(false)} >Tenants</Link>                
                                 </div>
                             }
+                            {tenantMetaData.tenant.tenantType !== TENANT_TYPE_ROOT_TENANT &&
+                                <div style={{display: "inline-flex", alignItems: "center", textDecoration: section === "tenants" ? "underline" : ""}}>
+                                    <SettingsApplicationsIcon sx={{marginRight: "8px"}} />
+                                    <Link href={`/${tenantMetaData.tenant.tenantId}?section=tenants`} >My Tenant</Link>                        
+                                </div>                
+                            }   
                             <div style={{display: "inline-flex", alignItems: "center"}}>
                                 <SettingsSystemDaydreamIcon sx={{marginRight: "8px"}}/>
                                 <Link href={`/${tenantMetaData.tenant.tenantId}?section=clients`} onClick={() => setDrawerOpen(false)}>Clients</Link>
