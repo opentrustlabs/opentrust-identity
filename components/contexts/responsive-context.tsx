@@ -30,8 +30,7 @@ const ResponsiveContextProvider: React.FC<ResponsiveContextProps> = ({
     children
 }) => {
 
-
-    const theme = useTheme();
+    const theme = useTheme();    
     const isExtraSmall: boolean = useMediaQuery(theme.breakpoints.down("xs"));
     const isSmall: boolean = useMediaQuery(theme.breakpoints.down("sm"));
     const isMedium: boolean = useMediaQuery(theme.breakpoints.down("md"));
