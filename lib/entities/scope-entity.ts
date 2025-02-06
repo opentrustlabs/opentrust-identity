@@ -20,7 +20,11 @@ class ScopeEntity implements Scope {
     scopeName: string;
 
     @Property({fieldName: "scopedescription"})
-    scopeDescription?: Maybe<string> | undefined;
+    scopeDescription: string;
+
+    @Property({fieldName: "scopeuse"})
+    scopeUse: string;
+
 }
 
 export default ScopeEntity;

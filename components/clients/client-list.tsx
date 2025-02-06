@@ -1,6 +1,6 @@
 "use client";
 import React, { useContext } from "react";
-import { Client, Tenant } from "@/graphql/generated/graphql-types";
+import { Client } from "@/graphql/generated/graphql-types";
 import { CLIENTS_QUERY } from "@/graphql/queries/oidc-queries";
 import { useQuery } from "@apollo/client";
 import { Divider, Grid2, InputAdornment, Stack, TextField, Typography } from "@mui/material";
@@ -31,11 +31,12 @@ const ClientList: React.FC = () => {
 
     // GRAPHQL FUNCTION
     const { data, error, loading } = useQuery(CLIENTS_QUERY, {
-        
+        variables: {
+            tenantId: tenantBean.getTenantMetaData().tenant.tenantType !== TENANT_TYPE_ROOT_TENANT ? tenantBean.getTenantMetaData().tenant.tenantId : null
+        }
     });
 
     // HANDLER FUNCTIONS
-
     const handleFilterChange = (evt: any) => {
         setFilerValue(evt.target.value);
     }

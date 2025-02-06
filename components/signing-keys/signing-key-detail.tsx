@@ -4,7 +4,7 @@ import Typography from "@mui/material/Typography";
 import React, { useContext } from "react";
 import { DetailPageContainer, DetailPageMainContentContainer, DetailPageRightNavContainer } from "../layout/detail-page-container";
 import { TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
-import { Divider, Grid2, Paper, TextField } from "@mui/material";
+import { Button, Divider, Grid2, Paper, Stack, TextField } from "@mui/material";
 import BreadcrumbComponent from "../breadcrumbs/breadcrumbs";
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
@@ -80,6 +80,9 @@ const SigningKeyDetail: React.FC<SigningKeyDetailProps> = ({ signingKey }) => {
                                         </Grid2>                                         
                                     </Grid2>
                                 </Grid2>
+                                <Stack sx={{marginTop: "8px"}} direction={"row"} flexDirection={"row-reverse"} >
+                                    <Button sx={{border: "solid 1px lightgrey", borderRadius: "4px", color: "black"}} >Update</Button>
+                                </Stack>
                             </Paper>
                         </Grid2>
                         <Grid2 size={12}>
@@ -92,9 +95,8 @@ const SigningKeyDetail: React.FC<SigningKeyDetailProps> = ({ signingKey }) => {
                                 on their permissions and which will require a service call.
 
                             */}
-                            <Paper sx={{ padding: "8px" }} elevation={1}>
-                                <Grid2 container size={12} spacing={2}>     
-                                    
+                            <Paper sx={{ padding: "8px", marginBottom: "16px"}}  elevation={1}>
+                                <Grid2 container size={12} spacing={2}>                                    
                                     <Grid2 size={{xs: 12, sm: 2, md: 2, lg: 2, xl: 2}} sx={{textDecoration: breakPoints.isSmall ? "underline": "none"}}>
                                         <Grid2 container>                                            
                                             <Grid2 size={9}>Private Key</Grid2>
@@ -104,16 +106,20 @@ const SigningKeyDetail: React.FC<SigningKeyDetailProps> = ({ signingKey }) => {
                                     <Grid2 size={{xs: 12, sm: 10, md: 10, lg: 10, xl: 10}}>
                                         <pre style={{fontSize: breakPoints.isSmall ? "0.8em" : "1.0em"}}>{signingKey.privateKeyPkcs8}</pre>
                                     </Grid2>
+                                </Grid2>
+                            </Paper>
 
-                                    <Grid2 size={12}><Divider></Divider></Grid2>
-
+                            <Paper sx={{ padding: "8px", marginBottom: "16px"}}  elevation={1}>
+                                <Grid2 container size={12} spacing={2}> 
                                     <Grid2 size={{xs: 3, sm: 3, md: 2, lg: 2, xl: 2}}>
                                         Password
                                     </Grid2>
                                     <Grid2 size={{xs: 9, sm: 9, md: 10, lg: 10, xl: 10}}><VisibilityOutlinedIcon /><><pre>{signingKey.password}</pre></></Grid2>
+                                </Grid2>
+                            </Paper>
 
-                                    <Grid2 size={12}><Divider></Divider></Grid2>
-
+                            <Paper sx={{ padding: "8px", marginBottom: "16px"}} elevation={1}>
+                                <Grid2 container size={12} spacing={2}>
                                     <Grid2 size={{xs: 12, sm: 2, md: 2, lg: 2, xl: 2}} sx={{textDecoration: breakPoints.isSmall ? "underline": "none"}}>
                                         <Grid2 container>
                                             <Grid2 size={9}>
@@ -129,9 +135,9 @@ const SigningKeyDetail: React.FC<SigningKeyDetailProps> = ({ signingKey }) => {
                                     </Grid2>
                                     <Grid2 size={{xs: 12, sm: 10, md: 10, lg: 10, xl: 10}}>
                                         <pre style={{fontSize: breakPoints.isSmall ? "0.8em" : "1.0em"}}>{signingKey.certificate ? signingKey.certificate : signingKey.publicKey}</pre>
-                                    </Grid2>
+                                    </Grid2>                                    
                                 </Grid2>
-                            </Paper>
+                            </Paper>                            
                         </Grid2>
                     </Grid2>
                 </DetailPageMainContentContainer>

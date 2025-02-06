@@ -228,7 +228,8 @@ CREATE INDEX rate_limit_service_group_servicegroupname_idx on rate_limit_service
 create TABLE scope (
     scopeid VARCHAR(64) PRIMARY KEY,
     scopename VARCHAR(128) UNIQUE NOT NULL,
-    scopedescription VARCHAR(256)
+    scopedescription VARCHAR(256) NOT NULL,
+    scopeuse VARCHAR(64) NOT NULL
 );
 
 create TABLE scope_constraint_schema (

@@ -11,6 +11,7 @@ import UserList from "@/components/users/user-list";
 import AuthenticationGroupList from "@/components/authentication-groups/authentication-group-list";
 import FederatedOIDCProviderList from "@/components/oidc-providers/oidc-provider-list";
 import SigningKeyList from "@/components/signing-keys/signing-key-list";
+import ScopeList from "@/components/scope/scope-list";
 
 
 const TenantLandingPage: React.FC = () => {
@@ -59,6 +60,9 @@ const TenantLandingPage: React.FC = () => {
             }
             {section === "signing-keys" &&
                 <SigningKeyList />
+            }
+            {section === "scope-access-control" &&
+                <ScopeList />
             }
         </>
     )

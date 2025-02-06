@@ -457,7 +457,8 @@ type SigningKey {
 type Scope {
     scopeId: String!
     scopeName: String!
-    scopeDescription: String
+    scopeDescription: String!
+    scopeUse: String!
 }
 
 type ScopeConstraintSchema {
@@ -969,14 +970,14 @@ input RateLimitUpdateInput {
 }
 input ScopeCreateInput {
     scopeName: String!
-    scopeDescription: String
+    scopeDescription: String!
     scopeConstraintSchemaId: String
 }
 
 input ScopeUpdateInput {
     scopeId: String!
     scopeName: String!
-    scopeDescription: String
+    scopeDescription: String!
     scopeConstraintSchemaId: String
 }
 

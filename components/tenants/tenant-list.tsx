@@ -55,18 +55,11 @@ const TenantList: React.FC = () => {
     }
 
     const arrBreadcrumbs = [];
-    if (tenantBean.getTenantMetaData().tenant.tenantType === TENANT_TYPE_ROOT_TENANT) {
-        arrBreadcrumbs.push({
-            href: `/${tenantBean.getTenantMetaData().tenant.tenantId}`,
-            linkText: `Tenant List`
-        })
-    }
-    else {
-        arrBreadcrumbs.push({
-            linkText: "Home Depot Production Tenant",
-            href: null
-        });
-    }
+    arrBreadcrumbs.push({
+        href: `/${tenantBean.getTenantMetaData().tenant.tenantId}`,
+        linkText: tenantBean.getTenantMetaData().tenant.tenantType === TENANT_TYPE_ROOT_TENANT ? `Tenant List` : `${tenantBean.getTenantMetaData().tenant.tenantName}`
+    });    
+
 
     if (loading) return <DataLoading dataLoadingSize="xl" color={null} />
     if (error) return <ErrorComponent message={error.stack || "Unknown Error Occurred."} componentSize='lg' />

@@ -16,11 +16,11 @@ const ManagementHeader: React.FC<ManagementHeaderProps> = ({
     return (
         <div 
             style={{
-                backgroundColor: tenantMetaData.tenantLookAndFeel?.adminheaderbackgroundcolor || "#1976d2", 
+                backgroundColor: "#1976d2", 
                 backgroundImage: "linear-gradient(#34111194, #1976d2)",
                 width: "100%", 
                 height: responsiveBreakpoints.isMedium ? "0vh" : "6vh", 
-                color: tenantMetaData.tenantLookAndFeel?.adminheadertextcolor || "white",
+                color: "white",
                 borderBottom: "1px solid lightgray",
                 boxShadow: "0px 0px 2vh 0px grey",
                 display: responsiveBreakpoints.isMedium ? "none" : "inherit", 
@@ -36,13 +36,7 @@ const ManagementHeader: React.FC<ManagementHeaderProps> = ({
                     direction={"row"}
                     justifyItems={"center"}
                     alignItems={"center"}                    
-                >
-                    {tenantMetaData.tenantLookAndFeel?.adminlogo &&
-                        <div style={{verticalAlign: "center"}}>
-                            <img style={{display: "block"}} src={`data:image/svg+xml;utf8,${encodeURIComponent(tenantMetaData.tenantLookAndFeel.adminlogo)}`} height="32px" >
-                            </img>
-                        </div>
-                    }
+                >                    
                     {tenantMetaData.tenantLookAndFeel?.adminheadertext &&                        
                         <div style={{verticalAlign: "center", fontWeight: "bold", marginLeft: "8px"}}>{tenantMetaData.tenantLookAndFeel?.adminheadertext}</div>                        
                     }

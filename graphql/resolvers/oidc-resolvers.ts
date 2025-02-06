@@ -6,7 +6,7 @@ import ScopeService from "@/lib/service/scope-service";
 import GroupService from "@/lib/service/group-service";
 import AuthenticationGroupService from "@/lib/service/authentication-group-service";
 import FederatedOIDCProviderService from "@/lib/service/federated-oidc-provider-service";
-import { NAME_ORDER_WESTERN, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_POST, SIGNING_KEY_STATUS_ACTIVE, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
+import { NAME_ORDER_WESTERN, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_POST, SCOPE_USE_APPLICATION_MANAGEMENT, SIGNING_KEY_STATUS_ACTIVE, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import SearchService from "@/lib/service/search-service";
 
 
@@ -25,7 +25,8 @@ const resolvers: Resolvers = {
                 scope: [{
                     scopeId: "id",
                     scopeName: "all",
-                    scopeDescription: ""
+                    scopeDescription: "",
+                    scopeUse: ""
                 }],
                 tenantId: "8256c1db-cd40-48d1-914f-71672b4d42fa",
                 tenantName: "First Tenant",
@@ -442,7 +443,8 @@ const resolvers: Resolvers = {
             const scope: Scope = {
                 scopeId: "",
                 scopeName: scopeInput.scopeName,
-                scopeDescription: scopeInput.scopeDescription
+                scopeDescription: scopeInput.scopeDescription,
+                scopeUse: SCOPE_USE_APPLICATION_MANAGEMENT
             };
             await scopeService.createScope(scope);
             return scope;
@@ -452,7 +454,8 @@ const resolvers: Resolvers = {
             const scope: Scope = {
                 scopeId: scopeInput.scopeId,
                 scopeName: scopeInput.scopeName,
-                scopeDescription: scopeInput.scopeDescription
+                scopeDescription: scopeInput.scopeDescription,
+                scopeUse: SCOPE_USE_APPLICATION_MANAGEMENT
             };
             await scopeService.updateScope(scope);
             return scope;

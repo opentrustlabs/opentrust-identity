@@ -329,6 +329,16 @@ export const SIGNING_KEY_DETAIL_QUERY = gql(`
     }
 `);
 
+export const SCOPE_QUERY = gql(`
+    query getScope($tenantId: String) {
+        getScope(tenantId: $tenantId){
+            scopeId
+            scopeName
+            scopeDescription
+            scopeUse        
+        }
+    }
+`);
 
 /*
 getLoginFailurePolicy {        
