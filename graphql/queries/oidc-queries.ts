@@ -340,6 +340,18 @@ export const SCOPE_QUERY = gql(`
     }
 `);
 
+export const SCOPE_DETAIL_QUERY = gql(`
+    query getScopeById($scopeId: String!){
+        getScopeById(scopeId: $scopeId) {
+            scopeId
+            scopeName
+            scopeDescription
+            scopeUse  
+        }
+    }
+`);
+
+
 /*
 getLoginFailurePolicy {        
             loginFailurePolicyType
