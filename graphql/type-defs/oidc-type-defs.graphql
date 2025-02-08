@@ -46,8 +46,8 @@ type Query {
 
 
     ## Scope constraints
-    getScopeConstraintSchemas: [ScopeConstraintSchema!]!
-    getScopeConstraintSchemaById(scopeConstraintSchemaId: String): ScopeConstraintSchema
+    getScopeAccessRuleSchemas: [ScopeAccessRuleSchema!]!
+    getScopeAccessRuleSchemaById(scopeAccessRuleSchemaId: String): ScopeAccessRuleSchema
 
     ## Access rules
     getAccessRules(tenantId: String): [AccessRule!]!
@@ -121,7 +121,7 @@ type Mutation {
     createScope(scopeInput: ScopeCreateInput!): Scope
     updateScope(scopeInput: ScopeUpdateInput!): Scope
     deleteScope(scopeId: String!): String
-    assignScopeToTenant(tenantId: String!, scopeId: String!, accessRuleId: String): TenantScopeRel
+    assignScopeToTenant(tenantId: String!, scopeId: String!): TenantAvailableScope
     removeScopeFromTenant(tenantId: String!, scopeId: String!): String
     assignScopeToClient(clientId: String!, tenantId: String!, scopeId: String!, accessRuleId: String): ClientScopeRel
     removeScopeFromClient(clientId: String!, tenantId: String!, scopeId: String!): String
@@ -131,9 +131,9 @@ type Mutation {
     removeScopeFromUser(userId: String!, tenantId: String!, scopeId: String!): String
 
     ## Scope constraint schemas
-    createScopeConstraintSchema(scopeConstraintSchemaInput: ScopeConstraintSchemaCreateInput!): ScopeConstraintSchema
-    updateScopeConstraintSchema(scopeConstraintSchemaInput: ScopeConstraintSchemaUpdateInput!): ScopeConstraintSchema
-    deleteScopeConstraingSchema(scopeConstraintSchemaId: String!): String!
+    createScopeAccessRuleSchema(scopeAccessRuleSchemaInput: ScopeAccessRuleSchemaCreateInput!): ScopeAccessRuleSchema
+    updateScopeAccessRuleSchema(scopeAccessRuleSchemaInput: ScopeAccessRuleSchemaUpdateInput!): ScopeAccessRuleSchema
+    deleteScopeAccessRuleSchema(scopeAccessRuleSchemaId: String!): String!
 
     ## Access rules
     createAccessRule(accessRuleInput: AccessRuleCreateInput!): AccessRule
@@ -461,19 +461,17 @@ type Scope {
     scopeUse: String!
 }
 
-type ScopeConstraintSchema {
-    scopeConstraintSchemaId: String!
+type ScopeAccessRuleSchema {
+    scopeAccessRuleSchemaId: String!
     schemaVersion: Int!
-    scopeconstraintschemaname: String!
     scopeId: String!
-    scopeconstraintschema: String!
+    scopeAccessRuleSchema: String!
 }
 
 type AccessRule {
     accessRuleId: String!
-    accessrulename: String!
-    scopeId: String!
-    scopeConstraintSchemaId: String!
+    accessRuleName: String!
+    scopeAccessRuleSchemaId: String!
     accessRuleDefinition: String!
 }
 
@@ -508,17 +506,16 @@ type TenantRateLimitRel {
 # 3. Defined on the client, inherits others from tenant
 # 4. Defined on the tenant
 
-type TenantScopeRel {
+type TenantAvailableScope {
     tenantId: String!
     scopeId: String!
-    accessRuleId: String
 }
 
 type ClientScopeRel {
     tenantId: String!
     clientId: String!
     scopeId: String!
-    accessruleid: String
+    accessRuleId: String
 }
 
 
@@ -526,14 +523,14 @@ type AuthorizationGroupScopeRel {
     groupId: String!
     tenantId: String!
     scopeId: String!
-    accessruleid: String
+    accessRuleId: String
 }
 
 type UserScopeRel {
-    userid: String!
-    tenantid: String!
-    scopeid: String!
-    accessruleid: String
+    userId: String!
+    tenantId: String!
+    scopeId: String!
+    accessRuleId: String
 }
 
 type PreAuthenticationState {
@@ -971,14 +968,14 @@ input RateLimitUpdateInput {
 input ScopeCreateInput {
     scopeName: String!
     scopeDescription: String!
-    scopeConstraintSchemaId: String
+    scopeAccessRuleSchemaId: String
 }
 
 input ScopeUpdateInput {
     scopeId: String!
     scopeName: String!
     scopeDescription: String!
-    scopeConstraintSchemaId: String
+    scopeAccessRuleSchemaId: String
 }
 
 input AuthenticationGroupCreateInput {
@@ -1010,28 +1007,28 @@ input AuthorizationGroupUpdateInput {
 }
 
 ## Scope constraint schemas
-input ScopeConstraintSchemaCreateInput {
+input ScopeAccessRuleSchemaCreateInput {
     scopeId: String!
     schema: String!
 }
 
-input ScopeConstraintSchemaUpdateInput {
-    scopeConstraintSchemaId: String!
+input ScopeAccessRuleSchemaUpdateInput {
+    scopeAccessRuleSchemaId: String!
     scopeId: String!
     schema: String!
 }
 
 ## Access rules
 input AccessRuleCreateInput {
-    scopeId: String!
-    scopeConstraintSchemaId: String!
+    accessRuleName: String!
+    scopeAccessRuleSchemaId: String!
     accessRuleDefinition: String!
 }
 
 input AccessRuleUpdateInput {
     accessRuleId: String!
-    scopeId: String!
-    scopeConstraintSchemaId: String!
+    accessRuleName: String!
+    scopeAccessRuleSchemaId: String!
     accessRuleDefinition: String!
 }
 

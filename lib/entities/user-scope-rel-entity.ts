@@ -14,16 +14,16 @@ class UserScopeRelEntity implements UserScopeRel {
     __typename?: "UserScopeRel";
 
     @PrimaryKey({fieldName: "userid"})
-    userid: string;
+    userId: string;
 
     @PrimaryKey({fieldName: "scopeid"})
-    scopeid: string;
+    scopeId: string;
 
     @PrimaryKey({fieldName: "tenantid"})
-    tenantid: string;
+    tenantId: string;
 
     @Property({fieldName: "accessruleid"})
-    accessruleid?: Maybe<string> | undefined;
+    accessRuleId?: Maybe<string> | undefined;
     
 }
 

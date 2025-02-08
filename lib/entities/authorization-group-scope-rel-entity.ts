@@ -23,7 +23,7 @@ class AuthorizationGroupScopeRelEntity implements AuthorizationGroupScopeRel {
     tenantId: string;
 
     @Property({fieldName: "accessruleid"})
-    accessruleid?: Maybe<string> | undefined;
+    accessRuleId?: Maybe<string> | undefined;
 
 }
 

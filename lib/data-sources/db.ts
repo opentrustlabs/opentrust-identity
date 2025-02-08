@@ -28,7 +28,7 @@ import RateLimitEntity from '@/lib/entities/rate-limit-entity';
 import RateLimitServiceGroupEntity from '@/lib/entities/rate-limit-service-group-entity';
 import RateLimitServiceGroupScopeRelEntity from '@/lib/entities/rate-limit-service-group-scope-rel-entity';
 import RefreshDataEntity from '@/lib/entities/refresh-data-entity';
-import ScopeConstraintSchemaEntity from '@/lib/entities/scope-constraint-schema-entity';
+import ScopeConstraintSchemaEntity from '@/lib/entities/scope-access-rule-schema-entity';
 import ScopeEntity from '@/lib/entities/scope-entity';
 import SigningKeyEntity from '@/lib/entities/signing-key-entity';
 import TenantAnonymousUserConfigurationRelEntity from '@/lib/entities/tenant-anonymous-user-configuration-rel-entity';
@@ -41,7 +41,7 @@ import UserEntity from '@/lib/entities/user-entity';
 import UserScopeRelEntity from '@/lib/entities/user-scope-rel-entity';
 import UserTenantRelEntity from '@/lib/entities/user-tenant-rel-entity';
 
-import ClientScopeRelEntity from '@/lib/entities/client-tenant-scope-rel-entity';
+import ClientScopeRelEntity from '@/lib/entities/client-scope-rel-entity';
 import ProhibitedPasswordEntity from '@/lib/entities/prohibited-password-entity';
 import SchedulerLockEntity from '@/lib/entities/scheduler-lock-entity';
 import TenantPasswordConfigEntity from '@/lib/entities/tenant-password-config-entity';
