@@ -1,12 +1,37 @@
-import { Scope, TenantScopeRel, ClientScopeRel } from "@/graphql/generated/graphql-types";
+import { Scope, TenantAvailableScope, ClientScopeRel, AuthorizationGroupScopeRel, UserScopeRel } from "@/graphql/generated/graphql-types";
 import ScopeDao from "../../scope-dao";
 import connection  from "@/lib/data-sources/db";
 import ScopeEntity from "@/lib/entities/scope-entity";
-import TenantScopeRelEntity from "@/lib/entities/tenant-scope-rel-entity";
+import TenantAvailableScopeEntity from "@/lib/entities/tenant-available-scope-entity";
 import ClientScopeRelEntity from "@/lib/entities/client-scope-rel-entity";
 import { QueryOrder } from "@mikro-orm/core";
 
 class DBScopeDao extends ScopeDao {
+
+    public async getTenantAvailableScope(tenantId?: String): Promise<Array<TenantAvailableScope>> {
+        throw new Error("Method not implemented.");
+    }
+    public async getClientScopeRels(clientId: string): Promise<Array<ClientScopeRel>> {
+        throw new Error("Method not implemented.");
+    }
+    public async getAuthorizationGroupScopeRels(authorizationGroupId: string): Promise<Array<AuthorizationGroupScopeRel>> {
+        throw new Error("Method not implemented.");
+    }
+    public async assignScopeToAuthorizationGroup(tenantId: string, authorizationGroupId: string, scopeId: string, accessRuleId?: string): Promise<AuthorizationGroupScopeRel> {
+        throw new Error("Method not implemented.");
+    }
+    public async removeScopeFromAuthorizationGroup(tenantId: string, authorizationGroupId: string, scopeId: string): Promise<void> {
+        throw new Error("Method not implemented.");
+    }
+    public async getUserScopeRels(userId: string): Promise<Array<UserScopeRel>> {
+        throw new Error("Method not implemented.");
+    }
+    public async assignScopeToUser(tenantId: string, userId: string, scopeId: string, accessRuleId?: string): Promise<UserScopeRel> {
+        throw new Error("Method not implemented.");
+    }
+    public async removeScopeFromUser(tenantId: string, userId: string, scopeId: string): Promise<void> {
+        throw new Error("Method not implemented.");
+    }
 
     public async getScope(tenantId?: string): Promise<Array<Scope>> {
         const em = connection.em.fork();
@@ -51,38 +76,39 @@ class DBScopeDao extends ScopeDao {
         return Promise.resolve();
     }
 
-    public async getTenantScopeRel(tenantId?: string): Promise<Array<TenantScopeRel>> {
+    public async getTenantScopeRel(tenantId?: string): Promise<Array<TenantAvailableScope>> {
         const em = connection.em.fork();
         if(tenantId){
-            return em.find(TenantScopeRelEntity, {tenantId: tenantId});
+            return em.find(TenantAvailableScopeEntity, {tenantId: tenantId});
         }
         else{
-            return em.findAll(TenantScopeRelEntity);
+            return em.findAll(TenantAvailableScopeEntity);
         }
     }
 
-    public async assignScopeToTenant(tenantId: string, scopeId: string, accessRuleId: string | null): Promise<TenantScopeRel> {
+    public async assignScopeToTenant(tenantId: string, scopeId: string): Promise<TenantAvailableScope> {
         const em = connection.em.fork();
-        const entity: TenantScopeRelEntity = new TenantScopeRelEntity({tenantId, scopeId, accessRuleId: accessRuleId});
+        const entity: TenantAvailableScopeEntity = new TenantAvailableScopeEntity({tenantId, scopeId});
         await em.persistAndFlush(entity);
         return Promise.resolve(entity);
     }
 
     public async removeScopeFromTenant(tenantId: string, scopeId: string): Promise<void> {
         const em = connection.em.fork();
-        await em.nativeDelete(TenantScopeRelEntity, {
+        await em.nativeDelete(TenantAvailableScopeEntity, {
             tenantId: tenantId,
             scopeId: scopeId
         });
         return Promise.resolve();
     }
 
-    public async assignScopeToClient(tenantId: string, clientId: string, scopeId: string): Promise<ClientScopeRel> {
+    public async assignScopeToClient(tenantId: string, clientId: string, scopeId: string, accessRuleId?: string): Promise<ClientScopeRel> {
         const em = connection.em.fork();
         const entity: ClientScopeRelEntity = new ClientScopeRelEntity({
             tenantId: tenantId,
             scopeId: scopeId,
-            clientId: clientId        
+            clientId: clientId,
+            accessRuleId: accessRuleId
         });
         await em.persistAndFlush(entity);
         return Promise.resolve(entity);

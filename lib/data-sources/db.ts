@@ -34,13 +34,12 @@ import SigningKeyEntity from '@/lib/entities/signing-key-entity';
 import TenantAnonymousUserConfigurationRelEntity from '@/lib/entities/tenant-anonymous-user-configuration-rel-entity';
 import TenantLookAndFeelEntity from '@/lib/entities/tenant-look-and-feel-entity';
 import TenantRateLimitRelEntity from '@/lib/entities/tenant-rate-limit-rel-entity';
-import TenantScopeRelEntity from '@/lib/entities/tenant-scope-rel-entity';
+import TenantAvailableScopeEntity from '@/lib/entities/tenant-available-scope-entity';
 import UserAuthorizationGroupRelEntity from '@/lib/entities/authorization-group-user-rel-entity';
 import UserCredentialEntity from '@/lib/entities/user-credential-entity';
 import UserEntity from '@/lib/entities/user-entity';
 import UserScopeRelEntity from '@/lib/entities/user-scope-rel-entity';
 import UserTenantRelEntity from '@/lib/entities/user-tenant-rel-entity';
-
 import ClientScopeRelEntity from '@/lib/entities/client-scope-rel-entity';
 import ProhibitedPasswordEntity from '@/lib/entities/prohibited-password-entity';
 import SchedulerLockEntity from '@/lib/entities/scheduler-lock-entity';
@@ -52,21 +51,33 @@ import UserFido2ChallengeEntity from '@/lib/entities/user-fido2-challenge-entity
 import UserFido2CounterRelEntity from '@/lib/entities/user-fido2-counter-rel-entity';
 import UserMfaRelEntity from '@/lib/entities/user-mfa-rel-entity';
 
+const {
+    DB_USER,
+    DB_PASSWORD,
+    DB_HOST,
+    DB_NAME,
+    DB_PORT,
+    DB_MIN_POOL_SIZE,
+    DB_MAX_POOL_SIZE,
+    DB_AUTH_SCHEME,
+    DB_USER_DOMAIN
+} = process.env;
+
 
 const connection = MikroORM.initSync(
     {
-        dbName: "OPEN_CERTS_OIDC_IAM",
-        user: "root",
-        password: "sagman",
-        host: "localhost",
-        port: 3306,
+        dbName: DB_NAME,
+        user: DB_USER,
+        password: DB_PASSWORD,
+        host: DB_HOST,
+        port: parseInt(DB_PORT || "0"),
         pool: {
-            max: 10,
-            min: 4
+            max: DB_MAX_POOL_SIZE ? parseInt(DB_MAX_POOL_SIZE) : 10,
+            min: DB_MIN_POOL_SIZE ? parseInt(DB_MIN_POOL_SIZE) : 4,
         },
         // driverOptions: {
-        //     authenticationScheme: "NTLM",
-        //     domain: "domain"
+        //     authenticationScheme: DB_AUTH_SCHEME || "NTLM",
+        //     domain: DB_USER_DOMAIN || "domain"
         // },
         entities: [
             AccessRuleEntity,
@@ -107,7 +118,7 @@ const connection = MikroORM.initSync(
             TenantPasswordConfigEntity,
             TenantRateLimitRelEntity,
             TenantRestrictedAuthenticationDomainRelEntity,
-            TenantScopeRelEntity,
+            TenantAvailableScopeEntity,
             UserAuthorizationGroupRelEntity,
             UserCredentialEntity,            
             UserFailedLoginAttemptsEntity,

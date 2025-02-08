@@ -1,4 +1,4 @@
-import { Scope, TenantScopeRel, ClientTenantScopeRel } from "@/graphql/generated/graphql-types";
+import { Scope, TenantAvailableScope, ClientScopeRel, AuthorizationGroupScopeRel, UserScopeRel } from "@/graphql/generated/graphql-types";
 
 
 
@@ -14,15 +14,29 @@ abstract class ScopeDao {
     
         abstract deleteScope(scopeId: string): Promise<void>;
     
-        abstract getTenantScopeRel(tenantId?: String): Promise<Array<TenantScopeRel>>;
+        abstract getTenantAvailableScope(tenantId?: String): Promise<Array<TenantAvailableScope>>;
         
-        abstract assignScopeToTenant(tenantId: string, scopeId: string, accessRuleId: string | null): Promise<TenantScopeRel>;
+        abstract assignScopeToTenant(tenantId: string, scopeId: string): Promise<TenantAvailableScope>;
     
         abstract removeScopeFromTenant(tenantId: string, scopeId: string): Promise<void>;
     
-        abstract assignScopeToClient(tenantId: string, clientId: string, scopeId: string): Promise<ClientTenantScopeRel>;
+        abstract getClientScopeRels(clientId: string): Promise<Array<ClientScopeRel>>;
+
+        abstract assignScopeToClient(tenantId: string, clientId: string, scopeId: string, accessRuleId?: string): Promise<ClientScopeRel>;
     
         abstract removeScopeFromClient(tenantId: string, clientId: string, scopeId: string): Promise<void>;
+
+        abstract getAuthorizationGroupScopeRels(authorizationGroupId: string): Promise<Array<AuthorizationGroupScopeRel>>;
+
+        abstract assignScopeToAuthorizationGroup(tenantId: string, authorizationGroupId: string, scopeId: string, accessRuleId?: string): Promise<AuthorizationGroupScopeRel>;
+
+        abstract removeScopeFromAuthorizationGroup(tenantId: string, authorizationGroupId: string, scopeId: string): Promise<void>;
+
+        abstract getUserScopeRels(userId: string): Promise<Array<UserScopeRel>>;
+
+        abstract assignScopeToUser(tenantId: string, userId: string, scopeId: string, accessRuleId?: string): Promise<UserScopeRel>;
+
+        abstract removeScopeFromUser(tenantId: string, userId: string, scopeId: string): Promise<void>;
         
 }
 
