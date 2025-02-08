@@ -9,9 +9,8 @@ class AccessRuleEntity {
     constructor(accessRule?: AccessRule){
         if(accessRule){
             this.accessRuleId = accessRule.accessRuleId;
-            this.scopeId = accessRule.scopeId;
-            this.accessrulename = accessRule.accessrulename;
-            this.scopeConstraintSchemaId = accessRule.scopeConstraintSchemaId;
+            this.accessRuleName = accessRule.accessRuleName;
+            this.scopeAccessRuleSchemaId = accessRule.scopeAccessRuleSchemaId;
             this.accessRuleDefinition = Buffer.from(accessRule.accessRuleDefinition);
         }
     }
@@ -20,14 +19,11 @@ class AccessRuleEntity {
     @PrimaryKey({fieldName: "accessruleid"})
     accessRuleId: string;
 
-    @Property({fieldName: "scopeid"})
-    scopeId: string;
-
     @Property({fieldName: "accessrulename"})
-    accessrulename: string;
+    accessRuleName: string;
 
     @Property({fieldName: "scopeconstraintschemaid"})
-    scopeConstraintSchemaId: string;
+    scopeAccessRuleSchemaId: string;
 
     @Property({fieldName: "accessruledefinition"})
     accessRuleDefinition: Buffer;
@@ -36,9 +32,8 @@ class AccessRuleEntity {
         const m: AccessRule = {
             accessRuleDefinition: this.accessRuleDefinition.toString("utf-8"),
             accessRuleId: this.accessRuleId,
-            accessrulename: this.accessrulename,
-            scopeConstraintSchemaId: this.scopeConstraintSchemaId,
-            scopeId: this.scopeId,
+            accessRuleName: this.accessRuleName,
+            scopeAccessRuleSchemaId: this.scopeAccessRuleSchemaId,
             __typename: "AccessRule"
         }
         return m;

@@ -232,23 +232,20 @@ create TABLE scope (
     scopeuse VARCHAR(64) NOT NULL
 );
 
-create TABLE scope_constraint_schema (
-    scopeconstraintschemaid VARCHAR(64) PRIMARY KEY,
-    scopeconstraintschemaname VARCHAR(128) NOT NULL,
-    schemaversion INT NOT NULL,    
+create TABLE scope_access_rule_schema (
+    scopeaccessruleschemaid VARCHAR(64) PRIMARY KEY,
     scopeid VARCHAR(64) NOT NULL,
-    scopeconstrainschema BLOB,
+    schemaversion INT NOT NULL,    
+    scopeaccessruleschema BLOB,
     FOREIGN KEY (scopeid) REFERENCES scope(scopeid)
 );
 
 create TABLE access_rule (
     accessruleid VARCHAR(64) PRIMARY KEY,
     accessrulename VARCHAR(128) NOT NULL,
-    scopeid VARCHAR(64) NOT NULL,
-    scopeconstraintschemaid VARCHAR(64) NOT NULL,
+    scopeaccessruleschemaid VARCHAR(64) NOT NULL,
     accessruledefinition BLOB NOT NULL,
-    FOREIGN KEY (scopeid) REFERENCES scope(scopeid),
-    FOREIGN KEY (scopeconstraintschemaid) REFERENCES  scope_constraint_schema(scopeconstraintschemaid)
+    FOREIGN KEY (scopeaccessruleschemaid) REFERENCES  scope_access_rule_schema(scopeaccessruleschemaid)
 );
 
 create TABLE rate_limit_service_group_scope_rel (
@@ -276,14 +273,12 @@ create TABLE tenant_rate_limit_rel (
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid)
 );
 
-create TABLE tenant_scope_rel (
-    scopeid VARCHAR(64) NOT NULL,
+create TABLE tenant_available_scope (
     tenantid VARCHAR(64) NOT NULL,
-    accessruleid VARCHAR(64),
-    PRIMARY KEY (scopeid, tenantid),
-    FOREIGN KEY (scopeid) REFERENCES scope(scopeid),
+    scopeid VARCHAR(64) NOT NULL,
+    PRIMARY KEY (tenantid, scopeid),
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid),
-    FOREIGN KEY (accessruleid) REFERENCES access_rule(accessruleid)
+    FOREIGN KEY (scopeid) REFERENCES scope(scopeid)
 );
 
 create TABLE client_scope_rel (
@@ -293,7 +288,7 @@ create TABLE client_scope_rel (
     accessruleid VARCHAR(64),
     PRIMARY KEY (scopeid, tenantid, clientid),
     FOREIGN KEY (scopeid) REFERENCES scope(scopeid),
-    FOREIGN KEY (tenantid) REFERENCES tenant(tenantid),
+    FOREIGN KEY (tenantid) REFERENCES tenant_available_scope(tenantid),
     FOREIGN KEY (clientid) REFERENCES client(clientid),
     FOREIGN KEY (accessruleid) REFERENCES access_rule(accessruleid)
 );
@@ -305,11 +300,10 @@ create TABLE authorization_group_scope_rel (
     accessruleid VARCHAR(64),
     PRIMARY KEY (scopeid, tenantid, groupid),
     FOREIGN KEY (scopeid) REFERENCES scope(scopeid),
-    FOREIGN KEY (tenantid) REFERENCES tenant(tenantid),
+    FOREIGN KEY (tenantid) REFERENCES tenant_available_scope(tenantid),
     FOREIGN KEY (groupid) REFERENCES authorization_group(groupid),
     FOREIGN KEY (accessruleid) REFERENCES access_rule(accessruleid)
 );
-
 
 create TABLE user_scope_rel (
     userid VARCHAR(64) NOT NULL,
@@ -318,11 +312,10 @@ create TABLE user_scope_rel (
     accessruleid VARCHAR(64),
     PRIMARY KEY (userid, tenantid, scopeid),
     FOREIGN KEY (userid) REFERENCES user(userid),
-    FOREIGN KEY (tenantid) REFERENCES tenant(tenantid),
+    FOREIGN KEY (tenantid) REFERENCES tenant_available_scope(tenantid),
     FOREIGN KEY (scopeid) REFERENCES scope(scopeid),
     FOREIGN KEY (accessruleid) REFERENCES access_rule(accessruleid)
 );
-
 
 create TABLE pre_authentication_state (
     token VARCHAR(128) NOT NULL PRIMARY KEY,

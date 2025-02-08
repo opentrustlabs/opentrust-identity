@@ -3,7 +3,7 @@ import ScopeDao from "../../scope-dao";
 import connection  from "@/lib/data-sources/db";
 import ScopeEntity from "@/lib/entities/scope-entity";
 import TenantScopeRelEntity from "@/lib/entities/tenant-scope-rel-entity";
-import ClientScopeRelEntity from "@/lib/entities/client-tenant-scope-rel-entity";
+import ClientScopeRelEntity from "@/lib/entities/client-scope-rel-entity";
 import { QueryOrder } from "@mikro-orm/core";
 
 class DBScopeDao extends ScopeDao {
