@@ -20,6 +20,8 @@ import AddBoxIcon from '@mui/icons-material/AddBox';
 import DeleteForeverOutlinedIcon from '@mui/icons-material/DeleteForeverOutlined';
 import SchemaIcon from '@mui/icons-material/Schema';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import SettingsApplicationsIcon from '@mui/icons-material/SettingsApplications';
+
 
 export interface ScopeDetailProps {
     scope: Scope
@@ -83,7 +85,7 @@ const ScopeDetail: React.FC<ScopeDetailProps> = ({ scope }) => {
                                     <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
                                         <Grid2 marginBottom={"8px"}>
                                             <div>Scope Use</div>
-                                            <TextField disabled={scope.scopeUse === SCOPE_USE_IAM_MANAGEMENT} name="providerName" id="providerName" value={scope.scopeUse} fullWidth={true} size="small" />
+                                            <TextField disabled={true} name="providerName" id="providerName" value={scope.scopeUse} fullWidth={true} size="small" />
                                         </Grid2>
                                     </Grid2>
                                 </Grid2>
@@ -152,7 +154,7 @@ const ScopeDetail: React.FC<ScopeDetailProps> = ({ scope }) => {
 
                                 >
                                     <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
-                                        <SchemaIcon /><div style={{marginLeft: "8px"}}>Tenants</div>
+                                        <SettingsApplicationsIcon /><div style={{marginLeft: "8px"}}>Tenants</div>
                                     </div>
                                 </AccordionSummary>
                                 <AccordionDetails>
@@ -169,22 +171,18 @@ const ScopeDetail: React.FC<ScopeDetailProps> = ({ scope }) => {
                                     
                                     <Typography component={"div"} fontSize={"0.9em"} fontWeight={"bold"}>
                                         <Grid2 margin={"8px 0px 8px 0px"} container size={12} spacing={1}>
-                                            <Grid2 size={5}>Name</Grid2>
-                                            <Grid2 size={4}>Access Rule</Grid2>
-                                            <Grid2 size={2}>Version</Grid2>                                                    
+                                            <Grid2 size={11}>Tenant</Grid2>                                            
                                             <Grid2 size={1}></Grid2>
                                         </Grid2>
                                     </Typography>
                                     <Divider />
-                                    {["Home Depot Prod", "Amgen", "Pfizer", "AirBnB"].map(                                            
+                                    {["Home Depot Prod", "Amgen", "Pfizer", "AirBnB", "MilliporeSigma", ].map(                                            
                                         (name: string) => (
                                             <Typography key={`${name}`} component={"div"} fontSize={"0.9em"} >
                                                 <Divider></Divider>
                                                 <Grid2 margin={"8px 0px 8px 0px"} container size={12} spacing={1}>
-                                                    <Grid2 size={5}>Schema Name</Grid2>
-                                                    <Grid2 size={4}>Mark for delete</Grid2>
-                                                    <Grid2 size={2}>{name}</Grid2>                                                    
-                                                    <Grid2 size={1}><EditOutlinedIcon /></Grid2>
+                                                    <Grid2 size={11}>{name}</Grid2>                                                                                                        
+                                                    <Grid2 size={1}><DeleteForeverOutlinedIcon /></Grid2>
                                                 </Grid2>
                                             </Typography>                                                
                                         )
@@ -195,7 +193,11 @@ const ScopeDetail: React.FC<ScopeDetailProps> = ({ scope }) => {
 
                     </Grid2>
                 </DetailPageMainContentContainer>
-                <DetailPageRightNavContainer><div></div></DetailPageRightNavContainer>
+                <DetailPageRightNavContainer>
+                    <Grid2 container spacing={2} size={12}>
+                        
+                    </Grid2>
+                </DetailPageRightNavContainer>
             </DetailPageContainer>
 
         </Typography>
