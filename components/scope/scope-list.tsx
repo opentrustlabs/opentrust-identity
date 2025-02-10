@@ -79,10 +79,20 @@ const ScopeList: React.FC = () => {
         href: null
     });
 
+    /*
+        TODO
+        For users who belong to the root tenant, create a link to the scope detail page and
+        for those who have scope delete permissions show a delete icon for those APPLICATION_MANAGEMENT
+        use-types of scope
+
+        For non-root tenants, do NOT create a link to the scope detail page.
+        If a non-root user tries to access a scope detail page, return an access error message.
+    */
     if (loading) return <DataLoading dataLoadingSize="xl" color={null} />
     if (error) return <ErrorComponent message={error.message || "Unknown Error Occurred."} componentSize='lg' />
     if (data) return (
 
+        
         <main>
             <Typography component={"div"} >
                 <BreadcrumbComponent breadCrumbs={arrBreadcrumbs} />

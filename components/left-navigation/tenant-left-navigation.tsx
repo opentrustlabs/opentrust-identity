@@ -17,9 +17,6 @@ import SpeedIcon from '@mui/icons-material/Speed';
 import { ResponsiveBreakpoints } from "@/components/contexts/responsive-context";
 import { TenantMetaData } from "@/graphql/generated/graphql-types";
 import { TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
-import { SimpleTreeView } from '@mui/x-tree-view/SimpleTreeView';
-import { TreeItem } from '@mui/x-tree-view/TreeItem';
-import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
 
 
 interface NavigationProps {

@@ -19,7 +19,9 @@ import FaceIcon from '@mui/icons-material/Face';
 import InputIcon from '@mui/icons-material/Input';
 import DisplaySettingsIcon from '@mui/icons-material/DisplaySettings';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-
+import AddBoxIcon from '@mui/icons-material/AddBox';
+import DeleteForeverOutlinedIcon from '@mui/icons-material/DeleteForeverOutlined';
+import PolicyIcon from '@mui/icons-material/Policy';
 
 export interface TenantDetailProps {
     tenantId: string
@@ -135,7 +137,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                     <Button sx={{border: "solid 1px lightgrey", borderRadius: "4px", color: "black"}} >Update</Button>
                                 </Stack>
                             </Paper>
-                        </Grid2>
+                        </Grid2>                        
                         
                         <Grid2 size={12}>
                             <Accordion defaultExpanded={true}  >
