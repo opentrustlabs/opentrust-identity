@@ -22,9 +22,6 @@ class ClientScopeRelEntity implements ClientScopeRel {
 
     @PrimaryKey({fieldName: "tenantid"})
     tenantId: string;
-
-    @Property({fieldName: "accessruleid", nullable: true})
-    accessruleid?: Maybe<string> | undefined;
  
 }
 

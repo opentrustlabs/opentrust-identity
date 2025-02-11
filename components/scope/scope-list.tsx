@@ -148,7 +148,7 @@ const ScopeList: React.FC = () => {
                                 (scope: Scope, idx: number) => (
                                     <Typography key={scope.scopeId} component={"div"} fontSize={"0.9em"} noWrap>
                                         <Divider></Divider>
-                                        <Grid2 sx={{backgroundColor: idx %2 === 0 ? "#fafafa": "white"}} padding={"8px 0px 8px 0px"} container size={12} spacing={1}>
+                                        <Grid2 padding={"8px 0px 8px 0px"} container size={12} spacing={1}>
                                             <Grid2 size={0.3}><DeleteForeverOutlinedIcon /></Grid2>
                                             <Grid2 sx={{textOverflow: "ellipsis", overflow: "hidden"}} size={2.3}><Link href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/scope-access-control/${scope.scopeId}`}>{scope.scopeName}</Link></Grid2>
                                             <Grid2 size={3.7}>{scope.scopeDescription}</Grid2>
