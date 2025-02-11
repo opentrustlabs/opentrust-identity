@@ -17,7 +17,7 @@ class DBScopeDao extends ScopeDao {
     public async getAuthorizationGroupScopeRels(authorizationGroupId: string): Promise<Array<AuthorizationGroupScopeRel>> {
         throw new Error("Method not implemented.");
     }
-    public async assignScopeToAuthorizationGroup(tenantId: string, authorizationGroupId: string, scopeId: string, accessRuleId?: string): Promise<AuthorizationGroupScopeRel> {
+    public async assignScopeToAuthorizationGroup(tenantId: string, authorizationGroupId: string, scopeId: string): Promise<AuthorizationGroupScopeRel> {
         throw new Error("Method not implemented.");
     }
     public async removeScopeFromAuthorizationGroup(tenantId: string, authorizationGroupId: string, scopeId: string): Promise<void> {
@@ -26,7 +26,7 @@ class DBScopeDao extends ScopeDao {
     public async getUserScopeRels(userId: string): Promise<Array<UserScopeRel>> {
         throw new Error("Method not implemented.");
     }
-    public async assignScopeToUser(tenantId: string, userId: string, scopeId: string, accessRuleId?: string): Promise<UserScopeRel> {
+    public async assignScopeToUser(tenantId: string, userId: string, scopeId: string): Promise<UserScopeRel> {
         throw new Error("Method not implemented.");
     }
     public async removeScopeFromUser(tenantId: string, userId: string, scopeId: string): Promise<void> {
@@ -86,9 +86,9 @@ class DBScopeDao extends ScopeDao {
         }
     }
 
-    public async assignScopeToTenant(tenantId: string, scopeId: string): Promise<TenantAvailableScope> {
+    public async assignScopeToTenant(tenantId: string, scopeId: string, accessRuleId?: string): Promise<TenantAvailableScope> {
         const em = connection.em.fork();
-        const entity: TenantAvailableScopeEntity = new TenantAvailableScopeEntity({tenantId, scopeId});
+        const entity: TenantAvailableScopeEntity = new TenantAvailableScopeEntity({tenantId, scopeId, accessRuleId });
         await em.persistAndFlush(entity);
         return Promise.resolve(entity);
     }
@@ -102,13 +102,12 @@ class DBScopeDao extends ScopeDao {
         return Promise.resolve();
     }
 
-    public async assignScopeToClient(tenantId: string, clientId: string, scopeId: string, accessRuleId?: string): Promise<ClientScopeRel> {
+    public async assignScopeToClient(tenantId: string, clientId: string, scopeId: string): Promise<ClientScopeRel> {
         const em = connection.em.fork();
         const entity: ClientScopeRelEntity = new ClientScopeRelEntity({
             tenantId: tenantId,
             scopeId: scopeId,
-            clientId: clientId,
-            accessRuleId: accessRuleId
+            clientId: clientId
         });
         await em.persistAndFlush(entity);
         return Promise.resolve(entity);

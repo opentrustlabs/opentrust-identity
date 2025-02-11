@@ -1,5 +1,5 @@
 import type { TenantAvailableScope } from "@/graphql/generated/graphql-types";
-import { Entity, PrimaryKey } from "@mikro-orm/core";
+import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
 
 @Entity({
     tableName: "tenant_available_scope"
@@ -19,6 +19,9 @@ class TenantAvailableScopeEntity implements TenantAvailableScope {
 
     @PrimaryKey({fieldName: "scopeid"})
     scopeId: string;
+
+    @Property({fieldName: "accessruleid", nullable: true})
+    accessRuleId: string | null;
    
 }
 

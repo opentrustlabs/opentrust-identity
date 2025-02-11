@@ -22,9 +22,6 @@ class AuthorizationGroupScopeRelEntity implements AuthorizationGroupScopeRel {
     @PrimaryKey({fieldName: "tenantid"})
     tenantId: string;
 
-    @Property({fieldName: "accessruleid"})
-    accessRuleId?: Maybe<string> | undefined;
-
 }
 
 export default AuthorizationGroupScopeRelEntity;

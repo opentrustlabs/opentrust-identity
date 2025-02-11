@@ -276,45 +276,41 @@ create TABLE tenant_rate_limit_rel (
 create TABLE tenant_available_scope (
     tenantid VARCHAR(64) NOT NULL,
     scopeid VARCHAR(64) NOT NULL,
+    accessruleid VARCHAR(64),
     PRIMARY KEY (tenantid, scopeid),
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid),
-    FOREIGN KEY (scopeid) REFERENCES scope(scopeid)
+    FOREIGN KEY (scopeid) REFERENCES scope(scopeid),
+    FOREIGN KEY (accessruleid) REFERENCES access_rule(accessruleid)
 );
 
 create TABLE client_scope_rel (
     scopeid VARCHAR(64) NOT NULL,
     tenantid VARCHAR(64) NOT NULL,
     clientid VARCHAR(64) NOT NULL,
-    accessruleid VARCHAR(64),
     PRIMARY KEY (scopeid, tenantid, clientid),
     FOREIGN KEY (scopeid) REFERENCES scope(scopeid),
     FOREIGN KEY (tenantid) REFERENCES tenant_available_scope(tenantid),
-    FOREIGN KEY (clientid) REFERENCES client(clientid),
-    FOREIGN KEY (accessruleid) REFERENCES access_rule(accessruleid)
+    FOREIGN KEY (clientid) REFERENCES client(clientid)
 );
 
 create TABLE authorization_group_scope_rel (
     scopeid VARCHAR(64) NOT NULL,
     tenantid VARCHAR(64) NOT NULL,
     groupid VARCHAR(64) NOT NULL,
-    accessruleid VARCHAR(64),
     PRIMARY KEY (scopeid, tenantid, groupid),
     FOREIGN KEY (scopeid) REFERENCES scope(scopeid),
     FOREIGN KEY (tenantid) REFERENCES tenant_available_scope(tenantid),
-    FOREIGN KEY (groupid) REFERENCES authorization_group(groupid),
-    FOREIGN KEY (accessruleid) REFERENCES access_rule(accessruleid)
+    FOREIGN KEY (groupid) REFERENCES authorization_group(groupid)
 );
 
 create TABLE user_scope_rel (
     userid VARCHAR(64) NOT NULL,
     tenantid VARCHAR(64) NOT NULL,
     scopeid VARCHAR(64) NOT NULL,
-    accessruleid VARCHAR(64),
     PRIMARY KEY (userid, tenantid, scopeid),
     FOREIGN KEY (userid) REFERENCES user(userid),
     FOREIGN KEY (tenantid) REFERENCES tenant_available_scope(tenantid),
-    FOREIGN KEY (scopeid) REFERENCES scope(scopeid),
-    FOREIGN KEY (accessruleid) REFERENCES access_rule(accessruleid)
+    FOREIGN KEY (scopeid) REFERENCES scope(scopeid)
 );
 
 create TABLE pre_authentication_state (

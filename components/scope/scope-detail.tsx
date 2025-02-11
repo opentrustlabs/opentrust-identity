@@ -21,6 +21,9 @@ import DeleteForeverOutlinedIcon from '@mui/icons-material/DeleteForeverOutlined
 import SchemaIcon from '@mui/icons-material/Schema';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import SettingsApplicationsIcon from '@mui/icons-material/SettingsApplications';
+import InputAdornment from "@mui/material/InputAdornment";
+import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
+import StraightenIcon from '@mui/icons-material/Straighten';
 
 
 export interface ScopeDetailProps {
@@ -168,20 +171,47 @@ const ScopeDetail: React.FC<ScopeDetailProps> = ({ scope }) => {
                                             </Stack>
                                         </Grid2>
                                     </Typography>
+                                    <Typography component={"div"} fontWeight={"bold"} >
+                                        <Grid2 container size={12} spacing={1} marginBottom={"16px"} >
+                                            <Stack spacing={1} justifyContent={"space-between"} direction={"row"} fontWeight={"bold"} fontSize={"0.95em"} margin={"8px 0px 24px 0px"}>
+                                            <TextField
+                                                label={"Filter Tenants"}
+                                                size={"small"}
+                                                name={"filter"}
+                                                value={""}
+                                                
+                                                slotProps={{
+                                                    input: {
+                                                        endAdornment: (
+                                                            <InputAdornment position="end">
+                                                                <CloseOutlinedIcon
+                                                                    sx={{ cursor: "pointer" }}
+                                                                    onClick={() => {  }}
+                                                                />
+                                                            </InputAdornment>
+                                                        )
+                                                    }
+                                                }}
+                                            />
+                                            </Stack>
+                                        </Grid2>
+                                    </Typography>
                                     
                                     <Typography component={"div"} fontSize={"0.9em"} fontWeight={"bold"}>
                                         <Grid2 margin={"8px 0px 8px 0px"} container size={12} spacing={1}>
-                                            <Grid2 size={11}>Tenant</Grid2>                                            
+                                            <Grid2 size={8}>Tenant</Grid2>
+                                            <Grid2 size={3}>Access Rule</Grid2>
                                             <Grid2 size={1}></Grid2>
                                         </Grid2>
                                     </Typography>
                                     <Divider />
                                     {["Home Depot Prod", "Amgen", "Pfizer", "AirBnB", "MilliporeSigma", ].map(                                            
-                                        (name: string) => (
+                                        (name: string, idx: number) => (
                                             <Typography key={`${name}`} component={"div"} fontSize={"0.9em"} >
                                                 <Divider></Divider>
                                                 <Grid2 margin={"8px 0px 8px 0px"} container size={12} spacing={1}>
-                                                    <Grid2 size={11}>{name}</Grid2>                                                                                                        
+                                                    <Grid2 size={8}>{name}</Grid2>                                                                                                        
+                                                    <Grid2 size={3}>{idx === 1 || idx === 4 ? <StraightenIcon /> : <AddBoxIcon />}</Grid2>
                                                     <Grid2 size={1}><DeleteForeverOutlinedIcon /></Grid2>
                                                 </Grid2>
                                             </Typography>                                                

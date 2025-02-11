@@ -22,8 +22,6 @@ class UserScopeRelEntity implements UserScopeRel {
     @PrimaryKey({fieldName: "tenantid"})
     tenantId: string;
 
-    @Property({fieldName: "accessruleid"})
-    accessRuleId?: Maybe<string> | undefined;
     
 }
 
