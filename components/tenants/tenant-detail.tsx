@@ -101,10 +101,17 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                             <TextField name="tenantType" id="tenantType" value={tenant.tenantType} fullWidth={true} size="small" />
                                         </Grid2>
                                         <Grid2 marginBottom={"16px"}>
-                                            <div>Claims supported</div>
+                                            <div>Claims Supported</div>
                                             <TextField name="tenantType" id="tenantType" value={tenant.tenantType} fullWidth={true} size="small" />
                                         </Grid2>
-
+                                        <Grid2 marginBottom={"16px"}>
+                                            <div>Default Rate Limit</div>
+                                            <TextField name="defaultRateLimit" id="defaultRateLimit" value={tenant.defaultRateLimit} fullWidth={true} size="small" />
+                                        </Grid2>
+                                        <Grid2 marginBottom={"16px"}>
+                                            <div>Default Rate Limit Period (minutes)</div>
+                                            <TextField name="defaultRateLimitPeriodMinutes" id="defaultRateLimitPeriodMinutes" value={tenant.defaultRateLimitPeriodMinutes} fullWidth={true} size="small" />
+                                        </Grid2>
                                     </Grid2>
                                     <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
                                         <Grid2 borderLeft={"dotted 1px lightgrey"} paddingLeft={"8px"} container size={12}>

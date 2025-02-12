@@ -13,8 +13,8 @@ class TenantRateLimitRelEntity implements TenantRateLimitRel {
     }
     __typename?: "TenantRateLimitRel" | undefined;
     
-    @PrimaryKey({fieldName: "ratelimitid"})
-    rateLimitId: string;
+    @PrimaryKey({fieldName: "servicegroupid"})
+    servicegroupid: string;
 
     @PrimaryKey({fieldName: "tenantid"})
     tenantId: string;

@@ -12,6 +12,7 @@ import AuthenticationGroupList from "@/components/authentication-groups/authenti
 import FederatedOIDCProviderList from "@/components/oidc-providers/oidc-provider-list";
 import SigningKeyList from "@/components/signing-keys/signing-key-list";
 import ScopeList from "@/components/scope/scope-list";
+import RateLimitList from "@/components/rate-limits/rate-limit-list";
 
 
 const TenantLandingPage: React.FC = () => {
@@ -63,6 +64,9 @@ const TenantLandingPage: React.FC = () => {
             }
             {section === "scope-access-control" &&
                 <ScopeList />
+            }
+            {section === "rate-limits" &&
+                <RateLimitList />
             }
         </>
     )

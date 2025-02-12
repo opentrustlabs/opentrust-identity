@@ -149,6 +149,9 @@ const resolvers: Resolvers = {
             }
             return response;
             //(username: String!, tenantId: String, preauthToken: String): LoginUserNameHandlerResponse!
+        },
+        getRateLimitServiceGroups: (_:any, { tenantId }, oidcContenxt) => {
+            return [];
         }
     },
     Mutation: {
@@ -273,7 +276,9 @@ const resolvers: Resolvers = {
                 allowAnonymousUsers: tenantInput.allowAnonymousUsers,
                 migrateLegacyUsers: tenantInput.migrateLegacyUsers,
                 allowLoginByPhoneNumber: tenantInput.allowLoginByPhoneNumber,
-                allowForgotPassword: tenantInput.allowForgotPassword
+                allowForgotPassword: tenantInput.allowForgotPassword,
+                defaultRateLimit: tenantInput.defaultRateLimit,
+                defaultRateLimitPeriodMinutes: tenantInput.defaultRateLimitPeriodMinutes
             }
             await tenantService.createTenant(tenant);
             const contacts: Array<Contact> = tenantInput.contactInput.map((i: ContactInput) => { return {email: i.email, name: i.name, objectid: tenant.tenantId, objecttype:""}});
@@ -324,7 +329,9 @@ const resolvers: Resolvers = {
                 allowAnonymousUsers: tenantInput.allowAnonymousUsers,
                 migrateLegacyUsers: tenantInput.migrateLegacyUsers,
                 allowLoginByPhoneNumber: tenantInput.allowLoginByPhoneNumber,
-                allowForgotPassword: tenantInput.allowForgotPassword
+                allowForgotPassword: tenantInput.allowForgotPassword,
+                defaultRateLimit: tenantInput.defaultRateLimit,
+                defaultRateLimitPeriodMinutes: tenantInput.defaultRateLimitPeriodMinutes
             }
             const updatedTenant: Tenant = await tenantService.updateTenant(tenant);
             const contacts: Array<Contact> = tenantInput.contactInput.map((i: ContactInput) => { return {email: i.email, name: i.name, objectid: tenant.tenantId, objecttype:""}});

@@ -34,8 +34,8 @@ type Query {
     getSigningKeyById(signingKeyId: String!): SigningKey
 
     ## RateLimit
-    getRateLimits(tenantId: String): [RateLimit!]!
-    getRateLimitById(rateLimitId: String!): RateLimit
+    getRateLimitServiceGroups(tenantId: String): [RateLimitServiceGroup!]!
+    getRateLimitServiceGroupById(serviceGroupId: String!): RateLimitServiceGroup
 
     ## Scope
     getScope(tenantId: String): [Scope!]!
@@ -110,12 +110,12 @@ type Mutation {
     deleteSigningKey(keyId: String!): String!
 
     ## RateLimit
-    createRateLimit(rateLimitInput: RateLimitCreateInput!): RateLimit
-    updateRateLimit(rateLimitInput: RateLimitUpdateInput!): RateLimit
-    deleteRateLimit(rateLimitId: String!): String
-    assignRateLimitToTenant(tenantId: String!, rateLimitId: String!, allowUnlimited: Boolean, limit: Int, rateLimitPeriodMinutes: Int): TenantRateLimitRel
-    updateRateLimitForTenant(tenantId: String!, rateLimitId: String!, allowUnlimited: Boolean, limit: Int, rateLimitPeriodMinutes: Int): TenantRateLimitRel
-    removeRateLimitFromTenant(tenantId: String!, rateLimitId: String!): String
+    createRateLimitServiceGroup(rateLimitServiceGroupInput: RateLimitServiceGroupCreateInput!): RateLimitServiceGroup
+    updateRateLimitServiceGroup(rateLimitServiceGroupInput: RateLimitServiceGroupUpdateInput!): RateLimitServiceGroup
+    deleteRateLimitServiceGroup(serviceGroupId: String!): String
+    assignRateLimitToTenant(tenantId: String!, serviceGroupId: String!, allowUnlimited: Boolean, limit: Int, rateLimitPeriodMinutes: Int): TenantRateLimitRel
+    updateRateLimitForTenant(tenantId: String!, serviceGroupId: String!, allowUnlimited: Boolean, limit: Int, rateLimitPeriodMinutes: Int): TenantRateLimitRel
+    removeRateLimitFromTenant(tenantId: String!, serviceGroupId: String!): String
 
     ## Scope
     createScope(scopeInput: ScopeCreateInput!): Scope
@@ -215,6 +215,8 @@ type Tenant {
     migrateLegacyUsers: Boolean!
     allowLoginByPhoneNumber: Boolean!
     allowForgotPassword: Boolean!
+    defaultRateLimit: Int
+    defaultRateLimitPeriodMinutes: Int
 }
 
 
@@ -491,7 +493,7 @@ type RateLimit {
 
 type TenantRateLimitRel {
     tenantId: String!
-    rateLimitId: String!
+    servicegroupid: String!
     allowUnlimitedRate: Boolean
     rateLimit: Int
     rateLimitPeriodMinutes: Int
@@ -875,6 +877,8 @@ input TenantCreateInput {
     migrateLegacyUsers: Boolean!
     allowLoginByPhoneNumber: Boolean!
     allowForgotPassword: Boolean!
+    defaultRateLimit: Int
+    defaultRateLimitPeriodMinutes: Int
 }
 
 input TenantUpdateInput {
@@ -897,6 +901,8 @@ input TenantUpdateInput {
     migrateLegacyUsers: Boolean!
     allowLoginByPhoneNumber: Boolean!
     allowForgotPassword: Boolean!
+    defaultRateLimit: Int
+    defaultRateLimitPeriodMinutes: Int
 }
 
 input ClientCreateInput {
@@ -953,16 +959,17 @@ input SigningKeyUpdateInput {
 }
 
 
-input RateLimitCreateInput {
+input RateLimitServiceGroupCreateInput {
     rateLimitDomain: String!
     rateLimitDescription: String
 }
 
-input RateLimitUpdateInput {
+input RateLimitServiceGroupUpdateInput {
     rateLimitId: String!
     rateLimitDomain: String!
     rateLimitDescription: String
 }
+
 input ScopeCreateInput {
     scopeName: String!
     scopeDescription: String!

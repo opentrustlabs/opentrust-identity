@@ -36,7 +36,9 @@ create TABLE tenant (
     tenanttype VARCHAR(128) NOT NULL,
     migratelegacyusers BOOLEAN NOT NULL,
     allowloginbyphonenumber BOOLEAN NOT NULL,
-    allowforgotpassword BOOLEAN NOT NULL
+    allowforgotpassword BOOLEAN NOT NULL,
+    defaultratelimit INT,
+    defaultratelimitperiodminutes INT
 );
 CREATE INDEX tenant_tenant_type_idx ON tenant(tenanttype);
 
@@ -264,12 +266,12 @@ create TABLE rate_limit (
 );
 
 create TABLE tenant_rate_limit_rel (
-    ratelimitid VARCHAR(64) NOT NULL,
+    servicegroupid VARCHAR(64) NOT NULL,
     tenantid VARCHAR(64) NOT NULL,
     allowunlimitedrate BOOLEAN NOT NULL,
     ratelimit INT,
     ratelimitperiodminutes INT,
-    FOREIGN KEY (ratelimitid) REFERENCES rate_limit(ratelimitid),
+    FOREIGN KEY (servicegroupid) REFERENCES rate_limit_service_group(servicegroupid),
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid)
 );
 

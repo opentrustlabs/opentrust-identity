@@ -351,7 +351,15 @@ export const SCOPE_DETAIL_QUERY = gql(`
     }
 `);
 
-
+export const RATE_LIMITS_QUERY = gql(`
+    query getRateLimitServiceGroups($tenantId: String){
+        getRateLimitServiceGroups(tenantId: $tenantId){
+            servicegroupid
+            servicegroupname
+            servicegroupdescription
+        }
+    }
+`);
 /*
 getLoginFailurePolicy {        
             loginFailurePolicyType

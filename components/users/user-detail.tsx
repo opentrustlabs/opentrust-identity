@@ -226,7 +226,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                             <Stack spacing={1} justifyContent={"space-between"} direction={"row"} fontWeight={"bold"} fontSize={"0.95em"} margin={"8px 0px 24px 0px"}>
                                                 <div style={{ display: "inline-flex", alignItems: "center" }}>
                                                     <AddBoxIcon sx={{ marginRight: "8px", cursor: "pointer" }} />
-                                                    <span>Add Access Control Rule</span>
+                                                    <span>Add Scope</span>
                                                 </div>
                                             </Stack>
                                         </Grid2>

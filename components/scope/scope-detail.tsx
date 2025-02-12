@@ -232,9 +232,6 @@ const ScopeDetail: React.FC<ScopeDetailProps> = ({ scope }) => {
 
         </Typography>
 
-
-
-
     )
 }
 

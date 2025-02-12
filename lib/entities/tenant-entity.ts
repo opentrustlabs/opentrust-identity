@@ -1,4 +1,4 @@
-import type { Tenant } from '@/graphql/generated/graphql-types';
+import type { Maybe, Tenant } from '@/graphql/generated/graphql-types';
 import { Entity, PrimaryKey, Property } from '@mikro-orm/core';
 
 @Entity({
@@ -25,6 +25,8 @@ export class TenantEntity {
             this.migrateLegacyUsers = tenant.migrateLegacyUsers;
             this.allowLoginByPhoneNumber = tenant.allowLoginByPhoneNumber;    
             this.allowForgotPassword = tenant.allowForgotPassword; 
+            this.defaultRateLimit = tenant.defaultRateLimit;
+            this.defaultRateLimitPeriodMinutes = tenant.defaultRateLimitPeriodMinutes
         }
     }
     
@@ -76,6 +78,12 @@ export class TenantEntity {
     @Property({fieldName: "allowforgotpassword"})
     allowForgotPassword: boolean;
 
+    @Property({fieldName: "defaultratelimit", nullable: true})
+    defaultRateLimit: Maybe<number> | undefined;
+
+    @Property({fieldName: "defaultratelimitperiodminutes", nullable: true})
+    defaultRateLimitPeriodMinutes: Maybe<number> | undefined;
+
     public toModel(): Tenant {
         const t: Tenant = {
             allowAnonymousUsers: this.allowanonymoususers,
@@ -95,7 +103,9 @@ export class TenantEntity {
             tenanttypeid: "",
             migrateLegacyUsers: this.migrateLegacyUsers,
             allowLoginByPhoneNumber: this.allowLoginByPhoneNumber,
-            allowForgotPassword: this.allowForgotPassword
+            allowForgotPassword: this.allowForgotPassword,
+            defaultRateLimit: this.defaultRateLimit,
+            defaultRateLimitPeriodMinutes: this.defaultRateLimitPeriodMinutes
         }
         return t;
     }
