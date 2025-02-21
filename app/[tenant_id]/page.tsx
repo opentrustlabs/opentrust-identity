@@ -13,6 +13,8 @@ import FederatedOIDCProviderList from "@/components/oidc-providers/oidc-provider
 import SigningKeyList from "@/components/signing-keys/signing-key-list";
 import ScopeList from "@/components/scope/scope-list";
 import RateLimitList from "@/components/rate-limits/rate-limit-list";
+import SearchResultListLayout from "@/components/layout/search-result-list-layout";
+import { SearchResultType } from "@/graphql/generated/graphql-types";
 
 
 const TenantLandingPage: React.FC = () => {
@@ -39,7 +41,13 @@ const TenantLandingPage: React.FC = () => {
     return (
         <>
             {(section === null || section === "tenants") && tenantBean.getTenantMetaData().tenant.tenantType === TENANT_TYPE_ROOT_TENANT && 
-                <TenantList page={1} perPage={20} embedded={false} />
+                <SearchResultListLayout 
+                    page={1} 
+                    perPage={20} 
+                    filterInputLabel="Filter Tenants" 
+                    resultType={SearchResultType.Tenant}
+                    breadCrumbText=""
+                />
             }
             {(section === null || section === "tenants") && tenantBean.getTenantMetaData().tenant.tenantType !== TENANT_TYPE_ROOT_TENANT && 
                 <TenantDetail tenantId={tenantBean.getTenantMetaData().tenant.tenantId} />
@@ -48,13 +56,12 @@ const TenantLandingPage: React.FC = () => {
                 <ClientList />
             }
             {section === "users" &&
-                <UserList 
-                    tenantId={tenantBean.getTenantMetaData().tenant.tenantType !== TENANT_TYPE_ROOT_TENANT ? tenantBean.getTenantMetaData().tenant.tenantId : ""} 
-                    authorizationGroupId={""} 
-                    authenticationGroupId={""}  
+                <SearchResultListLayout 
+                    filterInputLabel="Filter Users" 
+                    resultType={SearchResultType.User}
                     page={1} 
-                    perPage={20} 
-                    embedded={false}
+                    perPage={20}
+                    breadCrumbText="User List"
                 />
             }
             {section === "authorization-groups" &&
