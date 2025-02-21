@@ -195,23 +195,23 @@ export const AUTHORIZATION_GROUP_DETAIL_QUERY = gql(`
 export const SEARCH_QUERY = gql(`
     query search($searchInput: SearchInput!){
         search(searchInput: $searchInput) {
-            startTime
-            endTime
+            starttime
+            endtime
             took
             page
-            perPage
+            perpage
             total
-            resultList {
+            resultlist {
                 description
                 email
                 enabled
                 name
-                objectId
-                objectType
-                owningClientId
-                owningTenantId
-                subType
-                subTypeKey
+                objectid
+                objecttype
+                owningclientid
+                owningtenantid
+                subtype
+                subtypekey
             }
         }
     }

@@ -1,4 +1,4 @@
-import { LookaheadResult, SearchFilterInput, SearchFilterInputObjectType, SearchInput, SearchResultItem, SearchResults } from "@/graphql/generated/graphql-types";
+import { LookaheadResult, ObjectSearchResults, SearchFilterInput, SearchFilterInputObjectType, SearchInput, ObjectSearchResultItem } from "@/graphql/generated/graphql-types";
 import { OIDCContext } from "@/graphql/graphql-context";
 import { getOpenSearchClient } from "../data-sources/search";
 import { Client } from "@opensearch-project/opensearch";
@@ -25,7 +25,7 @@ class SearchService {
         this.oidcContext = oidcContext;
     }
 
-    public async search(searchInput: SearchInput): Promise<SearchResults> {
+    public async search(searchInput: SearchInput): Promise<ObjectSearchResults> {
 
         let page: number = searchInput.page;
         let perPage: number = searchInput.perPage;
@@ -48,7 +48,7 @@ class SearchService {
         const start = Date.now();
 
         // Default result list is am empty array
-        let items: Array<SearchResultItem> = [];
+        let items: Array<ObjectSearchResultItem> = [];
 
         // Build the BOOLEAN query, both in cases where there is a search term and where
         // there is not. We will almost always need to some kind of filters, whether for
@@ -132,30 +132,30 @@ class SearchService {
         searchResponse.body.hits.hits.forEach(
             (hit: any) => {
                 const source: any = hit._source;
-                const item: SearchResultItem = {
-                    name: source.name,
-                    description: source.description,
-                    email: source.email,
-                    objectId: source.objectid,
-                    objectType: source.objecttype,
-                    enabled: source.enabled,
-                    owningClientId: source.owningclientid,
-                    owningTenantId: source.owningtenantid,
-                    subType: source.subtype,
-                    subTypeKey: source.subtypekey
-                }
-                return items.push(item);
+                // const item: ObjectSearchResultItem = {
+                //     name: source.name,
+                //     description: source.description,
+                //     email: source.email,
+                //     objectId: source.objectid,
+                //     objectType: source.objecttype,
+                //     enabled: source.enabled,
+                //     owningClientId: source.owningclientid,
+                //     owningTenantId: source.owningtenantid,
+                //     subType: source.subtype,
+                //     subTypeKey: source.subtypekey
+                // }
+                return items.push(source);
             }
         );        
 
-        const searchResults: SearchResults = {
-            endTime: end,
+        const searchResults: ObjectSearchResults = {
+            endtime: end,
             page: page,
-            perPage: perPage,
-            startTime: start,
+            perpage: perPage,
+            starttime: start,
             took: end - start,
             total: total,
-            resultList: items
+            resultlist: items
         }  
 
         return searchResults;        
