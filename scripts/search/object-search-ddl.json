@@ -1,0 +1,95 @@
+{
+    "mappings":{
+        "properties": {
+            "objectid": {
+                "type": "keyword"
+            },
+            "objecttype": {
+                "type": "keyword"
+            },
+            "owningtenantid": {
+                "type": "keyword"
+            },
+            "owningclientid": {
+                "type": "keyword"
+            },
+            "name": {
+                "type": "text",
+                "copy_to": "name_as",
+                "fields": {
+                    "raw": {
+                        "type": "keyword"
+                    }
+                }
+            },
+            "name_as": {
+                "type": "text",
+                "analyzer": "autosuggest_indexing_analyzer",
+                "search_analyzer": "autosuggest_search_analyzer"
+            },
+            "description": {
+                "type": "text",
+                "copy_to": "description_as",
+                "fields": {
+                    "raw": {
+                        "type": "keyword"
+                    }
+                }
+            },
+            "description_as": {
+                "type": "text",
+                "analyzer": "autosuggest_indexing_analyzer",
+                "search_analyzer": "autosuggest_search_analyzer"
+            },
+            "subtype": {
+                "type": "keyword"
+            },
+            "subtypekey": {
+                "type": "keyword"
+            },
+            "email": {
+                "type": "text",
+                "copy_to": "email_as",
+                "fields": {
+                    "raw": {
+                        "type": "keyword"
+                    }
+                }
+            },
+            "email_as": {
+                "type": "text",
+                "analyzer": "autosuggest_indexing_analyzer",
+                "search_analyzer": "autosuggest_search_analyzer"
+            },
+            "enabled": {
+                "type": "boolean"
+            }
+        }
+    },
+    "settings": {
+        "analysis": {
+            "analyzer": {
+                "autosuggest_indexing_analyzer": {
+                    "tokenizer": "autosuggest_indexing_tokenizer",
+                    "filter": [
+                        "lowercase"
+                    ]
+                },
+                "autosuggest_search_analyzer": {
+                    "tokenizer": "lowercase"
+                }
+            },
+            "tokenizer": {
+                "autosuggest_indexing_tokenizer": {
+                    "type": "edge_ngram",
+                    "min_gram": 3,
+                    "max_gram": 10,
+                    "token_chars": [
+                        "letter"
+                    ]
+                }
+            }
+  
+        }
+    }
+  }

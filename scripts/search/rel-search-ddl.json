@@ -1,0 +1,79 @@
+{
+    "mappings":{
+        "properties": {
+            "owningtenantid": {
+                "type": "keyword"
+            },
+            "parentid": {
+                "type": "keyword"
+            },
+            "parenttype": {
+                "type": "keyword"
+            },
+            "childid": {
+                "type": "keyword"
+            },
+            "childtype": {
+                "type": "keyword"
+            },          
+            "childname": {
+                "type": "text",
+                "copy_to": "childname_as",
+                "fields": {
+                    "raw": {
+                        "type": "keyword"
+                    }
+                }
+            },
+            "childname_as": {
+                "type": "text",
+                "analyzer": "autosuggest_indexing_analyzer",
+                "search_analyzer": "autosuggest_search_analyzer"
+            },
+            "childdescription": {
+                "type": "text",
+                "copy_to": "childdescription_as",
+                "fields": {
+                    "raw": {
+                        "type": "keyword"
+                    }
+                }
+            },
+            "childdescription_as": {
+                "type": "text",
+                "analyzer": "autosuggest_indexing_analyzer",
+                "search_analyzer": "autosuggest_search_analyzer"
+            },
+            "ancillarydata": {
+                "type": "text"
+            }
+  
+        }
+    },
+    "settings": {
+        "analysis": {
+            "analyzer": {
+                "autosuggest_indexing_analyzer": {
+                    "tokenizer": "autosuggest_indexing_tokenizer",
+                    "filter": [
+                        "lowercase"
+                    ]
+                },
+                "autosuggest_search_analyzer": {
+                    "tokenizer": "lowercase"
+                }
+            },
+            "tokenizer": {
+                "autosuggest_indexing_tokenizer": {
+                    "type": "edge_ngram",
+                    "min_gram": 3,
+                    "max_gram": 10,
+                    "token_chars": [
+                        "letter"
+                    ]
+                }
+            }
+  
+        }
+    }
+  }
