@@ -35,7 +35,7 @@ const ManagementLayout: React.FC<Props> = ({children}) => {
             <Container
                 maxWidth={breakPoints.isGreaterThanExtraLarge ? "xl" : "xl"}
                 disableGutters={true}
-                sx={{minHeight: "94vh"}}
+                sx={{minHeight: "95vh"}}
             >
                 <Box sx={{ flexGrow: 1,  }}>
                     <Grid2 size={12} container spacing={1} sx={{}}>                

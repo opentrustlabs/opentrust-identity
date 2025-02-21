@@ -39,7 +39,7 @@ const TenantLandingPage: React.FC = () => {
     return (
         <>
             {(section === null || section === "tenants") && tenantBean.getTenantMetaData().tenant.tenantType === TENANT_TYPE_ROOT_TENANT && 
-                <TenantList />
+                <TenantList page={1} perPage={20} embedded={false} />
             }
             {(section === null || section === "tenants") && tenantBean.getTenantMetaData().tenant.tenantType !== TENANT_TYPE_ROOT_TENANT && 
                 <TenantDetail tenantId={tenantBean.getTenantMetaData().tenant.tenantId} />
@@ -48,7 +48,14 @@ const TenantLandingPage: React.FC = () => {
                 <ClientList />
             }
             {section === "users" &&
-                <UserList tenantId={tenantBean.getTenantMetaData().tenant.tenantId} authorizationGroupId={""} authenticationGroupId={""}  page={0} perPage={20} embedded={false}/>
+                <UserList 
+                    tenantId={tenantBean.getTenantMetaData().tenant.tenantType !== TENANT_TYPE_ROOT_TENANT ? tenantBean.getTenantMetaData().tenant.tenantId : ""} 
+                    authorizationGroupId={""} 
+                    authenticationGroupId={""}  
+                    page={1} 
+                    perPage={20} 
+                    embedded={false}
+                />
             }
             {section === "authorization-groups" &&
                 <AuthorizationGroupList />

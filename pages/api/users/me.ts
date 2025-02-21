@@ -1,4 +1,13 @@
+// import IdentityDao from '@/lib/dao/identity-dao'
+// import { getIdentityDaoImpl } from '@/utils/dao-utils'
 import type { NextApiRequest, NextApiResponse } from 'next'
+//import { randomUUID } from 'crypto';
+import { User } from '@/graphql/generated/graphql-types';
+//import { MFA_FACTOR_AUTH_TYPE_NONE, NAME_ORDER_WESTERN } from '@/utils/consts';
+
+
+//const identityDao: IdentityDao = getIdentityDaoImpl();
+
 
 export default async function handler(
 	req: NextApiRequest,
@@ -27,5 +36,32 @@ export default async function handler(
     // 3.   Is the client valid
     //      a. Does the client exist and is it enabled
 
-    
+    const users: Array<User> = [];
+
+    // for(let i = 0; i < arr.length; i++){
+    //     const obj = arr[i];
+    //     const domain = domains[i % domains.length];
+    //     const user: User = {
+    //         domain: domain,
+    //         email: `${obj.f.toLowerCase()}.${obj.l.toLowerCase()}@${domain}`,
+    //         emailVerified: true,
+    //         enabled: true,
+    //         firstName: obj.f,
+    //         lastName: obj.l,
+    //         locked: false,
+    //         nameOrder: NAME_ORDER_WESTERN,
+    //         userId: randomUUID().toString(),
+    //         address: "",
+    //         countryCode: "US",
+    //         preferredLanguageCode: "en",
+    //         federatedOIDCProviderSubjectId: "",
+    //         middleName: "",
+    //         phoneNumber: "",
+    //         twoFactorAuthType: MFA_FACTOR_AUTH_TYPE_NONE
+    //     }
+    //     await identityDao.createUser(user);
+    //     users.push(user);
+    // }
+
+    return res.status(200).json(users);    
 }

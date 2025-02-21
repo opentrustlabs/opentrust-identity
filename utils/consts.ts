@@ -636,3 +636,5 @@ export const MIN_SEARCH_PAGE_SIZE=10;
 export const MAX_SEARCH_PAGE=1000
 export const ALLOWED_OBJECT_SEARCH_SORT_FIELDS = ["name", "description", "email"];
 export const ALLOWED_SEARCH_DIRECTIONS=["asc", "desc"];
+export const SEARCH_INDEX_OBJECT_SEARCH="object_search";
+export const SEARCH_INDEX_REL_SEARCH="rel_search";
