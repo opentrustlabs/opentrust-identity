@@ -1,7 +1,7 @@
 "use client";
-import React, { useContext } from "react";
-import { Tenant } from "@/graphql/generated/graphql-types";
-import { TENANTS_QUERY } from "@/graphql/queries/oidc-queries";
+import React, { useContext, useRef } from "react";
+import { SearchResultItem, SearchResultType, Tenant } from "@/graphql/generated/graphql-types";
+import { SEARCH_QUERY } from "@/graphql/queries/oidc-queries";
 import { useQuery } from "@apollo/client";
 import { Divider, Grid2, InputAdornment, Stack, TextField, Typography } from "@mui/material";
 import AddBoxIcon from '@mui/icons-material/AddBox';
@@ -18,27 +18,79 @@ import BreadcrumbComponent from "../breadcrumbs/breadcrumbs";
 import DataLoading from "../layout/data-loading";
 import ErrorComponent from "../error/error-component";
 
-const TenantList: React.FC = () => {
 
+export interface TenantListProps {
+    page: number | null,
+    perPage: number | null,
+    embedded: boolean
+}
+
+const TenantList: React.FC<TenantListProps> = ({ 
+    page: p, 
+    perPage: pp }) => {
+
+    // REF OBJECTS
+    const topOfSearchList = useRef<HTMLDivElement | null>(null);
 
     // STATE VARIABLES
     const [mapViewExpanded, setMapViewExpanded] = React.useState(new Map());
-    const [filterValue, setFilerValue] = React.useState("");
+    const [filterTerm, setFilterTerm] = React.useState<string>("");
+    const [page, setPage] = React.useState<number>(p  || 0);
+    const [perPage, setPerPage] = React.useState<number>(pp || 30);
+
     // HOOKS
     const c: ResponsiveBreakpoints = useContext(ResponsiveContext);
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
 
     // GRAPHQL FUNCTION
-    const { data, error, loading } = useQuery(TENANTS_QUERY, {
+    // const { data, error, loading } = useQuery(SEARCH_QUERY, {
 
-    });
+    // });
+
+    let { data, loading, error, refetch, previousData } = useQuery(SEARCH_QUERY, {
+        variables: {
+            searchInput: {
+                term: filterTerm,
+                page: page,
+                perPage: perPage,
+                resultType: SearchResultType.Tenant
+            }
+        },
+
+    })
+
 
     // HANDLER FUNCTIONS
+    // const handleFilterChange = (evt: any) => {
+    //     setFilterTerm(evt.target.value);
+    // }
 
-    const handleFilterChange = (evt: any) => {
-        setFilerValue(evt.target.value);
+    const handlePageChange = async (evt: any, page: number) => {
+        setPage(page);
+
+        await refetch({
+            searchInput: {
+                term: filterTerm,
+                page: page,
+                perPage: perPage,
+                resultType: SearchResultType.User
+            }
+        });
+        topOfSearchList.current?.scrollIntoView({
+            behavior: "smooth"
+        })
     }
 
+    const handleFilterTermChange = async (evt: any) => {
+        const term = evt.target.value || "";        
+        setFilterTerm(term);      
+        if (term && term.length >= 3) {
+            setPage(0);
+        }
+        if (!term || term.length < 3) {
+            setPage(0);
+        }
+    }
 
     const setExpanded = (section: string): void => {
         console.log("set is expanded")
@@ -82,15 +134,15 @@ const TenantList: React.FC = () => {
                             label={"Filter"}
                             size={"small"}
                             name={"filter"}
-                            value={filterValue}
-                            onChange={handleFilterChange}
+                            value={filterTerm}
+                            onChange={handleFilterTermChange}
                             slotProps={{
                                 input: {
                                     endAdornment: (
                                         <InputAdornment position="end">
                                             <CloseOutlinedIcon
                                                 sx={{ cursor: "pointer" }}
-                                                onClick={() => setFilerValue("")}
+                                                onClick={() => setFilterTerm("")}
                                             />
                                         </InputAdornment>
                                     )
@@ -98,6 +150,7 @@ const TenantList: React.FC = () => {
                             }}
                         />
                     </div>
+                    <div ref={topOfSearchList}></div>
                 </Stack>
                 {c.isMedium &&
                     <>
@@ -110,44 +163,44 @@ const TenantList: React.FC = () => {
                         </Typography>
                         <Divider></Divider>
 
-                        {data.getTenants.map(
-                            (tenant: Tenant) => (
-                                <Typography key={`${tenant.tenantId}`} component={"div"} fontSize={"0.9em"}>
+                        {data.search.resultList.map(
+                            (tenant: SearchResultItem) => (
+                                <Typography key={`${tenant.objectId}`} component={"div"} fontSize={"0.9em"}>
                                     <Divider></Divider>
                                     <Grid2 margin={"8px 0px 8px 0px"} container size={12} spacing={1}>
-                                        <Grid2 size={9}><Link style={{ color: "", fontWeight: "bold", textDecoration: "underline" }} href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/tenants/${tenant.tenantId}`}>{tenant.tenantName}</Link></Grid2>
+                                        <Grid2 size={9}><Link style={{ color: "", fontWeight: "bold", textDecoration: "underline" }} href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/tenants/${tenant.objectId}`}>{tenant.name}</Link></Grid2>
                                         <Grid2 size={2}>
                                             {tenant.enabled &&
                                                 <CheckOutlinedIcon />
                                             }
                                         </Grid2>
                                         <Grid2 size={1}>
-                                            {mapViewExpanded.has(tenant.tenantId) &&
+                                            {mapViewExpanded.has(tenant.objectId) &&
                                                 <UnfoldLessOutlinedIcon
                                                     sx={{ cursor: "pointer" }}
-                                                    onClick={() => removeExpanded(tenant.tenantId)}
+                                                    onClick={() => removeExpanded(tenant.objectId)}
                                                 />
                                             }
-                                            {!mapViewExpanded.has(tenant.tenantId) &&
+                                            {!mapViewExpanded.has(tenant.objectId) &&
                                                 <UnfoldMoreOutlinedIcon
                                                     sx={{ cursor: "pointer" }}
-                                                    onClick={() => setExpanded(tenant.tenantId)}
+                                                    onClick={() => setExpanded(tenant.objectId)}
                                                 />
                                             }
                                         </Grid2>
                                     </Grid2>
-                                    {mapViewExpanded.has(tenant.tenantId) &&
+                                    {mapViewExpanded.has(tenant.objectId) &&
                                         <Grid2 container size={12} spacing={0.5} marginBottom={"8px"}>
                                             <Grid2 size={1}></Grid2>
                                             <Grid2 size={11} container>
                                                 <Grid2 sx={{ textDecoration: "underline" }} size={12}>Description</Grid2>
-                                                <Grid2 size={12}>{tenant.tenantDescription}</Grid2>
+                                                <Grid2 size={12}>{tenant.description}</Grid2>
 
                                                 <Grid2 sx={{ textDecoration: "underline" }} size={12}>Tenant Type</Grid2>
-                                                <Grid2 size={12}>{TENANT_TYPES_DISPLAY.get(tenant.tenantType)}</Grid2>
+                                                <Grid2 size={12}>{tenant.subType}</Grid2>
 
                                                 <Grid2 sx={{ textDecoration: "underline" }} size={12}>Object ID</Grid2>
-                                                <Grid2 size={12} display={"inline-flex"}><div style={{ marginRight: "8px" }}>{tenant.tenantId}</div><ContentCopyIcon /></Grid2>
+                                                <Grid2 size={12} display={"inline-flex"}><div style={{ marginRight: "8px" }}>{tenant.objectId}</div><ContentCopyIcon /></Grid2>
                                             </Grid2>
                                         </Grid2>
                                     }
@@ -170,20 +223,20 @@ const TenantList: React.FC = () => {
                         </Typography>
                         <Divider></Divider>
 
-                        {data.getTenants.map(
-                            (tenant: Tenant) => (
-                                <Typography key={`${tenant.tenantId}`} component={"div"} fontSize={"0.9em"}>
+                        {data.search.resultList.map(
+                            (tenant: SearchResultItem) => (
+                                <Typography key={`${tenant.objectId}`} component={"div"} fontSize={"0.9em"}>
                                     <Divider></Divider>
                                     <Grid2 margin={"8px 0px 8px 0px"} container size={12} spacing={1}>
-                                        <Grid2 size={2}><Link style={{ color: "", fontWeight: "bold", textDecoration: "underline" }} href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/tenants/${tenant.tenantId}`}>{tenant.tenantName}</Link></Grid2>
-                                        <Grid2 size={3.6}>{tenant.tenantDescription}</Grid2>
-                                        <Grid2 size={2}>{TENANT_TYPES_DISPLAY.get(tenant.tenantType)}</Grid2>
+                                        <Grid2 size={2}><Link style={{ color: "", fontWeight: "bold", textDecoration: "underline" }} href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/tenants/${tenant.objectId}`}>{tenant.name}</Link></Grid2>
+                                        <Grid2 size={3.6}>{tenant.description}</Grid2>
+                                        <Grid2 size={2}>{tenant.subType}</Grid2>
                                         <Grid2 size={1}>
                                             {tenant.enabled &&
                                                 <CheckOutlinedIcon />
                                             }
                                         </Grid2>
-                                        <Grid2 size={3} columnGap={1} >{tenant.tenantId}</Grid2>
+                                        <Grid2 size={3} columnGap={1} >{tenant.objectId}</Grid2>
                                         <Grid2 size={0.4}><ContentCopyIcon /></Grid2>
                                     </Grid2>
                                 </Typography>

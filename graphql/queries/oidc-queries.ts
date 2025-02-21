@@ -192,7 +192,7 @@ export const AUTHORIZATION_GROUP_DETAIL_QUERY = gql(`
 `);
 
 
-export const USER_SEARCH_QUERY = gql(`
+export const SEARCH_QUERY = gql(`
     query search($searchInput: SearchInput!){
         search(searchInput: $searchInput) {
             startTime
@@ -202,11 +202,16 @@ export const USER_SEARCH_QUERY = gql(`
             perPage
             total
             resultList {
+                description
+                email
+                enabled
+                name
                 objectId
                 objectType
-                name
-                description
-                enabled
+                owningClientId
+                owningTenantId
+                subType
+                subTypeKey
             }
         }
     }
