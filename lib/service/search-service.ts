@@ -1,4 +1,4 @@
-import { LookaheadResult, SearchFilterInput, SearchFilterInputObjectType, SearchInput, SearchResultItem, SearchResults, SearchResultType } from "@/graphql/generated/graphql-types";
+import { LookaheadResult, SearchFilterInput, SearchFilterInputObjectType, SearchInput, SearchResultItem, SearchResults } from "@/graphql/generated/graphql-types";
 import { OIDCContext } from "@/graphql/graphql-context";
 import { getOpenSearchClient } from "../data-sources/search";
 import { Client } from "@opensearch-project/opensearch";
@@ -9,6 +9,11 @@ import { ALLOWED_OBJECT_SEARCH_SORT_FIELDS, ALLOWED_SEARCH_DIRECTIONS, MAX_SEARC
 const lastnames = ["Smith", "Jones", "Hayek", "Peterson", "Pederson", "Hannsson"];
 const firstNames = ["Adam", "Bob", "Casey", "David", "Edward", "Fred", "Gary"];
 
+// The opensearch javascript client api documentation and boolean query documentation: 
+// 
+// https://opensearch.org/docs/latest/clients/javascript/index
+// https://opensearch.org/docs/latest/query-dsl/compound/bool/
+// 
 
 const client: Client = getOpenSearchClient();
 
@@ -25,9 +30,10 @@ class SearchService {
         let page: number = searchInput.page;
         let perPage: number = searchInput.perPage;
         let searchTerm = searchInput.term;
+
+        // Make sure all of the search parameters are set to sensible values
         const sortDirection = searchInput.sortDirection && ALLOWED_SEARCH_DIRECTIONS.includes(searchInput.sortDirection) ? searchInput.sortDirection : "asc";
-        const sortField = searchInput.sortField && ALLOWED_OBJECT_SEARCH_SORT_FIELDS.includes(searchInput.sortField) ? searchInput.sortField : "name";
-        
+        const sortField = searchInput.sortField && ALLOWED_OBJECT_SEARCH_SORT_FIELDS.includes(searchInput.sortField) ? searchInput.sortField : "name";        
         if(page < 1 || page > MAX_SEARCH_PAGE){
             page = 1;
         }
@@ -38,20 +44,16 @@ class SearchService {
             perPage = MIN_SEARCH_PAGE_SIZE;
         }
 
+        // Start the timer
         const start = Date.now();
 
-        const searchResults: SearchResults = {
-            endTime: 0,
-            page: page,
-            perPage: perPage,
-            startTime: start,
-            took: 0,
-            total: 0,
-            resultList: []
-        }   
-
+        // Default result list is am empty array
         let items: Array<SearchResultItem> = [];
 
+        // Build the BOOLEAN query, both in cases where there is a search term and where
+        // there is not. We will almost always need to some kind of filters, whether for
+        // object type (tenant vs client vs user vs oidc provider vs ...) or for the
+        // tenant in which the user resides.
         let query: any = {
             bool: {
                 must: {},
@@ -114,6 +116,8 @@ class SearchService {
             body: searchBody
         });
 
+        const end = Date.now();
+
         let total: number = 0;
         const totalValueOf = searchResponse.body.hits.total?.valueOf();
         if(totalValueOf){
@@ -124,12 +128,10 @@ class SearchService {
                 total = (totalValueOf as any).value;
             }
         }
-        console.log(totalValueOf);
 
-        items = searchResponse.body.hits.hits.map(
+        searchResponse.body.hits.hits.forEach(
             (hit: any) => {
                 const source: any = hit._source;
-                console.log(hit)
                 const item: SearchResultItem = {
                     name: source.name,
                     description: source.description,
@@ -142,21 +144,24 @@ class SearchService {
                     subType: source.subtype,
                     subTypeKey: source.subtypekey
                 }
-                return item;
+                return items.push(item);
             }
-        );
+        );        
 
-        const end = Date.now();
-        searchResults.resultList = items;
-        searchResults.endTime = end;
-        searchResults.took = end - start;
-        searchResults.total = total;
+        const searchResults: SearchResults = {
+            endTime: end,
+            page: page,
+            perPage: perPage,
+            startTime: start,
+            took: end - start,
+            total: total,
+            resultList: items
+        }  
 
         return searchResults;        
     }
 
     public async lookahead(term: string): Promise<Array<LookaheadResult>> {
-
 
         return Promise.resolve([]);
     }
