@@ -3,7 +3,7 @@ import { OIDCContext } from "@/graphql/graphql-context";
 import { getOpenSearchClient } from "../data-sources/search";
 import { Client } from "@opensearch-project/opensearch";
 import { Search_Response } from "@opensearch-project/opensearch/api/index.js";
-import { ALLOWED_OBJECT_SEARCH_SORT_FIELDS, ALLOWED_SEARCH_DIRECTIONS, MAX_SEARCH_PAGE, MAX_SEARCH_PAGE_SIZE, MIN_SEARCH_PAGE_SIZE } from "@/utils/consts";
+import { ALLOWED_OBJECT_SEARCH_SORT_FIELDS, ALLOWED_SEARCH_DIRECTIONS, MAX_SEARCH_PAGE, MAX_SEARCH_PAGE_SIZE, MIN_SEARCH_PAGE_SIZE, SEARCH_INDEX_OBJECT_SEARCH } from "@/utils/consts";
 
 
 const lastnames = ["Smith", "Jones", "Hayek", "Peterson", "Pederson", "Hannsson"];
@@ -112,7 +112,7 @@ class SearchService {
         }
 
         const searchResponse: Search_Response = await client.search({
-            index: "object_search",
+            index: SEARCH_INDEX_OBJECT_SEARCH,
             body: searchBody
         });
 

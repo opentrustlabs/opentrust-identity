@@ -65,6 +65,7 @@ const UserList: React.FC<UserListProps> = ({
         href: null
     });
     const filters: Array<SearchFilterInput> = [];
+
     tenantId && filters.push({
         objectType: SearchFilterInputObjectType.TenantId,
         objectValue: tenantId
@@ -180,7 +181,7 @@ const UserList: React.FC<UserListProps> = ({
                 }
                 
                 <Grid2 container size={12} spacing={1} marginTop={"16px"} marginBottom={"16px"} >
-                <Grid2 size={embedded ? 12 : 9}>
+                <Grid2 size={12}>
                     {loading && previousData &&
                         <TablePagination
                             component={"div"}
@@ -292,7 +293,13 @@ const UserResultList: React.FC<UserResultListProps> = ({
                                     </Grid2>
                                 </Grid2>
                                 {mapViewExpanded.has(user.objectId) &&
-                                    <Grid2 container size={12} spacing={0.5} marginBottom={"8px"}>
+                                    <Grid2 container size={12} spacing={0.5} marginBottom={"8px"}>                                        
+                                        <Grid2 size={1}></Grid2>
+                                        <Grid2 size={11} container>
+                                            <Grid2 sx={{ textDecoration: "underline" }} size={12}>Email</Grid2>
+                                            <Grid2 size={12} >{user.email}</Grid2>
+                                        </Grid2>
+
                                         <Grid2 size={1}></Grid2>
                                         <Grid2 size={11} container>
                                             <Grid2 sx={{ textDecoration: "underline" }} size={12}>Object ID</Grid2>
@@ -306,16 +313,17 @@ const UserResultList: React.FC<UserResultListProps> = ({
                 </>
             }
             {!isMobileAndNotEmbedded &&
-                <Grid2 size={embedded ? 12 : 9}>
+                <Grid2 size={12}>
                     <Typography component={"div"} fontWeight={"bold"} fontSize={"0.9em"}>
                         <Grid2 container size={12} spacing={1} marginBottom={"16px"} >
                             {!embedded &&
                             <>  
                                 <Grid2 size={0.4}></Grid2>
-                                <Grid2 size={4.6}>User Name</Grid2>
-                                <Grid2 size={2}>Enabled</Grid2>
-                                <Grid2 size={4}>Object ID</Grid2>
-                                <Grid2 size={1}></Grid2>
+                                <Grid2 size={3.0}>User Name</Grid2>
+                                <Grid2 size={3.6}>Email</Grid2>
+                                <Grid2 size={1}>Enabled</Grid2>
+                                <Grid2 size={3.5}>Object ID</Grid2>
+                                <Grid2 size={0.5}></Grid2>
                             </>
                             }
                             {embedded &&
@@ -343,14 +351,15 @@ const UserResultList: React.FC<UserResultListProps> = ({
                                 {!embedded &&
                                     <Grid2 margin={"8px 0px 8px 0px"} container size={12} spacing={1}>
                                         <Grid2 size={0.4}><DeleteForeverOutlinedIcon /></Grid2>
-                                        <Grid2 size={4.6}><Link style={{ color: "", fontWeight: "bold", textDecoration: "underline" }} href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/users/${user.objectId}`}>{user.name}</Link></Grid2>
-                                        <Grid2 size={2}>
+                                        <Grid2 size={3.0}><Link style={{ color: "", fontWeight: "bold", textDecoration: "underline" }} href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/users/${user.objectId}`}>{user.name}</Link></Grid2>
+                                        <Grid2 size={3.6}>{user.email}</Grid2>
+                                        <Grid2 size={1}>
                                             {user.enabled &&
                                                 <CheckOutlinedIcon />
                                             }
                                         </Grid2>
-                                        <Grid2 size={4} display={"inline-flex"} columnGap={1} ><div>{user.objectId}</div></Grid2>
-                                        <Grid2 size={1} ><ContentCopyIcon /></Grid2>
+                                        <Grid2 size={3.5} display={"inline-flex"} columnGap={1} ><div>{user.objectId}</div></Grid2>
+                                        <Grid2 size={0.5} ><ContentCopyIcon /></Grid2>
                                     </Grid2>
                                 }
                                 {embedded &&

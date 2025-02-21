@@ -19,7 +19,7 @@ const ManagementHeader: React.FC<ManagementHeaderProps> = ({
                 backgroundColor: "#1976d2", 
                 backgroundImage: "linear-gradient(#34111194, #1976d2)",
                 width: "100%", 
-                height: responsiveBreakpoints.isMedium ? "0vh" : "6vh", 
+                height: responsiveBreakpoints.isMedium ? "0vh" : "5vh", 
                 color: "white",
                 borderBottom: "1px solid lightgray",
                 boxShadow: "0px 0px 2vh 0px grey",
