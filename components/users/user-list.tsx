@@ -3,9 +3,8 @@ import { useQuery } from "@apollo/client";
 import React, { useContext, useRef } from "react";
 import ErrorComponent from "../error/error-component";
 import DataLoading from "../layout/data-loading";
-import { USER_SEARCH_QUERY } from "@/graphql/queries/oidc-queries";
-import { Client, SearchFilterInput, SearchFilterInputObjectType, SearchResultItem, SearchResults, SearchResultType } from "@/graphql/generated/graphql-types";
-import { useSearchParams } from "next/navigation";
+import { SEARCH_QUERY } from "@/graphql/queries/oidc-queries";
+import { SearchFilterInput, SearchFilterInputObjectType, SearchResultItem, SearchResults, SearchResultType } from "@/graphql/generated/graphql-types";
 import Typography from "@mui/material/Typography";
 import BreadcrumbComponent from "../breadcrumbs/breadcrumbs";
 import Stack from "@mui/material/Stack";
@@ -79,7 +78,7 @@ const UserList: React.FC<UserListProps> = ({
         objectValue: authenticationGroupId
     });
 
-    let { data, loading, error, refetch, previousData } = useQuery(USER_SEARCH_QUERY, {
+    let { data, loading, error, refetch, previousData } = useQuery(SEARCH_QUERY, {
         variables: {
             searchInput: {
                 term: filterTerm,
