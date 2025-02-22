@@ -63,8 +63,7 @@ const FederatedOIDCProviderList: React.FC<ResultListProps> = ({
                                 <Grid2 margin={"8px 0px 8px 0px"} container size={12} spacing={1}>
                                     <Grid2 size={1}><DeleteForeverOutlinedIcon /></Grid2>
                                     <Grid2 size={8}><Link style={{ color: "", fontWeight: "bold", textDecoration: "underline" }} href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/oidc-providers/${item.objectid}`}>{item.name}</Link></Grid2>
-                                    <Grid2 size={2}>
-                                    </Grid2>
+                                    <Grid2 size={2}>{item.subtype}</Grid2>
                                     <Grid2 size={1}>
                                         {mapViewExpanded.has(item.objectid) &&
                                             <UnfoldLessOutlinedIcon
