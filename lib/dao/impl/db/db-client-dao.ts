@@ -1,11 +1,14 @@
-import { Client, ClientAuthHistory, Contact } from "@/graphql/generated/graphql-types";
+import { Client, ClientAuthHistory, Contact, ObjectSearchResultItem, SearchResultType } from "@/graphql/generated/graphql-types";
 import ClientDao from "@/lib/dao/client-dao";
 import connection  from "@/lib/data-sources/db";
+import { getOpenSearchClient } from "@/lib/data-sources/search";
 import ClientAuthHistoryEntity from "@/lib/entities/client-auth-history-entity";
 import ClientEntity from "@/lib/entities/client-entity";
 import ClientRedirectUriRelEntity from "@/lib/entities/client-redirect-uri-rel-entity";
 import ContactEntity from "@/lib/entities/contact-entity";
-import { CONTACT_TYPE_FOR_CLIENT } from "@/utils/consts";
+import { CLIENT_TYPES_DISPLAY, CONTACT_TYPE_FOR_CLIENT, SEARCH_INDEX_OBJECT_SEARCH } from "@/utils/consts";
+
+const searchClient = getOpenSearchClient();
 
 class DBClientDao extends ClientDao {
 
@@ -44,7 +47,8 @@ class DBClientDao extends ClientDao {
                 em.persist(uriEntity);
                 await em.flush();
             }            
-        }        
+        }     
+        await this.updateSearchIndex(client);
         return Promise.resolve(client);
     }
 
@@ -62,7 +66,31 @@ class DBClientDao extends ClientDao {
                 await em.flush();
             }            
         }
+        await this.updateSearchIndex(client);
         return Promise.resolve(client);    
+    }
+
+    protected async updateSearchIndex(client: Client): Promise<void> {
+        
+        const document: ObjectSearchResultItem = {
+            name: client.clientName,
+            description: client.clientDescription,
+            objectid: client.clientId,
+            objecttype: SearchResultType.Client,
+            owningtenantid: client.tenantId,
+            email: "",
+            enabled: client.enabled,
+            owningclientid: "",
+            subtype: CLIENT_TYPES_DISPLAY.get(client.clientType),
+            subtypekey: client.clientType
+        }
+        
+        await searchClient.index({
+            id: client.clientId,
+            index: SEARCH_INDEX_OBJECT_SEARCH,
+            body: document
+        });
+        
     }
 
     public async deleteClient(clientId: string): Promise<void> {

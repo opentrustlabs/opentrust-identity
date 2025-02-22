@@ -1,4 +1,4 @@
-import type { AuthorizationGroup } from "@/graphql/generated/graphql-types"
+import type { AuthorizationGroup, Maybe } from "@/graphql/generated/graphql-types"
 import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
 
 @Entity({
@@ -19,6 +19,9 @@ class AuthorizationGroupEntity implements AuthorizationGroup {
 
     @Property({fieldName: "groupname"})
     groupName: string;
+
+    @Property({fieldName: "groupdescription"})
+    groupDescription?: Maybe<string> | undefined;
 
     @Property({fieldName: "tenantid"})
     tenantId: string;

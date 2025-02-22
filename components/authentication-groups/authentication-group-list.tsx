@@ -1,6 +1,6 @@
 "use client";
 import React, { useContext } from "react";
-import { AuthenticationGroup } from "@/graphql/generated/graphql-types";
+import { AuthenticationGroup, ObjectSearchResultItem } from "@/graphql/generated/graphql-types";
 import { AUTHENTICATION_GROUPS_QUERY } from "@/graphql/queries/oidc-queries";
 import { useQuery } from "@apollo/client";
 import { Divider, Grid2, InputAdornment, Stack, TextField, Typography } from "@mui/material";
@@ -18,191 +18,151 @@ import DataLoading from "../layout/data-loading";
 import ErrorComponent from "../error/error-component";
 import BreadcrumbComponent from "../breadcrumbs/breadcrumbs";
 import { TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
+import { ResultListProps } from "../layout/search-result-list-layout";
 
 
-const AuthenticationGroupList: React.FC = () => {
+const AuthenticationGroupList: React.FC<ResultListProps> = ({
+    searchResults
+}) => {
 
     // STATE VARIABLES
     const [mapViewExpanded, setMapViewExpanded] = React.useState(new Map());
-    const [filterValue, setFilerValue] = React.useState("");
+
     // HOOKS
     const c: ResponsiveBreakpoints = useContext(ResponsiveContext);
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
 
-    // GRAPHQL FUNCTION
-    const { data, error, loading } = useQuery(AUTHENTICATION_GROUPS_QUERY, {
-
-    });
-
-    // HANDLER FUNCTIONS
-
-    const handleFilterChange = (evt: any) => {
-        setFilerValue(evt.target.value);
-    }
-
-    const isExpanded = (section: string): boolean => {
-        console.log("is expanded")
-        if (mapViewExpanded.has(section)) {
-            return true;
-        }
-        return false;
-    }
 
     const setExpanded = (section: string): void => {
-        console.log("set is expanded")
         mapViewExpanded.set(section, true);
         const newMap = new Map(mapViewExpanded)
         setMapViewExpanded(newMap);
     }
 
     const removeExpanded = (section: string): void => {
-        console.log("remove is expanded")
         mapViewExpanded.delete(section);
         const newMap = new Map(mapViewExpanded)
         setMapViewExpanded(newMap);
     }
 
-    if (loading) return <DataLoading dataLoadingSize="xl" color={null} />
-    if (error) return <ErrorComponent message={error.stack || "Unknown Error Occurred."} componentSize='lg' />
-    if (data) return (
+    // Only show the owning tenant link when we are in the root tenant. 
+    const isRootTenant = tenantBean.getTenantMetaData().tenant.tenantType === TENANT_TYPE_ROOT_TENANT;
 
-        <main >
-            <Typography component={"div"}>
-                <BreadcrumbComponent breadCrumbs={[
-                    {
-                        href: `/${tenantBean.getTenantMetaData().tenant.tenantId}`,
-                        linkText: tenantBean.getTenantMetaData().tenant.tenantType === TENANT_TYPE_ROOT_TENANT ? `Tenant List` : `${tenantBean.getTenantMetaData().tenant.tenantName}`
-                    },
-                    {
-                        href: null,
-                        linkText: "Authentication Groups"
+    return (
+        <>
+
+            {c.isMedium &&
+                <>
+                    <Typography component={"div"} fontWeight={"bold"} fontSize={"0.9em"}>
+                        <Grid2 container size={12} spacing={1} marginBottom={"16px"} >
+                            <Grid2 size={1}></Grid2>
+                            <Grid2 size={10}>Group Name</Grid2>
+                            <Grid2 size={1}></Grid2>
+                        </Grid2>
+                    </Typography>
+                    <Divider></Divider>
+                    {searchResults.total < 1 &&
+                        <Typography component={"div"} fontSize={"0.9em"}>
+                            <Grid2 margin={"8px 0px 8px 0px"} textAlign={"center"} size={12} spacing={1}>
+                                No groups to display
+                            </Grid2>
+                        </Typography>
                     }
-                ]} />
-                <Stack spacing={1} justifyContent={"space-between"} direction={"row"} fontWeight={"bold"} fontSize={"0.95em"} margin={"8px 0px 24px 0px"}>
-                    <div style={{ display: "inline-flex", alignItems: "center" }}>
-                        <AddBoxIcon sx={{ marginRight: "8px", cursor: "pointer" }} />
-                        <span>New Authentication Group</span>
-                    </div>
-                </Stack>
-                <Stack spacing={1} justifyContent={"space-between"} direction={"row"} fontWeight={"bold"} fontSize={"0.95em"} margin={"8px 0px 24px 0px"}>
-                    <div style={{ display: "inline-flex", alignItems: "center" }}>
-                        <TextField
-                            label={"Filter"}
-                            size={"small"}
-                            name={"filter"}
-                            value={filterValue}
-                            onChange={handleFilterChange}
-                            slotProps={{
-                                input: {
-                                    endAdornment: (
-                                        <InputAdornment position="end">
-                                            <CloseOutlinedIcon
+
+                    {searchResults.resultlist.map(
+                        (item: ObjectSearchResultItem) => (
+
+                            <Typography key={`${item.objectid}`} component={"div"} fontSize={"0.9em"}>
+                                <Divider></Divider>
+                                <Grid2 margin={"8px 0px 8px 0px"} container size={12} spacing={1}>
+                                    <Grid2 size={1}><DeleteForeverOutlinedIcon /></Grid2>
+                                    <Grid2 size={10}><Link style={{ color: "", fontWeight: "bold", textDecoration: "underline" }} href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/authentication-groups/${item.objectid}`}>{item.name}</Link></Grid2>
+
+                                    <Grid2 size={1}>
+                                        {mapViewExpanded.has(item.objectid) &&
+                                            <UnfoldLessOutlinedIcon
                                                 sx={{ cursor: "pointer" }}
-                                                onClick={() => setFilerValue("")}
+                                                onClick={() => removeExpanded(item.objectid)}
                                             />
-                                        </InputAdornment>
-                                    )
+                                        }
+                                        {!mapViewExpanded.has(item.objectid) &&
+                                            <UnfoldMoreOutlinedIcon
+                                                sx={{ cursor: "pointer" }}
+                                                onClick={() => setExpanded(item.objectid)}
+                                            />
+                                        }
+                                    </Grid2>
+                                </Grid2>
+                                {mapViewExpanded.has(item.objectid) &&
+                                    <Grid2 container size={12} spacing={0.5} marginBottom={"8px"}>
+                                        <Grid2 size={1}></Grid2>
+                                        <Grid2 size={11} container>
+                                            <Grid2 sx={{ textDecoration: "underline" }} size={12}>Description</Grid2>
+                                            <Grid2 size={12}>{item.description || "No description provided"}</Grid2>
+                                            {isRootTenant &&
+                                                <>
+                                                    <Grid2 sx={{ textDecoration: "underline" }} size={12}>Tenant</Grid2>
+                                                    <Grid2 size={12}><Link href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/tenants/${item.objectid}`}>{item.owningtenantid}</Link></Grid2>
+                                                </>
+                                            }
+                                            <Grid2 sx={{ textDecoration: "underline" }} size={12}>Object ID</Grid2>
+                                            <Grid2 size={12} display={"inline-flex"}><div style={{ marginRight: "8px" }}>{item.objectid}</div><ContentCopyIcon /></Grid2>
+                                        </Grid2>
+                                    </Grid2>
                                 }
-                            }}
-                        />
-                    </div>
-                </Stack>
-                {c.isMedium &&
-                    <>
-                        <Typography component={"div"} fontWeight={"bold"} fontSize={"0.9em"}>
-                            <Grid2 container size={12} spacing={1} marginBottom={"16px"} >
-                                <Grid2 size={1}></Grid2>
-                                <Grid2 size={8}>Group Name</Grid2>
-                                <Grid2 size={2}>Default</Grid2>
-                                <Grid2 size={1}></Grid2>
+                            </Typography>
+                        )
+                    )}
+                </>
+            }
+            {!c.isMedium &&
+                <>
+                    <Typography component={"div"} fontWeight={"bold"} fontSize={"0.9em"}>
+                        <Grid2 container size={12} spacing={1} marginBottom={"16px"} >
+                            <Grid2 size={0.3}></Grid2>
+                            <Grid2 size={2.7}>Group Name</Grid2>
+                            <Grid2 size={isRootTenant ? 2.5 : 5.5}>Description</Grid2>
+                            {isRootTenant &&
+                                <>
+                                    <Grid2 size={3}>Tenant</Grid2>
+                                </>
+                            }
+                            <Grid2 size={3}>Object ID</Grid2>
+                            <Grid2 size={1}></Grid2>
+                        </Grid2>
+                    </Typography>
+                    <Divider></Divider>
+                    {searchResults.total < 1 &&
+                        <Typography component={"div"} fontSize={"0.9em"}>
+                            <Grid2 margin={"8px 0px 8px 0px"} textAlign={"center"} size={12} spacing={1}>
+                                No groups to display
                             </Grid2>
                         </Typography>
-                        <Divider></Divider>
+                    }
 
-                        {data.getAuthenticationGroups.map(
-                            (authenticationGroup: AuthenticationGroup) => (
-                                <Typography key={`${authenticationGroup.authenticationGroupId}`} component={"div"} fontSize={"0.9em"}>
-                                    <Divider></Divider>
-                                    <Grid2 margin={"8px 0px 8px 0px"} container size={12} spacing={1}>
-                                        <Grid2 size={1}><DeleteForeverOutlinedIcon /></Grid2>
-                                        <Grid2 size={8}><Link style={{ color: "", fontWeight: "bold", textDecoration: "underline" }} href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/authentication-groups/${authenticationGroup.authenticationGroupId}`}>{authenticationGroup.authenticationGroupName}</Link></Grid2>
-                                        <Grid2 size={2}>
-                                            {authenticationGroup.defaultGroup &&
-                                                <CheckOutlinedIcon />
-                                            }</Grid2>
-                                        <Grid2 size={1}>
-                                            {mapViewExpanded.has(authenticationGroup.authenticationGroupId) &&
-                                                <UnfoldLessOutlinedIcon
-                                                    sx={{ cursor: "pointer" }}
-                                                    onClick={() => removeExpanded(authenticationGroup.authenticationGroupId)}
-                                                />
-                                            }
-                                            {!mapViewExpanded.has(authenticationGroup.authenticationGroupId) &&
-                                                <UnfoldMoreOutlinedIcon
-                                                    sx={{ cursor: "pointer" }}
-                                                    onClick={() => setExpanded(authenticationGroup.authenticationGroupId)}
-                                                />
-                                            }
-                                        </Grid2>
-                                    </Grid2>
-                                    {mapViewExpanded.has(authenticationGroup.authenticationGroupId) &&
-                                        <Grid2 container size={12} spacing={0.5} marginBottom={"8px"}>
-                                            <Grid2 size={1}></Grid2>
-                                            <Grid2 size={11} container>
-                                                <Grid2 sx={{ textDecoration: "underline" }} size={12}>Description</Grid2>
-                                                <Grid2 size={12}>{authenticationGroup.authenticationGroupDescription || "No description provided"}</Grid2>
-                                                <Grid2 sx={{ textDecoration: "underline" }} size={12}>Tenant</Grid2>
-                                                <Grid2 size={12}><Link href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/authentication-groups/${authenticationGroup.authenticationGroupId}`}>{authenticationGroup.tenantId}</Link></Grid2>
-                                                <Grid2 sx={{ textDecoration: "underline" }} size={12}>Object ID</Grid2>
-                                                <Grid2 size={12} display={"inline-flex"}><div style={{ marginRight: "8px" }}>{authenticationGroup.authenticationGroupId}</div><ContentCopyIcon /></Grid2>
-                                            </Grid2>
-                                        </Grid2>
+                    {searchResults.resultlist.map(
+                        (item: ObjectSearchResultItem) => (
+                            <Typography key={`${item.objectid}`} component={"div"} fontSize={"0.9em"}>
+                                <Divider></Divider>
+                                <Grid2 margin={"8px 0px 8px 0px"} container size={12} spacing={1}>
+                                    <Grid2 size={0.3}><DeleteForeverOutlinedIcon /></Grid2>
+                                    <Grid2 size={2.7}><Link style={{ color: "", fontWeight: "bold", textDecoration: "underline" }} href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/authentication-groups/${item.objectid}`}>{item.name}</Link></Grid2>
+                                    <Grid2 size={isRootTenant ? 2.5 : 5.5}>{item.description}</Grid2>
+                                    {isRootTenant &&
+                                        <>
+                                            <Grid2 size={3}><Link href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/tenants/${item.owningtenantid}`}>{item.owningtenantid}</Link></Grid2>
+                                        </>
                                     }
-                                </Typography>
-                            )
-                        )}
-                    </>
-                }
-                {!c.isMedium &&
-                    <>
-                        <Typography component={"div"} fontWeight={"bold"} fontSize={"0.9em"}>
-                            <Grid2 container size={12} spacing={1} marginBottom={"16px"} >
-                                <Grid2 size={0.3}></Grid2>
-                                <Grid2 size={2.3}>Group Name</Grid2>
-                                <Grid2 size={3.4}>Description</Grid2>
-                                <Grid2 size={1}>Is Default</Grid2>
-                                <Grid2 size={2}>Tenant</Grid2>
-                                <Grid2 size={2.5}>Object ID</Grid2>
-                                <Grid2 size={0.5}></Grid2>
-                            </Grid2>
-                        </Typography>
-                        <Divider></Divider>
+                                    <Grid2 size={3}>{item.objectid}</Grid2>
+                                    <Grid2 size={0.5}><ContentCopyIcon /></Grid2>
+                                </Grid2>
+                            </Typography>
 
-                        {data.getAuthenticationGroups.map(
-                            (authenticationGroup: AuthenticationGroup) => (
-                                <Typography key={`${authenticationGroup.authenticationGroupId}`} component={"div"} fontSize={"0.9em"}>
-                                    <Divider></Divider>
-                                    <Grid2 margin={"8px 0px 8px 0px"} container size={12} spacing={1}>
-                                        <Grid2 size={0.3}><DeleteForeverOutlinedIcon /></Grid2>
-                                        <Grid2 size={2.3}><Link style={{ color: "", fontWeight: "bold", textDecoration: "underline" }} href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/authentication-groups/${authenticationGroup.authenticationGroupId}`}>{authenticationGroup.authenticationGroupName}</Link></Grid2>
-                                        <Grid2 size={3.4}>{authenticationGroup.authenticationGroupDescription}</Grid2>
-                                        <Grid2 size={1}>
-                                            {authenticationGroup.defaultGroup &&
-                                                <CheckOutlinedIcon />
-                                            }
-                                        </Grid2>
-                                        <Grid2 size={2}><Link href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/tenants/${authenticationGroup.tenantId}`}>{authenticationGroup.tenantId}</Link></Grid2>
-                                        <Grid2 size={2.5}>{authenticationGroup.authenticationGroupId}</Grid2>
-                                        <Grid2 size={0.5}><ContentCopyIcon /></Grid2>
-                                    </Grid2>
-                                </Typography>
-
-                            )
-                        )}
-                    </>
-                }
-            </Typography>
-        </main>
+                        )
+                    )}
+                </>
+            }
+        </>
     )
 }
 

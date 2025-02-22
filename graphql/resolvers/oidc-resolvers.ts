@@ -537,7 +537,8 @@ const resolvers: Resolvers = {
                 default: groupInput.default,
                 groupId: "",
                 groupName: groupInput.groupName,
-                tenantId: groupInput.tenantId
+                tenantId: groupInput.tenantId,
+                groupDescription: groupInput.groupDescription
             };
             await groupService.createGroup(group);
             return group;
@@ -548,7 +549,8 @@ const resolvers: Resolvers = {
                 default: groupInput.default,
                 groupId: groupInput.groupId,
                 groupName: groupInput.groupName,
-                tenantId: groupInput.tenantId
+                tenantId: groupInput.tenantId,
+                groupDescription: groupInput.groupDescription
             };
             await groupService.updateGroup(group);
             return group;

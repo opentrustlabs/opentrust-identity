@@ -1,13 +1,9 @@
 "use client";
 import React, { useContext } from "react";
 import { useSearchParams } from 'next/navigation';
-import TenantList from "@/components/tenants/tenant-list";
-import ClientList from "@/components/clients/client-list";
-import AuthorizationGroupList from "@/components/authorization-groups/authorization-group-list";
 import { TenantContext, TenantMetaDataBean } from "@/components/contexts/tenant-context";
 import { TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import TenantDetail from "@/components/tenants/tenant-detail";
-import UserList from "@/components/users/user-list";
 import AuthenticationGroupList from "@/components/authentication-groups/authentication-group-list";
 import FederatedOIDCProviderList from "@/components/oidc-providers/oidc-provider-list";
 import SigningKeyList from "@/components/signing-keys/signing-key-list";
@@ -53,7 +49,13 @@ const TenantLandingPage: React.FC = () => {
                 <TenantDetail tenantId={tenantBean.getTenantMetaData().tenant.tenantId} />
             }
             {section === "clients" &&
-                <ClientList />
+                <SearchResultListLayout
+                    page={1}
+                    perPage={20}
+                    filterInputLabel="Filter Clients"
+                    resultType={SearchResultType.Client}
+                    breadCrumbText={"Client List"}
+                />
             }
             {section === "users" &&
                 <SearchResultListLayout 
@@ -65,10 +67,22 @@ const TenantLandingPage: React.FC = () => {
                 />
             }
             {section === "authorization-groups" &&
-                <AuthorizationGroupList />
+                <SearchResultListLayout 
+                    filterInputLabel="Filter Authorization Groups" 
+                    resultType={SearchResultType.AuthorizationGroup}
+                    page={1} 
+                    perPage={20}
+                    breadCrumbText="Authorization Groups"
+                />
             }
             {section === "authentication-groups" &&
-                <AuthenticationGroupList />
+                <SearchResultListLayout 
+                    filterInputLabel="Filter Authentication Groups" 
+                    resultType={SearchResultType.AuthenticationGroup}
+                    page={1} 
+                    perPage={20}
+                    breadCrumbText="Authorization Groups"
+                />
             }
             {section === "oidc-providers" &&
                 <FederatedOIDCProviderList  />

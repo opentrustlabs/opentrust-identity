@@ -17,6 +17,9 @@ import { ObjectSearchResults, SearchFilterInput, SearchFilterInputObjectType, Se
 import { SEARCH_QUERY } from "@/graphql/queries/oidc-queries";
 import TenantResultList from "../tenants/tenant-list";
 import UserResultList from "../users/user-list";
+import ClientResultList from "../clients/client-list";
+import AuthorizationGroupList from "../authorization-groups/authorization-group-list";
+import AuthenticationGroupList from "../authentication-groups/authentication-group-list";
 
 export interface ResultListProps {
     searchResults: ObjectSearchResults,
@@ -166,6 +169,15 @@ const SearchResultListLayout: React.FC<SearchResultListProps> = ({
                         {resultType === SearchResultType.User &&
                             <UserResultList searchResults={previousData.search} />
                         }
+                        {resultType === SearchResultType.Client &&
+                            <ClientResultList searchResults={previousData.search} />
+                        }
+                        {resultType === SearchResultType.AuthorizationGroup &&
+                            <AuthorizationGroupList searchResults={previousData.search} />
+                        }
+                        {resultType === SearchResultType.AuthenticationGroup &&
+                            <AuthenticationGroupList searchResults={previousData.search} />
+                        }
                     </>
                     
                 }
@@ -176,6 +188,15 @@ const SearchResultListLayout: React.FC<SearchResultListProps> = ({
                         }
                         {resultType === SearchResultType.User &&
                             <UserResultList searchResults={data.search} />
+                        }
+                        {resultType === SearchResultType.Client &&
+                            <ClientResultList searchResults={data.search} />
+                        }
+                        {resultType === SearchResultType.AuthorizationGroup &&
+                            <AuthorizationGroupList searchResults={data.search} />
+                        }
+                        {resultType === SearchResultType.AuthenticationGroup &&
+                            <AuthenticationGroupList searchResults={data.search} />
                         }
                     </>
                 }

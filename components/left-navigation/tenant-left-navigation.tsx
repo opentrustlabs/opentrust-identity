@@ -16,6 +16,7 @@ import AutoAwesomeMosaicIcon from '@mui/icons-material/AutoAwesomeMosaic';
 import SpeedIcon from '@mui/icons-material/Speed';
 import { ResponsiveBreakpoints } from "@/components/contexts/responsive-context";
 import { TenantMetaData } from "@/graphql/generated/graphql-types";
+import AddBoxIcon from '@mui/icons-material/AddBox';
 import { TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 
 
@@ -132,6 +133,11 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
                             <KeyIcon sx={{marginRight: "8px"}} />
                             <Link href={`/${tenantMetaData.tenant.tenantId}?section=signing-keys`} >Keys</Link>
                         </div>
+                        <Divider />
+                        <div style={{display: "inline-flex", alignItems: "center"}}>
+                            <AddBoxIcon sx={{marginRight: "8px"}} />
+                            <Link href={`/${tenantMetaData.tenant.tenantId}?section=signing-keys`} >Add New...</Link>
+                        </div>
                     </Stack>
                 </>
             }
@@ -227,6 +233,11 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
                             <div style={{display: "inline-flex", alignItems: "center"}}> 
                                 <KeyIcon sx={{marginRight: "8px"}} />
                                 <Link href={`/${tenantMetaData.tenant.tenantId}?section=signing-keys`} onClick={() => setDrawerOpen(false)}>Keys</Link>
+                            </div>
+                            <Divider />
+                            <div style={{display: "inline-flex", alignItems: "center"}}>
+                                <AddBoxIcon sx={{marginRight: "8px"}} />
+                                <Link href={`/${tenantMetaData.tenant.tenantId}?section=signing-keys`} >Add New...</Link>
                             </div>
                         </Stack>
                     </Drawer>

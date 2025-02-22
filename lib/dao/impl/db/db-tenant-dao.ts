@@ -1,16 +1,18 @@
-import { Tenant, TenantManagementDomainRel, AnonymousUserConfiguration, TenantLookAndFeel, Contact, TenantPasswordConfig } from "@/graphql/generated/graphql-types";
+import { Tenant, TenantManagementDomainRel, AnonymousUserConfiguration, TenantLookAndFeel, Contact, TenantPasswordConfig, SearchResultType, ObjectSearchResultItem } from "@/graphql/generated/graphql-types";
 import TenantDao from "../../tenant-dao";
 import { TenantEntity } from "@/lib/entities/tenant-entity";
 import connection  from "@/lib/data-sources/db";
-import { TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
+import { SEARCH_INDEX_OBJECT_SEARCH, TENANT_TYPE_ROOT_TENANT, TENANT_TYPES_DISPLAY } from "@/utils/consts";
 import { GraphQLError } from "graphql";
 import TenantManagementDomainRelEntity from "@/lib/entities/tenant-management-domain-rel-entity";
 import AnonymousUserConfigurationEntity from "@/lib/entities/anonymous-user-configuration-entity";
-import TenantAnonymousUserConfigurationRelEntity from "@/lib/entities/tenant-anonymous-user-configuration-rel-entity";
 import TenantPasswordConfigEntity from "@/lib/entities/tenant-password-config-entity";
 import TenantLookAndFeelEntity from "@/lib/entities/tenant-look-and-feel-entity";
 import ContactEntity from "@/lib/entities/contact-entity";
+import { Client } from "@opensearch-project/opensearch";
+import { getOpenSearchClient } from "@/lib/data-sources/search";
 
+const searchClient: Client = getOpenSearchClient();
 class DBTenantDao extends TenantDao {
 
     public async getRootTenant(): Promise<Tenant> {
@@ -33,15 +35,27 @@ class DBTenantDao extends TenantDao {
         const em = connection.em.fork();
         em.persist(entity);
         await em.flush();
+        await this.updateSearchIndex(tenant);
         return Promise.resolve(tenant);
     }
 
+    // TODO
+    // Do we want to index the root tenant? Or do we want
+    // to call out the root tenant separately for those who
+    // have access to it. The call out would be on the left
+    // hand navigation for root tenant access and would look
+    // like:
+    // Root Tenant
+    // Tenants
+    // Clients
+    // ...etc.
     public async updateRootTenant(tenant: Tenant): Promise<Tenant> {
         tenant.tenantType = TENANT_TYPE_ROOT_TENANT;
         const em = connection.em.fork();
         const entity: TenantEntity = new TenantEntity(tenant);
         em.upsert(entity);
         await em.flush();
+        await this.updateSearchIndex(tenant);
         return Promise.resolve(tenant);
     }
 
@@ -72,6 +86,7 @@ class DBTenantDao extends TenantDao {
         const e: TenantEntity = new TenantEntity(tenant);        
         em.persist(e);
         await em.flush();
+        await this.updateSearchIndex(tenant);
         return Promise.resolve(tenant);
     }
 
@@ -80,7 +95,35 @@ class DBTenantDao extends TenantDao {
         const e: TenantEntity = new TenantEntity(tenant);
         em.upsert(e);
         await em.flush();
+        await this.updateSearchIndex(tenant);
         return Promise.resolve(tenant);    
+    }
+
+    protected async updateSearchIndex(tenant: Tenant): Promise<void> {
+        let owningTenantId: string | null = null;
+        if(tenant.tenantType !== TENANT_TYPE_ROOT_TENANT){
+            const rootTenant: Tenant = await this.getRootTenant();
+            owningTenantId = rootTenant.tenantId;
+        }
+        const document: ObjectSearchResultItem = {
+            name: tenant.tenantName,
+            description: tenant.tenantDescription,
+            objectid: tenant.tenantId,
+            objecttype: SearchResultType.Tenant,
+            owningtenantid: owningTenantId,
+            email: "",
+            enabled: tenant.enabled,
+            owningclientid: "",
+            subtype: TENANT_TYPES_DISPLAY.get(tenant.tenantType),
+            subtypekey: tenant.tenantType
+        }
+        
+        await searchClient.index({
+            id: tenant.tenantId,
+            index: SEARCH_INDEX_OBJECT_SEARCH,
+            body: document
+        });
+        
     }
 
     public async deleteTenant(tenantId: string): Promise<void> {

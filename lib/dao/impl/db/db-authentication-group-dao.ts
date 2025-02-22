@@ -1,10 +1,14 @@
-import { AuthenticationGroup, AuthenticationGroupClientRel, AuthenticationGroupUserRel } from "@/graphql/generated/graphql-types";
+import { AuthenticationGroup, AuthenticationGroupClientRel, AuthenticationGroupUserRel, ObjectSearchResultItem, SearchResultType } from "@/graphql/generated/graphql-types";
 import AuthenticationGroupDao from "../../authentication-group-dao";
 import connection  from "@/lib/data-sources/db";
 import AuthenticationGroupEntity from "@/lib/entities/authentication-group-entity";
 import AuthenticationGroupClientRelEntity from "@/lib/entities/authentication-group-client-rel-entity";
 import AuthenticationGroupUserRelEntity from "@/lib/entities/authentication-group-user-rel-entity";
+import { SEARCH_INDEX_OBJECT_SEARCH } from "@/utils/consts";
+import { Client } from "@opensearch-project/opensearch";
+import { getOpenSearchClient } from "@/lib/data-sources/search";
 
+const searchClient: Client = getOpenSearchClient();
 class DBAuthenticationGroupDao extends AuthenticationGroupDao {
 
     public async getAuthenticationGroups(tenantId?: string): Promise<Array<AuthenticationGroup>> {
@@ -31,6 +35,7 @@ class DBAuthenticationGroupDao extends AuthenticationGroupDao {
         const em = connection.em.fork();
         const entity: AuthenticationGroupEntity = new AuthenticationGroupEntity(authenticationGroup);
         await em.persistAndFlush(entity);
+        await this.updateSearchIndex(authenticationGroup);
         return Promise.resolve(authenticationGroup);
     }
 
@@ -39,7 +44,29 @@ class DBAuthenticationGroupDao extends AuthenticationGroupDao {
         const entity: AuthenticationGroupEntity = new AuthenticationGroupEntity(authenticationGroup);
         em.upsert(entity);
         await em.flush();
+        await this.updateSearchIndex(authenticationGroup);
         return Promise.resolve(authenticationGroup);
+    }
+
+    protected async updateSearchIndex(authenticationGroup: AuthenticationGroup): Promise<void> {
+        const document: ObjectSearchResultItem = {
+            name: authenticationGroup.authenticationGroupName,
+            description: authenticationGroup.authenticationGroupDescription,
+            objectid: authenticationGroup.authenticationGroupId,
+            objecttype: SearchResultType.AuthenticationGroup,
+            owningtenantid: authenticationGroup.tenantId,
+            email: "",
+            enabled: true,
+            owningclientid: "",
+            subtype: "",
+            subtypekey: ""            
+        }
+        
+        await searchClient.index({
+            id: authenticationGroup.authenticationGroupId,
+            index: SEARCH_INDEX_OBJECT_SEARCH,
+            body: document
+        });        
     }
 
     public async deleteAuthenticationGroup(authenticationGroupId: string): Promise<void> {

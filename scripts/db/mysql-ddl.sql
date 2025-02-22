@@ -182,6 +182,7 @@ create TABLE authorization_group (
     groupid VARCHAR(64) PRIMARY KEY,
     tenantid VARCHAR(64) NOT NULL,
     groupname VARCHAR(128) NOT NULL,
+    groupdescription VARCHAR(256),
     defaultgroup BOOLEAN NOT NULL,
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid) 
 );

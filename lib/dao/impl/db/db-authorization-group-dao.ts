@@ -1,8 +1,13 @@
-import { AuthorizationGroup, AuthorizationGroupUserRel } from "@/graphql/generated/graphql-types";
+import { AuthorizationGroup, AuthorizationGroupUserRel, ObjectSearchResultItem, SearchResultType } from "@/graphql/generated/graphql-types";
 import AuthorizationGroupDao from "../../authorization-group-dao";
 import connection  from "@/lib/data-sources/db";
 import AuthorizationGroupEntity from "@/lib/entities/authorization-group-entity";
 import AuthorizationGroupUserRelEntity from "@/lib/entities/authorization-group-user-rel-entity";
+import { getOpenSearchClient } from "@/lib/data-sources/search";
+import { Client } from "@opensearch-project/opensearch";
+import { SEARCH_INDEX_OBJECT_SEARCH } from "@/utils/consts";
+
+const searchClient: Client = getOpenSearchClient();
 
 class DBAuthorizationGroupDao extends AuthorizationGroupDao {
 
@@ -14,7 +19,7 @@ class DBAuthorizationGroupDao extends AuthorizationGroupDao {
         else{
             return em.findAll(AuthorizationGroupEntity);
         }
-    }
+    }  
 
     public async getAuthorizationGroupById(groupId: string): Promise<AuthorizationGroup | null> {
         const em = connection.em.fork();
@@ -28,7 +33,29 @@ class DBAuthorizationGroupDao extends AuthorizationGroupDao {
         const em = connection.em.fork();
         const entity: AuthorizationGroupEntity = new AuthorizationGroupEntity(group);
         await em.persistAndFlush(entity);
+        await this.updateSearchIndex(group);
         return Promise.resolve(group);
+    }
+
+    protected async updateSearchIndex(group: AuthorizationGroup): Promise<void> {
+        const document: ObjectSearchResultItem = {
+            name: group.groupName,
+            description: group.groupDescription,
+            objectid: group.groupId,
+            objecttype: SearchResultType.AuthorizationGroup,
+            owningtenantid: group.tenantId,
+            email: "",
+            enabled: true,
+            owningclientid: "",
+            subtype: "",
+            subtypekey: ""            
+        }
+        
+        await searchClient.index({
+            id: group.groupId,
+            index: SEARCH_INDEX_OBJECT_SEARCH,
+            body: document
+        });        
     }
 
     public async updateAuthorizationGroup(group: AuthorizationGroup): Promise<AuthorizationGroup> {
@@ -36,6 +63,7 @@ class DBAuthorizationGroupDao extends AuthorizationGroupDao {
         const entity: AuthorizationGroupEntity = new AuthorizationGroupEntity(group);
         await em.upsert(entity);
         await em.flush();
+        await this.updateSearchIndex(group);
         return Promise.resolve(group);
     }
 
