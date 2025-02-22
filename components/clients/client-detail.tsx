@@ -14,6 +14,7 @@ import SyncIcon from '@mui/icons-material/Sync';
 import GroupIcon from '@mui/icons-material/Group';
 import PolicyIcon from '@mui/icons-material/Policy';
 import Link from "next/link";
+import TenantHighlight from "../tenants/tenant-highlight";
 
 export interface ClientDetailProps {
     client: Client
@@ -41,6 +42,10 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
             <Grid2 container size={12} spacing={3} marginBottom={"16px"}>
                 <Grid2 size={{ xs: 12, sm: 12, md: 12, lg: 9, xl: 9 }}>
                     <Grid2 container size={12} spacing={2}>
+                        {/**  If we are in the root tenant, then show the owning tenant for this client */}
+                        {tenantBean.getTenantMetaData().tenant.tenantType === TENANT_TYPE_ROOT_TENANT &&
+                            <TenantHighlight tenantId={client.tenantId} />
+                        }
                         <Grid2 className="detail-page-subheader" sx={{backgroundColor: "#1976d2", color: "white", padding: "8px", borderRadius: "2px"}} size={12}>Overview</Grid2>
                         <Grid2 size={12} marginBottom={"16px"}>
                             <Paper elevation={1} sx={{ padding: "8px" }}>

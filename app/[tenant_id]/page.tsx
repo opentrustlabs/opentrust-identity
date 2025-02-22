@@ -85,7 +85,13 @@ const TenantLandingPage: React.FC = () => {
                 />
             }
             {section === "oidc-providers" &&
-                <FederatedOIDCProviderList  />
+                <SearchResultListLayout 
+                    filterInputLabel="Filter Providers" 
+                    resultType={SearchResultType.OidcProvider}
+                    page={1} 
+                    perPage={20}
+                    breadCrumbText="Federated OIDC Providers"
+                />
             }
             {section === "signing-keys" &&
                 <SigningKeyList />

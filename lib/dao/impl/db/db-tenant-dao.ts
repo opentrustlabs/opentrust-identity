@@ -122,8 +122,7 @@ class DBTenantDao extends TenantDao {
             id: tenant.tenantId,
             index: SEARCH_INDEX_OBJECT_SEARCH,
             body: document
-        });
-        
+        });        
     }
 
     public async deleteTenant(tenantId: string): Promise<void> {

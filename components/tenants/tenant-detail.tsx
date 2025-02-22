@@ -19,9 +19,6 @@ import FaceIcon from '@mui/icons-material/Face';
 import InputIcon from '@mui/icons-material/Input';
 import DisplaySettingsIcon from '@mui/icons-material/DisplaySettings';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import AddBoxIcon from '@mui/icons-material/AddBox';
-import DeleteForeverOutlinedIcon from '@mui/icons-material/DeleteForeverOutlined';
-import PolicyIcon from '@mui/icons-material/Policy';
 
 export interface TenantDetailProps {
     tenantId: string
@@ -35,10 +32,7 @@ const TenantDetail: React.FC<TenantDetailProps> = ({ tenantId }) => {
             skip: tenantId === null || tenantId === undefined,
             variables: {
                 tenantId: tenantId
-            },
-            onError(error) {
-
-            },
+            }
         }
 
     );

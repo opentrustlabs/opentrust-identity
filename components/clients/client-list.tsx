@@ -39,9 +39,7 @@ const ClientResultList: React.FC<ResultListProps> = ({
 
     return (
         <div>
-            {
-
-                c.isMedium &&
+            {c.isMedium &&
                 <>
                     <Typography component={"div"} fontWeight={"bold"} fontSize={"0.9em"}>
                         <Grid2 container size={12} spacing={1} marginBottom={"16px"} >

@@ -20,6 +20,7 @@ import UserResultList from "../users/user-list";
 import ClientResultList from "../clients/client-list";
 import AuthorizationGroupList from "../authorization-groups/authorization-group-list";
 import AuthenticationGroupList from "../authentication-groups/authentication-group-list";
+import FederatedOIDCProviderList from "../oidc-providers/oidc-provider-list";
 
 export interface ResultListProps {
     searchResults: ObjectSearchResults,
@@ -178,6 +179,9 @@ const SearchResultListLayout: React.FC<SearchResultListProps> = ({
                         {resultType === SearchResultType.AuthenticationGroup &&
                             <AuthenticationGroupList searchResults={previousData.search} />
                         }
+                        {resultType === SearchResultType.OidcProvider &&
+                            <FederatedOIDCProviderList searchResults={previousData.search} />
+                        }
                     </>
                     
                 }
@@ -197,6 +201,9 @@ const SearchResultListLayout: React.FC<SearchResultListProps> = ({
                         }
                         {resultType === SearchResultType.AuthenticationGroup &&
                             <AuthenticationGroupList searchResults={data.search} />
+                        }
+                        {resultType === SearchResultType.OidcProvider &&
+                            <FederatedOIDCProviderList searchResults={data.search} />
                         }
                     </>
                 }
