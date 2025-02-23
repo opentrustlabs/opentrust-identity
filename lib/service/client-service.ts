@@ -1,14 +1,16 @@
-import { Client, Contact, Tenant } from "@/graphql/generated/graphql-types";
+import { Client, Contact, ObjectSearchResultItem, SearchResultType, Tenant } from "@/graphql/generated/graphql-types";
 import { OIDCContext } from "@/graphql/graphql-context";
 import ClientDao from "@/lib/dao/client-dao";
 import { generateRandomToken, getClientDaoImpl, getTenantDaoImpl } from "@/utils/dao-utils";
 import TenantDao from "@/lib/dao/tenant-dao";
 import { GraphQLError } from "graphql/error/GraphQLError";
 import { randomUUID } from 'crypto'; 
-import { CLIENT_SECRET_ENCODING, CONTACT_TYPE_FOR_CLIENT } from "@/utils/consts";
+import { CLIENT_SECRET_ENCODING, CLIENT_TYPES_DISPLAY, CONTACT_TYPE_FOR_CLIENT, SEARCH_INDEX_OBJECT_SEARCH } from "@/utils/consts";
+import { getOpenSearchClient } from "@/lib/data-sources/search";
 
 const clientDao: ClientDao = getClientDaoImpl();
 const tenantDao: TenantDao = getTenantDaoImpl();
+const searchClient = getOpenSearchClient();
 
 class ClientService {
 
@@ -45,7 +47,9 @@ class ClientService {
         }
         client.clientId = randomUUID().toString();
         client.clientSecret = generateRandomToken(32, CLIENT_SECRET_ENCODING);
-        return clientDao.createClient(client);                
+        await clientDao.createClient(client);
+        await this.updateSearchIndex(client);
+        return Promise.resolve(client);
     }
 
     public async updateClient(client: Client): Promise<Client> {
@@ -62,7 +66,34 @@ class ClientService {
         clientToUpdate.oidcEnabled = client.oidcEnabled;
         clientToUpdate.pkceEnabled = client.pkceEnabled;
         clientToUpdate.redirectUris = client.redirectUris;
-        return clientDao.updateClient(clientToUpdate);
+
+        await clientDao.updateClient(clientToUpdate);
+        await this.updateSearchIndex(clientToUpdate);
+
+        return Promise.resolve(clientToUpdate);
+    }
+
+    protected async updateSearchIndex(client: Client): Promise<void> {
+        
+        const document: ObjectSearchResultItem = {
+            name: client.clientName,
+            description: client.clientDescription,
+            objectid: client.clientId,
+            objecttype: SearchResultType.Client,
+            owningtenantid: client.tenantId,
+            email: "",
+            enabled: client.enabled,
+            owningclientid: "",
+            subtype: CLIENT_TYPES_DISPLAY.get(client.clientType),
+            subtypekey: client.clientType
+        }
+        
+        await searchClient.index({
+            id: client.clientId,
+            index: SEARCH_INDEX_OBJECT_SEARCH,
+            body: document
+        });
+        
     }
 
     public async deleteClient(clientId: string): Promise<void> {

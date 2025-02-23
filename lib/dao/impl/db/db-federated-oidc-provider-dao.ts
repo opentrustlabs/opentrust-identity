@@ -4,11 +4,7 @@ import connection  from "@/lib/data-sources/db";
 import { FederatedOIDCProviderEntity } from "@/lib/entities/federated-oidc-provider-entity";
 import FederatedOIDCProviderTenantRelEntity from "@/lib/entities/federated-oidc-provider-tenant-rel-entity";
 import FederatedOIDCProviderDomainRelEntity from "@/lib/entities/federated-oidc-provider-domain-rel-entity";
-import { Client } from "@opensearch-project/opensearch";
-import { getOpenSearchClient } from "@/lib/data-sources/search";
-import { FEDERATED_OIDC_PROVIDER_TYPES_DISPLAY, SEARCH_INDEX_OBJECT_SEARCH } from "@/utils/consts";
 
-const searchClient: Client = getOpenSearchClient();
 
 class DBFederatedOIDCProviderDao extends FederatedOIDCProviderDao {
 
@@ -55,8 +51,7 @@ class DBFederatedOIDCProviderDao extends FederatedOIDCProviderDao {
         const em = connection.em.fork();
         const e: FederatedOIDCProviderEntity = new FederatedOIDCProviderEntity(federatedOIDCProvider);        
         em.persist(e);
-        await em.flush();
-        await this.updateSearchIndex(federatedOIDCProvider);
+        await em.flush();        
         return Promise.resolve(federatedOIDCProvider);
     }
 
@@ -66,31 +61,9 @@ class DBFederatedOIDCProviderDao extends FederatedOIDCProviderDao {
         const e: FederatedOIDCProviderEntity = new FederatedOIDCProviderEntity(federatedOIDCProvider);
         em.upsert(e);
         await em.flush();
-        await this.updateSearchIndex(federatedOIDCProvider);
         return Promise.resolve(federatedOIDCProvider);
     }
 
-    protected async updateSearchIndex(federatedOIDCProvider: FederatedOidcProvider): Promise<void> {
-            
-            const document: ObjectSearchResultItem = {
-                name: federatedOIDCProvider.federatedOIDCProviderName,
-                description: federatedOIDCProvider.federatedOIDCProviderDescription,
-                objectid: federatedOIDCProvider.federatedOIDCProviderId,
-                objecttype: SearchResultType.OidcProvider,
-                owningtenantid: "",
-                email: "",
-                enabled: true,
-                owningclientid: "",
-                subtype: FEDERATED_OIDC_PROVIDER_TYPES_DISPLAY.get(federatedOIDCProvider.federatedOIDCProviderType),
-                subtypekey: federatedOIDCProvider.federatedOIDCProviderType
-            }
-            
-            await searchClient.index({
-                id: federatedOIDCProvider.federatedOIDCProviderId,
-                index: SEARCH_INDEX_OBJECT_SEARCH,
-                body: document
-            });        
-        }
 
     public async getFederatedOidcProviderTenantRels(tenantId?: string): Promise<Array<FederatedOidcProviderTenantRel>> {
         const em = connection.em.fork();

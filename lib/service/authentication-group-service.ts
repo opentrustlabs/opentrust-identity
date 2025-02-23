@@ -1,4 +1,4 @@
-import { AuthenticationGroup, AuthenticationGroupClientRel, AuthenticationGroupUserRel, Client, Tenant } from "@/graphql/generated/graphql-types";
+import { AuthenticationGroup, AuthenticationGroupClientRel, AuthenticationGroupUserRel, Client, ObjectSearchResultItem, SearchResultType, Tenant } from "@/graphql/generated/graphql-types";
 import { OIDCContext } from "@/graphql/graphql-context";
 import TenantDao from "@/lib/dao/tenant-dao";
 import { getClientDaoImpl, getAuthenticationGroupDaoImpl, getTenantDaoImpl } from "@/utils/dao-utils";
@@ -6,6 +6,11 @@ import ClientDao from "../dao/client-dao";
 import { GraphQLError } from "graphql/error/GraphQLError";
 import { randomUUID } from 'crypto'; 
 import AuthenticationGroupDao from "../dao/authentication-group-dao";
+import { SEARCH_INDEX_OBJECT_SEARCH } from "@/utils/consts";
+import { Client as SearchClient } from "@opensearch-project/opensearch";
+import { getOpenSearchClient } from "@/lib/data-sources/search";
+
+const searchClient: SearchClient = getOpenSearchClient();
 
 const tenantDao: TenantDao = getTenantDaoImpl();
 const clientDao: ClientDao = getClientDaoImpl();
@@ -34,7 +39,11 @@ class AuthenticationGroupService {
             throw new GraphQLError("ERROR_TENANT_DOES_NOT_EXIST_FOR_LOGIN_GROUP");
         }
         authenticationGroup.authenticationGroupId = randomUUID().toString();
-        return authenticationGroupDao.createAuthenticationGroup(authenticationGroup);
+
+        await authenticationGroupDao.createAuthenticationGroup(authenticationGroup);
+        await this.updateSearchIndex(authenticationGroup);
+
+        return Promise.resolve(authenticationGroup);
     }
 
     public async updateAuthenticationGroup(authenticationGroup: AuthenticationGroup): Promise<AuthenticationGroup> {
@@ -45,7 +54,31 @@ class AuthenticationGroupService {
         }
         existingAuthenticationGroup.authenticationGroupDescription = authenticationGroup.authenticationGroupDescription;
         existingAuthenticationGroup.authenticationGroupName = authenticationGroup.authenticationGroupName;
-        return authenticationGroupDao.updateAuthenticationGroup(authenticationGroup);
+
+        await authenticationGroupDao.updateAuthenticationGroup(existingAuthenticationGroup);
+        await this.updateSearchIndex(existingAuthenticationGroup);
+        return Promise.resolve(existingAuthenticationGroup);
+    }
+
+    protected async updateSearchIndex(authenticationGroup: AuthenticationGroup): Promise<void> {
+        const document: ObjectSearchResultItem = {
+            name: authenticationGroup.authenticationGroupName,
+            description: authenticationGroup.authenticationGroupDescription,
+            objectid: authenticationGroup.authenticationGroupId,
+            objecttype: SearchResultType.AuthenticationGroup,
+            owningtenantid: authenticationGroup.tenantId,
+            email: "",
+            enabled: true,
+            owningclientid: "",
+            subtype: "",
+            subtypekey: ""            
+        }
+        
+        await searchClient.index({
+            id: authenticationGroup.authenticationGroupId,
+            index: SEARCH_INDEX_OBJECT_SEARCH,
+            body: document
+        });        
     }
 
     public async deleteAuthenticationGroup(authenticationGroupId: string): Promise<void> {

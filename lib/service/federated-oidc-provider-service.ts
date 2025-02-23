@@ -1,10 +1,14 @@
-import { FederatedOidcProvider, FederatedOidcProviderDomainRel, FederatedOidcProviderTenantRel, Tenant } from "@/graphql/generated/graphql-types";
+import { FederatedOidcProvider, FederatedOidcProviderDomainRel, FederatedOidcProviderTenantRel, ObjectSearchResultItem, SearchResultType, Tenant } from "@/graphql/generated/graphql-types";
 import { OIDCContext } from "@/graphql/graphql-context";
 import { getFederatedOIDCProvicerDaoImpl, getTenantDaoImpl } from "@/utils/dao-utils";
 import FederatedOIDCProviderDao from "@/lib/dao/federated-oidc-provider-dao";
 import { GraphQLError } from "graphql/error/GraphQLError";
 import { randomUUID } from 'crypto'; 
+import { FEDERATED_OIDC_PROVIDER_TYPES_DISPLAY, SEARCH_INDEX_OBJECT_SEARCH } from "@/utils/consts";
+import { Client } from "@opensearch-project/opensearch";
+import { getOpenSearchClient } from "@/lib/data-sources/search";
 
+const searchClient: Client = getOpenSearchClient();
 const federatedOIDCProviderDao: FederatedOIDCProviderDao = getFederatedOIDCProvicerDaoImpl();
 const tenantDao = getTenantDaoImpl();
 
@@ -31,6 +35,7 @@ class FederatedOIDCProviderService {
         }
         federatedOIDCProvider.federatedOIDCProviderId = randomUUID().toString();
         await federatedOIDCProviderDao.createFederatedOidcProvider(federatedOIDCProvider);
+        await this.updateSearchIndex(federatedOIDCProvider);
         return Promise.resolve(federatedOIDCProvider);
     }
 
@@ -59,7 +64,30 @@ class FederatedOIDCProviderService {
             throw new GraphQLError("ERROR_NO_FEDERATED_OIDC_PROVIDER_FOUND");
         }
         await federatedOIDCProviderDao.updateFederatedOidcProvider(federatedOIDCProvider);
+        await this.updateSearchIndex(federatedOIDCProvider);
         return Promise.resolve(federatedOIDCProvider);
+    }
+
+    protected async updateSearchIndex(federatedOIDCProvider: FederatedOidcProvider): Promise<void> {
+            
+        const document: ObjectSearchResultItem = {
+            name: federatedOIDCProvider.federatedOIDCProviderName,
+            description: federatedOIDCProvider.federatedOIDCProviderDescription,
+            objectid: federatedOIDCProvider.federatedOIDCProviderId,
+            objecttype: SearchResultType.OidcProvider,
+            owningtenantid: "",
+            email: "",
+            enabled: true,
+            owningclientid: "",
+            subtype: FEDERATED_OIDC_PROVIDER_TYPES_DISPLAY.get(federatedOIDCProvider.federatedOIDCProviderType),
+            subtypekey: federatedOIDCProvider.federatedOIDCProviderType
+        }
+        
+        await searchClient.index({
+            id: federatedOIDCProvider.federatedOIDCProviderId,
+            index: SEARCH_INDEX_OBJECT_SEARCH,
+            body: document
+        });        
     }
 
     public async getFederatedOIDCProviderTenantRels(tenantId?: string): Promise<Array<FederatedOidcProviderTenantRel>>{

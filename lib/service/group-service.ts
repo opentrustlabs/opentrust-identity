@@ -1,13 +1,18 @@
-import { AuthorizationGroup, AuthorizationGroupUserRel, Tenant } from "@/graphql/generated/graphql-types";
+import { AuthorizationGroup, AuthorizationGroupUserRel, ObjectSearchResultItem, SearchResultType, Tenant } from "@/graphql/generated/graphql-types";
 import { OIDCContext } from "@/graphql/graphql-context";
 import TenantDao from "@/lib/dao/tenant-dao";
 import { getAuthorizationGroupDaoImpl, getTenantDaoImpl } from "@/utils/dao-utils";
 import { GraphQLError } from "graphql/error/GraphQLError";
 import { randomUUID } from 'crypto'; 
 import GroupDao from "../dao/authorization-group-dao";
+import { SEARCH_INDEX_OBJECT_SEARCH } from "@/utils/consts";
+import { getOpenSearchClient } from "@/lib/data-sources/search";
+import { Client } from "@opensearch-project/opensearch";
+
 
 const tenantDao: TenantDao = getTenantDaoImpl();
 const groupDao: GroupDao = getAuthorizationGroupDaoImpl();
+const searchClient: Client = getOpenSearchClient();
 
 class GroupService {
 
@@ -36,7 +41,10 @@ class GroupService {
             throw new GraphQLError("ERROR_TENANT_NOT_FOUND_FOR_GROUP_CREATION");
         }
         group.groupId = randomUUID().toString();
-        return groupDao.createAuthorizationGroup(group);
+
+        await groupDao.createAuthorizationGroup(group);
+        await this.updateSearchIndex(group);
+        return Promise.resolve(group);
     }
 
     public async updateGroup(group: AuthorizationGroup): Promise<AuthorizationGroup> {
@@ -46,7 +54,31 @@ class GroupService {
         }
         existingGroup.groupName = group.groupName;
         existingGroup.default = group.default;
-        return groupDao.updateAuthorizationGroup(group);
+        existingGroup.groupDescription = group.groupDescription;
+        await groupDao.updateAuthorizationGroup(existingGroup);
+        await this.updateSearchIndex(existingGroup);
+        return Promise.resolve(existingGroup);
+    }
+
+    protected async updateSearchIndex(group: AuthorizationGroup): Promise<void> {
+        const document: ObjectSearchResultItem = {
+            name: group.groupName,
+            description: group.groupDescription,
+            objectid: group.groupId,
+            objecttype: SearchResultType.AuthorizationGroup,
+            owningtenantid: group.tenantId,
+            email: "",
+            enabled: true,
+            owningclientid: "",
+            subtype: "",
+            subtypekey: ""            
+        }
+        
+        await searchClient.index({
+            id: group.groupId,
+            index: SEARCH_INDEX_OBJECT_SEARCH,
+            body: document
+        });        
     }
 
     public async deleteGroup(groupId: string): Promise<void> {
