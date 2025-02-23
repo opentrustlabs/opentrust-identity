@@ -2,17 +2,14 @@ import { Tenant, TenantManagementDomainRel, AnonymousUserConfiguration, TenantLo
 import TenantDao from "../../tenant-dao";
 import { TenantEntity } from "@/lib/entities/tenant-entity";
 import connection  from "@/lib/data-sources/db";
-import { SEARCH_INDEX_OBJECT_SEARCH, TENANT_TYPE_ROOT_TENANT, TENANT_TYPES_DISPLAY } from "@/utils/consts";
+import { TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import { GraphQLError } from "graphql";
 import TenantManagementDomainRelEntity from "@/lib/entities/tenant-management-domain-rel-entity";
 import AnonymousUserConfigurationEntity from "@/lib/entities/anonymous-user-configuration-entity";
 import TenantPasswordConfigEntity from "@/lib/entities/tenant-password-config-entity";
 import TenantLookAndFeelEntity from "@/lib/entities/tenant-look-and-feel-entity";
 import ContactEntity from "@/lib/entities/contact-entity";
-import { Client } from "@opensearch-project/opensearch";
-import { getOpenSearchClient } from "@/lib/data-sources/search";
 
-const searchClient: Client = getOpenSearchClient();
 class DBTenantDao extends TenantDao {
 
     public async getRootTenant(): Promise<Tenant> {
@@ -35,7 +32,6 @@ class DBTenantDao extends TenantDao {
         const em = connection.em.fork();
         em.persist(entity);
         await em.flush();
-        await this.updateSearchIndex(tenant);
         return Promise.resolve(tenant);
     }
 
@@ -54,8 +50,7 @@ class DBTenantDao extends TenantDao {
         const em = connection.em.fork();
         const entity: TenantEntity = new TenantEntity(tenant);
         em.upsert(entity);
-        await em.flush();
-        await this.updateSearchIndex(tenant);
+        await em.flush();        
         return Promise.resolve(tenant);
     }
 
@@ -86,7 +81,6 @@ class DBTenantDao extends TenantDao {
         const e: TenantEntity = new TenantEntity(tenant);        
         em.persist(e);
         await em.flush();
-        await this.updateSearchIndex(tenant);
         return Promise.resolve(tenant);
     }
 
@@ -95,34 +89,7 @@ class DBTenantDao extends TenantDao {
         const e: TenantEntity = new TenantEntity(tenant);
         em.upsert(e);
         await em.flush();
-        await this.updateSearchIndex(tenant);
         return Promise.resolve(tenant);    
-    }
-
-    protected async updateSearchIndex(tenant: Tenant): Promise<void> {
-        let owningTenantId: string | null = null;
-        if(tenant.tenantType !== TENANT_TYPE_ROOT_TENANT){
-            const rootTenant: Tenant = await this.getRootTenant();
-            owningTenantId = rootTenant.tenantId;
-        }
-        const document: ObjectSearchResultItem = {
-            name: tenant.tenantName,
-            description: tenant.tenantDescription,
-            objectid: tenant.tenantId,
-            objecttype: SearchResultType.Tenant,
-            owningtenantid: owningTenantId,
-            email: "",
-            enabled: tenant.enabled,
-            owningclientid: "",
-            subtype: TENANT_TYPES_DISPLAY.get(tenant.tenantType),
-            subtypekey: tenant.tenantType
-        }
-        
-        await searchClient.index({
-            id: tenant.tenantId,
-            index: SEARCH_INDEX_OBJECT_SEARCH,
-            body: document
-        });        
     }
 
     public async deleteTenant(tenantId: string): Promise<void> {

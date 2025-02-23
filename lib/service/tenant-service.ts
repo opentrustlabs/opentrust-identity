@@ -1,11 +1,14 @@
-import { AnonymousUserConfiguration, Contact, Tenant, TenantLookAndFeel, TenantManagementDomainRel, TenantMetaData, TenantPasswordConfig } from "@/graphql/generated/graphql-types";
+import { AnonymousUserConfiguration, Contact, ObjectSearchResultItem, SearchResultType, Tenant, TenantLookAndFeel, TenantManagementDomainRel, TenantMetaData, TenantPasswordConfig } from "@/graphql/generated/graphql-types";
 import { OIDCContext } from "@/graphql/graphql-context";
 import TenantDao from "@/lib/dao/tenant-dao";
 import { getTenantDaoImpl } from "@/utils/dao-utils";
 import { GraphQLError } from "graphql";
 import { randomUUID } from 'crypto'; 
-import { CONTACT_TYPE_FOR_TENANT, DEFAULT_TENANT_META_DATA } from "@/utils/consts";
+import { CONTACT_TYPE_FOR_TENANT, DEFAULT_TENANT_META_DATA, SEARCH_INDEX_OBJECT_SEARCH, TENANT_TYPE_ROOT_TENANT, TENANT_TYPES_DISPLAY } from "@/utils/consts";
+import { Client } from "@opensearch-project/opensearch";
+import { getOpenSearchClient } from "@/lib/data-sources/search";
 
+const searchClient: Client = getOpenSearchClient();
 const tenantDao: TenantDao = getTenantDaoImpl();
 
 class TenantService {
@@ -19,17 +22,23 @@ class TenantService {
     public async getRootTenant(): Promise<Tenant> {
         return tenantDao.getRootTenant();
     }
+
     public async createRootTenant(tenant: Tenant): Promise<Tenant> {
         tenant.tenantId = randomUUID().toString();
-        return tenantDao.createRootTenant(tenant);
-        
+        await tenantDao.createRootTenant(tenant);
+        await this.updateSearchIndex(tenant);
+
+        return Promise.resolve(tenant);        
     }
+
     public async updateRootTenant(tenant: Tenant): Promise<Tenant> {
         const {valid, errorMessage} = await this.validateTenantInput(tenant);
         if(!valid){
             throw new GraphQLError(errorMessage);
         }
-        return tenantDao.updateRootTenant(tenant);
+        await tenantDao.updateRootTenant(tenant);
+        await this.updateSearchIndex(tenant);
+        return Promise.resolve(tenant);
     }
         
     public async getTenants(): Promise<Array<Tenant>> {
@@ -47,7 +56,36 @@ class TenantService {
         }
         
         tenant.tenantId = randomUUID().toString();
-        return tenantDao.createTenant(tenant);
+        await tenantDao.createTenant(tenant);
+        await this.updateSearchIndex(tenant);
+
+        return Promise.resolve(tenant);
+    }
+    
+    protected async updateSearchIndex(tenant: Tenant): Promise<void> {
+        let owningTenantId: string | null = null;
+        if(tenant.tenantType !== TENANT_TYPE_ROOT_TENANT){
+            const rootTenant: Tenant = await this.getRootTenant();
+            owningTenantId = rootTenant.tenantId;
+        }
+        const document: ObjectSearchResultItem = {
+            name: tenant.tenantName,
+            description: tenant.tenantDescription,
+            objectid: tenant.tenantId,
+            objecttype: SearchResultType.Tenant,
+            owningtenantid: owningTenantId,
+            email: "",
+            enabled: tenant.enabled,
+            owningclientid: "",
+            subtype: TENANT_TYPES_DISPLAY.get(tenant.tenantType),
+            subtypekey: tenant.tenantType
+        }
+        
+        await searchClient.index({
+            id: tenant.tenantId,
+            index: SEARCH_INDEX_OBJECT_SEARCH,
+            body: document
+        });        
     }
     
     protected async validateTenantInput(tenant: Tenant): Promise<{valid: boolean, errorMessage: string}> {
@@ -68,7 +106,9 @@ class TenantService {
         if(!valid){
             throw new GraphQLError(errorMessage);
         }
-        return tenantDao.updateTenant(tenant);
+        await tenantDao.updateTenant(tenant);
+        await this.updateSearchIndex(tenant);
+        return Promise.resolve(tenant);
     }
 
     public async deleteTenant(tenantId: string): Promise<void> {
