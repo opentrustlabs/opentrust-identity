@@ -91,7 +91,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                             <TextField name="tenantType" id="tenantType" value={tenant.tenantType} fullWidth={true} size="small" />
                                         </Grid2>
                                         <Grid2 marginBottom={"16px"}>
-                                            <div>External OIDC Provider Constraint</div>
+                                            <div>Federated OIDC Provider Type</div>
                                             <TextField name="tenantType" id="tenantType" value={tenant.tenantType} fullWidth={true} size="small" />
                                         </Grid2>
                                         <Grid2 marginBottom={"16px"}>

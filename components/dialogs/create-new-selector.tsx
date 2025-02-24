@@ -5,6 +5,7 @@ import { ResponsiveBreakpoints } from "../contexts/responsive-context";
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
 import { TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import TenantSelector from "./tenant-selector";
+import NewTenantDialog from "./new-tenant-dialog";
 
 
 export interface CreateNewSelectorProps {
@@ -44,17 +45,18 @@ const CreateNewSelector: React.FC<CreateNewSelectorProps> = ({
         return ARR_TYPES_REQUIRING_PARENT_TENANT.includes(type);
     }
 
+    // maxWidth={breakPoints.isMedium ? "lg" : createNewType === null || selectedTenant === null ? "xs" : "lg"}
     return (
         <Dialog
             draggable={true}
             open={open}
             onClose={() => {setCreateNewType(null); onClose();}}
             fullScreen={false}
-            maxWidth={breakPoints.isMedium ? "lg" : createNewType === null || selectedTenant === null ? "xs" : "lg"}
-            fullWidth={breakPoints.isMedium ? true : true}
+            maxWidth={breakPoints.isMedium ? "lg" : createNewType === null || selectedTenant === null ? "sm" : "lg"}
+            fullWidth={breakPoints.isMedium ? true : false}
         >
             <DialogTitle sx={{fontWeight: "bold"}}>Create New</DialogTitle>            
-            <DialogContent>
+            <DialogContent >
                 {createNewType === null &&
                     <FormControl>                    
                         <RadioGroup
@@ -77,7 +79,11 @@ const CreateNewSelector: React.FC<CreateNewSelectorProps> = ({
                     <TenantSelector onSelected={setSelectedTenant} />
                 }
                 {createNewType === "tenant" &&
-                    <div>You want to create a new tenant</div>
+                    <NewTenantDialog enableFinish={function (): boolean {
+                    throw new Error("Function not implemented.");
+                } } onSuccess={function (tenantId: string): void {
+                    throw new Error("Function not implemented.");
+                } } />
                 }
                 {createNewType === "client" && selectedTenant !== null &&
                     <div>You want to create a new client</div>
@@ -102,12 +108,12 @@ const CreateNewSelector: React.FC<CreateNewSelectorProps> = ({
                 }
             </DialogContent>
             <DialogActions>
-                <Button onClick={() => {setCreateNewType(null); onCancel()}}>Cancel</Button>
+                <Button onClick={() => {onCancel(); setCreateNewType(null);}}>Cancel</Button>
                 
-                {createNewType !== null && selectedTenant !== null &&
+                {createNewType !== null && (selectedTenant !== null || createNewType === "tenant") &&
                     <Button disabled={createNewType === null}>Finish</Button>
                 }
-                {createNewType !== null && selectedTenant === null &&
+                {createNewType !== null && selectedTenant === null && createNewType !== "tenant" &&
                     <Button disabled={createNewType === null}>Next</Button>
                 }                
             </DialogActions>

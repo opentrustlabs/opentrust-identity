@@ -34,6 +34,7 @@ const TenantSelector: React.FC<TenantSelectorProps> = ({
     if(error) return <ErrorComponent message={error.message} componentSize={"sm"} />
     if(data) return (
         <Autocomplete 
+            sx={{paddingTop: "8px"}}
             renderInput={(params) => <TextField {...params} label="Select Tenant" />}
             options={createTenantOptions()}
 

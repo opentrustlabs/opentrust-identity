@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { Divider, Drawer, Grid2, Icon, InputAdornment, Stack, TextField } from "@mui/material";
+import { Divider, Drawer, Grid2, InputAdornment, Stack, TextField } from "@mui/material";
 import Link from "next/link";
 import SearchIcon from '@mui/icons-material/Search';
 import MenuIcon from '@mui/icons-material/Menu';
@@ -262,11 +262,14 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
                     </Drawer>
                 </>            
             }
-            <CreateNewSelector 
-                open={openCreateNewDialog} 
-                onCancel={() => setOpenCreateNewDialog(false)} 
-                onClose={() => setOpenCreateNewDialog(false)}
-                breakPoints={breakPoints}/>
+            {openCreateNewDialog &&
+                <CreateNewSelector 
+                    open={openCreateNewDialog} 
+                    onCancel={() => setOpenCreateNewDialog(false)} 
+                    onClose={() => setOpenCreateNewDialog(false)}
+                    breakPoints={breakPoints}
+                />
+            }
         </>
         
     )
