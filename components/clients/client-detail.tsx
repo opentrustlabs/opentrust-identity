@@ -90,7 +90,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                 </Grid2>
 
                                 <Stack sx={{ marginTop: "8px" }} direction={"row"} flexDirection={"row-reverse"} >
-                                    <Button sx={{ border: "solid 1px lightgrey", borderRadius: "4px", color: "black" }} >Update</Button>
+                                    <Button sx={{ border: "solid 1px lightgrey", borderRadius: "4px"}} >Update</Button>
                                 </Stack>
                             </Paper>
                         </Grid2>

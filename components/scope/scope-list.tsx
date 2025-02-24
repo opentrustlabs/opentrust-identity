@@ -75,7 +75,7 @@ const ScopeList: React.FC = () => {
     },);
     
     arrBreadcrumbs.push({
-        linkText: "Scope / Access Control ",
+        linkText: "Scope And Access Control ",
         href: null
     });
 
@@ -91,17 +91,10 @@ const ScopeList: React.FC = () => {
     if (loading) return <DataLoading dataLoadingSize="xl" color={null} />
     if (error) return <ErrorComponent message={error.message || "Unknown Error Occurred."} componentSize='lg' />
     if (data) return (
-
         
         <main>
             <Typography component={"div"} >
-                <BreadcrumbComponent breadCrumbs={arrBreadcrumbs} />
-                <Stack ref={topOfSearchList} spacing={1} justifyContent={"space-between"} direction={"row"} fontWeight={"bold"} margin={"8px 0px 24px 0px"}>
-                    <div style={{ display: "inline-flex", alignItems: "center" }}>
-                        <AddBoxIcon sx={{ marginRight: "8px", cursor: "pointer" }} />
-                        <span>New Application Scope</span>
-                    </div>
-                </Stack>
+                <BreadcrumbComponent breadCrumbs={arrBreadcrumbs} />                
                 <Stack spacing={1} justifyContent={"space-between"} direction={"row"} fontWeight={"bold"} margin={"8px 0px 24px 0px"}>
                     <div  style={{ display: "inline-flex", alignItems: "center" }}>
                         <TextField

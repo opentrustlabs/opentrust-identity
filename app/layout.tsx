@@ -16,9 +16,31 @@ import ManagementTenantFilter from "@/components/contexts/management-tenant-filt
 import { createTheme } from '@mui/material/styles';
 import { ThemeProvider } from '@mui/material/styles';
 
-const theme = createTheme({
-    
+const theme = createTheme({    
     components: {
+        MuiButton: {
+            defaultProps: {
+                
+            },
+            
+            styleOverrides: {
+                root: {
+                    "&:disabled": {
+                        color: "white",
+                        backgroundColor: "lightgrey"
+                    },
+                    variants: [
+                        {
+
+                        }
+                    ],
+                    color: "white",
+                    backgroundColor: "#1976d2"                    
+                },
+                
+            }
+
+        },
         MuiAccordion: {
             styleOverrides: {
                 heading: {
@@ -43,8 +65,7 @@ const theme = createTheme({
                     fontSize: "0.9em"
                 }
             },
-            defaultProps: {
-                
+            defaultProps: {                
                 fontSize: "0.9em"
             }
         }

@@ -72,7 +72,7 @@ const AuthenticationGroupDetail: React.FC<AuthenticationGroupDetailProps> = ({ a
                                             <Grid2 size={2}><ContentCopyIcon /></Grid2>
                                         </Grid2>
                                         <Stack sx={{ marginTop: "8px" }} direction={"row"} flexDirection={"row-reverse"} >
-                                            <Button sx={{ border: "solid 1px lightgrey", borderRadius: "4px", color: "black" }} >Update</Button>
+                                            <Button sx={{ border: "solid 1px lightgrey", borderRadius: "4px"}} >Update</Button>
                                         </Stack>
                                     </Grid2>
                                     <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
@@ -106,9 +106,9 @@ const AuthenticationGroupDetail: React.FC<AuthenticationGroupDetailProps> = ({ a
                                         </Grid2>
                                     </Typography>
                                     <UserList
-                                        tenantId={tenantBean.getTenantMetaData().tenant.tenantId}
-                                        authorizationGroupId={null}
-                                        authenticationGroupId={authenticationGroup.authenticationGroupId}
+                                        
+                                        
+                                        
                                         page={0}
                                         perPage={10}
                                         embedded={true}

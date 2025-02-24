@@ -17,7 +17,9 @@ import SpeedIcon from '@mui/icons-material/Speed';
 import { ResponsiveBreakpoints } from "@/components/contexts/responsive-context";
 import { TenantMetaData } from "@/graphql/generated/graphql-types";
 import AddBoxIcon from '@mui/icons-material/AddBox';
+import VerifiedIcon from '@mui/icons-material/Verified';
 import { TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
+import CreateNewSelector from "../dialogs/create-new-selector";
 
 
 interface NavigationProps {
@@ -31,6 +33,7 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
     // STATE VARIABLES
     const [searchTerm, setSearchTerm] = React.useState<string | null>(null);
     const [drawerOpen, setDrawerOpen] = React.useState(false);
+    const [openCreateNewDialog, setOpenCreateNewDialog] = React.useState<boolean>(false);
 
 
     // HANDLER FUNCTIONS
@@ -133,10 +136,18 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
                             <KeyIcon sx={{marginRight: "8px"}} />
                             <Link href={`/${tenantMetaData.tenant.tenantId}?section=signing-keys`} >Keys</Link>
                         </div>
+                        {tenantMetaData.tenant.tenantType === TENANT_TYPE_ROOT_TENANT &&
+                            <>                                
+                                <div style={{display: "inline-flex", alignItems: "center"}}>
+                                    <VerifiedIcon sx={{marginRight: "8px"}} />
+                                    <Link href={`/${tenantMetaData.tenant.tenantId}/catpcha-config`}>Captcha</Link>
+                                </div>                            
+                            </>                        
+                        }                        
                         <Divider />
-                        <div style={{display: "inline-flex", alignItems: "center"}}>
+                        <div onClick={() => setOpenCreateNewDialog(true)}  style={{display: "inline-flex", alignItems: "center", cursor: "pointer"}}>
                             <AddBoxIcon sx={{marginRight: "8px"}} />
-                            <Link href={`/${tenantMetaData.tenant.tenantId}?section=signing-keys`} >Add New...</Link>
+                            <div>Add New...</div>
                         </div>
                     </Stack>
                 </>
@@ -234,15 +245,28 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
                                 <KeyIcon sx={{marginRight: "8px"}} />
                                 <Link href={`/${tenantMetaData.tenant.tenantId}?section=signing-keys`} onClick={() => setDrawerOpen(false)}>Keys</Link>
                             </div>
+                            {tenantMetaData.tenant.tenantType === TENANT_TYPE_ROOT_TENANT &&
+                                <>                                
+                                    <div style={{display: "inline-flex", alignItems: "center"}}>
+                                        <VerifiedIcon sx={{marginRight: "8px"}} />
+                                        <Link href={`/${tenantMetaData.tenant.tenantId}/catpcha-config`}>Captcha</Link>
+                                    </div>                            
+                                </>                        
+                            }  
                             <Divider />
-                            <div style={{display: "inline-flex", alignItems: "center"}}>
+                            <div onClick={() => {setOpenCreateNewDialog(true); setDrawerOpen(false)}} style={{display: "inline-flex", alignItems: "center", cursor: "pointer"}}>
                                 <AddBoxIcon sx={{marginRight: "8px"}} />
-                                <Link href={`/${tenantMetaData.tenant.tenantId}?section=signing-keys`} >Add New...</Link>
+                                <div>Add New...</div>
                             </div>
                         </Stack>
                     </Drawer>
                 </>            
             }
+            <CreateNewSelector 
+                open={openCreateNewDialog} 
+                onCancel={() => setOpenCreateNewDialog(false)} 
+                onClose={() => setOpenCreateNewDialog(false)}
+                breakPoints={breakPoints}/>
         </>
         
     )

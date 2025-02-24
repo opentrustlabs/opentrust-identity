@@ -64,7 +64,7 @@ const AuthorizationGroupDetail: React.FC<AuthorizationGroupDetailProps> = ({ aut
                                             <Grid2 size={2}><ContentCopyIcon /></Grid2>
                                         </Grid2>
                                         <Stack sx={{ marginTop: "8px" }} direction={"row"} flexDirection={"row-reverse"} >
-                                            <Button sx={{ border: "solid 1px lightgrey", borderRadius: "4px", color: "black" }} >Update</Button>
+                                            <Button sx={{ border: "solid 1px lightgrey", borderRadius: "4px" }} >Update</Button>
                                         </Stack>
                                     </Grid2>
                                     <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>

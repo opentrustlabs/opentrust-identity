@@ -94,7 +94,7 @@ const ScopeDetail: React.FC<ScopeDetailProps> = ({ scope }) => {
                                 </Grid2>
                                 {/* TODO Show the button only when the scope is editable, which it will not be for IAM Management types of scope */}
                                 <Stack sx={{ marginTop: "8px" }} direction={"row"} flexDirection={"row-reverse"} >
-                                    <Button disabled={scope.scopeUse === SCOPE_USE_IAM_MANAGEMENT} sx={{ border: "solid 1px lightgrey", borderRadius: "4px", color: "black" }} >Update</Button>
+                                    <Button disabled={scope.scopeUse === SCOPE_USE_IAM_MANAGEMENT} sx={{ border: "solid 1px lightgrey", borderRadius: "4px"}} >Update</Button>
                                 </Stack>
                             </Paper>
                         </Grid2>

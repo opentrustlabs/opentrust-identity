@@ -135,7 +135,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                     </Grid2>                                    
                                 </Grid2>
                                 <Stack sx={{marginTop: "8px"}} direction={"row"} flexDirection={"row-reverse"} >
-                                    <Button sx={{border: "solid 1px lightgrey", borderRadius: "4px", color: "black"}} >Update</Button>
+                                    <Button sx={{border: "solid 1px lightgrey", borderRadius: "4px"}} >Update</Button>
                                 </Stack>
                             </Paper>
                         </Grid2>                        
@@ -181,7 +181,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                         </Grid2>
                                     </Grid2>
                                     <Stack sx={{marginTop: "8px"}} direction={"row"} flexDirection={"row-reverse"} >
-                                        <Button sx={{border: "solid 1px lightgrey", borderRadius: "4px", color: "black"}} >Update</Button>
+                                        <Button sx={{border: "solid 1px lightgrey", borderRadius: "4px"}} >Update</Button>
                                     </Stack>
 
                                 </AccordionDetails>
@@ -277,7 +277,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                         </Grid2>
                                     </Grid2>
                                     <Stack sx={{marginTop: "8px"}} direction={"row"} flexDirection={"row-reverse"} >
-                                        <Button sx={{border: "solid 1px lightgrey", borderRadius: "4px", color: "black"}} >Update</Button>
+                                        <Button sx={{border: "solid 1px lightgrey", borderRadius: "4px"}} >Update</Button>
                                     </Stack>
 
                                 </AccordionDetails>
@@ -322,7 +322,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                         </Grid2>
                                     </Grid2>
                                     <Stack sx={{marginTop: "8px"}} direction={"row"} flexDirection={"row-reverse"} >
-                                        <Button sx={{border: "solid 1px lightgrey", borderRadius: "4px", color: "black"}} >Update</Button>
+                                        <Button sx={{border: "solid 1px lightgrey", borderRadius: "4px"}} >Update</Button>
                                     </Stack>
 
                                 </AccordionDetails>
@@ -358,7 +358,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                         </Grid2>
                                     </Grid2>
                                     <Stack sx={{marginTop: "8px"}} direction={"row"} flexDirection={"row-reverse"} >
-                                        <Button sx={{border: "solid 1px lightgrey", borderRadius: "4px", color: "black"}} >Update</Button>
+                                        <Button sx={{border: "solid 1px lightgrey", borderRadius: "4px"}} >Update</Button>
                                     </Stack>
 
                                 </AccordionDetails>
@@ -385,7 +385,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                         </Paper>
                                     </Grid2>
                                     <Stack sx={{marginTop: "8px"}} direction={"row"} flexDirection={"row-reverse"} >
-                                        <Button sx={{border: "solid 1px lightgrey", borderRadius: "4px", color: "black"}} >Update</Button>
+                                        <Button sx={{border: "solid 1px lightgrey", borderRadius: "4px"}} >Update</Button>
                                     </Stack>
                                 </AccordionDetails>
                             </Accordion>
