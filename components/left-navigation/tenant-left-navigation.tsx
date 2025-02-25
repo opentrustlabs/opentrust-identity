@@ -19,7 +19,7 @@ import { TenantMetaData } from "@/graphql/generated/graphql-types";
 import AddBoxIcon from '@mui/icons-material/AddBox';
 import VerifiedIcon from '@mui/icons-material/Verified';
 import { TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
-import CreateNewSelector from "../dialogs/create-new-selector";
+import CreateNewDialog from "../dialogs/create-new-dialog";
 
 
 interface NavigationProps {
@@ -263,7 +263,7 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
                 </>            
             }
             {openCreateNewDialog &&
-                <CreateNewSelector 
+                <CreateNewDialog 
                     open={openCreateNewDialog} 
                     onCancel={() => setOpenCreateNewDialog(false)} 
                     onClose={() => setOpenCreateNewDialog(false)}

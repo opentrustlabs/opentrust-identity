@@ -18,3 +18,23 @@ export const LOGIN_MUTATION = gql(`
         }
     }        
 `);
+
+export const TENANT_CREATE_MUTATION = gql(`
+    mutation createTenant($tenantInput: TenantCreateInput!) {
+        createTenant(tenantInput: $tenantInput) {
+            tenantId
+            tenantName
+            tenantDescription
+        }
+    }     
+`);
+
+export const TENANT_UPDATE_MUTATION = gql(`
+    mutation updateTenant($tenantInput: TenantUpdateInput!) {
+        updateTenant(tenantInput: $tenantInput){
+            tenantId
+            tenantName
+            tenantDescription
+        }
+   }
+`);
