@@ -1,12 +1,12 @@
 "use client";
-import { Button, Dialog, DialogActions, DialogContent, DialogTitle, Divider, FormControl, FormControlLabel, FormLabel, Radio, RadioGroup } from "@mui/material";
+import { Dialog } from "@mui/material";
 import React, { useContext } from "react";
 import { ResponsiveBreakpoints } from "../contexts/responsive-context";
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
 import { TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import TenantSelector from "./tenant-selector";
 import NewTenantDialog from "./new-tenant-dialog";
-
+import CreateNewTypeSelector from "./create-new-type-selector";
 
 export interface CreateNewSelectorProps {
     open: boolean,
@@ -16,7 +16,7 @@ export interface CreateNewSelectorProps {
 }
 
 
-const CreateNewSelector: React.FC<CreateNewSelectorProps> = ({ 
+const CreateNewDialog: React.FC<CreateNewSelectorProps> = ({ 
     open,
     onCancel,
     onClose,
@@ -34,18 +34,11 @@ const CreateNewSelector: React.FC<CreateNewSelectorProps> = ({
             tenantBean.getTenantMetaData().tenant.tenantId
     )
 
-    // HANDLER FUNCTIONS
-    const handleSelection = (event: React.ChangeEvent<HTMLInputElement>) => {
-        console.log("in handle selection")
-        setCreateNewType(event.target.value);
-    };
-
     const ARR_TYPES_REQUIRING_PARENT_TENANT = ["client", "authorization-group", "authentication-group", "key"];
     const requiresParentTenant = (type: string): boolean => {
         return ARR_TYPES_REQUIRING_PARENT_TENANT.includes(type);
     }
 
-    // maxWidth={breakPoints.isMedium ? "lg" : createNewType === null || selectedTenant === null ? "xs" : "lg"}
     return (
         <Dialog
             draggable={true}
@@ -55,35 +48,20 @@ const CreateNewSelector: React.FC<CreateNewSelectorProps> = ({
             maxWidth={breakPoints.isMedium ? "lg" : createNewType === null || selectedTenant === null ? "sm" : "lg"}
             fullWidth={breakPoints.isMedium ? true : false}
         >
-            <DialogTitle sx={{fontWeight: "bold"}}>Create New</DialogTitle>            
-            <DialogContent >
-                {createNewType === null &&
-                    <FormControl>                    
-                        <RadioGroup
-                            name="create-new-radio-group"
-                            onChange={handleSelection}
-                        >
-                            {/** TODO handle conditional display based on what the user has access to do */}
-                            <FormControlLabel value="tenant" control={<Radio />} label="Tenant" />
-                            <FormControlLabel value="client" control={<Radio />} label="Client" />
-                            <FormControlLabel value="authorization-group" control={<Radio />} label="Authorization Group" />
-                            <FormControlLabel value="authentication-group" control={<Radio />} label="Authentication Group" />
-                            <FormControlLabel value="scope-access-control" control={<Radio />} label="Scope / Access Control" />
-                            <FormControlLabel value="oidc-provider" control={<Radio />} label="OIDC Provider" />
-                            <FormControlLabel value="rate-limit" control={<Radio />} label="Rate Limit" />
-                            <FormControlLabel value="key" control={<Radio />} label="Key" />                        
-                        </RadioGroup>
-                    </FormControl>
-                }
+            {createNewType === null &&
+                <CreateNewTypeSelector  
+                    onCancel={onCancel}
+                    onNext={(selectedType: string) => setCreateNewType(selectedType)}
+                />
+            }
                 {createNewType !== null && requiresParentTenant(createNewType) && selectedTenant === null &&
                     <TenantSelector onSelected={setSelectedTenant} />
                 }
                 {createNewType === "tenant" &&
-                    <NewTenantDialog enableFinish={function (): boolean {
-                    throw new Error("Function not implemented.");
-                } } onSuccess={function (tenantId: string): void {
-                    throw new Error("Function not implemented.");
-                } } />
+                    <NewTenantDialog 
+                        onCancel={onCancel}
+                        onClose={onClose}
+                    />
                 }
                 {createNewType === "client" && selectedTenant !== null &&
                     <div>You want to create a new client</div>
@@ -106,20 +84,10 @@ const CreateNewSelector: React.FC<CreateNewSelectorProps> = ({
                 {createNewType === "key" && selectedTenant !== null &&
                     <div>You want to create a new key</div>
                 }
-            </DialogContent>
-            <DialogActions>
-                <Button onClick={() => {onCancel(); setCreateNewType(null);}}>Cancel</Button>
-                
-                {createNewType !== null && (selectedTenant !== null || createNewType === "tenant") &&
-                    <Button disabled={createNewType === null}>Finish</Button>
-                }
-                {createNewType !== null && selectedTenant === null && createNewType !== "tenant" &&
-                    <Button disabled={createNewType === null}>Next</Button>
-                }                
-            </DialogActions>
+
+
         </Dialog>
     )
-
 }
 
-export default CreateNewSelector
+export default CreateNewDialog;
