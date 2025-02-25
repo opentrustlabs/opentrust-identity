@@ -87,14 +87,12 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
             variables: {
                 tenantInput: tenantInput
             },
-            onCompleted(data) {
-                console.log(JSON.stringify(data));
+            onCompleted(data) {                
                 setOverviewDirty(false);
                 setShowMutationBackdrop(false);
                 setShowMutationSnackbar(true);
             },
             onError(error) {
-                console.log(error.message);
                 setOverviewDirty(false);
                 setShowMutationBackdrop(false);
                 setErrorMessage(error.message);
@@ -120,7 +118,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
         })
     }
     arrBreadcrumbs.push({
-        linkText: tenant.tenantName,
+        linkText: tenantInput.tenantName,
         href: null
     });
 
