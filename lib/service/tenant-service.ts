@@ -224,6 +224,10 @@ class TenantService {
         return tenantDao.deleteTenantLookAndFeel(tenantId);
     }
 
+    public async getTenantPasswordConfig(tenantId: string): Promise<TenantPasswordConfig | null> {
+        return tenantDao.getTenantPasswordConfig(tenantId);
+    }
+
     public async assignPasswordConfigToTenant(tenantId: string, tenantPasswordConfig: TenantPasswordConfig): Promise<TenantPasswordConfig>{
         return tenantDao.assignPasswordConfigToTenant(tenantId, tenantPasswordConfig);
     }

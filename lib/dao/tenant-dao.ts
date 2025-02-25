@@ -44,6 +44,8 @@ abstract class TenantDao {
 
     abstract assignPasswordConfigToTenant(tenantId: string, tenantPasswordConfig: TenantPasswordConfig): Promise<TenantPasswordConfig>;
 
+    abstract getTenantPasswordConfig(tenantId: string): Promise<TenantPasswordConfig | null>;
+
     abstract removePasswordConfigFromTenant(tenantId: string): Promise<void>;
 
     abstract updateLoginFailurePolicy(loginFailurePolicy: LoginFailurePolicy): Promise<LoginFailurePolicy>;

@@ -16,6 +16,7 @@ type Query {
     getAnonymousUserConfiguration(tenantId: String!): AnonymousUserConfiguration
     getLegacyUserMigrationConfiguration(tenantId: String!): TenantLegacyUserMigrationConfig
     getTenantLookAndFeel(tenantId: String!): TenantLookAndFeel
+    getTenantPasswordConfig(tenantId: String!): TenantPasswordConfig
 
     ## Clients
     getClients(tenantId: String): [Client!]!
@@ -90,6 +91,8 @@ type Mutation {
     removeDomainFromTenantManagement(tenantId: String!, domain: String!): String
     addDomainToTenantRestrictedAuthentication(tenantId: String!, domain: String!): String
     removeDomainFromTenantRestrictedAuthentication(tenantId: String, domain: String!): String
+    addPasswordConfigToTenant(passwordConfigInput: PasswordConfigInput!): TenantPasswordConfig
+    removePasswordConfigFromTenant(tenantId: String!): String
 
     ## Clients
     createClient(clientInput: ClientCreateInput!): Client
@@ -839,6 +842,7 @@ input ContactInput {
 }
 
 input PasswordConfigInput {
+    tenantId: String!
     passwordMinLength: Int!
     passwordMaxLength: Int! 
     passwordHashingAlgorithm: String!
@@ -851,9 +855,12 @@ input PasswordConfigInput {
     mfaTypesRequired: String
     allowMfa: Boolean!
     mfaTypesAllowed: String
+    maxRepeatingCharacterLength: Int
+    passwordRotationPeriodDays: Int
 }
 
 input AnonymousUserConfigInput {
+    tenantId: String!
     defaultcountrycode: String
     defaultlangugecode: String
     tokenttlseconds: Int!
@@ -875,8 +882,6 @@ input TenantCreateInput {
     federatedAuthenticationConstraint: String!    
     tenantType: String!
     contactInput: [ContactInput!]!
-    passwordConfigInput: PasswordConfigInput
-    anonymousUserConfigInput: AnonymousUserConfigInput
     migrateLegacyUsers: Boolean!
     allowLoginByPhoneNumber: Boolean!
     allowForgotPassword: Boolean!
@@ -899,8 +904,6 @@ input TenantUpdateInput {
     markForDelete: Boolean!
     tenantType: String!
     contactInput: [ContactInput!]!
-    passwordConfigInput: PasswordConfigInput
-    anonymousUserConfigInput: AnonymousUserConfigInput
     migrateLegacyUsers: Boolean!
     allowLoginByPhoneNumber: Boolean!
     allowForgotPassword: Boolean!
