@@ -1,4 +1,4 @@
-import { Tenant, TenantManagementDomainRel, AnonymousUserConfiguration, TenantLookAndFeel, Contact, TenantPasswordConfig, SearchResultType, ObjectSearchResultItem } from "@/graphql/generated/graphql-types";
+import { Tenant, TenantManagementDomainRel, AnonymousUserConfiguration, TenantLookAndFeel, Contact, TenantPasswordConfig, SearchResultType, ObjectSearchResultItem, LoginFailurePolicy } from "@/graphql/generated/graphql-types";
 import TenantDao from "../../tenant-dao";
 import { TenantEntity } from "@/lib/entities/tenant-entity";
 import connection  from "@/lib/data-sources/db";
@@ -11,6 +11,11 @@ import TenantLookAndFeelEntity from "@/lib/entities/tenant-look-and-feel-entity"
 import ContactEntity from "@/lib/entities/contact-entity";
 
 class DBTenantDao extends TenantDao {
+
+    
+    public async updateLoginFailurePolicy(loginFailurePolicy: LoginFailurePolicy): Promise<LoginFailurePolicy> {
+        throw new Error("Method not implemented.");
+    }
 
     public async getRootTenant(): Promise<Tenant> {
         const em = connection.em.fork();
@@ -183,6 +188,17 @@ class DBTenantDao extends TenantDao {
         return Promise.resolve();
     }
 
+    public async getTenantPasswordConfig(tenantId: string): Promise<TenantPasswordConfig | null> {
+        const em = connection.em.fork();
+        const tenantPasswordConfigEntity: TenantPasswordConfigEntity | null = await em.findOne(TenantPasswordConfigEntity, {tenantId: tenantId});
+        if(tenantPasswordConfigEntity){
+            return tenantPasswordConfigEntity;
+        }
+        else{
+            return null;
+        }        
+    }
+
     public async assignPasswordConfigToTenant(tenantId: string, tenantPasswordConfig: TenantPasswordConfig): Promise<TenantPasswordConfig> {
         const em = connection.em.fork();
         tenantPasswordConfig.tenantId = tenantId;
@@ -227,6 +243,8 @@ class DBTenantDao extends TenantDao {
         });
         return Promise.resolve();
     }
+
+    
 
 }
 

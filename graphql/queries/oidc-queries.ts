@@ -380,3 +380,25 @@ export const LOGIN_FAILURE_CONFIGURATION_QUERY = gql(`
         }
     }
 `);
+
+export const TENANT_PASSWORD_CONFIG_QUERY = gql(`
+    query getTenantPasswordConfig($tenantId: String!) {
+        getTenantPasswordConfig(tenantId: $tenantId) {
+            tenantId
+            passwordMinLength
+            passwordMaxLength
+            passwordHashingAlgorithm
+            requireUpperCase
+            requireLowerCase
+            requireNumbers
+            requireSpecialCharacters
+            specialCharactersAllowed
+            requireMfa
+            mfaTypesRequired
+            allowMfa
+            mfaTypesAllowed
+            maxRepeatingCharacterLength
+            passwordRotationPeriodDays        
+        }
+    }
+`)

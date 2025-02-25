@@ -53,3 +53,25 @@ export const LOGIN_FAILURE_POLICY_CONFIGURATION_MUTATION = gql(`
         }
     }
 `);
+
+export const PASSWORD_CONFIGURATION_MUTATION = gql(`
+    mutation addPasswordConfigToTenant($passwordConfigInput: PasswordConfigInput!){
+        addPasswordConfigToTenant(passwordConfigInput: $passwordConfigInput){
+            tenantId
+            passwordMinLength
+            passwordMaxLength
+            passwordHashingAlgorithm
+            requireUpperCase
+            requireLowerCase
+            requireNumbers
+            requireSpecialCharacters
+            specialCharactersAllowed
+            requireMfa
+            mfaTypesRequired
+            allowMfa
+            mfaTypesAllowed
+            maxRepeatingCharacterLength
+            passwordRotationPeriodDays        
+        }
+    }
+`);
