@@ -20,6 +20,7 @@ import InputIcon from '@mui/icons-material/Input';
 import DisplaySettingsIcon from '@mui/icons-material/DisplaySettings';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { TENANT_UPDATE_MUTATION } from "@/graphql/mutations/oidc-mutations";
+import LoginFailureConfiguration from "./login-failure-configuration";
 
 export interface TenantDetailProps {
     tenantId: string
@@ -305,37 +306,19 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                     </div>
                                 </AccordionSummary>
                                 <AccordionDetails>
-
-                                    <Grid2 container size={12} spacing={2}>
-                                        <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
-                                            <div>Login Failure Policy Type</div>
-                                            <TextField name="tenantType" id="tenantType" value={"Lock"} fullWidth={true} size="small" />
-                                        </Grid2>
-                                        <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
-                                            <div>Failure Threshold</div>
-                                            <TextField name="tenantType" id="tenantType" value={"6"} fullWidth={true} size="small" />
-                                        </Grid2>
-                                        <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
-                                            <div>Pause Duration (in minutes)</div>
-                                            <TextField name="tenantType" id="tenantType" value={"30"} fullWidth={true} size="small" />
-                                        </Grid2>
-                                        <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
-                                            <div>Number of pause cycles before locking</div>
-                                            <TextField name="tenantType" id="tenantType" value={"5"} fullWidth={true} size="small" />
-                                        </Grid2>
-                                        <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
-                                            <div>Initial backoff duration (in minutes)</div>
-                                            <TextField name="tenantType" id="tenantType" value={"4"} fullWidth={true} size="small" />
-                                        </Grid2>
-                                        <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
-                                            <div>Number of backoff cycles before locking</div>
-                                            <TextField name="tenantType" id="tenantType" value={"4"} fullWidth={true} size="small" />
-                                        </Grid2>
-                                    </Grid2>
-                                    <Stack sx={{marginTop: "8px"}} direction={"row"} flexDirection={"row-reverse"} >
-                                        <Button sx={{border: "solid 1px lightgrey", borderRadius: "4px"}} >Update</Button>
-                                    </Stack>
-
+                                    <LoginFailureConfiguration 
+                                        tenantId={tenant.tenantId}
+                                        onUpdateEnd={(success: boolean) => {
+                                            setShowMutationBackdrop(false);
+                                            if(success){
+                                                setShowMutationSnackbar(true);
+                                            }
+                                        }}
+                                        onUpdateStart={() => {
+                                            setShowMutationBackdrop(true);
+                                            
+                                        }}
+                                    />
                                 </AccordionDetails>
                             </Accordion>
                         </Grid2>

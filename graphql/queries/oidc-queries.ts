@@ -365,8 +365,11 @@ export const RATE_LIMITS_QUERY = gql(`
         }
     }
 `);
-/*
-getLoginFailurePolicy {        
+
+export const LOGIN_FAILURE_CONFIGURATION_QUERY = gql(`
+    query getLoginFailurePolicy($tenantId: String!){
+        getLoginFailurePolicy(tenantId: $tenantId) {
+            tenantId
             loginFailurePolicyType
             loginfailurepolicytypeid
             failureThreshold
@@ -375,4 +378,5 @@ getLoginFailurePolicy {
             initBackoffDurationMinutes
             numberOfBackoffCyclesBeforeLocking
         }
-*/
+    }
+`);

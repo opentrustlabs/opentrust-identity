@@ -84,6 +84,8 @@ const SearchResultListLayout: React.FC<SearchResultListProps> = ({
                 resultType: resultType ? resultType : null
             }
         },
+        fetchPolicy: "no-cache",
+        nextFetchPolicy: "no-cache"
 
     })
 

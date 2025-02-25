@@ -71,7 +71,7 @@ type Query {
     getChangeEvents(objectId: String!): [ChangeEvent!]!
 
     ## Login Failure Configuration
-    getLoginFailurePolicy: LoginFailurePolicy!
+    getLoginFailurePolicy(tenantId: String!): LoginFailurePolicy
 
     ## Scheduler
     getSchedulerLocks: [SchedulerLock]
@@ -166,7 +166,7 @@ type Mutation {
     deleteFederatedOIDCProvider(federatedOIDCProviderId: String!): String!
 
     ## Login failure policy
-    createLoginFailurePolicy(loginFailurePolicyInput: LoginFailurePolicyInput!): LoginFailurePolicy!
+    ## createLoginFailurePolicy(loginFailurePolicyInput: LoginFailurePolicyInput!): LoginFailurePolicy!
     updateLoginFailurePolicy(loginFailurePolicyInput: LoginFailurePolicyInput!): LoginFailurePolicy!
 
     ## Scheduler locks
