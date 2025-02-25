@@ -304,6 +304,8 @@ type TenantPasswordConfig {
     mfaTypesRequired: String
     allowMfa: Boolean!
     mfaTypesAllowed: String
+    maxRepeatingCharacterLength: Int
+    passwordRotationPeriodDays: Int
 }
 
 

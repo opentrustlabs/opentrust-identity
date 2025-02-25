@@ -53,6 +53,12 @@ class TenantPasswordConfigEntity implements TenantPasswordConfig {
     @Property({fieldName: "mfatypesrequired"})
     mfaTypesRequired?: Maybe<string> | undefined;
 
+    @Property({fieldName: "maxrepeatingcharacterlength"})
+    maxRepeatingCharacterLength?: Maybe<number> | undefined;
+
+    @Property({fieldName: "passwordrotationperioddays"})
+    passwordRotationPeriodDays?: Maybe<number> | undefined;    
+
 }
 
 export default TenantPasswordConfigEntity;
