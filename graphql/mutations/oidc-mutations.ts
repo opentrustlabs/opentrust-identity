@@ -38,3 +38,18 @@ export const TENANT_UPDATE_MUTATION = gql(`
         }
    }
 `);
+
+export const LOGIN_FAILURE_POLICY_CONFIGURATION_MUTATION = gql(`
+    mutation updateLoginFailurePolicy($loginFailurePolicyInput: LoginFailurePolicyInput!) {
+        updateLoginFailurePolicy(loginFailurePolicyInput: $loginFailurePolicyInput) {
+            tenantId
+            loginFailurePolicyType
+            loginfailurepolicytypeid
+            failureThreshold
+            pauseDurationMinutes
+            numberOfPauseCyclesBeforeLocking
+            initBackoffDurationMinutes
+            numberOfBackoffCyclesBeforeLocking
+        }
+    }
+`);

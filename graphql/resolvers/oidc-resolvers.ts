@@ -1,6 +1,6 @@
 import ClientService from "@/lib/service/client-service";
 import TenantService from "@/lib/service/tenant-service";
-import { Resolvers, QueryResolvers, MutationResolvers, Tenant, Client, SigningKey, Scope, AuthenticationGroup, AuthorizationGroup, FederatedOidcProvider, ContactInput, Contact, LoginUserNameHandlerResponse, LoginUserNameHandlerAction, LoginAuthenticationHandlerResponse, LoginAuthenticationHandlerAction, SecondFactorType, PortalUserProfile, User } from "@/graphql/generated/graphql-types";
+import { Resolvers, QueryResolvers, MutationResolvers, Tenant, Client, SigningKey, Scope, AuthenticationGroup, AuthorizationGroup, FederatedOidcProvider, ContactInput, Contact, LoginUserNameHandlerResponse, LoginUserNameHandlerAction, LoginAuthenticationHandlerResponse, LoginAuthenticationHandlerAction, SecondFactorType, PortalUserProfile, User, LoginFailurePolicy } from "@/graphql/generated/graphql-types";
 import SigningKeysService from "@/lib/service/keys-service";
 import ScopeService from "@/lib/service/scope-service";
 import GroupService from "@/lib/service/group-service";
@@ -8,6 +8,7 @@ import AuthenticationGroupService from "@/lib/service/authentication-group-servi
 import FederatedOIDCProviderService from "@/lib/service/federated-oidc-provider-service";
 import { NAME_ORDER_WESTERN, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_POST, SCOPE_USE_APPLICATION_MANAGEMENT, SIGNING_KEY_STATUS_ACTIVE, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import SearchService from "@/lib/service/search-service";
+import { GraphQLError } from "graphql";
 
 
 const resolvers: Resolvers = {
@@ -629,6 +630,20 @@ const resolvers: Resolvers = {
                 }
             }
             return response;
+        },
+        updateLoginFailurePolicy: async(_: any, { loginFailurePolicyInput }, oidcContext) => {
+            const loginFailurePolicy: LoginFailurePolicy = {
+                failureThreshold: loginFailurePolicyInput.failureThreshold,
+                loginFailurePolicyType: loginFailurePolicyInput.loginFailurePolicyType,
+                tenantId: loginFailurePolicyInput.tenantId,
+                initBackoffDurationMinutes: loginFailurePolicyInput.initBackoffDurationMinutes || 0,
+                numberOfBackoffCyclesBeforeLocking: loginFailurePolicyInput.numberOfBackoffCyclesBeforeLocking || 0,
+                numberOfPauseCyclesBeforeLocking: loginFailurePolicyInput.numberOfPauseCyclesBeforeLocking || 0,
+                pauseDurationMinutes: loginFailurePolicyInput.pauseDurationMinutes || 0
+            }            
+            // TODO 
+            // Implement the DAO and Service interfaces for assigning login failure policies.
+            return loginFailurePolicy;
         }
     }
 }

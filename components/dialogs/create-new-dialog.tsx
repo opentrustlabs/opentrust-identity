@@ -46,7 +46,7 @@ const CreateNewDialog: React.FC<CreateNewSelectorProps> = ({
             onClose={() => {setCreateNewType(null); onClose();}}
             fullScreen={false}
             maxWidth={breakPoints.isMedium ? "lg" : createNewType === null || selectedTenant === null ? "sm" : "lg"}
-            fullWidth={breakPoints.isMedium ? true : false}
+            fullWidth={breakPoints.isMedium ? true : true}
         >
             {createNewType === null &&
                 <CreateNewTypeSelector  
@@ -55,7 +55,7 @@ const CreateNewDialog: React.FC<CreateNewSelectorProps> = ({
                 />
             }
                 {createNewType !== null && requiresParentTenant(createNewType) && selectedTenant === null &&
-                    <TenantSelector onSelected={setSelectedTenant} />
+                    <TenantSelector onSelected={setSelectedTenant} onCancel={onCancel}/>
                 }
                 {createNewType === "tenant" &&
                     <NewTenantDialog 
