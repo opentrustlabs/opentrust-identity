@@ -22,6 +22,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { TENANT_UPDATE_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import LoginFailureConfiguration from "./login-failure-configuration";
 import PasswordRulesConfiguration from "./password-rules-config";
+import LegacyUserMigrationConfiguration from "./legacy-user-migration-configuration";
 
 export interface TenantDetailProps {
     tenantId: string
@@ -409,25 +410,18 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                     
                                 </AccordionSummary>
                                 <AccordionDetails>
-
-                                    <Grid2 container size={12} spacing={2}>
-                                        <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
-                                            <div>Authentication URI</div>
-                                            <TextField name="tenantType" id="tenantType" value={"https://sigmaaldrich.com/ecommerce/users/login"} fullWidth={true} size="small" />
-                                        </Grid2>
-                                        <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
-                                            <div>User Profile URI</div>
-                                            <TextField name="tenantType" id="tenantType" value={"https://sigmaaldrich.com/ecommerce/users/profile"} fullWidth={true} size="small" />
-                                        </Grid2>
-                                        <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
-                                            <div>User Name-Check URI</div>
-                                            <TextField name="tenantType" id="tenantType" value={"https://sigmaaldrich.com/ecommerce/users/userexists"} fullWidth={true} size="small" />
-                                        </Grid2>
-                                    </Grid2>
-                                    <Stack sx={{marginTop: "8px"}} direction={"row"} flexDirection={"row-reverse"} >
-                                        <Button sx={{border: "solid 1px lightgrey", borderRadius: "4px"}} >Update</Button>
-                                    </Stack>
-
+                                    <LegacyUserMigrationConfiguration
+                                        tenantId={tenant.tenantId}
+                                        onUpdateEnd={(success: boolean) => {
+                                            setShowMutationBackdrop(false);
+                                            if(success){
+                                                setShowMutationSnackbar(true);
+                                            }
+                                        }}
+                                        onUpdateStart={() => {
+                                            setShowMutationBackdrop(true);                                            
+                                        }}
+                                    />
                                 </AccordionDetails>
                             </Accordion>
                         </Grid2>

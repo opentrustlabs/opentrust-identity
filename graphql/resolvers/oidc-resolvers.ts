@@ -1,6 +1,6 @@
 import ClientService from "@/lib/service/client-service";
 import TenantService from "@/lib/service/tenant-service";
-import { Resolvers, QueryResolvers, MutationResolvers, Tenant, Client, SigningKey, Scope, AuthenticationGroup, AuthorizationGroup, FederatedOidcProvider, ContactInput, Contact, LoginUserNameHandlerResponse, LoginUserNameHandlerAction, LoginAuthenticationHandlerResponse, LoginAuthenticationHandlerAction, SecondFactorType, PortalUserProfile, User, LoginFailurePolicy, TenantPasswordConfig } from "@/graphql/generated/graphql-types";
+import { Resolvers, QueryResolvers, MutationResolvers, Tenant, Client, SigningKey, Scope, AuthenticationGroup, AuthorizationGroup, FederatedOidcProvider, ContactInput, Contact, LoginUserNameHandlerResponse, LoginUserNameHandlerAction, LoginAuthenticationHandlerResponse, LoginAuthenticationHandlerAction, SecondFactorType, PortalUserProfile, User, LoginFailurePolicy, TenantPasswordConfig, TenantLegacyUserMigrationConfig } from "@/graphql/generated/graphql-types";
 import SigningKeysService from "@/lib/service/keys-service";
 import ScopeService from "@/lib/service/scope-service";
 import GroupService from "@/lib/service/group-service";
@@ -154,9 +154,13 @@ const resolvers: Resolvers = {
         getRateLimitServiceGroups: (_:any, { tenantId }, oidcContenxt) => {
             return [];
         },
-        getTenantPasswordConfig: (_: any, { tenantId }, oidcContenxt) => {
-            const tenantService: TenantService = new TenantService(oidcContenxt);
+        getTenantPasswordConfig: (_: any, { tenantId }, oidcContext) => {
+            const tenantService: TenantService = new TenantService(oidcContext);
             return tenantService.getTenantPasswordConfig(tenantId);
+        },
+        getLegacyUserMigrationConfiguration: (_: any, { tenantId }, oidcContext) => {
+            const tenantService: TenantService = new TenantService(oidcContext);
+            return tenantService.getLegacyUserMigrationConfiguration(tenantId);
         }
     },
     Mutation: {
@@ -568,6 +572,17 @@ const resolvers: Resolvers = {
             }
             //await tenantService.assignPasswordConfigToTenant(passwordConfigInput.tenantId, tenantPasswordConfig);
             return tenantPasswordConfig;
+        },
+        setTenantLegacyUserMigrationConfig: async(_: any, { tenantLegacyUserMigrationConfigInput }, oidcContext) => {
+            const tenantLegacyUserMigrationConfig: TenantLegacyUserMigrationConfig = {
+                authenticationUri: tenantLegacyUserMigrationConfigInput.authenticationUri,
+                tenantId: tenantLegacyUserMigrationConfigInput.tenantId,
+                userProfileUri: tenantLegacyUserMigrationConfigInput.userProfileUri,
+                usernameCheckUri: tenantLegacyUserMigrationConfigInput.usernameCheckUri
+            }
+            const tenantService: TenantService = new TenantService(oidcContext);
+            await tenantService.setTenantLegacyUserMigrationConfiguration(tenantLegacyUserMigrationConfig);
+            return tenantLegacyUserMigrationConfig;
         }
     }
 }

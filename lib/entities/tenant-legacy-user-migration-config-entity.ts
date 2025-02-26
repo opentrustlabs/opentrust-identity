@@ -1,4 +1,4 @@
-import { TenantLegacyUserMigrationConfig } from "@/graphql/generated/graphql-types";
+import type { TenantLegacyUserMigrationConfig } from "@/graphql/generated/graphql-types";
 
 
 import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
@@ -7,6 +7,12 @@ import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
     tableName: "tenant_legacy_user_migration_config"
 })
 class TenantLegacyUserMigrationConfigEntity implements TenantLegacyUserMigrationConfig {
+
+    constructor(tenantLegacyUserMigrationConfig?: TenantLegacyUserMigrationConfig){
+        if(tenantLegacyUserMigrationConfig){
+            Object.assign(this, tenantLegacyUserMigrationConfig);
+        }
+    }
 
     __typename?: "TenantLegacyUserMigrationConfig";
     
