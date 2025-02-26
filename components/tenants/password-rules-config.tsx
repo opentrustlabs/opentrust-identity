@@ -146,7 +146,7 @@ const PasswordRulesConfiguration: React.FC<PasswordRulesConfigurationProps> = ({
                             </Grid2>
                             <Grid2 marginBottom={"16px"} >
                                 <div>Change Password Period (days)</div>
-                                <TextField name="passwordHistoryPeriod" id="passwordHistoryPeriod"
+                                <TextField name="passwordRotationPeriodDays" id="passwordRotationPeriodDays"
                                     value={passwordConfigInput.passwordRotationPeriodDays}
                                     onChange={(evt) => { passwordConfigInput.passwordRotationPeriodDays = parseInt(evt.target.value || "0"); setPasswordConfigInput({ ...passwordConfigInput }); setMarkDirty(true); }}
                                     fullWidth={true} size="small"
