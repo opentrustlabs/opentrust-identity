@@ -21,6 +21,7 @@ import DisplaySettingsIcon from '@mui/icons-material/DisplaySettings';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { TENANT_UPDATE_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import LoginFailureConfiguration from "./login-failure-configuration";
+import PasswordRulesConfiguration from "./password-rules-config";
 
 export interface TenantDetailProps {
     tenantId: string
@@ -315,8 +316,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                             }
                                         }}
                                         onUpdateStart={() => {
-                                            setShowMutationBackdrop(true);
-                                            
+                                            setShowMutationBackdrop(true);                                            
                                         }}
                                     />
                                 </AccordionDetails>
@@ -335,86 +335,18 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                     </div>                                    
                                 </AccordionSummary>
                                 <AccordionDetails>
-
-                                    <Grid2 container size={12} spacing={2}>
-                                        <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
-                                            <Grid2 marginBottom={"16px"}>
-                                                <div>Password Minimum Length</div>
-                                                <TextField name="tenantType" id="tenantType" value={"8"} fullWidth={true} size="small" />
-                                            </Grid2>
-                                            <Grid2 marginBottom={"16px"} >
-                                                <div>Password Maximum Length</div>
-                                                <TextField name="tenantType" id="tenantType" value={"64"} fullWidth={true} size="small" />
-                                            </Grid2>
-                                            <Grid2 marginBottom={"16px"} >
-                                                <div>Maximum Consecutive Length Of Identical Characters</div>
-                                                <TextField name="tenantType" id="tenantType" value={"2"} fullWidth={true} size="small" />
-                                            </Grid2>
-                                            <Grid2 marginBottom={"16px"} >
-                                                <div>Password Reuse Period</div>
-                                                <TextField name="tenantType" id="tenantType" value={"20"} fullWidth={true} size="small" />
-                                            </Grid2>
-                                            <Grid2 marginBottom={"16px"} >
-                                                <div>Change Password Period (days)</div>
-                                                <TextField name="tenantType" id="tenantType" value={"720"} fullWidth={true} size="small" />
-                                            </Grid2>
-                                            <Grid2 marginBottom={"16px"} >
-                                                <div>Password Hashing Algorithm</div>
-                                                <TextField name="tenantType" id="tenantType" value={"Blowfish 12 Rounds"} fullWidth={true} size="small" />
-                                            </Grid2>
-                                        </Grid2>
-
-                                        <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
-                                            <Grid2 borderLeft={"dotted 1px lightgrey"} paddingLeft={"8px"} container size={12}>
-                                                <Grid2 alignContent={"center"} size={10}>
-                                                    Require Uppercase
-                                                </Grid2>
-                                                <Grid2 size={2}><Checkbox /></Grid2>
-
-                                                <Grid2 alignContent={"center"} size={10}>
-                                                    Require Lowercase
-                                                </Grid2>
-                                                <Grid2 size={2}><Checkbox /></Grid2>
-
-                                                <Grid2 alignContent={"center"} size={10}>
-                                                    Require Numbers
-                                                </Grid2>
-                                                <Grid2 size={2}><Checkbox /></Grid2>
-
-                                                <Grid2 alignContent={"center"} size={10}>
-                                                    Require Special Characters
-                                                </Grid2>
-                                                <Grid2 size={2}><Checkbox /></Grid2>
-
-                                                <Grid2 marginTop={"8px"} alignContent={"center"} size={10}>
-                                                    <div>Special Characters Allowed</div>
-                                                    <TextField name="tenantType" id="tenantType" value={"4"} fullWidth={true} size="small" />
-                                                </Grid2>
-                                            </Grid2>
-                                        </Grid2>
-                                    </Grid2>
-                                    <Divider sx={{ marginTop: "16px" }} />
-                                    <Grid2 marginTop={"24px"} container size={12} spacing={2}>
-                                        <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
-                                            <Grid2 container size={12}>
-                                                <Grid2 alignContent={"center"} size={12}>Allow Or Require Multi-factor Auth Dropdown?</Grid2>
-                                                <Grid2 marginBottom={"16px"} alignContent={"center"} size={12}>
-                                                    <TextField name="tenantType" id="tenantType" value={"30"} fullWidth={true} size="small" />
-                                                </Grid2>
-                                                <Grid2 alignContent={"center"} size={12}>
-                                                    MFA Auth Types Allowed/Required
-                                                </Grid2>
-                                                <Grid2 alignContent={"center"} size={12}>
-                                                    <TextField name="tenantType" id="tenantType" value={"30"} fullWidth={true} size="small" />
-                                                </Grid2>
-
-                                            </Grid2>
-                                        </Grid2>
-                                    </Grid2>
-                                    <Stack sx={{marginTop: "8px"}} direction={"row"} flexDirection={"row-reverse"} >
-                                        <Button sx={{border: "solid 1px lightgrey", borderRadius: "4px"}} >Update</Button>
-                                    </Stack>
-
+                                    <PasswordRulesConfiguration
+                                        tenantId={tenant.tenantId}
+                                        onUpdateEnd={(success: boolean) => {
+                                            setShowMutationBackdrop(false);
+                                            if(success){
+                                                setShowMutationSnackbar(true);
+                                            }
+                                        }}
+                                        onUpdateStart={() => {
+                                            setShowMutationBackdrop(true);                                            
+                                        }}
+                                    />
                                 </AccordionDetails>
                             </Accordion>
                         </Grid2>

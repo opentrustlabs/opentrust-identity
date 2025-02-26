@@ -39,6 +39,7 @@ const LoginFailureConfiguration: React.FC<LoginFailureConfigurationProps> = ({
     const [markDirty, setMarkDirty] = React.useState<boolean>(false);
     const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
     const [failurePolicyInput, setFailurePolicyInput] = React.useState<LoginFailurePolicyInput | null>(null);
+    const [revertToPolicyInput, setRevertToPolicyInput] = React.useState<LoginFailurePolicyInput | null>(null);
 
 
     // GRAPHQL FUNCTIONS
@@ -58,6 +59,7 @@ const LoginFailureConfiguration: React.FC<LoginFailureConfigurationProps> = ({
                 initInput.pauseDurationMinutes = policy.pauseDurationMinutes;
             }
             setFailurePolicyInput(initInput);
+            setRevertToPolicyInput(initInput);
         },
     });
 
@@ -71,7 +73,8 @@ const LoginFailureConfiguration: React.FC<LoginFailureConfigurationProps> = ({
         },
         onError(error) {
             onUpdateEnd(false);
-            setErrorMessage(error.message)            
+            setFailurePolicyInput(revertToPolicyInput);
+            setErrorMessage(error.message)
         },
     }
 

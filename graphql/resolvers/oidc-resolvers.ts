@@ -1,6 +1,6 @@
 import ClientService from "@/lib/service/client-service";
 import TenantService from "@/lib/service/tenant-service";
-import { Resolvers, QueryResolvers, MutationResolvers, Tenant, Client, SigningKey, Scope, AuthenticationGroup, AuthorizationGroup, FederatedOidcProvider, ContactInput, Contact, LoginUserNameHandlerResponse, LoginUserNameHandlerAction, LoginAuthenticationHandlerResponse, LoginAuthenticationHandlerAction, SecondFactorType, PortalUserProfile, User, LoginFailurePolicy } from "@/graphql/generated/graphql-types";
+import { Resolvers, QueryResolvers, MutationResolvers, Tenant, Client, SigningKey, Scope, AuthenticationGroup, AuthorizationGroup, FederatedOidcProvider, ContactInput, Contact, LoginUserNameHandlerResponse, LoginUserNameHandlerAction, LoginAuthenticationHandlerResponse, LoginAuthenticationHandlerAction, SecondFactorType, PortalUserProfile, User, LoginFailurePolicy, TenantPasswordConfig } from "@/graphql/generated/graphql-types";
 import SigningKeysService from "@/lib/service/keys-service";
 import ScopeService from "@/lib/service/scope-service";
 import GroupService from "@/lib/service/group-service";
@@ -543,6 +543,31 @@ const resolvers: Resolvers = {
             // TODO 
             // Implement the DAO and Service interfaces for assigning login failure policies.
             return loginFailurePolicy;
+        },
+        setTenantPasswordConfig: async(_: any, { passwordConfigInput }, oidcContenxt) => {
+            //const tenantService: TenantService = new TenantService(oidcContenxt);
+            // TODO
+            // Implement the service and DAO classes
+            const tenantPasswordConfig: TenantPasswordConfig = {
+                allowMfa: passwordConfigInput.allowMfa,
+                passwordHashingAlgorithm: passwordConfigInput.passwordHashingAlgorithm,
+                passwordMaxLength: passwordConfigInput.passwordMaxLength,
+                passwordMinLength: passwordConfigInput.passwordMinLength,
+                requireLowerCase: passwordConfigInput.requireLowerCase,
+                requireMfa: passwordConfigInput.requireMfa,
+                requireNumbers: passwordConfigInput.requireNumbers,
+                requireSpecialCharacters: passwordConfigInput.requireSpecialCharacters,
+                requireUpperCase: passwordConfigInput.requireUpperCase,
+                tenantId: passwordConfigInput.tenantId,
+                maxRepeatingCharacterLength: passwordConfigInput.maxRepeatingCharacterLength,
+                mfaTypesAllowed: passwordConfigInput.mfaTypesAllowed,
+                mfaTypesRequired: passwordConfigInput.mfaTypesRequired,
+                passwordHistoryPeriod: passwordConfigInput.passwordHistoryPeriod,
+                passwordRotationPeriodDays: passwordConfigInput.passwordRotationPeriodDays,
+                specialCharactersAllowed: passwordConfigInput.specialCharactersAllowed
+            }
+            //await tenantService.assignPasswordConfigToTenant(passwordConfigInput.tenantId, tenantPasswordConfig);
+            return tenantPasswordConfig;
         }
     }
 }

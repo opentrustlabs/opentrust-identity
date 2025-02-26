@@ -302,11 +302,34 @@ export const PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS="password-hash-bcrypt-1
 export const PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS="password-hash-bcrypt-12-rounds";
 export const PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS="password-hash-pbkdf2-128k-iterations";
 export const PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS="password-hash-pbkdf2-256k-iterations";
+export const PASSWORD_HASHING_ALGORITHMS = [
+    PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS,
+    PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS,
+    PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS,
+    PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS,
+    PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS,
+    PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS,
+    PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS
+];
+export const PASSWORD_HASHING_ALGORITHMS_DISPLAY: Map<string, string> = new Map([
+    [PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS, "SHA256 64K Iterations"],
+    [PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS, "SHA256 128K Iterations"],
+    [PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS, "BCrypt 10 Rounds"],
+    [PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS, "BCrypt 11 Rounds"],
+    [PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, "BCrypt 12 Rounds"],
+    [PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS, "PBKDF2 128K Iterations"],
+    [PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS, "PBKDF2 256K Iterations"]
+]);
+
+
+
+
 // 16 byte salt (minimum recommended by NIST is 32 bits / 4 bytes)
 export const PASSWORD_SALT_LENGTH=16; 
 export const PASSWORD_MINIMUM_LENGTH=10;
 export const PASSWORD_MAXIMUM_LENGTH=64;
-export const PASSWORD_PATTERN="[A-Za-z0-9_-!@#]";
+export const PASSWORD_PATTERN="[A-Za-z0-9_-!@#[]<>=?+*.,%/:;]";
+export const DEFAULT_PASSWORD_SPECIAL_CHARACTERS_ALLOWED="_-!@#[]<>=?+*.,%/:;";
 
 export const VERIFICATION_TOKEN_TYPE_PASSWORD_RESET="PASSWORD_RESET";
 export const VERIFICATION_TOKEN_TYPE_VALIDATE_EMAIL="VALIDATE_EMAIL";
@@ -629,19 +652,19 @@ export const DEFAULT_TENANT_META_DATA: TenantMetaData = {
 }
 
 export const DEFAULT_TENANT_PASSWORD_CONFIGURATION: TenantPasswordConfig = {
-    allowMfa: true,
+    allowMfa: false,
     passwordHashingAlgorithm: PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS,
     passwordMaxLength: 64,
     passwordMinLength: 10,
     requireLowerCase: true,
     requireMfa: false,
     requireNumbers: true,
-    requireSpecialCharacters: false,
+    requireSpecialCharacters: true,
     requireUpperCase: true,
     tenantId: "",
-    mfaTypesAllowed: MFA_FACTOR_AUTH_TYPE_TIME_BASED_OTP,
+    mfaTypesAllowed: "",
     mfaTypesRequired: "",
-    specialCharactersAllowed: "_-!@#[]<>=?+*.,%/:;"
+    specialCharactersAllowed: DEFAULT_PASSWORD_SPECIAL_CHARACTERS_ALLOWED
 }
 
 // ************************************************************************** //

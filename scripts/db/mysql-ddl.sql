@@ -478,6 +478,7 @@ create TABLE tenant_password_config (
     mfatypesallowed VARCHAR(128),
     maxrepeatingcharacterlength INT,
     passwordrotationperioddays INT,
+    passwordhistoryperiod INT,
     PRIMARY KEY (tenantid),
     FOREIGN KEY (tenantid) references tenant(tenantid)
 );

@@ -57,7 +57,10 @@ class TenantPasswordConfigEntity implements TenantPasswordConfig {
     maxRepeatingCharacterLength?: Maybe<number> | undefined;
 
     @Property({fieldName: "passwordrotationperioddays"})
-    passwordRotationPeriodDays?: Maybe<number> | undefined;    
+    passwordRotationPeriodDays?: Maybe<number> | undefined;
+
+    @Property({fieldName: "passwordhistoryperiod"})
+    passwordHistoryPeriod?: Maybe<number> | undefined;
 
 }
 

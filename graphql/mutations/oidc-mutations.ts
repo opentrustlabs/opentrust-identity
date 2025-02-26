@@ -55,8 +55,8 @@ export const LOGIN_FAILURE_POLICY_CONFIGURATION_MUTATION = gql(`
 `);
 
 export const PASSWORD_CONFIGURATION_MUTATION = gql(`
-    mutation addPasswordConfigToTenant($passwordConfigInput: PasswordConfigInput!){
-        addPasswordConfigToTenant(passwordConfigInput: $passwordConfigInput){
+    mutation setTenantPasswordConfig($passwordConfigInput: PasswordConfigInput!){
+        setTenantPasswordConfig(passwordConfigInput: $passwordConfigInput){
             tenantId
             passwordMinLength
             passwordMaxLength
