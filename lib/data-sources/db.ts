@@ -50,6 +50,7 @@ import UserVerificationTokenEntity from '@/lib/entities/user-verification-token-
 import UserFido2ChallengeEntity from '@/lib/entities/user-fido2-challenge-entity';
 import UserFido2CounterRelEntity from '@/lib/entities/user-fido2-counter-rel-entity';
 import UserMfaRelEntity from '@/lib/entities/user-mfa-rel-entity';
+import TenantLegacyUserMigrationConfigEntity from '../entities/tenant-legacy-user-migration-config-entity';
 
 const {
     DB_USER,
@@ -119,6 +120,7 @@ const connection = MikroORM.initSync(
             TenantRateLimitRelEntity,
             TenantRestrictedAuthenticationDomainRelEntity,
             TenantAvailableScopeEntity,
+            TenantLegacyUserMigrationConfigEntity,
             UserAuthorizationGroupRelEntity,
             UserCredentialEntity,            
             UserFailedLoginAttemptsEntity,

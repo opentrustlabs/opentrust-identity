@@ -75,3 +75,14 @@ export const PASSWORD_CONFIGURATION_MUTATION = gql(`
         }
     }
 `);
+
+export const LEGACY_USER_MIGRATION_CONFIGURATION_MUTATION = gql(`
+    mutation setTenantLegacyUserMigrationConfig($tenantLegacyUserMigrationConfigInput: TenantLegacyUserMigrationConfigInput!) {
+        setTenantLegacyUserMigrationConfig(tenantLegacyUserMigrationConfigInput: $tenantLegacyUserMigrationConfigInput) {
+            tenantId
+            authenticationUri
+            userProfileUri
+            usernameCheckUri
+        }
+   }
+`);

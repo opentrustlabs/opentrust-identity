@@ -1,4 +1,4 @@
-import { Tenant, TenantManagementDomainRel, AnonymousUserConfiguration, TenantLookAndFeel, Contact, TenantPasswordConfig, SearchResultType, ObjectSearchResultItem, LoginFailurePolicy } from "@/graphql/generated/graphql-types";
+import { Tenant, TenantManagementDomainRel, AnonymousUserConfiguration, TenantLookAndFeel, Contact, TenantPasswordConfig, SearchResultType, ObjectSearchResultItem, LoginFailurePolicy, TenantLegacyUserMigrationConfig } from "@/graphql/generated/graphql-types";
 import TenantDao from "../../tenant-dao";
 import { TenantEntity } from "@/lib/entities/tenant-entity";
 import connection  from "@/lib/data-sources/db";
@@ -9,8 +9,14 @@ import AnonymousUserConfigurationEntity from "@/lib/entities/anonymous-user-conf
 import TenantPasswordConfigEntity from "@/lib/entities/tenant-password-config-entity";
 import TenantLookAndFeelEntity from "@/lib/entities/tenant-look-and-feel-entity";
 import ContactEntity from "@/lib/entities/contact-entity";
+import TenantLegacyUserMigrationConfigEntity from "@/lib/entities/tenant-legacy-user-migration-config-entity";
 
 class DBTenantDao extends TenantDao {
+
+    
+    removeLegacyUserMigrationConfiguration(tenantId: string): Promise<void> {
+        throw new Error("Method not implemented.");
+    }
 
     
     public async updateLoginFailurePolicy(loginFailurePolicy: LoginFailurePolicy): Promise<LoginFailurePolicy> {
@@ -242,6 +248,19 @@ class DBTenantDao extends TenantDao {
             tenantid: tenantId
         });
         return Promise.resolve();
+    }
+
+    public async getLegacyUserMigrationConfiguration(tenantId: string): Promise<TenantLegacyUserMigrationConfig | null> {
+        const em = connection.em.fork();
+        const entity: TenantLegacyUserMigrationConfigEntity | null = await em.findOne(TenantLegacyUserMigrationConfigEntity, {tenantId: tenantId});
+        return entity ? Promise.resolve(entity) : Promise.resolve(null);
+    }
+
+    public async setTenantLegacyUserMigrationConfiguration(tenantLegacyUserMigrationConfig: TenantLegacyUserMigrationConfig): Promise<TenantLegacyUserMigrationConfig | null> {
+        const em = connection.em.fork();
+        const entity: TenantLegacyUserMigrationConfigEntity = new TenantLegacyUserMigrationConfigEntity(tenantLegacyUserMigrationConfig);
+        await em.upsert(entity);
+        return Promise.resolve(tenantLegacyUserMigrationConfig);
     }
 
     

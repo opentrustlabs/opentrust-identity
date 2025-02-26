@@ -401,4 +401,15 @@ export const TENANT_PASSWORD_CONFIG_QUERY = gql(`
             passwordRotationPeriodDays        
         }
     }
-`)
+`);
+
+export const LEGACY_USER_MIGRATION_CONFIGURATION_QUERY = gql(`
+    query getLegacyUserMigrationConfiguration($tenantId: String!) {
+        getLegacyUserMigrationConfiguration(tenantId: $tenantId) {
+            tenantId
+            authenticationUri
+            userProfileUri
+            usernameCheckUri
+        }
+    }
+`);

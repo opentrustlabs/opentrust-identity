@@ -93,6 +93,8 @@ type Mutation {
     removeDomainFromTenantRestrictedAuthentication(tenantId: String, domain: String!): String
     setTenantPasswordConfig(passwordConfigInput: PasswordConfigInput!): TenantPasswordConfig
     removeTenantPasswordConfig(tenantId: String!): String
+    setTenantLegacyUserMigrationConfig(tenantLegacyUserMigrationConfigInput: TenantLegacyUserMigrationConfigInput!): TenantLegacyUserMigrationConfig
+    removeTenantLegacyUserMigrationConfig(tenantId: String!): String
 
     ## Clients
     createClient(clientInput: ClientCreateInput!): Client
@@ -911,6 +913,13 @@ input TenantUpdateInput {
     allowForgotPassword: Boolean!
     defaultRateLimit: Int
     defaultRateLimitPeriodMinutes: Int
+}
+
+input TenantLegacyUserMigrationConfigInput {
+    tenantId: String!
+    authenticationUri: String!
+    userProfileUri: String!
+    usernameCheckUri: String!
 }
 
 input ClientCreateInput {

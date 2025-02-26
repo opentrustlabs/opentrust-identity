@@ -1,4 +1,4 @@
-import { AnonymousUserConfiguration, Contact, ObjectSearchResultItem, SearchResultType, Tenant, TenantLookAndFeel, TenantManagementDomainRel, TenantMetaData, TenantPasswordConfig } from "@/graphql/generated/graphql-types";
+import { AnonymousUserConfiguration, Contact, ObjectSearchResultItem, SearchResultType, Tenant, TenantLegacyUserMigrationConfig, TenantLookAndFeel, TenantManagementDomainRel, TenantMetaData, TenantPasswordConfig } from "@/graphql/generated/graphql-types";
 import { OIDCContext } from "@/graphql/graphql-context";
 import TenantDao from "@/lib/dao/tenant-dao";
 import { getTenantDaoImpl } from "@/utils/dao-utils";
@@ -234,6 +234,14 @@ class TenantService {
 
     public async removePasswordConfigFromTenant(tenantId: string): Promise<void>{
         return tenantDao.removePasswordConfigFromTenant(tenantId);
+    }
+
+    public async getLegacyUserMigrationConfiguration(tenantId: string): Promise<TenantLegacyUserMigrationConfig | null> {
+        return tenantDao.getLegacyUserMigrationConfiguration(tenantId);
+    }
+
+    public async setTenantLegacyUserMigrationConfiguration(tenantLegacyUserMigrationConfig: TenantLegacyUserMigrationConfig): Promise<TenantLegacyUserMigrationConfig | null> {
+        return tenantDao.setTenantLegacyUserMigrationConfiguration(tenantLegacyUserMigrationConfig)
     }
 
 
