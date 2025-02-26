@@ -580,8 +580,12 @@ const resolvers: Resolvers = {
                 userProfileUri: tenantLegacyUserMigrationConfigInput.userProfileUri,
                 usernameCheckUri: tenantLegacyUserMigrationConfigInput.usernameCheckUri
             }
+            if(tenantLegacyUserMigrationConfigInput.tenantId !== "fake tenant id"){
+                throw new GraphQLError("ERROR_UPDATING_USER_MIGRATION");
+            }
             const tenantService: TenantService = new TenantService(oidcContext);
             await tenantService.setTenantLegacyUserMigrationConfiguration(tenantLegacyUserMigrationConfig);
+            
             return tenantLegacyUserMigrationConfig;
         }
     }

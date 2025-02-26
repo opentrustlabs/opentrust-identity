@@ -33,6 +33,7 @@ const LegacyUserMigrationConfiguration: React.FC<LegacyUserMigrationConfiguratio
     // STATE VARIABLES
     const [markDirty, setMarkDirty] = React.useState<boolean>(false);
     const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
+    const [showReset, setShowReset] = React.useState<boolean>(false);
     const [tenantLegacyUserMigrationConfigInput, setTenantLegacyUserMigrationConfigInput] = React.useState<TenantLegacyUserMigrationConfigInput | null>(null);
     const [revertToInput, setRevertToInput] = React.useState<TenantLegacyUserMigrationConfigInput | null>(null);
 
@@ -44,14 +45,14 @@ const LegacyUserMigrationConfiguration: React.FC<LegacyUserMigrationConfiguratio
             tenantId: tenantId
         },
         onCompleted(data) {
-            if (data && data.getTenantPasswordConfig) {
+            if (data && data.getLegacyUserMigrationConfiguration) {
                 const config: TenantLegacyUserMigrationConfig = data.getLegacyUserMigrationConfiguration as TenantLegacyUserMigrationConfig;
                 initInput.authenticationUri = config.authenticationUri;
                 initInput.userProfileUri = config.userProfileUri;
                 initInput.usernameCheckUri = config.usernameCheckUri;
             }
-            setTenantLegacyUserMigrationConfigInput(initInput);
-            setRevertToInput(initInput)
+            setTenantLegacyUserMigrationConfigInput({...initInput});
+            setRevertToInput({...initInput});
         },
     });
 
@@ -65,9 +66,9 @@ const LegacyUserMigrationConfiguration: React.FC<LegacyUserMigrationConfiguratio
         },
         onError(error) {
             onUpdateEnd(false);
-            setTenantLegacyUserMigrationConfigInput(revertToInput);
-            setErrorMessage(error.message)
-        },
+            setErrorMessage(error.message);
+            setShowReset(true);
+        }
     });
 
     if (loading) return <DataLoading dataLoadingSize="md" color={null} />
@@ -107,11 +108,22 @@ const LegacyUserMigrationConfiguration: React.FC<LegacyUserMigrationConfiguratio
                     />
                 </Grid2>
             </Grid2>
-            <Stack sx={{ marginTop: "8px" }} direction={"row"} flexDirection={"row-reverse"} >
+            <Stack sx={{ marginTop: "8px" }} direction={"row"} flexDirection={"row-reverse"} >                
                 <Button
                     disabled={!markDirty}
                     onClick={() => { onUpdateStart(); mutateUserMigrationConfiguration() }}
-                    sx={{ border: "solid 1px lightgrey", borderRadius: "4px" }} >Update</Button>
+                    sx={{ border: "solid 1px lightgrey", borderRadius: "4px" }} >Update
+                </Button>
+                {showReset &&
+                    <Button 
+                        sx={{marginRight: "8px"}}
+                        onClick={() => {
+                            setTenantLegacyUserMigrationConfigInput({...revertToInput as TenantLegacyUserMigrationConfigInput});
+                            setRevertToInput({...revertToInput as TenantLegacyUserMigrationConfigInput});
+                            setShowReset(false);
+                        }}
+                    >Revert</Button>
+                }
             </Stack>
         </>
 
