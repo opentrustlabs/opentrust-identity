@@ -51,7 +51,7 @@ const TenantSelector: React.FC<TenantSelectorProps> = ({
                     sx={{paddingTop: "8px"}}
                     renderInput={(params) => <TextField {...params} label="Select Tenant" />}
                     options={createTenantOptions()}
-                    onChange={ (_, value: any) => setSelectedTenant(value)}
+                    onChange={ (_, value: any) => setSelectedTenant(value.id)}
                 />
             </DialogContent>
             <DialogActions>

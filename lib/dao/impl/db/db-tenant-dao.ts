@@ -1,11 +1,11 @@
-import { Tenant, TenantManagementDomainRel, AnonymousUserConfiguration, TenantLookAndFeel, Contact, TenantPasswordConfig, SearchResultType, ObjectSearchResultItem, LoginFailurePolicy, TenantLegacyUserMigrationConfig } from "@/graphql/generated/graphql-types";
+import { Tenant, TenantManagementDomainRel, TenantAnonymousUserConfiguration, TenantLookAndFeel, Contact, TenantPasswordConfig, SearchResultType, ObjectSearchResultItem, LoginFailurePolicy, TenantLegacyUserMigrationConfig } from "@/graphql/generated/graphql-types";
 import TenantDao from "../../tenant-dao";
 import { TenantEntity } from "@/lib/entities/tenant-entity";
 import connection  from "@/lib/data-sources/db";
 import { TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import { GraphQLError } from "graphql";
 import TenantManagementDomainRelEntity from "@/lib/entities/tenant-management-domain-rel-entity";
-import AnonymousUserConfigurationEntity from "@/lib/entities/anonymous-user-configuration-entity";
+import TenantAnonymousUserConfigurationEntity from "@/lib/entities/tenant-anonymous-user-configuration-entity";
 import TenantPasswordConfigEntity from "@/lib/entities/tenant-password-config-entity";
 import TenantLookAndFeelEntity from "@/lib/entities/tenant-look-and-feel-entity";
 import ContactEntity from "@/lib/entities/contact-entity";
@@ -170,16 +170,16 @@ class DBTenantDao extends TenantDao {
         return Promise.resolve(model);
     }
     
-    public async createAnonymousUserConfiguration(tenantId: string, anonymousUserConfiguration: AnonymousUserConfiguration): Promise<AnonymousUserConfiguration> {
+    public async createAnonymousUserConfiguration(tenantId: string, anonymousUserConfiguration: TenantAnonymousUserConfiguration): Promise<TenantAnonymousUserConfiguration> {
         const em = connection.em.fork();
-        const configEntity: AnonymousUserConfigurationEntity = new AnonymousUserConfigurationEntity(anonymousUserConfiguration);
+        const configEntity: TenantAnonymousUserConfigurationEntity = new TenantAnonymousUserConfigurationEntity(anonymousUserConfiguration);
         await em.persistAndFlush(configEntity);
         return Promise.resolve(anonymousUserConfiguration);
     }
 
-    public async updateAnonymousUserConfiguration(anonymousUserConfiguration: AnonymousUserConfiguration): Promise<AnonymousUserConfiguration> {
+    public async updateAnonymousUserConfiguration(anonymousUserConfiguration: TenantAnonymousUserConfiguration): Promise<TenantAnonymousUserConfiguration> {
         const em = connection.em.fork();
-        const e: AnonymousUserConfigurationEntity = new AnonymousUserConfigurationEntity(anonymousUserConfiguration);
+        const e: TenantAnonymousUserConfigurationEntity = new TenantAnonymousUserConfigurationEntity(anonymousUserConfiguration);
         em.upsert(e);
         await em.flush();
         return Promise.resolve(e);
@@ -187,7 +187,7 @@ class DBTenantDao extends TenantDao {
 
     public async deleteAnonymousUserConfiguration(tenantId: string): Promise<void> {
         const em = connection.em.fork();        
-        await em.nativeDelete(AnonymousUserConfigurationEntity, {
+        await em.nativeDelete(TenantAnonymousUserConfigurationEntity, {
             tenantId: tenantId
         });
         await em.flush();

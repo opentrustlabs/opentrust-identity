@@ -33,9 +33,9 @@ const LegacyUserMigrationConfiguration: React.FC<LegacyUserMigrationConfiguratio
     // STATE VARIABLES
     const [markDirty, setMarkDirty] = React.useState<boolean>(false);
     const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
-    const [showReset, setShowReset] = React.useState<boolean>(false);
+    // const [showReset, setShowReset] = React.useState<boolean>(false);
     const [tenantLegacyUserMigrationConfigInput, setTenantLegacyUserMigrationConfigInput] = React.useState<TenantLegacyUserMigrationConfigInput | null>(null);
-    const [revertToInput, setRevertToInput] = React.useState<TenantLegacyUserMigrationConfigInput | null>(null);
+    //const [revertToInput, setRevertToInput] = React.useState<TenantLegacyUserMigrationConfigInput | null>(null);
 
 
     // GRAPHQL FUNCTIONS
@@ -52,7 +52,7 @@ const LegacyUserMigrationConfiguration: React.FC<LegacyUserMigrationConfiguratio
                 initInput.usernameCheckUri = config.usernameCheckUri;
             }
             setTenantLegacyUserMigrationConfigInput({...initInput});
-            setRevertToInput({...initInput});
+            // setRevertToInput({...initInput});
         },
     });
 
@@ -67,7 +67,7 @@ const LegacyUserMigrationConfiguration: React.FC<LegacyUserMigrationConfiguratio
         onError(error) {
             onUpdateEnd(false);
             setErrorMessage(error.message);
-            setShowReset(true);
+            //setShowReset(true);
         }
     });
 
@@ -114,7 +114,7 @@ const LegacyUserMigrationConfiguration: React.FC<LegacyUserMigrationConfiguratio
                     onClick={() => { onUpdateStart(); mutateUserMigrationConfiguration() }}
                     sx={{ border: "solid 1px lightgrey", borderRadius: "4px" }} >Update
                 </Button>
-                {showReset &&
+                {/* {showReset &&
                     <Button 
                         sx={{marginRight: "8px"}}
                         onClick={() => {
@@ -122,8 +122,8 @@ const LegacyUserMigrationConfiguration: React.FC<LegacyUserMigrationConfiguratio
                             setRevertToInput({...revertToInput as TenantLegacyUserMigrationConfigInput});
                             setShowReset(false);
                         }}
-                    >Revert</Button>
-                }
+                    >Revert Changes</Button>
+                } */}
             </Stack>
         </>
 

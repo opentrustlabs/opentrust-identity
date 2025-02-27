@@ -23,6 +23,7 @@ import { TENANT_UPDATE_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import LoginFailureConfiguration from "./login-failure-configuration";
 import PasswordRulesConfiguration from "./password-rules-config";
 import LegacyUserMigrationConfiguration from "./legacy-user-migration-configuration";
+import AnonymousUserConfiguration from "./anonymous-user-configuration";
 
 export interface TenantDetailProps {
     tenantId: string
@@ -365,34 +366,18 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                     
                                 </AccordionSummary>
                                 <AccordionDetails>
-
-
-                                    <Grid2 container size={12} spacing={2}>
-                                        <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
-                                            <div>Default Country Code</div>
-                                            <TextField name="tenantType" id="tenantType" value={"US"} fullWidth={true} size="small" />
-                                        </Grid2>
-                                        <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
-                                            <div>Default Language Code</div>
-                                            <TextField name="tenantType" id="tenantType" value={"en"} fullWidth={true} size="small" />
-                                        </Grid2>
-                                        <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
-                                            <div>Token Time-To-Live (in seconds)</div>
-                                            <TextField name="tenantType" id="tenantType" value={"30000000"} fullWidth={true} size="small" />
-                                        </Grid2>
-                                        <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
-                                            <div>Scope Values</div>
-                                            <TextField name="tenantType" id="tenantType" value={"5"} fullWidth={true} size="small" />
-                                        </Grid2>
-                                        <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
-                                            <div>Member Groups</div>
-                                            <TextField name="tenantType" id="tenantType" value={"4"} fullWidth={true} size="small" />
-                                        </Grid2>
-                                    </Grid2>
-                                    <Stack sx={{marginTop: "8px"}} direction={"row"} flexDirection={"row-reverse"} >
-                                        <Button sx={{border: "solid 1px lightgrey", borderRadius: "4px"}} >Update</Button>
-                                    </Stack>
-
+                                    <AnonymousUserConfiguration
+                                        tenant={tenant}
+                                        onUpdateEnd={(success: boolean) => {
+                                            setShowMutationBackdrop(false);
+                                            if(success){
+                                                setShowMutationSnackbar(true);
+                                            }
+                                        }}
+                                        onUpdateStart={() => {
+                                            setShowMutationBackdrop(true);                                            
+                                        }}
+                                    />
                                 </AccordionDetails>
                             </Accordion>
                         </Grid2>

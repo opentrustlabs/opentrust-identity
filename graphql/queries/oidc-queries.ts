@@ -413,3 +413,14 @@ export const LEGACY_USER_MIGRATION_CONFIGURATION_QUERY = gql(`
         }
     }
 `);
+
+export const TENANT_ANONYMOUS_USER_CONFIGURATION_QUERY = gql(`
+    query getAnonymousUserConfiguration($tenantId: String!){
+        getAnonymousUserConfiguration(tenantId: $tenantId){
+            tenantId 
+            defaultcountrycode
+            defaultlangugecode
+            tokenttlseconds
+        }
+    }
+`);

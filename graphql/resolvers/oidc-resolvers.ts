@@ -1,6 +1,6 @@
 import ClientService from "@/lib/service/client-service";
 import TenantService from "@/lib/service/tenant-service";
-import { Resolvers, QueryResolvers, MutationResolvers, Tenant, Client, SigningKey, Scope, AuthenticationGroup, AuthorizationGroup, FederatedOidcProvider, ContactInput, Contact, LoginUserNameHandlerResponse, LoginUserNameHandlerAction, LoginAuthenticationHandlerResponse, LoginAuthenticationHandlerAction, SecondFactorType, PortalUserProfile, User, LoginFailurePolicy, TenantPasswordConfig, TenantLegacyUserMigrationConfig } from "@/graphql/generated/graphql-types";
+import { Resolvers, QueryResolvers, MutationResolvers, Tenant, Client, SigningKey, Scope, AuthenticationGroup, AuthorizationGroup, FederatedOidcProvider, ContactInput, Contact, LoginUserNameHandlerResponse, LoginUserNameHandlerAction, LoginAuthenticationHandlerResponse, LoginAuthenticationHandlerAction, SecondFactorType, PortalUserProfile, User, LoginFailurePolicy, TenantPasswordConfig, TenantLegacyUserMigrationConfig, TenantAnonymousUserConfiguration } from "@/graphql/generated/graphql-types";
 import SigningKeysService from "@/lib/service/keys-service";
 import ScopeService from "@/lib/service/scope-service";
 import GroupService from "@/lib/service/group-service";
@@ -442,7 +442,8 @@ const resolvers: Resolvers = {
                 groupId: "",
                 groupName: groupInput.groupName,
                 tenantId: groupInput.tenantId,
-                groupDescription: groupInput.groupDescription
+                groupDescription: groupInput.groupDescription,
+                allowForAnonymousUsers: groupInput.allowForAnonymousUsers
             };
             await groupService.createGroup(group);
             return group;
@@ -454,7 +455,8 @@ const resolvers: Resolvers = {
                 groupId: groupInput.groupId,
                 groupName: groupInput.groupName,
                 tenantId: groupInput.tenantId,
-                groupDescription: groupInput.groupDescription
+                groupDescription: groupInput.groupDescription,
+                allowForAnonymousUsers: groupInput.allowForAnonymousUsers
             };
             await groupService.updateGroup(group);
             return group;
@@ -580,13 +582,22 @@ const resolvers: Resolvers = {
                 userProfileUri: tenantLegacyUserMigrationConfigInput.userProfileUri,
                 usernameCheckUri: tenantLegacyUserMigrationConfigInput.usernameCheckUri
             }
-            if(tenantLegacyUserMigrationConfigInput.tenantId !== "fake tenant id"){
-                throw new GraphQLError("ERROR_UPDATING_USER_MIGRATION");
-            }
             const tenantService: TenantService = new TenantService(oidcContext);
-            await tenantService.setTenantLegacyUserMigrationConfiguration(tenantLegacyUserMigrationConfig);
-            
+            await tenantService.setTenantLegacyUserMigrationConfiguration(tenantLegacyUserMigrationConfig);            
             return tenantLegacyUserMigrationConfig;
+        },
+        setTenantAnonymousUserConfig: async(_: any, { tenantAnonymousUserConfigInput }, oidcContext) => {
+            // TODO
+            // Implement the service and dao functions.
+            //const tenantService: TenantService = new TenantService(oidcContext);
+            const anonymousUserConfig: TenantAnonymousUserConfiguration = {
+                tenantId: tenantAnonymousUserConfigInput.tenantId,
+                tokenttlseconds: tenantAnonymousUserConfigInput.tokenttlseconds,
+                defaultcountrycode: tenantAnonymousUserConfigInput.defaultcountrycode,
+                defaultlangugecode: tenantAnonymousUserConfigInput.defaultlangugecode
+            }
+            //await tenantService.setTenantAnonymousUserConfig(anonymousUserConfig);
+            return anonymousUserConfig;
         }
     }
 }

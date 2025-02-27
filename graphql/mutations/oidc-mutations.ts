@@ -86,3 +86,14 @@ export const LEGACY_USER_MIGRATION_CONFIGURATION_MUTATION = gql(`
         }
    }
 `);
+
+export const TENANT_ANONYMOUS_USER_CONFIGURATION_MUTATION = gql(`
+    mutation setTenantAnonymousUserConfig($tenantAnonymousUserConfigInput: TenantAnonymousUserConfigInput!) {
+        setTenantAnonymousUserConfig(tenantAnonymousUserConfigInput: $tenantAnonymousUserConfigInput) {
+            tenantId
+            defaultcountrycode
+            defaultlangugecode 
+            tokenttlseconds
+        }
+    }
+`);

@@ -13,7 +13,7 @@ type Query {
     getTenantMetaData(tenantId: String!): TenantMetaData
     getDomainsForTenantManagement(tenantId: String!): [String]
     getDomainsForTenantAuthentication(tenantId: String!): [String]
-    getAnonymousUserConfiguration(tenantId: String!): AnonymousUserConfiguration
+    getAnonymousUserConfiguration(tenantId: String!): TenantAnonymousUserConfiguration
     getLegacyUserMigrationConfiguration(tenantId: String!): TenantLegacyUserMigrationConfig
     getTenantLookAndFeel(tenantId: String!): TenantLookAndFeel
     getTenantPasswordConfig(tenantId: String!): TenantPasswordConfig
@@ -95,6 +95,8 @@ type Mutation {
     removeTenantPasswordConfig(tenantId: String!): String
     setTenantLegacyUserMigrationConfig(tenantLegacyUserMigrationConfigInput: TenantLegacyUserMigrationConfigInput!): TenantLegacyUserMigrationConfig
     removeTenantLegacyUserMigrationConfig(tenantId: String!): String
+    setTenantAnonymousUserConfig(tenantAnonymousUserConfigInput: TenantAnonymousUserConfigInput!): TenantAnonymousUserConfiguration
+    removeTenantAnonymousUserConfig(tenantId: String!): String
 
     ## Clients
     createClient(clientInput: ClientCreateInput!): Client
@@ -225,13 +227,11 @@ type Tenant {
 }
 
 
-type AnonymousUserConfiguration {
+type TenantAnonymousUserConfiguration {
     tenantId: String!
     defaultcountrycode: String
     defaultlangugecode: String
     tokenttlseconds: Int!
-    scopeids: [String]
-    groupids: [String]
 }
 
 
@@ -428,6 +428,7 @@ type AuthorizationGroup {
     groupName: String!
     groupDescription: String
     default: Boolean!
+    allowForAnonymousUsers: Boolean!
 }
 
 type AuthorizationGroupUserRel {
@@ -863,13 +864,11 @@ input PasswordConfigInput {
     passwordHistoryPeriod: Int
 }
 
-input AnonymousUserConfigInput {
+input TenantAnonymousUserConfigInput {
     tenantId: String!
     defaultcountrycode: String
     defaultlangugecode: String
     tokenttlseconds: Int!
-    scopeids: [String]
-    groupids: [String]
 }
 
 input TenantCreateInput {
@@ -1020,6 +1019,7 @@ input AuthorizationGroupCreateInput {
     groupName: String!
     groupDescription: String
     default: Boolean!
+    allowForAnonymousUsers: Boolean!
 }
 
 input AuthorizationGroupUpdateInput {
@@ -1028,6 +1028,7 @@ input AuthorizationGroupUpdateInput {
     groupName: String!
     groupDescription: String
     default: Boolean!
+    allowForAnonymousUsers: Boolean!
 }
 
 ## Scope constraint schemas

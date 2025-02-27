@@ -184,6 +184,7 @@ create TABLE authorization_group (
     groupname VARCHAR(128) NOT NULL,
     groupdescription VARCHAR(256),
     defaultgroup BOOLEAN NOT NULL,
+    allowforanonymoususers BOOLEAN NOT NULL,
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid) 
 );
 
@@ -410,13 +411,11 @@ create TABLE change_event (
 CREATE INDEX change_event_objectid_idx ON change_event(objectid);
 CREATE INDEX change_event_objecttype_idx ON change_event(objecttype);
 
-create TABLE anonymous_user_configuration (
+create TABLE tenant_anonymous_user_configuration (
     tenantid VARCHAR(64) PRIMARY KEY,
     defaultcountrycode VARCHAR(8) NOT NULL,
     defaultlanguagecode VARCHAR(8) NOT NULL,
-    tokenttlseconds INT NOT NULL,
-    scopeids VARCHAR(4096),
-    groupids VARCHAR(4096),
+    tokenttlseconds INT NOT NULL,    
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid)
 );
 

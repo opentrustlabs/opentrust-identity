@@ -8,7 +8,7 @@ import AuthenticationGroupEntity from "@/lib/entities/authentication-group-entit
 import UserEntity from "@/lib/entities/user-entity";
 import UserCredentialEntity from "@/lib/entities/user-credential-entity";
 import { QueryOrder } from "@mikro-orm/core";
-import { MFA_FACTOR_AUTH_TYPE_FIDO2, PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS, SEARCH_INDEX_OBJECT_SEARCH, VERIFICATION_TOKEN_TYPE_PASSWORD_RESET } from "@/utils/consts";
+import { MFA_AUTH_TYPE_FIDO2, PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS, SEARCH_INDEX_OBJECT_SEARCH, VERIFICATION_TOKEN_TYPE_PASSWORD_RESET } from "@/utils/consts";
 import { bcryptHashPassword, bcryptValidatePassword, generateRandomToken, pbkdf2HashPassword, sha256HashPassword } from "@/utils/dao-utils";
 import UserFailedLoginAttemptsEntity from "@/lib/entities/user-failed-login-attempts-entity";
 import UserMfaRelEntity from "@/lib/entities/user-mfa-rel-entity";
@@ -19,17 +19,6 @@ import { Client } from "@opensearch-project/opensearch";
 
 const searchClient: Client = getOpenSearchClient();
 
-
-const domainTenantMap: Map<string, string> = new Map([
-    ["milliporesigma.com", "8256c1db-cd40-48d1-914f-71672b4d42fa"], 
-    ["pfizer.com", "b863b09d-8103-4b21-a84c-1ca556959029"], 
-    ["homedepot.com", "2a303f6d-0ebc-4590-9d12-7ebab6531d7e"],
-    ["amgen.com", "73d00cb0-f058-43b0-8fb4-d0e48ff33ba2"], 
-    ["airbnb.com", "c42c29cb-1bf7-4f6a-905e-5f74760218e2"]
-]);
-
-//["milliporesigma.com", "pfizer.com", "homedepot.com", "amgen.com", "airbnb.com"];
-//tenantids = ["", "", "", "", ""];
 class DBIdentityDao extends IdentityDao {
 
 
@@ -123,7 +112,7 @@ class DBIdentityDao extends IdentityDao {
                 userId: user.userId,
                 mfaType: mfa.mfaType
             };
-            if(mfa.mfaType === MFA_FACTOR_AUTH_TYPE_FIDO2){
+            if(mfa.mfaType === MFA_AUTH_TYPE_FIDO2){
                 // create the challenge and save it for the next step
                 const challenge: string = generateRandomToken(32, "base64url");
                 r.challenge = challenge;
