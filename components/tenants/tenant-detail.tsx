@@ -368,6 +368,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                 <AccordionDetails>
                                     <AnonymousUserConfiguration
                                         tenant={tenant}
+                                        allowAnonymousUsers={tenantInput.allowAnonymousUsers}
                                         onUpdateEnd={(success: boolean) => {
                                             setShowMutationBackdrop(false);
                                             if(success){
@@ -397,6 +398,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                 <AccordionDetails>
                                     <LegacyUserMigrationConfiguration
                                         tenantId={tenant.tenantId}
+                                        allowLegacyUserMigration={tenantInput.migrateLegacyUsers}
                                         onUpdateEnd={(success: boolean) => {
                                             setShowMutationBackdrop(false);
                                             if(success){
