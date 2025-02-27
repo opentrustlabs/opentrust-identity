@@ -221,7 +221,7 @@ class DBTenantDao extends TenantDao {
         return Promise.resolve();
     }
 
-    public async getTenantLookAndFeed(tenantId: string): Promise<TenantLookAndFeel | null> {
+    public async getTenantLookAndFeel(tenantId: string): Promise<TenantLookAndFeel | null> {
         const em = connection.em.fork();
         const entity: TenantLookAndFeelEntity | null = await em.findOne(TenantLookAndFeelEntity, {tenantid: tenantId});
         return entity ? Promise.resolve(entity?.toModel()) : Promise.resolve(null);

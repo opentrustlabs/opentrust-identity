@@ -645,6 +645,7 @@ type TenantLookAndFeel {
     authenticationheaderbackgroundcolor: String
     authenticationheadertextcolor: String
     authenticationlogo: String
+    authenticationlogomimetype: String
     authenticationheadertext: String
     footerlinks: [FooterLink]
 }

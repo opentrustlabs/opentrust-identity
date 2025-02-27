@@ -686,3 +686,24 @@ export const ALLOWED_OBJECT_SEARCH_SORT_FIELDS = ["name", "description", "email"
 export const ALLOWED_SEARCH_DIRECTIONS=["asc", "desc"];
 export const SEARCH_INDEX_OBJECT_SEARCH="object_search";
 export const SEARCH_INDEX_REL_SEARCH="rel_search";
+
+
+
+// ************************************************************************** //
+// 
+//                  SEARCH CONSTANTS
+// 
+// ************************************************************************** //
+export const IMGAGE_MIME_TYPES_MAP: Map<string, string> = new Map([
+    ["svg", "image/svg+xml"],
+    ["png", "image/png"],
+    ["gif", "image/gif"],
+    ["jpeg", "image/jpeg"],
+    ["jpg", "image/jpeg"],
+    ["tif", "image/tiff"],
+    ["tiff", "image/tiff"],
+    ["webp", "image/webp"],
+    ["apng", "image/apng"],
+    ["avif", "image/avif"],
+    ["bmp", "image/bmp"]
+]);
