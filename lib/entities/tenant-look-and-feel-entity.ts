@@ -17,6 +17,7 @@ class TenantLookAndFeelEntity {
             this.authenticationheadertext = m.authenticationheadertext;
             this.authenticationheadertextcolor = m.authenticationheadertextcolor;
             this.authenticationlogo = Buffer.from(m.authenticationlogo || "");
+            this.authenticationlogomimetype = m.authenticationlogomimetype;
         }
     }
     __typename?: "TenantLookAndFeel" | undefined;
@@ -47,6 +48,9 @@ class TenantLookAndFeelEntity {
 
     @Property({fieldName: "authenticationlogo"})
     authenticationlogo?: Buffer | undefined;
+
+    @Property({fieldName: "authenticationlogomimetype"})
+    authenticationlogomimetype: Maybe<string> | undefined;
     
     footerlinks?: Maybe<Maybe<FooterLink>[]> | undefined;
     
@@ -61,7 +65,8 @@ class TenantLookAndFeelEntity {
             authenticationheaderbackgroundcolor: this.authenticationheaderbackgroundcolor,
             authenticationheadertext: this.authenticationheadertext,
             authenticationheadertextcolor: this.authenticationheadertextcolor,
-            authenticationlogo: this.authenticationlogo?.toString("utf-8")        
+            authenticationlogo: this.authenticationlogo?.toString("utf-8"),
+            authenticationlogomimetype: this.authenticationlogomimetype    
         };
         return m;
     }

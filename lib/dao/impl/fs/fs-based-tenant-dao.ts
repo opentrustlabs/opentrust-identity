@@ -1,4 +1,4 @@
-import { AnonymousUserConfiguration, Contact, Tenant, TenantLookAndFeel, TenantManagementDomainRel, TenantPasswordConfig } from "@/graphql/generated/graphql-types";
+import { TenantAnonymousUserConfiguration, Contact, LoginFailurePolicy, Tenant, TenantLegacyUserMigrationConfig, TenantLookAndFeel, TenantManagementDomainRel, TenantPasswordConfig } from "@/graphql/generated/graphql-types";
 import TenantDAO from "../../tenant-dao";
 import { writeFileSync } from "node:fs";
 import path from "node:path";
@@ -8,9 +8,24 @@ import { getFileContents } from "@/utils/dao-utils";
 
 const dataDir = process.env.FS_BASED_DATA_DIR ?? path.join(__dirname);
 class FSBasedTenantDao extends TenantDAO {
+    getTenantPasswordConfig(tenantId: string): Promise<TenantPasswordConfig | null> {
+        throw new Error("Method not implemented.");
+    }
+    updateLoginFailurePolicy(loginFailurePolicy: LoginFailurePolicy): Promise<LoginFailurePolicy> {
+        throw new Error("Method not implemented.");
+    }
+    getLegacyUserMigrationConfiguration(tenantId: string): Promise<TenantLegacyUserMigrationConfig | null> {
+        throw new Error("Method not implemented.");
+    }
+    setTenantLegacyUserMigrationConfiguration(tenantLegacyUserMigrationConfig: TenantLegacyUserMigrationConfig): Promise<TenantLegacyUserMigrationConfig | null> {
+        throw new Error("Method not implemented.");
+    }
+    removeLegacyUserMigrationConfiguration(tenantId: string): Promise<void> {
+        throw new Error("Method not implemented.");
+    }
 
     
-    getTenantLookAndFeed(tenantId: string): Promise<TenantLookAndFeel | null> {
+    getTenantLookAndFeel(tenantId: string): Promise<TenantLookAndFeel | null> {
         throw new Error("Method not implemented.");
     }
 
@@ -31,10 +46,10 @@ class FSBasedTenantDao extends TenantDAO {
     }
 
 
-    public async createAnonymousUserConfiguration(tenantId: string, anonymousUserConfiguration: AnonymousUserConfiguration): Promise<AnonymousUserConfiguration> {
+    public async createAnonymousUserConfiguration(tenantId: string, anonymousUserConfiguration: TenantAnonymousUserConfiguration): Promise<TenantAnonymousUserConfiguration> {
         throw new Error("Method not implemented.");
     }
-    public async updateAnonymousUserConfiguration(anonymousUserConfiguration: AnonymousUserConfiguration): Promise<AnonymousUserConfiguration> {
+    public async updateAnonymousUserConfiguration(anonymousUserConfiguration: TenantAnonymousUserConfiguration): Promise<TenantAnonymousUserConfiguration> {
         throw new Error("Method not implemented.");
     }
     public async deleteAnonymousUserConfiguration(configurationId: string): Promise<void> {

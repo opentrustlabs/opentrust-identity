@@ -36,7 +36,7 @@ const ManagementHeader: React.FC<ManagementHeaderProps> = ({
                     direction={"row"}
                     justifyItems={"center"}
                     alignItems={"center"}                    
-                >                    
+                >                  
                     {tenantMetaData.tenantLookAndFeel?.adminheadertext &&                        
                         <div style={{verticalAlign: "center", fontWeight: "bold", marginLeft: "8px"}}>{tenantMetaData.tenantLookAndFeel?.adminheadertext}</div>                        
                     }

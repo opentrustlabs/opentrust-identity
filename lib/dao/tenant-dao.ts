@@ -14,7 +14,7 @@ abstract class TenantDao {
  
     abstract getTenantById(tenantId: string): Promise<Tenant | null>;
 
-    abstract getTenantLookAndFeed(tenantId: string): Promise<TenantLookAndFeel | null>;
+    abstract getTenantLookAndFeel(tenantId: string): Promise<TenantLookAndFeel | null>;
 
     abstract createTenant(tenant: Tenant): Promise<Tenant | null>;
 

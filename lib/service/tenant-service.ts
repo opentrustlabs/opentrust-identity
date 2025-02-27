@@ -203,7 +203,7 @@ class TenantService {
         if(!tenant){
             throw new GraphQLError("ERROR_TENANT_DOES_NOT_EXIST");
         }
-        const tenantLookAndFeel: TenantLookAndFeel | null = await tenantDao.getTenantLookAndFeed(tenantId);
+        const tenantLookAndFeel: TenantLookAndFeel | null = await tenantDao.getTenantLookAndFeel(tenantId);
         return Promise.resolve(
             {
                 tenant: tenant,
