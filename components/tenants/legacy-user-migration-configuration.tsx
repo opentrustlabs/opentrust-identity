@@ -13,12 +13,14 @@ import { LEGACY_USER_MIGRATION_CONFIGURATION_MUTATION } from "@/graphql/mutation
 
 export interface LegacyUserMigrationConfigurationProps {
     tenantId: string,
+    allowLegacyUserMigration: boolean,
     onUpdateStart: () => void;
     onUpdateEnd: (success: boolean) => void;
 }
 
 const LegacyUserMigrationConfiguration: React.FC<LegacyUserMigrationConfigurationProps> = ({
     tenantId,
+    allowLegacyUserMigration,
     onUpdateEnd,
     onUpdateStart
 }) => {
@@ -86,7 +88,8 @@ const LegacyUserMigrationConfiguration: React.FC<LegacyUserMigrationConfiguratio
                 <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
                     <div>Authentication URI</div>
                     <TextField name="authenticationUri" id="authenticationUri"
-                        value={tenantLegacyUserMigrationConfigInput.authenticationUri}
+                        disabled={allowLegacyUserMigration !== true}
+                        value={allowLegacyUserMigration ? tenantLegacyUserMigrationConfigInput.authenticationUri : ""}
                         onChange={(evt) => { tenantLegacyUserMigrationConfigInput.authenticationUri = evt.target.value; setTenantLegacyUserMigrationConfigInput({ ...tenantLegacyUserMigrationConfigInput }); setMarkDirty(true); }}
                         fullWidth={true} size="small"
                     />
@@ -94,7 +97,8 @@ const LegacyUserMigrationConfiguration: React.FC<LegacyUserMigrationConfiguratio
                 <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
                     <div>User Profile URI</div>
                     <TextField name="userProfileUri" id="userProfileUri"
-                        value={tenantLegacyUserMigrationConfigInput.userProfileUri}
+                        disabled={allowLegacyUserMigration !== true}
+                        value={allowLegacyUserMigration ? tenantLegacyUserMigrationConfigInput.userProfileUri : ""}
                         onChange={(evt) => { tenantLegacyUserMigrationConfigInput.userProfileUri = evt.target.value; setTenantLegacyUserMigrationConfigInput({ ...tenantLegacyUserMigrationConfigInput }); setMarkDirty(true); }}
                         fullWidth={true} size="small"
                     />
@@ -102,7 +106,8 @@ const LegacyUserMigrationConfiguration: React.FC<LegacyUserMigrationConfiguratio
                 <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
                     <div>User Name-Check URI</div>
                     <TextField name="namecheckUri" id="namecheckUri"
-                        value={tenantLegacyUserMigrationConfigInput.usernameCheckUri}
+                        disabled={allowLegacyUserMigration !== true}
+                        value={allowLegacyUserMigration ? tenantLegacyUserMigrationConfigInput.usernameCheckUri: ""}
                         onChange={(evt) => { tenantLegacyUserMigrationConfigInput.usernameCheckUri = evt.target.value; setTenantLegacyUserMigrationConfigInput({ ...tenantLegacyUserMigrationConfigInput }); setMarkDirty(true); }}
                         fullWidth={true} size="small"
                     />
@@ -110,7 +115,7 @@ const LegacyUserMigrationConfiguration: React.FC<LegacyUserMigrationConfiguratio
             </Grid2>
             <Stack sx={{ marginTop: "8px" }} direction={"row"} flexDirection={"row-reverse"} >                
                 <Button
-                    disabled={!markDirty}
+                    disabled={!allowLegacyUserMigration || !markDirty}
                     onClick={() => { onUpdateStart(); mutateUserMigrationConfiguration() }}
                     sx={{ border: "solid 1px lightgrey", borderRadius: "4px" }} >Update
                 </Button>

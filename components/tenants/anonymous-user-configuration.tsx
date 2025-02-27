@@ -16,12 +16,14 @@ import { COUNTRY_CODES, CountryCodeDef, LANGUAGE_CODES, LanguageCodeDef } from "
 
 export interface AnonymousUserConfigurationProps {
     tenant: Tenant,
+    allowAnonymousUsers: boolean,
     onUpdateStart: () => void;
     onUpdateEnd: (success: boolean) => void;
 }
 
 const AnonymousUserConfiguration: React.FC<AnonymousUserConfigurationProps> = ({
     tenant,
+    allowAnonymousUsers,
     onUpdateEnd,
     onUpdateStart
 }) => {
@@ -75,39 +77,42 @@ const AnonymousUserConfiguration: React.FC<AnonymousUserConfigurationProps> = ({
     });
 
     const getDefaultCountryCodeDef = (countryCode: string) => {
-        const ccDef: CountryCodeDef | undefined = COUNTRY_CODES.find(
-            (cc: CountryCodeDef) => cc.countryCode === countryCode
-        )
-        if(ccDef){
-            return {
-                id: ccDef.countryCode,
-                label: ccDef.country
+        let retVal = {
+            id: "",
+            label: ""
+        };
+        if(allowAnonymousUsers){
+            const ccDef: CountryCodeDef | undefined = COUNTRY_CODES.find(
+                (cc: CountryCodeDef) => cc.countryCode === countryCode
+            )
+            if(ccDef){
+                retVal = {
+                    id: ccDef.countryCode,
+                    label: ccDef.country
+                }
             }
         }
-        else{
-            return {
-                id: "",
-                label: ""
-            }
-        }
+        return retVal;        
     }
 
     const getDefaultLanguageCodeDef = (languageCode: string) => {
+        let retVal = {
+            id: "",
+            label: ""
+        }
+        if(allowAnonymousUsers){
         const lDef: LanguageCodeDef | undefined = LANGUAGE_CODES.find(
             (lc: LanguageCodeDef) => lc.languageCode === languageCode
         );
         if(lDef){
-            return {
+            retVal = {
                 id: lDef.languageCode,
                 label: lDef.language
             }
         }
-        else{
-            return {
-                id: "",
-                label: ""
-            }
         }
+        return retVal;
+        
     }
 
     if (loading) return <DataLoading dataLoadingSize="md" color={null} />
@@ -125,7 +130,8 @@ const AnonymousUserConfiguration: React.FC<AnonymousUserConfigurationProps> = ({
                 <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
                     <div>Default Country</div>
                     <Autocomplete
-                        id="defaultCountry"                        
+                        id="defaultCountry"
+                        disabled={allowAnonymousUsers !== true}
                         sx={{paddingTop: "8px"}}
                         size="small"
                         renderInput={(params) => <TextField {...params} label="" />}
@@ -137,8 +143,7 @@ const AnonymousUserConfiguration: React.FC<AnonymousUserConfigurationProps> = ({
                             )
                         }                        
                         value={getDefaultCountryCodeDef(tenantAnonymousUserConfigInput.defaultcountrycode || "")}
-                        onChange={ (_, value: any) => {      
-                            
+                        onChange={ (_, value: any) => {                            
                             tenantAnonymousUserConfigInput.defaultcountrycode = value ? value.id : "";
                             setTenantAnonymousUserConfigInput({ ...tenantAnonymousUserConfigInput });
                             setMarkDirty(true);
@@ -148,7 +153,8 @@ const AnonymousUserConfiguration: React.FC<AnonymousUserConfigurationProps> = ({
                 <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
                     <div>Default Language</div>
                     <Autocomplete
-                        id="defaultLanguage"                        
+                        id="defaultLanguage"
+                        disabled={allowAnonymousUsers !== true}
                         sx={{paddingTop: "8px"}}
                         size="small"
                         renderInput={(params) => <TextField {...params} label="" />}
@@ -170,7 +176,8 @@ const AnonymousUserConfiguration: React.FC<AnonymousUserConfigurationProps> = ({
                 <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
                     <div>Token Time-To-Live (in seconds)</div>
                     <TextField name="tokenTTLSeconds" id="tokenTTLSeconds"
-                        value={tenantAnonymousUserConfigInput.tokenttlseconds > 0 ? tenantAnonymousUserConfigInput.tokenttlseconds : ""}
+                        disabled={allowAnonymousUsers !== true}
+                        value={ allowAnonymousUsers !== true ? "" : tenantAnonymousUserConfigInput.tokenttlseconds > 0 ? tenantAnonymousUserConfigInput.tokenttlseconds : ""}
                         onChange={(evt) => { tenantAnonymousUserConfigInput.tokenttlseconds = parseInt(evt.target.value || "0"); setTenantAnonymousUserConfigInput({ ...tenantAnonymousUserConfigInput }); setMarkDirty(true); }}
                         fullWidth={true} size="small"
                     />
@@ -178,7 +185,7 @@ const AnonymousUserConfiguration: React.FC<AnonymousUserConfigurationProps> = ({
             </Grid2>
             <Stack sx={{ marginTop: "8px" }} direction={"row"} flexDirection={"row-reverse"} >                
                 <Button
-                    disabled={!markDirty}
+                    disabled={!allowAnonymousUsers || !markDirty}
                     onClick={() => { onUpdateStart(); mutateAnonymousUserConfiguration() }}
                     sx={{ border: "solid 1px lightgrey", borderRadius: "4px" }} >Update
                 </Button>
