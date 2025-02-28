@@ -1,6 +1,6 @@
 import ClientService from "@/lib/service/client-service";
 import TenantService from "@/lib/service/tenant-service";
-import { Resolvers, QueryResolvers, MutationResolvers, Tenant, Client, SigningKey, Scope, AuthenticationGroup, AuthorizationGroup, FederatedOidcProvider, ContactInput, Contact, LoginUserNameHandlerResponse, LoginUserNameHandlerAction, LoginAuthenticationHandlerResponse, LoginAuthenticationHandlerAction, SecondFactorType, PortalUserProfile, User, LoginFailurePolicy, TenantPasswordConfig, TenantLegacyUserMigrationConfig, TenantAnonymousUserConfiguration } from "@/graphql/generated/graphql-types";
+import { Resolvers, QueryResolvers, MutationResolvers, Tenant, Client, SigningKey, Scope, AuthenticationGroup, AuthorizationGroup, FederatedOidcProvider, ContactInput, Contact, LoginUserNameHandlerResponse, LoginUserNameHandlerAction, LoginAuthenticationHandlerResponse, LoginAuthenticationHandlerAction, SecondFactorType, PortalUserProfile, User, LoginFailurePolicy, TenantPasswordConfig, TenantLegacyUserMigrationConfig, TenantAnonymousUserConfiguration, TenantLookAndFeel } from "@/graphql/generated/graphql-types";
 import SigningKeysService from "@/lib/service/keys-service";
 import ScopeService from "@/lib/service/scope-service";
 import GroupService from "@/lib/service/group-service";
@@ -161,6 +161,10 @@ const resolvers: Resolvers = {
         getLegacyUserMigrationConfiguration: (_: any, { tenantId }, oidcContext) => {
             const tenantService: TenantService = new TenantService(oidcContext);
             return tenantService.getLegacyUserMigrationConfiguration(tenantId);
+        },
+        getTenantLookAndFeel: (_: any, { tenantId }, oidcContext) => {
+            const tenantService: TenantService = new TenantService(oidcContext);
+            return tenantService.getTenantLookAndFeel(tenantId);
         }
     },
     Mutation: {
@@ -598,6 +602,21 @@ const resolvers: Resolvers = {
             }
             //await tenantService.setTenantAnonymousUserConfig(anonymousUserConfig);
             return anonymousUserConfig;
+        },
+        setTenantLookAndFeel: async(_: any, { tenantLookAndFeelInput }, oidcContext) => {
+            // TODO
+            // Implement the service and dao functions.
+            // const tenantService: TenantService = new TenantService(oidcContext);
+            const tenantLookAndFeel: TenantLookAndFeel = {
+                tenantid: tenantLookAndFeelInput.tenantid,
+                authenticationheaderbackgroundcolor: tenantLookAndFeelInput.authenticationheaderbackgroundcolor,
+                authenticationheadertextcolor: tenantLookAndFeelInput.authenticationheadertextcolor,
+                authenticationheadertext: tenantLookAndFeelInput.authenticationheadertext,
+                authenticationlogo: tenantLookAndFeelInput.authenticationlogo,
+                authenticationlogomimetype: tenantLookAndFeelInput.authenticationlogomimetype
+            }
+            // await tenantService.createTenantLookAndFeel(tenantLookAndFeel);
+            return tenantLookAndFeel;
         }
     }
 }
