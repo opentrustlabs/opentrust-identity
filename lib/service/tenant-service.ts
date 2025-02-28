@@ -203,13 +203,18 @@ class TenantService {
         if(!tenant){
             throw new GraphQLError("ERROR_TENANT_DOES_NOT_EXIST");
         }
-        const tenantLookAndFeel: TenantLookAndFeel | null = await tenantDao.getTenantLookAndFeel(tenantId);
+        const tenantLookAndFeel: TenantLookAndFeel | null = await this.getTenantLookAndFeel(tenantId);
         return Promise.resolve(
             {
                 tenant: tenant,
                 tenantLookAndFeel: tenantLookAndFeel ? tenantLookAndFeel : DEFAULT_TENANT_META_DATA.tenantLookAndFeel
             }
         );
+    }
+
+    public async getTenantLookAndFeel(tenantId: string): Promise<TenantLookAndFeel | null> {
+        const tenantLookAndFeel: TenantLookAndFeel | null = await tenantDao.getTenantLookAndFeel(tenantId);
+        return Promise.resolve(tenantLookAndFeel);
     }
 
     public async createTenantLookAndFeel(tenantLookAndFeel: TenantLookAndFeel): Promise<TenantLookAndFeel>{

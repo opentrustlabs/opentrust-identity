@@ -24,7 +24,7 @@ import LoginFailureConfiguration from "./login-failure-configuration";
 import PasswordRulesConfiguration from "./password-rules-config";
 import LegacyUserMigrationConfiguration from "./legacy-user-migration-configuration";
 import AnonymousUserConfiguration from "./anonymous-user-configuration";
-import TenantLookAndFeelConfiguration from "./tenant-look-and-feel";
+import TenantLookAndFeelConfiguration from "./tenant-look-and-feel-configuration";
 
 export interface TenantDetailProps {
     tenantId: string
