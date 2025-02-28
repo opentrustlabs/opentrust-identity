@@ -424,3 +424,20 @@ export const TENANT_ANONYMOUS_USER_CONFIGURATION_QUERY = gql(`
         }
     }
 `);
+
+export const TENANT_LOOK_AND_FEEL_QUERY = gql(`
+    query getTenantLookAndFeel($tenantId: String!) {
+        getTenantLookAndFeel(tenantId: $tenantId) {
+            tenantid
+            adminheaderbackgroundcolor
+            adminheadertextcolor
+            adminlogo
+            adminheadertext
+            authenticationheaderbackgroundcolor
+            authenticationheadertextcolor
+            authenticationlogo
+            authenticationlogomimetype
+            authenticationheadertext                      
+        }
+    }
+`);

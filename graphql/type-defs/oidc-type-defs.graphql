@@ -97,6 +97,8 @@ type Mutation {
     removeTenantLegacyUserMigrationConfig(tenantId: String!): String
     setTenantAnonymousUserConfig(tenantAnonymousUserConfigInput: TenantAnonymousUserConfigInput!): TenantAnonymousUserConfiguration
     removeTenantAnonymousUserConfig(tenantId: String!): String
+    setTenantLookAndFeel(tenantLookAndFeelInput: TenantLookAndFeelInput!): TenantLookAndFeel
+    removeTenantLookAndFeel(tenantId: String!): String
 
     ## Clients
     createClient(clientInput: ClientCreateInput!): Client
@@ -920,6 +922,27 @@ input TenantLegacyUserMigrationConfigInput {
     authenticationUri: String!
     userProfileUri: String!
     usernameCheckUri: String!
+}
+
+input FooterLinkInput {
+    footerlinkid: String
+    tenantid: String!
+    linktext: String!
+    uri: String!
+}
+
+input TenantLookAndFeelInput {
+    tenantid: String!
+    adminheaderbackgroundcolor: String
+    adminheadertextcolor: String
+    adminlogo: String
+    adminheadertext: String
+    authenticationheaderbackgroundcolor: String
+    authenticationheadertextcolor: String
+    authenticationlogo: String
+    authenticationlogomimetype: String
+    authenticationheadertext: String
+    footerlinks: [FooterLinkInput]
 }
 
 input ClientCreateInput {

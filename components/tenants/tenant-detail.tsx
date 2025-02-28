@@ -24,6 +24,7 @@ import LoginFailureConfiguration from "./login-failure-configuration";
 import PasswordRulesConfiguration from "./password-rules-config";
 import LegacyUserMigrationConfiguration from "./legacy-user-migration-configuration";
 import AnonymousUserConfiguration from "./anonymous-user-configuration";
+import TenantLookAndFeelConfiguration from "./tenant-look-and-feel";
 
 export interface TenantDetailProps {
     tenantId: string
@@ -427,14 +428,18 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                     
                                 </AccordionSummary>
                                 <AccordionDetails>
-                                    <Grid2 container size={12} spacing={2}>
-                                        <Paper sx={{ padding: "8px" }} elevation={3}>
-                                            <div style={{ height: "128px", backgroundColor: "lightgray" }}></div>
-                                        </Paper>
-                                    </Grid2>
-                                    <Stack sx={{marginTop: "8px"}} direction={"row"} flexDirection={"row-reverse"} >
-                                        <Button sx={{border: "solid 1px lightgrey", borderRadius: "4px"}} >Update</Button>
-                                    </Stack>
+                                    <TenantLookAndFeelConfiguration
+                                        tenantId={tenant.tenantId}
+                                        onUpdateEnd={(success: boolean) => {
+                                            setShowMutationBackdrop(false);
+                                            if(success){
+                                                setShowMutationSnackbar(true);
+                                            }
+                                        }}
+                                        onUpdateStart={() => {
+                                            setShowMutationBackdrop(true);                                            
+                                        }}
+                                    />                                    
                                 </AccordionDetails>
                             </Accordion>
                         </Grid2>

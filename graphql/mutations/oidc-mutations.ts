@@ -97,3 +97,21 @@ export const TENANT_ANONYMOUS_USER_CONFIGURATION_MUTATION = gql(`
         }
     }
 `);
+
+export const TENANT_LOOK_AND_FEEL_MUTATION = gql(`
+    mutation setTenantLookAndFeel($tenantLookAndFeelInput: TenantLookAndFeelInput!) {
+        setTenantLookAndFeel(tenantLookAndFeelInput: tenantLookAndFeelInput) {
+            tenantid
+            adminheaderbackgroundcolor
+            adminheadertextcolor
+            adminlogo
+            adminheadertext
+            authenticationheaderbackgroundcolor
+            authenticationheadertextcolor
+            authenticationlogo
+            authenticationlogomimetype
+            authenticationheadertext
+            footerlinks        
+        }
+    }
+`);

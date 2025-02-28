@@ -691,19 +691,51 @@ export const SEARCH_INDEX_REL_SEARCH="rel_search";
 
 // ************************************************************************** //
 // 
-//                  SEARCH CONSTANTS
+//                  TENANT LOOK AND FEEL CONSTANTS
 // 
 // ************************************************************************** //
-export const IMGAGE_MIME_TYPES_MAP: Map<string, string> = new Map([
+
+export const DEFAULT_BACKGROUND_COLOR = "#1976d2";
+export const DEFAULT_TEXT_COLOR = "white";
+
+export const IMAGE_EXTENSION_TYPES = [
+    "svg",
+    "png",
+    "gif",
+    "jpeg",
+    "jpg",
+    "tif",
+    "tiff",
+    "bmp",
+    "webp",
+    "apng",
+    "avif"
+]
+
+export const IMAGE_MIME_TYPES_MAP: Map<string, string> = new Map([
     ["svg", "image/svg+xml"],
     ["png", "image/png"],
     ["gif", "image/gif"],
     ["jpeg", "image/jpeg"],
     ["jpg", "image/jpeg"],
     ["tif", "image/tiff"],
-    ["tiff", "image/tiff"],
+    ["tiff", "image/tiff"],    
+    ["bmp", "image/bmp"],
     ["webp", "image/webp"],
     ["apng", "image/apng"],
-    ["avif", "image/avif"],
-    ["bmp", "image/bmp"]
+    ["avif", "image/avif"]
 ]);
+
+export const IMAGE_MINE_TYPES_DISPLAY: Map<string, string> = new Map([
+    ["svg", "svg"],
+    ["png", "png"],
+    ["gif", "gif"],
+    ["jpeg", "jpg"],
+    ["jpg", "jpg"],
+    ["tif", "tiff"],
+    ["tiff", "tiff"],
+    ["bmp", "bmp"],
+    ["webp", "webp"],
+    ["apng", "apng"],
+    ["avif", "avif"]    
+])

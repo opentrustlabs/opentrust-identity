@@ -142,7 +142,7 @@ const LoginFailureConfiguration: React.FC<LoginFailureConfigurationProps> = ({
                 </Grid2>
                 <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
                     <div>Initial backoff duration (in minutes)</div>
-                    <TextField name="tenantType" id="tenantType" 
+                    <TextField name="initialBackoffDurationMins" id="initialBackoffDurationMins" 
                         disabled={ ! (failurePolicyInput.loginFailurePolicyType === LOGIN_FAILURE_POLICY_BACKOFF || failurePolicyInput.loginFailurePolicyType === LOGIN_FAILURE_POLICY_BACKOFF_THEN_LOCK) }
                         value={
                             ! (failurePolicyInput.loginFailurePolicyType === LOGIN_FAILURE_POLICY_BACKOFF || failurePolicyInput.loginFailurePolicyType === LOGIN_FAILURE_POLICY_BACKOFF_THEN_LOCK) ?
@@ -154,7 +154,7 @@ const LoginFailureConfiguration: React.FC<LoginFailureConfigurationProps> = ({
                 </Grid2>
                 <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
                     <div>Number of backoff cycles before locking</div>
-                    <TextField name="tenantType" id="tenantType"
+                    <TextField name="numberOfBackoffCyclesBeforeLocking" id="numberOfBackoffCyclesBeforeLocking"
                         disabled={failurePolicyInput.loginFailurePolicyType !== LOGIN_FAILURE_POLICY_BACKOFF_THEN_LOCK}                
                         value={
                             failurePolicyInput.loginFailurePolicyType !== LOGIN_FAILURE_POLICY_BACKOFF_THEN_LOCK ?
