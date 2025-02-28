@@ -11,10 +11,11 @@ import Stack from "@mui/material/Stack";
 import Button from "@mui/material/Button";
 import TextField from "@mui/material/TextField";
 import ColorizeIcon from '@mui/icons-material/Colorize';
-import UploadFileIcon from '@mui/icons-material/UploadFile';
-import { MenuItem, Select } from "@mui/material";
-import { DEFAULT_BACKGROUND_COLOR, DEFAULT_TEXT_COLOR, IMAGE_EXTENSION_TYPES, IMAGE_MINE_TYPES_DISPLAY } from "@/utils/consts";
+import { Alert, Dialog, DialogActions, DialogContent, DialogTitle } from "@mui/material";
+import { DEFAULT_BACKGROUND_COLOR, DEFAULT_TEXT_COLOR } from "@/utils/consts";
 import { ResponsiveBreakpoints, ResponsiveContext } from "../contexts/responsive-context";
+import { HexColorPicker } from "react-colorful";
+import DeleteForeverOutlinedIcon from '@mui/icons-material/DeleteForeverOutlined';
 
 export interface TenantLookAndFeelProps {
     tenantId: string,
@@ -50,7 +51,9 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
     const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
     // const [showReset, setShowReset] = React.useState<boolean>(false);
     const [tenantLookAndFeelInput, setTenantLookAndFeelInput] = React.useState<TenantLookAndFeelInput | null>(null);
-    //const [revertToInput, setRevertToInput] = React.useState<TenantLegacyUserMigrationConfigInput | null>(null);
+    const [revertToInput, setRevertToInput] = React.useState<TenantLookAndFeelInput | null>(null);
+    const [backgroundColorPickerOpen, setBackgroundColorPickerOpen] = React.useState(false);
+    const [tempBackgroundColor, setTempBackgroundColor] = React.useState("");
 
     // GRAPHQL FUNCTIONS
     // data may be null, so present some sensible defaults
@@ -63,12 +66,12 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
                 const config: TenantLookAndFeel = data.getTenantLookAndFeel as TenantLookAndFeel;
                 initInput.authenticationheaderbackgroundcolor = config.authenticationheaderbackgroundcolor || DEFAULT_BACKGROUND_COLOR;
                 initInput.authenticationheadertext = config.authenticationheadertext;
-                initInput.authenticationheadertextcolor = config.authenticationheadertextcolor;
+                initInput.authenticationheadertextcolor = config.authenticationheadertextcolor || "white";
                 initInput.authenticationlogo = config.authenticationlogo;
                 initInput.authenticationlogomimetype = config.authenticationlogomimetype || "";
             }
             setTenantLookAndFeelInput({...initInput});
-            // setRevertToInput({...initInput});
+            setRevertToInput({...initInput});
         },
     });
 
@@ -87,25 +90,28 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
         }
     });
     
-    const handleTemporaryFileUpload = (changeEvent: React.ChangeEvent<HTMLInputElement>) => {
+    const handleTemporaryFileUpload = (changeEvent: React.ChangeEvent<HTMLInputElement>) => {        
         const inputElement = changeEvent.target;
         console.log("number of files: " + inputElement.files?.length || 0);
         if(inputElement.files && inputElement.files?.length > 0){
             const reader: FileReader = new FileReader();
-            // ((this: FileReader, ev: ProgressEvent<FileReader>) => any) 
             reader.onloadend = (
                 ( ev: ProgressEvent<FileReader>) => {
                     const result = ev.target?.result;
                     if(result){
                         console.log(result);  
-                        localStorage.setItem("tempLogoData", result as string);
+                        if(tenantLookAndFeelInput){
+                            tenantLookAndFeelInput.authenticationlogo = result as string;
+                            setTenantLookAndFeelInput({...tenantLookAndFeelInput});
+                            setMarkDirty(true);
+                        }
                     }
                     else{
-                        console.log("failed to upload file")
+                        setErrorMessage("Failed to read file");
                     }
                 }
             )
-            reader.readAsDataURL(inputElement.files[0]);            
+            reader.readAsText(inputElement.files[0]);
         }
     }
 
@@ -114,10 +120,26 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
     
     if(tenantLookAndFeelInput) return (
         <>
+            <Dialog 
+                onClose={() => setBackgroundColorPickerOpen(false)}
+                open={backgroundColorPickerOpen}
+            >
+                <DialogTitle>Select color</DialogTitle>
+                <DialogContent>
+                    <HexColorPicker
+                        color={tenantLookAndFeelInput.authenticationheaderbackgroundcolor ? tenantLookAndFeelInput.authenticationheaderbackgroundcolor : DEFAULT_BACKGROUND_COLOR}
+                        onChange={(newColor: string) => {setTempBackgroundColor(newColor); }}
+                    />
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setBackgroundColorPickerOpen(false)}>Cancel</Button>
+                    <Button onClick={() => {tenantLookAndFeelInput.authenticationheaderbackgroundcolor = tempBackgroundColor; setTenantLookAndFeelInput({...tenantLookAndFeelInput}); setMarkDirty(true); setBackgroundColorPickerOpen(false);  }}>Select</Button>
+                </DialogActions>
+            </Dialog>
             <Grid2 container size={12} spacing={2}>
                 {errorMessage &&
                     <Grid2 marginBottom={"16px"} size={12} >
-                        <div>{errorMessage}</div>
+                        <Alert onClose={() => setErrorMessage(null)} severity="error">{errorMessage}</Alert>
                     </Grid2>
                 }
                 <div style={{fontWeight: "bold", fontSize: "1.0em"}}>Preview</div>
@@ -131,16 +153,14 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
                     padding={"8px"}
                     sx={{
                         backgroundColor: tenantLookAndFeelInput.authenticationheaderbackgroundcolor,
-                        color: tenantLookAndFeelInput.authenticationheadertextcolor,
-                        border: "solid 1px lightgrey",
-                        borderRadius: "4px",
+                        color: tenantLookAndFeelInput.authenticationheadertextcolor,                        
                         fontWeight: "bold",
                         fontSize: "1.0em"
                     }}
                 >
                     {tenantLookAndFeelInput.authenticationlogo && 
                         <Grid2 size={breakPoints.isMedium ? 2 : 1} >
-                            <div style={{height: "48px", width: "48px"}} dangerouslySetInnerHTML={{__html: tenantLookAndFeelInput.authenticationlogo}}></div>
+                            <div style={{maxHeight: "48px", maxWidth: "48px"}} dangerouslySetInnerHTML={{__html: tenantLookAndFeelInput.authenticationlogo}}></div>
                         </Grid2>
                     }
                     <Grid2
@@ -167,7 +187,7 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
                             />
                         </Grid2>
                         <Grid2 size={1}>
-                            <ColorizeIcon sx={{cursor: "pointer"}} />
+                            <ColorizeIcon onClick={() => setBackgroundColorPickerOpen(true)} sx={{cursor: "pointer"}} />
                         </Grid2>
                     </Grid2>
                 </Grid2>
@@ -194,41 +214,20 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
                         fullWidth={true} size="small"
                     />                        
                 </Grid2>
-
-                <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
-                    <div>Logo Image Type</div>
-                    <Select
-                        fullWidth={true}
-                        size="small"
-                        value={tenantLookAndFeelInput.authenticationlogomimetype}
-                        onChange={(evt) => {tenantLookAndFeelInput.authenticationlogomimetype = evt.target.value; setTenantLookAndFeelInput({ ...tenantLookAndFeelInput }); setMarkDirty(true); }}
-                    >
-                        {["", ...IMAGE_EXTENSION_TYPES].map(
-                            (t: string) => (
-                                <MenuItem key={t} value={t}>{IMAGE_MINE_TYPES_DISPLAY.get(t) || "Select..."}</MenuItem>
-                            )
-                        )}
-                    </Select>                    
-                </Grid2>
-                <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
-                    
-                    <Grid2 container spacing={2}>
-                        <Grid2 size={11}>Logo (Select File)</Grid2>
+                
+                <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >    
+                    <Grid2 container size={12}>
+                        <Grid2 size={11}>Logo (svg)</Grid2>
                         <Grid2 size={1}>
-                            <UploadFileIcon sx={{cursor: "pointer"}}></UploadFileIcon>
-                        </Grid2>
-                        <Grid2 size={12}>
-                            <input type="file" id="logoFile" onChange={(evt) => handleTemporaryFileUpload(evt)}/>
+                            <DeleteForeverOutlinedIcon 
+                                sx={{cursor: "pointer"}}
+                                onClick={() => {tenantLookAndFeelInput.authenticationlogo = ""; setTenantLookAndFeelInput({ ...tenantLookAndFeelInput }); setMarkDirty(true); }}
+                            />
                         </Grid2>
                     </Grid2>
-                    {/* <div style={{height: "40px"}}>
-                        {tenantLookAndFeelInput.authenticationlogo &&
-                            
-                                <div style={{height: "48px", width: "48px"}} dangerouslySetInnerHTML={{__html: tenantLookAndFeelInput.authenticationlogo}}></div>
-                            
-                            
-                        }
-                    </div> */}
+                    <Grid2 size={12} paddingTop={"8px"}>
+                        <input type="file" accept="image/svg+xml, .svg" id="logoFile" onChange={(evt) => handleTemporaryFileUpload(evt)} />                            
+                    </Grid2>
                 </Grid2>
             </Grid2>
             <Stack sx={{ marginTop: "8px" }} direction={"row"} flexDirection={"row-reverse"} >                
@@ -237,16 +236,17 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
                     onClick={() => { onUpdateStart(); mutateTenantLookAndFeel() }}
                     sx={{ border: "solid 1px lightgrey", borderRadius: "4px" }} >Update
                 </Button>
-                {/* {showReset &&
+                
                     <Button 
                         sx={{marginRight: "8px"}}
                         onClick={() => {
-                            setTenantLegacyUserMigrationConfigInput({...revertToInput as TenantLegacyUserMigrationConfigInput});
-                            setRevertToInput({...revertToInput as TenantLegacyUserMigrationConfigInput});
-                            setShowReset(false);
+                            setTenantLookAndFeelInput({...revertToInput as TenantLookAndFeelInput});
+                            setRevertToInput({...revertToInput as TenantLookAndFeelInput});
+                            setMarkDirty(false);
                         }}
+                        disabled={!markDirty}
                     >Revert Changes</Button>
-                } */}
+                
             </Stack>        
         </>
     )
