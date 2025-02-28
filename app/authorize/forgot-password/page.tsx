@@ -26,9 +26,9 @@ const ForgotPassword: React.FC = () => {
 
     // QUERY PARAMS
     const params = useSearchParams();
-    const preauthToken = params.get(QUERY_PARAM_PREAUTHN_TOKEN);
-    const tenantId = params.get(QUERY_PARAM_PREAUTH_TENANT_ID);
-    const redirectUri = params.get(QUERY_PARAM_PREAUTH_REDIRECT_URI);
+    const preauthToken = params?.get(QUERY_PARAM_PREAUTHN_TOKEN);
+    const tenantId = params?.get(QUERY_PARAM_PREAUTH_TENANT_ID);
+    const redirectUri = params?.get(QUERY_PARAM_PREAUTH_REDIRECT_URI);
 
     // // PAGE STATE MANAGEMENT VARIABLES
     // const [username, setUsername] = useState<string | null>("");
@@ -222,7 +222,7 @@ const ForgotPassword: React.FC = () => {
                                     alignItems={"center"}
                                     sx={{width: "100%"}}
                                 >
-                                    <Alert onClose={() => setErrorMessage(null)} sx={{width: "100%"}}severity="error">{errorMessage}</Alert>
+                                    <Alert onClose={() => setErrorMessage(null)} sx={{width: "100%"}} severity="error">{errorMessage}</Alert>
                                     
                                 </Stack>
                             </Grid2>
