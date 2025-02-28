@@ -54,6 +54,8 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
     const [revertToInput, setRevertToInput] = React.useState<TenantLookAndFeelInput | null>(null);
     const [backgroundColorPickerOpen, setBackgroundColorPickerOpen] = React.useState(false);
     const [tempBackgroundColor, setTempBackgroundColor] = React.useState("");
+    const [textColorPickerOpen, setTextColorPickerOpen] = React.useState(false);
+    const [tempTextColor, setTempTextColor] = React.useState("");
 
     // GRAPHQL FUNCTIONS
     // data may be null, so present some sensible defaults
@@ -124,7 +126,7 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
                 onClose={() => setBackgroundColorPickerOpen(false)}
                 open={backgroundColorPickerOpen}
             >
-                <DialogTitle>Select color</DialogTitle>
+                <DialogTitle>Select background color</DialogTitle>
                 <DialogContent>
                     <HexColorPicker
                         color={tenantLookAndFeelInput.authenticationheaderbackgroundcolor ? tenantLookAndFeelInput.authenticationheaderbackgroundcolor : DEFAULT_BACKGROUND_COLOR}
@@ -134,6 +136,22 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
                 <DialogActions>
                     <Button onClick={() => setBackgroundColorPickerOpen(false)}>Cancel</Button>
                     <Button onClick={() => {tenantLookAndFeelInput.authenticationheaderbackgroundcolor = tempBackgroundColor; setTenantLookAndFeelInput({...tenantLookAndFeelInput}); setMarkDirty(true); setBackgroundColorPickerOpen(false);  }}>Select</Button>
+                </DialogActions>
+            </Dialog>
+            <Dialog 
+                onClose={() => setTextColorPickerOpen(false)}
+                open={textColorPickerOpen}
+            >
+                <DialogTitle>Select text color</DialogTitle>
+                <DialogContent>
+                    <HexColorPicker
+                        color={tenantLookAndFeelInput.authenticationheadertextcolor ? tenantLookAndFeelInput.authenticationheadertextcolor : DEFAULT_TEXT_COLOR}
+                        onChange={(newColor: string) => {setTempTextColor(newColor); }}
+                    />
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setTextColorPickerOpen(false)}>Cancel</Button>
+                    <Button onClick={() => {tenantLookAndFeelInput.authenticationheadertextcolor = tempTextColor; setTenantLookAndFeelInput({...tenantLookAndFeelInput}); setMarkDirty(true); setTextColorPickerOpen(false);  }}>Select</Button>
                 </DialogActions>
             </Dialog>
             <Grid2 container size={12} spacing={2}>
@@ -155,7 +173,8 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
                         backgroundColor: tenantLookAndFeelInput.authenticationheaderbackgroundcolor,
                         color: tenantLookAndFeelInput.authenticationheadertextcolor,                        
                         fontWeight: "bold",
-                        fontSize: "1.0em"
+                        fontSize: "1.0em",
+                        border: "solid 1px lightgrey"
                     }}
                 >
                     {tenantLookAndFeelInput.authenticationlogo && 
@@ -202,7 +221,11 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
                             />
                         </Grid2>
                         <Grid2 size={1}>
-                            <ColorizeIcon sx={{cursor: "pointer"}} />
+                            <ColorizeIcon 
+                                sx={{cursor: "pointer"}} 
+                                onClick={() => {setTextColorPickerOpen(true)}}
+                            
+                            />
                         </Grid2>
                     </Grid2>
                 </Grid2>
