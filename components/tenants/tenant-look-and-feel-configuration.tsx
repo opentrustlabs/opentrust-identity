@@ -87,6 +87,27 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
         }
     });
     
+    const handleTemporaryFileUpload = (changeEvent: React.ChangeEvent<HTMLInputElement>) => {
+        const inputElement = changeEvent.target;
+        console.log("number of files: " + inputElement.files?.length || 0);
+        if(inputElement.files && inputElement.files?.length > 0){
+            const reader: FileReader = new FileReader();
+            // ((this: FileReader, ev: ProgressEvent<FileReader>) => any) 
+            reader.onloadend = (
+                ( ev: ProgressEvent<FileReader>) => {
+                    const result = ev.target?.result;
+                    if(result){
+                        console.log(result);  
+                        localStorage.setItem("tempLogoData", result as string);
+                    }
+                    else{
+                        console.log("failed to upload file")
+                    }
+                }
+            )
+            reader.readAsDataURL(inputElement.files[0]);            
+        }
+    }
 
     if (loading) return <DataLoading dataLoadingSize="md" color={null} />
     if (error) return <ErrorComponent message={error.message} componentSize='md' />
@@ -105,7 +126,7 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
                     spacing={2}
                     marginBottom={"16px"} 
                     size={12}
-                    height={"8vh"}
+                    height={"72px"}
                     alignContent={"center"}
                     padding={"8px"}
                     sx={{
@@ -195,6 +216,9 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
                         <Grid2 size={11}>Logo (Select File)</Grid2>
                         <Grid2 size={1}>
                             <UploadFileIcon sx={{cursor: "pointer"}}></UploadFileIcon>
+                        </Grid2>
+                        <Grid2 size={12}>
+                            <input type="file" id="logoFile" onChange={(evt) => handleTemporaryFileUpload(evt)}/>
                         </Grid2>
                     </Grid2>
                     {/* <div style={{height: "40px"}}>
