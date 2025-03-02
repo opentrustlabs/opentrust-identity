@@ -105,13 +105,16 @@ const AuthenticationGroupDetail: React.FC<AuthenticationGroupDetailProps> = ({ a
                                             </Stack>
                                         </Grid2>
                                     </Typography>
-                                    <UserList
-                                        
-                                        
-                                        
-                                        page={0}
-                                        perPage={10}
-                                        embedded={true}
+                                    <UserList searchResults={{
+                                        __typename: undefined,
+                                        endtime: 0,
+                                        page: 0,
+                                        perpage: 0,
+                                        resultlist: [],
+                                        starttime: 0,
+                                        took: 0,
+                                        total: 0
+                                    }}
                                     />
                                 </AccordionDetails>
                             </Accordion>

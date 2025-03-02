@@ -441,3 +441,12 @@ export const TENANT_LOOK_AND_FEEL_QUERY = gql(`
         }
     }
 `);
+
+export const TENANT_DOMAIN_MANAGEMENT_REL_QUERY = gql(`
+    query getDomainsForTenantManagement($tenantId: String!) {
+        getDomainsForTenantManagement(tenantId: $tenantId) {
+            tenantId
+            domain
+        }
+    }
+`);

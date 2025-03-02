@@ -17,7 +17,6 @@ import Link from "next/link";
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
 import DeleteForeverOutlinedIcon from '@mui/icons-material/DeleteForeverOutlined';
-import CheckOutlinedIcon from '@mui/icons-material/CheckOutlined';
 import TextField from "@mui/material/TextField";
 import InputAdornment from "@mui/material/InputAdornment";
 import Grid2 from "@mui/material/Grid2";

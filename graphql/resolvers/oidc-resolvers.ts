@@ -165,6 +165,10 @@ const resolvers: Resolvers = {
         getTenantLookAndFeel: (_: any, { tenantId }, oidcContext) => {
             const tenantService: TenantService = new TenantService(oidcContext);
             return tenantService.getTenantLookAndFeel(tenantId);
+        },
+        getDomainsForTenantManagement: (_: any, { tenantId }, oidcContext) => {
+            const tenantService: TenantService = new TenantService(oidcContext);
+            return tenantService.getDomainTenantManagementRels(tenantId);
         }
     },
     Mutation: {
@@ -617,7 +621,17 @@ const resolvers: Resolvers = {
             }
             // await tenantService.createTenantLookAndFeel(tenantLookAndFeel);
             return tenantLookAndFeel;
+        },
+        addDomainToTenantManagement: async(_: any, { tenantId, domain }, oidcContext) => {
+            const tenantService: TenantService = new TenantService(oidcContext);
+            return tenantService.addDomainToTenantManagement(tenantId, domain);
+        },
+        removeDomainFromTenantManagement: async(_: any, { tenantId, domain }, oidcContext) => {
+            const tenantService: TenantService = new TenantService(oidcContext);
+            await tenantService.removeDomainFromTenantManagement(tenantId, domain);
+            return "";
         }
+
     }
 }
 

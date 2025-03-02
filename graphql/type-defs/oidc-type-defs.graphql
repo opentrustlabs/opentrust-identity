@@ -11,8 +11,8 @@ type Query {
     getTenants: [Tenant!]!
     getTenantById(tenantId: String!): Tenant
     getTenantMetaData(tenantId: String!): TenantMetaData
-    getDomainsForTenantManagement(tenantId: String!): [String]
-    getDomainsForTenantAuthentication(tenantId: String!): [String]
+    getDomainsForTenantManagement(tenantId: String!): [TenantManagementDomainRel!]!
+    getDomainsForTenantAuthentication(tenantId: String!): [String!]!
     getAnonymousUserConfiguration(tenantId: String!): TenantAnonymousUserConfiguration
     getLegacyUserMigrationConfiguration(tenantId: String!): TenantLegacyUserMigrationConfig
     getTenantLookAndFeel(tenantId: String!): TenantLookAndFeel
@@ -87,7 +87,7 @@ type Mutation {
     createTenant(tenantInput: TenantCreateInput!): Tenant
     updateTenant(tenantInput: TenantUpdateInput!): Tenant
     deleteTenant(tenantId: String!): String
-    addDomainToTenantManagement(tenantId: String!, domain: String!): String
+    addDomainToTenantManagement(tenantId: String!, domain: String!): TenantManagementDomainRel
     removeDomainFromTenantManagement(tenantId: String!, domain: String!): String
     addDomainToTenantRestrictedAuthentication(tenantId: String!, domain: String!): String
     removeDomainFromTenantRestrictedAuthentication(tenantId: String, domain: String!): String
@@ -244,6 +244,8 @@ type TenantManagementDomainRel {
     domain: String!
 }
 
+# Does the tenant have certain users who are allowed to login
+# using this tenant?
 type TenantRestrictedAuthenticationDomainRel {
     tenantId: String!
     domain: String!
