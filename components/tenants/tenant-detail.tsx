@@ -25,6 +25,7 @@ import PasswordRulesConfiguration from "./password-rules-config";
 import LegacyUserMigrationConfiguration from "./legacy-user-migration-configuration";
 import AnonymousUserConfiguration from "./anonymous-user-configuration";
 import TenantLookAndFeelConfiguration from "./tenant-look-and-feel-configuration";
+import TenantManagementDomainConfiguration from "./tenant-management-domain-configuration";
 
 export interface TenantDetailProps {
     tenantId: string
@@ -452,19 +453,19 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                         <Grid2 size={{ xs: 12, sm: 6, lg: 12, md: 6, xl: 12 }} >                            
                             <Paper elevation={3} >
                                 <div className="detail-page-subheader">Tenant Management Domains</div>
-                                <List sx={{padding: "8px"}}>
-                                    <ListItem disablePadding>opentrust.org</ListItem>
-                                    <ListItem disablePadding>opentrust.com</ListItem>
-                                    <ListItem disablePadding>megacorp.com</ListItem>
-                                    <ListItem disablePadding><MoreHorizOutlinedIcon /></ListItem>
-                                </List>
-
-                                <Divider />
-                                <Stack sx={{ padding: "8px" }} direction={"row"} flexDirection={"row-reverse"} >
-                                    <EditOutlinedIcon />
-                                </Stack>
+                                <TenantManagementDomainConfiguration
+                                    tenantId={tenant.tenantId}
+                                    onUpdateEnd={(success: boolean) => {
+                                        setShowMutationBackdrop(false);
+                                        if(success){
+                                            setShowMutationSnackbar(true);
+                                        }
+                                    }}
+                                    onUpdateStart={() => {
+                                        setShowMutationBackdrop(true);                                            
+                                    }}
+                                />
                             </Paper>
-
                         </Grid2>
 
 
@@ -487,7 +488,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
 
                         <Grid2 size={{ xs: 12, sm: 6, lg: 12, md: 6, xl: 12 }} >                            
                             <Paper elevation={3} >
-                            <div className="detail-page-subheader">Federated OIDC Providers</div>
+                            <div className="detail-page-subheader">Enterprise Identity Providers</div>
                                 <List sx={{ padding: "8px" }}>
                                     <ListItem disablePadding>opentrust.org</ListItem>
                                     <ListItem disablePadding>opentrust.com</ListItem>

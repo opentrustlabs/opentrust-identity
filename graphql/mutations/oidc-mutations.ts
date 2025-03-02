@@ -114,3 +114,18 @@ export const TENANT_LOOK_AND_FEEL_MUTATION = gql(`
         }
     }
 `);
+
+export const TENANT_DOMAIN_MANAGEMENT_REL_ADD_MUTATION = gql(`
+    mutation addDomainToTenantManagement($tenantId: String!, $domain: String!) {
+        addDomainToTenantManagement(tenantId: $tenantId, domain: $domain) {
+            tenantId
+            domain
+        }
+    }
+`);
+
+export const TENANT_DOMAIN_MANAGEMENT_REL_REMOVE_MUTATION = gql(`
+    mutation removeDomainFromTenantManagement($tenantId: String!, $domain: String!) {
+        removeDomainFromTenantManagement(tenantId: $tenantId, domain: $domain) 
+    }
+`);
