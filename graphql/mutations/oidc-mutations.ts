@@ -129,3 +129,18 @@ export const TENANT_DOMAIN_MANAGEMENT_REL_REMOVE_MUTATION = gql(`
         removeDomainFromTenantManagement(tenantId: $tenantId, domain: $domain) 
     }
 `);
+
+export const TENANT_RESTRICTED_DOMAIN_REL_ADD_MUTATION = gql(`
+    mutation addDomainToTenantRestrictedAuthentication($tenantId: String!, $domain: String!) {
+        addDomainToTenantRestrictedAuthentication(tenantId: $tenantId, domain: $domain) {
+            tenantId
+            domain
+        }
+    }
+`);
+
+export const TENANT_RESTRICTED_DOMAIN_REL_REMOVE_MUTATION = gql(`
+    mutation removeDomainFromTenantRestrictedAuthentication($tenantId: String!, $domain: String!) {
+        removeDomainFromTenantRestrictedAuthentication(tenantId: $tenantId, domain: $domain) 
+    }
+`);

@@ -12,7 +12,7 @@ type Query {
     getTenantById(tenantId: String!): Tenant
     getTenantMetaData(tenantId: String!): TenantMetaData
     getDomainsForTenantManagement(tenantId: String!): [TenantManagementDomainRel!]!
-    getDomainsForTenantAuthentication(tenantId: String!): [String!]!
+    getDomainsForTenantAuthentication(tenantId: String!): [TenantRestrictedAuthenticationDomainRel!]!
     getAnonymousUserConfiguration(tenantId: String!): TenantAnonymousUserConfiguration
     getLegacyUserMigrationConfiguration(tenantId: String!): TenantLegacyUserMigrationConfig
     getTenantLookAndFeel(tenantId: String!): TenantLookAndFeel
@@ -89,8 +89,8 @@ type Mutation {
     deleteTenant(tenantId: String!): String
     addDomainToTenantManagement(tenantId: String!, domain: String!): TenantManagementDomainRel
     removeDomainFromTenantManagement(tenantId: String!, domain: String!): String
-    addDomainToTenantRestrictedAuthentication(tenantId: String!, domain: String!): String
-    removeDomainFromTenantRestrictedAuthentication(tenantId: String, domain: String!): String
+    addDomainToTenantRestrictedAuthentication(tenantId: String!, domain: String!): TenantRestrictedAuthenticationDomainRel
+    removeDomainFromTenantRestrictedAuthentication(tenantId: String!, domain: String!): String
     setTenantPasswordConfig(passwordConfigInput: PasswordConfigInput!): TenantPasswordConfig
     removeTenantPasswordConfig(tenantId: String!): String
     setTenantLegacyUserMigrationConfig(tenantLegacyUserMigrationConfigInput: TenantLegacyUserMigrationConfigInput!): TenantLegacyUserMigrationConfig

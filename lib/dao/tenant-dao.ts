@@ -1,4 +1,4 @@
-import { TenantAnonymousUserConfiguration, Contact, LoginFailurePolicy, Tenant, TenantLegacyUserMigrationConfig, TenantLookAndFeel, TenantManagementDomainRel, TenantPasswordConfig } from "@/graphql/generated/graphql-types";
+import { TenantAnonymousUserConfiguration, Contact, LoginFailurePolicy, Tenant, TenantLegacyUserMigrationConfig, TenantLookAndFeel, TenantManagementDomainRel, TenantPasswordConfig, TenantRestrictedAuthenticationDomainRel } from "@/graphql/generated/graphql-types";
 
 
 abstract class TenantDao {
@@ -23,6 +23,8 @@ abstract class TenantDao {
     abstract deleteTenant(tenantId: string): Promise<void>;
 
     abstract assignContactsToTenant(tenantId: string, contactList: Array<Contact>): Promise<Array<Contact>>;
+
+    abstract removeContactFromTenant(tenantId: string, contact: Contact): Promise<void>;
 
     abstract getDomainTenantManagementRels(tenantId?: string, domain?: string): Promise<Array<TenantManagementDomainRel>>;
 
@@ -55,6 +57,12 @@ abstract class TenantDao {
     abstract setTenantLegacyUserMigrationConfiguration(tenantLegacyUserMigrationConfig: TenantLegacyUserMigrationConfig): Promise<TenantLegacyUserMigrationConfig | null>;
 
     abstract removeLegacyUserMigrationConfiguration(tenantId: string): Promise<void>;
+
+    abstract getDomainsForTenantRestrictedAuthentication(tenantId: string): Promise<Array<TenantRestrictedAuthenticationDomainRel>>;
+
+    abstract addDomainToTenantRestrictedAuthentication(tenantId: string, domain: string): Promise<TenantRestrictedAuthenticationDomainRel>;
+
+    abstract removeDomainFromTenantRestrictedAuthentication(tenantId: string, domain: string): Promise<void>;
 
 }
 
