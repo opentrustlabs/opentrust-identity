@@ -450,3 +450,12 @@ export const TENANT_DOMAIN_MANAGEMENT_REL_QUERY = gql(`
         }
     }
 `);
+
+export const TENANT_AUTHENTICATION_DOMAIN_REL_QUERY = gql(`
+    query getDomainsForTenantAuthentication($tenantId: String!) {
+        getDomainsForTenantAuthentication(tenantId: $tenantId) {
+            tenantId
+            domain
+        }
+    }
+`);

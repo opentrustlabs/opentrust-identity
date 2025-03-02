@@ -1,4 +1,4 @@
-import { TenantAnonymousUserConfiguration, Contact, ObjectSearchResultItem, SearchResultType, Tenant, TenantLegacyUserMigrationConfig, TenantLookAndFeel, TenantManagementDomainRel, TenantMetaData, TenantPasswordConfig } from "@/graphql/generated/graphql-types";
+import { TenantAnonymousUserConfiguration, Contact, ObjectSearchResultItem, SearchResultType, Tenant, TenantLegacyUserMigrationConfig, TenantLookAndFeel, TenantManagementDomainRel, TenantMetaData, TenantPasswordConfig, TenantRestrictedAuthenticationDomainRel } from "@/graphql/generated/graphql-types";
 import { OIDCContext } from "@/graphql/graphql-context";
 import TenantDao from "@/lib/dao/tenant-dao";
 import { getTenantDaoImpl } from "@/utils/dao-utils";
@@ -248,6 +248,52 @@ class TenantService {
     public async setTenantLegacyUserMigrationConfiguration(tenantLegacyUserMigrationConfig: TenantLegacyUserMigrationConfig): Promise<TenantLegacyUserMigrationConfig | null> {
         return tenantDao.setTenantLegacyUserMigrationConfiguration(tenantLegacyUserMigrationConfig)
     }
+
+    public async getDomainsForTenantRestrictedAuthentication(tenantId: string): Promise<Array<TenantRestrictedAuthenticationDomainRel>>{
+        return tenantDao.getDomainsForTenantRestrictedAuthentication(tenantId);
+    }
+
+    public async addDomainToTenantRestrictedAuthentication(tenantId: string, domain: string): Promise<TenantRestrictedAuthenticationDomainRel> {
+        return tenantDao.addDomainToTenantRestrictedAuthentication(tenantId, domain);
+    }
+
+    public async removeDomainFromTenantRestrictedAuthentication(tenantId: string, domain: string): Promise<void>{
+        return tenantDao.removeDomainFromTenantRestrictedAuthentication(tenantId, domain);
+    }
+
+    /*
+    public async getDomainsForTenantRestrictedAuthentication(tenantId: string): Promise<Array<TenantRestrictedAuthenticationDomainRel>> {
+        const em = connection.em.fork();
+        const entities: Array<TenantRestrictedAuthenticationDomainRelEntity> = await em.find(
+            TenantRestrictedAuthenticationDomainRelEntity, 
+            {
+                tenantId: tenantId
+            }
+        );
+        
+        return Promise.resolve(entities);
+    }
+
+    public async addDomainToTenantRestrictedAuthentication(tenantId: string, domain: string): Promise<TenantRestrictedAuthenticationDomainRel> {
+        const em = connection.em.fork();
+        const entity: TenantRestrictedAuthenticationDomainRelEntity = new TenantRestrictedAuthenticationDomainRelEntity();
+        entity.domain = domain;
+        entity.tenantId = tenantId;
+        await em.persistAndFlush(entity);
+        return Promise.resolve(entity);
+    }
+
+    public async removeDomainFromTenantRestrictedAuthentication(tenantId: string, domain: string): Promise<void> {
+        const em = connection.em.fork();
+        await em.nativeDelete(TenantRestrictedAuthenticationDomainRelEntity,
+            {
+                tenantId: tenantId,
+                domain: domain
+            }
+        );
+    }
+
+    */
 
 
 }

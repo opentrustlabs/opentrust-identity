@@ -1,6 +1,6 @@
 "use client";
 import React, { useContext } from "react";
-import { Accordion, AccordionDetails, AccordionSummary, Button, Checkbox, Divider, Paper, Stack, TextField } from "@mui/material";
+import { Accordion, AccordionDetails, AccordionSummary, Button, Checkbox, Divider, List, ListItem, Paper, Stack, TextField } from "@mui/material";
 import Grid2 from "@mui/material/Grid2";
 import Typography from "@mui/material/Typography";
 import DeleteForeverOutlinedIcon from '@mui/icons-material/DeleteForeverOutlined';
@@ -13,6 +13,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import SyncIcon from '@mui/icons-material/Sync';
 import GroupIcon from '@mui/icons-material/Group';
 import PolicyIcon from '@mui/icons-material/Policy';
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import Link from "next/link";
 import TenantHighlight from "../tenants/tenant-highlight";
 
@@ -39,14 +40,17 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                     linkText: client.clientName
                 }
             ]} />
+            {/**  If we are in the root tenant, then show the owning tenant for this client */}
+            {tenantBean.getTenantMetaData().tenant.tenantType === TENANT_TYPE_ROOT_TENANT &&
+                <div style={{marginBottom: "16px"}}>
+                    <TenantHighlight tenantId={client.tenantId} />
+                </div>
+            }
             <Grid2 container size={12} spacing={3} marginBottom={"16px"}>
                 <Grid2 size={{ xs: 12, sm: 12, md: 12, lg: 9, xl: 9 }}>
                     <Grid2 container size={12} spacing={2}>
-                        {/**  If we are in the root tenant, then show the owning tenant for this client */}
-                        {tenantBean.getTenantMetaData().tenant.tenantType === TENANT_TYPE_ROOT_TENANT &&
-                            <TenantHighlight tenantId={client.tenantId} />
-                        }
-                        <Grid2 className="detail-page-subheader" sx={{backgroundColor: "#1976d2", color: "white", padding: "8px", borderRadius: "2px"}} size={12}>Overview</Grid2>
+                        
+                        <Grid2 className="detail-page-subheader" sx={{ backgroundColor: "#1976d2", color: "white", padding: "8px", borderRadius: "2px" }} size={12}>Overview</Grid2>
                         <Grid2 size={12} marginBottom={"16px"}>
                             <Paper elevation={1} sx={{ padding: "8px" }}>
                                 <Grid2 container size={12} spacing={2}>
@@ -90,22 +94,22 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                 </Grid2>
 
                                 <Stack sx={{ marginTop: "8px" }} direction={"row"} flexDirection={"row-reverse"} >
-                                    <Button sx={{ border: "solid 1px lightgrey", borderRadius: "4px"}} >Update</Button>
+                                    <Button sx={{ border: "solid 1px lightgrey", borderRadius: "4px" }} >Update</Button>
                                 </Stack>
                             </Paper>
                         </Grid2>
 
-                        
+
                         <Grid2 size={12} marginBottom={"16px"}>
                             <Accordion defaultExpanded={true}  >
                                 <AccordionSummary
                                     expandIcon={<ExpandMoreIcon />}
                                     id={"redirect-uri-configuration"}
-                                    sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center"}}
+                                    sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center" }}
 
                                 >
-                                    <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
-                                        <SyncIcon /><div style={{marginLeft: "8px"}}>Redirect URI Configuration</div>
+                                    <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+                                        <SyncIcon /><div style={{ marginLeft: "8px" }}>Redirect URI Configuration</div>
                                     </div>
                                 </AccordionSummary>
                                 <AccordionDetails>
@@ -132,21 +136,21 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                         )
                                     )}
                                     <Divider></Divider>
-                            </AccordionDetails>
+                                </AccordionDetails>
                             </Accordion>
                         </Grid2>
 
-                        
+
                         <Grid2 size={12} marginBottom={"16px"}>
                             <Accordion >
                                 <AccordionSummary
                                     expandIcon={<ExpandMoreIcon />}
                                     id={"redirect-uri-configuration"}
-                                    sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center"}}
+                                    sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center" }}
 
                                 >
-                                    <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
-                                        <GroupIcon /><div style={{marginLeft: "8px"}}>Authentication Groups</div>
+                                    <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+                                        <GroupIcon /><div style={{ marginLeft: "8px" }}>Authentication Groups</div>
                                     </div>
                                 </AccordionSummary>
                                 <AccordionDetails>
@@ -172,7 +176,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                             </Typography>
                                         )
                                     )}
-                                    
+
                                 </AccordionDetails>
                             </Accordion>
                         </Grid2>
@@ -182,11 +186,11 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                 <AccordionSummary
                                     expandIcon={<ExpandMoreIcon />}
                                     id={"redirect-uri-configuration"}
-                                    sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center"}}
+                                    sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center" }}
 
                                 >
-                                    <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
-                                        <PolicyIcon /><div style={{marginLeft: "8px"}}>Access Control</div>
+                                    <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+                                        <PolicyIcon /><div style={{ marginLeft: "8px" }}>Access Control</div>
                                     </div>
                                 </AccordionSummary>
                                 <AccordionDetails>
@@ -212,20 +216,33 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                             </Typography>
                                         )
                                     )}
-                                    
+
                                 </AccordionDetails>
                             </Accordion>
-                        </Grid2>                        
-
-
-
-
+                        </Grid2>
                     </Grid2>
                 </Grid2>
 
-                <Grid2 spacing={2} size={3}>
 
-                </Grid2>
+                    <Grid2 spacing={2} size={{ xs: 12, sm: 12, md: 12, lg: 3, xl: 3 }}>
+                        <Grid2 container spacing={2} size={12}>
+                            <Grid2 size={{ xs: 12, sm: 6, lg: 12, md: 6, xl: 12 }} >
+                                <Paper elevation={3} >
+                                    <div className="detail-page-subheader">Client Contacts</div>
+                                    <List sx={{ padding: "8px" }}>
+                                        <ListItem disablePadding>Firstname Lastname</ListItem>
+                                        <ListItem disablePadding>Reggie T. Pickwick</ListItem>
+                                        <ListItem disablePadding>David Copperfield</ListItem>
+                                    </List>
+
+                                    <Divider />
+                                    <Stack sx={{ padding: "8px" }} direction={"row"} flexDirection={"row-reverse"} paddingTop={"8px"} >
+                                        <EditOutlinedIcon />
+                                    </Stack>
+                                </Paper>
+                            </Grid2>
+                        </Grid2>
+                    </Grid2>
 
             </Grid2>
         </Typography >

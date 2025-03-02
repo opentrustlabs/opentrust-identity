@@ -3,7 +3,6 @@ import React, { useContext } from "react";
 import { Accordion, AccordionDetails, AccordionSummary, Alert, Backdrop, Button, Checkbox, CircularProgress, Divider, List, ListItem, MenuItem, Paper, Select, Snackbar, Stack, TextField } from "@mui/material";
 import Grid2 from "@mui/material/Grid2";
 import Typography from "@mui/material/Typography";
-import MoreHorizOutlinedIcon from '@mui/icons-material/MoreHorizOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import BreadcrumbComponent from "../breadcrumbs/breadcrumbs";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
@@ -26,6 +25,7 @@ import LegacyUserMigrationConfiguration from "./legacy-user-migration-configurat
 import AnonymousUserConfiguration from "./anonymous-user-configuration";
 import TenantLookAndFeelConfiguration from "./tenant-look-and-feel-configuration";
 import TenantManagementDomainConfiguration from "./tenant-management-domain-configuration";
+import TenantAuthenticationDomainConfiguration from "./tenant-authentication-domain-configuration";
 
 export interface TenantDetailProps {
     tenantId: string
@@ -472,16 +472,18 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                         <Grid2 size={{ xs: 12, sm: 6, lg: 12, md: 6, xl: 12 }} >                            
                             <Paper elevation={3} >
                             <div className="detail-page-subheader">Tenant Authentication Domains</div>
-                                <List sx={{ padding: "8px" }}>
-                                    <ListItem disablePadding>opentrust.org</ListItem>
-                                    <ListItem disablePadding>opentrust.com</ListItem>
-                                    <ListItem disablePadding>megacorp.com</ListItem>
-                                </List>
-
-                                <Divider />
-                                <Stack sx={{ padding: "8px" }} direction={"row"} flexDirection={"row-reverse"} >
-                                    <EditOutlinedIcon />
-                                </Stack>
+                                <TenantAuthenticationDomainConfiguration
+                                    tenantId={tenant.tenantId}
+                                    onUpdateEnd={(success: boolean) => {
+                                        setShowMutationBackdrop(false);
+                                        if(success){
+                                            setShowMutationSnackbar(true);
+                                        }
+                                    }}
+                                    onUpdateStart={() => {
+                                        setShowMutationBackdrop(true);                                            
+                                    }}
+                                />                                
                             </Paper>
                         </Grid2>
 
@@ -518,6 +520,23 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                 </Stack>
                             </Paper>
                         </Grid2>
+
+                        <Grid2 size={{ xs: 12, sm: 6, lg: 12, md: 6, xl: 12 }} >
+                            <Paper elevation={3} >                                
+                                <div className="detail-page-subheader">Tenant Contacts</div>
+                                <List sx={{ padding: "8px" }}>
+                                    <ListItem disablePadding>Firstname Lastname</ListItem>
+                                    <ListItem disablePadding>Reggie T. Pickwick</ListItem>
+                                    <ListItem disablePadding>David Copperfield</ListItem>
+                                </List>
+
+                                <Divider />
+                                <Stack sx={{ padding: "8px" }} direction={"row"} flexDirection={"row-reverse"} paddingTop={"8px"} >
+                                    <EditOutlinedIcon />
+                                </Stack>
+                            </Paper>
+                        </Grid2>
+
                     </Grid2>
                 </Grid2>
 

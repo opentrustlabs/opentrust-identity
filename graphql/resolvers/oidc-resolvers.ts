@@ -169,6 +169,11 @@ const resolvers: Resolvers = {
         getDomainsForTenantManagement: (_: any, { tenantId }, oidcContext) => {
             const tenantService: TenantService = new TenantService(oidcContext);
             return tenantService.getDomainTenantManagementRels(tenantId);
+        },
+        getDomainsForTenantAuthentication: (_: any, { tenantId }, oidcContext) => {
+            const tenantService: TenantService = new TenantService(oidcContext);
+            return tenantService.getDomainsForTenantRestrictedAuthentication(tenantId);
+            
         }
     },
     Mutation: {
@@ -630,7 +635,16 @@ const resolvers: Resolvers = {
             const tenantService: TenantService = new TenantService(oidcContext);
             await tenantService.removeDomainFromTenantManagement(tenantId, domain);
             return "";
-        }
+        },
+        addDomainToTenantRestrictedAuthentication: async(_: any, { tenantId, domain }, oidcContext) => {
+            const tenantService: TenantService = new TenantService(oidcContext);
+            return tenantService.addDomainToTenantRestrictedAuthentication(tenantId, domain);
+        },
+        removeDomainFromTenantRestrictedAuthentication: async(_: any, { tenantId, domain }, oidcContext) => {
+            const tenantService: TenantService = new TenantService(oidcContext);
+            await tenantService.removeDomainFromTenantRestrictedAuthentication(tenantId, domain);
+            return "";
+        },
 
     }
 }

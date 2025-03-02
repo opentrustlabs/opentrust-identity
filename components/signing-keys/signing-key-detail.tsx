@@ -4,12 +4,13 @@ import Typography from "@mui/material/Typography";
 import React, { useContext } from "react";
 import { DetailPageContainer, DetailPageMainContentContainer, DetailPageRightNavContainer } from "../layout/detail-page-container";
 import { TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
-import { Button, Divider, Grid2, Paper, Stack, TextField } from "@mui/material";
+import { Button, Divider, Grid2, List, ListItem, Paper, Stack, TextField } from "@mui/material";
 import BreadcrumbComponent from "../breadcrumbs/breadcrumbs";
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import { ResponsiveBreakpoints, ResponsiveContext } from "../contexts/responsive-context";
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 
 export interface SigningKeyDetailProps {
     signingKey: SigningKey
@@ -141,7 +142,21 @@ const SigningKeyDetail: React.FC<SigningKeyDetailProps> = ({ signingKey }) => {
                         </Grid2>
                     </Grid2>
                 </DetailPageMainContentContainer>
-                <DetailPageRightNavContainer><div></div></DetailPageRightNavContainer>
+                <DetailPageRightNavContainer>
+                <Paper elevation={3} >
+                                    <div className="detail-page-subheader">Signing-Key Contacts</div>
+                                    <List sx={{ padding: "8px" }}>
+                                        <ListItem disablePadding>Firstname Lastname</ListItem>
+                                        <ListItem disablePadding>Reggie T. Pickwick</ListItem>
+                                        <ListItem disablePadding>David Copperfield</ListItem>
+                                    </List>
+
+                                    <Divider />
+                                    <Stack sx={{ padding: "8px" }} direction={"row"} flexDirection={"row-reverse"} paddingTop={"8px"} >
+                                        <EditOutlinedIcon />
+                                    </Stack>
+                                </Paper>
+                    </DetailPageRightNavContainer>
 
 
             </DetailPageContainer>

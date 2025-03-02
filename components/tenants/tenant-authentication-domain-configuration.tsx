@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
-import { TENANT_DOMAIN_MANAGEMENT_REL_ADD_MUTATION, TENANT_DOMAIN_MANAGEMENT_REL_REMOVE_MUTATION } from "@/graphql/mutations/oidc-mutations";
-import { TENANT_DOMAIN_MANAGEMENT_REL_QUERY } from "@/graphql/queries/oidc-queries";
+import { TENANT_RESTRICTED_DOMAIN_REL_ADD_MUTATION, TENANT_RESTRICTED_DOMAIN_REL_REMOVE_MUTATION } from "@/graphql/mutations/oidc-mutations";
+import { TENANT_AUTHENTICATION_DOMAIN_REL_QUERY } from "@/graphql/queries/oidc-queries";
 import { useMutation, useQuery } from "@apollo/client";
 import DeleteForeverOutlinedIcon from '@mui/icons-material/DeleteForeverOutlined';
 import AddBoxIcon from '@mui/icons-material/AddBox';
@@ -12,13 +12,13 @@ import DataLoading from "../layout/data-loading";
 import ErrorComponent from "../error/error-component";
 import { TenantManagementDomainRel } from "@/graphql/generated/graphql-types";
 
-export interface TenantManagementDomainConfigurationProps {
+export interface TenantAuthenticationDomainConfigurationProps {
     tenantId: string,
     onUpdateStart: () => void;
     onUpdateEnd: (success: boolean) => void;
 }
 
-const TenantManagementDomainConfiguration: React.FC<TenantManagementDomainConfigurationProps> = ({
+const TenantAuthenticationDomainConfiguration: React.FC<TenantAuthenticationDomainConfigurationProps> = ({
     tenantId,
     onUpdateEnd,
     onUpdateStart
@@ -31,13 +31,13 @@ const TenantManagementDomainConfiguration: React.FC<TenantManagementDomainConfig
     const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
     const [addDialogOpen, setAddDialogOpen] = React.useState(false);
 
-    const {data, loading, error} = useQuery(TENANT_DOMAIN_MANAGEMENT_REL_QUERY, {
+    const {data, loading, error} = useQuery(TENANT_AUTHENTICATION_DOMAIN_REL_QUERY, {
         variables: {
             tenantId: tenantId
         }
     })
 
-    const [addTenantDomainManagementRel] = useMutation(TENANT_DOMAIN_MANAGEMENT_REL_ADD_MUTATION, {
+    const [addTenantAuthenticationDomainRel] = useMutation(TENANT_RESTRICTED_DOMAIN_REL_ADD_MUTATION, {
         variables: {
             tenantId: tenantId,
             domain: selectedDomainToAdd
@@ -50,10 +50,10 @@ const TenantManagementDomainConfiguration: React.FC<TenantManagementDomainConfig
             onUpdateEnd(false);
             setErrorMessage(error.message);
         },
-        refetchQueries: [TENANT_DOMAIN_MANAGEMENT_REL_QUERY]
+        refetchQueries: [TENANT_AUTHENTICATION_DOMAIN_REL_QUERY]
     });
 
-    const [removeTenantDomainManagementRel] = useMutation(TENANT_DOMAIN_MANAGEMENT_REL_REMOVE_MUTATION, {
+    const [removeTenantAuthenticationDomainRel] = useMutation(TENANT_RESTRICTED_DOMAIN_REL_REMOVE_MUTATION, {
         variables: {
             tenantId: tenantId,
             domain: selectedDomainToDelete
@@ -66,7 +66,7 @@ const TenantManagementDomainConfiguration: React.FC<TenantManagementDomainConfig
             onUpdateEnd(false);
             setErrorMessage(error.message);
         },
-        refetchQueries: [TENANT_DOMAIN_MANAGEMENT_REL_QUERY]
+        refetchQueries: [TENANT_AUTHENTICATION_DOMAIN_REL_QUERY]
     });
 
     if (loading) return <DataLoading dataLoadingSize="xs" color={null} />
@@ -88,7 +88,7 @@ const TenantManagementDomainConfiguration: React.FC<TenantManagementDomainConfig
                     </DialogContent>
                     <DialogActions>
                         <Button onClick={() => {setDeleteDialogOpen(false); setSelectedDomainToDelete(null);}}>Cancel</Button>
-                        <Button onClick={() => {onUpdateStart(); setDeleteDialogOpen(false); removeTenantDomainManagementRel();}}>Confirm</Button>
+                        <Button onClick={() => {onUpdateStart(); setDeleteDialogOpen(false); removeTenantAuthenticationDomainRel();}}>Confirm</Button>
                     </DialogActions>                    
                 </Dialog>
             }
@@ -110,16 +110,16 @@ const TenantManagementDomainConfiguration: React.FC<TenantManagementDomainConfig
                     </DialogContent>
                     <DialogActions>
                         <Button onClick={() => {setAddDialogOpen(false); setSelectedDomainToAdd(null);}}>Cancel</Button>
-                        <Button onClick={() => {onUpdateStart(); setAddDialogOpen(false); addTenantDomainManagementRel();}}>Submit</Button>
+                        <Button onClick={() => {onUpdateStart(); setAddDialogOpen(false); addTenantAuthenticationDomainRel();}}>Submit</Button>
                     </DialogActions>                    
                 </Dialog>
             }
             
             <Grid2 padding={"8px"} container size={12} spacing={0}>
-                {data.getDomainsForTenantManagement && data.getDomainsForTenantManagement.length < 1 &&
-                    <Grid2 size={12}>No domains for tenant management</Grid2>
+                {data.getDomainsForTenantAuthentication && data.getDomainsForTenantAuthentication.length < 1 &&
+                    <Grid2 size={12}>No restricted domains found</Grid2>
                 }
-                {data.getDomainsForTenantManagement.map(
+                {data.getDomainsForTenantAuthentication.map(
                     (rel: TenantManagementDomainRel, idx: number) => (
                         <Grid2 container key={rel.domain} size={12}>
                             <Grid2  size={10.8}>{rel.domain}</Grid2>
@@ -134,10 +134,9 @@ const TenantManagementDomainConfiguration: React.FC<TenantManagementDomainConfig
                     <AddBoxIcon onClick={() => setAddDialogOpen(true)} sx={{cursor: "pointer"}}/>
                 </Grid2>
                 <Grid2 size={11}></Grid2>
-                
             </Grid2>
         </>
     )
 }
 
-export default TenantManagementDomainConfiguration;
+export default TenantAuthenticationDomainConfiguration;
