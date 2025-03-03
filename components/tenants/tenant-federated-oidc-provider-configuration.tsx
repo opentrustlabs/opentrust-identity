@@ -180,7 +180,6 @@ const TenantFederatedOIDCProviderConfiguration: React.FC<TenantFederatedOIDCProv
                                     <RemoveCircleOutlineIcon
                                         sx={{cursor: "pointer"}}
                                         onClick={() => {setSelectedOIDCProviderToRemove({id:provider.federatedOIDCProviderId, name: provider.federatedOIDCProviderName}); setShowRemoveConfirmationDialog(true);}}
-
                                     />
                                 </Grid2>
                                 <Grid2 size={12}><Divider /></Grid2>

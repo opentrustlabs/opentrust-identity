@@ -3,10 +3,11 @@ import SigningKeysDao from "../../signing-keys-dao";
 import connection  from "@/lib/data-sources/db";
 import SigningKeyEntity from "@/lib/entities/signing-key-entity";
 import ContactEntity from "@/lib/entities/contact-entity";
-import { CONTACT_TYPE_FOR_SIGNING_KEY } from "@/utils/consts";
+import { CONTACT_TYPE_FOR_SIGNING_KEY, SIGNING_KEY_STATUS_REVOKED } from "@/utils/consts";
 
 class DBSigningKeysDao extends SigningKeysDao {
 
+    
     public async getSigningKeys(tenantId?: string): Promise<Array<SigningKey>> {
         const em = connection.em.fork();
         const queryParams: any = {};
@@ -37,12 +38,25 @@ class DBSigningKeysDao extends SigningKeysDao {
         return Promise.resolve(key);
     }
 
+    public async revokeSigningKey(keyId: string): Promise<void> {
+        const key: SigningKey | null = await this.getSigningKeyById(keyId);
+        if(key){
+            key.status = SIGNING_KEY_STATUS_REVOKED;
+            const em = connection.em.fork();
+            const entity: SigningKeyEntity = new SigningKeyEntity(key);
+            await em.upsert(entity);
+            await em.flush()
+        }
+        return Promise.resolve();
+    }
+
     public async deleteSigningKey(keyId: string): Promise<void> {
         const em = connection.em.fork();
         await em.nativeDelete(SigningKeyEntity, {keyId: keyId});
         em.flush();
         return Promise.resolve();
     }
+
 
     public async assignContactsToSigningKey(keyId: string, contactList: Array<Contact>): Promise<Array<Contact>> {
         const em = connection.em.fork();

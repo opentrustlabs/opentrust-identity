@@ -1,7 +1,7 @@
 import { getFileContents } from "@/utils/dao-utils";
 import ScopeDao from "../../scope-dao";
 import { CLIENT_TENANT_SCOPE_REL_FILE, SCOPE_FILE, TENANT_SCOPE_REL_FILE } from "@/utils/consts";
-import { ClientTenantScopeRel, Scope, TenantScopeRel } from "@/graphql/generated/graphql-types";
+import { AuthorizationGroupScopeRel, ClientScopeRel, Scope, TenantAvailableScope, UserScopeRel } from "@/graphql/generated/graphql-types";
 import path from "node:path";
 import { writeFileSync } from "node:fs";
 import { GraphQLError } from "graphql/error/GraphQLError";
@@ -9,15 +9,40 @@ import { GraphQLError } from "graphql/error/GraphQLError";
 const dataDir = process.env.FS_BASED_DATA_DIR ?? path.join(__dirname);
 
 class FSBasedScopeDao extends ScopeDao {
+
+    getTenantAvailableScope(tenantId?: String): Promise<Array<TenantAvailableScope>> {
+        throw new Error("Method not implemented.");
+    }
+    getClientScopeRels(clientId: string): Promise<Array<ClientScopeRel>> {
+        throw new Error("Method not implemented.");
+    }
+    getAuthorizationGroupScopeRels(authorizationGroupId: string): Promise<Array<AuthorizationGroupScopeRel>> {
+        throw new Error("Method not implemented.");
+    }
+    assignScopeToAuthorizationGroup(tenantId: string, authorizationGroupId: string, scopeId: string): Promise<AuthorizationGroupScopeRel> {
+        throw new Error("Method not implemented.");
+    }
+    removeScopeFromAuthorizationGroup(tenantId: string, authorizationGroupId: string, scopeId: string): Promise<void> {
+        throw new Error("Method not implemented.");
+    }
+    getUserScopeRels(userId: string): Promise<Array<UserScopeRel>> {
+        throw new Error("Method not implemented.");
+    }
+    assignScopeToUser(tenantId: string, userId: string, scopeId: string): Promise<UserScopeRel> {
+        throw new Error("Method not implemented.");
+    }
+    removeScopeFromUser(tenantId: string, userId: string, scopeId: string): Promise<void> {
+        throw new Error("Method not implemented.");
+    }
     
     
     public async getScope(tenantId?: string): Promise<Array<Scope>> {
         let scopes: Array<Scope> = JSON.parse(getFileContents(`${dataDir}/${SCOPE_FILE}`, "[]"));
         if(tenantId){
-            const rels: Array<TenantScopeRel> = await this.getTenantScopeRel(tenantId);
+            const rels: Array<TenantAvailableScope> = await this.getTenantScopeRel(tenantId);
             scopes = scopes.filter(
                 (s: Scope) => rels.find(
-                    (r: TenantScopeRel) => r.tenantId === tenantId
+                    (r: TenantAvailableScope) => r.tenantId === tenantId
                 )
             )
         }
@@ -62,12 +87,12 @@ class FSBasedScopeDao extends ScopeDao {
     }
         
 
-    public async getTenantScopeRel(tenantId?: String): Promise<Array<TenantScopeRel>> {
-        const tenantScopeRels: Array<TenantScopeRel> = JSON.parse(getFileContents(`${dataDir}/${TENANT_SCOPE_REL_FILE}`, "[]"));
+    public async getTenantScopeRel(tenantId?: String): Promise<Array<TenantAvailableScope>> {
+        const tenantScopeRels: Array<TenantAvailableScope> = JSON.parse(getFileContents(`${dataDir}/${TENANT_SCOPE_REL_FILE}`, "[]"));
         if(tenantId){
             return Promise.resolve(
                 tenantScopeRels.filter(
-                    (t: TenantScopeRel) => t.tenantId === tenantId
+                    (t: TenantAvailableScope) => t.tenantId === tenantId
                 )
             );
         }
@@ -76,16 +101,17 @@ class FSBasedScopeDao extends ScopeDao {
         }
     }
     
-    public async assignScopeToTenant(tenantId: string, scopeId: string, accessRuleId: string | null): Promise<TenantScopeRel> {
+    public async assignScopeToTenant(tenantId: string, scopeId: string, accessRuleId?: string): Promise<TenantAvailableScope> {
+    // public async assignScopeToTenant(tenantId: string, scopeId: string, accessRuleId: string | null): Promise<TenantAvailableScope> {
         
-        const a: Array<TenantScopeRel> = await this.getTenantScopeRel();
+        const a: Array<TenantAvailableScope> = await this.getTenantScopeRel();
         const existingRel = a.find(
-            (r: TenantScopeRel) => r.tenantId === tenantId && r.scopeId === scopeId
+            (r: TenantAvailableScope) => r.tenantId === tenantId && r.scopeId === scopeId
         )
         if(existingRel){
             return Promise.resolve(existingRel);
         }
-        const rel: TenantScopeRel = {
+        const rel: TenantAvailableScope = {
             tenantId: tenantId,
             scopeId: scopeId
         }
@@ -96,23 +122,23 @@ class FSBasedScopeDao extends ScopeDao {
     }
 
     public async removeScopeFromTenant(tenantId: string, scopeId: string): Promise<void> {
-        let a: Array<TenantScopeRel> = await this.getTenantScopeRel();
+        let a: Array<TenantAvailableScope> = await this.getTenantScopeRel();
         a = a.filter(
-            (rel: TenantScopeRel) => !(rel.tenantId === tenantId && rel.scopeId === scopeId)
+            (rel: TenantAvailableScope) => !(rel.tenantId === tenantId && rel.scopeId === scopeId)
         );
         writeFileSync(`${dataDir}/${TENANT_SCOPE_REL_FILE}`, JSON.stringify(a), {encoding: "utf-8"});
     }
 
-    public async assignScopeToClient(tenantId: string, clientId: string, scopeId: string): Promise<ClientTenantScopeRel> {
+    public async assignScopeToClient(tenantId: string, clientId: string, scopeId: string): Promise<ClientScopeRel> {
         
-        const clientTenantScopeRels: Array<ClientTenantScopeRel> = getFileContents(`${dataDir}/${CLIENT_TENANT_SCOPE_REL_FILE}`, "[]");
+        const clientTenantScopeRels: Array<ClientScopeRel> = getFileContents(`${dataDir}/${CLIENT_TENANT_SCOPE_REL_FILE}`, "[]");
         const existingRel = clientTenantScopeRels.find(
-            (r: ClientTenantScopeRel) => r.tenantId === tenantId && r.clientId === clientId && r.scopeId === scopeId
+            (r: ClientScopeRel) => r.tenantId === tenantId && r.clientId === clientId && r.scopeId === scopeId
         )
         if(existingRel){
             return Promise.resolve(existingRel);
         }
-        const newRel: ClientTenantScopeRel = {
+        const newRel: ClientScopeRel = {
             tenantId: tenantId,
             clientId: clientId,
             scopeId: scopeId
@@ -123,9 +149,9 @@ class FSBasedScopeDao extends ScopeDao {
 
     }
     public async removeScopeFromClient(tenantId: string, clientId: string, scopeId: string): Promise<void> {
-        let clientTenantScopeRels: Array<ClientTenantScopeRel> = getFileContents(`${dataDir}/${CLIENT_TENANT_SCOPE_REL_FILE}`, "[]");
+        let clientTenantScopeRels: Array<ClientScopeRel> = getFileContents(`${dataDir}/${CLIENT_TENANT_SCOPE_REL_FILE}`, "[]");
         clientTenantScopeRels = clientTenantScopeRels.filter(
-            (r: ClientTenantScopeRel) => !(r.tenantId === tenantId && r.clientId === clientId && r.scopeId === scopeId)
+            (r: ClientScopeRel) => !(r.tenantId === tenantId && r.clientId === clientId && r.scopeId === scopeId)
         )
         writeFileSync(`${dataDir}/${CLIENT_TENANT_SCOPE_REL_FILE}`, JSON.stringify(clientTenantScopeRels), {encoding: "utf-8"});
     }

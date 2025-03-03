@@ -1,6 +1,6 @@
 import ClientService from "@/lib/service/client-service";
 import TenantService from "@/lib/service/tenant-service";
-import { Resolvers, QueryResolvers, MutationResolvers, Tenant, Client, SigningKey, Scope, AuthenticationGroup, AuthorizationGroup, FederatedOidcProvider, ContactInput, Contact, LoginUserNameHandlerResponse, LoginUserNameHandlerAction, LoginAuthenticationHandlerResponse, LoginAuthenticationHandlerAction, SecondFactorType, PortalUserProfile, User, LoginFailurePolicy, TenantPasswordConfig, TenantLegacyUserMigrationConfig, TenantAnonymousUserConfiguration, TenantLookAndFeel } from "@/graphql/generated/graphql-types";
+import { Resolvers, QueryResolvers, MutationResolvers, Tenant, Client, SigningKey, Scope, AuthenticationGroup, AuthorizationGroup, FederatedOidcProvider, Contact, LoginUserNameHandlerResponse, LoginUserNameHandlerAction, LoginAuthenticationHandlerResponse, LoginAuthenticationHandlerAction, SecondFactorType, PortalUserProfile, User, LoginFailurePolicy, TenantPasswordConfig, TenantLegacyUserMigrationConfig, TenantAnonymousUserConfiguration, TenantLookAndFeel } from "@/graphql/generated/graphql-types";
 import SigningKeysService from "@/lib/service/keys-service";
 import ScopeService from "@/lib/service/scope-service";
 import GroupService from "@/lib/service/group-service";
@@ -9,6 +9,7 @@ import FederatedOIDCProviderService from "@/lib/service/federated-oidc-provider-
 import { NAME_ORDER_WESTERN, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_POST, SCOPE_USE_APPLICATION_MANAGEMENT, SIGNING_KEY_STATUS_ACTIVE, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import SearchService from "@/lib/service/search-service";
 import { GraphQLError } from "graphql";
+import ContactService from "@/lib/service/contact-service";
 
 
 const resolvers: Resolvers = {
@@ -172,8 +173,11 @@ const resolvers: Resolvers = {
         },
         getDomainsForTenantAuthentication: (_: any, { tenantId }, oidcContext) => {
             const tenantService: TenantService = new TenantService(oidcContext);
-            return tenantService.getDomainsForTenantRestrictedAuthentication(tenantId);
-            
+            return tenantService.getDomainsForTenantRestrictedAuthentication(tenantId);            
+        },
+        getContacts: (_: any, { objectId }, oidcContext) => {
+            const contactService: ContactService = new ContactService(oidcContext);
+            return contactService.getContacts(objectId);
         }
     },
     Mutation: {
@@ -198,8 +202,8 @@ const resolvers: Resolvers = {
                 allowForgotPassword: false
             };
             await tenantService.createRootTenant(tenant);
-            const contacts: Array<Contact> = tenantInput.contactInput.map((i: ContactInput) => { return {email: i.email, name: i.name, objectid: tenant.tenantId, objecttype:""}});
-            await tenantService.assignContactsToTenant(tenant.tenantId, contacts);            
+            //const contacts: Array<Contact> = tenantInput.contactInput.map((i: ContactInput) => { return {email: i.email, name: i.name, objectid: tenant.tenantId, objecttype:""}});
+            //await tenantService.assignContactsToTenant(tenant.tenantId, contacts);            
             return tenant;
         },
         updateRootTenant: async(_: any, { tenantInput }, oidcContext) => {
@@ -223,8 +227,8 @@ const resolvers: Resolvers = {
                 allowForgotPassword: false
             }
             await tenantService.updateRootTenant(tenant);
-            const contacts: Array<Contact> = tenantInput.contactInput.map((i: ContactInput) => { return {email: i.email, name: i.name, objectid: tenant.tenantId, objecttype:""}});
-            await tenantService.assignContactsToTenant(tenant.tenantId, contacts);            
+            //const contacts: Array<Contact> = tenantInput.contactInput.map((i: ContactInput) => { return {email: i.email, name: i.name, objectid: tenant.tenantId, objecttype:""}});
+            //await tenantService.assignContactsToTenant(tenant.tenantId, contacts);            
             return tenant;
         },
         createTenant: async (_: any, { tenantInput }, oidcContext) => {
@@ -250,8 +254,8 @@ const resolvers: Resolvers = {
                 defaultRateLimitPeriodMinutes: tenantInput.defaultRateLimitPeriodMinutes
             }
             await tenantService.createTenant(tenant);
-            const contacts: Array<Contact> = tenantInput.contactInput.map((i: ContactInput) => { return {email: i.email, name: i.name, objectid: tenant.tenantId, objecttype:""}});
-            await tenantService.assignContactsToTenant(tenant.tenantId, contacts);            
+            //const contacts: Array<Contact> = tenantInput.contactInput.map((i: ContactInput) => { return {email: i.email, name: i.name, objectid: tenant.tenantId, objecttype:""}});
+            //await tenantService.assignContactsToTenant(tenant.tenantId, contacts);            
             return tenant; 
         },
         updateTenant: async (_: any, { tenantInput }, oidcContext) => {
@@ -277,8 +281,8 @@ const resolvers: Resolvers = {
                 defaultRateLimitPeriodMinutes: tenantInput.defaultRateLimitPeriodMinutes
             }
             const updatedTenant: Tenant = await tenantService.updateTenant(tenant);
-            const contacts: Array<Contact> = tenantInput.contactInput.map((i: ContactInput) => { return {email: i.email, name: i.name, objectid: tenant.tenantId, objecttype:""}});
-            await tenantService.assignContactsToTenant(tenant.tenantId, contacts);            
+            //const contacts: Array<Contact> = tenantInput.contactInput.map((i: ContactInput) => { return {email: i.email, name: i.name, objectid: tenant.tenantId, objecttype:""}});
+            //await tenantService.assignContactsToTenant(tenant.tenantId, contacts);            
             return updatedTenant;
         },
         deleteTenant: async (_: any, { tenantId }, oidcContext) => {
@@ -305,8 +309,8 @@ const resolvers: Resolvers = {
                 clienttypeid: ""
             }
             await clientService.createClient(client);
-            const contacts: Array<Contact> = clientInput.contactInput.map((i: ContactInput) => { return {email: i.email, name: i.name, objectid: client.clientId, objecttype:""}});
-            await clientService.assignContactsToClient(client.clientId, contacts);
+            //const contacts: Array<Contact> = clientInput.contactInput.map((i: ContactInput) => { return {email: i.email, name: i.name, objectid: client.clientId, objecttype:""}});
+            //await clientService.assignContactsToClient(client.clientId, contacts);
             return client;
         },
         updateClient: async (_: any, { clientInput }, oidcContext) => {
@@ -328,8 +332,8 @@ const resolvers: Resolvers = {
                 clienttypeid: ""
             }
             await clientService.updateClient(client);
-            const contacts: Array<Contact> = clientInput.contactInput.map((i: ContactInput) => { return {email: i.email, name: i.name, objectid: client.clientId, objecttype:""}});
-            await clientService.assignContactsToClient(client.clientId, contacts);
+            //const contacts: Array<Contact> = clientInput.contactInput.map((i: ContactInput) => { return {email: i.email, name: i.name, objectid: client.clientId, objecttype:""}});
+            //await clientService.assignContactsToClient(client.clientId, contacts);
             return client;
         },
         deleteClient: async(_: any, { clientId }, oidcContext) => {
@@ -652,8 +656,24 @@ const resolvers: Resolvers = {
         removeFederatedOIDCProviderFromTenant: async(_: any, { tenantId, federatedOIDCProviderId }, oidcContext) => {
             const service: FederatedOIDCProviderService = new FederatedOIDCProviderService(oidcContext);
             return service.removeFederatedOIDCProviderFromTenant(federatedOIDCProviderId, tenantId);            
+        },
+        addContact: async(_: any, { contactCreateInput }, oidcContext) => {
+            const contactService: ContactService = new ContactService(oidcContext);
+            const contact: Contact = {
+                contactid: "",
+                email: contactCreateInput.email,
+                objectid: contactCreateInput.objectid,
+                objecttype: contactCreateInput.objecttype,
+                name: contactCreateInput.name,
+                userid: contactCreateInput.userid
+            }
+            return contactService.addContact(contact);
+        },
+        removeContact: async(_: any, { contactId }, oidcContext) => {
+            const contactService: ContactService = new ContactService(oidcContext);
+            await contactService.removeContact(contactId);
+            return contactId;
         }
-
     }
 }
 

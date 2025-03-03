@@ -13,17 +13,20 @@ class  ContactEntity implements Contact {
     }
     __typename?: "Contact";
 
-    @PrimaryKey({fieldName: "objectid"})
+    @PrimaryKey({fieldName: "contactid"})
+    contactid: string;
+
+    @Property({fieldName: "objectid"})
     objectid: string;
 
-    @PrimaryKey({fieldName: "email"})
+    @Property({fieldName: "email"})
     email: string;
 
     @Property({fieldName: "objecttype"})
     objecttype: string;
     
-    @Property({fieldName: "name"})
-    name: string;
+    @Property({fieldName: "contactname", nullable: true})
+    name: Maybe<string> | undefined;
     
     @Property({fieldName: "userid", nullable: true})
     userid?: Maybe<string> | undefined;
