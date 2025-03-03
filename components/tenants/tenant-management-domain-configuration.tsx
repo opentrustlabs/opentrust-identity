@@ -73,7 +73,7 @@ const TenantManagementDomainConfiguration: React.FC<TenantManagementDomainConfig
     if (error) return <ErrorComponent message={error.message} componentSize='xs' />
 
     return (
-        <>
+        <Typography component={"div"}>
             {errorMessage && 
                 <Alert severity="error" onClose={() => {setErrorMessage(null)}}>{errorMessage}</Alert>
             }
@@ -115,6 +115,7 @@ const TenantManagementDomainConfiguration: React.FC<TenantManagementDomainConfig
                 </Dialog>
             }
             
+            
             <Grid2 padding={"8px"} container size={12} spacing={0}>
                 {data.getDomainsForTenantManagement && data.getDomainsForTenantManagement.length < 1 &&
                     <Grid2 size={12} textAlign={"center"}>No domains for tenant management</Grid2>
@@ -128,7 +129,7 @@ const TenantManagementDomainConfiguration: React.FC<TenantManagementDomainConfig
                     )
                 )}
             </Grid2>
-            <Divider />
+            <Divider />            
             <Grid2 padding={"8px"} container size={12} spacing={0}>                
                 <Grid2 size={1}>
                     <AddBoxIcon onClick={() => setAddDialogOpen(true)} sx={{cursor: "pointer"}}/>
@@ -136,7 +137,8 @@ const TenantManagementDomainConfiguration: React.FC<TenantManagementDomainConfig
                 <Grid2 size={11}></Grid2>
                 
             </Grid2>
-        </>
+            </Typography>
+        
     )
 }
 
