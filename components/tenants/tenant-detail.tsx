@@ -17,6 +17,7 @@ import LoginIcon from '@mui/icons-material/Login';
 import FaceIcon from '@mui/icons-material/Face';
 import InputIcon from '@mui/icons-material/Input';
 import DisplaySettingsIcon from '@mui/icons-material/DisplaySettings';
+import AutoAwesomeMosaicIcon from '@mui/icons-material/AutoAwesomeMosaic';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { TENANT_UPDATE_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import LoginFailureConfiguration from "./login-failure-configuration";
@@ -26,6 +27,7 @@ import AnonymousUserConfiguration from "./anonymous-user-configuration";
 import TenantLookAndFeelConfiguration from "./tenant-look-and-feel-configuration";
 import TenantManagementDomainConfiguration from "./tenant-management-domain-configuration";
 import TenantAuthenticationDomainConfiguration from "./tenant-authentication-domain-configuration";
+import TenantFederatedOIDCProviderConfiguration from "./tenant-federated-oidc-provider-configuration";
 
 export interface TenantDetailProps {
     tenantId: string
@@ -415,6 +417,35 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                             </Accordion>
                         </Grid2>
 
+                        <Grid2 size={12}>
+                            <Accordion >
+                                <AccordionSummary
+                                    expandIcon={<ExpandMoreIcon />}
+                                    id={"federated-oidc-providers"}
+                                    sx={{ fontWeight: "bold" }}
+                                >
+                                    <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
+                                        <AutoAwesomeMosaicIcon /><div style={{marginLeft: "8px"}}>Federated OIDC Providers</div>
+                                    </div>
+                                    
+                                </AccordionSummary>
+                                <AccordionDetails>
+                                    <TenantFederatedOIDCProviderConfiguration
+                                        tenantId={tenant.tenantId}
+                                        onUpdateEnd={(success: boolean) => {
+                                            setShowMutationBackdrop(false);
+                                            if(success){
+                                                setShowMutationSnackbar(true);
+                                            }
+                                        }}
+                                        onUpdateStart={() => {
+                                            setShowMutationBackdrop(true);                                            
+                                        }}
+                                    />                                    
+                                </AccordionDetails>
+                            </Accordion>
+                        </Grid2>
+
 
                         <Grid2 size={12}>
                             <Accordion >
@@ -484,40 +515,6 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                         setShowMutationBackdrop(true);                                            
                                     }}
                                 />                                
-                            </Paper>
-                        </Grid2>
-
-
-                        <Grid2 size={{ xs: 12, sm: 6, lg: 12, md: 6, xl: 12 }} >                            
-                            <Paper elevation={3} >
-                            <div className="detail-page-subheader">Enterprise Identity Providers</div>
-                                <List sx={{ padding: "8px" }}>
-                                    <ListItem disablePadding>opentrust.org</ListItem>
-                                    <ListItem disablePadding>opentrust.com</ListItem>
-                                    <ListItem disablePadding>megacorp.com</ListItem>
-                                </List>
-
-                                <Divider />
-                                <Stack sx={{ padding: "8px" }} direction={"row"} flexDirection={"row-reverse"} >
-                                    <EditOutlinedIcon />
-                                </Stack>
-                            </Paper>
-                        </Grid2>
-
-
-                        <Grid2 size={{ xs: 12, sm: 6, lg: 12, md: 6, xl: 12 }} >
-                            <Paper elevation={3} >                                
-                                <div className="detail-page-subheader">Social Identity Providers</div>
-                                <List sx={{ padding: "8px" }}>
-                                    <ListItem disablePadding>opentrust.org</ListItem>
-                                    <ListItem disablePadding>opentrust.com</ListItem>
-                                    <ListItem disablePadding>megacorp.com</ListItem>
-                                </List>
-
-                                <Divider />
-                                <Stack sx={{ padding: "8px" }} direction={"row"} flexDirection={"row-reverse"} paddingTop={"8px"} >
-                                    <EditOutlinedIcon />
-                                </Stack>
                             </Paper>
                         </Grid2>
 

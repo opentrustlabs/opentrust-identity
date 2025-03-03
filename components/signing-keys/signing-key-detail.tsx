@@ -143,21 +143,19 @@ const SigningKeyDetail: React.FC<SigningKeyDetailProps> = ({ signingKey }) => {
                     </Grid2>
                 </DetailPageMainContentContainer>
                 <DetailPageRightNavContainer>
-                <Paper elevation={3} >
-                                    <div className="detail-page-subheader">Signing-Key Contacts</div>
-                                    <List sx={{ padding: "8px" }}>
-                                        <ListItem disablePadding>Firstname Lastname</ListItem>
-                                        <ListItem disablePadding>Reggie T. Pickwick</ListItem>
-                                        <ListItem disablePadding>David Copperfield</ListItem>
-                                    </List>
-
-                                    <Divider />
-                                    <Stack sx={{ padding: "8px" }} direction={"row"} flexDirection={"row-reverse"} paddingTop={"8px"} >
-                                        <EditOutlinedIcon />
-                                    </Stack>
-                                </Paper>
-                    </DetailPageRightNavContainer>
-
+                    <Paper elevation={3} >
+                        <div className="detail-page-subheader">Signing-Key Contacts</div>
+                        <List sx={{ padding: "8px" }}>
+                            <ListItem disablePadding>Firstname Lastname</ListItem>
+                            <ListItem disablePadding>Reggie T. Pickwick</ListItem>
+                            <ListItem disablePadding>David Copperfield</ListItem>
+                        </List>
+                        <Divider />
+                        <Stack sx={{ padding: "8px" }} direction={"row"} flexDirection={"row-reverse"} paddingTop={"8px"} >
+                            <EditOutlinedIcon />
+                        </Stack>
+                    </Paper>
+                </DetailPageRightNavContainer>
 
             </DetailPageContainer>
         </Typography>

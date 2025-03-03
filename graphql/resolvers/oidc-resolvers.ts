@@ -645,6 +645,14 @@ const resolvers: Resolvers = {
             await tenantService.removeDomainFromTenantRestrictedAuthentication(tenantId, domain);
             return "";
         },
+        assignFederatedOIDCProviderToTenant: async(_: any, { tenantId, federatedOIDCProviderId }, oidcContext) => {
+            const service: FederatedOIDCProviderService = new FederatedOIDCProviderService(oidcContext);
+            return service.assignFederatedOIDCProviderToTenant(federatedOIDCProviderId, tenantId);
+        },
+        removeFederatedOIDCProviderFromTenant: async(_: any, { tenantId, federatedOIDCProviderId }, oidcContext) => {
+            const service: FederatedOIDCProviderService = new FederatedOIDCProviderService(oidcContext);
+            return service.removeFederatedOIDCProviderFromTenant(federatedOIDCProviderId, tenantId);            
+        }
 
     }
 }
