@@ -103,7 +103,7 @@ const ContactConfiguration: React.FC<ContactConfigurationProps> = ({
     if (error) return <ErrorComponent message={error.message} componentSize='xs' />
 
     return (
-        <>
+        <Typography component={"div"}>
             {errorMessage && 
                 <Alert severity="error" onClose={() => {setErrorMessage(null)}}>{errorMessage}</Alert>
             }
@@ -193,7 +193,7 @@ const ContactConfiguration: React.FC<ContactConfigurationProps> = ({
                 </Grid2>
                 <Grid2 size={11}></Grid2>
             </Grid2>
-        </>
+        </Typography>
     )
 }
 
