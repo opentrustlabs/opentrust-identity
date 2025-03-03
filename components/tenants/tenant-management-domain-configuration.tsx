@@ -3,7 +3,7 @@ import React from "react";
 import { TENANT_DOMAIN_MANAGEMENT_REL_ADD_MUTATION, TENANT_DOMAIN_MANAGEMENT_REL_REMOVE_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import { TENANT_DOMAIN_MANAGEMENT_REL_QUERY } from "@/graphql/queries/oidc-queries";
 import { useMutation, useQuery } from "@apollo/client";
-import DeleteForeverOutlinedIcon from '@mui/icons-material/DeleteForeverOutlined';
+import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
 import AddBoxIcon from '@mui/icons-material/AddBox';
 import Dialog from "@mui/material/Dialog";
 import DialogContent from "@mui/material/DialogContent";
@@ -123,7 +123,7 @@ const TenantManagementDomainConfiguration: React.FC<TenantManagementDomainConfig
                     (rel: TenantManagementDomainRel, idx: number) => (
                         <Grid2 container key={rel.domain} size={12}>
                             <Grid2  size={10.8}>{rel.domain}</Grid2>
-                            <Grid2 size={1.2}><DeleteForeverOutlinedIcon sx={{cursor: "pointer"}} onClick={() => {setSelectedDomainToDelete(rel.domain); setDeleteDialogOpen(true); }} /></Grid2>                            
+                            <Grid2 size={1.2}><RemoveCircleOutlineIcon sx={{cursor: "pointer"}} onClick={() => {setSelectedDomainToDelete(rel.domain); setDeleteDialogOpen(true); }} /></Grid2>                            
                         </Grid2>
                     )
                 )}

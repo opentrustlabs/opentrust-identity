@@ -4,7 +4,7 @@ import { useQuery } from "@apollo/client";
 import React from "react";
 import DataLoading from "../layout/data-loading";
 import ErrorComponent from "../error/error-component";
-import { Autocomplete, AutocompleteRenderInputParams, Button, DialogActions, DialogContent, DialogTitle, TextField } from "@mui/material";
+import { Autocomplete, Button, DialogActions, DialogContent, DialogTitle, TextField } from "@mui/material";
 import { Tenant } from "@/graphql/generated/graphql-types";
 
 export interface TenantSelectorProps {

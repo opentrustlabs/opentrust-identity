@@ -144,3 +144,21 @@ export const TENANT_RESTRICTED_DOMAIN_REL_REMOVE_MUTATION = gql(`
         removeDomainFromTenantRestrictedAuthentication(tenantId: $tenantId, domain: $domain) 
     }
 `);
+
+export const ASSIGN_TENANT_FEDERATED_OIDC_PROVIDER_MUTATION = gql(`
+    mutation assignFederatedOIDCProviderToTenant($federatedOIDCProviderId: String!, $tenantId: String!) {
+        assignFederatedOIDCProviderToTenant(federatedOIDCProviderId: $federatedOIDCProviderId, tenantId: $tenantId) {
+            federatedOIDCProviderId
+            tenantId
+        }
+    }
+`);
+
+export const REMOVE_TENANT_FEDERATED_OIDC_PROVIDER_MUTATION = gql(`
+    mutation removeFederatedOIDCProviderFromTenant($federatedOIDCProviderId: String!, $tenantId: String!) {
+        removeFederatedOIDCProviderFromTenant(federatedOIDCProviderId: $federatedOIDCProviderId, tenantId: $tenantId) {
+            federatedOIDCProviderId
+            tenantId
+        }
+    }
+`);
