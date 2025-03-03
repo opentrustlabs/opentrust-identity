@@ -443,14 +443,15 @@ create TABLE footer_link (
 );
 
 create TABLE contact (
+    contactid VARCHAR(64) PRIMARY KEY,
     objectid VARCHAR(64) NOT NULL,
     objecttype VARCHAR(64) NOT NULL,
     email VARCHAR(128) NOT NULL,
-    name VARCHAR(128) NOT NULL,
-    userid VARCHAR(64),
-    PRIMARY KEY(objectid, email)
+    contactname VARCHAR(128),
+    userid VARCHAR(64)
 );
 CREATE INDEX contact_objectid_idx ON contact(objectid);
+CREATE INDEX contact_objecttype_idx on contact(objecttype);
 CREATE INDEX contact_email_idx ON contact(email);
 
 

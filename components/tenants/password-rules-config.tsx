@@ -271,8 +271,7 @@ const PasswordRulesConfiguration: React.FC<PasswordRulesConfigurationProps> = ({
                                 options={[
                                     { id: MFA_AUTH_TYPE_TIME_BASED_OTP, label: "OTP - Requires an authenticator app" },
                                     { id: MFA_AUTH_TYPE_FIDO2, label: "Security Key" },
-                                    { id: MFA_AUTH_TYPE_SMS, label: "SMS - Not recommended" },
-                                    { id: MFA_AUTH_TYPE_EMAIL, label: "Email - Not recommended" }
+                                    { id: MFA_AUTH_TYPE_SMS, label: "SMS - Not recommended" }
                                 ]}
                                 isOptionEqualToValue={(option, value) => option.id === value.id}
                                 value={

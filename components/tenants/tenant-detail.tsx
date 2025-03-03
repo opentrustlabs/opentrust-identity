@@ -28,6 +28,7 @@ import TenantLookAndFeelConfiguration from "./tenant-look-and-feel-configuration
 import TenantManagementDomainConfiguration from "./tenant-management-domain-configuration";
 import TenantAuthenticationDomainConfiguration from "./tenant-authentication-domain-configuration";
 import TenantFederatedOIDCProviderConfiguration from "./tenant-federated-oidc-provider-configuration";
+import ContactConfiguration from "../contacts/contact-configuration";
 
 export interface TenantDetailProps {
     tenantId: string
@@ -68,7 +69,6 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
         allowUnlimitedRate: tenant.allowUnlimitedRate,
         allowUserSelfRegistration: tenant.allowUserSelfRegistration,
         claimsSupported: [],
-        contactInput: [],
         enabled: tenant.enabled,
         federatedAuthenticationConstraint: tenant.federatedAuthenticationConstraint,
         markForDelete: tenant.markForDelete,
@@ -502,7 +502,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
 
                         <Grid2 size={{ xs: 12, sm: 6, lg: 12, md: 6, xl: 12 }} >                            
                             <Paper elevation={3} >
-                            <div className="detail-page-subheader">Tenant Authentication Domains</div>
+                                <div className="detail-page-subheader">Tenant Authentication Domains</div>
                                 <TenantAuthenticationDomainConfiguration
                                     tenantId={tenant.tenantId}
                                     onUpdateEnd={(success: boolean) => {
@@ -514,23 +514,26 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                     onUpdateStart={() => {
                                         setShowMutationBackdrop(true);                                            
                                     }}
-                                />                                
+                                />
                             </Paper>
                         </Grid2>
 
                         <Grid2 size={{ xs: 12, sm: 6, lg: 12, md: 6, xl: 12 }} >
                             <Paper elevation={3} >                                
                                 <div className="detail-page-subheader">Tenant Contacts</div>
-                                <List sx={{ padding: "8px" }}>
-                                    <ListItem disablePadding>Firstname Lastname</ListItem>
-                                    <ListItem disablePadding>Reggie T. Pickwick</ListItem>
-                                    <ListItem disablePadding>David Copperfield</ListItem>
-                                </List>
-
-                                <Divider />
-                                <Stack sx={{ padding: "8px" }} direction={"row"} flexDirection={"row-reverse"} paddingTop={"8px"} >
-                                    <EditOutlinedIcon />
-                                </Stack>
+                                <ContactConfiguration
+                                    contactForId={tenant.tenantId}
+                                    contactForType={"tenant"}
+                                    onUpdateEnd={(success: boolean) => {
+                                        setShowMutationBackdrop(false);
+                                        if(success){
+                                            setShowMutationSnackbar(true);
+                                        }
+                                    }}
+                                    onUpdateStart={() => {
+                                        setShowMutationBackdrop(true);                                            
+                                    }}
+                                />
                             </Paper>
                         </Grid2>
 

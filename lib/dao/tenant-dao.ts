@@ -22,9 +22,9 @@ abstract class TenantDao {
 
     abstract deleteTenant(tenantId: string): Promise<void>;
 
-    abstract assignContactsToTenant(tenantId: string, contactList: Array<Contact>): Promise<Array<Contact>>;
+    // abstract assignContactsToTenant(tenantId: string, contactList: Array<Contact>): Promise<Array<Contact>>;
 
-    abstract removeContactFromTenant(tenantId: string, contact: Contact): Promise<void>;
+    // abstract removeContactFromTenant(tenantId: string, contact: Contact): Promise<void>;
 
     abstract getDomainTenantManagementRels(tenantId?: string, domain?: string): Promise<Array<TenantManagementDomainRel>>;
 

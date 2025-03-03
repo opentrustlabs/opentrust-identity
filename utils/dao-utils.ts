@@ -33,6 +33,8 @@ import AccessRuleDao from "@/lib/dao/access-rule-dao";
 import DBAccessRuleDao from "@/lib/dao/impl/db/db-access-rule-dao";
 import bcrypt from "bcrypt";
 import DBIdentityDao from "@/lib/dao/impl/db/db-identity-dao";
+import ContactDao from "@/lib/dao/contact-dao";
+import DBContactDao from "@/lib/dao/impl/db/db-contact-dao";
 
 /**
  * 
@@ -242,6 +244,14 @@ export function getIdentityDaoImpl(): IdentityDao {
 export function getAccessRuleDaoImpl(): AccessRuleDao {
     const daoStrategy = process.env.DAO_STRATEGY ?? "filesystem";
     return new DBAccessRuleDao();
+}
+
+export function getContactDaoImpl(): ContactDao {
+    const daoStrategy = process.env.DAO_STRATEGY ?? "filesystem";
+    if(daoStrategy === "postgresql" || daoStrategy === "mysql" || daoStrategy === "mssql"){
+        return new DBContactDao();
+    }
+    return new DBContactDao();
 }
 
 // To retrieve the key in an enum. This can then be used as an index into the enum

@@ -162,3 +162,22 @@ export const REMOVE_TENANT_FEDERATED_OIDC_PROVIDER_MUTATION = gql(`
         }
     }
 `);
+
+export const ADD_CONTACT_MUTATION = gql(`
+    mutation addContact($contactCreateInput: ContactCreateInput!) {
+        addContact(contactCreateInput: $contactCreateInput){
+            contactid
+            objectid
+            objecttype
+            email
+            name
+            userid
+        }
+    }
+`);
+
+export const REMOVE_CONTACT_MUTATION = gql(`
+    mutation removeContact($contactId: String!) {
+        removeContact(contactId: $contactId) 
+    }
+`);

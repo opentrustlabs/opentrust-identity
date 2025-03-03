@@ -77,6 +77,9 @@ type Query {
     ## Scheduler
     getSchedulerLocks: [SchedulerLock]
 
+    ## Contacts
+    getContacts(objectId: String!): [Contact!]!
+
 }
 
 type Mutation {
@@ -181,7 +184,9 @@ type Mutation {
     ## Scheduler locks
     deleteSchedulerLock(instanceId: String!): String!
 
-
+    ## Contacts
+    addContact(contactCreateInput: ContactCreateInput!): Contact!
+    removeContact(contactId: String!): String!
 
 }
 
@@ -618,10 +623,11 @@ type ClientAuthHistory {
 }
 
 type Contact {
+    contactid: String!
     objectid: String!
     objecttype: String!
     email: String!
-    name: String!
+    name: String
     userid: String
 }
 
@@ -844,11 +850,14 @@ input FederatedOIDCProviderUpdateInput {
 }
 
 
-input ContactInput {
+input ContactCreateInput {
+    objectid: String!
+    objecttype: String!
     email: String!
-    name: String!
+    name: String
     userid: String
 }
+
 
 input PasswordConfigInput {
     tenantId: String!
@@ -889,7 +898,6 @@ input TenantCreateInput {
     allowSocialLogin: Boolean!
     federatedAuthenticationConstraint: String!    
     tenantType: String!
-    contactInput: [ContactInput!]!
     migrateLegacyUsers: Boolean!
     allowLoginByPhoneNumber: Boolean!
     allowForgotPassword: Boolean!
@@ -911,7 +919,6 @@ input TenantUpdateInput {
     federatedAuthenticationConstraint: String!    
     markForDelete: Boolean!
     tenantType: String!
-    contactInput: [ContactInput!]!
     migrateLegacyUsers: Boolean!
     allowLoginByPhoneNumber: Boolean!
     allowForgotPassword: Boolean!
@@ -960,7 +967,6 @@ input ClientCreateInput {
     userTokenTTLSeconds: Int
     clientTokenTTLSeconds: Int
     maxRefreshTokenCount: Int
-    contactInput: [ContactInput!]!
 }
 
 input ClientUpdateInput {
@@ -977,7 +983,6 @@ input ClientUpdateInput {
     userTokenTTLSeconds: Int
     clientTokenTTLSeconds: Int
     maxRefreshTokenCount: Int
-    contactInput: [ContactInput!]!
 }
 
 input SigningKeyCreateInput {

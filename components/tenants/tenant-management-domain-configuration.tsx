@@ -84,7 +84,7 @@ const TenantManagementDomainConfiguration: React.FC<TenantManagementDomainConfig
                 >
                     <DialogContent>
 
-                        <Typography ><span>Confirm deletion of domain: </span> <span style={{fontWeight: "bold"}}>{selectedDomainToDelete}</span></Typography>
+                        <Typography ><span>Confirm removal of domain: </span> <span style={{fontWeight: "bold"}}>{selectedDomainToDelete}</span></Typography>
                     </DialogContent>
                     <DialogActions>
                         <Button onClick={() => {setDeleteDialogOpen(false); setSelectedDomainToDelete(null);}}>Cancel</Button>
@@ -117,7 +117,7 @@ const TenantManagementDomainConfiguration: React.FC<TenantManagementDomainConfig
             
             <Grid2 padding={"8px"} container size={12} spacing={0}>
                 {data.getDomainsForTenantManagement && data.getDomainsForTenantManagement.length < 1 &&
-                    <Grid2 size={12}>No domains for tenant management</Grid2>
+                    <Grid2 size={12} textAlign={"center"}>No domains for tenant management</Grid2>
                 }
                 {data.getDomainsForTenantManagement.map(
                     (rel: TenantManagementDomainRel, idx: number) => (

@@ -459,3 +459,16 @@ export const TENANT_AUTHENTICATION_DOMAIN_REL_QUERY = gql(`
         }
     }
 `);
+
+export const CONTACTS_QUERY = gql(`
+    query getContacts($objectId: String!){
+        getContacts(objectId: $objectId) {
+            contactid
+            objectid
+            objecttype
+            email
+            name
+            userid
+        }
+    }
+`);

@@ -84,7 +84,7 @@ const TenantAuthenticationDomainConfiguration: React.FC<TenantAuthenticationDoma
                 >
                     <DialogContent>
 
-                        <Typography ><span>Confirm deletion of domain: </span> <span style={{fontWeight: "bold"}}>{selectedDomainToDelete}</span></Typography>
+                        <Typography ><span>Confirm removal of domain: </span> <span style={{fontWeight: "bold"}}>{selectedDomainToDelete}</span></Typography>
                     </DialogContent>
                     <DialogActions>
                         <Button onClick={() => {setDeleteDialogOpen(false); setSelectedDomainToDelete(null);}}>Cancel</Button>
@@ -117,7 +117,7 @@ const TenantAuthenticationDomainConfiguration: React.FC<TenantAuthenticationDoma
             
             <Grid2 padding={"8px"} container size={12} spacing={0}>
                 {data.getDomainsForTenantAuthentication && data.getDomainsForTenantAuthentication.length < 1 &&
-                    <Grid2 size={12}>No restricted domains found</Grid2>
+                    <Grid2 size={12} textAlign={"center"}>No restricted domains found</Grid2>
                 }
                 {data.getDomainsForTenantAuthentication.map(
                     (rel: TenantManagementDomainRel, idx: number) => (
