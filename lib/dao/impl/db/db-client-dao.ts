@@ -22,11 +22,7 @@ class DBClientDao extends ClientDao {
     public async getClientById(clientId: string): Promise<Client | null> {
         const em = connection.em.fork();
         const clientEntity: Client | null = await em.findOne(ClientEntity, {clientId: clientId});
-        if(clientEntity){
-            const redirectUris: Array<ClientRedirectUriRelEntity> = await em.find(ClientRedirectUriRelEntity, {clientId: clientId});
-            if(redirectUris){
-                clientEntity.redirectUris = redirectUris.map(r => r.redirectUri);
-            }
+        if(clientEntity){            
             return clientEntity;
         }
         else{
@@ -40,13 +36,13 @@ class DBClientDao extends ClientDao {
         em.persist(e);
         await em.flush();
         em.nativeDelete(ClientRedirectUriRelEntity, {clientId: client.clientId});
-        if(client.redirectUris && client.redirectUris.length > 0){
-            for(let i = 0; i < client.redirectUris.length; i++){
-                const uriEntity: ClientRedirectUriRelEntity = new ClientRedirectUriRelEntity(client.clientId, client.redirectUris[i]);
-                em.persist(uriEntity);
-                await em.flush();
-            }            
-        }             
+        // if(client.redirectUris && client.redirectUris.length > 0){
+        //     for(let i = 0; i < client.redirectUris.length; i++){
+        //         const uriEntity: ClientRedirectUriRelEntity = new ClientRedirectUriRelEntity(client.clientId, client.redirectUris[i]);
+        //         em.persist(uriEntity);
+        //         await em.flush();
+        //     }            
+        // }             
         return Promise.resolve(client);
     }
 
@@ -56,14 +52,14 @@ class DBClientDao extends ClientDao {
         em.upsert(e);
         await em.flush();
         em.nativeDelete(ClientRedirectUriRelEntity, {clientId: client.clientId});
-        if(client.redirectUris && client.redirectUris.length > 0){
-            em = connection.em.fork();
-            for(let i = 0; i < client.redirectUris.length; i++){
-                const uriEntity: ClientRedirectUriRelEntity = new ClientRedirectUriRelEntity(client.clientId, client.redirectUris[i]);
-                em.persist(uriEntity);
-                await em.flush();
-            }            
-        }
+        // if(client.redirectUris && client.redirectUris.length > 0){
+        //     em = connection.em.fork();
+        //     for(let i = 0; i < client.redirectUris.length; i++){
+        //         const uriEntity: ClientRedirectUriRelEntity = new ClientRedirectUriRelEntity(client.clientId, client.redirectUris[i]);
+        //         em.persist(uriEntity);
+        //         await em.flush();
+        //     }            
+        // }
         return Promise.resolve(client);    
     }
 
@@ -113,6 +109,38 @@ class DBClientDao extends ClientDao {
         await em.nativeDelete(ClientAuthHistoryEntity, {
             jti: jti
         });
+        return Promise.resolve();
+    }
+
+    public async getRedirectURIs(clientId: string): Promise<Array<string>>{
+        const em = connection.em.fork();
+        const resultList: Array<ClientRedirectUriRelEntity> = await em.find(ClientRedirectUriRelEntity, {
+            clientId: clientId
+        });
+        const retList: Array<string> = [];
+        if(resultList.length > 0){
+            resultList.forEach(
+                (e: ClientRedirectUriRelEntity) => {
+                    retList.push(e.redirectUri);
+                }
+            )
+        }
+        return Promise.resolve(retList);
+    }
+
+    public async addRedirectURI(clientId: string, uri: string): Promise<string>{
+        const em = connection.em.fork();
+        const uriEntity: ClientRedirectUriRelEntity = new ClientRedirectUriRelEntity(clientId, uri);
+        await em.upsert(uriEntity);
+        return Promise.resolve(uri);
+    }
+    
+    public async removeRedirectURI(clientId: string, uri: string): Promise<void>{
+        const em = connection.em.fork();
+        await em.nativeDelete(ClientRedirectUriRelEntity, {
+            clientId: clientId,
+            redirectUri: uri
+        })
         return Promise.resolve();
     }
 

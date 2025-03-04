@@ -21,6 +21,7 @@ type Query {
     ## Clients
     getClients(tenantId: String): [Client!]!
     getClientById(clientId: String!): Client
+    getRedirectURIs(clientId: String!): [String!]!
 
     ## Users
     getUsers(tenantId: String): [User!]!
@@ -102,19 +103,20 @@ type Mutation {
     removeTenantAnonymousUserConfig(tenantId: String!): String
     setTenantLookAndFeel(tenantLookAndFeelInput: TenantLookAndFeelInput!): TenantLookAndFeel
     removeTenantLookAndFeel(tenantId: String!): String
-
+    
     ## Clients
     createClient(clientInput: ClientCreateInput!): Client
     updateClient(clientInput: ClientUpdateInput!): Client
     ## Just returns the ID after deletion is complete
     deleteClient(clientId: String!): String
+    addRedirectURI(clientId: String!, uri: String!): String
+    removeRedirectURI(clientId: String!, uri: String!): String
 
     ## Users
     logout(userId: String): String
     login(username: String!, password: String!): LoginAuthenticationHandlerResponse!
     createUser(userInput: UserCreateInput!): User!
     updateUser(userInput: UserUpdateInput!): User!
-
     
     ## Keys
     createSigningKey(keyInput: SigningKeyCreateInput!): SigningKey!

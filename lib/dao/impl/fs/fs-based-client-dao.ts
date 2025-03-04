@@ -10,6 +10,16 @@ import { GraphQLError } from "graphql/error/GraphQLError";
 const dataDir = process.env.FS_BASED_DATA_DIR ?? path.join(__dirname);
 
 class FSBasedClientDao extends ClientDao {
+
+    getRedirectURIs(clientId: string): Promise<Array<string>> {
+        throw new Error("Method not implemented.");
+    }
+    addRedirectURI(clientId: string, uri: string): Promise<string> {
+        throw new Error("Method not implemented.");
+    }
+    removeRedirectURI(clientId: string, uri: string): Promise<void> {
+        throw new Error("Method not implemented.");
+    }
     
     
     public async assignContactsToClient(clientId: string, contactList: Array<Contact>): Promise<Array<Contact>> {
@@ -68,7 +78,7 @@ class FSBasedClientDao extends ClientDao {
         clientToUpdate.enabled = client.enabled;
         clientToUpdate.oidcEnabled = client.oidcEnabled;
         clientToUpdate.pkceEnabled = client.pkceEnabled;
-        clientToUpdate.redirectUris = client.redirectUris;
+        
         writeFileSync(`${dataDir}/${CLIENT_FILE}`, JSON.stringify(clients), {encoding: "utf-8"});
 
         return Promise.resolve(client);

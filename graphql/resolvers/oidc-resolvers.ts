@@ -179,6 +179,10 @@ const resolvers: Resolvers = {
         getContacts: (_: any, { objectId }, oidcContext) => {
             const contactService: ContactService = new ContactService(oidcContext);
             return contactService.getContacts(objectId);
+        },
+        getRedirectURIs: (_: any, { clientId }, oidcContext) => {
+            const clientService: ClientService = new ClientService(oidcContext);
+            return clientService.getRedirectURIs(clientId);
         }
     },
     Mutation: {
@@ -672,6 +676,15 @@ const resolvers: Resolvers = {
             const contactService: ContactService = new ContactService(oidcContext);
             await contactService.removeContact(contactId);
             return contactId;
+        },
+        addRedirectURI: async(_: any, { clientId, uri }, oidcContext) => {
+            const clientService: ClientService = new ClientService(oidcContext);
+            return clientService.addRedirectURI(clientId, uri);
+        },
+        removeRedirectURI: async(_: any, { clientId, uri }, oidcContext) => {
+            const clientService: ClientService = new ClientService(oidcContext);
+            await clientService.removeRedirectURI(clientId, uri);
+            return uri;
         }
     }
 }

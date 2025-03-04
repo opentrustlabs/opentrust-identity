@@ -13,7 +13,11 @@ abstract class ClientDao {
     
         abstract deleteClient(clientId: string): Promise<void>;
 
-        // abstract assignContactsToClient(clientId: string, contactList: Array<Contact>): Promise<Array<Contact>>;
+        abstract getRedirectURIs(clientId: string): Promise<Array<string>>;
+
+        abstract addRedirectURI(clientId: string, uri: string): Promise<string>;
+        
+        abstract removeRedirectURI(clientId: string, uri: string): Promise<void>;
 
         abstract getClientAuthHistoryByJti(jti: string): Promise<ClientAuthHistory | null>;
 
