@@ -1,10 +1,10 @@
 "use client";
-import { REDIRECT_URIS_QUERY } from "@/graphql/queries/oidc-queries";
+import { AUTHENTICATION_GROUPS_QUERY } from "@/graphql/queries/oidc-queries";
 import { useMutation, useQuery } from "@apollo/client";
 import React from "react";
 import DataLoading from "../layout/data-loading";
 import ErrorComponent from "../error/error-component";
-import { ADD_REDIRECT_URI_MUTATION, REMOVE_REDIRECT_URI_MUTATION } from "@/graphql/mutations/oidc-mutations";
+import { ASSIGN_AUTHENTICATION_GROUP_TO_CLIENT_MUTATION, REMOVE_AUTHENTICATION_GROUP_FROM_CLIENT_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import Grid2 from "@mui/material/Grid2";
 import Divider from "@mui/material/Divider";
 import Dialog from "@mui/material/Dialog";
@@ -17,41 +17,42 @@ import AddBoxIcon from '@mui/icons-material/AddBox';
 import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
 import DialogTitle from "@mui/material/DialogTitle";
 import { TextField } from "@mui/material";
+import { AuthenticationGroup } from "@/graphql/generated/graphql-types";
+import GeneralSelector from "../dialogs/general-selector";
+import client from "../apollo-client/apollo-client";
 
 
 
-export interface ClientRedirectUriConfigurationProps {
+export interface ClientAuthenticationGroupConfigurationProps {
+    tenantId: string,
     clientId: string,
     onUpdateStart: () => void;
     onUpdateEnd: (success: boolean) => void;
 }
 
-const ClientRedirectUriConfiguration: React.FC<ClientRedirectUriConfigurationProps> = ({
+const ClientAuthenticationGroupConfiguration: React.FC<ClientAuthenticationGroupConfigurationProps> = ({
+    tenantId,
     clientId,
     onUpdateEnd,
     onUpdateStart
 }) => {
 
     // STATE VARIABLES
-    const [uriToAdd, setUriToAdd] = React.useState<string | null>(null);
-    const [uriToRemove, setUriToRemove] = React.useState<string | null>(null);
+    const [groupToAdd, setGroupToAdd] = React.useState<string | null>(null);
+    const [groupToRemove, setGroupToRemove] = React.useState<AuthenticationGroup | null>(null);
     const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
     const [selectDialogOpen, setSelectDialogOpen] = React.useState(false);
     const [showRemoveConfirmationDialog, setShowRemoveConfirmationDialog] = React.useState(false);
 
 
     // GRAPHQL FUNCTIONS
-    const {data, loading, error} = useQuery(REDIRECT_URIS_QUERY, {
+    const {data, loading, error} = useQuery(AUTHENTICATION_GROUPS_QUERY, {
         variables: {
             clientId: clientId
         }
     });
 
-    const [addRedirectUriMutation] = useMutation(ADD_REDIRECT_URI_MUTATION, {
-        variables: {
-            clientId: clientId,
-            uri: uriToAdd
-        },
+    const [addAuthenticationGroupMutation] = useMutation(ASSIGN_AUTHENTICATION_GROUP_TO_CLIENT_MUTATION, {        
         onCompleted() {
             onUpdateEnd(true);
             setSelectDialogOpen(false);
@@ -60,13 +61,13 @@ const ClientRedirectUriConfiguration: React.FC<ClientRedirectUriConfigurationPro
             onUpdateEnd(false);            
             setErrorMessage(error.message);
         },
-        refetchQueries: [REDIRECT_URIS_QUERY]
+        refetchQueries: [AUTHENTICATION_GROUPS_QUERY]
     });
 
-    const [removeRedirectUriMutation] = useMutation(REMOVE_REDIRECT_URI_MUTATION, {
+    const [removeAuthenticationGroupMutation] = useMutation(REMOVE_AUTHENTICATION_GROUP_FROM_CLIENT_MUTATION, {
         variables: {
             clientId: clientId,
-            uri: uriToRemove
+            authenticationGroupId: groupToRemove?.authenticationGroupId
         },
         onCompleted() {
             onUpdateEnd(true);
@@ -75,41 +76,8 @@ const ClientRedirectUriConfiguration: React.FC<ClientRedirectUriConfigurationPro
             onUpdateEnd(false);
             setErrorMessage(error.message);
         },
-        refetchQueries: [REDIRECT_URIS_QUERY]
+        refetchQueries: [AUTHENTICATION_GROUPS_QUERY]
     });
-
-
-    // HANDLER FUNCTIONS
-    const isValidUri = (uri: string): boolean => {
-        
-        if(!uri){        
-            return false;
-        }
-        if(uri.length < 7){
-            return false;
-        }
-        let url: URL | null = null;
-        try{
-            url = new URL(uri);
-        }
-        catch(err){
-            return false;
-        }
-
-        if(! (url.protocol == "http:" || url.protocol === "https:")){
-            return false;
-        }
-        if(url.protocol === "http:" && url.hostname !== "localhost"){
-            return false;
-        }
-        if(!url.pathname){
-            return false;
-        }
-        if(url.pathname && url.pathname.length < 2){
-            return false;
-        }
-        return true;
-    }
 
     if (loading) return <DataLoading dataLoadingSize="md" color={null} />
     if (error) return <ErrorComponent message={error.message} componentSize='md' />
@@ -130,7 +98,7 @@ const ClientRedirectUriConfiguration: React.FC<ClientRedirectUriConfigurationPro
                 >
                     <DialogContent>
                         <Typography component="div">
-                            <span>Confirm removal of redirect URI: </span><span style={{fontWeight: "bold"}}>{uriToRemove}</span>
+                            <span>Confirm removal of group: </span><span style={{fontWeight: "bold"}}>{groupToRemove?.authenticationGroupName}</span>
                         </Typography>
                     </DialogContent>
                     <DialogActions>
@@ -138,7 +106,7 @@ const ClientRedirectUriConfiguration: React.FC<ClientRedirectUriConfigurationPro
                         <Button onClick={() => {
                             setShowRemoveConfirmationDialog(false);
                             onUpdateStart();
-                            removeRedirectUriMutation();
+                            removeAuthenticationGroupMutation();
                         }}>Confirm</Button>
                     </DialogActions>
 
@@ -151,26 +119,47 @@ const ClientRedirectUriConfiguration: React.FC<ClientRedirectUriConfigurationPro
                     maxWidth={"sm"}
                     fullWidth={true}
                 >
-                    <DialogTitle>Add a redirect URI</DialogTitle>
-                    <DialogContent>
-                        <TextField
-                            fullWidth={true}
-                            onChange={(evt) => setUriToAdd(evt.target.value)}                            
-                        />
-                    </DialogContent>
-                    <DialogActions>
-                        <Button onClick={() => setSelectDialogOpen(false)}>Cancel</Button>
-                        <Button 
-                            disabled={!isValidUri(uriToAdd || "")}
-                            onClick={() =>{
-                                onUpdateStart();
-                                addRedirectUriMutation();
-                            }}                            
-                        >
-                            Submit
-                        </Button>
-                    </DialogActions>
-                    
+                    <GeneralSelector 
+                        query={AUTHENTICATION_GROUPS_QUERY}
+                        queryVars={{tenantId: tenantId}}
+                        dataMapper={(d) => {
+                            const preExistingIds = data.getAuthenticationGroups.map( (g: AuthenticationGroup) => g.authenticationGroupId);
+                            console.log(preExistingIds);
+                            console.log(d.getAuthenticationGroups);
+                            if(d && d.getAuthenticationGroups){
+                                return d.getAuthenticationGroups
+                                .filter(
+                                    (g: AuthenticationGroup) => {
+                                        return !preExistingIds.includes(g.authenticationGroupId)
+                                    }
+                                )                                
+                                .map(
+                                    (g: AuthenticationGroup) => {
+                                        return {
+                                            id: g.authenticationGroupId,
+                                            label: g.authenticationGroupName
+                                        }
+                                    }
+                                )
+                            }
+                            else{
+                                return [];
+                            }
+                        }}
+                        helpText="Select a valid group"
+                        onCancel={() => setSelectDialogOpen(false)}
+                        onSelected={(id) => {
+                            setGroupToAdd(id);
+                            onUpdateStart();
+                            addAuthenticationGroupMutation({
+                                variables: {
+                                    clientId: clientId,
+                                    authenticationGroupId: id
+                                },
+                            });
+                        }}
+                        selectorLabel="Select a group"
+                    />
                 </Dialog>
             }
             <Grid2 marginBottom={"16px"} marginTop={"16px"} spacing={2} container size={12}>
@@ -179,31 +168,31 @@ const ClientRedirectUriConfiguration: React.FC<ClientRedirectUriConfigurationPro
                         sx={{cursor: "pointer"}}
                         onClick={() => setSelectDialogOpen(true)}
                     />
-                    <div style={{marginLeft: "8px", fontWeight: "bold"}}>Add Redirect URI</div>
+                    <div style={{marginLeft: "8px", fontWeight: "bold"}}>Add Authentication Group</div>
                 </Grid2>
                 
             </Grid2>
             <Divider />
-            {data.getRedirectURIs.length === 0 &&
+            {data.getAuthenticationGroups.length === 0 &&
                 <Grid2 marginTop={"16px"}  spacing={2} container size={12} textAlign={"center"} >    
                     <Grid2 margin={"8px 0px 8px 0px"} textAlign={"center"} size={12} spacing={1}>
-                        No redirect URIs
+                        No Authentication Groups Assigned
                     </Grid2>
                 </Grid2>
             }
-            {data.getRedirectURIs.length > 0 &&
+            {data.getAuthenticationGroups.length > 0 &&
                 <Grid2 spacing={1} container size={12}>
-                    {data.getRedirectURIs.map(
-                        (uri: string) => (
-                            <React.Fragment key={uri}>
+                    {data.getAuthenticationGroups.map(
+                        (group: AuthenticationGroup) => (
+                            <React.Fragment key={group.authenticationGroupId}>
                                 <Grid2 size={12}><Divider /></Grid2>
                                 <Grid2 size={11}>
-                                    {uri}                                    
+                                    {group.authenticationGroupName}                                    
                                 </Grid2>
                                 <Grid2 size={1}>
                                     <RemoveCircleOutlineIcon
                                         sx={{cursor: "pointer"}}
-                                        onClick={() => {setUriToRemove(uri); setShowRemoveConfirmationDialog(true);}}
+                                        onClick={() => {setGroupToRemove(group); setShowRemoveConfirmationDialog(true);}}
                                     />
                                 </Grid2>                                
                             </React.Fragment>
@@ -216,4 +205,4 @@ const ClientRedirectUriConfiguration: React.FC<ClientRedirectUriConfigurationPro
 
 }
 
-export default ClientRedirectUriConfiguration;
+export default ClientAuthenticationGroupConfiguration;

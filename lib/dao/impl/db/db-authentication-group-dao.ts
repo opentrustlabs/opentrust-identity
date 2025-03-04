@@ -4,19 +4,54 @@ import connection  from "@/lib/data-sources/db";
 import AuthenticationGroupEntity from "@/lib/entities/authentication-group-entity";
 import AuthenticationGroupClientRelEntity from "@/lib/entities/authentication-group-client-rel-entity";
 import AuthenticationGroupUserRelEntity from "@/lib/entities/authentication-group-user-rel-entity";
+import { QueryOrder } from "@mikro-orm/core";
 
 class DBAuthenticationGroupDao extends AuthenticationGroupDao {
 
-    public async getAuthenticationGroups(tenantId?: string): Promise<Array<AuthenticationGroup>> {
+    public async getAuthenticationGroups(tenantId?: string, clientId?: string, userId?: string): Promise<Array<AuthenticationGroup>> {
         const em = connection.em.fork();
-        const queryParams: any = {};
+        
         if(tenantId){
-            queryParams.tenantid = tenantId;
-        };
-        const authnGroups: Array<AuthenticationGroupEntity> = await em.find(AuthenticationGroupEntity, queryParams);
-        return Promise.resolve(authnGroups);
+            const authnGroups: Array<AuthenticationGroupEntity> = await em.find(AuthenticationGroupEntity, 
+                {
+                    tenantId: tenantId
+                },
+                {
+                    orderBy: {
+                        authenticationGroupName: QueryOrder.ASC
+                    }
+                }
+            );
+            return Promise.resolve(authnGroups);
+        }
+        else if(clientId){
+            const rels: Array<AuthenticationGroupClientRelEntity> = await this.getAuthenticationGroupClientRels(clientId);
+            const inValues: Array<string> = rels.map((r: AuthenticationGroupClientRelEntity) => r.authenticationGroupId);
+            const authnGroups = await em.find(AuthenticationGroupEntity, 
+                {
+                    authenticationGroupId: inValues
+                },
+                {
+                    orderBy: {
+                        authenticationGroupName: QueryOrder.ASC
+                    }
+                }
+            )
+            return Promise.resolve(authnGroups);
+        }
+        else {
+            return [];
+        }
     }
 
+    protected async getAuthenticationGroupClientRels(clientId: string): Promise<Array<AuthenticationGroupClientRelEntity>> {
+        const em = connection.em.fork();
+        const results: Array<AuthenticationGroupClientRelEntity> = await em.find(AuthenticationGroupClientRelEntity, {
+            clientId: clientId
+        });
+        return results && results.length > 0 ? Promise.resolve(results) : Promise.resolve([]);
+    }
+    
     public async getAuthenticationGroupById(authenticationGroupId: string): Promise<AuthenticationGroup | null> {
         const em = connection.em.fork();
         const entity: AuthenticationGroupEntity | null = await em.findOne(

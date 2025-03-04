@@ -4,7 +4,7 @@ import { AuthenticationGroup, AuthenticationGroupClientRel, AuthenticationGroupU
 abstract class AuthenticationGroupDao {
 
         /////////////////   AUTHENTICATION GROUPS   ///////////////////////
-        abstract getAuthenticationGroups(tenantId?: string): Promise<Array<AuthenticationGroup>>;
+        abstract getAuthenticationGroups(tenantId?: string, clientId?: string, userId?: string): Promise<Array<AuthenticationGroup>>;
 
         abstract getAuthenticationGroupById(authenticationGroupId: string): Promise<AuthenticationGroup | null>;
     

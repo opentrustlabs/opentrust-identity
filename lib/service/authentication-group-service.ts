@@ -25,8 +25,8 @@ class AuthenticationGroupService {
         this.oidcContext = oidcContext;
     }
 
-    public async getAuthenticationGroups(tenantId?: string): Promise<Array<AuthenticationGroup>> {
-        return authenticationGroupDao.getAuthenticationGroups(tenantId);
+    public async getAuthenticationGroups(tenantId?: string, clientId?: string, userId?: string): Promise<Array<AuthenticationGroup>> {
+        return authenticationGroupDao.getAuthenticationGroups(tenantId, clientId, userId);
     }
 
     public async getAuthenticationGroupById(authenticationGroupId: string): Promise<AuthenticationGroup | null> {
@@ -89,15 +89,15 @@ class AuthenticationGroupService {
     public async assignAuthenticationGroupToClient(authenticationGroupId: string, clientId: string): Promise<AuthenticationGroupClientRel> {
         const client: Client | null = await clientDao.getClientById(clientId);
         if (!client) {
-            throw new GraphQLError("ERROR_CLIENT_DOES_NOT_EXIST_FOR_LOGIN_GROUP_ASSIGNMENT");
+            throw new GraphQLError("ERROR_CLIENT_DOES_NOT_EXIST_FOR_AUTHENTICATION_GROUP_ASSIGNMENT");
         }
         const authenticationGroup = await this.getAuthenticationGroupById(authenticationGroupId);
         if (!authenticationGroup) {
-            throw new GraphQLError("ERROR_LOGIN_GROUP_DOES_NOT_EXIST_FOR_CLIENT_ASSIGNMENT");
+            throw new GraphQLError("ERROR_AUTHENTICATION_GROUP_DOES_NOT_EXIST_FOR_CLIENT_ASSIGNMENT");
         }
         // Do the tenants match?
         if (authenticationGroup.tenantId !== client.tenantId) {
-            throw new GraphQLError("ERROR_CANNOT_ASSIGN_LOGIN_GROUP_TO_CLIENT")
+            throw new GraphQLError("ERROR_CANNOT_ASSIGN_AUTHENTICATION_GROUP_TO_CLIENT")
         }
         const newRel = await authenticationGroupDao.assignAuthenticationGroupToClient(authenticationGroupId, clientId);        
         return Promise.resolve(newRel);

@@ -213,3 +213,18 @@ export const REMOVE_REDIRECT_URI_MUTATION = gql(`
         removeRedirectURI(clientId: $clientId, uri: $uri)
     }
 `);
+
+export const ASSIGN_AUTHENTICATION_GROUP_TO_CLIENT_MUTATION = gql(`
+    mutation assignAuthenticationGroupToClient($authenticationGroupId: String!, $clientId: String!) {
+        assignAuthenticationGroupToClient(authenticationGroupId: $authenticationGroupId, clientId: $clientId) {
+            clientId
+            authenticationGroupId
+        }
+    }
+`);
+
+export const REMOVE_AUTHENTICATION_GROUP_FROM_CLIENT_MUTATION = gql(`
+    mutation removeAuthenticationGroupFromClient($authenticationGroupId: String!, $clientId: String!) {
+        removeAuthenticationGroupFromClient(authenticationGroupId: $authenticationGroupId, clientId: $clientId) 
+    }
+`);
