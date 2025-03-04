@@ -1,4 +1,4 @@
-import { Tenant, TenantManagementDomainRel, TenantAnonymousUserConfiguration, TenantLookAndFeel, Contact, TenantPasswordConfig, SearchResultType, ObjectSearchResultItem, LoginFailurePolicy, TenantLegacyUserMigrationConfig, TenantRestrictedAuthenticationDomainRel } from "@/graphql/generated/graphql-types";
+import { Tenant, TenantManagementDomainRel, TenantAnonymousUserConfiguration, TenantLookAndFeel, Contact, TenantPasswordConfig, LoginFailurePolicy, TenantLegacyUserMigrationConfig, TenantRestrictedAuthenticationDomainRel } from "@/graphql/generated/graphql-types";
 import TenantDao from "../../tenant-dao";
 import { TenantEntity } from "@/lib/entities/tenant-entity";
 import connection  from "@/lib/data-sources/db";
@@ -15,9 +15,6 @@ import { QueryOrder } from "@mikro-orm/core";
 
 class DBTenantDao extends TenantDao {
 
-    removeContactFromTenant(tenantId: string, contact: Contact): Promise<void> {
-        throw new Error("Method not implemented.");
-    }
         
     removeLegacyUserMigrationConfiguration(tenantId: string): Promise<void> {
         throw new Error("Method not implemented.");

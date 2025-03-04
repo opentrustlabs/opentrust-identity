@@ -201,3 +201,15 @@ export const CLIENT_UPDATE_MUTATION = gql(`
         }
     }
 `);
+
+export const ADD_REDIRECT_URI_MUTATION = gql(`
+    mutation addRedirectURI($clientId: String!, $uri: String!) {
+        addRedirectURI(clientId: $clientId, uri: $uri)
+    }
+`);
+
+export const REMOVE_REDIRECT_URI_MUTATION = gql(`
+    mutation removeRedirectURI($clientId: String!, $uri: String!) {
+        removeRedirectURI(clientId: $clientId, uri: $uri)
+    }
+`);

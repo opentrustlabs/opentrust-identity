@@ -471,3 +471,9 @@ export const CONTACTS_QUERY = gql(`
         }
     }
 `);
+
+export const REDIRECT_URIS_QUERY = gql(`
+    query getRedirectURIs($clientId: String!){
+        getRedirectURIs(clientId: $clientId)
+    }
+`);

@@ -22,8 +22,6 @@ const NewClientDialog: React.FC<NewClientDialogProps> = ({
     onClose
 }) => {
 
-
-
     const initInput: ClientCreateInput = {
         clientName: "",
         clientType: CLIENT_TYPE_SERVICE_ACCOUNT_AND_USER_DELEGATED_PERMISSIONS,

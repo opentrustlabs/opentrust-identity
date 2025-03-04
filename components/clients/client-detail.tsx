@@ -20,6 +20,7 @@ import TenantHighlight from "../tenants/tenant-highlight";
 import ContactConfiguration from "../contacts/contact-configuration";
 import { useMutation } from "@apollo/client";
 import { CLIENT_UPDATE_MUTATION } from "@/graphql/mutations/oidc-mutations";
+import ClientRedirectUriConfiguration from "./client-redirect-uri-configuration";
 
 export interface ClientDetailProps {
     client: Client
@@ -277,29 +278,16 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                     </div>
                                 </AccordionSummary>
                                 <AccordionDetails>
-                                    <Typography component={"div"} fontWeight={"bold"} >
-                                        <Grid2 container size={12} spacing={1} marginBottom={"16px"} >
-                                            <Stack spacing={1} justifyContent={"space-between"} direction={"row"} fontWeight={"bold"} fontSize={"0.95em"} margin={"8px 0px 24px 0px"}>
-                                                <div style={{ display: "inline-flex", alignItems: "center" }}>
-                                                    <AddBoxIcon sx={{ marginRight: "8px", cursor: "pointer" }} />
-                                                    <span>Add Redirect URI</span>
-                                                </div>
-                                            </Stack>
-                                        </Grid2>
-                                    </Typography>
-                                    <Divider></Divider>
-                                    {["http://localhost:8080/oidc/return", "https://qa.opentrust.org/oidc/return"].map(
-                                        (uri: string) => (
-                                            <Typography key={`${uri}`} component={"div"} fontSize={"0.9em"} fontWeight={"bold"}>
-                                                <Divider></Divider>
-                                                <Grid2 margin={"8px 0px 8px 0px"} container size={12} spacing={1}>
-                                                    <Grid2 size={11}>{uri}</Grid2>
-                                                    <Grid2 size={1}><DeleteForeverOutlinedIcon /></Grid2>
-                                                </Grid2>
-                                            </Typography>
-                                        )
-                                    )}
-                                    <Divider></Divider>
+                                    <ClientRedirectUriConfiguration 
+                                        clientId={client.clientId} 
+                                        onUpdateStart={() => setShowMutationBackdrop(true)}
+                                        onUpdateEnd={(success: boolean) => {
+                                            setShowMutationBackdrop(false);
+                                            if(success){
+                                                setShowMutationSnackbar(true);
+                                            }
+                                        }}
+                                    />                                    
                                 </AccordionDetails>
                             </Accordion>
                         </Grid2>
