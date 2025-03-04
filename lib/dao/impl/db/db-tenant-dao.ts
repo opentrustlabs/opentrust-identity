@@ -11,6 +11,7 @@ import TenantLookAndFeelEntity from "@/lib/entities/tenant-look-and-feel-entity"
 import ContactEntity from "@/lib/entities/contact-entity";
 import TenantLegacyUserMigrationConfigEntity from "@/lib/entities/tenant-legacy-user-migration-config-entity";
 import TenantRestrictedAuthenticationDomainRelEntity from "@/lib/entities/tenant-restricted-authentication-domain-rel-entity";
+import { QueryOrder } from "@mikro-orm/core";
 
 class DBTenantDao extends TenantDao {
 
@@ -71,7 +72,11 @@ class DBTenantDao extends TenantDao {
 
     public async getTenants(): Promise<Array<Tenant>> {
         const em = connection.em.fork();
-        const tenantEntities: Array<TenantEntity> = await em.findAll(TenantEntity);
+        const tenantEntities: Array<TenantEntity> = await em.findAll(TenantEntity, {
+            orderBy: {
+                tenantname: QueryOrder.ASC
+            }
+        });
         const tenants: Array<Tenant> = tenantEntities.map(
             (e: TenantEntity) => {
                 return e.toModel();

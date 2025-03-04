@@ -40,6 +40,7 @@ const resolvers: Resolvers = {
             // home depot: 2a303f6d-0ebc-4590-9d12-7ebab6531d7e
             // root tenant: ad3e45b1-3e62-4fe2-ba59-530d35ae93d5
             // airbnb: c42c29cb-1bf7-4f6a-905e-5f74760218e2
+            // amgen: 73d00cb0-f058-43b0-8fb4-d0e48ff33ba2
             return profile;
         },
         getUserById: (_, { userId }, oidcContext) => {

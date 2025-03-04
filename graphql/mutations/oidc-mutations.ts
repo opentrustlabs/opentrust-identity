@@ -182,7 +182,7 @@ export const REMOVE_CONTACT_MUTATION = gql(`
     }
 `);
 
-export const CREATE_CLIENT_MUTATION = gql(`
+export const CLIENT_CREATE_MUTATION = gql(`
     mutation createClient($clientInput: ClientCreateInput!) {
         createClient(clientInput: $clientInput) {
             clientId
@@ -192,7 +192,7 @@ export const CREATE_CLIENT_MUTATION = gql(`
     }
 `);
 
-export const UPDATE_CLIENT_MUTATION = gql(`
+export const CLIENT_UPDATE_MUTATION = gql(`
     mutation updateClient($clientInput: ClientUpdateInput!) {
         updateClient(clientInput: $clientInput){
             clientId

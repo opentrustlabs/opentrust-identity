@@ -13,14 +13,13 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import SyncIcon from '@mui/icons-material/Sync';
 import GroupIcon from '@mui/icons-material/Group';
 import PolicyIcon from '@mui/icons-material/Policy';
-import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import Link from "next/link";
 import TenantHighlight from "../tenants/tenant-highlight";
 import ContactConfiguration from "../contacts/contact-configuration";
 import { useMutation } from "@apollo/client";
-import { UPDATE_CLIENT_MUTATION } from "@/graphql/mutations/oidc-mutations";
+import { CLIENT_UPDATE_MUTATION } from "@/graphql/mutations/oidc-mutations";
 
 export interface ClientDetailProps {
     client: Client
@@ -50,7 +49,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
     const [showMutationBackdrop, setShowMutationBackdrop] = React.useState<boolean>(false);
     const [showMutationSnackbar, setShowMutationSnackbar] = React.useState<boolean>(false);
 
-    const [clientUpdateMutation] = useMutation(UPDATE_CLIENT_MUTATION, {
+    const [clientUpdateMutation] = useMutation(CLIENT_UPDATE_MUTATION, {
         variables: {
             clientInput: clientUpdateInput
         },
@@ -204,7 +203,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
 
                                             <Grid2 alignContent={"center"} size={12}>Client Token TTL (Seconds) - Max: {MAX_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS}, Min: {MIN_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS}</Grid2>
                                             <Grid2 marginBottom={"16px"} alignContent={"center"} size={12}>
-                                                <TextField name="clientTokenTTLSeconds" id="clientTokenTTLSeconds" 
+                                                <TextField type="number" name="clientTokenTTLSeconds" id="clientTokenTTLSeconds" 
                                                     value={
                                                         clientUpdateInput.clientTokenTTLSeconds || ""
                                                     }
@@ -226,7 +225,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                             
                                             <Grid2 alignContent={"center"} size={12}>Max Refresh Token Count</Grid2>
                                             <Grid2 marginBottom={"16px"} alignContent={"center"} size={12}>
-                                                <TextField name="maxRefreshTokenCount" id="maxRefreshTokenCount" 
+                                                <TextField type="number" name="maxRefreshTokenCount" id="maxRefreshTokenCount" 
                                                     value={
                                                         clientUpdateInput.maxRefreshTokenCount || ""
                                                     }                                                   
@@ -245,13 +244,21 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                 </Grid2>
 
                                 <Stack sx={{ marginTop: "8px" }} direction={"row"} flexDirection={"row-reverse"} >
+                                    
                                     <Button  
                                         onClick={() => {setShowMutationBackdrop(true); clientUpdateMutation(); }}
                                         disabled={!markDirty} 
                                         sx={{ border: "solid 1px lightgrey", borderRadius: "4px" }} 
                                     >
-                                            Update
+                                        Update
                                     </Button>
+                                    
+                                        <Button
+                                            disabled={!markDirty}
+                                            sx={{marginRight: "8px"}}
+                                            onClick={() => {setClientUpdateInput(initInput); setMarkDirty(false); }}
+                                        >Cancel</Button>
+                                    
                                 </Stack>
                             </Paper>
                         </Grid2>

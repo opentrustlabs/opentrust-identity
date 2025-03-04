@@ -7,6 +7,7 @@ import { TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import TenantSelector from "./tenant-selector";
 import NewTenantDialog from "./new-tenant-dialog";
 import CreateNewTypeSelector from "./create-new-type-selector";
+import NewClientDialog from "./new-client-dialog";
 
 export interface CreateNewSelectorProps {
     open: boolean,
@@ -45,7 +46,7 @@ const CreateNewDialog: React.FC<CreateNewSelectorProps> = ({
             open={open}
             onClose={() => {setCreateNewType(null); onClose();}}
             fullScreen={false}
-            maxWidth={breakPoints.isMedium ? "lg" : createNewType === null || selectedTenant === null ? "sm" : "lg"}
+            maxWidth={breakPoints.isMedium ? "lg" : createNewType === null || selectedTenant === null ? "sm" : "sm"}
             fullWidth={breakPoints.isMedium ? true : true}
         >
             {createNewType === null &&
@@ -64,7 +65,11 @@ const CreateNewDialog: React.FC<CreateNewSelectorProps> = ({
                     />
                 }
                 {createNewType === "client" && selectedTenant !== null &&
-                    <div>You want to create a new client</div>
+                    <NewClientDialog
+                        tenantId={selectedTenant}
+                        onCancel={onCancel}
+                        onClose={onClose}
+                    />
                 }
                 {createNewType === "authorization-group" && selectedTenant !== null &&
                     <div>You want to create a new authorization-group</div>
