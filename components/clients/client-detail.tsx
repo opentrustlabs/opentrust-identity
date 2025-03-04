@@ -1,26 +1,23 @@
 "use client";
 import React, { useContext } from "react";
-import { Accordion, AccordionDetails, AccordionSummary, Alert, Backdrop, Button, Checkbox, CircularProgress, Divider, List, ListItem, MenuItem, Paper, Select, Snackbar, Stack, TextField } from "@mui/material";
+import { Accordion, AccordionDetails, AccordionSummary, Alert, Backdrop, Button, Checkbox, CircularProgress, MenuItem, Paper, Select, Snackbar, Stack, TextField } from "@mui/material";
 import Grid2 from "@mui/material/Grid2";
 import Typography from "@mui/material/Typography";
-import DeleteForeverOutlinedIcon from '@mui/icons-material/DeleteForeverOutlined';
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
 import BreadcrumbComponent from "../breadcrumbs/breadcrumbs";
 import { CLIENT_TYPE_SERVICE_ACCOUNT_AND_USER_DELEGATED_PERMISSIONS, CLIENT_TYPE_SERVICE_ACCOUNT_ONLY, CLIENT_TYPE_USER_DELEGATED_PERMISSIONS_ONLY, CLIENT_TYPES_DISPLAY, DEFAULT_BACKGROUND_COLOR, DEFAULT_END_USER_TOKEN_TTL_SECONDS, DEFAULT_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS, MAX_END_USER_TOKEN_TTL_SECONDS, MAX_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS, MIN_END_USER_TOKEN_TTL_SECONDS, MIN_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import { Client, ClientUpdateInput } from "@/graphql/generated/graphql-types";
-import AddBoxIcon from '@mui/icons-material/AddBox';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import SyncIcon from '@mui/icons-material/Sync';
 import GroupIcon from '@mui/icons-material/Group';
-import PolicyIcon from '@mui/icons-material/Policy';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import Link from "next/link";
 import TenantHighlight from "../tenants/tenant-highlight";
 import ContactConfiguration from "../contacts/contact-configuration";
 import { useMutation } from "@apollo/client";
 import { CLIENT_UPDATE_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import ClientRedirectUriConfiguration from "./client-redirect-uri-configuration";
+import ClientAuthenticationGroupConfiguration from "./client-authentication-group-configuration";
 
 export interface ClientDetailProps {
     client: Client
@@ -306,76 +303,22 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                     </div>
                                 </AccordionSummary>
                                 <AccordionDetails>
-                                    <Typography component={"div"} fontWeight={"bold"} >
-                                        <Grid2 container size={12} spacing={1} marginBottom={"16px"} >
-                                            <Stack spacing={1} justifyContent={"space-between"} direction={"row"} fontWeight={"bold"} fontSize={"0.95em"} margin={"8px 0px 24px 0px"}>
-                                                <div style={{ display: "inline-flex", alignItems: "center" }}>
-                                                    <AddBoxIcon sx={{ marginRight: "8px", cursor: "pointer" }} />
-                                                    <span>Add Authentication Group</span>
-                                                </div>
-                                            </Stack>
-                                        </Grid2>
-                                    </Typography>
-                                    <Divider></Divider>
-                                    {["STL Project Managers Authn Group", "Reporing Tool Developers Authn Group"].map(
-                                        (uri: string) => (
-                                            <Typography key={`${uri}`} component={"div"} fontSize={"0.9em"} fontWeight={"bold"}>
-                                                <Divider></Divider>
-                                                <Grid2 margin={"8px 0px 8px 0px"} container size={12} spacing={1}>
-                                                    <Grid2 size={11}><Link href={`/123412341234/authentication-groups/1234372987349`}>{uri}</Link></Grid2>
-                                                    <Grid2 size={1}><DeleteForeverOutlinedIcon /></Grid2>
-                                                </Grid2>
-                                            </Typography>
-                                        )
-                                    )}
-
-                                </AccordionDetails>
-                            </Accordion>
-                        </Grid2>
-
-                        <Grid2 size={12} marginBottom={"16px"}>
-                            <Accordion >
-                                <AccordionSummary
-                                    expandIcon={<ExpandMoreIcon />}
-                                    id={"redirect-uri-configuration"}
-                                    sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center" }}
-
-                                >
-                                    <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-                                        <PolicyIcon /><div style={{ marginLeft: "8px" }}>Access Control</div>
-                                    </div>
-                                </AccordionSummary>
-                                <AccordionDetails>
-                                    <Typography component={"div"} fontWeight={"bold"} >
-                                        <Grid2 container size={12} spacing={1} marginBottom={"16px"} >
-                                            <Stack spacing={1} justifyContent={"space-between"} direction={"row"} fontWeight={"bold"} fontSize={"0.95em"} margin={"8px 0px 24px 0px"}>
-                                                <div style={{ display: "inline-flex", alignItems: "center" }}>
-                                                    <AddBoxIcon sx={{ marginRight: "8px", cursor: "pointer" }} />
-                                                    <span>Add Scope</span>
-                                                </div>
-                                            </Stack>
-                                        </Grid2>
-                                    </Typography>
-                                    <Divider></Divider>
-                                    {["Read Reports in QA", "Update Reports in QA", "Delete Reports in QA"].map(
-                                        (uri: string) => (
-                                            <Typography key={`${uri}`} component={"div"} fontSize={"0.9em"} fontWeight={"bold"}>
-                                                <Divider></Divider>
-                                                <Grid2 margin={"8px 0px 8px 0px"} container size={12} spacing={1}>
-                                                    <Grid2 size={11}><Link href={`/123412341234/authentication-groups/1234372987349`}>{uri}</Link></Grid2>
-                                                    <Grid2 size={1}><DeleteForeverOutlinedIcon /></Grid2>
-                                                </Grid2>
-                                            </Typography>
-                                        )
-                                    )}
-
+                                    <ClientAuthenticationGroupConfiguration
+                                        tenantId={client.tenantId}
+                                        clientId={client.clientId}
+                                        onUpdateEnd={(success: boolean) => {
+                                            setShowMutationBackdrop(false);
+                                            if(success){
+                                                setShowMutationSnackbar(true);
+                                            }
+                                        }}
+                                        onUpdateStart={() => setShowMutationBackdrop(true)}
+                                    />
                                 </AccordionDetails>
                             </Accordion>
                         </Grid2>
                     </Grid2>
                 </Grid2>
-
-
                     <Grid2 spacing={2} size={{ xs: 12, sm: 12, md: 12, lg: 3, xl: 3 }}>
                         <Grid2 container spacing={2} size={12}>
                             <Grid2 size={{ xs: 12, sm: 6, lg: 12, md: 6, xl: 12 }} >
@@ -386,13 +329,13 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                         contactForId={client.clientId}
                                         contactForType={"client"}
                                         onUpdateEnd={(success: boolean) => {
-                                            //setShowMutationBackdrop(false);
+                                            setShowMutationBackdrop(false);
                                             if(success){
-                                                //setShowMutationSnackbar(true);
+                                                setShowMutationSnackbar(true);
                                             }
                                         }}
                                         onUpdateStart={() => {
-                                            //setShowMutationBackdrop(true);                                            
+                                            setShowMutationBackdrop(true);
                                         }}
                                     />
                                 </Paper>

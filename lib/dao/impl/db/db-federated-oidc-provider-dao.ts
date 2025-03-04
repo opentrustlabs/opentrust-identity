@@ -27,12 +27,12 @@ class DBFederatedOIDCProviderDao extends FederatedOIDCProviderDao {
              await em.findAll(FederatedOIDCProviderEntity)
              ;
        
-        const tenants: Array<FederatedOidcProvider> = t.map(
+        const providers: Array<FederatedOidcProvider> = t.map(
             (e: FederatedOIDCProviderEntity) => {
                 return e.toModel();
             }
         );
-        return Promise.resolve(tenants);
+        return Promise.resolve(providers);
     }
 
     public async getFederatedOidcProviderById(federatedOIDCProviderId: string): Promise<FederatedOidcProvider | null> {

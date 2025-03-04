@@ -35,14 +35,6 @@ class DBClientDao extends ClientDao {
         const e: ClientEntity | null= new ClientEntity(client);        
         em.persist(e);
         await em.flush();
-        em.nativeDelete(ClientRedirectUriRelEntity, {clientId: client.clientId});
-        // if(client.redirectUris && client.redirectUris.length > 0){
-        //     for(let i = 0; i < client.redirectUris.length; i++){
-        //         const uriEntity: ClientRedirectUriRelEntity = new ClientRedirectUriRelEntity(client.clientId, client.redirectUris[i]);
-        //         em.persist(uriEntity);
-        //         await em.flush();
-        //     }            
-        // }             
         return Promise.resolve(client);
     }
 
@@ -51,15 +43,6 @@ class DBClientDao extends ClientDao {
         const e: ClientEntity = new ClientEntity(client);
         em.upsert(e);
         await em.flush();
-        em.nativeDelete(ClientRedirectUriRelEntity, {clientId: client.clientId});
-        // if(client.redirectUris && client.redirectUris.length > 0){
-        //     em = connection.em.fork();
-        //     for(let i = 0; i < client.redirectUris.length; i++){
-        //         const uriEntity: ClientRedirectUriRelEntity = new ClientRedirectUriRelEntity(client.clientId, client.redirectUris[i]);
-        //         em.persist(uriEntity);
-        //         await em.flush();
-        //     }            
-        // }
         return Promise.resolve(client);    
     }
 

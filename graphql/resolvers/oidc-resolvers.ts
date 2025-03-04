@@ -107,9 +107,9 @@ const resolvers: Resolvers = {
             const scopeService: ScopeService = new ScopeService(oidcContext);
             return scopeService.getScopeById(scopeId);
         },
-        getAuthenticationGroups: (_: any, __: any, oidcContext) => {
+        getAuthenticationGroups: (_: any, { tenantId, clientId, userId }, oidcContext) => {
             const authenticationGroupService: AuthenticationGroupService = new AuthenticationGroupService(oidcContext);
-            return authenticationGroupService.getAuthenticationGroups();
+            return authenticationGroupService.getAuthenticationGroups(tenantId || undefined, clientId || undefined, userId || undefined);
         },
         getAuthenticationGroupById: (_: any, { authenticationGroupId }, oidcContext) => {
             const authenticationGroupService: AuthenticationGroupService = new AuthenticationGroupService(oidcContext);

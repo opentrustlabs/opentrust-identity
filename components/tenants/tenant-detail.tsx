@@ -1,9 +1,9 @@
 "use client";
 import React, { useContext } from "react";
-import { Accordion, AccordionDetails, AccordionSummary, Alert, Backdrop, Button, Checkbox, CircularProgress, Divider, List, ListItem, MenuItem, Paper, Select, Snackbar, Stack, TextField } from "@mui/material";
+import { Accordion, AccordionDetails, AccordionSummary, Alert, Backdrop, Button, Checkbox, CircularProgress, Divider, MenuItem, Paper, Select, Snackbar, Stack, TextField } from "@mui/material";
 import Grid2 from "@mui/material/Grid2";
 import Typography from "@mui/material/Typography";
-import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import DeleteForeverOutlinedIcon from '@mui/icons-material/DeleteForeverOutlined';
 import BreadcrumbComponent from "../breadcrumbs/breadcrumbs";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
 import { FEDERATED_AUTHN_CONSTRAINT_DISPLAY, FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE, FEDERATED_AUTHN_CONSTRAINT_NOT_ALLOWED, FEDERATED_AUTHN_CONSTRAINT_PERMISSIVE, TENANT_TYPE_IDENTITY_MANAGEMENT, TENANT_TYPE_IDENTITY_MANAGEMENT_AND_SERVICES, TENANT_TYPE_ROOT_TENANT, TENANT_TYPE_SERVICES, TENANT_TYPES_DISPLAY } from "@/utils/consts";
@@ -16,6 +16,8 @@ import PasswordIcon from '@mui/icons-material/Password';
 import LoginIcon from '@mui/icons-material/Login';
 import FaceIcon from '@mui/icons-material/Face';
 import InputIcon from '@mui/icons-material/Input';
+import PolicyIcon from '@mui/icons-material/Policy';
+import AddBoxIcon from '@mui/icons-material/AddBox';
 import DisplaySettingsIcon from '@mui/icons-material/DisplaySettings';
 import AutoAwesomeMosaicIcon from '@mui/icons-material/AutoAwesomeMosaic';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -29,6 +31,7 @@ import TenantManagementDomainConfiguration from "./tenant-management-domain-conf
 import TenantAuthenticationDomainConfiguration from "./tenant-authentication-domain-configuration";
 import TenantFederatedOIDCProviderConfiguration from "./tenant-federated-oidc-provider-configuration";
 import ContactConfiguration from "../contacts/contact-configuration";
+import Link from "next/link";
 
 export interface TenantDetailProps {
     tenantId: string
@@ -445,6 +448,46 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                 </AccordionDetails>
                             </Accordion>
                         </Grid2>
+                        
+                        <Grid2 size={12} marginBottom={"16px"}>
+                            <Accordion >
+                                <AccordionSummary
+                                    expandIcon={<ExpandMoreIcon />}
+                                    id={"redirect-uri-configuration"}
+                                    sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center" }}
+
+                                >
+                                    <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+                                        <PolicyIcon /><div style={{ marginLeft: "8px" }}>Access Control</div>
+                                    </div>
+                                </AccordionSummary>
+                                <AccordionDetails>
+                                    <Typography component={"div"} fontWeight={"bold"} >
+                                        <Grid2 container size={12} spacing={1} marginBottom={"16px"} >
+                                            <Stack spacing={1} justifyContent={"space-between"} direction={"row"} fontWeight={"bold"} fontSize={"0.95em"} margin={"8px 0px 24px 0px"}>
+                                                <div style={{ display: "inline-flex", alignItems: "center" }}>
+                                                    <AddBoxIcon sx={{ marginRight: "8px", cursor: "pointer" }} />
+                                                    <span>Add Scope</span>
+                                                </div>
+                                            </Stack>
+                                        </Grid2>
+                                    </Typography>
+                                    <Divider></Divider>
+                                    {["Read Reports in QA", "Update Reports in QA", "Delete Reports in QA"].map(
+                                        (uri: string) => (
+                                            <Typography key={`${uri}`} component={"div"} fontSize={"0.9em"} fontWeight={"bold"}>
+                                                <Divider></Divider>
+                                                <Grid2 margin={"8px 0px 8px 0px"} container size={12} spacing={1}>
+                                                    <Grid2 size={11}><Link href={`/123412341234/authentication-groups/1234372987349`}>{uri}</Link></Grid2>
+                                                    <Grid2 size={1}><DeleteForeverOutlinedIcon /></Grid2>
+                                                </Grid2>
+                                            </Typography>
+                                        )
+                                    )}
+
+                                </AccordionDetails>
+                            </Accordion>
+                        </Grid2>                        
 
 
                         <Grid2 size={12}>
