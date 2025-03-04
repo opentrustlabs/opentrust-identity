@@ -29,7 +29,6 @@ const NewTenantDialog: React.FC<NewTenantDialogProps> = ({
         allowUnlimitedRate: false,
         allowUserSelfRegistration: false,
         claimsSupported: [],
-        contactInput: [],
         enabled: true,
         federatedAuthenticationConstraint: "",
         migrateLegacyUsers: false,

@@ -169,7 +169,6 @@ export const CLIENT_DETAIL_QUERY = gql(`
             clientName
             clientDescription
             enabled
-            redirectUris
             oidcEnabled
             pkceEnabled
             clientType

@@ -65,7 +65,10 @@ class ClientService {
         clientToUpdate.enabled = client.enabled;
         clientToUpdate.oidcEnabled = client.oidcEnabled;
         clientToUpdate.pkceEnabled = client.pkceEnabled;
-        clientToUpdate.redirectUris = client.redirectUris;
+        clientToUpdate.clientTokenTTLSeconds = client.clientTokenTTLSeconds;
+        clientToUpdate.clientType = client.clientType;
+        clientToUpdate.maxRefreshTokenCount = client.maxRefreshTokenCount;
+        clientToUpdate.userTokenTTLSeconds = client.userTokenTTLSeconds;        
 
         await clientDao.updateClient(clientToUpdate);
         await this.updateSearchIndex(clientToUpdate);
@@ -103,29 +106,29 @@ class ClientService {
         throw new Error("Method not implemented.");
     }
 
-    public async assignContactsToClient(clientId: string, contactList: Array<Contact>): Promise<Array<Contact>>{
-        contactList.forEach(
-            (c: Contact) => {
-                c.objectid = clientId;
-                c.objecttype = CONTACT_TYPE_FOR_CLIENT
-            }
-        );
-        const invalidContacts = contactList.filter(
-            (c: Contact) => {
-                if(c.email === null || c.email === "" || c.email.length < 3 || c.email.indexOf("@") < 0){
-                    return true;
-                }
-                if(c.name === null || c.name === "" || c.name.length < 3){
-                    return true;
-                }
-                return false;
-            }
-        );
-        if(invalidContacts.length > 0){
-            throw new GraphQLError("ERROR_INVALID_CONTACT_INFORMATION");
-        }
-        return clientDao.assignContactsToClient(clientId, contactList);
-    }
+    // public async assignContactsToClient(clientId: string, contactList: Array<Contact>): Promise<Array<Contact>>{
+    //     contactList.forEach(
+    //         (c: Contact) => {
+    //             c.objectid = clientId;
+    //             c.objecttype = CONTACT_TYPE_FOR_CLIENT
+    //         }
+    //     );
+    //     const invalidContacts = contactList.filter(
+    //         (c: Contact) => {
+    //             if(c.email === null || c.email === "" || c.email.length < 3 || c.email.indexOf("@") < 0){
+    //                 return true;
+    //             }
+    //             if(c.name === null || c.name === "" || c.name.length < 3){
+    //                 return true;
+    //             }
+    //             return false;
+    //         }
+    //     );
+    //     if(invalidContacts.length > 0){
+    //         throw new GraphQLError("ERROR_INVALID_CONTACT_INFORMATION");
+    //     }
+    //     return clientDao.assignContactsToClient(clientId, contactList);
+    // }
 }
 
 export default ClientService;

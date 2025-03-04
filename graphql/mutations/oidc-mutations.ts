@@ -181,3 +181,23 @@ export const REMOVE_CONTACT_MUTATION = gql(`
         removeContact(contactId: $contactId) 
     }
 `);
+
+export const CREATE_CLIENT_MUTATION = gql(`
+    mutation createClient($clientInput: ClientCreateInput!) {
+        createClient(clientInput: $clientInput) {
+            clientId
+            clientSecret
+            clientName
+        }
+    }
+`);
+
+export const UPDATE_CLIENT_MUTATION = gql(`
+    mutation updateClient($clientInput: ClientUpdateInput!) {
+        updateClient(clientInput: $clientInput){
+            clientId
+            clientName
+            clientDescription
+        }
+    }
+`);

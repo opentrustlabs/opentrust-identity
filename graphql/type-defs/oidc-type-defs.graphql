@@ -350,8 +350,7 @@ type Client {
     clientSecret: String!
     clientName: String!
     clientDescription: String
-    enabled: Boolean
-    redirectUris: [String!]
+    enabled: Boolean!
     oidcEnabled: Boolean!
     pkceEnabled: Boolean!
     clientType: String!
@@ -958,10 +957,9 @@ input ClientCreateInput {
     tenantId: String!
     clientName: String!
     clientDescription: String
-    enabled: Boolean
-    redirectUris: [String!]
-    oidcEnabled: Boolean
-    pkceEnabled: Boolean
+    enabled: Boolean!
+    oidcEnabled: Boolean!
+    pkceEnabled: Boolean!
     clientType: String!
     clienttypeid: String
     userTokenTTLSeconds: Int
@@ -974,10 +972,9 @@ input ClientUpdateInput {
     clientId: String!
     clientName: String!
     clientDescription: String
-    enabled: Boolean
-    redirectUris: [String!]
-    oidcEnabled: Boolean
-    pkceEnabled: Boolean
+    enabled: Boolean!
+    oidcEnabled: Boolean!
+    pkceEnabled: Boolean!
     clientType: String!
     clienttypeid: String
     userTokenTTLSeconds: Int

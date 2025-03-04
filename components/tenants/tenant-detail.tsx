@@ -546,7 +546,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                 open={showMutationBackdrop}
                 onClick={() => setShowMutationBackdrop(false)}
             >
-                <CircularProgress color="inherit" />
+                <CircularProgress color="info" />
             </Backdrop>
             <Snackbar
                 open={showMutationSnackbar}

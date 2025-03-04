@@ -31,7 +31,7 @@ const TenantManagementDomainConfiguration: React.FC<TenantManagementDomainConfig
     const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
     const [addDialogOpen, setAddDialogOpen] = React.useState(false);
 
-    const {data, loading, error} = useQuery(TENANT_DOMAIN_MANAGEMENT_REL_QUERY, {
+    const { data, loading, error } = useQuery(TENANT_DOMAIN_MANAGEMENT_REL_QUERY, {
         variables: {
             tenantId: tenantId
         }
@@ -41,7 +41,7 @@ const TenantManagementDomainConfiguration: React.FC<TenantManagementDomainConfig
         variables: {
             tenantId: tenantId,
             domain: selectedDomainToAdd
-        },        
+        },
         onCompleted() {
             setSelectedDomainToAdd(null);
             onUpdateEnd(true);
@@ -74,48 +74,48 @@ const TenantManagementDomainConfiguration: React.FC<TenantManagementDomainConfig
 
     return (
         <Typography component={"div"}>
-            {errorMessage && 
-                <Alert severity="error" onClose={() => {setErrorMessage(null)}}>{errorMessage}</Alert>
+            {errorMessage &&
+                <Alert severity="error" onClose={() => { setErrorMessage(null) }}>{errorMessage}</Alert>
             }
             {deleteDialogOpen &&
-                <Dialog 
+                <Dialog
                     open={deleteDialogOpen}
-                    onClose={() => {setDeleteDialogOpen(false); setSelectedDomainToDelete(null);}}
+                    onClose={() => { setDeleteDialogOpen(false); setSelectedDomainToDelete(null); }}
                 >
                     <DialogContent>
 
-                        <Typography ><span>Confirm removal of domain: </span> <span style={{fontWeight: "bold"}}>{selectedDomainToDelete}</span></Typography>
+                        <Typography ><span>Confirm removal of domain: </span> <span style={{ fontWeight: "bold" }}>{selectedDomainToDelete}</span></Typography>
                     </DialogContent>
                     <DialogActions>
-                        <Button onClick={() => {setDeleteDialogOpen(false); setSelectedDomainToDelete(null);}}>Cancel</Button>
-                        <Button onClick={() => {onUpdateStart(); setDeleteDialogOpen(false); removeTenantDomainManagementRel();}}>Confirm</Button>
-                    </DialogActions>                    
+                        <Button onClick={() => { setDeleteDialogOpen(false); setSelectedDomainToDelete(null); }}>Cancel</Button>
+                        <Button onClick={() => { onUpdateStart(); setDeleteDialogOpen(false); removeTenantDomainManagementRel(); }}>Confirm</Button>
+                    </DialogActions>
                 </Dialog>
             }
             {addDialogOpen &&
-                <Dialog 
+                <Dialog
                     open={addDialogOpen}
-                    onClose={() => {setAddDialogOpen(false); setSelectedDomainToAdd(null);}}
+                    onClose={() => { setAddDialogOpen(false); setSelectedDomainToAdd(null); }}
                     maxWidth="sm"
                     fullWidth={true}
                 >
                     <DialogTitle>Add domain</DialogTitle>
                     <DialogContent>
-                        <TextField 
+                        <TextField
                             fullWidth={true}
                             size="small"
                             name="domain"
-                            onChange={(evt) => {if(evt.target.value.length > 0){setSelectedDomainToAdd(evt.target.value)}}}
+                            onChange={(evt) => { if (evt.target.value.length > 0) { setSelectedDomainToAdd(evt.target.value) } }}
                         />
                     </DialogContent>
                     <DialogActions>
-                        <Button onClick={() => {setAddDialogOpen(false); setSelectedDomainToAdd(null);}}>Cancel</Button>
-                        <Button onClick={() => {onUpdateStart(); setAddDialogOpen(false); addTenantDomainManagementRel();}}>Submit</Button>
-                    </DialogActions>                    
+                        <Button onClick={() => { setAddDialogOpen(false); setSelectedDomainToAdd(null); }}>Cancel</Button>
+                        <Button onClick={() => { onUpdateStart(); setAddDialogOpen(false); addTenantDomainManagementRel(); }}>Submit</Button>
+                    </DialogActions>
                 </Dialog>
             }
-            
-            
+
+
             <Grid2 padding={"8px"} container size={12} spacing={0}>
                 {data.getDomainsForTenantManagement && data.getDomainsForTenantManagement.length < 1 &&
                     <Grid2 size={12} textAlign={"center"}>No domains for tenant management</Grid2>
@@ -123,22 +123,22 @@ const TenantManagementDomainConfiguration: React.FC<TenantManagementDomainConfig
                 {data.getDomainsForTenantManagement.map(
                     (rel: TenantManagementDomainRel, idx: number) => (
                         <Grid2 container key={rel.domain} size={12}>
-                            <Grid2  size={10.8}>{rel.domain}</Grid2>
-                            <Grid2 size={1.2}><RemoveCircleOutlineIcon sx={{cursor: "pointer"}} onClick={() => {setSelectedDomainToDelete(rel.domain); setDeleteDialogOpen(true); }} /></Grid2>                            
+                            <Grid2 size={10.8}>{rel.domain}</Grid2>
+                            <Grid2 size={1.2}><RemoveCircleOutlineIcon sx={{ cursor: "pointer" }} onClick={() => { setSelectedDomainToDelete(rel.domain); setDeleteDialogOpen(true); }} /></Grid2>
                         </Grid2>
                     )
                 )}
             </Grid2>
-            <Divider />            
-            <Grid2 padding={"8px"} container size={12} spacing={0}>                
+            <Divider />
+            <Grid2 padding={"8px"} container size={12} spacing={0}>
                 <Grid2 size={1}>
-                    <AddBoxIcon onClick={() => setAddDialogOpen(true)} sx={{cursor: "pointer"}}/>
+                    <AddBoxIcon onClick={() => setAddDialogOpen(true)} sx={{ cursor: "pointer" }} />
                 </Grid2>
                 <Grid2 size={11}></Grid2>
-                
+
             </Grid2>
-            </Typography>
-        
+        </Typography>
+
     )
 }
 
