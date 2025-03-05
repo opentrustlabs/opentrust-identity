@@ -10,13 +10,17 @@ import { useRouter } from 'next/navigation';
 
 
 export interface NewTenantDialogProps {
-    onCancel: () => void
-    onClose: () => void
+    onCancel: () => void,
+    onClose: () => void,
+    onCreateStart: () => void,
+    onCreateEnd: (success: boolean) => void
 }
 
 const NewTenantDialog: React.FC<NewTenantDialogProps> = ({
     onCancel,
-    onClose
+    onClose,
+    onCreateEnd,
+    onCreateStart
 }) => {
 
 
@@ -56,11 +60,13 @@ const NewTenantDialog: React.FC<NewTenantDialogProps> = ({
                 tenantInput: tenantInput
             },
             onCompleted(data) {
+                onCreateEnd(true);
                 router.push(`${tenantBean.getTenantMetaData().tenant.tenantId}/tenants/${data.createTenant.tenantId}`);
                 onClose();
             },
             onError(error) {
                 setErrorMessage(error.message)
+                onCreateEnd(false);
             },
         }
     );
@@ -215,7 +221,7 @@ const NewTenantDialog: React.FC<NewTenantDialogProps> = ({
             <DialogActions>
                 <Button onClick={() => {onCancel(); setTenantInput(initInput);}}>Cancel</Button>
                 <Button 
-                    onClick={() => createTenantMutation()}
+                    onClick={() => {onCreateStart(); createTenantMutation();}}
                     disabled={tenantInput.tenantName === null || tenantInput.tenantName === "" || tenantInput.tenantType === null  || tenantInput.tenantType === ""}
                 >
                     Finish

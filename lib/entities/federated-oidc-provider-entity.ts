@@ -20,8 +20,7 @@ export class FederatedOIDCProviderEntity {
             this.federatedoidcproviderclientsecret = federatedOidcProvider.federatedOIDCProviderClientSecret ? federatedOidcProvider.federatedOIDCProviderClientSecret : "";
             this.federatedoidcproviderdescription = federatedOidcProvider.federatedOIDCProviderDescription || "";
             this.federatedoidcprovidertenantid = federatedOidcProvider.federatedOIDCProviderTenantId || "";
-            this.sociallogindisplayname = federatedOidcProvider.socialLoginDisplayName || "";
-            this.socialloginicon = federatedOidcProvider.socialLoginIcon ? Buffer.from(federatedOidcProvider.socialLoginIcon) : null;
+            this.socialloginprovider = federatedOidcProvider.socialLoginProvider || "";            
         }
     }
 
@@ -61,11 +60,8 @@ export class FederatedOIDCProviderEntity {
     @Property()
     federatedoidcprovidertype: string;
 
-    @Property({ type: BlobType, nullable: true })
-    socialloginicon: Buffer | null;
-
     @Property()
-    sociallogindisplayname: string | null;
+    socialloginprovider: string | null;
 
     public toModel(): FederatedOidcProvider {
         const f: FederatedOidcProvider = {
@@ -78,11 +74,10 @@ export class FederatedOIDCProviderEntity {
             refreshTokenAllowed: this.refreshtokenallowed,
             scopes: this.scopes ? this.scopes.split(",") : [],
             usePkce: this.usepkce,
-            federatedOIDCProviderClientSecret: "",
+            federatedOIDCProviderClientSecret: this.federatedoidcproviderclientsecret,
             federatedOIDCProviderDescription: this.federatedoidcproviderdescription,
             federatedOIDCProviderTenantId: this.federatedoidcprovidertenantid, 
-            socialLoginDisplayName: this.sociallogindisplayname,
-            socialLoginIcon: this.socialloginicon ? this.socialloginicon.toString() : "",
+            socialLoginProvider: this.socialloginprovider            
         }
         return f;
 

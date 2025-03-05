@@ -13,13 +13,17 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 export interface NewClientDialogProps {
     tenantId: string,
     onCancel: () => void,
-    onClose: () => void
+    onClose: () => void,
+    onCreateStart: () => void,
+    onCreateEnd: (success: boolean) => void
 }
 
 const NewClientDialog: React.FC<NewClientDialogProps> = ({
     tenantId,
     onCancel,
-    onClose
+    onClose,
+    onCreateEnd,
+    onCreateStart
 }) => {
 
     const initInput: ClientCreateInput = {
@@ -53,10 +57,12 @@ const NewClientDialog: React.FC<NewClientDialogProps> = ({
             variables: {
                 clientInput: clientInput
             },
-            onCompleted(data) {                
+            onCompleted(data) {
+                onCreateEnd(true);
                 setCreatedClient(data.createClient);
             },
             onError(error) {
+                onCreateEnd(false);
                 setErrorMessage(error.message)
             },
         }
@@ -166,7 +172,7 @@ const NewClientDialog: React.FC<NewClientDialogProps> = ({
                 <DialogActions>
                     <Button onClick={() => { onCancel(); setClientInput(initInput); }}>Cancel</Button>
                     <Button
-                        onClick={() => createClientMutation()}
+                        onClick={() => {onCreateStart(); createClientMutation(); }}
                         disabled={
                             clientInput.clientName === null || clientInput.clientName === "" || clientInput.clientType === null || clientInput.clientType === ""}
                     >

@@ -16,8 +16,7 @@ create TABLE federated_oidc_provider(
     usepkce BOOLEAN NOT NULL,
     clientauthtype varchar(128) NOT NULL,
     federatedoidcprovidertype varchar(128) NOT NULL,
-    socialloginicon BLOB,
-    sociallogindisplayname varchar(128)
+    socialloginprovider VARCHAR(128)
 );
 
 create TABLE tenant (

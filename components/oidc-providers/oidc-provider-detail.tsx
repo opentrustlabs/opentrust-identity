@@ -1,9 +1,9 @@
 "use client";
-import { FederatedOidcProvider } from "@/graphql/generated/graphql-types";
+import { FederatedOidcProvider, FederatedOidcProviderUpdateInput } from "@/graphql/generated/graphql-types";
 import Typography from "@mui/material/Typography";
 import React, { useContext } from "react";
 import BreadcrumbComponent from "../breadcrumbs/breadcrumbs";
-import { TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
+import { FEDERATED_OIDC_PROVIDER_TYPE_ENTERPRISE, FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL, FEDERATED_OIDC_PROVIDER_TYPES_DISPLAY, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_BASIC, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_JWT, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_POST, OIDC_CLIENT_AUTH_TYPE_DISPLAY, OIDC_CLIENT_AUTH_TYPE_NONE, OIDC_EMAIL_SCOPE, OIDC_OFFLINE_ACCESS_SCOPE, OIDC_OPENID_SCOPE, OIDC_PROFILE_SCOPE, SOCIAL_OIDC_PROVIDERS, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
 import { DetailPageContainer, DetailPageMainContentContainer, DetailPageRightNavContainer } from "../layout/detail-page-container";
 import Grid2 from "@mui/material/Grid2";
@@ -11,12 +11,17 @@ import TextField from "@mui/material/TextField";
 import Checkbox from "@mui/material/Checkbox";
 import Paper from "@mui/material/Paper";
 import Accordion from "@mui/material/Accordion";
-import { AccordionSummary, AccordionDetails, Stack, Divider, Button } from "@mui/material";
+import { AccordionSummary, AccordionDetails, Stack, Divider, Button, Backdrop, CircularProgress, Snackbar, Alert, Select, MenuItem, Autocomplete, InputAdornment } from "@mui/material";
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import AddBoxIcon from '@mui/icons-material/AddBox';
 import DeleteForeverOutlinedIcon from '@mui/icons-material/DeleteForeverOutlined';
 import AlternateEmailIcon from '@mui/icons-material/AlternateEmail';
 import SettingsApplicationsIcon from '@mui/icons-material/SettingsApplications';
+import { useMutation } from "@apollo/client";
+import { FEDERATED_OIDC_PROVIDER_UPDATE_MUTATION } from "@/graphql/mutations/oidc-mutations";
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
+import { FEDERATED_OIDC_PROVIDER_DETAIL_QUERY } from "@/graphql/queries/oidc-queries";
 
 export interface FederatedOIDCProviderDetailProps {
     federatedOIDCProvider: FederatedOidcProvider
@@ -24,8 +29,50 @@ export interface FederatedOIDCProviderDetailProps {
 
 const FederatedOIDCProviderDetail: React.FC<FederatedOIDCProviderDetailProps> = ({ federatedOIDCProvider }) => {
 
-
+    // CONTEXT VARIABLES
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
+
+    // STATE VARIABLES
+    let initInput: FederatedOidcProviderUpdateInput = {
+        clientAuthType: federatedOIDCProvider.clientAuthType,
+        federatedOIDCProviderClientId: federatedOIDCProvider.federatedOIDCProviderClientId,
+        federatedOIDCProviderId: federatedOIDCProvider.federatedOIDCProviderId,
+        federatedOIDCProviderName: federatedOIDCProvider.federatedOIDCProviderName,
+        federatedOIDCProviderType: federatedOIDCProvider.federatedOIDCProviderType,
+        federatedOIDCProviderWellKnownUri: federatedOIDCProvider.federatedOIDCProviderWellKnownUri,
+        refreshTokenAllowed: federatedOIDCProvider.refreshTokenAllowed,
+        scopes: federatedOIDCProvider.scopes,
+        usePkce: federatedOIDCProvider.usePkce,
+        federatedOIDCProviderDescription: federatedOIDCProvider.federatedOIDCProviderDescription,
+        socialLoginProvider: federatedOIDCProvider.socialLoginProvider,
+        federatedOIDCProviderClientSecret: ""
+    };    
+    const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
+    const [oidcProviderInput, setOIDCProviderInput] = React.useState<FederatedOidcProviderUpdateInput>(initInput);
+    const [markDirty, setMarkDirty] = React.useState<boolean>(false);
+    const [showMutationBackdrop, setShowMutationBackdrop] = React.useState<boolean>(false);
+    const [showMutationSnackbar, setShowMutationSnackbar] = React.useState<boolean>(false);
+    const [changeClientSecret, setChangeClientSecret] = React.useState<boolean>(false);
+    
+    
+    // GRAPHQL FUNCTIONS
+    const [oidcProviderUpdateMutation] = useMutation(FEDERATED_OIDC_PROVIDER_UPDATE_MUTATION, {
+        variables: {
+            oidcProviderInput: oidcProviderInput
+        },
+        onCompleted() {
+            setMarkDirty(false);
+            setShowMutationBackdrop(false);
+            setShowMutationSnackbar(true);
+        },
+        onError(error) {
+            setShowMutationBackdrop(false);
+            setErrorMessage(error.message);
+        },
+        refetchQueries: [FEDERATED_OIDC_PROVIDER_DETAIL_QUERY]
+    });
+
+
     const arrBreadcrumbs = [];
     arrBreadcrumbs.push({
         href: `/${tenantBean.getTenantMetaData().tenant.tenantId}`,
@@ -58,73 +105,230 @@ const FederatedOIDCProviderDetail: React.FC<FederatedOIDCProviderDetailProps> = 
                         <Grid2 size={12}>
                             <Paper sx={{ padding: "8px" }} elevation={1}>
                                 <Grid2 container size={12} spacing={2}>
-                                    <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
-                                        <Grid2 marginBottom={"8px"}>
-                                            <div>Provider Name</div>
-                                            <TextField name="providerName" id="providerName" value={federatedOIDCProvider.federatedOIDCProviderName} fullWidth={true} size="small" />
+                                    {errorMessage &&
+                                        <Grid2 size={12}>
+                                            <Alert onClose={() => setErrorMessage(null)} sx={{ width: "100%" }} severity="error">{errorMessage}</Alert>
                                         </Grid2>
-                                        <Grid2 marginBottom={"8px"}>
+                                    }
+                                    <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
+                                        
+                                        <Grid2 marginBottom={"16px"}>
+                                            <div>Provider Name</div>
+                                            <TextField
+                                                required name="providerName" id="providerName"
+                                                onChange={(evt) => { oidcProviderInput.federatedOIDCProviderName = evt?.target.value; setOIDCProviderInput({ ...oidcProviderInput }); setMarkDirty(true); }}
+                                                value={oidcProviderInput.federatedOIDCProviderName}
+                                                fullWidth={true}
+                                                size="small" />
+                                        </Grid2>
+                                        <Grid2 marginBottom={"16px"}>
                                             <div>Provider Description</div>
-                                            <TextField 
-                                                name="providerDescription" 
-                                                id="providerDescription" 
-                                                value={federatedOIDCProvider.federatedOIDCProviderDescription || ""} 
-                                                fullWidth={true} 
-                                                size="small" 
+                                            <TextField
+                                                name="providerDescription" id="providerDescription"
+                                                value={oidcProviderInput.federatedOIDCProviderDescription}
+                                                fullWidth={true}
+                                                size="small"
                                                 multiline={true}
                                                 rows={2}
+                                                onChange={(evt) => { oidcProviderInput.federatedOIDCProviderDescription = evt?.target.value; setOIDCProviderInput({ ...oidcProviderInput }); setMarkDirty(true);  }}
                                             />
                                         </Grid2>
-                                        <Grid2 marginBottom={"8px"}>
+                                        <Grid2 marginBottom={"16px"}>
                                             <div>Provider Type</div>
-                                            <TextField name="providerType" id="provider" value={federatedOIDCProvider.federatedOIDCProviderType || ""} fullWidth={true} size="small" />
+                                            <Select
+                                                size="small"
+                                                fullWidth={true}
+                                                value={oidcProviderInput.federatedOIDCProviderType}
+                                                name="providerType"
+                                                onChange={(evt) => {
+                                                    oidcProviderInput.federatedOIDCProviderType = evt.target.value;
+                                                    if (evt.target.value === FEDERATED_OIDC_PROVIDER_TYPE_ENTERPRISE) {
+                                                        oidcProviderInput.socialLoginProvider = "";
+                                                    }
+                                                    setOIDCProviderInput({ ...oidcProviderInput });
+                                                    setMarkDirty(true); 
+                                                }}
+                                            >
+                                                <MenuItem value={FEDERATED_OIDC_PROVIDER_TYPE_ENTERPRISE} >{FEDERATED_OIDC_PROVIDER_TYPES_DISPLAY.get(FEDERATED_OIDC_PROVIDER_TYPE_ENTERPRISE)}</MenuItem>
+                                                <MenuItem value={FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL} >{FEDERATED_OIDC_PROVIDER_TYPES_DISPLAY.get(FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL)}</MenuItem>
+                                            </Select>
                                         </Grid2>
-                                        <Grid2 marginBottom={"8px"}>
+                                        {oidcProviderInput.federatedOIDCProviderType === FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL &&
+                                            <Grid2 marginBottom={"16px"}>
+                                                <div>Social Provider (Requires an account with the provider)</div>
+                                                <Autocomplete
+                                                    id="socialLoginProvider"
+                                                    size="small"
+                                                    options={SOCIAL_OIDC_PROVIDERS}
+                                                    renderInput={(params) => (
+                                                        <TextField {...params} label="Select or type..." variant="outlined" />
+                                                    )}
+                                                />
+                                            </Grid2>
+                                        }
+                                        <Grid2 marginBottom={"16px"}>
                                             <div>Provider Client ID</div>
-                                            <TextField name="clientId" id="clientId" value={federatedOIDCProvider.federatedOIDCProviderClientId || ""} fullWidth={true} size="small" />
+                                            <TextField name="clientId" id="clientId"
+                                                value={oidcProviderInput.federatedOIDCProviderClientId || ""}
+                                                onChange={(evt) => { oidcProviderInput.federatedOIDCProviderClientId = evt.target.value; setOIDCProviderInput({ ...oidcProviderInput }); setMarkDirty(true); }}
+                                                fullWidth={true} size="small" />
                                         </Grid2>
-                                        <Grid2 marginBottom={"8px"}>
-                                            <div>Provider Client Secret</div>
-                                            <TextField name="clientSecret" id="clientSecret" value={"*******************"} fullWidth={true} size="small" />
-                                        </Grid2>
-                                        <Grid2 marginBottom={"8px"}>
-                                            <div>Provider Tenant ID</div>
-                                            <TextField name="federatedOIDCProviderTenantId" id="federatedOIDCProviderTenantId" value={federatedOIDCProvider.federatedOIDCProviderTenantId || ""} fullWidth={true} size="small" />
+                                        <Grid2 marginBottom={"16px"}>
+                                            <div style={{textDecoration: "underline"}} >Provider Client Secret</div>
+                                            <Grid2 marginTop={"8px"} container display={"inline-flex"} size={12}>
+                                                {changeClientSecret === true &&
+                                                    <Grid2 size={12}>
+                                                        <TextField type="password" name="clientSecret" id="clientSecret"
+                                                            value={oidcProviderInput.federatedOIDCProviderClientSecret}
+                                                            onChange={(evt) => { 
+                                                                oidcProviderInput.federatedOIDCProviderClientSecret = evt.target.value; 
+                                                                setOIDCProviderInput({ ...oidcProviderInput }); 
+                                                                setMarkDirty(true);
+                                                            }}
+                                                            fullWidth={true} size="small" 
+                                                            slotProps={{
+                                                                input: {
+                                                                    endAdornment: (
+                                                                        <InputAdornment position="end">
+                                                                            <CloseOutlinedIcon
+                                                                                sx={{ cursor: "pointer" }}
+                                                                                onClick={() => { 
+                                                                                    oidcProviderInput.federatedOIDCProviderClientSecret = "";
+                                                                                    setOIDCProviderInput({...oidcProviderInput});
+                                                                                    setChangeClientSecret(false);
+                                                                                }}
+                                                                            />
+                                                                        </InputAdornment>
+                                                                    )
+                                                                }
+                                                            }}
+                                                        />
+                                                    </Grid2>
+                                                }
+                                                {changeClientSecret !== true &&
+                                                    <>
+                                                        <Grid2 size={10}>
+                                                            <div>*******************************************</div>
+                                                        </Grid2>
+                                                        <Grid2 size={1}></Grid2>
+                                                        <Grid2 size={1}>                                                        
+                                                            <EditOutlinedIcon
+                                                                sx={{cursor: "pointer"}}
+                                                                onClick={() => {
+                                                                    setChangeClientSecret(true);
+                                                                }}
+                                                            />
+                                                        </Grid2>
+                                                    </>
+                                                        
+                                                }                                                
+                                                
+                                            </Grid2>
                                         </Grid2>
                                     </Grid2>
                                     <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>                                        
-                                        <Grid2 marginBottom={"8px"}>
+                                        <Grid2 marginBottom={"16px"}>
                                             <div>Well Known URI</div>
-                                            <TextField name="providerWellKnownUri" id="providerWellKnownUri" value={federatedOIDCProvider.federatedOIDCProviderWellKnownUri || ""} fullWidth={true} size="small" />
+                                            <TextField name="providerWellKnownUri" id="providerWellKnownUri"
+                                                value={oidcProviderInput.federatedOIDCProviderWellKnownUri}
+                                                onChange={(evt) => { oidcProviderInput.federatedOIDCProviderWellKnownUri = evt.target.value; setOIDCProviderInput({ ...oidcProviderInput }); setMarkDirty(true); }}
+                                                fullWidth={true} size="small" />
                                         </Grid2>
-                                        <Grid2 marginBottom={"8px"}>
+                                        <Grid2 marginBottom={"16px"}>
                                             <div>Authentication Type</div>
-                                            <TextField name="clientAuthType" id="clientAuthType" value={federatedOIDCProvider.clientAuthType} fullWidth={true} size="small" />
+                                            <Select
+                                                size="small"
+                                                fullWidth={true}
+                                                value={oidcProviderInput.clientAuthType}
+                                                name="providerType"
+                                                onChange={(evt) => { oidcProviderInput.clientAuthType = evt.target.value; setOIDCProviderInput({ ...oidcProviderInput }); setMarkDirty(true);}}
+                                            >
+                                                <MenuItem value={OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_POST} >{OIDC_CLIENT_AUTH_TYPE_DISPLAY.get(OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_POST)}</MenuItem>
+                                                <MenuItem value={OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_JWT} >{OIDC_CLIENT_AUTH_TYPE_DISPLAY.get(OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_JWT)}</MenuItem>
+                                                <MenuItem value={OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_BASIC} >{OIDC_CLIENT_AUTH_TYPE_DISPLAY.get(OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_BASIC)}</MenuItem>
+                                                <MenuItem disabled={oidcProviderInput.usePkce === false} value={OIDC_CLIENT_AUTH_TYPE_NONE} >{OIDC_CLIENT_AUTH_TYPE_DISPLAY.get(OIDC_CLIENT_AUTH_TYPE_NONE)}</MenuItem>
+                                            </Select>
                                         </Grid2>
-                                        <Grid2 marginBottom={"8px"}>
+                                        <Grid2 marginBottom={"16px"}>
                                             <div>Scope</div>
-                                            <TextField name="scope" id="scope" value={federatedOIDCProvider.scopes || ""} fullWidth={true} size="small" />
-                                        </Grid2>                                        
-                                        <Grid2 marginBottom={"8px"}>
-                                            <div>Social Login Icon</div>
-                                            <TextField name="socialLoginIcon" id="socialLoginIcon" value={""} fullWidth={true} size="small" />
+                                            <Autocomplete
+                                                id="scopes"
+                                                multiple={true}
+                                                size="small"
+                                                sx={{ paddingTop: "8px" }}
+                                                renderInput={(params) => <TextField {...params} label="" />}
+                                                options={[
+                                                    { id: OIDC_OPENID_SCOPE, label: OIDC_OPENID_SCOPE },
+                                                    { id: OIDC_EMAIL_SCOPE, label: OIDC_EMAIL_SCOPE },
+                                                    { id: OIDC_PROFILE_SCOPE, label: OIDC_PROFILE_SCOPE },
+                                                    { id: OIDC_OFFLINE_ACCESS_SCOPE, label: OIDC_OFFLINE_ACCESS_SCOPE }
+                                                ]}
+                                                isOptionEqualToValue={(option, value) => option.id === value.id}
+                                                value={oidcProviderInput.scopes.map(
+                                                    (s: string) => {
+                                                        return {
+                                                            id: s,
+                                                            label: s
+                                                        }
+                                                    }
+                                                )}
+                                                onChange={(_, value: any) => {                                                    
+                                                    oidcProviderInput.scopes = value.map((v: any) => v.id);
+                                                    setOIDCProviderInput({ ...oidcProviderInput });
+                                                    setMarkDirty(true);
+                                                }}
+                                            />
                                         </Grid2>
-                                        <Grid2 marginBottom={"8px"}>
-                                            <div>Social Login Display Name</div>
-                                            <TextField name="socialLoginDisplayName" id="socialLoginDisplayName" value={""} fullWidth={true} size="small" />
-                                        </Grid2>
-                                        <Grid2 marginBottom={"8px"}>
-                                            <Grid2 paddingLeft={"8px"} marginBottom={"16px"} container size={12}>
-                                                <Grid2 alignContent={"center"} size={10}>Refresh Token Allowed</Grid2>
-                                                <Grid2 size={2}><Checkbox /></Grid2>
+                                        <Grid2 marginBottom={"16px"}>
+                                            <Grid2 paddingLeft={"8px"} marginBottom={"16px"} container size={12}>                                                
                                                 <Grid2 alignContent={"center"} size={10}>Use PKCE</Grid2>
-                                                <Grid2 size={2}><Checkbox /></Grid2>
+                                                <Grid2 size={2}>
+                                                    <Checkbox
+                                                        checked={oidcProviderInput.usePkce}
+                                                        onChange={(_, checked: boolean) => {
+                                                            oidcProviderInput.usePkce = checked;
+                                                            if (!checked && oidcProviderInput.clientAuthType === OIDC_CLIENT_AUTH_TYPE_NONE) {
+                                                                oidcProviderInput.clientAuthType = OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_POST;
+                                                            }
+                                                            setOIDCProviderInput({ ...oidcProviderInput });
+                                                        }}
+                                                    />                                                    
+                                                </Grid2>
+                                                <Grid2 alignContent={"center"} size={10}>Refresh Token Allowed</Grid2>
+                                                <Grid2 size={2}>
+                                                    <Checkbox
+                                                        id="refreshTokensAllowed"
+                                                        checked={oidcProviderInput.refreshTokenAllowed}
+                                                        onChange={(_, checked: boolean) => {
+                                                            oidcProviderInput.refreshTokenAllowed = checked;
+                                                            setOIDCProviderInput({ ...oidcProviderInput });
+                                                        }}
+                                                    />
+                                                </Grid2>
                                             </Grid2>
                                         </Grid2>
                                     </Grid2>
                                 </Grid2>
                                 <Stack sx={{ marginTop: "8px" }} direction={"row"} flexDirection={"row-reverse"} >
-                                    <Button sx={{ border: "solid 1px lightgrey", borderRadius: "4px" }} >Update</Button>
+                                    <Button 
+                                        disabled={!markDirty}
+                                        onClick={() => {
+                                            setShowMutationBackdrop(true);
+                                            oidcProviderUpdateMutation();                                            
+                                        }}
+                                    >
+                                        Update
+                                    </Button>
+                                    <Button 
+                                        sx={{marginRight: "8px"}}
+                                        onClick={() => {
+                                            setOIDCProviderInput(initInput);
+                                            setMarkDirty(false);
+                                        }}
+                                        disabled={!markDirty}
+                                    >
+                                        Cancel
+                                    </Button>
                                 </Stack>
                             </Paper>
                         </Grid2>
@@ -204,23 +408,29 @@ const FederatedOIDCProviderDetail: React.FC<FederatedOIDCProviderDetailProps> = 
                                 </AccordionDetails>
                             </Accordion>
                         </Grid2>
-
-
-
                     </Grid2>
-
-
                 </DetailPageMainContentContainer>
-
             </DetailPageContainer>
             <DetailPageRightNavContainer><div></div></DetailPageRightNavContainer>
 
 
-
+            <Backdrop
+                sx={{ color: '#fff'}}
+                open={showMutationBackdrop}
+                onClick={() => setShowMutationBackdrop(false)}
+            >
+                <CircularProgress color="info" />
+            </Backdrop>
+            <Snackbar
+                open={showMutationSnackbar}
+                autoHideDuration={4000}
+                onClose={() => setShowMutationSnackbar(false)}
+                message="Provider Updated"
+                anchorOrigin={{horizontal: "center", vertical: "top"}}
+            />
 
 
         </Typography>
-        // <>{JSON.stringify(federatedOIDCProvider)}</>
 
 
     )

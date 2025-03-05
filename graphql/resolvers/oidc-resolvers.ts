@@ -508,8 +508,10 @@ const resolvers: Resolvers = {
                 federatedOIDCProviderClientSecret: oidcProviderInput.federatedOIDCProviderClientSecret,
                 federatedOIDCProviderDescription: oidcProviderInput.federatedOIDCProviderDescription,
                 federatedOIDCProviderTenantId: oidcProviderInput.federatedOIDCProviderTenantId,
-                scopes: [],
-                federatedOIDCProviderType: oidcProviderInput.federatedOIDCProviderType
+                scopes: oidcProviderInput.scopes,
+                federatedOIDCProviderType: oidcProviderInput.federatedOIDCProviderType,
+                socialLoginProvider: oidcProviderInput.socialLoginProvider
+                
             };
             const providerService: FederatedOIDCProviderService = new FederatedOIDCProviderService(oidcContext);
             await providerService.createFederatedOIDCProvider(oidcProvider);
@@ -527,8 +529,9 @@ const resolvers: Resolvers = {
                 federatedOIDCProviderClientSecret: oidcProviderInput.federatedOIDCProviderClientSecret,
                 federatedOIDCProviderDescription: oidcProviderInput.federatedOIDCProviderDescription,
                 federatedOIDCProviderTenantId: oidcProviderInput.federatedOIDCProviderTenantId,
-                scopes: [],
-                federatedOIDCProviderType: oidcProviderInput.federatedOIDCProviderType
+                scopes: oidcProviderInput.scopes,
+                federatedOIDCProviderType: oidcProviderInput.federatedOIDCProviderType,
+                socialLoginProvider: oidcProviderInput.socialLoginProvider
             };
             const providerService: FederatedOIDCProviderService = new FederatedOIDCProviderService(oidcContext);
             await providerService.updateFederatedOIDCProvider(oidcProvider);

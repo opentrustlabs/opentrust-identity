@@ -1,5 +1,5 @@
 "use client";
-import { Dialog } from "@mui/material";
+import { Backdrop, CircularProgress, Dialog, Snackbar } from "@mui/material";
 import React, { useContext } from "react";
 import { ResponsiveBreakpoints } from "../contexts/responsive-context";
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
@@ -18,12 +18,12 @@ export interface CreateNewSelectorProps {
 }
 
 
-const CreateNewDialog: React.FC<CreateNewSelectorProps> = ({ 
+const CreateNewDialog: React.FC<CreateNewSelectorProps> = ({
     open,
     onCancel,
     onClose,
     breakPoints
- }) => {
+}) => {
 
     // CONTEXTS
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
@@ -31,10 +31,11 @@ const CreateNewDialog: React.FC<CreateNewSelectorProps> = ({
     // STATE
     const [createNewType, setCreateNewType] = React.useState<string | null>(null);
     const [selectedTenant, setSelectedTenant] = React.useState<string | null>(
-        tenantBean.getTenantMetaData().tenant.tenantType === TENANT_TYPE_ROOT_TENANT ? 
+        tenantBean.getTenantMetaData().tenant.tenantType === TENANT_TYPE_ROOT_TENANT ?
             null :
             tenantBean.getTenantMetaData().tenant.tenantId
-    )
+    );
+    const [showMutationBackdrop, setShowMutationBackdrop] = React.useState<boolean>(false);
 
     const ARR_TYPES_REQUIRING_PARENT_TENANT = ["client", "authorization-group", "authentication-group", "key"];
     const requiresParentTenant = (type: string): boolean => {
@@ -42,27 +43,37 @@ const CreateNewDialog: React.FC<CreateNewSelectorProps> = ({
     }
 
     return (
-        <Dialog
-            draggable={true}
-            open={open}
-            onClose={() => {setCreateNewType(null); onClose();}}
-            fullScreen={false}
-            maxWidth={breakPoints.isMedium ? "lg" : createNewType === null || selectedTenant === null ? "sm" : "sm"}
-            fullWidth={breakPoints.isMedium ? true : true}
-        >
-            {createNewType === null &&
-                <CreateNewTypeSelector  
-                    onCancel={onCancel}
-                    onNext={(selectedType: string) => setCreateNewType(selectedType)}
-                />
-            }
+        <>
+            <Dialog
+                draggable={true}
+                open={open}
+                onClose={() => { setCreateNewType(null); onClose(); }}
+                fullScreen={false}
+                maxWidth={breakPoints.isMedium ? "lg" : createNewType === null || selectedTenant === null ? "sm" : "sm"}
+                fullWidth={breakPoints.isMedium ? true : true}
+            >
+                {createNewType === null &&
+                    <CreateNewTypeSelector
+                        onCancel={onCancel}
+                        onNext={(selectedType: string) => setCreateNewType(selectedType)}
+                    />
+                }
                 {createNewType !== null && requiresParentTenant(createNewType) && selectedTenant === null &&
-                    <TenantSelector onSelected={setSelectedTenant} onCancel={onCancel}/>
+                    <TenantSelector onSelected={setSelectedTenant} onCancel={onCancel} />
                 }
                 {createNewType === "tenant" &&
-                    <NewTenantDialog 
+                    <NewTenantDialog
                         onCancel={onCancel}
                         onClose={onClose}
+                        onCreateEnd={(success: boolean) => {
+                            setShowMutationBackdrop(false);
+                            if(success){
+                                onClose();
+                            }
+                        }}
+                        onCreateStart={() => {
+                            setShowMutationBackdrop(true);
+                        }}
                     />
                 }
                 {createNewType === "client" && selectedTenant !== null &&
@@ -70,6 +81,12 @@ const CreateNewDialog: React.FC<CreateNewSelectorProps> = ({
                         tenantId={selectedTenant}
                         onCancel={onCancel}
                         onClose={onClose}
+                        onCreateEnd={() => {
+                            setShowMutationBackdrop(false);                            
+                        }}
+                        onCreateStart={() => {
+                            setShowMutationBackdrop(true);
+                        }}
                     />
                 }
                 {createNewType === "authorization-group" && selectedTenant !== null &&
@@ -81,13 +98,22 @@ const CreateNewDialog: React.FC<CreateNewSelectorProps> = ({
                 {createNewType === "scope-access-control" &&
                     <div>You want to create a new scope-access-control</div>
                 }
-                {createNewType === "oidc-provider" && 
+                {createNewType === "oidc-provider" &&
                     <NewOIDCProviderDialog
                         onCancel={onCancel}
                         onClose={onClose}
+                        onCreateEnd={(success: boolean) => {
+                            setShowMutationBackdrop(false);
+                            if(success){
+                                onClose();
+                            }
+                        }}
+                        onCreateStart={() => {
+                            setShowMutationBackdrop(true);
+                        }}
                     />
                 }
-                {createNewType === "rate-limit" && 
+                {createNewType === "rate-limit" &&
                     <div>You want to create a new rate-limit</div>
                 }
                 {createNewType === "key" && selectedTenant !== null &&
@@ -95,7 +121,15 @@ const CreateNewDialog: React.FC<CreateNewSelectorProps> = ({
                 }
 
 
-        </Dialog>
+            </Dialog>
+            <Backdrop
+                sx={{ color: '#fff' }}
+                open={showMutationBackdrop}
+                onClick={() => setShowMutationBackdrop(false)}
+            >
+                <CircularProgress color="info" />
+            </Backdrop>
+        </>
     )
 }
 

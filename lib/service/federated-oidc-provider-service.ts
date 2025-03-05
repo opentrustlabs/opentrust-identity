@@ -20,12 +20,17 @@ class FederatedOIDCProviderService {
         this.oidcContext = oidcContext;
     }
     
-    public async getFederatedOIDCProviders(tenantId?: string): Promise<Array<FederatedOidcProvider>>{
+    public async getFederatedOIDCProviders(tenantId?: string): Promise<Array<FederatedOidcProvider>>{        
         return federatedOIDCProviderDao.getFederatedOidcProviders(tenantId);
     }
 
     public async getFederatedOIDCProviderById(federatedOIDCProviderId: string): Promise<FederatedOidcProvider | null>{
-        return federatedOIDCProviderDao.getFederatedOidcProviderById(federatedOIDCProviderId);
+        const provider: FederatedOidcProvider | null = await federatedOIDCProviderDao.getFederatedOidcProviderById(federatedOIDCProviderId);
+        // make sure to unset the client secret before returning.
+        if(provider){
+            provider.federatedOIDCProviderClientSecret = "";
+        }
+        return Promise.resolve(provider);
     }
 
     public async createFederatedOIDCProvider(federatedOIDCProvider: FederatedOidcProvider): Promise<FederatedOidcProvider>{
@@ -33,6 +38,9 @@ class FederatedOIDCProviderService {
         if(!valid){
             throw new GraphQLError(errorMessage);
         }
+        
+        // TODO - Encrypt the secret value if it exists
+
         federatedOIDCProvider.federatedOIDCProviderId = randomUUID().toString();
         await federatedOIDCProviderDao.createFederatedOidcProvider(federatedOIDCProvider);
         await this.updateSearchIndex(federatedOIDCProvider);
@@ -55,14 +63,27 @@ class FederatedOIDCProviderService {
         return {valid: true, errorMessage: ""}
     }
     
-    public async updateFederatedOIDCProvider(federatedOIDCProvider: FederatedOidcProvider): Promise<FederatedOidcProvider>{        
+    public async updateFederatedOIDCProvider(federatedOIDCProvider: FederatedOidcProvider): Promise<FederatedOidcProvider>{    
+        
+        const existingProvider: FederatedOidcProvider | null = await federatedOIDCProviderDao.getFederatedOidcProviderById(federatedOIDCProvider.federatedOIDCProviderId);
+        if(!existingProvider){
+            throw new GraphQLError("ERROR_NO_FEDERATED_OIDC_PROVIDER_FOUND");
+        }
+        // If the user intended to update the client secret, then overwrite the existing secret. Otherwise, just use the
+        // existing secret.
+        // TODO - Encrypt the new secret value
+        if(federatedOIDCProvider.federatedOIDCProviderClientSecret === null || federatedOIDCProvider.federatedOIDCProviderClientSecret === ""){
+            if(existingProvider.federatedOIDCProviderClientSecret !== null && existingProvider.federatedOIDCProviderClientSecret !== ""){                
+                federatedOIDCProvider.federatedOIDCProviderClientSecret = existingProvider.federatedOIDCProviderClientSecret;
+            }
+        }
+
         const { valid, errorMessage } = this.validateOIDCProviderInput(federatedOIDCProvider);
         if(!valid){
             throw new GraphQLError(errorMessage);
         }
-        if(!this.getFederatedOIDCProviderById(federatedOIDCProvider.federatedOIDCProviderId)){
-            throw new GraphQLError("ERROR_NO_FEDERATED_OIDC_PROVIDER_FOUND");
-        }
+        
+
         await federatedOIDCProviderDao.updateFederatedOidcProvider(federatedOIDCProvider);
         await this.updateSearchIndex(federatedOIDCProvider);
         return Promise.resolve(federatedOIDCProvider);

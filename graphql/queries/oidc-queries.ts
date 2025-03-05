@@ -292,8 +292,7 @@ export const FEDERATED_OIDC_PROVIDER_DETAIL_QUERY = gql(`
             clientauthtypeid
             federatedOIDCProviderTenantId	
             federatedoidcprovidertypeid
-            socialLoginIcon
-            socialLoginDisplayName        
+            socialLoginProvider       
         }
     }
 `);
