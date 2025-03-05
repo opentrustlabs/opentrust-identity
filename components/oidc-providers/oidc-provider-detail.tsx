@@ -62,6 +62,7 @@ const FederatedOIDCProviderDetail: React.FC<FederatedOIDCProviderDetailProps> = 
         },
         onCompleted() {
             setMarkDirty(false);
+            setChangeClientSecret(false);
             setShowMutationBackdrop(false);
             setShowMutationSnackbar(true);
         },
@@ -324,10 +325,11 @@ const FederatedOIDCProviderDetail: React.FC<FederatedOIDCProviderDetailProps> = 
                                         onClick={() => {
                                             setOIDCProviderInput(initInput);
                                             setMarkDirty(false);
+                                            setChangeClientSecret(false);
                                         }}
                                         disabled={!markDirty}
                                     >
-                                        Cancel
+                                        Undo Changes
                                     </Button>
                                 </Stack>
                             </Paper>
