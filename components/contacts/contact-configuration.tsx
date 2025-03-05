@@ -19,6 +19,8 @@ import Grid2 from "@mui/material/Grid2";
 import Divider from "@mui/material/Divider";
 import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
 import AddBoxIcon from '@mui/icons-material/AddBox';
+import MailOutlineOutlinedIcon from '@mui/icons-material/MailOutlineOutlined';
+import { Box } from "@mui/material";
 
 
 export type ContactForType = "tenant" | "client" | "signing-key";
@@ -45,6 +47,11 @@ const ContactConfiguration: React.FC<ContactConfigurationProps> = ({
                         CONTACT_TYPE_FOR_CLIENT :
                         "signing-key";
 
+    const contactHeader = contactForType === "tenant" ?
+                            "Tenant Contacts" :
+                            contactForType === "client" ?
+                                 "Client Contacts":
+                                    "Signing Key Contacts";
     const initContact: ContactCreateInput = {
         email: "",
         objectid: contactForId,
@@ -171,6 +178,8 @@ const ContactConfiguration: React.FC<ContactConfigurationProps> = ({
                     </DialogActions>                    
                 </Dialog>                
             }
+            <Grid2 size={12} className="detail-page-subheader" display={"inline-flex"}><MailOutlineOutlinedIcon /><div style={{ marginLeft: "8px" }}>{contactHeader}</div></Grid2>
+
             <Grid2 padding={"8px"} container size={12} spacing={0}>
                 {data.getContacts && data.getContacts.length < 1 &&
                     <Grid2 size={12} textAlign={"center"}>No contacts found</Grid2>

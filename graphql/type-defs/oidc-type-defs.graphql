@@ -279,8 +279,7 @@ type FederatedOIDCProvider {
     clientauthtypeid: String
     federatedOIDCProviderType: String!
     federatedoidcprovidertypeid: String
-    socialLoginIcon: String
-    socialLoginDisplayName: String
+    socialLoginProvider: String
 }
 
 type FederatedOIDCProviderTenantRel {    
@@ -819,7 +818,6 @@ input SearchInput {
 }
 
 input FederatedOIDCProviderCreateInput {
-    federatedOIDCProviderId: String!
     federatedOIDCProviderName: String!
     federatedOIDCProviderDescription: String
     federatedOIDCProviderTenantId: String
@@ -832,6 +830,8 @@ input FederatedOIDCProviderCreateInput {
     federatedoidcprovidertypeid: String
     clientAuthType: String!
     clientauthtypeid: String
+    scopes: [String!]!
+    socialLoginProvider: String
 }
 
 input FederatedOIDCProviderUpdateInput {
@@ -848,6 +848,8 @@ input FederatedOIDCProviderUpdateInput {
     federatedoidcprovidertypeid: String
     clientAuthType: String!
     clientauthtypeid: String
+    scopes: [String!]!
+    socialLoginProvider: String
 }
 
 

@@ -321,10 +321,9 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                 </Grid2>
                     <Grid2 spacing={2} size={{ xs: 12, sm: 12, md: 12, lg: 3, xl: 3 }}>
                         <Grid2 container spacing={2} size={12}>
-                            <Grid2 size={{ xs: 12, sm: 6, lg: 12, md: 6, xl: 12 }} >
-                            
-                                <Paper elevation={3} >                                
-                                    <div className="detail-page-subheader">Client Contacts</div>
+                            <Grid2 size={{ xs: 12, sm: 6, lg: 12, md: 6, xl: 12 }} >                            
+                                <Paper elevation={3} >
+                                    
                                     <ContactConfiguration
                                         contactForId={client.clientId}
                                         contactForType={"client"}

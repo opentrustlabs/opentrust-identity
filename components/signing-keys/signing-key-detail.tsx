@@ -11,6 +11,7 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import { ResponsiveBreakpoints, ResponsiveContext } from "../contexts/responsive-context";
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import ContactConfiguration from "../contacts/contact-configuration";
 
 export interface SigningKeyDetailProps {
     signingKey: SigningKey
@@ -144,16 +145,16 @@ const SigningKeyDetail: React.FC<SigningKeyDetailProps> = ({ signingKey }) => {
                 </DetailPageMainContentContainer>
                 <DetailPageRightNavContainer>
                     <Paper elevation={3} >
-                        <div className="detail-page-subheader">Signing-Key Contacts</div>
-                        <List sx={{ padding: "8px" }}>
-                            <ListItem disablePadding>Firstname Lastname</ListItem>
-                            <ListItem disablePadding>Reggie T. Pickwick</ListItem>
-                            <ListItem disablePadding>David Copperfield</ListItem>
-                        </List>
-                        <Divider />
-                        <Stack sx={{ padding: "8px" }} direction={"row"} flexDirection={"row-reverse"} paddingTop={"8px"} >
-                            <EditOutlinedIcon />
-                        </Stack>
+                        <ContactConfiguration 
+                            contactForType={"signing-key"} 
+                            contactForId={signingKey.keyId} 
+                            onUpdateStart={function (): void {
+                                throw new Error("Function not implemented.");
+                            } } 
+                            onUpdateEnd={function (success: boolean): void {
+                                throw new Error("Function not implemented.");
+                            } }
+                        />                        
                     </Paper>
                 </DetailPageRightNavContainer>
 

@@ -562,8 +562,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                         </Grid2>
 
                         <Grid2 size={{ xs: 12, sm: 6, lg: 12, md: 6, xl: 12 }} >
-                            <Paper elevation={3} >                                
-                                <div className="detail-page-subheader">Tenant Contacts</div>
+                            <Paper elevation={3} >                                                                
                                 <ContactConfiguration
                                     contactForId={tenant.tenantId}
                                     contactForType={"tenant"}
