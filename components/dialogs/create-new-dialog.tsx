@@ -8,6 +8,7 @@ import TenantSelector from "./tenant-selector";
 import NewTenantDialog from "./new-tenant-dialog";
 import CreateNewTypeSelector from "./create-new-type-selector";
 import NewClientDialog from "./new-client-dialog";
+import NewOIDCProviderDialog from "./new-oidc-provider-dialog";
 
 export interface CreateNewSelectorProps {
     open: boolean,
@@ -81,7 +82,10 @@ const CreateNewDialog: React.FC<CreateNewSelectorProps> = ({
                     <div>You want to create a new scope-access-control</div>
                 }
                 {createNewType === "oidc-provider" && 
-                    <div>You want to create a new oidc-provider</div>
+                    <NewOIDCProviderDialog
+                        onCancel={onCancel}
+                        onClose={onClose}
+                    />
                 }
                 {createNewType === "rate-limit" && 
                     <div>You want to create a new rate-limit</div>

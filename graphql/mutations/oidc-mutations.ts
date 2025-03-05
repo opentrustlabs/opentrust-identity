@@ -228,3 +228,58 @@ export const REMOVE_AUTHENTICATION_GROUP_FROM_CLIENT_MUTATION = gql(`
         removeAuthenticationGroupFromClient(authenticationGroupId: $authenticationGroupId, clientId: $clientId) 
     }
 `);
+
+export const FEDERATED_OIDC_PROVIDER_CREATE_MUTATION = gql(`
+    mutation createFederatedOIDCProvider($oidcProviderInput: FederatedOIDCProviderCreateInput!) {
+        createFederatedOIDCProvider(oidcProviderInput: $oidcProviderInput) {
+            federatedOIDCProviderId
+            federatedOIDCProviderName
+
+        }
+    }
+`);
+
+export const FEDERATED_OIDC_PROVIDER_UPDATE_MUTATION = gql(`
+    mutation updateFederatedOIDCProvider($oidcProviderInput: FederatedOIDCProviderUpdateInput!) {
+        updateFederatedOIDCProvider(oidcProviderInput: $oidcProviderInput) {
+            federatedOIDCProviderId
+            federatedOIDCProviderName
+        }
+    }
+`);
+
+export const ASSIGN_FEDERATED_OIDC_PROVIDER_TO_TENANT_MUTATION = gql(`
+    mutation assignFederatedOIDCProviderToTenant($federatedOIDCProviderId: String!, $tenantId: String!) {
+        assignFederatedOIDCProviderToTenant(federatedOIDCProviderId: $federatedOIDCProviderId, tenantId: $tenantId){
+            tenantId
+            federatedOIDCProviderId
+        }
+    }
+`);
+
+export const REMOVE_FEDERATED_OIDC_PROVIDER_FROM_TENANT_MUTATION = gql(`
+    mutation removeFederatedOIDCProviderFromTenant($federatedOIDCProviderId: String!, $tenantId: String!) {
+        removeFederatedOIDCProviderFromTenant(federatedOIDCProviderId: $federatedOIDCProviderId, tenantId: $tenantId){
+            tenantId
+            federatedOIDCProviderId
+        }
+    }
+`);
+
+export const ASSIGN_DOMAIN_TO_FEDERATED_OIDC_PROVIDER_MUTATION = gql(`
+    mutation assignFederatedOIDCProviderToDomain($federatedOIDCProviderId: String!, $domain: String!){
+        assignFederatedOIDCProviderToDomain(federatedOIDCProviderId: $federatedOIDCProviderId, domain: $domain){
+            federatedOIDCProviderId
+            domain
+        }
+    }
+`);
+
+export const REMOVE_DOMAIN_FROM_FEDERATED_OIDC_PROVIDER_MUTATION = gql(`
+    mutation removeFederatedOIDCProviderFromDomain($federatedOIDCProviderId: String!, $domain: String!) {
+        removeFederatedOIDCProviderFromDomain(federatedOIDCProviderId: $federatedOIDCProviderId, domain: $domain) {
+            federatedOIDCProviderId
+            domain
+        }
+    }
+`);
