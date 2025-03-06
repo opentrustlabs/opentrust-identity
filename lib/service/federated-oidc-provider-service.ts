@@ -4,7 +4,7 @@ import { getFederatedOIDCProvicerDaoImpl, getTenantDaoImpl } from "@/utils/dao-u
 import FederatedOIDCProviderDao from "@/lib/dao/federated-oidc-provider-dao";
 import { GraphQLError } from "graphql/error/GraphQLError";
 import { randomUUID } from 'crypto'; 
-import { FEDERATED_OIDC_PROVIDER_TYPES_DISPLAY, SEARCH_INDEX_OBJECT_SEARCH } from "@/utils/consts";
+import { FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL, FEDERATED_OIDC_PROVIDER_TYPES_DISPLAY, SEARCH_INDEX_OBJECT_SEARCH } from "@/utils/consts";
 import { Client } from "@opensearch-project/opensearch";
 import { getOpenSearchClient } from "@/lib/data-sources/search";
 
@@ -78,6 +78,12 @@ class FederatedOIDCProviderService {
             }
         }
 
+        // Since the both the provider type and the social provider values are write-once, 
+        // we need to update those values from the database as well. The user cannot change
+        // these once created.
+        federatedOIDCProvider.socialLoginProvider = existingProvider.socialLoginProvider;
+        federatedOIDCProvider.federatedOIDCProviderType = existingProvider.federatedOIDCProviderType;
+
         const { valid, errorMessage } = this.validateOIDCProviderInput(federatedOIDCProvider);
         if(!valid){
             throw new GraphQLError(errorMessage);
@@ -149,6 +155,7 @@ class FederatedOIDCProviderService {
         if(existingDomainRel && existingDomainRel.federatedOIDCProviderId !== federatedOIDCProviderId){
             throw new GraphQLError("ERROR_DOMAIN_IS_ALREADY_ASSIGNED_TO_AN_EXTERNAL_OIDC_PROVIDER");
         }
+        
         if(existingDomainRel && existingDomainRel.federatedOIDCProviderId === federatedOIDCProviderId){
             return Promise.resolve({
                 domain: domain,

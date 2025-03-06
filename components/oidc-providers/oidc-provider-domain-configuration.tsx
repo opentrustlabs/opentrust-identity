@@ -1,7 +1,7 @@
 "use client";
 import { FEDERATED_OIDC_PROVIDER_DOMAIN_REL_QUERY } from "@/graphql/queries/oidc-queries";
 import { useLazyQuery, useMutation, useQuery } from "@apollo/client";
-import React from "react";
+import React, { useContext } from "react";
 import DataLoading from "../layout/data-loading";
 import ErrorComponent from "../error/error-component";
 import Typography from "@mui/material/Typography";
@@ -15,6 +15,8 @@ import AddBoxIcon from '@mui/icons-material/AddBox';
 import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
 import FederatedOIDCProviderDomainRelEntity from "@/lib/entities/federated-oidc-provider-domain-rel-entity";
 import { FederatedOidcProviderDomainRel } from "@/graphql/generated/graphql-types";
+import Link from "next/link";
+import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
 
 export interface FederatedOIDCProviderDomainConfigurationProps {
     federatedOIDCProviderId: string,
@@ -28,6 +30,8 @@ const FederatedOIDCProviderDomainConfiguration: React.FC<FederatedOIDCProviderDo
     onUpdateStart
 }) => {
 
+    // CONTEXT VARIABLES
+    const tenantBean: TenantMetaDataBean = useContext(TenantContext);
 
     // STATE VARIABLES
     const [domainToAdd, setDomainToAdd] = React.useState<string | null>(null);
@@ -36,7 +40,7 @@ const FederatedOIDCProviderDomainConfiguration: React.FC<FederatedOIDCProviderDo
     const [addErrorMessage, setAddErrorMessage] = React.useState<string | null>(null);
     const [showAddDialog, setShowAddDialog] = React.useState<boolean>(false);
     const [showRemoveDialog, setShowRemoveDialog] = React.useState<boolean>(false);
-    const [existingOIDCProviderDomainRel, setExistingOIDCProviderDomainRel] = React.useState<FederatedOIDCProviderDomainRelEntity | null>(null);
+    const [existingOIDCProviderDomainRel, setExistingOIDCProviderDomainRel] = React.useState<FederatedOidcProviderDomainRel | null>(null);
 
 
 
@@ -47,7 +51,10 @@ const FederatedOIDCProviderDomainConfiguration: React.FC<FederatedOIDCProviderDo
         }
     });
 
-    const [fetchRels] = useLazyQuery(FEDERATED_OIDC_PROVIDER_DOMAIN_REL_QUERY);
+    const [fetchRels] = useLazyQuery(FEDERATED_OIDC_PROVIDER_DOMAIN_REL_QUERY, {
+        fetchPolicy: "no-cache",
+        nextFetchPolicy: "no-cache"
+    });
 
     const [assignFederatedOIDCDomainMutation] = useMutation(ASSIGN_DOMAIN_TO_FEDERATED_OIDC_PROVIDER_MUTATION,{
         variables: {
@@ -114,9 +121,6 @@ const FederatedOIDCProviderDomainConfiguration: React.FC<FederatedOIDCProviderDo
                 domain: domainToAdd
             }
         });
-        console.log(fData);
-        console.log(fError);
-        console.log(fLoading);
 
         // It means that this domain is already assigned to a different OIDC provider
         // and should be removed from there first.
@@ -180,19 +184,35 @@ const FederatedOIDCProviderDomainConfiguration: React.FC<FederatedOIDCProviderDo
                         <Grid2 spacing={2} container size={12}>
                         {addErrorMessage &&
                             <Grid2 size={12}>
-                                <Alert onClose={() => setAddErrorMessage(null)} severity="error">{addErrorMessage}</Alert>
+                                <Alert onClose={() => setAddErrorMessage(null)} severity="error">
+                                    <div>{addErrorMessage}</div>
+                                    {existingOIDCProviderDomainRel &&
+                                        <div>
+                                            <span>Click </span>
+                                            <Link style={{fontWeight: "bold"}} href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/oidc-providers/${existingOIDCProviderDomainRel.federatedOIDCProviderId}`}  >here</Link>
+                                            <span> to edit</span>
+                                        </div>
+                                    }
+                                </Alert>
                             </Grid2>
                         }
                         <Grid2 size={12}>
                             <TextField
                                 fullWidth={true}
-                                onChange={(evt) => setDomainToAdd(evt.target.value)}                            
+                                onChange={(evt) => setDomainToAdd(evt.target.value)} 
+                                size="small"
                             />
                         </Grid2>   
                         </Grid2>
                     </DialogContent>
                     <DialogActions>
-                        <Button onClick={() => setShowAddDialog(false)}>Cancel</Button>
+                        <Button onClick={() => {
+                            setDomainToAdd(null);
+                            setShowAddDialog(false); 
+                            setAddErrorMessage(null);
+                        }}>
+                            Cancel
+                        </Button>
                         <Button 
                             onClick={() => {
                                 handleAddDomain();

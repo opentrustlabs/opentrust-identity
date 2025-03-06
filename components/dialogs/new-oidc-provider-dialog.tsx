@@ -167,6 +167,11 @@ const NewOIDCProviderDialog: React.FC<NewOIDCProviderDialogProps> = ({
                                         renderInput={(params) => (
                                             <TextField {...params} label="Select or type..." variant="outlined" />
                                         )}
+                                        onChange={(_, value) => {
+                                            oidcProviderInput.socialLoginProvider = value;
+                                            setOIDCProviderInput({ ...oidcProviderInput });
+                                        }}
+                                        value={oidcProviderInput.socialLoginProvider}
                                     />
                                 </Grid2>
                             }

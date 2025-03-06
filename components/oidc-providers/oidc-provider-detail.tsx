@@ -150,6 +150,7 @@ const FederatedOIDCProviderDetail: React.FC<FederatedOIDCProviderDetailProps> = 
                                                     setOIDCProviderInput({ ...oidcProviderInput });
                                                     setMarkDirty(true); 
                                                 }}
+                                                disabled={true}
                                             >
                                                 <MenuItem value={FEDERATED_OIDC_PROVIDER_TYPE_ENTERPRISE} >{FEDERATED_OIDC_PROVIDER_TYPES_DISPLAY.get(FEDERATED_OIDC_PROVIDER_TYPE_ENTERPRISE)}</MenuItem>
                                                 <MenuItem value={FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL} >{FEDERATED_OIDC_PROVIDER_TYPES_DISPLAY.get(FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL)}</MenuItem>
@@ -163,8 +164,14 @@ const FederatedOIDCProviderDetail: React.FC<FederatedOIDCProviderDetailProps> = 
                                                     size="small"
                                                     options={SOCIAL_OIDC_PROVIDERS}
                                                     renderInput={(params) => (
-                                                        <TextField {...params} label="Select or type..." variant="outlined" />
+                                                        <TextField {...params} variant="outlined" />
                                                     )}
+                                                    onChange={(_, value) => {
+                                                        oidcProviderInput.socialLoginProvider = value;
+                                                        setOIDCProviderInput({ ...oidcProviderInput });
+                                                    }}
+                                                    value={oidcProviderInput.socialLoginProvider}
+                                                    disabled={true}
                                                 />
                                             </Grid2>
                                         }
@@ -337,6 +344,7 @@ const FederatedOIDCProviderDetail: React.FC<FederatedOIDCProviderDetailProps> = 
                                 </Stack>
                             </Paper>
                         </Grid2>
+                        
                         <Grid2 size={12} marginBottom={"16px"}>
                             <Accordion defaultExpanded={true}  >
                                 <AccordionSummary
@@ -365,6 +373,7 @@ const FederatedOIDCProviderDetail: React.FC<FederatedOIDCProviderDetailProps> = 
                                 </AccordionDetails>
                             </Accordion>
                         </Grid2>
+                        
                         <Grid2 size={12} marginBottom={"16px"}>
                             <Accordion defaultExpanded={false}  >
                                 <AccordionSummary
