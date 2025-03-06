@@ -4,6 +4,7 @@ import connection  from "@/lib/data-sources/db";
 import { FederatedOIDCProviderEntity } from "@/lib/entities/federated-oidc-provider-entity";
 import FederatedOIDCProviderTenantRelEntity from "@/lib/entities/federated-oidc-provider-tenant-rel-entity";
 import FederatedOIDCProviderDomainRelEntity from "@/lib/entities/federated-oidc-provider-domain-rel-entity";
+import { QueryOrder } from "@mikro-orm/core";
 
 
 class DBFederatedOIDCProviderDao extends FederatedOIDCProviderDao {
@@ -119,9 +120,22 @@ class DBFederatedOIDCProviderDao extends FederatedOIDCProviderDao {
 
     }
 
-    public async getFederatedOidcProviderDomainRels(): Promise<Array<FederatedOidcProviderDomainRel>> {
+    public async getFederatedOidcProviderDomainRels(federatedOIDCProviderId: string | null, domain: string | null): Promise<Array<FederatedOidcProviderDomainRel>> {
         const em = connection.em.fork();
-        const entities: Array<FederatedOIDCProviderDomainRelEntity> = await em.findAll(FederatedOIDCProviderDomainRelEntity);
+        const params: any = {};
+        if(federatedOIDCProviderId){
+            params.federatedoidcproviderid = federatedOIDCProviderId;
+        }
+        if(domain){
+            params.domain = domain
+        }
+        const entities: Array<FederatedOIDCProviderDomainRelEntity> = await em.find(FederatedOIDCProviderDomainRelEntity, 
+            params,
+            {
+                orderBy: {federatedoidcproviderid: QueryOrder.ASC}
+            }
+        );
+        
         const models = entities.map(
             (e: FederatedOIDCProviderDomainRelEntity) => e.toModel()
         );

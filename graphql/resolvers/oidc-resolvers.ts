@@ -183,6 +183,10 @@ const resolvers: Resolvers = {
         getRedirectURIs: (_: any, { clientId }, oidcContext) => {
             const clientService: ClientService = new ClientService(oidcContext);
             return clientService.getRedirectURIs(clientId);
+        },
+        getFederatedOIDCProviderDomainRels: (_: any, { federatedOIDCProviderId, domain }, oidcContext) => {
+            const service: FederatedOIDCProviderService = new FederatedOIDCProviderService(oidcContext);
+            return service.getFederatedOIDCProviderDomainRels(federatedOIDCProviderId || null, domain || null);
         }
     },
     Mutation: {
@@ -688,7 +692,15 @@ const resolvers: Resolvers = {
             const clientService: ClientService = new ClientService(oidcContext);
             await clientService.removeRedirectURI(clientId, uri);
             return uri;
-        }
+        },
+        assignFederatedOIDCProviderToDomain: async(_: any, { federatedOIDCProviderId, domain}, oidcContext) => {
+            const service: FederatedOIDCProviderService = new FederatedOIDCProviderService(oidcContext);
+            return service.assignFederatedOIDCProviderToDomain(federatedOIDCProviderId, domain);
+        },
+        removeFederatedOIDCProviderFromDomain: async(_: any, { federatedOIDCProviderId, domain}, oidcContext) => {
+            const service: FederatedOIDCProviderService = new FederatedOIDCProviderService(oidcContext);
+            return service.removeFederatedOIDCProviderFromDomain(federatedOIDCProviderId, domain);
+        },
     }
 }
 

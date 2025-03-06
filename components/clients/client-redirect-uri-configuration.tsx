@@ -22,8 +22,8 @@ import { TextField } from "@mui/material";
 
 export interface ClientRedirectUriConfigurationProps {
     clientId: string,
-    onUpdateStart: () => void;
-    onUpdateEnd: (success: boolean) => void;
+    onUpdateStart: () => void,
+    onUpdateEnd: (success: boolean) => void
 }
 
 const ClientRedirectUriConfiguration: React.FC<ClientRedirectUriConfigurationProps> = ({

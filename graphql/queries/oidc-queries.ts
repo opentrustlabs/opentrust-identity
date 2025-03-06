@@ -476,3 +476,12 @@ export const REDIRECT_URIS_QUERY = gql(`
         getRedirectURIs(clientId: $clientId)
     }
 `);
+
+export const FEDERATED_OIDC_PROVIDER_DOMAIN_REL_QUERY = gql(`
+    query getFederatedOIDCProviderDomainRels($federatedOIDCProviderId: String, $domain: String) {
+        getFederatedOIDCProviderDomainRels(federatedOIDCProviderId: $federatedOIDCProviderId, domain: $domain){
+            federatedOIDCProviderId
+            domain
+        }
+    }
+`);

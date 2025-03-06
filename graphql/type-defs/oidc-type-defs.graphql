@@ -68,6 +68,7 @@ type Query {
     getFederatedOIDCProviders(tenantId: String): [FederatedOIDCProvider!]!
     getSocialOIDCProviders(tenantId: String): [FederatedOIDCProvider!]!
     getFederatedOIDCProviderById(federatedOIDCProviderId: String!): FederatedOIDCProvider
+    getFederatedOIDCProviderDomainRels(federatedOIDCProviderId: String, domain: String): [FederatedOIDCProviderDomainRel!]!
     
     ## Change events
     getChangeEvents(objectId: String!): [ChangeEvent!]!

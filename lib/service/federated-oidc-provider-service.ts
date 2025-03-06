@@ -136,8 +136,8 @@ class FederatedOIDCProviderService {
         return federatedOIDCProviderDao.removeFederatedOidcProviderFromTenant(federatedOIDCProviderId, tenantId);
     }
 
-    public async getFederatedOIDCProviderDomainRels(): Promise<Array<FederatedOidcProviderDomainRel>>{
-        return federatedOIDCProviderDao.getFederatedOidcProviderDomainRels();
+    public async getFederatedOIDCProviderDomainRels(federatedOIDCProviderId: string | null, domain: string | null): Promise<Array<FederatedOidcProviderDomainRel>>{
+        return federatedOIDCProviderDao.getFederatedOidcProviderDomainRels(federatedOIDCProviderId, domain);
     }
 
     public async assignFederatedOIDCProviderToDomain(federatedOIDCProviderId: string, domain: string): Promise<FederatedOidcProviderDomainRel> {
