@@ -150,7 +150,7 @@ const FederatedOIDCProviderDomainConfiguration: React.FC<FederatedOIDCProviderDo
                     onClose={() => setShowRemoveDialog(false)}
                 >
                     <DialogContent>
-                        <span>Confirm remove of domain: </span><span style={{fontWeight: "bold"}}>{domainToRemove}</span>
+                        <span>Confirm removal of domain: </span><span style={{fontWeight: "bold"}}>{domainToRemove}</span>
                     </DialogContent>
                     <DialogActions>
                         <Button 

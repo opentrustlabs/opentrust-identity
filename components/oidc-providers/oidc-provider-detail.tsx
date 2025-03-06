@@ -23,6 +23,7 @@ import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
 import { FEDERATED_OIDC_PROVIDER_DETAIL_QUERY } from "@/graphql/queries/oidc-queries";
 import FederatedOIDCProviderDomainConfiguration from "./oidc-provider-domain-configuration";
+import FederatedOIDCProviderTenantConfiguration from "./oidc-provider-tenant-configuration";
 
 export interface FederatedOIDCProviderDetailProps {
     federatedOIDCProvider: FederatedOidcProvider
@@ -387,28 +388,19 @@ const FederatedOIDCProviderDetail: React.FC<FederatedOIDCProviderDetailProps> = 
                                     </div>
                                 </AccordionSummary>
                                 <AccordionDetails>
-                                    <Typography component={"div"} fontWeight={"bold"} >
-                                        <Grid2 container size={12} spacing={1} marginBottom={"16px"} >
-                                            <Stack spacing={1} justifyContent={"space-between"} direction={"row"} fontWeight={"bold"} fontSize={"0.95em"} margin={"8px 0px 24px 0px"}>
-                                                <div style={{ display: "inline-flex", alignItems: "center" }}>
-                                                    <AddBoxIcon sx={{ marginRight: "8px", cursor: "pointer" }} />
-                                                    <span>Add Tenant</span>
-                                                </div>
-                                            </Stack>
-                                        </Grid2>
-                                    </Typography>
-                                    <Divider />                                        
-                                    {["Pfizer Production Tenant", "Pfizer QA Tenant", "Biohaven QA Tenant", "GBT QA Tenant", "MilliporeSigma"].map(                                            
-                                        (name: string) => (
-                                            <Typography key={`${name}`} component={"div"} fontSize={"0.9em"} fontWeight={"bold"}>
-                                                <Divider></Divider>
-                                                <Grid2 margin={"8px 0px 8px 0px"} container size={12} spacing={1}>
-                                                    <Grid2 size={11}>{name}</Grid2>                                                    
-                                                    <Grid2 size={1}><DeleteForeverOutlinedIcon /></Grid2>
-                                                </Grid2>
-                                            </Typography>                                                
-                                        )
-                                    )}
+                                    <FederatedOIDCProviderTenantConfiguration
+                                        federatedOIDCProviderId={federatedOIDCProvider.federatedOIDCProviderId}
+                                        onUpdateEnd={(success: boolean) =>{
+                                            setShowMutationBackdrop(false);
+                                            if(success){
+                                                setShowMutationSnackbar(true);
+                                            }
+                                        }}
+                                        onUpdateStart={() =>{
+                                            setShowMutationBackdrop(true);
+                                        }}
+                                    />
+                                    
                                 </AccordionDetails>
                             </Accordion>
                         </Grid2>

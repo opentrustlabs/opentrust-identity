@@ -66,9 +66,15 @@ class DBFederatedOIDCProviderDao extends FederatedOIDCProviderDao {
     }
 
 
-    public async getFederatedOidcProviderTenantRels(tenantId?: string): Promise<Array<FederatedOidcProviderTenantRel>> {
+    public async getFederatedOidcProviderTenantRels(tenantId?: string, federatedOIDCProviderId?: string): Promise<Array<FederatedOidcProviderTenantRel>> {
         const em = connection.em.fork();
-        const whereClause = tenantId ? { tenantId: tenantId } : {};
+        const whereClause: any = {};
+        if(tenantId){
+            whereClause.tenantId = tenantId;
+        }
+        if(federatedOIDCProviderId){
+            whereClause.federatedOIDCProviderId = federatedOIDCProviderId;
+        }
         const a: Array<FederatedOIDCProviderTenantRelEntity> = await em.find(FederatedOIDCProviderTenantRelEntity, whereClause);
         return Promise.resolve(a)        ;
     }
@@ -135,7 +141,7 @@ class DBFederatedOIDCProviderDao extends FederatedOIDCProviderDao {
                 orderBy: {federatedoidcproviderid: QueryOrder.ASC}
             }
         );
-        
+
         const models = entities.map(
             (e: FederatedOIDCProviderDomainRelEntity) => e.toModel()
         );

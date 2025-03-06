@@ -1,15 +1,18 @@
-import { TenantAnonymousUserConfiguration, Contact, ObjectSearchResultItem, SearchResultType, Tenant, TenantLegacyUserMigrationConfig, TenantLookAndFeel, TenantManagementDomainRel, TenantMetaData, TenantPasswordConfig, TenantRestrictedAuthenticationDomainRel } from "@/graphql/generated/graphql-types";
+import { TenantAnonymousUserConfiguration, Contact, ObjectSearchResultItem, SearchResultType, Tenant, TenantLegacyUserMigrationConfig, TenantLookAndFeel, TenantManagementDomainRel, TenantMetaData, TenantPasswordConfig, TenantRestrictedAuthenticationDomainRel, FederatedOidcProviderTenantRel } from "@/graphql/generated/graphql-types";
 import { OIDCContext } from "@/graphql/graphql-context";
 import TenantDao from "@/lib/dao/tenant-dao";
-import { getTenantDaoImpl } from "@/utils/dao-utils";
+import { getFederatedOIDCProvicerDaoImpl, getTenantDaoImpl } from "@/utils/dao-utils";
 import { GraphQLError } from "graphql";
 import { randomUUID } from 'crypto'; 
 import { CONTACT_TYPE_FOR_TENANT, DEFAULT_TENANT_META_DATA, SEARCH_INDEX_OBJECT_SEARCH, TENANT_TYPE_ROOT_TENANT, TENANT_TYPES_DISPLAY } from "@/utils/consts";
 import { Client } from "@opensearch-project/opensearch";
 import { getOpenSearchClient } from "@/lib/data-sources/search";
+import FederatedOIDCProviderDao from "../dao/federated-oidc-provider-dao";
 
 const searchClient: Client = getOpenSearchClient();
 const tenantDao: TenantDao = getTenantDaoImpl();
+const federatedOIDCProviderDao: FederatedOIDCProviderDao = getFederatedOIDCProvicerDaoImpl();
+
 
 class TenantService {
 
@@ -41,8 +44,18 @@ class TenantService {
         return Promise.resolve(tenant);
     }
         
-    public async getTenants(): Promise<Array<Tenant>> {
-        return tenantDao.getTenants();    
+    public async getTenants(tenantIds?: Array<string>, federatedOIDCProviderId?: string): Promise<Array<Tenant>> {
+
+        let tenantFilterIds: Array<string> | undefined = undefined;
+
+        if(federatedOIDCProviderId){
+            const r: Array<FederatedOidcProviderTenantRel> = await federatedOIDCProviderDao.getFederatedOidcProviderTenantRels(undefined, federatedOIDCProviderId);
+            tenantFilterIds = r.map((rel: FederatedOidcProviderTenantRel) => rel.tenantId);
+        }
+        else if(tenantIds){
+            tenantFilterIds = tenantIds;
+        }
+        return tenantDao.getTenants(tenantFilterIds);    
     }
 
     public async getTenantById(tenantId: string): Promise<Tenant | null> {

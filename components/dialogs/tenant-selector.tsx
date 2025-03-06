@@ -9,12 +9,16 @@ import { Tenant } from "@/graphql/generated/graphql-types";
 
 export interface TenantSelectorProps {
     onCancel: () => void,
-    onSelected: (tenantId: string) => void
+    onSelected: (tenantId: string) => void,
+    filterTenants?: (tenants: Array<Tenant>) => Array<Tenant>
+    submitButtonText?: string
 }
 
 const TenantSelector: React.FC<TenantSelectorProps> = ({
     onCancel,
-    onSelected
+    onSelected,
+    filterTenants,
+    submitButtonText
 }) => {
 
     // STATE VARIALBES
@@ -26,18 +30,22 @@ const TenantSelector: React.FC<TenantSelectorProps> = ({
 
     // HANDLER FUNCTIONS
     const createTenantOptions = () => {
-        return data ? 
-            data.getTenants.map(
-                (tenant: Tenant) => {
-                    return {
-                        id: tenant.tenantId,
-                        label: tenant.tenantName
-                    }        
-                }
-            )
-            : []
+        let tenants: Array<Tenant> = data && data.getTenants ? data.getTenants : [];
+        if(filterTenants){
+            tenants = filterTenants(tenants);
+        }
+
+        return tenants.map(
+            (tenant: Tenant) => {
+                return {
+                    id: tenant.tenantId,
+                    label: tenant.tenantName
+                }        
+            }
+        );
     }
 
+    
     if(loading) return <DataLoading dataLoadingSize="22vh" color={null} />
     if(error) return <ErrorComponent message={error.message} componentSize={"sm"} />
     if(data) return (
@@ -56,7 +64,16 @@ const TenantSelector: React.FC<TenantSelectorProps> = ({
             </DialogContent>
             <DialogActions>
                 <Button onClick={() => onCancel()}>Cancel</Button>
-                <Button disabled={selectedTenant === null} onClick={() => {selectedTenant !== null ? onSelected(selectedTenant) : setErrorMessage("Select a valid tenant")}}>Next</Button>
+                <Button disabled={selectedTenant === null} 
+                    onClick={() => {selectedTenant !== null ? onSelected(selectedTenant) : setErrorMessage("Select a valid tenant")}}>
+                        {submitButtonText &&
+                            submitButtonText
+                        }
+                        {!submitButtonText &&
+                            "Next"
+                        }
+                        
+                    </Button>
             </DialogActions>
         
         </>

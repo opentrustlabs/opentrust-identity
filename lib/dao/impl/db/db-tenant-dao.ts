@@ -67,13 +67,20 @@ class DBTenantDao extends TenantDao {
         return Promise.resolve(tenant);
     }
 
-    public async getTenants(): Promise<Array<Tenant>> {
+    public async getTenants(tenantIds?: Array<string>): Promise<Array<Tenant>> {
         const em = connection.em.fork();
-        const tenantEntities: Array<TenantEntity> = await em.findAll(TenantEntity, {
-            orderBy: {
-                tenantname: QueryOrder.ASC
+        const filter: any = {};
+        if(tenantIds){
+            filter.tenantid = tenantIds;
+        }
+        const tenantEntities: Array<TenantEntity> = await em.find(TenantEntity,
+            filter,
+            {
+                orderBy: {
+                    tenantname: QueryOrder.ASC
+                }
             }
-        });
+        );
         const tenants: Array<Tenant> = tenantEntities.map(
             (e: TenantEntity) => {
                 return e.toModel();

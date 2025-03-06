@@ -12,7 +12,7 @@ abstract class FederatedOIDCProviderDao {
 
     abstract updateFederatedOidcProvider(federatedOIDCProvider: FederatedOidcProvider): Promise<FederatedOidcProvider>;
 
-    abstract getFederatedOidcProviderTenantRels(tenantId?: string): Promise<Array<FederatedOidcProviderTenantRel>>;
+    abstract getFederatedOidcProviderTenantRels(tenantId?: string, federatedOIDCProviderId?: string): Promise<Array<FederatedOidcProviderTenantRel>>;
 
     abstract getFederatedOidcProviderByDomain(domain: string): Promise<FederatedOidcProvider | null>;
 
