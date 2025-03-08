@@ -78,12 +78,7 @@ const SigningKeyList: React.FC = () => {
         <main >
             <Typography component={"div"}>
                 <BreadcrumbComponent breadCrumbs={arrBreadcrumbs}></BreadcrumbComponent>
-                <Stack spacing={1} justifyContent={"space-between"} direction={"row"} fontWeight={"bold"} fontSize={"0.95em"} margin={"8px 0px 24px 0px"}>
-                    <div style={{ display: "inline-flex", alignItems: "center" }}>
-                        <AddBoxIcon sx={{ marginRight: "8px", cursor: "pointer" }} />
-                        <span>New Signing Key</span>
-                    </div>
-                </Stack>
+                
                 <Stack spacing={1} justifyContent={"space-between"} direction={"row"} fontWeight={"bold"} fontSize={"0.95em"} margin={"8px 0px 24px 0px"}>
                     <div style={{ display: "inline-flex", alignItems: "center" }}>
                         <TextField
@@ -112,8 +107,8 @@ const SigningKeyList: React.FC = () => {
                         <Typography component={"div"} fontWeight={"bold"} fontSize={"0.9em"}>
                             <Grid2 container size={12} spacing={1} marginBottom={"16px"} >
                                 <Grid2 size={1}></Grid2>
-                                <Grid2 size={5}>Key Name</Grid2>
-                                <Grid2 size={5}>Key Use</Grid2>                                
+                                <Grid2 size={7}>Key Name</Grid2>
+                                <Grid2 size={3}>Key Type</Grid2>                                
                                 <Grid2 size={1}></Grid2>
                             </Grid2>
                         </Typography>
@@ -125,8 +120,8 @@ const SigningKeyList: React.FC = () => {
                                     <Divider></Divider>
                                     <Grid2 margin={"8px 0px 8px 0px"} container size={12} spacing={1}>
                                         <Grid2 size={1}><DeleteForeverOutlinedIcon /></Grid2>
-                                        <Grid2 size={5}><Link style={{ color: "", fontWeight: "bold", textDecoration: "underline" }} href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/signing-keys/${signingKey.keyId}`}>{signingKey.keyName}</Link></Grid2>
-                                        <Grid2 size={5}>{signingKey.keyUse}</Grid2>
+                                        <Grid2 size={7}><Link style={{ color: "", fontWeight: "bold", textDecoration: "underline" }} href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/signing-keys/${signingKey.keyId}`}>{signingKey.keyName}</Link></Grid2>
+                                        <Grid2 size={3}>{signingKey.keyType}</Grid2>
                                         <Grid2 size={1}>
                                             {mapViewExpanded.has(signingKey.keyId) &&
                                                 <UnfoldLessOutlinedIcon
@@ -146,8 +141,6 @@ const SigningKeyList: React.FC = () => {
                                         <Grid2 container size={12} spacing={0.5} marginBottom={"8px"}>
                                             <Grid2 size={1}></Grid2>
                                             <Grid2 size={11} container>
-                                                <Grid2 sx={{ textDecoration: "underline" }} size={12}>Key Type</Grid2>
-                                                <Grid2 size={12}>{signingKey.keyType}</Grid2>
 
                                                 <Grid2 sx={{ textDecoration: "underline" }} size={12}>Status</Grid2>
                                                 <Grid2 size={12}>{signingKey.status}</Grid2>
@@ -171,9 +164,8 @@ const SigningKeyList: React.FC = () => {
                         <Typography component={"div"} fontWeight={"bold"} fontSize={"0.9em"}>
                             <Grid2 container size={12} spacing={1} marginBottom={"16px"} >
                                 <Grid2 size={0.3}></Grid2>
-                                <Grid2 size={2.7}>Key Name</Grid2>
-                                <Grid2 size={2}>Key Type</Grid2>
-                                <Grid2 size={2}>Key Use</Grid2>
+                                <Grid2 size={3.7}>Key Name</Grid2>
+                                <Grid2 size={3}>Key Type</Grid2>
                                 <Grid2 size={2}>Status</Grid2>
                                 <Grid2 size={2}>Expires</Grid2>
                                 <Grid2 size={1}></Grid2>
@@ -187,9 +179,8 @@ const SigningKeyList: React.FC = () => {
                                     <Divider></Divider>
                                     <Grid2 margin={"8px 0px 8px 0px"} container size={12} spacing={1}>
                                         <Grid2 size={0.3}><DeleteForeverOutlinedIcon /></Grid2>
-                                        <Grid2 size={2.7}><Link style={{ color: "", fontWeight: "bold", textDecoration: "underline" }} href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/signing-keys/${signingKey.keyId}`}>{signingKey.keyName}</Link></Grid2>
-                                        <Grid2 size={2}>{signingKey.keyType}</Grid2>
-                                        <Grid2 size={2}>{signingKey.keyUse}</Grid2>
+                                        <Grid2 size={3.7}><Link style={{ color: "", fontWeight: "bold", textDecoration: "underline" }} href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/signing-keys/${signingKey.keyId}`}>{signingKey.keyName}</Link></Grid2>
+                                        <Grid2 size={3}>{signingKey.keyType}</Grid2>
                                         <Grid2 size={2}>{signingKey.status}</Grid2>
                                         <Grid2 size={2}>{formatISODateFromMs(signingKey.expiresAtMs, "")}</Grid2>
                                         {/* <Grid2 size={3}>{signingKey.keyId}</Grid2> */}

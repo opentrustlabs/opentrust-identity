@@ -1,7 +1,7 @@
 "use client";
 import { SigningKeyCreateInput } from "@/graphql/generated/graphql-types";
 import { SIGNING_KEY_CREATE_MUTATION } from "@/graphql/mutations/oidc-mutations";
-import { KEY_TYPE_EC, KEY_TYPE_RSA, KEY_USE_JWT_SIGNING } from "@/utils/consts";
+import { CERTIFICATE_HEADER, KEY_TYPE_EC, KEY_TYPE_RSA, KEY_USE_JWT_SIGNING, PKCS8_ENCRYPTED_PRIVATE_KEY_HEADER, PKCS8_PRIVATE_KEY_HEADER, PKCS8_PUBLIC_KEY_HEADER } from "@/utils/consts";
 import { useMutation } from "@apollo/client";
 import { Alert, Button, DialogActions, DialogContent, Grid2, MenuItem, Select, Stack, TextField, Typography } from "@mui/material";
 import React, { useContext } from "react";
@@ -83,7 +83,7 @@ const NewSigningKeyDialog: React.FC<NewSigningKeyDialogProps> = ({
                         // private pkcs8 files need to start with -----BEGIN PRIVATE KEY-----, or -----BEGIN ENCRYPTED PRIVATE KEY-----
                         const privateKey: string = result.toString();
                         if(
-                            privateKey.startsWith("-----BEGIN PRIVATE KEY-----") || privateKey.startsWith("-----BEGIN ENCRYPTED PRIVATE KEY-----")
+                            privateKey.startsWith(PKCS8_PRIVATE_KEY_HEADER) || privateKey.startsWith(PKCS8_ENCRYPTED_PRIVATE_KEY_HEADER)
                         ){
                             signingKeyInput.privateKeyPkcs8 = privateKey;
                             setSigningKeyInput({...signingKeyInput});
@@ -115,12 +115,12 @@ const NewSigningKeyDialog: React.FC<NewSigningKeyDialogProps> = ({
                         console.log(result);  
                         // file needs to start with -----BEGIN PUBLIC KEY-----, or -----BEGIN CERTIFICATE-----
                         const publicKeyOrCert: string = result.toString();
-                        if(publicKeyOrCert.startsWith("-----BEGIN PUBLIC KEY-----")) {
+                        if(publicKeyOrCert.startsWith(PKCS8_PUBLIC_KEY_HEADER)) {
                             signingKeyInput.publicKey = publicKeyOrCert;
                             setSigningKeyInput({...signingKeyInput});
 
                         } 
-                        else if(publicKeyOrCert.startsWith("-----BEGIN CERTIFICATE-----")) {
+                        else if(publicKeyOrCert.startsWith(CERTIFICATE_HEADER)) {
                             signingKeyInput.certificate = publicKeyOrCert;
                             setSigningKeyInput({...signingKeyInput});
                         }
@@ -149,7 +149,7 @@ const NewSigningKeyDialog: React.FC<NewSigningKeyDialogProps> = ({
         if(signingKey.certificate === "" && signingKey.publicKey === ""){
             return false;
         }
-        if(signingKey.password === "" && signingKey.privateKeyPkcs8.startsWith("-----BEGIN ENCRYPTED PRIVATE KEY-----")){
+        if(signingKey.password === "" && signingKey.privateKeyPkcs8.startsWith(PKCS8_ENCRYPTED_PRIVATE_KEY_HEADER)){
             return false;
         }
         // TODO
@@ -216,13 +216,14 @@ const NewSigningKeyDialog: React.FC<NewSigningKeyDialogProps> = ({
                             <Grid2 marginBottom={"16px"}>
                                 <div>Passphrase</div>
                                 <TextField
-                                    required={signingKeyInput.privateKeyPkcs8 !== "" && signingKeyInput.privateKeyPkcs8.startsWith("-----BEGIN ENCRYPTED PRIVATE KEY-----") }
+                                    required={signingKeyInput.privateKeyPkcs8 !== "" && signingKeyInput.privateKeyPkcs8.startsWith(PKCS8_ENCRYPTED_PRIVATE_KEY_HEADER) }
                                     name="keyPassphrase" 
                                     id="keyPassphrase"
                                     onChange={(evt) => { signingKeyInput.password = evt?.target.value; setSigningKeyInput({ ...signingKeyInput }); }}
                                     value={signingKeyInput.password}
                                     fullWidth={true}                                    
                                     size="small" 
+                                    type="password"
                                 />
                             </Grid2>
                             <Grid2 marginBottom={"16px"}>
@@ -237,7 +238,7 @@ const NewSigningKeyDialog: React.FC<NewSigningKeyDialogProps> = ({
                                     name="keyExpiration" 
                                     id="keyExpiration"
                                     onChange={(evt) => { signingKeyInput.expiresAtMs = parseInt(evt?.target.value); setSigningKeyInput({ ...signingKeyInput }); }}
-                                    value={signingKeyInput.password}
+                                    value={signingKeyInput.expiresAtMs}
                                     fullWidth={true}                                    
                                     size="small" 
                                     disabled={signingKeyInput.certificate !== ""}
