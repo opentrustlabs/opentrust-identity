@@ -283,3 +283,13 @@ export const REMOVE_DOMAIN_FROM_FEDERATED_OIDC_PROVIDER_MUTATION = gql(`
         }
     }
 `);
+
+export const SIGNING_KEY_CREATE_MUTATION = gql(`
+    mutation createSigningKey($keyInput: SigningKeyCreateInput!) {
+        createSigningKey(keyInput: $keyInput) {
+            keyId
+            tenantId
+            keyName
+        }
+    }
+`);

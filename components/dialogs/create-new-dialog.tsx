@@ -9,6 +9,7 @@ import NewTenantDialog from "./new-tenant-dialog";
 import CreateNewTypeSelector from "./create-new-type-selector";
 import NewClientDialog from "./new-client-dialog";
 import NewOIDCProviderDialog from "./new-oidc-provider-dialog";
+import NewSigningKeyDialog from "./new-signing-key-dialog";
 
 export interface CreateNewSelectorProps {
     open: boolean,
@@ -117,9 +118,18 @@ const CreateNewDialog: React.FC<CreateNewSelectorProps> = ({
                     <div>You want to create a new rate-limit</div>
                 }
                 {createNewType === "key" && selectedTenant !== null &&
-                    <div>You want to create a new key</div>
+                    <NewSigningKeyDialog
+                        tenantId={selectedTenant}
+                        onCancel={onCancel}
+                        onClose={onClose}
+                        onCreateEnd={() => {
+                            setShowMutationBackdrop(false);                            
+                        }}
+                        onCreateStart={() => {
+                            setShowMutationBackdrop(true);
+                        }}
+                    />                    
                 }
-
 
             </Dialog>
             <Backdrop

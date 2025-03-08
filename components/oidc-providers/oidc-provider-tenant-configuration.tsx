@@ -1,6 +1,6 @@
 "use client";
 import { TENANTS_QUERY } from "@/graphql/queries/oidc-queries";
-import { useLazyQuery, useMutation, useQuery } from "@apollo/client";
+import { useMutation, useQuery } from "@apollo/client";
 import React, { useContext } from "react";
 import DataLoading from "../layout/data-loading";
 import ErrorComponent from "../error/error-component";
@@ -9,12 +9,10 @@ import Grid2 from "@mui/material/Grid2";
 import Alert from "@mui/material/Alert";
 import { ASSIGN_FEDERATED_OIDC_PROVIDER_TO_TENANT_MUTATION, REMOVE_FEDERATED_OIDC_PROVIDER_FROM_TENANT_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import Dialog from "@mui/material/Dialog";
-import DialogTitle from "@mui/material/DialogTitle";
 import { Button, DialogActions, DialogContent, Divider, TextField } from "@mui/material";
 import AddBoxIcon from '@mui/icons-material/AddBox';
 import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
-import FederatedOIDCProviderDomainRelEntity from "@/lib/entities/federated-oidc-provider-domain-rel-entity";
-import { FederatedOidcProviderDomainRel, Tenant } from "@/graphql/generated/graphql-types";
+import { Tenant } from "@/graphql/generated/graphql-types";
 import Link from "next/link";
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
 import TenantSelector from "../dialogs/tenant-selector";
@@ -48,8 +46,6 @@ const FederatedOIDCProviderTenantConfiguration: React.FC<FederatedOIDCProviderTe
             federatedOIDCProviderId: federatedOIDCProviderId
         }
     });
-
-    //const [fetchRels] = useLazyQuery(FEDERATED_OIDC_PROVIDER_DOMAIN_REL_QUERY);
 
     const [assignFederatedOIDCTenantMutation] = useMutation(ASSIGN_FEDERATED_OIDC_PROVIDER_TO_TENANT_MUTATION,{
         variables: {

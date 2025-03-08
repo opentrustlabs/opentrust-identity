@@ -1,6 +1,6 @@
 "use client";
 import { CONTACTS_QUERY } from "@/graphql/queries/oidc-queries";
-import { CONTACT_TYPE_FOR_CLIENT, CONTACT_TYPE_FOR_TENANT } from "@/utils/consts";
+import { CONTACT_TYPE_FOR_CLIENT, CONTACT_TYPE_FOR_SIGNING_KEY, CONTACT_TYPE_FOR_TENANT } from "@/utils/consts";
 import { useMutation, useQuery } from "@apollo/client";
 import React from "react";
 import ErrorComponent from "../error/error-component";
@@ -45,13 +45,14 @@ const ContactConfiguration: React.FC<ContactConfigurationProps> = ({
                     CONTACT_TYPE_FOR_TENANT :
                     contactForType === "client" ?
                         CONTACT_TYPE_FOR_CLIENT :
-                        "signing-key";
+                            CONTACT_TYPE_FOR_SIGNING_KEY;
 
     const contactHeader = contactForType === "tenant" ?
                             "Tenant Contacts" :
                             contactForType === "client" ?
                                  "Client Contacts":
                                     "Signing Key Contacts";
+                                    
     const initContact: ContactCreateInput = {
         email: "",
         objectid: contactForId,

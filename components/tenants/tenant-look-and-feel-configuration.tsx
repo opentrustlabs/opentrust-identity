@@ -94,14 +94,12 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
     
     const handleTemporaryFileUpload = (changeEvent: React.ChangeEvent<HTMLInputElement>) => {        
         const inputElement = changeEvent.target;
-        console.log("number of files: " + inputElement.files?.length || 0);
         if(inputElement.files && inputElement.files?.length > 0){
             const reader: FileReader = new FileReader();
             reader.onloadend = (
                 ( ev: ProgressEvent<FileReader>) => {
                     const result = ev.target?.result;
-                    if(result){
-                        console.log(result);  
+                    if(result){                        
                         if(tenantLookAndFeelInput){
                             tenantLookAndFeelInput.authenticationlogo = result as string;
                             setTenantLookAndFeelInput({...tenantLookAndFeelInput});

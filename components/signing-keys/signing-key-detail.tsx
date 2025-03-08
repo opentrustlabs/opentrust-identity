@@ -1,26 +1,39 @@
 "use client";
-import { SigningKey } from "@/graphql/generated/graphql-types";
+import { SigningKey, SigningKeyUpdateInput } from "@/graphql/generated/graphql-types";
 import Typography from "@mui/material/Typography";
 import React, { useContext } from "react";
 import { DetailPageContainer, DetailPageMainContentContainer, DetailPageRightNavContainer } from "../layout/detail-page-container";
-import { TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
-import { Button, Divider, Grid2, List, ListItem, Paper, Stack, TextField } from "@mui/material";
+import { SIGNING_KEY_STATUS_ACTIVE, SIGNING_KEY_STATUS_REVOKED, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
+import { Backdrop, Button, CircularProgress, Grid2, MenuItem, Paper, Select, Snackbar, Stack, TextField } from "@mui/material";
 import BreadcrumbComponent from "../breadcrumbs/breadcrumbs";
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import { ResponsiveBreakpoints, ResponsiveContext } from "../contexts/responsive-context";
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
-import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import ContactConfiguration from "../contacts/contact-configuration";
+import TenantHighlight from "../tenants/tenant-highlight";
 
 export interface SigningKeyDetailProps {
     signingKey: SigningKey
 }
 const SigningKeyDetail: React.FC<SigningKeyDetailProps> = ({ signingKey }) => {
 
-    // CONTEXT VARS
+    // CONTEXT VARIABLES
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
     const breakPoints: ResponsiveBreakpoints = useContext(ResponsiveContext);
+
+    // STATE VARIABLES
+    const [showMutationBackdrop, setShowMutationBackdrop] = React.useState<boolean>(false);
+    const [showMutationSnackbar, setShowMutationSnackbar] = React.useState<boolean>(false);
+
+    const initInput: SigningKeyUpdateInput = {
+        keyId: signingKey.keyId,
+        status: signingKey.status,
+        keyName: signingKey.keyName,
+        keyUse: signingKey.keyUse
+    };
+    const [keyUpdateInput, setKeyUpdateInput] = React.useState<SigningKeyUpdateInput>(initInput);
+    
 
     return (
         <Typography component={"div"} >
@@ -38,6 +51,12 @@ const SigningKeyDetail: React.FC<SigningKeyDetailProps> = ({ signingKey }) => {
                     linkText: signingKey.keyName
                 }
             ]} />
+            {/**  If we are in the root tenant, then show the owning tenant for this client */}
+            {tenantBean.getTenantMetaData().tenant.tenantType === TENANT_TYPE_ROOT_TENANT &&
+                <div style={{marginBottom: "16px"}}>
+                    <TenantHighlight tenantId={signingKey.tenantId} />
+                </div>
+            }
 
             <DetailPageContainer>
                 <DetailPageMainContentContainer>
@@ -56,30 +75,43 @@ const SigningKeyDetail: React.FC<SigningKeyDetailProps> = ({ signingKey }) => {
                                     <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
                                         <Grid2 marginBottom={"8px"}>
                                             <div>Key Name / Alias</div>
-                                            <TextField name="keyName" id="keyName" value={""} fullWidth={true} size="small" />
-                                        </Grid2>
-                                        <Grid2 marginBottom={"8px"}>
-                                            <div>Key Use</div>
-                                            <TextField name="tenantDescription" id="tenantDescription" value={""} fullWidth={true} size="small" />
-                                        </Grid2>
+                                            <TextField name="keyName" id="keyName" value={keyUpdateInput.keyName} fullWidth={true} size="small" />
+                                        </Grid2>                                        
                                         <Grid2 marginBottom={"8px"}>
                                             <div>Key Type</div>
-                                            <TextField name="tenantDescription" id="tenantDescription" value={""} fullWidth={true} size="small" />
+                                            <TextField name="keyType" id="keyType" value={signingKey.keyType} disabled={true} fullWidth={true} size="small" />
                                         </Grid2>                                        
                                     </Grid2>
                                     <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
                                         <Grid2 marginBottom={"8px"}>
                                             <div>Status</div>
-                                            <TextField name="keyName" id="keyName" value={""} fullWidth={true} size="small" />
+                                            {signingKey.status === SIGNING_KEY_STATUS_REVOKED &&
+                                                <TextField 
+                                                    name="keyStatus" 
+                                                    id="keyStatus" 
+                                                    value={keyUpdateInput.status} 
+                                                    disabled={true} fullWidth={true} size="small" />
+                                            }
+                                            {signingKey.status !== SIGNING_KEY_STATUS_REVOKED &&
+                                                <Select
+                                                    size="small"
+                                                    fullWidth={true}
+                                                    value={keyUpdateInput.status}
+                                                    name="keyStatus"
+                                                    onChange={(evt) => {
+                                                        keyUpdateInput.status = evt.target.value;                                        
+                                                        setKeyUpdateInput({ ...keyUpdateInput });
+                                                    }}
+                                                >                                                    
+                                                    <MenuItem value={SIGNING_KEY_STATUS_ACTIVE} >{SIGNING_KEY_STATUS_ACTIVE}</MenuItem>
+                                                    <MenuItem value={SIGNING_KEY_STATUS_REVOKED} >{SIGNING_KEY_STATUS_REVOKED}</MenuItem>
+                                                </Select>
+                                            }                                            
                                         </Grid2>
                                         <Grid2 marginBottom={"8px"}>
                                             <div>Expires</div>
-                                            <TextField name="tenantDescription" id="tenantDescription" value={""} fullWidth={true} size="small" />
-                                        </Grid2> 
-                                        <Grid2 marginBottom={"8px"}>
-                                            <div>Owning Tenant</div> {/* TODO Make this conditional: if we are in the root tenant then show, otherwise hide */}
-                                            <TextField name="tenantDescription" id="tenantDescription" value={""} fullWidth={true} size="small" />
-                                        </Grid2>                                         
+                                            <TextField name="keyExpiration" id="keyExpiration" value={signingKey.expiresAtMs} disabled={true} fullWidth={true} size="small" />
+                                        </Grid2>                                       
                                     </Grid2>
                                 </Grid2>
                                 <Stack sx={{marginTop: "8px"}} direction={"row"} flexDirection={"row-reverse"} >
@@ -148,17 +180,34 @@ const SigningKeyDetail: React.FC<SigningKeyDetailProps> = ({ signingKey }) => {
                         <ContactConfiguration 
                             contactForType={"signing-key"} 
                             contactForId={signingKey.keyId} 
-                            onUpdateStart={function (): void {
-                                throw new Error("Function not implemented.");
-                            } } 
-                            onUpdateEnd={function (success: boolean): void {
-                                throw new Error("Function not implemented.");
-                            } }
+                            onUpdateEnd={(success: boolean) =>{
+                                setShowMutationBackdrop(false);
+                                if(success){
+                                    setShowMutationSnackbar(true);
+                                }
+                            }}
+                            onUpdateStart={() =>{
+                                setShowMutationBackdrop(true);
+                            }}
                         />                        
                     </Paper>
                 </DetailPageRightNavContainer>
 
             </DetailPageContainer>
+            <Backdrop
+                sx={{ color: '#fff'}}
+                open={showMutationBackdrop}
+                onClick={() => setShowMutationBackdrop(false)}
+            >
+                <CircularProgress color="info" />
+            </Backdrop>
+            <Snackbar
+                open={showMutationSnackbar}
+                autoHideDuration={4000}
+                onClose={() => setShowMutationSnackbar(false)}
+                message="Provider Updated"
+                anchorOrigin={{horizontal: "center", vertical: "top"}}
+            />
         </Typography>
     )
 
