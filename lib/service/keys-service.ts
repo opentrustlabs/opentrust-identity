@@ -3,7 +3,7 @@ import { getSigningKeysDaoImpl, getTenantDaoImpl } from "@/utils/dao-utils";
 import { GraphQLError } from "graphql/error/GraphQLError";
 import { randomUUID } from 'crypto'; 
 import { OIDCContext } from "@/graphql/graphql-context";
-import { KEY_TYPES, PKCS8_ENCRYPTED_PRIVATE_KEY_HEADER } from "@/utils/consts";
+import { KEY_TYPES, PKCS8_ENCRYPTED_PRIVATE_KEY_HEADER, SIGNING_KEY_STATUS_ACTIVE, SIGNING_KEY_STATUS_REVOKED } from "@/utils/consts";
 
 const signingKeysDao = getSigningKeysDaoImpl()
 const tenantDao = getTenantDaoImpl();
@@ -62,7 +62,28 @@ class SigningKeysService {
         
         await signingKeysDao.createSigningKey(key);
         return Promise.resolve(key);        
-    }    
+    } 
+
+    public async updateSigningKey(key: SigningKey): Promise<SigningKey> {
+
+        if( ! (key.status === SIGNING_KEY_STATUS_REVOKED || key.status === SIGNING_KEY_STATUS_ACTIVE)) {
+            throw new GraphQLError("ERROR_INVALID_SIGNING_KEY_STATUS");
+        }
+        const existingKey: SigningKey | null = await this.getSigningKeyById(key.keyId);
+        if(!existingKey){
+            throw new GraphQLError("ERROR_SIGNING_KEY_DOES_NOT_EXIST");
+        }
+        if(existingKey.status === SIGNING_KEY_STATUS_REVOKED){
+            throw new GraphQLError("ERROR_CANNOT_UPDATE_A_REVOKED_KEY");
+        }
+        
+        existingKey.keyName = key.keyName;
+        existingKey.status = key.status;
+        existingKey.expiresAtMs = key.expiresAtMs;
+        await signingKeysDao.updateSigningKey(existingKey);
+        return Promise.resolve(existingKey);
+
+    }
 
     public async getSigningKeyById(keyId: string): Promise<SigningKey | null> {
         const signingKey: SigningKey | null = await signingKeysDao.getSigningKeyById(keyId);

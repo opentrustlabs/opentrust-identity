@@ -101,6 +101,11 @@ export const SCOPE_NAME_PATTERN="[A-Z,a-z,0-9_-\.]"
 // These are ALL of the constants that are required for managing the application.
 // Additional scope values can be created for the various services that your
 // applications provide. The scope names are fixed and cannot be redefined. 
+//
+// General-purpose tenant.read scope. It is a short-hand way of saying a user
+// has read access to the entire tenant and all of the objects within, such 
+// as clients, keys, authn/z groups, etc.
+export const TENANT_READ_ALL_SCOPE="tenant.*.read";
 export const TENANT_CREATE_SCOPE="tenant.create";
 export const TENANT_UPDATE_SCOPE="tenant.update";
 export const TENANT_DELETE_SCOPE="tenant.delete";
@@ -110,6 +115,8 @@ export const CLIENT_CREATE_SCOPE="client.create";
 export const CLIENT_UPDATE_SCOPE="client.update";
 export const CLIENT_DELETE_SCOPE="client.delete";
 export const CLIENT_READ_SCOPE="client.read";
+// A scope specific to reading the client secret
+export const CLIENT_SECRET_VIEW_SCOPE="client.secret.view";
 
 export const SCOPE_CREATE_SCOPE="scope.create";
 export const SCOPE_UPDATE_SCOPE="scope.update";
@@ -138,6 +145,9 @@ export const KEY_CREATE_SCOPE="keys.create";
 export const KEY_UPDATE_SCOPE="keys.update";
 export const KEY_DELETE_SCOPE="keys.delete";
 export const KEY_READ_SCOPE="keys.read";
+// A scope specific to reading either the private key (if unencrypted)
+// or the passcode for the private key (if encrypted)
+export const KEY_SECRET_VIEW_SCOPE="keys.secret.view";
 
 export const RATE_LIMIT_CREATE_SCOPE="ratelimit.create";
 export const RATE_LIMIT_UPDATE_SCOPE="ratelimit.update";
@@ -181,9 +191,9 @@ export const SCOPE_USE_APPLICATION_MANAGEMENT="APPLICATION_MANAGEMENT";
 // are globally unique (as are ALL scope names)
 export const ALL_INTERNAL_SCOPE_NAMES = [
     // Tenant
-    TENANT_CREATE_SCOPE, TENANT_UPDATE_SCOPE, TENANT_DELETE_SCOPE, TENANT_READ_SCOPE,
+    TENANT_CREATE_SCOPE, TENANT_UPDATE_SCOPE, TENANT_DELETE_SCOPE, TENANT_READ_SCOPE, TENANT_READ_ALL_SCOPE,
     // Client
-    CLIENT_CREATE_SCOPE, CLIENT_UPDATE_SCOPE, CLIENT_DELETE_SCOPE, CLIENT_READ_SCOPE,
+    CLIENT_CREATE_SCOPE, CLIENT_UPDATE_SCOPE, CLIENT_DELETE_SCOPE, CLIENT_READ_SCOPE, CLIENT_SECRET_VIEW_SCOPE,
     // Scope itself
     SCOPE_CREATE_SCOPE, SCOPE_UPDATE_SCOPE, SCOPE_DELETE_SCOPE, SCOPE_READ_SCOPE, 
     SCOPE_TENANT_ASSIGN_SCOPE, SCOPE_TENANT_REMOVE_SCOPE, 
@@ -194,7 +204,7 @@ export const ALL_INTERNAL_SCOPE_NAMES = [
     // Access rules
     ACCESS_RULE_CREATE_SCOPE, ACCESS_RULE_UPDATE_SCOPE, ACCESS_RULE_DELETE_SCOPE, ACCESS_RULE_READ_SCOPE,
     // Signing Keys
-    KEY_CREATE_SCOPE, KEY_UPDATE_SCOPE, KEY_DELETE_SCOPE, KEY_READ_SCOPE,
+    KEY_CREATE_SCOPE, KEY_UPDATE_SCOPE, KEY_DELETE_SCOPE, KEY_READ_SCOPE, KEY_SECRET_VIEW_SCOPE,
     // Rate limits
     RATE_LIMIT_CREATE_SCOPE, RATE_LIMIT_UPDATE_SCOPE, RATE_LIMIT_DELETE_SCOPE, RATE_LIMIT_READ_SCOPE, RATE_LIMIT_TENANT_ASSIGN_SCOPE, RATE_LIMIT_TENANT_REMOVE_SCOPE, RATE_LIMIT_TENANT_UPDATE_SCOPE,
     // Login groups
@@ -235,9 +245,9 @@ export const ROOT_TENANT_EXCLUSIVE_INTERNAL_SCOPE_NAMES = [
 // if they want.
 export const DEFAULT_TENANT_BOUND_INTERNAL_SCOPE_NAMES = [
     // Tenant
-    TENANT_READ_SCOPE,
+    TENANT_READ_SCOPE, TENANT_READ_ALL_SCOPE,
     // Client
-    CLIENT_CREATE_SCOPE, CLIENT_UPDATE_SCOPE, CLIENT_DELETE_SCOPE, CLIENT_READ_SCOPE,
+    CLIENT_CREATE_SCOPE, CLIENT_UPDATE_SCOPE, CLIENT_DELETE_SCOPE, CLIENT_READ_SCOPE, CLIENT_SECRET_VIEW_SCOPE,
     // Scope itself
     SCOPE_READ_SCOPE, SCOPE_CLIENT_ASSIGN_SCOPE, SCOPE_CLIENT_REMOVE_SCOPE, SCOPE_GROUP_ASSIGN_SCOPE, SCOPE_GROUP_REMOVE_SCOPE, SCOPE_USER_ASSIGN_SCOPE, SCOPE_USER_REMOVE_SCOPE,
     // Scope constraints
@@ -245,7 +255,7 @@ export const DEFAULT_TENANT_BOUND_INTERNAL_SCOPE_NAMES = [
     // Access rules
     ACCESS_RULE_READ_SCOPE,
     // Signing keys
-    KEY_CREATE_SCOPE, KEY_UPDATE_SCOPE, KEY_DELETE_SCOPE, KEY_READ_SCOPE,
+    KEY_CREATE_SCOPE, KEY_UPDATE_SCOPE, KEY_DELETE_SCOPE, KEY_READ_SCOPE, KEY_SECRET_VIEW_SCOPE,
     // Rate limits
     RATE_LIMIT_READ_SCOPE,
     // Authentication groups
@@ -349,6 +359,8 @@ export const AES_KEY_LENGTH=256;  // bits
 // We may eventually support other ciphers (which SHOULD support authenticated data)
 export const AES_GCM_CIPHER="aes-256-gcm";
 export const MAX_ENCRYPTION_LENGTH = 65536;
+export const MIN_PRIVATE_KEY_PASSWORD_LENGTH=16;
+export const DEFAULT_PRIVATE_KEY_PASSWORD_LENGTH=20;
 
 
 

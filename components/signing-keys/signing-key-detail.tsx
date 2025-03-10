@@ -3,8 +3,8 @@ import { SigningKey, SigningKeyUpdateInput } from "@/graphql/generated/graphql-t
 import Typography from "@mui/material/Typography";
 import React, { useContext } from "react";
 import { DetailPageContainer, DetailPageMainContentContainer, DetailPageRightNavContainer } from "../layout/detail-page-container";
-import { SIGNING_KEY_STATUS_ACTIVE, SIGNING_KEY_STATUS_REVOKED, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
-import { Backdrop, Button, CircularProgress, Grid2, MenuItem, Paper, Select, Snackbar, Stack, TextField } from "@mui/material";
+import { PKCS8_ENCRYPTED_PRIVATE_KEY_HEADER, PKCS8_PRIVATE_KEY_HEADER, SIGNING_KEY_STATUS_ACTIVE, SIGNING_KEY_STATUS_REVOKED, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
+import { Alert, Backdrop, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, Grid2, MenuItem, Paper, Select, Snackbar, Stack, TextField } from "@mui/material";
 import BreadcrumbComponent from "../breadcrumbs/breadcrumbs";
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
@@ -12,6 +12,9 @@ import { ResponsiveBreakpoints, ResponsiveContext } from "../contexts/responsive
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import ContactConfiguration from "../contacts/contact-configuration";
 import TenantHighlight from "../tenants/tenant-highlight";
+import { useMutation, useQuery } from "@apollo/client";
+import { SIGNING_KEY_UPDATE_MUTATION } from "@/graphql/mutations/oidc-mutations";
+import { SIGNING_KEY_DETAIL_QUERY } from "@/graphql/queries/oidc-queries";
 
 export interface SigningKeyDetailProps {
     signingKey: SigningKey
@@ -25,7 +28,8 @@ const SigningKeyDetail: React.FC<SigningKeyDetailProps> = ({ signingKey }) => {
     // STATE VARIABLES
     const [showMutationBackdrop, setShowMutationBackdrop] = React.useState<boolean>(false);
     const [showMutationSnackbar, setShowMutationSnackbar] = React.useState<boolean>(false);
-
+    const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
+    const [markDirty, setMarkDirty] = React.useState<boolean>(false);
     const initInput: SigningKeyUpdateInput = {
         keyId: signingKey.keyId,
         status: signingKey.status,
@@ -33,7 +37,36 @@ const SigningKeyDetail: React.FC<SigningKeyDetailProps> = ({ signingKey }) => {
         keyUse: signingKey.keyUse
     };
     const [keyUpdateInput, setKeyUpdateInput] = React.useState<SigningKeyUpdateInput>(initInput);
-    
+    const [showRevokeConfirmationDialog, setShowRevokeConfirmationDialog] = React.useState<boolean>(false);
+
+
+    // GRAPHQL FUNCTIONS
+
+    const [keyUpdateMutation] = useMutation(SIGNING_KEY_UPDATE_MUTATION, {
+        variables: {
+            keyInput: keyUpdateInput
+        },
+        onCompleted() {
+            setShowMutationBackdrop(false);
+            setShowMutationSnackbar(true);
+            setMarkDirty(false);
+        },
+        onError(error) {
+            setShowMutationBackdrop(false);
+            setErrorMessage(error.message);
+        },
+        refetchQueries: [SIGNING_KEY_DETAIL_QUERY]
+    });
+
+    // HANDLER FUNCTIONS
+    const handleUpdate = () => {
+        if(initInput.status === SIGNING_KEY_STATUS_ACTIVE && keyUpdateInput.status === SIGNING_KEY_STATUS_REVOKED){
+            setShowRevokeConfirmationDialog(true);
+        }
+        else{
+            keyUpdateMutation();
+        }
+    }
 
     return (
         <Typography component={"div"} >
@@ -57,6 +90,32 @@ const SigningKeyDetail: React.FC<SigningKeyDetailProps> = ({ signingKey }) => {
                     <TenantHighlight tenantId={signingKey.tenantId} />
                 </div>
             }
+            {showRevokeConfirmationDialog &&
+                <Dialog 
+                    open={showRevokeConfirmationDialog}
+                    onClose={() => setShowRevokeConfirmationDialog(false)}                    
+                >
+                    
+                    <DialogContent>
+                        <Typography>
+                            Confirm that you want to revoke the certificate. This operation cannot be un-done.
+                        </Typography>
+                    </DialogContent>
+                    <DialogActions>
+                        <Button onClick={() => setShowRevokeConfirmationDialog(false)}>Cancel</Button>
+                        <Button 
+                            onClick={() => {
+                                setShowRevokeConfirmationDialog(false);
+                                setShowMutationBackdrop(true);
+                                keyUpdateMutation();
+                            }}
+                        >
+                            Confirm
+                        </Button>
+                    </DialogActions>
+                    
+                </Dialog>
+            }
 
             <DetailPageContainer>
                 <DetailPageMainContentContainer>
@@ -71,11 +130,22 @@ const SigningKeyDetail: React.FC<SigningKeyDetailProps> = ({ signingKey }) => {
                         </Grid2>
                         <Grid2 size={12}>
                             <Paper sx={{ padding: "8px" }} elevation={1}>
-                                <Grid2 container size={12} spacing={2}>                                    
+                                <Grid2 container size={12} spacing={2}>
+                                    {errorMessage &&
+                                        <Grid2 size={12}>
+                                            <Alert onClose={() => setErrorMessage(null)} sx={{ width: "100%" }} severity="error">{errorMessage}</Alert>
+                                        </Grid2>
+                                    }
                                     <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
                                         <Grid2 marginBottom={"8px"}>
                                             <div>Key Name / Alias</div>
-                                            <TextField name="keyName" id="keyName" value={keyUpdateInput.keyName} fullWidth={true} size="small" />
+                                            <TextField 
+                                                name="keyName" id="keyName" 
+                                                value={keyUpdateInput.keyName} 
+                                                onChange={(evt) => {keyUpdateInput.keyName = evt.target.value; setKeyUpdateInput({...keyUpdateInput}); setMarkDirty(true)}}
+                                                disabled={keyUpdateInput.status === SIGNING_KEY_STATUS_REVOKED}
+                                                fullWidth={true} size="small" 
+                                            />
                                         </Grid2>                                        
                                         <Grid2 marginBottom={"8px"}>
                                             <div>Key Type</div>
@@ -99,7 +169,8 @@ const SigningKeyDetail: React.FC<SigningKeyDetailProps> = ({ signingKey }) => {
                                                     value={keyUpdateInput.status}
                                                     name="keyStatus"
                                                     onChange={(evt) => {
-                                                        keyUpdateInput.status = evt.target.value;                                        
+                                                        keyUpdateInput.status = evt.target.value;
+                                                        setMarkDirty(true);
                                                         setKeyUpdateInput({ ...keyUpdateInput });
                                                     }}
                                                 >                                                    
@@ -115,7 +186,24 @@ const SigningKeyDetail: React.FC<SigningKeyDetailProps> = ({ signingKey }) => {
                                     </Grid2>
                                 </Grid2>
                                 <Stack sx={{marginTop: "8px"}} direction={"row"} flexDirection={"row-reverse"} >
-                                    <Button sx={{border: "solid 1px lightgrey", borderRadius: "4px"}} >Update</Button>
+                                    
+                                    <Button 
+                                        sx={{border: "solid 1px lightgrey", borderRadius: "4px"}} 
+                                        disabled={!markDirty}
+                                        onClick={() => handleUpdate()}
+                                    >
+                                        Update
+                                    </Button>
+                                    <Button 
+                                        sx={{marginRight: "8px"}}
+                                        onClick={() => {
+                                            setKeyUpdateInput(initInput);
+                                            setMarkDirty(false);
+                                        }}
+                                        disabled={!markDirty}
+                                    >
+                                        Undo
+                                    </Button>
                                 </Stack>
                             </Paper>
                         </Grid2>
@@ -129,28 +217,64 @@ const SigningKeyDetail: React.FC<SigningKeyDetailProps> = ({ signingKey }) => {
                                 on their permissions and which will require a service call.
 
                             */}
-                            <Paper sx={{ padding: "8px", marginBottom: "16px"}}  elevation={1}>
-                                <Grid2 container size={12} spacing={2}>                                    
-                                    <Grid2 size={{xs: 12, sm: 2, md: 2, lg: 2, xl: 2}} sx={{textDecoration: breakPoints.isSmall ? "underline": "none"}}>
-                                        <Grid2 container>                                            
-                                            <Grid2 size={9}>Private Key</Grid2>
-                                            <Grid2 size={3}><ContentCopyIcon /></Grid2>                                            
+                            {signingKey.privateKeyPkcs8.startsWith(PKCS8_ENCRYPTED_PRIVATE_KEY_HEADER) &&
+                                <Paper sx={{ padding: "8px", marginBottom: "16px"}}  elevation={1}>
+                                    <Grid2 container size={12} spacing={2}>                                    
+                                        <Grid2 size={{xs: 12, sm: 2, md: 2, lg: 2, xl: 2}} sx={{textDecoration: breakPoints.isSmall ? "underline": "none"}}>
+                                            <Grid2 container>                                            
+                                                <Grid2 size={9}>Private Key</Grid2>
+                                                <Grid2 size={3}><ContentCopyIcon /></Grid2>                                            
+                                            </Grid2>
+                                        </Grid2>
+                                        <Grid2 size={{xs: 12, sm: 10, md: 10, lg: 10, xl: 10}}>
+                                            <pre style={{fontSize: breakPoints.isSmall ? "0.8em" : "1.0em"}}>{signingKey.privateKeyPkcs8}</pre>
                                         </Grid2>
                                     </Grid2>
-                                    <Grid2 size={{xs: 12, sm: 10, md: 10, lg: 10, xl: 10}}>
-                                        <pre style={{fontSize: breakPoints.isSmall ? "0.8em" : "1.0em"}}>{signingKey.privateKeyPkcs8}</pre>
+                                </Paper>
+                            }
+                            {signingKey.privateKeyPkcs8 === "" &&
+                                <Paper sx={{ padding: "8px", marginBottom: "16px"}}  elevation={1}>
+                                    <Grid2 container size={12} spacing={2}> 
+                                        <Grid2 size={{xs: 3, sm: 3, md: 2, lg: 2, xl: 2}}>
+                                            Private Key
+                                        </Grid2>
+                                        <Grid2 size={{xs: 9, sm: 9, md: 10, lg: 10, xl: 10}}>
+                                            <VisibilityOutlinedIcon 
+                                                sx={{cursor: "pointer"}}
+                                                onClick={() => {
+                                                    // TODO
+                                                    // Only show this button if the user has access to view the password
+                                                    // based on their scope.
+                                                    // Show a dialog confirming that the user will be audited when they
+                                                    // view a password and an email will be sent to the admin group.
+                                                }}
+                                            />
+                                        </Grid2>
+                                    </Grid2>                                    
+                                </Paper>
+                            }
+                            {signingKey.privateKeyPkcs8.startsWith(PKCS8_ENCRYPTED_PRIVATE_KEY_HEADER) &&
+                                <Paper sx={{ padding: "8px", marginBottom: "16px"}}  elevation={1}>
+                                    <Grid2 container size={12} spacing={2}> 
+                                        <Grid2 size={{xs: 3, sm: 3, md: 2, lg: 2, xl: 2}}>
+                                            Password
+                                        </Grid2>
+                                        <Grid2 size={{xs: 9, sm: 9, md: 10, lg: 10, xl: 10}}>
+                                            <VisibilityOutlinedIcon 
+                                                sx={{cursor: "pointer"}}
+                                                onClick={() => {
+                                                    // TODO
+                                                    // Only show this button if the user has access to view the password
+                                                    // based on their scope.
+                                                    // Show a dialog confirming that the user will be audited when they
+                                                    // view a password and an email will be sent to the admin group.
+                                                }}
+                                            />
+                                            
+                                        </Grid2>
                                     </Grid2>
-                                </Grid2>
-                            </Paper>
-
-                            <Paper sx={{ padding: "8px", marginBottom: "16px"}}  elevation={1}>
-                                <Grid2 container size={12} spacing={2}> 
-                                    <Grid2 size={{xs: 3, sm: 3, md: 2, lg: 2, xl: 2}}>
-                                        Password
-                                    </Grid2>
-                                    <Grid2 size={{xs: 9, sm: 9, md: 10, lg: 10, xl: 10}}><VisibilityOutlinedIcon /><><pre>{signingKey.password}</pre></></Grid2>
-                                </Grid2>
-                            </Paper>
+                                </Paper>
+                            }                            
 
                             <Paper sx={{ padding: "8px", marginBottom: "16px"}} elevation={1}>
                                 <Grid2 container size={12} spacing={2}>

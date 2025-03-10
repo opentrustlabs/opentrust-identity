@@ -4,6 +4,7 @@ import connection  from "@/lib/data-sources/db";
 import SigningKeyEntity from "@/lib/entities/signing-key-entity";
 import ContactEntity from "@/lib/entities/contact-entity";
 import { CONTACT_TYPE_FOR_SIGNING_KEY, SIGNING_KEY_STATUS_REVOKED } from "@/utils/consts";
+import { QueryOrder } from "@mikro-orm/core";
 
 class DBSigningKeysDao extends SigningKeysDao {
 
@@ -14,7 +15,15 @@ class DBSigningKeysDao extends SigningKeysDao {
         if(tenantId){
             queryParams.tenantid = tenantId;
         }
-        const entities: Array<SigningKeyEntity> = await em.find(SigningKeyEntity, queryParams);
+        const entities: Array<SigningKeyEntity> = await em.find(
+            SigningKeyEntity, 
+            queryParams,
+            {
+                orderBy: {
+                    keyName: QueryOrder.ASC
+                }
+            }
+        );
         const models = entities.map(
             e => e.toModel()
         );
@@ -35,6 +44,13 @@ class DBSigningKeysDao extends SigningKeysDao {
         const em = connection.em.fork();
         const entity: SigningKeyEntity = new SigningKeyEntity(key);
         await em.persistAndFlush(entity);
+        return Promise.resolve(key);
+    }
+
+    public async updateSigningKey(key: SigningKey): Promise<SigningKey>{
+        const em = connection.em.fork();
+        const entity: SigningKeyEntity = new SigningKeyEntity(key);
+        await em.upsert(entity);
         return Promise.resolve(key);
     }
 

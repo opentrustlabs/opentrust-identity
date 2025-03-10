@@ -1,7 +1,7 @@
 "use client";
 import { SigningKeyCreateInput } from "@/graphql/generated/graphql-types";
 import { SIGNING_KEY_CREATE_MUTATION } from "@/graphql/mutations/oidc-mutations";
-import { CERTIFICATE_HEADER, KEY_TYPE_EC, KEY_TYPE_RSA, KEY_USE_JWT_SIGNING, PKCS8_ENCRYPTED_PRIVATE_KEY_HEADER, PKCS8_PRIVATE_KEY_HEADER, PKCS8_PUBLIC_KEY_HEADER } from "@/utils/consts";
+import { CERTIFICATE_HEADER, KEY_TYPE_EC, KEY_TYPE_RSA, KEY_USE_JWT_SIGNING, MIN_PRIVATE_KEY_PASSWORD_LENGTH, PKCS8_ENCRYPTED_PRIVATE_KEY_HEADER, PKCS8_PRIVATE_KEY_HEADER, PKCS8_PUBLIC_KEY_HEADER } from "@/utils/consts";
 import { useMutation } from "@apollo/client";
 import { Alert, Button, DialogActions, DialogContent, Grid2, MenuItem, Select, Stack, TextField, Typography } from "@mui/material";
 import React, { useContext } from "react";
@@ -149,9 +149,10 @@ const NewSigningKeyDialog: React.FC<NewSigningKeyDialogProps> = ({
         if(signingKey.certificate === "" && signingKey.publicKey === ""){
             return false;
         }
-        if(signingKey.password === "" && signingKey.privateKeyPkcs8.startsWith(PKCS8_ENCRYPTED_PRIVATE_KEY_HEADER)){
+        if(signingKey.privateKeyPkcs8.startsWith(PKCS8_ENCRYPTED_PRIVATE_KEY_HEADER) && 
+            (signingKey.password === "" || signingKey.password?.length || 0 < MIN_PRIVATE_KEY_PASSWORD_LENGTH)){
             return false;
-        }
+        }        
         // TODO
         // Only allow 365 days maximum for a signing key
         if(signingKey.publicKey !== "" && signingKey.expiresAtMs === 0){

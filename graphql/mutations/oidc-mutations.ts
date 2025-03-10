@@ -293,3 +293,14 @@ export const SIGNING_KEY_CREATE_MUTATION = gql(`
         }
     }
 `);
+
+export const SIGNING_KEY_UPDATE_MUTATION = gql(`
+    mutation updateSigningKey($keyInput: SigningKeyUpdateInput!) {
+        updateSigningKey(keyInput: $keyInput) {
+            keyId
+            keyName
+            keyType
+            status
+        }
+    }
+`);

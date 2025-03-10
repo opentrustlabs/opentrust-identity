@@ -368,6 +368,26 @@ const resolvers: Resolvers = {
             await keysService.createSigningKey(key);
             return key;
         },
+        updateSigningKey: async(_: any, {keyInput }, oidcContext) => {
+            const keysService: SigningKeysService = new SigningKeysService(oidcContext);
+            const key: SigningKey = {
+                keyType: "",
+                tenantId: "",
+                keyUse: "",
+                keyName: keyInput.keyName || "",
+                keyId: keyInput.keyId,
+                certificate: "",
+                privateKeyPkcs8: "",
+                password: "",
+                expiresAtMs: 0,
+                status: keyInput.status,
+                keyTypeId: "",
+                publicKey: "",
+                statusId: ""
+            };
+            const updatedKey = await keysService.updateSigningKey(key);
+            return updatedKey;
+        },
         deleteSigningKey: async(_: any, { keyId }, oidcContext) => {
             const keysService: SigningKeysService = new SigningKeysService(oidcContext);
             await keysService.deleteSigningKey(keyId);
