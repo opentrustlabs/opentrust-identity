@@ -13,6 +13,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import DeleteForeverOutlinedIcon from '@mui/icons-material/DeleteForeverOutlined';
 import PersonIcon from '@mui/icons-material/Person';
 import PolicyIcon from '@mui/icons-material/Policy';
+import TenantHighlight from "../tenants/tenant-highlight";
 
 
 
@@ -30,18 +31,24 @@ const AuthenticationGroupDetail: React.FC<AuthenticationGroupDetailProps> = ({ a
         linkText: tenantBean.getTenantMetaData().tenant.tenantType === TENANT_TYPE_ROOT_TENANT ? `Tenant List` : `${tenantBean.getTenantMetaData().tenant.tenantName}`
     },);
     arrBreadcrumbs.push({
-        linkText: "Authorization Groups",
+        linkText: "Authentication Groups",
         href: `/${tenantBean.getTenantMetaData().tenant.tenantId}?section=authentication-groups`
     });
     arrBreadcrumbs.push({
         linkText: authenticationGroup.authenticationGroupName,
         href: null
-    })
+    });
 
 
     return (
         <Typography component={"div"} >
             <BreadcrumbComponent breadCrumbs={arrBreadcrumbs} />
+            {/**  If we are in the root tenant, then show the owning tenant for this client */}
+            {tenantBean.getTenantMetaData().tenant.tenantType === TENANT_TYPE_ROOT_TENANT &&
+                <div style={{marginBottom: "16px"}}>
+                    <TenantHighlight tenantId={authenticationGroup.tenantId} />
+                </div>
+            }
             <Grid2 container size={12} spacing={3} marginBottom={"16px"}>
                 <Grid2 size={{ xs: 12, sm: 12, md: 12, lg: 9, xl: 9 }}>
                     <Grid2 container size={12} spacing={2}>
@@ -52,13 +59,11 @@ const AuthenticationGroupDetail: React.FC<AuthenticationGroupDetailProps> = ({ a
                                     <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Group Name</div>
-                                            <TextField name="tenantName" id="tenantName" value={authenticationGroup.authenticationGroupName} fullWidth={true} size="small" />
+                                            <TextField name="authnGroupName" id="authnGroupName" value={authenticationGroup.authenticationGroupName} fullWidth={true} size="small" />
                                         </Grid2>
-                                    </Grid2>
-                                    <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Group Description</div>
-                                            <TextField name="tenantName" id="tenantName" value={authenticationGroup.authenticationGroupDescription} fullWidth={true} size="small" multiline={true} rows={2}/>
+                                            <TextField name="authnGroupDescription" id="authnGroupDescription" value={authenticationGroup.authenticationGroupDescription} fullWidth={true} size="small" multiline={true} rows={2}/>
                                         </Grid2>
                                     </Grid2>
                                     <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
@@ -66,19 +71,16 @@ const AuthenticationGroupDetail: React.FC<AuthenticationGroupDetailProps> = ({ a
                                             <Grid2 alignContent={"center"} size={10}>Default</Grid2>
                                             <Grid2 size={2}><Checkbox /></Grid2>
                                         </Grid2>
-                                        <Grid2 >Object ID</Grid2>
+                                        <Grid2 sx={{textDecoration: "underline"}}>Object ID</Grid2>
                                         <Grid2 container size={12} marginBottom={"16px"}>
                                             <Grid2 alignContent={"center"} size={10}>{authenticationGroup.authenticationGroupId}</Grid2>
                                             <Grid2 size={2}><ContentCopyIcon /></Grid2>
-                                        </Grid2>
-                                        <Stack sx={{ marginTop: "8px" }} direction={"row"} flexDirection={"row-reverse"} >
-                                            <Button sx={{ border: "solid 1px lightgrey", borderRadius: "4px"}} >Update</Button>
-                                        </Stack>
-                                    </Grid2>
-                                    <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
-
-                                    </Grid2>
+                                        </Grid2>                                        
+                                    </Grid2>                                    
                                 </Grid2>
+                                <Stack sx={{ marginTop: "8px" }} direction={"row"} flexDirection={"row-reverse"} >
+                                    <Button sx={{ border: "solid 1px lightgrey", borderRadius: "4px"}} >Update</Button>
+                                </Stack>
                             </Paper>
                         </Grid2>
 
@@ -95,6 +97,7 @@ const AuthenticationGroupDetail: React.FC<AuthenticationGroupDetailProps> = ({ a
                                     </div>
                                 </AccordionSummary>
                                 <AccordionDetails>
+
                                     <Typography component={"div"} fontWeight={"bold"} >
                                         <Grid2 container size={12} spacing={1} marginBottom={"8px"} >
                                             <Stack spacing={1} justifyContent={"space-between"} direction={"row"} fontWeight={"bold"} fontSize={"0.95em"} margin={"8px 0px 16px 0px"}>

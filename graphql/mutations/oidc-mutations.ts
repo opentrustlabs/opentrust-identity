@@ -304,3 +304,24 @@ export const SIGNING_KEY_UPDATE_MUTATION = gql(`
         }
     }
 `);
+
+export const AUTHENTICATION_GROUP_CREATE_MUTATION = gql(`
+    mutation createAuthenticationGroup($authenticationGroupInput: AuthenticationGroupCreateInput!) {
+        createAuthenticationGroup(authenticationGroupInput: $authenticationGroupInput) {
+            tenantId
+            authenticationGroupId
+        }
+    }
+`);
+
+export const AUTHENTICATION_GROUP_UPDATE_MUTATION = gql(`
+    mutation createAuthenticationGroup($authenticationGroupInput: AuthenticationGroupUpdateInput!) {
+        createAuthenticationGroup(authenticationGroupInput: $authenticationGroupInput) {
+            tenantId
+            authenticationGroupId
+            authenticationGroupName
+            authenticationGroupDescription
+            defaultGroup
+        }
+    }
+`);
