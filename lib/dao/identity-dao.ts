@@ -1,4 +1,4 @@
-import { AuthenticationGroup, User, AuthorizationGroup, SuccessfulLoginResponse, UserFailedLoginAttempts } from "@/graphql/generated/graphql-types";
+import { AuthenticationGroup, User, AuthorizationGroup, SuccessfulLoginResponse, UserFailedLoginAttempts, UserTenantRel } from "@/graphql/generated/graphql-types";
 
 abstract class IdentityDao {
 
@@ -38,6 +38,12 @@ abstract class IdentityDao {
     abstract updateUser(user: User): Promise<User>;
 
     abstract deleteUser(userId: string): Promise<void>;
+
+    abstract assignUserToTenant(tenantId: string, userId: string, relType: string): Promise<UserTenantRel>;
+
+    abstract removeUserFromTenant(tenantId: string, userId: string): Promise<void>;
+
+    abstract getUserTenantRel(tenantId: string, userId: string): Promise<UserTenantRel | null>;
 
 }
 

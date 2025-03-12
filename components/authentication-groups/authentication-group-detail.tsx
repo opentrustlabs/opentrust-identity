@@ -14,6 +14,7 @@ import DeleteForeverOutlinedIcon from '@mui/icons-material/DeleteForeverOutlined
 import PersonIcon from '@mui/icons-material/Person';
 import PolicyIcon from '@mui/icons-material/Policy';
 import TenantHighlight from "../tenants/tenant-highlight";
+import AuthenticationGroupUserConfiguration from "./authentication-group-user-configuration";
 
 
 
@@ -97,28 +98,12 @@ const AuthenticationGroupDetail: React.FC<AuthenticationGroupDetailProps> = ({ a
                                     </div>
                                 </AccordionSummary>
                                 <AccordionDetails>
-
-                                    <Typography component={"div"} fontWeight={"bold"} >
-                                        <Grid2 container size={12} spacing={1} marginBottom={"8px"} >
-                                            <Stack spacing={1} justifyContent={"space-between"} direction={"row"} fontWeight={"bold"} fontSize={"0.95em"} margin={"8px 0px 16px 0px"}>
-                                                <div style={{ display: "inline-flex", alignItems: "center" }}>
-                                                    <AddBoxIcon sx={{ marginRight: "8px", cursor: "pointer" }} />
-                                                    <span>Add User To Authentication Group</span>
-                                                </div>
-                                            </Stack>
-                                        </Grid2>
-                                    </Typography>
-                                    <UserList searchResults={{
-                                        __typename: undefined,
-                                        endtime: 0,
-                                        page: 0,
-                                        perpage: 0,
-                                        resultlist: [],
-                                        starttime: 0,
-                                        took: 0,
-                                        total: 0
-                                    }}
-                                    />
+                                    <AuthenticationGroupUserConfiguration
+                                        authenticationGroupId={authenticationGroup.authenticationGroupId}
+                                        tenantId={authenticationGroup.tenantId}
+                                        onUpdateEnd={() => console.log('update ended')}
+                                        onUpdateStart={() => console.log('updated started')}
+                                    />                                    
                                 </AccordionDetails>
                             </Accordion>
                         </Grid2>

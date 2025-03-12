@@ -63,9 +63,13 @@ const resolvers: Resolvers = {
             }
             return user;
         },
-        search: (_, { searchInput }, oidcContenxt) => {
-            const searchService: SearchService = new SearchService(oidcContenxt);
+        search: (_, { searchInput }, oidcContext) => {
+            const searchService: SearchService = new SearchService(oidcContext);
             return searchService.search(searchInput);
+        },
+        relSearch: (_, { relSearchInput}, oidcContext) => {
+            const searchService: SearchService = new SearchService(oidcContext);
+            return searchService.relSearch(relSearchInput);
         },
         getRootTenant: (_, __, oidcContext) => {
             const tenantService: TenantService = new TenantService(oidcContext);
@@ -153,7 +157,7 @@ const resolvers: Resolvers = {
             return response;
             //(username: String!, tenantId: String, preauthToken: String): LoginUserNameHandlerResponse!
         },
-        getRateLimitServiceGroups: (_:any, { tenantId }, oidcContenxt) => {
+        getRateLimitServiceGroups: (_:any, { tenantId }, oidcContext) => {
             return [];
         },
         getTenantPasswordConfig: (_: any, { tenantId }, oidcContext) => {
@@ -597,8 +601,8 @@ const resolvers: Resolvers = {
             // Implement the DAO and Service interfaces for assigning login failure policies.
             return loginFailurePolicy;
         },
-        setTenantPasswordConfig: async(_: any, { passwordConfigInput }, oidcContenxt) => {
-            //const tenantService: TenantService = new TenantService(oidcContenxt);
+        setTenantPasswordConfig: async(_: any, { passwordConfigInput }, oidcContext) => {
+            //const tenantService: TenantService = new TenantService(oidcContext);
             // TODO
             // Implement the service and DAO classes
             const tenantPasswordConfig: TenantPasswordConfig = {
@@ -721,6 +725,15 @@ const resolvers: Resolvers = {
             const service: FederatedOIDCProviderService = new FederatedOIDCProviderService(oidcContext);
             return service.removeFederatedOIDCProviderFromDomain(federatedOIDCProviderId, domain);
         },
+        addUserToAuthenticationGroup: async(_: any, { authenticationGroupId, userId}, oidcContext) => {
+            const service: AuthenticationGroupService = new AuthenticationGroupService(oidcContext);
+            return service.assignUserToAuthenticationGroup(userId, authenticationGroupId);
+        },
+        removeUserFromAuthenticationGroup: async(_: any, { authenticationGroupId, userId}, oidcContext) => {
+            const service: AuthenticationGroupService = new AuthenticationGroupService(oidcContext);
+            await service.removeUserFromAuthenticationGroup(userId, authenticationGroupId);
+            return authenticationGroupId;
+        }
     }
 }
 

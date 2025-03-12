@@ -29,6 +29,9 @@ class AuthorizationGroupEntity implements AuthorizationGroup {
     @Property({fieldName: "defaultgroup"})
     default: boolean;
 
+    @Property({fieldName: "allowforanonymoususers"})
+    allowForAnonymousUsers: boolean;
+
 }
 
 export default AuthorizationGroupEntity;

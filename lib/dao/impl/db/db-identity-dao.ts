@@ -1,4 +1,4 @@
-import { User, AuthenticationGroup, AuthorizationGroup, AuthenticationGroupUserRel, SuccessfulLoginResponse, UserFailedLoginAttempts, SearchResultType } from "@/graphql/generated/graphql-types";
+import { User, AuthenticationGroup, AuthorizationGroup, AuthenticationGroupUserRel, SuccessfulLoginResponse, UserFailedLoginAttempts, SearchResultType, UserTenantRel } from "@/graphql/generated/graphql-types";
 import IdentityDao from "../../identity-dao";
 import connection  from "@/lib/data-sources/db";
 import UserAuthorizationGroupRelEntity from "@/lib/entities/authorization-group-user-rel-entity";
@@ -16,13 +16,13 @@ import UserFido2ChallengeEntity from "@/lib/entities/user-fido2-challenge-entity
 import UserVerificationTokenEntity from "@/lib/entities/user-verification-token-entity";
 import { getOpenSearchClient } from "@/lib/data-sources/search";
 import { Client } from "@opensearch-project/opensearch";
+import UserTenantRelEntity from "@/lib/entities/user-tenant-rel-entity";
 
 const searchClient: Client = getOpenSearchClient();
 
 class DBIdentityDao extends IdentityDao {
 
-
-
+    
     public async getUsers(clientId: string): Promise<Array<User>> {
         throw new Error("Method not implemented.");
     }
@@ -228,6 +228,36 @@ class DBIdentityDao extends IdentityDao {
 
     public async deleteUser(userId: string): Promise<void> {
         throw new Error("Method not implemented.");
+    }
+
+    public async assignUserToTenant(tenantId: string, userId: string, relType: string): Promise<UserTenantRel> {
+        const em = connection.em.fork();
+        const entity: UserTenantRelEntity = new UserTenantRelEntity({
+            userId: userId,
+            tenantId: tenantId,
+            relType: relType,
+            enabled: true
+        });
+        await em.persistAndFlush(entity);
+        return entity;
+    }
+
+    public async removeUserFromTenant(tenantId: string, userId: string): Promise<void> {
+        const em = connection.em.fork();
+        await em.nativeDelete(UserTenantRelEntity, {
+            tenantId: tenantId,
+            userId: userId
+        });
+        return Promise.resolve();
+    }
+
+    public async getUserTenantRel(tenantId: string, userId: string): Promise<UserTenantRel | null> {
+        const em = connection.em.fork();
+        const entity: UserTenantRelEntity | null = await em.findOne(UserTenantRelEntity, {
+            tenantId: tenantId,
+            userId: userId
+        });
+        return Promise.resolve(entity);
     }
 
 }

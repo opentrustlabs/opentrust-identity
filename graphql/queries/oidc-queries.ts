@@ -216,6 +216,28 @@ export const SEARCH_QUERY = gql(`
     }
 `);
 
+export const REL_SEARCH_QUERY = gql(`
+    query relSearch($relSearchInput: RelSearchInput!) {
+        relSearch(relSearchInput: $relSearchInput) {
+            starttime
+            endtime
+            took
+            page
+            perpage
+            total
+            resultlist {
+                owningtenantid
+                parentid
+                parenttype
+                childid
+                childtype
+                childname
+                childdescription
+            }            
+        }
+    }
+`);
+
 export const USER_DETAIL_QUERY = gql(`
     query getUserById($userId: String!) {
         getUserById(userId: $userId) {

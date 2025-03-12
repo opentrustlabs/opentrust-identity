@@ -37,6 +37,7 @@ class DBAuthorizationGroupDao extends AuthorizationGroupDao {
         const entity: AuthorizationGroupEntity = new AuthorizationGroupEntity(group);
         await em.upsert(entity);
         await em.flush();
+
         return Promise.resolve(group);
     }
 

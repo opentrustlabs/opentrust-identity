@@ -4,7 +4,9 @@ type Query {
 
     ## Search
     search(searchInput: SearchInput!): ObjectSearchResults!
-    lookahead(term: String!): [LookaheadResult]
+    lookahead(term: String!): [LookaheadResult!]!
+    relSearch(relSearchInput: RelSearchInput!): RelSearchResults!
+
 
     ## Tenants
     getRootTenant: Tenant!
@@ -118,8 +120,10 @@ type Mutation {
     ## Users
     logout(userId: String): String
     login(username: String!, password: String!): LoginAuthenticationHandlerResponse!
-    createUser(userInput: UserCreateInput!): User!
+    createUser(tenantId: String!, userInput: UserCreateInput!): User!
     updateUser(userInput: UserUpdateInput!): User!
+    assignUserToTenant(tenantId: String!, userId: String!): UserTenantRel!
+    removeUserFromTenant(tenantId: String!, userId: String): UserTenantRel
     
     ## Keys
     createSigningKey(keyInput: SigningKeyCreateInput!): SigningKey!
@@ -161,8 +165,8 @@ type Mutation {
     createAuthenticationGroup(authenticationGroupInput: AuthenticationGroupCreateInput!): AuthenticationGroup
     updateAuthenticationGroup(authenticationGroupInput: AuthenticationGroupUpdateInput!): AuthenticationGroup
     deleteAuthenticationGroup(authenticationGroupId: String!): String!
-    addUserToAuthenticationGroup(authenticationGroupId: String, userId: String!): AuthenticationGroupUserRel
-    removeUserFromAuthenticationGroup(authenticationGroupId: String, userId: String!): String
+    addUserToAuthenticationGroup(authenticationGroupId: String!, userId: String!): AuthenticationGroupUserRel
+    removeUserFromAuthenticationGroup(authenticationGroupId: String!, userId: String!): String
     
     ## Groups
     createAuthorizationGroup(groupInput: AuthorizationGroupCreateInput!): AuthorizationGroup
@@ -741,6 +745,10 @@ type LoginAuthenticationHandlerResponse {
 }
 
 
+############################################################################
+################ SEARCH TYPES AND RESPONSES FOR MUTATATIONS ################
+############################################################################
+
 enum SearchResultType {
     TENANT
     CLIENT
@@ -766,7 +774,16 @@ type ObjectSearchResultItem {
     enabled: Boolean
 }
 
-# union SearchResultItem = GenericSearchResultItem | Tenant | Client | User | AuthenticationGroup | AuthorizationGroup | Scope | FederatedOIDCProvider
+type RelSearchResultItem {
+    owningtenantid: String!
+    parentid: String!
+    parenttype: SearchResultType!
+    childid: String!
+    childtype: SearchResultType!
+    childname: String!
+    childdescription: String
+}
+
 
 type ObjectSearchResults {
     starttime: Float!
@@ -776,6 +793,16 @@ type ObjectSearchResults {
     perpage: Int!
     total: Int!
     resultlist: [ObjectSearchResultItem!]!
+}
+
+type RelSearchResults {
+    starttime: Float!
+    endtime: Float!
+    took: Int!
+    page: Int!
+    perpage: Int!
+    total: Int!
+    resultlist: [RelSearchResultItem!]!
 }
 
 type LookaheadItem {
@@ -812,6 +839,19 @@ input SearchInput {
     term: String
     resultType: SearchResultType
     filters: [SearchFilterInput]
+    page: Int!
+    perPage: Int!
+    sortField: String
+    sortDirection: String
+}
+
+input RelSearchInput {
+    term: String
+    owningtenantid: String
+    parenttype: String
+    parentid: String  
+    childtype: String
+    childid: String 
     page: Int!
     perPage: Int!
     sortField: String

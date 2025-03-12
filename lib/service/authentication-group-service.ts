@@ -1,21 +1,23 @@
-import { AuthenticationGroup, AuthenticationGroupClientRel, AuthenticationGroupUserRel, Client, ObjectSearchResultItem, SearchResultType, Tenant } from "@/graphql/generated/graphql-types";
+import { AuthenticationGroup, AuthenticationGroupClientRel, AuthenticationGroupUserRel, Client, ObjectSearchResultItem, RelSearchResultItem, SearchResultType, Tenant, User, UserTenantRel } from "@/graphql/generated/graphql-types";
 import { OIDCContext } from "@/graphql/graphql-context";
 import TenantDao from "@/lib/dao/tenant-dao";
-import { getClientDaoImpl, getAuthenticationGroupDaoImpl, getTenantDaoImpl } from "@/utils/dao-utils";
+import { getClientDaoImpl, getAuthenticationGroupDaoImpl, getTenantDaoImpl, getIdentityDaoImpl } from "@/utils/dao-utils";
 import ClientDao from "../dao/client-dao";
 import { GraphQLError } from "graphql/error/GraphQLError";
 import { randomUUID } from 'crypto'; 
 import AuthenticationGroupDao from "../dao/authentication-group-dao";
-import { SEARCH_INDEX_OBJECT_SEARCH } from "@/utils/consts";
+import { NAME_ORDER_WESTERN, QUERY_PARAM_RETURN_URI, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH } from "@/utils/consts";
 import { Client as SearchClient } from "@opensearch-project/opensearch";
 import { getOpenSearchClient } from "@/lib/data-sources/search";
+import IdentityDao from "../dao/identity-dao";
+import UserTenantRelEntity from "../entities/user-tenant-rel-entity";
 
 const searchClient: SearchClient = getOpenSearchClient();
 
 const tenantDao: TenantDao = getTenantDaoImpl();
 const clientDao: ClientDao = getClientDaoImpl();
 const authenticationGroupDao: AuthenticationGroupDao = getAuthenticationGroupDaoImpl();
-
+const identityDao: IdentityDao = getIdentityDaoImpl();
 
 class AuthenticationGroupService {
 
@@ -82,6 +84,8 @@ class AuthenticationGroupService {
     }
 
     public async deleteAuthenticationGroup(authenticationGroupId: string): Promise<void> {
+        // TODO
+        // Remove the search index relationships
         return authenticationGroupDao.deleteAuthenticationGroup(authenticationGroupId);
     }
 
@@ -108,12 +112,55 @@ class AuthenticationGroupService {
     }
 
     public async assignUserToAuthenticationGroup(userId: string, authenticationGroupId: string): Promise<AuthenticationGroupUserRel> {
-        throw new Error("Method not implemented.");
+        const user: User | null = await identityDao.getUserById(userId);
+        // Checks:
+        // 1.   Does the user exist
+        if(!user){
+            throw new GraphQLError("ERROR_USER_DOES_NOT_EXIST");
+        }
+        // 2.   Does the authn group exist
+        const authnGroup: AuthenticationGroup | null = await authenticationGroupDao.getAuthenticationGroupById(authenticationGroupId);
+        if(!authnGroup){
+            throw new GraphQLError("ERROR_AUTHENTICATION_GROUP_DOES_NOT_EXIST");
+        }
+        // 3.   Is the user a member of the tenant?
+        const userTenantRel: UserTenantRel | null = await identityDao.getUserTenantRel(authnGroup.tenantId, userId);
+        if(!userTenantRel){
+            throw new GraphQLError("ERROR_INVALID_TENANT_FOR_USER");
+        }
+
+        const r: AuthenticationGroupUserRel = await authenticationGroupDao.assignUserToAuthenticationGroup(userId, authenticationGroupId);
+
+        const document: RelSearchResultItem = {
+            childid: user.userId,
+            childname: user.nameOrder === NAME_ORDER_WESTERN ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`,
+            childtype: SearchResultType.User,
+            owningtenantid: authnGroup.tenantId,
+            parentid: authnGroup.authenticationGroupId,
+            parenttype: SearchResultType.AuthenticationGroup,
+            childdescription: user.email
+        }
+        await searchClient.index({
+            id: `${authenticationGroupId}::${userId}`,
+            index: SEARCH_INDEX_REL_SEARCH,
+            body: document
+        });
+
+        return r;
+
     }
 
     public async removeUserFromAuthenticationGroup(userId: string, authenticationGroupId: string): Promise<void> {
-        throw new Error("Method not implemented.");
+        await authenticationGroupDao.removeUserFromAuthenticationGroup(userId, authenticationGroupId);
+
+        await searchClient.delete({
+            id: `${authenticationGroupId}::${userId}`,
+            index: SEARCH_INDEX_REL_SEARCH
+        })
+
+        return Promise.resolve();
     }
+    
 }
 
 export default AuthenticationGroupService;

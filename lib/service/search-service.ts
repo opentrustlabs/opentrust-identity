@@ -1,9 +1,9 @@
-import { LookaheadResult, ObjectSearchResults, SearchFilterInput, SearchFilterInputObjectType, SearchInput, ObjectSearchResultItem } from "@/graphql/generated/graphql-types";
+import { LookaheadResult, ObjectSearchResults, SearchFilterInput, SearchFilterInputObjectType, SearchInput, ObjectSearchResultItem, RelSearchResults, RelSearchInput, RelSearchResultItem } from "@/graphql/generated/graphql-types";
 import { OIDCContext } from "@/graphql/graphql-context";
 import { getOpenSearchClient } from "../data-sources/search";
 import { Client } from "@opensearch-project/opensearch";
 import { Search_Response } from "@opensearch-project/opensearch/api/index.js";
-import { ALLOWED_OBJECT_SEARCH_SORT_FIELDS, ALLOWED_SEARCH_DIRECTIONS, MAX_SEARCH_PAGE, MAX_SEARCH_PAGE_SIZE, MIN_SEARCH_PAGE_SIZE, SEARCH_INDEX_OBJECT_SEARCH } from "@/utils/consts";
+import { ALLOWED_OBJECT_SEARCH_SORT_FIELDS, ALLOWED_SEARCH_DIRECTIONS, MAX_SEARCH_PAGE, MAX_SEARCH_PAGE_SIZE, MIN_SEARCH_PAGE_SIZE, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH } from "@/utils/consts";
 
 
 const lastnames = ["Smith", "Jones", "Hayek", "Peterson", "Pederson", "Hannsson"];
@@ -159,6 +159,138 @@ class SearchService {
         }  
 
         return searchResults;        
+    }
+
+    public async relSearch(relSearchInput: RelSearchInput): Promise<RelSearchResults> {
+        let page: number = relSearchInput.page;
+        let perPage: number = relSearchInput.perPage;
+        let searchTerm = relSearchInput.term;
+
+        // Make sure all of the search parameters are set to sensible values
+        const sortDirection = relSearchInput.sortDirection && ALLOWED_SEARCH_DIRECTIONS.includes(relSearchInput.sortDirection) ? relSearchInput.sortDirection : "asc";
+        const sortField = relSearchInput.sortField && ALLOWED_OBJECT_SEARCH_SORT_FIELDS.includes(relSearchInput.sortField) ? relSearchInput.sortField : "childname";        
+        if(page < 1 || page > MAX_SEARCH_PAGE){
+            page = 1;
+        }
+        if(perPage > MAX_SEARCH_PAGE_SIZE){
+            perPage = MAX_SEARCH_PAGE_SIZE;
+        }
+        if(perPage < MIN_SEARCH_PAGE_SIZE){
+            perPage = MIN_SEARCH_PAGE_SIZE;
+        }
+
+        // Start the timer
+        const start = Date.now();
+
+        // Default result list is am empty array
+        let items: Array<RelSearchResultItem> = [];
+
+        let query: any = {
+            bool: {
+                must: {},
+                filter: []
+            }
+        }
+        if(!searchTerm || searchTerm.length < 3){
+            query.bool.must = {
+                match_all: {}
+            }
+        }
+        else{
+            query.bool.must = {
+                multi_match: {
+                    query: searchTerm,
+                    fields: ["childname^8", "childdescription^4", "childname_as", "childdescription_as"]
+                }
+            }
+        }
+
+        if(relSearchInput.owningtenantid){
+            query.bool.filter.push({
+                term: {owningtenantid: relSearchInput.owningtenantid}
+            });
+        }
+        if(relSearchInput.parentid){
+            query.bool.filter.push({
+                term: {parentid: relSearchInput.parentid}
+            });
+        }
+        if(relSearchInput.childid){
+            query.bool.filter.push({
+                term: {childid: relSearchInput.childid}
+            });
+        }
+        if(relSearchInput.childtype){
+            query.bool.filter.push({
+                term: {childtype: relSearchInput.childtype}
+            });
+        }
+
+        const sortObj: any = {};
+        sortObj[`${sortField}.raw`] = { order: sortDirection};
+
+        const searchBody: any = {
+            from: (page - 1) * perPage,
+            size: perPage,
+            query: query,
+            sort: [sortObj],
+            highlight: {
+                fields: {
+                    childname: {},
+                    childdescription: {}
+                }
+            }
+        }
+
+        const searchResponse: Search_Response = await client.search({
+            index: SEARCH_INDEX_REL_SEARCH,
+            body: searchBody
+        });
+
+        const end = Date.now();
+
+        let total: number = 0;
+        const totalValueOf = searchResponse.body.hits.total?.valueOf();
+        if(totalValueOf){
+            if(typeof totalValueOf === "number"){
+                total = totalValueOf;
+            }
+            else{
+                total = (totalValueOf as any).value;
+            }
+        }
+
+        searchResponse.body.hits.hits.forEach(
+            (hit: any) => {
+                const source: any = hit._source;
+                // const item: ObjectSearchResultItem = {
+                //     name: source.name,
+                //     description: source.description,
+                //     email: source.email,
+                //     objectId: source.objectid,
+                //     objectType: source.objecttype,
+                //     enabled: source.enabled,
+                //     owningClientId: source.owningclientid,
+                //     owningTenantId: source.owningtenantid,
+                //     subType: source.subtype,
+                //     subTypeKey: source.subtypekey
+                // }
+                return items.push(source);
+            }
+        );        
+
+        const searchResults: RelSearchResults = {
+            endtime: end,
+            page: page,
+            perpage: perPage,
+            starttime: start,
+            took: end - start,
+            total: total,
+            resultlist: items
+        }  
+
+        return searchResults;   
+
     }
 
     public async lookahead(term: string): Promise<Array<LookaheadResult>> {
