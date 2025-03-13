@@ -1,4 +1,4 @@
-import { AuthenticationGroup, User, AuthorizationGroup, SuccessfulLoginResponse, UserFailedLoginAttempts, UserTenantRel } from "@/graphql/generated/graphql-types";
+import { AuthenticationGroup, User, AuthorizationGroup, SuccessfulLoginResponse, UserFailedLoginAttempts, UserTenantRel, UserCredential } from "@/graphql/generated/graphql-types";
 
 abstract class IdentityDao {
 
@@ -34,25 +34,20 @@ abstract class IdentityDao {
     abstract deleteEmailConfirmationToken(token: string): Promise<void>;
 
 
-    /**
-     * Creates a user (if they user does not already exist based on email or phone number) 
-     * and hashed credentials from a registration page and assigns the 
-     * user to the tenant as the PRIMARY tenant for the user.
-     * 
-     * @param user 
-     * @param password 
-     * @param tenantId 
-     */
-    abstract registerUser(user: User, password: string, tenantId: string): Promise<User>;
+
 
     /**
-     * creates a user and assigns the user to the tenant as the PRIMARY tenant. This is for
+     * Creates a user (if they user does not already exist based on email or phone number) 
+     * and assigns the user to the tenant as the PRIMARY tenant. This is for
      * cases where the tenant may be using SSO with an external OIDC provider and so no
-     * password is necessary.
+     * password is necessary, or for when the user is registering and needs to supply
+     * a password. 
      * 
      * @param user 
      */
-    abstract createUser(user: User, tenantId: string): Promise<User>;
+    abstract createUser(user: User): Promise<User>;
+
+    abstract addUserCredential(userCredential: UserCredential): Promise<void>;
 
     abstract updateUser(user: User): Promise<User>;
 

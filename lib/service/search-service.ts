@@ -132,18 +132,6 @@ class SearchService {
         searchResponse.body.hits.hits.forEach(
             (hit: any) => {
                 const source: any = hit._source;
-                // const item: ObjectSearchResultItem = {
-                //     name: source.name,
-                //     description: source.description,
-                //     email: source.email,
-                //     objectId: source.objectid,
-                //     objectType: source.objecttype,
-                //     enabled: source.enabled,
-                //     owningClientId: source.owningclientid,
-                //     owningTenantId: source.owningtenantid,
-                //     subType: source.subtype,
-                //     subTypeKey: source.subtypekey
-                // }
                 return items.push(source);
             }
         );        
@@ -263,18 +251,6 @@ class SearchService {
         searchResponse.body.hits.hits.forEach(
             (hit: any) => {
                 const source: any = hit._source;
-                // const item: ObjectSearchResultItem = {
-                //     name: source.name,
-                //     description: source.description,
-                //     email: source.email,
-                //     objectId: source.objectid,
-                //     objectType: source.objecttype,
-                //     enabled: source.enabled,
-                //     owningClientId: source.owningclientid,
-                //     owningTenantId: source.owningtenantid,
-                //     subType: source.subtype,
-                //     subTypeKey: source.subtypekey
-                // }
                 return items.push(source);
             }
         );        
