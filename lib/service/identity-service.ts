@@ -50,7 +50,7 @@ class IdentitySerivce {
             twoFactorAuthType: "",
             federatedOIDCProviderSubjectId: ""
         }
-        await identityDao.createUser(user);
+        await identityDao.registerUser(user, "", "PRIMARY");
         return user;
     }
 

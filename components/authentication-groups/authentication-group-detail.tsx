@@ -101,8 +101,8 @@ const AuthenticationGroupDetail: React.FC<AuthenticationGroupDetailProps> = ({ a
                                     <AuthenticationGroupUserConfiguration
                                         authenticationGroupId={authenticationGroup.authenticationGroupId}
                                         tenantId={authenticationGroup.tenantId}
-                                        onUpdateEnd={() => console.log('update ended')}
-                                        onUpdateStart={() => console.log('updated started')}
+                                        page={1}
+                                        perPage={10}
                                     />                                    
                                 </AccordionDetails>
                             </Accordion>

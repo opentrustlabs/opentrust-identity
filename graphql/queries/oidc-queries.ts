@@ -238,6 +238,7 @@ export const REL_SEARCH_QUERY = gql(`
     }
 `);
 
+
 export const USER_DETAIL_QUERY = gql(`
     query getUserById($userId: String!) {
         getUserById(userId: $userId) {

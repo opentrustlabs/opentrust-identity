@@ -33,14 +33,51 @@ abstract class IdentityDao {
 
     abstract deleteEmailConfirmationToken(token: string): Promise<void>;
 
-    abstract createUser(user: User): Promise<User>;
+
+    /**
+     * Creates a user (if they user does not already exist based on email or phone number) 
+     * and hashed credentials from a registration page and assigns the 
+     * user to the tenant as the PRIMARY tenant for the user.
+     * 
+     * @param user 
+     * @param password 
+     * @param tenantId 
+     */
+    abstract registerUser(user: User, password: string, tenantId: string): Promise<User>;
+
+    /**
+     * creates a user and assigns the user to the tenant as the PRIMARY tenant. This is for
+     * cases where the tenant may be using SSO with an external OIDC provider and so no
+     * password is necessary.
+     * 
+     * @param user 
+     */
+    abstract createUser(user: User, tenantId: string): Promise<User>;
 
     abstract updateUser(user: User): Promise<User>;
 
-    abstract deleteUser(userId: string): Promise<void>;
+    abstract deleteUser(userId: string): Promise<void>;    
 
+
+    /**
+     * Assigns the user to the tenant with the given relationship type, which can either
+     * be "PRIMARY" or "GUEST". A user must be in at-most exactly ONE primary tenant
+     * They can be guests in many different tenants, if the tenants allow for it.
+     * 
+     * @param tenantId 
+     * @param userId 
+     * @param relType 
+     */
     abstract assignUserToTenant(tenantId: string, userId: string, relType: string): Promise<UserTenantRel>;
 
+    /**
+     * Cannot remove a user from their PRIMARY tenant. If necessary, a user can be assigned a
+     * GUEST relationship type to the tenant, then assigned a PRIMARY relationship to another
+     * tenant
+     * 
+     * @param tenantId 
+     * @param userId 
+     */
     abstract removeUserFromTenant(tenantId: string, userId: string): Promise<void>;
 
     abstract getUserTenantRel(tenantId: string, userId: string): Promise<UserTenantRel | null>;

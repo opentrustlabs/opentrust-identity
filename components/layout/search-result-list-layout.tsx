@@ -74,7 +74,7 @@ const SearchResultListLayout: React.FC<SearchResultListProps> = ({
         objectValue: tenantBean.getTenantMetaData().tenant.tenantId
     });
 
-    let { data, loading, error, refetch, previousData } = useQuery(SEARCH_QUERY, {
+    let { data, loading, error, previousData } = useQuery(SEARCH_QUERY, {
         variables: {
             searchInput: {
                 term: filterTerm,
@@ -95,16 +95,7 @@ const SearchResultListLayout: React.FC<SearchResultListProps> = ({
     // indexing. They should really use OFFSET rather than page,
     // since that makes more sense.
     const handlePageChange = async (evt: any, page: number) => {
-        setPage(page + 1);
-        await refetch({
-            searchInput: {
-                term: filterTerm,
-                filters: filters,
-                page: page + 1,
-                perPage: perPage,
-                resultType: SearchResultType.User
-            }
-        });
+        setPage(page + 1);        
         topOfSearchList.current?.scrollIntoView({
             behavior: "smooth"
         })
@@ -211,29 +202,29 @@ const SearchResultListLayout: React.FC<SearchResultListProps> = ({
                 }
                 
                 <Grid2 container size={12} spacing={1} marginTop={"16px"} marginBottom={"16px"} >
-                <Grid2 size={12}>
-                    {loading && previousData &&
-                        <TablePagination
-                            component={"div"}
-                            page={page - 1}
-                            rowsPerPage={perPage}
-                            count={previousData.search.total}
-                            onPageChange={handlePageChange}
-                            rowsPerPageOptions={[]}
-                        />
-                    }
-                    {data &&
-                        <TablePagination
-                            component={"div"}
-                            page={page - 1}
-                            rowsPerPage={perPage}
-                            count={data.search.total}
-                            onPageChange={handlePageChange}
-                            rowsPerPageOptions={[]}
-                        />
-                    }                    
+                    <Grid2 size={12}>
+                        {loading && previousData &&
+                            <TablePagination
+                                component={"div"}
+                                page={page - 1}
+                                rowsPerPage={perPage}
+                                count={previousData.search.total}
+                                onPageChange={handlePageChange}
+                                rowsPerPageOptions={[]}
+                            />
+                        }
+                        {data &&
+                            <TablePagination
+                                component={"div"}
+                                page={page - 1}
+                                rowsPerPage={perPage}
+                                count={data.search.total}
+                                onPageChange={handlePageChange}
+                                rowsPerPageOptions={[]}
+                            />
+                        }                    
+                    </Grid2>
                 </Grid2>
-            </Grid2>
 
             </Typography>
         </main>
