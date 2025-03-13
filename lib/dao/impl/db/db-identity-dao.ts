@@ -1,4 +1,4 @@
-import { User, AuthenticationGroup, AuthorizationGroup, AuthenticationGroupUserRel, SuccessfulLoginResponse, UserFailedLoginAttempts, SearchResultType, UserTenantRel } from "@/graphql/generated/graphql-types";
+import { User, AuthenticationGroup, AuthorizationGroup, AuthenticationGroupUserRel, SuccessfulLoginResponse, UserFailedLoginAttempts, SearchResultType, UserTenantRel, UserCredential } from "@/graphql/generated/graphql-types";
 import IdentityDao from "../../identity-dao";
 import connection  from "@/lib/data-sources/db";
 import UserAuthorizationGroupRelEntity from "@/lib/entities/authorization-group-user-rel-entity";
@@ -216,8 +216,10 @@ class DBIdentityDao extends IdentityDao {
         throw new Error("Method not implemented.");
     }
     
+    public async addUserCredential(userCredential: UserCredential): Promise<void> {
+        throw new Error("Method not implemented.");
+    }
 
-    
     public async createUser(user: User): Promise<User> {
         throw new Error("Method not implemented.");
     }

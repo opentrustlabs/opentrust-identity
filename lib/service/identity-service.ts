@@ -16,7 +16,12 @@ class IdentitySerivce {
         this.oidcContext = oidcContext;
     }
 
-    public async createUser(userCreateInput: UserCreateInput): Promise<User>{
+    public async registerUser(userCreateInput: UserCreateInput, tenantId: string, password: string){
+
+    }
+
+
+    public async createUser(userCreateInput: UserCreateInput, tenantId: string): Promise<User>{
 
         // TODO
         // 1.   Refactor the create user function. We need to do a couple of 
@@ -50,7 +55,17 @@ class IdentitySerivce {
             twoFactorAuthType: "",
             federatedOIDCProviderSubjectId: ""
         }
-        await identityDao.registerUser(user, "", "PRIMARY");
+
+        await identityDao.createUser(user);
+        await identityDao.assignUserToTenant(tenantId, user.userId, "PRIMARY");
+
+        await identityDao.addUserCredential({
+            dateCreated: "",
+            hashedPassword: "",
+            hashingAlgorithm: "",
+            salt: "",
+            userId: ""
+        })
         return user;
     }
 
