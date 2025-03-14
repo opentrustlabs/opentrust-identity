@@ -1,40 +1,7 @@
-import ClientDao from "@/lib/dao/client-dao";
-import AuthorizationGroupDao from "@/lib/dao/authorization-group-dao";
-import FSBasedClientDao from "@/lib/dao/impl/fs/fs-based-client-dao";
-import FSBasedAuthorizationGroupDao from "@/lib/dao/impl/fs/fs-based-authorization-group-dao";
-import FSBasedSigningKeysDao from "@/lib/dao/impl/fs/fs-based-signing-keys-dao";
-import FSBasedRateLimitDao from "@/lib/dao/impl/fs/fs-based-rate-limit-dao";
-import FSBasedScopeDao from "@/lib/dao/impl/fs/fs-based-scope-dao";
-import FSBasedTenantDao from "@/lib/dao/impl/fs/fs-based-tenant-dao";
-import SigningKeysDao from "@/lib/dao/signing-keys-dao";
-import RateLimitDao from "@/lib/dao/rate-limit-dao";
-import ScopeDao from "@/lib/dao/scope-dao";
-import TenantDao from "@/lib/dao/tenant-dao";
-import IdentityDao from "@/lib/dao/identity-dao";
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { randomBytes, hash, createHash, pbkdf2Sync } from "node:crypto";
-import AuthenticationGroupDao from "@/lib/dao/authentication-group-dao";
-import FSBasedAuthenticationGroupDao from "@/lib/dao/impl/fs/fs-based-authentication-group-dao";
-import FederatedOIDCProviderDao from "@/lib/dao/federated-oidc-provider-dao";
-import FSBasedFederatedOidcProviderDao from "@/lib/dao/impl/fs/fs-based-federated-oidc-provider-dao";
-import AuthDao from "@/lib/dao/auth-dao";
-import FSBasedAuthDao from "@/lib/dao/impl/fs/fs-based-auth-dao";
-import FSBasedIdentityDao from "@/lib/dao/impl/fs/fs-based-identity-dao";
-import DBTenantDao from "@/lib/dao/impl/db/db-tenant-dao";
-import DBFederatedOIDCProviderDao from "@/lib/dao/impl/db/db-federated-oidc-provider-dao";
-import DBClientDao from "@/lib/dao/impl/db/db-client-dao";
-import DBSigningKeysDao from "@/lib/dao/impl/db/db-signing-keys-dao";
-import DBAuthenticationGroupDao from "@/lib/dao/impl/db/db-authentication-group-dao";
-import DBAuthDao from "@/lib/dao/impl/db/db-auth-dao";
-import DBRateLimitDao from "@/lib/dao/impl/db/db-rate-limit-dao";
-import DBScopeDao from "@/lib/dao/impl/db/db-scope-dao";
-import DBAuthorizationGroupDao from "@/lib/dao/impl/db/db-authorization-group-dao";
-import AccessRuleDao from "@/lib/dao/access-rule-dao";
-import DBAccessRuleDao from "@/lib/dao/impl/db/db-access-rule-dao";
 import bcrypt from "bcrypt";
-import DBIdentityDao from "@/lib/dao/impl/db/db-identity-dao";
-import ContactDao from "@/lib/dao/contact-dao";
-import DBContactDao from "@/lib/dao/impl/db/db-contact-dao";
+
 
 /**
  * 
@@ -98,6 +65,10 @@ export function generateHash(data: string, hashAlgorithm?: HashAlgorithm, encodi
         hashAlgorithm = "sha256"
     }
     return hash(hashAlgorithm, data, encoding);
+}
+
+export function generateSalt(): string {
+    return generateRandomToken(16, "base64");
 }
 
 /**

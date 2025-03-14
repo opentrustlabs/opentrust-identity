@@ -1,13 +1,17 @@
-// import IdentityDao from '@/lib/dao/identity-dao'
-// import { getIdentityDaoImpl } from '@/utils/dao-utils'
+
 import type { NextApiRequest, NextApiResponse } from 'next'
-//import { randomUUID } from 'crypto';
 import { User } from '@/graphql/generated/graphql-types';
+// import IdentityDao from '@/lib/dao/identity-dao';
+// import { DaoImpl } from '@/lib/data-sources/dao-impl';
+// import TenantDao from '@/lib/dao/tenant-dao';
+// import { Client } from '@opensearch-project/opensearch';
+// import { getOpenSearchClient } from '@/lib/data-sources/search';
 //import { MFA_FACTOR_AUTH_TYPE_NONE, NAME_ORDER_WESTERN } from '@/utils/consts';
 
 
-//const identityDao: IdentityDao = DaoImpl.getInstance().getIdentityDao();
-
+// const identityDao: IdentityDao = DaoImpl.getInstance().getIdentityDao();
+// const tenantDao: TenantDao = DaoImpl.getInstance().getTenantDao();
+// const searchClient: Client = getOpenSearchClient();
 
 export default async function handler(
 	req: NextApiRequest,
@@ -63,5 +67,8 @@ export default async function handler(
     //     users.push(user);
     // }
 
+
+
     return res.status(200).json(users);    
 }
+

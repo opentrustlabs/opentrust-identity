@@ -1,8 +1,9 @@
 import { AuthenticationGroup, User, AuthorizationGroup, SuccessfulLoginResponse, UserFailedLoginAttempts, UserTenantRel, UserCredential } from "@/graphql/generated/graphql-types";
 
+export type UserLookupType = "id" | "email" | "phone";
 abstract class IdentityDao {
 
-    abstract getUsers(clientId: string): Promise<Array<User>>;
+    abstract getUsers(tenant: string | null): Promise<Array<User>>;
 
     abstract getUserGroups(userId: string): Promise<Array<AuthorizationGroup>>;
 
@@ -19,7 +20,7 @@ abstract class IdentityDao {
     // challengeType could be email (as for registration of new users), sms, time-based-otp, or security key
     abstract validateOTP(userId: string, challenge: string, challengeId: string, challengeType: string): Promise<boolean>;
 
-    abstract getUserById(userId: string): Promise<User | null>;
+    abstract getUserBy(userLookupType: UserLookupType, value: string): Promise<User | null>;
 
     abstract savePasswordResetToken(userId: string, token: string): Promise<void>;
 
@@ -53,6 +54,7 @@ abstract class IdentityDao {
 
     abstract deleteUser(userId: string): Promise<void>;    
 
+    abstract passwordProhibited(password: string): Promise<boolean>;
 
     /**
      * Assigns the user to the tenant with the given relationship type, which can either
@@ -76,6 +78,8 @@ abstract class IdentityDao {
     abstract removeUserFromTenant(tenantId: string, userId: string): Promise<void>;
 
     abstract getUserTenantRel(tenantId: string, userId: string): Promise<UserTenantRel | null>;
+
+    abstract getUserTenantRelsByUserId(userId: string): Promise<Array<UserTenantRel>>;
 
 }
 

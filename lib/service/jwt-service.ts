@@ -46,7 +46,7 @@ class JwtService {
      * @param scope 
      */
     public async signUserJwt(userId: string, clientId: string, tenantId: string, scope: string): Promise<OIDCTokenResponse | null>{
-        const user: User | null = await identityDao.getUserById(userId);
+        const user: User | null = await identityDao.getUserBy("id", userId);
         if(!user){
             return Promise.resolve(null);
         }
