@@ -1,15 +1,16 @@
-import { Client, Contact, ObjectSearchResultItem, SearchResultType, Tenant } from "@/graphql/generated/graphql-types";
+import { Client, ObjectSearchResultItem, SearchResultType, Tenant } from "@/graphql/generated/graphql-types";
 import { OIDCContext } from "@/graphql/graphql-context";
 import ClientDao from "@/lib/dao/client-dao";
-import { generateRandomToken, getClientDaoImpl, getTenantDaoImpl } from "@/utils/dao-utils";
+import { generateRandomToken } from "@/utils/dao-utils";
 import TenantDao from "@/lib/dao/tenant-dao";
 import { GraphQLError } from "graphql/error/GraphQLError";
 import { randomUUID } from 'crypto'; 
-import { CLIENT_SECRET_ENCODING, CLIENT_TYPES_DISPLAY, CONTACT_TYPE_FOR_CLIENT, SEARCH_INDEX_OBJECT_SEARCH } from "@/utils/consts";
+import { CLIENT_SECRET_ENCODING, CLIENT_TYPES_DISPLAY, SEARCH_INDEX_OBJECT_SEARCH } from "@/utils/consts";
 import { getOpenSearchClient } from "@/lib/data-sources/search";
+import { DaoImpl } from "../data-sources/dao-impl";
 
-const clientDao: ClientDao = getClientDaoImpl();
-const tenantDao: TenantDao = getTenantDaoImpl();
+const clientDao: ClientDao = DaoImpl.getInstance().getClientDao();
+const tenantDao: TenantDao = DaoImpl.getInstance().getTenantDao();
 const searchClient = getOpenSearchClient();
 
 class ClientService {

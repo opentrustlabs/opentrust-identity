@@ -1,10 +1,12 @@
 import { OIDCContext } from "@/graphql/graphql-context";
-import { getIdentityDaoImpl } from "@/utils/dao-utils";
+
 import IdentityDao from "../dao/identity-dao";
 import { User, UserCreateInput } from "@/graphql/generated/graphql-types";
+import { DaoImpl } from "../data-sources/dao-impl";
 
 
-const identityDao: IdentityDao = getIdentityDaoImpl();
+const identityDao: IdentityDao = DaoImpl.getInstance().getIdentityDao();
+
 
 
 

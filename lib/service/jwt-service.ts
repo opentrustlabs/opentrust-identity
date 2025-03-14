@@ -1,5 +1,5 @@
 import { User, Tenant, Client, SigningKey, ClientAuthHistory } from "@/graphql/generated/graphql-types";
-import { getTenantDaoImpl, getClientDaoImpl, getIdentityDaoImpl, getSigningKeysDaoImpl, generateRandomToken } from "@/utils/dao-utils";
+import { generateRandomToken } from "@/utils/dao-utils";
 import ClientDao from "@/lib/dao/client-dao";
 import TenantDao from "@/lib/dao/tenant-dao";
 import IdentityDao from "@/lib/dao/identity-dao";
@@ -10,6 +10,7 @@ import { OIDCPrincipal } from "../models/principal";
 import { randomUUID, createPrivateKey, PrivateKeyInput, KeyObject, createSecretKey, createPublicKey, PublicKeyInput } from "node:crypto"; 
 import NodeCache from "node-cache";
 import { CLIENT_SECRET_ENCODING, DEFAULT_END_USER_TOKEN_TTL_SECONDS, DEFAULT_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS, NAME_ORDER_WESTERN, TOKEN_TYPE_END_USER_TOKEN, TOKEN_TYPE_SERVICE_ACCOUNT_TOKEN } from "@/utils/consts";
+import { DaoImpl } from "../data-sources/dao-impl";
 
 const SIGNING_KEY_ARRAY_CACHE_KEY = "SIGNING_KEY_ARRAY_CACHE_KEY"
 interface CachedSigningKeyData {
@@ -26,10 +27,10 @@ const SigningKeyCache = new NodeCache(
     }
 );
 
-const identityDao: IdentityDao = getIdentityDaoImpl();
-const tenantDao: TenantDao = getTenantDaoImpl();
-const clientDao: ClientDao = getClientDaoImpl();
-const signingKeysDao: SigningKeysDao = getSigningKeysDaoImpl();
+const identityDao: IdentityDao = DaoImpl.getInstance().getIdentityDao();
+const tenantDao: TenantDao = DaoImpl.getInstance().getTenantDao();
+const clientDao: ClientDao = DaoImpl.getInstance().getClientDao();
+const signingKeysDao: SigningKeysDao = DaoImpl.getInstance().getSigningKeysDao();
 
 const {
     AUTH_DOMAIN

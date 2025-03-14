@@ -1,16 +1,16 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import TenantDao from "../../../../lib/dao/tenant-dao";
-import { getTenantDaoImpl } from "../../../..//utils/dao-utils";
 import { Tenant } from '../../../../graphql/generated/graphql-types';
 import { ErrorResponseBody } from '../../../..//lib/models/error';
 import { GRANT_TYPES_SUPPORTED } from "../../../../utils/consts";
+import { DaoImpl } from "../../../../lib/data-sources/dao-impl";
 
 const {
     AUTH_DOMAIN
 } = process.env;
 
 
-const tenantDao: TenantDao = getTenantDaoImpl();
+const tenantDao: TenantDao = DaoImpl.getInstance().getTenantDao();
 
 
 export default async function handler(

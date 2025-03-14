@@ -6,7 +6,7 @@ import { User } from '@/graphql/generated/graphql-types';
 //import { MFA_FACTOR_AUTH_TYPE_NONE, NAME_ORDER_WESTERN } from '@/utils/consts';
 
 
-//const identityDao: IdentityDao = getIdentityDaoImpl();
+//const identityDao: IdentityDao = DaoImpl.getInstance().getIdentityDao();
 
 
 export default async function handler(
