@@ -1,5 +1,5 @@
 import { User, AuthenticationGroup, AuthorizationGroup, AuthenticationGroupUserRel, SuccessfulLoginResponse, UserFailedLoginAttempts, SearchResultType, UserTenantRel, UserCredential } from "@/graphql/generated/graphql-types";
-import IdentityDao from "../../identity-dao";
+import IdentityDao, { UserLookupType } from "../../identity-dao";
 import connection  from "@/lib/data-sources/db";
 import UserAuthorizationGroupRelEntity from "@/lib/entities/authorization-group-user-rel-entity";
 import AuthorizationGroupEntity from "@/lib/entities/authorization-group-entity";
@@ -17,14 +17,17 @@ import UserVerificationTokenEntity from "@/lib/entities/user-verification-token-
 import { getOpenSearchClient } from "@/lib/data-sources/search";
 import { Client } from "@opensearch-project/opensearch";
 import UserTenantRelEntity from "@/lib/entities/user-tenant-rel-entity";
+import ProhibitedPasswordEntity from "@/lib/entities/prohibited-password-entity";
 
 const searchClient: Client = getOpenSearchClient();
 
 class DBIdentityDao extends IdentityDao {
 
     
-    public async getUsers(clientId: string): Promise<Array<User>> {
-        throw new Error("Method not implemented.");
+    public async getUsers(tenantId: string | null): Promise<Array<User>> {
+        const em = connection.em.fork();
+        const users: Array<UserEntity> = await em.findAll(UserEntity);
+        return Promise.resolve(users);
     }
 
     public async getUserGroups(userId: string): Promise<Array<AuthorizationGroup>> {
@@ -74,11 +77,11 @@ class DBIdentityDao extends IdentityDao {
             valid = hashedPassword === userCredential.hashedPassword;
         }
         else if(userCredential.hashingAlgorithm === PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS){
-            const hashedPassword = pbkdf2HashPassword(password, userCredential.hashedPassword, 128000);
+            const hashedPassword = pbkdf2HashPassword(password, userCredential.salt, 128000);
             valid = hashedPassword === userCredential.hashedPassword;
         }
         else if(userCredential.hashingAlgorithm === PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS){
-            const hashedPassword = pbkdf2HashPassword(password, userCredential.hashedPassword, 256000);
+            const hashedPassword = pbkdf2HashPassword(password, userCredential.salt, 256000);
             valid = hashedPassword === userCredential.hashedPassword;
         }
         else{
@@ -159,11 +162,23 @@ class DBIdentityDao extends IdentityDao {
     }
 
 
-    public async getUserById(userId: string): Promise<User | null> {
+    public async getUserBy(userLookupType: UserLookupType, value: string): Promise<User | null> {
         const em = connection.em.fork();
-        const u: UserEntity | null = await em.findOne(UserEntity, {userId: userId});
+        const where: any = {};
+        if(userLookupType === "email"){
+            where.email = value;
+        }
+        else if(userLookupType === "id"){
+            where.id = value;
+        }
+        else if(userLookupType === "phone"){
+            where.phoneNumber = value;
+        }
+        const u: UserEntity | null = await em.findOne(UserEntity, where);
         return Promise.resolve(u);
     }
+
+
 
     public async savePasswordResetToken(userId: string, token: string): Promise<void> {
         const em = connection.em.fork();
@@ -215,17 +230,37 @@ class DBIdentityDao extends IdentityDao {
     public async validateOTP(userId: string, challenge: string, challengeId: string, challengeType: string): Promise<boolean> {
         throw new Error("Method not implemented.");
     }
+
+    public async passwordProhibited(password: string): Promise<boolean> {
+        const em = connection.em.fork();
+        const entity = await em.findOne(ProhibitedPasswordEntity, {
+            password: password
+        });
+        if(entity){
+            return Promise.resolve(true);
+        }
+        return Promise.resolve(false);
+    }
     
     public async addUserCredential(userCredential: UserCredential): Promise<void> {
-        throw new Error("Method not implemented.");
+        const em = connection.em.fork();
+        const entity: UserCredentialEntity = new UserCredentialEntity(userCredential);
+        await em.persistAndFlush(entity);
+        return Promise.resolve();
     }
 
     public async createUser(user: User): Promise<User> {
-        throw new Error("Method not implemented.");
+        const em = connection.em.fork();
+        const entity: UserEntity = new UserEntity(user);
+        await em.persistAndFlush(entity);
+        return Promise.resolve(user);
     }
 
     public async updateUser(user: User): Promise<User> {
-        throw new Error("Method not implemented.");
+        const em = connection.em.fork();
+        const entity: UserEntity = new UserEntity(user);
+        await em.upsert(entity);
+        return Promise.resolve(user);
     }
 
     public async deleteUser(userId: string): Promise<void> {
@@ -260,6 +295,14 @@ class DBIdentityDao extends IdentityDao {
             userId: userId
         });
         return Promise.resolve(entity);
+    }
+
+    public async getUserTenantRelsByUserId(userId: string): Promise<Array<UserTenantRel>> {
+        const em = connection.em.fork();
+        const list = await em.find(UserTenantRelEntity, {
+            userId: userId
+        });
+        return Promise.resolve(list);
     }
 
 }

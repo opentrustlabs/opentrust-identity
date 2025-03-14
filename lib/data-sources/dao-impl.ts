@@ -41,8 +41,8 @@ class DaoImpl {
     protected accessRuleDao: AccessRuleDao;
     protected contactDao: ContactDao;
 
-    private constructor() {       
-        console.log("in constructor");
+    private constructor() {
+        // NO-OP
     }
 
     public static getInstance(): DaoImpl {        

@@ -111,7 +111,7 @@ class AuthenticationGroupService {
     }
 
     public async assignUserToAuthenticationGroup(userId: string, authenticationGroupId: string): Promise<AuthenticationGroupUserRel> {
-        const user: User | null = await identityDao.getUserById(userId);
+        const user: User | null = await identityDao.getUserBy("id", userId);
         // Checks:
         // 1.   Does the user exist
         if(!user){
