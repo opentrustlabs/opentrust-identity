@@ -188,7 +188,7 @@ class SearchService {
             query.bool.must = {
                 multi_match: {
                     query: searchTerm,
-                    fields: ["childname^8", "childdescription^4", "childname_as", "childdescription_as"]
+                    fields: ["childname^8", "childname_as"]
                 }
             }
         }

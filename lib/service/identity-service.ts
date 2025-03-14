@@ -179,7 +179,7 @@ class IdentitySerivce {
             owningtenantid: owningTenantId,
             parentid: owningTenantId,
             parenttype: SearchResultType.Tenant,
-            childdescription: relType
+            childdescription: user.email
         }
         await searchClient.index({
             id: `${tenant.tenantId}::${user.userId}`,
