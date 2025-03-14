@@ -1,17 +1,17 @@
-import { AccessRule, Client, ClientTenantScopeRel, Scope, Tenant, TenantScopeRel } from "@/graphql/generated/graphql-types";
+import { AccessRule, Client, ClientScopeRel, Scope, Tenant } from "@/graphql/generated/graphql-types";
 import { OIDCContext } from "@/graphql/graphql-context";
-import { getAccessRuleDaoImpl, getClientDaoImpl, getScopeDaoImpl, getTenantDaoImpl } from "@/utils/dao-utils";
 import { GraphQLError } from "graphql/error/GraphQLError";
 import ScopeDao from "../dao/scope-dao";
 import { randomUUID } from 'crypto'; 
 import TenantDao from "../dao/tenant-dao";
 import ClientDao from "../dao/client-dao";
 import AccessRuleDao from "../dao/access-rule-dao";
+import { DaoImpl } from "../data-sources/dao-impl";
 
-const scopeDao: ScopeDao = getScopeDaoImpl();
-const tenantDao: TenantDao = getTenantDaoImpl();
-const clientDao: ClientDao = getClientDaoImpl();
-const accessRuleDao: AccessRuleDao = getAccessRuleDaoImpl();
+const scopeDao: ScopeDao = DaoImpl.getInstance().getScopeDao();
+const tenantDao: TenantDao = DaoImpl.getInstance().getTenantDao();
+const clientDao: ClientDao = DaoImpl.getInstance().getClientDao();
+const accessRuleDao: AccessRuleDao = DaoImpl.getInstance().getAccessRuleDao();
 
 class ScopeService {
 
@@ -52,53 +52,53 @@ class ScopeService {
     }
         
     
-    public async assignScopeToTenant(tenantId: string, scopeId: string, accessRuleId: string | null): Promise<TenantScopeRel> {
-        const tenant: Tenant | null = await tenantDao.getTenantById(tenantId);
-        if(!tenant){
-            throw new GraphQLError("ERROR_CANNOT_FIND_TENANT_FOR_SCOPE_ASSIGNMENT");
-        }
-        const scope: Scope | null = await this.getScopeById(scopeId);
-        if(!scope){
-            throw new GraphQLError("ERROR_CANNOT_FIND_SCOPE_TO_ASSIGN_TO_TENANT");
-        }
-        if(accessRuleId){
-            const accessRule: AccessRule | null = await accessRuleDao.getAccessRuleById(accessRuleId);
-            if(!accessRule){
-                throw new GraphQLError("ERROR_CANNOT_FIND_ACCESS_RULE_ID")
-            }
-        }
-        return scopeDao.assignScopeToTenant(tenantId, scopeId, accessRuleId);
-    }
+    // public async assignScopeToTenant(tenantId: string, scopeId: string, accessRuleId: string | null): Promise<TenantScopeRel> {
+    //     const tenant: Tenant | null = await tenantDao.getTenantById(tenantId);
+    //     if(!tenant){
+    //         throw new GraphQLError("ERROR_CANNOT_FIND_TENANT_FOR_SCOPE_ASSIGNMENT");
+    //     }
+    //     const scope: Scope | null = await this.getScopeById(scopeId);
+    //     if(!scope){
+    //         throw new GraphQLError("ERROR_CANNOT_FIND_SCOPE_TO_ASSIGN_TO_TENANT");
+    //     }
+    //     if(accessRuleId){
+    //         const accessRule: AccessRule | null = await accessRuleDao.getAccessRuleById(accessRuleId);
+    //         if(!accessRule){
+    //             throw new GraphQLError("ERROR_CANNOT_FIND_ACCESS_RULE_ID")
+    //         }
+    //     }
+    //     return scopeDao.assignScopeToTenant(tenantId, scopeId, accessRuleId);
+    // }
 
 
     public async removeScopeFromTenant(tenantId: string, scopeId: string): Promise<void> {
         return scopeDao.removeScopeFromTenant(tenantId, scopeId);
     }
 
-    public async assignScopeToClient(tenantId: string, clientId: string, scopeId: string): Promise<ClientTenantScopeRel> {
-        const client: Client | null = await clientDao.getClientById(clientId);
-        if(!client){
-            throw new GraphQLError("ERROR_CLIENT_NOT_FOUND_FOR_SCOPE_ASSIGNMENT");
-        }
-        if(client.tenantId !== tenantId){
-            throw new GraphQLError("ERROR_CLIENT_DOES_NOT_BELONG_TO_TENANT");
-        }
-        const scope: Scope | null = await this.getScopeById(scopeId);
-        if(!scope){
-            throw new GraphQLError("ERROR_SCOPE_ID_NOT_FOUND_FOR_CLIENT_ASSIGNMENT");
-        }
-        // the scope needs to be assigned to the tenant overall, in order to be assigned to
-        // the client
-        const tenantScopes: Array<TenantScopeRel> = await scopeDao.getTenantScopeRel(tenantId);
-        const rel = tenantScopes.find(
-            (t: TenantScopeRel) => t.scopeId === scopeId
-        )
-        if(!rel){
-            throw new GraphQLError("ERROR_SCOPE_IS_NOT_ASSIGNED_TO_THE_TENANT_OF_THIS_CLIENT");
-        }
-        return scopeDao.assignScopeToClient(tenantId, clientId, scopeId);
+    // public async assignScopeToClient(tenantId: string, clientId: string, scopeId: string): Promise<ClientTenantScopeRel> {
+    //     const client: Client | null = await clientDao.getClientById(clientId);
+    //     if(!client){
+    //         throw new GraphQLError("ERROR_CLIENT_NOT_FOUND_FOR_SCOPE_ASSIGNMENT");
+    //     }
+    //     if(client.tenantId !== tenantId){
+    //         throw new GraphQLError("ERROR_CLIENT_DOES_NOT_BELONG_TO_TENANT");
+    //     }
+    //     const scope: Scope | null = await this.getScopeById(scopeId);
+    //     if(!scope){
+    //         throw new GraphQLError("ERROR_SCOPE_ID_NOT_FOUND_FOR_CLIENT_ASSIGNMENT");
+    //     }
+    //     // the scope needs to be assigned to the tenant overall, in order to be assigned to
+    //     // the client
+    //     const tenantScopes: Array<TenantScopeRel> = await scopeDao.getTenantScopeRel(tenantId);
+    //     const rel = tenantScopes.find(
+    //         (t: TenantScopeRel) => t.scopeId === scopeId
+    //     )
+    //     if(!rel){
+    //         throw new GraphQLError("ERROR_SCOPE_IS_NOT_ASSIGNED_TO_THE_TENANT_OF_THIS_CLIENT");
+    //     }
+    //     return scopeDao.assignScopeToClient(tenantId, clientId, scopeId);
         
-    }
+    // }
 
     public async removeScopeFromClient(tenantId: string, clientId: string, scopeId: string): Promise<void> {
         return scopeDao.removeScopeFromClient(tenantId, clientId, scopeId);

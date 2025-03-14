@@ -1,17 +1,17 @@
 import { AuthorizationGroup, AuthorizationGroupUserRel, ObjectSearchResultItem, SearchResultType, Tenant } from "@/graphql/generated/graphql-types";
 import { OIDCContext } from "@/graphql/graphql-context";
 import TenantDao from "@/lib/dao/tenant-dao";
-import { getAuthorizationGroupDaoImpl, getTenantDaoImpl } from "@/utils/dao-utils";
 import { GraphQLError } from "graphql/error/GraphQLError";
 import { randomUUID } from 'crypto'; 
 import GroupDao from "../dao/authorization-group-dao";
 import { SEARCH_INDEX_OBJECT_SEARCH } from "@/utils/consts";
 import { getOpenSearchClient } from "@/lib/data-sources/search";
 import { Client } from "@opensearch-project/opensearch";
+import { DaoImpl } from "../data-sources/dao-impl";
 
 
-const tenantDao: TenantDao = getTenantDaoImpl();
-const groupDao: GroupDao = getAuthorizationGroupDaoImpl();
+const tenantDao: TenantDao = DaoImpl.getInstance().getTenantDao();
+const groupDao: GroupDao = DaoImpl.getInstance().getAuthorizationGroupDao();
 const searchClient: Client = getOpenSearchClient();
 
 class GroupService {

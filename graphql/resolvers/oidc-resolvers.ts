@@ -424,21 +424,21 @@ const resolvers: Resolvers = {
             await scopeService.deleteScope(scopeId);
             return scopeId;
         },
-        assignScopeToTenant: async(_: any, { scopeId, tenantId, accessRuleId }, oidcContext) => {
-            const scopeService: ScopeService = new ScopeService(oidcContext);
-            const rel = await scopeService.assignScopeToTenant(tenantId, scopeId, accessRuleId || null);
-            return rel;
-        },
+        // assignScopeToTenant: async(_: any, { scopeId, tenantId, accessRuleId }, oidcContext) => {
+        //     const scopeService: ScopeService = new ScopeService(oidcContext);
+        //     const rel = await scopeService.assignScopeToTenant(tenantId, scopeId, accessRuleId || null);
+        //     return rel;
+        // },
         removeScopeFromTenant: async(_: any, { scopeId, tenantId }, oidcContext ) => {
             const scopeService: ScopeService = new ScopeService(oidcContext);
             await scopeService.removeScopeFromTenant(tenantId, scopeId);
             return scopeId;
         },
-        assignScopeToClient: async(_: any, { scopeId, clientId, tenantId }, oidcContext) => {
-            const scopeService: ScopeService = new ScopeService(oidcContext);
-            const rel = await scopeService.assignScopeToClient(tenantId, clientId, scopeId);
-            return rel;
-        },
+        // assignScopeToClient: async(_: any, { scopeId, clientId, tenantId }, oidcContext) => {
+        //     const scopeService: ScopeService = new ScopeService(oidcContext);
+        //     const rel = await scopeService.assignScopeToClient(tenantId, clientId, scopeId);
+        //     return rel;
+        // },
         removeScopeFromClient: async(_: any, { scopeId, tenantId, clientId }, oidcContext) => {
             const scopeService: ScopeService = new ScopeService(oidcContext);
             await scopeService.removeScopeFromClient(tenantId, clientId, scopeId);

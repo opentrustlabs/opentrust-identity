@@ -1,12 +1,12 @@
 import { SigningKey, Tenant } from "@/graphql/generated/graphql-types";
-import { getSigningKeysDaoImpl, getTenantDaoImpl } from "@/utils/dao-utils";
 import { GraphQLError } from "graphql/error/GraphQLError";
 import { randomUUID } from 'crypto'; 
 import { OIDCContext } from "@/graphql/graphql-context";
 import { KEY_TYPES, PKCS8_ENCRYPTED_PRIVATE_KEY_HEADER, SIGNING_KEY_STATUS_ACTIVE, SIGNING_KEY_STATUS_REVOKED } from "@/utils/consts";
+import { DaoImpl } from "../data-sources/dao-impl";
 
-const signingKeysDao = getSigningKeysDaoImpl()
-const tenantDao = getTenantDaoImpl();
+const signingKeysDao = DaoImpl.getInstance().getSigningKeysDao()
+const tenantDao = DaoImpl.getInstance().getTenantDao();
 
 class SigningKeysService {
 

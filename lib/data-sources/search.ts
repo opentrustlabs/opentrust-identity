@@ -17,10 +17,9 @@ let client: Client | null = null;
 
 export function getOpenSearchClient(): Client {
     if(client){
-        console.log("client exists");
         return client;
     }
-    console.log("will generate new client");
+
     client = new Client({
         pingTimeout: 15000,
         requestTimeout: 25000,

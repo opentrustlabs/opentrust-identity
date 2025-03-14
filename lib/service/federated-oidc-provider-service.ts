@@ -1,16 +1,17 @@
 import { FederatedOidcProvider, FederatedOidcProviderDomainRel, FederatedOidcProviderTenantRel, ObjectSearchResultItem, SearchResultType, Tenant } from "@/graphql/generated/graphql-types";
 import { OIDCContext } from "@/graphql/graphql-context";
-import { getFederatedOIDCProvicerDaoImpl, getTenantDaoImpl } from "@/utils/dao-utils";
+
 import FederatedOIDCProviderDao from "@/lib/dao/federated-oidc-provider-dao";
 import { GraphQLError } from "graphql/error/GraphQLError";
 import { randomUUID } from 'crypto'; 
 import { FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL, FEDERATED_OIDC_PROVIDER_TYPES_DISPLAY, SEARCH_INDEX_OBJECT_SEARCH } from "@/utils/consts";
 import { Client } from "@opensearch-project/opensearch";
 import { getOpenSearchClient } from "@/lib/data-sources/search";
+import { DaoImpl } from "../data-sources/dao-impl";
 
 const searchClient: Client = getOpenSearchClient();
-const federatedOIDCProviderDao: FederatedOIDCProviderDao = getFederatedOIDCProvicerDaoImpl();
-const tenantDao = getTenantDaoImpl();
+const federatedOIDCProviderDao: FederatedOIDCProviderDao = DaoImpl.getInstance().getFederatedOIDCProvicerDao();
+const tenantDao = DaoImpl.getInstance().getTenantDao();
 
 class FederatedOIDCProviderService {
 

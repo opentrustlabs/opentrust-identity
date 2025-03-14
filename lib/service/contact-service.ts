@@ -1,5 +1,4 @@
 import { OIDCContext } from "@/graphql/graphql-context";
-import { getClientDaoImpl, getContactDaoImpl, getSigningKeysDaoImpl, getTenantDaoImpl } from "@/utils/dao-utils";
 import TenantDao from "../dao/tenant-dao";
 import ClientDao from "../dao/client-dao";
 import ContactDao from "../dao/contact-dao";
@@ -8,12 +7,13 @@ import { Client, Contact, SigningKey, Tenant } from "@/graphql/generated/graphql
 import { randomUUID } from "crypto";
 import { CONTACT_TYPE_FOR_CLIENT, CONTACT_TYPE_FOR_SIGNING_KEY, CONTACT_TYPE_FOR_TENANT } from "@/utils/consts";
 import { GraphQLError } from "graphql";
+import { DaoImpl } from "../data-sources/dao-impl";
 
 
-const tenantDao: TenantDao = getTenantDaoImpl();
-const clientDao: ClientDao = getClientDaoImpl();
-const keyDao: SigningKeysDao = getSigningKeysDaoImpl();
-const contactDao: ContactDao = getContactDaoImpl();
+const tenantDao: TenantDao = DaoImpl.getInstance().getTenantDao();
+const clientDao: ClientDao = DaoImpl.getInstance().getClientDao();
+const keyDao: SigningKeysDao = DaoImpl.getInstance().getSigningKeysDao();
+const contactDao: ContactDao = DaoImpl.getInstance().getContactDao();
 
 
 class ContactService {

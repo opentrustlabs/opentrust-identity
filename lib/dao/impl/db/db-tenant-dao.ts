@@ -16,7 +16,7 @@ import { QueryOrder } from "@mikro-orm/core";
 class DBTenantDao extends TenantDao {
 
         
-    removeLegacyUserMigrationConfiguration(tenantId: string): Promise<void> {
+    public async removeLegacyUserMigrationConfiguration(tenantId: string): Promise<void> {
         throw new Error("Method not implemented.");
     }
 
