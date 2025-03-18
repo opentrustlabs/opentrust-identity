@@ -55,7 +55,7 @@ const AuthenticationGroupDetail: React.FC<AuthenticationGroupDetailProps> = ({ a
                     <Grid2 container size={12} spacing={2}>
                         <Grid2 className="detail-page-subheader" sx={{ backgroundColor: "#1976d2", color: "white", padding: "8px", borderRadius: "2px" }} size={12}>Overview</Grid2>
                         <Grid2 size={12} marginBottom={"16px"}>
-                            <Paper elevation={0} sx={{ padding: "8px" }}>
+                            <Paper elevation={0} sx={{ padding: "8px" }}>                                
                                 <Grid2 container size={12} spacing={2}>
                                     <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
                                         <Grid2 marginBottom={"16px"}>
@@ -70,7 +70,12 @@ const AuthenticationGroupDetail: React.FC<AuthenticationGroupDetailProps> = ({ a
                                     <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
                                         <Grid2 container size={12} marginBottom={"16px"}>
                                             <Grid2 alignContent={"center"} size={10}>Default</Grid2>
-                                            <Grid2 size={2}><Checkbox /></Grid2>
+                                            <Grid2 size={2}>
+                                                <Checkbox 
+                                                    name="defaultGroup"
+                                                    checked={authenticationGroup.defaultGroup}
+                                                />
+                                            </Grid2>
                                         </Grid2>
                                         <Grid2 sx={{textDecoration: "underline"}}>Object ID</Grid2>
                                         <Grid2 container size={12} marginBottom={"16px"}>
@@ -78,7 +83,7 @@ const AuthenticationGroupDetail: React.FC<AuthenticationGroupDetailProps> = ({ a
                                             <Grid2 size={2}><ContentCopyIcon /></Grid2>
                                         </Grid2>                                        
                                     </Grid2>                                    
-                                </Grid2>
+                                </Grid2>                                
                                 <Stack sx={{ marginTop: "8px" }} direction={"row"} flexDirection={"row-reverse"} >
                                     <Button sx={{ border: "solid 1px lightgrey", borderRadius: "4px"}} >Update</Button>
                                 </Stack>
@@ -99,7 +104,7 @@ const AuthenticationGroupDetail: React.FC<AuthenticationGroupDetailProps> = ({ a
                                 </AccordionSummary>
                                 <AccordionDetails>
                                     <AuthenticationGroupUserConfiguration
-                                        authenticationGroupId={authenticationGroup.authenticationGroupId}
+                                        authenticationGroup={authenticationGroup}
                                         tenantId={authenticationGroup.tenantId}
                                         page={1}
                                         perPage={10}

@@ -1,5 +1,5 @@
 "use client";
-import { FederatedOidcProviderDomainRel, RelSearchResultItem, RelSearchResults, SearchResultType } from "@/graphql/generated/graphql-types";
+import { AuthenticationGroup, FederatedOidcProviderDomainRel, RelSearchResultItem, RelSearchResults, SearchResultType } from "@/graphql/generated/graphql-types";
 import { REL_SEARCH_QUERY } from "@/graphql/queries/oidc-queries";
 import { useQuery } from "@apollo/client";
 import React, { useRef } from "react";
@@ -18,14 +18,14 @@ import { MAX_SEARCH_PAGE_SIZE } from "@/utils/consts";
 
 
 export interface AuthenticationGroupUserConfigurationProps {
-    authenticationGroupId: string,
+    authenticationGroup: AuthenticationGroup,
     tenantId: string,
     page: number,
     perPage: number
 }
 
 const AuthenticationGroupUserConfiguration: React.FC<AuthenticationGroupUserConfigurationProps> = ({
-    authenticationGroupId,
+    authenticationGroup,
     tenantId,
     page: p,
     perPage: pp
@@ -51,7 +51,7 @@ const AuthenticationGroupUserConfiguration: React.FC<AuthenticationGroupUserConf
     const { data, loading, error, refetch, previousData } = useQuery(REL_SEARCH_QUERY, {
         variables: {
             relSearchInput: {
-                parentid: authenticationGroupId,
+                parentid: authenticationGroup.authenticationGroupId,
                 childtype: SearchResultType.User,
                 page: p,
                 perPage: perPage,
@@ -67,7 +67,7 @@ const AuthenticationGroupUserConfiguration: React.FC<AuthenticationGroupUserConf
         setPage(newPage + 1);
         refetch({
             relSearchInput: {
-                parentid: authenticationGroupId,
+                parentid: authenticationGroup.authenticationGroupId,
                 childtype: SearchResultType.User,
                 page: (newPage + 1),
                 perPage: perPage,
@@ -83,7 +83,7 @@ const AuthenticationGroupUserConfiguration: React.FC<AuthenticationGroupUserConf
             setPage(1);
             refetch({
                 relSearchInput: {
-                    parentid: authenticationGroupId,
+                    parentid: authenticationGroup.authenticationGroupId,
                     childtype: SearchResultType.User,
                     page: 1,
                     perPage: perPage,
@@ -95,7 +95,7 @@ const AuthenticationGroupUserConfiguration: React.FC<AuthenticationGroupUserConf
             setPage(1);
             refetch({
                 relSearchInput: {
-                    parentid: authenticationGroupId,
+                    parentid: authenticationGroup.authenticationGroupId,
                     childtype: SearchResultType.User,
                     page: 1,
                     perPage: perPage,
@@ -107,164 +107,178 @@ const AuthenticationGroupUserConfiguration: React.FC<AuthenticationGroupUserConf
 
     return (
         <Typography component="div">
-            <Grid2 marginBottom={"16px"} marginTop={"16px"} spacing={2} container size={12}>
-                <Grid2 size={12} display={"inline-flex"} alignItems="center" alignContent={"center"}>
-                    <AddBoxIcon
-                        sx={{ cursor: "pointer" }}
-                        onClick={() => setShowAddDialog(true)}
-                    />
-                    <div style={{ marginLeft: "8px", fontWeight: "bold" }}>Add User</div>
-                </Grid2>
-            </Grid2>
-            <Stack spacing={1} justifyContent={"space-between"} direction={"row"} fontWeight={"bold"} margin={"24px 0px 24px 0px"}>
-                <div style={{ display: "inline-flex", alignItems: "center" }}>
-                    <TextField
-                        label={"Filter users"}
-                        size={"small"}
-                        name={"filter"}
-                        value={filterTerm}
-                        onChange={handleFilterTermChange}
-                        slotProps={{
-                            input: {
-                                endAdornment: (
-                                    <InputAdornment position="end">
-                                        <CloseOutlinedIcon
-                                            sx={{ cursor: "pointer" }}
-                                            onClick={() => { setFilterTerm(""); setPage(1) }}
-                                        />
-                                    </InputAdornment>
-                                )
-                            }
-                        }}
-                    />
-                </div>
-            </Stack>
-            {loading && !previousData &&
-                <DataLoading dataLoadingSize="44vh" color={null} />
-            }
-            {error &&
-                <ErrorComponent message={error.message || "Unknown Error Occurred."} componentSize='lg' />
-            }
-            {errorMessage &&
-                <Grid2 marginBottom={"16px"} size={12} >
-                    <Alert onClose={() => setErrorMessage(null)} severity="error">{errorMessage}</Alert>
+            {authenticationGroup.defaultGroup &&
+                <Grid2 size={12} container spacing={2} marginTop={"16px"}>
+                    <Grid2 size={12}>
+                        For default authentication groups, ALL users who belong to the tenant will also automatically belong to this group. To
+                        select users individually, uncheck the "Default" checkbox above and save your changes.
+                    </Grid2>
                 </Grid2>
             }
-            {showRemoveDialog &&
-                <Dialog
-                    open={showRemoveDialog}
-                    onClose={() => setShowRemoveDialog(false)}
-                >
-                    <DialogContent>
-                        <Typography component="div">
-                            <span>Confirm removal of user: </span><span style={{ fontWeight: "bold" }}>{""}</span>
-                        </Typography>
-                    </DialogContent>
-                    <DialogActions>
-                        <Button
-                            onClick={() => {
-                            }}
-                        >
-                            Cancel
-                        </Button>
-                        <Button
-                            onClick={() => {
-
-                            }}
-                        >
-                            Confirm
-                        </Button>
-                    </DialogActions>
-                </Dialog>
-            }
-            {showAddDialog &&
-                <Dialog
-                    open={showAddDialog}
-                    onClose={() => setShowAddDialog(false)}
-                    maxWidth={"sm"}
-                    fullWidth={true}
-                >
-                    <DialogTitle>Search users</DialogTitle>
-                    <DialogContent>
-                        <Grid2 spacing={2} container size={12}>
-                            {addErrorMessage &&
-                                <Grid2 size={12}>
-                                    <Alert onClose={() => setAddErrorMessage(null)} severity="error">
-                                        <div>{addErrorMessage}</div>
-
-                                    </Alert>
-                                </Grid2>
-                            }
-                            <Grid2 size={12}>
-                                <UserRelSearch
-                                    authnId={authenticationGroupId}
-                                    tenantId={tenantId}
-                                    onUserSelected={
-                                        (userId: string | null) => {
-                                            setUserToAdd(userId);
-                                        }
-                                    }
-                                />
-                            </Grid2>
+            {!authenticationGroup.defaultGroup &&
+                <>
+                    <Grid2 marginBottom={"16px"} marginTop={"16px"} spacing={2} container size={12}>
+                        <Grid2 size={12} display={"inline-flex"} alignItems="center" alignContent={"center"}>
+                            <AddBoxIcon
+                                sx={{ cursor: "pointer" }}
+                                onClick={() => setShowAddDialog(true)}
+                            />
+                            <div style={{ marginLeft: "8px", fontWeight: "bold" }}>Add User</div>
                         </Grid2>
-                    </DialogContent>
-                    <DialogActions>
-                        <Button onClick={() => {
-                            setUserToAdd(null);
-                            setShowAddDialog(false);
-                            setAddErrorMessage(null);
-                        }}>
-                            Cancel
-                        </Button>
-                        <Button
-                            onClick={() => {
+                    </Grid2>
+                    <Stack spacing={1} justifyContent={"space-between"} direction={"row"} fontWeight={"bold"} margin={"24px 0px 24px 0px"}>
+                        <div style={{ display: "inline-flex", alignItems: "center" }}>
+                            <TextField
+                                label={"Filter users"}
+                                size={"small"}
+                                name={"filter"}
+                                value={filterTerm}
+                                onChange={handleFilterTermChange}
+                                slotProps={{
+                                    input: {
+                                        endAdornment: (
+                                            <InputAdornment position="end">
+                                                <CloseOutlinedIcon
+                                                    sx={{ cursor: "pointer" }}
+                                                    onClick={() => { setFilterTerm(""); setPage(1) }}
+                                                />
+                                            </InputAdornment>
+                                        )
+                                    }
+                                }}
+                            />
+                        </div>
+                    </Stack>
+                    {loading && !previousData &&
+                        <DataLoading dataLoadingSize="44vh" color={null} />
+                    }
 
-                            }}
-                            disabled={
-                                userToAdd === null
-                            }
+
+                    {error &&
+                        <ErrorComponent message={error.message || "Unknown Error Occurred."} componentSize='lg' />
+                    }
+                    {errorMessage &&
+                        <Grid2 marginBottom={"16px"} size={12} >
+                            <Alert onClose={() => setErrorMessage(null)} severity="error">{errorMessage}</Alert>
+                        </Grid2>
+                    }
+                    {showRemoveDialog &&
+                        <Dialog
+                            open={showRemoveDialog}
+                            onClose={() => setShowRemoveDialog(false)}
                         >
-                            Submit
-                        </Button>
-                    </DialogActions>
-                </Dialog>
-            }
+                            <DialogContent>
+                                <Typography component="div">
+                                    <span>Confirm removal of user: </span><span style={{ fontWeight: "bold" }}>{""}</span>
+                                </Typography>
+                            </DialogContent>
+                            <DialogActions>
+                                <Button
+                                    onClick={() => {
+                                    }}
+                                >
+                                    Cancel
+                                </Button>
+                                <Button
+                                    onClick={() => {
 
-            <Divider />
-            {loading && previousData &&
-                <UserList
-                    relSearchResults={previousData.relSearch}
-                />
-            }
-            {data &&
-                <UserList
-                    relSearchResults={loading && previousData ? previousData.relSearch : data.relSearch}
-                />
-            }
-            <Grid2 container size={12} spacing={1} marginTop={"16px"} marginBottom={"16px"} >
-                <Grid2 size={12}>
+                                    }}
+                                >
+                                    Confirm
+                                </Button>
+                            </DialogActions>
+                        </Dialog>
+                    }
+                    {showAddDialog &&
+                        <Dialog
+                            open={showAddDialog}
+                            onClose={() => setShowAddDialog(false)}
+                            maxWidth={"sm"}
+                            fullWidth={true}
+                        >
+                            <DialogTitle>Search users</DialogTitle>
+                            <DialogContent>
+                                <Grid2 spacing={2} container size={12}>
+                                    {addErrorMessage &&
+                                        <Grid2 size={12}>
+                                            <Alert onClose={() => setAddErrorMessage(null)} severity="error">
+                                                <div>{addErrorMessage}</div>
+
+                                            </Alert>
+                                        </Grid2>
+                                    }
+                                    <Grid2 size={12}>
+                                        <UserRelSearch
+                                            authnId={authenticationGroup.authenticationGroupId}
+                                            tenantId={tenantId}
+                                            onUserSelected={
+                                                (userId: string | null) => {
+                                                    setUserToAdd(userId);
+                                                }
+                                            }
+                                        />
+                                    </Grid2>
+                                </Grid2>
+                            </DialogContent>
+                            <DialogActions>
+                                <Button onClick={() => {
+                                    setUserToAdd(null);
+                                    setShowAddDialog(false);
+                                    setAddErrorMessage(null);
+                                }}>
+                                    Cancel
+                                </Button>
+                                <Button
+                                    onClick={() => {
+
+                                    }}
+                                    disabled={
+                                        userToAdd === null
+                                    }
+                                >
+                                    Submit
+                                </Button>
+                            </DialogActions>
+                        </Dialog>
+                    }
+
+                    <Divider />
                     {loading && previousData &&
-                        <TablePagination
-                            component={"div"}
-                            page={page - 1}
-                            rowsPerPage={perPage}
-                            count={previousData.relSearch.total}
-                            onPageChange={handlePageChange}
-                            rowsPerPageOptions={[]}
+                        <UserList
+                            relSearchResults={previousData.relSearch}
                         />
                     }
                     {data &&
-                        <TablePagination
-                            component={"div"}
-                            page={page - 1}
-                            rowsPerPage={perPage}
-                            count={data.relSearch.total}
-                            onPageChange={handlePageChange}
-                            rowsPerPageOptions={[]}
+                        <UserList
+                            relSearchResults={loading && previousData ? previousData.relSearch : data.relSearch}
                         />
                     }
-                </Grid2>
-            </Grid2>
+                    <Grid2 container size={12} spacing={1} marginTop={"16px"} marginBottom={"16px"} >
+                        <Grid2 size={12}>
+                            {loading && previousData &&
+                                <TablePagination
+                                    component={"div"}
+                                    page={page - 1}
+                                    rowsPerPage={perPage}
+                                    count={previousData.relSearch.total}
+                                    onPageChange={handlePageChange}
+                                    rowsPerPageOptions={[]}
+                                />
+                            }
+                            {data &&
+                                <TablePagination
+                                    component={"div"}
+                                    page={page - 1}
+                                    rowsPerPage={perPage}
+                                    count={data.relSearch.total}
+                                    onPageChange={handlePageChange}
+                                    rowsPerPageOptions={[]}
+                                />
+                            }
+                        </Grid2>
+                    </Grid2>
+                </>
+            }
         </Typography>
     )
 }
@@ -341,6 +355,7 @@ const UserRelSearch: React.FC<UserRelSearchProps> = ({
                             onUserSelected(null);
                             setSearchTerm(evt.target.value);
                         }}
+                        autoFocus={true}
                         size="small"
                         slotProps={{
                             input: {
@@ -356,7 +371,7 @@ const UserRelSearch: React.FC<UserRelSearchProps> = ({
                         }}
                     />
                 </Grid2>
-                <Grid2 minHeight={"12vh"} sx={{ marginTop: "16px", padding: "8px" }} size={12}>
+                <Grid2 minHeight={"4vh"} sx={{ marginTop: "16px", padding: "8px" }} size={12}>
                     {data && data.relSearch.total > 0 &&
                         <>
                             {data.relSearch.resultlist.map(
