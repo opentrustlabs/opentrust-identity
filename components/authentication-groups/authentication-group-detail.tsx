@@ -12,7 +12,7 @@ import TenantHighlight from "../tenants/tenant-highlight";
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { useMutation } from "@apollo/client";
 import { AUTHENTICATION_GROUP_UPDATE_MUTATION, AUTHENTICATION_GROUP_USER_ADD_MUTATION, AUTHENTICATION_GROUP_USER_REMOVE_MUTATION } from "@/graphql/mutations/oidc-mutations";
-import { AUTHENTICATION_GROUP_DETAIL_QUERY, REL_SEARCH_QUERY } from "@/graphql/queries/oidc-queries";
+import { AUTHENTICATION_GROUP_DETAIL_QUERY } from "@/graphql/queries/oidc-queries";
 import RelationshipConfigurationComponent from "../relationship-config/relationshipt-configuration-component";
 
 
@@ -31,6 +31,7 @@ const AuthenticationGroupDetail: React.FC<AuthenticationGroupDetailProps> = ({ a
         defaultGroup: authenticationGroup.defaultGroup,
         tenantId: authenticationGroup.tenantId,
         authenticationGroupDescription: authenticationGroup.authenticationGroupDescription
+
     }
     // STATE VARIABLES
     const [authnGroupInput, setAuthnGroupInput] = React.useState<AuthenticationGroupUpdateInput>(initInput);
@@ -269,7 +270,7 @@ const AuthenticationGroupDetail: React.FC<AuthenticationGroupDetailProps> = ({ a
                 open={showMutationSnackbar}
                 autoHideDuration={4000}
                 onClose={() => setShowMutationSnackbar(false)}
-                message="Client Updated"
+                message="Authentication Group Updated"
                 anchorOrigin={{horizontal: "center", vertical: "top"}}
             />
         </Typography >
