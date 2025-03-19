@@ -1,9 +1,9 @@
 "use client";
-import { User } from "@/graphql/generated/graphql-types";
+import { User, UserUpdateInput } from "@/graphql/generated/graphql-types";
 import React, { useContext } from "react";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
 import Typography from "@mui/material/Typography";
-import { NAME_ORDER_WESTERN, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
+import { NAME_ORDER_DISPLAY, NAME_ORDER_EASTERN, NAME_ORDER_WESTERN, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import BreadcrumbComponent from "../breadcrumbs/breadcrumbs";
 import { DetailPageContainer, DetailPageMainContentContainer, DetailPageRightNavContainer } from "../layout/detail-page-container";
 import Grid2 from "@mui/material/Grid2";
@@ -11,7 +11,7 @@ import Paper from "@mui/material/Paper";
 import TextField from "@mui/material/TextField";
 import Checkbox from "@mui/material/Checkbox";
 import Stack from "@mui/material/Stack";
-import { Accordion, AccordionDetails, AccordionSummary, Button, Divider } from "@mui/material";
+import { Accordion, AccordionDetails, AccordionSummary, Alert, Autocomplete, Button, Divider, MenuItem, Select } from "@mui/material";
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import AddBoxIcon from '@mui/icons-material/AddBox';
 import DeleteForeverOutlinedIcon from '@mui/icons-material/DeleteForeverOutlined';
@@ -20,6 +20,8 @@ import PeopleIcon from '@mui/icons-material/People';
 import SettingsApplicationsIcon from '@mui/icons-material/SettingsApplications';
 import PolicyIcon from '@mui/icons-material/Policy';
 import Link from "next/link";
+import { COUNTRY_CODES, CountryCodeDef, LANGUAGE_CODES, LanguageCodeDef } from "@/utils/i18n";
+import { getDefaultCountryCodeDef, getDefaultLanguageCodeDef } from "@/utils/client-utils";
 
 export interface UserDetailProps {
     user: User;
@@ -29,7 +31,33 @@ const UserDetail: React.FC<UserDetailProps> = ({
     user
 }) => {
 
+    // CONTEXT VARIABLES
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
+
+    const initInput: UserUpdateInput = {
+        domain: user.domain,
+        email: user.email,
+        emailVerified: user.emailVerified,
+        enabled: user.enabled,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        locked: user.locked,
+        nameOrder: user.nameOrder,
+        userId: user.userId,
+        address: user.address,
+        countryCode: user.countryCode,
+        federatedOIDCProviderSubjectId: user.federatedOIDCProviderSubjectId,
+        middleName: user.middleName,
+        phoneNumber: user.phoneNumber,
+        preferredLanguageCode: user.preferredLanguageCode,
+        twoFactorAuthType: user.twoFactorAuthType
+    }
+    // STATE VARIABLES
+    const [userInput, setUserInput] = React.useState<UserUpdateInput>(initInput);
+    const [markDirty, setMarkDirty] = React.useState<boolean>(false);
+    const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
+    const [showMutationBackdrop, setShowMutationBackdrop] = React.useState<boolean>(false);
+    const [showMutationSnackbar, setShowMutationSnackbar] = React.useState<boolean>(false);
 
     return (
         <Typography component={"div"} >
@@ -58,47 +86,114 @@ const UserDetail: React.FC<UserDetailProps> = ({
                         >
                             Overview
                         </Grid2>
+                        {errorMessage &&
+                            <Alert severity={"error"} onClose={() => setErrorMessage(null)}>{errorMessage}</Alert>
+                        }
                         <Grid2 size={12}>
                             <Paper sx={{ padding: "8px" }} elevation={1}>
                                 <Grid2 container size={12} spacing={2}>                                    
                                     <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
                                         <Grid2 marginBottom={"8px"}>
                                             <div>First Name</div>
-                                            <TextField name="tenantName" id="tenantName" value={""} fullWidth={true} size="small" />
+                                            <TextField name="firstName" id="firstName" 
+                                                value={userInput.firstName}
+                                                onChange={(evt) => {userInput.firstName = evt.target.value; setMarkDirty(true); setUserInput({...userInput})}}
+                                                fullWidth={true} size="small" 
+                                            />
                                         </Grid2>
                                         <Grid2 marginBottom={"8px"}>
                                             <div>Last Name</div>
-                                            <TextField name="tenantDescription" id="tenantDescription" value={""} fullWidth={true} size="small" />
+                                            <TextField name="lastName" id="lastName" 
+                                                value={userInput.lastName} 
+                                                onChange={(evt) => {userInput.lastName = evt.target.value; setMarkDirty(true); setUserInput({...userInput}); }}
+                                                fullWidth={true} size="small" 
+                                            />
                                         </Grid2>
                                     </Grid2>
                                     <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
                                         <Grid2>
                                             <Grid2 paddingLeft={"8px"} marginBottom={"16px"} container size={12}>
                                                 <Grid2 alignContent={"center"} size={10}>Enabled</Grid2>
-                                                <Grid2 size={2}><Checkbox /></Grid2>
+                                                <Grid2 size={2}>
+                                                    <Checkbox 
+                                                        name="enabled"
+                                                        checked={userInput.enabled}
+                                                        onChange={(_, checked) => {
+                                                            userInput.enabled = checked;
+                                                            setMarkDirty(true); 
+                                                            setUserInput({...userInput});
+                                                        }}
+                                                    />
+                                                </Grid2>
                                                 <Grid2 alignContent={"center"} size={10}>Email verified</Grid2>
-                                                <Grid2 size={2}><Checkbox /></Grid2>
+                                                <Grid2 size={2}>
+                                                    <Checkbox 
+                                                        name="emailVerified"
+                                                        checked={userInput.emailVerified}
+                                                        onChange={(_, checked) => {
+                                                            userInput.emailVerified = checked;
+                                                            setMarkDirty(true); 
+                                                            setUserInput({...userInput});
+                                                        }}
+                                                    />
+                                                </Grid2>
                                                 <Grid2 alignContent={"center"} size={10}>Locked</Grid2>
-                                                <Grid2 size={2}><Checkbox /></Grid2>
+                                                <Grid2 size={2}>
+                                                    <Checkbox 
+                                                        name="locked"
+                                                        checked={userInput.locked}
+                                                        onChange={(_, checked) => {
+                                                            userInput.locked = checked;
+                                                            setMarkDirty(true); 
+                                                            setUserInput({...userInput});
+                                                        }}                                                    
+                                                    />
+                                                </Grid2>
                                             </Grid2>
                                         </Grid2>
                                     </Grid2>                                    
                                     <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Middle Name</div>
-                                            <TextField name="tenantType" id="tenantType" value={""} fullWidth={true} size="small" />
+                                            <TextField name="middleName" id="middleName" 
+                                                value={""} 
+                                                onChange={(evt) => {userInput.middleName = evt.target.value; setMarkDirty(true); setUserInput({...userInput}); }}
+                                                fullWidth={true} size="small" 
+                                            />
                                         </Grid2>
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Name Order</div>
-                                            <TextField name="tenantType" id="tenantType" value={""} fullWidth={true} size="small" />
+                                            <Select 
+                                                name="nameOrder"
+                                                value={userInput.nameOrder}
+                                                onChange={(evt) => {
+                                                    userInput.nameOrder = evt.target.value;
+                                                    setMarkDirty(true); 
+                                                    setUserInput({...userInput});
+                                                }}
+                                                size="small"
+                                                fullWidth={true}
+                                            >
+                                                <MenuItem value={NAME_ORDER_EASTERN}>{NAME_ORDER_DISPLAY.get(NAME_ORDER_EASTERN)}</MenuItem>
+                                                <MenuItem value={NAME_ORDER_WESTERN}>{NAME_ORDER_DISPLAY.get(NAME_ORDER_WESTERN)}</MenuItem>
+
+                                            </Select>
                                         </Grid2>
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Email</div>
-                                            <TextField name="tenantType" id="tenantType" value={""} fullWidth={true} size="small" />
+                                            <TextField name="email" id="email" 
+                                                value={userInput.email} 
+                                                onChange={(evt) => {userInput.email = evt.target.value; setMarkDirty(true); setUserInput({...userInput}); }}
+                                                fullWidth={true} size="small" 
+                                            />
                                         </Grid2>
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Phone Number</div>
-                                            <TextField name="tenantType" id="tenantType" value={""} fullWidth={true} size="small" />
+                                            <TextField name="phoneNumber" id="phoneNumber" 
+                                                value={userInput.phoneNumber} 
+                                                onChange={(evt) => {userInput.phoneNumber = evt.target.value; setMarkDirty(true); setUserInput({...userInput}); }}
+                                                fullWidth={true} size="small" 
+                                            />
                                         </Grid2>
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Address</div>
@@ -108,15 +203,57 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                     <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
                                         <Grid2 size={12} marginBottom={"16px"}>
                                             <div>Country</div>
-                                            <TextField name="tenantType" id="tenantType" value={"Italy"} fullWidth={true} size="small" />
+                                            <Autocomplete
+                                                id="countryCode"                                                
+                                                sx={{paddingTop: "8px"}}
+                                                size="small"
+                                                renderInput={(params) => <TextField {...params} label="" />}
+                                                options={
+                                                    [{countryCode: "", country: ""}, ...COUNTRY_CODES].map(
+                                                        (cc: CountryCodeDef) => {
+                                                            return {id: cc.countryCode, label: cc.country}
+                                                        }
+                                                    )
+                                                }                        
+                                                value={getDefaultCountryCodeDef(userInput.countryCode || "")}
+                                                onChange={ (_, value: any) => {                            
+                                                    // tenantAnonymousUserConfigInput.defaultcountrycode = value ? value.id : "";
+                                                    // setTenantAnonymousUserConfigInput({ ...tenantAnonymousUserConfigInput });
+                                                    setMarkDirty(true);
+                                                }}                        
+                                            />
+                                            
                                         </Grid2>
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Preferred Language</div>
-                                            <TextField name="tenantType" id="tenantType" value={"Italian"} fullWidth={true} size="small" />
+                                            <Autocomplete
+                                                id="defaultLanguage"                                                
+                                                sx={{paddingTop: "8px"}}
+                                                size="small"
+                                                renderInput={(params) => <TextField {...params} label="" />}
+                                                options={
+                                                    [{languageCode: "", language: ""}, ...LANGUAGE_CODES].map(
+                                                        (lc: LanguageCodeDef) => {
+                                                            return {id: lc.languageCode, label: lc.language}
+                                                        }
+                                                    )
+                                                }                        
+                                                value={getDefaultLanguageCodeDef(userInput.preferredLanguageCode || "")}
+                                                onChange={ (_, value: any) => {                                  
+                                                    // tenantAnonymousUserConfigInput.defaultlangugecode = value ? value.id : "";
+                                                    // setTenantAnonymousUserConfigInput({ ...tenantAnonymousUserConfigInput });
+                                                    setMarkDirty(true);
+                                                }}                        
+                                            />
                                         </Grid2>
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Federated OIDC Provider Subject ID</div>
-                                            <TextField disabled={true} name="tenantType" id="tenantType" value={""} fullWidth={true} size="small" />
+                                            <TextField disabled={true} 
+                                                name="federatedOIDCProviderSubjectId" 
+                                                id="federatedOIDCProviderSubjectId" 
+                                                value={userInput.federatedOIDCProviderSubjectId} 
+                                                fullWidth={true} size="small" 
+                                            />
                                         </Grid2>
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Multi-factor Authorization</div>
@@ -130,6 +267,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                 </Stack>
                             </Paper>
                         </Grid2>
+
                         <Grid2 size={12} marginBottom={"16px"}>
                             <Accordion defaultExpanded={true}  >
                                 <AccordionSummary

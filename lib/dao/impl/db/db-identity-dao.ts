@@ -263,6 +263,15 @@ class DBIdentityDao extends IdentityDao {
         return Promise.resolve(user);
     }
 
+    public async unlockUser(userId: string): Promise<void> {
+        const user: User | null = await this.getUserBy("id", userId);
+        if(user){
+            user.locked = false;
+            this.updateUser(user);
+        }
+        return Promise.resolve();
+    }
+
     public async deleteUser(userId: string): Promise<void> {
         throw new Error("Method not implemented.");
     }

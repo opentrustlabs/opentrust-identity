@@ -10,6 +10,7 @@ import { NAME_ORDER_WESTERN, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_POST, SCOPE_USE
 import SearchService from "@/lib/service/search-service";
 import { GraphQLError } from "graphql";
 import ContactService from "@/lib/service/contact-service";
+import IdentitySerivce from "@/lib/service/identity-service";
 
 
 const resolvers: Resolvers = {
@@ -44,24 +45,8 @@ const resolvers: Resolvers = {
             return profile;
         },
         getUserById: (_, { userId }, oidcContext) => {
-            const user: User = {
-                domain: "charter.net",
-                email: "alessandro.barbero@charter.net",
-                emailVerified: true,
-                enabled: true,
-                firstName: "Alessandro",
-                lastName: "Barbero",
-                locked: false,
-                nameOrder: NAME_ORDER_WESTERN,
-                userId: "23478928374982734",
-                address: "118 Via Milano",
-                countryCode: "IT",
-                preferredLanguageCode: "it",
-                federatedOIDCProviderSubjectId: "",
-                middleName: "Ricardo",
-                twoFactorAuthType: "NONE"
-            }
-            return user;
+            const identityService: IdentitySerivce = new IdentitySerivce(oidcContext);
+            return identityService.getUserById(userId);            
         },
         search: (_, { searchInput }, oidcContext) => {
             const searchService: SearchService = new SearchService(oidcContext);

@@ -503,6 +503,10 @@ export const NAME_ORDERS=[
     NAME_ORDER_EASTERN,
     NAME_ORDER_WESTERN
 ];
+export const NAME_ORDER_DISPLAY: Map<string, string> = new Map([
+    [NAME_ORDER_EASTERN, "Eastern name order"],
+    [NAME_ORDER_WESTERN, "Western name order"]
+]);
 
 export const KEY_TYPE_RSA="RSA";
 export const KEY_TYPE_EC="EC";

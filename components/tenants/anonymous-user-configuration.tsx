@@ -12,6 +12,7 @@ import { TENANT_ANONYMOUS_USER_CONFIGURATION_QUERY } from "@/graphql/queries/oid
 import { TENANT_ANONYMOUS_USER_CONFIGURATION_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import Autocomplete from "@mui/material/Autocomplete";
 import { COUNTRY_CODES, CountryCodeDef, LANGUAGE_CODES, LanguageCodeDef } from "@/utils/i18n";
+import { getDefaultCountryCodeDef, getDefaultLanguageCodeDef } from "@/utils/client-utils";
 
 
 export interface AnonymousUserConfigurationProps {
@@ -76,44 +77,6 @@ const AnonymousUserConfiguration: React.FC<AnonymousUserConfigurationProps> = ({
         }
     });
 
-    const getDefaultCountryCodeDef = (countryCode: string) => {
-        let retVal = {
-            id: "",
-            label: ""
-        };
-        if(allowAnonymousUsers){
-            const ccDef: CountryCodeDef | undefined = COUNTRY_CODES.find(
-                (cc: CountryCodeDef) => cc.countryCode === countryCode
-            )
-            if(ccDef){
-                retVal = {
-                    id: ccDef.countryCode,
-                    label: ccDef.country
-                }
-            }
-        }
-        return retVal;        
-    }
-
-    const getDefaultLanguageCodeDef = (languageCode: string) => {
-        let retVal = {
-            id: "",
-            label: ""
-        }
-        if(allowAnonymousUsers){
-        const lDef: LanguageCodeDef | undefined = LANGUAGE_CODES.find(
-            (lc: LanguageCodeDef) => lc.languageCode === languageCode
-        );
-        if(lDef){
-            retVal = {
-                id: lDef.languageCode,
-                label: lDef.language
-            }
-        }
-        }
-        return retVal;
-        
-    }
 
     if (loading) return <DataLoading dataLoadingSize="md" color={null} />
     if (error) return <ErrorComponent message={error.message} componentSize='md' />
@@ -142,7 +105,7 @@ const AnonymousUserConfiguration: React.FC<AnonymousUserConfigurationProps> = ({
                                 }
                             )
                         }                        
-                        value={getDefaultCountryCodeDef(tenantAnonymousUserConfigInput.defaultcountrycode || "")}
+                        value={ allowAnonymousUsers ? getDefaultCountryCodeDef(tenantAnonymousUserConfigInput.defaultcountrycode || "" ): {id: "", label: ""}}
                         onChange={ (_, value: any) => {                            
                             tenantAnonymousUserConfigInput.defaultcountrycode = value ? value.id : "";
                             setTenantAnonymousUserConfigInput({ ...tenantAnonymousUserConfigInput });
@@ -165,7 +128,7 @@ const AnonymousUserConfiguration: React.FC<AnonymousUserConfigurationProps> = ({
                                 }
                             )
                         }                        
-                        value={getDefaultLanguageCodeDef(tenantAnonymousUserConfigInput.defaultlangugecode || "")}
+                        value={allowAnonymousUsers ? getDefaultLanguageCodeDef(tenantAnonymousUserConfigInput.defaultlangugecode || ""): {id: "", label: ""}}
                         onChange={ (_, value: any) => {                                  
                             tenantAnonymousUserConfigInput.defaultlangugecode = value ? value.id : "";
                             setTenantAnonymousUserConfigInput({ ...tenantAnonymousUserConfigInput });

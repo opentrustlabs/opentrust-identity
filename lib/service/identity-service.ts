@@ -55,6 +55,10 @@ class IdentitySerivce {
         
     }
 
+    public async getUserById(userId: string): Promise<User | null> {
+        return identityDao.getUserBy("id", userId);
+    }
+
     public async createUser(userCreateInput: UserCreateInput, tenantId: string): Promise<User>{
         const tenant: Tenant | null = await tenantDao.getTenantById(tenantId);
         if(!tenant){
@@ -81,11 +85,28 @@ class IdentitySerivce {
         return Promise.resolve(true);
     }
 
+    public async updateUser(user: User): Promise<User> {
+        
+        const existingUser: User | null = await identityDao.getUserBy("id", user.userId);
+        if(!user){
+            throw new GraphQLError("ERROR_USER_DOES_NOT_EXIST");
+        }
+
+
+
+        await identityDao.updateUser(user);
+
+        return user;
+
+    }
 
     protected async _createUser(userCreateInput: UserCreateInput, tenant: Tenant, enabled: boolean): Promise<User>  {
 
+        const domain: string = userCreateInput.email.substring(
+            userCreateInput.email.indexOf("@") + 1
+        )
         const user: User = {
-            domain: "",
+            domain: domain,
             email: userCreateInput.email,
             emailVerified: userCreateInput.emailVerified,
             enabled: enabled,

@@ -52,6 +52,8 @@ abstract class IdentityDao {
 
     abstract updateUser(user: User): Promise<User>;
 
+    abstract unlockUser(userId: string): Promise<void>;
+
     abstract deleteUser(userId: string): Promise<void>;    
 
     abstract passwordProhibited(password: string): Promise<boolean>;
