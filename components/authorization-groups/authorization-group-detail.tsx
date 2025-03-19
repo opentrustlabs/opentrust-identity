@@ -12,7 +12,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import PersonIcon from '@mui/icons-material/Person';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import TenantHighlight from "../tenants/tenant-highlight";
-import RelationshipConfigurationComponent from "../relationship-config/relationshipt-configuration-component";
+import RelationshipConfigurationComponent from "../relationship-config/relationship-configuration-component";
 import { useMutation } from "@apollo/client";
 import { AUTHORIZATION_GROUP_UPDATE_MUTATION, AUTHORIZATION_GROUP_USER_ADD_MUTATION, AUTHORIZATION_GROUP_USER_REMOVE_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import { AUTHORIZATION_GROUP_DETAIL_QUERY } from "@/graphql/queries/oidc-queries";

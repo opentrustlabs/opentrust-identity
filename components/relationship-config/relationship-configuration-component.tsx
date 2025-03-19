@@ -119,6 +119,11 @@ const RelationshipConfigurationComponent: React.FC<RelationshipConfigurationComp
         }
     }
 
+    // For user names, 
+    const usernameFormatter = (name: string): string => {
+        return name.replace(/\s+/, ", ");        
+    }
+
     return (
         <Typography component="div">
             <Grid2 marginBottom={"16px"} marginTop={"16px"} spacing={2} container size={12}>
@@ -265,6 +270,7 @@ const RelationshipConfigurationComponent: React.FC<RelationshipConfigurationComp
                         seIdToRemove(id);
                         setShowRemoveDialog(true);
                     }}
+                    nameFormatter={relSearchInput.childtype === SearchResultType.User ? usernameFormatter : undefined}
                 />
             }
             {data &&
@@ -275,6 +281,7 @@ const RelationshipConfigurationComponent: React.FC<RelationshipConfigurationComp
                         seIdToRemove(id);
                         setShowRemoveDialog(true);
                     }}
+                    nameFormatter={relSearchInput.childtype === SearchResultType.User ? usernameFormatter : undefined}
                 />
             }
             <Grid2 container size={12} spacing={1} marginTop={"16px"} marginBottom={"16px"} >
@@ -451,12 +458,14 @@ const RelSearch: React.FC<RelSearchProps> = ({
 interface RelListProps {
     relSearchResults: RelSearchResults,
     noObjectsFoundText: string,
-    removeRelAction: (id: string) => void
+    removeRelAction: (id: string) => void,
+    nameFormatter?: (name: string) => string
 }
 const RelList: React.FC<RelListProps> = ({
     relSearchResults,
     noObjectsFoundText,
-    removeRelAction
+    removeRelAction,
+    nameFormatter
 }) => {
 
     return (
@@ -468,7 +477,7 @@ const RelList: React.FC<RelListProps> = ({
                             <React.Fragment key={item.childid}>
                                 <Grid2 size={12}><Divider /></Grid2>
                                 <Grid2 size={11}>
-                                    {item.childname}
+                                    { nameFormatter ? nameFormatter(item.childname) : item.childname}
                                 </Grid2>
                                 <Grid2 size={1}>
                                     <RemoveCircleOutlineIcon
