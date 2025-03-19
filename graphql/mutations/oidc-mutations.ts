@@ -343,7 +343,7 @@ export const AUTHENTICATION_GROUP_USER_REMOVE_MUTATION = gql(`
 
 export const AUTHORIZATION_GROUP_CREATE_MUTATION = gql(`
     mutation createAuthorizationGroup($groupInput: AuthorizationGroupCreateInput!) {
-        createAuthenticationGroup(groupInput: $groupInput) {
+        createAuthorizationGroup(groupInput: $groupInput) {
             tenantId
             groupId
             groupName

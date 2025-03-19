@@ -11,6 +11,7 @@ import NewClientDialog from "./new-client-dialog";
 import NewOIDCProviderDialog from "./new-oidc-provider-dialog";
 import NewSigningKeyDialog from "./new-signing-key-dialog";
 import NewAuthenticationGroupDialog from "./new-authentication-group-dialog";
+import NewAuthorizationGroupDialog from "./new-authorization-group-dialog";
 
 export interface CreateNewSelectorProps {
     open: boolean,
@@ -92,7 +93,17 @@ const CreateNewDialog: React.FC<CreateNewSelectorProps> = ({
                     />
                 }
                 {createNewType === "authorization-group" && selectedTenant !== null &&
-                    <div>You want to create a new authorization-group</div>
+                    <NewAuthorizationGroupDialog
+                        tenantId={selectedTenant}
+                        onCancel={onCancel}
+                        onClose={onClose}
+                        onCreateEnd={() => {
+                            setShowMutationBackdrop(false);                            
+                        }}
+                        onCreateStart={() => {
+                            setShowMutationBackdrop(true);
+                        }}
+                    />
                 }
                 {createNewType === "authentication-group" && selectedTenant !== null &&
                     <NewAuthenticationGroupDialog
