@@ -848,9 +848,9 @@ input SearchInput {
 input RelSearchInput {
     term: String
     owningtenantid: String
-    parenttype: String
+    parenttype: SearchResultType
     parentid: String  
-    childtype: String
+    childtype: SearchResultType
     childid: String 
     page: Int!
     perPage: Int!

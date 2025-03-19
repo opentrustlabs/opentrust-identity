@@ -142,7 +142,8 @@ class AuthenticationGroupService {
         await searchClient.index({
             id: `${authenticationGroupId}::${userId}`,
             index: SEARCH_INDEX_REL_SEARCH,
-            body: document
+            body: document,
+            refresh: "wait_for"
         });
 
         return r;
@@ -154,7 +155,8 @@ class AuthenticationGroupService {
 
         await searchClient.delete({
             id: `${authenticationGroupId}::${userId}`,
-            index: SEARCH_INDEX_REL_SEARCH
+            index: SEARCH_INDEX_REL_SEARCH,
+            refresh: "wait_for"
         })
 
         return Promise.resolve();

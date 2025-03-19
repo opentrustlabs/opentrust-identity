@@ -169,7 +169,7 @@ class DBIdentityDao extends IdentityDao {
             where.email = value;
         }
         else if(userLookupType === "id"){
-            where.id = value;
+            where.userId = value;
         }
         else if(userLookupType === "phone"){
             where.phoneNumber = value;

@@ -215,7 +215,7 @@ const NewSigningKeyDialog: React.FC<NewSigningKeyDialogProps> = ({
                                 <input type="file" accept=".pem" id="privateKey" onChange={(evt) => handlePrivateKeyFileUpload(evt)} />                                
                             </Grid2>
                             <Grid2 marginBottom={"16px"}>
-                                <div>Passphrase (if the key is encrypted)</div>
+                                <div>Passphrase (if the private key is encrypted)</div>
                                 <TextField
                                     required={signingKeyInput.privateKeyPkcs8 !== "" && signingKeyInput.privateKeyPkcs8.startsWith(PKCS8_ENCRYPTED_PRIVATE_KEY_HEADER) }
                                     name="keyPassphrase" 

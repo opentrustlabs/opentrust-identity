@@ -115,8 +115,8 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                             <TextField name="tenantType" id="tenantType" value={"Italian"} fullWidth={true} size="small" />
                                         </Grid2>
                                         <Grid2 marginBottom={"16px"}>
-                                            <div>Federated OIDC Provider ID</div>
-                                            <TextField name="tenantType" id="tenantType" value={""} fullWidth={true} size="small" />
+                                            <div>Federated OIDC Provider Subject ID</div>
+                                            <TextField disabled={true} name="tenantType" id="tenantType" value={""} fullWidth={true} size="small" />
                                         </Grid2>
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Multi-factor Authorization</div>

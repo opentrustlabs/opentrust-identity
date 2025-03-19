@@ -315,13 +315,28 @@ export const AUTHENTICATION_GROUP_CREATE_MUTATION = gql(`
 `);
 
 export const AUTHENTICATION_GROUP_UPDATE_MUTATION = gql(`
-    mutation createAuthenticationGroup($authenticationGroupInput: AuthenticationGroupUpdateInput!) {
-        createAuthenticationGroup(authenticationGroupInput: $authenticationGroupInput) {
+    mutation updateAuthenticationGroup($authenticationGroupInput: AuthenticationGroupUpdateInput!) {
+        updateAuthenticationGroup(authenticationGroupInput: $authenticationGroupInput) {
             tenantId
             authenticationGroupId
             authenticationGroupName
             authenticationGroupDescription
             defaultGroup
         }
+    }
+`);
+
+export const AUTHENTICATION_GROUP_USER_ADD_MUTATION = gql(`
+    mutation addUserToAuthenticationGroup($authenticationGroupId: String!, $userId: String!) {
+        addUserToAuthenticationGroup(authenticationGroupId: $authenticationGroupId, userId: $userId){
+            userId
+            authenticationGroupId
+        }
+    }
+`);
+
+export const AUTHENTICATION_GROUP_USER_REMOVE_MUTATION = gql(`
+    mutation removeUserFromAuthenticationGroup($authenticationGroupId: String!, $userId: String!) {
+        removeUserFromAuthenticationGroup(authenticationGroupId: $authenticationGroupId, userId: $userId)
     }
 `);
