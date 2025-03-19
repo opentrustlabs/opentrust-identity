@@ -185,6 +185,9 @@ export const AUTHORIZATION_GROUP_DETAIL_QUERY = gql(`
         getAuthorizationGroupById(groupId: $groupId) {
             groupId
             groupName
+            groupDescription
+            tenantId
+            allowForAnonymousUsers
             default
         }
     }

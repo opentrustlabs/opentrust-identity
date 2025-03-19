@@ -340,3 +340,41 @@ export const AUTHENTICATION_GROUP_USER_REMOVE_MUTATION = gql(`
         removeUserFromAuthenticationGroup(authenticationGroupId: $authenticationGroupId, userId: $userId)
     }
 `);
+
+export const AUTHORIZATION_GROUP_CREATE_MUTATION = gql(`
+    mutation createAuthorizationGroup($groupInput: AuthorizationGroupCreateInput!) {
+        createAuthenticationGroup(groupInput: $groupInput) {
+            tenantId
+            groupId
+            groupName
+        }
+    }
+`);
+
+export const AUTHORIZATION_GROUP_UPDATE_MUTATION = gql(`
+    mutation updateAuthorizationGroup($groupInput: AuthorizationGroupUpdateInput!) {
+        updateAuthorizationGroup(groupInput: $groupInput) {
+            tenantId
+            groupId
+            groupName
+            groupDescription
+            default
+            allowForAnonymousUsers
+        }
+    }
+`);
+
+export const AUTHORIZATION_GROUP_USER_ADD_MUTATION = gql(`
+    mutation addUserToAuthorizationGroup($groupId: String!, $userId: String!) {
+        addUserToAuthorizationGroup(groupId: $groupId, userId: $userId){
+            userId
+            groupId
+        }
+    }
+`);
+
+export const AUTHORIZATION_GROUP_USER_REMOVE_MUTATION = gql(`
+    mutation removeUserFromAuthorizationGroup($groupId: String!, $userId: String!) {
+        removeUserFromAuthorizationGroup(groupId: $groupId, userId: $userId)
+    }
+`);

@@ -1,18 +1,20 @@
-import { AuthorizationGroup, AuthorizationGroupUserRel, ObjectSearchResultItem, SearchResultType, Tenant } from "@/graphql/generated/graphql-types";
+import { AuthorizationGroup, AuthorizationGroupUserRel, ObjectSearchResultItem, RelSearchResultItem, SearchResultType, Tenant, User, UserTenantRel } from "@/graphql/generated/graphql-types";
 import { OIDCContext } from "@/graphql/graphql-context";
 import TenantDao from "@/lib/dao/tenant-dao";
 import { GraphQLError } from "graphql/error/GraphQLError";
 import { randomUUID } from 'crypto'; 
 import GroupDao from "../dao/authorization-group-dao";
-import { SEARCH_INDEX_OBJECT_SEARCH } from "@/utils/consts";
+import { NAME_ORDER_EASTERN, NAME_ORDER_WESTERN, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH } from "@/utils/consts";
 import { getOpenSearchClient } from "@/lib/data-sources/search";
 import { Client } from "@opensearch-project/opensearch";
 import { DaoImpl } from "../data-sources/dao-impl";
+import IdentityDao from "../dao/identity-dao";
 
 
 const tenantDao: TenantDao = DaoImpl.getInstance().getTenantDao();
 const groupDao: GroupDao = DaoImpl.getInstance().getAuthorizationGroupDao();
 const searchClient: Client = getOpenSearchClient();
+const identityDao: IdentityDao = DaoImpl.getInstance().getIdentityDao();
 
 class GroupService {
 
@@ -86,11 +88,53 @@ class GroupService {
     }
 
     public async addUserToGroup(userId: string, groupId: string): Promise<AuthorizationGroupUserRel> {
-        throw new Error("Method not implemented.");
+        const user: User | null = await identityDao.getUserBy("id", userId);
+        // Checks:
+        // 1.   Does the user exist
+        if(!user){
+            throw new GraphQLError("ERROR_USER_DOES_NOT_EXIST");
+        }
+        // 2.   Does the authz group exist
+        const authzGroup: AuthorizationGroup | null = await groupDao.getAuthorizationGroupById(groupId);
+        if(!authzGroup){
+            throw new GraphQLError("ERROR_AUTHORIZATION_GROUP_DOES_NOT_EXIST");
+        }
+        // 3.   Is the user a member of the tenant?
+        const userTenantRel: UserTenantRel | null = await identityDao.getUserTenantRel(authzGroup.tenantId, userId);
+        if(!userTenantRel){
+            throw new GraphQLError("ERROR_INVALID_TENANT_FOR_USER");
+        }
+
+        const r: AuthorizationGroupUserRel = await groupDao.addUserToAuthorizationGroup(userId, groupId);
+
+        const document: RelSearchResultItem = {
+            childid: user.userId,
+            childname: user.nameOrder === NAME_ORDER_EASTERN ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`,
+            childtype: SearchResultType.User,
+            owningtenantid: authzGroup.tenantId,
+            parentid: authzGroup.groupId,
+            parenttype: SearchResultType.AuthenticationGroup,
+            childdescription: user.email
+        }
+        await searchClient.index({
+            id: `${groupId}::${userId}`,
+            index: SEARCH_INDEX_REL_SEARCH,
+            body: document,
+            refresh: "wait_for"
+        });
+
+        return Promise.resolve(r);
+        
     }
     
     public async removeUserFromGroup(userId: string, groupId: string): Promise<void> {
-        throw new Error("Method not implemented.");
+        await groupDao.removeUserFromAuthorizationGroup(userId, groupId);
+        
+        await searchClient.delete({
+            id: `${groupId}::${userId}`,
+            index: SEARCH_INDEX_REL_SEARCH,
+            refresh: "wait_for"
+        });  
     }
 }
 
