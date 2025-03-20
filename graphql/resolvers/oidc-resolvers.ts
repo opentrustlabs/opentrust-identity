@@ -11,6 +11,7 @@ import SearchService from "@/lib/service/search-service";
 import { GraphQLError } from "graphql";
 import ContactService from "@/lib/service/contact-service";
 import IdentitySerivce from "@/lib/service/identity-service";
+import { t } from "@mikro-orm/core";
 
 
 const resolvers: Resolvers = {
@@ -47,6 +48,10 @@ const resolvers: Resolvers = {
         getUserById: (_, { userId }, oidcContext) => {
             const identityService: IdentitySerivce = new IdentitySerivce(oidcContext);
             return identityService.getUserById(userId);            
+        },
+        getUserTenantRels: (_, { userId }, oidcContext) => {
+            const identityService: IdentitySerivce = new IdentitySerivce(oidcContext);
+            return identityService.getUserTenantRels(userId);
         },
         search: (_, { searchInput }, oidcContext) => {
             const searchService: SearchService = new SearchService(oidcContext);
@@ -744,7 +749,19 @@ const resolvers: Resolvers = {
             }
             await service.updateUser(user);
             return user;
-
+        },
+        assignUserToTenant: async(_: any, { tenantId, userId, relType }, oidcContext) => {
+            const service: IdentitySerivce = new IdentitySerivce(oidcContext);
+            return service.assignUserToTenant(tenantId, userId, relType);
+        },
+        updateUserTenantRel: async(_: any, { tenantId, userId, relType }, oidcContext) => {
+            const service: IdentitySerivce = new IdentitySerivce(oidcContext);
+            return service.assignUserToTenant(tenantId, userId, relType);
+        },
+        removeUserFromTenant: async(_: any, { tenantId, userId }, oidcContext) => {
+            const service: IdentitySerivce = new IdentitySerivce(oidcContext);
+            await service.removeUserFromTenant(tenantId, userId);
+            return userId;
         }
     }
 }

@@ -27,6 +27,7 @@ import { getDefaultCountryCodeDef, getDefaultLanguageCodeDef } from "@/utils/cli
 import { useMutation } from "@apollo/client";
 import { USER_UPDATE_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import { USER_DETAIL_QUERY } from "@/graphql/queries/oidc-queries";
+import UserTenantConfiguration from "./user-tenant-configuration";
 
 export interface UserDetailProps {
     user: User;
@@ -469,45 +470,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                 </AccordionDetails>
                             </Accordion>
                         </Grid2>
-                        <Grid2 size={12} marginBottom={"16px"}>
-                            <Accordion >
-                                <AccordionSummary
-                                    expandIcon={<ExpandMoreIcon />}
-                                    id={"redirect-uri-configuration"}
-                                    sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center" }}
-
-                                >
-                                    <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-                                        <PolicyIcon /><div style={{ marginLeft: "8px" }}>Access Control</div>
-                                    </div>
-                                </AccordionSummary>
-                                <AccordionDetails>
-                                    <Typography component={"div"} fontWeight={"bold"} >
-                                        <Grid2 container size={12} spacing={1} marginBottom={"16px"} >
-                                            <Stack spacing={1} justifyContent={"space-between"} direction={"row"} fontWeight={"bold"} fontSize={"0.95em"} margin={"8px 0px 24px 0px"}>
-                                                <div style={{ display: "inline-flex", alignItems: "center" }}>
-                                                    <AddBoxIcon sx={{ marginRight: "8px", cursor: "pointer" }} />
-                                                    <span>Add Scope</span>
-                                                </div>
-                                            </Stack>
-                                        </Grid2>
-                                    </Typography>
-                                    <Divider></Divider>
-                                    {["Read Reports in QA", "Update Reports in QA", "Delete Reports in QA"].map(
-                                        (uri: string) => (
-                                            <Typography key={`${uri}`} component={"div"} fontSize={"0.9em"} fontWeight={"bold"}>
-                                                <Divider></Divider>
-                                                <Grid2 margin={"8px 0px 8px 0px"} container size={12} spacing={1}>
-                                                    <Grid2 size={11}><Link href={`/123412341234/authentication-groups/1234372987349`}>{uri}</Link></Grid2>
-                                                    <Grid2 size={1}><DeleteForeverOutlinedIcon /></Grid2>
-                                                </Grid2>
-                                            </Typography>
-                                        )
-                                    )}
-
-                                </AccordionDetails>
-                            </Accordion>
-                        </Grid2>
+                        
                         <Grid2 size={12}>
                             <Accordion defaultExpanded={false}  >
                                 <AccordionSummary
@@ -521,27 +484,18 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                     </div>
                                 </AccordionSummary>
                                 <AccordionDetails>
-                                    <Typography component={"div"} fontWeight={"bold"} >
-                                        <Grid2 container size={12} spacing={1} marginBottom={"16px"} >
-                                            <Grid2 size={8}>Tenant Name</Grid2>
-                                            <Grid2 size={3}>Membership Type</Grid2>
-                                            <Grid2 size={1}></Grid2>                                                                                        
-                                        </Grid2>
-                                    </Typography>
-                                    <Divider />
-                                    {["Ameran Prod Tenant", "WEB UI Tenant"].map(                                            
-                                        (name: string, idx: number) => (
-                                            <Typography key={`${name}`} component={"div"} fontSize={"0.9em"} fontWeight={"bold"}>
-                                                <Divider></Divider>
-                                                <Grid2 margin={"8px 0px 8px 0px"} container size={12} spacing={1}>
-                                                    <Grid2 size={8}>{name}</Grid2>
-                                                    <Grid2 size={3}>{idx === 3 ? `Primary` : `Guest`}</Grid2>
-                                                    <Grid2 size={1}><DeleteForeverOutlinedIcon /></Grid2>
-                                                </Grid2>
-                                            </Typography>                                                
-                                        )
-                                    )}
-
+                                    <UserTenantConfiguration
+                                        userId={user.userId}
+                                        onUpdateEnd={(success: boolean) => {
+                                            setShowMutationBackdrop(false);
+                                            if(success){
+                                                setShowMutationSnackbar(true);
+                                            }
+                                        }}
+                                        onUpdateStart={() => {
+                                            setShowMutationBackdrop(true);
+                                        }}
+                                    />
                                 </AccordionDetails>
                             </Accordion>
                         </Grid2>
@@ -560,7 +514,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
                 open={showMutationSnackbar}
                 autoHideDuration={4000}
                 onClose={() => setShowMutationSnackbar(false)}
-                message="Client Updated"
+                message="User Updated"
                 anchorOrigin={{horizontal: "center", vertical: "top"}}
             />
 

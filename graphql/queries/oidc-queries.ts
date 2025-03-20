@@ -515,3 +515,14 @@ export const FEDERATED_OIDC_PROVIDER_DOMAIN_REL_QUERY = gql(`
         }
     }
 `);
+
+export const USER_TENANT_RELS_QUERY = gql(`
+    query getUserTenantRels($userId: String!) {
+        getUserTenantRels(userId: $userId) {
+            userId
+            tenantId
+            tenantName
+            relType
+        }
+    }
+`);

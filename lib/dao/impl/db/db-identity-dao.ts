@@ -284,7 +284,7 @@ class DBIdentityDao extends IdentityDao {
             relType: relType,
             enabled: true
         });
-        await em.persistAndFlush(entity);
+        await em.upsert(entity);
         return entity;
     }
 
