@@ -181,7 +181,8 @@ class IdentitySerivce {
 
         await identityDao.createUser(user);
         await identityDao.assignUserToTenant(tenant.tenantId, user.userId, "PRIMARY");
-        await this.updateSearchIndex(tenant, user, "PRIMARY");
+        await this.updateObjectSearchIndex(tenant, user, "PRIMARY");
+        await this.updateRelSearchIndex(tenant.tenantId, tenant.tenantId, user, USER_TENANT_REL_TYPE_PRIMARY);
 
         return Promise.resolve(user);
     }
@@ -272,6 +273,8 @@ class IdentitySerivce {
             }
             else{
                 userTenantRel = await identityDao.assignUserToTenant(tenantId, userId, relType);
+                // Both the owning and parent tenant ids are the same in this case
+                await this.updateRelSearchIndex(tenantId, tenantId, user, relType);
             }
         }
         // Otherwise, there already exists one or more relationships. 
@@ -295,6 +298,9 @@ class IdentitySerivce {
                 }
                 else{
                     userTenantRel = await identityDao.assignUserToTenant(tenantId, userId, relType);
+                    // The primary rel remains as the owning tenant id, which the incoming tenant id 
+                    // is the parent id
+                    await this.updateRelSearchIndex(primaryRel.tenantId, tenantId, user, relType);
                 }
             }
             
@@ -309,14 +315,16 @@ class IdentitySerivce {
                 else if(existingTenantRel.relType === USER_TENANT_REL_TYPE_GUEST && relType === USER_TENANT_REL_TYPE_PRIMARY){
                     // Assign the incoming as primary
                     userTenantRel = await identityDao.assignUserToTenant(tenantId, userId, relType);
+                    // The incoming tenant becomes the new owning tenant as well as the parent.
+                    await this.updateRelSearchIndex(tenantId, tenantId, user, relType);
                     // Then update the existing primary as guest
                     await identityDao.assignUserToTenant(primaryRel.tenantId, primaryRel.userId, USER_TENANT_REL_TYPE_GUEST);
+                    // The incoming tenant is the owning tenant, which the existing primary becomes just the parent
+                    await this.updateRelSearchIndex(tenantId, primaryRel.tenantId, user, relType);
                 }
             }
         }
-
-        return userTenantRel;
-        
+        return userTenantRel;        
     }
 
     public async removeUserFromTenant(tenantId: string, userId: string): Promise<void> {
@@ -334,7 +342,7 @@ class IdentitySerivce {
     }
 
 
-    protected async updateSearchIndex(tenant: Tenant, user: User, relType: string): Promise<void> {
+    protected async updateObjectSearchIndex(tenant: Tenant, user: User, relType: string): Promise<void> {
         let owningTenantId: string = tenant.tenantId;
         const document: ObjectSearchResultItem = {
             name: user.nameOrder === NAME_ORDER_WESTERN ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`,
@@ -354,25 +362,25 @@ class IdentitySerivce {
             index: SEARCH_INDEX_OBJECT_SEARCH,
             body: document
         });
+    }
+
+    protected async updateRelSearchIndex(owningTenantId: string, parentTenantId: string, user: User, relType: string): Promise<void> {
         
         const relDocument: RelSearchResultItem = {
             childid: user.userId,
             childname: user.nameOrder === NAME_ORDER_WESTERN ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`,
             childtype: SearchResultType.User,
             owningtenantid: owningTenantId,
-            parentid: owningTenantId,
+            parentid: parentTenantId,
             parenttype: SearchResultType.Tenant,
             childdescription: user.email
         }
         await searchClient.index({
-            id: `${tenant.tenantId}::${user.userId}`,
+            id: `${parentTenantId}::${user.userId}`,
             index: SEARCH_INDEX_REL_SEARCH,
             body: relDocument
         })
     }
-
-
-
 
 }
 

@@ -526,3 +526,16 @@ export const USER_TENANT_RELS_QUERY = gql(`
         }
     }
 `);
+
+export const USER_AUTHORIZATION_GROUP_QUERY = gql(`
+    query getUserAuthorizationGroups($userId: String!) {
+        getUserAuthorizationGroups(userId: $userId){
+            tenantId
+            groupId
+            groupName
+            groupDescription
+            default
+            allowForAnonymousUsers
+        }
+    }
+`);

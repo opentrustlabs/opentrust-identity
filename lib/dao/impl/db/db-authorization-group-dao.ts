@@ -3,6 +3,7 @@ import AuthorizationGroupDao from "../../authorization-group-dao";
 import connection  from "@/lib/data-sources/db";
 import AuthorizationGroupEntity from "@/lib/entities/authorization-group-entity";
 import AuthorizationGroupUserRelEntity from "@/lib/entities/authorization-group-user-rel-entity";
+import { QueryOrder } from "@mikro-orm/core";
 
 class DBAuthorizationGroupDao extends AuthorizationGroupDao {
 
@@ -72,7 +73,7 @@ class DBAuthorizationGroupDao extends AuthorizationGroupDao {
         const em = connection.em.fork();
         const rels = await em.find(AuthorizationGroupUserRelEntity, {userId: userId});
         const inClause = rels.map(r => r.groupId);
-        const entities = await em.find(AuthorizationGroupEntity, {groupId: inClause});
+        const entities = await em.find(AuthorizationGroupEntity, {groupId: inClause}, {orderBy: {groupName: QueryOrder.ASC}});
         return Promise.resolve(entities);
     }
     

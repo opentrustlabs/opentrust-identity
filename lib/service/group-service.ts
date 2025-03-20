@@ -113,7 +113,7 @@ class GroupService {
             childtype: SearchResultType.User,
             owningtenantid: authzGroup.tenantId,
             parentid: authzGroup.groupId,
-            parenttype: SearchResultType.AuthenticationGroup,
+            parenttype: SearchResultType.AuthorizationGroup,
             childdescription: user.email
         }
         await searchClient.index({
@@ -135,6 +135,10 @@ class GroupService {
             index: SEARCH_INDEX_REL_SEARCH,
             refresh: "wait_for"
         });  
+    }
+
+    public async getUserAuthorizationGroups(userId: string): Promise<Array<AuthorizationGroup>> {
+        return groupDao.getUserAuthorizationGroups(userId);
     }
 }
 

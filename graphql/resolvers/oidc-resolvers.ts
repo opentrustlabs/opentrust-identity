@@ -181,6 +181,10 @@ const resolvers: Resolvers = {
         getFederatedOIDCProviderDomainRels: (_: any, { federatedOIDCProviderId, domain }, oidcContext) => {
             const service: FederatedOIDCProviderService = new FederatedOIDCProviderService(oidcContext);
             return service.getFederatedOIDCProviderDomainRels(federatedOIDCProviderId || null, domain || null);
+        },
+        getUserAuthorizationGroups: (_: any, { userId }, oidcContext) => {
+            const service: GroupService = new GroupService(oidcContext);
+            return service.getUserAuthorizationGroups(userId);
         }
     },
     Mutation: {
