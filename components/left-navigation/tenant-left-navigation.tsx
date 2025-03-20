@@ -93,13 +93,13 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
                     <Stack spacing={2} padding={"8px"} color={"#616161"} fontSize={"0.9em"} fontWeight={"bolder"} marginTop={"8px"} >
                         <Divider />
                         {tenantMetaData.tenant.tenantType === TENANT_TYPE_ROOT_TENANT &&
-                            <div style={{display: "inline-flex", alignItems: "center", textDecoration: section === "tenants" ? "underline" : ""}}>
+                            <div style={{display: "inline-flex", alignItems: "center"}}>
                                 <SettingsApplicationsIcon sx={{marginRight: "8px"}} />
                                 <Link href={`/${tenantMetaData.tenant.tenantId}?section=tenants`} >Tenants</Link>                        
                             </div>                
                         }      
                         {tenantMetaData.tenant.tenantType !== TENANT_TYPE_ROOT_TENANT &&
-                            <div style={{display: "inline-flex", alignItems: "center", textDecoration: section === "tenants" ? "underline" : ""}}>
+                            <div style={{display: "inline-flex", alignItems: "center"}}>
                                 <SettingsApplicationsIcon sx={{marginRight: "8px"}} />
                                 <Link href={`/${tenantMetaData.tenant.tenantId}?section=tenants`} >My Tenant</Link>                        
                             </div>                
@@ -208,7 +208,7 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
                                 </div>
                             }
                             {tenantMetaData.tenant.tenantType !== TENANT_TYPE_ROOT_TENANT &&
-                                <div style={{display: "inline-flex", alignItems: "center", textDecoration: section === "tenants" ? "underline" : ""}}>
+                                <div style={{display: "inline-flex", alignItems: "center"}}>
                                     <SettingsApplicationsIcon sx={{marginRight: "8px"}} />
                                     <Link href={`/${tenantMetaData.tenant.tenantId}?section=tenants`} >My Tenant</Link>                        
                                 </div>                

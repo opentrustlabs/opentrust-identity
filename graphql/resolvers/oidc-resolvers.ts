@@ -718,6 +718,33 @@ const resolvers: Resolvers = {
             const service: AuthenticationGroupService = new AuthenticationGroupService(oidcContext);
             await service.removeUserFromAuthenticationGroup(userId, authenticationGroupId);
             return authenticationGroupId;
+        },
+        updateUser: async(_: any, { userInput }, oidcContext) => {
+            const service: IdentitySerivce = new IdentitySerivce(oidcContext);            
+            const user: User = {
+                domain: userInput.domain,
+                email: userInput.email,
+                emailVerified: userInput.emailVerified,
+                enabled: userInput.enabled,
+                firstName: userInput.firstName,
+                lastName: userInput.lastName,
+                locked: false,
+                nameOrder: userInput.nameOrder,
+                userId: userInput.userId,
+                address: userInput.address,
+                addressLine1: userInput.addressLine1,
+                city: userInput.city,
+                countryCode: userInput.countryCode,
+                middleName: userInput.middleName,
+                phoneNumber: userInput.phoneNumber,
+                postalCode: userInput.postalCode,
+                preferredLanguageCode: userInput.preferredLanguageCode,
+                stateRegionProvince: userInput.stateRegionProvince,
+                twoFactorAuthType: userInput.twoFactorAuthType
+            }
+            await service.updateUser(user);
+            return user;
+
         }
     }
 }

@@ -401,6 +401,10 @@ type User {
     middleName: String
     phoneNumber: String
     address: String
+    addressLine1: String
+    city: String
+    postalCode: String
+    stateRegionProvince: String
     countryCode: String
     preferredLanguageCode: String
     twoFactorAuthType: String
@@ -1151,6 +1155,10 @@ input UserCreateInput {
     middleName: String
     phoneNumber: String
     address: String
+    addressLine1: String
+    city: String
+    postalCode: String
+    stateRegionProvince: String
     countryCode: String
     preferredLanguageCode: String
     twoFactorAuthType: String
@@ -1170,6 +1178,10 @@ input UserUpdateInput {
     middleName: String
     phoneNumber: String
     address: String
+    addressLine1: String
+    city: String
+    postalCode: String
+    stateRegionProvince: String
     countryCode: String
     preferredLanguageCode: String
     twoFactorAuthType: String

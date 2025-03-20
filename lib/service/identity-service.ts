@@ -10,6 +10,7 @@ import { NAME_ORDER_WESTERN, PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS, PASSWO
 import { sha256HashPassword, pbkdf2HashPassword, bcryptHashPassword, generateSalt } from "@/utils/dao-utils";
 import { Client } from "@opensearch-project/opensearch";
 import { getOpenSearchClient } from "../data-sources/search";
+import { Get_Response } from "@opensearch-project/opensearch/api/index.js";
 
 
 const identityDao: IdentityDao = DaoImpl.getInstance().getIdentityDao();
@@ -86,18 +87,72 @@ class IdentitySerivce {
     }
 
     public async updateUser(user: User): Promise<User> {
-        
+
         const existingUser: User | null = await identityDao.getUserBy("id", user.userId);
-        if(!user){
+        if (existingUser !== null) {
+            if (existingUser.locked === true && user.locked !== true) {
+                user.locked = true;
+            }
+            user.federatedOIDCProviderSubjectId = existingUser.federatedOIDCProviderSubjectId;
+            user.emailVerified = existingUser.emailVerified;
+            user.domain = existingUser.domain;
+
+            // Did the email change and if so, what parts of the email have changed?
+            // 1    domains 
+            // 2    just the name
+            // 3    both
+            // In case of change.
+            // 1    verify the email does not already exist
+            // 2    unset the verified email flag
+            if (user.email !== existingUser.email) {
+                const userByEmail: User | null = await identityDao.getUserBy("email", user.email);
+                if (userByEmail) {
+                    throw new GraphQLError("ERROR_ATTEMPTING_TO_CHANGE_EMAIL_FAILED");
+                }
+                else {
+                    const domain: string = user.email.substring(
+                        user.email.indexOf("@") + 1
+                    )
+                    user.domain = domain;
+                    user.emailVerified = false;
+                }
+            }
+
+            await identityDao.updateUser(user);
+
+            // Only update the search index if anything has changed
+            if (
+                user.email !== existingUser.email ||
+                user.firstName !== existingUser.firstName ||
+                user.lastName !== existingUser.lastName ||
+                user.enabled !== existingUser.enabled
+            ) {
+                const getResponse: Get_Response = await searchClient.get({
+                    id: user.userId,
+                    index: SEARCH_INDEX_OBJECT_SEARCH
+                });
+                console.log(getResponse);
+                if (getResponse.body) {
+                    console.log("####################################");
+                    console.log(getResponse.body);
+                    const document: ObjectSearchResultItem = getResponse.body._source as ObjectSearchResultItem;
+                    console.log("####################################")
+                    console.log(document);
+                    document.name = user.nameOrder === NAME_ORDER_WESTERN ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`,
+                        document.email = user.email;
+                    document.enabled = user.enabled;
+                    await searchClient.index({
+                        id: user.userId,
+                        index: SEARCH_INDEX_OBJECT_SEARCH,
+                        body: document
+                    })
+                }
+            }
+            return user;
+        }
+        else {
             throw new GraphQLError("ERROR_USER_DOES_NOT_EXIST");
         }
-
-
-
-        await identityDao.updateUser(user);
-
-        return user;
-
     }
 
     protected async _createUser(userCreateInput: UserCreateInput, tenant: Tenant, enabled: boolean): Promise<User>  {
