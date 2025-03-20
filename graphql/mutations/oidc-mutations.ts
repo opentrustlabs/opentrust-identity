@@ -378,3 +378,13 @@ export const AUTHORIZATION_GROUP_USER_REMOVE_MUTATION = gql(`
         removeUserFromAuthorizationGroup(groupId: $groupId, userId: $userId)
     }
 `);
+
+export const USER_UPDATE_MUTATION = gql(`
+    mutation updateUser($userInput: UserUpdateInput!) {
+        updateUser(userInput: $userInput) {
+            userId
+            firstName
+            lastName
+        }
+    }
+`);

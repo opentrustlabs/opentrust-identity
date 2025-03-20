@@ -255,6 +255,10 @@ export const USER_DETAIL_QUERY = gql(`
             middleName
             phoneNumber
             address
+            addressLine1
+            city
+            stateRegionProvince
+            postalCode
             countryCode
             preferredLanguageCode
             twoFactorAuthType

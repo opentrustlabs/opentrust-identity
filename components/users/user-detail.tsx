@@ -3,7 +3,7 @@ import { User, UserUpdateInput } from "@/graphql/generated/graphql-types";
 import React, { useContext } from "react";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
 import Typography from "@mui/material/Typography";
-import { NAME_ORDER_DISPLAY, NAME_ORDER_EASTERN, NAME_ORDER_WESTERN, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
+import { MFA_AUTH_TYPE_DISPLAY, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_NONE, MFA_AUTH_TYPE_SMS, MFA_AUTH_TYPE_TIME_BASED_OTP, NAME_ORDER_DISPLAY, NAME_ORDER_EASTERN, NAME_ORDER_WESTERN, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import BreadcrumbComponent from "../breadcrumbs/breadcrumbs";
 import { DetailPageContainer, DetailPageMainContentContainer, DetailPageRightNavContainer } from "../layout/detail-page-container";
 import Grid2 from "@mui/material/Grid2";
@@ -11,7 +11,7 @@ import Paper from "@mui/material/Paper";
 import TextField from "@mui/material/TextField";
 import Checkbox from "@mui/material/Checkbox";
 import Stack from "@mui/material/Stack";
-import { Accordion, AccordionDetails, AccordionSummary, Alert, Autocomplete, Button, Divider, MenuItem, Select } from "@mui/material";
+import { Accordion, AccordionDetails, AccordionSummary, Alert, Autocomplete, Backdrop, Button, CircularProgress, Divider, MenuItem, Select, Snackbar } from "@mui/material";
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import AddBoxIcon from '@mui/icons-material/AddBox';
 import DeleteForeverOutlinedIcon from '@mui/icons-material/DeleteForeverOutlined';
@@ -19,9 +19,14 @@ import GroupIcon from '@mui/icons-material/Group';
 import PeopleIcon from '@mui/icons-material/People';
 import SettingsApplicationsIcon from '@mui/icons-material/SettingsApplications';
 import PolicyIcon from '@mui/icons-material/Policy';
+import LockOpenOutlinedIcon from '@mui/icons-material/LockOpenOutlined';
+import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import Link from "next/link";
 import { COUNTRY_CODES, CountryCodeDef, LANGUAGE_CODES, LanguageCodeDef } from "@/utils/i18n";
 import { getDefaultCountryCodeDef, getDefaultLanguageCodeDef } from "@/utils/client-utils";
+import { useMutation } from "@apollo/client";
+import { USER_UPDATE_MUTATION } from "@/graphql/mutations/oidc-mutations";
+import { USER_DETAIL_QUERY } from "@/graphql/queries/oidc-queries";
 
 export interface UserDetailProps {
     user: User;
@@ -44,7 +49,11 @@ const UserDetail: React.FC<UserDetailProps> = ({
         locked: user.locked,
         nameOrder: user.nameOrder,
         userId: user.userId,
-        address: user.address,
+        address: user.address || "",
+        addressLine1: user.addressLine1 || "",
+        city: user.city || "",
+        stateRegionProvince: user.stateRegionProvince || "",
+        postalCode: user.postalCode || "",
         countryCode: user.countryCode,
         federatedOIDCProviderSubjectId: user.federatedOIDCProviderSubjectId,
         middleName: user.middleName,
@@ -58,6 +67,26 @@ const UserDetail: React.FC<UserDetailProps> = ({
     const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
     const [showMutationBackdrop, setShowMutationBackdrop] = React.useState<boolean>(false);
     const [showMutationSnackbar, setShowMutationSnackbar] = React.useState<boolean>(false);
+
+
+    // GRAPHQL FUNCTIONS
+    const [updateUserMutation] = useMutation(USER_UPDATE_MUTATION, {
+        variables: {
+            userInput: userInput
+        },
+        onCompleted() {
+            setShowMutationBackdrop(false);
+            setShowMutationSnackbar(true);
+            setMarkDirty(false);
+        },
+        onError(error) {
+            setShowMutationBackdrop(false);
+            setErrorMessage(error.message);
+        },
+        refetchQueries: [USER_DETAIL_QUERY]
+
+    });
+
 
     return (
         <Typography component={"div"} >
@@ -87,11 +116,15 @@ const UserDetail: React.FC<UserDetailProps> = ({
                             Overview
                         </Grid2>
                         {errorMessage &&
-                            <Alert severity={"error"} onClose={() => setErrorMessage(null)}>{errorMessage}</Alert>
+                            <Grid2 size={12}>
+                            
+                                <Alert severity={"error"} onClose={() => setErrorMessage(null)}>{errorMessage}</Alert>
+                            </Grid2>
                         }
-                        <Grid2 size={12}>
-                            <Paper sx={{ padding: "8px" }} elevation={1}>
-                                <Grid2 container size={12} spacing={2}>                                    
+                        <Grid2 size={12}>                            
+                            <Paper sx={{ padding: "8px" }} elevation={1}>                            
+                                <Grid2 container size={12} spacing={2}>  
+                                    
                                     <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
                                         <Grid2 marginBottom={"8px"}>
                                             <div>First Name</div>
@@ -141,22 +174,29 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                                 <Grid2 size={2}>
                                                     <Checkbox 
                                                         name="locked"
-                                                        checked={userInput.locked}
+                                                        checked={user.locked}
+                                                        disabled={!user.locked}
                                                         onChange={(_, checked) => {
+                                                            // TODO
+                                                            // Rather than update the entire user,
+                                                            // we just want to unlock the account in case it is locked.
+                                                            // There is a special function for this, just need to invoke it here.
                                                             userInput.locked = checked;
                                                             setMarkDirty(true); 
                                                             setUserInput({...userInput});
-                                                        }}                                                    
+                                                        }}
+                                                        icon={<LockOpenOutlinedIcon sx={{color: "green"}}/>}
+                                                        checkedIcon={<LockOutlinedIcon sx={{color: "red"}} />}
                                                     />
                                                 </Grid2>
                                             </Grid2>
                                         </Grid2>
-                                    </Grid2>                                    
+                                    </Grid2>
                                     <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Middle Name</div>
                                             <TextField name="middleName" id="middleName" 
-                                                value={""} 
+                                                value={userInput.middleName} 
                                                 onChange={(evt) => {userInput.middleName = evt.target.value; setMarkDirty(true); setUserInput({...userInput}); }}
                                                 fullWidth={true} size="small" 
                                             />
@@ -196,35 +236,6 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                             />
                                         </Grid2>
                                         <Grid2 marginBottom={"16px"}>
-                                            <div>Address</div>
-                                            <TextField name="tenantType" id="tenantType" value={""} fullWidth={true} size="small" />
-                                        </Grid2>
-                                    </Grid2>
-                                    <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
-                                        <Grid2 size={12} marginBottom={"16px"}>
-                                            <div>Country</div>
-                                            <Autocomplete
-                                                id="countryCode"                                                
-                                                sx={{paddingTop: "8px"}}
-                                                size="small"
-                                                renderInput={(params) => <TextField {...params} label="" />}
-                                                options={
-                                                    [{countryCode: "", country: ""}, ...COUNTRY_CODES].map(
-                                                        (cc: CountryCodeDef) => {
-                                                            return {id: cc.countryCode, label: cc.country}
-                                                        }
-                                                    )
-                                                }                        
-                                                value={getDefaultCountryCodeDef(userInput.countryCode || "")}
-                                                onChange={ (_, value: any) => {                            
-                                                    // tenantAnonymousUserConfigInput.defaultcountrycode = value ? value.id : "";
-                                                    // setTenantAnonymousUserConfigInput({ ...tenantAnonymousUserConfigInput });
-                                                    setMarkDirty(true);
-                                                }}                        
-                                            />
-                                            
-                                        </Grid2>
-                                        <Grid2 marginBottom={"16px"}>
                                             <div>Preferred Language</div>
                                             <Autocomplete
                                                 id="defaultLanguage"                                                
@@ -248,7 +259,8 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                         </Grid2>
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Federated OIDC Provider Subject ID</div>
-                                            <TextField disabled={true} 
+                                            <TextField 
+                                                disabled={true} 
                                                 name="federatedOIDCProviderSubjectId" 
                                                 id="federatedOIDCProviderSubjectId" 
                                                 value={userInput.federatedOIDCProviderSubjectId} 
@@ -257,13 +269,124 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                         </Grid2>
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Multi-factor Authorization</div>
-                                            <TextField name="tenantType" id="tenantType" value={""} fullWidth={true} size="small" />
+                                            <Autocomplete
+                                                id="mfa"
+                                                multiple={false}
+                                                size="small"
+                                                sx={{ paddingTop: "8px" }}
+                                                renderInput={(params) => <TextField {...params} label="" />}
+                                                options={[
+                                                    { id: MFA_AUTH_TYPE_NONE, label: "None"},
+                                                    { id: MFA_AUTH_TYPE_TIME_BASED_OTP, label: "OTP - Requires an authenticator app" },
+                                                    { id: MFA_AUTH_TYPE_FIDO2, label: "Security Key" },
+                                                    { id: MFA_AUTH_TYPE_SMS, label: "SMS - Not recommended" }
+                                                ]}
+                                                isOptionEqualToValue={(option, value) => option.id === value.id}
+                                                value={
+                                                    userInput.twoFactorAuthType ?
+                                                        {id: userInput.twoFactorAuthType, label: MFA_AUTH_TYPE_DISPLAY.get(userInput.twoFactorAuthType)}
+                                                        :
+                                                        {id: "", label: ""}
+                                                }
+                                                onChange={(_, value: any) => {
+                                                    if(!value){
+                                                        userInput.twoFactorAuthType = MFA_AUTH_TYPE_NONE;
+                                                    }
+                                                    else{
+                                                        userInput.twoFactorAuthType = value.id;
+                                                    }
+                                                    setUserInput({...userInput});
+                                                    setMarkDirty(true);
+                                                }}
+                                            />
                                         </Grid2>
-
+                                        
+                                    </Grid2>
+                                    <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
+                                        <Grid2 marginBottom={"16px"}>
+                                            <div>Address</div>
+                                            <TextField name="address" id="address" 
+                                                value={userInput.address} fullWidth={true} size="small" 
+                                                onChange={(evt) => {userInput.address = evt.target.value; setUserInput({...userInput}); setMarkDirty(true);}}
+                                            />
+                                        </Grid2>
+                                        <Grid2 marginBottom={"16px"}>
+                                            <div>(Optional) Apartment, suite, unit, building, floor</div>
+                                            <TextField name="addressline1" id="addressline1" 
+                                                value={userInput.addressLine1} 
+                                                onChange={(evt) => {userInput.addressLine1 = evt.target.value; setUserInput({...userInput}); setMarkDirty(true);}}
+                                                fullWidth={true} size="small" 
+                                            />
+                                        </Grid2>
+                                        <Grid2 marginBottom={"16px"}>
+                                            <div>City</div>
+                                            <TextField name="city" id="city" 
+                                                value={userInput.city} 
+                                                onChange={(evt) => {userInput.city = evt.target.value; setUserInput({...userInput}); setMarkDirty(true);}}
+                                                fullWidth={true} size="small" 
+                                                
+                                            />
+                                        </Grid2>
+                                        <Grid2 size={12} marginBottom={"16px"}>
+                                            <div>Country</div>
+                                            <Autocomplete
+                                                id="countryCode"                                                
+                                                sx={{paddingTop: "8px"}}
+                                                size="small"
+                                                renderInput={(params) => <TextField {...params} label="" />}
+                                                options={
+                                                    [{countryCode: "", country: ""}, ...COUNTRY_CODES].map(
+                                                        (cc: CountryCodeDef) => {
+                                                            return {id: cc.countryCode, label: cc.country}
+                                                        }
+                                                    )
+                                                }                        
+                                                value={getDefaultCountryCodeDef(userInput.countryCode || "")}
+                                                onChange={ (_, value: any) => {                            
+                                                    // tenantAnonymousUserConfigInput.defaultcountrycode = value ? value.id : "";
+                                                    // setTenantAnonymousUserConfigInput({ ...tenantAnonymousUserConfigInput });
+                                                    setMarkDirty(true);
+                                                }}                        
+                                            />                                            
+                                        </Grid2>
+                                        <Grid2 marginBottom={"16px"}>
+                                            <div>State / Province / Region</div>
+                                            <TextField name="stateprovinceregion" id="stateprovinceregion" 
+                                                value={userInput.stateRegionProvince} 
+                                                onChange={(evt) => {userInput.stateRegionProvince = evt.target.value; setUserInput({...userInput}); setMarkDirty(true);}}
+                                                fullWidth={true} size="small" 
+                                            />
+                                        </Grid2>
+                                        <Grid2 marginBottom={"16px"}>
+                                            <div>Postal Code</div>
+                                            <TextField name="postalCode" id="postalCode" 
+                                                value={userInput.postalCode} 
+                                                fullWidth={true} size="small" 
+                                                onChange={(evt) => {userInput.postalCode = evt.target.value; setUserInput({...userInput}); setMarkDirty(true);}}
+                                            />
+                                        </Grid2>
                                     </Grid2>
                                 </Grid2>
                                 <Stack sx={{ marginTop: "8px" }} direction={"row"} flexDirection={"row-reverse"} >
-                                    <Button sx={{ border: "solid 1px lightgrey", borderRadius: "4px"}} >Update</Button>
+
+                                    <Button sx={{ border: "solid 1px lightgrey", borderRadius: "4px"}} 
+                                        disabled={!markDirty}
+                                        onClick={() => {
+                                            setShowMutationBackdrop(true);
+                                            updateUserMutation();
+                                        }}
+                                    >
+                                        Update
+                                    </Button>
+                                    <Button sx={{ border: "solid 1px lightgrey", borderRadius: "4px", marginRight: "8px"}} 
+                                        disabled={!markDirty}
+                                        onClick={() => {
+                                            setMarkDirty(false);
+                                            setUserInput(initInput);
+                                        }}
+                                    >
+                                        Undo
+                                    </Button>
                                 </Stack>
                             </Paper>
                         </Grid2>
@@ -426,6 +549,20 @@ const UserDetail: React.FC<UserDetailProps> = ({
                 </DetailPageMainContentContainer>
                 <DetailPageRightNavContainer><div></div></DetailPageRightNavContainer>
             </DetailPageContainer>
+            <Backdrop
+                sx={{ color: '#fff'}}
+                open={showMutationBackdrop}
+                onClick={() => setShowMutationBackdrop(false)}
+            >
+                <CircularProgress color="info" />
+            </Backdrop>
+            <Snackbar
+                open={showMutationSnackbar}
+                autoHideDuration={4000}
+                onClose={() => setShowMutationSnackbar(false)}
+                message="Client Updated"
+                anchorOrigin={{horizontal: "center", vertical: "top"}}
+            />
 
         </Typography>
     )

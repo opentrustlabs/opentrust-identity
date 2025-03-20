@@ -20,6 +20,18 @@ class UserEntity implements User {
     @Property({fieldName: "address"})
     address?: Maybe<string> | undefined;
 
+    @Property({fieldName: "addressline1"})
+    addressLine1?: Maybe<string> | undefined;
+
+    @Property({fieldName: "city"})
+    city?: Maybe<string> | undefined;
+
+    @Property({fieldName: "postalcode"})
+    postalCode?: Maybe<string> | undefined;
+
+    @Property({fieldName: "stateregionprovince"})    
+    stateRegionProvince?: Maybe<string> | undefined;
+
     @Property({fieldName: "countrycode"})
     countryCode?: Maybe<string> | undefined;
 
