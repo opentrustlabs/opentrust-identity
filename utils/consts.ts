@@ -508,6 +508,17 @@ export const NAME_ORDER_DISPLAY: Map<string, string> = new Map([
     [NAME_ORDER_WESTERN, "Western name order"]
 ]);
 
+export const USER_TENANT_REL_TYPE_PRIMARY = "PRIMARY";
+export const USER_TENANT_REL_TYPE_GUEST = "GUEST";
+export const USER_TENANT_REL_TYPES = [
+    USER_TENANT_REL_TYPE_PRIMARY,
+    USER_TENANT_REL_TYPE_GUEST
+];
+export const USER_TENANT_REL_TYPES_DISPLAY: Map<string, string> = new Map([
+    [USER_TENANT_REL_TYPE_PRIMARY, "Primary"],
+    [USER_TENANT_REL_TYPE_GUEST, "Guest"]
+]);
+
 export const KEY_TYPE_RSA="RSA";
 export const KEY_TYPE_EC="EC";
 export const KEY_TYPES=[

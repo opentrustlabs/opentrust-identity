@@ -1,12 +1,12 @@
 import { OIDCContext } from "@/graphql/graphql-context";
 
 import IdentityDao from "../dao/identity-dao";
-import { ObjectSearchResultItem, RelSearchResultItem, SearchResultType, Tenant, TenantPasswordConfig, User, UserCreateInput, UserCredential } from "@/graphql/generated/graphql-types";
+import { ObjectSearchResultItem, RelSearchResultItem, SearchResultType, Tenant, TenantPasswordConfig, User, UserCreateInput, UserCredential, UserTenantRel, UserTenantRelView } from "@/graphql/generated/graphql-types";
 import { DaoImpl } from "../data-sources/dao-impl";
 import TenantDao from "../dao/tenant-dao";
 import { GraphQLError } from "graphql/error";
 import { randomUUID } from "crypto";
-import { NAME_ORDER_WESTERN, PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
+import { NAME_ORDER_WESTERN, PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_TYPE_ROOT_TENANT, USER_TENANT_REL_TYPE_GUEST, USER_TENANT_REL_TYPE_PRIMARY } from "@/utils/consts";
 import { sha256HashPassword, pbkdf2HashPassword, bcryptHashPassword, generateSalt } from "@/utils/dao-utils";
 import { Client } from "@opensearch-project/opensearch";
 import { getOpenSearchClient } from "../data-sources/search";
@@ -226,6 +226,113 @@ class IdentitySerivce {
             userId: userId
         }
     }
+
+
+    public async getUserTenantRels(userId: string): Promise<Array<UserTenantRelView>> {
+        const rels: Array<UserTenantRel> = await identityDao.getUserTenantRelsByUserId(userId);
+        const retVal: Array<UserTenantRelView> = [];
+        for(let i = 0; i < rels.length; i++){
+            const tenant: Tenant | null = await tenantDao.getTenantById(rels[i].tenantId);
+            const tenantName = tenant ? tenant.tenantName : "";
+            retVal.push({
+                userId: userId,
+                tenantId: rels[i].tenantId,
+                relType: rels[i].relType,
+                tenantName: tenantName
+            });
+        }
+        return retVal;
+    }
+
+    public async assignUserToTenant(tenantId: string, userId: string, relType: string): Promise<UserTenantRel> {
+        let userTenantRel: UserTenantRel = {
+            enabled: false,
+            relType: relType,
+            tenantId: tenantId,
+            userId: userId
+        };
+        if(! ( relType === USER_TENANT_REL_TYPE_PRIMARY || relType === USER_TENANT_REL_TYPE_GUEST) ){
+            throw new GraphQLError("ERROR_INVALID_USER_TENANT_RELATIONSHIP_TYPE");
+        }
+        const tenant: Tenant | null = await tenantDao.getTenantById(tenantId);
+        if(!tenant){
+            throw new GraphQLError("ERROR_UNABLE_TO_FIND_TENANT");
+        }
+        const user: User | null = await identityDao.getUserBy("id", userId);
+        if(!user){
+            throw new GraphQLError("ERROR_UNABLE_TO_FIND_USERS");
+        }
+
+        const rels: Array<UserTenantRel> = await identityDao.getUserTenantRelsByUserId(userId);
+        // If there is not an existing relationship, then it MUST be a PRIMARY relationship.
+        // If not, throw an error.
+        if(rels.length === 0){
+            if(relType !== USER_TENANT_REL_TYPE_PRIMARY){
+                throw new GraphQLError("ERROR_MUST_BE_PRIMARY_TENANT");
+            }
+            else{
+                userTenantRel = await identityDao.assignUserToTenant(tenantId, userId, relType);
+            }
+        }
+        // Otherwise, there already exists one or more relationships. 
+        else {
+            const primaryRel: UserTenantRel | undefined  = rels.find(
+                (rel: UserTenantRel) => rel.relType === USER_TENANT_REL_TYPE_PRIMARY
+            );
+            // There should always be a primary rel
+            if(!primaryRel){
+                throw new GraphQLError("ERROR_NO_PRIMARY_RELATIONSHIP_EXISTS_FOR_THE_USER_AND_TENANT");
+            }
+
+            // If there are no existing rels that match the incoming data, then create a 
+            // new one, but ONLY if the relationship type is GUEST.
+            const existingTenantRel: UserTenantRel | undefined = rels.find(
+                (rel: UserTenantRel) => rel.tenantId === tenantId && rel.userId === userId
+            )            
+            if(!existingTenantRel){
+                if(relType === USER_TENANT_REL_TYPE_PRIMARY){
+                    throw new GraphQLError("ERROR_MUST_BE_GUEST_TENANT");
+                }
+                else{
+                    userTenantRel = await identityDao.assignUserToTenant(tenantId, userId, relType);
+                }
+            }
+            
+            // Otherwise, we may have to update more than one record if the incoming data
+            // is set to a relationship type of PRIMARY. In this case we have to remove
+            // the PRIMARY relationship from the existing data and set it to GUEST and we
+            // have to update the incoming as PRIMARY
+            else{
+                if(existingTenantRel.relType === USER_TENANT_REL_TYPE_PRIMARY && relType === USER_TENANT_REL_TYPE_GUEST){
+                    throw new GraphQLError("ERROR_CANNOT_ASSIGN_TO_A_GUEST_RELATIONSHIP");
+                }
+                else if(existingTenantRel.relType === USER_TENANT_REL_TYPE_GUEST && relType === USER_TENANT_REL_TYPE_PRIMARY){
+                    // Assign the incoming as primary
+                    userTenantRel = await identityDao.assignUserToTenant(tenantId, userId, relType);
+                    // Then update the existing primary as guest
+                    await identityDao.assignUserToTenant(primaryRel.tenantId, primaryRel.userId, USER_TENANT_REL_TYPE_GUEST);
+                }
+            }
+        }
+
+        return userTenantRel;
+        
+    }
+
+    public async removeUserFromTenant(tenantId: string, userId: string): Promise<void> {
+        // Cannot remove a primary relationship
+        const rel: UserTenantRel | null = await identityDao.getUserTenantRel(tenantId, userId);
+        if(rel){
+            if(rel.relType === USER_TENANT_REL_TYPE_PRIMARY){
+                throw new GraphQLError("ERROR_CANNOT_CANNOT_REMOVE_A_PRIMARY_RELATIONSHIP");
+            }
+            else {
+                await identityDao.removeUserFromTenant(tenantId, userId);
+            }
+        }        
+        return Promise.resolve();
+    }
+
 
     protected async updateSearchIndex(tenant: Tenant, user: User, relType: string): Promise<void> {
         let owningTenantId: string = tenant.tenantId;

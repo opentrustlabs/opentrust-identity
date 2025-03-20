@@ -29,6 +29,7 @@ type Query {
     getUsers(tenantId: String): [User!]!
     getUserById(userId: String!): User
     getLoginUserNameHandler(username: String!, tenantId: String, preauthToken: String): LoginUserNameHandlerResponse!
+    getUserTenantRels(userId: String!): [UserTenantRelView!]!
 
     ## For tenant management and access
     me: PortalUserProfile
@@ -122,8 +123,9 @@ type Mutation {
     login(username: String!, password: String!): LoginAuthenticationHandlerResponse!
     createUser(tenantId: String!, userInput: UserCreateInput!): User!
     updateUser(userInput: UserUpdateInput!): User!
-    assignUserToTenant(tenantId: String!, userId: String!): UserTenantRel!
-    removeUserFromTenant(tenantId: String!, userId: String): UserTenantRel
+    updateUserTenantRel(tenantId: String!, userId: String!, relType: String!): UserTenantRel!
+    assignUserToTenant(tenantId: String!, userId: String!, relType: String!): UserTenantRel!
+    removeUserFromTenant(tenantId: String!, userId: String!): String
     
     ## Keys
     createSigningKey(keyInput: SigningKeyCreateInput!): SigningKey!
@@ -417,6 +419,13 @@ type UserTenantRel {
     userId: String!
     tenantId: String!
     enabled: Boolean!
+    relType: String!
+}
+
+type UserTenantRelView {
+    userId: String!
+    tenantId: String!
+    tenantName: String!
     relType: String!
 }
 
