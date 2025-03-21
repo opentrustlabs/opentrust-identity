@@ -6,9 +6,6 @@ import { Search_Response } from "@opensearch-project/opensearch/api/index.js";
 import { ALLOWED_OBJECT_SEARCH_SORT_FIELDS, ALLOWED_SEARCH_DIRECTIONS, MAX_SEARCH_PAGE, MAX_SEARCH_PAGE_SIZE, MIN_SEARCH_PAGE_SIZE, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH } from "@/utils/consts";
 
 
-const lastnames = ["Smith", "Jones", "Hayek", "Peterson", "Pederson", "Hannsson"];
-const firstNames = ["Adam", "Bob", "Casey", "David", "Edward", "Fred", "Gary"];
-
 // The opensearch javascript client api documentation and boolean query documentation: 
 // 
 // https://opensearch.org/docs/latest/clients/javascript/index
@@ -83,15 +80,30 @@ class SearchService {
             );
         }
 
-        if(searchInput.filters && searchInput.filters.length > 0){            
-            const f: SearchFilterInput | null = searchInput.filters[0];
-            if(f?.objectType === SearchFilterInputObjectType.TenantId){
-                query.bool.filter.push(
-                    {
-                        term: { owningtenantid: f.objectValue}
+        // If there are filter terms, these should be added to the search query
+        // with and OR clause, i.e., adding a boolean should query to the 
+        // filter list.
+        if(searchInput.filters && searchInput.filters.length > 0){
+            query.bool.filter.push(
+                {
+                    bool: {
+                        should: []
                     }
-                )
-            }            
+                }
+            );
+
+            searchInput.filters.forEach(
+                (f: SearchFilterInput | null) => {
+                    // Only supports OR queries by tenant id for the moment. 
+                    if(f?.objectType === SearchFilterInputObjectType.TenantId){
+                        query.bool.filter[query.bool.filter.length - 1].bool.should.push(
+                            {
+                                term: { owningtenantid: f.objectValue}
+                            }
+                        )
+                    }
+                }
+            )         
         }
         
         const sortObj: any = {};

@@ -124,8 +124,8 @@ export const ME_QUERY = gql(`
 `);
 
 export const AUTHORIZATION_GROUPS_QUERY = gql(`
-    query getAuthorizationGroups {
-        getAuthorizationGroups {
+    query getAuthorizationGroups($tenantId: String) {
+        getAuthorizationGroups(tenantId: $tenantId) {
             tenantId
             groupId
             groupName
