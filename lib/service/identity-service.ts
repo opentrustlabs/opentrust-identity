@@ -283,6 +283,9 @@ class IdentitySerivce {
                 (rel: UserTenantRel) => rel.relType === USER_TENANT_REL_TYPE_PRIMARY
             );
             // There should always be a primary rel
+            // TODO
+            // There might not be a primary rel in cases where the tenant has been deleted, leaving
+            // orphaned users. Re-factor this code to account for that.
             if(!primaryRel){
                 throw new GraphQLError("ERROR_NO_PRIMARY_RELATIONSHIP_EXISTS_FOR_THE_USER_AND_TENANT");
             }

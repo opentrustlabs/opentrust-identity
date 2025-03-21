@@ -740,7 +740,7 @@ export const DEFAULT_TENANT_PASSWORD_CONFIGURATION: TenantPasswordConfig = {
 //                  SEARCH CONSTANTS
 // 
 // ************************************************************************** //
-export const MAX_SEARCH_PAGE_SIZE=500;
+export const MAX_SEARCH_PAGE_SIZE=1000;
 export const MIN_SEARCH_PAGE_SIZE=10;
 export const MAX_SEARCH_PAGE=1000
 export const ALLOWED_OBJECT_SEARCH_SORT_FIELDS = ["name", "description", "email"];

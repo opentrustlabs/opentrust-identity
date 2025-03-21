@@ -74,6 +74,7 @@ const SearchResultListLayout: React.FC<SearchResultListProps> = ({
         objectValue: tenantBean.getTenantMetaData().tenant.tenantId
     });
 
+
     let { data, loading, error, previousData } = useQuery(SEARCH_QUERY, {
         variables: {
             searchInput: {
@@ -86,7 +87,6 @@ const SearchResultListLayout: React.FC<SearchResultListProps> = ({
         },
         fetchPolicy: "no-cache",
         nextFetchPolicy: "no-cache"
-
     })
 
     // Material UI TablePagination component uses zero-based 
