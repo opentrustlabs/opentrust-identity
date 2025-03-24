@@ -1,5 +1,5 @@
 "use client";
-import { SEARCH_QUERY, TENANT_DETAIL_QUERY, USER_AUTHORIZATION_GROUP_QUERY, USER_TENANT_RELS_QUERY } from "@/graphql/queries/oidc-queries";
+import { AUTHENTICATION_GROUPS_QUERY, SEARCH_QUERY, TENANT_DETAIL_QUERY, USER_TENANT_RELS_QUERY } from "@/graphql/queries/oidc-queries";
 import { useMutation, useQuery } from "@apollo/client";
 import React from "react";
 import DataLoading from "../layout/data-loading";
@@ -14,20 +14,21 @@ import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
 import AddBoxIcon from '@mui/icons-material/AddBox';
 import DoneOutlinedIcon from '@mui/icons-material/DoneOutlined';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
-import { AuthorizationGroup, ObjectSearchResultItem, ObjectSearchResults, SearchFilterInputObjectType, SearchResultType, UserTenantRelView } from "@/graphql/generated/graphql-types";
-import { Alert, Button, Checkbox, Dialog, DialogActions, DialogContent, InputAdornment, Pagination, TablePagination, TextField } from "@mui/material";
-import { AUTHORIZATION_GROUP_USER_ADD_MUTATION, AUTHORIZATION_GROUP_USER_REMOVE_MUTATION } from "@/graphql/mutations/oidc-mutations";
+import { AuthenticationGroup, ObjectSearchResultItem, ObjectSearchResults, SearchFilterInputObjectType, SearchResultType, UserTenantRelView } from "@/graphql/generated/graphql-types";
+import { Alert, Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, InputAdornment, TablePagination, TextField } from "@mui/material";
+import { AUTHENTICATION_GROUP_USER_ADD_MUTATION, AUTHENTICATION_GROUP_USER_REMOVE_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import TenantQuickInfo from "../tenants/tenant-quick-info";
 
 
 
-export interface UserAuthorizationGroupConfigurationProps {
+
+export interface UserAuthenticationGroupConfigurationProps {
     userId: string
     onUpdateStart: () => void;
     onUpdateEnd: (success: boolean) => void;
 }
 
-const UserAuthorizationGroupConfiguration: React.FC<UserAuthorizationGroupConfigurationProps> = ({
+const UserAuthenticationGroupConfiguration: React.FC<UserAuthenticationGroupConfigurationProps> = ({
     userId,
     onUpdateEnd,
     onUpdateStart
@@ -42,13 +43,13 @@ const UserAuthorizationGroupConfiguration: React.FC<UserAuthorizationGroupConfig
     const [showTenantInfo, setShowTenantInfo] = React.useState<boolean>(false);
     const [tenantIdToShow, setTenantIdToShow] = React.useState<string | null>(null);
 
-    const {data, loading, error} = useQuery(USER_AUTHORIZATION_GROUP_QUERY, {
+    const {data, loading, error} = useQuery(AUTHENTICATION_GROUPS_QUERY, {
         variables: {
             userId: userId
         }
     });
 
-    const [authorizationGroupUserAddMutation] = useMutation(AUTHORIZATION_GROUP_USER_ADD_MUTATION, {
+    const [authenticationGroupUserAddMutation] = useMutation(AUTHENTICATION_GROUP_USER_ADD_MUTATION, {
         onCompleted() {
             onUpdateEnd(true);
             setShowAddDialog(false);
@@ -60,10 +61,10 @@ const UserAuthorizationGroupConfiguration: React.FC<UserAuthorizationGroupConfig
             setErrorMessage(error.message);
             setGroupToAdd(null);
         },
-        refetchQueries: [USER_AUTHORIZATION_GROUP_QUERY]
+        refetchQueries: [AUTHENTICATION_GROUPS_QUERY]
     });
 
-    const [authorizationGroupUserRemoveMutation] = useMutation(AUTHORIZATION_GROUP_USER_REMOVE_MUTATION, {
+    const [authenticationGroupUserRemoveMutation] = useMutation(AUTHENTICATION_GROUP_USER_REMOVE_MUTATION, {
         onCompleted() {
             onUpdateEnd(true);
             setShowAddDialog(false);
@@ -75,7 +76,7 @@ const UserAuthorizationGroupConfiguration: React.FC<UserAuthorizationGroupConfig
             setErrorMessage(error.message);
             setGroupToRemove(null);
         },
-        refetchQueries: [USER_AUTHORIZATION_GROUP_QUERY]
+        refetchQueries: [AUTHENTICATION_GROUPS_QUERY]
     });
 
 
@@ -92,10 +93,10 @@ const UserAuthorizationGroupConfiguration: React.FC<UserAuthorizationGroupConfig
                     fullWidth={true}
                 >
                     <DialogContent>
-                        <AuthorizationGroupsAssignDialog
+                        <AuthenticationGroupsAssignDialog
                             userId={userId}
-                            existingGroups={data.getUserAuthorizationGroups.map(
-                                (authzGroup: AuthorizationGroup) => authzGroup.groupId
+                            existingGroups={data.getAuthenticationGroups.map(
+                                (authnGroup: AuthenticationGroup) => authnGroup.authenticationGroupId
                             )}
                             onGroupSelected={(groupId: string | null) => {
                                 setGroupToAdd(groupId);
@@ -111,10 +112,10 @@ const UserAuthorizationGroupConfiguration: React.FC<UserAuthorizationGroupConfig
                             onClick={() => {
                                 onUpdateStart();
                                 setShowAddDialog(false);
-                                authorizationGroupUserAddMutation({
+                                authenticationGroupUserAddMutation({
                                     variables: {
                                         userId: userId,
-                                        groupId: groupToAdd
+                                        authenticationGroupId: groupToAdd
                                     }
                                 });
                             }}
@@ -130,7 +131,7 @@ const UserAuthorizationGroupConfiguration: React.FC<UserAuthorizationGroupConfig
                     fullWidth={true}
                 >
                     <DialogContent>
-                        Confirm removal of authorization group
+                        Confirm removal of authentication group
                     </DialogContent>
                     <DialogActions>
                         <Button
@@ -141,10 +142,10 @@ const UserAuthorizationGroupConfiguration: React.FC<UserAuthorizationGroupConfig
                             onClick={() => {
                                 onUpdateStart();
                                 setShowRemoveDialog(false);
-                                authorizationGroupUserRemoveMutation({
+                                authenticationGroupUserRemoveMutation({
                                     variables: {
                                         userId: userId,
-                                        groupId: groupToRemove
+                                        authenticationGroupId: groupToRemove
                                     }
                                 }); 
                             }}
@@ -183,7 +184,7 @@ const UserAuthorizationGroupConfiguration: React.FC<UserAuthorizationGroupConfig
                             sx={{cursor: "pointer"}}
                             onClick={() => setShowAddDialog(true)}
                         />
-                        <div style={{marginLeft: "8px", fontWeight: "bold"}}>Assign User To Authorization Group</div>
+                        <div style={{marginLeft: "8px", fontWeight: "bold"}}>Assign User To Authentication Group</div>
                     </Grid2>                    
                 </Grid2>
                 <Grid2 container size={12} spacing={1} marginTop={"16px"} marginBottom={"16px"} >
@@ -195,28 +196,28 @@ const UserAuthorizationGroupConfiguration: React.FC<UserAuthorizationGroupConfig
                     <Grid2 size={1}></Grid2>                                                                                        
                 </Grid2>
                 <Divider />
-                {data.getUserAuthorizationGroups.length === 0 &&
+                {data.getAuthenticationGroups.length === 0 &&
                     <Grid2 marginTop={"16px"}  spacing={2} container size={12} textAlign={"center"} >    
                         <Grid2 margin={"8px 0px 8px 0px"} textAlign={"center"} size={12} spacing={1}>
-                            No authorization groups
+                            No authentication groups
                         </Grid2>
                     </Grid2>
                 }                
             </Typography>
             
             
-            {data.getUserAuthorizationGroups.map(                                            
-                (authzGroup: AuthorizationGroup) => (
-                    <Typography key={`${authzGroup.groupId}`} component={"div"} fontSize={"0.9em"} fontWeight={"bold"}>
+            {data.getAuthenticationGroups.map(                                            
+                (authnGroup: AuthenticationGroup) => (
+                    <Typography key={`${authnGroup.authenticationGroupId}`} component={"div"} fontSize={"0.9em"} fontWeight={"bold"}>
                         <Divider></Divider>                        
                         <Grid2 margin={"8px 0px 8px 0px"} container size={12} spacing={1}>
-                            <Grid2 size={9}>{authzGroup.groupName}</Grid2>                            
+                            <Grid2 size={9}>{authnGroup.authenticationGroupName}</Grid2>                            
                             
                             <Grid2 size={2}>
                                 <InfoOutlinedIcon
                                     sx={{cursor: "pointer"}}
                                     onClick={() => {
-                                        setTenantIdToShow(authzGroup.tenantId);
+                                        setTenantIdToShow(authnGroup.tenantId);
                                         setShowTenantInfo(true);
                                     }}
                                 />
@@ -224,7 +225,7 @@ const UserAuthorizationGroupConfiguration: React.FC<UserAuthorizationGroupConfig
                             <Grid2 size={1}>                                
                                     <RemoveCircleOutlineIcon 
                                         onClick={() => {
-                                            setGroupToRemove(authzGroup.groupId);
+                                            setGroupToRemove(authnGroup.authenticationGroupId);
                                             setShowRemoveDialog(true);
                                         }}
                                         sx={{cursor: "pointer"}}
@@ -241,13 +242,13 @@ const UserAuthorizationGroupConfiguration: React.FC<UserAuthorizationGroupConfig
 }
 
 
-interface AuthorizationGroupAssignDialogProps {
+interface AuthenticationGroupAssignDialogProps {
     userId: string,
     existingGroups: Array<string>,
     onGroupSelected: (groupId: string | null) => void
 }
 
-const AuthorizationGroupsAssignDialog: React.FC<AuthorizationGroupAssignDialogProps> = ({
+const AuthenticationGroupsAssignDialog: React.FC<AuthenticationGroupAssignDialogProps> = ({
     userId,
     existingGroups,
     onGroupSelected
@@ -274,7 +275,7 @@ const AuthorizationGroupsAssignDialog: React.FC<AuthorizationGroupAssignDialogPr
                 filters: data.getUserTenantRels.map( (userTenantRelView: UserTenantRelView) => { return {objectType: SearchFilterInputObjectType.TenantId, objectValue: userTenantRelView.tenantId}}),
                 page: 1,
                 perPage: 10,
-                resultType: SearchResultType.AuthorizationGroup
+                resultType: SearchResultType.AuthenticationGroup
             }
         },
         skip: !data,
@@ -403,4 +404,4 @@ const AuthorizationGroupsAssignDialog: React.FC<AuthorizationGroupAssignDialogPr
     }
 }
 
-export default UserAuthorizationGroupConfiguration;
+export default UserAuthenticationGroupConfiguration;

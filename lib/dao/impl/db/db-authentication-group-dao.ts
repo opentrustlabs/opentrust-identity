@@ -39,6 +39,21 @@ class DBAuthenticationGroupDao extends AuthenticationGroupDao {
             )
             return Promise.resolve(authnGroups);
         }
+        else if(userId){
+            const rels: Array<AuthenticationGroupUserRel> = await this.getAuthenticationGroupUserRels(userId);
+            const inValues: Array<string> = rels.map( (r: AuthenticationGroupUserRel) => r.authenticationGroupId);
+            const authnGroups = await em.find(AuthenticationGroupEntity, 
+                {
+                    authenticationGroupId: inValues
+                },
+                {
+                    orderBy: {
+                        authenticationGroupName: QueryOrder.ASC
+                    }
+                }
+            )
+            return Promise.resolve(authnGroups);
+        }
         else {
             return [];
         }
@@ -123,6 +138,14 @@ class DBAuthenticationGroupDao extends AuthenticationGroupDao {
         });
         await em.flush();
         return Promise.resolve();
+    }
+
+    protected async getAuthenticationGroupUserRels(userId: string): Promise<Array<AuthenticationGroupUserRel>> {
+        const em = connection.em.fork();
+        const res: Array<AuthenticationGroupUserRelEntity> = await em.find(AuthenticationGroupUserRelEntity, {
+            userId: userId
+        });
+        return res;
     }
 
 }
