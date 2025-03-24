@@ -90,62 +90,62 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
                         </div>
                     </Stack>
 
-                    <Stack spacing={2} padding={"8px"} color={"#616161"} fontSize={"0.9em"} fontWeight={"bolder"} marginTop={"8px"} >
+                    <Stack spacing={0} padding={"8px"} color={"#616161"} fontSize={"0.9em"} fontWeight={"bolder"} marginTop={"8px"} >
                         <Divider />
                         {tenantMetaData.tenant.tenantType === TENANT_TYPE_ROOT_TENANT &&
-                            <div style={{display: "inline-flex", alignItems: "center"}}>
+                            <div  className="left-navigation">
                                 <SettingsApplicationsIcon sx={{marginRight: "8px"}} />
                                 <Link href={`/${tenantMetaData.tenant.tenantId}?section=tenants`} >Tenants</Link>                        
                             </div>                
                         }      
                         {tenantMetaData.tenant.tenantType !== TENANT_TYPE_ROOT_TENANT &&
-                            <div style={{display: "inline-flex", alignItems: "center"}}>
+                            <div className="left-navigation">
                                 <SettingsApplicationsIcon sx={{marginRight: "8px"}} />
                                 <Link href={`/${tenantMetaData.tenant.tenantId}?section=tenants`} >My Tenant</Link>                        
                             </div>                
                         }           
-                        <div style={{display: "inline-flex", alignItems: "center"}}>
+                        <div className="left-navigation" >
                             <SettingsSystemDaydreamIcon sx={{marginRight: "8px"}}/>
                             <Link href={`/${tenantMetaData.tenant.tenantId}?section=clients`} >Clients</Link>
                         </div>
-                        <div style={{display: "inline-flex", alignItems: "center"}}>
+                        <div className="left-navigation" >
                             <PersonIcon sx={{marginRight: "8px"}} />
                             <Link href={`/${tenantMetaData.tenant.tenantId}?section=users`} >Users</Link>
                         </div>
-                        <div style={{display: "inline-flex", alignItems: "center"}}>
+                        <div className="left-navigation" >
                             <PeopleIcon sx={{marginRight: "8px"}} />
                             <Link href={`/${tenantMetaData.tenant.tenantId}?section=authorization-groups`} >Authorization Groups</Link>
                         </div>
-                        <div style={{display: "inline-flex", alignItems: "center"}}>
+                        <div className="left-navigation" >
                             <GroupIcon sx={{marginRight: "8px"}} />
                             <Link href={`/${tenantMetaData.tenant.tenantId}?section=authentication-groups`} >Authentication Groups</Link>
                         </div>
-                        <div style={{display: "inline-flex", alignItems: "center"}}>
+                        <div className="left-navigation" >
                             <PolicyIcon sx={{marginRight: "8px"}} />
                             <Link href={`/${tenantMetaData.tenant.tenantId}?section=scope-access-control`} >Scope/Access Control</Link>
                         </div>
-                        <div style={{display: "inline-flex", alignItems: "center"}}>
+                        <div className="left-navigation" >
                             <AutoAwesomeMosaicIcon sx={{marginRight: "8px"}} />
                             <Link href={`/${tenantMetaData.tenant.tenantId}?section=oidc-providers`} >OIDC Providers</Link>
                         </div>
-                        <div style={{display: "inline-flex", alignItems: "center"}}>
+                        <div className="left-navigation">
                             <SpeedIcon sx={{marginRight: "8px"}} />
                             <Link href={`/${tenantMetaData.tenant.tenantId}?section=rate-limits`} >Rate Limits</Link>
                         </div>
-                        <div style={{display: "inline-flex", alignItems: "center"}}>
+                        <div className="left-navigation">
                             <KeyIcon sx={{marginRight: "8px"}} />
                             <Link href={`/${tenantMetaData.tenant.tenantId}?section=signing-keys`} >Keys</Link>
                         </div>
                         {tenantMetaData.tenant.tenantType === TENANT_TYPE_ROOT_TENANT &&
                             <>                                
-                                <div style={{display: "inline-flex", alignItems: "center"}}>
+                                <div className="left-navigation" >
                                     <VerifiedIcon sx={{marginRight: "8px"}} />
                                     <Link href={`/${tenantMetaData.tenant.tenantId}/catpcha-config`}>Captcha</Link>
                                 </div>                            
                             </>                        
                         }                        
                         <Divider />
-                        <div onClick={() => setOpenCreateNewDialog(true)}  style={{display: "inline-flex", alignItems: "center", cursor: "pointer"}}>
+                        <div className="left-navigation" onClick={() => setOpenCreateNewDialog(true)}  style={{marginTop: "8px", cursor: "pointer"}}>
                             <AddBoxIcon sx={{marginRight: "8px"}} />
                             <div>Add New...</div>
                         </div>

@@ -173,7 +173,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Tenant Type</div>
                                             {tenant.tenantType === TENANT_TYPE_ROOT_TENANT &&
-                                                <TextField disabled={true} name="tenantType" id="tenantType" value={tenant.tenantType} fullWidth={true} size="small" />
+                                                <TextField disabled={true} name="tenantType" id="tenantType" value={TENANT_TYPES_DISPLAY.get(tenant.tenantType)} fullWidth={true} size="small" />
                                             }
                                             {tenant.tenantType !== TENANT_TYPE_ROOT_TENANT &&
                                                 <Select

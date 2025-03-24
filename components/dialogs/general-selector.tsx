@@ -31,7 +31,9 @@ const GeneralSelector: React.FC<GeneralSelectorProps> = ({
 
     // GRAPHQL FUNCTIONS
     const {data, loading, error} = useQuery(query, {
-        variables: queryVars
+        variables: queryVars,
+        fetchPolicy: "no-cache",
+        nextFetchPolicy: "no-cache"
     });
 
     // HANDLER FUNCTIONS
