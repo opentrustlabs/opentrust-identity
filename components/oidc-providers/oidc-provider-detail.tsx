@@ -11,10 +11,8 @@ import TextField from "@mui/material/TextField";
 import Checkbox from "@mui/material/Checkbox";
 import Paper from "@mui/material/Paper";
 import Accordion from "@mui/material/Accordion";
-import { AccordionSummary, AccordionDetails, Stack, Divider, Button, Backdrop, CircularProgress, Snackbar, Alert, Select, MenuItem, Autocomplete, InputAdornment } from "@mui/material";
+import { AccordionSummary, AccordionDetails, Stack, Button, Backdrop, CircularProgress, Snackbar, Alert, Select, MenuItem, Autocomplete, InputAdornment } from "@mui/material";
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import AddBoxIcon from '@mui/icons-material/AddBox';
-import DeleteForeverOutlinedIcon from '@mui/icons-material/DeleteForeverOutlined';
 import AlternateEmailIcon from '@mui/icons-material/AlternateEmail';
 import SettingsApplicationsIcon from '@mui/icons-material/SettingsApplications';
 import { useMutation } from "@apollo/client";
@@ -113,8 +111,7 @@ const FederatedOIDCProviderDetail: React.FC<FederatedOIDCProviderDetailProps> = 
                                             <Alert onClose={() => setErrorMessage(null)} sx={{ width: "100%" }} severity="error">{errorMessage}</Alert>
                                         </Grid2>
                                     }
-                                    <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
-                                        
+                                    <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>                                        
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Provider Name</div>
                                             <TextField
@@ -350,7 +347,7 @@ const FederatedOIDCProviderDetail: React.FC<FederatedOIDCProviderDetailProps> = 
                             <Accordion defaultExpanded={true}  >
                                 <AccordionSummary
                                     expandIcon={<ExpandMoreIcon />}
-                                    id={"login-failure-configuration"}
+                                    id={"domain-configuration"}
                                     sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center"}}
 
                                 >
