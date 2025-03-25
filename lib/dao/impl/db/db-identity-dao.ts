@@ -8,7 +8,7 @@ import AuthenticationGroupEntity from "@/lib/entities/authentication-group-entit
 import UserEntity from "@/lib/entities/user-entity";
 import UserCredentialEntity from "@/lib/entities/user-credential-entity";
 import { QueryOrder } from "@mikro-orm/core";
-import { MFA_AUTH_TYPE_FIDO2, PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS, SEARCH_INDEX_OBJECT_SEARCH, VERIFICATION_TOKEN_TYPE_PASSWORD_RESET } from "@/utils/consts";
+import { MFA_AUTH_TYPE_FIDO2, PASSWORD_HASH_ITERATION_128K, PASSWORD_HASH_ITERATION_256K, PASSWORD_HASH_ITERATION_64K, PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS, SEARCH_INDEX_OBJECT_SEARCH, VERIFICATION_TOKEN_TYPE_PASSWORD_RESET } from "@/utils/consts";
 import { bcryptHashPassword, bcryptValidatePassword, generateRandomToken, pbkdf2HashPassword, sha256HashPassword } from "@/utils/dao-utils";
 import UserFailedLoginAttemptsEntity from "@/lib/entities/user-failed-login-attempts-entity";
 import UserMfaRelEntity from "@/lib/entities/user-mfa-rel-entity";
@@ -69,19 +69,19 @@ class DBIdentityDao extends IdentityDao {
             valid = bcryptValidatePassword(password, userCredential.hashedPassword)
         }
         else if(userCredential.hashingAlgorithm === PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS){
-            const hashedPassword = sha256HashPassword(password, userCredential.salt, 64000);
+            const hashedPassword = sha256HashPassword(password, userCredential.salt, PASSWORD_HASH_ITERATION_64K);
             valid = hashedPassword === userCredential.hashedPassword;
         }
         else if(userCredential.hashingAlgorithm === PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS){
-            const hashedPassword = sha256HashPassword(password, userCredential.salt, 128000);
+            const hashedPassword = sha256HashPassword(password, userCredential.salt, PASSWORD_HASH_ITERATION_128K);
             valid = hashedPassword === userCredential.hashedPassword;
         }
         else if(userCredential.hashingAlgorithm === PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS){
-            const hashedPassword = pbkdf2HashPassword(password, userCredential.salt, 128000);
+            const hashedPassword = pbkdf2HashPassword(password, userCredential.salt, PASSWORD_HASH_ITERATION_128K);
             valid = hashedPassword === userCredential.hashedPassword;
         }
         else if(userCredential.hashingAlgorithm === PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS){
-            const hashedPassword = pbkdf2HashPassword(password, userCredential.salt, 256000);
+            const hashedPassword = pbkdf2HashPassword(password, userCredential.salt, PASSWORD_HASH_ITERATION_256K);
             valid = hashedPassword === userCredential.hashedPassword;
         }
         else{

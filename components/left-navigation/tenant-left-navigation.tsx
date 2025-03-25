@@ -147,7 +147,7 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
                         <Divider />
                         <div className="left-navigation" onClick={() => setOpenCreateNewDialog(true)}  style={{marginTop: "8px", cursor: "pointer"}}>
                             <AddBoxIcon sx={{marginRight: "8px"}} />
-                            <div>Add New...</div>
+                            <div>Create New...</div>
                         </div>
                     </Stack>
                 </>
@@ -256,7 +256,7 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
                             <Divider />
                             <div onClick={() => {setOpenCreateNewDialog(true); setDrawerOpen(false)}} style={{display: "inline-flex", alignItems: "center", cursor: "pointer"}}>
                                 <AddBoxIcon sx={{marginRight: "8px"}} />
-                                <div>Add New...</div>
+                                <div>Create New...</div>
                             </div>
                         </Stack>
                     </Drawer>

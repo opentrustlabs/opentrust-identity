@@ -404,3 +404,51 @@ export const USER_TENANT_REL_REMOVE_MUTATION = gql(`
         removeUserFromTenant(tenantId: $tenantId, userId: $userId)
     }
 `);
+
+export const RATE_LIMIT_SERVICE_GROUP_CREATE_MUTATION = gql(`
+    mutation createRateLimitServiceGroup($rateLimitServiceGroupInput: RateLimitServiceGroupCreateInput!) {
+        createRateLimitServiceGroup(rateLimitServiceGroupInput: $rateLimitServiceGroupInput) {
+            servicegroupid
+            servicegroupname
+            servicegroupdescription
+        }
+    }
+`);
+
+export const RATE_LIMIT_SERVICE_GROUP_UPDATE_MUTATION = gql(`
+    mutation updateRateLimitServiceGroup($rateLimitServiceGroupInput: RateLimitServiceGroupUpdateInput!) {
+        updateRateLimitServiceGroup(rateLimitServiceGroupInput: $rateLimitServiceGroupInput) {
+            servicegroupid
+            servicegroupname
+            servicegroupdescription
+        }
+    }    
+`);
+
+//  TODO
+//  deleteRateLimitServiceGroup(serviceGroupId: String!): String
+
+export const TENANT_RATE_LIMIT_ASSIGN_MUTATION = gql(`
+    mutation assignRateLimitToTenant($tenantId: String!, $serviceGroupId: String!, $allowUnlimited: Boolean, $limit: Int, $rateLimitPeriodMinutes: Int) {
+        assignRateLimitToTenant(tenantId: $tenantId, serviceGroupId: $serviceGroupId, allowUnlimited: $allowUnlimited, limit: $limit, rateLimitPeriodMinutes: $rateLimitPeriodMinutes) {
+            tenantId,
+            servicegroupid
+        }
+    }
+`);
+
+export const TENANT_RATE_LIMIT_UPDATE_MUTATION = gql(`
+    mutation updateRateLimitForTenant($tenantId: String!, $serviceGroupId: String!, $allowUnlimited: Boolean, $limit: Int, $rateLimitPeriodMinutes: Int) {
+        updateRateLimitForTenant(tenantId: $tenantId, serviceGroupId: $serviceGroupId, allowUnlimited: $allowUnlimited, limit: $limit, rateLimitPeriodMinutes: $rateLimitPeriodMinutes) {
+            tenantId,
+            servicegroupid
+        }
+    }
+`);
+
+export const TENANT_RATE_LIMIT_REMOVE_MUTATION = gql(`
+    mutation removeRateLimitFromTenant($tenantId: String!, $serviceGroupId: String!) {
+        removeRateLimitFromTenant(tenantId: $tenantId, serviceGroupId: $serviceGroupId)
+    }
+`);
+

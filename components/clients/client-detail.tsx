@@ -133,7 +133,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                             </Grid2>
                                         </Grid2>
                                         <Grid2 marginBottom={"16px"}>
-                                            <div style={{textDecoration: "underline"}}>Client Secret</div>
+                                            <div style={{textDecoration: "underline"}}>Client Secret</div>                                            
                                             <Grid2 marginTop={"8px"} container display={"inline-flex"} size={12}>
                                                 <Grid2 size={10}>
                                                     <span>*******************************************</span>

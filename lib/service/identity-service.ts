@@ -6,7 +6,7 @@ import { DaoImpl } from "../data-sources/dao-impl";
 import TenantDao from "../dao/tenant-dao";
 import { GraphQLError } from "graphql/error";
 import { randomUUID } from "crypto";
-import { NAME_ORDER_WESTERN, PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_TYPE_ROOT_TENANT, USER_TENANT_REL_TYPE_GUEST, USER_TENANT_REL_TYPE_PRIMARY } from "@/utils/consts";
+import { NAME_ORDER_WESTERN, PASSWORD_HASH_ITERATION_128K, PASSWORD_HASH_ITERATION_256K, PASSWORD_HASH_ITERATION_64K, PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_TYPE_ROOT_TENANT, USER_TENANT_REL_TYPE_GUEST, USER_TENANT_REL_TYPE_PRIMARY } from "@/utils/consts";
 import { sha256HashPassword, pbkdf2HashPassword, bcryptHashPassword, generateSalt } from "@/utils/dao-utils";
 import { Client } from "@opensearch-project/opensearch";
 import { getOpenSearchClient } from "../data-sources/search";
@@ -204,19 +204,19 @@ class IdentitySerivce {
         }                   
         else if(hashAlgorithm === PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS){
             salt = generateSalt();
-            hashedPassword = sha256HashPassword(password, salt, 64000);            
+            hashedPassword = sha256HashPassword(password, salt, PASSWORD_HASH_ITERATION_64K);            
         }
         else if(hashAlgorithm === PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS){
             salt = generateSalt();
-            hashedPassword = sha256HashPassword(password, salt, 128000);            
+            hashedPassword = sha256HashPassword(password, salt, PASSWORD_HASH_ITERATION_128K);            
         }
         else if(hashAlgorithm === PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS){
             salt = generateSalt();
-            hashedPassword = pbkdf2HashPassword(password, salt, 128000);            
+            hashedPassword = pbkdf2HashPassword(password, salt, PASSWORD_HASH_ITERATION_128K);            
         }
         else if(hashAlgorithm === PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS){
             salt = generateSalt();
-            hashedPassword = pbkdf2HashPassword(password, salt, 256000);            
+            hashedPassword = pbkdf2HashPassword(password, salt, PASSWORD_HASH_ITERATION_256K);            
         }
 
         return {

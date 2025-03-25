@@ -76,13 +76,7 @@ const RateLimitList: React.FC = () => {
 
         <main >
             <Typography component={"div"}>
-                <BreadcrumbComponent breadCrumbs={arrBreadcrumbs} />
-                <Stack spacing={1} justifyContent={"space-between"} direction={"row"} fontWeight={"bold"} margin={"8px 0px 24px 0px"}>
-                    <div style={{ display: "inline-flex", alignItems: "center" }}>
-                        <AddBoxIcon sx={{ marginRight: "8px", cursor: "pointer" }} />
-                        <span>New Service Group</span>
-                    </div>
-                </Stack>
+                <BreadcrumbComponent breadCrumbs={arrBreadcrumbs} />                
                 <Stack spacing={1} justifyContent={"space-between"} direction={"row"} fontWeight={"bold"} margin={"8px 0px 24px 0px"}>
                     <div style={{ display: "inline-flex", alignItems: "center" }}>
                         <TextField

@@ -394,6 +394,16 @@ export const RATE_LIMITS_QUERY = gql(`
     }
 `);
 
+export const RATE_LIMIT_BY_ID_QUERY = gql(`
+    query getRateLimitServiceGroupById($serviceGroupId: String!) {
+        getRateLimitServiceGroupById(serviceGroupId: $serviceGroupId) {
+            servicegroupid
+            servicegroupname
+            servicegroupdescription
+        }
+    }
+`);
+
 export const LOGIN_FAILURE_CONFIGURATION_QUERY = gql(`
     query getLoginFailurePolicy($tenantId: String!){
         getLoginFailurePolicy(tenantId: $tenantId) {

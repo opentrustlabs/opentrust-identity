@@ -1,26 +1,15 @@
-import { RateLimit, RateLimitServiceGroup, TenantRateLimitRel } from "@/graphql/generated/graphql-types";
-
-
+import { RateLimitServiceGroup, TenantRateLimitRel } from "@/graphql/generated/graphql-types";
 
 abstract class RateLimitDao {
 
-    
     /////////////////   RATE LIMITS   ///////////////////////
-    // abstract getRateLimits(tenantId?: string): Promise<Array<RateLimit>>;
-
-    // abstract createRateLimit(rateLimit: RateLimit): Promise<RateLimit>;
-
-    // abstract getRateLimitById(rateLimitId: string): Promise<RateLimit | null>;
-
-    // abstract updateRateLimit(rateLimit: RateLimit): Promise<RateLimit>;
-
-    // abstract deleteRateLimit(rateLimitId: string): Promise<void>;
-
-    abstract getRateLimitServiceGroups(tenantId: string): Promise<RateLimitServiceGroup>;
+    abstract getRateLimitServiceGroups(tenantId: string | null): Promise<Array<RateLimitServiceGroup>>;
 
     abstract getRateLimitServiceGroupById(serviceGroupId: string): Promise<RateLimitServiceGroup | null>;
 
     abstract createRateLimitServiceGroup(rateLimitServiceGroup: RateLimitServiceGroup): Promise<RateLimitServiceGroup>;
+
+    abstract updateRateLimitServiceGroup(rateLimitServiceGroup: RateLimitServiceGroup): Promise<RateLimitServiceGroup>;
 
     abstract deleteRateLimitServiceGroup(serviceGroupId: string): Promise<void>;
     

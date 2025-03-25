@@ -11,6 +11,7 @@ class RateLimitServiceGroupEntity implements RateLimitServiceGroup {
             Object.assign(this, rateLimitServiceGroup);
         }
     }
+    
     __typename?: "RateLimitServiceGroup" | undefined;
 
     @PrimaryKey({fieldName: "servicegroupid"})

@@ -6,7 +6,7 @@ import JwtService from '@/lib/service/jwt-service';
 import { JWTPayload,  } from 'jose';
 import { bcryptHashPassword, bcryptValidatePassword, generateRandomToken, pbkdf2HashPassword, sha256HashPassword } from '@/utils/dao-utils';
 import FSBasedKms from '@/lib/kms/fs-based-kms';
-import { CLIENT_TYPE_SERVICE_ACCOUNT_AND_USER_DELEGATED_PERMISSIONS, TOKEN_TYPE_END_USER_TOKEN } from '@/utils/consts';
+import { CLIENT_TYPE_SERVICE_ACCOUNT_AND_USER_DELEGATED_PERMISSIONS, PASSWORD_HASH_ITERATION_64K, TOKEN_TYPE_END_USER_TOKEN } from '@/utils/consts';
 
 // const jwtService: JwtService = new JwtService();
 
@@ -176,7 +176,7 @@ export default async function handler(
     const timeStart = Date.now();
     const password = "DdvkUJYn9oQ2XL4";
     const salt = generateRandomToken(16, "base64");
-    const hashedPassword = sha256HashPassword(password, salt, 64000);
+    const hashedPassword = sha256HashPassword(password, salt, PASSWORD_HASH_ITERATION_64K);
     const timeEnd = Date.now();
     const hashTime = timeEnd - timeStart;
 

@@ -139,6 +139,7 @@ const AnonymousUserConfiguration: React.FC<AnonymousUserConfigurationProps> = ({
                 <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
                     <div>Token Time-To-Live (in seconds)</div>
                     <TextField name="tokenTTLSeconds" id="tokenTTLSeconds"
+                        type="number"
                         disabled={allowAnonymousUsers !== true}
                         value={ allowAnonymousUsers !== true ? "" : tenantAnonymousUserConfigInput.tokenttlseconds > 0 ? tenantAnonymousUserConfigInput.tokenttlseconds : ""}
                         onChange={(evt) => { tenantAnonymousUserConfigInput.tokenttlseconds = parseInt(evt.target.value || "0"); setTenantAnonymousUserConfigInput({ ...tenantAnonymousUserConfigInput }); setMarkDirty(true); }}

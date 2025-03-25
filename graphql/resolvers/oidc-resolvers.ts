@@ -1,6 +1,6 @@
 import ClientService from "@/lib/service/client-service";
 import TenantService from "@/lib/service/tenant-service";
-import { Resolvers, QueryResolvers, MutationResolvers, Tenant, Client, SigningKey, Scope, AuthenticationGroup, AuthorizationGroup, FederatedOidcProvider, Contact, LoginUserNameHandlerResponse, LoginUserNameHandlerAction, LoginAuthenticationHandlerResponse, LoginAuthenticationHandlerAction, SecondFactorType, PortalUserProfile, User, LoginFailurePolicy, TenantPasswordConfig, TenantLegacyUserMigrationConfig, TenantAnonymousUserConfiguration, TenantLookAndFeel } from "@/graphql/generated/graphql-types";
+import { Resolvers, QueryResolvers, MutationResolvers, Tenant, Client, SigningKey, Scope, AuthenticationGroup, AuthorizationGroup, FederatedOidcProvider, Contact, LoginUserNameHandlerResponse, LoginUserNameHandlerAction, LoginAuthenticationHandlerResponse, LoginAuthenticationHandlerAction, SecondFactorType, PortalUserProfile, User, LoginFailurePolicy, TenantPasswordConfig, TenantLegacyUserMigrationConfig, TenantAnonymousUserConfiguration, TenantLookAndFeel, RateLimitServiceGroup, TenantRateLimitRel } from "@/graphql/generated/graphql-types";
 import SigningKeysService from "@/lib/service/keys-service";
 import ScopeService from "@/lib/service/scope-service";
 import GroupService from "@/lib/service/group-service";
@@ -12,6 +12,7 @@ import { GraphQLError } from "graphql";
 import ContactService from "@/lib/service/contact-service";
 import IdentitySerivce from "@/lib/service/identity-service";
 import { t } from "@mikro-orm/core";
+import RateLimitService from "@/lib/service/rate-limit-service";
 
 
 const resolvers: Resolvers = {
@@ -148,7 +149,12 @@ const resolvers: Resolvers = {
             //(username: String!, tenantId: String, preauthToken: String): LoginUserNameHandlerResponse!
         },
         getRateLimitServiceGroups: (_:any, { tenantId }, oidcContext) => {
-            return [];
+            const service: RateLimitService = new RateLimitService(oidcContext);
+            return service.getRateLimitServiceGroups(tenantId || null);
+        },
+        getRateLimitServiceGroupById: (_: any, { serviceGroupId }, oidcContext) => {
+            const service: RateLimitService = new RateLimitService(oidcContext);
+            return service.getRateLimitServiceGroupById(serviceGroupId);
         },
         getTenantPasswordConfig: (_: any, { tenantId }, oidcContext) => {
             const tenantService: TenantService = new TenantService(oidcContext);
@@ -766,7 +772,46 @@ const resolvers: Resolvers = {
             const service: IdentitySerivce = new IdentitySerivce(oidcContext);
             await service.removeUserFromTenant(tenantId, userId);
             return userId;
+        },
+        createRateLimitServiceGroup: async(_: any, { rateLimitServiceGroupInput }, oidcContext) => {
+            const service: RateLimitService = new RateLimitService(oidcContext);
+            const r: RateLimitServiceGroup = await service.createRateLimitServiceGroup({
+                servicegroupid: "",
+                servicegroupname: rateLimitServiceGroupInput.servicegroupname,
+                servicegroupdescription: rateLimitServiceGroupInput.servicegroupdescription
+            });
+            return r;
+        },
+        updateRateLimitServiceGroup: async(_: any, { rateLimitServiceGroupInput }, oidcContext) => {
+            const service: RateLimitService = new RateLimitService(oidcContext);
+            const r: RateLimitServiceGroup = await service.updateRateLimitServiceGroup({
+                servicegroupid: rateLimitServiceGroupInput.servicegroupid,
+                servicegroupname: rateLimitServiceGroupInput.servicegroupname,
+                servicegroupdescription: rateLimitServiceGroupInput.servicegroupdescription
+            });
+            return r;
+        },
+        deleteRateLimitServiceGroup: async(_: any, { serviceGroupId }, oidcContext) => {
+            const service: RateLimitService = new RateLimitService(oidcContext);
+            await service.deleteRateLimitServiceGroup(serviceGroupId);
+            return serviceGroupId
+        },
+        assignRateLimitToTenant: async(_: any, { tenantId, serviceGroupId, allowUnlimited, limit, rateLimitPeriodMinutes }, oidcContext) => {
+            const service: RateLimitService = new RateLimitService(oidcContext);
+            const r: TenantRateLimitRel = await service.assignRateLimitToTenant(tenantId, serviceGroupId, allowUnlimited || false, limit || 0, rateLimitPeriodMinutes || 0);
+            return r;
+        },
+        updateRateLimitForTenant: async(_: any, { tenantId, serviceGroupId, allowUnlimited, limit, rateLimitPeriodMinutes }, oidcContext) => {
+            const service: RateLimitService = new RateLimitService(oidcContext);
+            const r: TenantRateLimitRel = await service.updateRateLimitForTenant(tenantId, serviceGroupId, allowUnlimited || false, limit || 0, rateLimitPeriodMinutes || 0);
+            return r;
+        },
+        removeRateLimitFromTenant: async(_: any, { tenantId, serviceGroupId }, oidcContext) => {
+            const service: RateLimitService = new RateLimitService(oidcContext);
+            await service.removeRateLimitFromTenant(tenantId, serviceGroupId);
+            return serviceGroupId;
         }
+
     }
 }
 

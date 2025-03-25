@@ -518,7 +518,6 @@ type RateLimitServiceGroup {
     servicegroupid: String!
     servicegroupname: String!
     servicegroupdescription: String
-    scopeids: [String!]!
 }
 
 
@@ -1062,14 +1061,14 @@ input SigningKeyUpdateInput {
 
 
 input RateLimitServiceGroupCreateInput {
-    rateLimitDomain: String!
-    rateLimitDescription: String
+    servicegroupname: String!
+    servicegroupdescription: String
 }
 
 input RateLimitServiceGroupUpdateInput {
-    rateLimitId: String!
-    rateLimitDomain: String!
-    rateLimitDescription: String
+    servicegroupid: String!
+    servicegroupname: String!
+    servicegroupdescription: String
 }
 
 input ScopeCreateInput {
