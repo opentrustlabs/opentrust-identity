@@ -100,7 +100,13 @@ const TenantLandingPage: React.FC = () => {
                 <ScopeList />
             }
             {section === "rate-limits" &&
-                <RateLimitList />
+                <SearchResultListLayout 
+                    filterInputLabel="Filter Rate Limits" 
+                    resultType={SearchResultType.RateLimit}
+                    page={1} 
+                    perPage={20}
+                    breadCrumbText="Rate Limits"
+                />                
             }
         </>
     )

@@ -2,15 +2,16 @@ import { OIDCContext } from "@/graphql/graphql-context";
 import { GraphQLError } from "graphql/error/GraphQLError";
 import { randomUUID } from 'crypto'; 
 import RateLimitDao from "../dao/rate-limit-dao";
-import { RateLimitServiceGroup, Tenant, TenantRateLimitRel } from "@/graphql/generated/graphql-types";
+import { ObjectSearchResultItem, RateLimitServiceGroup, SearchResultType, Tenant, TenantRateLimitRel } from "@/graphql/generated/graphql-types";
 import TenantDao from "../dao/tenant-dao";
 import { DaoImpl } from "../data-sources/dao-impl";
-import { DEFAULT_RATE_LIMIT_PERIOD_MINUTES, MAX_RATE_LIMIT_PERIOD_MINUTES, MIN_RATE_LIMIT_PERIOD_MINUTES } from "@/utils/consts";
-
+import { DEFAULT_RATE_LIMIT_PERIOD_MINUTES, MAX_RATE_LIMIT_PERIOD_MINUTES, MIN_RATE_LIMIT_PERIOD_MINUTES, SEARCH_INDEX_OBJECT_SEARCH } from "@/utils/consts";
+import { getOpenSearchClient } from "../data-sources/search";
 
 
 const rateLimitDao: RateLimitDao = DaoImpl.getInstance().getRateLimitDao();
 const tenantDao: TenantDao = DaoImpl.getInstance().getTenantDao();
+const searchClient = getOpenSearchClient();
 
 class RateLimitService {
 
@@ -30,11 +31,19 @@ class RateLimitService {
 
     public async createRateLimitServiceGroup(rateLimitServiceGroup: RateLimitServiceGroup): Promise<RateLimitServiceGroup> {
         rateLimitServiceGroup.servicegroupid = randomUUID().toString();
-        return rateLimitDao.createRateLimitServiceGroup(rateLimitServiceGroup);        
+        await rateLimitDao.createRateLimitServiceGroup(rateLimitServiceGroup)
+        await this.updateSearchIndex(rateLimitServiceGroup);
+        return Promise.resolve(rateLimitServiceGroup);
     }
 
     public async updateRateLimitServiceGroup(rateLimitServiceGroup: RateLimitServiceGroup): Promise<RateLimitServiceGroup> {
-        return rateLimitDao.updateRateLimitServiceGroup(rateLimitServiceGroup);
+        const existing: RateLimitServiceGroup | null = await rateLimitDao.getRateLimitServiceGroupById(rateLimitServiceGroup.servicegroupid);
+        if(!existing){
+            throw new GraphQLError("ERROR_RATE_LIMIT_SERVICE_GROUP_DOES_NOT_EXIST");
+        }
+        await rateLimitDao.updateRateLimitServiceGroup(rateLimitServiceGroup);
+        await this.updateSearchIndex(rateLimitServiceGroup);
+        return Promise.resolve(rateLimitServiceGroup);
     }
 
     public async deleteRateLimitServiceGroup(serviceGroupId: string): Promise<void>{
@@ -43,6 +52,28 @@ class RateLimitService {
         
     public async getRateLimitTenantRel(tenantId: string): Promise<Array<TenantRateLimitRel>> {
         return rateLimitDao.getRateLimitTenantRel(tenantId);        
+    }
+
+    protected async updateSearchIndex(rateLimitServiceGroup: RateLimitServiceGroup): Promise<void> {
+        
+        const document: ObjectSearchResultItem = {
+            name: rateLimitServiceGroup.servicegroupname,
+            description: rateLimitServiceGroup.servicegroupdescription,
+            objectid: rateLimitServiceGroup.servicegroupid,
+            objecttype: SearchResultType.RateLimit,
+            owningtenantid: "",
+            email: "",
+            enabled: true,
+            owningclientid: "",
+            subtype: "",
+            subtypekey: ""
+        }
+        
+        await searchClient.index({
+            id: rateLimitServiceGroup.servicegroupid,
+            index: SEARCH_INDEX_OBJECT_SEARCH,
+            body: document
+        });        
     }
 
     
