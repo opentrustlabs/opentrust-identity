@@ -12,6 +12,7 @@ import NewOIDCProviderDialog from "./new-oidc-provider-dialog";
 import NewSigningKeyDialog from "./new-signing-key-dialog";
 import NewAuthenticationGroupDialog from "./new-authentication-group-dialog";
 import NewAuthorizationGroupDialog from "./new-authorization-group-dialog";
+import NewRateLimitDialog from "./new-rate-limit-dialog";
 
 export interface CreateNewSelectorProps {
     open: boolean,
@@ -137,7 +138,20 @@ const CreateNewDialog: React.FC<CreateNewSelectorProps> = ({
                     />
                 }
                 {createNewType === "rate-limit" &&
-                    <div>You want to create a new rate-limit</div>
+                    <NewRateLimitDialog
+                        onCancel={onCancel}
+                        onClose={onClose}
+                        onCreateEnd={(success: boolean) => {
+                            setShowMutationBackdrop(false);
+                            if(success){
+                                onClose();
+                            }
+                        }}
+                        onCreateStart={() => {
+                            setShowMutationBackdrop(true);
+                        }}
+                    />
+                    
                 }
                 {createNewType === "key" && selectedTenant !== null &&
                     <NewSigningKeyDialog

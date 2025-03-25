@@ -38,7 +38,7 @@ const ClientResultList: React.FC<ResultListProps> = ({
     }
 
     return (
-        <div>
+        <main>
             {c.isMedium &&
                 <>
                     <Typography component={"div"} fontWeight={"bold"} fontSize={"0.9em"}>
@@ -149,7 +149,7 @@ const ClientResultList: React.FC<ResultListProps> = ({
                     )}
                 </>
             }
-        </div>
+        </main>
     )
 
 }
