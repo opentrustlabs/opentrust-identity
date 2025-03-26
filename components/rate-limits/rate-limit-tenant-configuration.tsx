@@ -1,8 +1,8 @@
 "use client";
 import React from "react";
-import { RelSearchInput, RelSearchResultItem, SearchResultType } from "@/graphql/generated/graphql-types";
+import { RelSearchInput, RelSearchResultItem, SearchResultType, TenantRateLimitRelView } from "@/graphql/generated/graphql-types";
 import { TENANT_RATE_LIMIT_ASSIGN_MUTATION, TENANT_RATE_LIMIT_REMOVE_MUTATION, TENANT_RATE_LIMIT_UPDATE_MUTATION } from "@/graphql/mutations/oidc-mutations";
-import { TENANT_RATE_LIMIT_REL_SEARCH_QUERY } from "@/graphql/queries/oidc-queries";
+import { TENANT_RATE_LIMIT_REL_QUERY } from "@/graphql/queries/oidc-queries";
 import { useMutation, useQuery } from "@apollo/client";
 import Alert from "@mui/material/Alert";
 import Button from "@mui/material/Button";
@@ -41,13 +41,13 @@ const RateLimitTenantRelConfiguration: React.FC<RateLimitTenantRelConfigurationP
     const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
     const [selectDialogOpen, setSelectDialogOpen] = React.useState(false);
 
-    const relSearchInput: RelSearchInput = {
-        page: page,
-        perPage: perPage,
-        childtype: SearchResultType.RateLimit,
-        childid: rateLimitServiceGroupId,
-        term: filterTerm
-    }
+    // const relSearchInput: RelSearchInput = {
+    //     page: page,
+    //     perPage: perPage,
+    //     childtype: SearchResultType.RateLimit,
+    //     childid: rateLimitServiceGroupId,
+    //     term: filterTerm
+    // }
 
 
 
@@ -55,9 +55,9 @@ const RateLimitTenantRelConfiguration: React.FC<RateLimitTenantRelConfigurationP
     // GRAPHQL FUNCTIONS
 
     // need the query, assign, and remove graph ql function
-    const {data, loading, error} = useQuery(TENANT_RATE_LIMIT_REL_SEARCH_QUERY, {
+    const {data, loading, error} = useQuery(TENANT_RATE_LIMIT_REL_QUERY, {
         variables: {
-            relSearchInput: relSearchInput
+            rateLimitServiceGroupId: rateLimitServiceGroupId
         }
     });
 
@@ -143,7 +143,7 @@ const RateLimitTenantRelConfiguration: React.FC<RateLimitTenantRelConfigurationP
                         onChange={(evt) => setFilterTerm(evt.target.value)}
                         size="small"
                         placeholder="Filter Tenants"
-                        
+
                     />
                 </Grid2>                
             </Grid2>
@@ -162,21 +162,21 @@ const RateLimitTenantRelConfiguration: React.FC<RateLimitTenantRelConfigurationP
                     </Grid2>
                 </Grid2>
             }
-            {data && data.relSearch.total === 0 &&
+            {data && data.getRateLimitTenantRelViews.length === 0 &&
                 <Grid2 marginTop={"16px"}  spacing={2} container size={12} textAlign={"center"} >    
                     <Grid2 margin={"8px 0px 8px 0px"} textAlign={"center"} size={12} spacing={1}>
                         No tenants to display
                     </Grid2>
                 </Grid2>
             }
-            {data && data.relSearch.total > 0 &&
+            {data && data.getRateLimitTenantRelViews.length > 0 &&
                 <Grid2 marginTop={"16px"} spacing={1} container size={12}>
-                    {data.relSearch.resultlist.map(
-                        (item: RelSearchResultItem) => (
-                            <React.Fragment key={`${item.parentid}::${item.childid}`}>                                
+                    {data.getRateLimitTenantRelViews.map(
+                        (item: TenantRateLimitRelView) => (
+                            <React.Fragment key={`${item.tenantId}`}>                                
                                 <Grid2 size={8}>
                                     <span style={{textDecoration: "underline"}}>
-                                        {item.owningtenantname}
+                                        {item.tenantName}
                                     </span>
                                 </Grid2>
                                 <Grid2 size={3}>
@@ -186,7 +186,7 @@ const RateLimitTenantRelConfiguration: React.FC<RateLimitTenantRelConfigurationP
                                     <RemoveCircleOutlineIcon
                                         sx={{cursor: "pointer"}}
                                         onClick={() => {
-                                            setTenantToRemove({id: item.owningtenantid, name: item.owningtenantname || ""});
+                                            setTenantToRemove({id: item.tenantId, name: item.tenantName || ""});
                                             setShowRemoveConfirmationDialog(true);
                                         }}
                                     />

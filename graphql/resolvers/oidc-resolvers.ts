@@ -155,6 +155,10 @@ const resolvers: Resolvers = {
             const service: RateLimitService = new RateLimitService(oidcContext);
             return service.getRateLimitServiceGroupById(serviceGroupId);
         },
+        getRateLimitTenantRelViews: (_: any, { rateLimitServiceGroupId }, oidcContext) => {
+            const service: RateLimitService = new RateLimitService(oidcContext);
+            return service.getRateLimitTenantRelViews(rateLimitServiceGroupId);
+        } ,
         getTenantPasswordConfig: (_: any, { tenantId }, oidcContext) => {
             const tenantService: TenantService = new TenantService(oidcContext);
             return tenantService.getTenantPasswordConfig(tenantId);

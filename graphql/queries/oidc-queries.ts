@@ -241,25 +241,15 @@ export const REL_SEARCH_QUERY = gql(`
     }
 `);
 
-export const TENANT_RATE_LIMIT_REL_SEARCH_QUERY = gql(`
-    query relSearch($relSearchInput: RelSearchInput!) {
-        relSearch(relSearchInput: $relSearchInput) {
-            starttime
-            endtime
-            took
-            page
-            perpage
-            total
-            resultlist {
-                owningtenantid
-                owningtenantname
-                parentid
-                parenttype
-                childid
-                childtype
-                childname
-                childdescription
-            }            
+export const TENANT_RATE_LIMIT_REL_QUERY = gql(`
+    query getRateLimitTenantRelViews($rateLimitServiceGroupId: String!) {
+        getRateLimitTenantRelViews(rateLimitServiceGroupId: $rateLimitServiceGroupId) {
+            tenantId
+            tenantName
+            servicegroupid
+            allowUnlimitedRate
+            rateLimit
+            rateLimitPeriodMinutes           
         }
     }    
 `);
