@@ -207,16 +207,42 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Default Rate Limit</div>
                                             <TextField name="defaultRateLimit" id="defaultRateLimit" 
-                                                onChange={(evt) => {const n = parseInt(evt.target.value); if(n){tenantInput.defaultRateLimit = n; setTenantInput({...tenantInput}); setOverviewDirty(true); }}}
-                                                value={tenantInput.defaultRateLimit} fullWidth={true} size="small" 
+                                                disabled={tenantInput.allowUnlimitedRate === true}
+                                                onChange={(evt) => {
+                                                    const n = parseInt(evt.target.value); 
+                                                    if(n){
+                                                        tenantInput.defaultRateLimit = n;                                                         
+                                                    }
+                                                    else{
+                                                        tenantInput.defaultRateLimit = undefined; 
+                                                    }
+                                                    setTenantInput({...tenantInput}); 
+                                                    setOverviewDirty(true); 
+                                                }}
+                                                type="number"
+                                                value={tenantInput.defaultRateLimit || ""} fullWidth={true} size="small" 
                                             />
                                         </Grid2>
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Default Rate Limit Period (minutes)</div>
                                             <TextField 
-                                                onChange={(evt) => {const n = parseInt(evt.target.value); if(n){tenantInput.defaultRateLimitPeriodMinutes = n; setTenantInput({...tenantInput}); setOverviewDirty(true); }}}
+                                                disabled={tenantInput.allowUnlimitedRate === true}
+                                                onChange={
+                                                    (evt) => {
+                                                        const n = parseInt(evt.target.value); 
+                                                        if(n){
+                                                            tenantInput.defaultRateLimitPeriodMinutes = n;                                                             
+                                                        }
+                                                        else{
+                                                            tenantInput.defaultRateLimitPeriodMinutes = undefined;
+                                                        }
+                                                        setTenantInput({...tenantInput}); 
+                                                        setOverviewDirty(true); 
+                                                    }}
+                                                type="number"
                                                 name="defaultRateLimitPeriodMinutes" id="defaultRateLimitPeriodMinutes" 
-                                                value={tenantInput.defaultRateLimitPeriodMinutes} fullWidth={true} size="small" 
+                                                
+                                                value={tenantInput.defaultRateLimitPeriodMinutes || ""} fullWidth={true} size="small" 
                                             />
                                         </Grid2>
                                     </Grid2>
@@ -240,7 +266,15 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                             <Grid2 size={2}>
                                                 <Checkbox 
                                                     checked={tenantInput.allowUnlimitedRate === true}
-                                                    onChange={(_, checked: boolean) => {tenantInput.allowUnlimitedRate = checked; setTenantInput({...tenantInput}); setOverviewDirty(true);}}
+                                                    onChange={(_, checked: boolean) => {
+                                                        tenantInput.allowUnlimitedRate = checked;                                                         
+                                                        if(checked){
+                                                            tenantInput.defaultRateLimit = undefined;
+                                                            tenantInput.defaultRateLimitPeriodMinutes = undefined;
+                                                        }
+                                                        setTenantInput({...tenantInput}); 
+                                                        setOverviewDirty(true);
+                                                    }}
                                                 />
                                             </Grid2>
                                             <Grid2 alignContent={"center"} size={10}>Allow user self-registration</Grid2>

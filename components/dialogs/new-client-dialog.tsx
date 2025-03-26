@@ -128,18 +128,6 @@ const NewClientDialog: React.FC<NewClientDialogProps> = ({
                                     </Grid2>
                                 }
                                 <Grid2 marginBottom={"16px"}>
-                                    <div>Client Name</div>
-                                    <TextField required name="clientName" id="clientName" onChange={(evt) => { clientInput.clientName = evt?.target.value; setClientInput({ ...clientInput }) }} value={clientInput.clientName} fullWidth={true} size="small" />
-                                </Grid2>
-                                <Grid2 marginBottom={"16px"}>
-                                    <div>Client Descripton</div>
-                                    <TextField
-                                        name="tenantDescription" id="tenantDescription"
-                                        value={clientInput.clientDescription} fullWidth={true} size="small" multiline={true} rows={2}
-                                        onChange={(evt) => { clientInput.clientDescription = evt?.target.value; setClientInput({ ...clientInput }) }}
-                                    />
-                                </Grid2>
-                                <Grid2 marginBottom={"16px"}>
                                     <div>Client Type</div>
                                     <Select
                                         size="small"
@@ -153,6 +141,19 @@ const NewClientDialog: React.FC<NewClientDialogProps> = ({
                                         <MenuItem value={CLIENT_TYPE_USER_DELEGATED_PERMISSIONS_ONLY} >{CLIENT_TYPES_DISPLAY.get(CLIENT_TYPE_USER_DELEGATED_PERMISSIONS_ONLY)}</MenuItem>
                                     </Select>
                                 </Grid2>
+                                <Grid2 marginBottom={"16px"}>
+                                    <div>Client Name</div>
+                                    <TextField required name="clientName" id="clientName" onChange={(evt) => { clientInput.clientName = evt?.target.value; setClientInput({ ...clientInput }) }} value={clientInput.clientName} fullWidth={true} size="small" />
+                                </Grid2>
+                                <Grid2 marginBottom={"16px"}>
+                                    <div>Client Descripton</div>
+                                    <TextField
+                                        name="tenantDescription" id="tenantDescription"
+                                        value={clientInput.clientDescription} fullWidth={true} size="small" multiline={true} rows={2}
+                                        onChange={(evt) => { clientInput.clientDescription = evt?.target.value; setClientInput({ ...clientInput }) }}
+                                    />
+                                </Grid2>
+                                
                             </Grid2>
                         </Grid2>
                     }

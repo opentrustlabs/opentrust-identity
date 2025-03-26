@@ -6,7 +6,6 @@ export const TENANTS_QUERY = gql(`
             tenantId
             tenantName
             tenantDescription
-            tenantType
             enabled
             claimsSupported
             allowUnlimitedRate
@@ -15,6 +14,15 @@ export const TENANTS_QUERY = gql(`
             allowAnonymousUsers
             verifyEmailOnSelfRegistration
             federatedAuthenticationConstraint
+            federatedauthenticationconstraintid
+            markForDelete
+            tenantType
+            tenanttypeid
+            migrateLegacyUsers
+            allowLoginByPhoneNumber
+            allowForgotPassword
+            defaultRateLimit
+            defaultRateLimitPeriodMinutes            
         }
     }    
 `);
@@ -154,7 +162,9 @@ export const TENANT_DETAIL_QUERY = gql(`
             tenanttypeid
             migrateLegacyUsers
             allowLoginByPhoneNumber
-            allowForgotPassword             
+            allowForgotPassword
+            defaultRateLimit
+            defaultRateLimitPeriodMinutes   
         }       
         
     }
