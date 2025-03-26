@@ -14,6 +14,7 @@ import Grid2 from "@mui/material/Grid2";
 import Typography from "@mui/material/Typography";
 import AddBoxIcon from '@mui/icons-material/AddBox';
 import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
+import { TextField } from "@mui/material";
 
 
 export interface RateLimitTenantRelConfigurationProps {
@@ -123,7 +124,6 @@ const RateLimitTenantRelConfiguration: React.FC<RateLimitTenantRelConfigurationP
                             removeTenantFromRateLimitGroupMutation();
                         }}>Confirm</Button>
                     </DialogActions>
-
                 </Dialog>
             }
             <Grid2 marginBottom={"16px"} marginTop={"16px"} spacing={2} container size={12}>
@@ -133,6 +133,18 @@ const RateLimitTenantRelConfiguration: React.FC<RateLimitTenantRelConfigurationP
                         onClick={() => setSelectDialogOpen(true)}
                     />
                     <div style={{marginLeft: "8px", fontWeight: "bold"}}>Add Tenant</div>
+                </Grid2>                
+            </Grid2>
+            <Grid2 marginBottom={"16px"} marginTop={"16px"} spacing={2} container size={12}>
+                <Grid2 size={12} display={"inline-flex"} alignItems="center" alignContent={"center"}>
+                    <TextField
+                        name="filter"
+                        id="filter"
+                        onChange={(evt) => setFilterTerm(evt.target.value)}
+                        size="small"
+                        placeholder="Filter Tenants"
+                        
+                    />
                 </Grid2>                
             </Grid2>
             <Divider />
@@ -157,26 +169,6 @@ const RateLimitTenantRelConfiguration: React.FC<RateLimitTenantRelConfigurationP
                     </Grid2>
                 </Grid2>
             }
-            {/**
-             * relSearch(relSearchInput: $relSearchInput) {
-            starttime
-            endtime
-            took
-            page
-            perpage
-            total
-            resultlist {
-                owningtenantid
-                parentid
-                parenttype
-                childid
-                childtype
-                childname
-                childdescription
-            }            
-        }
-    }
-             */}
             {data && data.relSearch.total > 0 &&
                 <Grid2 marginTop={"16px"} spacing={1} container size={12}>
                     {data.relSearch.resultlist.map(
@@ -193,7 +185,10 @@ const RateLimitTenantRelConfiguration: React.FC<RateLimitTenantRelConfigurationP
                                 <Grid2 size={1}>
                                     <RemoveCircleOutlineIcon
                                         sx={{cursor: "pointer"}}
-                                        onClick={() => {setShowRemoveConfirmationDialog(true);}}
+                                        onClick={() => {
+                                            setTenantToRemove({id: item.owningtenantid, name: item.owningtenantname || ""});
+                                            setShowRemoveConfirmationDialog(true);
+                                        }}
                                     />
                                 </Grid2>
                                 <Grid2 size={12}><Divider /></Grid2>
@@ -203,6 +198,13 @@ const RateLimitTenantRelConfiguration: React.FC<RateLimitTenantRelConfigurationP
                 </Grid2>
             } 
         </Typography>
+    )
+}
+
+const AddNewTenatRateLimitConfiguration: React.FC = () => {
+
+    return (
+        <></>
     )
 }
 
