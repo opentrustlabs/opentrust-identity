@@ -9,7 +9,7 @@ import { Tenant } from "@/graphql/generated/graphql-types";
 
 export interface TenantSelectorProps {
     onCancel: () => void,
-    onSelected: (tenantId: string) => void,
+    onSelected: (tenantId: string, tenant?: Tenant) => void,
     filterTenants?: (tenants: Array<Tenant>) => Array<Tenant>
     submitButtonText?: string
 }
@@ -65,7 +65,19 @@ const TenantSelector: React.FC<TenantSelectorProps> = ({
             <DialogActions>
                 <Button onClick={() => onCancel()}>Cancel</Button>
                 <Button disabled={selectedTenant === null} 
-                    onClick={() => {selectedTenant !== null ? onSelected(selectedTenant) : setErrorMessage("Select a valid tenant")}}>
+                    onClick={() => {
+                        if(selectedTenant !== null){
+                            const tenants: Array<Tenant> = data.getTenants;
+                            const tenant: Tenant | undefined = tenants.find(
+                                (t: Tenant) => t.tenantId === selectedTenant
+                            );
+                            onSelected(selectedTenant, tenant);
+                        }
+                        else{
+                            setErrorMessage("Select a valid tenant");
+                        }
+                    }}
+                >
                         {submitButtonText &&
                             submitButtonText
                         }
