@@ -1,4 +1,4 @@
-import { RateLimitServiceGroup, TenantRateLimitRel } from "@/graphql/generated/graphql-types";
+import { RateLimitServiceGroup, TenantRateLimitRel, TenantRateLimitRelView } from "@/graphql/generated/graphql-types";
 import RateLimitDao from "../../rate-limit-dao";
 import connection  from "@/lib/data-sources/db";
 import TenantRateLimitRelEntity from "@/lib/entities/tenant-rate-limit-rel-entity";
@@ -38,6 +38,28 @@ class DBRateLimitDao extends RateLimitDao {
             servicegroupid: serviceGroupId
         });
         return Promise.resolve(r);
+    }
+
+    public async getRateLimitTenantRelViews(rateLimitServiceGroupId: string): Promise<Array<TenantRateLimitRelView>> {
+        const conn = connection.em.fork().getConnection();
+        const l = await conn.execute<Array<any>>("select tenant_rate_limit_rel.*, tenant.tenantname from tenant_rate_limit_rel INNER JOIN tenant ON tenant_rate_limit_rel.tenantid = tenant.tenantid WHERE tenant_rate_limit_rel.servicegroupid = ? ORDER BY tenant.tenantname ASC", [
+            rateLimitServiceGroupId
+        ], "all");
+        
+        return l.map(
+            (item: any) => {
+                const view: TenantRateLimitRelView = {
+                    servicegroupid: item.servicegroupid,
+                    tenantId: item.tenantid,
+                    tenantName: item.tenantname,
+                    allowUnlimitedRate: item.allowunlimitedrate,
+                    rateLimit: item.ratelimit,
+                    rateLimitPeriodMinutes: item.ratelimitperiodminutes
+                }
+                return view;
+            }
+        )
+        
     }
 
     public async createRateLimitServiceGroup(rateLimitServiceGroup: RateLimitServiceGroup): Promise<RateLimitServiceGroup> {
