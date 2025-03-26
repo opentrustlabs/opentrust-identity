@@ -241,6 +241,29 @@ export const REL_SEARCH_QUERY = gql(`
     }
 `);
 
+export const TENANT_RATE_LIMIT_REL_SEARCH_QUERY = gql(`
+    query relSearch($relSearchInput: RelSearchInput!) {
+        relSearch(relSearchInput: $relSearchInput) {
+            starttime
+            endtime
+            took
+            page
+            perpage
+            total
+            resultlist {
+                owningtenantid
+                owningtenantname
+                parentid
+                parenttype
+                childid
+                childtype
+                childname
+                childdescription
+            }            
+        }
+    }    
+`);
+
 
 export const USER_DETAIL_QUERY = gql(`
     query getUserById($userId: String!) {

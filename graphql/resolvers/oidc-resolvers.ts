@@ -1,6 +1,6 @@
 import ClientService from "@/lib/service/client-service";
 import TenantService from "@/lib/service/tenant-service";
-import { Resolvers, QueryResolvers, MutationResolvers, Tenant, Client, SigningKey, Scope, AuthenticationGroup, AuthorizationGroup, FederatedOidcProvider, Contact, LoginUserNameHandlerResponse, LoginUserNameHandlerAction, LoginAuthenticationHandlerResponse, LoginAuthenticationHandlerAction, SecondFactorType, PortalUserProfile, User, LoginFailurePolicy, TenantPasswordConfig, TenantLegacyUserMigrationConfig, TenantAnonymousUserConfiguration, TenantLookAndFeel, RateLimitServiceGroup, TenantRateLimitRel } from "@/graphql/generated/graphql-types";
+import { Resolvers, QueryResolvers, MutationResolvers, Tenant, Client, SigningKey, Scope, AuthenticationGroup, AuthorizationGroup, FederatedOidcProvider, Contact, LoginUserNameHandlerResponse, LoginUserNameHandlerAction, LoginAuthenticationHandlerResponse, LoginAuthenticationHandlerAction, SecondFactorType, PortalUserProfile, User, LoginFailurePolicy, TenantPasswordConfig, TenantLegacyUserMigrationConfig, TenantAnonymousUserConfiguration, TenantLookAndFeel, RateLimitServiceGroup, TenantRateLimitRel, RelSearchResultItem } from "@/graphql/generated/graphql-types";
 import SigningKeysService from "@/lib/service/keys-service";
 import ScopeService from "@/lib/service/scope-service";
 import GroupService from "@/lib/service/group-service";
@@ -8,11 +8,10 @@ import AuthenticationGroupService from "@/lib/service/authentication-group-servi
 import FederatedOIDCProviderService from "@/lib/service/federated-oidc-provider-service";
 import { NAME_ORDER_WESTERN, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_POST, SCOPE_USE_APPLICATION_MANAGEMENT, SIGNING_KEY_STATUS_ACTIVE, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import SearchService from "@/lib/service/search-service";
-import { GraphQLError } from "graphql";
 import ContactService from "@/lib/service/contact-service";
 import IdentitySerivce from "@/lib/service/identity-service";
-import { t } from "@mikro-orm/core";
 import RateLimitService from "@/lib/service/rate-limit-service";
+import { OIDCContext } from "../graphql-context";
 
 
 const resolvers: Resolvers = {
@@ -58,7 +57,7 @@ const resolvers: Resolvers = {
             const searchService: SearchService = new SearchService(oidcContext);
             return searchService.search(searchInput);
         },
-        relSearch: (_, { relSearchInput}, oidcContext) => {
+        relSearch: (_, { relSearchInput}, oidcContext) => {            
             const searchService: SearchService = new SearchService(oidcContext);
             return searchService.relSearch(relSearchInput);
         },
@@ -811,7 +810,27 @@ const resolvers: Resolvers = {
             await service.removeRateLimitFromTenant(tenantId, serviceGroupId);
             return serviceGroupId;
         }
-
+    },
+    RelSearchResultItem : {
+        owningtenantname: async (item: RelSearchResultItem, _: any, oidcContext: OIDCContext) => {
+            let tenant: Tenant | null = null;
+            if(oidcContext.requestCache.has(item.owningtenantid)){
+                tenant = oidcContext.requestCache.get(item.owningtenantid);
+                return tenant?.tenantName || "";
+            }
+            else{
+                const service: TenantService = new TenantService(oidcContext);
+                tenant = await service.getTenantById(item.owningtenantid);
+                if(tenant){
+                    oidcContext.requestCache.set(item.owningtenantid, tenant);
+                    return tenant.tenantName;
+                }
+                else{
+                    return "";
+                }
+            }
+            
+        }
     }
 }
 

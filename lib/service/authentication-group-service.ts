@@ -157,7 +157,7 @@ class AuthenticationGroupService {
             id: `${authenticationGroupId}::${userId}`,
             index: SEARCH_INDEX_REL_SEARCH,
             refresh: "wait_for"
-        })
+        });
 
         return Promise.resolve();
     }

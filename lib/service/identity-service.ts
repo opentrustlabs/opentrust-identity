@@ -131,15 +131,11 @@ class IdentitySerivce {
                     id: user.userId,
                     index: SEARCH_INDEX_OBJECT_SEARCH
                 });
-                console.log(getResponse);
+                
                 if (getResponse.body) {
-                    console.log("####################################");
-                    console.log(getResponse.body);
                     const document: ObjectSearchResultItem = getResponse.body._source as ObjectSearchResultItem;
-                    console.log("####################################")
-                    console.log(document);
                     document.name = user.nameOrder === NAME_ORDER_WESTERN ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`,
-                        document.email = user.email;
+                    document.email = user.email;
                     document.enabled = user.enabled;
                     await searchClient.index({
                         id: user.userId,
@@ -147,6 +143,8 @@ class IdentitySerivce {
                         body: document
                     })
                 }
+                // TODO: Update the rel_index as well, but do NOT wait on the results since
+                // there could be 1000s of records to modify.
             }
             return user;
         }
