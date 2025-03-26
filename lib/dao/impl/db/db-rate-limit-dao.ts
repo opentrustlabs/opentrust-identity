@@ -12,7 +12,7 @@ class DBRateLimitDao extends RateLimitDao {
         const em = connection.em.fork();        
 
         if(tenantId){
-            const rels: Array<TenantRateLimitRel> = await this.getRateLimitTenantRel(tenantId);
+            const rels: Array<TenantRateLimitRel> = await this.getRateLimitTenantRel(tenantId, null);
             const ids: Array<string> = rels.map((r: TenantRateLimitRel) => r.servicegroupid);
             const arr: Array<RateLimitServiceGroup> = await em.find(RateLimitServiceGroupEntity, 
                 {
@@ -61,12 +61,32 @@ class DBRateLimitDao extends RateLimitDao {
     }
 
 
-    public async getRateLimitTenantRel(tenantId: string): Promise<Array<TenantRateLimitRel>> {
+    public async getRateLimitTenantRel(tenantId: string | null, rateLimitServiceGroupId: string | null): Promise<Array<TenantRateLimitRel>> {
         const em = connection.em.fork();
-        const entities = await em.find(TenantRateLimitRelEntity, {
-            tenantId: tenantId
-        });
-        return Promise.resolve(entities);
+        // const conn = connection.em.fork().getConnection();
+        // conn.execute("SELECT * FROM ")
+        const where: any = {};
+        if(tenantId){
+            where.tenantId = tenantId
+        }
+        if(rateLimitServiceGroupId){
+            where.servicegroupid = rateLimitServiceGroupId
+        }
+        const entities: Array<TenantRateLimitRelEntity> = await em.find(TenantRateLimitRelEntity, where);
+        const retVal = entities.map(
+            (entity: TenantRateLimitRelEntity) => {
+                return {
+                    allowUnlimitedRate: entity.allowUnlimitedRate,
+                    rateLimit: entity.rateLimit,
+                    rateLimitPeriodMinutes: entity.rateLimitPeriodMinutes,
+                    servicegroupid: entity.servicegroupid,
+                    tenantId: entity.tenantId,
+                    tenantName: ""
+                }
+            }
+        )
+
+        return Promise.resolve(retVal);
     }
 
     public async assignRateLimitToTenant(tenantId: string, serviceGroupId: string, allowUnlimited: boolean, limit: number, rateLimitPeriodMinutes: number): Promise<TenantRateLimitRel> {

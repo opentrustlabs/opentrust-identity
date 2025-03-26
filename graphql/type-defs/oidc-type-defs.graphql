@@ -41,6 +41,8 @@ type Query {
     ## RateLimit
     getRateLimitServiceGroups(tenantId: String): [RateLimitServiceGroup!]!
     getRateLimitServiceGroupById(serviceGroupId: String!): RateLimitServiceGroup
+    getRateLimitTenantRels(tenantId: String, rateLimitServiceGroupId: String): [TenantRateLimitRelView!]!
+
 
     ## Scope
     getScope(tenantId: String): [Scope!]!
@@ -535,6 +537,15 @@ type TenantRateLimitRel {
     rateLimitPeriodMinutes: Int
 }
 
+type TenantRateLimitRelView {
+    tenantId: String!
+    tenantName: String!
+    servicegroupid: String!
+    allowUnlimitedRate: Boolean
+    rateLimit: Int
+    rateLimitPeriodMinutes: Int
+}
+
 
 # Access rules CAN be applied at the tenant level for any non-Root tenant
 # Any client or group will automatically inherit these restrictions.
@@ -788,8 +799,10 @@ type ObjectSearchResultItem {
 
 type RelSearchResultItem {
     owningtenantid: String!
+    owningtenantname: String
     parentid: String!
     parenttype: SearchResultType!
+    parentname: String
     childid: String!
     childtype: SearchResultType!
     childname: String!

@@ -28,9 +28,8 @@ export default startServerAndCreateNextHandler(server, {
     context: async(req: NextApiRequest, res: NextApiResponse) => {
         
         return {
-            req,
-            res,
-            authToken: "auth token here"
+            authToken: "auth token here",
+            requestCache: new Map()
         }
     }
 });

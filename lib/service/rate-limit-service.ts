@@ -2,10 +2,10 @@ import { OIDCContext } from "@/graphql/graphql-context";
 import { GraphQLError } from "graphql/error/GraphQLError";
 import { randomUUID } from 'crypto'; 
 import RateLimitDao from "../dao/rate-limit-dao";
-import { ObjectSearchResultItem, RateLimitServiceGroup, SearchResultType, Tenant, TenantRateLimitRel } from "@/graphql/generated/graphql-types";
+import { ObjectSearchResultItem, RateLimitServiceGroup, RelSearchResultItem, SearchResultType, Tenant, TenantRateLimitRel, TenantRateLimitRelView } from "@/graphql/generated/graphql-types";
 import TenantDao from "../dao/tenant-dao";
 import { DaoImpl } from "../data-sources/dao-impl";
-import { DEFAULT_RATE_LIMIT_PERIOD_MINUTES, MAX_RATE_LIMIT_PERIOD_MINUTES, MIN_RATE_LIMIT_PERIOD_MINUTES, SEARCH_INDEX_OBJECT_SEARCH } from "@/utils/consts";
+import { DEFAULT_RATE_LIMIT_PERIOD_MINUTES, MAX_RATE_LIMIT_PERIOD_MINUTES, MIN_RATE_LIMIT_PERIOD_MINUTES, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH } from "@/utils/consts";
 import { getOpenSearchClient } from "../data-sources/search";
 
 
@@ -43,6 +43,8 @@ class RateLimitService {
         }
         await rateLimitDao.updateRateLimitServiceGroup(rateLimitServiceGroup);
         await this.updateSearchIndex(rateLimitServiceGroup);
+        // TODO
+        // Update the rel index if the name or description of the group has changed.
         return Promise.resolve(rateLimitServiceGroup);
     }
 
@@ -50,9 +52,16 @@ class RateLimitService {
         return rateLimitDao.deleteRateLimitServiceGroup(serviceGroupId);
     }
         
-    public async getRateLimitTenantRel(tenantId: string): Promise<Array<TenantRateLimitRel>> {
-        return rateLimitDao.getRateLimitTenantRel(tenantId);        
+    public async getRateLimitTenantRel(tenantId: string | null, rateLimitServiceGroupId: string | null): Promise<Array<TenantRateLimitRel>> {
+        const rels: Array<TenantRateLimitRel> = await rateLimitDao.getRateLimitTenantRel(tenantId, rateLimitServiceGroupId);        
+        return rels;        
     }
+
+    // public async getRateLimitTenantRelViews(tenantId: string | null, rateLimitServiceGroupId: string | null): Promise<Array<TenantRateLimitRelView>> {
+    //     const rels: Array<TenantRateLimitRel> = await rateLimitDao.getRateLimitTenantRel(tenantId, rateLimitServiceGroupId);
+
+    // }
+    
 
     protected async updateSearchIndex(rateLimitServiceGroup: RateLimitServiceGroup): Promise<void> {
         
@@ -87,7 +96,7 @@ class RateLimitService {
         if(!rateLimitServiceGroup){
             throw new GraphQLError("ERROR_CANNOT_FIND_RATE_LIMIT_TO_ASSIGN_TO_TENANT");
         }
-        let existingRels: Array<TenantRateLimitRel> = await rateLimitDao.getRateLimitTenantRel(tenantId);
+        let existingRels: Array<TenantRateLimitRel> = await rateLimitDao.getRateLimitTenantRel(tenantId, null);
         const existingRateLimitRel = existingRels.find(
             (r: TenantRateLimitRel) => r.servicegroupid === rateLimitServiceGroup.servicegroupid
         )
@@ -108,12 +117,14 @@ class RateLimitService {
                                 DEFAULT_RATE_LIMIT_PERIOD_MINUTES : 
                                 rateLimitPeriodMinutes;
 
-        return rateLimitDao.assignRateLimitToTenant(tenantId, serviceGroupId, allowUnlimited, rateLimit, minutes);        
+        const r: TenantRateLimitRel = await rateLimitDao.assignRateLimitToTenant(tenantId, serviceGroupId, allowUnlimited, rateLimit, minutes);        
+        await this.updateRelSearchIndex(tenant, rateLimitServiceGroup);
+        return r;
     }
 
     public async updateRateLimitForTenant(tenantId: string, serviceGroupId: string, allowUnlimited: boolean, limit: number, rateLimitPeriodMinutes: number): Promise<TenantRateLimitRel> {
                 
-        const existingRels: Array<TenantRateLimitRel> = await rateLimitDao.getRateLimitTenantRel(tenantId); 
+        const existingRels: Array<TenantRateLimitRel> = await rateLimitDao.getRateLimitTenantRel(tenantId, null); 
         const existingRel: TenantRateLimitRel | undefined = existingRels.find(
             (r: TenantRateLimitRel) => r.servicegroupid === serviceGroupId && r.tenantId === tenantId
         );
@@ -143,8 +154,35 @@ class RateLimitService {
         return Promise.resolve(existingRel);
     }
 
+    protected async updateRelSearchIndex(tenant: Tenant, rateLimitServiceGroup: RateLimitServiceGroup): Promise<void> {
+
+        const document: RelSearchResultItem = {
+            childid: rateLimitServiceGroup.servicegroupid,
+            childname: rateLimitServiceGroup.servicegroupname,
+            childtype: SearchResultType.RateLimit,
+            owningtenantid: tenant.tenantId,
+            parentid: tenant.tenantId,
+            parenttype: SearchResultType.Tenant,
+            childdescription: rateLimitServiceGroup.servicegroupdescription
+        }
+        await searchClient.index({
+            id: `${tenant.tenantId}::${rateLimitServiceGroup.servicegroupid}`,
+            index: SEARCH_INDEX_REL_SEARCH,
+            body: document,
+            refresh: "wait_for"
+        });
+    }
+
+
     public async removeRateLimitFromTenant(tenantId: string, rateLimitId: string): Promise<void> {
-        return rateLimitDao.removeRateLimitFromTenant(tenantId, rateLimitId);
+        await rateLimitDao.removeRateLimitFromTenant(tenantId, rateLimitId);
+        await searchClient.delete({
+            id: `${tenantId}::${rateLimitId}`,
+            index: SEARCH_INDEX_REL_SEARCH,
+            refresh: "wait_for"
+        });
+
+        return Promise.resolve();
     }
 
     protected checkTotalLimitNotExceeded(tenant: Tenant, limit: number, allowUnlimited: boolean, rateLimitPeriodMinutes: number, existingRels: Array<TenantRateLimitRel>): boolean {

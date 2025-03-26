@@ -13,7 +13,7 @@ abstract class RateLimitDao {
 
     abstract deleteRateLimitServiceGroup(serviceGroupId: string): Promise<void>;
     
-    abstract getRateLimitTenantRel(tenantId: string): Promise<Array<TenantRateLimitRel>>;
+    abstract getRateLimitTenantRel(tenantId: string | null, rateLimitServiceGroupId: string | null): Promise<Array<TenantRateLimitRel>>;
 
     abstract assignRateLimitToTenant(tenantId: string, serviceGroupId: string, allowUnlimited: boolean, limit: number, rateLimitPeriodMinutes: number): Promise<TenantRateLimitRel>;
 

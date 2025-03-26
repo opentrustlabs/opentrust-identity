@@ -5,4 +5,5 @@ export interface OIDCContext {
     authToken: string,
     oidcPrincipal: OIDCPrincipal,
     rootTenant: Tenant,
+    requestCache: Map<string, any>
 }

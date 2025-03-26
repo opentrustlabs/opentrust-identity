@@ -21,6 +21,7 @@ import AccordionSummary from "@mui/material/AccordionSummary";
 import AccordionDetails from "@mui/material/AccordionDetails";
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import SettingsApplicationsIcon from '@mui/icons-material/SettingsApplications';
+import RateLimitTenantRelConfiguration from "./rate-limit-tenant-configuration";
 
 export interface RateLimitDetailProps {
     rateLimitDetail: RateLimitServiceGroup
@@ -151,7 +152,19 @@ const RateLimitDetail: React.FC<RateLimitDetailProps> = ({
                                 </div>
                             </AccordionSummary>
                             <AccordionDetails>
-                                <div>details here</div>
+                                <RateLimitTenantRelConfiguration
+                                    onUpdateEnd={(success: boolean) => {
+                                        setShowMutationBackdrop(false);
+                                        if(success){
+                                            setShowMutationSnackbar(true);
+                                        }
+                                    }}
+                                    onUpdateStart={() => {
+                                        setShowMutationBackdrop(true);
+                                    }}
+                                    rateLimitServiceGroupId={rateLimitDetail.servicegroupid}
+
+                                />
                             </AccordionDetails>
                         </Accordion>
                     </Grid2>
