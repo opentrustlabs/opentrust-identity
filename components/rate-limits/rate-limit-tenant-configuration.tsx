@@ -511,6 +511,9 @@ const AddNewTenatRateLimitConfiguration: React.FC<AddNewTenatRateLimitConfigurat
                                         setLimit(limit);
                                     }
                                 }
+                                else {
+                                    setLimit(parseInt(evt.target.value));
+                                }
                             }}
                             value={limit || ""}
                             disabled={allowUnlimited === true}
