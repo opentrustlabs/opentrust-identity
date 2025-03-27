@@ -6,7 +6,7 @@ import Typography from "@mui/material/Typography";
 import DeleteForeverOutlinedIcon from '@mui/icons-material/DeleteForeverOutlined';
 import BreadcrumbComponent from "../breadcrumbs/breadcrumbs";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
-import { FEDERATED_AUTHN_CONSTRAINT_DISPLAY, FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE, FEDERATED_AUTHN_CONSTRAINT_NOT_ALLOWED, FEDERATED_AUTHN_CONSTRAINT_PERMISSIVE, TENANT_TYPE_IDENTITY_MANAGEMENT, TENANT_TYPE_IDENTITY_MANAGEMENT_AND_SERVICES, TENANT_TYPE_ROOT_TENANT, TENANT_TYPE_SERVICES, TENANT_TYPES_DISPLAY } from "@/utils/consts";
+import { DEFAULT_RATE_LIMIT_PERIOD_MINUTES, FEDERATED_AUTHN_CONSTRAINT_DISPLAY, FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE, FEDERATED_AUTHN_CONSTRAINT_NOT_ALLOWED, FEDERATED_AUTHN_CONSTRAINT_PERMISSIVE, TENANT_TYPE_IDENTITY_MANAGEMENT, TENANT_TYPE_IDENTITY_MANAGEMENT_AND_SERVICES, TENANT_TYPE_ROOT_TENANT, TENANT_TYPE_SERVICES, TENANT_TYPES_DISPLAY } from "@/utils/consts";
 import { Tenant, TenantUpdateInput } from "@/graphql/generated/graphql-types";
 import { useMutation, useQuery } from "@apollo/client";
 import { TENANT_DETAIL_QUERY } from "@/graphql/queries/oidc-queries";
@@ -93,8 +93,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
     const [showMutationSnackbar, setShowMutationSnackbar] = React.useState<boolean>(false);
 
     // GRAPHQL FUNCTIONS
-    const [tenantUpdateMutation] = useMutation(TENANT_UPDATE_MUTATION,
-        {
+    const [tenantUpdateMutation] = useMutation(TENANT_UPDATE_MUTATION, {
             variables: {
                 tenantInput: tenantInput
             },
@@ -108,6 +107,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                 setShowMutationBackdrop(false);
                 setErrorMessage(error.message);
             },
+            refetchQueries: [TENANT_DETAIL_QUERY]
         }
     );
 
@@ -226,23 +226,12 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Default Rate Limit Period (minutes)</div>
                                             <TextField 
-                                                disabled={tenantInput.allowUnlimitedRate === true}
-                                                onChange={
-                                                    (evt) => {
-                                                        const n = parseInt(evt.target.value); 
-                                                        if(n){
-                                                            tenantInput.defaultRateLimitPeriodMinutes = n;                                                             
-                                                        }
-                                                        else{
-                                                            tenantInput.defaultRateLimitPeriodMinutes = undefined;
-                                                        }
-                                                        setTenantInput({...tenantInput}); 
-                                                        setOverviewDirty(true); 
-                                                    }}
+                                                disabled={true}                                                
                                                 type="number"
-                                                name="defaultRateLimitPeriodMinutes" id="defaultRateLimitPeriodMinutes" 
-                                                
-                                                value={tenantInput.defaultRateLimitPeriodMinutes || ""} fullWidth={true} size="small" 
+                                                name="defaultRateLimitPeriodMinutes" id="defaultRateLimitPeriodMinutes"                                                 
+                                                value={tenantInput.allowUnlimitedRate ? "" : DEFAULT_RATE_LIMIT_PERIOD_MINUTES} 
+                                                fullWidth={true} 
+                                                size="small" 
                                             />
                                         </Grid2>
                                     </Grid2>
@@ -271,6 +260,9 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                                         if(checked){
                                                             tenantInput.defaultRateLimit = undefined;
                                                             tenantInput.defaultRateLimitPeriodMinutes = undefined;
+                                                        }
+                                                        else{
+                                                            tenantInput.defaultRateLimitPeriodMinutes = DEFAULT_RATE_LIMIT_PERIOD_MINUTES;
                                                         }
                                                         setTenantInput({...tenantInput}); 
                                                         setOverviewDirty(true);

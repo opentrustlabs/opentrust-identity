@@ -111,6 +111,7 @@ class TenantService {
         //         return {valid: false, errorMessage: "ERROR_INVALID_OIDC_PROVIDER"};
         //     }
         // }
+        
         return {valid: true, errorMessage: ""};
     }
 
