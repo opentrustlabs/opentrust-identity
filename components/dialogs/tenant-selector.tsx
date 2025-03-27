@@ -26,7 +26,10 @@ const TenantSelector: React.FC<TenantSelectorProps> = ({
     const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
 
     // GRAPHQL FUNCTIONS
-    const {data, loading, error} = useQuery(TENANTS_QUERY);
+    const {data, loading, error} = useQuery(TENANTS_QUERY, {
+        fetchPolicy: "no-cache",
+        nextFetchPolicy: "no-cache"
+    });
 
     // HANDLER FUNCTIONS
     const createTenantOptions = () => {

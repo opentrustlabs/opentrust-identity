@@ -6,7 +6,7 @@ import ScopeService from "@/lib/service/scope-service";
 import GroupService from "@/lib/service/group-service";
 import AuthenticationGroupService from "@/lib/service/authentication-group-service";
 import FederatedOIDCProviderService from "@/lib/service/federated-oidc-provider-service";
-import { NAME_ORDER_WESTERN, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_POST, SCOPE_USE_APPLICATION_MANAGEMENT, SIGNING_KEY_STATUS_ACTIVE, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
+import { DEFAULT_RATE_LIMIT_PERIOD_MINUTES, NAME_ORDER_WESTERN, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_POST, SCOPE_USE_APPLICATION_MANAGEMENT, SIGNING_KEY_STATUS_ACTIVE, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import SearchService from "@/lib/service/search-service";
 import ContactService from "@/lib/service/contact-service";
 import IdentitySerivce from "@/lib/service/identity-service";
@@ -158,7 +158,11 @@ const resolvers: Resolvers = {
         getRateLimitTenantRelViews: (_: any, { rateLimitServiceGroupId }, oidcContext) => {
             const service: RateLimitService = new RateLimitService(oidcContext);
             return service.getRateLimitTenantRelViews(rateLimitServiceGroupId);
-        } ,
+        },
+        getRateLimitTenantRels: (_: any, { tenantId, rateLimitServiceGroupId }, oidcContext) => {
+            const service: RateLimitService = new RateLimitService(oidcContext);
+            return service.getRateLimitTenantRel(tenantId || null, rateLimitServiceGroupId || null);
+        },
         getTenantPasswordConfig: (_: any, { tenantId }, oidcContext) => {
             const tenantService: TenantService = new TenantService(oidcContext);
             return tenantService.getTenantPasswordConfig(tenantId);
@@ -267,7 +271,7 @@ const resolvers: Resolvers = {
                 allowLoginByPhoneNumber: tenantInput.allowLoginByPhoneNumber,
                 allowForgotPassword: tenantInput.allowForgotPassword,
                 defaultRateLimit: tenantInput.defaultRateLimit,
-                defaultRateLimitPeriodMinutes: tenantInput.defaultRateLimitPeriodMinutes
+                defaultRateLimitPeriodMinutes: tenantInput.allowUnlimitedRate ? null: DEFAULT_RATE_LIMIT_PERIOD_MINUTES
             }
             await tenantService.createTenant(tenant);
             //const contacts: Array<Contact> = tenantInput.contactInput.map((i: ContactInput) => { return {email: i.email, name: i.name, objectid: tenant.tenantId, objecttype:""}});
@@ -294,7 +298,7 @@ const resolvers: Resolvers = {
                 allowLoginByPhoneNumber: tenantInput.allowLoginByPhoneNumber,
                 allowForgotPassword: tenantInput.allowForgotPassword,
                 defaultRateLimit: tenantInput.defaultRateLimit,
-                defaultRateLimitPeriodMinutes: tenantInput.defaultRateLimitPeriodMinutes
+                defaultRateLimitPeriodMinutes: tenantInput.allowUnlimitedRate ? null: DEFAULT_RATE_LIMIT_PERIOD_MINUTES
             }
             const updatedTenant: Tenant = await tenantService.updateTenant(tenant);
             //const contacts: Array<Contact> = tenantInput.contactInput.map((i: ContactInput) => { return {email: i.email, name: i.name, objectid: tenant.tenantId, objecttype:""}});

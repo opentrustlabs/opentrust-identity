@@ -251,11 +251,24 @@ export const REL_SEARCH_QUERY = gql(`
     }
 `);
 
-export const TENANT_RATE_LIMIT_REL_QUERY = gql(`
+export const TENANT_RATE_LIMIT_REL_VIEW_QUERY = gql(`
     query getRateLimitTenantRelViews($rateLimitServiceGroupId: String!) {
         getRateLimitTenantRelViews(rateLimitServiceGroupId: $rateLimitServiceGroupId) {
             tenantId
             tenantName
+            servicegroupid
+            allowUnlimitedRate
+            rateLimit
+            rateLimitPeriodMinutes           
+        }
+    }    
+`);
+
+// getRateLimitTenantRels(tenantId: String, rateLimitServiceGroupId: String)
+export const TENANT_RATE_LIMIT_REL_QUERY = gql(`
+    query getRateLimitTenantRels($tenantId: String, $rateLimitServiceGroupId: String) {
+        getRateLimitTenantRels(tenantId: $tenantId, rateLimitServiceGroupId: $rateLimitServiceGroupId) {
+            tenantId
             servicegroupid
             allowUnlimitedRate
             rateLimit

@@ -810,4 +810,4 @@ export const IMAGE_MINE_TYPES_DISPLAY: Map<string, string> = new Map([
 // ************************************************************************** //
 export const MAX_RATE_LIMIT_PERIOD_MINUTES=1440;
 export const MIN_RATE_LIMIT_PERIOD_MINUTES=1;
-export const DEFAULT_RATE_LIMIT_PERIOD_MINUTES=60;
+export const DEFAULT_RATE_LIMIT_PERIOD_MINUTES=15;

@@ -56,11 +56,6 @@ class RateLimitService {
         const rels: Array<TenantRateLimitRel> = await rateLimitDao.getRateLimitTenantRel(tenantId, rateLimitServiceGroupId);        
         return rels;        
     }
-
-    // public async getRateLimitTenantRelViews(tenantId: string | null, rateLimitServiceGroupId: string | null): Promise<Array<TenantRateLimitRelView>> {
-    //     const rels: Array<TenantRateLimitRel> = await rateLimitDao.getRateLimitTenantRel(tenantId, rateLimitServiceGroupId);
-
-    // }
     
 
     protected async updateSearchIndex(rateLimitServiceGroup: RateLimitServiceGroup): Promise<void> {
@@ -122,7 +117,7 @@ class RateLimitService {
         return r;
     }
 
-    public async updateRateLimitForTenant(tenantId: string, serviceGroupId: string, allowUnlimited: boolean, limit: number, rateLimitPeriodMinutes: number): Promise<TenantRateLimitRel> {
+    public async updateRateLimitForTenant(tenantId: string, serviceGroupId: string, allowUnlimited: boolean, limit: number | null, rateLimitPeriodMinutes: number | null): Promise<TenantRateLimitRel> {
                 
         const existingRels: Array<TenantRateLimitRel> = await rateLimitDao.getRateLimitTenantRel(tenantId, null); 
         const existingRel: TenantRateLimitRel | undefined = existingRels.find(
@@ -142,12 +137,8 @@ class RateLimitService {
             }
         }
         existingRel.allowUnlimitedRate = allowUnlimited;
-        existingRel.rateLimit = limit < 0 ? 15 : limit > 1000000 ? 15 : limit;
-        existingRel.rateLimitPeriodMinutes = rateLimitPeriodMinutes > MAX_RATE_LIMIT_PERIOD_MINUTES ? 
-                                                DEFAULT_RATE_LIMIT_PERIOD_MINUTES : 
-                                                    rateLimitPeriodMinutes < MIN_RATE_LIMIT_PERIOD_MINUTES ? 
-                                                    DEFAULT_RATE_LIMIT_PERIOD_MINUTES : 
-                                                    rateLimitPeriodMinutes;
+        existingRel.rateLimit = limit && limit < 0 ? 15 : limit && limit > 1000000 ? 15 : limit;
+        existingRel.rateLimitPeriodMinutes = allowUnlimited ? null : DEFAULT_RATE_LIMIT_PERIOD_MINUTES;    // rateLimitPeriodMinutes > MAX_RATE_LIMIT_PERIOD_MINUTES ? DEFAULT_RATE_LIMIT_PERIOD_MINUTES : rateLimitPeriodMinutes < MIN_RATE_LIMIT_PERIOD_MINUTES ? DEFAULT_RATE_LIMIT_PERIOD_MINUTES : rateLimitPeriodMinutes;
         
         rateLimitDao.updateRateLimitForTenant(tenantId, serviceGroupId, allowUnlimited, existingRel.rateLimit, existingRel.rateLimitPeriodMinutes);
 
@@ -190,7 +181,7 @@ class RateLimitService {
         return Promise.resolve();
     }
 
-    protected checkTotalLimitNotExceeded(tenant: Tenant, limit: number, allowUnlimited: boolean, rateLimitPeriodMinutes: number, existingRels: Array<TenantRateLimitRel>): boolean {
+    protected checkTotalLimitNotExceeded(tenant: Tenant, limit: number | null, allowUnlimited: boolean, rateLimitPeriodMinutes: number | null, existingRels: Array<TenantRateLimitRel>): boolean {
         
         if(allowUnlimited === true){
             return true;
@@ -198,13 +189,19 @@ class RateLimitService {
         if(tenant.allowUnlimitedRate === true){
             return true;
         }
-        if(!tenant.defaultRateLimit){
-            return true;
+        if(!allowUnlimited && !tenant.defaultRateLimit){
+            return false;
         }
         if(tenant.defaultRateLimit){
+
+            if(!limit){
+                return false;
+            }
+
             if(rateLimitPeriodMinutes !== tenant.defaultRateLimitPeriodMinutes){
                 return false;
             }
+            
             let existingTotal = 0;
             for(let i = 0; i < existingRels.length; i++){
                 const rel: TenantRateLimitRel = existingRels[i];
@@ -212,9 +209,11 @@ class RateLimitService {
                     existingTotal += rel.rateLimit || 0;
                 }
             }
+
             if(tenant.defaultRateLimit < (limit + existingTotal)){
                 return false;
             }
+
             return true;
         }
         return true;
