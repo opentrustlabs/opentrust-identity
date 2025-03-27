@@ -58,16 +58,19 @@ const RateLimitTenantRelConfiguration: React.FC<RateLimitTenantRelConfigurationP
         }
     });
 
-    const [assignTenantToRateLimitGroupMutation] = useMutation(TENANT_RATE_LIMIT_ASSIGN_MUTATION, {
-        variables: {
 
-        },
+    //    mutation assignRateLimitToTenant($tenantId: String!, $serviceGroupId: String!, $allowUnlimited: Boolean, $limit: Int, $rateLimitPeriodMinutes: Int) {
+    const [assignTenantToRateLimitGroupMutation] = useMutation(TENANT_RATE_LIMIT_ASSIGN_MUTATION, {
         onCompleted() {
             onUpdateEnd(true);
+            setTenantIdToAdd(null);
+            setTenantToAdd(null);
+            setErrorMessage(null);
         },
         onError(error) {
             setErrorMessage(error.message);
         },
+        refetchQueries: [TENANT_RATE_LIMIT_REL_VIEW_QUERY]
     });
 
     const [updateTenantRateLimitGroupMutation] = useMutation(TENANT_RATE_LIMIT_UPDATE_MUTATION, {
@@ -76,10 +79,13 @@ const RateLimitTenantRelConfiguration: React.FC<RateLimitTenantRelConfigurationP
         },
         onCompleted() {
             onUpdateEnd(true);
+
+            setErrorMessage(null);
         },
         onError(error) {
             setErrorMessage(error.message);
         },
+        refetchQueries: [TENANT_RATE_LIMIT_REL_VIEW_QUERY]
     });
 
     const [removeTenantFromRateLimitGroupMutation] = useMutation(TENANT_RATE_LIMIT_REMOVE_MUTATION, {
@@ -88,10 +94,12 @@ const RateLimitTenantRelConfiguration: React.FC<RateLimitTenantRelConfigurationP
         },
         onCompleted() {
             onUpdateEnd(true);
+            setErrorMessage(null);
         },
         onError(error) {
             setErrorMessage(error.message);
         },
+        refetchQueries: [TENANT_RATE_LIMIT_REL_VIEW_QUERY]
     });
 
 
@@ -157,22 +165,33 @@ const RateLimitTenantRelConfiguration: React.FC<RateLimitTenantRelConfigurationP
                     fullWidth={true}
                     maxWidth={"sm"}
                 >
-
-                    <DialogContent>
-                        <AddNewTenatRateLimitConfiguration
-                            tenantId={tenantIdToAdd || ""}
-                            tenantName={tenantToAdd?.tenantName || ""}
-                            tenantAllowUnlimited={tenantToAdd?.allowUnlimitedRate || false}
-                            tenantRatePeriodMinutes={tenantToAdd?.defaultRateLimitPeriodMinutes || null}
-                            totalRateLimit={tenantToAdd?.defaultRateLimit || null}
-                            onCompleted={(allowUnlimited: boolean, limit: number, rateLimitPeriodMinutes: number) => {
-                                console.log("on completed")
-                            }}
-                        />
-                    </DialogContent>
-                    <DialogActions>
-                        <Button onClick={() => setConfigureRateLimitDialogOpen(false)}>Cancel</Button>
-                    </DialogActions>
+                    
+                    <AddNewTenatRateLimitConfiguration
+                        tenantId={tenantIdToAdd || ""}
+                        tenantName={tenantToAdd?.tenantName || ""}
+                        tenantAllowUnlimited={tenantToAdd?.allowUnlimitedRate || false}
+                        tenantRatePeriodMinutes={tenantToAdd?.defaultRateLimitPeriodMinutes || null}
+                        totalRateLimit={tenantToAdd?.defaultRateLimit || null}
+                        onCompleted={(allowUnlimited: boolean, limit: number | null, rateLimitPeriodMinutes: number | null) => {
+                            setConfigureRateLimitDialogOpen(false);
+                            onUpdateStart();                            
+                            assignTenantToRateLimitGroupMutation({
+                                variables: {
+                                    tenantId: tenantIdToAdd,
+                                    allowUnlimited: allowUnlimited,
+                                    serviceGroupId: rateLimitServiceGroupId,
+                                    limit: limit,
+                                    rateLimitPeriodMinutes: rateLimitPeriodMinutes
+                                }
+                            });   
+                        }} 
+                        onCancel={() => {
+                            setConfigureRateLimitDialogOpen(false);
+                            setTenantIdToAdd(null);
+                            setTenantToAdd(null);
+                        }}                        
+                    />
+                    
 
                 </Dialog>
             }
@@ -193,7 +212,12 @@ const RateLimitTenantRelConfiguration: React.FC<RateLimitTenantRelConfigurationP
                         <Button onClick={() => {
                             setShowRemoveConfirmationDialog(false);
                             onUpdateStart();
-                            removeTenantFromRateLimitGroupMutation();
+                            removeTenantFromRateLimitGroupMutation({
+                                variables: {
+                                    tenantId: tenantToRemove?.id,
+                                    serviceGroupId: rateLimitServiceGroupId
+                                }
+                            });
                         }}>Confirm</Button>
                     </DialogActions>
                 </Dialog>
@@ -220,14 +244,12 @@ const RateLimitTenantRelConfiguration: React.FC<RateLimitTenantRelConfigurationP
                                 endAdornment: (
                                     <InputAdornment position="end">
                                         <CloseOutlinedIcon
-
                                             sx={{ cursor: "pointer" }}
                                         />
                                     </InputAdornment>
                                 )
                             }
                         }}
-
                     />
                 </Grid2>
             </Grid2>
@@ -376,7 +398,8 @@ interface AddNewTenatRateLimitConfigurationProps {
     tenantAllowUnlimited: boolean,
     tenantRatePeriodMinutes: number | null,
     totalRateLimit: number | null,
-    onCompleted: (allowUnlimited: boolean, limit: number, rateLimitPeriodMinutes: number) => void
+    onCancel: () => void,
+    onCompleted: (allowUnlimited: boolean, limit: number | null, rateLimitPeriodMinutes: number | null) => void
 }
 
 
@@ -386,13 +409,14 @@ const AddNewTenatRateLimitConfiguration: React.FC<AddNewTenatRateLimitConfigurat
     tenantAllowUnlimited,
     tenantRatePeriodMinutes,
     totalRateLimit,
+    onCancel,
     onCompleted
 }) => {
 
     // STATE VARIABLES
     const [allowUnlimited, setAllowUnlimited] = React.useState<boolean>(false);
-    const [limit, setLimit] = React.useState<number | string>("");
-    const [rateLimitPeriodMinutes, setRateLimitPeriodMinutes] = React.useState<number | string>(tenantRatePeriodMinutes || DEFAULT_RATE_LIMIT_PERIOD_MINUTES);
+    const [limit, setLimit] = React.useState<number | null>(null);
+    const [rateLimitPeriodMinutes, setRateLimitPeriodMinutes] = React.useState<number | null>(tenantRatePeriodMinutes || DEFAULT_RATE_LIMIT_PERIOD_MINUTES);
 
 
     // GRAPHQL FUNCTIONS
@@ -418,92 +442,114 @@ const AddNewTenatRateLimitConfiguration: React.FC<AddNewTenatRateLimitConfigurat
 
     return (
         <Typography component="div">
-            <Grid2 size={12} container spacing={1}>
-                <Grid2 marginBottom={"8px"} size={3} fontWeight={"bold"}>
-                    <span style={{ textDecoration: "underline" }}>Tenant: </span>
-                </Grid2>
-                <Grid2 marginBottom={"8px"} size={9} fontWeight={"bold"}>
-                    <span>{tenantName} </span>
-                </Grid2>
-                {!tenantAllowUnlimited &&
-                    <>
-                        <Grid2 marginBottom={"0px"} sx={{ textDecoration: "underline" }} size={3} >
-                            <span>Total limit:</span>
-                        </Grid2>
-                        <Grid2 marginBottom={"0px"}  size={9} >
-                            <span>{totalRateLimit}</span>
-                        </Grid2>
-                        {data && data.getRateLimitTenantRels &&
-                            <>
-                                <Grid2 marginBottom={"16px"} sx={{ textDecoration: "underline" }} size={3} >
-                                    <span>Used:</span>
-                                </Grid2>
-                                <Grid2 marginBottom={"16px"}  size={9} >
-                                    <span>{getTotalUsed(data.getRateLimitTenantRels)}</span>
-                                </Grid2>
-                            </>
-                            
-                        }
-                    </>
-                }
+            <DialogContent>
+                <Grid2 size={12} container spacing={1}>
+                    <Grid2 marginBottom={"8px"} size={3} fontWeight={"bold"}>
+                        <span style={{ textDecoration: "underline" }}>Tenant: </span>
+                    </Grid2>
+                    <Grid2 marginBottom={"8px"} size={9} fontWeight={"bold"}>
+                        <span>{tenantName} </span>
+                    </Grid2>
+                    {!tenantAllowUnlimited &&
+                        <>
+                            <Grid2 marginBottom={"0px"} sx={{ textDecoration: "underline" }} size={3} >
+                                <span>Total limit:</span>
+                            </Grid2>
+                            <Grid2 marginBottom={"0px"} size={9} >
+                                <span>{totalRateLimit}</span>
+                            </Grid2>
+                            {data && data.getRateLimitTenantRels &&
+                                <>
+                                    <Grid2 marginBottom={"16px"} sx={{ textDecoration: "underline" }} size={3} >
+                                        <span>Used:</span>
+                                    </Grid2>
+                                    <Grid2 marginBottom={"16px"} size={9} >
+                                        <span>{getTotalUsed(data.getRateLimitTenantRels)}</span>
+                                    </Grid2>
+                                </>
 
-                <Grid2 size={11}>Allow unlimited</Grid2>
-                <Grid2 size={1}>
-                    <Checkbox
-                        value={allowUnlimited}
-                        onChange={(_, checked: boolean) => {
-                            setAllowUnlimited(checked);
-                            if (checked) {
-                                setLimit("");
-                                setRateLimitPeriodMinutes("");
                             }
-                            else {
-                                setRateLimitPeriodMinutes(DEFAULT_RATE_LIMIT_PERIOD_MINUTES);
-                                
-                            }
-                        }}
-                    />
-                </Grid2>
-                <Grid2 size={12}>Limit</Grid2>
-                <Grid2 size={12} marginBottom={"16px"}>
-                    <TextField
-                        name="limit"
-                        type="number"
-                        fullWidth={true}
-                        size="small"
-                        onChange={(evt) => {
-                            if(!tenantAllowUnlimited && totalRateLimit){
-                                const used: number = data && data.getRateLimitTenantRels ? getTotalUsed(data.getRateLimitTenantRels) : 0;
-                                let limit: number = 0;
-                                try{
-                                    limit = parseInt(evt.target.value)
+                        </>
+                    }
+
+                    <Grid2 size={11}>Allow unlimited</Grid2>
+                    <Grid2 size={1}>
+                        <Checkbox
+                            value={allowUnlimited}
+                            onChange={(_, checked: boolean) => {
+                                setAllowUnlimited(checked);
+                                if (checked) {
+                                    setLimit(null);
+                                    setRateLimitPeriodMinutes(null);
                                 }
-                                catch(err){limit = 0}
-                                if((limit + used) > totalRateLimit){
-                                    setLimit(totalRateLimit - used);
+                                else {
+                                    setRateLimitPeriodMinutes(DEFAULT_RATE_LIMIT_PERIOD_MINUTES);
+
                                 }
-                                else{
-                                    setLimit(limit);
+                            }}
+                        />
+                    </Grid2>
+                    <Grid2 size={12}>Limit</Grid2>
+                    <Grid2 size={12} marginBottom={"16px"}>
+                        <TextField
+                            name="limit"
+                            type="number"
+                            fullWidth={true}
+                            size="small"
+                            onChange={(evt) => {
+                                if (!tenantAllowUnlimited && totalRateLimit) {
+                                    const used: number = data && data.getRateLimitTenantRels ? getTotalUsed(data.getRateLimitTenantRels) : 0;
+                                    let limit: number = 0;
+                                    try {
+                                        limit = parseInt(evt.target.value)
+                                    }
+                                    catch (err) { limit = 0 }
+                                    if ((limit + used) > totalRateLimit) {
+                                        setLimit(totalRateLimit - used);
+                                    }
+                                    else {
+                                        setLimit(limit);
+                                    }
                                 }
-                            }
-                        }}
-                        value={limit}
-                        disabled={allowUnlimited === true}
-                    />
+                            }}
+                            value={limit || ""}
+                            disabled={allowUnlimited === true}
+                        />
+                    </Grid2>
+                    <Grid2 size={12}>Rate Limit Period (minutes)</Grid2>
+                    <Grid2 size={12}>
+                        <TextField
+                            name="limitPeriod"
+                            type="number"
+                            fullWidth={true}
+                            size="small"
+                            value={rateLimitPeriodMinutes || ""}
+                            onChange={(evt) => setRateLimitPeriodMinutes(parseInt(evt.target.value))}
+                            disabled={true}
+                        />
+                    </Grid2>
                 </Grid2>
-                <Grid2 size={12}>Rate Limit Period (minutes)</Grid2>
-                <Grid2 size={12}>
-                    <TextField
-                        name="limitPeriod"
-                        type="number"
-                        fullWidth={true}
-                        size="small"
-                        value={rateLimitPeriodMinutes}
-                        onChange={(evt) => setRateLimitPeriodMinutes(parseInt(evt.target.value))}
-                        disabled={true}
-                    />
-                </Grid2>
-            </Grid2>
+            </DialogContent>
+            <DialogActions>
+                <Button onClick={() => {
+                    onCancel()
+                }}
+                >
+                    Cancel
+                </Button>
+                <Button onClick={() => {
+                    if (typeof limit === "string") {
+                        if (limit !== "") {
+
+                        }
+                    }
+                    onCompleted(allowUnlimited, limit, rateLimitPeriodMinutes);
+                }}
+                >
+                    Submit
+                </Button>
+
+            </DialogActions>
         </Typography>
     )
 }
