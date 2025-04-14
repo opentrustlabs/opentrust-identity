@@ -61,7 +61,7 @@ const NewRateLimitDialog: React.FC<NewRateLimitDialogProps> = ({
 
     return (
         <>
-            <DialogTitle>New Authorization Group</DialogTitle>
+            <DialogTitle>New Service Group</DialogTitle>
             <DialogContent>
                 <Typography component={"div"}>
                     <Grid2 container size={12} spacing={3} marginBottom={"16px"} >

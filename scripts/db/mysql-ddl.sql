@@ -276,6 +276,7 @@ create TABLE tenant_rate_limit_rel (
     allowunlimitedrate BOOLEAN NOT NULL,
     ratelimit INT,
     ratelimitperiodminutes INT,
+    PRIMARY KEY (servicegroupid, tenantid),
     FOREIGN KEY (servicegroupid) REFERENCES rate_limit_service_group(servicegroupid),
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid)
 );

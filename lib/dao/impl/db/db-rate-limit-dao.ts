@@ -134,7 +134,7 @@ class DBRateLimitDao extends RateLimitDao {
             rateLimitPeriodMinutes
         });
         await em.upsert(entity);
-        await em.flush()
+        await em.flush();
         return Promise.resolve(entity);
     }
 

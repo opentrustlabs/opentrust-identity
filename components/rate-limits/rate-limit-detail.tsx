@@ -188,11 +188,6 @@ const RateLimitDetail: React.FC<RateLimitDetailProps> = ({
                 anchorOrigin={{ horizontal: "center", vertical: "top" }}
             />
         </Typography >
-
-
-
-
-
     )
 }
 
