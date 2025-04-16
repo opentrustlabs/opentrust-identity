@@ -475,7 +475,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                             </Accordion>
                         </Grid2>
                         
-                        <Grid2 size={12} marginBottom={"16px"}>
+                        <Grid2 size={12} >
                             <Accordion >
                                 <AccordionSummary
                                     expandIcon={<ExpandMoreIcon />}

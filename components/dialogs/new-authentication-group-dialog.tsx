@@ -69,8 +69,8 @@ const NewAuthenticationGroupDialog: React.FC<NewAuthenticationGroupDialogProps> 
 
             <DialogContent>
                 <Typography component={"div"}>
-                    <Grid2 container size={12} spacing={3} marginBottom={"16px"} >
-                        <Grid2 size={12}>
+                    <Grid2 container size={12} spacing={1} marginBottom={"8px"} >
+                        
                             {errorMessage &&
                                 <Grid2 size={{ xs: 12 }} textAlign={"center"}>
                                     <Stack
@@ -83,14 +83,14 @@ const NewAuthenticationGroupDialog: React.FC<NewAuthenticationGroupDialogProps> 
                                     </Stack>
                                 </Grid2>
                             }
-                            <Grid2 marginBottom={"16px"}>
+                            <Grid2 size={12} marginBottom={"8px"}>
                                 <div>Group Name</div>
                                 <TextField name="authnGroupName" id="authnGroupName" 
                                     value={authnGroupInput.authenticationGroupName} fullWidth={true} size="small" 
                                     onChange={(evt) => {authnGroupInput.authenticationGroupName = evt.target.value; setAuthnGroupInput({...authnGroupInput})}}
                                 />
                             </Grid2>
-                            <Grid2 marginBottom={"16px"}>                                
+                            <Grid2 size={12} marginBottom={"8px"}>                                
                                 <div>Group Description</div>
                                 <TextField name="authnGroupDescription" id="authnGroupDescription" 
                                     value={authnGroupInput.authenticationGroupDescription} 
@@ -99,7 +99,7 @@ const NewAuthenticationGroupDialog: React.FC<NewAuthenticationGroupDialogProps> 
 
                                 />
                             </Grid2>
-                            <Grid2 marginBottom={"16px"}>
+                            <Grid2 size={12} container marginBottom={"8px"}>
                                 <Grid2 alignContent={"center"} size={10}>Default</Grid2>
                                 <Grid2 size={2}>
                                     <Checkbox 
@@ -108,7 +108,7 @@ const NewAuthenticationGroupDialog: React.FC<NewAuthenticationGroupDialogProps> 
                                     />
                                 </Grid2>
                             </Grid2>
-                        </Grid2>
+                        
                     </Grid2>
 
                 </Typography>
