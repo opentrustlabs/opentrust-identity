@@ -7,7 +7,7 @@ import ErrorComponent from "../error/error-component";
 import Typography from "@mui/material/Typography";
 import Grid2 from "@mui/material/Grid2";
 import Divider from "@mui/material/Divider";
-import SearchIcon from '@mui/icons-material/Search';
+import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
 import RadioButtonUncheckedOutlinedIcon from '@mui/icons-material/RadioButtonUncheckedOutlined';
 import RadioButtonCheckedIcon from '@mui/icons-material/RadioButtonChecked';
 import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
@@ -15,7 +15,7 @@ import AddBoxIcon from '@mui/icons-material/AddBox';
 import DoneOutlinedIcon from '@mui/icons-material/DoneOutlined';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { AuthorizationGroup, ObjectSearchResultItem, ObjectSearchResults, SearchFilterInputObjectType, SearchResultType, UserTenantRelView } from "@/graphql/generated/graphql-types";
-import { Alert, Button, Checkbox, Dialog, DialogActions, DialogContent, InputAdornment, Pagination, TablePagination, TextField } from "@mui/material";
+import { Alert, Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, InputAdornment, Pagination, TablePagination, TextField } from "@mui/material";
 import { AUTHORIZATION_GROUP_USER_ADD_MUTATION, AUTHORIZATION_GROUP_USER_REMOVE_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import TenantQuickInfo from "../tenants/tenant-quick-info";
 
@@ -88,19 +88,22 @@ const UserAuthorizationGroupConfiguration: React.FC<UserAuthorizationGroupConfig
                 <Dialog
                     open={showAddDialog}
                     onClose={() => setShowAddDialog(false)}
-                    maxWidth="xs"
+                    maxWidth="sm"
                     fullWidth={true}
                 >
+                    <DialogTitle>Select Authorization Group</DialogTitle>
                     <DialogContent>
-                        <AuthorizationGroupsAssignDialog
-                            userId={userId}
-                            existingGroups={data.getUserAuthorizationGroups.map(
-                                (authzGroup: AuthorizationGroup) => authzGroup.groupId
-                            )}
-                            onGroupSelected={(groupId: string | null) => {
-                                setGroupToAdd(groupId);
-                            }}
-                        />
+                        <Typography component="div">
+                            <AuthorizationGroupsAssignDialog
+                                userId={userId}
+                                existingGroups={data.getUserAuthorizationGroups.map(
+                                    (authzGroup: AuthorizationGroup) => authzGroup.groupId
+                                )}
+                                onGroupSelected={(groupId: string | null) => {
+                                    setGroupToAdd(groupId);
+                                }}
+                            />
+                        </Typography>
                     </DialogContent>
                     <DialogActions>
                         <Button
@@ -207,7 +210,7 @@ const UserAuthorizationGroupConfiguration: React.FC<UserAuthorizationGroupConfig
             
             {data.getUserAuthorizationGroups.map(                                            
                 (authzGroup: AuthorizationGroup) => (
-                    <Typography key={`${authzGroup.groupId}`} component={"div"} fontSize={"0.9em"} fontWeight={"bold"}>
+                    <Typography key={`${authzGroup.groupId}`} component={"div"} fontWeight={"bold"}>
                         <Divider></Divider>                        
                         <Grid2 margin={"8px 0px 8px 0px"} container size={12} spacing={1}>
                             <Grid2 size={9}>{authzGroup.groupName}</Grid2>                            
@@ -267,7 +270,7 @@ const AuthorizationGroupsAssignDialog: React.FC<AuthorizationGroupAssignDialogPr
         }
     });
 
-    let { data: searchData, loading: searchLoading, error: searchError, previousData: searchPreviousData } = useQuery(SEARCH_QUERY, {
+    let { data: searchData, loading: searchLoading, previousData: searchPreviousData } = useQuery(SEARCH_QUERY, {
         variables: {
             searchInput: {
                 term: filterTerm,
@@ -278,8 +281,8 @@ const AuthorizationGroupsAssignDialog: React.FC<AuthorizationGroupAssignDialogPr
             }
         },
         skip: !data,
-        fetchPolicy: "no-cache",
-        nextFetchPolicy: "no-cache"
+        // fetchPolicy: "no-cache",
+        // nextFetchPolicy: "no-cache"
     });
 
 
@@ -309,8 +312,8 @@ const AuthorizationGroupsAssignDialog: React.FC<AuthorizationGroupAssignDialogPr
         
         return (
         <>
-            <Typography component={"div"} fontWeight={"bold"} fontSize={"0.9em"}>
-                <Grid2 container size={12} spacing={1} marginBottom={"16px"} >
+            <Typography component={"div"} fontWeight={"bold"} >
+                <Grid2 container size={12} spacing={1} marginBottom={"16px"} paddingTop={"8px"}>
                     <Grid2 size={12}>
                         <TextField
                             autoFocus={true}
@@ -324,9 +327,12 @@ const AuthorizationGroupsAssignDialog: React.FC<AuthorizationGroupAssignDialogPr
                                 input: {
                                     endAdornment: (
                                         <InputAdornment position="end">
-                                            <SearchIcon
+                                            <CloseOutlinedIcon
                                                 sx={{ cursor: "pointer" }}
-                                                onClick={() => { setFilterTerm(""); }}
+                                                onClick={() => { 
+                                                    setFilterTerm("");
+                                                    setPage(1);
+                                                }}
                                             />
                                         </InputAdornment>
                                     )
@@ -336,9 +342,8 @@ const AuthorizationGroupsAssignDialog: React.FC<AuthorizationGroupAssignDialogPr
                     </Grid2>                    
                 </Grid2>
             </Typography>
-            <Divider></Divider>
-            {r.total < 1 &&
-                <Typography component={"div"} fontSize={"0.9em"}>
+            {!searchLoading && r.total < 1 &&
+                <Typography component={"div"} >
                     <Grid2 margin={"8px 0px 8px 0px"} textAlign={"center"} size={12} spacing={1}>
                         No groups to display
                     </Grid2>
@@ -347,8 +352,9 @@ const AuthorizationGroupsAssignDialog: React.FC<AuthorizationGroupAssignDialogPr
             <Grid2 minHeight={"4vh"} sx={{ marginTop: "16px", padding: "8px" }} size={12}>
                 {r.resultlist.map(
                     (item: ObjectSearchResultItem) => (
-                        <Typography key={`${item.objectid}`} component={"div"} fontSize={"0.9em"}>
-                            <Grid2 alignItems={"center"} container size={12} spacing={1}>
+                        <React.Fragment key={`${item.objectid}`}>
+                        <Typography  component={"div"} >
+                            <Grid2 alignItems={"center"} container size={12} spacing={0}>
                                 <Grid2 size={11}>
                                     {item.name}
                                 </Grid2>                                
@@ -385,6 +391,7 @@ const AuthorizationGroupsAssignDialog: React.FC<AuthorizationGroupAssignDialogPr
                             </Grid2>
                             <Divider />
                         </Typography>
+                        </React.Fragment>
                     )
                 )}
             </Grid2>

@@ -7,7 +7,7 @@ import ErrorComponent from "../error/error-component";
 import Typography from "@mui/material/Typography";
 import Grid2 from "@mui/material/Grid2";
 import Divider from "@mui/material/Divider";
-import SearchIcon from '@mui/icons-material/Search';
+import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
 import RadioButtonUncheckedOutlinedIcon from '@mui/icons-material/RadioButtonUncheckedOutlined';
 import RadioButtonCheckedIcon from '@mui/icons-material/RadioButtonChecked';
 import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
@@ -89,10 +89,12 @@ const UserAuthenticationGroupConfiguration: React.FC<UserAuthenticationGroupConf
                 <Dialog
                     open={showAddDialog}
                     onClose={() => setShowAddDialog(false)}
-                    maxWidth="xs"
+                    maxWidth="sm"
                     fullWidth={true}
                 >
+                    <DialogTitle>Select Authentication Group</DialogTitle>
                     <DialogContent>
+                        <Typography component="div">
                         <AuthenticationGroupsAssignDialog
                             userId={userId}
                             existingGroups={data.getAuthenticationGroups.map(
@@ -102,6 +104,7 @@ const UserAuthenticationGroupConfiguration: React.FC<UserAuthenticationGroupConf
                                 setGroupToAdd(groupId);
                             }}
                         />
+                        </Typography>
                     </DialogContent>
                     <DialogActions>
                         <Button
@@ -208,7 +211,7 @@ const UserAuthenticationGroupConfiguration: React.FC<UserAuthenticationGroupConf
             
             {data.getAuthenticationGroups.map(                                            
                 (authnGroup: AuthenticationGroup) => (
-                    <Typography key={`${authnGroup.authenticationGroupId}`} component={"div"} fontSize={"0.9em"} fontWeight={"bold"}>
+                    <Typography key={`${authnGroup.authenticationGroupId}`} component={"div"} fontWeight={"bold"}>
                         <Divider></Divider>                        
                         <Grid2 margin={"8px 0px 8px 0px"} container size={12} spacing={1}>
                             <Grid2 size={9}>{authnGroup.authenticationGroupName}</Grid2>                            
@@ -279,8 +282,8 @@ const AuthenticationGroupsAssignDialog: React.FC<AuthenticationGroupAssignDialog
             }
         },
         skip: !data,
-        fetchPolicy: "no-cache",
-        nextFetchPolicy: "no-cache"
+        // fetchPolicy: "no-cache",
+        // nextFetchPolicy: "no-cache"
     });
 
 
@@ -310,8 +313,8 @@ const AuthenticationGroupsAssignDialog: React.FC<AuthenticationGroupAssignDialog
         
         return (
         <>
-            <Typography component={"div"} fontWeight={"bold"} fontSize={"0.9em"}>
-                <Grid2 container size={12} spacing={1} marginBottom={"16px"} >
+            <Typography component={"div"} fontWeight={"bold"} >
+                <Grid2 container size={12} spacing={1} marginBottom={"16px"} paddingTop={"8px"}>
                     <Grid2 size={12}>
                         <TextField
                             autoFocus={true}
@@ -325,9 +328,12 @@ const AuthenticationGroupsAssignDialog: React.FC<AuthenticationGroupAssignDialog
                                 input: {
                                     endAdornment: (
                                         <InputAdornment position="end">
-                                            <SearchIcon
+                                            <CloseOutlinedIcon
                                                 sx={{ cursor: "pointer" }}
-                                                onClick={() => { setFilterTerm(""); }}
+                                                onClick={() => { 
+                                                    setFilterTerm("");
+                                                    setPage(1);
+                                                }}
                                             />
                                         </InputAdornment>
                                     )
@@ -337,9 +343,9 @@ const AuthenticationGroupsAssignDialog: React.FC<AuthenticationGroupAssignDialog
                     </Grid2>                    
                 </Grid2>
             </Typography>
-            <Divider></Divider>
-            {r.total < 1 &&
-                <Typography component={"div"} fontSize={"0.9em"}>
+            
+            {!searchLoading && r.total < 1 &&
+                <Typography component={"div"} >
                     <Grid2 margin={"8px 0px 8px 0px"} textAlign={"center"} size={12} spacing={1}>
                         No groups to display
                     </Grid2>
@@ -348,8 +354,9 @@ const AuthenticationGroupsAssignDialog: React.FC<AuthenticationGroupAssignDialog
             <Grid2 minHeight={"4vh"} sx={{ marginTop: "16px", padding: "8px" }} size={12}>
                 {r.resultlist.map(
                     (item: ObjectSearchResultItem) => (
-                        <Typography key={`${item.objectid}`} component={"div"} fontSize={"0.9em"}>
-                            <Grid2 alignItems={"center"} container size={12} spacing={1}>
+                        <React.Fragment key={`${item.objectid}`}>
+                        <Typography  component={"div"} >
+                            <Grid2 alignItems={"center"} container size={12} spacing={0}>
                                 <Grid2 size={11}>
                                     {item.name}
                                 </Grid2>                                
@@ -381,11 +388,11 @@ const AuthenticationGroupsAssignDialog: React.FC<AuthenticationGroupAssignDialog
 
                                         />
                                     }
-                                </Grid2>
-                                
+                                </Grid2>                                
                             </Grid2>
                             <Divider />
                         </Typography>
+                        </React.Fragment>
                     )
                 )}
             </Grid2>

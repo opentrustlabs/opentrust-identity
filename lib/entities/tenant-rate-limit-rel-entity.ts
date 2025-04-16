@@ -22,10 +22,10 @@ class TenantRateLimitRelEntity implements TenantRateLimitRel {
     @Property({fieldName: "allowunlimitedrate"})
     allowUnlimitedRate?: Maybe<boolean> | undefined;
 
-    @Property({fieldName: "ratelimit"})
+    @Property({fieldName: "ratelimit", nullable: true})
     rateLimit?: Maybe<number> | undefined;
     
-    @Property({fieldName: "ratelimitperiodminutes"})
+    @Property({fieldName: "ratelimitperiodminutes", nullable: true})
     rateLimitPeriodMinutes?: Maybe<number> | undefined;
     
 }

@@ -2,14 +2,13 @@
 import { RelSearchInput, RelSearchResultItem, RelSearchResults, SearchResultType } from "@/graphql/generated/graphql-types";
 import { REL_SEARCH_QUERY } from "@/graphql/queries/oidc-queries";
 import { useQuery } from "@apollo/client";
-import React, { useRef } from "react";
+import React from "react";
 import DataLoading from "../layout/data-loading";
 import ErrorComponent from "../error/error-component";
 import { Alert, Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, Divider, Grid2, InputAdornment, Link, Stack, TablePagination, TextField, Typography } from "@mui/material";
 import AddBoxIcon from '@mui/icons-material/AddBox';
 import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
-import SearchIcon from '@mui/icons-material/Search';
 import RadioButtonUncheckedOutlinedIcon from '@mui/icons-material/RadioButtonUncheckedOutlined';
 import DoneOutlinedIcon from '@mui/icons-material/DoneOutlined';
 import RadioButtonCheckedIcon from '@mui/icons-material/RadioButtonChecked';
