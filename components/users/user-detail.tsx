@@ -189,8 +189,6 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                                             setMarkDirty(true); 
                                                             setUserInput({...userInput});
                                                         }}
-                                                        icon={<LockOpenOutlinedIcon sx={{color: "green"}}/>}
-                                                        checkedIcon={<LockOutlinedIcon sx={{color: "red"}} />}
                                                     />
                                                 </Grid2>
                                             </Grid2>

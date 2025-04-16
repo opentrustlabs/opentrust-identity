@@ -70,8 +70,7 @@ const NewAuthorizationGroupDialog: React.FC<NewAuthorizationGroupDialogProps> = 
 
             <DialogContent>
                 <Typography component={"div"}>
-                    <Grid2 container size={12} spacing={3} marginBottom={"16px"} >
-                        <Grid2 size={12}>
+                    <Grid2 container size={12} spacing={1} marginBottom={"8px"} >                        
                             {errorMessage &&
                                 <Grid2 size={{ xs: 12 }} textAlign={"center"}>
                                     <Stack
@@ -84,14 +83,14 @@ const NewAuthorizationGroupDialog: React.FC<NewAuthorizationGroupDialogProps> = 
                                     </Stack>
                                 </Grid2>
                             }
-                            <Grid2 marginBottom={"16px"}>
+                            <Grid2 size={12} marginBottom={"8px"}>
                                 <div>Group Name</div>
                                 <TextField name="authzGroupName" id="authzGroupName" 
                                     value={authzGroupInput.groupName} fullWidth={true} size="small" 
                                     onChange={(evt) => {authzGroupInput.groupName = evt.target.value; setAuthzGroupInput({...authzGroupInput})}}
                                 />
                             </Grid2>
-                            <Grid2 marginBottom={"16px"}>                                
+                            <Grid2 size={12} marginBottom={"8px"}>                                
                                 <div>Group Description</div>
                                 <TextField name="authzGroupDescription" id="authzGroupDescription" 
                                     value={authzGroupInput.groupDescription} 
@@ -100,7 +99,7 @@ const NewAuthorizationGroupDialog: React.FC<NewAuthorizationGroupDialogProps> = 
 
                                 />
                             </Grid2>
-                            <Grid2 marginBottom={"16px"}>
+                            <Grid2 size={12} container marginBottom={"8px"}>
                                 <Grid2 alignContent={"center"} size={10}>Default</Grid2>
                                 <Grid2 size={2}>
                                     <Checkbox 
@@ -110,7 +109,7 @@ const NewAuthorizationGroupDialog: React.FC<NewAuthorizationGroupDialogProps> = 
                                     />
                                 </Grid2>
                             </Grid2>
-                            <Grid2 marginBottom={"16px"}>
+                            <Grid2 size={12} container marginBottom={"8px"}>
                                 <Grid2 alignContent={"center"} size={10}>Allow for anonymous users</Grid2>
                                 <Grid2 size={2}>
                                     <Checkbox 
@@ -120,7 +119,7 @@ const NewAuthorizationGroupDialog: React.FC<NewAuthorizationGroupDialogProps> = 
                                     />
                                 </Grid2>
                             </Grid2>
-                        </Grid2>
+                        
                     </Grid2>
 
                 </Typography>

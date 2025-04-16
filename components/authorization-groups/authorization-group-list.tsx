@@ -8,7 +8,7 @@ import Link from "next/link";
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import { ResponsiveBreakpoints, ResponsiveContext } from "../contexts/responsive-context";
 import DeleteForeverOutlinedIcon from '@mui/icons-material/DeleteForeverOutlined';
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import OpenInNewOutlinedIcon from '@mui/icons-material/OpenInNewOutlined';
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
 import { TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import { ResultListProps } from "../layout/search-result-list-layout";
@@ -94,7 +94,7 @@ const AuthorizationGroupList: React.FC<ResultListProps> = ({
                                                     <Grid2 sx={{ textDecoration: "underline" }} size={12}>Tenant</Grid2>
                                                     <Grid2 size={12}>
                                                         <Link href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/tenants/${item.owningtenantid}`} target="_blank">
-                                                            <InfoOutlinedIcon
+                                                            <OpenInNewOutlinedIcon
                                                                 sx={{cursor: "pointer"}}
                                                             />
                                                         </Link>
@@ -148,7 +148,7 @@ const AuthorizationGroupList: React.FC<ResultListProps> = ({
                                         <>
                                             <Grid2 size={1}>
                                                 <Link href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/tenants/${item.owningtenantid}`} target="_blank">
-                                                    <InfoOutlinedIcon
+                                                    <OpenInNewOutlinedIcon
                                                         sx={{cursor: "pointer"}}
                                                     />
                                                 </Link>
