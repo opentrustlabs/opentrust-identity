@@ -9,23 +9,20 @@ import { ObjectSearchResultItem, SearchResultType, Tenant } from "@/graphql/gene
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
 import RadioButtonUncheckedOutlinedIcon from '@mui/icons-material/RadioButtonUncheckedOutlined';
 import RadioButtonCheckedIcon from '@mui/icons-material/RadioButtonChecked';
+import DoneOutlinedIcon from '@mui/icons-material/DoneOutlined';
 
 
 export interface TenantSelectorProps {
     onCancel: () => void,
     onSelected: (tenantId: string) => void,
-    filterTenants?: (tenants: Array<Tenant>) => Array<Tenant>
+    existingTenantIds?: Array<string>
     submitButtonText?: string
 }
 
-// TODO
-// Refactor clients of this component
-// Add in handler to show a checkbox if the "filterTenants" property is selected. This should
-// be an array of existing tenants, rather than a function to filter the tenants.
 const TenantSelector: React.FC<TenantSelectorProps> = ({
     onCancel,
     onSelected,
-    filterTenants,
+    existingTenantIds,
     submitButtonText
 }) => {
 
@@ -42,7 +39,7 @@ const TenantSelector: React.FC<TenantSelectorProps> = ({
     let { data, loading, error, previousData } = useQuery(SEARCH_QUERY, {
         variables: {
             searchInput: {
-                term: filterTerm,                
+                term: filterTerm,
                 page: page,
                 perPage: perPage,
                 resultType: SearchResultType.Tenant
@@ -52,20 +49,17 @@ const TenantSelector: React.FC<TenantSelectorProps> = ({
     });
 
     // HANDLER FUNCTIONS
-    const createTenantOptions = () => {
-        let tenants: Array<Tenant> = data && data.getTenants ? data.getTenants : [];
-        if(filterTenants){
-            tenants = filterTenants(tenants);
+    const isExistingTenant = (tenantId: string): boolean => {
+        if (!existingTenantIds) {
+            return false;
         }
-
-        return tenants.map(
-            (tenant: Tenant) => {
-                return {
-                    id: tenant.tenantId,
-                    label: tenant.tenantName
-                }        
-            }
-        );
+        if (existingTenantIds.length === 0) {
+            return false;
+        }
+        if (existingTenantIds.includes(tenantId)) {
+            return true;
+        }
+        return false;
     }
 
     const handlePageChange = async (evt: any, newPage: number) => {
@@ -73,151 +67,162 @@ const TenantSelector: React.FC<TenantSelectorProps> = ({
     }
 
     const getSearchResultItems = (): Array<ObjectSearchResultItem> => {
-        if(loading && previousData){
+        if (loading && previousData) {
             return previousData.search.resultlist;
         }
-        if(data && data.search){
+        if (data && data.search) {
             return data.search.resultlist;
         }
         else return [];
     }
-        
+
     return (
         <>
             <DialogTitle>Select Tenant</DialogTitle>
             <DialogContent>
                 <Typography component="div">
-                {errorMessage &&
-                    <div>{errorMessage}</div>
-                }
-                <Grid2 container size={12} paddingTop={"8px"} marginBottom={"16px"}>
-                    <TextField 
-                        fullWidth={true}
-                        value={filterTerm}
-                        size="small"
-                        label="Filter Tenants"
-                        onChange={(evt) => {
-                            setPage(1);
-                            setFitlerTerm(evt.target.value);
-                            setSelectedTenant(null);
-                        }}
-                        slotProps={{
-                            input: {
-                                endAdornment: (
-                                    <InputAdornment position="end">
-                                        <CloseOutlinedIcon
-                                            sx={{ cursor: "pointer" }}
-                                            onClick={() => {
-                                                setFitlerTerm("");
+                    {errorMessage &&
+                        <div>{errorMessage}</div>
+                    }
+                    <Grid2 container size={12} paddingTop={"8px"} marginBottom={"16px"}>
+                        <TextField
+                            fullWidth={true}
+                            value={filterTerm}
+                            size="small"
+                            label="Filter Tenants"
+                            onChange={(evt) => {
+                                setPage(1);
+                                setFitlerTerm(evt.target.value);
+                                setSelectedTenant(null);
+                            }}
+                            slotProps={{
+                                input: {
+                                    endAdornment: (
+                                        <InputAdornment position="end">
+                                            <CloseOutlinedIcon
+                                                sx={{ cursor: "pointer" }}
+                                                onClick={() => {
+                                                    setFitlerTerm("");
 
-                                            }}
-                                        />
-                                    </InputAdornment>
-                                )
-                            }
-                        }}
-                    />
-                </Grid2>
-                <Grid2  size={12} >
-                    {loading && !previousData &&
-                        <DataLoading dataLoadingSize="22vh" color={null} />
-                    }
-                    {error &&
-                        <ErrorComponent message={error.message} componentSize={"sm"} />
-                    }
-                    {!error && !loading &&
-                        <>
-                            {getSearchResultItems().map(
-                                (item: ObjectSearchResultItem) => (
-                                    <React.Fragment key={item.objectid}>
-                                        <Typography component="div">
-                                            <Grid2 spacing={0} alignItems={"center"} container size={12}>
-                                                <Grid2 size={11}>
-                                                    {item.name}
+                                                }}
+                                            />
+                                        </InputAdornment>
+                                    )
+                                }
+                            }}
+                        />
+                    </Grid2>
+                    <Grid2 size={12} >
+                        {loading && !previousData &&
+                            <DataLoading dataLoadingSize="22vh" color={null} />
+                        }
+                        {error &&
+                            <ErrorComponent message={error.message} componentSize={"sm"} />
+                        }
+                        {!error && !loading &&
+                            <>
+                                {getSearchResultItems().map(
+                                    (item: ObjectSearchResultItem) => 
+                                        {
+                                            const existingTenant: boolean = isExistingTenant(item.objectid);
+                                            return (<React.Fragment key={item.objectid}>
+                                                        <Typography component="div">
+                                                            <Grid2 spacing={0} alignItems={"center"} container size={12}>
+                                                                <Grid2 size={11}>
+                                                                    {item.name}
+                                                                </Grid2>
+                                                                <Grid2 size={1}>
+                                                                    {!existingTenant &&
+                                                                        <Checkbox
+                                                                            icon={<RadioButtonUncheckedOutlinedIcon />}
+                                                                            checkedIcon={<RadioButtonCheckedIcon />}
+                                                                            sx={{ cursor: "pointer" }}
+                                                                            checked={selectedTenant === item.objectid}
+                                                                            onClick={() => {
+                                                                                if (selectedTenant === item.objectid) {
+                                                                                    setSelectedTenant(null);
+                                                                                    // onIdSelected(null);
+                                                                                    // setSelectedObjectId(null);
+                                                                                }
+                                                                                else {
+                                                                                    // onIdSelected(item.childid);
+                                                                                    // setSelectedObjectId(item.childid);
+                                                                                    setSelectedTenant(item.objectid);
+                                                                                }
+                                                                            }}
+                                                                        />
+                                                                    }
+                                                                    {existingTenant &&
+                                                                        <Checkbox
+                                                                            icon={<DoneOutlinedIcon />}
+                                                                            disabled={true}
+                                                                        />
+                                                                    }
 
-                                                </Grid2>
-                                                <Grid2 size={1}>
-                                                    <Checkbox 
-                                                        icon={<RadioButtonUncheckedOutlinedIcon />}
-                                                        checkedIcon={<RadioButtonCheckedIcon />}
-                                                        sx={{ cursor: "pointer" }}
-                                                        checked={selectedTenant === item.objectid}
-                                                        onClick={() => {
-                                                            if (selectedTenant === item.objectid) {
-                                                                setSelectedTenant(null);
-                                                                // onIdSelected(null);
-                                                                // setSelectedObjectId(null);
-                                                            }
-                                                            else {
-                                                                // onIdSelected(item.childid);
-                                                                // setSelectedObjectId(item.childid);
-                                                                setSelectedTenant(item.objectid);
-                                                            }
-                                                        }}
-                                                    />
-                                                    
-                                                </Grid2>
-                                                <Grid2 size={12}><Divider /></Grid2>
-                                            </Grid2>
-                                        </Typography>
-                                    </React.Fragment>
-                                )
-                            )}
-                        </>
-                    }
-                    {!data || !data.search &&
-                        <div>No results to display</div>
-                    }
-                </Grid2>
+                                                                </Grid2>
+                                                                <Grid2 size={12}><Divider /></Grid2>
+                                                            </Grid2>
+                                                        </Typography>
+                                                    </React.Fragment>
+                                                )
+                                    
+                                    }
+                                )}
+                            </>
+                        }
+                        {!data || !data.search &&
+                            <div>No results to display</div>
+                        }
+                    </Grid2>
                 </Typography>
                 <Grid2 container size={12} spacing={1} marginTop={"16px"} marginBottom={"16px"} >
-                <Grid2 size={12}>
-                    {loading && previousData &&
-                        <TablePagination
-                            component={"div"}
-                            page={page - 1}
-                            rowsPerPage={perPage}
-                            count={previousData.search.total}
-                            onPageChange={handlePageChange}
-                            rowsPerPageOptions={[]}
-                        />
-                    }
-                    {data &&
-                        <TablePagination
-                            component={"div"}
-                            page={page - 1}
-                            rowsPerPage={perPage}
-                            count={data.search.total}
-                            onPageChange={handlePageChange}
-                            rowsPerPageOptions={[]}
-                        />
-                    }
+                    <Grid2 size={12}>
+                        {loading && previousData &&
+                            <TablePagination
+                                component={"div"}
+                                page={page - 1}
+                                rowsPerPage={perPage}
+                                count={previousData.search.total}
+                                onPageChange={handlePageChange}
+                                rowsPerPageOptions={[]}
+                            />
+                        }
+                        {data &&
+                            <TablePagination
+                                component={"div"}
+                                page={page - 1}
+                                rowsPerPage={perPage}
+                                count={data.search.total}
+                                onPageChange={handlePageChange}
+                                rowsPerPageOptions={[]}
+                            />
+                        }
+                    </Grid2>
                 </Grid2>
-            </Grid2>
-                
+
             </DialogContent>
             <DialogActions>
                 <Button onClick={() => onCancel()}>Cancel</Button>
-                <Button disabled={selectedTenant === null} 
+                <Button disabled={selectedTenant === null}
                     onClick={() => {
-                        if(selectedTenant !== null){                            
+                        if (selectedTenant !== null) {
                             onSelected(selectedTenant);
                         }
-                        else{
+                        else {
                             setErrorMessage("Select a valid tenant");
                         }
                     }}
                 >
-                        {submitButtonText &&
-                            submitButtonText
-                        }
-                        {!submitButtonText &&
-                            "Next"
-                        }
-                        
-                    </Button>
+                    {submitButtonText &&
+                        submitButtonText
+                    }
+                    {!submitButtonText &&
+                        "Next"
+                    }
+
+                </Button>
             </DialogActions>
-        
+
         </>
     )
 

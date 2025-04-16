@@ -48,7 +48,7 @@ const RateLimitTenantRelConfiguration: React.FC<RateLimitTenantRelConfigurationP
     const [filterTerm, setFilterTerm] = React.useState<string>("");
     const [showRemoveConfirmationDialog, setShowRemoveConfirmationDialog] = React.useState(false);
     const [tenantIdToAdd, setTenantIdToAdd] = React.useState<string | null>(null);
-    const [tenantToAdd, setTenantToAdd] = React.useState<Tenant | null>(null);
+    // const [tenantToAdd, setTenantToAdd] = React.useState<Tenant | null>(null);
     const [tenantToRemove, setTenantToRemove] = React.useState<{ id: string, name: string } | null>(null);
     const [tenantRateLimitRelToEdit, setTenantRateLimitRelToEdit] = React.useState<TenantRateLimitRelView | null>(null);
     const [showTenantEditDialogOpen, setShowTenantEditDialogOpen] = React.useState<boolean>(false);
@@ -69,7 +69,7 @@ const RateLimitTenantRelConfiguration: React.FC<RateLimitTenantRelConfigurationP
         onCompleted() {
             onUpdateEnd(true);
             setTenantIdToAdd(null);
-            setTenantToAdd(null);
+            // setTenantToAdd(null);
             setErrorMessage(null);
         },
         onError(error) {
@@ -130,37 +130,18 @@ const RateLimitTenantRelConfiguration: React.FC<RateLimitTenantRelConfigurationP
                 >
                     <TenantSelector
                         onCancel={() => setSelectDialogOpen(false)}
-                        onSelected={(tenantId: string, tenant?: Tenant) => {
-                            console.log("tenant id selected: " + tenantId);
-                            setTenantIdToAdd(tenantId);
-                            if (tenant) {
-                                setTenantToAdd(tenant);
-                            }
+                        onSelected={(tenantId: string) => {                            
+                            setTenantIdToAdd(tenantId);                            
                             setSelectDialogOpen(false);
                             setConfigureRateLimitDialogOpen(true);
                         }}
-                        filterTenants={(tenants: Array<Tenant>) => {
-                            if (data && data.getRateLimitTenantRelViews.length === 0) {
-                                return tenants;
-                            }
-                            else {
-                                const arr: Array<TenantRateLimitRelView> = data.getRateLimitTenantRelViews;
-                                const filtered = tenants.filter(
-                                    (t: Tenant) => {
-                                        const exists = arr.find(
-                                            (rel: TenantRateLimitRelView) => rel.tenantId === t.tenantId
-                                        )
-                                        if (exists) {
-                                            return false;
-                                        }
-                                        else {
-                                            return true;
-                                        }
-                                    }
-                                )
-                                return filtered
-                            }
-                        }}
+                        existingTenantIds={
+                            (data && data.getRateLimitTenantRelViews.length === 0) ? 
+                                [] :
+                                data.getRateLimitTenantRelViews.map(
+                                    (rel: TenantRateLimitRelView) => rel.tenantId
+                                )                            
+                        }
                     />
                 </Dialog>
             }
@@ -174,11 +155,7 @@ const RateLimitTenantRelConfiguration: React.FC<RateLimitTenantRelConfigurationP
                     <TenatRateLimitConfiguration
                         existingAllowUnlimited={null}
                         existingLimit={null}
-                        tenantId={tenantIdToAdd || ""}
-                        tenantName={tenantToAdd?.tenantName || ""}
-                        tenantAllowUnlimited={tenantToAdd?.allowUnlimitedRate || false}
-                        tenantRatePeriodMinutes={tenantToAdd?.defaultRateLimitPeriodMinutes || null}
-                        totalRateLimit={tenantToAdd?.defaultRateLimit || null}
+                        tenantId={tenantIdToAdd || ""}                        
                         onCompleted={(allowUnlimited: boolean, limit: number | null, rateLimitPeriodMinutes: number | null) => {
                             setConfigureRateLimitDialogOpen(false);
                             onUpdateStart();                            
@@ -195,7 +172,7 @@ const RateLimitTenantRelConfiguration: React.FC<RateLimitTenantRelConfigurationP
                         onCancel={() => {
                             setConfigureRateLimitDialogOpen(false);
                             setTenantIdToAdd(null);
-                            setTenantToAdd(null);
+                            // setTenantToAdd(null);
                         }}                        
                     />
                     
@@ -209,7 +186,7 @@ const RateLimitTenantRelConfiguration: React.FC<RateLimitTenantRelConfigurationP
                     fullWidth={true}
                     maxWidth="sm"
                 >
-                    <EditTenatRateLimitConfiguration
+                    <TenatRateLimitConfiguration
                         tenantId={tenantRateLimitRelToEdit?.tenantId || ""}
                         existingAllowUnlimited={tenantRateLimitRelToEdit?.allowUnlimitedRate || false}
                         existingLimit={tenantRateLimitRelToEdit?.rateLimit || null} 
@@ -261,7 +238,7 @@ const RateLimitTenantRelConfiguration: React.FC<RateLimitTenantRelConfigurationP
                     </DialogActions>
                 </Dialog>
             }
-            <Grid2 marginBottom={"24px"} marginTop={"16px"} spacing={2} container size={12}>
+            <Grid2 marginBottom={"32px"} marginTop={"16px"} spacing={2} container size={12}>
                 <Grid2 size={12} display={"inline-flex"} alignItems="center" alignContent={"center"}>
                     <AddBoxIcon
                         sx={{ cursor: "pointer" }}
@@ -270,7 +247,7 @@ const RateLimitTenantRelConfiguration: React.FC<RateLimitTenantRelConfigurationP
                     <div style={{ marginLeft: "8px", fontWeight: "bold" }}>Add Tenant</div>
                 </Grid2>
             </Grid2>
-            <Grid2 marginBottom={"32px"} marginTop={"16px"} spacing={2} container size={12}>
+            {/* <Grid2 marginBottom={"32px"} marginTop={"16px"} spacing={2} container size={12}>
                 <Grid2 size={12} display={"inline-flex"} alignItems="center" alignContent={"center"}>
                     <TextField
                         name="filter"
@@ -291,7 +268,7 @@ const RateLimitTenantRelConfiguration: React.FC<RateLimitTenantRelConfigurationP
                         }}
                     />
                 </Grid2>
-            </Grid2>
+            </Grid2> */}
 
             {loading &&
                 <Grid2 marginTop={"16px"} spacing={2} container size={12} textAlign={"center"} >
@@ -433,14 +410,14 @@ const RateLimitTenantRelConfiguration: React.FC<RateLimitTenantRelConfigurationP
                             </Grid2>
                         </>
                     }
-                    <TablePagination
+                    {/* <TablePagination
                         component={"div"}
                         page={page - 1}
                         rowsPerPage={perPage}
                         count={data.getRateLimitTenantRelViews.length}
                         onPageChange={handlePageChange}
                         rowsPerPageOptions={[]}
-                    />
+                    /> */}
                 </>
             }
         </Typography>
@@ -450,11 +427,7 @@ const RateLimitTenantRelConfiguration: React.FC<RateLimitTenantRelConfigurationP
 interface TenatRateLimitConfigurationProps {
     existingLimit: number | null,
     existingAllowUnlimited: boolean | null,
-    tenantId: string,
-    tenantName: string,
-    tenantAllowUnlimited: boolean,
-    tenantRatePeriodMinutes: number | null,
-    totalRateLimit: number | null,
+    tenantId: string,    
     onCancel: () => void,
     onCompleted: (allowUnlimited: boolean, limit: number | null, rateLimitPeriodMinutes: number | null) => void
 }
@@ -464,18 +437,14 @@ const TenatRateLimitConfiguration: React.FC<TenatRateLimitConfigurationProps> = 
     existingAllowUnlimited,
     existingLimit,
     tenantId,
-    tenantName,
-    tenantAllowUnlimited,
-    tenantRatePeriodMinutes,
-    totalRateLimit,
     onCancel,
     onCompleted
 }) => {
 
     // STATE VARIABLES    
-    const [allowUnlimited, setAllowUnlimited] = React.useState<boolean>(existingAllowUnlimited ? existingAllowUnlimited : tenantAllowUnlimited ? tenantAllowUnlimited : false);
+    const [allowUnlimited, setAllowUnlimited] = React.useState<boolean>(existingAllowUnlimited ? existingAllowUnlimited : false);
     const [limit, setLimit] = React.useState<number | null>(existingLimit || null);
-    const [rateLimitPeriodMinutes, setRateLimitPeriodMinutes] = React.useState<number | null>(tenantRatePeriodMinutes || DEFAULT_RATE_LIMIT_PERIOD_MINUTES);
+    const [rateLimitPeriodMinutes, setRateLimitPeriodMinutes] = React.useState<number | null>( DEFAULT_RATE_LIMIT_PERIOD_MINUTES);
 
 
     // GRAPHQL FUNCTIONS
@@ -485,6 +454,12 @@ const TenatRateLimitConfiguration: React.FC<TenatRateLimitConfigurationProps> = 
         },
         fetchPolicy: "no-cache",
         nextFetchPolicy: "no-cache"
+    });
+
+    const { data: tenantDetailData} = useQuery(TENANT_DETAIL_QUERY, {
+        variables: {
+            tenantId: tenantId
+        }
     });
 
     const getTotalUsed = (arr: Array<TenantRateLimitRel>): number => {
@@ -501,7 +476,7 @@ const TenatRateLimitConfiguration: React.FC<TenatRateLimitConfigurationProps> = 
         return used;
     }
 
-    return (
+    if(data && tenantDetailData) return (
         <Typography component="div">
             <DialogContent>
                 <Grid2 size={12} container spacing={1}>
@@ -509,7 +484,7 @@ const TenatRateLimitConfiguration: React.FC<TenatRateLimitConfigurationProps> = 
                         <span style={{ textDecoration: "underline" }}>Tenant: </span>
                     </Grid2>
                     <Grid2 marginBottom={"8px"} size={9} fontWeight={"bold"}>
-                        <span>{tenantName} </span>
+                        <span>{tenantDetailData.getTenantById.tenantName} </span>
                     </Grid2>
                     
                         <>
@@ -517,11 +492,11 @@ const TenatRateLimitConfiguration: React.FC<TenatRateLimitConfigurationProps> = 
                                 <span>Total limit:</span>
                             </Grid2>
                             <Grid2 marginBottom={"0px"} size={9} >
-                                {tenantAllowUnlimited &&
+                                {tenantDetailData.getTenantById.allowUnlimitedRate &&
                                     <span>Unlimited</span>    
                                 }
-                                {!tenantAllowUnlimited &&
-                                    <span>{totalRateLimit}</span>
+                                {!tenantDetailData.getTenantById.allowUnlimitedRate &&
+                                    <span>{tenantDetailData.getTenantById.defaultRateLimit}</span>
                                 }                                
                             </Grid2>
                             {data && data.getRateLimitTenantRels &&
@@ -563,15 +538,15 @@ const TenatRateLimitConfiguration: React.FC<TenatRateLimitConfigurationProps> = 
                             fullWidth={true}
                             size="small"
                             onChange={(evt) => {
-                                if (!tenantAllowUnlimited && totalRateLimit) {
+                                if (!tenantDetailData.getTenantById.allowUnlimitedRate && tenantDetailData.getTenantById.defaultRateLimit) {
                                     const used: number = data && data.getRateLimitTenantRels ? getTotalUsed(data.getRateLimitTenantRels) : 0;
                                     let limit: number = 0;
                                     try {
                                         limit = parseInt(evt.target.value)
                                     }
                                     catch (err) { limit = 0 }
-                                    if ((limit + used) > totalRateLimit) {
-                                        setLimit(totalRateLimit - used);
+                                    if ((limit + used) > tenantDetailData.getTenantById.defaultRateLimit) {
+                                        setLimit(tenantDetailData.getTenantById.defaultRateLimit - used);
                                     }
                                     else {
                                         setLimit(limit);
@@ -622,46 +597,6 @@ const TenatRateLimitConfiguration: React.FC<TenatRateLimitConfigurationProps> = 
             </DialogActions>
         </Typography>
     )
-}
-
-interface EditTenatRateLimitConfigurationProps {
-    tenantId: string,
-    existingAllowUnlimited: boolean,
-    existingLimit: number | null,
-    onCancel: () => void,
-    onCompleted: (allowUnlimited: boolean, limit: number | null, rateLimitPeriodMinutes: number | null) => void
-}
-
-const EditTenatRateLimitConfiguration: React.FC<EditTenatRateLimitConfigurationProps> = ({
-    tenantId,
-    existingAllowUnlimited,
-    existingLimit,
-    onCancel,
-    onCompleted
-}) => {
-
-    const {data, loading, error} = useQuery(TENANT_DETAIL_QUERY, {
-        variables: {
-            tenantId: tenantId
-        }
-    });
-
-    if(error) return <ErrorComponent message={error.message} componentSize={"sm"} /> 
-    if(loading) return <div></div>
-    return (
-        <TenatRateLimitConfiguration 
-            existingLimit={existingLimit} 
-            existingAllowUnlimited={existingAllowUnlimited} 
-            tenantId={tenantId} 
-            tenantName={data.getTenantById.tenantName} 
-            tenantAllowUnlimited={data.getTenantById.allowUnlimitedRate} 
-            tenantRatePeriodMinutes={data.getTenantById.defaultRateLimitPeriodMinutes} 
-            totalRateLimit={data.getTenantById.defaultRateLimit} 
-            onCancel={onCancel} 
-            onCompleted={onCompleted}
-        />
-    )
-
 }
 
 

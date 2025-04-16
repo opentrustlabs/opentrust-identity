@@ -328,23 +328,23 @@ const RelSearch: React.FC<RelSearchProps> = ({
 }) => {
 
     // STATE VARIABLES
+    const [page, setPage] = React.useState<number>(1);
     const [searchTerm, setSearchTerm] = React.useState<string>("");
     const [selectedObjectId, setSelectedObjectId] = React.useState<string | null>(null);
 
     // GRAPHQL FUNCTIONS
-    const { data } = useQuery(REL_SEARCH_QUERY, {
+    const { data, loading, previousData } = useQuery(REL_SEARCH_QUERY, {
         variables: {
             relSearchInput: {
                 parentid: tenantId,
                 childtype: childType,
-                page: 1,
+                page: page,
                 perPage: 10,
                 term: searchTerm
             }
         },
-        skip: searchTerm.length < 3,
-        fetchPolicy: "no-cache",
-        nextFetchPolicy: "no-cache"
+        // fetchPolicy: "no-cache",
+        // nextFetchPolicy: "no-cache"
     });
 
     const { data: childData } = useQuery(REL_SEARCH_QUERY, {
@@ -352,15 +352,20 @@ const RelSearch: React.FC<RelSearchProps> = ({
             relSearchInput: {
                 parentid: parentId,
                 childtype: childType,
-                page: 1,
+                page: page,
                 perPage: 10,
                 term: searchTerm
             }
         },
-        skip: searchTerm.length < 3,
-        fetchPolicy: "no-cache",
-        nextFetchPolicy: "no-cache"
+        // fetchPolicy: "no-cache",
+        // nextFetchPolicy: "no-cache"
     });
+
+
+    // HANDLER FUNCTIONS
+    const handlePageChange = async (evt: any, newPage: number) => {
+        setPage(newPage + 1);
+    }
 
     const isSelected = (userId: string): boolean => {
         if (childData) {
@@ -382,10 +387,12 @@ const RelSearch: React.FC<RelSearchProps> = ({
                 <Grid2 size={12}>
                     <TextField
                         fullWidth={true}
+                        value={searchTerm}
                         onChange={(evt) => {
                             setSelectedObjectId(null);
                             onIdSelected(null);
                             setSearchTerm(evt.target.value);
+                            setPage(1);
                         }}
                         autoFocus={true}
                         size="small"
@@ -393,8 +400,12 @@ const RelSearch: React.FC<RelSearchProps> = ({
                             input: {
                                 endAdornment: (
                                     <InputAdornment position="end">
-                                        <SearchIcon
+                                        <CloseOutlinedIcon
                                             sx={{ cursor: "pointer" }}
+                                            onClick={() => {
+                                                setPage(1);
+                                                setSearchTerm("");
+                                            }}
                                         />
                                     </InputAdornment>
                                 )
@@ -402,7 +413,10 @@ const RelSearch: React.FC<RelSearchProps> = ({
                         }}
                     />
                 </Grid2>
-                <Grid2 minHeight={"4vh"} sx={{ marginTop: "16px", padding: "8px" }} size={12}>
+                <Grid2 sx={{ marginTop: "16px", padding: "8px" }} size={12}>
+                    {loading &&
+                        <DataLoading dataLoadingSize="22vh" color={null} />
+                    }
                     {data && data.relSearch.total > 0 &&
                         <>
                             {data.relSearch.resultlist.map(
@@ -446,7 +460,31 @@ const RelSearch: React.FC<RelSearchProps> = ({
                             )}
                         </>
                     }
-                </Grid2>
+                </Grid2>                
+                <Grid2 container size={12} spacing={1} marginTop={"16px"} marginBottom={"16px"} >
+                    <Grid2 size={12}>
+                        {loading && previousData &&
+                            <TablePagination
+                                component={"div"}
+                                page={page - 1}
+                                rowsPerPage={10}
+                                count={previousData.relSearch.total}
+                                onPageChange={handlePageChange}
+                                rowsPerPageOptions={[]}
+                            />
+                        }
+                        {data &&
+                            <TablePagination
+                                component={"div"}
+                                page={page - 1}
+                                rowsPerPage={10}
+                                count={data.relSearch.total}
+                                onPageChange={handlePageChange}
+                                rowsPerPageOptions={[]}
+                            />
+                        }
+                    </Grid2>
+                </Grid2>                                        
             </Grid2>
         </Typography>
     )

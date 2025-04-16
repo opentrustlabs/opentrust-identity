@@ -165,8 +165,7 @@ export const TENANT_DETAIL_QUERY = gql(`
             allowForgotPassword
             defaultRateLimit
             defaultRateLimitPeriodMinutes   
-        }       
-        
+        }        
     }
 `);
 

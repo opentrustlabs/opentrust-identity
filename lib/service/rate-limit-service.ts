@@ -105,12 +105,8 @@ class RateLimitService {
             }
         }
 
-        const rateLimit = limit < 0 ? 15 : limit > 1000000 ? 15 : limit;
-        const minutes = rateLimitPeriodMinutes > MAX_RATE_LIMIT_PERIOD_MINUTES ? 
-                            DEFAULT_RATE_LIMIT_PERIOD_MINUTES : 
-                                rateLimitPeriodMinutes < MIN_RATE_LIMIT_PERIOD_MINUTES ? 
-                                DEFAULT_RATE_LIMIT_PERIOD_MINUTES : 
-                                rateLimitPeriodMinutes;
+        const rateLimit = allowUnlimited ? null : limit < 0 ? 15 : limit > 1000000 ? 15 : limit;
+        const minutes = allowUnlimited ? null : DEFAULT_RATE_LIMIT_PERIOD_MINUTES; //rateLimitPeriodMinutes > MAX_RATE_LIMIT_PERIOD_MINUTES ? DEFAULT_RATE_LIMIT_PERIOD_MINUTES : rateLimitPeriodMinutes < MIN_RATE_LIMIT_PERIOD_MINUTES ? DEFAULT_RATE_LIMIT_PERIOD_MINUTES : rateLimitPeriodMinutes;
 
         const r: TenantRateLimitRel = await rateLimitDao.assignRateLimitToTenant(tenantId, serviceGroupId, allowUnlimited, rateLimit, minutes);        
         await this.updateRelSearchIndex(tenant, rateLimitServiceGroup);
@@ -137,7 +133,7 @@ class RateLimitService {
             }
         }
         existingRel.allowUnlimitedRate = allowUnlimited;
-        existingRel.rateLimit = limit && limit < 0 ? 15 : limit && limit > 1000000 ? 15 : limit;
+        existingRel.rateLimit = allowUnlimited ? null : limit && limit < 0 ? 15 : limit && limit > 1000000 ? 15 : limit;
         existingRel.rateLimitPeriodMinutes = allowUnlimited ? null : DEFAULT_RATE_LIMIT_PERIOD_MINUTES;    // rateLimitPeriodMinutes > MAX_RATE_LIMIT_PERIOD_MINUTES ? DEFAULT_RATE_LIMIT_PERIOD_MINUTES : rateLimitPeriodMinutes < MIN_RATE_LIMIT_PERIOD_MINUTES ? DEFAULT_RATE_LIMIT_PERIOD_MINUTES : rateLimitPeriodMinutes;
         
         rateLimitDao.updateRateLimitForTenant(tenantId, serviceGroupId, allowUnlimited, existingRel.rateLimit, existingRel.rateLimitPeriodMinutes);
