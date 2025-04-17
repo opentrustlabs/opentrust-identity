@@ -20,6 +20,7 @@ const BreadcrumbComponent: React.FC<BreadcrumbComponentProps> = ({breadCrumbs}) 
                 (breadCrumb: BreadcrumbDetail) => (
                     
                     <Link
+                        className="undecorated"
                         key={breadCrumb.linkText}
                         href={breadCrumb.href || ""}
                         aria-disabled={breadCrumb.href === null ? true : false}

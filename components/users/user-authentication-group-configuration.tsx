@@ -1,7 +1,7 @@
 "use client";
 import { AUTHENTICATION_GROUPS_QUERY, SEARCH_QUERY, TENANT_DETAIL_QUERY, USER_TENANT_RELS_QUERY } from "@/graphql/queries/oidc-queries";
 import { useMutation, useQuery } from "@apollo/client";
-import React from "react";
+import React, { useContext } from "react";
 import DataLoading from "../layout/data-loading";
 import ErrorComponent from "../error/error-component";
 import Typography from "@mui/material/Typography";
@@ -18,6 +18,8 @@ import { AuthenticationGroup, ObjectSearchResultItem, ObjectSearchResults, Searc
 import { Alert, Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, InputAdornment, TablePagination, TextField } from "@mui/material";
 import { AUTHENTICATION_GROUP_USER_ADD_MUTATION, AUTHENTICATION_GROUP_USER_REMOVE_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import TenantQuickInfo from "../tenants/tenant-quick-info";
+import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
+import Link from "next/link";
 
 
 
@@ -34,6 +36,10 @@ const UserAuthenticationGroupConfiguration: React.FC<UserAuthenticationGroupConf
     onUpdateStart
 }) => {
 
+    // CONTEXT VARIABLES
+    const tenantBean: TenantMetaDataBean = useContext(TenantContext);
+
+
     // STATE VARIABLES
     const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
     const [showAddDialog, setShowAddDialog] = React.useState<boolean>(false);
@@ -43,6 +49,8 @@ const UserAuthenticationGroupConfiguration: React.FC<UserAuthenticationGroupConf
     const [showTenantInfo, setShowTenantInfo] = React.useState<boolean>(false);
     const [tenantIdToShow, setTenantIdToShow] = React.useState<string | null>(null);
 
+
+    // GRAPHQL FUNCTIONS
     const {data, loading, error} = useQuery(AUTHENTICATION_GROUPS_QUERY, {
         variables: {
             userId: userId
@@ -211,10 +219,15 @@ const UserAuthenticationGroupConfiguration: React.FC<UserAuthenticationGroupConf
             
             {data.getAuthenticationGroups.map(                                            
                 (authnGroup: AuthenticationGroup) => (
-                    <Typography key={`${authnGroup.authenticationGroupId}`} component={"div"} fontWeight={"bold"}>
+                    <Typography key={`${authnGroup.authenticationGroupId}`} component={"div"}>
                         <Divider></Divider>                        
                         <Grid2 margin={"8px 0px 8px 0px"} container size={12} spacing={1}>
-                            <Grid2 size={9}>{authnGroup.authenticationGroupName}</Grid2>                            
+                            <Grid2 size={9}>
+                                <Link href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/authentication-groups/${authnGroup.authenticationGroupId}`} target="_blank">
+                                    {authnGroup.authenticationGroupName}
+                                </Link>
+                                    
+                            </Grid2>
                             
                             <Grid2 size={2}>
                                 <InfoOutlinedIcon
