@@ -129,9 +129,7 @@ const ClientAuthenticationGroupConfiguration: React.FC<ClientAuthenticationGroup
                         query={AUTHENTICATION_GROUPS_QUERY}
                         queryVars={{tenantId: tenantId}}
                         dataMapper={(d) => {
-                            const preExistingIds = data.getAuthenticationGroups.map( (g: AuthenticationGroup) => g.authenticationGroupId);
-                            console.log(preExistingIds);
-                            console.log(d.getAuthenticationGroups);
+                            const preExistingIds = data.getAuthenticationGroups.map( (g: AuthenticationGroup) => g.authenticationGroupId);                            
                             if(d && d.getAuthenticationGroups){
                                 return d.getAuthenticationGroups
                                 .filter(

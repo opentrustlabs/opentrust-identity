@@ -342,8 +342,8 @@ const RelSearch: React.FC<RelSearchProps> = ({
                 term: searchTerm
             }
         },
-        // fetchPolicy: "no-cache",
-        // nextFetchPolicy: "no-cache"
+        fetchPolicy: "no-cache",
+        nextFetchPolicy: "no-cache"
     });
 
     const { data: childData } = useQuery(REL_SEARCH_QUERY, {
@@ -351,13 +351,13 @@ const RelSearch: React.FC<RelSearchProps> = ({
             relSearchInput: {
                 parentid: parentId,
                 childtype: childType,
-                page: page,
+                page: 1,
                 perPage: 10,
                 term: searchTerm
             }
         },
-        // fetchPolicy: "no-cache",
-        // nextFetchPolicy: "no-cache"
+        fetchPolicy: "no-cache",
+        nextFetchPolicy: "no-cache"
     });
 
 
