@@ -30,7 +30,7 @@ const TenantSelector: React.FC<TenantSelectorProps> = ({
     const perPage: number = 10;
 
     // STATE VARIALBES
-    const [filterTerm, setFitlerTerm] = React.useState<string>("");
+    const [filterTerm, setFilterTerm] = React.useState<string>("");
     const [page, setPage] = React.useState<number>(1);
     const [selectedTenant, setSelectedTenant] = React.useState<string | null>(null);
     const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
@@ -92,7 +92,7 @@ const TenantSelector: React.FC<TenantSelectorProps> = ({
                             label="Filter Tenants"
                             onChange={(evt) => {
                                 setPage(1);
-                                setFitlerTerm(evt.target.value);
+                                setFilterTerm(evt.target.value);
                                 setSelectedTenant(null);
                             }}
                             slotProps={{
@@ -102,7 +102,7 @@ const TenantSelector: React.FC<TenantSelectorProps> = ({
                                             <CloseOutlinedIcon
                                                 sx={{ cursor: "pointer" }}
                                                 onClick={() => {
-                                                    setFitlerTerm("");
+                                                    setFilterTerm("");
 
                                                 }}
                                             />
@@ -112,7 +112,7 @@ const TenantSelector: React.FC<TenantSelectorProps> = ({
                             }}
                         />
                     </Grid2>
-                    <Grid2 size={12} >
+                    <Grid2 size={12} padding={"4px"}>
                         {loading && !previousData &&
                             <DataLoading dataLoadingSize="22vh" color={null} />
                         }
