@@ -1,7 +1,7 @@
 "use client";
 import { USER_TENANT_RELS_QUERY } from "@/graphql/queries/oidc-queries";
 import { useMutation, useQuery } from "@apollo/client";
-import React from "react";
+import React, { useContext } from "react";
 import DataLoading from "../layout/data-loading";
 import ErrorComponent from "../error/error-component";
 import Typography from "@mui/material/Typography";
@@ -15,6 +15,8 @@ import { DEFAULT_BACKGROUND_COLOR, USER_TENANT_REL_TYPE_GUEST, USER_TENANT_REL_T
 
 import { Tooltip } from "@mui/material";
 import { USER_TENANT_REL_REMOVE_MUTATION, USER_TENANT_REL_UPDATE_MUTATION } from "@/graphql/mutations/oidc-mutations";
+import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
+import Link from "next/link";
 
 
 export interface UserTenantConfigurationProps {
@@ -29,10 +31,15 @@ const UserTenantConfiguration: React.FC<UserTenantConfigurationProps> = ({
     onUpdateStart
 }) => {
 
+
+    // CONTEXT VARIABLES
+    const tenantBean: TenantMetaDataBean = useContext(TenantContext);
+
     // STATE VARIABLES
     const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
 
 
+    // GRAPHQL FUNCTIONS
     const {data, loading, error} = useQuery(USER_TENANT_RELS_QUERY, {
         variables: {
             userId: userId
@@ -86,11 +93,15 @@ const UserTenantConfiguration: React.FC<UserTenantConfigurationProps> = ({
             <Divider />
             {data.getUserTenantRels.map(                                            
                 (userTenantRelView: UserTenantRelView) => (
-                    <Typography key={`${userTenantRelView.tenantId}`} component={"div"} fontSize={"0.9em"} fontWeight={"bold"}>
+                    <Typography key={`${userTenantRelView.tenantId}`} component={"div"} fontSize={"0.9em"} >
                         <Divider></Divider>                        
                         <Grid2 margin={"8px 0px 8px 0px"} container size={12} spacing={1}>
                             {data.getUserTenantRels.length === 1 &&
-                                <Grid2 size={8}>{userTenantRelView.tenantName}</Grid2>
+                                <Grid2 size={8}>
+                                    <Link target="_blank" href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/tenants/${userTenantRelView.tenantId}`}>
+                                        {userTenantRelView.tenantName}
+                                    </Link>
+                                </Grid2>
                             }
                             {data.getUserTenantRels.length > 1 &&
                                 <Grid2 container size={8}>
@@ -117,7 +128,11 @@ const UserTenantConfiguration: React.FC<UserTenantConfigurationProps> = ({
                                             <GradeIcon sx={{color: DEFAULT_BACKGROUND_COLOR}}  />
                                         }                                       
                                     </Grid2>
-                                    <Grid2 size={6.6}>{userTenantRelView.tenantName}</Grid2>
+                                    <Grid2 size={6.6}>
+                                        <Link target="_blank" href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/tenants/${userTenantRelView.tenantId}`}>
+                                            {userTenantRelView.tenantName}
+                                        </Link>
+                                    </Grid2>
                                 </Grid2>
                             }
                             <Grid2 size={3}>{USER_TENANT_REL_TYPES_DISPLAY.get(userTenantRelView.relType)}</Grid2>

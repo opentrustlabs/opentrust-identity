@@ -1,7 +1,7 @@
 "use client";
-import { SEARCH_QUERY, TENANT_DETAIL_QUERY, USER_AUTHORIZATION_GROUP_QUERY, USER_TENANT_RELS_QUERY } from "@/graphql/queries/oidc-queries";
+import { SEARCH_QUERY, USER_AUTHORIZATION_GROUP_QUERY, USER_TENANT_RELS_QUERY } from "@/graphql/queries/oidc-queries";
 import { useMutation, useQuery } from "@apollo/client";
-import React from "react";
+import React, { useContext } from "react";
 import DataLoading from "../layout/data-loading";
 import ErrorComponent from "../error/error-component";
 import Typography from "@mui/material/Typography";
@@ -18,6 +18,8 @@ import { AuthorizationGroup, ObjectSearchResultItem, ObjectSearchResults, Search
 import { Alert, Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, InputAdornment, Pagination, TablePagination, TextField } from "@mui/material";
 import { AUTHORIZATION_GROUP_USER_ADD_MUTATION, AUTHORIZATION_GROUP_USER_REMOVE_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import TenantQuickInfo from "../tenants/tenant-quick-info";
+import Link from "next/link";
+import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
 
 
 
@@ -33,6 +35,9 @@ const UserAuthorizationGroupConfiguration: React.FC<UserAuthorizationGroupConfig
     onUpdateStart
 }) => {
 
+    // CONTEXT VARIABLES
+    const tenantBean: TenantMetaDataBean = useContext(TenantContext);
+
     // STATE VARIABLES
     const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
     const [showAddDialog, setShowAddDialog] = React.useState<boolean>(false);
@@ -42,6 +47,8 @@ const UserAuthorizationGroupConfiguration: React.FC<UserAuthorizationGroupConfig
     const [showTenantInfo, setShowTenantInfo] = React.useState<boolean>(false);
     const [tenantIdToShow, setTenantIdToShow] = React.useState<string | null>(null);
 
+
+    // GRAPHQL FUNCTIONS
     const {data, loading, error} = useQuery(USER_AUTHORIZATION_GROUP_QUERY, {
         variables: {
             userId: userId
@@ -210,10 +217,16 @@ const UserAuthorizationGroupConfiguration: React.FC<UserAuthorizationGroupConfig
             
             {data.getUserAuthorizationGroups.map(                                            
                 (authzGroup: AuthorizationGroup) => (
-                    <Typography key={`${authzGroup.groupId}`} component={"div"} fontWeight={"bold"}>
+                    <Typography key={`${authzGroup.groupId}`} component={"div"} >
                         <Divider></Divider>                        
                         <Grid2 margin={"8px 0px 8px 0px"} container size={12} spacing={1}>
-                            <Grid2 size={9}>{authzGroup.groupName}</Grid2>                            
+                            <Grid2 size={9}>
+                                <Link href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/authorization-groups/${authzGroup.groupId}`}
+                                    target="_blank"
+                                >
+                                    {authzGroup.groupName}
+                                </Link>
+                            </Grid2>
                             
                             <Grid2 size={2}>
                                 <InfoOutlinedIcon
