@@ -1,8 +1,8 @@
 "use client";
-import { RelSearchInput, RelSearchResultItem, RelSearchResults, SearchResultType } from "@/graphql/generated/graphql-types";
-import { REL_SEARCH_QUERY } from "@/graphql/queries/oidc-queries";
+import { RelSearchInput, RelSearchResultItem, RelSearchResults, SearchFilterInput, SearchFilterInputObjectType, SearchRelType, SearchResultType } from "@/graphql/generated/graphql-types";
+import { REL_SEARCH_QUERY, SEARCH_QUERY } from "@/graphql/queries/oidc-queries";
 import { useQuery } from "@apollo/client";
-import React from "react";
+import React, { useContext } from "react";
 import DataLoading from "../layout/data-loading";
 import ErrorComponent from "../error/error-component";
 import { Alert, Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, Divider, Grid2, InputAdornment, Link, Stack, TablePagination, TextField, Typography } from "@mui/material";
@@ -13,6 +13,7 @@ import RadioButtonUncheckedOutlinedIcon from '@mui/icons-material/RadioButtonUnc
 import DoneOutlinedIcon from '@mui/icons-material/DoneOutlined';
 import RadioButtonCheckedIcon from '@mui/icons-material/RadioButtonChecked';
 import { MAX_SEARCH_PAGE_SIZE } from "@/utils/consts";
+import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
 
 
 
@@ -49,10 +50,8 @@ const RelationshipConfigurationComponent: React.FC<RelationshipConfigurationComp
     // STATE VARIABLES
     const perPage = relSearchInput && relSearchInput.perPage < MAX_SEARCH_PAGE_SIZE ? relSearchInput.perPage : 20;
 
-
     const [filterTerm, setFilterTerm] = React.useState<string | null>(relSearchInput.term || "");
-    const [page, setPage] = React.useState<number>(relSearchInput.page);
-    
+    const [page, setPage] = React.useState<number>(relSearchInput.page);    
     const [idToAdd, setIdToAdd] = React.useState<string | null>(null);
     const [idToRemove, seIdToRemove] = React.useState<string | null>(null);
     const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
@@ -222,6 +221,7 @@ const RelationshipConfigurationComponent: React.FC<RelationshipConfigurationComp
                             <Grid2 size={12}>
                                 {relSearchInput.parentid && relSearchInput.childtype &&
                                     <RelSearch
+                                        parentType={relSearchInput.parenttype}
                                         parentId={relSearchInput.parentid || ""}
                                         tenantId={tenantId}
                                         childType={relSearchInput.childtype}
@@ -313,6 +313,7 @@ const RelationshipConfigurationComponent: React.FC<RelationshipConfigurationComp
 }
 
 interface RelSearchProps {
+    parentType?: SearchResultType | null,
     parentId: string,
     tenantId: string,
     childType: SearchResultType,
@@ -320,19 +321,33 @@ interface RelSearchProps {
 }
 
 const RelSearch: React.FC<RelSearchProps> = ({
+    parentType,
     parentId,
     tenantId,
     childType,
     onIdSelected
 }) => {
 
+    // CONTEXT HOOKS
+    const tenantBean: TenantMetaDataBean = useContext(TenantContext);
+
+    
     // STATE VARIABLES
     const [page, setPage] = React.useState<number>(1);
     const [searchTerm, setSearchTerm] = React.useState<string>("");
     const [selectedObjectId, setSelectedObjectId] = React.useState<string | null>(null);
 
     // GRAPHQL FUNCTIONS
-    const { data, loading, previousData } = useQuery(REL_SEARCH_QUERY, {
+    const filters: Array<SearchFilterInput> = [];
+
+    filters.push({
+        objectType: SearchFilterInputObjectType.TenantId,
+        objectValue: tenantBean.getTenantMetaData().tenant.tenantId
+    });
+
+
+
+    const { data, loading, previousData, error } = useQuery(REL_SEARCH_QUERY, {
         variables: {
             relSearchInput: {
                 parentid: tenantId,
@@ -346,16 +361,40 @@ const RelSearch: React.FC<RelSearchProps> = ({
         nextFetchPolicy: "no-cache"
     });
 
-    const { data: childData } = useQuery(REL_SEARCH_QUERY, {
+    const shouldSkip = (): boolean => {
+        console.log("loading is: " + loading);
+        console.log("error is " + error);
+        console.log("data is: " + data);
+
+        let skip = false;
+        if(loading){
+            console.log("checkpoint 1")
+            skip = true;
+        }
+        else if(error !== undefined){
+            console.log("checkpoint 2")
+            skip = true;
+        }
+        else if(data === null || data === undefined){
+            console.log("checkpoint 3")
+            skip = true;
+        }
+        console.log("value of skip is: " + skip);
+        return skip;
+    }
+
+    const { data: childData, loading: childDataLoading } = useQuery(REL_SEARCH_QUERY, {
         variables: {
             relSearchInput: {
                 parentid: parentId,
                 childtype: childType,
                 page: 1,
                 perPage: 10,
-                term: searchTerm
+                childids: data ? data.relSearch.resultlist.map( (item: RelSearchResultItem) => item.childid) : []
             }
-        },
+        },        
+        //skip: loading === true || error !== null || data === null || data === undefined,
+        skip: shouldSkip(),
         fetchPolicy: "no-cache",
         nextFetchPolicy: "no-cache"
     });
@@ -413,10 +452,10 @@ const RelSearch: React.FC<RelSearchProps> = ({
                     />
                 </Grid2>
                 <Grid2 sx={{ marginTop: "16px", padding: "8px" }} size={12}>
-                    {loading &&
-                        <DataLoading dataLoadingSize="22vh" color={null} />
+                    { (loading || childDataLoading) &&
+                        <DataLoading dataLoadingSize="38vh" color={null} />
                     }
-                    {data && data.relSearch.total > 0 &&
+                    {data && data.relSearch.total > 0 && childData &&
                         <>
                             {data.relSearch.resultlist.map(
                                 (item: RelSearchResultItem) => (

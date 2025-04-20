@@ -1,4 +1,4 @@
-import { LookaheadResult, ObjectSearchResults, SearchFilterInput, SearchFilterInputObjectType, SearchInput, ObjectSearchResultItem, RelSearchResults, RelSearchInput, RelSearchResultItem } from "@/graphql/generated/graphql-types";
+import { LookaheadResult, ObjectSearchResults, SearchFilterInput, SearchFilterInputObjectType, SearchInput, ObjectSearchResultItem, RelSearchResults, RelSearchInput, RelSearchResultItem, SearchRelType, SearchResultType } from "@/graphql/generated/graphql-types";
 import { OIDCContext } from "@/graphql/graphql-context";
 import { getOpenSearchClient } from "../data-sources/search";
 import { Client } from "@opensearch-project/opensearch";
@@ -144,9 +144,17 @@ class SearchService {
         searchResponse.body.hits.hits.forEach(
             (hit: any) => {
                 const source: any = hit._source;
-                return items.push(source);
+                items.push(source);
             }
-        );        
+        );
+
+        // if(searchInput.includeExistingRel && searchInput.existingRelParentId){
+        //     const arrayIds: Array<string> = items.map(
+        //         (item: ObjectSearchResultItem) => item.objectid
+        //     )
+        //     const relSearchResults: RelSearchResults = await this.getMatchingRels(searchInput.existingRelType || SearchRelType.AuthenticationGroupUserRel, searchInput.existingRelParentId, arrayIds);
+
+        // }
 
         const searchResults: ObjectSearchResults = {
             endtime: end,
@@ -160,6 +168,7 @@ class SearchService {
 
         return searchResults;        
     }
+    
 
     public async relSearch(relSearchInput: RelSearchInput): Promise<RelSearchResults> {
         let page: number = relSearchInput.page;
@@ -188,7 +197,8 @@ class SearchService {
         let query: any = {
             bool: {
                 must: {},
-                filter: []
+                filter: [],
+                should: []
             }
         }
         if(!searchTerm || searchTerm.length < 3){
@@ -211,20 +221,41 @@ class SearchService {
             });
         }
         if(relSearchInput.parentid){
-            query.bool.filter.push({
-                term: {parentid: relSearchInput.parentid}
-            });
+            if(relSearchInput.childids){
+                query.bool.should.push({
+                    term: {parentid: relSearchInput.parentid}
+                });
+            }
+            else{
+                query.bool.filter.push({
+                    term: {parentid: relSearchInput.parentid}
+                });
+            }
         }
         if(relSearchInput.childid){
             query.bool.filter.push({
                 term: {childid: relSearchInput.childid}
             });
         }
+        else if(relSearchInput.childids){
+            const ids: Array<string> = relSearchInput.childids as Array<string>;
+            ids.forEach(
+                (id: string) => {
+                    query.bool.should.push({
+                        term: {childid: id}
+                    });
+                }
+            );
+            query.bool.minimum_should_match = 2;
+        }
+
         if(relSearchInput.childtype){
             query.bool.filter.push({
                 term: {childtype: relSearchInput.childtype}
             });
         }
+        
+        console.log(JSON.stringify(query));
 
         const sortObj: any = {};
         sortObj[`${sortField}.raw`] = { order: sortDirection};

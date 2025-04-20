@@ -61,7 +61,7 @@ const NewTenantDialog: React.FC<NewTenantDialogProps> = ({
             },
             onCompleted(data) {
                 onCreateEnd(true);
-                router.push(`${tenantBean.getTenantMetaData().tenant.tenantId}/tenants/${data.createTenant.tenantId}`);
+                router.push(`/${tenantBean.getTenantMetaData().tenant.tenantId}/tenants/${data.createTenant.tenantId}`);
                 onClose();
             },
             onError(error) {

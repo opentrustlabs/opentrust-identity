@@ -794,7 +794,7 @@ type ObjectSearchResultItem {
     subtypekey: String
     subtype: String
     email: String
-    enabled: Boolean
+    enabled: Boolean    
 }
 
 type RelSearchResultItem {
@@ -841,6 +841,12 @@ type LookaheadResult {
     resultList: [LookaheadItem]
 }
 
+enum SearchRelType {
+    AUTHORIZATION_GROUP_USER_REL
+    AUTHENTICATION_GROUP_USER_REL
+    CLIENT_AUTHENTICATION_GROUP_REL
+}
+
 ############################################################################
 ################ INPUT TYPES AND RESPONSES FOR MUTATATIONS #################
 ############################################################################
@@ -876,7 +882,8 @@ input RelSearchInput {
     parenttype: SearchResultType
     parentid: String  
     childtype: SearchResultType
-    childid: String 
+    childid: String
+    childids: [String]
     page: Int!
     perPage: Int!
     sortField: String
