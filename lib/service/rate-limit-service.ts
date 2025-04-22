@@ -4,13 +4,13 @@ import { randomUUID } from 'crypto';
 import RateLimitDao from "../dao/rate-limit-dao";
 import { ObjectSearchResultItem, RateLimitServiceGroup, RelSearchResultItem, SearchResultType, Tenant, TenantRateLimitRel, TenantRateLimitRelView } from "@/graphql/generated/graphql-types";
 import TenantDao from "../dao/tenant-dao";
-import { DaoImpl } from "../data-sources/dao-impl";
+import { DaoFactory } from "../data-sources/dao-factory";
 import { DEFAULT_RATE_LIMIT_PERIOD_MINUTES, MAX_RATE_LIMIT_PERIOD_MINUTES, MIN_RATE_LIMIT_PERIOD_MINUTES, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH } from "@/utils/consts";
 import { getOpenSearchClient } from "../data-sources/search";
 
 
-const rateLimitDao: RateLimitDao = DaoImpl.getInstance().getRateLimitDao();
-const tenantDao: TenantDao = DaoImpl.getInstance().getTenantDao();
+const rateLimitDao: RateLimitDao = DaoFactory.getInstance().getRateLimitDao();
+const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
 const searchClient = getOpenSearchClient();
 
 class RateLimitService {

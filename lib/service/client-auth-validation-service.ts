@@ -1,14 +1,14 @@
 import { Client } from "@/graphql/generated/graphql-types";
 //import TenantDao from "@/lib/dao/tenant-dao";
 import ClientDao from "@/lib/dao/client-dao";
-import { DaoImpl } from "../data-sources/dao-impl";
+import { DaoFactory } from "../data-sources/dao-factory";
 
 const {
     AUTH_DOMAIN
 } = process.env;
 
-//const tenantDao: TenantDao = DaoImpl.getInstance().getTenantDao();
-const clientDao: ClientDao = DaoImpl.getInstance().getClientDao();
+//const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
+const clientDao: ClientDao = DaoFactory.getInstance().getClientDao();
 
 class ClientAuthValidationService {
 

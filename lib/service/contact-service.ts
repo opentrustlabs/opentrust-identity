@@ -7,13 +7,13 @@ import { Client, Contact, SigningKey, Tenant } from "@/graphql/generated/graphql
 import { randomUUID } from "crypto";
 import { CONTACT_TYPE_FOR_CLIENT, CONTACT_TYPE_FOR_SIGNING_KEY, CONTACT_TYPE_FOR_TENANT } from "@/utils/consts";
 import { GraphQLError } from "graphql";
-import { DaoImpl } from "../data-sources/dao-impl";
+import { DaoFactory } from "../data-sources/dao-factory";
 
 
-const tenantDao: TenantDao = DaoImpl.getInstance().getTenantDao();
-const clientDao: ClientDao = DaoImpl.getInstance().getClientDao();
-const keyDao: SigningKeysDao = DaoImpl.getInstance().getSigningKeysDao();
-const contactDao: ContactDao = DaoImpl.getInstance().getContactDao();
+const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
+const clientDao: ClientDao = DaoFactory.getInstance().getClientDao();
+const keyDao: SigningKeysDao = DaoFactory.getInstance().getSigningKeysDao();
+const contactDao: ContactDao = DaoFactory.getInstance().getContactDao();
 
 
 class ContactService {

@@ -6,12 +6,12 @@ import { randomUUID } from 'crypto';
 import TenantDao from "../dao/tenant-dao";
 import ClientDao from "../dao/client-dao";
 import AccessRuleDao from "../dao/access-rule-dao";
-import { DaoImpl } from "../data-sources/dao-impl";
+import { DaoFactory } from "../data-sources/dao-factory";
 
-const scopeDao: ScopeDao = DaoImpl.getInstance().getScopeDao();
-const tenantDao: TenantDao = DaoImpl.getInstance().getTenantDao();
-const clientDao: ClientDao = DaoImpl.getInstance().getClientDao();
-const accessRuleDao: AccessRuleDao = DaoImpl.getInstance().getAccessRuleDao();
+const scopeDao: ScopeDao = DaoFactory.getInstance().getScopeDao();
+const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
+const clientDao: ClientDao = DaoFactory.getInstance().getClientDao();
+const accessRuleDao: AccessRuleDao = DaoFactory.getInstance().getAccessRuleDao();
 
 class ScopeService {
 

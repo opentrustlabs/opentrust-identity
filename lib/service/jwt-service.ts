@@ -10,7 +10,7 @@ import { OIDCPrincipal } from "../models/principal";
 import { randomUUID, createPrivateKey, PrivateKeyInput, KeyObject, createSecretKey, createPublicKey, PublicKeyInput } from "node:crypto"; 
 import NodeCache from "node-cache";
 import { CLIENT_SECRET_ENCODING, DEFAULT_END_USER_TOKEN_TTL_SECONDS, DEFAULT_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS, NAME_ORDER_WESTERN, TOKEN_TYPE_END_USER_TOKEN, TOKEN_TYPE_SERVICE_ACCOUNT_TOKEN } from "@/utils/consts";
-import { DaoImpl } from "../data-sources/dao-impl";
+import { DaoFactory } from "../data-sources/dao-factory";
 
 const SIGNING_KEY_ARRAY_CACHE_KEY = "SIGNING_KEY_ARRAY_CACHE_KEY"
 interface CachedSigningKeyData {
@@ -27,10 +27,10 @@ const SigningKeyCache = new NodeCache(
     }
 );
 
-const identityDao: IdentityDao = DaoImpl.getInstance().getIdentityDao();
-const tenantDao: TenantDao = DaoImpl.getInstance().getTenantDao();
-const clientDao: ClientDao = DaoImpl.getInstance().getClientDao();
-const signingKeysDao: SigningKeysDao = DaoImpl.getInstance().getSigningKeysDao();
+const identityDao: IdentityDao = DaoFactory.getInstance().getIdentityDao();
+const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
+const clientDao: ClientDao = DaoFactory.getInstance().getClientDao();
+const signingKeysDao: SigningKeysDao = DaoFactory.getInstance().getSigningKeysDao();
 
 const {
     AUTH_DOMAIN
