@@ -88,7 +88,7 @@ const SearchResultListLayout: React.FC<SearchResultListProps> = ({
         },
         fetchPolicy: "no-cache",
         nextFetchPolicy: "no-cache"
-    })
+    });
 
     // Material UI TablePagination component uses zero-based 
     // indexing (argh) for pagination. Is there ever a page 0?

@@ -1,4 +1,4 @@
-import { TenantAnonymousUserConfiguration, Contact, LoginFailurePolicy, Tenant, TenantLegacyUserMigrationConfig, TenantLookAndFeel, TenantManagementDomainRel, TenantPasswordConfig } from "@/graphql/generated/graphql-types";
+import { TenantAnonymousUserConfiguration, Contact, LoginFailurePolicy, Tenant, TenantLegacyUserMigrationConfig, TenantLookAndFeel, TenantManagementDomainRel, TenantPasswordConfig, TenantRestrictedAuthenticationDomainRel } from "@/graphql/generated/graphql-types";
 import TenantDAO from "../../tenant-dao";
 import { writeFileSync } from "node:fs";
 import path from "node:path";
@@ -8,6 +8,15 @@ import { getFileContents } from "@/utils/dao-utils";
 
 const dataDir = process.env.FS_BASED_DATA_DIR ?? path.join(__dirname);
 class FSBasedTenantDao extends TenantDAO {
+    getDomainsForTenantRestrictedAuthentication(tenantId: string): Promise<Array<TenantRestrictedAuthenticationDomainRel>> {
+        throw new Error("Method not implemented.");
+    }
+    addDomainToTenantRestrictedAuthentication(tenantId: string, domain: string): Promise<TenantRestrictedAuthenticationDomainRel> {
+        throw new Error("Method not implemented.");
+    }
+    removeDomainFromTenantRestrictedAuthentication(tenantId: string, domain: string): Promise<void> {
+        throw new Error("Method not implemented.");
+    }
     getTenantPasswordConfig(tenantId: string): Promise<TenantPasswordConfig | null> {
         throw new Error("Method not implemented.");
     }
@@ -73,7 +82,6 @@ class FSBasedTenantDao extends TenantDAO {
         
         const rootTenant: Tenant = await this.getRootTenant();
         rootTenant.allowUnlimitedRate = tenant.allowUnlimitedRate;
-        rootTenant.claimsSupported = tenant.claimsSupported;
                 
         //rootTenant.enabled = tenant.enabled;
         rootTenant.tenantDescription = tenant.tenantDescription;
@@ -116,7 +124,6 @@ class FSBasedTenantDao extends TenantDAO {
         tenantToUpdate.tenantName = tenant.tenantName;
         tenantToUpdate.tenantDescription = tenant.tenantDescription;
         tenantToUpdate.allowUnlimitedRate = tenant.allowUnlimitedRate;
-        tenantToUpdate.claimsSupported = tenant.claimsSupported;
         tenantToUpdate.enabled = tenant.enabled;
         tenantToUpdate.allowUserSelfRegistration = tenant.allowUserSelfRegistration;
         tenantToUpdate.federatedAuthenticationConstraint = tenant.federatedAuthenticationConstraint;

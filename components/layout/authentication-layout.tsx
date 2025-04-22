@@ -4,7 +4,7 @@ import AuthenticationHeader from "./authentication-header";
 import AuthenticationFooter from "./authentication-footer";
 import Container from "@mui/material/Container";
 import { Grid2 } from "@mui/material";
-import { useSearchParams } from 'next/navigation';
+// import { useSearchParams } from 'next/navigation';
 import { DEFAULT_TENANT_META_DATA, QUERY_PARAM_PREAUTH_TENANT_ID } from "@/utils/consts";
 import { useQuery } from "@apollo/client";
 import { TENANT_META_DATA_QUERY } from "@/graphql/queries/oidc-queries";
@@ -17,7 +17,8 @@ const AuthenticationLayout: React.FC<LayoutProps> = ({
   }) => {
 
 
-    const params = useSearchParams();
+    // const params = useSearchParams();
+    const params = new Map<string, string>();
     const tenantId = params?.get(QUERY_PARAM_PREAUTH_TENANT_ID);
 
     const {data, error, loading} = useQuery(TENANT_META_DATA_QUERY, {

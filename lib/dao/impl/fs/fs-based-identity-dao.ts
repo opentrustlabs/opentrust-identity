@@ -1,7 +1,31 @@
-import { AuthenticationGroup, AuthorizationGroup, SuccessfulLoginResponse, User, UserFailedLoginAttempts } from "@/graphql/generated/graphql-types";
-import IdentityDao from "../../identity-dao";
+import { AuthenticationGroup, AuthorizationGroup, SuccessfulLoginResponse, User, UserCredential, UserFailedLoginAttempts, UserTenantRel } from "@/graphql/generated/graphql-types";
+import IdentityDao, { UserLookupType } from "../../identity-dao";
 
 class FSBasedIdentityDao extends IdentityDao {
+    getUserBy(userLookupType: UserLookupType, value: string): Promise<User | null> {
+        throw new Error("Method not implemented.");
+    }
+    addUserCredential(userCredential: UserCredential): Promise<void> {
+        throw new Error("Method not implemented.");
+    }
+    unlockUser(userId: string): Promise<void> {
+        throw new Error("Method not implemented.");
+    }
+    passwordProhibited(password: string): Promise<boolean> {
+        throw new Error("Method not implemented.");
+    }
+    assignUserToTenant(tenantId: string, userId: string, relType: string): Promise<UserTenantRel> {
+        throw new Error("Method not implemented.");
+    }
+    removeUserFromTenant(tenantId: string, userId: string): Promise<void> {
+        throw new Error("Method not implemented.");
+    }
+    getUserTenantRel(tenantId: string, userId: string): Promise<UserTenantRel | null> {
+        throw new Error("Method not implemented.");
+    }
+    getUserTenantRelsByUserId(userId: string): Promise<Array<UserTenantRel>> {
+        throw new Error("Method not implemented.");
+    }
 
     getLoginAttempts(userId: string): Promise<Array<UserFailedLoginAttempts>> {
         throw new Error("Method not implemented.");

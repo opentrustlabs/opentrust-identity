@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { Suspense } from "react";
 import Image from "next/image";
 import styles from "./page.module.css";
 
@@ -134,4 +134,13 @@ const Home: React.FC = () => {
   );
 }
 
-export default Home;
+const Wrapper: React.FC = () => {
+
+    return (
+        <Suspense>
+            <Home />
+        </Suspense>
+    )
+}
+
+export default Wrapper;

@@ -218,15 +218,13 @@ type LoginFailurePolicy {
 # 2.    enabled -            true | false
 # 3.    allowedScopeValues - ALL of the scopes that are available for the tenant. A subset of these are
 #                            available to each of the clients
-# 4.    claimsSupported -    Of all of the OIDC claims, which does this tenant support
-# 5.    allowUnlimitedRate - true | false. True will override any rate limit set in the rateLimits property
+# 4.    allowUnlimitedRate - true | false. True will override any rate limit set in the rateLimits property
 
 type Tenant {
     tenantId: String!
     tenantName: String!
     tenantDescription: String
-    enabled: Boolean!
-    claimsSupported: [String!]!
+    enabled: Boolean!    
     allowUnlimitedRate: Boolean!
     allowUserSelfRegistration: Boolean!
     allowSocialLogin: Boolean!
@@ -244,6 +242,10 @@ type Tenant {
     defaultRateLimitPeriodMinutes: Int
 }
 
+type TenantSupportedClaimRel {
+    tenantId: String!
+    claim: String!
+}
 
 type TenantAnonymousUserConfiguration {
     tenantId: String!
@@ -966,7 +968,6 @@ input TenantCreateInput {
     tenantName: String!
     tenantDescription: String
     enabled: Boolean!
-    claimsSupported: [String!]!
     allowUnlimitedRate: Boolean!
     allowUserSelfRegistration: Boolean!
     allowAnonymousUsers: Boolean!
@@ -986,7 +987,6 @@ input TenantUpdateInput {
     tenantName: String!
     tenantDescription: String
     enabled: Boolean!
-    claimsSupported: [String!]!
     allowUnlimitedRate: Boolean!
     allowUserSelfRegistration: Boolean!
     allowAnonymousUsers: Boolean!

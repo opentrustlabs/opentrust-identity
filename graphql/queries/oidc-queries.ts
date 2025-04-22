@@ -7,7 +7,6 @@ export const TENANTS_QUERY = gql(`
             tenantName
             tenantDescription
             enabled
-            claimsSupported
             allowUnlimitedRate
             allowUserSelfRegistration
             allowSocialLogin
@@ -46,7 +45,6 @@ export const TENANT_META_DATA_QUERY = gql(`
                 tenantName
                 tenantDescription
                 enabled
-                claimsSupported
                 allowUnlimitedRate
                 allowUserSelfRegistration
                 allowSocialLogin
@@ -149,7 +147,6 @@ export const TENANT_DETAIL_QUERY = gql(`
             tenantName
             tenantDescription
             enabled
-            claimsSupported
             allowUnlimitedRate
             allowUserSelfRegistration
             allowSocialLogin

@@ -694,7 +694,6 @@ export const DEFAULT_TENANT_META_DATA: TenantMetaData = {
         allowSocialLogin: false,
         allowUnlimitedRate: false,
         allowUserSelfRegistration: false,
-        claimsSupported: [],
         enabled: true,
         federatedAuthenticationConstraint: "",
         federatedauthenticationconstraintid: undefined,
