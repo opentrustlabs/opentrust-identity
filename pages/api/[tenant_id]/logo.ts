@@ -1,10 +1,10 @@
 import { TenantLookAndFeel } from '@/graphql/generated/graphql-types';
 import TenantDao from '@/lib/dao/tenant-dao';
-import { DaoImpl } from '@/lib/data-sources/dao-impl';
+import { DaoFactory } from '@/lib/data-sources/dao-factory';
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { readFileSync } from 'node:fs';
 
-const tenantDao: TenantDao = DaoImpl.getInstance().getTenantDao();
+const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
 
 
 

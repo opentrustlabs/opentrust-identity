@@ -25,9 +25,9 @@ import DBContactDao from "@/lib/dao/impl/db/db-contact-dao";
 
 const daoStrategy = process.env.DAO_STRATEGY
 
-class DaoImpl {
+class DaoFactory {
 
-    private static instance: DaoImpl;
+    private static instance: DaoFactory;
     protected tenantDao: TenantDao;
     protected clientDao: ClientDao;
     protected signingKeysDao: SigningKeysDao;
@@ -45,20 +45,20 @@ class DaoImpl {
         // NO-OP
     }
 
-    public static getInstance(): DaoImpl {        
-        if(!DaoImpl.instance){
-            DaoImpl.instance = new DaoImpl();
+    public static getInstance(): DaoFactory {        
+        if(!DaoFactory.instance){
+            DaoFactory.instance = new DaoFactory();
         }
-        return DaoImpl.instance;
+        return DaoFactory.instance;
     }
     
     public getTenantDao(): TenantDao {
-        if(DaoImpl.instance.tenantDao){
-            return DaoImpl.instance.tenantDao;
+        if(DaoFactory.instance.tenantDao){
+            return DaoFactory.instance.tenantDao;
         }
-        if(daoStrategy === "postgresql" || daoStrategy === "mysql" || daoStrategy === "mssql"){
-            DaoImpl.instance.tenantDao = new DBTenantDao();
-            return DaoImpl.instance.tenantDao;
+        if(daoStrategy=== "rdb"){
+            DaoFactory.instance.tenantDao = new DBTenantDao();
+            return DaoFactory.instance.tenantDao;
         }
         else{
             throw new Error("DAO strategy not defined.");
@@ -66,12 +66,12 @@ class DaoImpl {
     }
 
     public getClientDao(): ClientDao {
-        if(DaoImpl.instance.clientDao){
-            return DaoImpl.instance.clientDao;
+        if(DaoFactory.instance.clientDao){
+            return DaoFactory.instance.clientDao;
         }
-        if(daoStrategy === "postgresql" || daoStrategy === "mysql" || daoStrategy === "mssql"){
-            DaoImpl.instance.clientDao = new DBClientDao();
-            return DaoImpl.instance.clientDao;
+        if(daoStrategy=== "rdb"){
+            DaoFactory.instance.clientDao = new DBClientDao();
+            return DaoFactory.instance.clientDao;
         }
         else{
             throw new Error("DAO strategy not defined.");
@@ -79,12 +79,12 @@ class DaoImpl {
     }
 
     public getSigningKeysDao(): SigningKeysDao {
-        if(DaoImpl.instance.signingKeysDao){
-            return DaoImpl.instance.signingKeysDao;
+        if(DaoFactory.instance.signingKeysDao){
+            return DaoFactory.instance.signingKeysDao;
         }
-        if(daoStrategy === "postgresql" || daoStrategy === "mysql" || daoStrategy === "mssql"){
-            DaoImpl.instance.signingKeysDao = new DBSigningKeysDao();
-            return DaoImpl.instance.signingKeysDao;
+        if(daoStrategy=== "rdb"){
+            DaoFactory.instance.signingKeysDao = new DBSigningKeysDao();
+            return DaoFactory.instance.signingKeysDao;
         }
         else{
             throw new Error("DAO strategy not defined.");
@@ -92,13 +92,13 @@ class DaoImpl {
     }
 
     public getRateLimitDao(): RateLimitDao {
-        if(DaoImpl.instance.rateLimitDao){
-            return DaoImpl.instance.rateLimitDao;
+        if(DaoFactory.instance.rateLimitDao){
+            return DaoFactory.instance.rateLimitDao;
         }
     
-        if(daoStrategy === "postgresql" || daoStrategy === "mysql" || daoStrategy === "mssql"){
-            DaoImpl.instance.rateLimitDao = new DBRateLimitDao();
-            return DaoImpl.instance.rateLimitDao
+        if(daoStrategy=== "rdb"){
+            DaoFactory.instance.rateLimitDao = new DBRateLimitDao();
+            return DaoFactory.instance.rateLimitDao
         }
         else{
             throw new Error("DAO strategy not defined.");
@@ -106,12 +106,12 @@ class DaoImpl {
     }
 
     public getScopeDao(): ScopeDao {
-        if(DaoImpl.instance.scopeDao){
-            return DaoImpl.instance.scopeDao;
+        if(DaoFactory.instance.scopeDao){
+            return DaoFactory.instance.scopeDao;
         }
-        if(daoStrategy === "postgresql" || daoStrategy === "mysql" || daoStrategy === "mssql"){
-            DaoImpl.instance.scopeDao = new DBScopeDao();
-            return DaoImpl.instance.scopeDao; 
+        if(daoStrategy=== "rdb"){
+            DaoFactory.instance.scopeDao = new DBScopeDao();
+            return DaoFactory.instance.scopeDao; 
         }
         else{
             throw new Error("DAO strategy not defined.");
@@ -119,12 +119,12 @@ class DaoImpl {
     }
 
     public getAuthenticationGroupDao(): AuthenticationGroupDao {
-        if(DaoImpl.instance.authenticationGroupDao){
-            return DaoImpl.instance.authenticationGroupDao;
+        if(DaoFactory.instance.authenticationGroupDao){
+            return DaoFactory.instance.authenticationGroupDao;
         }
-        if(daoStrategy === "postgresql" || daoStrategy === "mysql" || daoStrategy === "mssql"){
-            DaoImpl.instance.authenticationGroupDao = new DBAuthenticationGroupDao();
-            return DaoImpl.instance.authenticationGroupDao;
+        if(daoStrategy=== "rdb"){
+            DaoFactory.instance.authenticationGroupDao = new DBAuthenticationGroupDao();
+            return DaoFactory.instance.authenticationGroupDao;
         }
         else{
             throw new Error("DAO strategy not defined.");
@@ -132,12 +132,12 @@ class DaoImpl {
     }
 
     public getAuthorizationGroupDao(): AuthorizationGroupDao {
-        if(DaoImpl.instance.authorizationGroupDao){
-            return DaoImpl.instance.authorizationGroupDao;
+        if(DaoFactory.instance.authorizationGroupDao){
+            return DaoFactory.instance.authorizationGroupDao;
         }
-        if(daoStrategy === "postgresql" || daoStrategy === "mysql" || daoStrategy === "mssql"){
-            DaoImpl.instance.authorizationGroupDao = new DBAuthorizationGroupDao();
-            return DaoImpl.instance.authorizationGroupDao; 
+        if(daoStrategy=== "rdb"){
+            DaoFactory.instance.authorizationGroupDao = new DBAuthorizationGroupDao();
+            return DaoFactory.instance.authorizationGroupDao; 
         }
         else{
             throw new Error("DAO strategy not defined.");
@@ -145,12 +145,12 @@ class DaoImpl {
     }
 
     public getFederatedOIDCProvicerDao(): FederatedOIDCProviderDao {
-        if(DaoImpl.instance.federatedOIDCProviderDao){
-            return DaoImpl.instance.federatedOIDCProviderDao;
+        if(DaoFactory.instance.federatedOIDCProviderDao){
+            return DaoFactory.instance.federatedOIDCProviderDao;
         }
-        if(daoStrategy === "postgresql" || daoStrategy === "mysql" || daoStrategy === "mssql"){
-            DaoImpl.instance.federatedOIDCProviderDao = new DBFederatedOIDCProviderDao();
-            return DaoImpl.instance.federatedOIDCProviderDao;
+        if(daoStrategy=== "rdb"){
+            DaoFactory.instance.federatedOIDCProviderDao = new DBFederatedOIDCProviderDao();
+            return DaoFactory.instance.federatedOIDCProviderDao;
         }
         else{
             throw new Error("DAO strategy not defined.");
@@ -158,12 +158,12 @@ class DaoImpl {
     }
 
     public getAuthDao(): AuthDao {
-        if(DaoImpl.instance.authDao){
-            return DaoImpl.instance.authDao;
+        if(DaoFactory.instance.authDao){
+            return DaoFactory.instance.authDao;
         }
-        if(daoStrategy === "postgresql" || daoStrategy === "mysql" || daoStrategy === "mssql"){
-            DaoImpl.instance.authDao = new DBAuthDao();
-            return DaoImpl.instance.authDao;
+        if(daoStrategy=== "rdb"){
+            DaoFactory.instance.authDao = new DBAuthDao();
+            return DaoFactory.instance.authDao;
         }
         else{
             throw new Error("DAO strategy not defined.");
@@ -171,12 +171,12 @@ class DaoImpl {
     }
 
     public getIdentityDao(): IdentityDao {
-        if(DaoImpl.instance.identityDao){
-            return DaoImpl.instance.identityDao;
+        if(DaoFactory.instance.identityDao){
+            return DaoFactory.instance.identityDao;
         }
-        if(daoStrategy === "postgresql" || daoStrategy === "mysql" || daoStrategy === "mssql"){
-            DaoImpl.instance.identityDao = new DBIdentityDao();
-            return DaoImpl.instance.identityDao; 
+        if(daoStrategy=== "rdb"){
+            DaoFactory.instance.identityDao = new DBIdentityDao();
+            return DaoFactory.instance.identityDao; 
         }
         else{
             throw new Error("DAO strategy not defined.");
@@ -184,12 +184,12 @@ class DaoImpl {
     }
 
     public getAccessRuleDao(): AccessRuleDao {
-        if(DaoImpl.instance.accessRuleDao){
-            return DaoImpl.instance.accessRuleDao;
+        if(DaoFactory.instance.accessRuleDao){
+            return DaoFactory.instance.accessRuleDao;
         }
-        if(daoStrategy === "postgresql" || daoStrategy === "mysql" || daoStrategy === "mssql"){
-            DaoImpl.instance.accessRuleDao = new DBAccessRuleDao();
-            return DaoImpl.instance.accessRuleDao; 
+        if(daoStrategy=== "rdb"){
+            DaoFactory.instance.accessRuleDao = new DBAccessRuleDao();
+            return DaoFactory.instance.accessRuleDao; 
         }
         else{
             throw new Error("DAO strategy not defined.");
@@ -197,12 +197,12 @@ class DaoImpl {
     }
 
     public getContactDao(): ContactDao {
-        if(DaoImpl.instance.contactDao){
-            return DaoImpl.instance.contactDao;
+        if(DaoFactory.instance.contactDao){
+            return DaoFactory.instance.contactDao;
         }
-        if(daoStrategy === "postgresql" || daoStrategy === "mysql" || daoStrategy === "mssql"){
-            DaoImpl.instance.contactDao = new DBContactDao();
-            return DaoImpl.instance.contactDao; 
+        if(daoStrategy=== "rdb"){
+            DaoFactory.instance.contactDao = new DBContactDao();
+            return DaoFactory.instance.contactDao; 
         }
         else{
             throw new Error("DAO strategy not defined.");
@@ -211,4 +211,4 @@ class DaoImpl {
 
 }
 
-export { DaoImpl }
+export { DaoFactory }

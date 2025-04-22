@@ -2,7 +2,7 @@ import { OIDCContext } from "@/graphql/graphql-context";
 
 import IdentityDao from "../dao/identity-dao";
 import { ObjectSearchResultItem, RelSearchResultItem, SearchResultType, Tenant, TenantPasswordConfig, User, UserCreateInput, UserCredential, UserTenantRel, UserTenantRelView } from "@/graphql/generated/graphql-types";
-import { DaoImpl } from "../data-sources/dao-impl";
+import { DaoFactory } from "../data-sources/dao-factory";
 import TenantDao from "../dao/tenant-dao";
 import { GraphQLError } from "graphql/error";
 import { randomUUID } from "crypto";
@@ -13,8 +13,8 @@ import { getOpenSearchClient } from "../data-sources/search";
 import { Get_Response } from "@opensearch-project/opensearch/api/index.js";
 
 
-const identityDao: IdentityDao = DaoImpl.getInstance().getIdentityDao();
-const tenantDao: TenantDao = DaoImpl.getInstance().getTenantDao();
+const identityDao: IdentityDao = DaoFactory.getInstance().getIdentityDao();
+const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
 const searchClient: Client = getOpenSearchClient();
 
 class IdentitySerivce {

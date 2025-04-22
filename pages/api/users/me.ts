@@ -2,15 +2,15 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { User } from '@/graphql/generated/graphql-types';
 // import IdentityDao from '@/lib/dao/identity-dao';
-// import { DaoImpl } from '@/lib/data-sources/dao-impl';
+// import { DaoFactory } from '@/lib/data-sources/dao-impl';
 // import TenantDao from '@/lib/dao/tenant-dao';
 // import { Client } from '@opensearch-project/opensearch';
 // import { getOpenSearchClient } from '@/lib/data-sources/search';
 //import { MFA_FACTOR_AUTH_TYPE_NONE, NAME_ORDER_WESTERN } from '@/utils/consts';
 
 
-// const identityDao: IdentityDao = DaoImpl.getInstance().getIdentityDao();
-// const tenantDao: TenantDao = DaoImpl.getInstance().getTenantDao();
+// const identityDao: IdentityDao = DaoFactory.getInstance().getIdentityDao();
+// const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
 // const searchClient: Client = getOpenSearchClient();
 
 export default async function handler(

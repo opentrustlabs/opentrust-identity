@@ -7,10 +7,10 @@ import { GraphQLError } from "graphql/error/GraphQLError";
 import { randomUUID } from 'crypto'; 
 import { CLIENT_SECRET_ENCODING, CLIENT_TYPES_DISPLAY, SEARCH_INDEX_OBJECT_SEARCH } from "@/utils/consts";
 import { getOpenSearchClient } from "@/lib/data-sources/search";
-import { DaoImpl } from "../data-sources/dao-impl";
+import { DaoFactory } from "../data-sources/dao-factory";
 
-const clientDao: ClientDao = DaoImpl.getInstance().getClientDao();
-const tenantDao: TenantDao = DaoImpl.getInstance().getTenantDao();
+const clientDao: ClientDao = DaoFactory.getInstance().getClientDao();
+const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
 const searchClient = getOpenSearchClient();
 
 class ClientService {

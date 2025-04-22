@@ -10,7 +10,7 @@ import type { NextApiRequest, NextApiResponse } from 'next'
 import { randomUUID } from 'crypto'; 
 import JwtService from '@/lib/service/jwt-service';
 import { OIDCTokenResponse } from '@/lib/models/token-response';
-import { DaoImpl } from '@/lib/data-sources/dao-impl';
+import { DaoFactory } from '@/lib/data-sources/dao-factory';
 
 
 // TODO 
@@ -20,9 +20,9 @@ import { DaoImpl } from '@/lib/data-sources/dao-impl';
 //     AUTH_DOMAIN
 // } = process.env;
 
-const tenantDao: TenantDao = DaoImpl.getInstance().getTenantDao();
-const clientDao: ClientDao = DaoImpl.getInstance().getClientDao();
-const authDao: AuthDao = DaoImpl.getInstance().getAuthDao();
+const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
+const clientDao: ClientDao = DaoFactory.getInstance().getClientDao();
+const authDao: AuthDao = DaoFactory.getInstance().getAuthDao();
 const clientAuthValidationService: ClientAuthValidationService = new ClientAuthValidationService();
 const jwtService: JwtService = new JwtService();
 

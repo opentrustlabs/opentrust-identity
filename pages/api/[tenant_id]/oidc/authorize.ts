@@ -3,17 +3,17 @@ import AuthDao from '@/lib/dao/auth-dao';
 import ClientDao from '@/lib/dao/client-dao';
 import FederatedOIDCProviderDao from '@/lib/dao/federated-oidc-provider-dao';
 import TenantDao from '@/lib/dao/tenant-dao';
-import { DaoImpl } from '@/lib/data-sources/dao-impl';
+import { DaoFactory } from '@/lib/data-sources/dao-factory';
 import { WellknownConfig } from '@/lib/models/wellknown-config';
 import OIDCServiceClient from '@/lib/service/oidc-service-client';
 import { ALL_OIDC_SUPPORTED_SCOPE_VALUES, CLIENT_TYPE_SERVICE_ACCOUNT_ONLY, FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE, OIDC_OPENID_SCOPE, QUERY_PARAM_PREAUTH_REDIRECT_URI, QUERY_PARAM_PREAUTH_TENANT_ID, QUERY_PARAM_PREAUTHN_TOKEN } from '@/utils/consts';
 import { generateCodeVerifierAndChallenge, generateRandomToken } from '@/utils/dao-utils';
 import type { NextApiRequest, NextApiResponse } from 'next'
 
-const tenantDao: TenantDao = DaoImpl.getInstance().getTenantDao();
-const clientDao: ClientDao = DaoImpl.getInstance().getClientDao();
-const federatedOIDCProviderDao: FederatedOIDCProviderDao = DaoImpl.getInstance().getFederatedOIDCProvicerDao();
-const authDao: AuthDao = DaoImpl.getInstance().getAuthDao();
+const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
+const clientDao: ClientDao = DaoFactory.getInstance().getClientDao();
+const federatedOIDCProviderDao: FederatedOIDCProviderDao = DaoFactory.getInstance().getFederatedOIDCProvicerDao();
+const authDao: AuthDao = DaoFactory.getInstance().getAuthDao();
 const oidcServiceClient: OIDCServiceClient = new OIDCServiceClient();
 
 const {

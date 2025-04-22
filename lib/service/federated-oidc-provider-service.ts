@@ -7,11 +7,11 @@ import { randomUUID } from 'crypto';
 import { FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL, FEDERATED_OIDC_PROVIDER_TYPES_DISPLAY, SEARCH_INDEX_OBJECT_SEARCH } from "@/utils/consts";
 import { Client } from "@opensearch-project/opensearch";
 import { getOpenSearchClient } from "@/lib/data-sources/search";
-import { DaoImpl } from "../data-sources/dao-impl";
+import { DaoFactory } from "../data-sources/dao-factory";
 
 const searchClient: Client = getOpenSearchClient();
-const federatedOIDCProviderDao: FederatedOIDCProviderDao = DaoImpl.getInstance().getFederatedOIDCProvicerDao();
-const tenantDao = DaoImpl.getInstance().getTenantDao();
+const federatedOIDCProviderDao: FederatedOIDCProviderDao = DaoFactory.getInstance().getFederatedOIDCProvicerDao();
+const tenantDao = DaoFactory.getInstance().getTenantDao();
 
 class FederatedOIDCProviderService {
 

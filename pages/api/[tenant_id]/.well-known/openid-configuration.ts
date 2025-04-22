@@ -3,14 +3,14 @@ import TenantDao from "../../../../lib/dao/tenant-dao";
 import { Tenant } from '../../../../graphql/generated/graphql-types';
 import { ErrorResponseBody } from '../../../..//lib/models/error';
 import { GRANT_TYPES_SUPPORTED } from "../../../../utils/consts";
-import { DaoImpl } from "../../../../lib/data-sources/dao-impl";
+import { DaoFactory } from "../../../../lib/data-sources/dao-factory";
 
 const {
     AUTH_DOMAIN
 } = process.env;
 
 
-const tenantDao: TenantDao = DaoImpl.getInstance().getTenantDao();
+const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
 
 
 export default async function handler(
