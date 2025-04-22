@@ -2,6 +2,7 @@ import { Tenant, TenantManagementDomainRel, TenantAnonymousUserConfiguration, Te
 import TenantDao from "../../tenant-dao";
 import { TenantEntity } from "@/lib/entities/tenant-entity";
 import connection  from "@/lib/data-sources/db";
+import { DBDriver, TenantEntity2 } from "@/lib/data-sources/sequelize-db";
 import { TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import { GraphQLError } from "graphql";
 import TenantManagementDomainRelEntity from "@/lib/entities/tenant-management-domain-rel-entity";
@@ -12,6 +13,7 @@ import ContactEntity from "@/lib/entities/contact-entity";
 import TenantLegacyUserMigrationConfigEntity from "@/lib/entities/tenant-legacy-user-migration-config-entity";
 import TenantRestrictedAuthenticationDomainRelEntity from "@/lib/entities/tenant-restricted-authentication-domain-rel-entity";
 import { QueryOrder } from "@mikro-orm/core";
+import { Op, Sequelize } from "sequelize";
 
 class DBTenantDao extends TenantDao {
 
@@ -68,25 +70,37 @@ class DBTenantDao extends TenantDao {
     }
 
     public async getTenants(tenantIds?: Array<string>): Promise<Array<Tenant>> {
-        const em = connection.em.fork();
+        const sequelize: Sequelize = await DBDriver.getConnection();
         const filter: any = {};
         if(tenantIds){
-            filter.tenantid = tenantIds;
-        }
-        const tenantEntities: Array<TenantEntity> = await em.find(TenantEntity,
-            filter,
-            {
-                orderBy: {
-                    tenantname: QueryOrder.ASC
-                }
-            }
-        );
-        const tenants: Array<Tenant> = tenantEntities.map(
-            (e: TenantEntity) => {
-                return e.toModel();
-            }
-        );
-        return Promise.resolve(tenants);
+            filter.tenantId = { [Op.in]: tenantIds};
+        }       
+
+        
+        const obj2: Array<TenantEntity2> = await sequelize.models.tenant.findAll({
+            where: filter,
+            order: [
+                ["tenantName", "ASC"]
+            ],
+            raw: true            
+        });
+
+
+        
+        // const tenantEntities: Array<TenantEntity> = await em.find(TenantEntity,
+        //     filter,
+        //     {
+        //         orderBy: {
+        //             tenantname: QueryOrder.ASC
+        //         }
+        //     }
+        // );
+        // const tenants: Array<Tenant> = tenantEntities.map(
+        //     (e: TenantEntity) => {
+        //         return e.toModel();
+        //     }
+        // );
+        return Promise.resolve(obj2 as any as Array<Tenant>);
     }
 
     public async getTenantById(tenantId: string): Promise<Tenant | null> {

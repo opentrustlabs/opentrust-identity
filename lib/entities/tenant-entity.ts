@@ -12,7 +12,6 @@ export class TenantEntity {
             this.allowsociallogin = tenant.allowSocialLogin;
             this.allowunlimitedrate = tenant.allowUnlimitedRate
             this.allowuserselfregistration = tenant.allowUserSelfRegistration;
-            this.claimssupported = tenant.claimsSupported ? tenant.claimsSupported.join(",") : "";
             this.enabled = tenant.enabled;
             this.federatedauthenticationconstraint = tenant.federatedAuthenticationConstraint;
             this.markfordelete = tenant.markForDelete;
@@ -41,9 +40,6 @@ export class TenantEntity {
 
     @Property()
     enabled: boolean;
-
-    @Property()
-    claimssupported?: string;
 
     @Property()
     allowunlimitedrate: boolean;
@@ -90,7 +86,6 @@ export class TenantEntity {
             allowSocialLogin: this.allowsociallogin,
             allowUnlimitedRate: this.allowunlimitedrate,
             allowUserSelfRegistration: this.allowuserselfregistration,
-            claimsSupported: this.claimssupported ? this.claimssupported.split(",") : [],
             enabled: this.enabled,
             federatedAuthenticationConstraint: this.federatedauthenticationconstraint,
             markForDelete: this.markfordelete,

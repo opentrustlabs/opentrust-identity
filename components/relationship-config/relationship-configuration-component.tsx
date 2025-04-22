@@ -362,24 +362,16 @@ const RelSearch: React.FC<RelSearchProps> = ({
     });
 
     const shouldSkip = (): boolean => {
-        console.log("loading is: " + loading);
-        console.log("error is " + error);
-        console.log("data is: " + data);
-
         let skip = false;
         if(loading){
-            console.log("checkpoint 1")
             skip = true;
         }
         else if(error !== undefined){
-            console.log("checkpoint 2")
             skip = true;
         }
         else if(data === null || data === undefined){
-            console.log("checkpoint 3")
             skip = true;
         }
-        console.log("value of skip is: " + skip);
         return skip;
     }
 

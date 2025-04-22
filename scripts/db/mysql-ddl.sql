@@ -24,7 +24,6 @@ create TABLE tenant (
     tenantname VARCHAR(128) NOT NULL,
     tenantdescription VARCHAR(256),
     enabled BOOLEAN NOT NULL,
-    claimssupported VARCHAR(1024),
     allowunlimitedrate BOOLEAN NOT NULL,
     allowuserselfregistration BOOLEAN NOT NULL,
     allowanonymoususers BOOLEAN NOT NULL,

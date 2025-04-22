@@ -8,6 +8,9 @@ import path from "node:path";
 const dataDir = process.env.FS_BASED_DATA_DIR ?? path.join(__dirname);
 
 class FSBasedSigningKeysDao extends SigningKeysDao {
+    updateSigningKey(key: SigningKey): Promise<SigningKey> {
+        throw new Error("Method not implemented.");
+    }
     
     
     public async assignContactsToSigningKey(keyId: string, contactList: Array<Contact>): Promise<Array<Contact>> {

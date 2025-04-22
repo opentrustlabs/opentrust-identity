@@ -255,8 +255,6 @@ class SearchService {
             });
         }
         
-        console.log(JSON.stringify(query));
-
         const sortObj: any = {};
         sortObj[`${sortField}.raw`] = { order: sortDirection};
 

@@ -57,9 +57,18 @@ const resolvers: Resolvers = {
             const searchService: SearchService = new SearchService(oidcContext);
             return searchService.search(searchInput);
         },
-        relSearch: (_, { relSearchInput}, oidcContext) => {            
+        relSearch: async (_, { relSearchInput}, oidcContext) => {            
+            const t1 = Date.now();
+
             const searchService: SearchService = new SearchService(oidcContext);
-            return searchService.relSearch(relSearchInput);
+            const t2 = Date.now();
+
+            const res = await searchService.relSearch(relSearchInput);
+            const t3 = Date.now();
+
+            console.log("time to create service service: " + (t2 - t1));
+            console.log("time to search: " + (t3 - t2));
+            return res;// searchService.relSearch(relSearchInput);
         },
         getRootTenant: (_, __, oidcContext) => {
             const tenantService: TenantService = new TenantService(oidcContext);
@@ -204,7 +213,6 @@ const resolvers: Resolvers = {
         createRootTenant: async(_: any, { tenantInput }, oidcContext) => {
             const tenantService: TenantService = new TenantService(oidcContext);
             let tenant: Tenant = {
-                claimsSupported: tenantInput.claimsSupported,
                 enabled: true,
                 tenantId: "",
                 allowUnlimitedRate: tenantInput.allowUnlimitedRate,
@@ -230,7 +238,6 @@ const resolvers: Resolvers = {
             const tenantService: TenantService = new TenantService(oidcContext);
             let tenant: Tenant = {
                 tenantId: tenantInput.tenantId,
-                claimsSupported: tenantInput.claimsSupported,
                 enabled: tenantInput.enabled,
                 tenantName: tenantInput.tenantName,
                 allowUnlimitedRate: tenantInput.allowUnlimitedRate,
@@ -254,7 +261,6 @@ const resolvers: Resolvers = {
         createTenant: async (_: any, { tenantInput }, oidcContext) => {
             const tenantService: TenantService = new TenantService(oidcContext);
             let tenant: Tenant = {
-                claimsSupported: tenantInput.claimsSupported,
                 enabled: true,
                 tenantId: "",
                 allowUnlimitedRate: tenantInput.allowUnlimitedRate,
@@ -282,7 +288,6 @@ const resolvers: Resolvers = {
             const tenantService: TenantService = new TenantService(oidcContext);
             let tenant: Tenant = {
                 tenantId: tenantInput.tenantId,
-                claimsSupported: tenantInput.claimsSupported,
                 enabled: tenantInput.enabled,
                 tenantName: tenantInput.tenantName,
                 allowUnlimitedRate: tenantInput.allowUnlimitedRate,

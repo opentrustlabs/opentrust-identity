@@ -71,7 +71,6 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
         allowSocialLogin: tenant.allowSocialLogin,
         allowUnlimitedRate: tenant.allowUnlimitedRate,
         allowUserSelfRegistration: tenant.allowUserSelfRegistration,
-        claimsSupported: [],
         enabled: tenant.enabled,
         federatedAuthenticationConstraint: tenant.federatedAuthenticationConstraint,
         markForDelete: tenant.markForDelete,
