@@ -172,6 +172,16 @@ class DBTenantDao extends TenantDao {
     }
     
     //tenantAnonymousUserConfiguration
+    public async getAnonymousUserConfiguration(tenantId: string): Promise<TenantAnonymousUserConfiguration | null> {
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        const entity: TenantAnonymousUserConfigurationEntity | null = await sequelize.models.tenantAnonymousUserConfiguration.findOne({
+            where: {
+                tenantId: tenantId
+            },
+            raw: true
+        });
+        return entity ? Promise.resolve(entity as any as TenantAnonymousUserConfiguration) : Promise.resolve(null);
+    }
 
     public async createAnonymousUserConfiguration(tenantId: string, anonymousUserConfiguration: TenantAnonymousUserConfiguration): Promise<TenantAnonymousUserConfiguration> {
         const sequelize: Sequelize = await DBDriver.getConnection();
@@ -241,8 +251,27 @@ class DBTenantDao extends TenantDao {
                 tenantId: tenantId
             }
         });
+        if(entity){
+            const tenantLookAndFeel: TenantLookAndFeel = {
+                tenantid: entity.getDataValue("tenantid"),
+                adminheaderbackgroundcolor: entity.getDataValue("adminheaderbackgroundcolor"),
+                adminheadertext: entity.getDataValue("adminheadertext"),
+                adminheadertextcolor: entity.getDataValue("adminheadertextcolor"),
+                adminlogo: entity.getDataValue("adminlogo") ? 
+                    Buffer.from(entity.getDataValue("adminlogo")).toString("utf-8") : "",
+                authenticationheaderbackgroundcolor: entity.getDataValue("authenticationheaderbackgroundcolor"),
+                authenticationheadertext: entity.getDataValue("authenticationheadertext"),
+                authenticationheadertextcolor: entity.getDataValue("authenticationheadertextcolor"),
+                authenticationlogo: entity.getDataValue("authenticationlogo") ?
+                    Buffer.from(entity.getDataValue("authenticationlogo")).toString("utf-8") : "",                
+                authenticationlogomimetype: entity.getDataValue("authenticationlogomimetype")
+            }
+            return Promise.resolve(tenantLookAndFeel);
+        }
+        else{
+            return Promise.resolve(null);
+        }
 
-        return entity ? Promise.resolve(entity as any as TenantLookAndFeel) : Promise.resolve(null);
     }
 
     public async createTenantLookAndFeel(tenantLookAndFeel: TenantLookAndFeel): Promise<TenantLookAndFeel> {
@@ -272,49 +301,57 @@ class DBTenantDao extends TenantDao {
     }
 
     public async getLegacyUserMigrationConfiguration(tenantId: string): Promise<TenantLegacyUserMigrationConfig | null> {
-        const em = connection.em.fork();
-        const entity: TenantLegacyUserMigrationConfigEntity | null = await em.findOne(TenantLegacyUserMigrationConfigEntity, {tenantId: tenantId});
-        return entity ? Promise.resolve(entity) : Promise.resolve(null);
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        const entity: TenantLegacyUserMigrationConfigEntity | null = await sequelize.models.tenantLegacyUserMigrationConfig.findOne({
+            where: {
+                tenantId: tenantId
+            }
+        });
+
+        return entity ? Promise.resolve(entity as any as TenantLegacyUserMigrationConfig) : Promise.resolve(null);
     }
 
     public async setTenantLegacyUserMigrationConfiguration(tenantLegacyUserMigrationConfig: TenantLegacyUserMigrationConfig): Promise<TenantLegacyUserMigrationConfig | null> {
-        const em = connection.em.fork();
-        const entity: TenantLegacyUserMigrationConfigEntity = new TenantLegacyUserMigrationConfigEntity(tenantLegacyUserMigrationConfig);
-        await em.upsert(entity);
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.tenantLegacyUserMigrationConfig.upsert(tenantLegacyUserMigrationConfig, {
+            conflictWhere: {
+                tenantId: tenantLegacyUserMigrationConfig.tenantId
+            }
+        });
         return Promise.resolve(tenantLegacyUserMigrationConfig);
     }
 
     public async getDomainsForTenantRestrictedAuthentication(tenantId: string): Promise<Array<TenantRestrictedAuthenticationDomainRel>> {
-        const em = connection.em.fork();
-        const entities: Array<TenantRestrictedAuthenticationDomainRelEntity> = await em.find(
-            TenantRestrictedAuthenticationDomainRelEntity, 
-            {
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        const entities: Array<TenantRestrictedAuthenticationDomainRelEntity> = await sequelize.models.tenantRestrictedAuthenticationDomainRel.findAll({
+            where: {
                 tenantId: tenantId
             }
-        );
+        });        
         
-        return Promise.resolve(entities);
+        return Promise.resolve(entities as any as Array<TenantRestrictedAuthenticationDomainRel>);
     }
 
     public async addDomainToTenantRestrictedAuthentication(tenantId: string, domain: string): Promise<TenantRestrictedAuthenticationDomainRel> {
-        const em = connection.em.fork();
-        const entity: TenantRestrictedAuthenticationDomainRelEntity = new TenantRestrictedAuthenticationDomainRelEntity();
-        entity.domain = domain;
-        entity.tenantId = tenantId;
-        await em.persistAndFlush(entity);
-        return Promise.resolve(entity);
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        const tenantRestrictedAuthenticationDomainRel: TenantRestrictedAuthenticationDomainRel = {
+            tenantId,
+            domain
+        }
+        await sequelize.models.tenantRestrictedAuthenticationDomainRel.create(tenantRestrictedAuthenticationDomainRel)
+        return Promise.resolve(tenantRestrictedAuthenticationDomainRel);
     }
 
     public async removeDomainFromTenantRestrictedAuthentication(tenantId: string, domain: string): Promise<void> {
-        const em = connection.em.fork();
-        await em.nativeDelete(TenantRestrictedAuthenticationDomainRelEntity,
-            {
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.tenantRestrictedAuthenticationDomainRel.destroy({
+            where: {
                 tenantId: tenantId,
                 domain: domain
             }
-        );
-    }
-       
+        })
+        return Promise.resolve();
+    }       
 
 }
 
