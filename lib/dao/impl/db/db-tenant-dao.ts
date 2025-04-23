@@ -1,7 +1,7 @@
 import { Tenant, TenantManagementDomainRel, TenantAnonymousUserConfiguration, TenantLookAndFeel, Contact, TenantPasswordConfig, LoginFailurePolicy, TenantLegacyUserMigrationConfig, TenantRestrictedAuthenticationDomainRel } from "@/graphql/generated/graphql-types";
 import TenantDao from "../../tenant-dao";
-import connection  from "@/lib/data-sources/db";
-import { DBDriver, TenantEntity2 } from "@/lib/data-sources/sequelize-db";
+// import connection  from "@/lib/data-sources/db";
+import DBDriver from "@/lib/data-sources/sequelize-db";
 import { TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import { GraphQLError } from "graphql";
 import TenantManagementDomainRelEntity from "@/lib/entities/tenant-management-domain-rel-entity";
@@ -11,6 +11,7 @@ import TenantLookAndFeelEntity from "@/lib/entities/tenant-look-and-feel-entity"
 import TenantLegacyUserMigrationConfigEntity from "@/lib/entities/tenant-legacy-user-migration-config-entity";
 import TenantRestrictedAuthenticationDomainRelEntity from "@/lib/entities/tenant-restricted-authentication-domain-rel-entity";
 import { Op, Sequelize } from "sequelize";
+import { TenantEntity } from "@/lib/entities/tenant-entity";
 
 class DBTenantDao extends TenantDao {
 
@@ -26,7 +27,7 @@ class DBTenantDao extends TenantDao {
 
     public async getRootTenant(): Promise<Tenant> {
         const sequelize: Sequelize = await DBDriver.getConnection();
-        const entity: TenantEntity2 | null = await sequelize.models.tenant.findOne({
+        const entity: TenantEntity | null = await sequelize.models.tenant.findOne({
             where: {
                 tenanttype: TENANT_TYPE_ROOT_TENANT
             },
@@ -42,7 +43,7 @@ class DBTenantDao extends TenantDao {
     public async createRootTenant(tenant: Tenant): Promise<Tenant> {
         tenant.tenantType = TENANT_TYPE_ROOT_TENANT;
         const sequelize: Sequelize = await DBDriver.getConnection();
-        const t: TenantEntity2 = await sequelize.models.tenant.create(tenant);
+        const t: TenantEntity = await sequelize.models.tenant.create(tenant);
         return Promise.resolve(t as any as Tenant);
     }
 
@@ -70,7 +71,7 @@ class DBTenantDao extends TenantDao {
             filter.tenantId = { [Op.in]: tenantIds};
         }       
         
-        const arr: Array<TenantEntity2> = await sequelize.models.tenant.findAll({
+        const arr: Array<TenantEntity> = await sequelize.models.tenant.findAll({
             where: filter,
             order: [
                 ["tenantName", "ASC"]
@@ -82,7 +83,7 @@ class DBTenantDao extends TenantDao {
 
     public async getTenantById(tenantId: string): Promise<Tenant | null> {
         const sequelize: Sequelize = await DBDriver.getConnection();
-        const tenantEntity: TenantEntity2 | null = await sequelize.models.tenant.findOne({
+        const tenantEntity: TenantEntity | null = await sequelize.models.tenant.findOne({
             where: {
                 tenantId: tenantId
             },
@@ -98,7 +99,7 @@ class DBTenantDao extends TenantDao {
 
     public async createTenant(tenant: Tenant): Promise<Tenant | null> {
         const sequelize: Sequelize = await DBDriver.getConnection();
-        const t: TenantEntity2 = await sequelize.models.tenant.create(tenant);
+        const t: TenantEntity = await sequelize.models.tenant.create(tenant);
         return Promise.resolve(t as any as Tenant);
     }
 
@@ -110,7 +111,7 @@ class DBTenantDao extends TenantDao {
 
     public async deleteTenant(tenantId: string): Promise<void> {        
         const sequelize: Sequelize = await DBDriver.getConnection();
-        const tenantEntity: TenantEntity2 | null = await sequelize.models.tenant.findOne({
+        const tenantEntity: TenantEntity | null = await sequelize.models.tenant.findOne({
             where: {
                 tenantId: tenantId
             },
@@ -127,126 +128,146 @@ class DBTenantDao extends TenantDao {
 
     
     public async getDomainTenantManagementRels(tenantId?: string, domain?: string): Promise<Array<TenantManagementDomainRel>> {
-        const em = connection.em.fork();
+
         const queryParams: any = {};
         if(tenantId){
-            queryParams.tenantid = tenantId;
+            queryParams.tenantId = tenantId;
         }
         if(domain){
             queryParams.domain = domain;
         }
-        const entities: Array<TenantManagementDomainRelEntity> = await em.find(
-            TenantManagementDomainRelEntity, 
-            queryParams
-        );
-        const models = entities.map(
-            (e: TenantManagementDomainRelEntity) => e.toModel()
-        )
-        return Promise.resolve(models);
 
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        const tenantManagementDomainRelEntities: Array<TenantManagementDomainRelEntity> | null = await sequelize.models.tenantManagementDomainRel.findAll({
+            where: queryParams
+        });
+
+        return Promise.resolve(tenantManagementDomainRelEntities as any as Array<TenantManagementDomainRel>);
     }
 
     public async addDomainToTenantManagement(tenantId: string, domain: string): Promise<TenantManagementDomainRel | null> {
-        const em = connection.em.fork();
-        const tenantManagementDomainRelEntity: TenantManagementDomainRelEntity = new TenantManagementDomainRelEntity({
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        const tenantManagementDomainRel: TenantManagementDomainRel = {
             tenantId: tenantId,
             domain: domain
-        });
-        await em.persist(tenantManagementDomainRelEntity).flush();
-        return Promise.resolve(tenantManagementDomainRelEntity.toModel());
+        };
+        await sequelize.models.tenantManagementDomainRel.create(tenantManagementDomainRel)
+        return Promise.resolve(tenantManagementDomainRel);
     }
 
     public async removeDomainFromTenantManagement(tenantId: string, domain: string): Promise<TenantManagementDomainRel | null> {
         const model: TenantManagementDomainRel = {
             tenantId: tenantId,
             domain: domain
-        }
-        const em = connection.em.fork();
-        await em.nativeDelete(TenantManagementDomainRelEntity, {
-            tenantid: tenantId,
-            domain: domain
+        };
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.tenantManagementDomainRel.destroy({
+            where: {
+                tenantId: tenantId,
+                domain: domain
+            }
         });
-        await em.flush();
+        
         return Promise.resolve(model);
     }
     
+    //tenantAnonymousUserConfiguration
+
     public async createAnonymousUserConfiguration(tenantId: string, anonymousUserConfiguration: TenantAnonymousUserConfiguration): Promise<TenantAnonymousUserConfiguration> {
-        const em = connection.em.fork();
-        const configEntity: TenantAnonymousUserConfigurationEntity = new TenantAnonymousUserConfigurationEntity(anonymousUserConfiguration);
-        await em.persistAndFlush(configEntity);
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.tenantAnonymousUserConfiguration.create(anonymousUserConfiguration);        
         return Promise.resolve(anonymousUserConfiguration);
     }
 
     public async updateAnonymousUserConfiguration(anonymousUserConfiguration: TenantAnonymousUserConfiguration): Promise<TenantAnonymousUserConfiguration> {
-        const em = connection.em.fork();
-        const e: TenantAnonymousUserConfigurationEntity = new TenantAnonymousUserConfigurationEntity(anonymousUserConfiguration);
-        em.upsert(e);
-        await em.flush();
-        return Promise.resolve(e);
+
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.tenantAnonymousUserConfiguration.update(anonymousUserConfiguration, {
+            where: {
+                tenantId: anonymousUserConfiguration.tenantId
+            }
+        });
+        return Promise.resolve(anonymousUserConfiguration);
     }
 
     public async deleteAnonymousUserConfiguration(tenantId: string): Promise<void> {
-        const em = connection.em.fork();        
-        await em.nativeDelete(TenantAnonymousUserConfigurationEntity, {
-            tenantId: tenantId
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.tenantAnonymousUserConfiguration.destroy({
+            where: {
+                tenantId: tenantId
+            }
         });
-        await em.flush();
         return Promise.resolve();
     }
 
     public async getTenantPasswordConfig(tenantId: string): Promise<TenantPasswordConfig | null> {
-        const em = connection.em.fork();
-        const tenantPasswordConfigEntity: TenantPasswordConfigEntity | null = await em.findOne(TenantPasswordConfigEntity, {tenantId: tenantId});
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        const tenantPasswordConfigEntity: TenantPasswordConfigEntity | null = await sequelize.models.tenantPasswordConfig.findOne({
+            where: {
+                tenantId: tenantId
+            },
+            raw: true
+        })
+
         if(tenantPasswordConfigEntity){
-            return tenantPasswordConfigEntity;
+            return tenantPasswordConfigEntity as any as TenantPasswordConfig;
         }
         else{
             return null;
         }        
     }
 
-    public async assignPasswordConfigToTenant(tenantId: string, tenantPasswordConfig: TenantPasswordConfig): Promise<TenantPasswordConfig> {
-        const em = connection.em.fork();
+    public async assignPasswordConfigToTenant(tenantId: string, tenantPasswordConfig: TenantPasswordConfig): Promise<TenantPasswordConfig> {        
         tenantPasswordConfig.tenantId = tenantId;
-        const entity: TenantPasswordConfigEntity = new TenantPasswordConfigEntity(tenantPasswordConfig);
-        await em.persistAndFlush(entity);
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.tenantPasswordConfig.create(tenantPasswordConfig);        
         return Promise.resolve(tenantPasswordConfig);
     }
 
     public async removePasswordConfigFromTenant(tenantId: string): Promise<void> {
-        const em = connection.em.fork();
-        await em.nativeDelete(TenantPasswordConfigEntity, {
-            tenantId: tenantId
-        });
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.tenantPasswordConfig.destroy({
+            where: {
+                tenantId: tenantId
+            }
+        });        
         return Promise.resolve();
     }
 
     public async getTenantLookAndFeel(tenantId: string): Promise<TenantLookAndFeel | null> {
-        const em = connection.em.fork();
-        const entity: TenantLookAndFeelEntity | null = await em.findOne(TenantLookAndFeelEntity, {tenantid: tenantId});
-        return entity ? Promise.resolve(entity?.toModel()) : Promise.resolve(null);
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        const entity: TenantLookAndFeelEntity | null = await sequelize.models.tenantLookAndFeel.findOne({
+            where: {
+                tenantId: tenantId
+            }
+        });
+
+        return entity ? Promise.resolve(entity as any as TenantLookAndFeel) : Promise.resolve(null);
     }
 
     public async createTenantLookAndFeel(tenantLookAndFeel: TenantLookAndFeel): Promise<TenantLookAndFeel> {
-        const em = connection.em.fork();
-        const entity: TenantLookAndFeelEntity = new TenantLookAndFeelEntity(tenantLookAndFeel);
-        await em.persistAndFlush(entity);
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.tenantLookAndFeel.create(tenantLookAndFeel);        
         return Promise.resolve(tenantLookAndFeel);
     }
 
     public async updateTenantLookAndFeel(tenantLookAndFeel: TenantLookAndFeel): Promise<TenantLookAndFeel> {
-        const em = connection.em.fork();
-        const entity: TenantLookAndFeelEntity = new TenantLookAndFeelEntity(tenantLookAndFeel);
-        await em.upsert(entity);
-        await em.flush()
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.tenantLookAndFeel.update(tenantLookAndFeel, {
+            where: {
+                tenantId: tenantLookAndFeel.tenantid
+            }
+        });
         return Promise.resolve(tenantLookAndFeel);
     }
 
     public async deleteTenantLookAndFeel(tenantId: string): Promise<void> {
-        const em = connection.em.fork();
-        await em.nativeDelete(TenantLookAndFeelEntity, {
-            tenantid: tenantId
-        });
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.tenantLookAndFeel.destroy({
+            where: {
+                tenantId: tenantId
+            }
+        })
         return Promise.resolve();
     }
 

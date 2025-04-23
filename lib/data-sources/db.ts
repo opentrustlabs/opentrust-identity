@@ -1,10 +1,7 @@
 import 'reflect-metadata';
-import { MikroORM, MySqlDriver } from '@mikro-orm/mysql';
-//import { MikroORM as MySqlMikroORM, MsSqlDriver } from '@mikro-orm/mssql';
-import { TenantEntity } from "@/lib/entities/tenant-entity";
+import { MikroORM } from '@mikro-orm/mysql';
 import { FederatedOIDCProviderEntity } from '@/lib/entities/federated-oidc-provider-entity';
 import LoginFailurePolicyEntity from '@/lib/entities/login-failure-policy-entity';
-import TenantManagementDomainRelEntity from '@/lib/entities/tenant-management-domain-rel-entity';
 import FederatedOIDCProviderTenantRelEntity from '@/lib/entities/federated-oidc-provider-tenant-rel-entity';
 import SocialOIDCProviderTenantRelEntity from '@/lib/entities/social-oidc-provider-tenant-rel-entity';
 import FederatedOIDCProviderDomainRelEntity from '@/lib/entities/federated-oidc-provider-domain-rel-entity';
@@ -19,7 +16,6 @@ import AuthorizationGroupEntity from '@/lib/entities/authorization-group-entity'
 import AuthorizationGroupScopeRelEntity from '@/lib/entities/authorization-group-scope-rel-entity';
 import ChangeEventEntity from '@/lib/entities/change-event-entity';
 import ClientAuthHistoryEntity from '@/lib/entities/client-auth-history-entity';
-import ContactEntity from '@/lib/entities/contact-entity';
 import FederatedOIDCAuthorizationRelEntity from '@/lib/entities/federated-oidc-authorization-rel-entity';
 import FooterLinkEntity from '@/lib/entities/footer-link-entity';
 import PreAuthenticationStateEntity from '@/lib/entities/pre-authentication-state-entity';
@@ -30,9 +26,6 @@ import RefreshDataEntity from '@/lib/entities/refresh-data-entity';
 import ScopeConstraintSchemaEntity from '@/lib/entities/scope-access-rule-schema-entity';
 import ScopeEntity from '@/lib/entities/scope-entity';
 import SigningKeyEntity from '@/lib/entities/signing-key-entity';
-import TenantAnonymousUserConfigurationEntity from '@/lib/entities/tenant-anonymous-user-configuration-entity';
-import TenantAnonymousUserConfigurationRelEntity from '@/lib/entities/tenant-anonymous-user-configuration-rel-entity';
-import TenantLookAndFeelEntity from '@/lib/entities/tenant-look-and-feel-entity';
 import TenantRateLimitRelEntity from '@/lib/entities/tenant-rate-limit-rel-entity';
 import TenantAvailableScopeEntity from '@/lib/entities/tenant-available-scope-entity';
 import UserAuthorizationGroupRelEntity from '@/lib/entities/authorization-group-user-rel-entity';
@@ -44,13 +37,11 @@ import ClientScopeRelEntity from '@/lib/entities/client-scope-rel-entity';
 import ProhibitedPasswordEntity from '@/lib/entities/prohibited-password-entity';
 import SchedulerLockEntity from '@/lib/entities/scheduler-lock-entity';
 import TenantPasswordConfigEntity from '@/lib/entities/tenant-password-config-entity';
-import TenantRestrictedAuthenticationDomainRelEntity from '@/lib/entities/tenant-restricted-authentication-domain-rel-entity';
 import UserFailedLoginAttemptsEntity from '@/lib/entities/user-failed-login-attempts-entity';
 import UserVerificationTokenEntity from '@/lib/entities/user-verification-token-entity';
 import UserFido2ChallengeEntity from '@/lib/entities/user-fido2-challenge-entity';
 import UserFido2CounterRelEntity from '@/lib/entities/user-fido2-counter-rel-entity';
 import UserMfaRelEntity from '@/lib/entities/user-mfa-rel-entity';
-import TenantLegacyUserMigrationConfigEntity from '../entities/tenant-legacy-user-migration-config-entity';
 
 const {
     DB_USER,
@@ -93,7 +84,6 @@ const connection = MikroORM.initSync(
             ClientEntity,
             ClientRedirectUriRelEntity,
             ClientScopeRelEntity,
-            ContactEntity,
             FederatedOIDCAuthorizationRelEntity,
             FederatedOIDCProviderDomainRelEntity,
             FederatedOIDCProviderEntity,
@@ -111,16 +101,9 @@ const connection = MikroORM.initSync(
             ScopeEntity,
             SigningKeyEntity,
             SocialOIDCProviderTenantRelEntity,
-            TenantAnonymousUserConfigurationEntity,
-            TenantAnonymousUserConfigurationRelEntity,
-            TenantEntity,
-            TenantLookAndFeelEntity,
-            TenantManagementDomainRelEntity,
             TenantPasswordConfigEntity,
             TenantRateLimitRelEntity,
-            TenantRestrictedAuthenticationDomainRelEntity,
             TenantAvailableScopeEntity,
-            TenantLegacyUserMigrationConfigEntity,
             UserAuthorizationGroupRelEntity,
             UserCredentialEntity,            
             UserFailedLoginAttemptsEntity,

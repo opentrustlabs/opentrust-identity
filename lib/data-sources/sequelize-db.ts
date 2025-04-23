@@ -1,6 +1,12 @@
 import { Dialect, Sequelize } from "sequelize";
-import { TenantEntity2 } from "../entities/tenant-entity-2";
-import ContactEntity2 from "../entities/contact-entity-2";
+import { TenantEntity } from "../entities/tenant-entity";
+import ContactEntity from "../entities/contact-entity";
+import TenantAnonymousUserConfigurationEntity from "../entities/tenant-anonymous-user-configuration-entity";
+import TenantManagementDomainRelEntity from "../entities/tenant-management-domain-rel-entity";
+import TenantPasswordConfigEntity from "../entities/tenant-password-config-entity";
+import TenantLookAndFeelEntity from "../entities/tenant-look-and-feel-entity";
+import TenantLegacyUserMigrationConfigEntity from "../entities/tenant-legacy-user-migration-config-entity";
+import TenantRestrictedAuthenticationDomainRelEntity from "../entities/tenant-restricted-authentication-domain-rel-entity";
 
 const {
     DB_USER,
@@ -70,8 +76,14 @@ class DBDriver {
                     }
                 }
             );
-            TenantEntity2.initModel(global.sequelize);
-            ContactEntity2.initModel(global.sequelize);
+            ContactEntity.initModel(global.sequelize);
+            TenantAnonymousUserConfigurationEntity.initModel(global.sequelize);
+            TenantEntity.initModel(global.sequelize);
+            TenantLegacyUserMigrationConfigEntity.initModel(global.sequelize);
+            TenantLookAndFeelEntity.initModel(global.sequelize);            
+            TenantManagementDomainRelEntity.initModel(global.sequelize);
+            TenantPasswordConfigEntity.initModel(global.sequelize);
+            TenantRestrictedAuthenticationDomainRelEntity.initModel(global.sequelize);
         } 
 
         return global.sequelize;
@@ -79,5 +91,5 @@ class DBDriver {
 
 }
 
-export { DBDriver, TenantEntity2, ContactEntity2 };
+export default DBDriver;
 

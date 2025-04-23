@@ -1,31 +1,40 @@
-import type { Maybe, TenantAnonymousUserConfiguration } from "@/graphql/generated/graphql-types";
-import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
+import { Model, DataTypes, Sequelize } from 'sequelize';
 
-@Entity({
-    tableName: "tenant_anonymous_user_configuration"
-})
-class TenantAnonymousUserConfigurationEntity implements TenantAnonymousUserConfiguration {
-
-    constructor(m?: TenantAnonymousUserConfiguration){
-        if(m){
-            Object.assign(this, m);
+class TenantAnonymousUserConfigurationEntity extends Model {
+    
+    static initModel(sequelize: Sequelize): typeof TenantAnonymousUserConfigurationEntity {
+        return TenantAnonymousUserConfigurationEntity.init({
+            tenantId: {
+                type: DataTypes.STRING,
+                primaryKey: true,
+                field: "tenantid"
+            },
+            defaultcountrycode: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: true,
+                field: "defaultcountrycode"
+            },
+            defaultlangugecode: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: true,
+                field: "defaultlangugecode"
+            },
+            tokenttlseconds: {
+                type: DataTypes.INTEGER,
+                primaryKey: false,
+                allowNull: true
+            }
+        },
+        {            
+            sequelize,
+            tableName: "tenant_anonymous_user_configuration",
+            modelName: "tenantAnonymousUserConfiguration",
+            timestamps: false
+            
         }
-    }
-    __typename?: "TenantAnonymousUserConfiguration";
-
-    @PrimaryKey({fieldName: "tenantid"})
-    tenantId: string;
-
-    @Property({fieldName: "defaultcountrycode"})
-    defaultcountrycode?: Maybe<string> | undefined;
-
-    @Property({fieldName: "defaultlangugecode"})
-    defaultlangugecode?: Maybe<string> | undefined;
-
-    @Property({fieldName: "tokenttlseconds"})
-    tokenttlseconds: number;
-
-
+    );}
 }
 
 export default TenantAnonymousUserConfigurationEntity;

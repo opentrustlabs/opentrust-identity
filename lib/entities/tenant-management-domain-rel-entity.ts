@@ -1,31 +1,29 @@
-import type { TenantManagementDomainRel } from "@/graphql/generated/graphql-types";
-import { Entity, PrimaryKey } from "@mikro-orm/core";
+import { Model, DataTypes, Sequelize } from 'sequelize';
 
-@Entity({
-    tableName: "tenant_management_domain_rel"
-})
-class TenantManagementDomainRelEntity {
-
-    constructor(tenantManagementDomainRel?: TenantManagementDomainRel){
-        if(tenantManagementDomainRel){
-            this.tenantid = tenantManagementDomainRel.tenantId;
-            this.domain = tenantManagementDomainRel.domain;
-        }
+class TenantManagementDomainRelEntity extends Model {
+    
+    static initModel(sequelize: Sequelize): typeof TenantManagementDomainRelEntity {
+        return TenantManagementDomainRelEntity.init(
+            {
+                tenantId: {
+                    type: DataTypes.STRING,
+                    primaryKey: true,
+                    field: "tenantid"
+                },
+                domain: {
+                    type: DataTypes.STRING,
+                    primaryKey: true,
+                    field: "domain"
+                }
+            },
+            {
+                sequelize: sequelize,
+                tableName: "tenant_management_domain_rel",
+                modelName: "tenantManagementDomainRel",
+                timestamps: false
+            }
+        );
     }
-
-    @PrimaryKey()
-    tenantid: string;
-
-    @PrimaryKey()
-    domain: string;
-
-    public toModel(): TenantManagementDomainRel {
-        return {
-            tenantId: this.tenantid,
-            domain: this.domain
-        }
-    }
-
 }
 
 export default TenantManagementDomainRelEntity;
