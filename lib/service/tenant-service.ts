@@ -231,13 +231,19 @@ class TenantService {
         return Promise.resolve(tenantLookAndFeel);
     }
 
-    public async createTenantLookAndFeel(tenantLookAndFeel: TenantLookAndFeel): Promise<TenantLookAndFeel>{
-        return tenantDao.createTenantLookAndFeel(tenantLookAndFeel);
+    public async setTenantLookAndFeel(tenantLookAndFeel: TenantLookAndFeel): Promise<TenantLookAndFeel>{
+        const existing: TenantLookAndFeel | null = await this.getTenantLookAndFeel(tenantLookAndFeel.tenantid);
+        if(!existing){
+            return tenantDao.createTenantLookAndFeel(tenantLookAndFeel);
+        }
+        else {
+            return tenantDao.updateTenantLookAndFeel(tenantLookAndFeel);
+        }
     }
 
-    public async updateTenantLookAndFeel(tenantLookAndFeel: TenantLookAndFeel): Promise<TenantLookAndFeel>{
-        return tenantDao.updateTenantLookAndFeel(tenantLookAndFeel);
-    }
+    // public async updateTenantLookAndFeel(tenantLookAndFeel: TenantLookAndFeel): Promise<TenantLookAndFeel>{
+    //     return tenantDao.updateTenantLookAndFeel(tenantLookAndFeel);
+    // }
 
     public async deleteTenantLookAndFeel(tenantId: string): Promise<void>{
         return tenantDao.deleteTenantLookAndFeel(tenantId);

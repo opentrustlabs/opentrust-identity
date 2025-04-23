@@ -107,7 +107,7 @@ type Mutation {
     removeTenantLegacyUserMigrationConfig(tenantId: String!): String
     setTenantAnonymousUserConfig(tenantAnonymousUserConfigInput: TenantAnonymousUserConfigInput!): TenantAnonymousUserConfiguration
     removeTenantAnonymousUserConfig(tenantId: String!): String
-    setTenantLookAndFeel(tenantLookAndFeelInput: TenantLookAndFeelInput!): TenantLookAndFeel
+    setTenantLookAndFeel(tenantLookAndFeelInput: TenantLookAndFeelInput!): TenantLookAndFeel    
     removeTenantLookAndFeel(tenantId: String!): String
     
     ## Clients

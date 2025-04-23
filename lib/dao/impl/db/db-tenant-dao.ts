@@ -1,6 +1,5 @@
-import { Tenant, TenantManagementDomainRel, TenantAnonymousUserConfiguration, TenantLookAndFeel, Contact, TenantPasswordConfig, LoginFailurePolicy, TenantLegacyUserMigrationConfig, TenantRestrictedAuthenticationDomainRel } from "@/graphql/generated/graphql-types";
+import { Tenant, TenantManagementDomainRel, TenantAnonymousUserConfiguration, TenantLookAndFeel, TenantPasswordConfig, LoginFailurePolicy, TenantLegacyUserMigrationConfig, TenantRestrictedAuthenticationDomainRel } from "@/graphql/generated/graphql-types";
 import TenantDao from "../../tenant-dao";
-// import connection  from "@/lib/data-sources/db";
 import DBDriver from "@/lib/data-sources/sequelize-db";
 import { TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import { GraphQLError } from "graphql";
@@ -276,7 +275,7 @@ class DBTenantDao extends TenantDao {
 
     public async createTenantLookAndFeel(tenantLookAndFeel: TenantLookAndFeel): Promise<TenantLookAndFeel> {
         const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.tenantLookAndFeel.create(tenantLookAndFeel);        
+        await sequelize.models.tenantLookAndFeel.create(tenantLookAndFeel)
         return Promise.resolve(tenantLookAndFeel);
     }
 
