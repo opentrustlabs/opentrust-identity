@@ -88,7 +88,7 @@ const GeneralSelector: React.FC<GeneralSelectorProps> = ({
                             fullWidth={true}
                             value={filterTerm}
                             size="small"
-                            label="Filter Groups"
+                            label=""
                             onChange={(evt) => {
                                 setPage(1);
                                 setFilterTerm(evt.target.value);

@@ -1,7 +1,8 @@
 import { Contact } from "@/graphql/generated/graphql-types";
 import ContactDao from "../../contact-dao";
-import { DBDriver, ContactEntity2 } from "@/lib/data-sources/sequelize-db";
+import DBDriver from "@/lib/data-sources/sequelize-db";
 import { Op, Sequelize } from "sequelize";
+import ContactEntity from "@/lib/entities/contact-entity";
 // import connection  from "@/lib/data-sources/db";
 // import ContactEntity from "@/lib/entities/contact-entity";
 
@@ -10,7 +11,7 @@ class DBContactDao extends ContactDao {
     public async getContacts(objectId: string): Promise<Array<Contact>>{
 
         const sequelize: Sequelize = await DBDriver.getConnection();
-        const arr: Array<ContactEntity2> = await sequelize.models.contact.findAll({
+        const arr: Array<ContactEntity> = await sequelize.models.contact.findAll({
             where: {
                 objectid: objectId
             }
