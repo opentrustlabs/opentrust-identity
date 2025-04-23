@@ -665,16 +665,20 @@ const resolvers: Resolvers = {
         setTenantLookAndFeel: async(_: any, { tenantLookAndFeelInput }, oidcContext) => {
             // TODO
             // Implement the service and dao functions.
-            // const tenantService: TenantService = new TenantService(oidcContext);
+            const tenantService: TenantService = new TenantService(oidcContext);
             const tenantLookAndFeel: TenantLookAndFeel = {
                 tenantid: tenantLookAndFeelInput.tenantid,
                 authenticationheaderbackgroundcolor: tenantLookAndFeelInput.authenticationheaderbackgroundcolor,
                 authenticationheadertextcolor: tenantLookAndFeelInput.authenticationheadertextcolor,
                 authenticationheadertext: tenantLookAndFeelInput.authenticationheadertext,
                 authenticationlogo: tenantLookAndFeelInput.authenticationlogo,
-                authenticationlogomimetype: tenantLookAndFeelInput.authenticationlogomimetype
+                authenticationlogomimetype: tenantLookAndFeelInput.authenticationlogomimetype,
+                adminheaderbackgroundcolor: tenantLookAndFeelInput.adminheaderbackgroundcolor,
+                adminheadertext: tenantLookAndFeelInput.adminheadertext,
+                adminheadertextcolor: tenantLookAndFeelInput.adminheadertextcolor,
+                adminlogo: tenantLookAndFeelInput.adminlogo
             }
-            // await tenantService.createTenantLookAndFeel(tenantLookAndFeel);
+            await tenantService.setTenantLookAndFeel(tenantLookAndFeel);
             return tenantLookAndFeel;
         },
         addDomainToTenantManagement: async(_: any, { tenantId, domain }, oidcContext) => {
