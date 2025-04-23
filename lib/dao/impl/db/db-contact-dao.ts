@@ -9,34 +9,12 @@ class DBContactDao extends ContactDao {
 
     public async getContacts(objectId: string): Promise<Array<Contact>>{
 
-        /*
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        const filter: any = {};
-        if(tenantIds){
-            filter.tenantId = { [Op.in]: tenantIds};
-        }       
-        
-        const arr: Array<TenantEntity2> = await sequelize.models.tenant.findAll({
-            where: filter,
-            order: [
-                ["tenantName", "ASC"]
-            ],
-            raw: true            
-        });
-        return Promise.resolve(arr as any as Array<Tenant>);
-        */
         const sequelize: Sequelize = await DBDriver.getConnection();
         const arr: Array<ContactEntity2> = await sequelize.models.contact.findAll({
             where: {
                 objectid: objectId
             }
         });
-        // const em = connection.em.fork();
-        // const r: Array<ContactEntity> = await em.find(
-        //     ContactEntity, {
-        //         objectid: objectId
-        //     }
-        // );
         return Promise.resolve(arr as any as Array<Contact>);
     }
 

@@ -1,33 +1,40 @@
-import type { TenantLegacyUserMigrationConfig } from "@/graphql/generated/graphql-types";
+import { Model, DataTypes, Sequelize } from 'sequelize';
 
-
-import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
-
-@Entity({
-    tableName: "tenant_legacy_user_migration_config"
-})
-class TenantLegacyUserMigrationConfigEntity implements TenantLegacyUserMigrationConfig {
-
-    constructor(tenantLegacyUserMigrationConfig?: TenantLegacyUserMigrationConfig){
-        if(tenantLegacyUserMigrationConfig){
-            Object.assign(this, tenantLegacyUserMigrationConfig);
-        }
-    }
-
-    __typename?: "TenantLegacyUserMigrationConfig";
+class TenantLegacyUserMigrationConfigEntity extends Model {
     
-    @PrimaryKey({fieldName: "tenantid"})
-    tenantId: string;
+    static initModel(sequelize: Sequelize): typeof TenantLegacyUserMigrationConfigEntity {
+        return TenantLegacyUserMigrationConfigEntity.init({
+            tenantId: {
+                type: DataTypes.STRING,
+                primaryKey: true,
+                field: "tenantid"
+            },
+            authenticationUri: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: false,
+                field: "authenticationuri"
+            },
+            userProfileUri: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: false,
+                field: "userprofileuri"
+            },
+            usernameCheckUri: {
+                type: DataTypes.BOOLEAN,
+                primaryKey: false,
+                allowNull: false,
+                field: "usernamecheckuri"
+            }
+        }, 
+        {
+            sequelize,
+            tableName: "tenant_legacy_user_migration_config",
+            modelName: "tenantLegacyUserMigrationConfig",
+            timestamps: false
+    });
+}}
 
-    @Property({fieldName: "authenticationuri"})
-    authenticationUri: string;
-    
-    @Property({fieldName: "userprofileuri"})
-    userProfileUri: string;
-
-    @Property({fieldName: "usernamecheckuri"})
-    usernameCheckUri: string;
-
-}
 
 export default TenantLegacyUserMigrationConfigEntity;

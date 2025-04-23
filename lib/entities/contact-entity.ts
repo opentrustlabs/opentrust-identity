@@ -1,36 +1,55 @@
-import type { Contact, Maybe } from "@/graphql/generated/graphql-types";
-import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
+import { Model, DataTypes, Sequelize } from 'sequelize';
 
-@Entity({
-    tableName: "contact"
-})
-class  ContactEntity implements Contact {
+class ContactEntity extends Model {
 
-    constructor(m?: Contact){
-        if(m){
-            Object.assign(this, m);
+    static initModel(sequelize: Sequelize) {
+        return ContactEntity.init({
+            contactid: {
+                type: DataTypes.STRING,
+                primaryKey: true,
+                field: "contactid"
+            },
+            objectid: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                field: "objectid",
+                allowNull: false
+            },
+            objecttype: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                field: "objecttype",
+                allowNull: false
+            },
+            email: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                field: "email",
+                allowNull: false
+            },
+            name: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                field: "contactname",
+                allowNull: true
+            },
+            userid: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                field: "userid",
+                allowNull: true
+            }
+        },
+        {
+            sequelize: sequelize,
+            tableName: "contact",
+            modelName: "contact",
+            timestamps: false
         }
+    );
     }
     __typename?: "Contact";
 
-    @PrimaryKey({fieldName: "contactid"})
-    contactid: string;
-
-    @Property({fieldName: "objectid"})
-    objectid: string;
-
-    @Property({fieldName: "email"})
-    email: string;
-
-    @Property({fieldName: "objecttype"})
-    objecttype: string;
-    
-    @Property({fieldName: "contactname", nullable: true})
-    name: Maybe<string> | undefined;
-    
-    @Property({fieldName: "userid", nullable: true})
-    userid?: Maybe<string> | undefined;
-   
 }
 
 export default ContactEntity;

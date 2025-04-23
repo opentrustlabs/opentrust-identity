@@ -1,23 +1,28 @@
-import type { TenantRestrictedAuthenticationDomainRel } from "@/graphql/generated/graphql-types";
-import { Entity, PrimaryKey } from "@mikro-orm/core";
+import { Model, DataTypes, Sequelize } from 'sequelize';
 
-@Entity({
-    tableName: "tenant_restricted_authentication_domain_rel"
-})
-class TenantRestrictedAuthenticationDomainRelEntity implements TenantRestrictedAuthenticationDomainRel{
-
-    constructor(tenantAuthenticationDomainRel?: TenantRestrictedAuthenticationDomainRel){
-        Object.assign(this, tenantAuthenticationDomainRel)
+class TenantRestrictedAuthenticationDomainRelEntity extends Model {
+    
+    static initModel(sequelize: Sequelize): typeof TenantRestrictedAuthenticationDomainRelEntity {
+        return TenantRestrictedAuthenticationDomainRelEntity.init({
+            tenantId: {
+                type: DataTypes.STRING,
+                primaryKey: true,
+                field: "tenantid"
+            },
+            domain: {
+                type: DataTypes.STRING,
+                primaryKey: true,
+                field: "domain"
+            }
+        }, 
+        {
+            sequelize,
+            tableName: "tenant_restricted_authentication_domain_rel",
+            modelName: "tenantRestrictedAuthenticationDomainRel",
+            timestamps: false
+        });
     }
-
-    __typename?: "TenantRestrictedAuthenticationDomainRel";
-
-    @PrimaryKey({fieldName: "tenantid"})
-    tenantId: string;    
-
-    @PrimaryKey({fieldName: "domain"})
-    domain: string;    
-
 }
+
 
 export default TenantRestrictedAuthenticationDomainRelEntity;
