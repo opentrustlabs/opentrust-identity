@@ -5,12 +5,7 @@ import LoginFailurePolicyEntity from '@/lib/entities/login-failure-policy-entity
 import FederatedOIDCProviderTenantRelEntity from '@/lib/entities/federated-oidc-provider-tenant-rel-entity';
 import SocialOIDCProviderTenantRelEntity from '@/lib/entities/social-oidc-provider-tenant-rel-entity';
 import FederatedOIDCProviderDomainRelEntity from '@/lib/entities/federated-oidc-provider-domain-rel-entity';
-import ClientEntity from '@/lib/entities/client-entity';
-import ClientRedirectUriRelEntity from '@/lib/entities/client-redirect-uri-rel-entity';
-import AuthorizationGroupEntity from '@/lib/entities/authorization-group-entity';
 import AuthorizationGroupScopeRelEntity from '@/lib/entities/authorization-group-scope-rel-entity';
-import ChangeEventEntity from '@/lib/entities/change-event-entity';
-import ClientAuthHistoryEntity from '@/lib/entities/client-auth-history-entity';
 import FooterLinkEntity from '@/lib/entities/footer-link-entity';
 import RateLimitEntity from '@/lib/entities/rate-limit-entity';
 import RateLimitServiceGroupEntity from '@/lib/entities/rate-limit-service-group-entity';
@@ -64,12 +59,7 @@ const connection = MikroORM.initSync(
         //     domain: DB_USER_DOMAIN || "domain"
         // },
         entities: [
-            AuthorizationGroupEntity,
             AuthorizationGroupScopeRelEntity,
-            ChangeEventEntity,
-            ClientAuthHistoryEntity,
-            ClientEntity,
-            ClientRedirectUriRelEntity,
             ClientScopeRelEntity,
             FederatedOIDCProviderDomainRelEntity,
             FederatedOIDCProviderEntity,

@@ -1,23 +1,28 @@
-import { Entity, PrimaryKey } from "@mikro-orm/core";
+import { Model, DataTypes, Sequelize } from 'sequelize';
 
-
-@Entity({
-    tableName: "client_redirect_uri_rel"
-})
-class ClientRedirectUriRelEntity {
-
-    constructor(clientId: string, redirectUri: string){
-        this.clientId = clientId;
-        this.redirectUri = redirectUri;
+class ClientRedirectUriRelEntity extends Model {
+    
+    static initModel(sequelize: Sequelize): typeof ClientRedirectUriRelEntity {
+        return ClientRedirectUriRelEntity.init({
+            clientId: {
+                type: DataTypes.STRING,
+                primaryKey: true,
+                field: "clientid"
+            },
+            redirectUri: {
+                type: DataTypes.STRING,
+                primaryKey: true,
+                field: "redirecturi"
+            }
+        }, 
+		{
+            sequelize,
+            tableName: "client_redirect_uri_rel",
+            modelName: "clientRedirectUriRel",
+            timestamps: false
+        });
     }
-    
-    @PrimaryKey({fieldName: "clientid"})
-    clientId: string;
-
-    @PrimaryKey({fieldName: "redirecturi"})
-    redirectUri: string;
-    
-
 }
+
 
 export default ClientRedirectUriRelEntity;

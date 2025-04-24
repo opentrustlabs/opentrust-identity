@@ -389,7 +389,7 @@ create TABLE client_auth_history (
     jti VARCHAR(256) NOT NULL PRIMARY KEY,
     tenantid VARCHAR(64) NOT NULL,
     clientid VARCHAR(64) NOT NULL,
-    expiresatms BIGINT NOT NULL,    
+    expiresatseconds BIGINT NOT NULL,
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid),
     FOREIGN KEY (clientid) REFERENCES client(clientid)
 );

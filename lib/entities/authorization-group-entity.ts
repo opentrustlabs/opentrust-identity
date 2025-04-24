@@ -1,37 +1,54 @@
-import type { AuthorizationGroup, Maybe } from "@/graphql/generated/graphql-types"
-import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
+import { Model, DataTypes, Sequelize } from 'sequelize';
 
-@Entity({
-    tableName: "authorization_group"
-})
-class AuthorizationGroupEntity implements AuthorizationGroup {
-
-    constructor(authorizationGroup?: AuthorizationGroup){
-        if(authorizationGroup){
-            Object.assign(this, authorizationGroup);
-        }
-    }
-
-    __typename?: "AuthorizationGroup" | undefined
+class AuthorizationGroupEntity extends Model {
     
-    @PrimaryKey({fieldName: "groupid"})
-    groupId: string;
-
-    @Property({fieldName: "groupname"})
-    groupName: string;
-
-    @Property({fieldName: "groupdescription"})
-    groupDescription?: Maybe<string> | undefined;
-
-    @Property({fieldName: "tenantid"})
-    tenantId: string;
-
-    @Property({fieldName: "defaultgroup"})
-    default: boolean;
-
-    @Property({fieldName: "allowforanonymoususers"})
-    allowForAnonymousUsers: boolean;
-
+    static initModel(sequelize: Sequelize): typeof AuthorizationGroupEntity {
+        return AuthorizationGroupEntity.init({
+            groupId: {
+                type: DataTypes.STRING,
+                primaryKey: true,
+                field: "groupid"
+            },
+            groupName: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: false,
+                field: "groupname"
+            },
+            groupDescription: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: true,
+                field: "groupdescription"
+            },
+            tenantId: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: false,
+				field: "tenantid"
+            },
+            default: {
+                type: DataTypes.BOOLEAN,
+                primaryKey: false,
+                allowNull: false,
+                field: "defaultgroup"
+            },
+            allowForAnonymousUsers: {
+                type: DataTypes.BOOLEAN,
+                primaryKey: false,
+                allowNull: false,
+                field: "allowforanonymoususers"
+            }
+        }, 
+		{
+            sequelize,
+            tableName: "authorization_group",
+            modelName: "authorizationGroup",
+            timestamps: false
+        });
+    }
 }
+
+
 
 export default AuthorizationGroupEntity;

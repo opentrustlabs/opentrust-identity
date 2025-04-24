@@ -1,10 +1,8 @@
 import { AuthenticationGroup, AuthenticationGroupClientRel, AuthenticationGroupUserRel } from "@/graphql/generated/graphql-types";
 import AuthenticationGroupDao from "../../authentication-group-dao";
-// import connection  from "@/lib/data-sources/db";
 import AuthenticationGroupEntity from "@/lib/entities/authentication-group-entity";
 import AuthenticationGroupClientRelEntity from "@/lib/entities/authentication-group-client-rel-entity";
 import AuthenticationGroupUserRelEntity from "@/lib/entities/authentication-group-user-rel-entity";
-import { QueryOrder } from "@mikro-orm/core";
 import DBDriver from "@/lib/data-sources/sequelize-db";
 import { Op, Sequelize } from "sequelize";
 
@@ -12,7 +10,7 @@ import { Op, Sequelize } from "sequelize";
 class DBAuthenticationGroupDao extends AuthenticationGroupDao {
 
     public async getAuthenticationGroups(tenantId?: string, clientId?: string, userId?: string): Promise<Array<AuthenticationGroup>> {
-        const sequelize: Sequelize = await DBDriver.getConnection();        
+        const sequelize: Sequelize = await DBDriver.getConnection(); 
         
         if(tenantId){
             const authnGroups: Array<AuthenticationGroupEntity> = await sequelize.models.authenticationGroup.findAll(
@@ -30,8 +28,12 @@ class DBAuthenticationGroupDao extends AuthenticationGroupDao {
         }
         else if(clientId){
             const rels: Array<AuthenticationGroupClientRelEntity> = await this.getAuthenticationGroupClientRels(clientId);
-            const inValues: Array<string> = rels.map((r: AuthenticationGroupClientRelEntity) => r.getDataValue("authenticationGroupId"));
-
+            
+            const inValues: Array<string> = rels.map(
+                (r: AuthenticationGroupClientRelEntity) => {              
+                    return r.getDataValue("authenticationGroupId");
+                }
+            );
             const filter: any = {};
             filter.authenticationGroupId = { [Op.in]: inValues};
             const authnGroups = await sequelize.models.authenticationGroup.findAll(
@@ -66,14 +68,12 @@ class DBAuthenticationGroupDao extends AuthenticationGroupDao {
         }
     }
 
-    // authenticationGroupClientRel
     protected async getAuthenticationGroupClientRels(clientId: string): Promise<Array<AuthenticationGroupClientRelEntity>> {
         const sequelize: Sequelize = await DBDriver.getConnection();    
         const results: Array<AuthenticationGroupClientRelEntity> = await sequelize.models.authenticationGroupClientRel.findAll({
             where: {
                 clientId: clientId
-            },
-            raw: true
+            }
         });
         return results && results.length > 0 ? Promise.resolve(results) : Promise.resolve([]);
     }
