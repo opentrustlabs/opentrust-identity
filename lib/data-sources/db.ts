@@ -2,7 +2,6 @@ import 'reflect-metadata';
 import { MikroORM } from '@mikro-orm/mysql';
 import LoginFailurePolicyEntity from '@/lib/entities/login-failure-policy-entity';
 import SocialOIDCProviderTenantRelEntity from '@/lib/entities/social-oidc-provider-tenant-rel-entity';
-import FederatedOIDCProviderDomainRelEntity from '@/lib/entities/federated-oidc-provider-domain-rel-entity';
 import AuthorizationGroupScopeRelEntity from '@/lib/entities/authorization-group-scope-rel-entity';
 import FooterLinkEntity from '@/lib/entities/footer-link-entity';
 import RateLimitEntity from '@/lib/entities/rate-limit-entity';
@@ -59,7 +58,6 @@ const connection = MikroORM.initSync(
         entities: [
             AuthorizationGroupScopeRelEntity,
             ClientScopeRelEntity,
-            FederatedOIDCProviderDomainRelEntity,
             FooterLinkEntity,
             LoginFailurePolicyEntity,
             ProhibitedPasswordEntity,
