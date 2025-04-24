@@ -1,31 +1,29 @@
-import type { FederatedOidcProviderDomainRel } from "@/graphql/generated/graphql-types";
-import { Entity, PrimaryKey } from "@mikro-orm/core";
+import { Model, DataTypes, Sequelize } from 'sequelize';
 
-
-@Entity({
-    tableName: "federated_oidc_provider_domain_rel"
-})
-class FederatedOIDCProviderDomainRelEntity {
-
-    constructor(federatedOidcProviderDomainRel?: FederatedOidcProviderDomainRel){
-        if(federatedOidcProviderDomainRel){
-            this.domain = federatedOidcProviderDomainRel.domain;
-            this.federatedoidcproviderid = federatedOidcProviderDomainRel.federatedOIDCProviderId;
-        }
-    }
-
-    @PrimaryKey()
-    federatedoidcproviderid: string;
-
-    @PrimaryKey()
-    domain: string;
-
-    public toModel(): FederatedOidcProviderDomainRel {
-        return {
-            federatedOIDCProviderId: this.federatedoidcproviderid,
-            domain: this.domain
-        }
+class FederatedOIDCProviderDomainRelEntity extends Model {
+    
+    static initModel(sequelize: Sequelize): typeof FederatedOIDCProviderDomainRelEntity {
+        return FederatedOIDCProviderDomainRelEntity.init({
+            federatedOIDCProviderId: {
+                type: DataTypes.STRING,
+                primaryKey: true,
+                field: "federatedoidcproviderid"
+            },
+            domain: {
+                type: DataTypes.STRING,
+                primaryKey: true,
+                field: "domain"
+            }
+        }, 
+		{
+            sequelize,
+            tableName: "federated_oidc_provider_domain_rel",
+            modelName: "federatedOidcProviderDomainRel",
+            timestamps: false
+        });
     }
 }
+
+
 
 export default FederatedOIDCProviderDomainRelEntity;
