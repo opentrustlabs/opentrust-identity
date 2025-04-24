@@ -21,6 +21,8 @@ import ChangeEventEntity from "../entities/change-event-entity";
 import ClientEntity from "../entities/client-entity";
 import ClientAuthHistoryEntity from "../entities/client-auth-history-entity";
 import ClientRedirectUriRelEntity from "../entities/client-redirect-uri-rel-entity";
+import FederatedOIDCProviderEntity from "../entities/federated-oidc-provider-entity";
+import FederatedOIDCProviderTenantRelEntity from "../entities/federated-oidc-provider-tenant-rel-entity";
 
 const {
     DB_USER,
@@ -112,6 +114,8 @@ class DBDriver {
             ClientEntity.initModel(global.sequelize);
             ClientAuthHistoryEntity.initModel(global.sequelize);
             ClientRedirectUriRelEntity.initModel(global.sequelize);
+            FederatedOIDCProviderTenantRelEntity.initModel(global.sequelize);
+            FederatedOIDCProviderEntity.initModel(global.sequelize);
         } 
 
         return global.sequelize;
