@@ -332,9 +332,7 @@ const resolvers: Resolvers = {
                 clientTokenTTLSeconds: clientInput.clientTokenTTLSeconds,
                 clienttypeid: ""
             }
-            await clientService.createClient(client);
-            //const contacts: Array<Contact> = clientInput.contactInput.map((i: ContactInput) => { return {email: i.email, name: i.name, objectid: client.clientId, objecttype:""}});
-            //await clientService.assignContactsToClient(client.clientId, contacts);
+            await clientService.createClient(client);            
             return client;
         },
         updateClient: async (_: any, { clientInput }, oidcContext) => {
@@ -355,8 +353,6 @@ const resolvers: Resolvers = {
                 clienttypeid: ""
             }
             await clientService.updateClient(client);
-            //const contacts: Array<Contact> = clientInput.contactInput.map((i: ContactInput) => { return {email: i.email, name: i.name, objectid: client.clientId, objecttype:""}});
-            //await clientService.assignContactsToClient(client.clientId, contacts);
             return client;
         },
         deleteClient: async(_: any, { clientId }, oidcContext) => {

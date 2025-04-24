@@ -30,8 +30,7 @@ class DBAccessRuleDao extends AccessRuleDao {
         const entity: AccessRuleEntity | null = await sequelize.models.accessRule.findOne({
             where: {
                 accessRuleId: accessRuleId
-            },
-            raw: true
+            }
         })
         if(!entity){
             return Promise.resolve(null);

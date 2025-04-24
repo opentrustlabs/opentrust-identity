@@ -14,6 +14,13 @@ import FederatedOIDCAuthorizationRelEntity from "../entities/federated-oidc-auth
 import AccessRuleEntity from "../entities/access-rule-entity";
 import AuthenticationGroupEntity from "../entities/authentication-group-entity";
 import AuthenticationGroupClientRelEntity from "../entities/authentication-group-client-rel-entity";
+import AuthenticationGroupUserRelEntity from "../entities/authentication-group-user-rel-entity";
+import AuthorizationGroupEntity from "../entities/authorization-group-entity";
+import AuthorizationGroupUserRelEntity from "../entities/authorization-group-user-rel-entity";
+import ChangeEventEntity from "../entities/change-event-entity";
+import ClientEntity from "../entities/client-entity";
+import ClientAuthHistoryEntity from "../entities/client-auth-history-entity";
+import ClientRedirectUriRelEntity from "../entities/client-redirect-uri-rel-entity";
 
 const {
     DB_USER,
@@ -98,6 +105,13 @@ class DBDriver {
             AccessRuleEntity.initModel(global.sequelize);
             AuthenticationGroupEntity.initModel(global.sequelize);
             AuthenticationGroupClientRelEntity.initModel(global.sequelize);
+            AuthenticationGroupUserRelEntity.initModel(global.sequelize);
+            AuthorizationGroupEntity.initModel(global.sequelize);
+            AuthorizationGroupUserRelEntity.initModel(global.sequelize);
+            ChangeEventEntity.initModel(global.sequelize);
+            ClientEntity.initModel(global.sequelize);
+            ClientAuthHistoryEntity.initModel(global.sequelize);
+            ClientRedirectUriRelEntity.initModel(global.sequelize);
         } 
 
         return global.sequelize;
