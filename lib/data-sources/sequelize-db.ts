@@ -7,6 +7,13 @@ import TenantPasswordConfigEntity from "../entities/tenant-password-config-entit
 import TenantLookAndFeelEntity from "../entities/tenant-look-and-feel-entity";
 import TenantLegacyUserMigrationConfigEntity from "../entities/tenant-legacy-user-migration-config-entity";
 import TenantRestrictedAuthenticationDomainRelEntity from "../entities/tenant-restricted-authentication-domain-rel-entity";
+import PreAuthenticationStateEntity from "../entities/pre-authentication-state-entity";
+import AuthorizationCodeDataEntity from "../entities/authorization-code-data-entity";
+import RefreshDataEntity from "../entities/refresh-data-entity";
+import FederatedOIDCAuthorizationRelEntity from "../entities/federated-oidc-authorization-rel-entity";
+import AccessRuleEntity from "../entities/access-rule-entity";
+import AuthenticationGroupEntity from "../entities/authentication-group-entity";
+import AuthenticationGroupClientRelEntity from "../entities/authentication-group-client-rel-entity";
 
 const {
     DB_USER,
@@ -84,6 +91,13 @@ class DBDriver {
             TenantManagementDomainRelEntity.initModel(global.sequelize);
             TenantPasswordConfigEntity.initModel(global.sequelize);
             TenantRestrictedAuthenticationDomainRelEntity.initModel(global.sequelize);
+            PreAuthenticationStateEntity.initModel(global.sequelize);
+            AuthorizationCodeDataEntity.initModel(global.sequelize);
+            RefreshDataEntity.initModel(global.sequelize);
+            FederatedOIDCAuthorizationRelEntity.initModel(global.sequelize);
+            AccessRuleEntity.initModel(global.sequelize);
+            AuthenticationGroupEntity.initModel(global.sequelize);
+            AuthenticationGroupClientRelEntity.initModel(global.sequelize);
         } 
 
         return global.sequelize;

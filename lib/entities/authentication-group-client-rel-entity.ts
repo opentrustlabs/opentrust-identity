@@ -1,25 +1,29 @@
-import type { AuthenticationGroupClientRel } from "@/graphql/generated/graphql-types";
-import { Entity, PrimaryKey } from "@mikro-orm/core";
+import { Model, DataTypes, Sequelize } from 'sequelize';
 
-@Entity({
-    tableName: "authentication_group_client_rel"
-})
-class AuthenticationGroupClientRelEntity implements AuthenticationGroupClientRel {
-
-    constructor(authenticationGroupClientRel?: AuthenticationGroupClientRel){
-        if(authenticationGroupClientRel){
-            Object.assign(this, authenticationGroupClientRel);
-        }
-    }
-
-    __typename?: "AuthenticationGroupClientRel" | undefined;
-
-    @PrimaryKey({fieldName: "authenticationgroupid"})
-    authenticationGroupId: string;
-
-    @PrimaryKey({fieldName: "clientid"})
-    clientId: string;
+class AuthenticationGroupClientRelEntity extends Model {
     
+    static initModel(sequelize: Sequelize): typeof AuthenticationGroupClientRelEntity {
+        return AuthenticationGroupClientRelEntity.init({
+            authenticationGroupId: {
+                type: DataTypes.STRING,
+                primaryKey: true,
+                field: "authenticationgroupid"
+            },
+            clientId: {
+                type: DataTypes.STRING,
+                primaryKey: true,
+                field: "clientid"
+            }
+        }, 
+		{
+            sequelize,
+            tableName: "authentication_group_client_rel",
+            modelName: "authenticationGroupClientRel",
+            timestamps: false
+        });
+    }
 }
+
+
 
 export default AuthenticationGroupClientRelEntity;

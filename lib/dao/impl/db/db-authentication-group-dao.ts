@@ -1,99 +1,113 @@
 import { AuthenticationGroup, AuthenticationGroupClientRel, AuthenticationGroupUserRel } from "@/graphql/generated/graphql-types";
 import AuthenticationGroupDao from "../../authentication-group-dao";
-import connection  from "@/lib/data-sources/db";
+// import connection  from "@/lib/data-sources/db";
 import AuthenticationGroupEntity from "@/lib/entities/authentication-group-entity";
 import AuthenticationGroupClientRelEntity from "@/lib/entities/authentication-group-client-rel-entity";
 import AuthenticationGroupUserRelEntity from "@/lib/entities/authentication-group-user-rel-entity";
 import { QueryOrder } from "@mikro-orm/core";
+import DBDriver from "@/lib/data-sources/sequelize-db";
+import { Op, Sequelize } from "sequelize";
+
 
 class DBAuthenticationGroupDao extends AuthenticationGroupDao {
 
     public async getAuthenticationGroups(tenantId?: string, clientId?: string, userId?: string): Promise<Array<AuthenticationGroup>> {
-        const em = connection.em.fork();
+        const sequelize: Sequelize = await DBDriver.getConnection();        
         
         if(tenantId){
-            const authnGroups: Array<AuthenticationGroupEntity> = await em.find(AuthenticationGroupEntity, 
+            const authnGroups: Array<AuthenticationGroupEntity> = await sequelize.models.authenticationGroup.findAll(
                 {
-                    tenantId: tenantId
-                },
-                {
-                    orderBy: {
-                        authenticationGroupName: QueryOrder.ASC
-                    }
-                }
+                    where: {
+                        tenantId: tenantId
+                    },
+                    order: [
+                        ["authenticationGroupName", "ASC"]
+                    ],
+                    raw: true
+                }                
             );
-            return Promise.resolve(authnGroups);
+            return Promise.resolve(authnGroups as any as Array<AuthenticationGroup>);
         }
         else if(clientId){
             const rels: Array<AuthenticationGroupClientRelEntity> = await this.getAuthenticationGroupClientRels(clientId);
-            const inValues: Array<string> = rels.map((r: AuthenticationGroupClientRelEntity) => r.authenticationGroupId);
-            const authnGroups = await em.find(AuthenticationGroupEntity, 
+            const inValues: Array<string> = rels.map((r: AuthenticationGroupClientRelEntity) => r.getDataValue("authenticationGroupId"));
+
+            const filter: any = {};
+            filter.authenticationGroupId = { [Op.in]: inValues};
+            const authnGroups = await sequelize.models.authenticationGroup.findAll(
                 {
-                    authenticationGroupId: inValues
-                },
-                {
-                    orderBy: {
-                        authenticationGroupName: QueryOrder.ASC
-                    }
-                }
+                    where: filter,
+                    order: [
+                        ["authenticationGroupName", "ASC"]
+                    ],
+                    raw: true
+                }                
             )
-            return Promise.resolve(authnGroups);
+            return Promise.resolve(authnGroups as any as Array<AuthenticationGroup>);
         }
         else if(userId){
             const rels: Array<AuthenticationGroupUserRel> = await this.getAuthenticationGroupUserRels(userId);
             const inValues: Array<string> = rels.map( (r: AuthenticationGroupUserRel) => r.authenticationGroupId);
-            const authnGroups = await em.find(AuthenticationGroupEntity, 
+            const filter: any = {};
+            filter.authenticationGroupId = { [Op.in]: inValues};
+            const authnGroups = await sequelize.models.authenticationGroup.findAll(
                 {
-                    authenticationGroupId: inValues
-                },
-                {
-                    orderBy: {
-                        authenticationGroupName: QueryOrder.ASC
-                    }
-                }
-            )
-            return Promise.resolve(authnGroups);
+                    where: filter,
+                    order: [
+                        ["authenticationGroupName", "ASC"]
+                    ],
+                    raw: true
+                }                
+            );
+            return Promise.resolve(authnGroups as any as Array<AuthenticationGroup>);
         }
         else {
             return [];
         }
     }
 
+    // authenticationGroupClientRel
     protected async getAuthenticationGroupClientRels(clientId: string): Promise<Array<AuthenticationGroupClientRelEntity>> {
-        const em = connection.em.fork();
-        const results: Array<AuthenticationGroupClientRelEntity> = await em.find(AuthenticationGroupClientRelEntity, {
-            clientId: clientId
+        const sequelize: Sequelize = await DBDriver.getConnection();    
+        const results: Array<AuthenticationGroupClientRelEntity> = await sequelize.models.authenticationGroupClientRel.findAll({
+            where: {
+                clientId: clientId
+            },
+            raw: true
         });
         return results && results.length > 0 ? Promise.resolve(results) : Promise.resolve([]);
     }
     
     public async getAuthenticationGroupById(authenticationGroupId: string): Promise<AuthenticationGroup | null> {
-        const em = connection.em.fork();
-        const entity: AuthenticationGroupEntity | null = await em.findOne(
-            AuthenticationGroupEntity, {
-                authenticationGroupId: authenticationGroupId
+        const sequelize: Sequelize = await DBDriver.getConnection();   
+        const entity: AuthenticationGroupEntity | null = await sequelize.models.authenticationGroup.findOne({
+                where: {
+                    authenticationGroupId: authenticationGroupId
+                },
+                raw: true
             }
         );
-        return Promise.resolve(entity);
+        return Promise.resolve(entity as any as AuthenticationGroup);
     }
 
     public async createAuthenticationGroup(authenticationGroup: AuthenticationGroup): Promise<AuthenticationGroup> {
-        const em = connection.em.fork();
-        const entity: AuthenticationGroupEntity = new AuthenticationGroupEntity(authenticationGroup);
-        await em.persistAndFlush(entity);        
+        const sequelize: Sequelize = await DBDriver.getConnection();   
+        await sequelize.models.authenticationGroup.create(authenticationGroup);        
         return Promise.resolve(authenticationGroup);
     }
 
     public async updateAuthenticationGroup(authenticationGroup: AuthenticationGroup): Promise<AuthenticationGroup> {
-        const em = connection.em.fork();
-        const entity: AuthenticationGroupEntity = new AuthenticationGroupEntity(authenticationGroup);
-        em.upsert(entity);
-        await em.flush();
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.authenticationGroup.update(authenticationGroup, {
+            where: {
+                authenticationGroupId: authenticationGroup.authenticationGroupId
+            }
+        });
         return Promise.resolve(authenticationGroup);
     }
 
     public async deleteAuthenticationGroup(authenticationGroupId: string): Promise<void> {
-        const em = connection.em.fork();
+        
         // TODO
         // DELETE ALL OF THE RELATIONSHIP VALUES
 
@@ -101,51 +115,59 @@ class DBAuthenticationGroupDao extends AuthenticationGroupDao {
     }
 
     public async assignAuthenticationGroupToClient(authenticationGroupId: string, clientId: string): Promise<AuthenticationGroupClientRel> {
-        const em = connection.em.fork();
-        const entity: AuthenticationGroupClientRelEntity = new AuthenticationGroupClientRelEntity({
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        const model: AuthenticationGroupClientRel = {
             authenticationGroupId: authenticationGroupId,
             clientId: clientId
-        });
-        await em.persistAndFlush(entity);
-        return Promise.resolve(entity);
+        };
+        await sequelize.models.authenticationGroupClientRel.create(model);
+        return Promise.resolve(model);
     }
 
     public async removeAuthenticationGroupFromClient(authenticationGroupId: string, clientId: string): Promise<void> {
-        const em = connection.em.fork();
-        await em.nativeDelete(AuthenticationGroupClientRelEntity, {
-            clientId: clientId,
-            authenticationGroupId: authenticationGroupId
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.authenticationGroupClientRel.destroy({
+            where: {
+                clientId: clientId,
+                authenticationGroupId: authenticationGroupId
+            }
         });
-        await em.flush();
         return Promise.resolve();
     }
 
     public async assignUserToAuthenticationGroup(userId: string, authenticationGroupId: string): Promise<AuthenticationGroupUserRel> {
-        const em = connection.em.fork();
-        const entity: AuthenticationGroupUserRelEntity = new AuthenticationGroupUserRelEntity({
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        const model: AuthenticationGroupUserRel = {
             userId: userId,
             authenticationGroupId: authenticationGroupId
-        });
-        await em.persistAndFlush(entity);
-        return Promise.resolve(entity);
+        };
+
+        await sequelize.models.authenticationGroupUserRel.create(model);
+        return Promise.resolve(model);
     }
 
     public async removeUserFromAuthenticationGroup(userId: string, authenticationGroupId: string): Promise<void> {
-        const em = connection.em.fork();
-        await em.nativeDelete(AuthenticationGroupUserRelEntity, {
-            userId: userId,
-            authenticationGroupId: authenticationGroupId
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.authenticationGroupUserRel.destroy({
+            where: {
+                userId: userId,
+                authenticationGroupId: authenticationGroupId
+            }
         });
-        await em.flush();
         return Promise.resolve();
     }
 
     protected async getAuthenticationGroupUserRels(userId: string): Promise<Array<AuthenticationGroupUserRel>> {
-        const em = connection.em.fork();
-        const res: Array<AuthenticationGroupUserRelEntity> = await em.find(AuthenticationGroupUserRelEntity, {
-            userId: userId
+        const sequelize: Sequelize = await DBDriver.getConnection();
+
+
+        const res: Array<AuthenticationGroupUserRelEntity> = await sequelize.models.authenticationGroupUserRel.findAll({
+            where: {
+                userId: userId
+            },
+            raw: true
         });
-        return res;
+        return res as any as Array<AuthenticationGroupUserRel>;
     }
 
 }

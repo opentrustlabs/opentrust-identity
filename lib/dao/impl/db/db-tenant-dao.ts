@@ -1,6 +1,5 @@
 import { Tenant, TenantManagementDomainRel, TenantAnonymousUserConfiguration, TenantLookAndFeel, TenantPasswordConfig, LoginFailurePolicy, TenantLegacyUserMigrationConfig, TenantRestrictedAuthenticationDomainRel } from "@/graphql/generated/graphql-types";
 import TenantDao from "../../tenant-dao";
-import DBDriver from "@/lib/data-sources/sequelize-db";
 import { TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import { GraphQLError } from "graphql";
 import TenantManagementDomainRelEntity from "@/lib/entities/tenant-management-domain-rel-entity";
@@ -9,6 +8,7 @@ import TenantPasswordConfigEntity from "@/lib/entities/tenant-password-config-en
 import TenantLookAndFeelEntity from "@/lib/entities/tenant-look-and-feel-entity";
 import TenantLegacyUserMigrationConfigEntity from "@/lib/entities/tenant-legacy-user-migration-config-entity";
 import TenantRestrictedAuthenticationDomainRelEntity from "@/lib/entities/tenant-restricted-authentication-domain-rel-entity";
+import DBDriver from "@/lib/data-sources/sequelize-db";
 import { Op, Sequelize } from "sequelize";
 import { TenantEntity } from "@/lib/entities/tenant-entity";
 

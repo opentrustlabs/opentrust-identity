@@ -1,52 +1,84 @@
-import type { Maybe, PreAuthenticationState } from "@/graphql/generated/graphql-types";
-import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
+import { Model, DataTypes, Sequelize } from 'sequelize';
 
-@Entity({
-    tableName: "preauthentication_state"
-})
-class PreAuthenticationStateEntity implements PreAuthenticationState {
+class PreAuthenticationStateEntity extends Model {
     
-    constructor(m?: PreAuthenticationState){
-        if(m){
-            Object.assign(this, m);
-        }
+    static initModel(sequelize: Sequelize): typeof PreAuthenticationStateEntity {
+        return PreAuthenticationStateEntity.init({
+            token: {
+                type: DataTypes.STRING,
+                primaryKey: true,
+                field: "token"
+            },
+            tenantId: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: false,
+                field: "tenantid"
+            },
+            clientId: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: false,
+                field: "clientid"
+            },
+            codeChallenge: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: true,
+                field: "codechallenge"
+            },
+            codeChallengeMethod: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: true,
+                field: "codechallengemethod"
+            },
+            expiresAtMs: {
+                type: DataTypes.NUMBER,
+                primaryKey: false,
+                allowNull: false,
+                field: "expiresatms"
+            },
+            redirectUri: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: false,
+                field: "redirecturi"
+            },
+            responseMode: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: false,
+                field: "responsemode"
+            },
+            responseType: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: false,
+                field: "responsetype"
+            },
+            scope: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: false,
+                field: "scope"
+            },
+            state: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: true,
+                field: "state"
+            }
+
+        }, 
+        {
+            sequelize,
+            tableName: "preauthentication_state",
+            modelName: "preauthenticationState",
+            timestamps: false
+        });
     }
-    __typename?: "PreAuthenticationState" | undefined;
-    
-
-    @PrimaryKey({fieldName: "token"})
-    token: string;
-
-    @Property({fieldName: "tenantid"})
-    tenantId: string;
-
-    @Property({fieldName: "clientid"})
-    clientId: string;
-
-    @Property({fieldName: "codechallenge"})
-    codeChallenge?: Maybe<string> | undefined;
-
-    @Property({fieldName: "codechallengemethod"})
-    codeChallengeMethod?: Maybe<string> | undefined;
-
-    @Property({fieldName: "expiresatms"})
-    expiresAtMs: number;
-
-    @Property({fieldName: "redirecturi"})
-    redirectUri: string;
-
-    @Property({fieldName: "responsemode"})
-    responseMode: string;
-
-    @Property({fieldName: "responsetype"})
-    responseType: string;
-
-    @Property({fieldName: "scope"})
-    scope: string;
-
-    @Property({fieldName: "state"})
-    state?: Maybe<string> | undefined;
-  
 }
+
 
 export default PreAuthenticationStateEntity;

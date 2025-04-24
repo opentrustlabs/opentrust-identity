@@ -1,45 +1,71 @@
-import type { AuthorizationCodeData, Maybe } from "@/graphql/generated/graphql-types";
-import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
+import { Model, DataTypes, Sequelize } from 'sequelize';
 
-@Entity({
-    tableName: "authorization_code_data"
-})
-class AuthorizationCodeDataEntity implements AuthorizationCodeData {
-
-    constructor(m?: AuthorizationCodeData){
-        if(m){
-            Object.assign(this , m);
-        }
+class AuthorizationCodeDataEntity extends Model {
+    
+    static initModel(sequelize: Sequelize): typeof AuthorizationCodeDataEntity {
+        return AuthorizationCodeDataEntity.init({
+            code: {
+                type: DataTypes.STRING,
+                primaryKey: true,
+                field: "code"
+            },
+            clientId: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: false,
+                field: "clientid"
+            },
+            tenantId: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: false,
+                field: "tenantid"
+            },
+            codeChallenge: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: true,
+                field: "codechallenge"
+            },
+            codeChallengeMethod: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: true,
+                field: "codechallengemethod"
+            },
+            expiresAtMs: {
+                type: DataTypes.NUMBER,
+                primaryKey: false,
+                allowNull: false,
+                field: "expiresatms"
+            },
+            redirectUri: {
+                type: DataTypes.BOOLEAN,
+                primaryKey: false,
+                allowNull: false,
+                field: "redirecturi"
+            },
+            scope: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: false,
+                field: "scope"
+            },
+            userId: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: false,
+                field: "userid"
+            }
+        }, 
+        {
+            sequelize,
+            tableName: "authorization_code_data",
+            modelName: "authorizationCodeData",
+            timestamps: false
+        });
     }
-    __typename?: "AuthorizationCodeData" | undefined;
-    
-    @PrimaryKey({fieldName: "code"})
-    code: string;
-
-    @Property({fieldName: "clientid"})
-    clientId: string;
-
-    @Property({fieldName: "tenantid"})
-    tenantId: string;
-
-    @Property({fieldName: "codechallenge", nullable: true})
-    codeChallenge?: Maybe<string> | undefined;
-
-    @Property({fieldName: "codechallengemethod", nullable: true})
-    codeChallengeMethod?: Maybe<string> | undefined;
-
-    @Property({fieldName: "expiresatms"})
-    expiresAtMs: number;
-
-    @Property({fieldName: "redirecturi"})
-    redirectUri: string;
-
-    @Property({fieldName: "scope"})
-    scope: string;
-    
-    @Property({fieldName: "userid"})
-    userId: string;
-  
 }
+
 
 export default AuthorizationCodeDataEntity;

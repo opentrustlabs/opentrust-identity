@@ -1,37 +1,57 @@
 import { AccessRule } from "@/graphql/generated/graphql-types";
 import AccessRuleDao from "../../access-rule-dao";
-import connection  from "@/lib/data-sources/db";
+import DBDriver from "@/lib/data-sources/sequelize-db";
+import { Sequelize } from "sequelize";
 import AccessRuleEntity from "@/lib/entities/access-rule-entity";
 
 class DBAccessRuleDao extends AccessRuleDao {
 
-    public async getAccessRules(tenant?: string): Promise<Array<AccessRule>> {
-        const em = connection.em.fork();
-        const arr: Array<AccessRuleEntity> = await em.findAll(AccessRuleEntity);
-        return Promise.resolve(arr.map(a => a.toModel()));
+    public async getAccessRules(tenantId?: string): Promise<Array<AccessRule>> {
+
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        const whereParams: any = {};
+        if(tenantId){
+            whereParams.tenantId = tenantId
+        };
+
+        const arr: Array<AccessRuleEntity> = await sequelize.models.accessRule.findAll({
+            where: whereParams
+        });
+
+        return Promise.resolve(arr.map(
+            (entity: AccessRuleEntity) => {
+                return this.entityToModel(entity);
+            }
+        ));
     }
 
     public async getAccessRuleById(accessRuleId: string): Promise<AccessRule | null> {
-        const em = connection.em.fork();
-        const entity: AccessRuleEntity | null = await em.findOne(AccessRuleEntity, {accessRuleId: accessRuleId});
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        const entity: AccessRuleEntity | null = await sequelize.models.accessRule.findOne({
+            where: {
+                accessRuleId: accessRuleId
+            },
+            raw: true
+        })
         if(!entity){
             return Promise.resolve(null);
         }
-        return Promise.resolve(entity.toModel());        
+        return Promise.resolve(this.entityToModel(entity));
     }
 
     public async createAccessRule(accessRule: AccessRule): Promise<AccessRule> {
-        const em = connection.em.fork();
-        const entity: AccessRuleEntity = new AccessRuleEntity(accessRule);
-        await em.persistAndFlush(entity);
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.accessRule.create(accessRule);        
         return Promise.resolve(accessRule);
     }
 
     public async updateAccessRule(accessRule: AccessRule): Promise<AccessRule> {
-        const em = connection.em.fork();
-        const entity: AccessRuleEntity = new AccessRuleEntity(accessRule);
-        await em.upsert(entity);
-        await em.flush();
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.accessRule.update(accessRule, {
+            where: {
+                accessRuleId: accessRule.accessRuleId
+            }
+        });
         return Promise.resolve(accessRule);
     }
 
@@ -39,6 +59,16 @@ class DBAccessRuleDao extends AccessRuleDao {
         // TODO
         // DELETE RELATIONSHIPS
         throw new Error("Method not implemented.");
+    }
+
+    protected entityToModel(entity: AccessRuleEntity): AccessRule {
+        const model: AccessRule = {
+            accessRuleDefinition: Buffer.from(entity.getDataValue("accessRuleDefinition")).toString("utf-8"),
+            accessRuleId: entity.getDataValue("accessRuleId"),
+            accessRuleName: entity.getDataValue("accessRuleName"),
+            scopeAccessRuleSchemaId: entity.getDataValue("scopeAccessRuleSchemaId")
+        };
+        return model;
     }
     
 }
