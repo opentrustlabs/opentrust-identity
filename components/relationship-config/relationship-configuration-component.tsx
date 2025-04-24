@@ -157,7 +157,7 @@ const RelationshipConfigurationComponent: React.FC<RelationshipConfigurationComp
                 </div>
             </Stack>
             {loading && !previousData &&
-                <DataLoading dataLoadingSize="44vh" color={null} />
+                <DataLoading dataLoadingSize="24vh" color={null} />
             }
             {error &&
                 <ErrorComponent message={error.message || "Unknown Error Occurred."} componentSize='lg' />
@@ -445,7 +445,7 @@ const RelSearch: React.FC<RelSearchProps> = ({
                 </Grid2>
                 <Grid2 sx={{ marginTop: "16px", padding: "8px" }} size={12}>
                     { (loading || childDataLoading) &&
-                        <DataLoading dataLoadingSize="38vh" color={null} />
+                        <DataLoading dataLoadingSize="24vh" color={null} />
                     }
                     {data && data.relSearch.total > 0 && childData &&
                         <>

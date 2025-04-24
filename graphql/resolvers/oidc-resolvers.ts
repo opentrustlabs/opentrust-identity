@@ -58,17 +58,9 @@ const resolvers: Resolvers = {
             return searchService.search(searchInput);
         },
         relSearch: async (_, { relSearchInput}, oidcContext) => {            
-            const t1 = Date.now();
-
             const searchService: SearchService = new SearchService(oidcContext);
-            const t2 = Date.now();
-
             const res = await searchService.relSearch(relSearchInput);
-            const t3 = Date.now();
-
-            console.log("time to create service service: " + (t2 - t1));
-            console.log("time to search: " + (t3 - t2));
-            return res;// searchService.relSearch(relSearchInput);
+            return res;
         },
         getRootTenant: (_, __, oidcContext) => {
             const tenantService: TenantService = new TenantService(oidcContext);
