@@ -10,15 +10,16 @@ class DBAuthorizationGroupDao extends AuthorizationGroupDao {
     public async getAuthorizationGroups(tenantId?: string): Promise<Array<AuthorizationGroup>> {
         const sequelize: Sequelize = await DBDriver.getConnection(); 
         if(tenantId){
-            return sequelize.models.authorizationGroup.findAll({
+            const entities: Array<AuthorizationGroupEntity> = await sequelize.models.authorizationGroup.findAll({
                 where: {
                     tenantId: tenantId
-                },
-                raw: true
-            }) as any as Array<AuthorizationGroup>;
+                }
+            });
+            return entities.map(e => e.dataValues);// as any as Array<AuthorizationGroup>;
         }
         else{
-            return sequelize.models.authorizationGroup.findAll({raw: true}) as any as Array<AuthorizationGroup>;
+            const entities: Array<AuthorizationGroupEntity> = await sequelize.models.authorizationGroup.findAll();// as any as Array<AuthorizationGroup>;
+            return entities.map(e => e.dataValues);
         }
     }  
 
@@ -28,10 +29,9 @@ class DBAuthorizationGroupDao extends AuthorizationGroupDao {
         const entity: AuthorizationGroupEntity | null = await sequelize.models.authorizationGroup.findOne({
             where: {
                 groupId: groupId
-            },
-            raw: true
+            }
         })
-        return entity ? Promise.resolve(entity as any as AuthorizationGroup) : Promise.resolve(null);
+        return entity ? Promise.resolve(entity.dataValues as AuthorizationGroup) : Promise.resolve(null);
     }
 
     public async createAuthorizationGroup(group: AuthorizationGroup): Promise<AuthorizationGroup> {
@@ -99,16 +99,15 @@ class DBAuthorizationGroupDao extends AuthorizationGroupDao {
 
         const filter: any = {};
         filter.groupId = { [Op.in]: inValues};
-        const authzGroups = await sequelize.models.authorizationGroup.findAll(
+        const authzGroups: Array<AuthorizationGroupEntity> = await sequelize.models.authorizationGroup.findAll(
             {
                 where: filter,
                 order: [
                     ["groupName", "ASC"]
-                ],
-                raw: true
+                ]
             }                
         )
-        return Promise.resolve(authzGroups as any as Array<AuthorizationGroup>);
+        return authzGroups.map(e => e.dataValues);
         
     }
     

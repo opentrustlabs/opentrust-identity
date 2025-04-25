@@ -29,14 +29,13 @@ class DBTenantDao extends TenantDao {
         const entity: TenantEntity | null = await sequelize.models.tenant.findOne({
             where: {
                 tenanttype: TENANT_TYPE_ROOT_TENANT
-            },
-            raw: true            
+            }
         });
 
         if(!entity){
             throw new GraphQLError("ERROR_UNABLE_TO_FIND_A_ROOT_TENANT");
         }
-        return Promise.resolve(entity as any as Tenant);
+        return Promise.resolve(entity.dataValues as Tenant);
     }
 
     public async createRootTenant(tenant: Tenant): Promise<Tenant> {
@@ -74,10 +73,9 @@ class DBTenantDao extends TenantDao {
             where: filter,
             order: [
                 ["tenantName", "ASC"]
-            ],
-            raw: true            
+            ]          
         });
-        return Promise.resolve(arr as any as Array<Tenant>);
+        return Promise.resolve(arr.map(e => e.dataValues));
     }
 
     public async getTenantById(tenantId: string): Promise<Tenant | null> {
@@ -85,11 +83,10 @@ class DBTenantDao extends TenantDao {
         const tenantEntity: TenantEntity | null = await sequelize.models.tenant.findOne({
             where: {
                 tenantId: tenantId
-            },
-            raw: true
+            }
         });
         if(tenantEntity){
-            return Promise.resolve(tenantEntity as any as Tenant);
+            return Promise.resolve(tenantEntity.dataValues as Tenant);
         }
         else{
             return Promise.resolve(null);
@@ -113,8 +110,7 @@ class DBTenantDao extends TenantDao {
         const tenantEntity: TenantEntity | null = await sequelize.models.tenant.findOne({
             where: {
                 tenantId: tenantId
-            },
-            raw: true
+            }
         });
 
         if(tenantEntity){
@@ -176,10 +172,9 @@ class DBTenantDao extends TenantDao {
         const entity: TenantAnonymousUserConfigurationEntity | null = await sequelize.models.tenantAnonymousUserConfiguration.findOne({
             where: {
                 tenantId: tenantId
-            },
-            raw: true
+            }
         });
-        return entity ? Promise.resolve(entity as any as TenantAnonymousUserConfiguration) : Promise.resolve(null);
+        return entity ? Promise.resolve(entity.dataValues as TenantAnonymousUserConfiguration) : Promise.resolve(null);
     }
 
     public async createAnonymousUserConfiguration(tenantId: string, anonymousUserConfiguration: TenantAnonymousUserConfiguration): Promise<TenantAnonymousUserConfiguration> {
@@ -214,12 +209,11 @@ class DBTenantDao extends TenantDao {
         const tenantPasswordConfigEntity: TenantPasswordConfigEntity | null = await sequelize.models.tenantPasswordConfig.findOne({
             where: {
                 tenantId: tenantId
-            },
-            raw: true
+            }
         })
 
         if(tenantPasswordConfigEntity){
-            return tenantPasswordConfigEntity as any as TenantPasswordConfig;
+            return tenantPasswordConfigEntity.dataValues as TenantPasswordConfig;
         }
         else{
             return null;

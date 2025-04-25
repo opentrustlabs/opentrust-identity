@@ -91,6 +91,7 @@ class RateLimitService {
         if(!rateLimitServiceGroup){
             throw new GraphQLError("ERROR_CANNOT_FIND_RATE_LIMIT_TO_ASSIGN_TO_TENANT");
         }
+        
         let existingRels: Array<TenantRateLimitRel> = await rateLimitDao.getRateLimitTenantRel(tenantId, null);
         const existingRateLimitRel = existingRels.find(
             (r: TenantRateLimitRel) => r.servicegroupid === rateLimitServiceGroup.servicegroupid
@@ -189,7 +190,6 @@ class RateLimitService {
             return false;
         }
         if(tenant.defaultRateLimit){
-
             if(!limit){
                 return false;
             }

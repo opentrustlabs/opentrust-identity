@@ -20,11 +20,10 @@ class DBAuthDao extends AuthDao {
         const entity: PreAuthenticationStateEntity | null = await sequelize.models.preauthenticationState.findOne({
             where: {
                 token: tk
-            },
-            raw: true
+            }
         });
         
-        return entity ? Promise.resolve(entity as any as PreAuthenticationState) : Promise.resolve(null);
+        return entity ? Promise.resolve(entity.dataValues as PreAuthenticationState) : Promise.resolve(null);
     }
 
     public async deletePreAuthenticationState(tk: string): Promise<void> {
@@ -74,10 +73,9 @@ class DBAuthDao extends AuthDao {
         const entity: RefreshDataEntity | null = await sequelize.models.refreshData.findOne({
             where: {
                 refreshToken: refreshToken
-            },
-            raw: true
+            }
         });
-        return entity ? Promise.resolve(entity as any as RefreshData) : Promise.resolve(null);
+        return entity ? Promise.resolve(entity.dataValues as RefreshData) : Promise.resolve(null);
     }
 
     public async deleteRefreshData(refreshToken: string): Promise<void> {

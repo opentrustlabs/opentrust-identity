@@ -31,6 +31,8 @@ import UserFailedLoginAttemptsEntity from "../entities/user-failed-login-attempt
 import UserVerificationTokenEntity from "../entities/user-verification-token-entity";
 import ProhibitedPasswordEntity from "../entities/prohibited-password-entity";
 import UserTenantRelEntity from "../entities/user-tenant-rel-entity";
+import TenantRateLimitRelEntity from "../entities/tenant-rate-limit-rel-entity";
+import RateLimitServiceGroupEntity from "../entities/rate-limit-service-group-entity";
 
 const {
     DB_USER,
@@ -133,6 +135,8 @@ class DBDriver {
             ProhibitedPasswordEntity.initModel(global.sequelize);
             UserTenantRelEntity.initModel(global.sequelize);
             AuthorizationGroupEntity.initModel(global.sequelize);
+            TenantRateLimitRelEntity.initModel(global.sequelize);
+            RateLimitServiceGroupEntity.initModel(global.sequelize);
         } 
 
         return global.sequelize;

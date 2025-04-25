@@ -55,28 +55,26 @@ class DBIdentityDao extends IdentityDao {
     public async loginUser(username: string, password: string): Promise<SuccessfulLoginResponse | Error> {
         const sequelize: Sequelize = await DBDriver.getConnection();
         const userEntity: UserEntity | null = await sequelize.models.user.findOne({
-            where:{email: username},
-            raw: true
+            where:{email: username}
         });
 
         if(!userEntity){
             return new Error("ERROR_UNABLE_TO_LOGIN_USER");
         }
-        const user: User = userEntity as any as User;
+        const user: User = userEntity.dataValues as User;
         const userCredentialEntity: UserCredentialEntity | null = await sequelize.models.userCredential.findOne({
             where: {
                 userId: user.userId
             },
             order: [
                 ["dateCreated", "DESC"]
-            ],
-            raw: true
+            ]
         })
         if(!userCredentialEntity){
             return new Error("ERROR_UNABLE_TO_LOGIN_USER");
         }
 
-        const userCredential: UserCredential = userCredentialEntity as any as UserCredential;
+        const userCredential: UserCredential = userCredentialEntity.dataValues as UserCredential;
         // Note that the bcrypt hashing algorithm CAN automatically generate a random salt
         // and save both the salt value and the iteration value as part of the hashed password,
         // so we do NOT need to pass both those pieces of information to the validation
@@ -169,14 +167,13 @@ class DBIdentityDao extends IdentityDao {
     public async getLoginAttempts(userId: string): Promise<Array<UserFailedLoginAttempts>> {
         const sequelize: Sequelize = await DBDriver.getConnection();
         const entities = await sequelize.models.userFailedLoginAttempts.findAll({
-            where: {userId: userId},
-            raw: true
+            where: {userId: userId}
         });
 
         if(!entities){
             return [];
         }
-        return entities as any as Array<UserFailedLoginAttempts>;
+        return entities.map(e => e.dataValues);
     }
 
     public async incrementLoginAttempts(userId: string): Promise<void> {
@@ -369,10 +366,9 @@ class DBIdentityDao extends IdentityDao {
             where: {
                 tenantId: tenantId,
                 userId: userId
-            },
-            raw: true
+            }
         });        
-        return entity ? Promise.resolve(entity as any as UserTenantRel) : Promise.resolve(null);
+        return entity ? Promise.resolve(entity.dataValues as UserTenantRel) : Promise.resolve(null);
     }
 
     public async getUserTenantRelsByUserId(userId: string): Promise<Array<UserTenantRel>> {
@@ -380,10 +376,9 @@ class DBIdentityDao extends IdentityDao {
         const list = await sequelize.models.userTenantRel.findAll({
             where: {
                 userId: userId
-            },
-            raw: true
+            }
         });
-        return Promise.resolve(list as any as Array<UserTenantRel>);
+        return list.map(e => e.dataValues);
     }
 
 }
