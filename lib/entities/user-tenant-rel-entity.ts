@@ -1,30 +1,40 @@
-import type { UserTenantRel } from "@/graphql/generated/graphql-types";
-import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
+import { Model, DataTypes, Sequelize } from 'sequelize';
 
-@Entity({
-    tableName: "user_tenant_rel"
-})
-class UserTenantRelEntity implements UserTenantRel {
-
-    constructor(userTenantRel?: UserTenantRel){
-        if(userTenantRel){
-            Object.assign(this, userTenantRel);
-        }
+class UserTenantRelEntity extends Model {
+    
+    static initModel(sequelize: Sequelize): typeof UserTenantRelEntity {
+        return UserTenantRelEntity.init({
+            tenantId: {
+                type: DataTypes.STRING,
+                primaryKey: true,
+                field: "tenantid"
+            },
+            userId: {
+                type: DataTypes.STRING,
+                primaryKey: true,
+                field: "userid"
+            },
+            relType: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: false,
+                field: "reltype"
+            },
+            enabled: {
+                type: DataTypes.BOOLEAN,
+                primaryKey: false,
+                allowNull: false,
+				field: "enabled"
+            }
+        }, 
+		{
+            sequelize,
+            tableName: "user_tenant_rel",
+            modelName: "userTenantRel",
+            timestamps: false
+        });
     }
-    __typename?: "UserTenantRel" | undefined;
-
-    @PrimaryKey({fieldName: "tenantid"})
-    tenantId: string;
-
-    @PrimaryKey({fieldName: "userid"})
-    userId: string; 
-    
-    @Property({fieldName: "enabled"})
-    enabled: boolean;
-
-    @Property({fieldName: "reltype"})
-    relType: string;
-    
 }
+
 
 export default UserTenantRelEntity;

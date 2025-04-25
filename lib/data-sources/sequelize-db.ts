@@ -24,6 +24,13 @@ import ClientRedirectUriRelEntity from "../entities/client-redirect-uri-rel-enti
 import FederatedOIDCProviderEntity from "../entities/federated-oidc-provider-entity";
 import FederatedOIDCProviderTenantRelEntity from "../entities/federated-oidc-provider-tenant-rel-entity";
 import FederatedOIDCProviderDomainRelEntity from "../entities/federated-oidc-provider-domain-rel-entity";
+import UserEntity from "../entities/user-entity";
+import UserCredentialEntity from "../entities/user-credential-entity";
+import UserFido2ChallengeEntity from "../entities/user-fido2-challenge-entity";
+import UserFailedLoginAttemptsEntity from "../entities/user-failed-login-attempts-entity";
+import UserVerificationTokenEntity from "../entities/user-verification-token-entity";
+import ProhibitedPasswordEntity from "../entities/prohibited-password-entity";
+import UserTenantRelEntity from "../entities/user-tenant-rel-entity";
 
 const {
     DB_USER,
@@ -118,6 +125,14 @@ class DBDriver {
             FederatedOIDCProviderTenantRelEntity.initModel(global.sequelize);
             FederatedOIDCProviderEntity.initModel(global.sequelize);
             FederatedOIDCProviderDomainRelEntity.initModel(global.sequelize);
+            UserEntity.initModel(global.sequelize);
+            UserCredentialEntity.initModel(global.sequelize);
+            UserFido2ChallengeEntity.initModel(global.sequelize);
+            UserFailedLoginAttemptsEntity.initModel(global.sequelize);
+            UserVerificationTokenEntity.initModel(global.sequelize);
+            ProhibitedPasswordEntity.initModel(global.sequelize);
+            UserTenantRelEntity.initModel(global.sequelize);
+            AuthorizationGroupEntity.initModel(global.sequelize);
         } 
 
         return global.sequelize;

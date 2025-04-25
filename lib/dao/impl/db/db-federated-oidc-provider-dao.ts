@@ -11,35 +11,9 @@ class DBFederatedOIDCProviderDao extends FederatedOIDCProviderDao {
 
     public async getFederatedOidcProviders(tenantId?: string): Promise<Array<FederatedOidcProvider>> {
 
-        // const testTenantId = "c42c29cb-1bf7-4f6a-905e-5f74760218e2"
         const sequelize: Sequelize = await DBDriver.getConnection();
-        // const r = await sequelize.query(
-        //     "SELECT * FROM federated_oidc_provider f INNER JOIN federated_oidc_provider_tenant_rel fr ON f.federatedoidcproviderid = fr.federatedoidcproviderid WHERE fr.tenantid = $tenantId",
-        //     {
-        //         bind: {
-        //             tenantId: testTenantId
-        //         }
-        //     }
-        // );
-        // console.log("##################################################################");
-        // console.log(r);
-        // console.log("##################################################################")
-
-        
-        // For custom join queries, see:   https://mikro-orm.io/docs/query-builder
-        // Example:
-        // const qb = em.createQueryBuilder(BookTag, 't');
-        // qb.select(['b.*', 't.*'])
-        // .leftJoin('t.books', 'b')
-        // .where('b.title = ? or b.title = ?', ['test 123', 'lol 321'])
-        // .andWhere('1 = 1')
-        // .orWhere('1 = 2')
-        // .limit(2, 1);
-        // console.log(qb.getQuery());
         const b: Array<FederatedOidcProviderTenantRel> = tenantId ? await this.getFederatedOidcProviderTenantRels(tenantId) : [];
 
-        /*
-        filter.tenantId = { [Op.in]: tenantIds};*/ 
         const t: Array<FederatedOIDCProviderEntity> = tenantId ?
              await sequelize.models.federatedOidcProvider.findAll({
                 where: {

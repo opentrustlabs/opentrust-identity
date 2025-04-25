@@ -204,7 +204,7 @@ create TABLE user_credential (
     hashedpassword VARCHAR(256) NOT NULL,
     hashingalgorithm VARCHAR(128) NOT NULL,
     datecreated TIMESTAMP NOT NULL,
-    PRIMARY KEY (userid),
+    PRIMARY KEY (userid, datecreated),
     FOREIGN KEY (userid) REFERENCES user(userid)    
 );
 CREATE INDEX user_credential_date_created_idx ON user_credential(datecreated);

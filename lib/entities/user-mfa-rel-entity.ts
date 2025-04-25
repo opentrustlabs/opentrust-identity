@@ -1,49 +1,70 @@
-import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
+import { Model, DataTypes, Sequelize } from 'sequelize';
 
-
-// primarymfa BOOLEAN NOT NULL,
-// mfatype VARCHAR(64) NOT NULL,
-// totpsecret VARCHAR(1024),
-// fido2publickey VARCHAR(4000),
-// fido2credentialid VARCHAR(1024),
-// fido2algorithm VARCHAR(1024),
-// fido2transports VARCHAR(1024),
-// fido2keysupportscounters BOOLEAN,
-// PRIMARY KEY (userid, mfatype),
-// FOREIGN KEY (userid) REFERENCES user(userid)
-
-@Entity({
-    tableName: "user_mfa_rel"
-})
-class UserMfaRelEntity {
-
-    @PrimaryKey({fieldName: "userid"})
-    userId: string;
-
-    @Property({fieldName: "mfatype"})
-    mfaType: string;
-
-    @Property({fieldName: "primarymfa"})
-    primaryMfa: boolean;
+class UserMfaRelEntity extends Model {
     
-    @Property({fieldName: "totpsecret"})
-    totpSecret: string;
-    
-    @Property({fieldName: "fido2publickey"})
-    fido2PublicKey: string;
-    
-    @Property({fieldName: "fido2credentialid"})
-    fido2CredentialId: string;
-    
-    @Property({fieldName: "fido2algorithm"})
-    fido2Algorithm: string;
-    
-    @Property({fieldName: "fido2transports"})
-    fido2Transports: string;
-
-    @Property({fieldName: "fido2keysupportscounters"})
-    fido2KeySupportsCounters: boolean;
-
+    static initModel(sequelize: Sequelize): typeof UserMfaRelEntity {
+        return UserMfaRelEntity.init({
+            userId: {
+                type: DataTypes.STRING,
+                primaryKey: true,
+                field: "userid"
+            },
+            mfaType: {
+                type: DataTypes.STRING,
+                primaryKey: true,
+                field: "mfatype"
+            },
+            primaryMfa: {
+                type: DataTypes.BOOLEAN,
+                primaryKey: false,
+                allowNull: false,
+                field: "primarymfa"
+            },
+            totpSecret: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: true,
+				field: "totpsecret"
+            },
+            fido2PublicKey: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: true,
+                field: "fido2publickey"
+            },
+            fido2CredentialId: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: true,
+                field: "fido2credentialid"
+            },
+            fido2Algorithm: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: true,
+                field: "fido2algorithm"
+            },
+            fido2Transports: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: true,
+                field: "fido2transports"
+            },
+            fido2KeySupportsCounters: {
+                type: DataTypes.BOOLEAN,
+                primaryKey: false,
+                allowNull: true,
+                field: "fido2keysupportscounters"
+            }
+        }, 
+		{
+            sequelize,
+            tableName: "user_mfa_rel",
+            modelName: "userMfaRel",
+            timestamps: false
+        });
+    }
 }
+
 
 export default UserMfaRelEntity;

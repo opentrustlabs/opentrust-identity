@@ -3,8 +3,7 @@ import { AuthenticationGroup, User, AuthorizationGroup, SuccessfulLoginResponse,
 export type UserLookupType = "id" | "email" | "phone";
 abstract class IdentityDao {
 
-    abstract getUsers(tenant: string | null): Promise<Array<User>>;
-
+    
     abstract getUserGroups(userId: string): Promise<Array<AuthorizationGroup>>;
 
     abstract getUserAuthenticationGroups(userId: string): Promise<Array<AuthenticationGroup>>;
