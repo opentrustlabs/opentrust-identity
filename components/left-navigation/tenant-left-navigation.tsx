@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useContext } from "react";
 import { Divider, Drawer, Grid2, InputAdornment, Stack, TextField } from "@mui/material";
 import Link from "next/link";
 import SearchIcon from '@mui/icons-material/Search';
@@ -20,6 +20,7 @@ import AddBoxIcon from '@mui/icons-material/AddBox';
 import VerifiedIcon from '@mui/icons-material/Verified';
 import { TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import CreateNewDialog from "../dialogs/create-new-dialog";
+import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
 
 
 interface NavigationProps {
@@ -30,8 +31,11 @@ interface NavigationProps {
 
 const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaData, breakPoints}) => {
 
+    // CONTEXT
+    const tenantBean: TenantMetaDataBean = useContext(TenantContext);
+
     // STATE VARIABLES
-    const [searchTerm, setSearchTerm] = React.useState<string | null>(null);
+    const [searchTerm, setSearchTerm] = React.useState<string | null>("");
     const [drawerOpen, setDrawerOpen] = React.useState(false);
     const [openCreateNewDialog, setOpenCreateNewDialog] = React.useState<boolean>(false);
 
@@ -49,14 +53,23 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
     const handleKeyPressSearch = (evt: React.KeyboardEvent) => {        
         if (evt.key.valueOf().toLowerCase() === "enter") {
             if(searchTerm && searchTerm.length > 2){
-                // DO SEARCH
-                console.log("will do search")
+                // I do not like doing this, but I cannot get router.push() to work.
+                window.document.location = `/${tenantBean.getTenantMetaData().tenant.tenantId}?section=search&term=${searchTerm}`;
+                // A bug in nextjs? router.push does not work when changing query params. Keep the code
+                // here as an example, just in case an upgrade fixes it.
+                // router.push(`/${tenantBean.getTenantMetaData().tenant.tenantId}?term=${searchTerm}&section=search`);
             }
         }
     }
 
     const handleSearch = (evt: any) => {
-        console.log("search button was clicked");
+        if(searchTerm && searchTerm.length > 2){      
+            // I do not like doing this, but I cannot get router.push() to work.      
+            window.document.location = `/${tenantBean.getTenantMetaData().tenant.tenantId}?section=search&term=${searchTerm}`;
+            // A bug in nextjs? router.push does not work when changing query params. Keep the code
+            // here as an example, just in case an upgrade fixes it.
+            //router.push(`/${tenantBean.getTenantMetaData().tenant.tenantId}?term=${searchTerm}&section=search`)            
+        }
     }
     
 
@@ -67,6 +80,7 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
                     <Stack spacing={0} fontSize={"0.9em"}  direction={"row"} paddingTop={"8px"}>
                         <div>
                             <TextField   
+                                value={searchTerm}
                                 size="small"
                                 name="searchinput"
                                 id="searchinput"

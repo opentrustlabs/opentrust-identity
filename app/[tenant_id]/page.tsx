@@ -4,11 +4,8 @@ import { useSearchParams } from 'next/navigation';
 import { TenantContext, TenantMetaDataBean } from "@/components/contexts/tenant-context";
 import { TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import TenantDetail from "@/components/tenants/tenant-detail";
-import AuthenticationGroupList from "@/components/authentication-groups/authentication-group-list";
-import FederatedOIDCProviderList from "@/components/oidc-providers/oidc-provider-list";
 import SigningKeyList from "@/components/signing-keys/signing-key-list";
 import ScopeList from "@/components/scope/scope-list";
-import RateLimitList from "@/components/rate-limits/rate-limit-list";
 import SearchResultListLayout from "@/components/layout/search-result-list-layout";
 import { SearchResultType } from "@/graphql/generated/graphql-types";
 
@@ -21,6 +18,7 @@ const TenantLandingPage: React.FC = () => {
      // QUERY PARAMS
     const params = useSearchParams();
     const section = params?.get("section");
+    const searchTerm = params?.get("term");
 
     /*
         In the content section for the landing page for the tenant, we will
@@ -43,10 +41,23 @@ const TenantLandingPage: React.FC = () => {
                     filterInputLabel="Filter Tenants" 
                     resultType={SearchResultType.Tenant}
                     breadCrumbText=""
+                    sortDirection={"asc"}
+                    sortField={"name"}
+
                 />
             }
             {(section === null || section === "tenants") && tenantBean.getTenantMetaData().tenant.tenantType !== TENANT_TYPE_ROOT_TENANT && 
                 <TenantDetail tenantId={tenantBean.getTenantMetaData().tenant.tenantId} />
+            }
+            {section === "search" &&
+                <SearchResultListLayout
+                    page={1}
+                    perPage={20}
+                    filterInputLabel="Filter Results"
+                    resultType={null}
+                    breadCrumbText={""}
+                    searchTerm={searchTerm || null}
+                />
             }
             {section === "clients" &&
                 <SearchResultListLayout
@@ -55,6 +66,8 @@ const TenantLandingPage: React.FC = () => {
                     filterInputLabel="Filter Clients"
                     resultType={SearchResultType.Client}
                     breadCrumbText={"Client List"}
+                    sortDirection={"asc"}
+                    sortField={"name"}
                 />
             }
             {section === "users" &&
@@ -64,6 +77,8 @@ const TenantLandingPage: React.FC = () => {
                     page={1} 
                     perPage={20}
                     breadCrumbText="User List"
+                    sortDirection={"asc"}
+                    sortField={"name"}
                 />
             }
             {section === "authorization-groups" &&
@@ -73,6 +88,8 @@ const TenantLandingPage: React.FC = () => {
                     page={1} 
                     perPage={20}
                     breadCrumbText="Authorization Groups"
+                    sortDirection={"asc"}
+                    sortField={"name"}
                 />
             }
             {section === "authentication-groups" &&
@@ -82,6 +99,8 @@ const TenantLandingPage: React.FC = () => {
                     page={1} 
                     perPage={20}
                     breadCrumbText="Authorization Groups"
+                    sortDirection={"asc"}
+                    sortField={"name"}
                 />
             }
             {section === "oidc-providers" &&
@@ -91,6 +110,8 @@ const TenantLandingPage: React.FC = () => {
                     page={1} 
                     perPage={20}
                     breadCrumbText="Federated OIDC Providers"
+                    sortDirection={"asc"}
+                    sortField={"name"}
                 />
             }
             {section === "signing-keys" &&
@@ -106,6 +127,8 @@ const TenantLandingPage: React.FC = () => {
                     page={1} 
                     perPage={20}
                     breadCrumbText="Rate Limits"
+                    sortDirection={"asc"}
+                    sortField={"name"}
                 />                
             }
         </>

@@ -22,6 +22,8 @@ import AuthorizationGroupList from "../authorization-groups/authorization-group-
 import AuthenticationGroupList from "../authentication-groups/authentication-group-list";
 import FederatedOIDCProviderList from "../oidc-providers/oidc-provider-list";
 import RateLimitList from "../rate-limits/rate-limit-list";
+import SearchResultList from "../search/search-result-list";
+
 
 export interface ResultListProps {
     searchResults: ObjectSearchResults,
@@ -34,6 +36,9 @@ export interface SearchResultListProps {
     perPage: number,
     resultType: SearchResultType | null,
     breadCrumbText: string | null
+    searchTerm?: string | null,
+    sortDirection?: string | null,
+    sortField?: string | null
 }
 
 
@@ -42,15 +47,20 @@ const SearchResultListLayout: React.FC<SearchResultListProps> = ({
     page: p,
     perPage: pp,
     resultType,
-    breadCrumbText
+    breadCrumbText,
+    searchTerm,
+    sortField,
+    sortDirection
 }) => {
 
+
     const perPage = pp && pp < MAX_SEARCH_PAGE_SIZE ? pp : 20;
+    
     // REF OBJECTS
     const topOfSearchList = useRef<HTMLDivElement | null>(null);
 
     // STATE VARIABLES
-    const [filterTerm, setFilterTerm] = React.useState<string>("");
+    const [filterTerm, setFilterTerm] = React.useState<string>(searchTerm ? searchTerm : "");
     const [page, setPage] = React.useState<number>(p  || 1);
     
     // CONTEXT HOOKS
@@ -58,10 +68,19 @@ const SearchResultListLayout: React.FC<SearchResultListProps> = ({
 
     // HANDLER FUNCTIONS
     const arrBreadcrumbs = [];
-    arrBreadcrumbs.push({
-        href: `/${tenantBean.getTenantMetaData().tenant.tenantId}`,
-        linkText: tenantBean.getTenantMetaData().tenant.tenantType === TENANT_TYPE_ROOT_TENANT ? `Tenant List` : `${tenantBean.getTenantMetaData().tenant.tenantName}`
-    },);
+    if(resultType === null){
+        const suffix = searchTerm ? ` (search term: ${searchTerm})` : ``
+        arrBreadcrumbs.push({
+            href: null,
+            linkText: `Search Results${suffix}`
+        });
+    }
+    else{
+        arrBreadcrumbs.push({
+            href: `/${tenantBean.getTenantMetaData().tenant.tenantId}`,
+            linkText: tenantBean.getTenantMetaData().tenant.tenantType === TENANT_TYPE_ROOT_TENANT ? `Tenant List` : `${tenantBean.getTenantMetaData().tenant.tenantName}`
+        });
+    }
 
     breadCrumbText &&
         arrBreadcrumbs.push({
@@ -83,11 +102,13 @@ const SearchResultListLayout: React.FC<SearchResultListProps> = ({
                 filters: filters,
                 page: page,
                 perPage: perPage,
-                resultType: resultType ? resultType : null
+                resultType: resultType ? resultType : null,
+                sortDirection: sortDirection,
+                sortField: sortField
             }
         },
-        fetchPolicy: "no-cache",
-        nextFetchPolicy: "no-cache"
+        fetchPolicy: "network-only",
+        nextFetchPolicy: "network-only"
     });
 
     // Material UI TablePagination component uses zero-based 
@@ -122,6 +143,7 @@ const SearchResultListLayout: React.FC<SearchResultListProps> = ({
                 <BreadcrumbComponent breadCrumbs={arrBreadcrumbs} />                
                 <Stack spacing={1} justifyContent={"space-between"} direction={"row"} fontWeight={"bold"} margin={"8px 0px 24px 0px"}>
                     <div style={{ display: "inline-flex", alignItems: "center" }}>
+                        {!searchTerm &&
                         <TextField
                             label={filterInputLabel}
                             size={"small"}
@@ -141,6 +163,7 @@ const SearchResultListLayout: React.FC<SearchResultListProps> = ({
                                 }
                             }}
                         />
+                        }
                     </div>
                     <div ref={topOfSearchList}></div>
                 </Stack>
@@ -158,6 +181,9 @@ const SearchResultListLayout: React.FC<SearchResultListProps> = ({
                 }                
                 {loading && previousData && 
                     <>
+                        {resultType === null &&
+                            <SearchResultList key={filterTerm} searchResults={previousData.search} />                            
+                        }
                         {resultType === SearchResultType.Tenant &&
                             <TenantResultList searchResults={previousData.search} />
                         }
@@ -181,8 +207,11 @@ const SearchResultListLayout: React.FC<SearchResultListProps> = ({
                         }
                     </>                    
                 }
-                {data &&
+                { data &&
                     <>
+                        {resultType === null &&
+                            <SearchResultList key={filterTerm} searchResults={data.search} />
+                        }
                         {resultType === SearchResultType.Tenant &&
                             <TenantResultList searchResults={data.search} />
                         }
