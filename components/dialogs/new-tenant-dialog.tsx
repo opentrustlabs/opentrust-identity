@@ -32,7 +32,6 @@ const NewTenantDialog: React.FC<NewTenantDialogProps> = ({
         allowSocialLogin: false,
         allowUnlimitedRate: false,
         allowUserSelfRegistration: false,
-        claimsSupported: [],
         enabled: true,
         federatedAuthenticationConstraint: "",
         migrateLegacyUsers: false,
@@ -61,7 +60,7 @@ const NewTenantDialog: React.FC<NewTenantDialogProps> = ({
             },
             onCompleted(data) {
                 onCreateEnd(true);
-                router.push(`${tenantBean.getTenantMetaData().tenant.tenantId}/tenants/${data.createTenant.tenantId}`);
+                router.push(`/${tenantBean.getTenantMetaData().tenant.tenantId}/tenants/${data.createTenant.tenantId}`);
                 onClose();
             },
             onError(error) {

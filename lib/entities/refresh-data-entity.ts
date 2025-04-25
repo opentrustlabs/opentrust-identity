@@ -1,46 +1,63 @@
-import type { Maybe, RefreshData } from "@/graphql/generated/graphql-types";
-import { Entity, PrimaryKey, Property, Ref } from "@mikro-orm/core";
+import { Model, DataTypes, Sequelize } from 'sequelize';
 
-@Entity({
-    tableName: "refresh_data"
-})
-class RefreshDataEntity implements RefreshData {
-
-    constructor(m?: RefreshData){
-        if(m){
-            Object.assign(this, m);
-        }
+class RefreshDataEntity extends Model {
+    
+    static initModel(sequelize: Sequelize): typeof RefreshDataEntity {
+        return RefreshDataEntity.init({
+            refreshToken: {
+                type: DataTypes.STRING,
+                primaryKey: true,
+                field: "refreshtoken"
+            },
+            tenantId: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: false,
+                field: "tenantid"
+            },
+            userId: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: false,
+                field: "userid"
+            },
+            clientId: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: false,
+				field: "clientid"
+            },
+            redirecturi: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: false,
+                field: "redirecturi"
+            },
+            refreshCount: {
+                type: DataTypes.NUMBER,
+                primaryKey: false,
+                allowNull: false,
+                field: "refreshcount"
+            },
+            refreshTokenClientType: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: false,
+                field: "refreshtokenclienttype"
+            },
+            scope: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: false,
+                field: "scope"
+            }
+        }, {
+            sequelize,
+            tableName: "refresh_data",
+            modelName: "refreshData",
+            timestamps: false
+        });
     }
-
-    __typename?: "RefreshData" | undefined;
-    
-    @PrimaryKey({fieldName: "refreshtoken"})
-    refreshToken: string;
-
-    @Property({fieldName: "tenantid"})
-    tenantId: string;
-
-    @Property({fieldName: "userid"})
-    userId: string;
-
-    @Property({fieldName: "clientid"})
-    clientId: string;
-
-    @Property({fieldName: "redirecturi"})
-    redirecturi: string;
-
-    @Property({fieldName: "refreshcount"})
-    refreshCount: number;
-    
-    @Property({fieldName: "refreshtokenclienttype"})
-    refreshTokenClientType: string;
-
-    //@Property({fieldName: ""})
-    refreshtokenclienttypeid?: Maybe<string> | undefined;
-
-    @Property({fieldName: "scope"})
-    scope: string;
-    
 }
 
 export default RefreshDataEntity

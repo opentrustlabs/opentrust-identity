@@ -6,7 +6,7 @@ import Typography from "@mui/material/Typography";
 import DeleteForeverOutlinedIcon from '@mui/icons-material/DeleteForeverOutlined';
 import BreadcrumbComponent from "../breadcrumbs/breadcrumbs";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
-import { FEDERATED_AUTHN_CONSTRAINT_DISPLAY, FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE, FEDERATED_AUTHN_CONSTRAINT_NOT_ALLOWED, FEDERATED_AUTHN_CONSTRAINT_PERMISSIVE, TENANT_TYPE_IDENTITY_MANAGEMENT, TENANT_TYPE_IDENTITY_MANAGEMENT_AND_SERVICES, TENANT_TYPE_ROOT_TENANT, TENANT_TYPE_SERVICES, TENANT_TYPES_DISPLAY } from "@/utils/consts";
+import { DEFAULT_RATE_LIMIT_PERIOD_MINUTES, FEDERATED_AUTHN_CONSTRAINT_DISPLAY, FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE, FEDERATED_AUTHN_CONSTRAINT_NOT_ALLOWED, FEDERATED_AUTHN_CONSTRAINT_PERMISSIVE, TENANT_TYPE_IDENTITY_MANAGEMENT, TENANT_TYPE_IDENTITY_MANAGEMENT_AND_SERVICES, TENANT_TYPE_ROOT_TENANT, TENANT_TYPE_SERVICES, TENANT_TYPES_DISPLAY } from "@/utils/consts";
 import { Tenant, TenantUpdateInput } from "@/graphql/generated/graphql-types";
 import { useMutation, useQuery } from "@apollo/client";
 import { TENANT_DETAIL_QUERY } from "@/graphql/queries/oidc-queries";
@@ -71,7 +71,6 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
         allowSocialLogin: tenant.allowSocialLogin,
         allowUnlimitedRate: tenant.allowUnlimitedRate,
         allowUserSelfRegistration: tenant.allowUserSelfRegistration,
-        claimsSupported: [],
         enabled: tenant.enabled,
         federatedAuthenticationConstraint: tenant.federatedAuthenticationConstraint,
         markForDelete: tenant.markForDelete,
@@ -93,8 +92,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
     const [showMutationSnackbar, setShowMutationSnackbar] = React.useState<boolean>(false);
 
     // GRAPHQL FUNCTIONS
-    const [tenantUpdateMutation] = useMutation(TENANT_UPDATE_MUTATION,
-        {
+    const [tenantUpdateMutation] = useMutation(TENANT_UPDATE_MUTATION, {
             variables: {
                 tenantInput: tenantInput
             },
@@ -108,6 +106,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                 setShowMutationBackdrop(false);
                 setErrorMessage(error.message);
             },
+            refetchQueries: [TENANT_DETAIL_QUERY]
         }
     );
 
@@ -173,7 +172,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Tenant Type</div>
                                             {tenant.tenantType === TENANT_TYPE_ROOT_TENANT &&
-                                                <TextField disabled={true} name="tenantType" id="tenantType" value={tenant.tenantType} fullWidth={true} size="small" />
+                                                <TextField disabled={true} name="tenantType" id="tenantType" value={TENANT_TYPES_DISPLAY.get(tenant.tenantType)} fullWidth={true} size="small" />
                                             }
                                             {tenant.tenantType !== TENANT_TYPE_ROOT_TENANT &&
                                                 <Select
@@ -207,16 +206,31 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Default Rate Limit</div>
                                             <TextField name="defaultRateLimit" id="defaultRateLimit" 
-                                                onChange={(evt) => {const n = parseInt(evt.target.value); if(n){tenantInput.defaultRateLimit = n; setTenantInput({...tenantInput}); setOverviewDirty(true); }}}
-                                                value={tenantInput.defaultRateLimit} fullWidth={true} size="small" 
+                                                disabled={tenantInput.allowUnlimitedRate === true}
+                                                onChange={(evt) => {
+                                                    const n = parseInt(evt.target.value); 
+                                                    if(n){
+                                                        tenantInput.defaultRateLimit = n;                                                         
+                                                    }
+                                                    else{
+                                                        tenantInput.defaultRateLimit = undefined; 
+                                                    }
+                                                    setTenantInput({...tenantInput}); 
+                                                    setOverviewDirty(true); 
+                                                }}
+                                                type="number"
+                                                value={tenantInput.defaultRateLimit || ""} fullWidth={true} size="small" 
                                             />
                                         </Grid2>
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Default Rate Limit Period (minutes)</div>
                                             <TextField 
-                                                onChange={(evt) => {const n = parseInt(evt.target.value); if(n){tenantInput.defaultRateLimitPeriodMinutes = n; setTenantInput({...tenantInput}); setOverviewDirty(true); }}}
-                                                name="defaultRateLimitPeriodMinutes" id="defaultRateLimitPeriodMinutes" 
-                                                value={tenantInput.defaultRateLimitPeriodMinutes} fullWidth={true} size="small" 
+                                                disabled={true}                                                
+                                                type="number"
+                                                name="defaultRateLimitPeriodMinutes" id="defaultRateLimitPeriodMinutes"                                                 
+                                                value={tenantInput.allowUnlimitedRate ? "" : DEFAULT_RATE_LIMIT_PERIOD_MINUTES} 
+                                                fullWidth={true} 
+                                                size="small" 
                                             />
                                         </Grid2>
                                     </Grid2>
@@ -240,7 +254,18 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                             <Grid2 size={2}>
                                                 <Checkbox 
                                                     checked={tenantInput.allowUnlimitedRate === true}
-                                                    onChange={(_, checked: boolean) => {tenantInput.allowUnlimitedRate = checked; setTenantInput({...tenantInput}); setOverviewDirty(true);}}
+                                                    onChange={(_, checked: boolean) => {
+                                                        tenantInput.allowUnlimitedRate = checked;                                                         
+                                                        if(checked){
+                                                            tenantInput.defaultRateLimit = undefined;
+                                                            tenantInput.defaultRateLimitPeriodMinutes = undefined;
+                                                        }
+                                                        else{
+                                                            tenantInput.defaultRateLimitPeriodMinutes = DEFAULT_RATE_LIMIT_PERIOD_MINUTES;
+                                                        }
+                                                        setTenantInput({...tenantInput}); 
+                                                        setOverviewDirty(true);
+                                                    }}
                                                 />
                                             </Grid2>
                                             <Grid2 alignContent={"center"} size={10}>Allow user self-registration</Grid2>
@@ -449,7 +474,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                             </Accordion>
                         </Grid2>
                         
-                        <Grid2 size={12} marginBottom={"16px"}>
+                        <Grid2 size={12} >
                             <Accordion >
                                 <AccordionSummary
                                     expandIcon={<ExpandMoreIcon />}

@@ -41,6 +41,8 @@ type Query {
     ## RateLimit
     getRateLimitServiceGroups(tenantId: String): [RateLimitServiceGroup!]!
     getRateLimitServiceGroupById(serviceGroupId: String!): RateLimitServiceGroup
+    getRateLimitTenantRels(tenantId: String, rateLimitServiceGroupId: String): [TenantRateLimitRel!]!
+    getRateLimitTenantRelViews(rateLimitServiceGroupId: String!): [TenantRateLimitRelView!]!
 
     ## Scope
     getScope(tenantId: String): [Scope!]!
@@ -105,7 +107,7 @@ type Mutation {
     removeTenantLegacyUserMigrationConfig(tenantId: String!): String
     setTenantAnonymousUserConfig(tenantAnonymousUserConfigInput: TenantAnonymousUserConfigInput!): TenantAnonymousUserConfiguration
     removeTenantAnonymousUserConfig(tenantId: String!): String
-    setTenantLookAndFeel(tenantLookAndFeelInput: TenantLookAndFeelInput!): TenantLookAndFeel
+    setTenantLookAndFeel(tenantLookAndFeelInput: TenantLookAndFeelInput!): TenantLookAndFeel    
     removeTenantLookAndFeel(tenantId: String!): String
     
     ## Clients
@@ -216,15 +218,13 @@ type LoginFailurePolicy {
 # 2.    enabled -            true | false
 # 3.    allowedScopeValues - ALL of the scopes that are available for the tenant. A subset of these are
 #                            available to each of the clients
-# 4.    claimsSupported -    Of all of the OIDC claims, which does this tenant support
-# 5.    allowUnlimitedRate - true | false. True will override any rate limit set in the rateLimits property
+# 4.    allowUnlimitedRate - true | false. True will override any rate limit set in the rateLimits property
 
 type Tenant {
     tenantId: String!
     tenantName: String!
     tenantDescription: String
-    enabled: Boolean!
-    claimsSupported: [String!]!
+    enabled: Boolean!    
     allowUnlimitedRate: Boolean!
     allowUserSelfRegistration: Boolean!
     allowSocialLogin: Boolean!
@@ -242,6 +242,10 @@ type Tenant {
     defaultRateLimitPeriodMinutes: Int
 }
 
+type TenantSupportedClaimRel {
+    tenantId: String!
+    claim: String!
+}
 
 type TenantAnonymousUserConfiguration {
     tenantId: String!
@@ -518,7 +522,6 @@ type RateLimitServiceGroup {
     servicegroupid: String!
     servicegroupname: String!
     servicegroupdescription: String
-    scopeids: [String!]!
 }
 
 
@@ -530,6 +533,15 @@ type RateLimit {
 
 type TenantRateLimitRel {
     tenantId: String!
+    servicegroupid: String!
+    allowUnlimitedRate: Boolean
+    rateLimit: Int
+    rateLimitPeriodMinutes: Int
+}
+
+type TenantRateLimitRelView {
+    tenantId: String!
+    tenantName: String!
     servicegroupid: String!
     allowUnlimitedRate: Boolean
     rateLimit: Int
@@ -784,13 +796,15 @@ type ObjectSearchResultItem {
     subtypekey: String
     subtype: String
     email: String
-    enabled: Boolean
+    enabled: Boolean    
 }
 
 type RelSearchResultItem {
     owningtenantid: String!
+    owningtenantname: String
     parentid: String!
     parenttype: SearchResultType!
+    parentname: String
     childid: String!
     childtype: SearchResultType!
     childname: String!
@@ -829,6 +843,12 @@ type LookaheadResult {
     resultList: [LookaheadItem]
 }
 
+enum SearchRelType {
+    AUTHORIZATION_GROUP_USER_REL
+    AUTHENTICATION_GROUP_USER_REL
+    CLIENT_AUTHENTICATION_GROUP_REL
+}
+
 ############################################################################
 ################ INPUT TYPES AND RESPONSES FOR MUTATATIONS #################
 ############################################################################
@@ -864,7 +884,8 @@ input RelSearchInput {
     parenttype: SearchResultType
     parentid: String  
     childtype: SearchResultType
-    childid: String 
+    childid: String
+    childids: [String]
     page: Int!
     perPage: Int!
     sortField: String
@@ -947,7 +968,6 @@ input TenantCreateInput {
     tenantName: String!
     tenantDescription: String
     enabled: Boolean!
-    claimsSupported: [String!]!
     allowUnlimitedRate: Boolean!
     allowUserSelfRegistration: Boolean!
     allowAnonymousUsers: Boolean!
@@ -967,7 +987,6 @@ input TenantUpdateInput {
     tenantName: String!
     tenantDescription: String
     enabled: Boolean!
-    claimsSupported: [String!]!
     allowUnlimitedRate: Boolean!
     allowUserSelfRegistration: Boolean!
     allowAnonymousUsers: Boolean!
@@ -1062,14 +1081,14 @@ input SigningKeyUpdateInput {
 
 
 input RateLimitServiceGroupCreateInput {
-    rateLimitDomain: String!
-    rateLimitDescription: String
+    servicegroupname: String!
+    servicegroupdescription: String
 }
 
 input RateLimitServiceGroupUpdateInput {
-    rateLimitId: String!
-    rateLimitDomain: String!
-    rateLimitDescription: String
+    servicegroupid: String!
+    servicegroupname: String!
+    servicegroupdescription: String
 }
 
 input ScopeCreateInput {

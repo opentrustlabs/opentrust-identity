@@ -1,22 +1,15 @@
 "use client";
 import React, { useContext } from "react";
-import { AuthenticationGroup, ObjectSearchResultItem } from "@/graphql/generated/graphql-types";
-import { AUTHENTICATION_GROUPS_QUERY } from "@/graphql/queries/oidc-queries";
-import { useQuery } from "@apollo/client";
-import { Divider, Grid2, InputAdornment, Stack, TextField, Typography } from "@mui/material";
-import AddBoxIcon from '@mui/icons-material/AddBox';
+import { ObjectSearchResultItem } from "@/graphql/generated/graphql-types";
+import { Divider, Grid2, Typography } from "@mui/material";
 import UnfoldMoreOutlinedIcon from '@mui/icons-material/UnfoldMoreOutlined';
 import UnfoldLessOutlinedIcon from '@mui/icons-material/UnfoldLessOutlined';
 import Link from "next/link";
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import { ResponsiveBreakpoints, ResponsiveContext } from "../contexts/responsive-context";
-import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
-import CheckOutlinedIcon from '@mui/icons-material/CheckOutlined';
+import OpenInNewOutlinedIcon from '@mui/icons-material/OpenInNewOutlined';
 import DeleteForeverOutlinedIcon from '@mui/icons-material/DeleteForeverOutlined';
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
-import DataLoading from "../layout/data-loading";
-import ErrorComponent from "../error/error-component";
-import BreadcrumbComponent from "../breadcrumbs/breadcrumbs";
 import { TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import { ResultListProps } from "../layout/search-result-list-layout";
 
@@ -25,14 +18,16 @@ const AuthenticationGroupList: React.FC<ResultListProps> = ({
     searchResults
 }) => {
 
-    // STATE VARIABLES
-    const [mapViewExpanded, setMapViewExpanded] = React.useState(new Map());
-
     // HOOKS
     const c: ResponsiveBreakpoints = useContext(ResponsiveContext);
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
 
 
+    // STATE VARIABLES
+    const [mapViewExpanded, setMapViewExpanded] = React.useState(new Map());
+
+    
+    // HANDLER FUNCTIONS
     const setExpanded = (section: string): void => {
         mapViewExpanded.set(section, true);
         const newMap = new Map(mapViewExpanded)
@@ -50,6 +45,7 @@ const AuthenticationGroupList: React.FC<ResultListProps> = ({
 
     return (
         <>
+            
 
             {c.isMedium &&
                 <>
@@ -102,7 +98,13 @@ const AuthenticationGroupList: React.FC<ResultListProps> = ({
                                             {isRootTenant &&
                                                 <>
                                                     <Grid2 sx={{ textDecoration: "underline" }} size={12}>Tenant</Grid2>
-                                                    <Grid2 size={12}><Link href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/tenants/${item.objectid}`}>{item.owningtenantid}</Link></Grid2>
+                                                    <Grid2 size={12}>
+                                                        <Link href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/tenants/${item.owningtenantid}`} target="_blank">
+                                                            <OpenInNewOutlinedIcon
+                                                                sx={{cursor: "pointer"}}
+                                                            />
+                                                        </Link>
+                                                    </Grid2>
                                                 </>
                                             }
                                             <Grid2 sx={{ textDecoration: "underline" }} size={12}>Object ID</Grid2>
@@ -121,10 +123,10 @@ const AuthenticationGroupList: React.FC<ResultListProps> = ({
                         <Grid2 container size={12} spacing={1} marginBottom={"16px"} >
                             <Grid2 size={0.3}></Grid2>
                             <Grid2 size={2.7}>Group Name</Grid2>
-                            <Grid2 size={isRootTenant ? 2.5 : 5.5}>Description</Grid2>
+                            <Grid2 size={isRootTenant ? 4.5 : 5.5}>Description</Grid2>
                             {isRootTenant &&
                                 <>
-                                    <Grid2 size={3}>Tenant</Grid2>
+                                    <Grid2 size={1}>Tenant</Grid2>
                                 </>
                             }
                             <Grid2 size={3}>Object ID</Grid2>
@@ -147,10 +149,16 @@ const AuthenticationGroupList: React.FC<ResultListProps> = ({
                                 <Grid2 margin={"8px 0px 8px 0px"} container size={12} spacing={1}>
                                     <Grid2 size={0.3}><DeleteForeverOutlinedIcon /></Grid2>
                                     <Grid2 size={2.7}><Link style={{ color: "", fontWeight: "bold", textDecoration: "underline" }} href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/authentication-groups/${item.objectid}`}>{item.name}</Link></Grid2>
-                                    <Grid2 size={isRootTenant ? 2.5 : 5.5}>{item.description}</Grid2>
+                                    <Grid2 size={isRootTenant ? 4.5 : 5.5}>{item.description}</Grid2>
                                     {isRootTenant &&
                                         <>
-                                            <Grid2 size={3}><Link href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/tenants/${item.owningtenantid}`}>{item.owningtenantid}</Link></Grid2>
+                                            <Grid2 size={1}>
+                                                <Link href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/tenants/${item.owningtenantid}`} target="_blank">
+                                                    <OpenInNewOutlinedIcon
+                                                        sx={{cursor: "pointer"}}
+                                                    />
+                                                </Link>
+                                            </Grid2>
                                         </>
                                     }
                                     <Grid2 size={3}>{item.objectid}</Grid2>

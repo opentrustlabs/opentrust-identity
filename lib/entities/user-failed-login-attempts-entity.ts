@@ -1,24 +1,28 @@
-import type { UserFailedLoginAttempts } from "@/graphql/generated/graphql-types";
-import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
+import { Model, DataTypes, Sequelize } from 'sequelize';
 
-@Entity({
-    tableName: "user_failed_login_attempts"
-})
-class UserFailedLoginAttemptsEntity implements UserFailedLoginAttempts {
-
-    constructor(userFailedLoginAttempts?: UserFailedLoginAttempts){
-        if(userFailedLoginAttempts){
-            Object.assign(this, userFailedLoginAttempts);
-        }
+class UserFailedLoginAttemptsEntity extends Model {
+    
+    static initModel(sequelize: Sequelize): typeof UserFailedLoginAttemptsEntity {
+        return UserFailedLoginAttemptsEntity.init({
+            userId: {
+                type: DataTypes.STRING,
+                primaryKey: true,
+                field: "userid"
+            },
+            failureAtMS: {
+                type: DataTypes.NUMBER,
+                primaryKey: true,
+                field: "failureatms"
+            }
+        }, 
+		{
+            sequelize,
+            tableName: "user_failed_login_attempts",
+            modelName: "userFailedLoginAttempts",
+            timestamps: false
+        });
     }
-    __typename?: "UserFailedLoginAttempts";
-
-    @PrimaryKey({fieldName: "userid"})
-    userId: string;
-
-    @Property({fieldName: "failureatms"})
-    failureAtMS: number;
-
 }
+
 
 export default UserFailedLoginAttemptsEntity;

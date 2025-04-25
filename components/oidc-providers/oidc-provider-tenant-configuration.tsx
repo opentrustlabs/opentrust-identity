@@ -146,18 +146,12 @@ const FederatedOIDCProviderTenantConfiguration: React.FC<FederatedOIDCProviderTe
                                 }
                             });
                         }}
-                        filterTenants={
-                            (tenants: Array<Tenant>) => {
-                                if(data.getTenants.length === 0){
-                                    return tenants;
-                                }
-                                const existingIds: Array<string> = data.getTenants.map((t: Tenant) => t.tenantId);
-                                return tenants.filter(
-                                    (t: Tenant) => {
-                                        return !existingIds.includes(t.tenantId);
-                                    }
-                                )                                
-                            }
+                        existingTenantIds={
+                            data.getTenants.length === 0 ?
+                                [] :
+                                data.getTenants.map(
+                                    (t: Tenant) => t.tenantId
+                                )
                         }
                         submitButtonText="Submit"
                     />

@@ -1,28 +1,34 @@
-import type { Maybe, RateLimitServiceGroup } from "@/graphql/generated/graphql-types";
-import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
+import { Model, DataTypes, Sequelize } from 'sequelize';
 
-@Entity({
-    tableName: "rate_limit_service_group"
-})
-class RateLimitServiceGroupEntity implements RateLimitServiceGroup {
-
-    constructor(rateLimitServiceGroup?: RateLimitServiceGroup){
-        if(rateLimitServiceGroup){
-            Object.assign(this, rateLimitServiceGroup);
-        }
-    }
-    __typename?: "RateLimitServiceGroup" | undefined;
-
-    @PrimaryKey({fieldName: "servicegroupid"})
-    servicegroupid: string;
-
-    @Property({fieldName: "servicegroupname"})
-    servicegroupname: string;
-
-    @Property({fieldName: "servicegroupdescription"})
-    servicegroupdescription?: Maybe<string> | undefined;
-       
+class RateLimitServiceGroupEntity extends Model {
     
+    static initModel(sequelize: Sequelize): typeof RateLimitServiceGroupEntity {
+        return RateLimitServiceGroupEntity.init({
+            servicegroupid: {
+                type: DataTypes.STRING,
+                primaryKey: true,
+                field: "servicegroupid"
+            },
+            servicegroupname: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: false,
+                field: "servicegroupname"
+            },
+            servicegroupdescription: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: true,
+                field: "servicegroupdescription"
+            }
+        }, 
+		{
+            sequelize,
+            tableName: "rate_limit_service_group",
+            modelName: "rateLimitServiceGroup",
+            timestamps: false
+        });
+    }
 }
 
 export default RateLimitServiceGroupEntity;

@@ -1,9 +1,8 @@
 import type { SchedulerLock } from "@/graphql/generated/graphql-types";
-import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
 
-@Entity({
-    tableName: "scheduler_lock"
-})
+// @Entity({
+//     tableName: "scheduler_lock"
+// })
 class SchedulerLockEntity implements SchedulerLock {
 
     constructor(schedulerLock?: SchedulerLock){
@@ -14,16 +13,12 @@ class SchedulerLockEntity implements SchedulerLock {
 
     __typename?: "SchedulerLock";
     
-    @PrimaryKey({fieldName: "localname"})
     lockName: string;
 
-    @PrimaryKey({fieldName: "lockinstanceid"})
     lockInstanceId: string;
     
-    @Property({fieldName: "lockstarttimems"})
     lockStartTimeMS: number;
 
-    @Property({fieldName: "lockexpiresatms"})
     lockExpiresAtMS: number;
     
     

@@ -7,14 +7,14 @@ import GroupDao from "../dao/authorization-group-dao";
 import { NAME_ORDER_EASTERN, NAME_ORDER_WESTERN, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH } from "@/utils/consts";
 import { getOpenSearchClient } from "@/lib/data-sources/search";
 import { Client } from "@opensearch-project/opensearch";
-import { DaoImpl } from "../data-sources/dao-impl";
+import { DaoFactory } from "../data-sources/dao-factory";
 import IdentityDao from "../dao/identity-dao";
 
 
-const tenantDao: TenantDao = DaoImpl.getInstance().getTenantDao();
-const groupDao: GroupDao = DaoImpl.getInstance().getAuthorizationGroupDao();
+const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
+const groupDao: GroupDao = DaoFactory.getInstance().getAuthorizationGroupDao();
 const searchClient: Client = getOpenSearchClient();
-const identityDao: IdentityDao = DaoImpl.getInstance().getIdentityDao();
+const identityDao: IdentityDao = DaoFactory.getInstance().getIdentityDao();
 
 class GroupService {
 
@@ -113,7 +113,7 @@ class GroupService {
             childtype: SearchResultType.User,
             owningtenantid: authzGroup.tenantId,
             parentid: authzGroup.groupId,
-            parenttype: SearchResultType.AuthenticationGroup,
+            parenttype: SearchResultType.AuthorizationGroup,
             childdescription: user.email
         }
         await searchClient.index({
@@ -135,6 +135,10 @@ class GroupService {
             index: SEARCH_INDEX_REL_SEARCH,
             refresh: "wait_for"
         });  
+    }
+
+    public async getUserAuthorizationGroups(userId: string): Promise<Array<AuthorizationGroup>> {
+        return groupDao.getUserAuthorizationGroups(userId);
     }
 }
 

@@ -7,11 +7,11 @@ import { DEFAULT_TENANT_META_DATA, SEARCH_INDEX_OBJECT_SEARCH, TENANT_TYPE_ROOT_
 import { Client } from "@opensearch-project/opensearch";
 import { getOpenSearchClient } from "@/lib/data-sources/search";
 import FederatedOIDCProviderDao from "../dao/federated-oidc-provider-dao";
-import { DaoImpl } from "../data-sources/dao-impl";
+import { DaoFactory } from "../data-sources/dao-factory";
 
 const searchClient: Client = getOpenSearchClient();
-const tenantDao: TenantDao = DaoImpl.getInstance().getTenantDao();
-const federatedOIDCProviderDao: FederatedOIDCProviderDao = DaoImpl.getInstance().getFederatedOIDCProvicerDao();
+const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
+const federatedOIDCProviderDao: FederatedOIDCProviderDao = DaoFactory.getInstance().getFederatedOIDCProvicerDao();
 
 
 class TenantService {
@@ -111,6 +111,7 @@ class TenantService {
         //         return {valid: false, errorMessage: "ERROR_INVALID_OIDC_PROVIDER"};
         //     }
         // }
+        
         return {valid: true, errorMessage: ""};
     }
 
@@ -230,13 +231,19 @@ class TenantService {
         return Promise.resolve(tenantLookAndFeel);
     }
 
-    public async createTenantLookAndFeel(tenantLookAndFeel: TenantLookAndFeel): Promise<TenantLookAndFeel>{
-        return tenantDao.createTenantLookAndFeel(tenantLookAndFeel);
+    public async setTenantLookAndFeel(tenantLookAndFeel: TenantLookAndFeel): Promise<TenantLookAndFeel>{
+        const existing: TenantLookAndFeel | null = await this.getTenantLookAndFeel(tenantLookAndFeel.tenantid);
+        if(!existing){
+            return tenantDao.createTenantLookAndFeel(tenantLookAndFeel);
+        }
+        else {
+            return tenantDao.updateTenantLookAndFeel(tenantLookAndFeel);
+        }
     }
 
-    public async updateTenantLookAndFeel(tenantLookAndFeel: TenantLookAndFeel): Promise<TenantLookAndFeel>{
-        return tenantDao.updateTenantLookAndFeel(tenantLookAndFeel);
-    }
+    // public async updateTenantLookAndFeel(tenantLookAndFeel: TenantLookAndFeel): Promise<TenantLookAndFeel>{
+    //     return tenantDao.updateTenantLookAndFeel(tenantLookAndFeel);
+    // }
 
     public async deleteTenantLookAndFeel(tenantId: string): Promise<void>{
         return tenantDao.deleteTenantLookAndFeel(tenantId);

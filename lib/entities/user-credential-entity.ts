@@ -1,48 +1,46 @@
-import type { UserCredential } from "@/graphql/generated/graphql-types";
-import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
+import { Model, DataTypes, Sequelize } from 'sequelize';
 
-@Entity({
-    tableName: "user_credential"
-})
-class UserCredentialEntity {
-
-    constructor(userCredential?: UserCredential){
-        if(userCredential){
-            this.userId = userCredential.userId;
-            this.dateCreated = new Date(parseInt(userCredential.dateCreated));
-            this.hashedPassword = userCredential.hashedPassword;
-            this.salt = userCredential.salt;
-            this.hashingAlgorithm = userCredential.hashingAlgorithm;
-        }
-    }
-    __typename?: "UserCredential" | undefined;
-
-    @PrimaryKey({fieldName: "userid"})
-    userId: string;
-
-    @Property({fieldName: "datecreated"})
-    dateCreated: Date;
+class UserCredentialEntity extends Model {
     
-    @Property({fieldName: "hashedpassword"})
-    hashedPassword: string;
-    
-    @Property({fieldName: "hashingalgorithm"})
-    hashingAlgorithm: string;
-   
-    @Property({fieldName: "salt"})
-    salt: string;
-
-    public toModel(): UserCredential{
-        return {
-            __typename: "UserCredential",
-            dateCreated: this.dateCreated.getTime().toString(),
-            hashedPassword: this.hashedPassword,
-            hashingAlgorithm: this.hashingAlgorithm,
-            userId: this.userId,
-            salt: this.salt
-        }
+    static initModel(sequelize: Sequelize): typeof UserCredentialEntity {
+        return UserCredentialEntity.init({
+            userId: {
+                type: DataTypes.STRING,
+                primaryKey: true,
+                field: "userid"
+            },
+            dateCreated: {
+                type: DataTypes.DATE,
+                primaryKey: true,
+                field: "datecreated"
+            },
+            hashedPassword: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: false,
+                field: "hashedpassword"
+            },
+            hashingAlgorithm: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: false,
+				field: "hashingalgorithm"
+            },
+            salt: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: false,
+                field: "salt"
+            }
+        }, 
+		{
+            sequelize,
+            tableName: "user_credential",
+            modelName: "userCredential",
+            timestamps: false
+        });
     }
-
 }
+
 
 export default UserCredentialEntity;

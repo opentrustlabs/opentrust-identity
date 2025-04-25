@@ -1,23 +1,41 @@
-import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
+import { Model, DataTypes, Sequelize } from 'sequelize';
 
-
-@Entity({
-    tableName: "user_fido2_challenge"
-})
-class UserFido2ChallengeEntity {
-
-    @PrimaryKey({fieldName: "userid"})
-    userId: string;
-
-    @Property({fieldName: "challenge"})
-    challenge: string;
-
-    @Property({fieldName: "issuedatms"})
-    issuedAtMS: number;
-
-    @Property({fieldName: "expiresatms"})
-    expiresAtMS: number
-
+class UserFido2ChallengeEntity extends Model {
+    
+    static initModel(sequelize: Sequelize): typeof UserFido2ChallengeEntity {
+        return UserFido2ChallengeEntity.init({
+            userId: {
+                type: DataTypes.STRING,
+                primaryKey: true,
+                field: "userid"
+            },
+            challenge: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: false,
+                field: "challenge"
+            },
+            issuedAtMS: {
+                type: DataTypes.NUMBER,
+                primaryKey: false,
+                allowNull: false,
+                field: "issuedatms"
+            },
+            expiresAtMS: {
+                type: DataTypes.NUMBER,
+                primaryKey: false,
+                allowNull: false,
+				field: "expiresatms"
+            }
+        }, 
+		{
+            sequelize,
+            tableName: "user_fido2_challenge",
+            modelName: "userFido2Challenge",
+            timestamps: false
+        });
+    }
 }
+
 
 export default UserFido2ChallengeEntity;

@@ -8,6 +8,7 @@ import Link from "next/link";
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import { ResponsiveBreakpoints, ResponsiveContext } from "../contexts/responsive-context";
 import DeleteForeverOutlinedIcon from '@mui/icons-material/DeleteForeverOutlined';
+import OpenInNewOutlinedIcon from '@mui/icons-material/OpenInNewOutlined';
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
 import { TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import { ResultListProps } from "../layout/search-result-list-layout";
@@ -91,7 +92,13 @@ const AuthorizationGroupList: React.FC<ResultListProps> = ({
                                             {isRootTenant &&
                                                 <>
                                                     <Grid2 sx={{ textDecoration: "underline" }} size={12}>Tenant</Grid2>
-                                                    <Grid2 size={12}><Link href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/tenants/${item.objectid}`}>{item.owningtenantid}</Link></Grid2>
+                                                    <Grid2 size={12}>
+                                                        <Link href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/tenants/${item.owningtenantid}`} target="_blank">
+                                                            <OpenInNewOutlinedIcon
+                                                                sx={{cursor: "pointer"}}
+                                                            />
+                                                        </Link>
+                                                    </Grid2>
                                                 </>
                                             }
                                             <Grid2 sx={{ textDecoration: "underline" }} size={12}>Object ID</Grid2>
@@ -110,10 +117,10 @@ const AuthorizationGroupList: React.FC<ResultListProps> = ({
                         <Grid2 container size={12} spacing={1} marginBottom={"16px"} >
                             <Grid2 size={0.3}></Grid2>
                             <Grid2 size={2.7}>Group Name</Grid2>
-                            <Grid2 size={isRootTenant ? 2.5 : 5.5}>Description</Grid2>
+                            <Grid2 size={isRootTenant ? 4.5 : 5.5}>Description</Grid2>
                             {isRootTenant &&
                                 <>
-                                    <Grid2 size={3}>Tenant</Grid2>
+                                    <Grid2 size={1}>Tenant</Grid2>
                                 </>
                             }  
                             <Grid2 size={3}>Object ID</Grid2>
@@ -136,10 +143,16 @@ const AuthorizationGroupList: React.FC<ResultListProps> = ({
                                 <Grid2 margin={"8px 0px 8px 0px"} container size={12} spacing={1}>
                                     <Grid2 size={0.3}><DeleteForeverOutlinedIcon /></Grid2>
                                     <Grid2 size={2.7}><Link style={{ color: "", fontWeight: "bold", textDecoration: "underline" }} href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/authorization-groups/${item.objectid}`}>{item.name}</Link></Grid2>
-                                    <Grid2 size={isRootTenant ? 2.5 : 5.5}>{item.description}</Grid2>
+                                    <Grid2 size={isRootTenant ? 4.5 : 5.5}>{item.description}</Grid2>
                                     {isRootTenant &&
                                         <>
-                                            <Grid2 size={3}><Link href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/tenants/${item.owningtenantid}`}>{item.owningtenantid}</Link></Grid2>
+                                            <Grid2 size={1}>
+                                                <Link href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/tenants/${item.owningtenantid}`} target="_blank">
+                                                    <OpenInNewOutlinedIcon
+                                                        sx={{cursor: "pointer"}}
+                                                    />
+                                                </Link>
+                                            </Grid2>
                                         </>
                                     } 
                                     <Grid2 size={3}>{item.objectid}</Grid2>

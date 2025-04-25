@@ -10,6 +10,7 @@ abstract class SigningKeysDao {
     abstract createSigningKey(key: SigningKey): Promise<SigningKey>;
 
     // abstract revokeSigningKey(keyId: string): Promise<void>;
+    
     abstract updateSigningKey(key: SigningKey): Promise<SigningKey>;
 
     abstract deleteSigningKey(keyId: string): Promise<void>;

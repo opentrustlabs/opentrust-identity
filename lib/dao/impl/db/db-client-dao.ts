@@ -1,29 +1,32 @@
-import { Client, ClientAuthHistory, Contact } from "@/graphql/generated/graphql-types";
+import { Client, ClientAuthHistory } from "@/graphql/generated/graphql-types";
 import ClientDao from "@/lib/dao/client-dao";
-import connection  from "@/lib/data-sources/db";
 import ClientAuthHistoryEntity from "@/lib/entities/client-auth-history-entity";
 import ClientEntity from "@/lib/entities/client-entity";
 import ClientRedirectUriRelEntity from "@/lib/entities/client-redirect-uri-rel-entity";
-import ContactEntity from "@/lib/entities/contact-entity";
-import { CONTACT_TYPE_FOR_CLIENT } from "@/utils/consts";
-
-
+import DBDriver from "@/lib/data-sources/sequelize-db";
+import { Sequelize } from "sequelize";
 
 class DBClientDao extends ClientDao {
 
-
     public async getClients(tenantId?: string): Promise<Array<Client>> {
-        const em = connection.em.fork();
+        const sequelize: Sequelize = await DBDriver.getConnection();
         const whereClause = tenantId ? {tenantId: tenantId} : {}
-        const clientEntities: Array<ClientEntity> = await em.find(ClientEntity, whereClause);
-        return Promise.resolve(clientEntities);
+        const clientEntities: Array<ClientEntity> = await sequelize.models.client.findAll({
+            where: whereClause
+        });
+        return clientEntities.map(e => e.dataValues);
     }
 
     public async getClientById(clientId: string): Promise<Client | null> {
-        const em = connection.em.fork();
-        const clientEntity: Client | null = await em.findOne(ClientEntity, {clientId: clientId});
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        const clientEntity: ClientEntity | null = await sequelize.models.client.findOne({
+            where: {
+                clientId: clientId
+            }
+        });
+
         if(clientEntity){            
-            return clientEntity;
+            return clientEntity.dataValues as any as Client;
         }
         else{
             return null;
@@ -31,18 +34,18 @@ class DBClientDao extends ClientDao {
     }
 
     public async createClient(client: Client): Promise<Client> {
-        const em = connection.em.fork();
-        const e: ClientEntity | null= new ClientEntity(client);        
-        em.persist(e);
-        await em.flush();
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.client.create(client);
         return Promise.resolve(client);
     }
 
     public async updateClient(client: Client): Promise<Client> {
-        let em = connection.em.fork();
-        const e: ClientEntity = new ClientEntity(client);
-        em.upsert(e);
-        await em.flush();
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.client.update(client, {
+            where: {
+                clientId: client.clientId
+            }
+        });
         return Promise.resolve(client);    
     }
 
@@ -51,60 +54,47 @@ class DBClientDao extends ClientDao {
         throw new Error("Method not implemented.");
     }
 
-    public async assignContactsToClient(clientId: string, contactList: Array<Contact>): Promise<Array<Contact>> {
-        const em = connection.em.fork();
-        await em.nativeDelete(
-            ContactEntity, {
-                objectid: clientId
-            }
-        );
-        await em.flush();
-        const entities: Array<ContactEntity> = contactList.map(
-            (m: Contact) => {
-                m.objectid = clientId;
-                m.objecttype = CONTACT_TYPE_FOR_CLIENT;
-                return new ContactEntity(m);
-            }
-        );
-        for(let i = 0; i < entities.length; i++){
-            await em.persistAndFlush(entities[i]);
-        }
-        return Promise.resolve(contactList);
-    }
 
     public async getClientAuthHistoryByJti(jti: string): Promise<ClientAuthHistory | null> {
-        const em = connection.em.fork();
-        const entity: ClientAuthHistoryEntity | null = await em.findOne(ClientAuthHistoryEntity, {
-            jti: jti
-        });
-        return Promise.resolve(entity);
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        const entity: ClientAuthHistoryEntity | null = await sequelize.models.clientAuthHistory.findOne({
+            where: {
+                jti: jti
+            }
+        }); 
+        return entity ? Promise.resolve(entity as any as ClientAuthHistory) : Promise.resolve(null);
     }
 
     public async saveClientAuthHistory(clientAuthHistory: ClientAuthHistory): Promise<void> {
-        const em = connection.em.fork();
-        const entity: ClientAuthHistoryEntity = new  ClientAuthHistoryEntity(clientAuthHistory);
-        await em.persistAndFlush(entity);
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.clientAuthHistory.create(clientAuthHistory);
         return Promise.resolve();
     }
 
     public async deleteClientAuthHistory(jti: string): Promise<void> {
-        const em = connection.em.fork();
-        await em.nativeDelete(ClientAuthHistoryEntity, {
-            jti: jti
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.clientAuthHistory.destroy({
+            where: {
+                jti: jti
+            }
         });
         return Promise.resolve();
     }
 
     public async getRedirectURIs(clientId: string): Promise<Array<string>>{
-        const em = connection.em.fork();
-        const resultList: Array<ClientRedirectUriRelEntity> = await em.find(ClientRedirectUriRelEntity, {
-            clientId: clientId
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        const resultList: Array<ClientRedirectUriRelEntity> = await sequelize.models.clientRedirectUriRel.findAll({
+            where: {
+                clientId: clientId
+            }
         });
+        
         const retList: Array<string> = [];
         if(resultList.length > 0){
             resultList.forEach(
                 (e: ClientRedirectUriRelEntity) => {
-                    retList.push(e.redirectUri);
+
+                    retList.push(e.getDataValue("redirectUri"))
                 }
             )
         }
@@ -112,18 +102,23 @@ class DBClientDao extends ClientDao {
     }
 
     public async addRedirectURI(clientId: string, uri: string): Promise<string>{
-        const em = connection.em.fork();
-        const uriEntity: ClientRedirectUriRelEntity = new ClientRedirectUriRelEntity(clientId, uri);
-        await em.upsert(uriEntity);
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.clientRedirectUriRel.build({
+            clientId: clientId, redirectUri: uri
+        })
+        .save();
+        
         return Promise.resolve(uri);
     }
     
-    public async removeRedirectURI(clientId: string, uri: string): Promise<void>{
-        const em = connection.em.fork();
-        await em.nativeDelete(ClientRedirectUriRelEntity, {
-            clientId: clientId,
-            redirectUri: uri
-        })
+    public async removeRedirectURI(clientId: string, uri: string): Promise<void>{        
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.clientRedirectUriRel.destroy({
+            where: {
+                clientId: clientId,
+                redirectUri: uri
+            }
+        });
         return Promise.resolve();
     }
 

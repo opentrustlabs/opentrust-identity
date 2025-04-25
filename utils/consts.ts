@@ -330,7 +330,9 @@ export const PASSWORD_HASHING_ALGORITHMS_DISPLAY: Map<string, string> = new Map(
     [PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS, "PBKDF2 128K Iterations"],
     [PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS, "PBKDF2 256K Iterations"]
 ]);
-
+export const PASSWORD_HASH_ITERATION_64K=65536;
+export const PASSWORD_HASH_ITERATION_128K=131072;
+export const PASSWORD_HASH_ITERATION_256K=262144;
 
 
 
@@ -692,7 +694,6 @@ export const DEFAULT_TENANT_META_DATA: TenantMetaData = {
         allowSocialLogin: false,
         allowUnlimitedRate: false,
         allowUserSelfRegistration: false,
-        claimsSupported: [],
         enabled: true,
         federatedAuthenticationConstraint: "",
         federatedauthenticationconstraintid: undefined,
@@ -740,8 +741,8 @@ export const DEFAULT_TENANT_PASSWORD_CONFIGURATION: TenantPasswordConfig = {
 //                  SEARCH CONSTANTS
 // 
 // ************************************************************************** //
-export const MAX_SEARCH_PAGE_SIZE=500;
-export const MIN_SEARCH_PAGE_SIZE=10;
+export const MAX_SEARCH_PAGE_SIZE=1000;
+export const MIN_SEARCH_PAGE_SIZE=5;
 export const MAX_SEARCH_PAGE=1000
 export const ALLOWED_OBJECT_SEARCH_SORT_FIELDS = ["name", "description", "email"];
 export const ALLOWED_SEARCH_DIRECTIONS=["asc", "desc"];
@@ -799,4 +800,13 @@ export const IMAGE_MINE_TYPES_DISPLAY: Map<string, string> = new Map([
     ["webp", "webp"],
     ["apng", "apng"],
     ["avif", "avif"]    
-])
+]);
+
+// ************************************************************************** //
+// 
+//                  RATE LIMIT CONSTANTS
+// 
+// ************************************************************************** //
+export const MAX_RATE_LIMIT_PERIOD_MINUTES=1440;
+export const MIN_RATE_LIMIT_PERIOD_MINUTES=1;
+export const DEFAULT_RATE_LIMIT_PERIOD_MINUTES=15;

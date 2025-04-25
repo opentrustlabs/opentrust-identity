@@ -1,10 +1,8 @@
 import type { LoginFailurePolicy } from "@/graphql/generated/graphql-types";
-import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
 
-
-@Entity({
-    tableName: "login_failure_policy"
-})
+// @Entity({
+//     tableName: "login_failure_policy"
+// })
 class LoginFailurePolicyEntity {
 
     constructor(loginFailurePolicy?: LoginFailurePolicy){
@@ -20,25 +18,18 @@ class LoginFailurePolicyEntity {
         }
     }
 
-    @PrimaryKey({fieldName: "tenantid"})
     tenantId: string;
 
-    @Property()
     loginfailurepolicytype: string;
 
-    @Property()
     failurethreshold: number;
 
-    @Property()
     pausedurationminutes?: number;
     
-    @Property()
     numberofpausecyclesbeforelocking?: number;
 
-    @Property()
     initbackoffdurationminutes?: number;
 
-    @Property()
     numberofbackoffcyclesbeforelocking?: number;
 
     toModel(): LoginFailurePolicy{

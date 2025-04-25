@@ -24,7 +24,6 @@ create TABLE tenant (
     tenantname VARCHAR(128) NOT NULL,
     tenantdescription VARCHAR(256),
     enabled BOOLEAN NOT NULL,
-    claimssupported VARCHAR(1024),
     allowunlimitedrate BOOLEAN NOT NULL,
     allowuserselfregistration BOOLEAN NOT NULL,
     allowanonymoususers BOOLEAN NOT NULL,
@@ -205,7 +204,7 @@ create TABLE user_credential (
     hashedpassword VARCHAR(256) NOT NULL,
     hashingalgorithm VARCHAR(128) NOT NULL,
     datecreated TIMESTAMP NOT NULL,
-    PRIMARY KEY (userid),
+    PRIMARY KEY (userid, datecreated),
     FOREIGN KEY (userid) REFERENCES user(userid)    
 );
 CREATE INDEX user_credential_date_created_idx ON user_credential(datecreated);
@@ -276,6 +275,7 @@ create TABLE tenant_rate_limit_rel (
     allowunlimitedrate BOOLEAN NOT NULL,
     ratelimit INT,
     ratelimitperiodminutes INT,
+    PRIMARY KEY (servicegroupid, tenantid),
     FOREIGN KEY (servicegroupid) REFERENCES rate_limit_service_group(servicegroupid),
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid)
 );
@@ -389,7 +389,7 @@ create TABLE client_auth_history (
     jti VARCHAR(256) NOT NULL PRIMARY KEY,
     tenantid VARCHAR(64) NOT NULL,
     clientid VARCHAR(64) NOT NULL,
-    expiresatms BIGINT NOT NULL,    
+    expiresatseconds BIGINT NOT NULL,
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid),
     FOREIGN KEY (clientid) REFERENCES client(clientid)
 );

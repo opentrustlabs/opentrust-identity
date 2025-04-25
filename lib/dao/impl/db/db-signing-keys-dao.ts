@@ -1,56 +1,74 @@
-import { SigningKey, Contact } from "@/graphql/generated/graphql-types";
+import { SigningKey } from "@/graphql/generated/graphql-types";
 import SigningKeysDao from "../../signing-keys-dao";
-import connection  from "@/lib/data-sources/db";
 import SigningKeyEntity from "@/lib/entities/signing-key-entity";
-import ContactEntity from "@/lib/entities/contact-entity";
-import { CONTACT_TYPE_FOR_SIGNING_KEY, SIGNING_KEY_STATUS_REVOKED } from "@/utils/consts";
-import { QueryOrder } from "@mikro-orm/core";
+import { SIGNING_KEY_STATUS_REVOKED } from "@/utils/consts";
+import DBDriver from "@/lib/data-sources/sequelize-db";
+import { Sequelize } from "sequelize";
 
 class DBSigningKeysDao extends SigningKeysDao {
 
     
     public async getSigningKeys(tenantId?: string): Promise<Array<SigningKey>> {
-        const em = connection.em.fork();
+        const sequelize: Sequelize = await DBDriver.getConnection();
         const queryParams: any = {};
         if(tenantId){
             queryParams.tenantid = tenantId;
         }
-        const entities: Array<SigningKeyEntity> = await em.find(
-            SigningKeyEntity, 
-            queryParams,
-            {
-                orderBy: {
-                    keyName: QueryOrder.ASC
-                }
-            }
-        );
-        const models = entities.map(
-            e => e.toModel()
-        );
-        return Promise.resolve(models);
+        const entities: Array<SigningKeyEntity> = await sequelize.models.signingKey.findAll({
+            where: queryParams,
+            order: [
+                ["keyName", "ASC"]
+            ]
+        });
+        return Promise.resolve(entities.map(m => this.entityToModel(m)));
     }
 
     public async getSigningKeyById(keyId: string): Promise<SigningKey | null> {
-        const em = connection.em.fork();
-        const entity: SigningKeyEntity | null = await em.findOne(
-            SigningKeyEntity, {
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        const entity: SigningKeyEntity | null = await sequelize.models.signingKey.findOne({
+            where: {
                 keyId: keyId
             }
-        );
-        return entity ? Promise.resolve(entity.toModel()) : Promise.resolve(null);
+        });
+
+        return entity ? Promise.resolve(this.entityToModel(entity)) : Promise.resolve(null);
+    }
+
+    // TODO
+    // Remove either the password or the private key from the returned data.
+    // Those values can only be viewed by somebody with the correct permissions.
+    protected entityToModel(entity: SigningKeyEntity): SigningKey {
+        
+        const key: SigningKey = {
+            expiresAtMs: entity.getDataValue("expiresAtMs"),
+            keyId: entity.getDataValue("keyId"),
+            keyName: entity.getDataValue("keyName"),
+            keyType: entity.getDataValue("keyType"),
+            keyUse: entity.getDataValue("keyUse"),
+            privateKeyPkcs8: Buffer.from(entity.getDataValue("privateKeyPkcs8") || "").toString("utf-8"),
+            status: entity.getDataValue("status"),
+            tenantId: entity.getDataValue("tenantId"),
+            certificate: Buffer.from(entity.getDataValue("certificate") || "").toString("utf-8"),
+            password: entity.getDataValue("password"),
+            publicKey: Buffer.from(entity.getDataValue("publicKey") || "").toString("utf-8")
+        }
+        
+        return key;
     }
 
     public async createSigningKey(key: SigningKey): Promise<SigningKey> {
-        const em = connection.em.fork();
-        const entity: SigningKeyEntity = new SigningKeyEntity(key);
-        await em.persistAndFlush(entity);
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.signingKey.create(key);        
         return Promise.resolve(key);
     }
 
     public async updateSigningKey(key: SigningKey): Promise<SigningKey>{
-        const em = connection.em.fork();
-        const entity: SigningKeyEntity = new SigningKeyEntity(key);
-        await em.upsert(entity);
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.signingKey.update(key, {
+            where: {
+                keyId: key.keyId
+            }
+        }); 
         return Promise.resolve(key);
     }
 
@@ -58,40 +76,26 @@ class DBSigningKeysDao extends SigningKeysDao {
         const key: SigningKey | null = await this.getSigningKeyById(keyId);
         if(key){
             key.status = SIGNING_KEY_STATUS_REVOKED;
-            const em = connection.em.fork();
-            const entity: SigningKeyEntity = new SigningKeyEntity(key);
-            await em.upsert(entity);
-            await em.flush()
+            const sequelize: Sequelize = await DBDriver.getConnection();
+            await sequelize.models.signingKey.update(key, {
+                where: {
+                    keyId: key.keyId
+                }
+            }); 
         }
         return Promise.resolve();
     }
 
     public async deleteSigningKey(keyId: string): Promise<void> {
-        const em = connection.em.fork();
-        await em.nativeDelete(SigningKeyEntity, {keyId: keyId});
-        em.flush();
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.signingKey.destroy({
+            where: {
+                keyId: keyId
+            }
+        });
         return Promise.resolve();
     }
 
-
-    public async assignContactsToSigningKey(keyId: string, contactList: Array<Contact>): Promise<Array<Contact>> {
-        const em = connection.em.fork();
-        await em.nativeDelete(ContactEntity, {
-            objectid: keyId
-        });
-        await em.flush();
-        const entities = contactList.map(
-            (c: Contact) => {
-                c.objectid = keyId;
-                c.objecttype = CONTACT_TYPE_FOR_SIGNING_KEY;
-                return new ContactEntity(c);                
-            }
-        );
-        for(let i = 0; i < entities.length; i++){
-            await em.persistAndFlush(entities[i]);
-        }
-        return Promise.resolve(contactList);
-    }
     
 }
 

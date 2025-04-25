@@ -1,31 +1,41 @@
-import type { ClientAuthHistory } from "@/graphql/generated/graphql-types";
-import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
+import { Model, DataTypes, Sequelize } from 'sequelize';
 
-@Entity({
-    tableName: "client_auth_history"
-})
-class ClientAuthHistoryEntity implements ClientAuthHistory {
-
-    constructor(m?: ClientAuthHistory){
-        if(m){
-            Object.assign(this, m);
-        }
-    }
-    __typename?: "ClientAuthHistory" | undefined;
+class ClientAuthHistoryEntity extends Model {
     
-    @PrimaryKey({fieldName: "jti"})
-    jti: string;
-
-    @Property({fieldName: "clientid"})
-    clientId: string;
-
-    @Property({fieldName: "tenantid"})
-    tenantId: string;
-
-    @Property({fieldName: "expiresatms"})
-    expiresAtSeconds: number;
-   
-
+    static initModel(sequelize: Sequelize): typeof ClientAuthHistoryEntity {
+        return ClientAuthHistoryEntity.init({
+            jti: {
+                type: DataTypes.STRING,
+                primaryKey: true,
+                field: "jti"
+            },
+            clientId: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: false,
+                field: "clientid"
+            },
+            tenantId: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: false,
+                field: "tenantid"
+            },
+            expiresAtSeconds: {
+                type: DataTypes.NUMBER,
+                primaryKey: false,
+                allowNull: false,
+				field: "expiresatseconds"
+            }
+        }, 
+		{
+            sequelize,
+            tableName: "client_auth_history",
+            modelName: "clientAuthHistory",
+            timestamps: false
+        });
+    }
 }
+
 
 export default ClientAuthHistoryEntity;

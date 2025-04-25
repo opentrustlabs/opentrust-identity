@@ -12,27 +12,27 @@ const server = new ApolloServer(
         resolvers: resolvers,
         typeDefs: typeDefs,
         introspection: true,
-        
         plugins: [
             process.env.NODE_ENV === 'production' 
                 ?   ApolloServerPluginLandingPageProductionDefault({
                         graphRef: 'my-graph-id@my-graph-variant',
                         footer: false,
                     })
-                :   ApolloServerPluginLandingPageLocalDefault({ footer: false }),
+                :   ApolloServerPluginLandingPageLocalDefault({ footer: false })
         ]
     }
 );
 
 export default startServerAndCreateNextHandler(server, {
+
     context: async(req: NextApiRequest, res: NextApiResponse) => {
-        
+                
         return {
-            req,
-            res,
-            authToken: "auth token here"
+            authToken: "auth token here",
+            requestCache: new Map()
         }
     }
+
 });
 
 export const config = {

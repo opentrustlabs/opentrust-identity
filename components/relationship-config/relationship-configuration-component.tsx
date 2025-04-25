@@ -1,19 +1,19 @@
 "use client";
-import { RelSearchInput, RelSearchResultItem, RelSearchResults, SearchResultType } from "@/graphql/generated/graphql-types";
-import { REL_SEARCH_QUERY } from "@/graphql/queries/oidc-queries";
+import { RelSearchInput, RelSearchResultItem, RelSearchResults, SearchFilterInput, SearchFilterInputObjectType, SearchRelType, SearchResultType } from "@/graphql/generated/graphql-types";
+import { REL_SEARCH_QUERY, SEARCH_QUERY } from "@/graphql/queries/oidc-queries";
 import { useQuery } from "@apollo/client";
-import React, { useRef } from "react";
+import React, { useContext } from "react";
 import DataLoading from "../layout/data-loading";
 import ErrorComponent from "../error/error-component";
 import { Alert, Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, Divider, Grid2, InputAdornment, Link, Stack, TablePagination, TextField, Typography } from "@mui/material";
 import AddBoxIcon from '@mui/icons-material/AddBox';
 import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
-import SearchIcon from '@mui/icons-material/Search';
 import RadioButtonUncheckedOutlinedIcon from '@mui/icons-material/RadioButtonUncheckedOutlined';
 import DoneOutlinedIcon from '@mui/icons-material/DoneOutlined';
 import RadioButtonCheckedIcon from '@mui/icons-material/RadioButtonChecked';
 import { MAX_SEARCH_PAGE_SIZE } from "@/utils/consts";
+import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
 
 
 
@@ -50,10 +50,8 @@ const RelationshipConfigurationComponent: React.FC<RelationshipConfigurationComp
     // STATE VARIABLES
     const perPage = relSearchInput && relSearchInput.perPage < MAX_SEARCH_PAGE_SIZE ? relSearchInput.perPage : 20;
 
-
     const [filterTerm, setFilterTerm] = React.useState<string | null>(relSearchInput.term || "");
-    const [page, setPage] = React.useState<number>(relSearchInput.page);
-    
+    const [page, setPage] = React.useState<number>(relSearchInput.page);    
     const [idToAdd, setIdToAdd] = React.useState<string | null>(null);
     const [idToRemove, seIdToRemove] = React.useState<string | null>(null);
     const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
@@ -159,7 +157,7 @@ const RelationshipConfigurationComponent: React.FC<RelationshipConfigurationComp
                 </div>
             </Stack>
             {loading && !previousData &&
-                <DataLoading dataLoadingSize="44vh" color={null} />
+                <DataLoading dataLoadingSize="24vh" color={null} />
             }
             {error &&
                 <ErrorComponent message={error.message || "Unknown Error Occurred."} componentSize='lg' />
@@ -223,6 +221,7 @@ const RelationshipConfigurationComponent: React.FC<RelationshipConfigurationComp
                             <Grid2 size={12}>
                                 {relSearchInput.parentid && relSearchInput.childtype &&
                                     <RelSearch
+                                        parentType={relSearchInput.parenttype}
                                         parentId={relSearchInput.parentid || ""}
                                         tenantId={tenantId}
                                         childType={relSearchInput.childtype}
@@ -314,6 +313,7 @@ const RelationshipConfigurationComponent: React.FC<RelationshipConfigurationComp
 }
 
 interface RelSearchProps {
+    parentType?: SearchResultType | null,
     parentId: string,
     tenantId: string,
     childType: SearchResultType,
@@ -321,46 +321,81 @@ interface RelSearchProps {
 }
 
 const RelSearch: React.FC<RelSearchProps> = ({
+    parentType,
     parentId,
     tenantId,
     childType,
     onIdSelected
 }) => {
 
+    // CONTEXT HOOKS
+    const tenantBean: TenantMetaDataBean = useContext(TenantContext);
+
+    
     // STATE VARIABLES
+    const [page, setPage] = React.useState<number>(1);
     const [searchTerm, setSearchTerm] = React.useState<string>("");
     const [selectedObjectId, setSelectedObjectId] = React.useState<string | null>(null);
 
     // GRAPHQL FUNCTIONS
-    const { data } = useQuery(REL_SEARCH_QUERY, {
+    const filters: Array<SearchFilterInput> = [];
+
+    filters.push({
+        objectType: SearchFilterInputObjectType.TenantId,
+        objectValue: tenantBean.getTenantMetaData().tenant.tenantId
+    });
+
+
+
+    const { data, loading, previousData, error } = useQuery(REL_SEARCH_QUERY, {
         variables: {
             relSearchInput: {
                 parentid: tenantId,
                 childtype: childType,
-                page: 1,
+                page: page,
                 perPage: 10,
                 term: searchTerm
             }
         },
-        skip: searchTerm.length < 3,
         fetchPolicy: "no-cache",
         nextFetchPolicy: "no-cache"
     });
 
-    const { data: childData } = useQuery(REL_SEARCH_QUERY, {
+    const shouldSkip = (): boolean => {
+        let skip = false;
+        if(loading){
+            skip = true;
+        }
+        else if(error !== undefined){
+            skip = true;
+        }
+        else if(data === null || data === undefined){
+            skip = true;
+        }
+        return skip;
+    }
+
+    const { data: childData, loading: childDataLoading } = useQuery(REL_SEARCH_QUERY, {
         variables: {
             relSearchInput: {
                 parentid: parentId,
                 childtype: childType,
                 page: 1,
                 perPage: 10,
-                term: searchTerm
+                childids: data ? data.relSearch.resultlist.map( (item: RelSearchResultItem) => item.childid) : []
             }
-        },
-        skip: searchTerm.length < 3,
+        },        
+        //skip: loading === true || error !== null || data === null || data === undefined,
+        skip: shouldSkip(),
         fetchPolicy: "no-cache",
         nextFetchPolicy: "no-cache"
     });
+
+
+    // HANDLER FUNCTIONS
+    const handlePageChange = async (evt: any, newPage: number) => {
+        setPage(newPage + 1);
+    }
 
     const isSelected = (userId: string): boolean => {
         if (childData) {
@@ -382,10 +417,12 @@ const RelSearch: React.FC<RelSearchProps> = ({
                 <Grid2 size={12}>
                     <TextField
                         fullWidth={true}
+                        value={searchTerm}
                         onChange={(evt) => {
                             setSelectedObjectId(null);
                             onIdSelected(null);
                             setSearchTerm(evt.target.value);
+                            setPage(1);
                         }}
                         autoFocus={true}
                         size="small"
@@ -393,8 +430,12 @@ const RelSearch: React.FC<RelSearchProps> = ({
                             input: {
                                 endAdornment: (
                                     <InputAdornment position="end">
-                                        <SearchIcon
+                                        <CloseOutlinedIcon
                                             sx={{ cursor: "pointer" }}
+                                            onClick={() => {
+                                                setPage(1);
+                                                setSearchTerm("");
+                                            }}
                                         />
                                     </InputAdornment>
                                 )
@@ -402,8 +443,11 @@ const RelSearch: React.FC<RelSearchProps> = ({
                         }}
                     />
                 </Grid2>
-                <Grid2 minHeight={"4vh"} sx={{ marginTop: "16px", padding: "8px" }} size={12}>
-                    {data && data.relSearch.total > 0 &&
+                <Grid2 sx={{ marginTop: "16px", padding: "8px" }} size={12}>
+                    { (loading || childDataLoading) &&
+                        <DataLoading dataLoadingSize="24vh" color={null} />
+                    }
+                    {data && data.relSearch.total > 0 && childData &&
                         <>
                             {data.relSearch.resultlist.map(
                                 (item: RelSearchResultItem) => (
@@ -446,7 +490,31 @@ const RelSearch: React.FC<RelSearchProps> = ({
                             )}
                         </>
                     }
-                </Grid2>
+                </Grid2>                
+                <Grid2 container size={12} spacing={1} marginTop={"16px"} marginBottom={"16px"} >
+                    <Grid2 size={12}>
+                        {loading && previousData &&
+                            <TablePagination
+                                component={"div"}
+                                page={page - 1}
+                                rowsPerPage={10}
+                                count={previousData.relSearch.total}
+                                onPageChange={handlePageChange}
+                                rowsPerPageOptions={[]}
+                            />
+                        }
+                        {data &&
+                            <TablePagination
+                                component={"div"}
+                                page={page - 1}
+                                rowsPerPage={10}
+                                count={data.relSearch.total}
+                                onPageChange={handlePageChange}
+                                rowsPerPageOptions={[]}
+                            />
+                        }
+                    </Grid2>
+                </Grid2>                                        
             </Grid2>
         </Typography>
     )

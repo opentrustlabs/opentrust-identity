@@ -1,61 +1,80 @@
-import { User, AuthenticationGroup, AuthorizationGroup, AuthenticationGroupUserRel, SuccessfulLoginResponse, UserFailedLoginAttempts, SearchResultType, UserTenantRel, UserCredential } from "@/graphql/generated/graphql-types";
+import { User, AuthenticationGroup, AuthorizationGroup, SuccessfulLoginResponse, UserFailedLoginAttempts, UserTenantRel, UserCredential } from "@/graphql/generated/graphql-types";
 import IdentityDao, { UserLookupType } from "../../identity-dao";
-import connection  from "@/lib/data-sources/db";
 import UserAuthorizationGroupRelEntity from "@/lib/entities/authorization-group-user-rel-entity";
 import AuthorizationGroupEntity from "@/lib/entities/authorization-group-entity";
-import AuthenticationGroupUserRelEntity from "@/lib/entities/authentication-group-user-rel-entity";
 import AuthenticationGroupEntity from "@/lib/entities/authentication-group-entity";
 import UserEntity from "@/lib/entities/user-entity";
 import UserCredentialEntity from "@/lib/entities/user-credential-entity";
-import { QueryOrder } from "@mikro-orm/core";
-import { MFA_AUTH_TYPE_FIDO2, PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS, SEARCH_INDEX_OBJECT_SEARCH, VERIFICATION_TOKEN_TYPE_PASSWORD_RESET } from "@/utils/consts";
-import { bcryptHashPassword, bcryptValidatePassword, generateRandomToken, pbkdf2HashPassword, sha256HashPassword } from "@/utils/dao-utils";
-import UserFailedLoginAttemptsEntity from "@/lib/entities/user-failed-login-attempts-entity";
+import { MFA_AUTH_TYPE_FIDO2, PASSWORD_HASH_ITERATION_128K, PASSWORD_HASH_ITERATION_256K, PASSWORD_HASH_ITERATION_64K, PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS, SEARCH_INDEX_OBJECT_SEARCH, VERIFICATION_TOKEN_TYPE_PASSWORD_RESET } from "@/utils/consts";
+import { bcryptValidatePassword, generateRandomToken, pbkdf2HashPassword, sha256HashPassword } from "@/utils/dao-utils";
 import UserMfaRelEntity from "@/lib/entities/user-mfa-rel-entity";
-import UserFido2ChallengeEntity from "@/lib/entities/user-fido2-challenge-entity";
-import UserVerificationTokenEntity from "@/lib/entities/user-verification-token-entity";
-import { getOpenSearchClient } from "@/lib/data-sources/search";
-import { Client } from "@opensearch-project/opensearch";
 import UserTenantRelEntity from "@/lib/entities/user-tenant-rel-entity";
-import ProhibitedPasswordEntity from "@/lib/entities/prohibited-password-entity";
-
-const searchClient: Client = getOpenSearchClient();
+import DBDriver from "@/lib/data-sources/sequelize-db";
+import { Op, Sequelize } from "sequelize";
 
 class DBIdentityDao extends IdentityDao {
-
     
-    public async getUsers(tenantId: string | null): Promise<Array<User>> {
-        const em = connection.em.fork();
-        const users: Array<UserEntity> = await em.findAll(UserEntity);
-        return Promise.resolve(users);
-    }
-
+    
     public async getUserGroups(userId: string): Promise<Array<AuthorizationGroup>> {
-        const em = connection.em.fork();
-        const rels: Array<UserAuthorizationGroupRelEntity> = await em.find(UserAuthorizationGroupRelEntity, {userId: userId});
-        const groupIds = rels.map(r => r.groupId);
-        const groups: Array<AuthorizationGroupEntity> = await em.find(AuthorizationGroupEntity, {groupId: groupIds});
-        return Promise.resolve(groups);
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        const rels: Array<UserAuthorizationGroupRelEntity> = await sequelize.models.authorizationGroupUserRel.findAll({
+            where: {
+                userId: userId
+            }
+        });
+
+        
+        const groupIds = rels.map(r => r.getDataValue("groupId"));
+        const groups: Array<AuthorizationGroupEntity> = await sequelize.models.authorizationGroup.findAll({
+            where: {
+                groupId: { [Op.in]: groupIds}
+            }
+        });
+
+        return Promise.resolve(groups as any as Array<AuthorizationGroup>);
     }
 
     public async getUserAuthenticationGroups(userId: string): Promise<Array<AuthenticationGroup>> {
-        const em = connection.em.fork();
-        const rels: Array<AuthenticationGroupUserRelEntity> = await em.find(AuthenticationGroupUserRelEntity, {userId: userId});
-        const groupIds = rels.map(r => r.authenticationGroupId);
-        const authnGroups: Array<AuthenticationGroupEntity> = await em.find(AuthenticationGroupEntity, {authenticationGroupId: groupIds});
-        return Promise.resolve(authnGroups);
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        const rels: Array<UserAuthorizationGroupRelEntity> = await sequelize.models.authenticationGroupUserRel.findAll({
+            where: {
+                userId: userId
+            }
+        });
+
+        const groupIds = rels.map(r => r.getDataValue("authenticationGroupId"));
+        const authnGroups: Array<AuthenticationGroupEntity> = await sequelize.models.authenticationGroup.findAll({
+            where: {
+                authenticationGroupId: {[Op.in]: groupIds}
+            }
+        });
+        
+        return Promise.resolve(authnGroups as any as Array<AuthenticationGroup>);
     }
 
     public async loginUser(username: string, password: string): Promise<SuccessfulLoginResponse | Error> {
-        const em = connection.em.fork();
-        const user: UserEntity | null = await em.findOne(UserEntity, {email: username});
-        if(!user){
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        const userEntity: UserEntity | null = await sequelize.models.user.findOne({
+            where:{email: username}
+        });
+
+        if(!userEntity){
             return new Error("ERROR_UNABLE_TO_LOGIN_USER");
         }
-        const userCredential: UserCredentialEntity | null = await em.findOne(UserCredentialEntity, {userId: user.userId}, {orderBy: {dateCreated: QueryOrder.DESC}});
-        if(!userCredential){
+        const user: User = userEntity.dataValues as User;
+        const userCredentialEntity: UserCredentialEntity | null = await sequelize.models.userCredential.findOne({
+            where: {
+                userId: user.userId
+            },
+            order: [
+                ["dateCreated", "DESC"]
+            ]
+        })
+        if(!userCredentialEntity){
             return new Error("ERROR_UNABLE_TO_LOGIN_USER");
         }
+
+        const userCredential: UserCredential = userCredentialEntity.dataValues as UserCredential;
         // Note that the bcrypt hashing algorithm CAN automatically generate a random salt
         // and save both the salt value and the iteration value as part of the hashed password,
         // so we do NOT need to pass both those pieces of information to the validation
@@ -69,19 +88,19 @@ class DBIdentityDao extends IdentityDao {
             valid = bcryptValidatePassword(password, userCredential.hashedPassword)
         }
         else if(userCredential.hashingAlgorithm === PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS){
-            const hashedPassword = sha256HashPassword(password, userCredential.salt, 64000);
+            const hashedPassword = sha256HashPassword(password, userCredential.salt, PASSWORD_HASH_ITERATION_64K);
             valid = hashedPassword === userCredential.hashedPassword;
         }
         else if(userCredential.hashingAlgorithm === PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS){
-            const hashedPassword = sha256HashPassword(password, userCredential.salt, 128000);
+            const hashedPassword = sha256HashPassword(password, userCredential.salt, PASSWORD_HASH_ITERATION_128K);
             valid = hashedPassword === userCredential.hashedPassword;
         }
         else if(userCredential.hashingAlgorithm === PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS){
-            const hashedPassword = pbkdf2HashPassword(password, userCredential.salt, 128000);
+            const hashedPassword = pbkdf2HashPassword(password, userCredential.salt, PASSWORD_HASH_ITERATION_128K);
             valid = hashedPassword === userCredential.hashedPassword;
         }
         else if(userCredential.hashingAlgorithm === PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS){
-            const hashedPassword = pbkdf2HashPassword(password, userCredential.salt, 256000);
+            const hashedPassword = pbkdf2HashPassword(password, userCredential.salt, PASSWORD_HASH_ITERATION_256K);
             valid = hashedPassword === userCredential.hashedPassword;
         }
         else{
@@ -90,19 +109,25 @@ class DBIdentityDao extends IdentityDao {
         if(!valid){
             throw new Error("ERROR_AUTHENTICATING_USER");
         }
-        // Does the user have any second-factor authentication enabled?
-        const mfas: Array<UserMfaRelEntity> = await em.find(UserMfaRelEntity, {userId: user.userId});
-        if(mfas && mfas.length > 0){
+        // Does the user have any second-factor authentication enabled? userMfaRel
+        const mfaEntities: Array<UserMfaRelEntity> = await sequelize.models.userMfaRel.findAll({
+            where:{
+                userId: user.userId
+            }
+        })
+        //em.find(UserMfaRelEntity, {userId: user.userId});
+        if(mfaEntities && mfaEntities.length > 0){
+            
             let mfa: UserMfaRelEntity | undefined;
-            if(mfas.length === 1){
-                mfa = mfas[0];
+            if(mfaEntities.length === 1){
+                mfa = mfaEntities[0];
             }
             else{
                 // find the primary factor and use it, the others are there for backup
                 // in case, for example, the user has lost their security key or their
                 // phone with an authenticator app on it.
-                mfa = mfas.find(
-                    (e: UserMfaRelEntity) => e.primaryMfa === true
+                mfa = mfaEntities.find(
+                    (e: UserMfaRelEntity) => e.getDataValue("primaryMfa") === true
                 )
                 // If not have been defined as primary, throw an error (although
                 // this should never happen in real life...)
@@ -110,23 +135,24 @@ class DBIdentityDao extends IdentityDao {
                     throw new Error("ERROR_UNABLE_TO_FIND_PRIMARY_MULTIFACTOR_AUTHENTICATION_TYPE")
                 }                
             }
-            let r: SuccessfulLoginResponse = {
+            let successfulLoginResponse: SuccessfulLoginResponse = {
                 mfaEnabled: true,
                 userId: user.userId,
-                mfaType: mfa.mfaType
+                mfaType: mfa.getDataValue("mfaType")
             };
-            if(mfa.mfaType === MFA_AUTH_TYPE_FIDO2){
+            if(mfa.getDataValue("mfaType") === MFA_AUTH_TYPE_FIDO2){
                 // create the challenge and save it for the next step
                 const challenge: string = generateRandomToken(32, "base64url");
-                r.challenge = challenge;
-                const entity: UserFido2ChallengeEntity = new UserFido2ChallengeEntity();
-                entity.challenge = challenge;
-                entity.expiresAtMS = Date.now() + 120000; // Allow 2 minutes
-                entity.issuedAtMS = Date.now();
-                entity.userId = user.userId;
-                await em.persistAndFlush(entity);
+                successfulLoginResponse.challenge = challenge;
+
+                await sequelize.models.userFido2Challenge.create({
+                    userId: user.userId,
+                    challenge:challenge,
+                    issuedAtMS: Date.now(),
+                    expiresAtMS: Date.now() + 120000
+                })
             }
-            return Promise.resolve(r);
+            return Promise.resolve(successfulLoginResponse);
         }
         
         return Promise.resolve({
@@ -137,33 +163,43 @@ class DBIdentityDao extends IdentityDao {
         });
     }
 
+    // userFailedLoginAttempts
     public async getLoginAttempts(userId: string): Promise<Array<UserFailedLoginAttempts>> {
-        const em = connection.em.fork();
-        const entities = await em.find(UserFailedLoginAttemptsEntity, {userId: userId});
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        const entities = await sequelize.models.userFailedLoginAttempts.findAll({
+            where: {userId: userId}
+        });
+
         if(!entities){
             return [];
         }
-        return entities;
+        return entities.map(e => e.dataValues);
     }
 
     public async incrementLoginAttempts(userId: string): Promise<void> {
-        const em = connection.em.fork();
-        const e: UserFailedLoginAttemptsEntity = new UserFailedLoginAttemptsEntity();
-        e.failureAtMS = Date.now();
-        e.userId = userId;
-        await em.persistAndFlush(e);
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.userFailedLoginAttempts.create(
+            {
+                userId: userId,
+                failureAtMS: Date.now()
+            }
+        );
         return Promise.resolve();
     }
 
     public async resetLoginAttempts(userId: string): Promise<void> {
-        const em = connection.em.fork();
-        await em.nativeDelete(UserFailedLoginAttemptsEntity, {userId: userId});
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.userFailedLoginAttempts.destroy({
+            where: {
+                userId: userId
+            }
+        });        
         return Promise.resolve();
     }
 
 
     public async getUserBy(userLookupType: UserLookupType, value: string): Promise<User | null> {
-        const em = connection.em.fork();
+        const sequelize: Sequelize = await DBDriver.getConnection();
         const where: any = {};
         if(userLookupType === "email"){
             where.email = value;
@@ -174,42 +210,56 @@ class DBIdentityDao extends IdentityDao {
         else if(userLookupType === "phone"){
             where.phoneNumber = value;
         }
-        const u: UserEntity | null = await em.findOne(UserEntity, where);
-        return Promise.resolve(u);
+        const u: UserEntity | null = await sequelize.models.user.findOne({
+            where: where
+        });
+
+        return u ? Promise.resolve(u as any as User) : Promise.resolve(null);
     }
 
 
 
     public async savePasswordResetToken(userId: string, token: string): Promise<void> {
-        const em = connection.em.fork();
-        const entity: UserVerificationTokenEntity = new UserVerificationTokenEntity();
-        entity.expiresAtMS = Date.now() + 600000; // allow 10 minutes
-        entity.issuedAtMS = Date.now();
-        entity.userId = userId;
-        entity.token = token;
-        entity.verificationType = VERIFICATION_TOKEN_TYPE_PASSWORD_RESET;
-        await em.persistAndFlush(entity);
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.userVerificationToken.create({
+            expiresAtMS: Date.now() + 600000,  // allow 10 minutes
+            issuedAtMS:  Date.now(),
+            userId: userId,
+            token: token,
+            verificationType: VERIFICATION_TOKEN_TYPE_PASSWORD_RESET
+        });        
+        
         return Promise.resolve();
     }
 
     public async getUserByPasswordResetToken(token: string): Promise<User | null> {
-        const em = connection.em.fork();
-        const tokenEntity = await em.findOne(UserVerificationTokenEntity, {token: token});
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        const tokenEntity = await sequelize.models.userVerificationToken.findOne({
+            where: {
+                token: token
+            }
+        }); 
         if(!tokenEntity){
             return Promise.resolve(null);
         }
         // If the token has expired, then delete it
-        if(tokenEntity.expiresAtMS < Date.now()){
+        if(tokenEntity.getDataValue("expiresAtMS") < Date.now()){
             this.deletePasswordResetToken(token);
             return Promise.resolve(null);
         }
-        const user: UserEntity | null = await em.findOne(UserEntity, {userId: tokenEntity.userId});
-        return Promise.resolve(user);
+        const user: UserEntity | null = await sequelize.models.user.findOne({
+            where: {userId: tokenEntity.getDataValue("userId")}
+        });
+        return user ? Promise.resolve(user as any as User) : Promise.resolve(null);
     }
 
     public async deletePasswordResetToken(token: string): Promise<void> {
-        const em = connection.em.fork();
-        await em.nativeDelete(UserVerificationTokenEntity, {token: token});
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.userVerificationToken.destroy({
+            where: {
+                token: token
+            }
+        })
         return Promise.resolve();
     }
 
@@ -231,10 +281,14 @@ class DBIdentityDao extends IdentityDao {
         throw new Error("Method not implemented.");
     }
 
+    // prohibitedPasswords
     public async passwordProhibited(password: string): Promise<boolean> {
-        const em = connection.em.fork();
-        const entity = await em.findOne(ProhibitedPasswordEntity, {
-            password: password
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        const entity = await sequelize.models.prohibitedPasswords.findOne({
+            where: {
+                password: password
+            }
+            
         });
         if(entity){
             return Promise.resolve(true);
@@ -243,23 +297,24 @@ class DBIdentityDao extends IdentityDao {
     }
     
     public async addUserCredential(userCredential: UserCredential): Promise<void> {
-        const em = connection.em.fork();
-        const entity: UserCredentialEntity = new UserCredentialEntity(userCredential);
-        await em.persistAndFlush(entity);
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.userCredential.create(userCredential);        
         return Promise.resolve();
     }
 
     public async createUser(user: User): Promise<User> {
-        const em = connection.em.fork();
-        const entity: UserEntity = new UserEntity(user);
-        await em.persistAndFlush(entity);
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.user.create(user);
         return Promise.resolve(user);
     }
 
     public async updateUser(user: User): Promise<User> {
-        const em = connection.em.fork();
-        const entity: UserEntity = new UserEntity(user);
-        await em.upsert(entity);
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.user.update(user, {
+            where: {
+                userId: user.userId
+            }
+        });
         return Promise.resolve(user);
     }
 
@@ -276,42 +331,54 @@ class DBIdentityDao extends IdentityDao {
         throw new Error("Method not implemented.");
     }
 
+    // userTenantRel
     public async assignUserToTenant(tenantId: string, userId: string, relType: string): Promise<UserTenantRel> {
-        const em = connection.em.fork();
-        const entity: UserTenantRelEntity = new UserTenantRelEntity({
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.userTenantRel.create({
             userId: userId,
             tenantId: tenantId,
             relType: relType,
             enabled: true
-        });
-        await em.upsert(entity);
-        return entity;
+        })
+        const model: UserTenantRel = {
+            userId: userId,
+            tenantId: tenantId,
+            relType: relType,
+            enabled: true
+        };
+        return model;
     }
 
     public async removeUserFromTenant(tenantId: string, userId: string): Promise<void> {
-        const em = connection.em.fork();
-        await em.nativeDelete(UserTenantRelEntity, {
-            tenantId: tenantId,
-            userId: userId
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.userTenantRel.destroy({
+            where: {
+                tenantId: tenantId,
+                userId: userId
+            }
         });
         return Promise.resolve();
     }
 
     public async getUserTenantRel(tenantId: string, userId: string): Promise<UserTenantRel | null> {
-        const em = connection.em.fork();
-        const entity: UserTenantRelEntity | null = await em.findOne(UserTenantRelEntity, {
-            tenantId: tenantId,
-            userId: userId
-        });
-        return Promise.resolve(entity);
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        const entity: UserTenantRelEntity | null = await sequelize.models.userTenantRel.findOne({
+            where: {
+                tenantId: tenantId,
+                userId: userId
+            }
+        });        
+        return entity ? Promise.resolve(entity.dataValues as UserTenantRel) : Promise.resolve(null);
     }
 
     public async getUserTenantRelsByUserId(userId: string): Promise<Array<UserTenantRel>> {
-        const em = connection.em.fork();
-        const list = await em.find(UserTenantRelEntity, {
-            userId: userId
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        const list = await sequelize.models.userTenantRel.findAll({
+            where: {
+                userId: userId
+            }
         });
-        return Promise.resolve(list);
+        return list.map(e => e.dataValues);
     }
 
 }

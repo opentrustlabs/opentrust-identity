@@ -1,34 +1,48 @@
-import type { AuthenticationGroup, Maybe } from "@/graphql/generated/graphql-types";
-import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
+import { Model, DataTypes, Sequelize } from 'sequelize';
 
-@Entity({
-    tableName: "authentication_group"
-})
-class AuthenticationGroupEntity implements AuthenticationGroup {
-
-    constructor(authenticationGroup?: AuthenticationGroup){
-        if(authenticationGroup){
-            Object.assign(this, authenticationGroup);
-        }
+class AuthenticationGroupEntity extends Model {
+    
+    static initModel(sequelize: Sequelize): typeof AuthenticationGroupEntity {
+        return AuthenticationGroupEntity.init({
+            authenticationGroupId: {
+                type: DataTypes.STRING,
+                primaryKey: true,
+                field: "authenticationgroupid"
+            },
+            tenantId: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: false,
+                field: "tenantid"
+            },
+            authenticationGroupName: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: false,
+                field: "authenticationgroupname"
+            },
+            authenticationGroupDescription: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: true,
+				field: "authenticationgroupdescription"
+            },
+            defaultGroup: {
+                type: DataTypes.BOOLEAN,
+                primaryKey: false,
+                allowNull: false,
+                field: "defaultgroup"
+            }
+        }, 
+		{
+            sequelize,
+            tableName: "authentication_group",
+            modelName: "authenticationGroup",
+            timestamps: false
+        });
     }
-
-    __typename?: "AuthenticationGroup" | undefined;
-    
-    @PrimaryKey({fieldName: "authenticationgroupid"})
-    authenticationGroupId: string;
-
-    @PrimaryKey({fieldName: "tenantid"})
-    tenantId: string;
-
-    @Property({fieldName: "authenticationgroupname"})
-    authenticationGroupName: string;
-
-    @Property({fieldName: "authenticationgroupdescription"})
-    authenticationGroupDescription?: Maybe<string> | undefined;
-
-    @Property({fieldName: "defaultgroup"})
-    defaultGroup: boolean;
-    
 }
+
+
 
 export default AuthenticationGroupEntity;

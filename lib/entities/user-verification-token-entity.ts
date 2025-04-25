@@ -1,25 +1,46 @@
-import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
+import { Model, DataTypes, Sequelize } from 'sequelize';
 
-@Entity({
-    tableName: "user_verification_token"
-})
-class UserVerificationTokenEntity {
-
-    @PrimaryKey({fieldName: "token"})
-    token: string;
+class UserVerificationTokenEntity extends Model {
     
-    @Property({fieldName: "userid"})
-    userId: string;
-
-    @Property({fieldName: "verificationtype"})
-    verificationType: string;
-
-    @Property({fieldName: "issuedatms"})
-    issuedAtMS: number;
-
-    @Property({fieldName: "expiresatms"})
-    expiresAtMS: number;
-
+    static initModel(sequelize: Sequelize): typeof UserVerificationTokenEntity {
+        return UserVerificationTokenEntity.init({
+            token: {
+                type: DataTypes.STRING,
+                primaryKey: true,
+                field: "token"
+            },
+            userId: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: false,
+                field: "userid"
+            },
+            verificationType: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: false,
+                field: "verificationtype"
+            },
+            issuedAtMS: {
+                type: DataTypes.NUMBER,
+                primaryKey: false,
+                allowNull: false,
+				field: "issuedatms"
+            },
+            expiresAtMS: {
+                type: DataTypes.NUMBER,
+                primaryKey: false,
+                allowNull: false,
+                field: "expiresatms"
+            }
+        }, 
+		{
+            sequelize,
+            tableName: "user_verification_token",
+            modelName: "userVerificationToken",
+            timestamps: false
+        });
+    }
 }
 
 export default UserVerificationTokenEntity;

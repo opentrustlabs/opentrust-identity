@@ -1,7 +1,7 @@
 "use client";
 import { AUTHENTICATION_GROUPS_QUERY } from "@/graphql/queries/oidc-queries";
 import { useMutation, useQuery } from "@apollo/client";
-import React from "react";
+import React, { useContext } from "react";
 import DataLoading from "../layout/data-loading";
 import ErrorComponent from "../error/error-component";
 import { ASSIGN_AUTHENTICATION_GROUP_TO_CLIENT_MUTATION, REMOVE_AUTHENTICATION_GROUP_FROM_CLIENT_MUTATION } from "@/graphql/mutations/oidc-mutations";
@@ -20,6 +20,8 @@ import { TextField } from "@mui/material";
 import { AuthenticationGroup } from "@/graphql/generated/graphql-types";
 import GeneralSelector from "../dialogs/general-selector";
 import client from "../apollo-client/apollo-client";
+import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
+import Link from "next/link";
 
 
 
@@ -37,6 +39,10 @@ const ClientAuthenticationGroupConfiguration: React.FC<ClientAuthenticationGroup
     onUpdateStart
 }) => {
 
+    // CONTEXT VARIABLES
+    const tenantBean: TenantMetaDataBean = useContext(TenantContext);
+
+    
     // STATE VARIABLES
     const [groupToAdd, setGroupToAdd] = React.useState<string | null>(null);
     const [groupToRemove, setGroupToRemove] = React.useState<AuthenticationGroup | null>(null);
@@ -123,9 +129,7 @@ const ClientAuthenticationGroupConfiguration: React.FC<ClientAuthenticationGroup
                         query={AUTHENTICATION_GROUPS_QUERY}
                         queryVars={{tenantId: tenantId}}
                         dataMapper={(d) => {
-                            const preExistingIds = data.getAuthenticationGroups.map( (g: AuthenticationGroup) => g.authenticationGroupId);
-                            console.log(preExistingIds);
-                            console.log(d.getAuthenticationGroups);
+                            const preExistingIds = data.getAuthenticationGroups.map( (g: AuthenticationGroup) => g.authenticationGroupId);                            
                             if(d && d.getAuthenticationGroups){
                                 return d.getAuthenticationGroups
                                 .filter(
@@ -187,7 +191,9 @@ const ClientAuthenticationGroupConfiguration: React.FC<ClientAuthenticationGroup
                             <React.Fragment key={group.authenticationGroupId}>
                                 <Grid2 size={12}><Divider /></Grid2>
                                 <Grid2 size={11}>
-                                    {group.authenticationGroupName}                                    
+                                    <Link href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/authentication-groups/${group.authenticationGroupId}`} target="_blank">
+                                        {group.authenticationGroupName} 
+                                    </Link>                                   
                                 </Grid2>
                                 <Grid2 size={1}>
                                     <RemoveCircleOutlineIcon

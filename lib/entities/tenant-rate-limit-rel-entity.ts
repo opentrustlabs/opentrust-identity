@@ -1,33 +1,45 @@
-import type { Maybe, TenantRateLimitRel } from "@/graphql/generated/graphql-types";
-import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
+import { Model, DataTypes, Sequelize } from 'sequelize';
 
-@Entity({
-    tableName: "tenant_rate_limit_rel"
-})
-class TenantRateLimitRelEntity implements TenantRateLimitRel {
-
-    constructor(tenantRateLimitRel?: TenantRateLimitRel){
-        if(tenantRateLimitRel){
-            Object.assign(this, tenantRateLimitRel);
-        }
+class TenantRateLimitRelEntity extends Model {
+    
+    static initModel(sequelize: Sequelize): typeof TenantRateLimitRelEntity {
+        return TenantRateLimitRelEntity.init({
+            servicegroupid: {
+                type: DataTypes.STRING,
+                primaryKey: true,
+                field: "servicegroupid"
+            },
+            tenantId: {
+                type: DataTypes.STRING,
+                primaryKey: true,
+                field: "tenantid"
+            },
+            allowUnlimitedRate: {
+                type: DataTypes.BOOLEAN,
+                primaryKey: false,
+                allowNull: true,
+                field: "allowunlimitedrate"
+            },
+            rateLimit: {
+                type: DataTypes.INTEGER,
+                primaryKey: false,
+                allowNull: true,
+				field: "ratelimit"
+            },
+            rateLimitPeriodMinutes: {
+                type: DataTypes.INTEGER,
+                primaryKey: false,
+                allowNull: true,
+                field: "ratelimitperiodminutes"
+            }
+        }, 
+		{
+            sequelize,
+            tableName: "tenant_rate_limit_rel",
+            modelName: "tenantRateLimitRel",
+            timestamps: false
+        });
     }
-    __typename?: "TenantRateLimitRel" | undefined;
-    
-    @PrimaryKey({fieldName: "servicegroupid"})
-    servicegroupid: string;
-
-    @PrimaryKey({fieldName: "tenantid"})
-    tenantId: string;
-
-    @Property({fieldName: "allowunlimitedrate"})
-    allowUnlimitedRate?: Maybe<boolean> | undefined;
-
-    @Property({fieldName: "ratelimit"})
-    rateLimit?: Maybe<number> | undefined;
-    
-    @Property({fieldName: "ratelimitperiodminutes"})
-    rateLimitPeriodMinutes?: Maybe<number> | undefined;
-    
 }
 
 export default TenantRateLimitRelEntity

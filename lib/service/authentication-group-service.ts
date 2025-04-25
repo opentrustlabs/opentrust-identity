@@ -9,14 +9,14 @@ import { NAME_ORDER_EASTERN, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH
 import { Client as SearchClient } from "@opensearch-project/opensearch";
 import { getOpenSearchClient } from "@/lib/data-sources/search";
 import IdentityDao from "../dao/identity-dao";
-import { DaoImpl } from "../data-sources/dao-impl";
+import { DaoFactory } from "../data-sources/dao-factory";
 
 const searchClient: SearchClient = getOpenSearchClient();
 
-const tenantDao: TenantDao = DaoImpl.getInstance().getTenantDao();
-const clientDao: ClientDao = DaoImpl.getInstance().getClientDao();
-const authenticationGroupDao: AuthenticationGroupDao = DaoImpl.getInstance().getAuthenticationGroupDao();
-const identityDao: IdentityDao = DaoImpl.getInstance().getIdentityDao();
+const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
+const clientDao: ClientDao = DaoFactory.getInstance().getClientDao();
+const authenticationGroupDao: AuthenticationGroupDao = DaoFactory.getInstance().getAuthenticationGroupDao();
+const identityDao: IdentityDao = DaoFactory.getInstance().getIdentityDao();
 
 class AuthenticationGroupService {
 
@@ -157,7 +157,7 @@ class AuthenticationGroupService {
             id: `${authenticationGroupId}::${userId}`,
             index: SEARCH_INDEX_REL_SEARCH,
             refresh: "wait_for"
-        })
+        });
 
         return Promise.resolve();
     }

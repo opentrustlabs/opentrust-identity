@@ -16,6 +16,7 @@ import { Alert, Button, Dialog, DialogActions, DialogContent } from "@mui/materi
 import OIDCSelector from "../dialogs/oidc-selector";
 import Link from "next/link";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
+import GeneralSelector from "../dialogs/general-selector";
 
 export interface TenantFederatedOIDCProviderConfigurationProps {
     tenantId: string,
@@ -117,9 +118,34 @@ const TenantFederatedOIDCProviderConfiguration: React.FC<TenantFederatedOIDCProv
                     maxWidth={"sm"}
                     fullWidth={true}
                 >
-                    <OIDCSelector 
+                    <GeneralSelector 
+                        query={FEDERATED_OIDC_PROVIDERS_QUERY}
+                        queryVars={{}}
+                        dataMapper={(d) => {
+                            const preExistingIds = data.getFederatedOIDCProviders.map( (provider: FederatedOidcProvider) => provider.federatedOIDCProviderId);                            
+                            if(d && d.getFederatedOIDCProviders){
+                                return d.getFederatedOIDCProviders
+                                .filter(
+                                    (provider: FederatedOidcProvider) => {
+                                        return !preExistingIds.includes(provider.federatedOIDCProviderId)
+                                    }
+                                )                                
+                                .map(
+                                    (provider: FederatedOidcProvider) => {
+                                        return {
+                                            id: provider.federatedOIDCProviderId,
+                                            label: provider.federatedOIDCProviderName
+                                        }
+                                    }
+                                )
+                            }
+                            else{
+                                return [];
+                            }
+                        }}
+                        helpText="Select a valid provider"
                         onCancel={() => setSelectDialogOpen(false)}
-                        onSelected={(oidcProviderId: string) => {                              
+                        onSelected={(oidcProviderId: string) => {
                             setSelectDialogOpen(false); 
                             onUpdateStart();
                             assignTenantFederatedOIDCProviderMutation({
@@ -129,11 +155,7 @@ const TenantFederatedOIDCProviderConfiguration: React.FC<TenantFederatedOIDCProv
                                 }
                             }); 
                         }}
-                        preExistingIds={
-                            data && data.getFederatedOIDCProviders && data.getFederatedOIDCProviders.length > 0 ?
-                                data.getFederatedOIDCProviders.map((provider: FederatedOidcProvider) => provider.federatedOIDCProviderId) :
-                                []
-                        }
+                        selectorLabel="Select a provider"
                     />
                 </Dialog>
             }

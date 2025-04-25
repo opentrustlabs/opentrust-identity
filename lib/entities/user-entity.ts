@@ -1,79 +1,137 @@
-import type { Maybe, User } from "@/graphql/generated/graphql-types";
-import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
+import { Model, DataTypes, Sequelize } from 'sequelize';
 
-@Entity({
-    tableName: "user"
-})
-class UserEntity implements User {
-
-    constructor(user?: User){
-        if(user){
-            Object.assign(this, user);
-        }
-    }
-
-    __typename?: "User" | undefined;
+class UserEntity extends Model {
     
-    @PrimaryKey({fieldName: "userid"})
-    userId: string;
-
-    @Property({fieldName: "address"})
-    address?: Maybe<string> | undefined;
-
-    @Property({fieldName: "addressline1"})
-    addressLine1?: Maybe<string> | undefined;
-
-    @Property({fieldName: "city"})
-    city?: Maybe<string> | undefined;
-
-    @Property({fieldName: "postalcode"})
-    postalCode?: Maybe<string> | undefined;
-
-    @Property({fieldName: "stateregionprovince"})    
-    stateRegionProvince?: Maybe<string> | undefined;
-
-    @Property({fieldName: "countrycode"})
-    countryCode?: Maybe<string> | undefined;
-
-    @Property({fieldName: "domain"})
-    domain: string;
-
-    @Property({fieldName: "email"})
-    email: string;
-
-    @Property({fieldName: "emailverified"})
-    emailVerified: boolean;
-
-    @Property({fieldName: "enabled"})
-    enabled: boolean;
-
-    @Property({fieldName: "federatedoidcprovidersubjectid"})
-    federatedOIDCProviderSubjectId?: Maybe<string> | undefined;
-
-    @Property({fieldName: "firstname"})
-    firstName: string;
-
-    @Property({fieldName: "lastname"})
-    lastName: string;
-
-    @Property({fieldName: "locked"})
-    locked: boolean;
-
-    @Property({fieldName: "middlename"})
-    middleName?: Maybe<string> | undefined;
-
-    @Property({fieldName: "nameorder"})
-    nameOrder: string;
-
-    @Property({fieldName: "phonenumber"})
-    phoneNumber?: Maybe<string> | undefined;
-
-    @Property({fieldName: "preferredlanguagecode"})
-    preferredLanguageCode?: Maybe<string> | undefined;
-
-    @Property({fieldName: "twofactorauthtype"})
-    twoFactorAuthType?: Maybe<string> | undefined;
-
+    static initModel(sequelize: Sequelize): typeof UserEntity {
+        return UserEntity.init({
+            userId: {
+                type: DataTypes.STRING,
+                primaryKey: true,
+                field: "userid"
+            },
+            address: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: true,
+                field: "address"
+            },
+            addressLine1: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: true,
+                field: "addressline1"
+            },
+            city: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: true,
+				field: "city"
+            },
+            postalCode: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: true,
+                field: "postalcode"
+            },
+            stateRegionProvince: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: true,
+                field: "stateregionprovince"
+            },
+            countryCode: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: true,
+                field: "countrycode"
+            },
+            domain: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: false,
+                field: "domain"
+            },
+            email: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: false,
+                field: "email"
+            },
+            emailVerified: {
+                type: DataTypes.BOOLEAN,
+                primaryKey: false,
+                allowNull: false,
+                field: "emailverified"
+            },
+            enabled: {
+                type: DataTypes.BOOLEAN,
+                primaryKey: false,
+                allowNull: false,
+                field: "enabled"
+            },
+            federatedOIDCProviderSubjectId: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: true,
+                field: "federatedoidcprovidersubjectid"
+            },
+            firstName: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: false,
+                field: "firstname"
+            },
+            lastName: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: false,
+                field: "lastname"
+            },
+            locked: {
+                type: DataTypes.BOOLEAN,
+                primaryKey: false,
+                allowNull: false,
+                field: "locked"
+            },
+            middleName: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: true,
+                field: "middlename"
+            },
+            nameOrder: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: false,
+                field: "nameorder"
+            },
+            phoneNumber: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: true,
+                field: "phonenumber"
+            },
+            preferredLanguageCode: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: true,
+                field: "preferredlanguagecode"
+            },
+            twoFactorAuthType: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: false,
+                field: "twofactorauthtype"
+            }
+        }, 
+		{
+            sequelize,
+            tableName: "user",
+            modelName: "user",
+            timestamps: false
+        });
+    }
 }
+
 
 export default UserEntity;

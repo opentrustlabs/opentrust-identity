@@ -21,6 +21,7 @@ import ClientResultList from "../clients/client-list";
 import AuthorizationGroupList from "../authorization-groups/authorization-group-list";
 import AuthenticationGroupList from "../authentication-groups/authentication-group-list";
 import FederatedOIDCProviderList from "../oidc-providers/oidc-provider-list";
+import RateLimitList from "../rate-limits/rate-limit-list";
 
 export interface ResultListProps {
     searchResults: ObjectSearchResults,
@@ -74,6 +75,7 @@ const SearchResultListLayout: React.FC<SearchResultListProps> = ({
         objectValue: tenantBean.getTenantMetaData().tenant.tenantId
     });
 
+
     let { data, loading, error, previousData } = useQuery(SEARCH_QUERY, {
         variables: {
             searchInput: {
@@ -86,8 +88,7 @@ const SearchResultListLayout: React.FC<SearchResultListProps> = ({
         },
         fetchPolicy: "no-cache",
         nextFetchPolicy: "no-cache"
-
-    })
+    });
 
     // Material UI TablePagination component uses zero-based 
     // indexing (argh) for pagination. Is there ever a page 0?
@@ -175,8 +176,10 @@ const SearchResultListLayout: React.FC<SearchResultListProps> = ({
                         {resultType === SearchResultType.OidcProvider &&
                             <FederatedOIDCProviderList searchResults={previousData.search} />
                         }
-                    </>
-                    
+                        {resultType === SearchResultType.RateLimit &&
+                            <RateLimitList searchResults={previousData.search} />
+                        }
+                    </>                    
                 }
                 {data &&
                     <>
@@ -198,12 +201,15 @@ const SearchResultListLayout: React.FC<SearchResultListProps> = ({
                         {resultType === SearchResultType.OidcProvider &&
                             <FederatedOIDCProviderList searchResults={data.search} />
                         }
+                        {resultType === SearchResultType.RateLimit &&
+                            <RateLimitList searchResults={data.search} />
+                        }
                     </>
                 }
                 
                 <Grid2 container size={12} spacing={1} marginTop={"16px"} marginBottom={"16px"} >
                     <Grid2 size={12}>
-                        {loading && previousData &&
+                        {loading && previousData && previousData.search.total > 0 &&
                             <TablePagination
                                 component={"div"}
                                 page={page - 1}
@@ -213,7 +219,7 @@ const SearchResultListLayout: React.FC<SearchResultListProps> = ({
                                 rowsPerPageOptions={[]}
                             />
                         }
-                        {data &&
+                        {data && data.search.total > 0 &&
                             <TablePagination
                                 component={"div"}
                                 page={page - 1}

@@ -11,23 +11,19 @@ import Paper from "@mui/material/Paper";
 import TextField from "@mui/material/TextField";
 import Checkbox from "@mui/material/Checkbox";
 import Stack from "@mui/material/Stack";
-import { Accordion, AccordionDetails, AccordionSummary, Alert, Autocomplete, Backdrop, Button, CircularProgress, Divider, MenuItem, Select, Snackbar } from "@mui/material";
+import { Accordion, AccordionDetails, AccordionSummary, Alert, Autocomplete, Backdrop, Button, CircularProgress, MenuItem, Select, Snackbar } from "@mui/material";
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import AddBoxIcon from '@mui/icons-material/AddBox';
-import DeleteForeverOutlinedIcon from '@mui/icons-material/DeleteForeverOutlined';
 import GroupIcon from '@mui/icons-material/Group';
 import PeopleIcon from '@mui/icons-material/People';
 import SettingsApplicationsIcon from '@mui/icons-material/SettingsApplications';
-import PolicyIcon from '@mui/icons-material/Policy';
-import LockOpenOutlinedIcon from '@mui/icons-material/LockOpenOutlined';
-import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
-import Link from "next/link";
 import { COUNTRY_CODES, CountryCodeDef, LANGUAGE_CODES, LanguageCodeDef } from "@/utils/i18n";
 import { getDefaultCountryCodeDef, getDefaultLanguageCodeDef } from "@/utils/client-utils";
 import { useMutation } from "@apollo/client";
 import { USER_UPDATE_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import { USER_DETAIL_QUERY } from "@/graphql/queries/oidc-queries";
 import UserTenantConfiguration from "./user-tenant-configuration";
+import UserAuthorizationGroupConfiguration from "./user-authorization-group-configuration";
+import UserAuthenticationGroupConfiguration from "./user-authentication-group-configuration";
 
 export interface UserDetailProps {
     user: User;
@@ -186,8 +182,6 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                                             setMarkDirty(true); 
                                                             setUserInput({...userInput});
                                                         }}
-                                                        icon={<LockOpenOutlinedIcon sx={{color: "green"}}/>}
-                                                        checkedIcon={<LockOutlinedIcon sx={{color: "red"}} />}
                                                     />
                                                 </Grid2>
                                             </Grid2>
@@ -405,29 +399,18 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                     </div>
                                 </AccordionSummary>
                                 <AccordionDetails>
-                                    <Typography component={"div"} fontWeight={"bold"} >
-                                        <Grid2 container size={12} spacing={1} marginBottom={"16px"} >
-                                            <Stack spacing={1} justifyContent={"space-between"} direction={"row"} fontWeight={"bold"} fontSize={"0.95em"} margin={"8px 0px 24px 0px"}>
-                                                <div style={{ display: "inline-flex", alignItems: "center" }}>
-                                                    <AddBoxIcon sx={{ marginRight: "8px", cursor: "pointer" }} />
-                                                    <span>Add User To Authorization Group</span>
-                                                </div>
-                                            </Stack>
-                                        </Grid2>
-                                    </Typography>
-                                    <Divider />                                        
-                                    {["Project Managers US", "Planning Tool Admin", "Server Room Access", "Gira User", "Confluence User", "Ordering Customer",
-                                        "Training Coordinators US", "Evacuation Leader St. Louis", "B2B Tool User", "OpenTrust User", "Ordering Manager"].map(                                            
-                                        (name: string) => (
-                                            <Typography key={`${name}`} component={"div"} fontSize={"0.9em"} fontWeight={"bold"}>
-                                                <Divider></Divider>
-                                                <Grid2 margin={"8px 0px 8px 0px"} container size={12} spacing={1}>
-                                                    <Grid2 size={11}>{name}</Grid2>                                                    
-                                                    <Grid2 size={1}><DeleteForeverOutlinedIcon /></Grid2>
-                                                </Grid2>
-                                            </Typography>                                                
-                                        )
-                                    )}
+                                    <UserAuthorizationGroupConfiguration
+                                        userId={user.userId}
+                                        onUpdateEnd={(success: boolean) => {
+                                            setShowMutationBackdrop(false);
+                                            if(success){
+                                                setShowMutationSnackbar(true);
+                                            }
+                                        }}
+                                        onUpdateStart={() => {
+                                            setShowMutationBackdrop(true);
+                                        }}    
+                                    />
                                 </AccordionDetails>
                             </Accordion>
                         </Grid2>
@@ -444,29 +427,18 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                     </div>
                                 </AccordionSummary>
                                 <AccordionDetails>
-                                    <Typography component={"div"} fontWeight={"bold"} >
-                                        <Grid2 container size={12} spacing={1} marginBottom={"16px"} >
-                                            <Stack spacing={1} justifyContent={"space-between"} direction={"row"} fontWeight={"bold"} fontSize={"0.95em"} margin={"8px 0px 24px 0px"}>
-                                                <div style={{ display: "inline-flex", alignItems: "center" }}>
-                                                    <AddBoxIcon sx={{ marginRight: "8px", cursor: "pointer" }} />
-                                                    <span>Add User To Authentication Group</span>
-                                                </div>
-                                            </Stack>
-                                        </Grid2>
-                                    </Typography>
-                                    <Divider />                                        
-                                    {["Project Managers US", "Planning Tool Admin", "Server Room Access", "Gira User", "Confluence User", "Ordering Customer",
-                                        "Training Coordinators US", "Evacuation Leader St. Louis", "B2B Tool User", "OpenTrust User", "Ordering Manager"].map(                                            
-                                        (name: string) => (
-                                            <Typography key={`${name}`} component={"div"} fontSize={"0.9em"} fontWeight={"bold"}>
-                                                <Divider></Divider>
-                                                <Grid2 margin={"8px 0px 8px 0px"} container size={12} spacing={1}>
-                                                    <Grid2 size={11}>{name}</Grid2>                                                    
-                                                    <Grid2 size={1}><DeleteForeverOutlinedIcon /></Grid2>
-                                                </Grid2>
-                                            </Typography>                                                
-                                        )
-                                    )}
+                                    <UserAuthenticationGroupConfiguration
+                                        userId={user.userId}
+                                        onUpdateEnd={(success: boolean) => {
+                                            setShowMutationBackdrop(false);
+                                            if(success){
+                                                setShowMutationSnackbar(true);
+                                            }
+                                        }}
+                                        onUpdateStart={() => {
+                                            setShowMutationBackdrop(true);
+                                        }} 
+                                    />                                    
                                 </AccordionDetails>
                             </Accordion>
                         </Grid2>

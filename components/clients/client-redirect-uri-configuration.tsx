@@ -154,6 +154,7 @@ const ClientRedirectUriConfiguration: React.FC<ClientRedirectUriConfigurationPro
                     <DialogTitle>Add a redirect URI</DialogTitle>
                     <DialogContent>
                         <TextField
+                            size="small"
                             fullWidth={true}
                             onChange={(evt) => setUriToAdd(evt.target.value)}                            
                         />

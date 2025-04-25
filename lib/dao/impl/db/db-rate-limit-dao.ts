@@ -1,110 +1,170 @@
-import { RateLimit, RateLimitServiceGroup, TenantRateLimitRel } from "@/graphql/generated/graphql-types";
+import { RateLimitServiceGroup, TenantRateLimitRel, TenantRateLimitRelView } from "@/graphql/generated/graphql-types";
 import RateLimitDao from "../../rate-limit-dao";
-import connection  from "@/lib/data-sources/db";
-import RateLimitEntity from "@/lib/entities/rate-limit-entity";
 import TenantRateLimitRelEntity from "@/lib/entities/tenant-rate-limit-rel-entity";
+import RateLimitServiceGroupEntity from "@/lib/entities/rate-limit-service-group-entity";
+import DBDriver from "@/lib/data-sources/sequelize-db";
+import { Op, Sequelize } from "sequelize";
 
 class DBRateLimitDao extends RateLimitDao {
 
 
-    getRateLimitServiceGroups(tenantId: string): Promise<RateLimitServiceGroup> {
-        throw new Error("Method not implemented.");
+    // rateLimitServiceGroup
+    public async getRateLimitServiceGroups(tenantId: string | null): Promise<Array<RateLimitServiceGroup>> {
+        const sequelize: Sequelize = await DBDriver.getConnection();        
+
+        if(tenantId){
+            const rels: Array<TenantRateLimitRel> = await this.getRateLimitTenantRel(tenantId, null);
+            const ids: Array<string> = rels.map((r: TenantRateLimitRel) => r.servicegroupid);
+
+            const arr: Array<RateLimitServiceGroupEntity> = await sequelize.models.rateLimitServiceGroup.findAll({
+                where: {
+                    servicegroupid: { [Op.in]: ids}
+                },
+                order: [
+                    ["servicegroupname", "ASC"]
+                ], 
+                raw: true                
+            });
+            return Promise.resolve(arr as any as Array<RateLimitServiceGroup>);
+        }
+        else{
+            const arr: Array<RateLimitServiceGroupEntity> = await sequelize.models.rateLimitServiceGroup.findAll({
+                order: [
+                    ["servicegroupname", "ASC"]
+                ],
+                raw: true
+            });
+            return Promise.resolve(arr as any as Array<RateLimitServiceGroup>);
+        }
     }
-    getRateLimitServiceGroupById(serviceGroupId: string): Promise<RateLimitServiceGroup | null> {
-        throw new Error("Method not implemented.");
-    }
-    createRateLimitServiceGroup(rateLimitServiceGroup: RateLimitServiceGroup): Promise<RateLimitServiceGroup> {
-        throw new Error("Method not implemented.");
-    }
-    deleteRateLimitServiceGroup(serviceGroupId: string): Promise<void> {
-        throw new Error("Method not implemented.");
+
+    public async getRateLimitServiceGroupById(serviceGroupId: string): Promise<RateLimitServiceGroup | null> {
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        const r: RateLimitServiceGroupEntity | null = await sequelize.models.rateLimitServiceGroup.findByPk(serviceGroupId, {raw: true});
+        return r ? Promise.resolve(r as any as RateLimitServiceGroup) : Promise.resolve(null);
     }
 
-    // public async getRateLimits(tenantId?: string): Promise<Array<RateLimit>> {
-    //     const em = connection.em.fork();
-    //     const queryParams: any = {};
-    //     if(tenantId){
-    //         const rels: Array<TenantRateLimitRel> = await this.getRateLimitTenantRel(tenantId);
-    //         queryParams.inClause = rels.map(r => r.rateLimitId);
-    //         return await em.find(RateLimitEntity, {
-    //             ratelimitid: queryParams.inClause
-    //         });
-    //     }
-    //     else{
-    //         return await em.findAll(RateLimitEntity);
-    //     }
-    // }
+    public async getRateLimitTenantRelViews(rateLimitServiceGroupId: string): Promise<Array<TenantRateLimitRelView>> {
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        const [resultList, _] = await sequelize.query(
+            "select tenant_rate_limit_rel.*, tenant.tenantname from tenant_rate_limit_rel INNER JOIN tenant ON tenant_rate_limit_rel.tenantid = tenant.tenantid WHERE tenant_rate_limit_rel.servicegroupid = $servicegroupid ORDER BY tenant.tenantname ASC",
+            {
+                bind: {
+                    servicegroupid: rateLimitServiceGroupId
+                }
+            }
+        );
+        
+        
+        // $servicegroupid
+        return resultList.map(
+            (item: any) => {
+                const view: TenantRateLimitRelView = {
+                    servicegroupid: item.servicegroupid,
+                    tenantId: item.tenantid,
+                    tenantName: item.tenantname,
+                    allowUnlimitedRate: item.allowunlimitedrate,
+                    rateLimit: item.ratelimit,
+                    rateLimitPeriodMinutes: item.ratelimitperiodminutes
+                }
+                return view;
+            }
+        );        
+    }
 
-    // public async createRateLimit(rateLimit: RateLimit): Promise<RateLimit> {
-    //     const em = connection.em.fork();
-    //     const entity: RateLimitEntity = new RateLimitEntity(rateLimit);
-    //     await em.persistAndFlush(entity);
-    //     return Promise.resolve(rateLimit);
-    // }
+    
+    public async createRateLimitServiceGroup(rateLimitServiceGroup: RateLimitServiceGroup): Promise<RateLimitServiceGroup> {
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.rateLimitServiceGroup.create(rateLimitServiceGroup);        
+        return Promise.resolve(rateLimitServiceGroup);
+        
+    }
 
-    // public async getRateLimitById(rateLimitId: string): Promise<RateLimit | null> {
-    //     const em = connection.em.fork();
-    //     const entity: RateLimitEntity | null = await em.findOne(RateLimitEntity, {
-    //         ratelimitid: rateLimitId
-    //     });
-    //     return Promise.resolve(entity);
-    // }
-
-    // public async updateRateLimit(rateLimit: RateLimit): Promise<RateLimit> {
-    //     const em = connection.em.fork();
-    //     const entity: RateLimitEntity = new RateLimitEntity(rateLimit);
-    //     em.upsert(entity);
-    //     await em.flush();
-    //     return Promise.resolve(entity);
-    // }
-
-    // public async deleteRateLimit(rateLimitId: string): Promise<void> {
-    //     const em = connection.em.fork();
-    //     // TODO
-    //     // DELETE relationships
-    //     return Promise.resolve();
-    // }
-
-    public async getRateLimitTenantRel(tenantId: string): Promise<Array<TenantRateLimitRel>> {
-        const em = connection.em.fork();
-        const entities = await em.find(TenantRateLimitRelEntity, {
-            tenantId: tenantId
+    public async updateRateLimitServiceGroup(rateLimitServiceGroup: RateLimitServiceGroup): Promise<RateLimitServiceGroup> {
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.rateLimitServiceGroup.update(rateLimitServiceGroup, {
+            where: {
+                servicegroupid: rateLimitServiceGroup.servicegroupid
+            }
         });
-        return Promise.resolve(entities);
+        return Promise.resolve(rateLimitServiceGroup);
+    }
+
+    public async deleteRateLimitServiceGroup(serviceGroupId: string): Promise<void> {
+        throw new Error("Method not implemented.");
+    }
+
+
+    
+    public async getRateLimitTenantRel(tenantId: string | null, rateLimitServiceGroupId: string | null): Promise<Array<TenantRateLimitRel>> {
+        const sequelize: Sequelize = await DBDriver.getConnection();
+
+        const where: any = {};
+        if(tenantId){
+            where.tenantId = tenantId
+        }
+        if(rateLimitServiceGroupId){
+            where.servicegroupid = rateLimitServiceGroupId
+        }
+        const entities: Array<TenantRateLimitRelEntity> = await sequelize.models.tenantRateLimitRel.findAll({
+            where: where
+        });
+        const retVal = entities.map(
+            (entity: TenantRateLimitRelEntity) => {
+                return {
+                    allowUnlimitedRate: entity.getDataValue("allowUnlimitedRate"),
+                    rateLimit: entity.getDataValue("rateLimit"),
+                    rateLimitPeriodMinutes: entity.getDataValue("rateLimitPeriodMinutes"),
+                    servicegroupid: entity.getDataValue("servicegroupid"),
+                    tenantId: entity.getDataValue("tenantId"),
+                    tenantName: ""
+                }
+            }
+        );
+
+        return Promise.resolve(retVal);
     }
 
     public async assignRateLimitToTenant(tenantId: string, serviceGroupId: string, allowUnlimited: boolean, limit: number, rateLimitPeriodMinutes: number): Promise<TenantRateLimitRel> {
-        const em = connection.em.fork();
-        const entity: TenantRateLimitRelEntity = new TenantRateLimitRelEntity({
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        const tenantRateLimitRel: TenantRateLimitRel = {
             servicegroupid: serviceGroupId,
             allowUnlimitedRate: allowUnlimited,
             tenantId,
             rateLimit: limit,
             rateLimitPeriodMinutes
-        });
-        await em.persistAndFlush(entity);
-        return Promise.resolve(entity);
+        };
+        await sequelize.models.tenantRateLimitRel.create(tenantRateLimitRel);
+        
+        return Promise.resolve(tenantRateLimitRel);
     }
     
     public async updateRateLimitForTenant(tenantId: string, serviceGroupId: string, allowUnlimited: boolean, limit: number, rateLimitPeriodMinutes: number): Promise<TenantRateLimitRel> {
-        const em = connection.em.fork();
-        const entity: TenantRateLimitRelEntity = new TenantRateLimitRelEntity({
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        const tenantRateLimitRel: TenantRateLimitRel = {
             servicegroupid: serviceGroupId,
             allowUnlimitedRate: allowUnlimited,
             tenantId,
             rateLimit: limit,
             rateLimitPeriodMinutes
+        };
+        await sequelize.models.tenantRateLimitRel.update(tenantRateLimitRel, {
+            where: {
+                servicegroupid: serviceGroupId,
+                tenantId: tenantId
+            }
         });
-        await em.upsert(entity);
-        await em.flush()
-        return Promise.resolve(entity);
+        return Promise.resolve(tenantRateLimitRel);
     }
 
     public async removeRateLimitFromTenant(tenantId: string, serviceGroupId: string): Promise<void> {
-        const em = connection.em.fork();
-        await em.nativeDelete(TenantRateLimitRelEntity, {
-            tenantId: tenantId,
-            servicegroupid: serviceGroupId
+        const sequelize: Sequelize = await DBDriver.getConnection();
+
+        await sequelize.models.tenantRateLimitRel.destroy({
+            where: {
+                tenantId: tenantId,
+                servicegroupid: serviceGroupId
+            }
         });
         return Promise.resolve();
     }    

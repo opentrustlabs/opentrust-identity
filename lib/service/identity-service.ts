@@ -2,19 +2,19 @@ import { OIDCContext } from "@/graphql/graphql-context";
 
 import IdentityDao from "../dao/identity-dao";
 import { ObjectSearchResultItem, RelSearchResultItem, SearchResultType, Tenant, TenantPasswordConfig, User, UserCreateInput, UserCredential, UserTenantRel, UserTenantRelView } from "@/graphql/generated/graphql-types";
-import { DaoImpl } from "../data-sources/dao-impl";
+import { DaoFactory } from "../data-sources/dao-factory";
 import TenantDao from "../dao/tenant-dao";
 import { GraphQLError } from "graphql/error";
 import { randomUUID } from "crypto";
-import { NAME_ORDER_WESTERN, PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_TYPE_ROOT_TENANT, USER_TENANT_REL_TYPE_GUEST, USER_TENANT_REL_TYPE_PRIMARY } from "@/utils/consts";
+import { NAME_ORDER_WESTERN, PASSWORD_HASH_ITERATION_128K, PASSWORD_HASH_ITERATION_256K, PASSWORD_HASH_ITERATION_64K, PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_TYPE_ROOT_TENANT, USER_TENANT_REL_TYPE_GUEST, USER_TENANT_REL_TYPE_PRIMARY } from "@/utils/consts";
 import { sha256HashPassword, pbkdf2HashPassword, bcryptHashPassword, generateSalt } from "@/utils/dao-utils";
 import { Client } from "@opensearch-project/opensearch";
 import { getOpenSearchClient } from "../data-sources/search";
 import { Get_Response } from "@opensearch-project/opensearch/api/index.js";
 
 
-const identityDao: IdentityDao = DaoImpl.getInstance().getIdentityDao();
-const tenantDao: TenantDao = DaoImpl.getInstance().getTenantDao();
+const identityDao: IdentityDao = DaoFactory.getInstance().getIdentityDao();
+const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
 const searchClient: Client = getOpenSearchClient();
 
 class IdentitySerivce {
@@ -131,15 +131,11 @@ class IdentitySerivce {
                     id: user.userId,
                     index: SEARCH_INDEX_OBJECT_SEARCH
                 });
-                console.log(getResponse);
+                
                 if (getResponse.body) {
-                    console.log("####################################");
-                    console.log(getResponse.body);
                     const document: ObjectSearchResultItem = getResponse.body._source as ObjectSearchResultItem;
-                    console.log("####################################")
-                    console.log(document);
                     document.name = user.nameOrder === NAME_ORDER_WESTERN ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`,
-                        document.email = user.email;
+                    document.email = user.email;
                     document.enabled = user.enabled;
                     await searchClient.index({
                         id: user.userId,
@@ -147,6 +143,8 @@ class IdentitySerivce {
                         body: document
                     })
                 }
+                // TODO: Update the rel_index as well, but do NOT wait on the results since
+                // there could be 1000s of records to modify.
             }
             return user;
         }
@@ -181,7 +179,8 @@ class IdentitySerivce {
 
         await identityDao.createUser(user);
         await identityDao.assignUserToTenant(tenant.tenantId, user.userId, "PRIMARY");
-        await this.updateSearchIndex(tenant, user, "PRIMARY");
+        await this.updateObjectSearchIndex(tenant, user, "PRIMARY");
+        await this.updateRelSearchIndex(tenant.tenantId, tenant.tenantId, user, USER_TENANT_REL_TYPE_PRIMARY);
 
         return Promise.resolve(user);
     }
@@ -203,19 +202,19 @@ class IdentitySerivce {
         }                   
         else if(hashAlgorithm === PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS){
             salt = generateSalt();
-            hashedPassword = sha256HashPassword(password, salt, 64000);            
+            hashedPassword = sha256HashPassword(password, salt, PASSWORD_HASH_ITERATION_64K);            
         }
         else if(hashAlgorithm === PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS){
             salt = generateSalt();
-            hashedPassword = sha256HashPassword(password, salt, 128000);            
+            hashedPassword = sha256HashPassword(password, salt, PASSWORD_HASH_ITERATION_128K);            
         }
         else if(hashAlgorithm === PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS){
             salt = generateSalt();
-            hashedPassword = pbkdf2HashPassword(password, salt, 128000);            
+            hashedPassword = pbkdf2HashPassword(password, salt, PASSWORD_HASH_ITERATION_128K);            
         }
         else if(hashAlgorithm === PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS){
             salt = generateSalt();
-            hashedPassword = pbkdf2HashPassword(password, salt, 256000);            
+            hashedPassword = pbkdf2HashPassword(password, salt, PASSWORD_HASH_ITERATION_256K);            
         }
 
         return {
@@ -272,6 +271,8 @@ class IdentitySerivce {
             }
             else{
                 userTenantRel = await identityDao.assignUserToTenant(tenantId, userId, relType);
+                // Both the owning and parent tenant ids are the same in this case
+                await this.updateRelSearchIndex(tenantId, tenantId, user, relType);
             }
         }
         // Otherwise, there already exists one or more relationships. 
@@ -280,6 +281,9 @@ class IdentitySerivce {
                 (rel: UserTenantRel) => rel.relType === USER_TENANT_REL_TYPE_PRIMARY
             );
             // There should always be a primary rel
+            // TODO
+            // There might not be a primary rel in cases where the tenant has been deleted, leaving
+            // orphaned users. Re-factor this code to account for that.
             if(!primaryRel){
                 throw new GraphQLError("ERROR_NO_PRIMARY_RELATIONSHIP_EXISTS_FOR_THE_USER_AND_TENANT");
             }
@@ -295,6 +299,9 @@ class IdentitySerivce {
                 }
                 else{
                     userTenantRel = await identityDao.assignUserToTenant(tenantId, userId, relType);
+                    // The primary rel remains as the owning tenant id, which the incoming tenant id 
+                    // is the parent id
+                    await this.updateRelSearchIndex(primaryRel.tenantId, tenantId, user, relType);
                 }
             }
             
@@ -309,14 +316,16 @@ class IdentitySerivce {
                 else if(existingTenantRel.relType === USER_TENANT_REL_TYPE_GUEST && relType === USER_TENANT_REL_TYPE_PRIMARY){
                     // Assign the incoming as primary
                     userTenantRel = await identityDao.assignUserToTenant(tenantId, userId, relType);
+                    // The incoming tenant becomes the new owning tenant as well as the parent.
+                    await this.updateRelSearchIndex(tenantId, tenantId, user, relType);
                     // Then update the existing primary as guest
                     await identityDao.assignUserToTenant(primaryRel.tenantId, primaryRel.userId, USER_TENANT_REL_TYPE_GUEST);
+                    // The incoming tenant is the owning tenant, which the existing primary becomes just the parent
+                    await this.updateRelSearchIndex(tenantId, primaryRel.tenantId, user, relType);
                 }
             }
         }
-
-        return userTenantRel;
-        
+        return userTenantRel;        
     }
 
     public async removeUserFromTenant(tenantId: string, userId: string): Promise<void> {
@@ -334,7 +343,7 @@ class IdentitySerivce {
     }
 
 
-    protected async updateSearchIndex(tenant: Tenant, user: User, relType: string): Promise<void> {
+    protected async updateObjectSearchIndex(tenant: Tenant, user: User, relType: string): Promise<void> {
         let owningTenantId: string = tenant.tenantId;
         const document: ObjectSearchResultItem = {
             name: user.nameOrder === NAME_ORDER_WESTERN ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`,
@@ -354,25 +363,25 @@ class IdentitySerivce {
             index: SEARCH_INDEX_OBJECT_SEARCH,
             body: document
         });
+    }
+
+    protected async updateRelSearchIndex(owningTenantId: string, parentTenantId: string, user: User, relType: string): Promise<void> {
         
         const relDocument: RelSearchResultItem = {
             childid: user.userId,
             childname: user.nameOrder === NAME_ORDER_WESTERN ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`,
             childtype: SearchResultType.User,
             owningtenantid: owningTenantId,
-            parentid: owningTenantId,
+            parentid: parentTenantId,
             parenttype: SearchResultType.Tenant,
             childdescription: user.email
         }
         await searchClient.index({
-            id: `${tenant.tenantId}::${user.userId}`,
+            id: `${parentTenantId}::${user.userId}`,
             index: SEARCH_INDEX_REL_SEARCH,
             body: relDocument
         })
     }
-
-
-
 
 }
 

@@ -1,17 +1,17 @@
 import ClientService from "@/lib/service/client-service";
 import TenantService from "@/lib/service/tenant-service";
-import { Resolvers, QueryResolvers, MutationResolvers, Tenant, Client, SigningKey, Scope, AuthenticationGroup, AuthorizationGroup, FederatedOidcProvider, Contact, LoginUserNameHandlerResponse, LoginUserNameHandlerAction, LoginAuthenticationHandlerResponse, LoginAuthenticationHandlerAction, SecondFactorType, PortalUserProfile, User, LoginFailurePolicy, TenantPasswordConfig, TenantLegacyUserMigrationConfig, TenantAnonymousUserConfiguration, TenantLookAndFeel } from "@/graphql/generated/graphql-types";
+import { Resolvers, QueryResolvers, MutationResolvers, Tenant, Client, SigningKey, Scope, AuthenticationGroup, AuthorizationGroup, FederatedOidcProvider, Contact, LoginUserNameHandlerResponse, LoginUserNameHandlerAction, LoginAuthenticationHandlerResponse, LoginAuthenticationHandlerAction, SecondFactorType, PortalUserProfile, User, LoginFailurePolicy, TenantPasswordConfig, TenantLegacyUserMigrationConfig, TenantAnonymousUserConfiguration, TenantLookAndFeel, RateLimitServiceGroup, TenantRateLimitRel, RelSearchResultItem } from "@/graphql/generated/graphql-types";
 import SigningKeysService from "@/lib/service/keys-service";
 import ScopeService from "@/lib/service/scope-service";
 import GroupService from "@/lib/service/group-service";
 import AuthenticationGroupService from "@/lib/service/authentication-group-service";
 import FederatedOIDCProviderService from "@/lib/service/federated-oidc-provider-service";
-import { NAME_ORDER_WESTERN, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_POST, SCOPE_USE_APPLICATION_MANAGEMENT, SIGNING_KEY_STATUS_ACTIVE, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
+import { DEFAULT_RATE_LIMIT_PERIOD_MINUTES, NAME_ORDER_WESTERN, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_POST, SCOPE_USE_APPLICATION_MANAGEMENT, SIGNING_KEY_STATUS_ACTIVE, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import SearchService from "@/lib/service/search-service";
-import { GraphQLError } from "graphql";
 import ContactService from "@/lib/service/contact-service";
 import IdentitySerivce from "@/lib/service/identity-service";
-import { t } from "@mikro-orm/core";
+import RateLimitService from "@/lib/service/rate-limit-service";
+import { OIDCContext } from "../graphql-context";
 
 
 const resolvers: Resolvers = {
@@ -57,9 +57,10 @@ const resolvers: Resolvers = {
             const searchService: SearchService = new SearchService(oidcContext);
             return searchService.search(searchInput);
         },
-        relSearch: (_, { relSearchInput}, oidcContext) => {
+        relSearch: async (_, { relSearchInput}, oidcContext) => {            
             const searchService: SearchService = new SearchService(oidcContext);
-            return searchService.relSearch(relSearchInput);
+            const res = await searchService.relSearch(relSearchInput);
+            return res;
         },
         getRootTenant: (_, __, oidcContext) => {
             const tenantService: TenantService = new TenantService(oidcContext);
@@ -148,7 +149,20 @@ const resolvers: Resolvers = {
             //(username: String!, tenantId: String, preauthToken: String): LoginUserNameHandlerResponse!
         },
         getRateLimitServiceGroups: (_:any, { tenantId }, oidcContext) => {
-            return [];
+            const service: RateLimitService = new RateLimitService(oidcContext);
+            return service.getRateLimitServiceGroups(tenantId || null);
+        },
+        getRateLimitServiceGroupById: (_: any, { serviceGroupId }, oidcContext) => {
+            const service: RateLimitService = new RateLimitService(oidcContext);
+            return service.getRateLimitServiceGroupById(serviceGroupId);
+        },
+        getRateLimitTenantRelViews: (_: any, { rateLimitServiceGroupId }, oidcContext) => {
+            const service: RateLimitService = new RateLimitService(oidcContext);
+            return service.getRateLimitTenantRelViews(rateLimitServiceGroupId);
+        },
+        getRateLimitTenantRels: (_: any, { tenantId, rateLimitServiceGroupId }, oidcContext) => {
+            const service: RateLimitService = new RateLimitService(oidcContext);
+            return service.getRateLimitTenantRel(tenantId || null, rateLimitServiceGroupId || null);
         },
         getTenantPasswordConfig: (_: any, { tenantId }, oidcContext) => {
             const tenantService: TenantService = new TenantService(oidcContext);
@@ -181,13 +195,16 @@ const resolvers: Resolvers = {
         getFederatedOIDCProviderDomainRels: (_: any, { federatedOIDCProviderId, domain }, oidcContext) => {
             const service: FederatedOIDCProviderService = new FederatedOIDCProviderService(oidcContext);
             return service.getFederatedOIDCProviderDomainRels(federatedOIDCProviderId || null, domain || null);
+        },
+        getUserAuthorizationGroups: (_: any, { userId }, oidcContext) => {
+            const service: GroupService = new GroupService(oidcContext);
+            return service.getUserAuthorizationGroups(userId);
         }
     },
     Mutation: {
         createRootTenant: async(_: any, { tenantInput }, oidcContext) => {
             const tenantService: TenantService = new TenantService(oidcContext);
             let tenant: Tenant = {
-                claimsSupported: tenantInput.claimsSupported,
                 enabled: true,
                 tenantId: "",
                 allowUnlimitedRate: tenantInput.allowUnlimitedRate,
@@ -213,7 +230,6 @@ const resolvers: Resolvers = {
             const tenantService: TenantService = new TenantService(oidcContext);
             let tenant: Tenant = {
                 tenantId: tenantInput.tenantId,
-                claimsSupported: tenantInput.claimsSupported,
                 enabled: tenantInput.enabled,
                 tenantName: tenantInput.tenantName,
                 allowUnlimitedRate: tenantInput.allowUnlimitedRate,
@@ -237,7 +253,6 @@ const resolvers: Resolvers = {
         createTenant: async (_: any, { tenantInput }, oidcContext) => {
             const tenantService: TenantService = new TenantService(oidcContext);
             let tenant: Tenant = {
-                claimsSupported: tenantInput.claimsSupported,
                 enabled: true,
                 tenantId: "",
                 allowUnlimitedRate: tenantInput.allowUnlimitedRate,
@@ -254,7 +269,7 @@ const resolvers: Resolvers = {
                 allowLoginByPhoneNumber: tenantInput.allowLoginByPhoneNumber,
                 allowForgotPassword: tenantInput.allowForgotPassword,
                 defaultRateLimit: tenantInput.defaultRateLimit,
-                defaultRateLimitPeriodMinutes: tenantInput.defaultRateLimitPeriodMinutes
+                defaultRateLimitPeriodMinutes: tenantInput.allowUnlimitedRate ? null: DEFAULT_RATE_LIMIT_PERIOD_MINUTES
             }
             await tenantService.createTenant(tenant);
             //const contacts: Array<Contact> = tenantInput.contactInput.map((i: ContactInput) => { return {email: i.email, name: i.name, objectid: tenant.tenantId, objecttype:""}});
@@ -265,7 +280,6 @@ const resolvers: Resolvers = {
             const tenantService: TenantService = new TenantService(oidcContext);
             let tenant: Tenant = {
                 tenantId: tenantInput.tenantId,
-                claimsSupported: tenantInput.claimsSupported,
                 enabled: tenantInput.enabled,
                 tenantName: tenantInput.tenantName,
                 allowUnlimitedRate: tenantInput.allowUnlimitedRate,
@@ -281,7 +295,7 @@ const resolvers: Resolvers = {
                 allowLoginByPhoneNumber: tenantInput.allowLoginByPhoneNumber,
                 allowForgotPassword: tenantInput.allowForgotPassword,
                 defaultRateLimit: tenantInput.defaultRateLimit,
-                defaultRateLimitPeriodMinutes: tenantInput.defaultRateLimitPeriodMinutes
+                defaultRateLimitPeriodMinutes: tenantInput.allowUnlimitedRate ? null: DEFAULT_RATE_LIMIT_PERIOD_MINUTES
             }
             const updatedTenant: Tenant = await tenantService.updateTenant(tenant);
             //const contacts: Array<Contact> = tenantInput.contactInput.map((i: ContactInput) => { return {email: i.email, name: i.name, objectid: tenant.tenantId, objecttype:""}});
@@ -310,9 +324,7 @@ const resolvers: Resolvers = {
                 clientTokenTTLSeconds: clientInput.clientTokenTTLSeconds,
                 clienttypeid: ""
             }
-            await clientService.createClient(client);
-            //const contacts: Array<Contact> = clientInput.contactInput.map((i: ContactInput) => { return {email: i.email, name: i.name, objectid: client.clientId, objecttype:""}});
-            //await clientService.assignContactsToClient(client.clientId, contacts);
+            await clientService.createClient(client);            
             return client;
         },
         updateClient: async (_: any, { clientInput }, oidcContext) => {
@@ -333,8 +345,6 @@ const resolvers: Resolvers = {
                 clienttypeid: ""
             }
             await clientService.updateClient(client);
-            //const contacts: Array<Contact> = clientInput.contactInput.map((i: ContactInput) => { return {email: i.email, name: i.name, objectid: client.clientId, objecttype:""}});
-            //await clientService.assignContactsToClient(client.clientId, contacts);
             return client;
         },
         deleteClient: async(_: any, { clientId }, oidcContext) => {
@@ -643,16 +653,20 @@ const resolvers: Resolvers = {
         setTenantLookAndFeel: async(_: any, { tenantLookAndFeelInput }, oidcContext) => {
             // TODO
             // Implement the service and dao functions.
-            // const tenantService: TenantService = new TenantService(oidcContext);
+            const tenantService: TenantService = new TenantService(oidcContext);
             const tenantLookAndFeel: TenantLookAndFeel = {
                 tenantid: tenantLookAndFeelInput.tenantid,
                 authenticationheaderbackgroundcolor: tenantLookAndFeelInput.authenticationheaderbackgroundcolor,
                 authenticationheadertextcolor: tenantLookAndFeelInput.authenticationheadertextcolor,
                 authenticationheadertext: tenantLookAndFeelInput.authenticationheadertext,
                 authenticationlogo: tenantLookAndFeelInput.authenticationlogo,
-                authenticationlogomimetype: tenantLookAndFeelInput.authenticationlogomimetype
+                authenticationlogomimetype: tenantLookAndFeelInput.authenticationlogomimetype,
+                adminheaderbackgroundcolor: tenantLookAndFeelInput.adminheaderbackgroundcolor,
+                adminheadertext: tenantLookAndFeelInput.adminheadertext,
+                adminheadertextcolor: tenantLookAndFeelInput.adminheadertextcolor,
+                adminlogo: tenantLookAndFeelInput.adminlogo
             }
-            // await tenantService.createTenantLookAndFeel(tenantLookAndFeel);
+            await tenantService.setTenantLookAndFeel(tenantLookAndFeel);
             return tenantLookAndFeel;
         },
         addDomainToTenantManagement: async(_: any, { tenantId, domain }, oidcContext) => {
@@ -762,6 +776,65 @@ const resolvers: Resolvers = {
             const service: IdentitySerivce = new IdentitySerivce(oidcContext);
             await service.removeUserFromTenant(tenantId, userId);
             return userId;
+        },
+        createRateLimitServiceGroup: async(_: any, { rateLimitServiceGroupInput }, oidcContext) => {
+            const service: RateLimitService = new RateLimitService(oidcContext);
+            const r: RateLimitServiceGroup = await service.createRateLimitServiceGroup({
+                servicegroupid: "",
+                servicegroupname: rateLimitServiceGroupInput.servicegroupname,
+                servicegroupdescription: rateLimitServiceGroupInput.servicegroupdescription
+            });
+            return r;
+        },
+        updateRateLimitServiceGroup: async(_: any, { rateLimitServiceGroupInput }, oidcContext) => {
+            const service: RateLimitService = new RateLimitService(oidcContext);
+            const r: RateLimitServiceGroup = await service.updateRateLimitServiceGroup({
+                servicegroupid: rateLimitServiceGroupInput.servicegroupid,
+                servicegroupname: rateLimitServiceGroupInput.servicegroupname,
+                servicegroupdescription: rateLimitServiceGroupInput.servicegroupdescription
+            });
+            return r;
+        },
+        deleteRateLimitServiceGroup: async(_: any, { serviceGroupId }, oidcContext) => {
+            const service: RateLimitService = new RateLimitService(oidcContext);
+            await service.deleteRateLimitServiceGroup(serviceGroupId);
+            return serviceGroupId
+        },
+        assignRateLimitToTenant: async(_: any, { tenantId, serviceGroupId, allowUnlimited, limit, rateLimitPeriodMinutes }, oidcContext) => {
+            const service: RateLimitService = new RateLimitService(oidcContext);
+            const r: TenantRateLimitRel = await service.assignRateLimitToTenant(tenantId, serviceGroupId, allowUnlimited || false, limit || 0, rateLimitPeriodMinutes || 0);
+            return r;
+        },
+        updateRateLimitForTenant: async(_: any, { tenantId, serviceGroupId, allowUnlimited, limit, rateLimitPeriodMinutes }, oidcContext) => {
+            const service: RateLimitService = new RateLimitService(oidcContext);
+            const r: TenantRateLimitRel = await service.updateRateLimitForTenant(tenantId, serviceGroupId, allowUnlimited || false, limit || 0, rateLimitPeriodMinutes || 0);
+            return r;
+        },
+        removeRateLimitFromTenant: async(_: any, { tenantId, serviceGroupId }, oidcContext) => {
+            const service: RateLimitService = new RateLimitService(oidcContext);
+            await service.removeRateLimitFromTenant(tenantId, serviceGroupId);
+            return serviceGroupId;
+        }
+    },
+    RelSearchResultItem : {
+        owningtenantname: async (item: RelSearchResultItem, _: any, oidcContext: OIDCContext) => {
+            let tenant: Tenant | null = null;
+            if(oidcContext.requestCache.has(item.owningtenantid)){
+                tenant = oidcContext.requestCache.get(item.owningtenantid);
+                return tenant?.tenantName || "";
+            }
+            else{
+                const service: TenantService = new TenantService(oidcContext);
+                tenant = await service.getTenantById(item.owningtenantid);
+                if(tenant){
+                    oidcContext.requestCache.set(item.owningtenantid, tenant);
+                    return tenant.tenantName;
+                }
+                else{
+                    return "";
+                }
+            }
+            
         }
     }
 }
