@@ -1,5 +1,3 @@
-import type { FooterLink, Maybe, TenantLookAndFeel } from "@/graphql/generated/graphql-types";
-import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
 import { Model, DataTypes, Sequelize } from 'sequelize';
 
 class TenantLookAndFeelEntity extends Model {

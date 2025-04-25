@@ -304,6 +304,8 @@ class DBTenantDao extends TenantDao {
         return entity ? Promise.resolve(entity as any as TenantLegacyUserMigrationConfig) : Promise.resolve(null);
     }
 
+    // TODO 
+    // Remove the conflict where clause. Refactor the DAO to use an update and create, instead of just a set...
     public async setTenantLegacyUserMigrationConfiguration(tenantLegacyUserMigrationConfig: TenantLegacyUserMigrationConfig): Promise<TenantLegacyUserMigrationConfig | null> {
         const sequelize: Sequelize = await DBDriver.getConnection();
         await sequelize.models.tenantLegacyUserMigrationConfig.upsert(tenantLegacyUserMigrationConfig, {

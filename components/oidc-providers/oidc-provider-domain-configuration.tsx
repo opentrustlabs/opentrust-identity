@@ -13,7 +13,7 @@ import DialogTitle from "@mui/material/DialogTitle";
 import { Button, DialogActions, DialogContent, Divider, TextField } from "@mui/material";
 import AddBoxIcon from '@mui/icons-material/AddBox';
 import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
-import FederatedOIDCProviderDomainRelEntity from "@/lib/entities/federated-oidc-provider-domain-rel-entity";
+
 import { FederatedOidcProviderDomainRel } from "@/graphql/generated/graphql-types";
 import Link from "next/link";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
@@ -105,9 +105,9 @@ const FederatedOIDCProviderDomainConfiguration: React.FC<FederatedOIDCProviderDo
     const handleAddDomain = async () => {
         // If the domain is already in the list, then just set an error message
         if(data && data.getFederatedOIDCProviderDomainRels.length > 0){
-            const arr: Array<FederatedOIDCProviderDomainRelEntity> = data.getFederatedOIDCProviderDomainRels;
+            const arr: Array<FederatedOidcProviderDomainRel> = data.getFederatedOIDCProviderDomainRels;
             const existing = arr.find(
-                (r: FederatedOIDCProviderDomainRelEntity) => r.domain === domainToAdd
+                (r: FederatedOidcProviderDomainRel) => r.domain === domainToAdd
             )
             if(existing){
                 setAddErrorMessage("The domain is already attached to this provider");
