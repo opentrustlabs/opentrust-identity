@@ -1,9 +1,9 @@
-import type { Maybe, UserScopeRel } from "@/graphql/generated/graphql-types";
-import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
+import type { UserScopeRel } from "@/graphql/generated/graphql-types";
 
-@Entity({
-    tableName: "user_scope_rel"
-})
+
+// @Entity({
+//     tableName: "user_scope_rel"
+// })
 class UserScopeRelEntity implements UserScopeRel {
 
     constructor(m?: UserScopeRel){
@@ -13,13 +13,10 @@ class UserScopeRelEntity implements UserScopeRel {
     }
     __typename?: "UserScopeRel";
 
-    @PrimaryKey({fieldName: "userid"})
     userId: string;
 
-    @PrimaryKey({fieldName: "scopeid"})
     scopeId: string;
 
-    @PrimaryKey({fieldName: "tenantid"})
     tenantId: string;
 
     

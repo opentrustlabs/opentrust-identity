@@ -1,9 +1,11 @@
-import type { AuthorizationGroupScopeRel, Maybe } from "@/graphql/generated/graphql-types";
-import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
 
-@Entity({
-    tableName: "authorization_group_scope_rel"
-})
+
+// @Entity({
+//     tableName: "authorization_group_scope_rel"
+
+import { AuthorizationGroupScopeRel } from "@/graphql/generated/graphql-types";
+
+// })
 class AuthorizationGroupScopeRelEntity implements AuthorizationGroupScopeRel {
 
     constructor(m?: AuthorizationGroupScopeRel){
@@ -13,13 +15,13 @@ class AuthorizationGroupScopeRelEntity implements AuthorizationGroupScopeRel {
     }
     __typename?: "AuthorizationGroupScopeRel" | undefined;
 
-    @PrimaryKey({fieldName: "groupid"})
+    
     groupId: string;
 
-    @PrimaryKey({fieldName: "scopeid"})
+    
     scopeId: string;
 
-    @PrimaryKey({fieldName: "tenantid"})
+    
     tenantId: string;
 
 }

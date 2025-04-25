@@ -1,83 +1,83 @@
-import type { Maybe, SigningKey } from "@/graphql/generated/graphql-types";
-import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
+import { Model, DataTypes, Sequelize } from 'sequelize';
 
-@Entity({
-    tableName: "signing_key"
-})
-class SigningKeyEntity {
-
-    constructor(signingKey?: SigningKey){
-        if(signingKey){
-            this.expiresAtMs = signingKey.expiresAtMs;
-            this.keyId = signingKey.keyId;
-            this.keyType = signingKey.keyType;
-            this.keyUse = signingKey.keyUse;
-            this.keyName = signingKey.keyName;
-            this.status = signingKey.status;
-            this.tenantId = signingKey.tenantId;
-            this.certificate = Buffer.from(signingKey.certificate ? signingKey.certificate : "");
-            this.privateKeyPkcs8 = Buffer.from(signingKey.privateKeyPkcs8);
-            this.publicKey = Buffer.from(signingKey.publicKey ? signingKey.publicKey : "");
-            this.password = signingKey.password;
-        }
+class SigningKeyEntity extends Model {
+    
+    static initModel(sequelize: Sequelize): typeof SigningKeyEntity {
+        return SigningKeyEntity.init({
+            keyId: {
+                type: DataTypes.STRING,
+                primaryKey: true,
+                field: "keyid"
+            },
+            keyType: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: false,
+                field: "keytype"
+            },
+            keyName: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: false,
+                field: "keyname"
+            },
+            keyUse: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: false,
+				field: "keyuse"
+            },
+            privateKeyPkcs8: {
+                type: DataTypes.BLOB,
+                primaryKey: false,
+                allowNull: false,
+                field: "privatekeypkcs8"
+            },
+            password: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: true,
+                field: "password"
+            },
+            publicKey: {
+                type: DataTypes.BLOB,
+                primaryKey: false,
+                allowNull: true,
+                field: "publickey"
+            },
+            certificate: {
+                type: DataTypes.BLOB,
+                primaryKey: false,
+                allowNull: true,
+                field: "certificate"
+            },
+            expiresAtMs: {
+                type: DataTypes.NUMBER,
+                primaryKey: false,
+                allowNull: false,
+                field: "expiresatms"
+            },
+            status: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: false,
+                field: "status"
+            },
+            tenantId: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: true,
+                field: "tenantid"
+            }
+        }, 
+		{
+            sequelize,
+            tableName: "signing_key",
+            modelName: "signingKey",
+            timestamps: false
+        });
     }
-    __typename?: "SigningKey";
-
-    @PrimaryKey({fieldName: "keyid"})
-    keyId: string;
-
-    @Property({fieldName: "keytype"})
-    keyType: string;
-    
-    keytypeid?: Maybe<string> | undefined;
-
-    @Property({fieldName: "keyname"})
-    keyName: string;
-    
-    @Property({fieldName: "keyuse"})
-    keyUse: string;
-    
-    @Property({fieldName: "privatekeypkcs8"})
-    privateKeyPkcs8: Buffer;
-
-    @Property({fieldName: "password"})
-    password?: Maybe<string> | undefined;
-
-    @Property({fieldName: "publickey"})
-    publicKey?: Buffer | undefined;
-
-    @Property({fieldName: "certificate"})
-    certificate: Buffer | undefined;
-
-    @Property({fieldName: "expiresatms"})
-    expiresAtMs: number;
-
-    @Property({fieldName: "status"})
-    status: string;
-
-    @Property({fieldName: "tenantid"})
-    tenantId: string;
-
-    public toModel(): SigningKey {
-        const m: SigningKey = {
-            expiresAtMs: this.expiresAtMs,
-            keyId: this.keyId,
-            keyType: this.keyType,
-            keyUse: this.keyUse,
-            privateKeyPkcs8: this.privateKeyPkcs8.toString("utf-8"),
-            status: this.status,
-            tenantId: this.tenantId,
-            certificate: this.certificate?.toString("utf-8"),
-            password: this.password,
-            publicKey: this.publicKey?.toString("utf-8"),
-            keyTypeId: "",
-            statusId: "",
-            keyName: this.keyName,
-            __typename: "SigningKey"
-        }
-        return m;
-    }
-
 }
+
 
 export default SigningKeyEntity;

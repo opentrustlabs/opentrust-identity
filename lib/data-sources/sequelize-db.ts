@@ -35,6 +35,7 @@ import TenantRateLimitRelEntity from "../entities/tenant-rate-limit-rel-entity";
 import RateLimitServiceGroupEntity from "../entities/rate-limit-service-group-entity";
 import TenantAvailableScopeEntity from "../entities/tenant-available-scope-entity";
 import ScopeEntity from "../entities/scope-entity";
+import SigningKeyEntity from "../entities/signing-key-entity";
 
 const {
     DB_USER,
@@ -141,6 +142,7 @@ class DBDriver {
             RateLimitServiceGroupEntity.initModel(global.sequelize);
             TenantAvailableScopeEntity.initModel(global.sequelize);
             ScopeEntity.initModel(global.sequelize);
+            SigningKeyEntity.initModel(global.sequelize);
         } 
 
         return global.sequelize;

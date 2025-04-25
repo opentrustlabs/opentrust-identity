@@ -1,10 +1,9 @@
 import type { SocialOidcProviderTenantRel } from "@/graphql/generated/graphql-types";
-import { Entity, PrimaryKey } from "@mikro-orm/core";
 
 
-@Entity({
-    tableName: "social_oidc_provider_tenant_rel"
-})
+// @Entity({
+//     tableName: "social_oidc_provider_tenant_rel"
+// })
 class SocialOIDCProviderTenantRelEntity {
 
     constructor(socialOidcProviderTenantRel?: SocialOidcProviderTenantRel){
@@ -14,10 +13,8 @@ class SocialOIDCProviderTenantRelEntity {
         }        
     }
 
-    @PrimaryKey()
     federatedoidcproviderid: string;
 
-    @PrimaryKey()
     tenantid: string;
 
     public toModel(): SocialOidcProviderTenantRel {

@@ -1,9 +1,9 @@
 // import type { RateLimitServiceGroupScopeRel } from "@/graphql/generated/graphql-types";
-import { Entity, PrimaryKey } from "@mikro-orm/core";
 
-@Entity({
-    tableName: "rate_limit_service_group_scope_rel"
-})
+
+// @Entity({
+//     tableName: "rate_limit_service_group_scope_rel"
+// })
 class RateLimitServiceGroupScopeRelEntity  {
 
     // constructor(rateLimitServiceGroupScopeRel?: RateLimitServiceGroupScopeRel){
@@ -13,10 +13,7 @@ class RateLimitServiceGroupScopeRelEntity  {
     // }
     __typename?: "RateLimitServiceGroupScopeRel" | undefined;
 
-    @PrimaryKey({fieldName: "scopeid"})
     scopeid: string;
-
-    @PrimaryKey({fieldName: "servicegroupid"})
     servicegroupid: string;
     
 }
