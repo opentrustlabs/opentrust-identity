@@ -20,10 +20,7 @@ class DBSigningKeysDao extends SigningKeysDao {
                 ["keyName", "ASC"]
             ]
         });
-        const models = entities.map(
-            e => e.dataValues
-        );
-        return Promise.resolve(models);
+        return Promise.resolve(entities.map(m => this.entityToModel(m)));
     }
 
     public async getSigningKeyById(keyId: string): Promise<SigningKey | null> {
@@ -33,7 +30,30 @@ class DBSigningKeysDao extends SigningKeysDao {
                 keyId: keyId
             }
         });
-        return entity ? Promise.resolve(entity.dataValues) : Promise.resolve(null);
+
+        return entity ? Promise.resolve(this.entityToModel(entity)) : Promise.resolve(null);
+    }
+
+    // TODO
+    // Remove either the password or the private key from the returned data.
+    // Those values can only be viewed by somebody with the correct permissions.
+    protected entityToModel(entity: SigningKeyEntity): SigningKey {
+        
+        const key: SigningKey = {
+            expiresAtMs: entity.getDataValue("expiresAtMs"),
+            keyId: entity.getDataValue("keyId"),
+            keyName: entity.getDataValue("keyName"),
+            keyType: entity.getDataValue("keyType"),
+            keyUse: entity.getDataValue("keyUse"),
+            privateKeyPkcs8: Buffer.from(entity.getDataValue("privateKeyPkcs8") || "").toString("utf-8"),
+            status: entity.getDataValue("status"),
+            tenantId: entity.getDataValue("tenantId"),
+            certificate: Buffer.from(entity.getDataValue("certificate") || "").toString("utf-8"),
+            password: entity.getDataValue("password"),
+            publicKey: Buffer.from(entity.getDataValue("publicKey") || "").toString("utf-8")
+        }
+        
+        return key;
     }
 
     public async createSigningKey(key: SigningKey): Promise<SigningKey> {
