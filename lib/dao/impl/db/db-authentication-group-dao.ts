@@ -20,11 +20,10 @@ class DBAuthenticationGroupDao extends AuthenticationGroupDao {
                     },
                     order: [
                         ["authenticationGroupName", "ASC"]
-                    ],
-                    raw: true
+                    ]
                 }                
             );
-            return Promise.resolve(authnGroups as any as Array<AuthenticationGroup>);
+            return authnGroups.map(e => e.dataValues)
         }
         else if(clientId){
             const rels: Array<AuthenticationGroupClientRelEntity> = await this.getAuthenticationGroupClientRels(clientId);
@@ -41,11 +40,10 @@ class DBAuthenticationGroupDao extends AuthenticationGroupDao {
                     where: filter,
                     order: [
                         ["authenticationGroupName", "ASC"]
-                    ],
-                    raw: true
+                    ]
                 }                
             )
-            return Promise.resolve(authnGroups as any as Array<AuthenticationGroup>);
+            return authnGroups.map(e => e.dataValues)
         }
         else if(userId){
             const rels: Array<AuthenticationGroupUserRel> = await this.getAuthenticationGroupUserRels(userId);
@@ -57,11 +55,10 @@ class DBAuthenticationGroupDao extends AuthenticationGroupDao {
                     where: filter,
                     order: [
                         ["authenticationGroupName", "ASC"]
-                    ],
-                    raw: true
+                    ]
                 }                
             );
-            return Promise.resolve(authnGroups as any as Array<AuthenticationGroup>);
+            return authnGroups.map(e => e.dataValues);
         }
         else {
             return [];
@@ -83,11 +80,10 @@ class DBAuthenticationGroupDao extends AuthenticationGroupDao {
         const entity: AuthenticationGroupEntity | null = await sequelize.models.authenticationGroup.findOne({
                 where: {
                     authenticationGroupId: authenticationGroupId
-                },
-                raw: true
+                }
             }
         );
-        return Promise.resolve(entity as any as AuthenticationGroup);
+        return entity ? Promise.resolve(entity.dataValues as AuthenticationGroup) : Promise.resolve(null);
     }
 
     public async createAuthenticationGroup(authenticationGroup: AuthenticationGroup): Promise<AuthenticationGroup> {

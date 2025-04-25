@@ -5,12 +5,10 @@ import SocialOIDCProviderTenantRelEntity from '@/lib/entities/social-oidc-provid
 import AuthorizationGroupScopeRelEntity from '@/lib/entities/authorization-group-scope-rel-entity';
 import FooterLinkEntity from '@/lib/entities/footer-link-entity';
 import RateLimitEntity from '@/lib/entities/rate-limit-entity';
-import RateLimitServiceGroupEntity from '@/lib/entities/rate-limit-service-group-entity';
 import RateLimitServiceGroupScopeRelEntity from '@/lib/entities/rate-limit-service-group-scope-rel-entity';
 import ScopeConstraintSchemaEntity from '@/lib/entities/scope-access-rule-schema-entity';
 import ScopeEntity from '@/lib/entities/scope-entity';
 import SigningKeyEntity from '@/lib/entities/signing-key-entity';
-import TenantRateLimitRelEntity from '@/lib/entities/tenant-rate-limit-rel-entity';
 import TenantAvailableScopeEntity from '@/lib/entities/tenant-available-scope-entity';
 import UserScopeRelEntity from '@/lib/entities/user-scope-rel-entity';
 import ClientScopeRelEntity from '@/lib/entities/client-scope-rel-entity';
@@ -51,14 +49,12 @@ const connection = MikroORM.initSync(
             FooterLinkEntity,
             LoginFailurePolicyEntity,
             RateLimitEntity,
-            RateLimitServiceGroupEntity,
             RateLimitServiceGroupScopeRelEntity,
             SchedulerLockEntity,
             ScopeConstraintSchemaEntity,
             ScopeEntity,
             SigningKeyEntity,
             SocialOIDCProviderTenantRelEntity,
-            TenantRateLimitRelEntity,
             TenantAvailableScopeEntity,
             UserFido2CounterRelEntity,
             UserScopeRelEntity

@@ -91,13 +91,12 @@ class DBFederatedOIDCProviderDao extends FederatedOIDCProviderDao {
         const federatedOIDCProviderDomainRelEntity: FederatedOIDCProviderDomainRelEntity | null = await sequelize.models.federatedOidcProviderDomainRel.findOne({
             where:{
                 domain: domain
-            },
-            raw: true
-        }
-        );
+            }
+        });
         if(!federatedOIDCProviderDomainRelEntity){
             return Promise.resolve(null);
         }
+        
         const federatedOIDCProviderEntity: FederatedOIDCProviderEntity | null = await sequelize.models.federatedOidcProvider.findOne({
                 where: {
                     federatedOIDCProviderId: federatedOIDCProviderDomainRelEntity.getDataValue("federatedOIDCProviderId")
@@ -107,7 +106,7 @@ class DBFederatedOIDCProviderDao extends FederatedOIDCProviderDao {
         if(!federatedOIDCProviderEntity){
             return Promise.resolve(null);
         }
-        return Promise.resolve(federatedOIDCProviderEntity as any as FederatedOidcProvider);
+        return Promise.resolve(federatedOIDCProviderEntity.dataValues as FederatedOidcProvider);
     }
 
     public async assignFederatedOidcProviderToTenant(federatedOIDCProviderId: string, tenantId: string): Promise<FederatedOidcProviderTenantRel> {

@@ -12,11 +12,9 @@ class DBClientDao extends ClientDao {
         const sequelize: Sequelize = await DBDriver.getConnection();
         const whereClause = tenantId ? {tenantId: tenantId} : {}
         const clientEntities: Array<ClientEntity> = await sequelize.models.client.findAll({
-            where: whereClause,
-            raw: true
+            where: whereClause
         });
-
-        return Promise.resolve(clientEntities as any as Array<Client>);
+        return clientEntities.map(e => e.dataValues);
     }
 
     public async getClientById(clientId: string): Promise<Client | null> {
@@ -24,12 +22,11 @@ class DBClientDao extends ClientDao {
         const clientEntity: ClientEntity | null = await sequelize.models.client.findOne({
             where: {
                 clientId: clientId
-            },
-            raw: true
+            }
         });
 
         if(clientEntity){            
-            return clientEntity as any as Client;
+            return clientEntity.dataValues as any as Client;
         }
         else{
             return null;
