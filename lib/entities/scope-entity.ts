@@ -1,30 +1,41 @@
-import type { Maybe, Scope } from "@/graphql/generated/graphql-types";
-import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
+import { Model, DataTypes, Sequelize } from 'sequelize';
 
-@Entity({
-    tableName: "scope"
-})
-class ScopeEntity implements Scope {
-
-    constructor(scope?: Scope){
-        if(scope){
-            Object.assign(this, scope);
-        }
+class ScopeEntity extends Model {
+    
+    static initModel(sequelize: Sequelize): typeof ScopeEntity {
+        return ScopeEntity.init({
+            scopeId: {
+                type: DataTypes.STRING,
+                primaryKey: true,
+                field: "scopeid"
+            },
+            scopeName: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: false,
+                field: "scopename"
+            },
+            scopeDescription: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: false,
+                field: "scopedescription"
+            },
+            scopeUse: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: false,
+                field: "scopeuse"
+            }
+        }, 
+		{
+            sequelize,
+            tableName: "scope",
+            modelName: "scope",
+            timestamps: false
+        });
     }
-    __typename?: "Scope" | undefined;
-
-    @PrimaryKey({fieldName: "scopeid"})
-    scopeId: string;
-
-    @Property({fieldName: "scopename"})
-    scopeName: string;
-
-    @Property({fieldName: "scopedescription"})
-    scopeDescription: string;
-
-    @Property({fieldName: "scopeuse"})
-    scopeUse: string;
-
 }
+
 
 export default ScopeEntity;

@@ -1,7 +1,5 @@
-// import { ScopeConstraintSchema } from "@/graphql/generated/graphql-types";
 import ScopeConstraintSchemaDao from "@/lib/dao/scope-constraint-schema-dao";
-import connection  from "@/lib/data-sources/db";
-import ScopeConstraintSchemaEntity from "@/lib/entities/scope-access-rule-schema-entity";
+
 
 class DBScopeConstraintSchemaDao extends ScopeConstraintSchemaDao {
 

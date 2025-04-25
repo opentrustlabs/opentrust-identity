@@ -1,28 +1,33 @@
-import type { TenantAvailableScope } from "@/graphql/generated/graphql-types";
-import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
+import { Model, DataTypes, Sequelize } from 'sequelize';
 
-@Entity({
-    tableName: "tenant_available_scope"
-})
-class TenantAvailableScopeEntity implements TenantAvailableScope {
+class TenantAvailableScopeEntity extends Model {
     
-    constructor(m?: TenantAvailableScope){
-        if(m){
-            Object.assign(this, m);
-        }
+    static initModel(sequelize: Sequelize): typeof TenantAvailableScopeEntity {
+        return TenantAvailableScopeEntity.init({
+            tenantId: {
+                type: DataTypes.STRING,
+                primaryKey: true,
+                field: "tenantid"
+            },
+            scopeId: {
+                type: DataTypes.STRING,
+                primaryKey: true,
+                field: "scopeid"
+            },
+            accessRuleId: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: true,
+                field: "accessruleid"
+            }
+        }, 
+		{
+            sequelize,
+            tableName: "tenant_available_scope",
+            modelName: "tenantAvailableScope",
+            timestamps: false
+        });
     }
-    
-    __typename?: "TenantAvailableScope";
-    
-    @PrimaryKey({fieldName: "tenantid"})
-    tenantId: string;
-
-    @PrimaryKey({fieldName: "scopeid"})
-    scopeId: string;
-
-    @Property({fieldName: "accessruleid", nullable: true})
-    accessRuleId: string | null;
-   
 }
 
 export default TenantAvailableScopeEntity;

@@ -33,6 +33,8 @@ import ProhibitedPasswordEntity from "../entities/prohibited-password-entity";
 import UserTenantRelEntity from "../entities/user-tenant-rel-entity";
 import TenantRateLimitRelEntity from "../entities/tenant-rate-limit-rel-entity";
 import RateLimitServiceGroupEntity from "../entities/rate-limit-service-group-entity";
+import TenantAvailableScopeEntity from "../entities/tenant-available-scope-entity";
+import ScopeEntity from "../entities/scope-entity";
 
 const {
     DB_USER,
@@ -137,6 +139,8 @@ class DBDriver {
             AuthorizationGroupEntity.initModel(global.sequelize);
             TenantRateLimitRelEntity.initModel(global.sequelize);
             RateLimitServiceGroupEntity.initModel(global.sequelize);
+            TenantAvailableScopeEntity.initModel(global.sequelize);
+            ScopeEntity.initModel(global.sequelize);
         } 
 
         return global.sequelize;

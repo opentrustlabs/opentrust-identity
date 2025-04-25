@@ -1,28 +1,33 @@
-import type { ClientScopeRel, Maybe } from "@/graphql/generated/graphql-types";
-import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
+import { Model, DataTypes, Sequelize } from 'sequelize';
 
-@Entity({
-    tableName: "client_scope_rel"
-})
-class ClientScopeRelEntity implements ClientScopeRel {
+class ClientScopeRelEntity extends Model {
     
-    constructor(m?: ClientScopeRel){
-        if(m){
-            Object.assign(this, m);
-        }
+    static initModel(sequelize: Sequelize): typeof ClientScopeRelEntity {
+        return ClientScopeRelEntity.init({
+            tenantId: {
+                type: DataTypes.STRING,
+                primaryKey: true,
+                field: "tenantid"
+            },
+            clientId: {
+                type: DataTypes.STRING,
+                primaryKey: true,
+                field: "clientid"
+            },
+            scopeId: {
+                type: DataTypes.STRING,
+                primaryKey: true,
+                field: "scopeid"
+            }
+        }, 
+		{
+            sequelize,
+            tableName: "client_scope_rel",
+            modelName: "clientScopeRel",
+            timestamps: false
+        });
     }
-    
-    __typename?: "ClientScopeRel"
-    
-    @PrimaryKey({fieldName: "clientid"})
-    clientId: string;
-
-    @PrimaryKey({fieldName: "scopeid"})
-    scopeId: string;
-
-    @PrimaryKey({fieldName: "tenantid"})
-    tenantId: string;
- 
 }
+
 
 export default ClientScopeRelEntity;

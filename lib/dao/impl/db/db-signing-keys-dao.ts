@@ -73,25 +73,6 @@ class DBSigningKeysDao extends SigningKeysDao {
         return Promise.resolve();
     }
 
-
-    public async assignContactsToSigningKey(keyId: string, contactList: Array<Contact>): Promise<Array<Contact>> {
-        const em = connection.em.fork();
-        await em.nativeDelete(ContactEntity, {
-            objectid: keyId
-        });
-        await em.flush();
-        const entities = contactList.map(
-            (c: Contact) => {
-                c.objectid = keyId;
-                c.objecttype = CONTACT_TYPE_FOR_SIGNING_KEY;
-                return new ContactEntity(c);                
-            }
-        );
-        for(let i = 0; i < entities.length; i++){
-            await em.persistAndFlush(entities[i]);
-        }
-        return Promise.resolve(contactList);
-    }
     
 }
 
