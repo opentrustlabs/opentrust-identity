@@ -1,5 +1,5 @@
 "use client";
-import React, { useContext } from "react";
+import React, { useContext, useEffect } from "react";
 import { Divider, Drawer, Grid2, InputAdornment, Stack, TextField } from "@mui/material";
 import Link from "next/link";
 import SearchIcon from '@mui/icons-material/Search';
@@ -18,9 +18,11 @@ import { ResponsiveBreakpoints } from "@/components/contexts/responsive-context"
 import { TenantMetaData } from "@/graphql/generated/graphql-types";
 import AddBoxIcon from '@mui/icons-material/AddBox';
 import VerifiedIcon from '@mui/icons-material/Verified';
+import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
 import { TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import CreateNewDialog from "../dialogs/create-new-dialog";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
+import { useRouter } from "next/navigation";
 
 
 interface NavigationProps {
@@ -33,12 +35,20 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
 
     // CONTEXT
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
+    const router = useRouter();
 
     // STATE VARIABLES
-    const [searchTerm, setSearchTerm] = React.useState<string | null>("");
+    const [searchTerm, setSearchTerm] = React.useState<string>("");
     const [drawerOpen, setDrawerOpen] = React.useState(false);
+    const [showSearchIcon, setShowSearchIcon] = React.useState<boolean>(true);
     const [openCreateNewDialog, setOpenCreateNewDialog] = React.useState<boolean>(false);
 
+    useEffect(() => {
+        if(section !== "search"){
+            setSearchTerm("");
+            setShowSearchIcon(true);
+        }
+    }, [section])
 
     // HANDLER FUNCTIONS
     const toggleDrawer = (newOpen: boolean) => () => {
@@ -53,22 +63,15 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
     const handleKeyPressSearch = (evt: React.KeyboardEvent) => {        
         if (evt.key.valueOf().toLowerCase() === "enter") {
             if(searchTerm && searchTerm.length > 2){
-                // I do not like doing this, but I cannot get router.push() to work.
-                window.document.location = `/${tenantBean.getTenantMetaData().tenant.tenantId}?section=search&term=${searchTerm}`;
-                // A bug in nextjs? router.push does not work when changing query params. Keep the code
-                // here as an example, just in case an upgrade fixes it.
-                // router.push(`/${tenantBean.getTenantMetaData().tenant.tenantId}?term=${searchTerm}&section=search`);
+                router.push(`/${tenantBean.getTenantMetaData().tenant.tenantId}?term=${searchTerm}&section=search`);
+                setShowSearchIcon(false);
             }
         }
     }
 
     const handleSearch = (evt: any) => {
-        if(searchTerm && searchTerm.length > 2){      
-            // I do not like doing this, but I cannot get router.push() to work.      
-            window.document.location = `/${tenantBean.getTenantMetaData().tenant.tenantId}?section=search&term=${searchTerm}`;
-            // A bug in nextjs? router.push does not work when changing query params. Keep the code
-            // here as an example, just in case an upgrade fixes it.
-            //router.push(`/${tenantBean.getTenantMetaData().tenant.tenantId}?term=${searchTerm}&section=search`)            
+        if(searchTerm && searchTerm.length > 2){
+            router.push(`/${tenantBean.getTenantMetaData().tenant.tenantId}?term=${searchTerm}&section=search`)            
         }
     }
     
@@ -85,17 +88,34 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
                                 name="searchinput"
                                 id="searchinput"
                                 onKeyDown={handleKeyPressSearch}
-                                onChange={(evt) => setSearchTerm(evt.target.value)}
+                                onChange={(evt) => {
+                                    setSearchTerm(evt.target.value);
+                                    setShowSearchIcon(true);
+                                }}
                                 fullWidth={true}
                                 label={"Search"}
                                 slotProps={{
                                     input: {
                                         endAdornment: (
                                             <InputAdornment position="end">
-                                                <SearchIcon 
-                                                    onClick={handleSearch}
-                                                    sx={{cursor: "pointer"}}
-                                                />
+                                                {showSearchIcon &&
+                                                    <SearchIcon 
+                                                        onClick={(evt) => {
+                                                            setShowSearchIcon(false);
+                                                            handleSearch(evt);
+                                                        }}
+                                                        sx={{cursor: "pointer"}}
+                                                    />
+                                                }
+                                                {!showSearchIcon &&
+                                                    <CloseOutlinedIcon
+                                                        onClick={() => {
+                                                            setSearchTerm("");
+                                                            setShowSearchIcon(true);
+                                                        }}
+                                                        sx={{cursor: "pointer"}}
+                                                    />
+                                                }
                                             </InputAdornment>
                                         )
                                     }
@@ -188,21 +208,39 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
                             OpenTrust Identity
                         </Grid2>
                         <Grid2 size={breakPoints.isSmall? 6: 7}>
-                            <TextField   
+                            <TextField 
+                                value={searchTerm}
                                 size="small"
                                 name="searchinput"
                                 id="searchinput"
                                 onKeyDown={handleKeyPressSearch}
-                                onChange={(evt) => setSearchTerm(evt.target.value)}
+                                onChange={(evt) => {
+                                    setSearchTerm(evt.target.value);
+                                    setShowSearchIcon(true);
+                                }}
                                 fullWidth={true}                                
                                 slotProps={{                                    
                                     input: {
                                         endAdornment: (
                                             <InputAdornment position="end">
-                                                <SearchIcon 
-                                                    onClick={handleSearch}
-                                                    sx={{cursor: "pointer"}}
-                                                />
+                                                {showSearchIcon &&
+                                                    <SearchIcon 
+                                                        onClick={(evt) => {
+                                                            setShowSearchIcon(false);
+                                                            handleSearch(evt);
+                                                        }}
+                                                        sx={{cursor: "pointer"}}
+                                                    />
+                                                }
+                                                {!showSearchIcon &&
+                                                    <CloseOutlinedIcon
+                                                        onClick={() => {
+                                                            setSearchTerm("");
+                                                            setShowSearchIcon(true);
+                                                        }}
+                                                        sx={{cursor: "pointer"}}
+                                                    />
+                                                }
                                             </InputAdornment>
                                         ),
                                         style: {

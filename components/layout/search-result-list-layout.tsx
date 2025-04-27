@@ -1,7 +1,7 @@
 "use client";
 import Grid2 from "@mui/material/Grid2";
 import TablePagination from "@mui/material/TablePagination";
-import React, { useContext, useRef } from "react";
+import React, { useContext, useEffect, useRef } from "react";
 import DataLoading from "./data-loading";
 import ErrorComponent from "../error/error-component";
 import Stack from "@mui/material/Stack";
@@ -23,6 +23,7 @@ import AuthenticationGroupList from "../authentication-groups/authentication-gro
 import FederatedOIDCProviderList from "../oidc-providers/oidc-provider-list";
 import RateLimitList from "../rate-limits/rate-limit-list";
 import SearchResultList from "../search/search-result-list";
+import { useSearchParams } from "next/navigation";
 
 
 export interface ResultListProps {
@@ -36,7 +37,6 @@ export interface SearchResultListProps {
     perPage: number,
     resultType: SearchResultType | null,
     breadCrumbText: string | null
-    searchTerm?: string | null,
     sortDirection?: string | null,
     sortField?: string | null
 }
@@ -48,28 +48,34 @@ const SearchResultListLayout: React.FC<SearchResultListProps> = ({
     perPage: pp,
     resultType,
     breadCrumbText,
-    searchTerm,
     sortField,
     sortDirection
 }) => {
 
 
+    // CONTEXT HOOKS
+    const tenantBean: TenantMetaDataBean = useContext(TenantContext);
+    const searchParams = useSearchParams();
+    const isSearchPage: boolean = searchParams?.get("section")  === "search" ? true : false;
+    const t = searchParams?.get("term") || ""
+    
     const perPage = pp && pp < MAX_SEARCH_PAGE_SIZE ? pp : 20;
     
     // REF OBJECTS
     const topOfSearchList = useRef<HTMLDivElement | null>(null);
 
     // STATE VARIABLES
-    const [filterTerm, setFilterTerm] = React.useState<string>(searchTerm ? searchTerm : "");
+    const [filterTerm, setFilterTerm] = React.useState<string>(t);
     const [page, setPage] = React.useState<number>(p  || 1);
     
-    // CONTEXT HOOKS
-    const tenantBean: TenantMetaDataBean = useContext(TenantContext);
+    useEffect(() => {
+        setFilterTerm(searchParams?.get("term") || "");
+    }, [searchParams]);
 
     // HANDLER FUNCTIONS
     const arrBreadcrumbs = [];
-    if(resultType === null){
-        const suffix = searchTerm ? ` (search term: ${searchTerm})` : ``
+    if(isSearchPage){
+        const suffix = t ? ` (search term: ${t})` : ``
         arrBreadcrumbs.push({
             href: null,
             linkText: `Search Results${suffix}`
@@ -139,30 +145,30 @@ const SearchResultListLayout: React.FC<SearchResultListProps> = ({
     return (
 
         <main >
-            <Typography component={"div"}>                
+            <Typography key={Date.now()} component={"div"}>
                 <BreadcrumbComponent breadCrumbs={arrBreadcrumbs} />                
                 <Stack spacing={1} justifyContent={"space-between"} direction={"row"} fontWeight={"bold"} margin={"8px 0px 24px 0px"}>
                     <div style={{ display: "inline-flex", alignItems: "center" }}>
-                        {!searchTerm &&
-                        <TextField
-                            label={filterInputLabel}
-                            size={"small"}
-                            name={"filter"}
-                            value={filterTerm}
-                            onChange={handleFilterTermChange}
-                            slotProps={{
-                                input: {
-                                    endAdornment: (
-                                        <InputAdornment position="end">
-                                            <CloseOutlinedIcon
-                                                sx={{ cursor: "pointer" }}
-                                                onClick={() => { setFilterTerm(""); setPage(1) }}
-                                            />
-                                        </InputAdornment>
-                                    )
-                                }
-                            }}
-                        />
+                        {!isSearchPage &&
+                            <TextField
+                                label={filterInputLabel}
+                                size={"small"}
+                                name={"filter"}
+                                value={filterTerm}
+                                onChange={handleFilterTermChange}
+                                slotProps={{
+                                    input: {
+                                        endAdornment: (
+                                            <InputAdornment position="end">
+                                                <CloseOutlinedIcon
+                                                    sx={{ cursor: "pointer" }}
+                                                    onClick={() => { setFilterTerm(""); setPage(1) }}
+                                                />
+                                            </InputAdornment>
+                                        )
+                                    }
+                                }}
+                            />
                         }
                     </div>
                     <div ref={topOfSearchList}></div>
