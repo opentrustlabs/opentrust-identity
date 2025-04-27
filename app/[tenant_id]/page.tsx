@@ -56,7 +56,6 @@ const TenantLandingPage: React.FC = () => {
                     filterInputLabel="Filter Results"
                     resultType={null}
                     breadCrumbText={""}
-                    searchTerm={searchTerm || null}
                 />
             }
             {section === "clients" &&
