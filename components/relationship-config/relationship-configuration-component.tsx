@@ -384,8 +384,7 @@ const RelSearch: React.FC<RelSearchProps> = ({
                 perPage: 10,
                 childids: data ? data.relSearch.resultlist.map( (item: RelSearchResultItem) => item.childid) : []
             }
-        },        
-        //skip: loading === true || error !== null || data === null || data === undefined,
+        }, 
         skip: shouldSkip(),
         fetchPolicy: "no-cache",
         nextFetchPolicy: "no-cache"
@@ -409,6 +408,15 @@ const RelSearch: React.FC<RelSearchProps> = ({
             return false;
         }
         return false
+    }
+
+    const getSearchResults = () => {
+        if(loading && previousData){
+            return previousData
+        }
+        else if(data){
+            return data;
+        }
     }
 
     return (
@@ -447,9 +455,9 @@ const RelSearch: React.FC<RelSearchProps> = ({
                     { (loading || childDataLoading) &&
                         <DataLoading dataLoadingSize="24vh" color={null} />
                     }
-                    {data && data.relSearch.total > 0 && childData &&
+                    {!loading && !childDataLoading && ((data && data.relSearch.total > 0) || (previousData && previousData.relSearch.total > 0)) && childData &&
                         <>
-                            {data.relSearch.resultlist.map(
+                            {getSearchResults().relSearch.resultlist.map(
                                 (item: RelSearchResultItem) => (
                                     <React.Fragment key={item.childid}>
                                         <Typography component="div">

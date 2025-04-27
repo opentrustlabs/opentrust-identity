@@ -1,6 +1,6 @@
 "use client";
-import React, { useContext, useEffect } from "react";
-import { Divider, Drawer, Grid2, InputAdornment, Stack, TextField } from "@mui/material";
+import React, { useContext, useEffect, useRef } from "react";
+import { Autocomplete, AutocompleteRenderInputParams, Divider, Drawer, Grid2, InputAdornment, Stack, TextField } from "@mui/material";
 import Link from "next/link";
 import SearchIcon from '@mui/icons-material/Search';
 import MenuIcon from '@mui/icons-material/Menu';
@@ -23,6 +23,8 @@ import { TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import CreateNewDialog from "../dialogs/create-new-dialog";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
 import { useRouter } from "next/navigation";
+import SearchLookahead from "../search/search-lookahead";
+import { isFullWidth } from "validator";
 
 
 interface NavigationProps {
@@ -39,16 +41,22 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
 
     // STATE VARIABLES
     const [searchTerm, setSearchTerm] = React.useState<string>("");
+    const [searchTerm2, setSearchTerm2] = React.useState<string>("");
     const [drawerOpen, setDrawerOpen] = React.useState(false);
     const [showSearchIcon, setShowSearchIcon] = React.useState<boolean>(true);
     const [openCreateNewDialog, setOpenCreateNewDialog] = React.useState<boolean>(false);
+    const [lookaheadAnchorElement, setLookaheadAnchorElement] = React.useState<HTMLElement | null>(null);
+
+    // REF OBJECTS
+    const searchInputBox = useRef<HTMLDivElement | null>(null);
 
     useEffect(() => {
         if(section !== "search"){
             setSearchTerm("");
             setShowSearchIcon(true);
         }
-    }, [section])
+
+    }, [section, lookaheadAnchorElement])
 
     // HANDLER FUNCTIONS
     const toggleDrawer = (newOpen: boolean) => () => {
@@ -79,10 +87,12 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
     return (
         <>
             {!breakPoints.isMedium && 
-                <>
+                <>                    
                     <Stack spacing={0} fontSize={"0.9em"}  direction={"row"} paddingTop={"8px"}>
                         <div>
+                        
                             <TextField   
+                                ref={searchInputBox}
                                 value={searchTerm}
                                 size="small"
                                 name="searchinput"
@@ -122,6 +132,56 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
                                 }}                                    
                             />
                         </div>
+                    </Stack>
+                    <Stack spacing={0} fontSize={"0.9em"}  direction={"row"} paddingTop={"8px"}>
+                                              
+                            <Autocomplete   
+                                freeSolo
+                                value={searchTerm2}
+                                filterOptions={(x) => x}
+                                size="small"
+                                id="searchinput2"
+                                onKeyDown={handleKeyPressSearch}
+                                onChange={(evt) => {
+                                    // setSearchTerm(evt.target.value);
+                                    // setShowSearchIcon(true);
+                                } }
+                                fullWidth={true}
+                                autoComplete={true}
+                                slotProps={{
+                                    
+                                    // input: {
+                                    //     endAdornment: (
+                                    //         <InputAdornment position="end">
+                                    //             {showSearchIcon &&
+                                    //                 <SearchIcon 
+                                    //                     onClick={(evt) => {
+                                    //                         setShowSearchIcon(false);
+                                    //                         handleSearch(evt);
+                                    //                     }}
+                                    //                     sx={{cursor: "pointer"}}
+                                    //                 />
+                                    //             }
+                                    //             {!showSearchIcon &&
+                                    //                 <CloseOutlinedIcon
+                                    //                     onClick={() => {
+                                    //                         setSearchTerm("");
+                                    //                         setShowSearchIcon(true);
+                                    //                     }}
+                                    //                     sx={{cursor: "pointer"}}
+                                    //                 />
+                                    //             }
+                                    //         </InputAdornment>
+                                    //     )
+                                    // }
+                                }} 
+                                renderInput={(params) => {
+                                    console.log(params)
+                                    return <TextField {...params} size="small" multiline={false} label="Search" fullWidth={true} />
+                                }}
+                                options={[]}
+                            />
+                        
                     </Stack>
 
                     <Stack spacing={0} padding={"8px"} color={"#616161"} fontSize={"0.9em"} fontWeight={"bolder"} marginTop={"8px"} >
