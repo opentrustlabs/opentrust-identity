@@ -1,4 +1,4 @@
-import { LookaheadResult, ObjectSearchResults, SearchFilterInput, SearchFilterInputObjectType, SearchInput, ObjectSearchResultItem, RelSearchResults, RelSearchInput, RelSearchResultItem, SearchRelType, SearchResultType } from "@/graphql/generated/graphql-types";
+import { LookaheadResult, ObjectSearchResults, SearchFilterInput, SearchFilterInputObjectType, SearchInput, ObjectSearchResultItem, RelSearchResults, RelSearchInput, RelSearchResultItem, SearchRelType, SearchResultType, LookaheadItem } from "@/graphql/generated/graphql-types";
 import { OIDCContext } from "@/graphql/graphql-context";
 import { getOpenSearchClient } from "../data-sources/search";
 import { Client } from "@opensearch-project/opensearch";
@@ -71,7 +71,8 @@ class SearchService {
             query.bool.must = {
                 multi_match: {
                     query: searchTerm,
-                    fields: fields
+                    fields: fields,
+                    operator: "and"
                 }
             }
         }
@@ -310,70 +311,46 @@ class SearchService {
     }
 
     public async lookahead(term: string): Promise<Array<LookaheadResult>> {
-        /*
-            __typename?: 'LookaheadResult';
-            category: Scalars['String']['output'];
-            resultList?: Maybe<Array<Maybe<LookaheadItem>>>;
-
-              __typename?: 'LookaheadItem';
-              displayValue: Scalars['String']['output'];
-              id: Scalars['String']['output'];
-              matchingString?: Maybe<Scalars['String']['output']>;
-
-        */
-        const retVal: Array<LookaheadResult> = [
-            {
-                category: SearchResultType.Tenant,
-                resultList: [
-                    {
-                        displayValue: "Bioreliance",
-                        id: "3847389283489234"
-                    },
-                    {
-                        displayValue: "Pfizer",
-                        id: "3847389283489235"
-                    },
-                    {
-                        displayValue: "Amgen",
-                        id: "3847389283489236"
-                    },
-                    {
-                        displayValue: "Lowes",
-                        id: "3847389283489237"
+   
+       // TODO
+       // Add in filters for tenant based on the oidcContext object and whether
+       // the user has access to see all tenants or just their own.
+       // For now, we'll just re-use the search function for lookahead
+        const searchInput: SearchInput = {
+            page: 1,
+            perPage: 10,
+            term: term
+        }
+        const searchResults: ObjectSearchResults = await this.search(searchInput);
+        const retVal: Array<LookaheadResult> = [];
+        if(searchResults.total > 0){
+            const map: Map<SearchResultType, Array<LookaheadItem>> = new Map();
+            searchResults.resultlist.forEach(
+                (item: ObjectSearchResultItem) => {
+                    let arr: Array<LookaheadItem> | undefined = map.get(item.objecttype);
+                    if(!arr){
+                        arr = [];
+                        map.set(item.objecttype, arr);
                     }
-                ]
-            },
-            {
-                category: SearchResultType.Client,
-                resultList: [
-                    {
-                        displayValue: "Bioreliance",
-                        id: "3847389283489238"
-                    },
-                    {
-                        displayValue: "Pfizer",
-                        id: "3847389283489239"
+                    const lookaheadItem: LookaheadItem = {
+                        displayValue: item.name,
+                        id: item.objectid,
+                        matchingString: ""
                     }
-                ]
-            },
-            {
-                category: SearchResultType.AuthorizationGroup,
-                    resultList: [
-                        {
-                            displayValue: "US Users",
-                            id: "3847389283489214"
-                        },
-                        {
-                            displayValue: "EU Users",
-                            id: "3847389283489224"
-                        },
-                        {
-                            displayValue: "Project management team - US",
-                            id: "3847389283489244"
-                        }
-                    ]
-            }
-        ]
+                    arr.push(lookaheadItem);
+                }
+            );
+            map.forEach(
+                (arr: Array<LookaheadItem>, objectType: SearchResultType) => {
+                    const lookaheadResult: LookaheadResult = {
+                        category: objectType,
+                        resultList: arr
+                    };
+                    retVal.push(lookaheadResult);
+                }
+            )
+        }
+
 
         return Promise.resolve(retVal);
     }

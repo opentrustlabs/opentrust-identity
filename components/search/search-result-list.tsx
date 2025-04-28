@@ -10,15 +10,6 @@ import Link from "next/link";
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import DeleteForeverOutlinedIcon from '@mui/icons-material/DeleteForeverOutlined';
 import { ResultListProps } from "../layout/search-result-list-layout";
-import GroupIcon from '@mui/icons-material/Group';
-import PeopleIcon from '@mui/icons-material/People';
-import KeyIcon from '@mui/icons-material/Key';
-import PersonIcon from '@mui/icons-material/Person';
-import SettingsApplicationsIcon from '@mui/icons-material/SettingsApplications';
-import SettingsSystemDaydreamIcon from '@mui/icons-material/SettingsSystemDaydream';
-import PolicyIcon from '@mui/icons-material/Policy';
-import AutoAwesomeMosaicIcon from '@mui/icons-material/AutoAwesomeMosaic';
-import SpeedIcon from '@mui/icons-material/Speed';
 import SearchResultIconRenderer, { getUriSection } from "./search-result-icon-renderer";
 
 const SearchResultList: React.FC<ResultListProps> = ({
