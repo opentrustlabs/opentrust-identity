@@ -155,14 +155,6 @@ class SearchService {
             }
         );
 
-        // if(searchInput.includeExistingRel && searchInput.existingRelParentId){
-        //     const arrayIds: Array<string> = items.map(
-        //         (item: ObjectSearchResultItem) => item.objectid
-        //     )
-        //     const relSearchResults: RelSearchResults = await this.getMatchingRels(searchInput.existingRelType || SearchRelType.AuthenticationGroupUserRel, searchInput.existingRelParentId, arrayIds);
-
-        // }
-
         const searchResults: ObjectSearchResults = {
             endtime: end,
             page: page,
@@ -318,8 +310,72 @@ class SearchService {
     }
 
     public async lookahead(term: string): Promise<Array<LookaheadResult>> {
+        /*
+            __typename?: 'LookaheadResult';
+            category: Scalars['String']['output'];
+            resultList?: Maybe<Array<Maybe<LookaheadItem>>>;
 
-        return Promise.resolve([]);
+              __typename?: 'LookaheadItem';
+              displayValue: Scalars['String']['output'];
+              id: Scalars['String']['output'];
+              matchingString?: Maybe<Scalars['String']['output']>;
+
+        */
+        const retVal: Array<LookaheadResult> = [
+            {
+                category: SearchResultType.Tenant,
+                resultList: [
+                    {
+                        displayValue: "Bioreliance",
+                        id: "3847389283489234"
+                    },
+                    {
+                        displayValue: "Pfizer",
+                        id: "3847389283489235"
+                    },
+                    {
+                        displayValue: "Amgen",
+                        id: "3847389283489236"
+                    },
+                    {
+                        displayValue: "Lowes",
+                        id: "3847389283489237"
+                    }
+                ]
+            },
+            {
+                category: SearchResultType.Client,
+                resultList: [
+                    {
+                        displayValue: "Bioreliance",
+                        id: "3847389283489238"
+                    },
+                    {
+                        displayValue: "Pfizer",
+                        id: "3847389283489239"
+                    }
+                ]
+            },
+            {
+                category: SearchResultType.AuthorizationGroup,
+                    resultList: [
+                        {
+                            displayValue: "US Users",
+                            id: "3847389283489214"
+                        },
+                        {
+                            displayValue: "EU Users",
+                            id: "3847389283489224"
+                        },
+                        {
+                            displayValue: "Project management team - US",
+                            id: "3847389283489244"
+                        }
+                    ]
+            }
+        ]
+
+        return Promise.resolve(retVal);
     }
 }
 

@@ -19,6 +19,7 @@ import SettingsSystemDaydreamIcon from '@mui/icons-material/SettingsSystemDaydre
 import PolicyIcon from '@mui/icons-material/Policy';
 import AutoAwesomeMosaicIcon from '@mui/icons-material/AutoAwesomeMosaic';
 import SpeedIcon from '@mui/icons-material/Speed';
+import SearchResultIconRenderer, { getUriSection } from "./search-result-icon-renderer";
 
 const SearchResultList: React.FC<ResultListProps> = ({
     searchResults
@@ -44,94 +45,6 @@ const SearchResultList: React.FC<ResultListProps> = ({
         setMapViewExpanded(newMap);
     }
 
-    const getUriSection = (objectType: SearchResultType): string => {
-        switch (objectType) {            
-            case SearchResultType.AccessControl : {
-                return "scope-access-control";                                
-            }
-            case SearchResultType.AuthenticationGroup : {
-                return "authentication-groups";
-            }
-            case SearchResultType.AuthorizationGroup: {
-                return "authorization-groups"
-            }
-            case SearchResultType.Client : {
-                return "clients";
-            }
-            case SearchResultType.Key : {
-                return "signing-keys"
-            }
-            case SearchResultType.OidcProvider : {
-                return "oidc-providers";
-            }
-            case SearchResultType.RateLimit : {
-                return "rate-limits";
-            }
-            case SearchResultType.Tenant : {
-                return "tenants"
-            }
-            case SearchResultType.User : {
-                return "users"
-            }
-            default: {
-                return ""
-            }
-
-        }
-    }
-
-    const getObjectTypeIcon = (objectType: SearchResultType) => {
-        if(objectType === SearchResultType.AccessControl){
-            return (
-                <PolicyIcon />
-            )
-        }
-        else if(objectType === SearchResultType.AuthenticationGroup){
-            return (
-                <GroupIcon />
-            )
-        }
-        else if(objectType === SearchResultType.AuthorizationGroup){
-            return (
-                <PeopleIcon />
-            )
-        }
-        else if(objectType === SearchResultType.Client){
-            return (
-                <SettingsSystemDaydreamIcon />
-            )
-        }
-        else if(objectType === SearchResultType.Key){
-            return (
-                <KeyIcon />
-            )
-        }
-        else if(objectType === SearchResultType.OidcProvider){
-            return (
-                <AutoAwesomeMosaicIcon />
-            )
-        }
-        else if(objectType === SearchResultType.RateLimit){
-            return (
-                <SpeedIcon />
-            )
-        }
-        else if(objectType === SearchResultType.Tenant){
-            return (
-                <SettingsApplicationsIcon />
-            )
-        }
-        else if(objectType === SearchResultType.User){
-            return (
-                <PersonIcon />
-            )
-        }
-        else {
-            return (
-                <></>
-            )
-        }
-    }
 
     return (
         <>
@@ -219,7 +132,7 @@ const SearchResultList: React.FC<ResultListProps> = ({
                             <Typography key={`${item.objectid}`} component={"div"} fontSize={"0.9em"}>
                                 <Divider></Divider>
                                 <Grid2 margin={"8px 0px 8px 0px"} container size={12} spacing={1}>
-                                    <Grid2 size={0.3}>{getObjectTypeIcon(item.objecttype)}</Grid2>
+                                    <Grid2 size={0.3}><SearchResultIconRenderer objectType={item.objecttype} /></Grid2>
                                     <Grid2 size={2.7}><Link style={{ color: "", fontWeight: "bold", textDecoration: "underline" }} href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/${getUriSection(item.objecttype)}/${item.objectid}`}>{item.name}</Link></Grid2>
                                     <Grid2 size={3}>{item.description}</Grid2>
                                     <Grid2 size={2}>{item.subtype}</Grid2>

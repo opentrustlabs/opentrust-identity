@@ -1,6 +1,6 @@
 "use client";
 import React, { useContext, useEffect, useRef } from "react";
-import { Autocomplete, AutocompleteRenderInputParams, Divider, Drawer, Grid2, InputAdornment, Stack, TextField } from "@mui/material";
+import { Autocomplete, AutocompleteRenderGroupParams, AutocompleteRenderInputParams, Divider, Drawer, Grid2, InputAdornment, Paper, Popper, Stack, TextField } from "@mui/material";
 import Link from "next/link";
 import SearchIcon from '@mui/icons-material/Search';
 import MenuIcon from '@mui/icons-material/Menu';
@@ -15,7 +15,7 @@ import PolicyIcon from '@mui/icons-material/Policy';
 import AutoAwesomeMosaicIcon from '@mui/icons-material/AutoAwesomeMosaic';
 import SpeedIcon from '@mui/icons-material/Speed';
 import { ResponsiveBreakpoints } from "@/components/contexts/responsive-context";
-import { TenantMetaData } from "@/graphql/generated/graphql-types";
+import { LookaheadItem, LookaheadResult, SearchResultType, TenantMetaData } from "@/graphql/generated/graphql-types";
 import AddBoxIcon from '@mui/icons-material/AddBox';
 import VerifiedIcon from '@mui/icons-material/Verified';
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
@@ -23,10 +23,11 @@ import { TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import CreateNewDialog from "../dialogs/create-new-dialog";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
 import { useRouter } from "next/navigation";
-import SearchLookahead from "../search/search-lookahead";
-import { isFullWidth } from "validator";
+import { useQuery } from "@apollo/client";
+import { LOOKAHEAD_SEARCH_QUERY } from "@/graphql/queries/oidc-queries";
+import SearchResultIconRenderer, { displaySearchCategory, getUriSection } from "../search/search-result-icon-renderer";
 
-
+const options = [{"category":"TENANT","id":"3847389283489234","displayValue":"Bioreliance"},{"category":"TENANT","id":"3847389283489235","displayValue":"Pfizer"},{"category":"TENANT","id":"3847389283489236","displayValue":"Amgen"},{"category":"TENANT","id":"3847389283489237","displayValue":"Lowes"},{"category":"CLIENT","id":"3847389283489238","displayValue":"Biorelianch"},{"category":"CLIENT","id":"3847389283489239","displayValue":"Pizer"},{"category":"AUTHORIZATION_GROUP","id":"3847389283489214","displayValue":"US Users"},{"category":"AUTHORIZATION_GROUP","id":"3847389283489224","displayValue":"EU Users"},{"category":"AUTHORIZATION_GROUP","id":"3847389283489244","displayValue":"Project management team - Within the US"}]
 interface NavigationProps {
     section: string | null,
     tenantMetaData: TenantMetaData,
@@ -41,30 +42,54 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
 
     // STATE VARIABLES
     const [searchTerm, setSearchTerm] = React.useState<string>("");
-    const [searchTerm2, setSearchTerm2] = React.useState<string>("");
     const [drawerOpen, setDrawerOpen] = React.useState(false);
-    const [showSearchIcon, setShowSearchIcon] = React.useState<boolean>(true);
     const [openCreateNewDialog, setOpenCreateNewDialog] = React.useState<boolean>(false);
-    const [lookaheadAnchorElement, setLookaheadAnchorElement] = React.useState<HTMLElement | null>(null);
+    const [lookaheadOptions, setLookaheadOptions] = React.useState<Array<{category: SearchResultType, displayCategory: string, id: string, displayValue: string}>>([]);
 
-    // REF OBJECTS
-    const searchInputBox = useRef<HTMLDivElement | null>(null);
 
+    // GRAPHQL FUNCTIONS
+    const {data, loading, error} = useQuery(LOOKAHEAD_SEARCH_QUERY, {
+        variables: {
+            term: searchTerm
+        },
+        skip: searchTerm.length < 3,
+        onCompleted(data) {
+            const arrLookaheadResults: Array<LookaheadResult> = data.lookahead;
+            const arr: Array<{category: SearchResultType, displayCategory: string, id: string, displayValue: string}> = [];
+            arrLookaheadResults.forEach(
+                (r: LookaheadResult) => {
+                    r.resultList.forEach(
+                        (i: LookaheadItem) => {
+                            arr.push({
+                                category: r.category,
+                                displayCategory: displaySearchCategory(r.category),
+                                id: i.id,
+                                displayValue: i.displayValue
+                            });                            
+                        }
+                    )
+                }
+            );
+            setLookaheadOptions(arr);
+        },
+        fetchPolicy: "no-cache",
+        nextFetchPolicy: "no-cache"
+    });
+
+    // HANDLER FUNCTIONS
     useEffect(() => {
         if(section !== "search"){
             setSearchTerm("");
-            setShowSearchIcon(true);
         }
 
-    }, [section, lookaheadAnchorElement])
+    }, [section]);
 
-    // HANDLER FUNCTIONS
+    
     const toggleDrawer = (newOpen: boolean) => () => {
         setDrawerOpen(newOpen);
     }
 
     const showMenuItems = () => {
-        console.log("will show menu items")
         setDrawerOpen(true);
     }
 
@@ -72,7 +97,7 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
         if (evt.key.valueOf().toLowerCase() === "enter") {
             if(searchTerm && searchTerm.length > 2){
                 router.push(`/${tenantBean.getTenantMetaData().tenant.tenantId}?term=${searchTerm}&section=search`);
-                setShowSearchIcon(false);
+                setLookaheadOptions([]);
             }
         }
     }
@@ -88,7 +113,7 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
         <>
             {!breakPoints.isMedium && 
                 <>                    
-                    <Stack spacing={0} fontSize={"0.9em"}  direction={"row"} paddingTop={"8px"}>
+                    {/* <Stack spacing={0} fontSize={"0.9em"}  direction={"row"} paddingTop={"8px"}>
                         <div>
                         
                             <TextField   
@@ -132,54 +157,80 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
                                 }}                                    
                             />
                         </div>
-                    </Stack>
-                    <Stack spacing={0} fontSize={"0.9em"}  direction={"row"} paddingTop={"8px"}>
-                                              
-                            <Autocomplete   
-                                freeSolo
-                                value={searchTerm2}
+                    </Stack> */}
+                    <Stack spacing={0} fontSize={"0.9em"}  direction={"row"} paddingTop={"8px"}>                                              
+                            <Autocomplete
+                                
+                                freeSolo={true}
+                                value={searchTerm}
                                 filterOptions={(x) => x}
                                 size="small"
                                 id="searchinput2"
                                 onKeyDown={handleKeyPressSearch}
-                                onChange={(evt) => {
-                                    // setSearchTerm(evt.target.value);
-                                    // setShowSearchIcon(true);
+                                onInputChange={(evt, newInputValue, reason: string) => {
+                                    console.log("in onInputChange");
+                                    console.log(newInputValue);
+                                    console.log(reason);
+                                    setSearchTerm(newInputValue);
+                                }}
+                                groupBy={(option) => option.displayCategory}
+                                includeInputInList
+                                filterSelectedOptions
+                                onChange={(evt, value, reason) => {
+                                    console.log("in onChange");
+                                    console.log(value);
+                                    console.log(reason);
+                                    if(reason === "clear"){
+                                        setLookaheadOptions([]);
+                                    }
                                 } }
+                                // renderGroup={(params: AutocompleteRenderGroupParams) => {
+                                //     {category, id, displayValue} = params;
+                                //     return (
+
+                                //     )
+                                // }}
                                 fullWidth={true}
                                 autoComplete={true}
-                                slotProps={{
-                                    
-                                    // input: {
-                                    //     endAdornment: (
-                                    //         <InputAdornment position="end">
-                                    //             {showSearchIcon &&
-                                    //                 <SearchIcon 
-                                    //                     onClick={(evt) => {
-                                    //                         setShowSearchIcon(false);
-                                    //                         handleSearch(evt);
-                                    //                     }}
-                                    //                     sx={{cursor: "pointer"}}
-                                    //                 />
-                                    //             }
-                                    //             {!showSearchIcon &&
-                                    //                 <CloseOutlinedIcon
-                                    //                     onClick={() => {
-                                    //                         setSearchTerm("");
-                                    //                         setShowSearchIcon(true);
-                                    //                     }}
-                                    //                     sx={{cursor: "pointer"}}
-                                    //                 />
-                                    //             }
-                                    //         </InputAdornment>
-                                    //     )
-                                    // }
+                                forcePopupIcon={false}
+                                slots={{ popper: Popper, paper: Paper }}
+                                
+                                renderOption={(props, option) => {
+                                    const { key, ...optionProps } = props;
+                                    return (
+                                        <li {...optionProps} key={option.id}>
+                                            <Grid2  alignItems={"center"} size={12} container spacing={0} >
+                                                <Grid2 sx={{ display: 'flex', width: 35 }}><SearchResultIconRenderer objectType={option.category}/></Grid2>
+                                                <Grid2 sx={{ width: 'calc(100% - 35px)', wordWrap: 'break-word' }}>
+                                                    <Link className="undecorated" href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/${getUriSection(option.category)}/${option.id}`}>{option.displayValue}</Link>
+                                                </Grid2>
+                                            </Grid2>
+                                        </li>
+                                        
+                                    )
+                                }}
+                                popupIcon={ <CloseOutlinedIcon /> }
+                                
+                                getOptionLabel={(option) => typeof option === "string" ? option : option.displayValue}
+                                slotProps={{                                    
+                                    paper: {
+                                        sx: {
+                                            width: 350
+                                        }
+                                    }
                                 }} 
                                 renderInput={(params) => {
-                                    console.log(params)
-                                    return <TextField {...params} size="small" multiline={false} label="Search" fullWidth={true} />
+                                    return <TextField 
+                                            {...params} 
+                                            size="small" 
+                                            multiline={false} 
+                                            label="Search" 
+                                            fullWidth={true} 
+                                            
+                                    
+                                        />
                                 }}
-                                options={[]}
+                                options={lookaheadOptions}
                             />
                         
                     </Stack>
@@ -268,7 +319,7 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
                             OpenTrust Identity
                         </Grid2>
                         <Grid2 size={breakPoints.isSmall? 6: 7}>
-                            <TextField 
+                            {/* <TextField 
                                 value={searchTerm}
                                 size="small"
                                 name="searchinput"
@@ -308,7 +359,7 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
                                         }
                                     }
                                 }}                                    
-                            />                            
+                            />                             */}
                         </Grid2>
                     </Grid2>
                     <Drawer open={drawerOpen} onClose={toggleDrawer(false)}>
