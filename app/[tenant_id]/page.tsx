@@ -114,7 +114,15 @@ const TenantLandingPage: React.FC = () => {
                 />
             }
             {section === "signing-keys" &&
-                <SigningKeyList />
+                <SearchResultListLayout 
+                    filterInputLabel="Filter Keys" 
+                    resultType={SearchResultType.Key}
+                    page={1} 
+                    perPage={20}
+                    breadCrumbText="Keys"
+                    sortDirection={"asc"}
+                    sortField={"name"}
+                />
             }
             {section === "scope-access-control" &&
                 <SearchResultListLayout 

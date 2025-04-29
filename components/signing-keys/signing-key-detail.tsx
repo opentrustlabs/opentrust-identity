@@ -3,7 +3,7 @@ import { SigningKey, SigningKeyUpdateInput } from "@/graphql/generated/graphql-t
 import Typography from "@mui/material/Typography";
 import React, { useContext } from "react";
 import { DetailPageContainer, DetailPageMainContentContainer, DetailPageRightNavContainer } from "../layout/detail-page-container";
-import { PKCS8_ENCRYPTED_PRIVATE_KEY_HEADER, PKCS8_PRIVATE_KEY_HEADER, SIGNING_KEY_STATUS_ACTIVE, SIGNING_KEY_STATUS_REVOKED, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
+import { KEY_USE_DISPLAY, PKCS8_ENCRYPTED_PRIVATE_KEY_HEADER, PKCS8_PRIVATE_KEY_HEADER, SIGNING_KEY_STATUS_ACTIVE, SIGNING_KEY_STATUS_REVOKED, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import { Alert, Backdrop, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, Grid2, MenuItem, Paper, Select, Snackbar, Stack, TextField } from "@mui/material";
 import BreadcrumbComponent from "../breadcrumbs/breadcrumbs";
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
@@ -15,6 +15,7 @@ import TenantHighlight from "../tenants/tenant-highlight";
 import { useMutation, useQuery } from "@apollo/client";
 import { SIGNING_KEY_UPDATE_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import { SIGNING_KEY_DETAIL_QUERY } from "@/graphql/queries/oidc-queries";
+import { formatISODateFromMs } from "@/utils/date-utils";
 
 export interface SigningKeyDetailProps {
     signingKey: SigningKey
@@ -150,7 +151,11 @@ const SigningKeyDetail: React.FC<SigningKeyDetailProps> = ({ signingKey }) => {
                                         <Grid2 marginBottom={"8px"}>
                                             <div>Key Type</div>
                                             <TextField name="keyType" id="keyType" value={signingKey.keyType} disabled={true} fullWidth={true} size="small" />
-                                        </Grid2>                                        
+                                        </Grid2>
+                                        <Grid2 marginBottom={"8px"}>
+                                            <div>Key Use</div>
+                                            <TextField name="keyUse" id="keyUse" value={KEY_USE_DISPLAY.get(signingKey.keyUse || "")} disabled={true} fullWidth={true} size="small" /> 
+                                        </Grid2>
                                     </Grid2>
                                     <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
                                         <Grid2 marginBottom={"8px"}>
@@ -181,7 +186,7 @@ const SigningKeyDetail: React.FC<SigningKeyDetailProps> = ({ signingKey }) => {
                                         </Grid2>
                                         <Grid2 marginBottom={"8px"}>
                                             <div>Expires</div>
-                                            <TextField name="keyExpiration" id="keyExpiration" value={signingKey.expiresAtMs} disabled={true} fullWidth={true} size="small" />
+                                            <TextField name="keyExpiration" id="keyExpiration" value={formatISODateFromMs(signingKey.expiresAtMs, "")} disabled={true} fullWidth={true} size="small" />
                                         </Grid2>                                       
                                     </Grid2>
                                 </Grid2>

@@ -25,6 +25,7 @@ import RateLimitList from "../rate-limits/rate-limit-list";
 import SearchResultList from "../search/search-result-list";
 import { useSearchParams } from "next/navigation";
 import ScopeList from "../scope/scope-list";
+import SigningKeyList from "../signing-keys/signing-key-list";
 
 
 export interface ResultListProps {
@@ -216,6 +217,9 @@ const SearchResultListLayout: React.FC<SearchResultListProps> = ({
                         {resultType === SearchResultType.AccessControl &&
                             <ScopeList searchResults={previousData.search} />
                         }
+                        {resultType === SearchResultType.Key &&
+                            <SigningKeyList searchResults={previousData.search} />
+                        }
                     </>                    
                 }
                 { data &&
@@ -246,6 +250,9 @@ const SearchResultListLayout: React.FC<SearchResultListProps> = ({
                         }
                         {resultType === SearchResultType.AccessControl &&
                             <ScopeList searchResults={data.search} />
+                        }
+                        {resultType === SearchResultType.Key &&
+                            <SigningKeyList searchResults={data.search} />
                         }
                     </>
                 }
