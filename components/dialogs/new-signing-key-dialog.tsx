@@ -186,7 +186,7 @@ const NewSigningKeyDialog: React.FC<NewSigningKeyDialogProps> = ({
                             <Grid2 marginBottom={"16px"}>
                                 <div>Key Name / Alias</div>
                                 <TextField
-                                    required name="providerName" id="providerName"
+                                    required name="keyNameAlias" id="keyNameAlias"
                                     onChange={(evt) => { signingKeyInput.keyName = evt?.target.value; setSigningKeyInput({ ...signingKeyInput }); }}
                                     value={signingKeyInput.keyName}
                                     fullWidth={true}
