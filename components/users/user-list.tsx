@@ -4,14 +4,12 @@ import { ObjectSearchResultItem } from "@/graphql/generated/graphql-types";
 import Typography from "@mui/material/Typography";
 import Grid2 from "@mui/material/Grid2";
 import Divider from "@mui/material/Divider";
-
 import Link from "next/link";
 import { ResponsiveBreakpoints, ResponsiveContext } from "../contexts/responsive-context";
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
 import UnfoldMoreOutlinedIcon from '@mui/icons-material/UnfoldMoreOutlined';
 import UnfoldLessOutlinedIcon from '@mui/icons-material/UnfoldLessOutlined';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import DeleteForeverOutlinedIcon from '@mui/icons-material/DeleteForeverOutlined';
 import CheckOutlinedIcon from '@mui/icons-material/CheckOutlined';
 import { ResultListProps } from "../layout/search-result-list-layout";
 
@@ -46,9 +44,8 @@ const UserResultList: React.FC<ResultListProps> = ({
             {c.isMedium &&
                 <>
                     <Typography component={"div"} fontWeight={"bold"} fontSize={"0.9em"}>
-                        <Grid2 container size={12} spacing={1} marginBottom={"16px"} >
-                            <Grid2 size={1}></Grid2>
-                            <Grid2 size={8}>User Name</Grid2>
+                        <Grid2 container size={12} spacing={1} marginBottom={"16px"} >                            
+                            <Grid2 size={9}>User Name</Grid2>
                             <Grid2 size={2}>Enabled</Grid2>
                             <Grid2 size={1}></Grid2>
                         </Grid2>
@@ -65,9 +62,8 @@ const UserResultList: React.FC<ResultListProps> = ({
                         (user: ObjectSearchResultItem) => (
                             <Typography key={`${user.objectid}`} component={"div"} fontSize={"0.9em"}>
                                 <Divider></Divider>
-                                <Grid2 margin={"8px 0px 8px 0px"} container size={12} spacing={1}>
-                                    <Grid2 size={1}><DeleteForeverOutlinedIcon /></Grid2>
-                                    <Grid2 size={8}><Link style={{ color: "", fontWeight: "bold", textDecoration: "underline" }} href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/users/${user.objectid}`}>{user.name}</Link></Grid2>
+                                <Grid2 margin={"8px 0px 8px 0px"} container size={12} spacing={1}>                                    
+                                    <Grid2 size={9}><Link style={{ color: "", fontWeight: "bold", textDecoration: "underline" }} href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/users/${user.objectid}`}>{user.name}</Link></Grid2>
                                     <Grid2 size={2}>
                                         {user.enabled &&
                                             <CheckOutlinedIcon />
@@ -111,11 +107,9 @@ const UserResultList: React.FC<ResultListProps> = ({
             {!c.isMedium &&
                 <Grid2 size={12}>
                     <Typography component={"div"} fontWeight={"bold"} fontSize={"0.9em"}>
-                        <Grid2 container size={12} spacing={1} marginBottom={"16px"} >
-                            
-                            <Grid2 size={0.4}></Grid2>
+                        <Grid2 container size={12} spacing={1} marginBottom={"16px"} >                            
                             <Grid2 size={3.0}>User Name</Grid2>
-                            <Grid2 size={3.6}>Email</Grid2>
+                            <Grid2 size={4}>Email</Grid2>
                             <Grid2 size={1}>Enabled</Grid2>
                             <Grid2 size={3.5}>Object ID</Grid2>
                             <Grid2 size={0.5}></Grid2>
@@ -134,12 +128,10 @@ const UserResultList: React.FC<ResultListProps> = ({
                     {searchResults.resultlist.map(
                         (user: ObjectSearchResultItem) => (
                             <Typography key={`${user.objectid}`} component={"div"} fontSize={"0.9em"}>
-                                <Divider></Divider>
-                                
-                                <Grid2 margin={"8px 0px 8px 0px"} container size={12} spacing={1}>
-                                    <Grid2 size={0.4}><DeleteForeverOutlinedIcon /></Grid2>
+                                <Divider></Divider>                                
+                                <Grid2 margin={"8px 0px 8px 0px"} container size={12} spacing={1}>                                    
                                     <Grid2 size={3.0}><Link style={{ color: "", fontWeight: "bold", textDecoration: "underline" }} href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/users/${user.objectid}`}>{user.name}</Link></Grid2>
-                                    <Grid2 size={3.6}>{user.email}</Grid2>
+                                    <Grid2 size={4}>{user.email}</Grid2>
                                     <Grid2 size={1}>
                                         {user.enabled &&
                                             <CheckOutlinedIcon />

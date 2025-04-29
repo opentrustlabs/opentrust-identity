@@ -13,6 +13,7 @@ import NewSigningKeyDialog from "./new-signing-key-dialog";
 import NewAuthenticationGroupDialog from "./new-authentication-group-dialog";
 import NewAuthorizationGroupDialog from "./new-authorization-group-dialog";
 import NewRateLimitDialog from "./new-rate-limit-dialog";
+import NewScopeDialog from "./new-scope-dialog";
 
 export interface CreateNewSelectorProps {
     open: boolean,
@@ -120,7 +121,19 @@ const CreateNewDialog: React.FC<CreateNewSelectorProps> = ({
                     />
                 }
                 {createNewType === "scope-access-control" &&
-                    <div>You want to create a new scope-access-control</div>
+                    <NewScopeDialog
+                        onCancel={onCancel}
+                        onClose={onClose}
+                        onCreateEnd={(success: boolean) => {
+                            setShowMutationBackdrop(false);
+                            if(success){
+                                onClose();
+                            }
+                        }}
+                        onCreateStart={() => {
+                            setShowMutationBackdrop(true);
+                        }}
+                    />
                 }
                 {createNewType === "oidc-provider" &&
                     <NewOIDCProviderDialog

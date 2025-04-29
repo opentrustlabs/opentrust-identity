@@ -120,7 +120,7 @@ const NewOIDCProviderDialog: React.FC<NewOIDCProviderDialogProps> = ({
                             <Grid2 marginBottom={"8px"}>
                                 <div>Provider Name</div>
                                 <TextField
-                                    required name="providerName" id="providerName"
+                                    required name="oidcProviderName" id="oidcProviderName"
                                     onChange={(evt) => { oidcProviderInput.federatedOIDCProviderName = evt?.target.value; setOIDCProviderInput({ ...oidcProviderInput }); }}
                                     value={oidcProviderInput.federatedOIDCProviderName}
                                     fullWidth={true}
@@ -129,7 +129,7 @@ const NewOIDCProviderDialog: React.FC<NewOIDCProviderDialogProps> = ({
                             <Grid2 marginBottom={"8px"}>
                                 <div>Provider Descripton</div>
                                 <TextField
-                                    name="providerDescription" id="providerDescription"
+                                    name="oidcProviderDescription" id="oidcProviderDescription"
                                     value={oidcProviderInput.federatedOIDCProviderDescription}
                                     fullWidth={true}
                                     size="small"
@@ -144,7 +144,7 @@ const NewOIDCProviderDialog: React.FC<NewOIDCProviderDialogProps> = ({
                                     size="small"
                                     fullWidth={true}
                                     value={oidcProviderInput.federatedOIDCProviderType}
-                                    name="providerType"
+                                    name="oidcProviderType"
                                     onChange={(evt) => {
                                         oidcProviderInput.federatedOIDCProviderType = evt.target.value;
                                         if (evt.target.value === FEDERATED_OIDC_PROVIDER_TYPE_ENTERPRISE) {

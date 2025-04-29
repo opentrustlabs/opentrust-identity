@@ -42,7 +42,9 @@ const TenantSelector: React.FC<TenantSelectorProps> = ({
                 term: filterTerm,
                 page: page,
                 perPage: perPage,
-                resultType: SearchResultType.Tenant
+                resultType: SearchResultType.Tenant,
+                sortDirection: "asc",
+                sortField: "name"
             }
         },
         skip: (filterTerm.length === 1 || filterTerm.length === 2)

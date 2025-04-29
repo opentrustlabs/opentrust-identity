@@ -1,8 +1,7 @@
 "use client";
-import React from "react";
-import { Divider, Drawer, Grid2, InputAdornment, Stack, TextField } from "@mui/material";
+import React, { useContext, useEffect } from "react";
+import { Autocomplete, Divider, Drawer, Grid2, Paper, Popper, Stack, TextField } from "@mui/material";
 import Link from "next/link";
-import SearchIcon from '@mui/icons-material/Search';
 import MenuIcon from '@mui/icons-material/Menu';
 import GroupIcon from '@mui/icons-material/Group';
 import PeopleIcon from '@mui/icons-material/People';
@@ -15,12 +14,17 @@ import PolicyIcon from '@mui/icons-material/Policy';
 import AutoAwesomeMosaicIcon from '@mui/icons-material/AutoAwesomeMosaic';
 import SpeedIcon from '@mui/icons-material/Speed';
 import { ResponsiveBreakpoints } from "@/components/contexts/responsive-context";
-import { TenantMetaData } from "@/graphql/generated/graphql-types";
+import { LookaheadItem, LookaheadResult, SearchResultType, TenantMetaData } from "@/graphql/generated/graphql-types";
 import AddBoxIcon from '@mui/icons-material/AddBox';
 import VerifiedIcon from '@mui/icons-material/Verified';
+import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
 import { TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import CreateNewDialog from "../dialogs/create-new-dialog";
-
+import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
+import { useRouter } from "next/navigation";
+import { useQuery } from "@apollo/client";
+import { LOOKAHEAD_SEARCH_QUERY } from "@/graphql/queries/oidc-queries";
+import SearchResultIconRenderer, { displaySearchCategory, getUriSection } from "../search/search-result-icon-renderer";
 
 interface NavigationProps {
     section: string | null,
@@ -30,64 +34,156 @@ interface NavigationProps {
 
 const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaData, breakPoints}) => {
 
+    // CONTEXT
+    const tenantBean: TenantMetaDataBean = useContext(TenantContext);
+    const router = useRouter();
+
     // STATE VARIABLES
-    const [searchTerm, setSearchTerm] = React.useState<string | null>(null);
+    const [searchTerm, setSearchTerm] = React.useState<string>("");
+    const [highlightedTerm, setHighlightedTerm] = React.useState<string | null>(null);
     const [drawerOpen, setDrawerOpen] = React.useState(false);
     const [openCreateNewDialog, setOpenCreateNewDialog] = React.useState<boolean>(false);
+    const [lookaheadOptions, setLookaheadOptions] = React.useState<Array<{category: SearchResultType, displayCategory: string, id: string, displayValue: string}>>([]);
 
+
+    // GRAPHQL FUNCTIONS
+    const {} = useQuery(LOOKAHEAD_SEARCH_QUERY, {
+        variables: {
+            term: searchTerm
+        },
+        skip: searchTerm.length < 3,
+        onCompleted(data) {
+            const arrLookaheadResults: Array<LookaheadResult> = data.lookahead;
+            const arr: Array<{category: SearchResultType, displayCategory: string, id: string, displayValue: string}> = [];
+            arrLookaheadResults.forEach(
+                (r: LookaheadResult) => {
+                    r.resultList.forEach(
+                        (i: LookaheadItem) => {
+                            arr.push({
+                                category: r.category,
+                                displayCategory: displaySearchCategory(r.category),
+                                id: i.id,
+                                displayValue: i.displayValue
+                            });                            
+                        }
+                    )
+                }
+            );
+            setLookaheadOptions(arr);
+        },
+        fetchPolicy: "no-cache",
+        nextFetchPolicy: "no-cache"
+    });
 
     // HANDLER FUNCTIONS
+    useEffect(() => {
+        if(section !== "search"){
+            setSearchTerm("");
+        }
+
+    }, [section]);
+
+    
     const toggleDrawer = (newOpen: boolean) => () => {
         setDrawerOpen(newOpen);
     }
 
     const showMenuItems = () => {
-        console.log("will show menu items")
         setDrawerOpen(true);
     }
 
     const handleKeyPressSearch = (evt: React.KeyboardEvent) => {        
         if (evt.key.valueOf().toLowerCase() === "enter") {
-            if(searchTerm && searchTerm.length > 2){
-                // DO SEARCH
-                console.log("will do search")
+            // give preference to the highlighted term over the search term
+            // for cases where the user hits the enter button.
+            let term: string | null = highlightedTerm;
+            if(!term){
+                term = searchTerm;
+            }
+            else{
+                setSearchTerm(term);
+            }
+            if(term && term.length > 2){
+                router.push(`/${tenantBean.getTenantMetaData().tenant.tenantId}?term=${term}&section=search`);
+                setLookaheadOptions([]);
             }
         }
-    }
-
-    const handleSearch = (evt: any) => {
-        console.log("search button was clicked");
     }
     
 
     return (
         <>
             {!breakPoints.isMedium && 
-                <>
-                    <Stack spacing={0} fontSize={"0.9em"}  direction={"row"} paddingTop={"8px"}>
-                        <div>
-                            <TextField   
-                                size="small"
-                                name="searchinput"
-                                id="searchinput"
-                                onKeyDown={handleKeyPressSearch}
-                                onChange={(evt) => setSearchTerm(evt.target.value)}
-                                fullWidth={true}
-                                label={"Search"}
-                                slotProps={{
-                                    input: {
-                                        endAdornment: (
-                                            <InputAdornment position="end">
-                                                <SearchIcon 
-                                                    onClick={handleSearch}
-                                                    sx={{cursor: "pointer"}}
-                                                />
-                                            </InputAdornment>
-                                        )
+                <>  
+                    <Stack spacing={0} fontSize={"0.9em"}  direction={"row"} paddingTop={"8px"}>                                              
+                        <Autocomplete                            
+                            freeSolo={true}
+                            value={searchTerm}
+                            filterOptions={(x) => x}
+                            size="small"
+                            id="searchinput2"
+                            onKeyDown={handleKeyPressSearch}
+                            onInputChange={(_, newInputValue) => {
+                                setSearchTerm(newInputValue);
+                            }}
+                            onHighlightChange={(_, option) => {
+                                if(option !== null){
+                                    typeof option === "string" ? setHighlightedTerm(option) : setHighlightedTerm(option.displayValue);
+                                }
+                                else {
+                                    setHighlightedTerm(null);
+                                }
+                            }}
+                            onChange={(_, value, reason) => {
+                                if(reason === "clear"){
+                                    setLookaheadOptions([]);
+                                }
+                                else if(reason === "selectOption" && value !== null){
+                                    const v: string = typeof value === "string" ? value : value.displayValue;
+                                    typeof value === "string" ? setSearchTerm(value) : setSearchTerm(value.displayValue)
+                                }
+                            } }
+                            groupBy={(option) => option.displayCategory}
+                            includeInputInList
+                            fullWidth={true}
+                            autoComplete={true}
+                            forcePopupIcon={false}
+                            clearOnEscape={true}
+                            slots={{ popper: Popper, paper: Paper }}                                
+                            renderOption={(props, option) => {
+                                const { key, ...optionProps } = props;
+                                return (
+                                    <li {...optionProps} key={option.id}>
+                                        <Grid2  alignItems={"center"} size={12} container spacing={0} >
+                                            <Grid2 sx={{ display: 'flex', width: 35 }}><SearchResultIconRenderer objectType={option.category}/></Grid2>
+                                            <Grid2 sx={{ width: 'calc(100% - 35px)', wordWrap: 'break-word' }}>
+                                                <Link className="undecorated" href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/${getUriSection(option.category)}/${option.id}`}>{option.displayValue}</Link>
+                                            </Grid2>
+                                        </Grid2>
+                                    </li>
+                                    
+                                )
+                            }}
+                            popupIcon={ <CloseOutlinedIcon /> }                                
+                            getOptionLabel={(option) => typeof option === "string" ? option : option.displayValue}
+                            slotProps={{                                    
+                                paper: {
+                                    sx: {
+                                        width: 350
                                     }
-                                }}                                    
-                            />
-                        </div>
+                                }
+                            }} 
+                            renderInput={(params) => {
+                                return <TextField 
+                                        {...params} 
+                                        size="small" 
+                                        multiline={false} 
+                                        label="Search" 
+                                        fullWidth={true}
+                                    />
+                            }}
+                            options={lookaheadOptions}
+                        />                        
                     </Stack>
 
                     <Stack spacing={0} padding={"8px"} color={"#616161"} fontSize={"0.9em"} fontWeight={"bolder"} marginTop={"8px"} >
@@ -173,30 +269,75 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
                         <Grid2 size={breakPoints.isSmall ? 5 : 4}>
                             OpenTrust Identity
                         </Grid2>
-                        <Grid2 size={breakPoints.isSmall? 6: 7}>
-                            <TextField   
+                        <Grid2  size={breakPoints.isSmall? 6: 7} >
+                        {/* 
+                            // TODO
+                            //  Need to refactor this look and feel. Change the autocomplete textbox to a single
+                            // search icon, and when you click it, the full text box takes over the top of the
+                            // screen. 
+                        */}
+                            <Autocomplete                                
+                                freeSolo={true}
+                                value={searchTerm}
+                                filterOptions={(x) => x}
                                 size="small"
-                                name="searchinput"
                                 id="searchinput"
                                 onKeyDown={handleKeyPressSearch}
-                                onChange={(evt) => setSearchTerm(evt.target.value)}
-                                fullWidth={true}                                
+                                onInputChange={(evt, newInputValue, reason: string) => {                                    
+                                    setSearchTerm(newInputValue);
+                                }}
+                                groupBy={(option) => option.displayCategory}
+                                includeInputInList
+                                filterSelectedOptions
+                                onChange={(evt, value, reason) => {
+                                    if(reason === "clear"){
+                                        setLookaheadOptions([]);
+                                    }
+                                }}
+                                fullWidth={true}
+                                autoComplete={true}
+                                forcePopupIcon={false}
+                                slots={{ popper: Popper, paper: Paper }}                                
+                                renderOption={(props, option) => {
+                                    const { key, ...optionProps } = props;
+                                    return (
+                                        <li {...optionProps} key={option.id}>
+                                            <Grid2  alignItems={"center"} size={12} container spacing={0} >
+                                                <Grid2 sx={{ display: 'flex', width: 35 }}><SearchResultIconRenderer objectType={option.category}/></Grid2>
+                                                <Grid2 sx={{ width: 'calc(100% - 35px)', wordWrap: 'break-word' }}>
+                                                    <Link className="undecorated" href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/${getUriSection(option.category)}/${option.id}`}>{option.displayValue}</Link>
+                                                </Grid2>
+                                            </Grid2>
+                                        </li>
+                                        
+                                    )
+                                }}
+                                popupIcon={ <CloseOutlinedIcon /> }                                
+                                getOptionLabel={(option) => typeof option === "string" ? option : option.displayValue}
                                 slotProps={{                                    
-                                    input: {
-                                        endAdornment: (
-                                            <InputAdornment position="end">
-                                                <SearchIcon 
-                                                    onClick={handleSearch}
-                                                    sx={{cursor: "pointer"}}
-                                                />
-                                            </InputAdornment>
-                                        ),
-                                        style: {
-                                            backgroundColor: "white"
+                                    paper: {
+                                        sx: {
+                                            width: 350                                            
                                         }
                                     }
-                                }}                                    
-                            />                            
+                                }}                                 
+                                renderInput={(params) => {
+                                    return <TextField 
+                                            {...params} 
+                                            size="small" 
+                                            multiline={false} 
+                                            label="" 
+                                            fullWidth={true} 
+                                            sx={{
+                                                '& .MuiInputBase-root': {
+                                                    backgroundColor: 'white', // <-- This controls the whole textbox "container"
+                                                    borderRadius: '4px',      // <-- You can also fix the radius here
+                                                  }
+                                            }}
+                                        />
+                                }}
+                                options={lookaheadOptions}
+                            />  
                         </Grid2>
                     </Grid2>
                     <Drawer open={drawerOpen} onClose={toggleDrawer(false)}>

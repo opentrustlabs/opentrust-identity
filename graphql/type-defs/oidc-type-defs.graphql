@@ -839,8 +839,8 @@ type LookaheadItem {
 }
 
 type LookaheadResult {
-    category: String!
-    resultList: [LookaheadItem]
+    category: SearchResultType!
+    resultList: [LookaheadItem!]!
 }
 
 enum SearchRelType {

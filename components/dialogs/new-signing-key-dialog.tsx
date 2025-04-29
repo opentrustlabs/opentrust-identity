@@ -1,7 +1,7 @@
 "use client";
 import { SigningKeyCreateInput } from "@/graphql/generated/graphql-types";
 import { SIGNING_KEY_CREATE_MUTATION } from "@/graphql/mutations/oidc-mutations";
-import { CERTIFICATE_HEADER, KEY_TYPE_EC, KEY_TYPE_RSA, KEY_USE_JWT_SIGNING, MIN_PRIVATE_KEY_PASSWORD_LENGTH, PKCS8_ENCRYPTED_PRIVATE_KEY_HEADER, PKCS8_PRIVATE_KEY_HEADER, PKCS8_PUBLIC_KEY_HEADER } from "@/utils/consts";
+import { CERTIFICATE_HEADER, KEY_TYPE_EC, KEY_TYPE_RSA, KEY_USE_CERTIFICATE_SIGNING, KEY_USE_DIGITAL_SIGNING, KEY_USE_DISPLAY, KEY_USE_ENCRYPTION, KEY_USE_KEY_AGREEMENT, MIN_PRIVATE_KEY_PASSWORD_LENGTH, PKCS8_ENCRYPTED_PRIVATE_KEY_HEADER, PKCS8_PRIVATE_KEY_HEADER, PKCS8_PUBLIC_KEY_HEADER } from "@/utils/consts";
 import { useMutation } from "@apollo/client";
 import { Alert, Button, DialogActions, DialogContent, Grid2, MenuItem, Select, Stack, TextField, Typography } from "@mui/material";
 import React, { useContext } from "react";
@@ -30,7 +30,7 @@ const NewSigningKeyDialog: React.FC<NewSigningKeyDialogProps> = ({
         keyType: "",
         keyTypeId: "",
         keyName: "",
-        keyUse: KEY_USE_JWT_SIGNING,
+        keyUse: "",
         privateKeyPkcs8: "",
         password: "",
         certificate: "",
@@ -161,6 +161,9 @@ const NewSigningKeyDialog: React.FC<NewSigningKeyDialogProps> = ({
         if(signingKey.keyType === ""){
             return false;
         }
+        if(signingKey.keyUse === ""){
+            return false;
+        }
         return true;
     }
 
@@ -186,7 +189,7 @@ const NewSigningKeyDialog: React.FC<NewSigningKeyDialogProps> = ({
                             <Grid2 marginBottom={"16px"}>
                                 <div>Key Name / Alias</div>
                                 <TextField
-                                    required name="providerName" id="providerName"
+                                    required name="keyNameAlias" id="keyNameAlias"
                                     onChange={(evt) => { signingKeyInput.keyName = evt?.target.value; setSigningKeyInput({ ...signingKeyInput }); }}
                                     value={signingKeyInput.keyName}
                                     fullWidth={true}
@@ -207,8 +210,26 @@ const NewSigningKeyDialog: React.FC<NewSigningKeyDialogProps> = ({
                                     <MenuItem value={""}>Select Key Type</MenuItem>
                                     <MenuItem value={KEY_TYPE_RSA} >{KEY_TYPE_RSA}</MenuItem>
                                     <MenuItem value={KEY_TYPE_EC} >{KEY_TYPE_EC}</MenuItem>
-                                </Select>
-                                
+                                </Select>                                
+                            </Grid2>
+                            <Grid2 marginBottom={"16px"}>
+                                <div>Key Use</div>
+                                <Select
+                                    size="small"
+                                    fullWidth={true}
+                                    value={signingKeyInput.keyUse}
+                                    name="keyUse"
+                                    onChange={(evt) => {
+                                        signingKeyInput.keyUse = evt.target.value;                                        
+                                        setSigningKeyInput({ ...signingKeyInput });
+                                    }}
+                                >
+                                    <MenuItem value={""}>Select Key Use</MenuItem>
+                                    <MenuItem value={KEY_USE_DIGITAL_SIGNING} >{KEY_USE_DISPLAY.get(KEY_USE_DIGITAL_SIGNING)}</MenuItem>
+                                    <MenuItem value={KEY_USE_ENCRYPTION} >{KEY_USE_DISPLAY.get(KEY_USE_ENCRYPTION)}</MenuItem>
+                                    <MenuItem value={KEY_USE_KEY_AGREEMENT} >{KEY_USE_DISPLAY.get(KEY_USE_KEY_AGREEMENT)}</MenuItem>
+                                    <MenuItem value={KEY_USE_CERTIFICATE_SIGNING} >{KEY_USE_DISPLAY.get(KEY_USE_CERTIFICATE_SIGNING)}</MenuItem>
+                                </Select>                                
                             </Grid2>
                             <Grid2 marginBottom={"16px"}>
                                 <div>Private Key (in PKCS#8 format)</div>

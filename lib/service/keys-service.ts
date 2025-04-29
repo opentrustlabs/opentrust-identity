@@ -1,12 +1,15 @@
-import { SigningKey, Tenant } from "@/graphql/generated/graphql-types";
+import { ObjectSearchResultItem, SearchResultType, SigningKey, Tenant } from "@/graphql/generated/graphql-types";
 import { GraphQLError } from "graphql/error/GraphQLError";
 import { randomUUID } from 'crypto'; 
 import { OIDCContext } from "@/graphql/graphql-context";
-import { KEY_TYPES, PKCS8_ENCRYPTED_PRIVATE_KEY_HEADER, SIGNING_KEY_STATUS_ACTIVE, SIGNING_KEY_STATUS_REVOKED } from "@/utils/consts";
+import { KEY_TYPES, KEY_USES, PKCS8_ENCRYPTED_PRIVATE_KEY_HEADER, SEARCH_INDEX_OBJECT_SEARCH, SIGNING_KEY_STATUS_ACTIVE, SIGNING_KEY_STATUS_REVOKED } from "@/utils/consts";
 import { DaoFactory } from "../data-sources/dao-factory";
+import { Client } from "@opensearch-project/opensearch";
+import { getOpenSearchClient } from "../data-sources/search";
 
-const signingKeysDao = DaoFactory.getInstance().getSigningKeysDao()
+const signingKeysDao = DaoFactory.getInstance().getSigningKeysDao();
 const tenantDao = DaoFactory.getInstance().getTenantDao();
+const searchClient: Client = getOpenSearchClient();
 
 class SigningKeysService {
 
@@ -52,6 +55,9 @@ class SigningKeysService {
         if(key.keyType === "" || !KEY_TYPES.includes(key.keyType)){
             throw new GraphQLError("ERROR_MISSING_OR_INVALID_KEY_TYPE");
         }
+        if(key.keyUse === "" || !KEY_USES.includes(key.keyUse)){
+            throw new GraphQLError("ERROR_MISSING_OR_INVALID_KEY_USE");
+        }
         // TODO
         // Get the actual expiration for the public key
         if(key.publicKey !== "" && key.expiresAtMs < 0){
@@ -61,6 +67,7 @@ class SigningKeysService {
         key.keyId = randomUUID().toString();
         
         await signingKeysDao.createSigningKey(key);
+        await this.updateSearchIndex(key);
         return Promise.resolve(key);        
     } 
 
@@ -81,6 +88,7 @@ class SigningKeysService {
         existingKey.status = key.status;
         existingKey.expiresAtMs = key.expiresAtMs;
         await signingKeysDao.updateSigningKey(existingKey);
+        await this.updateSearchIndex(existingKey);
         return Promise.resolve(existingKey);
 
     }
@@ -106,7 +114,34 @@ class SigningKeysService {
 
     public async deleteSigningKey(keyId: string): Promise<void> {
         await signingKeysDao.deleteSigningKey(keyId);
+        await searchClient.delete({
+            id: keyId,
+            index: SEARCH_INDEX_OBJECT_SEARCH,
+            refresh: "wait_for"
+        });
+        return Promise.resolve();        
+    }
+
+    protected async updateSearchIndex(key: SigningKey): Promise<void> {
         
+        const document: ObjectSearchResultItem = {
+            name: key.keyName,
+            description: key.keyUse,
+            objectid: key.keyId,
+            objecttype: SearchResultType.Key,
+            owningtenantid: key.tenantId,
+            email: "",
+            enabled: key.status === SIGNING_KEY_STATUS_ACTIVE,
+            owningclientid: "",
+            subtype: key.keyType,
+            subtypekey: key.keyType
+        }
+        
+        await searchClient.index({
+            id: key.keyId,
+            index: SEARCH_INDEX_OBJECT_SEARCH,
+            body: document
+        });        
     }
 
 }

@@ -452,3 +452,31 @@ export const TENANT_RATE_LIMIT_REMOVE_MUTATION = gql(`
     }
 `);
 
+export const SCOPE_CREATE_MUTATION = gql(`
+    mutation createScope($scopeInput: ScopeCreateInput!) {
+        createScope(scopeInput: $scopeInput) {
+            scopeId
+            scopeName
+            scopeDescription
+            scopeUse
+        }
+    }
+`);
+
+export const SCOPE_UPDATE_MUTATION = gql(`
+    mutation updateScope($scopeInput: ScopeUpdateInput!) {
+        updateScope(scopeInput: $scopeInput) {
+            scopeId
+            scopeName
+            scopeDescription
+            scopeUse
+        }
+    }
+`);
+
+export const SCOPE_DELETE_MUTATION = gql(`
+    mutation deleteScope($scopeId: String!) {
+        deleteScope(scopeId: $scopeId)
+    }
+`);
+

@@ -1,16 +1,18 @@
 "use client";
 import React, { useContext } from "react";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
-import { ObjectSearchResultItem } from "@/graphql/generated/graphql-types";
+import { ObjectSearchResultItem, SearchResultType } from "@/graphql/generated/graphql-types";
 import { ResponsiveBreakpoints, ResponsiveContext } from "../contexts/responsive-context";
 import { Typography,  Divider, Grid2 } from "@mui/material";
 import UnfoldMoreOutlinedIcon from '@mui/icons-material/UnfoldMoreOutlined';
 import UnfoldLessOutlinedIcon from '@mui/icons-material/UnfoldLessOutlined';
 import Link from "next/link";
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import DeleteForeverOutlinedIcon from '@mui/icons-material/DeleteForeverOutlined';
 import { ResultListProps } from "../layout/search-result-list-layout";
+import SearchResultIconRenderer, { getUriSection } from "./search-result-icon-renderer";
 
-const FederatedOIDCProviderList: React.FC<ResultListProps> = ({
+const SearchResultList: React.FC<ResultListProps> = ({
     searchResults
 }) => {
 
@@ -34,13 +36,15 @@ const FederatedOIDCProviderList: React.FC<ResultListProps> = ({
         setMapViewExpanded(newMap);
     }
 
+
     return (
         <>
             {c.isMedium &&
                 <>
                     <Typography component={"div"} fontWeight={"bold"} fontSize={"0.9em"}>
-                        <Grid2 container size={12} spacing={1} marginBottom={"16px"} >                            
-                            <Grid2 size={9}>Name</Grid2>
+                        <Grid2 container size={12} spacing={1} marginBottom={"16px"} >
+                            <Grid2 size={1}></Grid2>
+                            <Grid2 size={8}>Name</Grid2>
                             <Grid2 size={2}>Type</Grid2>
                             <Grid2 size={1}></Grid2>
                         </Grid2>
@@ -49,7 +53,7 @@ const FederatedOIDCProviderList: React.FC<ResultListProps> = ({
                     {searchResults.total < 1 &&
                         <Typography component={"div"} fontSize={"0.9em"}>
                             <Grid2 margin={"8px 0px 8px 0px"} textAlign={"center"} size={12} spacing={1}>
-                                No OIDC providers to display
+                                No records to display
                             </Grid2>
                         </Typography>
                     }
@@ -59,7 +63,8 @@ const FederatedOIDCProviderList: React.FC<ResultListProps> = ({
                             <Typography key={`${item.objectid}`} component={"div"} fontSize={"0.9em"}>
                                 <Divider></Divider>
                                 <Grid2 margin={"8px 0px 8px 0px"} container size={12} spacing={1}>
-                                    <Grid2 size={9}><Link style={{ color: "", fontWeight: "bold", textDecoration: "underline" }} href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/oidc-providers/${item.objectid}`}>{item.name}</Link></Grid2>
+                                    <Grid2 size={1}><DeleteForeverOutlinedIcon /></Grid2>
+                                    <Grid2 size={8}><Link style={{ color: "", fontWeight: "bold", textDecoration: "underline" }} href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/${getUriSection(item.objecttype)}/${item.objectid}`}>{item.name}</Link></Grid2>
                                     <Grid2 size={2}>{item.subtype}</Grid2>
                                     <Grid2 size={1}>
                                         {mapViewExpanded.has(item.objectid) &&
@@ -95,8 +100,9 @@ const FederatedOIDCProviderList: React.FC<ResultListProps> = ({
             {!c.isMedium &&
                 <>
                     <Typography component={"div"} fontWeight={"bold"} fontSize={"0.9em"}>
-                        <Grid2 container size={12} spacing={1} marginBottom={"16px"} >                            
-                            <Grid2 size={3}>Name</Grid2>
+                        <Grid2 container size={12} spacing={1} marginBottom={"16px"} >
+                            <Grid2 size={0.3}></Grid2>
+                            <Grid2 size={2.7}>Name</Grid2>
                             <Grid2 size={3}>Description</Grid2>
                             <Grid2 size={2}>Type</Grid2>
                             <Grid2 size={2.6}>Object ID</Grid2>
@@ -107,7 +113,7 @@ const FederatedOIDCProviderList: React.FC<ResultListProps> = ({
                     {searchResults.total < 1 &&
                         <Typography component={"div"} fontSize={"0.9em"}>
                             <Grid2 margin={"8px 0px 8px 0px"} textAlign={"center"} size={12} spacing={1}>
-                                No OIDC providers to display
+                                No records to display
                             </Grid2>
                         </Typography>
                     }
@@ -117,7 +123,8 @@ const FederatedOIDCProviderList: React.FC<ResultListProps> = ({
                             <Typography key={`${item.objectid}`} component={"div"} fontSize={"0.9em"}>
                                 <Divider></Divider>
                                 <Grid2 margin={"8px 0px 8px 0px"} container size={12} spacing={1}>
-                                    <Grid2 size={3}><Link style={{ color: "", fontWeight: "bold", textDecoration: "underline" }} href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/oidc-providers/${item.objectid}`}>{item.name}</Link></Grid2>
+                                    <Grid2 size={0.3}><SearchResultIconRenderer objectType={item.objecttype} /></Grid2>
+                                    <Grid2 size={2.7}><Link style={{ color: "", fontWeight: "bold", textDecoration: "underline" }} href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/${getUriSection(item.objecttype)}/${item.objectid}`}>{item.name}</Link></Grid2>
                                     <Grid2 size={3}>{item.description}</Grid2>
                                     <Grid2 size={2}>{item.subtype}</Grid2>
                                     <Grid2 size={2.6}>{item.objectid}</Grid2>
@@ -134,4 +141,4 @@ const FederatedOIDCProviderList: React.FC<ResultListProps> = ({
     )
 }
 
-export default FederatedOIDCProviderList;
+export default SearchResultList;

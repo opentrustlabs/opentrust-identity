@@ -1,4 +1,4 @@
-import { LookaheadResult, ObjectSearchResults, SearchFilterInput, SearchFilterInputObjectType, SearchInput, ObjectSearchResultItem, RelSearchResults, RelSearchInput, RelSearchResultItem, SearchRelType, SearchResultType } from "@/graphql/generated/graphql-types";
+import { LookaheadResult, ObjectSearchResults, SearchFilterInput, SearchFilterInputObjectType, SearchInput, ObjectSearchResultItem, RelSearchResults, RelSearchInput, RelSearchResultItem, SearchRelType, SearchResultType, LookaheadItem } from "@/graphql/generated/graphql-types";
 import { OIDCContext } from "@/graphql/graphql-context";
 import { getOpenSearchClient } from "../data-sources/search";
 import { Client } from "@opensearch-project/opensearch";
@@ -29,8 +29,8 @@ class SearchService {
         let searchTerm = searchInput.term;
 
         // Make sure all of the search parameters are set to sensible values
-        const sortDirection = searchInput.sortDirection && ALLOWED_SEARCH_DIRECTIONS.includes(searchInput.sortDirection) ? searchInput.sortDirection : "asc";
-        const sortField = searchInput.sortField && ALLOWED_OBJECT_SEARCH_SORT_FIELDS.includes(searchInput.sortField) ? searchInput.sortField : "name";        
+        const sortDirection = searchInput.sortDirection && ALLOWED_SEARCH_DIRECTIONS.includes(searchInput.sortDirection) ? searchInput.sortDirection : null;
+        const sortField = searchInput.sortField && ALLOWED_OBJECT_SEARCH_SORT_FIELDS.includes(searchInput.sortField) ? searchInput.sortField : null;
         if(page < 1 || page > MAX_SEARCH_PAGE){
             page = 1;
         }
@@ -63,10 +63,16 @@ class SearchService {
             }
         }
         else{
+            // Ignore the email fields if there is no search type. This will potentially match
+            // too many records if search by an organization name.
+            const fields: Array<string> = searchInput.resultType ? 
+                    ["name^8", "description^4", "email^2", "name_as", "description_as", "email_as"] :
+                    ["name^8", "description^4", "name_as", "description_as"]
             query.bool.must = {
                 multi_match: {
                     query: searchTerm,
-                    fields: ["name^8", "description^4", "email^2", "name_as", "description_as", "email_as"]
+                    fields: fields,
+                    operator: "and"
                 }
             }
         }
@@ -107,7 +113,9 @@ class SearchService {
         }
         
         const sortObj: any = {};
-        sortObj[`${sortField}.raw`] = { order: sortDirection};
+        if(sortDirection && sortField){
+            sortObj[`${sortField}.raw`] = { order: sortDirection};
+        }
 
         const searchBody: any = {
             from: (page - 1) * perPage,
@@ -147,14 +155,6 @@ class SearchService {
                 items.push(source);
             }
         );
-
-        // if(searchInput.includeExistingRel && searchInput.existingRelParentId){
-        //     const arrayIds: Array<string> = items.map(
-        //         (item: ObjectSearchResultItem) => item.objectid
-        //     )
-        //     const relSearchResults: RelSearchResults = await this.getMatchingRels(searchInput.existingRelType || SearchRelType.AuthenticationGroupUserRel, searchInput.existingRelParentId, arrayIds);
-
-        // }
 
         const searchResults: ObjectSearchResults = {
             endtime: end,
@@ -311,8 +311,48 @@ class SearchService {
     }
 
     public async lookahead(term: string): Promise<Array<LookaheadResult>> {
+   
+       // TODO
+       // Add in filters for tenant based on the oidcContext object and whether
+       // the user has access to see all tenants or just their own.
+       // For now, we'll just re-use the search function for lookahead
+        const searchInput: SearchInput = {
+            page: 1,
+            perPage: 10,
+            term: term
+        }
+        const searchResults: ObjectSearchResults = await this.search(searchInput);
+        const retVal: Array<LookaheadResult> = [];
+        if(searchResults.total > 0){
+            const map: Map<SearchResultType, Array<LookaheadItem>> = new Map();
+            searchResults.resultlist.forEach(
+                (item: ObjectSearchResultItem) => {
+                    let arr: Array<LookaheadItem> | undefined = map.get(item.objecttype);
+                    if(!arr){
+                        arr = [];
+                        map.set(item.objecttype, arr);
+                    }
+                    const lookaheadItem: LookaheadItem = {
+                        displayValue: item.name,
+                        id: item.objectid,
+                        matchingString: ""
+                    }
+                    arr.push(lookaheadItem);
+                }
+            );
+            map.forEach(
+                (arr: Array<LookaheadItem>, objectType: SearchResultType) => {
+                    const lookaheadResult: LookaheadResult = {
+                        category: objectType,
+                        resultList: arr
+                    };
+                    retVal.push(lookaheadResult);
+                }
+            )
+        }
 
-        return Promise.resolve([]);
+
+        return Promise.resolve(retVal);
     }
 }
 

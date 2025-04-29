@@ -247,6 +247,18 @@ export const REL_SEARCH_QUERY = gql(`
     }
 `);
 
+export const LOOKAHEAD_SEARCH_QUERY = gql(`
+    query lookahead($term: String!) {
+        lookahead(term: $term) {
+            category
+            resultList {
+                displayValue
+                id
+            }
+        }
+    }    
+`);
+
 export const TENANT_RATE_LIMIT_REL_VIEW_QUERY = gql(`
     query getRateLimitTenantRelViews($rateLimitServiceGroupId: String!) {
         getRateLimitTenantRelViews(rateLimitServiceGroupId: $rateLimitServiceGroupId) {

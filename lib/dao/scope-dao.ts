@@ -7,6 +7,12 @@ abstract class ScopeDao {
         abstract getScope(tenantId?: string): Promise<Array<Scope>>;
 
         abstract getScopeById(scopeId: string): Promise<Scope | null>;
+
+        /**
+         * Scope names must be globally unique. 
+         * @param scopeName 
+         */
+        abstract getScopeByScopeName(scopeName: string): Promise<Scope | null>;
     
         abstract createScope(scope: Scope): Promise<Scope>;
     

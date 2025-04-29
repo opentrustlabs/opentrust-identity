@@ -55,7 +55,11 @@ const resolvers: Resolvers = {
         },
         search: (_, { searchInput }, oidcContext) => {
             const searchService: SearchService = new SearchService(oidcContext);
-            return searchService.search(searchInput);
+            return searchService.search(searchInput);            
+        },
+        lookahead: (_, { term }, oidcContext) => {
+            const searchService: SearchService = new SearchService(oidcContext);
+            return searchService.lookahead(term);
         },
         relSearch: async (_, { relSearchInput}, oidcContext) => {            
             const searchService: SearchService = new SearchService(oidcContext);

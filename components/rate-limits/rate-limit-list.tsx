@@ -7,7 +7,6 @@ import UnfoldMoreOutlinedIcon from '@mui/icons-material/UnfoldMoreOutlined';
 import UnfoldLessOutlinedIcon from '@mui/icons-material/UnfoldLessOutlined';
 import Link from "next/link";
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import DeleteForeverOutlinedIcon from '@mui/icons-material/DeleteForeverOutlined';
 import Grid2 from "@mui/material/Grid2";
 import Divider from "@mui/material/Divider";
 import { ObjectSearchResultItem } from "@/graphql/generated/graphql-types";
@@ -45,9 +44,8 @@ const RateLimitList: React.FC<ResultListProps> = ({
                 {c.isMedium &&
                     <>
                         <Typography component={"div"} fontWeight={"bold"} >
-                            <Grid2 container size={12} spacing={1} marginBottom={"16px"} >
-                                <Grid2 size={1}></Grid2>
-                                <Grid2 size={10}>Service Group Name</Grid2>                                
+                            <Grid2 container size={12} spacing={1} marginBottom={"16px"} >                                
+                                <Grid2 size={11}>Service Group Name</Grid2>
                                 <Grid2 size={1}></Grid2>
                             </Grid2>
                         </Typography>
@@ -63,9 +61,7 @@ const RateLimitList: React.FC<ResultListProps> = ({
                                 <Typography key={`${item.objectid}`} component={"div"}>
                                     <Divider></Divider>
                                     <Grid2 margin={"8px 0px 8px 0px"} container size={12} spacing={1}>
-                                        <Grid2 size={1}><DeleteForeverOutlinedIcon /></Grid2>
-                                        <Grid2 size={10}><Link style={{ color: "", fontWeight: "bold", textDecoration: "underline" }} href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/rate-limits/${item.objectid}`}>{item.name}</Link></Grid2>
-                                        
+                                        <Grid2 size={11}><Link style={{ color: "", fontWeight: "bold", textDecoration: "underline" }} href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/rate-limits/${item.objectid}`}>{item.name}</Link></Grid2>
                                         <Grid2 size={1}>
                                             {mapViewExpanded.has(item.objectid) &&
                                                 <UnfoldLessOutlinedIcon
@@ -101,9 +97,8 @@ const RateLimitList: React.FC<ResultListProps> = ({
                 {!c.isMedium &&
                     <>
                         <Typography component={"div"} fontWeight={"bold"} >
-                            <Grid2 container size={12} spacing={1} marginBottom={"16px"} >
-                                <Grid2 size={0.3}></Grid2>
-                                <Grid2 size={2.7}>Service Group Name</Grid2>
+                            <Grid2 container size={12} spacing={1} marginBottom={"16px"} >                                
+                                <Grid2 size={3}>Service Group Name</Grid2>
                                 <Grid2 size={5}>Service Group Description</Grid2>
                                 <Grid2 size={3}>Object ID</Grid2>
                                 <Grid2 size={1}></Grid2>
@@ -121,14 +116,12 @@ const RateLimitList: React.FC<ResultListProps> = ({
                                 <Typography key={`${item.objectid}`} component={"div"} >
                                     <Divider></Divider>
                                     <Grid2 margin={"8px 0px 8px 0px"} container size={12} spacing={1}>
-                                        <Grid2 size={0.3}><DeleteForeverOutlinedIcon /></Grid2>
-                                        <Grid2 size={2.7}><Link style={{ color: "", fontWeight: "bold", textDecoration: "underline" }} href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/rate-limits/${item.objectid}`}>{item.name}</Link></Grid2>
+                                        <Grid2 size={3}><Link style={{ color: "", fontWeight: "bold", textDecoration: "underline" }} href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/rate-limits/${item.objectid}`}>{item.name}</Link></Grid2>
                                         <Grid2 size={5}>{item.description}</Grid2>
                                         <Grid2 size={3}>{item.objectid}</Grid2>                                        
                                         <Grid2 size={1} ><ContentCopyIcon /></Grid2>
                                     </Grid2>
                                 </Typography>
-
                             )
                         )}
                     </>

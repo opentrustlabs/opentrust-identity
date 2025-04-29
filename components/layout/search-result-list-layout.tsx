@@ -1,7 +1,7 @@
 "use client";
 import Grid2 from "@mui/material/Grid2";
 import TablePagination from "@mui/material/TablePagination";
-import React, { useContext, useRef } from "react";
+import React, { useContext, useEffect, useRef } from "react";
 import DataLoading from "./data-loading";
 import ErrorComponent from "../error/error-component";
 import Stack from "@mui/material/Stack";
@@ -22,6 +22,11 @@ import AuthorizationGroupList from "../authorization-groups/authorization-group-
 import AuthenticationGroupList from "../authentication-groups/authentication-group-list";
 import FederatedOIDCProviderList from "../oidc-providers/oidc-provider-list";
 import RateLimitList from "../rate-limits/rate-limit-list";
+import SearchResultList from "../search/search-result-list";
+import { useSearchParams } from "next/navigation";
+import ScopeList from "../scope/scope-list";
+import SigningKeyList from "../signing-keys/signing-key-list";
+
 
 export interface ResultListProps {
     searchResults: ObjectSearchResults,
@@ -34,6 +39,8 @@ export interface SearchResultListProps {
     perPage: number,
     resultType: SearchResultType | null,
     breadCrumbText: string | null
+    sortDirection?: string | null,
+    sortField?: string | null
 }
 
 
@@ -42,26 +49,46 @@ const SearchResultListLayout: React.FC<SearchResultListProps> = ({
     page: p,
     perPage: pp,
     resultType,
-    breadCrumbText
+    breadCrumbText,
+    sortField,
+    sortDirection
 }) => {
 
+    
+    // CONTEXT HOOKS
+    const tenantBean: TenantMetaDataBean = useContext(TenantContext);
+    const searchParams = useSearchParams();
+    const isSearchPage: boolean = searchParams?.get("section")  === "search" ? true : false;
+    const t = searchParams?.get("term") || "";
+    
     const perPage = pp && pp < MAX_SEARCH_PAGE_SIZE ? pp : 20;
+    
     // REF OBJECTS
     const topOfSearchList = useRef<HTMLDivElement | null>(null);
 
     // STATE VARIABLES
-    const [filterTerm, setFilterTerm] = React.useState<string>("");
+    const [filterTerm, setFilterTerm] = React.useState<string>(t);
     const [page, setPage] = React.useState<number>(p  || 1);
     
-    // CONTEXT HOOKS
-    const tenantBean: TenantMetaDataBean = useContext(TenantContext);
+    useEffect(() => {
+        setFilterTerm(searchParams?.get("term") || "");
+    }, [searchParams]);
 
     // HANDLER FUNCTIONS
     const arrBreadcrumbs = [];
-    arrBreadcrumbs.push({
-        href: `/${tenantBean.getTenantMetaData().tenant.tenantId}`,
-        linkText: tenantBean.getTenantMetaData().tenant.tenantType === TENANT_TYPE_ROOT_TENANT ? `Tenant List` : `${tenantBean.getTenantMetaData().tenant.tenantName}`
-    },);
+    if(isSearchPage){
+        const suffix = t ? ` (search term: ${t})` : ``
+        arrBreadcrumbs.push({
+            href: null,
+            linkText: `Search Results${suffix}`
+        });
+    }
+    else{
+        arrBreadcrumbs.push({
+            href: `/${tenantBean.getTenantMetaData().tenant.tenantId}`,
+            linkText: tenantBean.getTenantMetaData().tenant.tenantType === TENANT_TYPE_ROOT_TENANT ? `Tenant List` : `${tenantBean.getTenantMetaData().tenant.tenantName}`
+        });
+    }
 
     breadCrumbText &&
         arrBreadcrumbs.push({
@@ -83,11 +110,13 @@ const SearchResultListLayout: React.FC<SearchResultListProps> = ({
                 filters: filters,
                 page: page,
                 perPage: perPage,
-                resultType: resultType ? resultType : null
+                resultType: resultType ? resultType : null,
+                sortDirection: sortDirection,
+                sortField: sortField
             }
         },
-        fetchPolicy: "no-cache",
-        nextFetchPolicy: "no-cache"
+        fetchPolicy: "network-only",
+        nextFetchPolicy: "network-only"
     });
 
     // Material UI TablePagination component uses zero-based 
@@ -118,29 +147,32 @@ const SearchResultListLayout: React.FC<SearchResultListProps> = ({
     return (
 
         <main >
-            <Typography component={"div"}>                
+            <Typography component={"div"}>
                 <BreadcrumbComponent breadCrumbs={arrBreadcrumbs} />                
                 <Stack spacing={1} justifyContent={"space-between"} direction={"row"} fontWeight={"bold"} margin={"8px 0px 24px 0px"}>
                     <div style={{ display: "inline-flex", alignItems: "center" }}>
-                        <TextField
-                            label={filterInputLabel}
-                            size={"small"}
-                            name={"filter"}
-                            value={filterTerm}
-                            onChange={handleFilterTermChange}
-                            slotProps={{
-                                input: {
-                                    endAdornment: (
-                                        <InputAdornment position="end">
-                                            <CloseOutlinedIcon
-                                                sx={{ cursor: "pointer" }}
-                                                onClick={() => { setFilterTerm(""); setPage(1) }}
-                                            />
-                                        </InputAdornment>
-                                    )
-                                }
-                            }}
-                        />
+                        {!isSearchPage &&
+                            <TextField
+                                label={filterInputLabel}
+                                size={"small"}
+                                name={"filter"}
+                                value={filterTerm}
+                                onChange={handleFilterTermChange}
+                                autoFocus={true}
+                                slotProps={{
+                                    input: {
+                                        endAdornment: (
+                                            <InputAdornment position="end">
+                                                <CloseOutlinedIcon
+                                                    sx={{ cursor: "pointer" }}
+                                                    onClick={() => { setFilterTerm(""); setPage(1) }}
+                                                />
+                                            </InputAdornment>
+                                        )
+                                    }
+                                }}
+                            />
+                        }
                     </div>
                     <div ref={topOfSearchList}></div>
                 </Stack>
@@ -158,6 +190,9 @@ const SearchResultListLayout: React.FC<SearchResultListProps> = ({
                 }                
                 {loading && previousData && 
                     <>
+                        {resultType === null &&
+                            <SearchResultList searchResults={previousData.search} />                            
+                        }
                         {resultType === SearchResultType.Tenant &&
                             <TenantResultList searchResults={previousData.search} />
                         }
@@ -179,10 +214,19 @@ const SearchResultListLayout: React.FC<SearchResultListProps> = ({
                         {resultType === SearchResultType.RateLimit &&
                             <RateLimitList searchResults={previousData.search} />
                         }
+                        {resultType === SearchResultType.AccessControl &&
+                            <ScopeList searchResults={previousData.search} />
+                        }
+                        {resultType === SearchResultType.Key &&
+                            <SigningKeyList searchResults={previousData.search} />
+                        }
                     </>                    
                 }
-                {data &&
+                { data &&
                     <>
+                        {resultType === null &&
+                            <SearchResultList searchResults={data.search} />
+                        }
                         {resultType === SearchResultType.Tenant &&
                             <TenantResultList searchResults={data.search} />
                         }
@@ -203,6 +247,12 @@ const SearchResultListLayout: React.FC<SearchResultListProps> = ({
                         }
                         {resultType === SearchResultType.RateLimit &&
                             <RateLimitList searchResults={data.search} />
+                        }
+                        {resultType === SearchResultType.AccessControl &&
+                            <ScopeList searchResults={data.search} />
+                        }
+                        {resultType === SearchResultType.Key &&
+                            <SigningKeyList searchResults={data.search} />
                         }
                     </>
                 }
