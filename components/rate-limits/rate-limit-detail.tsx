@@ -88,7 +88,7 @@ const RateLimitDetail: React.FC<RateLimitDetailProps> = ({
                                     <Grid2 marginBottom={"16px"}>
                                         <div>Service Group Name</div>
                                         <TextField
-                                            required name="providerName" id="providerName"
+                                            required name="serviceGroupName" id="serviceGroupName"
                                             onChange={(evt) => { serviceGroupInput.servicegroupname = evt?.target.value; setServiceGroupInput({ ...serviceGroupInput }); setMarkDirty(true); }}
                                             value={serviceGroupInput.servicegroupname}
                                             fullWidth={true}
@@ -104,7 +104,7 @@ const RateLimitDetail: React.FC<RateLimitDetailProps> = ({
                                     <Grid2 marginBottom={"16px"}>
                                         <div>Service Group Description</div>
                                         <TextField
-                                            name="providerDescription" id="providerDescription"
+                                            name="serviceGroupDescription" id="serviceGroupDescription"
                                             value={serviceGroupInput.servicegroupdescription}
                                             fullWidth={true}
                                             size="small"
