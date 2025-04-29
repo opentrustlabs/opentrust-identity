@@ -60,6 +60,15 @@ class DBScopeDao extends ScopeDao {
         return entity ? Promise.resolve(entity.dataValues as Scope) : Promise.resolve(null);
     }
 
+    public async getScopeByScopeName(scopeName: string): Promise<Scope | null> {
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        const entity: ScopeEntity | null = await sequelize.models.scope.findOne({
+            where: {scopeName: scopeName}
+        });
+
+        return entity ? Promise.resolve(entity.dataValues as Scope) : Promise.resolve(null);
+    }
+
     public async createScope(scope: Scope): Promise<Scope> {
         const sequelize: Sequelize = await DBDriver.getConnection();        
         await sequelize.models.scope.create(scope);

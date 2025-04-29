@@ -117,7 +117,15 @@ const TenantLandingPage: React.FC = () => {
                 <SigningKeyList />
             }
             {section === "scope-access-control" &&
-                <ScopeList />
+                <SearchResultListLayout 
+                    filterInputLabel="Filter Scope" 
+                    resultType={SearchResultType.AccessControl}
+                    page={1} 
+                    perPage={20}
+                    breadCrumbText="Scope/Access Control"
+                    sortDirection={"asc"}
+                    sortField={"name"}
+                />
             }
             {section === "rate-limits" &&
                 <SearchResultListLayout 

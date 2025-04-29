@@ -24,6 +24,7 @@ import FederatedOIDCProviderList from "../oidc-providers/oidc-provider-list";
 import RateLimitList from "../rate-limits/rate-limit-list";
 import SearchResultList from "../search/search-result-list";
 import { useSearchParams } from "next/navigation";
+import ScopeList from "../scope/scope-list";
 
 
 export interface ResultListProps {
@@ -212,6 +213,9 @@ const SearchResultListLayout: React.FC<SearchResultListProps> = ({
                         {resultType === SearchResultType.RateLimit &&
                             <RateLimitList searchResults={previousData.search} />
                         }
+                        {resultType === SearchResultType.AccessControl &&
+                            <ScopeList searchResults={previousData.search} />
+                        }
                     </>                    
                 }
                 { data &&
@@ -239,6 +243,9 @@ const SearchResultListLayout: React.FC<SearchResultListProps> = ({
                         }
                         {resultType === SearchResultType.RateLimit &&
                             <RateLimitList searchResults={data.search} />
+                        }
+                        {resultType === SearchResultType.AccessControl &&
+                            <ScopeList searchResults={data.search} />
                         }
                     </>
                 }

@@ -185,6 +185,14 @@ export const FEDERATED_OIDC_PROVIDER_TENANT_REMOVE_SCOPE="federatedoidcprovider.
 
 export const SCOPE_USE_IAM_MANAGEMENT="IAM_MANAGEMENT";
 export const SCOPE_USE_APPLICATION_MANAGEMENT="APPLICATION_MANAGEMENT";
+export const SCOPE_USES = [
+    SCOPE_USE_IAM_MANAGEMENT,
+    SCOPE_USE_APPLICATION_MANAGEMENT
+];
+export const SCOPE_USE_DISPLAY = new Map<string, string>([
+    [SCOPE_USE_IAM_MANAGEMENT, "IAM Management"],
+    [SCOPE_USE_APPLICATION_MANAGEMENT, "Application Management"]
+]);
 
 
 // These are for the exclusive use of the application and cannot be changed. The names

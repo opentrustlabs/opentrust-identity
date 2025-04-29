@@ -2,7 +2,7 @@
 import { Scope } from "@/graphql/generated/graphql-types";
 import React, { useContext } from "react";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
-import { SCOPE_USE_IAM_MANAGEMENT, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
+import { SCOPE_USE_DISPLAY, SCOPE_USE_IAM_MANAGEMENT, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import Typography from "@mui/material/Typography";
 import BreadcrumbComponent from "../breadcrumbs/breadcrumbs";
 import { DetailPageContainer, DetailPageMainContentContainer, DetailPageRightNavContainer } from "../layout/detail-page-container";
@@ -40,7 +40,7 @@ const ScopeDetail: React.FC<ScopeDetailProps> = ({ scope }) => {
     },);
     arrBreadcrumbs.push({
         linkText: "Scope / Access Control",
-        href: `/${tenantBean.getTenantMetaData().tenant.tenantId}?section=oidc-providers`
+        href: `/${tenantBean.getTenantMetaData().tenant.tenantId}?section=scope-access-control`
     });
     arrBreadcrumbs.push({
         linkText: scope.scopeName,
@@ -88,7 +88,7 @@ const ScopeDetail: React.FC<ScopeDetailProps> = ({ scope }) => {
                                     <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
                                         <Grid2 marginBottom={"8px"}>
                                             <div>Scope Use</div>
-                                            <TextField disabled={true} name="providerName" id="providerName" value={scope.scopeUse} fullWidth={true} size="small" />
+                                            <TextField disabled={true} name="providerName" id="providerName" value={SCOPE_USE_DISPLAY.get(scope.scopeUse)} fullWidth={true} size="small" />
                                         </Grid2>
                                     </Grid2>
                                 </Grid2>

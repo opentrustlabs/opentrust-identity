@@ -1,4 +1,4 @@
-import type { NextApiRequest, NextApiResponse } from 'next'
+import type { NextApiRequest, NextApiResponse } from 'next';
 import { generateKeyPairSync, createPublicKey, KeyObject, PrivateKeyInput, createPrivateKey } from "node:crypto";
 import { pem, sha256, hmac, pki } from "node-forge";
 import { OIDCPrincipal } from '@/lib/models/principal';
