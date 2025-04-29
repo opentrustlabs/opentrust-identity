@@ -47,7 +47,8 @@ const {
     DB_MAX_POOL_SIZE,
     DB_AUTH_SCHEME,
     DB_USER_DOMAIN,
-    RDB_DIALECT
+    RDB_DIALECT,
+    DB_ENABLE_QUERY_LOGGING
 } = process.env;
 
 
@@ -69,9 +70,7 @@ class DBDriver {
     public static async getConnection(): Promise<Sequelize> {
 
         if(!global.sequelize){
-            
-            console.log("will need to create a new sequelize");
-            
+                        
             let dialect: Dialect | null = null; 
             
             if(RDB_DIALECT === "postgres"){
@@ -102,8 +101,11 @@ class DBDriver {
                     pool: {
                         max: parseInt(DB_MAX_POOL_SIZE || "10"),
                         min: parseInt(DB_MIN_POOL_SIZE || "4")
-                    }
-                }
+                    },
+                    logging: DB_ENABLE_QUERY_LOGGING === "true"
+                },
+                
+                
             );
             ContactEntity.initModel(global.sequelize);
             TenantAnonymousUserConfigurationEntity.initModel(global.sequelize);
