@@ -52,12 +52,12 @@ const SearchResultListLayout: React.FC<SearchResultListProps> = ({
     sortDirection
 }) => {
 
-
+    
     // CONTEXT HOOKS
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
     const searchParams = useSearchParams();
     const isSearchPage: boolean = searchParams?.get("section")  === "search" ? true : false;
-    const t = searchParams?.get("term") || ""
+    const t = searchParams?.get("term") || "";
     
     const perPage = pp && pp < MAX_SEARCH_PAGE_SIZE ? pp : 20;
     
@@ -145,7 +145,7 @@ const SearchResultListLayout: React.FC<SearchResultListProps> = ({
     return (
 
         <main >
-            <Typography key={Date.now()} component={"div"}>
+            <Typography component={"div"}>
                 <BreadcrumbComponent breadCrumbs={arrBreadcrumbs} />                
                 <Stack spacing={1} justifyContent={"space-between"} direction={"row"} fontWeight={"bold"} margin={"8px 0px 24px 0px"}>
                     <div style={{ display: "inline-flex", alignItems: "center" }}>
@@ -156,6 +156,7 @@ const SearchResultListLayout: React.FC<SearchResultListProps> = ({
                                 name={"filter"}
                                 value={filterTerm}
                                 onChange={handleFilterTermChange}
+                                autoFocus={true}
                                 slotProps={{
                                     input: {
                                         endAdornment: (
@@ -188,7 +189,7 @@ const SearchResultListLayout: React.FC<SearchResultListProps> = ({
                 {loading && previousData && 
                     <>
                         {resultType === null &&
-                            <SearchResultList key={filterTerm} searchResults={previousData.search} />                            
+                            <SearchResultList searchResults={previousData.search} />                            
                         }
                         {resultType === SearchResultType.Tenant &&
                             <TenantResultList searchResults={previousData.search} />
@@ -216,7 +217,7 @@ const SearchResultListLayout: React.FC<SearchResultListProps> = ({
                 { data &&
                     <>
                         {resultType === null &&
-                            <SearchResultList key={filterTerm} searchResults={data.search} />
+                            <SearchResultList searchResults={data.search} />
                         }
                         {resultType === SearchResultType.Tenant &&
                             <TenantResultList searchResults={data.search} />
