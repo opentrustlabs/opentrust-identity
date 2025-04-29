@@ -145,7 +145,7 @@ class DBScopeDao extends ScopeDao {
     public async removeScopeFromClient(tenantId: string, clientId: string, scopeId: string): Promise<void> {
         const sequelize: Sequelize = await DBDriver.getConnection();
         
-        await await sequelize.models.clientScopeRel.destroy({
+        await sequelize.models.clientScopeRel.destroy({
             where: {
                 tenantId: tenantId,
                 clientId: clientId,

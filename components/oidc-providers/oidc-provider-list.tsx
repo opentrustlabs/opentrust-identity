@@ -8,7 +8,6 @@ import UnfoldMoreOutlinedIcon from '@mui/icons-material/UnfoldMoreOutlined';
 import UnfoldLessOutlinedIcon from '@mui/icons-material/UnfoldLessOutlined';
 import Link from "next/link";
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import DeleteForeverOutlinedIcon from '@mui/icons-material/DeleteForeverOutlined';
 import { ResultListProps } from "../layout/search-result-list-layout";
 
 const FederatedOIDCProviderList: React.FC<ResultListProps> = ({
@@ -40,9 +39,8 @@ const FederatedOIDCProviderList: React.FC<ResultListProps> = ({
             {c.isMedium &&
                 <>
                     <Typography component={"div"} fontWeight={"bold"} fontSize={"0.9em"}>
-                        <Grid2 container size={12} spacing={1} marginBottom={"16px"} >
-                            <Grid2 size={1}></Grid2>
-                            <Grid2 size={8}>Name</Grid2>
+                        <Grid2 container size={12} spacing={1} marginBottom={"16px"} >                            
+                            <Grid2 size={9}>Name</Grid2>
                             <Grid2 size={2}>Type</Grid2>
                             <Grid2 size={1}></Grid2>
                         </Grid2>
@@ -61,8 +59,7 @@ const FederatedOIDCProviderList: React.FC<ResultListProps> = ({
                             <Typography key={`${item.objectid}`} component={"div"} fontSize={"0.9em"}>
                                 <Divider></Divider>
                                 <Grid2 margin={"8px 0px 8px 0px"} container size={12} spacing={1}>
-                                    <Grid2 size={1}><DeleteForeverOutlinedIcon /></Grid2>
-                                    <Grid2 size={8}><Link style={{ color: "", fontWeight: "bold", textDecoration: "underline" }} href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/oidc-providers/${item.objectid}`}>{item.name}</Link></Grid2>
+                                    <Grid2 size={9}><Link style={{ color: "", fontWeight: "bold", textDecoration: "underline" }} href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/oidc-providers/${item.objectid}`}>{item.name}</Link></Grid2>
                                     <Grid2 size={2}>{item.subtype}</Grid2>
                                     <Grid2 size={1}>
                                         {mapViewExpanded.has(item.objectid) &&
@@ -98,9 +95,8 @@ const FederatedOIDCProviderList: React.FC<ResultListProps> = ({
             {!c.isMedium &&
                 <>
                     <Typography component={"div"} fontWeight={"bold"} fontSize={"0.9em"}>
-                        <Grid2 container size={12} spacing={1} marginBottom={"16px"} >
-                            <Grid2 size={0.3}></Grid2>
-                            <Grid2 size={2.7}>Name</Grid2>
+                        <Grid2 container size={12} spacing={1} marginBottom={"16px"} >                            
+                            <Grid2 size={3}>Name</Grid2>
                             <Grid2 size={3}>Description</Grid2>
                             <Grid2 size={2}>Type</Grid2>
                             <Grid2 size={2.6}>Object ID</Grid2>
@@ -121,8 +117,7 @@ const FederatedOIDCProviderList: React.FC<ResultListProps> = ({
                             <Typography key={`${item.objectid}`} component={"div"} fontSize={"0.9em"}>
                                 <Divider></Divider>
                                 <Grid2 margin={"8px 0px 8px 0px"} container size={12} spacing={1}>
-                                    <Grid2 size={0.3}><DeleteForeverOutlinedIcon /></Grid2>
-                                    <Grid2 size={2.7}><Link style={{ color: "", fontWeight: "bold", textDecoration: "underline" }} href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/oidc-providers/${item.objectid}`}>{item.name}</Link></Grid2>
+                                    <Grid2 size={3}><Link style={{ color: "", fontWeight: "bold", textDecoration: "underline" }} href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/oidc-providers/${item.objectid}`}>{item.name}</Link></Grid2>
                                     <Grid2 size={3}>{item.description}</Grid2>
                                     <Grid2 size={2}>{item.subtype}</Grid2>
                                     <Grid2 size={2.6}>{item.objectid}</Grid2>

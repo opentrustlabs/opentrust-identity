@@ -7,7 +7,6 @@ import UnfoldLessOutlinedIcon from '@mui/icons-material/UnfoldLessOutlined';
 import Link from "next/link";
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import { ResponsiveBreakpoints, ResponsiveContext } from "../contexts/responsive-context";
-import DeleteForeverOutlinedIcon from '@mui/icons-material/DeleteForeverOutlined';
 import OpenInNewOutlinedIcon from '@mui/icons-material/OpenInNewOutlined';
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
 import { TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
@@ -48,9 +47,8 @@ const AuthorizationGroupList: React.FC<ResultListProps> = ({
             {c.isMedium &&
                 <>
                     <Typography component={"div"} fontWeight={"bold"} fontSize={"0.9em"}>
-                        <Grid2 container size={12} spacing={1} marginBottom={"16px"} >
-                            <Grid2 size={1}></Grid2>
-                            <Grid2 size={10}>Group Name</Grid2>
+                        <Grid2 container size={12} spacing={1} marginBottom={"16px"} >                            
+                            <Grid2 size={11}>Group Name</Grid2>
                             <Grid2 size={1}></Grid2>
                         </Grid2>
                     </Typography>
@@ -67,9 +65,8 @@ const AuthorizationGroupList: React.FC<ResultListProps> = ({
                         (item: ObjectSearchResultItem) => (
                             <Typography key={`${item.objectid}`} component={"div"} fontSize={"0.9em"}>
                                 <Divider></Divider>
-                                <Grid2 margin={"8px 0px 8px 0px"} container size={12} spacing={1}>
-                                    <Grid2 size={1}><DeleteForeverOutlinedIcon /></Grid2>
-                                    <Grid2 size={10}><Link style={{ color: "", fontWeight: "bold", textDecoration: "underline" }} href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/authorization-groups/${item.objectid}`}>{item.name}</Link></Grid2>
+                                <Grid2 margin={"8px 0px 8px 0px"} container size={12} spacing={1}>                                    
+                                    <Grid2 size={11}><Link style={{ color: "", fontWeight: "bold", textDecoration: "underline" }} href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/authorization-groups/${item.objectid}`}>{item.name}</Link></Grid2>
                                     <Grid2 size={1}>
                                         {mapViewExpanded.has(item.objectid) &&
                                             <UnfoldLessOutlinedIcon
@@ -114,9 +111,8 @@ const AuthorizationGroupList: React.FC<ResultListProps> = ({
             {!c.isMedium &&
                 <>
                     <Typography component={"div"} fontWeight={"bold"} fontSize={"0.9em"}>
-                        <Grid2 container size={12} spacing={1} marginBottom={"16px"} >
-                            <Grid2 size={0.3}></Grid2>
-                            <Grid2 size={2.7}>Group Name</Grid2>
+                        <Grid2 container size={12} spacing={1} marginBottom={"16px"} >                            
+                            <Grid2 size={3}>Group Name</Grid2>
                             <Grid2 size={isRootTenant ? 4.5 : 5.5}>Description</Grid2>
                             {isRootTenant &&
                                 <>
@@ -140,9 +136,8 @@ const AuthorizationGroupList: React.FC<ResultListProps> = ({
                         (item: ObjectSearchResultItem) => (
                             <Typography key={`${item.objectid}`} component={"div"} fontSize={"0.9em"}>
                                 <Divider></Divider>
-                                <Grid2 margin={"8px 0px 8px 0px"} container size={12} spacing={1}>
-                                    <Grid2 size={0.3}><DeleteForeverOutlinedIcon /></Grid2>
-                                    <Grid2 size={2.7}><Link style={{ color: "", fontWeight: "bold", textDecoration: "underline" }} href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/authorization-groups/${item.objectid}`}>{item.name}</Link></Grid2>
+                                <Grid2 margin={"8px 0px 8px 0px"} container size={12} spacing={1}>                                    
+                                    <Grid2 size={3}><Link style={{ color: "", fontWeight: "bold", textDecoration: "underline" }} href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/authorization-groups/${item.objectid}`}>{item.name}</Link></Grid2>
                                     <Grid2 size={isRootTenant ? 4.5 : 5.5}>{item.description}</Grid2>
                                     {isRootTenant &&
                                         <>

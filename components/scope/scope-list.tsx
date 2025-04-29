@@ -7,8 +7,7 @@ import { Divider, Grid2 } from "@mui/material";
 import UnfoldMoreOutlinedIcon from '@mui/icons-material/UnfoldMoreOutlined';
 import UnfoldLessOutlinedIcon from '@mui/icons-material/UnfoldLessOutlined';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import DeleteForeverOutlinedIcon from '@mui/icons-material/DeleteForeverOutlined';
-import { ObjectSearchResultItem, Scope } from "@/graphql/generated/graphql-types";
+import { ObjectSearchResultItem } from "@/graphql/generated/graphql-types";
 import Link from "next/link";
 import { ResultListProps } from "../layout/search-result-list-layout";
 
@@ -55,10 +54,9 @@ const ScopeList: React.FC<ResultListProps> = ({
             {!c.isMedium &&
                 <>
                     <Typography  component={"div"} fontWeight={"bold"} fontSize={"0.9em"}>
-                        <Grid2 container spacing={2} marginBottom={"16px"}>
-                            <Grid2 size={0.3}></Grid2>
+                        <Grid2 container spacing={2} marginBottom={"16px"}>                            
                             <Grid2 size={2.3}>Name</Grid2>
-                            <Grid2 size={3.7}>Description</Grid2>
+                            <Grid2 size={4}>Description</Grid2>
                             <Grid2 size={2}>Use</Grid2>
                             <Grid2 size={2.7}>Object ID</Grid2>
                             <Grid2 size={1}></Grid2>
@@ -75,10 +73,9 @@ const ScopeList: React.FC<ResultListProps> = ({
                         (item: ObjectSearchResultItem) => (
                             <Typography key={item.objectid} component={"div"} fontSize={"0.9em"} noWrap>
                                 <Divider></Divider>
-                                <Grid2 padding={"8px 0px 8px 0px"} container size={12} spacing={1}>
-                                    <Grid2 size={0.3}></Grid2>
-                                    <Grid2 sx={{textOverflow: "ellipsis", overflow: "hidden"}} size={2.3}><Link href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/scope-access-control/${item.objectid}`}>{item.name}</Link></Grid2>
-                                    <Grid2 size={3.7}>{item.description}</Grid2>
+                                <Grid2 padding={"8px 0px 8px 0px"} container size={12} spacing={1}>                                    
+                                    <Grid2 sx={{textOverflow: "ellipsis", overflow: "hidden", fontWeight: "bold"}} size={2.3}><Link href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/scope-access-control/${item.objectid}`}>{item.name}</Link></Grid2>
+                                    <Grid2 size={4}>{item.description}</Grid2>
                                     <Grid2 size={2}>{item.subtype}</Grid2>
                                     <Grid2 sx={{textOverflow: "ellipsis", overflow: "hidden"}}  size={2.7}>{item.objectid}</Grid2>
                                     <Grid2 size={1}><ContentCopyIcon /></Grid2>
@@ -110,8 +107,8 @@ const ScopeList: React.FC<ResultListProps> = ({
                             <Typography key={`${item.objectid}`} component={"div"} fontSize={"0.9em"}>
                                 <Divider></Divider>
                                 <Grid2 margin={"8px 0px 8px 0px"} container size={12} spacing={1}>
-                                    <Grid2 size={1}><DeleteForeverOutlinedIcon /></Grid2>
-                                    <Grid2 size={10}><Link href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/scope-access-control/${item.objectid}`}>{item.name}</Link></Grid2>                                            
+                                    
+                                    <Grid2 size={11} sx={{fontWeight: "bold"}}><Link href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/scope-access-control/${item.objectid}`}>{item.name}</Link></Grid2>                                            
                                     <Grid2 size={1}>
                                         {mapViewExpanded.has(item.objectid) &&
                                             <UnfoldLessOutlinedIcon
