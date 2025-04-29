@@ -88,7 +88,7 @@ class SigningKeysService {
         existingKey.status = key.status;
         existingKey.expiresAtMs = key.expiresAtMs;
         await signingKeysDao.updateSigningKey(existingKey);
-        await this.updateSearchIndex(key);
+        await this.updateSearchIndex(existingKey);
         return Promise.resolve(existingKey);
 
     }
