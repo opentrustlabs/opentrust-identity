@@ -282,10 +282,15 @@ const AuthenticationGroupDetail: React.FC<AuthenticationGroupDetailProps> = ({ a
             <Snackbar
                 open={showMutationSnackbar}
                 autoHideDuration={4000}
-                onClose={() => setShowMutationSnackbar(false)}
-                message="Authentication Group Updated"
+                onClose={() => setShowMutationSnackbar(false)}                
                 anchorOrigin={{horizontal: "center", vertical: "top"}}
-            />
+            >
+                <Alert 
+                    onClose={() => setShowMutationSnackbar(false)}
+                >
+                    Authentication Group Updated
+                </Alert>
+            </Snackbar>
         </Typography >
     )
 }

@@ -196,10 +196,15 @@ const RateLimitDetail: React.FC<RateLimitDetailProps> = ({
             <Snackbar
                 open={showMutationSnackbar}
                 autoHideDuration={4000}
-                onClose={() => setShowMutationSnackbar(false)}
-                message="Rate Limit Updated"
-                anchorOrigin={{ horizontal: "center", vertical: "top" }}
-            />
+                onClose={() => setShowMutationSnackbar(false)}                
+                anchorOrigin={{horizontal: "center", vertical: "top"}}
+            >
+                <Alert 
+                    onClose={() => setShowMutationSnackbar(false)}
+                >
+                    Rate Limit Updated
+                </Alert>
+            </Snackbar>	            
         </Typography >
     )
 }
