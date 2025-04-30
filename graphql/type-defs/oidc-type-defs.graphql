@@ -87,6 +87,9 @@ type Query {
     ## Contacts
     getContacts(objectId: String!): [Contact!]!
 
+    ## Viewing secrets or private keys
+    getSecretValue(objectId: String!, objectType: SecretObjectType!): String
+
 }
 
 type Mutation {
@@ -201,6 +204,11 @@ type Mutation {
 
 }
 
+enum SecretObjectType {
+    CLIENT_SECRET
+    PRIVATE_KEY
+    PRIVATE_KEY_PASSWORD
+}
 
 type LoginFailurePolicy {
     tenantId: String!

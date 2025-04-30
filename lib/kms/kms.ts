@@ -1,7 +1,7 @@
 import { AES_GCM_CIPHER, AES_KEY_LENGTH, AUTH_TAG_LENGTH, IV_LENGTH_IN_BYTES } from "@/utils/consts";
 import { generateKeySync, createCipheriv, randomBytes, KeyObject, CipherGCM, createDecipheriv, DecipherGCM } from "node:crypto";
 
-abstract class BaseKms {
+abstract class Kms {
 
     abstract encrypt(data: string, aad?: string): Promise<string | null>;
 
@@ -185,4 +185,4 @@ abstract class BaseKms {
 
 }
 
-export default BaseKms
+export default Kms;

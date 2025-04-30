@@ -22,27 +22,6 @@ export const MIN_END_USER_TOKEN_TTL_SECONDS = 600; // 10 minutes
 //                  FILE-SYSTEM-BASED DAO CONSTANTS
 // 
 // ************************************************************************** //
-export const ROOT_TENANT_FILE = "root-tenant.json";
-export const TENANT_FILE = "tenants.json";
-export const TENANT_MANAGEMENT_DOMAIN_REL_FILE = "tenant-management-domain-rel.json";
-export const CLIENT_FILE = "clients.json";
-export const KEY_FILE = "keys.json";
-export const RATE_LIMIT_FILE = "rate-limits.json";
-export const TENANT_RATE_LIMIT_REL_FILE = "tenant-rate-limit-rel.json";
-export const SCOPE_FILE = "scope.json";
-export const TENANT_SCOPE_REL_FILE = "tenant-scope-rel.json";
-export const CLIENT_TENANT_SCOPE_REL_FILE = "client-tenant-scope-rel.json";
-export const AUTHENTICATION_GROUP_FILE = "authentication-groups.json";
-export const AUTHENTICATION_GROUP_CLIENT_REL_FILE = "authentication-groups-client-rel.json";
-export const GROUP_FILE = "groups.json";
-export const FEDERATED_OIDC_PROVIDER_FILE = "federated-oidc-provider.json";
-export const FEDERATED_OIDC_PROVIDER_TENANT_REL_FILE = "federated-oidc-provider-tenant-rel.json";
-export const FEDERATED_OIDC_PROVIDER_DOMAIN_REL_FILE = "federated-oidc-provider-domain-rel.json";
-export const PRE_AUTHENTICATION_STATE_FILE = "pre-authentication-state.json";
-export const AUTHORIZATION_CODE_DATA_FILE = "authorization-code-data.json";
-export const REFRESH_TOKEN_FILE = "refresh-token.json";
-export const FEDERATED_OIDC_AUTHORIZATION_REL_FILE = "federated-oidc-authorization-rel.json";
-export const CLIENT_AUTH_HISTORY_FILE = "client-auth-history.json";
 export const KMS_KEYS_FILE = "kms-keys.json"
 
 

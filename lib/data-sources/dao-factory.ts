@@ -22,8 +22,11 @@ import DBAuthorizationGroupDao from "@/lib/dao/impl/db/db-authorization-group-da
 import DBAccessRuleDao from "@/lib/dao/impl/db/db-access-rule-dao";
 import DBIdentityDao from "@/lib/dao/impl/db/db-identity-dao";
 import DBContactDao from "@/lib/dao/impl/db/db-contact-dao";
+import Kms from "../kms/kms";
+import FSBasedKms from "../kms/fs-based-kms";
 
-const daoStrategy = process.env.DAO_STRATEGY
+const daoStrategy = process.env.DAO_STRATEGY;
+const ksmStrategy = process.env.KMS_STRATEGY;
 
 class DaoFactory {
 
@@ -40,6 +43,7 @@ class DaoFactory {
     protected identityDao: IdentityDao;
     protected accessRuleDao: AccessRuleDao;
     protected contactDao: ContactDao;
+    protected kms: Kms;
 
     private constructor() {
         // NO-OP
@@ -51,6 +55,19 @@ class DaoFactory {
         }
         return DaoFactory.instance;
     }
+
+    public getKms(): Kms {
+        if(DaoFactory.instance.kms){
+            return DaoFactory.instance.kms;
+        }
+        if(ksmStrategy === "filesystem"){
+            DaoFactory.instance.kms = new FSBasedKms();
+            return DaoFactory.instance.kms;
+        }
+        else {
+            throw new Error("ERROR_KMS_STRATEGY_NOT_IMPLEMENTED");
+        }
+    }
     
     public getTenantDao(): TenantDao {
         if(DaoFactory.instance.tenantDao){
@@ -61,7 +78,7 @@ class DaoFactory {
             return DaoFactory.instance.tenantDao;
         }
         else{
-            throw new Error("DAO strategy not defined.");
+            throw new Error("ERROR_DAO_STRATEGY_NOT_DEFINED");
         }
     }
 
@@ -74,7 +91,7 @@ class DaoFactory {
             return DaoFactory.instance.clientDao;
         }
         else{
-            throw new Error("DAO strategy not defined.");
+            throw new Error("ERROR_DAO_STRATEGY_NOT_DEFINED");
         }
     }
 
@@ -87,7 +104,7 @@ class DaoFactory {
             return DaoFactory.instance.signingKeysDao;
         }
         else{
-            throw new Error("DAO strategy not defined.");
+            throw new Error("ERROR_DAO_STRATEGY_NOT_DEFINED");
         }
     }
 
@@ -101,7 +118,7 @@ class DaoFactory {
             return DaoFactory.instance.rateLimitDao
         }
         else{
-            throw new Error("DAO strategy not defined.");
+            throw new Error("ERROR_DAO_STRATEGY_NOT_DEFINED");
         }
     }
 
@@ -114,7 +131,7 @@ class DaoFactory {
             return DaoFactory.instance.scopeDao; 
         }
         else{
-            throw new Error("DAO strategy not defined.");
+            throw new Error("ERROR_DAO_STRATEGY_NOT_DEFINED");
         }  
     }
 
@@ -127,7 +144,7 @@ class DaoFactory {
             return DaoFactory.instance.authenticationGroupDao;
         }
         else{
-            throw new Error("DAO strategy not defined.");
+            throw new Error("ERROR_DAO_STRATEGY_NOT_DEFINED");
         }
     }
 
@@ -140,7 +157,7 @@ class DaoFactory {
             return DaoFactory.instance.authorizationGroupDao; 
         }
         else{
-            throw new Error("DAO strategy not defined.");
+            throw new Error("ERROR_DAO_STRATEGY_NOT_DEFINED");
         }
     }
 
@@ -153,7 +170,7 @@ class DaoFactory {
             return DaoFactory.instance.federatedOIDCProviderDao;
         }
         else{
-            throw new Error("DAO strategy not defined.");
+            throw new Error("ERROR_DAO_STRATEGY_NOT_DEFINED");
         }
     }
 
@@ -166,7 +183,7 @@ class DaoFactory {
             return DaoFactory.instance.authDao;
         }
         else{
-            throw new Error("DAO strategy not defined.");
+            throw new Error("ERROR_DAO_STRATEGY_NOT_DEFINED");
         }
     }
 
@@ -179,7 +196,7 @@ class DaoFactory {
             return DaoFactory.instance.identityDao; 
         }
         else{
-            throw new Error("DAO strategy not defined.");
+            throw new Error("ERROR_DAO_STRATEGY_NOT_DEFINED");
         }
     }
 
@@ -192,7 +209,7 @@ class DaoFactory {
             return DaoFactory.instance.accessRuleDao; 
         }
         else{
-            throw new Error("DAO strategy not defined.");
+            throw new Error("ERROR_DAO_STRATEGY_NOT_DEFINED");
         }
     }
 
@@ -205,7 +222,7 @@ class DaoFactory {
             return DaoFactory.instance.contactDao; 
         }
         else{
-            throw new Error("DAO strategy not defined.");
+            throw new Error("ERROR_DAO_STRATEGY_NOT_DEFINED");
         }
     }
 

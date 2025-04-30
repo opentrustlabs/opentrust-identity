@@ -12,6 +12,7 @@ import ContactService from "@/lib/service/contact-service";
 import IdentitySerivce from "@/lib/service/identity-service";
 import RateLimitService from "@/lib/service/rate-limit-service";
 import { OIDCContext } from "../graphql-context";
+import ViewSecretService from "@/lib/service/view-secret-service";
 
 
 const resolvers: Resolvers = {
@@ -203,6 +204,11 @@ const resolvers: Resolvers = {
         getUserAuthorizationGroups: (_: any, { userId }, oidcContext) => {
             const service: GroupService = new GroupService(oidcContext);
             return service.getUserAuthorizationGroups(userId);
+        },
+        getSecretValue: async (_: any, { objectId, objectType }, oidcContext) => {
+            const service: ViewSecretService = new ViewSecretService(oidcContext);
+            const val: string | null | undefined = await service.viewSecret(objectId, objectType);
+            return val;
         }
     },
     Mutation: {
