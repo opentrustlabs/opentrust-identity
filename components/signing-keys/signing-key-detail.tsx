@@ -3,8 +3,8 @@ import { SigningKey, SigningKeyUpdateInput } from "@/graphql/generated/graphql-t
 import Typography from "@mui/material/Typography";
 import React, { useContext } from "react";
 import { DetailPageContainer, DetailPageMainContentContainer, DetailPageRightNavContainer } from "../layout/detail-page-container";
-import { KEY_USE_DISPLAY, PKCS8_ENCRYPTED_PRIVATE_KEY_HEADER, PKCS8_PRIVATE_KEY_HEADER, SIGNING_KEY_STATUS_ACTIVE, SIGNING_KEY_STATUS_REVOKED, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
-import { Alert, Backdrop, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, Grid2, MenuItem, Paper, Select, Snackbar, Stack, TextField } from "@mui/material";
+import { KEY_USE_DISPLAY, PKCS8_ENCRYPTED_PRIVATE_KEY_HEADER, SIGNING_KEY_STATUS_ACTIVE, SIGNING_KEY_STATUS_REVOKED, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
+import { Alert, Backdrop, Button, CircularProgress, Dialog, DialogActions, DialogContent, Grid2, MenuItem, Paper, Select, Snackbar, Stack, TextField } from "@mui/material";
 import BreadcrumbComponent from "../breadcrumbs/breadcrumbs";
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
@@ -12,10 +12,11 @@ import { ResponsiveBreakpoints, ResponsiveContext } from "../contexts/responsive
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import ContactConfiguration from "../contacts/contact-configuration";
 import TenantHighlight from "../tenants/tenant-highlight";
-import { useMutation, useQuery } from "@apollo/client";
+import { useMutation } from "@apollo/client";
 import { SIGNING_KEY_UPDATE_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import { SIGNING_KEY_DETAIL_QUERY } from "@/graphql/queries/oidc-queries";
 import { formatISODateFromMs } from "@/utils/date-utils";
+import { useClipboardCopyContext } from "../contexts/clipboard-copy-context";
 
 export interface SigningKeyDetailProps {
     signingKey: SigningKey
@@ -25,6 +26,7 @@ const SigningKeyDetail: React.FC<SigningKeyDetailProps> = ({ signingKey }) => {
     // CONTEXT VARIABLES
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
     const breakPoints: ResponsiveBreakpoints = useContext(ResponsiveContext);
+    const { copyContentToClipboard } = useClipboardCopyContext();
 
     // STATE VARIABLES
     const [showMutationBackdrop, setShowMutationBackdrop] = React.useState<boolean>(false);
@@ -138,7 +140,7 @@ const SigningKeyDetail: React.FC<SigningKeyDetailProps> = ({ signingKey }) => {
                                         </Grid2>
                                     }
                                     <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
-                                        <Grid2 marginBottom={"8px"}>
+                                        <Grid2 marginBottom={"16px"}>
                                             <div>Key Name / Alias</div>
                                             <TextField 
                                                 name="keyName" id="keyName" 
@@ -147,18 +149,8 @@ const SigningKeyDetail: React.FC<SigningKeyDetailProps> = ({ signingKey }) => {
                                                 disabled={keyUpdateInput.status === SIGNING_KEY_STATUS_REVOKED}
                                                 fullWidth={true} size="small" 
                                             />
-                                        </Grid2>                                        
-                                        <Grid2 marginBottom={"8px"}>
-                                            <div>Key Type</div>
-                                            <TextField name="keyType" id="keyType" value={signingKey.keyType} disabled={true} fullWidth={true} size="small" />
                                         </Grid2>
-                                        <Grid2 marginBottom={"8px"}>
-                                            <div>Key Use</div>
-                                            <TextField name="keyUse" id="keyUse" value={KEY_USE_DISPLAY.get(signingKey.keyUse || "")} disabled={true} fullWidth={true} size="small" /> 
-                                        </Grid2>
-                                    </Grid2>
-                                    <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
-                                        <Grid2 marginBottom={"8px"}>
+                                        <Grid2 marginBottom={"16px"}>
                                             <div>Status</div>
                                             {signingKey.status === SIGNING_KEY_STATUS_REVOKED &&
                                                 <TextField 
@@ -184,7 +176,34 @@ const SigningKeyDetail: React.FC<SigningKeyDetailProps> = ({ signingKey }) => {
                                                 </Select>
                                             }                                            
                                         </Grid2>
-                                        <Grid2 marginBottom={"8px"}>
+                                        <Grid2 marginBottom={"16px"}>
+                                            <div style={{textDecoration: "underline"}}>Object ID</div>
+                                            <Grid2 marginTop={"8px"} container display={"inline-flex"} size={12}>
+                                                <Grid2  size={11}>
+                                                    {signingKey.keyId}
+                                                </Grid2>
+                                                <Grid2 size={1}>
+                                                    <ContentCopyIcon 
+                                                        sx={{cursor: "pointer"}}
+                                                        onClick={() => {
+                                                            copyContentToClipboard(signingKey.keyId, "Key ID copied to clipboard");
+                                                        }}
+                                                    />
+                                                </Grid2>
+                                            </Grid2>
+                                        </Grid2>
+                                        
+                                    </Grid2>
+                                    <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
+                                    <Grid2 marginBottom={"16px"}>
+                                            <div>Key Type</div>
+                                            <TextField name="keyType" id="keyType" value={signingKey.keyType} disabled={true} fullWidth={true} size="small" />
+                                        </Grid2>
+                                        <Grid2 marginBottom={"16px"}>
+                                            <div>Key Use</div>
+                                            <TextField name="keyUse" id="keyUse" value={KEY_USE_DISPLAY.get(signingKey.keyUse || "")} disabled={true} fullWidth={true} size="small" /> 
+                                        </Grid2>
+                                        <Grid2 marginBottom={"16px"}>
                                             <div>Expires</div>
                                             <TextField name="keyExpiration" id="keyExpiration" value={formatISODateFromMs(signingKey.expiresAtMs, "")} disabled={true} fullWidth={true} size="small" />
                                         </Grid2>                                       
@@ -274,8 +293,7 @@ const SigningKeyDetail: React.FC<SigningKeyDetailProps> = ({ signingKey }) => {
                                                     // Show a dialog confirming that the user will be audited when they
                                                     // view a password and an email will be sent to the admin group.
                                                 }}
-                                            />
-                                            
+                                            />                                            
                                         </Grid2>
                                     </Grid2>
                                 </Paper>
@@ -293,7 +311,16 @@ const SigningKeyDetail: React.FC<SigningKeyDetailProps> = ({ signingKey }) => {
                                                     <>Public Key</>
                                                 }  
                                             </Grid2>
-                                            <Grid2 size={3}><ContentCopyIcon /></Grid2>
+                                            <Grid2 size={3}>
+                                                <ContentCopyIcon 
+                                                    sx={{cursor: "pointer"}}
+                                                    onClick={() => {
+                                                        const textToCopy: string = signingKey.certificate ? signingKey.certificate : signingKey.publicKey ? signingKey.publicKey : "";
+                                                        const message = signingKey.certificate ? "Certificate copied to clipboard" : signingKey.publicKey ? "Public key copied to clipboard" : "No data to copy";
+                                                        copyContentToClipboard(textToCopy, message);
+                                                    }}
+                                                />
+                                            </Grid2>
                                         </Grid2>                                                                              
                                     </Grid2>
                                     <Grid2 size={{xs: 12, sm: 10, md: 10, lg: 10, xl: 10}}>

@@ -10,6 +10,7 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import { ObjectSearchResultItem } from "@/graphql/generated/graphql-types";
 import Link from "next/link";
 import { ResultListProps } from "../layout/search-result-list-layout";
+import { useClipboardCopyContext } from "../contexts/clipboard-copy-context";
 
 
 const ScopeList: React.FC<ResultListProps> = ({
@@ -23,7 +24,7 @@ const ScopeList: React.FC<ResultListProps> = ({
     // HOOKS
     const c: ResponsiveBreakpoints = useContext(ResponsiveContext);
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
-
+    const { copyContentToClipboard } = useClipboardCopyContext();
 
     // HANDLER FUNCTIONS
     const setExpanded = (section: string): void => {
@@ -78,7 +79,14 @@ const ScopeList: React.FC<ResultListProps> = ({
                                     <Grid2 size={4}>{item.description}</Grid2>
                                     <Grid2 size={2}>{item.subtype}</Grid2>
                                     <Grid2 sx={{textOverflow: "ellipsis", overflow: "hidden"}}  size={2.7}>{item.objectid}</Grid2>
-                                    <Grid2 size={1}><ContentCopyIcon /></Grid2>
+                                    <Grid2 size={1}>
+                                        <ContentCopyIcon 
+                                            sx={{cursor: "pointer"}}
+                                            onClick={() => {
+                                                copyContentToClipboard(item.objectid, "Scope ID copied to clipboard");
+                                            }}
+                                        />
+                                    </Grid2>
                                 </Grid2>
                             </Typography>
                         )
@@ -133,7 +141,14 @@ const ScopeList: React.FC<ResultListProps> = ({
                                             <Grid2 sx={{ textDecoration: "underline" }} size={12}>Use</Grid2>
                                             <Grid2 size={12}>{item.subtype}</Grid2>
                                             <Grid2 sx={{ textDecoration: "underline" }} size={12}>Object ID</Grid2>
-                                            <Grid2 size={12} display={"inline-flex"}><div style={{ marginRight: "8px" }}>{item.objectid}</div><ContentCopyIcon /></Grid2>
+                                            <Grid2 size={12} display={"inline-flex"}><div style={{ marginRight: "8px" }}>{item.objectid}</div>
+                                                <ContentCopyIcon 
+                                                    sx={{cursor: "pointer"}}
+                                                    onClick={() => {
+                                                        copyContentToClipboard(item.objectid, "Scope ID copied to clipboard");
+                                                    }}
+                                                />
+                                            </Grid2>
                                         </Grid2>
                                     </Grid2>
                                 }

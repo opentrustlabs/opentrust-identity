@@ -18,6 +18,7 @@ import FaceIcon from '@mui/icons-material/Face';
 import InputIcon from '@mui/icons-material/Input';
 import PolicyIcon from '@mui/icons-material/Policy';
 import AddBoxIcon from '@mui/icons-material/AddBox';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import DisplaySettingsIcon from '@mui/icons-material/DisplaySettings';
 import AutoAwesomeMosaicIcon from '@mui/icons-material/AutoAwesomeMosaic';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -32,6 +33,7 @@ import TenantAuthenticationDomainConfiguration from "./tenant-authentication-dom
 import TenantFederatedOIDCProviderConfiguration from "./tenant-federated-oidc-provider-configuration";
 import ContactConfiguration from "../contacts/contact-configuration";
 import Link from "next/link";
+import { useClipboardCopyContext } from "../contexts/clipboard-copy-context";
 
 export interface TenantDetailProps {
     tenantId: string
@@ -39,6 +41,7 @@ export interface TenantDetailProps {
 const TenantDetail: React.FC<TenantDetailProps> = ({ tenantId }) => {
 
 
+    // GRAPHQL FUNCTIONS
     const { data, loading, error } = useQuery(
         TENANT_DETAIL_QUERY,
         {
@@ -112,6 +115,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
 
     // CONTEXT VARIABLES
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
+    const { copyContentToClipboard } = useClipboardCopyContext();
 
 
     // HANDLER FUNCTIONS
@@ -187,6 +191,22 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                                     <MenuItem value={TENANT_TYPE_SERVICES}>{TENANT_TYPES_DISPLAY.get(TENANT_TYPE_SERVICES)}</MenuItem>
                                                 </Select>
                                             }
+                                        </Grid2>
+                                        <Grid2 marginBottom={"16px"}>
+                                            <div style={{textDecoration: "underline"}}>Object ID</div>
+                                            <Grid2 marginTop={"8px"} container display={"inline-flex"} size={12}>
+                                                <Grid2  size={11}>
+                                                    {tenant.tenantId}
+                                                </Grid2>
+                                                <Grid2 size={1}>
+                                                    <ContentCopyIcon 
+                                                        sx={{cursor: "pointer"}}
+                                                        onClick={() => {
+                                                            copyContentToClipboard(tenant.tenantId, "Tenant ID copied to clipboard");
+                                                        }}
+                                                    />
+                                                </Grid2>
+                                            </Grid2>                                                                                        
                                         </Grid2>
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Federated OIDC Provider Constraint</div>

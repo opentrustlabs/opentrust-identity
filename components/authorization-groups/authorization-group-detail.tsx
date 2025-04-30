@@ -16,6 +16,7 @@ import RelationshipConfigurationComponent from "../relationship-config/relations
 import { useMutation } from "@apollo/client";
 import { AUTHORIZATION_GROUP_UPDATE_MUTATION, AUTHORIZATION_GROUP_USER_ADD_MUTATION, AUTHORIZATION_GROUP_USER_REMOVE_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import { AUTHORIZATION_GROUP_DETAIL_QUERY } from "@/graphql/queries/oidc-queries";
+import { useClipboardCopyContext } from "../contexts/clipboard-copy-context";
 
 export interface AuthorizationGroupDetailProps {
     authorizationGroup: AuthorizationGroup
@@ -25,6 +26,7 @@ const AuthorizationGroupDetail: React.FC<AuthorizationGroupDetailProps> = ({ aut
 
     // CONTEXT VARIABLES
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
+    const { copyContentToClipboard } = useClipboardCopyContext();
 
     const initInput: AuthorizationGroupUpdateInput = {
         allowForAnonymousUsers: authorizationGroup.allowForAnonymousUsers,
@@ -133,7 +135,23 @@ const AuthorizationGroupDetail: React.FC<AuthorizationGroupDetailProps> = ({ aut
                                                 value={authzGroupInput.groupDescription} 
                                                 onChange={(evt) => {authzGroupInput.groupDescription = evt.target.value; setAuthzGroupInput({...authzGroupInput}); setMarkDirty(true)}}
                                                 fullWidth={true} size="small" />
-                                        </Grid2>                                       
+                                        </Grid2>
+                                        <Grid2 marginBottom={"16px"}>
+                                            <div style={{textDecoration: "underline"}}>Object ID</div>
+                                            <Grid2 marginTop={"8px"} container display={"inline-flex"} size={12}>
+                                                <Grid2  size={11}>
+                                                    {authorizationGroup.groupId}
+                                                </Grid2>
+                                                <Grid2 size={1}>
+                                                    <ContentCopyIcon 
+                                                        sx={{cursor: "pointer"}}
+                                                        onClick={() => {
+                                                            copyContentToClipboard(authorizationGroup.groupId, "AuthZ ID copied to clipboard");
+                                                        }}
+                                                    />
+                                                </Grid2>
+                                            </Grid2>
+                                        </Grid2>
                                         
                                     </Grid2>
                                     <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
@@ -164,12 +182,7 @@ const AuthorizationGroupDetail: React.FC<AuthorizationGroupDetailProps> = ({ aut
                                                     }}
                                                 />
                                             </Grid2>
-                                        </Grid2>
-                                        <Grid2 >Object ID</Grid2>
-                                        <Grid2 container size={12} marginBottom={"16px"}>
-                                            <Grid2 alignContent={"center"} size={10}>{authorizationGroup.groupId}</Grid2>
-                                            <Grid2 size={2}><ContentCopyIcon /></Grid2>
-                                        </Grid2>
+                                        </Grid2>                                        
                                     </Grid2>
                                     
                                 </Grid2>

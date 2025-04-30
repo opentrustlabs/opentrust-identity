@@ -14,6 +14,7 @@ import { useMutation } from "@apollo/client";
 import { AUTHENTICATION_GROUP_UPDATE_MUTATION, AUTHENTICATION_GROUP_USER_ADD_MUTATION, AUTHENTICATION_GROUP_USER_REMOVE_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import { AUTHENTICATION_GROUP_DETAIL_QUERY } from "@/graphql/queries/oidc-queries";
 import RelationshipConfigurationComponent from "../relationship-config/relationship-configuration-component";
+import { useClipboardCopyContext } from "../contexts/clipboard-copy-context";
 
 
 export interface AuthenticationGroupDetailProps {
@@ -24,6 +25,7 @@ const AuthenticationGroupDetail: React.FC<AuthenticationGroupDetailProps> = ({ a
 
     // CONTEXT VARIABLES
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
+    const { copyContentToClipboard } = useClipboardCopyContext();
 
     const initInput: AuthenticationGroupUpdateInput = {
         authenticationGroupId: authenticationGroup.authenticationGroupId,
@@ -136,6 +138,22 @@ const AuthenticationGroupDetail: React.FC<AuthenticationGroupDetailProps> = ({ a
                                                 onChange={(evt) => {authnGroupInput.authenticationGroupDescription = evt.target.value; setMarkDirty(true); setAuthnGroupInput({...authnGroupInput})}}
                                             />
                                         </Grid2>
+                                        <Grid2 marginBottom={"16px"}>
+                                            <div style={{textDecoration: "underline"}}>Object ID</div>
+                                            <Grid2 marginTop={"8px"} container display={"inline-flex"} size={12}>
+                                                <Grid2  size={11}>
+                                                    {authenticationGroup.authenticationGroupId}
+                                                </Grid2>
+                                                <Grid2 size={1}>
+                                                    <ContentCopyIcon 
+                                                        sx={{cursor: "pointer"}}
+                                                        onClick={() => {
+                                                            copyContentToClipboard(authenticationGroup.authenticationGroupId, "AuthN ID copied to clipboard");
+                                                        }}
+                                                    />
+                                                </Grid2>
+                                            </Grid2>
+                                        </Grid2>
                                     </Grid2>
                                     <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
                                         <Grid2 container size={12} marginBottom={"16px"}>
@@ -151,12 +169,7 @@ const AuthenticationGroupDetail: React.FC<AuthenticationGroupDetailProps> = ({ a
                                                     }}
                                                 />
                                             </Grid2>
-                                        </Grid2>
-                                        <Grid2 sx={{textDecoration: "underline"}}>Object ID</Grid2>
-                                        <Grid2 container size={12} marginBottom={"16px"}>
-                                            <Grid2 alignContent={"center"} size={10}>{authenticationGroup.authenticationGroupId}</Grid2>
-                                            <Grid2 size={2}><ContentCopyIcon /></Grid2>
-                                        </Grid2>                                        
+                                        </Grid2>                                      
                                     </Grid2>                                    
                                 </Grid2>                                
                                 <Stack sx={{ marginTop: "8px" }} direction={"row"} flexDirection={"row-reverse"} >

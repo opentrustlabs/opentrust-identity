@@ -11,6 +11,7 @@ import Grid2 from "@mui/material/Grid2";
 import Divider from "@mui/material/Divider";
 import { ObjectSearchResultItem } from "@/graphql/generated/graphql-types";
 import { ResultListProps } from "../layout/search-result-list-layout";
+import { useClipboardCopyContext } from "../contexts/clipboard-copy-context";
 
 
 const RateLimitList: React.FC<ResultListProps> = ({
@@ -23,6 +24,7 @@ const RateLimitList: React.FC<ResultListProps> = ({
     // CONTEXT HOOKS
     const c: ResponsiveBreakpoints = useContext(ResponsiveContext);
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
+    const { copyContentToClipboard } = useClipboardCopyContext();
 
     const setExpanded = (section: string): void => {
         mapViewExpanded.set(section, true);
@@ -84,7 +86,14 @@ const RateLimitList: React.FC<ResultListProps> = ({
                                                 <Grid2 sx={{ textDecoration: "underline" }} size={12}>Description</Grid2>
                                                 <Grid2 size={12}>{item.description}</Grid2>
                                                 <Grid2 sx={{ textDecoration: "underline" }} size={12}>Object ID</Grid2>
-                                                <Grid2 size={12} display={"inline-flex"}><div style={{ marginRight: "8px" }}>{item.objectid}</div><ContentCopyIcon /></Grid2>
+                                                <Grid2 size={12} display={"inline-flex"}><div style={{ marginRight: "8px" }}>{item.objectid}</div>
+                                                    <ContentCopyIcon 
+                                                        sx={{cursor: "pointer"}}
+                                                        onClick={() => {
+                                                            copyContentToClipboard(item.objectid, "Service Group ID copied to clipboard");
+                                                        }}
+                                                    />
+                                                </Grid2>
                                             </Grid2>
                                         </Grid2>
                                     }
@@ -119,7 +128,14 @@ const RateLimitList: React.FC<ResultListProps> = ({
                                         <Grid2 size={3}><Link style={{ color: "", fontWeight: "bold", textDecoration: "underline" }} href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/rate-limits/${item.objectid}`}>{item.name}</Link></Grid2>
                                         <Grid2 size={5}>{item.description}</Grid2>
                                         <Grid2 size={3}>{item.objectid}</Grid2>                                        
-                                        <Grid2 size={1} ><ContentCopyIcon /></Grid2>
+                                        <Grid2 size={1} >
+                                            <ContentCopyIcon 
+                                                sx={{cursor: "pointer"}}
+                                                onClick={() => {
+                                                    copyContentToClipboard(item.objectid, "Service Group ID copied to clipboard");
+                                                }}
+                                            />
+                                        </Grid2>
                                     </Grid2>
                                 </Typography>
                             )

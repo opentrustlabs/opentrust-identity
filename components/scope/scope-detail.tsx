@@ -24,6 +24,8 @@ import SettingsApplicationsIcon from '@mui/icons-material/SettingsApplications';
 import InputAdornment from "@mui/material/InputAdornment";
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
 import StraightenIcon from '@mui/icons-material/Straighten';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import { useClipboardCopyContext } from "../contexts/clipboard-copy-context";
 
 
 export interface ScopeDetailProps {
@@ -32,7 +34,11 @@ export interface ScopeDetailProps {
 
 const ScopeDetail: React.FC<ScopeDetailProps> = ({ scope }) => {
 
+    // CONTEXT VARIABLES
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
+    const { copyContentToClipboard } = useClipboardCopyContext();
+
+
     const arrBreadcrumbs = [];
     arrBreadcrumbs.push({
         href: `/${tenantBean.getTenantMetaData().tenant.tenantId}`,
@@ -67,11 +73,11 @@ const ScopeDetail: React.FC<ScopeDetailProps> = ({ scope }) => {
                             <Paper sx={{ padding: "8px" }} elevation={1}>
                                 <Grid2 container size={12} spacing={2}>
                                     <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
-                                        <Grid2 marginBottom={"8px"}>
+                                        <Grid2 marginBottom={"16px"}>
                                             <div>Name</div>
                                             <TextField disabled={scope.scopeUse === SCOPE_USE_IAM_MANAGEMENT} name="scopeName" id="scopeName" value={scope.scopeName} fullWidth={true} size="small" />
                                         </Grid2>
-                                        <Grid2 marginBottom={"8px"}>
+                                        <Grid2 marginBottom={"16px"}>
                                             <div>Description</div>
                                             <TextField
                                                 disabled={scope.scopeUse === SCOPE_USE_IAM_MANAGEMENT}
@@ -83,6 +89,22 @@ const ScopeDetail: React.FC<ScopeDetailProps> = ({ scope }) => {
                                                 multiline={true}
                                                 rows={2}
                                             />
+                                        </Grid2>
+                                        <Grid2 marginBottom={"16px"}>
+                                            <div style={{textDecoration: "underline"}}>Object ID</div>
+                                            <Grid2 marginTop={"8px"} container display={"inline-flex"} size={12}>
+                                                <Grid2  size={11}>
+                                                    {scope.scopeId}
+                                                </Grid2>
+                                                <Grid2 size={1}>
+                                                    <ContentCopyIcon 
+                                                        sx={{cursor: "pointer"}}
+                                                        onClick={() => {
+                                                            copyContentToClipboard(scope.scopeId, "Scope ID copied to clipboard");
+                                                        }}
+                                                    />
+                                                </Grid2>
+                                            </Grid2>
                                         </Grid2>
                                     </Grid2>
                                     <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>

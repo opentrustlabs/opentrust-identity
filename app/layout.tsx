@@ -15,6 +15,7 @@ import TenantContextProvider from "@/components/contexts/tenant-context";
 import ManagementTenantFilter from "@/components/contexts/management-tenant-filter";
 import { createTheme } from '@mui/material/styles';
 import { ThemeProvider } from '@mui/material/styles';
+import { ClipboardCopyContextProvider } from "@/components/contexts/clipboard-copy-context";
 
 const theme = createTheme({    
     components: {
@@ -103,20 +104,22 @@ export default function RootLayout({
         <html lang="en">
             <body className={`${geistSans.variable} ${geistMono.variable}`}>
                 <ApolloProvider client={client}>
-                    <ResponsiveContextProvider>
+                    <ResponsiveContextProvider>                        
                         <PageTitleContextProvider>
                             {isAuthenticationLayoutPage &&
                                 <AuthenticationLayout>{children}</AuthenticationLayout>
                             }
                             {!isAuthenticationLayoutPage &&
                                 <AuthContextProvider>
-                                    <TenantContextProvider>
-                                        <ManagementTenantFilter>
-                                            <ThemeProvider theme={theme}>
-                                                <ManagementLayout>{children}</ManagementLayout>
-                                            </ThemeProvider>
-                                        </ManagementTenantFilter>
-                                    </TenantContextProvider>
+                                    <ClipboardCopyContextProvider>
+                                        <TenantContextProvider>
+                                            <ManagementTenantFilter>
+                                                <ThemeProvider theme={theme}>
+                                                    <ManagementLayout>{children}</ManagementLayout>
+                                                </ThemeProvider>
+                                            </ManagementTenantFilter>
+                                        </TenantContextProvider>
+                                    </ClipboardCopyContextProvider>
                                 </AuthContextProvider>
                             }
                         </PageTitleContextProvider>

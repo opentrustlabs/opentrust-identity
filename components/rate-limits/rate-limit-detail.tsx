@@ -22,6 +22,7 @@ import AccordionDetails from "@mui/material/AccordionDetails";
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import SettingsApplicationsIcon from '@mui/icons-material/SettingsApplications';
 import RateLimitTenantRelConfiguration from "./rate-limit-tenant-configuration";
+import { useClipboardCopyContext } from "../contexts/clipboard-copy-context";
 
 export interface RateLimitDetailProps {
     rateLimitDetail: RateLimitServiceGroup
@@ -33,6 +34,7 @@ const RateLimitDetail: React.FC<RateLimitDetailProps> = ({
 
     // CONTEXT VARIABLES
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
+    const { copyContentToClipboard } = useClipboardCopyContext();
 
     // STATE VARIABLES
     const initInput: RateLimitServiceGroupUpdateInput = {
@@ -94,10 +96,21 @@ const RateLimitDetail: React.FC<RateLimitDetailProps> = ({
                                             fullWidth={true}
                                             size="small" />
                                     </Grid2>
-                                    <Grid2 sx={{ textDecoration: "underline" }}>Object ID</Grid2>
-                                    <Grid2 container size={12} marginBottom={"16px"}>
-                                        <Grid2 alignContent={"center"} size={10}>{serviceGroupInput.servicegroupid}</Grid2>
-                                        <Grid2 size={2}><ContentCopyIcon /></Grid2>
+                                    <Grid2 marginBottom={"16px"}>
+                                        <div style={{textDecoration: "underline"}}>Object ID</div>
+                                        <Grid2 marginTop={"8px"} container display={"inline-flex"} size={12}>
+                                            <Grid2  size={11}>
+                                                {rateLimitDetail.servicegroupid}
+                                            </Grid2>
+                                            <Grid2 size={1}>
+                                                <ContentCopyIcon 
+                                                    sx={{cursor: "pointer"}}
+                                                    onClick={() => {
+                                                        copyContentToClipboard(rateLimitDetail.servicegroupid, "Service Group ID copied to clipboard");
+                                                    }}
+                                                />
+                                            </Grid2>
+                                        </Grid2>
                                     </Grid2>
                                 </Grid2>
                                 <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>

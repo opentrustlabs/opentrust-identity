@@ -18,15 +18,19 @@ import { useMutation } from "@apollo/client";
 import { CLIENT_UPDATE_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import ClientRedirectUriConfiguration from "./client-redirect-uri-configuration";
 import ClientAuthenticationGroupConfiguration from "./client-authentication-group-configuration";
+import { useClipboardCopyContext } from "../contexts/clipboard-copy-context";
 
 export interface ClientDetailProps {
     client: Client
 }
 const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
 
+    // CONTEXT OBJECTS
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
+    const { copyContentToClipboard } = useClipboardCopyContext();
 
 
+    // STATE VARIABLES
     const initInput: ClientUpdateInput = {
         clientId: client.clientId,
         clientName: client.clientName,
@@ -47,6 +51,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
     const [showMutationBackdrop, setShowMutationBackdrop] = React.useState<boolean>(false);
     const [showMutationSnackbar, setShowMutationSnackbar] = React.useState<boolean>(false);
 
+    // GRAPHQLQL FUNCTIONS
     const [clientUpdateMutation] = useMutation(CLIENT_UPDATE_MUTATION, {
         variables: {
             clientInput: clientUpdateInput
@@ -128,7 +133,12 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                                     {client.clientId}
                                                 </Grid2>
                                                 <Grid2 size={1}>
-                                                    <ContentCopyIcon sx={{cursor: "pointer"}} />
+                                                    <ContentCopyIcon 
+                                                        sx={{cursor: "pointer"}}
+                                                        onClick={() => {
+                                                            copyContentToClipboard(client.clientId, "Client ID copied to clipboard");
+                                                        }}
+                                                    />
                                                 </Grid2>
                                             </Grid2>
                                         </Grid2>

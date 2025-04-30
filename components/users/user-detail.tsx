@@ -24,6 +24,8 @@ import { USER_DETAIL_QUERY } from "@/graphql/queries/oidc-queries";
 import UserTenantConfiguration from "./user-tenant-configuration";
 import UserAuthorizationGroupConfiguration from "./user-authorization-group-configuration";
 import UserAuthenticationGroupConfiguration from "./user-authentication-group-configuration";
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import { useClipboardCopyContext } from "../contexts/clipboard-copy-context";
 
 export interface UserDetailProps {
     user: User;
@@ -35,6 +37,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
 
     // CONTEXT VARIABLES
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
+    const { copyContentToClipboard } = useClipboardCopyContext();
 
     const initInput: UserUpdateInput = {
         domain: user.domain,
@@ -195,6 +198,22 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                                 onChange={(evt) => {userInput.middleName = evt.target.value; setMarkDirty(true); setUserInput({...userInput}); }}
                                                 fullWidth={true} size="small" 
                                             />
+                                        </Grid2>
+                                        <Grid2 marginBottom={"16px"}>
+                                            <div style={{textDecoration: "underline"}}>User ID</div>
+                                            <Grid2 marginTop={"8px"} container display={"inline-flex"} size={12}>
+                                                <Grid2  size={11}>
+                                                    {user.userId}
+                                                </Grid2>
+                                                <Grid2 size={1}>
+                                                    <ContentCopyIcon 
+                                                        sx={{cursor: "pointer"}}
+                                                        onClick={() => {
+                                                            copyContentToClipboard(user.userId, "User ID copied to clipboard");
+                                                        }}
+                                                    />
+                                                </Grid2>
+                                            </Grid2>
                                         </Grid2>
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Name Order</div>
