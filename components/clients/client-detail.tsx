@@ -363,10 +363,15 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
             <Snackbar
                 open={showMutationSnackbar}
                 autoHideDuration={4000}
-                onClose={() => setShowMutationSnackbar(false)}
-                message="Client Updated"
+                onClose={() => setShowMutationSnackbar(false)}                
                 anchorOrigin={{horizontal: "center", vertical: "top"}}
-            />
+            >
+                <Alert 
+                    onClose={() => setShowMutationSnackbar(false)}
+                >
+                    Client Updated
+                </Alert>
+            </Snackbar>
         </Typography >
     )
 }

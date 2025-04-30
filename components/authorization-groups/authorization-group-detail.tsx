@@ -297,10 +297,15 @@ const AuthorizationGroupDetail: React.FC<AuthorizationGroupDetailProps> = ({ aut
             <Snackbar
                 open={showMutationSnackbar}
                 autoHideDuration={4000}
-                onClose={() => setShowMutationSnackbar(false)}
-                message="Authorization Group Updated"
+                onClose={() => setShowMutationSnackbar(false)}                
                 anchorOrigin={{horizontal: "center", vertical: "top"}}
-            />
+            >
+                <Alert 
+                    onClose={() => setShowMutationSnackbar(false)}
+                >
+                    Authorization Group Updated
+                </Alert>
+            </Snackbar>	            
         </Typography >
     )
 }

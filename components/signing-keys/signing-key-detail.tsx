@@ -360,10 +360,15 @@ const SigningKeyDetail: React.FC<SigningKeyDetailProps> = ({ signingKey }) => {
             <Snackbar
                 open={showMutationSnackbar}
                 autoHideDuration={4000}
-                onClose={() => setShowMutationSnackbar(false)}
-                message="Provider Updated"
+                onClose={() => setShowMutationSnackbar(false)}                
                 anchorOrigin={{horizontal: "center", vertical: "top"}}
-            />
+            >
+                <Alert 
+                    onClose={() => setShowMutationSnackbar(false)}
+                >
+                    Signing Key Updated
+                </Alert>
+            </Snackbar>	            
         </Typography>
     )
 

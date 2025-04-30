@@ -638,11 +638,15 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
             <Snackbar
                 open={showMutationSnackbar}
                 autoHideDuration={4000}
-                onClose={() => setShowMutationSnackbar(false)}
-                message="Tenant Updated"
+                onClose={() => setShowMutationSnackbar(false)}                
                 anchorOrigin={{horizontal: "center", vertical: "top"}}
-            />
-
+            >
+                <Alert 
+                    onClose={() => setShowMutationSnackbar(false)}
+                >
+                    Tenant Updated
+                </Alert>
+            </Snackbar>	
         </Typography >
     )
 }
