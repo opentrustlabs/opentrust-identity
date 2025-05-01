@@ -372,14 +372,14 @@ const SigningKeyDetail: React.FC<SigningKeyDetailProps> = ({ signingKey }) => {
                     Signing Key Updated
                 </Alert>
             </Snackbar>
-            {secretDialogOpen &&
+            {secretDialogOpen &&                    
                 <SecretViewerDialog 
                     open={secretDialogOpen}
                     onClose={() => setSecretDialogOpen(false)}
                     objectId={signingKey.keyId}
-                    secretObjectType={signingKey.privateKeyPkcs8.length > 0 ? SecretObjectType.PrivateKeyPassword : SecretObjectType.PrivateKey}
+                    secretObjectType={signingKey.privateKeyPkcs8.length > 0 ? SecretObjectType.PrivateKeyPassword : SecretObjectType.PrivateKey}                
                 />
-            }  
+            }            
         </Typography>
     )
 

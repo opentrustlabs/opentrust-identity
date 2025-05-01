@@ -1,5 +1,5 @@
 "use client";
-import { FederatedOidcProvider, FederatedOidcProviderUpdateInput } from "@/graphql/generated/graphql-types";
+import { FederatedOidcProvider, FederatedOidcProviderUpdateInput, SecretObjectType } from "@/graphql/generated/graphql-types";
 import Typography from "@mui/material/Typography";
 import React, { useContext } from "react";
 import BreadcrumbComponent from "../breadcrumbs/breadcrumbs";
@@ -23,7 +23,9 @@ import { FEDERATED_OIDC_PROVIDER_DETAIL_QUERY } from "@/graphql/queries/oidc-que
 import FederatedOIDCProviderDomainConfiguration from "./oidc-provider-domain-configuration";
 import FederatedOIDCProviderTenantConfiguration from "./oidc-provider-tenant-configuration";
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import { useClipboardCopyContext } from "../contexts/clipboard-copy-context";
+import SecretViewerDialog from "../dialogs/secret-viewer-dialog";
 
 export interface FederatedOIDCProviderDetailProps {
     federatedOIDCProvider: FederatedOidcProvider
@@ -56,6 +58,7 @@ const FederatedOIDCProviderDetail: React.FC<FederatedOIDCProviderDetailProps> = 
     const [showMutationBackdrop, setShowMutationBackdrop] = React.useState<boolean>(false);
     const [showMutationSnackbar, setShowMutationSnackbar] = React.useState<boolean>(false);
     const [changeClientSecret, setChangeClientSecret] = React.useState<boolean>(false);
+    const [secretDialogOpen, setSecretDialogOpen] = React.useState<boolean>(false);
     
     
     // GRAPHQL FUNCTIONS
@@ -97,6 +100,14 @@ const FederatedOIDCProviderDetail: React.FC<FederatedOIDCProviderDetailProps> = 
             <BreadcrumbComponent breadCrumbs={arrBreadcrumbs}></BreadcrumbComponent>
             <DetailPageContainer>
                 <DetailPageMainContentContainer>
+                   {secretDialogOpen &&                    
+                        <SecretViewerDialog 
+                            open={secretDialogOpen}
+                            onClose={() => setSecretDialogOpen(false)}
+                            objectId={federatedOIDCProvider.federatedOIDCProviderId}
+                            secretObjectType={SecretObjectType.OidcProviderClientSecret}                     
+                        />
+                    }
                     <Grid2 container size={12} spacing={2}>
                         <Grid2
                             className="detail-page-subheader"
@@ -236,13 +247,19 @@ const FederatedOIDCProviderDetail: React.FC<FederatedOIDCProviderDetailProps> = 
                                                         <Grid2 size={10}>
                                                             <div>*******************************************</div>
                                                         </Grid2>
-                                                        <Grid2 size={1}></Grid2>
+                                                        
                                                         <Grid2 size={1}>                                                        
                                                             <EditOutlinedIcon
                                                                 sx={{cursor: "pointer"}}
                                                                 onClick={() => {
                                                                     setChangeClientSecret(true);
                                                                 }}
+                                                            />
+                                                        </Grid2>
+                                                        <Grid2 size={1}>
+                                                            <VisibilityOutlinedIcon 
+                                                                sx={{cursor: "pointer"}}
+                                                                onClick={() => setSecretDialogOpen(true)}
                                                             />
                                                         </Grid2>
                                                     </>
@@ -444,7 +461,7 @@ const FederatedOIDCProviderDetail: React.FC<FederatedOIDCProviderDetailProps> = 
                 >
                     Provider Updated
                 </Alert>
-            </Snackbar>
+            </Snackbar>            
         </Typography>
 
 

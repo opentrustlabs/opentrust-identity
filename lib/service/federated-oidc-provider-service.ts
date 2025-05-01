@@ -81,8 +81,7 @@ class FederatedOIDCProviderService {
             throw new GraphQLError("ERROR_NO_FEDERATED_OIDC_PROVIDER_FOUND");
         }
         // If the user intended to update the client secret, then overwrite the existing secret. Otherwise, just use the
-        // existing secret.
-        
+        // existing secret.                
         if(federatedOIDCProvider.federatedOIDCProviderClientSecret === null || federatedOIDCProvider.federatedOIDCProviderClientSecret === ""){
             if(existingProvider.federatedOIDCProviderClientSecret !== null && existingProvider.federatedOIDCProviderClientSecret !== ""){                
                 federatedOIDCProvider.federatedOIDCProviderClientSecret = existingProvider.federatedOIDCProviderClientSecret;

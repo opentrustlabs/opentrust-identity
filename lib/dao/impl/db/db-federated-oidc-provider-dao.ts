@@ -26,7 +26,10 @@ class DBFederatedOIDCProviderDao extends FederatedOIDCProviderDao {
        
         const providers: Array<FederatedOidcProvider> = t.map(
             (e: FederatedOIDCProviderEntity) => {
-                return e as any as FederatedOidcProvider;
+                return {                    
+                    ...e.dataValues,
+                    scopes: e.dataValues.scopes ? e.dataValues.scopes.split(",") : [],
+                }                
             }
         );
         return Promise.resolve(providers);
@@ -42,8 +45,11 @@ class DBFederatedOIDCProviderDao extends FederatedOIDCProviderDao {
             }
         });
         
-        if(e){            
-            return e as any as FederatedOidcProvider;
+        if(e){     
+            return {                    
+                ...e.dataValues,
+                scopes: e.dataValues.scopes ? e.dataValues.scopes.split(",") : [],
+            } 
         }
         else{
             return null;
@@ -59,6 +65,7 @@ class DBFederatedOIDCProviderDao extends FederatedOIDCProviderDao {
 
 
     public async updateFederatedOidcProvider(federatedOIDCProvider: FederatedOidcProvider): Promise<FederatedOidcProvider> {
+        
         const sequelize: Sequelize = await DBDriver.getConnection();
         await sequelize.models.federatedOidcProvider.update(federatedOIDCProvider, {
             where: {

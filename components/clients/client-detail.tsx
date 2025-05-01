@@ -20,6 +20,7 @@ import ClientRedirectUriConfiguration from "./client-redirect-uri-configuration"
 import ClientAuthenticationGroupConfiguration from "./client-authentication-group-configuration";
 import { useClipboardCopyContext } from "../contexts/clipboard-copy-context";
 import SecretViewerDialog from "../dialogs/secret-viewer-dialog";
+import { CLIENT_DETAIL_QUERY } from "@/graphql/queries/oidc-queries";
 
 export interface ClientDetailProps {
     client: Client
@@ -67,6 +68,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
             setErrorMessage(error.message);
             setShowMutationBackdrop(false);
         },
+        refetchQueries: [CLIENT_DETAIL_QUERY]
     })
 
     return (
@@ -377,14 +379,14 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                     Client Updated
                 </Alert>
             </Snackbar>
-            {secretDialogOpen &&
+            {secretDialogOpen &&                    
                 <SecretViewerDialog 
                     open={secretDialogOpen}
                     onClose={() => setSecretDialogOpen(false)}
                     objectId={client.clientId}
-                    secretObjectType={SecretObjectType.ClientSecret}
+                    secretObjectType={SecretObjectType.ClientSecret}                    
                 />
-            }            
+            }                      
         </Typography >
     )
 }

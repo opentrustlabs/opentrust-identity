@@ -60,8 +60,16 @@ class FederatedOIDCProviderEntity extends Model {
                     const s = this.getDataValue("scopes");
                     return s ? s.split(",") : [];
                 },
-                set(val: string[] | null) {
-                    this.setDataValue("scopes", val ? val.join(",") : "");
+                set(val: string[] | string | null) {                    
+                    if(val === null){
+                        this.setDataValue("scopes", "");
+                    }
+                    else if(Array.isArray(val)){
+                        this.setDataValue("scopes", val.join(","));
+                    }
+                    else{
+                        this.setDataValue("scopes", val);
+                    }
                 }
             },
             usePkce: {

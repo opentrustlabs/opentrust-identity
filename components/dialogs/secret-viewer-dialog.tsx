@@ -1,21 +1,21 @@
 "use client";
-import React from "react";
+import React, { useEffect } from "react";
 import { SecretObjectType } from "@/graphql/generated/graphql-types";
 import { GET_SECRET_VALUE_QUERY } from "@/graphql/queries/oidc-queries";
 import { useQuery } from "@apollo/client";
-import { Alert, Button, DialogActions, DialogContent, Grid2 } from "@mui/material";
-import Dialog from "@mui/material/Dialog";
+import { Alert, Button, Dialog, DialogActions, DialogContent, Grid2, Typography } from "@mui/material";
 import DialogTitle from "@mui/material/DialogTitle";
 import PriorityHighOutlinedIcon from '@mui/icons-material/PriorityHighOutlined';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import DataLoading from "../layout/data-loading";
 import { useClipboardCopyContext } from "../contexts/clipboard-copy-context";
+import { TypeOrFieldNameRegExp } from "@apollo/client/cache/inmemory/helpers";
 
 
 
 export interface SecretViewerDialogProps {
     open: boolean,
-    onClose: () => void
+    onClose: () => void,
     objectId: string,
     secretObjectType: SecretObjectType
 }
@@ -31,85 +31,96 @@ const SecretViewerDialog: React.FC<SecretViewerDialogProps> = ({
     // CONTEXT OBJECTS
     const { copyContentToClipboard } = useClipboardCopyContext();
 
+    let message = "Client Secret Copied";
+    if (secretObjectType === SecretObjectType.OidcProviderClientSecret) {
+        message = "OIDC Provider Client Secret Copied"
+    }
+    if (secretObjectType === SecretObjectType.PrivateKey) {
+        message = "Private Key Copied"
+    }
+    if (secretObjectType === SecretObjectType.PrivateKeyPassword) {
+        message = "Private Key Password Copied"
+    }
+    const [clipboardMessage] = React.useState<string>(message);
+
+
     // GRAPHQL QUERIES
-    const {data, loading, error} = useQuery(GET_SECRET_VALUE_QUERY, {
+    const { data, loading, error } = useQuery(GET_SECRET_VALUE_QUERY, {
         variables: {
-            objectId: objectId, 
+            objectId: objectId,
             objectType: secretObjectType
-        }
+        },
+        fetchPolicy: "no-cache",
+        nextFetchPolicy: "no-cache"
     });
 
-    let clipboardMessage = "Client Secret Copied";
-    if(secretObjectType === SecretObjectType.OidcProviderClientSecret){
-        clipboardMessage = "OIDC Provider Client Secret Copied"
-    }
-    if(secretObjectType === SecretObjectType.PrivateKey){
-        clipboardMessage = "Private Key Copied"
-    }
-    if(secretObjectType === SecretObjectType.PrivateKeyPassword){
-        clipboardMessage = "Private Key Password Copied"
-    }
-
     return (
-        <Dialog
-            open={open}
-            onClose={onClose}
-            maxWidth="sm"
-            fullWidth={true}
-        >
-            <DialogTitle>
-                <Grid2 container size={12}>
-                    <Grid2 size={1}>
-                        <PriorityHighOutlinedIcon sx={{color: "red"}} />
-                    </Grid2>
-                    <Grid2 fontWeight={"bold"} size={11}>
-                        All views of secret values are logged and alerts are sent to the application administrators.
-                    </Grid2>
-                </Grid2>
-                              
-            </DialogTitle>
-            <DialogContent>
-                <Grid2 size={12} sx={{marginBottom: "8px", textDecoration: "underline"}}>
-                    {secretObjectType === SecretObjectType.ClientSecret &&
-                        `Client Secret`
-                    }
-                    {secretObjectType === SecretObjectType.OidcProviderClientSecret &&
-                        `OIDC Provider Client Secret`
-                    }
-                    {secretObjectType === SecretObjectType.PrivateKey &&
-                        `Private Key`
-                    }
-                    {secretObjectType === SecretObjectType.PrivateKeyPassword &&
-                        `Private Key Password`
-                    }
-                </Grid2>  
-                {loading &&
-                    <DataLoading dataLoadingSize="xs" color={null} />
-                }
-                {error &&
-                    <Alert severity="error">{error.message}</Alert>
-                }
-                {data &&
-                    <Grid2 container size={12}>
-                        <Grid2 size={11.5}>
-                            <pre>{data.getSecretValue}</pre>
-                        </Grid2>
-                        <Grid2 size={0.5}>
-                            <ContentCopyIcon 
-                                sx={{cursor: "pointer"}}
-                                onClick={() => copyContentToClipboard(data.getSecretValue, clipboardMessage)}
-                            />
-                        </Grid2>
-                    </Grid2>
-                }
+        <React.Fragment >
+            {open &&
+                <Dialog
+                    open={open}
+                    onClose={onClose}
+                    maxWidth="sm"
+                    fullWidth={true}
+                >
 
-            </DialogContent>
-            <DialogActions>
-                <Button onClick={() => onClose()}>Close</Button>
-            </DialogActions>
+                    <DialogTitle>
+                        <Grid2 container size={12}>
+                            <Grid2 size={1}>
+                                <PriorityHighOutlinedIcon sx={{ color: "red" }} />
+                            </Grid2>
+                            <Grid2 fontWeight={"bold"} size={11}>
+                                All views of secret values are logged and alerts are sent to the application administrators.
+                            </Grid2>
+                        </Grid2>
 
-            
-        </Dialog>
+                    </DialogTitle>
+                    <DialogContent>
+                        {loading &&
+                            <DataLoading dataLoadingSize={"xs"} color={""} />
+                        }
+                        {error &&
+                            <Alert severity="error">{error.message}</Alert>
+                        }
+                        {data &&
+                            <Typography component="div">
+                                <Grid2 size={12} sx={{ marginBottom: "8px", textDecoration: "underline" }}>
+                                    {secretObjectType === SecretObjectType.ClientSecret &&
+                                        `Client Secret (Base64 Encoded)`
+                                    }
+                                    {secretObjectType === SecretObjectType.OidcProviderClientSecret &&
+                                        `OIDC Provider Client Secret`
+                                    }
+                                    {secretObjectType === SecretObjectType.PrivateKey &&
+                                        `Private Key`
+                                    }
+                                    {secretObjectType === SecretObjectType.PrivateKeyPassword &&
+                                        `Private Key Password`
+                                    }
+                                </Grid2>
+                                <Grid2 container size={12}>
+                                    <Grid2 size={11.5}>
+                                        <pre>{data.getSecretValue}</pre>
+                                    </Grid2>
+                                    <Grid2 size={0.5}>
+                                        <ContentCopyIcon
+                                            sx={{ cursor: "pointer" }}
+                                            onClick={() => copyContentToClipboard(data.getSecretValue, clipboardMessage)}
+                                        />
+                                    </Grid2>
+                                </Grid2>
+                            </Typography>
+                        }
+
+                    </DialogContent>
+                    <DialogActions>
+                        <Button onClick={() => onClose()}>Close</Button>
+                    </DialogActions>
+
+
+                </Dialog>
+            }
+        </React.Fragment>
     )
 }
 
