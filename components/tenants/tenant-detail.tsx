@@ -641,7 +641,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                 onClose={() => setShowMutationSnackbar(false)}                
                 anchorOrigin={{horizontal: "center", vertical: "top"}}
             >
-                <Alert 
+                <Alert sx={{fontSize: "1em"}}
                     onClose={() => setShowMutationSnackbar(false)}
                 >
                     Tenant Updated

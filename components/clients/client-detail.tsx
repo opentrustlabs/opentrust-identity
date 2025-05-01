@@ -6,7 +6,7 @@ import Typography from "@mui/material/Typography";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
 import BreadcrumbComponent from "../breadcrumbs/breadcrumbs";
 import { CLIENT_TYPE_SERVICE_ACCOUNT_AND_USER_DELEGATED_PERMISSIONS, CLIENT_TYPE_SERVICE_ACCOUNT_ONLY, CLIENT_TYPE_USER_DELEGATED_PERMISSIONS_ONLY, CLIENT_TYPES_DISPLAY, DEFAULT_BACKGROUND_COLOR, DEFAULT_END_USER_TOKEN_TTL_SECONDS, DEFAULT_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS, MAX_END_USER_TOKEN_TTL_SECONDS, MAX_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS, MIN_END_USER_TOKEN_TTL_SECONDS, MIN_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
-import { Client, ClientUpdateInput } from "@/graphql/generated/graphql-types";
+import { Client, ClientUpdateInput, SecretObjectType } from "@/graphql/generated/graphql-types";
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import SyncIcon from '@mui/icons-material/Sync';
 import GroupIcon from '@mui/icons-material/Group';
@@ -19,6 +19,7 @@ import { CLIENT_UPDATE_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import ClientRedirectUriConfiguration from "./client-redirect-uri-configuration";
 import ClientAuthenticationGroupConfiguration from "./client-authentication-group-configuration";
 import { useClipboardCopyContext } from "../contexts/clipboard-copy-context";
+import SecretViewerDialog from "../dialogs/secret-viewer-dialog";
 
 export interface ClientDetailProps {
     client: Client
@@ -50,6 +51,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
     const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
     const [showMutationBackdrop, setShowMutationBackdrop] = React.useState<boolean>(false);
     const [showMutationSnackbar, setShowMutationSnackbar] = React.useState<boolean>(false);
+    const [secretDialogOpen, setSecretDialogOpen] = React.useState<boolean>(false);
 
     // GRAPHQLQL FUNCTIONS
     const [clientUpdateMutation] = useMutation(CLIENT_UPDATE_MUTATION, {
@@ -156,7 +158,10 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                                         2.  onclick hander to retrieve the client secret. this handler should first
                                                             show a dialog indicating the the viewing of the secret will be logged
                                                     */}
-                                                    <VisibilityOutlinedIcon sx={{cursor: "pointer"}} />
+                                                    <VisibilityOutlinedIcon 
+                                                        sx={{cursor: "pointer"}} 
+                                                        onClick={() => setSecretDialogOpen(true)}
+                                                    />
                                                 </Grid2>
                                             </Grid2>
                                         </Grid2>
@@ -366,12 +371,20 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                 onClose={() => setShowMutationSnackbar(false)}                
                 anchorOrigin={{horizontal: "center", vertical: "top"}}
             >
-                <Alert 
+                <Alert sx={{fontSize: "1em"}}
                     onClose={() => setShowMutationSnackbar(false)}
                 >
                     Client Updated
                 </Alert>
             </Snackbar>
+            {secretDialogOpen &&
+                <SecretViewerDialog 
+                    open={secretDialogOpen}
+                    onClose={() => setSecretDialogOpen(false)}
+                    objectId={client.clientId}
+                    secretObjectType={SecretObjectType.ClientSecret}
+                />
+            }            
         </Typography >
     )
 }

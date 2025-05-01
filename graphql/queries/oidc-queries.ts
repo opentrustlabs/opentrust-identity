@@ -594,3 +594,8 @@ export const USER_AUTHORIZATION_GROUP_QUERY = gql(`
     }
 `);
 
+export const GET_SECRET_VALUE_QUERY = gql(`
+    query getSecretValue($objectId: String!, $objectType: SecretObjectType!){
+        getSecretValue(objectId: $objectId, objectType: $objectType)
+    }
+`);

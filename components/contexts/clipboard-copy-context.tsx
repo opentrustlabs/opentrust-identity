@@ -59,9 +59,7 @@ const ClipboardCopyContextProvider: React.FC<ClipboardCopyContextProps> = ({ chi
                     anchorOrigin={{vertical: "top", horizontal: "center"}}                    
                     sx={{width: "100%"}}
                 >
-                    <Alert 
-                        onClose={closeSnackbar}
-                    >
+                    <Alert>
                         {message}
                     </Alert>
                 </Snackbar>
