@@ -97,6 +97,7 @@ export const CLIENT_READ_SCOPE="client.read";
 // A scope specific to reading the client secret
 export const CLIENT_SECRET_VIEW_SCOPE="client.secret.view";
 
+
 export const SCOPE_CREATE_SCOPE="scope.create";
 export const SCOPE_UPDATE_SCOPE="scope.update";
 export const SCOPE_DELETE_SCOPE="scope.delete";
@@ -161,6 +162,7 @@ export const FEDERATED_OIDC_PROVIDER_DELETE_SCOPE="federatedoidcprovider.delete"
 export const FEDERATED_OIDC_PROVIDER_READ_SCOPE="federatedoidcprovider.read";
 export const FEDERATED_OIDC_PROVIDER_TENANT_ASSIGN_SCOPE="federatedoidcprovider.tenant.assign";
 export const FEDERATED_OIDC_PROVIDER_TENANT_REMOVE_SCOPE="federatedoidcprovider.tenant.remove";
+
 
 export const SCOPE_USE_IAM_MANAGEMENT="IAM_MANAGEMENT";
 export const SCOPE_USE_APPLICATION_MANAGEMENT="APPLICATION_MANAGEMENT";

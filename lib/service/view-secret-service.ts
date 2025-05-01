@@ -1,14 +1,16 @@
-import { Client, SecretObjectType, SigningKey } from "@/graphql/generated/graphql-types";
+import { Client, FederatedOidcProvider, SecretObjectType, SigningKey } from "@/graphql/generated/graphql-types";
 import { OIDCContext } from "@/graphql/graphql-context";
 import { DaoFactory } from "../data-sources/dao-factory";
 import Kms from "../kms/kms";
 import ClientDao from "../dao/client-dao";
 import SigningKeysDao from "../dao/signing-keys-dao";
+import FederatedOIDCProviderDao from "../dao/federated-oidc-provider-dao";
 
 
 const kms: Kms = DaoFactory.getInstance().getKms();
 const clientDao: ClientDao = DaoFactory.getInstance().getClientDao();
 const signingKeysDao: SigningKeysDao = DaoFactory.getInstance().getSigningKeysDao();
+const federatedOIDCProviderDao: FederatedOIDCProviderDao = DaoFactory.getInstance().getFederatedOIDCProvicerDao();
 
 class ViewSecretService {
 
@@ -38,6 +40,14 @@ class ViewSecretService {
             if(signingKey){
                 if(signingKey.password){
                     decrypted = await kms.decrypt(signingKey.password);
+                }
+            }
+        }
+        else if(objectType === SecretObjectType.OidcProviderClientSecret){
+            const provider: FederatedOidcProvider | null = await federatedOIDCProviderDao.getFederatedOidcProviderById(objectId);
+            if(provider){
+                if(provider.federatedOIDCProviderClientSecret){
+                    decrypted = await kms.decrypt(provider.federatedOIDCProviderClientSecret);
                 }
             }
         }
