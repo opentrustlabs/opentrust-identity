@@ -15,7 +15,8 @@ interface KmsKey {
 const allKeys: Array<KmsKey> = JSON.parse(getFileContents(`${dataDir}/${KMS_KEYS_FILE}`, "[]"));
 
 /**
- * The key file should be formatted as follows, for example:
+ * Each key should be a 256 bit string, base64 encoded and
+ * the key file should be formatted as follows, for example:
  * <pre>
  * [
  *       {
