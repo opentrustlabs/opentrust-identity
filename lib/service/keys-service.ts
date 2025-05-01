@@ -6,10 +6,12 @@ import { KEY_TYPES, KEY_USES, PKCS8_ENCRYPTED_PRIVATE_KEY_HEADER, SEARCH_INDEX_O
 import { DaoFactory } from "../data-sources/dao-factory";
 import { Client } from "@opensearch-project/opensearch";
 import { getOpenSearchClient } from "../data-sources/search";
+import Kms from "../kms/kms";
 
 const signingKeysDao = DaoFactory.getInstance().getSigningKeysDao();
 const tenantDao = DaoFactory.getInstance().getTenantDao();
 const searchClient: Client = getOpenSearchClient();
+const kms: Kms = DaoFactory.getInstance().getKms();
 
 class SigningKeysService {
 
@@ -35,9 +37,7 @@ class SigningKeysService {
     public async createSigningKey(key: SigningKey): Promise<SigningKey> {
         const tenant: Tenant | null = await tenantDao.getTenantById(key.tenantId);
         if(!tenant){
-            throw new GraphQLError("ERROR_TENANT_NOT_FOUND", {
-
-            })
+            throw new GraphQLError("ERROR_TENANT_NOT_FOUND");
         }
 
         if(!key.keyName || key.keyName === ""){
@@ -64,8 +64,20 @@ class SigningKeysService {
             throw new GraphQLError("ERROR_INVALID_EXPIRATION_FOR_PUBLIC_KEY");
         }
         
-        key.keyId = randomUUID().toString();
         
+        const plainText = key.password && key.password !== "" ? key.password : key.privateKeyPkcs8;
+        const encrypted: string | null = await kms.encrypt(plainText);
+        if(encrypted === null){
+            throw new GraphQLError("ERROR_UNABLE_TO_ENCRYPT_PRIVATE_KEY_INFORMATION");
+        }
+        if(key.password && key.password !== ""){
+            key.password = encrypted
+        }
+        else{
+            key.privateKeyPkcs8 = encrypted;
+        }
+        
+        key.keyId = randomUUID().toString();
         await signingKeysDao.createSigningKey(key);
         await this.updateSearchIndex(key);
         return Promise.resolve(key);        
