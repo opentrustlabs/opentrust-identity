@@ -439,7 +439,7 @@ const FederatedOIDCProviderDetail: React.FC<FederatedOIDCProviderDetailProps> = 
                 onClose={() => setShowMutationSnackbar(false)}                
                 anchorOrigin={{horizontal: "center", vertical: "top"}}
             >
-                <Alert 
+                <Alert sx={{fontSize: "1em"}}
                     onClose={() => setShowMutationSnackbar(false)}
                 >
                     Provider Updated

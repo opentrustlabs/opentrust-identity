@@ -285,7 +285,7 @@ const AuthenticationGroupDetail: React.FC<AuthenticationGroupDetailProps> = ({ a
                 onClose={() => setShowMutationSnackbar(false)}                
                 anchorOrigin={{horizontal: "center", vertical: "top"}}
             >
-                <Alert 
+                <Alert sx={{fontSize: "1em"}}
                     onClose={() => setShowMutationSnackbar(false)}
                 >
                     Authentication Group Updated

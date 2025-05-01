@@ -59,6 +59,9 @@ class ClientService {
 
         await clientDao.createClient(client);
         await this.updateSearchIndex(client);
+        // Now we need to set the actual client secret back on the object that
+        // we are going to return so that the user can copy it somewhere.
+        client.clientSecret = clientSecret;
         return Promise.resolve(client);
     }
 

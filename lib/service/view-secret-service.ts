@@ -31,8 +31,8 @@ class ViewSecretService {
         }
         else if(objectType === SecretObjectType.PrivateKey){
             const signingKey: SigningKey | null = await signingKeysDao.getSigningKeyById(objectId);
-            if(signingKey){
-                decrypted = await kms.decrypt(signingKey.privateKeyPkcs8);
+            if(signingKey){                
+                decrypted = await kms.decrypt(signingKey.privateKeyPkcs8);                
             }
         }
         else if(objectType === SecretObjectType.PrivateKeyPassword){

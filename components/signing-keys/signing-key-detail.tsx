@@ -1,5 +1,5 @@
 "use client";
-import { SigningKey, SigningKeyUpdateInput } from "@/graphql/generated/graphql-types";
+import { SecretObjectType, SigningKey, SigningKeyUpdateInput } from "@/graphql/generated/graphql-types";
 import Typography from "@mui/material/Typography";
 import React, { useContext } from "react";
 import { DetailPageContainer, DetailPageMainContentContainer, DetailPageRightNavContainer } from "../layout/detail-page-container";
@@ -17,6 +17,7 @@ import { SIGNING_KEY_UPDATE_MUTATION } from "@/graphql/mutations/oidc-mutations"
 import { SIGNING_KEY_DETAIL_QUERY } from "@/graphql/queries/oidc-queries";
 import { formatISODateFromMs } from "@/utils/date-utils";
 import { useClipboardCopyContext } from "../contexts/clipboard-copy-context";
+import SecretViewerDialog from "../dialogs/secret-viewer-dialog";
 
 export interface SigningKeyDetailProps {
     signingKey: SigningKey
@@ -41,7 +42,7 @@ const SigningKeyDetail: React.FC<SigningKeyDetailProps> = ({ signingKey }) => {
     };
     const [keyUpdateInput, setKeyUpdateInput] = React.useState<SigningKeyUpdateInput>(initInput);
     const [showRevokeConfirmationDialog, setShowRevokeConfirmationDialog] = React.useState<boolean>(false);
-
+    const [secretDialogOpen, setSecretDialogOpen] = React.useState<boolean>(false);
 
     // GRAPHQL FUNCTIONS
 
@@ -271,6 +272,7 @@ const SigningKeyDetail: React.FC<SigningKeyDetailProps> = ({ signingKey }) => {
                                                     // based on their scope.
                                                     // Show a dialog confirming that the user will be audited when they
                                                     // view a password and an email will be sent to the admin group.
+                                                    setSecretDialogOpen(true);
                                                 }}
                                             />
                                         </Grid2>
@@ -292,6 +294,7 @@ const SigningKeyDetail: React.FC<SigningKeyDetailProps> = ({ signingKey }) => {
                                                     // based on their scope.
                                                     // Show a dialog confirming that the user will be audited when they
                                                     // view a password and an email will be sent to the admin group.
+                                                    setSecretDialogOpen(true);
                                                 }}
                                             />                                            
                                         </Grid2>
@@ -363,12 +366,20 @@ const SigningKeyDetail: React.FC<SigningKeyDetailProps> = ({ signingKey }) => {
                 onClose={() => setShowMutationSnackbar(false)}                
                 anchorOrigin={{horizontal: "center", vertical: "top"}}
             >
-                <Alert 
+                <Alert sx={{fontSize: "1em"}}
                     onClose={() => setShowMutationSnackbar(false)}
                 >
                     Signing Key Updated
                 </Alert>
-            </Snackbar>	            
+            </Snackbar>
+            {secretDialogOpen &&
+                <SecretViewerDialog 
+                    open={secretDialogOpen}
+                    onClose={() => setSecretDialogOpen(false)}
+                    objectId={signingKey.keyId}
+                    secretObjectType={signingKey.privateKeyPkcs8.length > 0 ? SecretObjectType.PrivateKeyPassword : SecretObjectType.PrivateKey}
+                />
+            }  
         </Typography>
     )
 
