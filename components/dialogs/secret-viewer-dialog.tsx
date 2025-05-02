@@ -84,23 +84,20 @@ const SecretViewerDialog: React.FC<SecretViewerDialogProps> = ({
                         }
                         {data &&
                             <Typography component="div">
-                                <Grid2 size={12} sx={{ marginBottom: "8px", textDecoration: "underline" }}>
-                                    {secretObjectType === SecretObjectType.ClientSecret &&
-                                        `Client Secret (Base64 Encoded)`
-                                    }
-                                    {secretObjectType === SecretObjectType.OidcProviderClientSecret &&
-                                        `OIDC Provider Client Secret`
-                                    }
-                                    {secretObjectType === SecretObjectType.PrivateKey &&
-                                        `Private Key`
-                                    }
-                                    {secretObjectType === SecretObjectType.PrivateKeyPassword &&
-                                        `Private Key Password`
-                                    }
-                                </Grid2>
                                 <Grid2 container size={12}>
-                                    <Grid2 size={11.5}>
-                                        <pre>{data.getSecretValue}</pre>
+                                    <Grid2 size={11.5} sx={{ marginBottom: "8px", textDecoration: "underline" }}>
+                                        {secretObjectType === SecretObjectType.ClientSecret &&
+                                            `Client Secret (Base64 Encoded)`
+                                        }
+                                        {secretObjectType === SecretObjectType.OidcProviderClientSecret &&
+                                            `OIDC Provider Client Secret`
+                                        }
+                                        {secretObjectType === SecretObjectType.PrivateKey &&
+                                            `Private Key`
+                                        }
+                                        {secretObjectType === SecretObjectType.PrivateKeyPassword &&
+                                            `Private Key Password`
+                                        }
                                     </Grid2>
                                     <Grid2 size={0.5}>
                                         <ContentCopyIcon
@@ -109,9 +106,11 @@ const SecretViewerDialog: React.FC<SecretViewerDialogProps> = ({
                                         />
                                     </Grid2>
                                 </Grid2>
+                                <Grid2 container size={12}>
+                                    <pre>{data.getSecretValue}</pre>
+                                </Grid2>
                             </Typography>
                         }
-
                     </DialogContent>
                     <DialogActions>
                         <Button onClick={() => onClose()}>Close</Button>
