@@ -78,7 +78,7 @@ class ScopeService {
         // scope use value is read-only
         existingScope.scopeDescription = scope.scopeDescription;
         existingScope.scopeName = scope.scopeName;
-        const s: Scope = await scopeDao.updateScope(existingScope);
+        await scopeDao.updateScope(existingScope);
         await this.updateSearchIndex(existingScope);
         return Promise.resolve(existingScope);
     }

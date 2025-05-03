@@ -1,6 +1,6 @@
 "use client";
 import React, { useContext } from "react";
-import { Accordion, AccordionDetails, AccordionSummary, Alert, Backdrop, Button, Checkbox, CircularProgress, MenuItem, Paper, Select, Snackbar, Stack, TextField } from "@mui/material";
+import { Accordion, AccordionDetails, AccordionSummary, Alert, Backdrop, Button, Checkbox, CircularProgress, Fade, MenuItem, Paper, Select, Snackbar, Stack, TextField } from "@mui/material";
 import Grid2 from "@mui/material/Grid2";
 import Typography from "@mui/material/Typography";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
@@ -21,6 +21,7 @@ import ClientAuthenticationGroupConfiguration from "./client-authentication-grou
 import { useClipboardCopyContext } from "../contexts/clipboard-copy-context";
 import SecretViewerDialog from "../dialogs/secret-viewer-dialog";
 import { CLIENT_DETAIL_QUERY } from "@/graphql/queries/oidc-queries";
+import DetailSectionActionHandler from "../layout/detail-section-action-handler";
 
 export interface ClientDetailProps {
     client: Client
@@ -257,24 +258,17 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                         </Grid2>
                                     </Grid2>
                                 </Grid2>
-
-                                <Stack sx={{ marginTop: "8px" }} direction={"row"} flexDirection={"row-reverse"} >
-                                    
-                                    <Button  
-                                        onClick={() => {setShowMutationBackdrop(true); clientUpdateMutation(); }}
-                                        disabled={!markDirty} 
-                                        sx={{ border: "solid 1px lightgrey", borderRadius: "4px" }} 
-                                    >
-                                        Update
-                                    </Button>
-                                    
-                                        <Button
-                                            disabled={!markDirty}
-                                            sx={{marginRight: "8px"}}
-                                            onClick={() => {setClientUpdateInput(initInput); setMarkDirty(false); }}
-                                        >Cancel</Button>
-                                    
-                                </Stack>
+                                <DetailSectionActionHandler
+                                    onDiscardClickedHandler={() => {
+                                        setClientUpdateInput(initInput); 
+                                        setMarkDirty(false);
+                                    }}
+                                    onUpdateClickedHandler={() => {
+                                        setShowMutationBackdrop(true); 
+                                        clientUpdateMutation();
+                                    }}
+                                    markDirty={markDirty}
+                                />
                             </Paper>
                         </Grid2>
 

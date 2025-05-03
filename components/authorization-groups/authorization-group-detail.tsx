@@ -17,6 +17,7 @@ import { useMutation } from "@apollo/client";
 import { AUTHORIZATION_GROUP_UPDATE_MUTATION, AUTHORIZATION_GROUP_USER_ADD_MUTATION, AUTHORIZATION_GROUP_USER_REMOVE_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import { AUTHORIZATION_GROUP_DETAIL_QUERY } from "@/graphql/queries/oidc-queries";
 import { useClipboardCopyContext } from "../contexts/clipboard-copy-context";
+import DetailSectionActionHandler from "../layout/detail-section-action-handler";
 
 export interface AuthorizationGroupDetailProps {
     authorizationGroup: AuthorizationGroup
@@ -183,30 +184,19 @@ const AuthorizationGroupDetail: React.FC<AuthorizationGroupDetailProps> = ({ aut
                                                 />
                                             </Grid2>
                                         </Grid2>                                        
-                                    </Grid2>
-                                    
+                                    </Grid2>                                    
                                 </Grid2>
-                                <Stack sx={{ marginTop: "8px" }} direction={"row"} flexDirection={"row-reverse"} >
-                                    
-                                    <Button sx={{ border: "solid 1px lightgrey", borderRadius: "4px" }} 
-                                        disabled={!markDirty}
-                                        onClick={() => {
-                                            setShowMutationBackdrop(true);
-                                            updateAuthzGroupMutation();
-                                        }}                                        
-                                    >
-                                        Update
-                                    </Button>
-                                    <Button sx={{ border: "solid 1px lightgrey", borderRadius: "4px", marginRight: "8px" }}
-                                        disabled={!markDirty}
-                                        onClick={() => {
-                                            setAuthzGroupInput(initInput);
-                                            setMarkDirty(false);
-                                        }}
-                                    >
-                                        Cancel
-                                    </Button>
-                                </Stack>
+                                <DetailSectionActionHandler
+                                    onDiscardClickedHandler={() => {
+                                        setAuthzGroupInput(initInput);
+                                        setMarkDirty(false);
+                                    }}
+                                    onUpdateClickedHandler={() => {
+                                        setShowMutationBackdrop(true);
+                                        updateAuthzGroupMutation();
+                                    }}
+                                    markDirty={markDirty}
+                                />                                
                             </Paper>
                         </Grid2>
 

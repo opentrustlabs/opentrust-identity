@@ -10,6 +10,7 @@ import TextField from "@mui/material/TextField";
 import Stack from "@mui/material/Stack";
 import Button from "@mui/material/Button";
 import { LEGACY_USER_MIGRATION_CONFIGURATION_MUTATION } from "@/graphql/mutations/oidc-mutations";
+import DetailSectionActionHandler from "../layout/detail-section-action-handler";
 
 export interface LegacyUserMigrationConfigurationProps {
     tenantId: string,
@@ -34,8 +35,7 @@ const LegacyUserMigrationConfiguration: React.FC<LegacyUserMigrationConfiguratio
 
     // STATE VARIABLES
     const [markDirty, setMarkDirty] = React.useState<boolean>(false);
-    const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
-    // const [showReset, setShowReset] = React.useState<boolean>(false);
+    const [errorMessage, setErrorMessage] = React.useState<string | null>(null);    
     const [tenantLegacyUserMigrationConfigInput, setTenantLegacyUserMigrationConfigInput] = React.useState<TenantLegacyUserMigrationConfigInput | null>(null);
     //const [revertToInput, setRevertToInput] = React.useState<TenantLegacyUserMigrationConfigInput | null>(null);
 
@@ -113,23 +113,18 @@ const LegacyUserMigrationConfiguration: React.FC<LegacyUserMigrationConfiguratio
                     />
                 </Grid2>
             </Grid2>
-            <Stack sx={{ marginTop: "8px" }} direction={"row"} flexDirection={"row-reverse"} >                
-                <Button
-                    disabled={!allowLegacyUserMigration || !markDirty}
-                    onClick={() => { onUpdateStart(); mutateUserMigrationConfiguration() }}
-                    sx={{ border: "solid 1px lightgrey", borderRadius: "4px" }} >Update
-                </Button>
-                {/* {showReset &&
-                    <Button 
-                        sx={{marginRight: "8px"}}
-                        onClick={() => {
-                            setTenantLegacyUserMigrationConfigInput({...revertToInput as TenantLegacyUserMigrationConfigInput});
-                            setRevertToInput({...revertToInput as TenantLegacyUserMigrationConfigInput});
-                            setShowReset(false);
-                        }}
-                    >Revert Changes</Button>
-                } */}
-            </Stack>
+            <DetailSectionActionHandler
+                onDiscardClickedHandler={() => {   
+                    setTenantLegacyUserMigrationConfigInput({...initInput});                                   
+                    setMarkDirty(false);
+                }}
+                onUpdateClickedHandler={() => {
+                    onUpdateStart(); 
+                    mutateUserMigrationConfiguration();
+                }}
+                disableSubmit={!allowLegacyUserMigration || !markDirty}
+                markDirty={markDirty}
+            />
         </>
 
     )

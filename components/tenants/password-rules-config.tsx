@@ -12,6 +12,7 @@ import Stack from "@mui/material/Stack";
 import Button from "@mui/material/Button";
 import { Alert, Autocomplete, AutocompleteRenderInputParams, Checkbox, Divider, MenuItem, Select } from "@mui/material";
 import { PASSWORD_CONFIGURATION_MUTATION } from "@/graphql/mutations/oidc-mutations";
+import DetailSectionActionHandler from "../layout/detail-section-action-handler";
 
 export interface PasswordRulesConfigurationProps {
     tenantId: string,
@@ -300,12 +301,17 @@ const PasswordRulesConfiguration: React.FC<PasswordRulesConfigurationProps> = ({
                 </Grid2>
 
             </Grid2>
-            <Stack sx={{ marginTop: "8px" }} direction={"row"} flexDirection={"row-reverse"} >
-                <Button
-                    disabled={!markDirty}
-                    onClick={() => { onUpdateStart(); mutatePasswordConfiguration() }}
-                    sx={{ border: "solid 1px lightgrey", borderRadius: "4px" }} >Update</Button>
-            </Stack>
+            <DetailSectionActionHandler
+                onDiscardClickedHandler={() => {
+                    setPasswordConfigInput(initInput); 
+                    setMarkDirty(false);
+                }}
+                onUpdateClickedHandler={() => {
+                    onUpdateStart(); 
+                    mutatePasswordConfiguration(); 
+                }}
+                markDirty={markDirty}
+            />
         </>
 
     )

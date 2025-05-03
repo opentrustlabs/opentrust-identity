@@ -23,6 +23,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import SettingsApplicationsIcon from '@mui/icons-material/SettingsApplications';
 import RateLimitTenantRelConfiguration from "./rate-limit-tenant-configuration";
 import { useClipboardCopyContext } from "../contexts/clipboard-copy-context";
+import DetailSectionActionHandler from "../layout/detail-section-action-handler";
 
 export interface RateLimitDetailProps {
     rateLimitDetail: RateLimitServiceGroup
@@ -128,28 +129,18 @@ const RateLimitDetail: React.FC<RateLimitDetailProps> = ({
                                     </Grid2>
                                 </Grid2>
                             </Grid2>
-                            <Stack sx={{ marginTop: "8px" }} direction={"row"} flexDirection={"row-reverse"} >
-                                <Button
-                                    disabled={!markDirty}
-                                    onClick={() => {
-                                        setShowMutationBackdrop(true);
-                                        //oidcProviderUpdateMutation();                                            
-                                    }}
-                                >
-                                    Update
-                                </Button>
-                                <Button
-                                    sx={{ marginRight: "8px" }}
-                                    onClick={() => {
-                                        //setOIDCProviderInput(initInput);
-                                        setMarkDirty(false);
-                                        //setChangeClientSecret(false);
-                                    }}
-                                    disabled={!markDirty}
-                                >
-                                    Undo Changes
-                                </Button>
-                            </Stack>
+                            <DetailSectionActionHandler
+                                onDiscardClickedHandler={() => {
+                                    //setOIDCProviderInput(initInput);
+                                    setServiceGroupInput(initInput);
+                                    setMarkDirty(false);
+                                }}
+                                onUpdateClickedHandler={() => {
+                                    setShowMutationBackdrop(true);
+                                    //oidcProviderUpdateMutation();   
+                                }}
+                                markDirty={markDirty}
+                            />
                         </Paper>
                     </Grid2>
                     <Grid2 size={12} marginBottom={"16px"}>

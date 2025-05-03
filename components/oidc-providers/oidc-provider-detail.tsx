@@ -26,6 +26,7 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import { useClipboardCopyContext } from "../contexts/clipboard-copy-context";
 import SecretViewerDialog from "../dialogs/secret-viewer-dialog";
+import DetailSectionActionHandler from "../layout/detail-section-action-handler";
 
 export interface FederatedOIDCProviderDetailProps {
     federatedOIDCProvider: FederatedOidcProvider
@@ -354,28 +355,18 @@ const FederatedOIDCProviderDetail: React.FC<FederatedOIDCProviderDetailProps> = 
                                         </Grid2>
                                     </Grid2>
                                 </Grid2>
-                                <Stack sx={{ marginTop: "8px" }} direction={"row"} flexDirection={"row-reverse"} >
-                                    <Button 
-                                        disabled={!markDirty}
-                                        onClick={() => {
-                                            setShowMutationBackdrop(true);
-                                            oidcProviderUpdateMutation();                                            
-                                        }}
-                                    >
-                                        Update
-                                    </Button>
-                                    <Button 
-                                        sx={{marginRight: "8px"}}
-                                        onClick={() => {
-                                            setOIDCProviderInput(initInput);
-                                            setMarkDirty(false);
-                                            setChangeClientSecret(false);
-                                        }}
-                                        disabled={!markDirty}
-                                    >
-                                        Undo Changes
-                                    </Button>
-                                </Stack>
+                                <DetailSectionActionHandler
+                                    onDiscardClickedHandler={() => {
+                                        setOIDCProviderInput(initInput);
+                                        setMarkDirty(false);
+                                        setChangeClientSecret(false);
+                                    }}
+                                    onUpdateClickedHandler={() => {
+                                        setShowMutationBackdrop(true);
+                                        oidcProviderUpdateMutation();  
+                                    }}
+                                    markDirty={markDirty}
+                                />                                  
                             </Paper>
                         </Grid2>
                         
