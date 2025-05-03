@@ -15,6 +15,7 @@ import { AUTHENTICATION_GROUP_UPDATE_MUTATION, AUTHENTICATION_GROUP_USER_ADD_MUT
 import { AUTHENTICATION_GROUP_DETAIL_QUERY } from "@/graphql/queries/oidc-queries";
 import RelationshipConfigurationComponent from "../relationship-config/relationship-configuration-component";
 import { useClipboardCopyContext } from "../contexts/clipboard-copy-context";
+import DetailSectionActionHandler from "../layout/detail-section-action-handler";
 
 
 export interface AuthenticationGroupDetailProps {
@@ -171,27 +172,18 @@ const AuthenticationGroupDetail: React.FC<AuthenticationGroupDetailProps> = ({ a
                                             </Grid2>
                                         </Grid2>                                      
                                     </Grid2>                                    
-                                </Grid2>                                
-                                <Stack sx={{ marginTop: "8px" }} direction={"row"} flexDirection={"row-reverse"} >
-                                    <Button sx={{ border: "solid 1px lightgrey", borderRadius: "4px"}} 
-                                        onClick={() => {
-                                            setShowMutationBackdrop(true);
-                                            updateAuthnGroupMutation();
-                                        }}
-                                        disabled={!markDirty}
-                                    >
-                                        Update
-                                    </Button>
-                                    <Button sx={{ border: "solid 1px lightgrey", borderRadius: "4px", marginRight: "8px"}} 
-                                        disabled={!markDirty}
-                                        onClick={() => {
-                                            setMarkDirty(false);
-                                            setAuthnGroupInput(initInput);
-                                        }}
-                                    >
-                                        Undo
-                                    </Button>
-                                </Stack>
+                                </Grid2> 
+                                <DetailSectionActionHandler
+                                    onDiscardClickedHandler={() => {
+                                        setMarkDirty(false);
+                                        setAuthnGroupInput(initInput);
+                                    }}
+                                    onUpdateClickedHandler={() => {
+                                        setShowMutationBackdrop(true);
+                                        updateAuthnGroupMutation();
+                                    }}
+                                    markDirty={markDirty}
+                                />                                
                             </Paper>
                         </Grid2>
 

@@ -13,6 +13,7 @@ import { TENANT_ANONYMOUS_USER_CONFIGURATION_MUTATION } from "@/graphql/mutation
 import Autocomplete from "@mui/material/Autocomplete";
 import { COUNTRY_CODES, CountryCodeDef, LANGUAGE_CODES, LanguageCodeDef } from "@/utils/i18n";
 import { getDefaultCountryCodeDef, getDefaultLanguageCodeDef } from "@/utils/client-utils";
+import DetailSectionActionHandler from "../layout/detail-section-action-handler";
 
 
 export interface AnonymousUserConfigurationProps {
@@ -39,7 +40,6 @@ const AnonymousUserConfiguration: React.FC<AnonymousUserConfigurationProps> = ({
     // STATE VARIABLES
     const [markDirty, setMarkDirty] = React.useState<boolean>(false);
     const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
-    // const [showReset, setShowReset] = React.useState<boolean>(false);
     const [tenantAnonymousUserConfigInput, setTenantAnonymousUserConfigInput] = React.useState<TenantAnonymousUserConfigInput | null>(null);
     //const [revertToInput, setRevertToInput] = React.useState<TenantLegacyUserMigrationConfigInput | null>(null);
 
@@ -147,23 +147,17 @@ const AnonymousUserConfiguration: React.FC<AnonymousUserConfigurationProps> = ({
                     />
                 </Grid2>
             </Grid2>
-            <Stack sx={{ marginTop: "8px" }} direction={"row"} flexDirection={"row-reverse"} >                
-                <Button
-                    disabled={!allowAnonymousUsers || !markDirty}
-                    onClick={() => { onUpdateStart(); mutateAnonymousUserConfiguration() }}
-                    sx={{ border: "solid 1px lightgrey", borderRadius: "4px" }} >Update
-                </Button>
-                {/* {showReset &&
-                    <Button 
-                        sx={{marginRight: "8px"}}
-                        onClick={() => {
-                            setTenantLegacyUserMigrationConfigInput({...revertToInput as TenantLegacyUserMigrationConfigInput});
-                            setRevertToInput({...revertToInput as TenantLegacyUserMigrationConfigInput});
-                            setShowReset(false);
-                        }}
-                    >Revert Changes</Button>
-                } */}
-            </Stack>
+            <DetailSectionActionHandler
+                onDiscardClickedHandler={() => {   
+                    setTenantAnonymousUserConfigInput({...initInput});                                    
+                    setMarkDirty(false);
+                }}
+                onUpdateClickedHandler={() => {
+                    onUpdateStart(); 
+                    mutateAnonymousUserConfiguration();
+                }}
+                markDirty={markDirty}
+            />
         </>
 
     )

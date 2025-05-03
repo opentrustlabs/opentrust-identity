@@ -26,6 +26,7 @@ import UserAuthorizationGroupConfiguration from "./user-authorization-group-conf
 import UserAuthenticationGroupConfiguration from "./user-authentication-group-configuration";
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import { useClipboardCopyContext } from "../contexts/clipboard-copy-context";
+import DetailSectionActionHandler from "../layout/detail-section-action-handler";
 
 export interface UserDetailProps {
     user: User;
@@ -381,27 +382,17 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                         </Grid2>
                                     </Grid2>
                                 </Grid2>
-                                <Stack sx={{ marginTop: "8px" }} direction={"row"} flexDirection={"row-reverse"} >
-
-                                    <Button sx={{ border: "solid 1px lightgrey", borderRadius: "4px"}} 
-                                        disabled={!markDirty}
-                                        onClick={() => {
-                                            setShowMutationBackdrop(true);
-                                            updateUserMutation();
-                                        }}
-                                    >
-                                        Update
-                                    </Button>
-                                    <Button sx={{ border: "solid 1px lightgrey", borderRadius: "4px", marginRight: "8px"}} 
-                                        disabled={!markDirty}
-                                        onClick={() => {
-                                            setMarkDirty(false);
-                                            setUserInput(initInput);
-                                        }}
-                                    >
-                                        Undo
-                                    </Button>
-                                </Stack>
+                                <DetailSectionActionHandler
+                                    onDiscardClickedHandler={() => {
+                                        setMarkDirty(false);
+                                        setUserInput(initInput);
+                                    }}
+                                    onUpdateClickedHandler={() => {
+                                        setShowMutationBackdrop(true);
+                                        updateUserMutation();
+                                    }}
+                                    markDirty={markDirty}
+                                />
                             </Paper>
                         </Grid2>
 

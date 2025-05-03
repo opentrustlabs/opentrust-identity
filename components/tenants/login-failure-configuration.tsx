@@ -12,6 +12,7 @@ import Stack from "@mui/material/Stack";
 import Button from "@mui/material/Button";
 import { MenuItem, Select } from "@mui/material";
 import { LOGIN_FAILURE_POLICY_CONFIGURATION_MUTATION } from "@/graphql/mutations/oidc-mutations";
+import DetailSectionActionHandler from "../layout/detail-section-action-handler";
 
 export interface LoginFailureConfigurationProps {
     tenantId: string,
@@ -165,12 +166,18 @@ const LoginFailureConfiguration: React.FC<LoginFailureConfigurationProps> = ({
                     />
                 </Grid2>
             </Grid2>
-            <Stack sx={{ marginTop: "8px" }} direction={"row"} flexDirection={"row-reverse"} >
-                <Button 
-                    disabled={!markDirty}
-                    onClick={() => {onUpdateStart(); mutateLoginFailureConfiguration()}}
-                    sx={{ border: "solid 1px lightgrey", borderRadius: "4px" }} >Update</Button>
-            </Stack>
+            <DetailSectionActionHandler
+                onDiscardClickedHandler={() => {   
+                    setFailurePolicyInput(initInput);
+                    setRevertToPolicyInput(initInput);                                     
+                    setMarkDirty(false);
+                }}
+                onUpdateClickedHandler={() => {
+                    onUpdateStart(); 
+                    mutateLoginFailureConfiguration();
+                }}
+                markDirty={markDirty}
+            />
         </>
     )
 

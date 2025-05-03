@@ -34,6 +34,7 @@ import TenantFederatedOIDCProviderConfiguration from "./tenant-federated-oidc-pr
 import ContactConfiguration from "../contacts/contact-configuration";
 import Link from "next/link";
 import { useClipboardCopyContext } from "../contexts/clipboard-copy-context";
+import DetailSectionActionHandler from "../layout/detail-section-action-handler";
 
 export interface TenantDetailProps {
     tenantId: string
@@ -342,9 +343,16 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                         </Grid2>
                                     </Grid2>                                    
                                 </Grid2>
-                                <Stack sx={{marginTop: "8px"}} direction={"row"} flexDirection={"row-reverse"} >
-                                    <Button disabled={!overviewDirty} onClick={() => performUpdate()} sx={{border: "solid 1px lightgrey", borderRadius: "4px"}} >Update</Button>
-                                </Stack>
+                                <DetailSectionActionHandler
+                                    onDiscardClickedHandler={() => {
+                                        setTenantInput(initInput); 
+                                        setOverviewDirty(false);
+                                    }}
+                                    onUpdateClickedHandler={() => {
+                                        performUpdate();
+                                    }}
+                                    markDirty={overviewDirty}
+                                />
                             </Paper>
                         </Grid2>                        
                         

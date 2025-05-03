@@ -16,6 +16,7 @@ import { DEFAULT_BACKGROUND_COLOR, DEFAULT_TEXT_COLOR } from "@/utils/consts";
 import { ResponsiveBreakpoints, ResponsiveContext } from "../contexts/responsive-context";
 import { HexColorPicker } from "react-colorful";
 import DeleteForeverOutlinedIcon from '@mui/icons-material/DeleteForeverOutlined';
+import DetailSectionActionHandler from "../layout/detail-section-action-handler";
 
 export interface TenantLookAndFeelProps {
     tenantId: string,
@@ -251,24 +252,18 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
                     </Grid2>
                 </Grid2>
             </Grid2>
-            <Stack sx={{ marginTop: "8px" }} direction={"row"} flexDirection={"row-reverse"} >                
-                <Button
-                    disabled={!markDirty}
-                    onClick={() => { onUpdateStart(); mutateTenantLookAndFeel() }}
-                    sx={{ border: "solid 1px lightgrey", borderRadius: "4px" }} >Update
-                </Button>
-                
-                    <Button 
-                        sx={{marginRight: "8px"}}
-                        onClick={() => {
-                            setTenantLookAndFeelInput({...revertToInput as TenantLookAndFeelInput});
-                            setRevertToInput({...revertToInput as TenantLookAndFeelInput});
-                            setMarkDirty(false);
-                        }}
-                        disabled={!markDirty}
-                    >Revert Changes</Button>
-                
-            </Stack>        
+            <DetailSectionActionHandler
+                onDiscardClickedHandler={() => {   
+                    setTenantLookAndFeelInput({...revertToInput as TenantLookAndFeelInput});
+                    setRevertToInput({...revertToInput as TenantLookAndFeelInput});
+                    setMarkDirty(false);
+                }}
+                onUpdateClickedHandler={() => {
+                    onUpdateStart(); 
+                    mutateTenantLookAndFeel();
+                }}
+                markDirty={markDirty}
+            />       
         </>
     )
 

@@ -18,6 +18,7 @@ import { SIGNING_KEY_DETAIL_QUERY } from "@/graphql/queries/oidc-queries";
 import { formatISODateFromMs } from "@/utils/date-utils";
 import { useClipboardCopyContext } from "../contexts/clipboard-copy-context";
 import SecretViewerDialog from "../dialogs/secret-viewer-dialog";
+import DetailSectionActionHandler from "../layout/detail-section-action-handler";
 
 export interface SigningKeyDetailProps {
     signingKey: SigningKey
@@ -210,26 +211,16 @@ const SigningKeyDetail: React.FC<SigningKeyDetailProps> = ({ signingKey }) => {
                                         </Grid2>                                       
                                     </Grid2>
                                 </Grid2>
-                                <Stack sx={{marginTop: "8px"}} direction={"row"} flexDirection={"row-reverse"} >
-                                    
-                                    <Button 
-                                        sx={{border: "solid 1px lightgrey", borderRadius: "4px"}} 
-                                        disabled={!markDirty}
-                                        onClick={() => handleUpdate()}
-                                    >
-                                        Update
-                                    </Button>
-                                    <Button 
-                                        sx={{marginRight: "8px"}}
-                                        onClick={() => {
-                                            setKeyUpdateInput(initInput);
-                                            setMarkDirty(false);
-                                        }}
-                                        disabled={!markDirty}
-                                    >
-                                        Undo
-                                    </Button>
-                                </Stack>
+                                <DetailSectionActionHandler
+                                    onDiscardClickedHandler={() => {
+                                        setKeyUpdateInput(initInput);
+                                        setMarkDirty(false);
+                                    }}
+                                    onUpdateClickedHandler={() => {
+                                        handleUpdate();
+                                    }}
+                                    markDirty={markDirty}
+                                />                                
                             </Paper>
                         </Grid2>
                         <Grid2 size={12}>

@@ -1,5 +1,5 @@
 "use client";
-import { Scope } from "@/graphql/generated/graphql-types";
+import { Scope, ScopeUpdateInput } from "@/graphql/generated/graphql-types";
 import React, { useContext } from "react";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
 import { SCOPE_USE_DISPLAY, SCOPE_USE_IAM_MANAGEMENT, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
@@ -26,6 +26,14 @@ import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
 import StraightenIcon from '@mui/icons-material/Straighten';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import { useClipboardCopyContext } from "../contexts/clipboard-copy-context";
+import DetailSectionActionHandler from "../layout/detail-section-action-handler";
+import Backdrop from "@mui/material/Backdrop";
+import CircularProgress from "@mui/material/CircularProgress";
+import Snackbar from "@mui/material/Snackbar";
+import Alert from "@mui/material/Alert";
+import { SCOPE_UPDATE_MUTATION } from "@/graphql/mutations/oidc-mutations";
+import { useMutation } from "@apollo/client";
+import { SCOPE_DETAIL_QUERY } from "@/graphql/queries/oidc-queries";
 
 
 export interface ScopeDetailProps {
@@ -38,6 +46,36 @@ const ScopeDetail: React.FC<ScopeDetailProps> = ({ scope }) => {
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
     const { copyContentToClipboard } = useClipboardCopyContext();
 
+    const initInput: ScopeUpdateInput = {
+        scopeDescription: scope.scopeDescription,
+        scopeId: scope.scopeId,
+        scopeName: scope.scopeName
+    }
+
+    // STATE VARIABLES
+    const [scopeUpdateInput, setScopeUpdateInput] = React.useState<ScopeUpdateInput>(initInput);
+    const [markDirty, setMarkDirty] = React.useState<boolean>(false);
+    const [showMutationBackdrop, setShowMutationBackdrop] = React.useState<boolean>(false);
+    const [showMutationSnackbar, setShowMutationSnackbar] = React.useState<boolean>(false);
+    const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
+
+
+    // GRAPHQL FUNCTIONS
+    const [updateScopeMutation] = useMutation(SCOPE_UPDATE_MUTATION, {
+        variables: {
+            scopeInput: scopeUpdateInput
+        },
+        onCompleted() {
+            setShowMutationBackdrop(false);
+            setShowMutationSnackbar(true);
+            setMarkDirty(false);
+        },
+        onError(error) {
+            setShowMutationBackdrop(false);
+            setErrorMessage(error.message);
+        },
+        refetchQueries: [SCOPE_DETAIL_QUERY]
+    })
 
     const arrBreadcrumbs = [];
     arrBreadcrumbs.push({
@@ -70,12 +108,26 @@ const ScopeDetail: React.FC<ScopeDetailProps> = ({ scope }) => {
                             Overview
                         </Grid2>
                         <Grid2 size={12}>
+                            {errorMessage &&
+                                <Alert severity={"error"} onClose={() => setErrorMessage(null)}>{errorMessage}</Alert>
+                            }
                             <Paper sx={{ padding: "8px" }} elevation={1}>
                                 <Grid2 container size={12} spacing={2}>
                                     <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Name</div>
-                                            <TextField disabled={scope.scopeUse === SCOPE_USE_IAM_MANAGEMENT} name="scopeName" id="scopeName" value={scope.scopeName} fullWidth={true} size="small" />
+                                            <TextField disabled={scope.scopeUse === SCOPE_USE_IAM_MANAGEMENT} 
+                                                name="scopeName" 
+                                                id="scopeName" 
+                                                value={scopeUpdateInput.scopeName} 
+                                                fullWidth={true} 
+                                                size="small" 
+                                                onChange={(evt) => {
+                                                    scopeUpdateInput.scopeName = evt.target.value;
+                                                    setScopeUpdateInput({...scopeUpdateInput});
+                                                    setMarkDirty(true);
+                                                }}
+                                            />
                                         </Grid2>
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Description</div>
@@ -83,11 +135,16 @@ const ScopeDetail: React.FC<ScopeDetailProps> = ({ scope }) => {
                                                 disabled={scope.scopeUse === SCOPE_USE_IAM_MANAGEMENT}
                                                 name="scopeDescription"
                                                 id="scopeDescription"
-                                                value={scope.scopeDescription}
+                                                value={scopeUpdateInput.scopeDescription}
                                                 fullWidth={true}
                                                 size="small"
                                                 multiline={true}
                                                 rows={2}
+                                                onChange={(evt) => {
+                                                    scopeUpdateInput.scopeDescription = evt.target.value;
+                                                    setScopeUpdateInput({...scopeUpdateInput});
+                                                    setMarkDirty(true);
+                                                }}
                                             />
                                         </Grid2>
                                         <Grid2 marginBottom={"16px"}>
@@ -114,10 +171,18 @@ const ScopeDetail: React.FC<ScopeDetailProps> = ({ scope }) => {
                                         </Grid2>
                                     </Grid2>
                                 </Grid2>
-                                {/* TODO Show the button only when the scope is editable, which it will not be for IAM Management types of scope */}
-                                <Stack sx={{ marginTop: "8px" }} direction={"row"} flexDirection={"row-reverse"} >
-                                    <Button disabled={scope.scopeUse === SCOPE_USE_IAM_MANAGEMENT} sx={{ border: "solid 1px lightgrey", borderRadius: "4px"}} >Update</Button>
-                                </Stack>
+                                <DetailSectionActionHandler
+                                    onDiscardClickedHandler={() => {
+                                        setMarkDirty(false);
+                                        setScopeUpdateInput(initInput);
+                                    }}
+                                    onUpdateClickedHandler={() => {
+                                        setShowMutationBackdrop(true);
+                                        updateScopeMutation();
+                                    }}
+                                    markDirty={markDirty}
+                                    disableSubmit={scope.scopeUse === SCOPE_USE_IAM_MANAGEMENT}
+                                />
                             </Paper>
                         </Grid2>
                         <Grid2 size={12} marginBottom={"16px"}>
@@ -251,6 +316,25 @@ const ScopeDetail: React.FC<ScopeDetailProps> = ({ scope }) => {
                     </Grid2>
                 </DetailPageRightNavContainer>
             </DetailPageContainer>
+            <Backdrop
+                sx={{ color: '#fff'}}
+                open={showMutationBackdrop}
+                onClick={() => setShowMutationBackdrop(false)}
+            >
+                <CircularProgress color="info" />
+            </Backdrop>
+            <Snackbar
+                open={showMutationSnackbar}
+                autoHideDuration={4000}
+                onClose={() => setShowMutationSnackbar(false)}                
+                anchorOrigin={{horizontal: "center", vertical: "top"}}
+            >
+                <Alert sx={{fontSize: "1em"}}
+                    onClose={() => setShowMutationSnackbar(false)}
+                >
+                    Scope Updated
+                </Alert>
+            </Snackbar>
 
         </Typography>
 
