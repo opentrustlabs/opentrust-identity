@@ -34,19 +34,25 @@ class DBScopeDao extends ScopeDao {
 
     public async getScope(tenantId?: string): Promise<Array<Scope>> {
         const sequelize: Sequelize = await DBDriver.getConnection();
-        if(tenantId){
-            const queryParams: any = {};
+        if(tenantId){            
             const rels = await this.getTenantScopeRel(tenantId);
             const scopeIds = rels.map(r => r.scopeId);
             const resultList: Array<ScopeEntity> = await sequelize.models.scope.findAll({
                 where: {
                     scopeId: {[Op.in]: scopeIds}
-                }
+                },
+                order: [
+                    ["scopeName", "ASC"]
+                ]
             });
             return resultList.map(e => e.dataValues);
         }
         else{
-            const resultList: Array<ScopeEntity> = await sequelize.models.scope.findAll();
+            const resultList: Array<ScopeEntity> = await sequelize.models.scope.findAll({
+                order: [
+                    ["scopeName", "ASC"]
+                ]
+            });
             return resultList.map(e => e.dataValues);
         }
     }

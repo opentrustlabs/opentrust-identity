@@ -35,6 +35,7 @@ import ContactConfiguration from "../contacts/contact-configuration";
 import Link from "next/link";
 import { useClipboardCopyContext } from "../contexts/clipboard-copy-context";
 import DetailSectionActionHandler from "../layout/detail-section-action-handler";
+import TenantScopeConfiguration from "./tenant-scope-configuration";
 
 export interface TenantDetailProps {
     tenantId: string
@@ -515,28 +516,18 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                     </div>
                                 </AccordionSummary>
                                 <AccordionDetails>
-                                    <Typography component={"div"} fontWeight={"bold"} >
-                                        <Grid2 container size={12} spacing={1} marginBottom={"16px"} >
-                                            <Stack spacing={1} justifyContent={"space-between"} direction={"row"} fontWeight={"bold"} fontSize={"0.95em"} margin={"8px 0px 24px 0px"}>
-                                                <div style={{ display: "inline-flex", alignItems: "center" }}>
-                                                    <AddBoxIcon sx={{ marginRight: "8px", cursor: "pointer" }} />
-                                                    <span>Add Scope</span>
-                                                </div>
-                                            </Stack>
-                                        </Grid2>
-                                    </Typography>
-                                    <Divider></Divider>
-                                    {["Read Reports in QA", "Update Reports in QA", "Delete Reports in QA"].map(
-                                        (uri: string) => (
-                                            <Typography key={`${uri}`} component={"div"} fontSize={"0.9em"} fontWeight={"bold"}>
-                                                <Divider></Divider>
-                                                <Grid2 margin={"8px 0px 8px 0px"} container size={12} spacing={1}>
-                                                    <Grid2 size={11}><Link href={`/123412341234/authentication-groups/1234372987349`}>{uri}</Link></Grid2>
-                                                    <Grid2 size={1}><DeleteForeverOutlinedIcon /></Grid2>
-                                                </Grid2>
-                                            </Typography>
-                                        )
-                                    )}
+                                    <TenantScopeConfiguration 
+                                        tenantId={tenant.tenantId}
+                                        onUpdateEnd={(success: boolean) => {
+                                            setShowMutationBackdrop(false);
+                                            if(success){
+                                                setShowMutationSnackbar(true);
+                                            }
+                                        }}
+                                        onUpdateStart={() => {
+                                            setShowMutationBackdrop(true);                                            
+                                        }}
+                                    />
 
                                 </AccordionDetails>
                             </Accordion>

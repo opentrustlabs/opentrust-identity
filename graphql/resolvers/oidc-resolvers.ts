@@ -99,9 +99,9 @@ const resolvers: Resolvers = {
             const keysService: SigningKeysService = new SigningKeysService(oidcContext);
             return keysService.getSigningKeyById(signingKeyId);
         },
-        getScope: (_: any, __: any, oidcContext) => {
+        getScope: (_: any, { tenantId }, oidcContext) => {
             const scopeService: ScopeService = new ScopeService(oidcContext);
-            return scopeService.getScope();
+            return scopeService.getScope(tenantId || undefined);
         },
         getScopeById: (_: any, { scopeId }, oidcContext) => {
             const scopeService: ScopeService = new ScopeService(oidcContext);
