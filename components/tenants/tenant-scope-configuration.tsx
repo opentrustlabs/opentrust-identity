@@ -1,6 +1,6 @@
 "use client";
 import { ASSIGN_TENANT_FEDERATED_OIDC_PROVIDER_MUTATION, REMOVE_TENANT_FEDERATED_OIDC_PROVIDER_MUTATION } from "@/graphql/mutations/oidc-mutations";
-import { FEDERATED_OIDC_PROVIDERS_QUERY } from "@/graphql/queries/oidc-queries";
+import { FEDERATED_OIDC_PROVIDERS_QUERY, SCOPE_QUERY } from "@/graphql/queries/oidc-queries";
 import { useMutation, useQuery } from "@apollo/client";
 import React, { useContext } from "react";
 import DataLoading from "../layout/data-loading";
@@ -9,7 +9,7 @@ import Typography from "@mui/material/Typography";
 import Grid2 from "@mui/material/Grid2";
 import AddBoxIcon from '@mui/icons-material/AddBox';
 import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
-import { FederatedOidcProvider } from "@/graphql/generated/graphql-types";
+import { FederatedOidcProvider, Scope } from "@/graphql/generated/graphql-types";
 import { FEDERATED_OIDC_PROVIDER_TYPE_ENTERPRISE, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import Divider from "@mui/material/Divider";
 import { Alert, Button, Dialog, DialogActions, DialogContent, TablePagination } from "@mui/material";
@@ -17,13 +17,13 @@ import Link from "next/link";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
 import GeneralSelector from "../dialogs/general-selector";
 
-export interface TenantFederatedOIDCProviderConfigurationProps {
+export interface TenantScopeConfigurationProps {
     tenantId: string,
     onUpdateStart: () => void;
     onUpdateEnd: (success: boolean) => void;
 }
 
-const TenantFederatedOIDCProviderConfiguration: React.FC<TenantFederatedOIDCProviderConfigurationProps> = ({
+const TenantScopeConfiguration: React.FC<TenantScopeConfigurationProps> = ({
     tenantId,
     onUpdateEnd,
     onUpdateStart
@@ -34,57 +34,58 @@ const TenantFederatedOIDCProviderConfiguration: React.FC<TenantFederatedOIDCProv
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
 
     // STATE VARIABLES
-    const [selectedOIDCProviderToRemove, setSelectedOIDCProviderToRemove] = React.useState<{id: string, name: string} | null>(null);
+    const [selectedScopeToRemove, setSelectedScopeToRemove] = React.useState<{id: string, name: string} | null>(null);
     const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
     const [selectDialogOpen, setSelectDialogOpen] = React.useState(false);
     const [showRemoveConfirmationDialog, setShowRemoveConfirmationDialog] = React.useState(false);
     const [page, setPage] = React.useState<number>(1);
 
 
-    // GRAPHQL FUNCTIONS
-    const {data, loading, error, refetch} = useQuery(FEDERATED_OIDC_PROVIDERS_QUERY, {
+    // GRAPHQL 
+    const {data, loading, error, refetch} = useQuery(SCOPE_QUERY, {
         variables: {
             tenantId: tenantId
         }
     });
 
-    const [assignTenantFederatedOIDCProviderMutation] = useMutation(ASSIGN_TENANT_FEDERATED_OIDC_PROVIDER_MUTATION, {        
-        onCompleted() {
-            onUpdateEnd(true);
-            refetch();
+    // data.getScope
 
-        },
-        onError(error) {
-            onUpdateEnd(false);
-            setErrorMessage(error.message);
-        },
+    // const [assignTenantFederatedOIDCProviderMutation] = useMutation(ASSIGN_TENANT_FEDERATED_OIDC_PROVIDER_MUTATION, {        
+    //     onCompleted() {
+    //         onUpdateEnd(true);
+    //         refetch();
+
+    //     },
+    //     onError(error) {
+    //         onUpdateEnd(false);
+    //         setErrorMessage(error.message);
+    //     },
         
-    });
+    // });
 
-    const [removeTenantFederatedOIDCProviderMutation] = useMutation(REMOVE_TENANT_FEDERATED_OIDC_PROVIDER_MUTATION, {
-        variables: {
-            tenantId: tenantId,
-            federatedOIDCProviderId: selectedOIDCProviderToRemove?.id
-        },
-        onCompleted() {
-            onUpdateEnd(true);
-            refetch();
+    // const [removeTenantFederatedOIDCProviderMutation] = useMutation(REMOVE_TENANT_FEDERATED_OIDC_PROVIDER_MUTATION, {
+    //     variables: {
+    //         tenantId: tenantId,
+    //         federatedOIDCProviderId: selectedOIDCProviderToRemove?.id
+    //     },
+    //     onCompleted() {
+    //         onUpdateEnd(true);
+    //         refetch();
 
-        },
-        onError(error) {
-            onUpdateEnd(false);
-            setErrorMessage(error.message);
-        },
-    });
+    //     },
+    //     onError(error) {
+    //         onUpdateEnd(false);
+    //         setErrorMessage(error.message);
+    //     },
+    // });
 
     // HANDLER FUNCTIONS
     const handlePageChange = (_: React.MouseEvent<HTMLButtonElement> | null, page: number) => {
         setPage(page + 1);
     }
 
-
-    if (loading) return <DataLoading dataLoadingSize="lg" color={null} />
-    if (error) return <ErrorComponent message={error.message} componentSize='lg' />
+    if (loading) return <DataLoading dataLoadingSize="sm" color={null} />
+    if (error) return <ErrorComponent message={error.message} componentSize='sm' />
 
     if(data) return (
         <Typography component="div">
@@ -102,7 +103,7 @@ const TenantFederatedOIDCProviderConfiguration: React.FC<TenantFederatedOIDCProv
                 >
                     <DialogContent>
                         <Typography component="div">
-                            <span>Confirm removal of OIDC provider: </span><span style={{fontWeight: "bold"}}>{selectedOIDCProviderToRemove?.name || ""}</span>
+                            <span>Confirm removal of OIDC provider: </span><span style={{fontWeight: "bold"}}>{selectedScopeToRemove?.name || ""}</span>
                         </Typography>
                     </DialogContent>
                     <DialogActions>
@@ -110,7 +111,7 @@ const TenantFederatedOIDCProviderConfiguration: React.FC<TenantFederatedOIDCProv
                         <Button onClick={() => {
                             setShowRemoveConfirmationDialog(false);
                             onUpdateStart();
-                            removeTenantFederatedOIDCProviderMutation();
+                            //removeTenantFederatedOIDCProviderMutation();
                         }}>Confirm</Button>
                     </DialogActions>
 
@@ -153,12 +154,12 @@ const TenantFederatedOIDCProviderConfiguration: React.FC<TenantFederatedOIDCProv
                         onSelected={(oidcProviderId: string) => {
                             setSelectDialogOpen(false); 
                             onUpdateStart();
-                            assignTenantFederatedOIDCProviderMutation({
-                                variables: {
-                                    tenantId: tenantId,
-                                    federatedOIDCProviderId: oidcProviderId
-                                }
-                            }); 
+                            // assignTenantFederatedOIDCProviderMutation({
+                            //     variables: {
+                            //         tenantId: tenantId,
+                            //         federatedOIDCProviderId: oidcProviderId
+                            //     }
+                            // }); 
                         }}
                         selectorLabel="Select a provider"
                     />
@@ -170,43 +171,39 @@ const TenantFederatedOIDCProviderConfiguration: React.FC<TenantFederatedOIDCProv
                         sx={{cursor: "pointer"}}
                         onClick={() => setSelectDialogOpen(true)}
                     />
-                    <div style={{marginLeft: "8px", fontWeight: "bold"}}>Add OIDC Provider</div>
-                </Grid2>
-                
+                    <div style={{marginLeft: "8px", fontWeight: "bold"}}>Add Scope</div>
+                </Grid2>                
             </Grid2>
             <Divider />
-            {data.getFederatedOIDCProviders.length === 0 &&
+            {data.getScope.length === 0 &&
                 <Grid2 marginTop={"16px"}  spacing={2} container size={12} textAlign={"center"} >    
                     <Grid2 margin={"8px 0px 8px 0px"} textAlign={"center"} size={12} spacing={1}>
-                        No Federated OIDC Providers
+                        No scope assigned to tenant
                     </Grid2>
                 </Grid2>
             }
-            {data.getFederatedOIDCProviders.length > 0 &&
+            {data.getScope.length > 0 &&
                 <Grid2 marginTop={"16px"} spacing={1} container size={12}>
-                    {data.getFederatedOIDCProviders.map(
-                        (provider: FederatedOidcProvider) => (
-                            <React.Fragment key={provider.federatedOIDCProviderId}>                                
-                                <Grid2 size={8}>
+                    {data.getScope.slice((page - 1) * 10, page * 10).map(
+                        (scope: Scope) => (
+                            <React.Fragment key={scope.scopeId}>                                
+                                <Grid2 size={4}>
                                     <span style={{textDecoration: "underline"}}>
                                         {tenantBean.getTenantMetaData().tenant.tenantType === TENANT_TYPE_ROOT_TENANT &&
-                                            <Link href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/oidc-providers/${provider.federatedOIDCProviderId}`}>{provider.federatedOIDCProviderName}</Link>
+                                            <Link href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/scope-access-control/${scope.scopeId}`}>{scope.scopeName}</Link>
                                         }
                                         {tenantBean.getTenantMetaData().tenant.tenantType !== TENANT_TYPE_ROOT_TENANT &&
-                                            <>{provider.federatedOIDCProviderName}</>
+                                            <>{scope.scopeName}</>
                                         }
                                     </span>
                                 </Grid2>
-                                <Grid2 size={3}>
-                                    {provider.federatedOIDCProviderType === FEDERATED_OIDC_PROVIDER_TYPE_ENTERPRISE ?
-                                        "Enterprise" :
-                                        "Social"                                    
-                                    }
+                                <Grid2 size={7}>
+                                    {scope.scopeDescription}
                                 </Grid2>
                                 <Grid2 size={1}>
                                     <RemoveCircleOutlineIcon
                                         sx={{cursor: "pointer"}}
-                                        onClick={() => {setSelectedOIDCProviderToRemove({id:provider.federatedOIDCProviderId, name: provider.federatedOIDCProviderName}); setShowRemoveConfirmationDialog(true);}}
+                                        onClick={() => {setSelectedScopeToRemove({id: scope.scopeId, name: scope.scopeName}); setShowRemoveConfirmationDialog(true);}}
                                     />
                                 </Grid2>
                                 <Grid2 size={12}><Divider /></Grid2>
@@ -219,14 +216,15 @@ const TenantFederatedOIDCProviderConfiguration: React.FC<TenantFederatedOIDCProv
                 component={"div"}
                 page={page - 1}
                 rowsPerPage={10}
-                count={data.getFederatedOIDCProviders.length}
+                count={data.getScope.length}
                 onPageChange={handlePageChange}
                 rowsPerPageOptions={[]}
             />
+
         </Typography>
     )
 }
 
 
 
-export default TenantFederatedOIDCProviderConfiguration;
+export default TenantScopeConfiguration;
