@@ -71,9 +71,9 @@ const resolvers: Resolvers = {
             const tenantService: TenantService = new TenantService(oidcContext);
             return tenantService.getRootTenant();
         },
-        getTenants: (_, { tenantIds, federatedOIDCProviderId }, oidcContext) => {
+        getTenants: (_, { tenantIds, federatedOIDCProviderId, scopeId }, oidcContext) => {
             const tenantService: TenantService = new TenantService(oidcContext);
-            return tenantService.getTenants(tenantIds || undefined, federatedOIDCProviderId || undefined);
+            return tenantService.getTenants(tenantIds || undefined, federatedOIDCProviderId || undefined, scopeId || undefined);
         },
         getTenantById: (_: any, { tenantId }, oidcContext: any ) => {
             const tenantService: TenantService = new TenantService(oidcContext);

@@ -67,6 +67,9 @@ const RateLimitTenantRelConfiguration: React.FC<RateLimitTenantRelConfigurationP
             setArr(data.getRateLimitTenantRelViews);
             setFilteredArr(data.getRateLimitTenantRelViews);
         },
+        fetchPolicy: "no-cache",
+        nextFetchPolicy: "no-cache",
+        notifyOnNetworkStatusChange: true
     });
 
 
@@ -446,14 +449,6 @@ const RateLimitTenantRelConfiguration: React.FC<RateLimitTenantRelConfigurationP
                         onPageChange={handlePageChange}
                         rowsPerPageOptions={[]}
                     />
-                    {/* <TablePagination
-                        component={"div"}
-                        page={page - 1}
-                        rowsPerPage={perPage}
-                        count={data.getRateLimitTenantRelViews.length}
-                        onPageChange={handlePageChange}
-                        rowsPerPageOptions={[]}
-                    /> */}
                 </>
             }
         </Typography>
@@ -521,34 +516,31 @@ const TenatRateLimitConfiguration: React.FC<TenatRateLimitConfigurationProps> = 
                     </Grid2>
                     <Grid2 marginBottom={"8px"} size={9} fontWeight={"bold"}>
                         <span>{tenantDetailData.getTenantById.tenantName} </span>
-                    </Grid2>
-                    
-                        <>
-                            <Grid2 marginBottom={"0px"} sx={{ textDecoration: "underline" }} size={3} >
-                                <span>Total limit:</span>
-                            </Grid2>
-                            <Grid2 marginBottom={"0px"} size={9} >
-                                {tenantDetailData.getTenantById.allowUnlimitedRate &&
-                                    <span>Unlimited</span>    
-                                }
-                                {!tenantDetailData.getTenantById.allowUnlimitedRate &&
-                                    <span>{tenantDetailData.getTenantById.defaultRateLimit}</span>
-                                }                                
-                            </Grid2>
-                            {data && data.getRateLimitTenantRels &&
-                                <>
-                                    <Grid2 marginBottom={"16px"} sx={{ textDecoration: "underline" }} size={3} >
-                                        <span>Used:</span>
-                                    </Grid2>
-                                    <Grid2 marginBottom={"16px"} size={9} >
-                                        <span>{getTotalUsed(data.getRateLimitTenantRels)}</span>
-                                    </Grid2>
-                                </>
-
+                    </Grid2>                    
+                    <>
+                        <Grid2 marginBottom={"0px"} sx={{ textDecoration: "underline" }} size={3} >
+                            <span>Total limit:</span>
+                        </Grid2>
+                        <Grid2 marginBottom={"0px"} size={9} >
+                            {tenantDetailData.getTenantById.allowUnlimitedRate &&
+                                <span>Unlimited</span>    
                             }
-                        </>
-                    
+                            {!tenantDetailData.getTenantById.allowUnlimitedRate &&
+                                <span>{tenantDetailData.getTenantById.defaultRateLimit}</span>
+                            }                                
+                        </Grid2>
+                        {data && data.getRateLimitTenantRels &&
+                            <>
+                                <Grid2 marginBottom={"16px"} sx={{ textDecoration: "underline" }} size={3} >
+                                    <span>Used:</span>
+                                </Grid2>
+                                <Grid2 marginBottom={"16px"} size={9} >
+                                    <span>{getTotalUsed(data.getRateLimitTenantRels)}</span>
+                                </Grid2>
+                            </>
 
+                        }
+                    </>
                     <Grid2 size={11}>Allow unlimited</Grid2>
                     <Grid2 size={1}>
                         <Checkbox

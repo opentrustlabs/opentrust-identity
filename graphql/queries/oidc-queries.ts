@@ -1,8 +1,8 @@
 import { gql } from "@apollo/client";
 
 export const TENANTS_QUERY = gql(`
-    query getTenants($tenantIds: [String!], $federatedOIDCProviderId: String) {
-        getTenants(tenantIds: $tenantIds, federatedOIDCProviderId: $federatedOIDCProviderId) {
+    query getTenants($tenantIds: [String!], $federatedOIDCProviderId: String, $scopeId: String) {
+        getTenants(tenantIds: $tenantIds, federatedOIDCProviderId: $federatedOIDCProviderId, scopeId: $scopeId) {
             tenantId
             tenantName
             tenantDescription
