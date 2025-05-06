@@ -10,7 +10,7 @@ type Query {
 
     ## Tenants
     getRootTenant: Tenant!
-    getTenants(tenantIds: [String!], federatedOIDCProviderId: String): [Tenant!]!
+    getTenants(tenantIds: [String!], federatedOIDCProviderId: String, scopeId: String): [Tenant!]!
     getTenantById(tenantId: String!): Tenant
     getTenantMetaData(tenantId: String!): TenantMetaData
     getDomainsForTenantManagement(tenantId: String!): [TenantManagementDomainRel!]!

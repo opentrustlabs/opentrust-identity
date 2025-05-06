@@ -50,6 +50,8 @@ const TenantSelector: React.FC<TenantSelectorProps> = ({
         skip: (filterTerm.length === 1 || filterTerm.length === 2)
     });
 
+    console.log("submit button text is: " + submitButtonText);
+
     // HANDLER FUNCTIONS
     const isExistingTenant = (tenantId: string): boolean => {
         if (!existingTenantIds) {
