@@ -518,6 +518,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                 <AccordionDetails>
                                     <TenantScopeConfiguration 
                                         tenantId={tenant.tenantId}
+                                        tenantType={tenant.tenantType}
                                         onUpdateEnd={(success: boolean) => {
                                             setShowMutationBackdrop(false);
                                             if(success){

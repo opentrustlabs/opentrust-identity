@@ -10,7 +10,7 @@ import Grid2 from "@mui/material/Grid2";
 import AddBoxIcon from '@mui/icons-material/AddBox';
 import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
 import { FederatedOidcProvider, Scope } from "@/graphql/generated/graphql-types";
-import { FEDERATED_OIDC_PROVIDER_TYPE_ENTERPRISE, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
+import { FEDERATED_OIDC_PROVIDER_TYPE_ENTERPRISE, SCOPE_USE_IAM_MANAGEMENT, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import Divider from "@mui/material/Divider";
 import { Alert, Button, Dialog, DialogActions, DialogContent, TablePagination } from "@mui/material";
 import Link from "next/link";
@@ -19,12 +19,14 @@ import GeneralSelector from "../dialogs/general-selector";
 
 export interface TenantScopeConfigurationProps {
     tenantId: string,
+    tenantType: string,
     onUpdateStart: () => void;
     onUpdateEnd: (success: boolean) => void;
 }
 
 const TenantScopeConfiguration: React.FC<TenantScopeConfigurationProps> = ({
     tenantId,
+    tenantType,
     onUpdateEnd,
     onUpdateStart
 }) => {
@@ -125,22 +127,22 @@ const TenantScopeConfiguration: React.FC<TenantScopeConfigurationProps> = ({
                     fullWidth={true}
                 >
                     <GeneralSelector 
-                        query={FEDERATED_OIDC_PROVIDERS_QUERY}
+                        query={SCOPE_QUERY}
                         queryVars={{}}
                         dataMapper={(d) => {
-                            const preExistingIds = data.getFederatedOIDCProviders.map( (provider: FederatedOidcProvider) => provider.federatedOIDCProviderId);                            
-                            if(d && d.getFederatedOIDCProviders){
-                                return d.getFederatedOIDCProviders
+                            const preExistingIds = data.getScope.map( (scope: Scope) => scope.scopeId);                            
+                            if(d && d.getScope){
+                                return d.getScope
                                 .filter(
-                                    (provider: FederatedOidcProvider) => {
-                                        return !preExistingIds.includes(provider.federatedOIDCProviderId)
+                                    (scope: Scope) => {
+                                        return !preExistingIds.includes(scope.scopeId)
                                     }
                                 )                                
                                 .map(
-                                    (provider: FederatedOidcProvider) => {
+                                    (scope: Scope) => {
                                         return {
-                                            id: provider.federatedOIDCProviderId,
-                                            label: provider.federatedOIDCProviderName
+                                            id: scope.scopeId,
+                                            label: scope.scopeName //`${scope.scopeName} (${scope.scopeDescription})`
                                         }
                                     }
                                 )
@@ -149,7 +151,7 @@ const TenantScopeConfiguration: React.FC<TenantScopeConfigurationProps> = ({
                                 return [];
                             }
                         }}
-                        helpText="Select a valid provider"
+                        helpText="Select a Scope"
                         onCancel={() => setSelectDialogOpen(false)}
                         onSelected={(oidcProviderId: string) => {
                             setSelectDialogOpen(false); 
@@ -201,10 +203,12 @@ const TenantScopeConfiguration: React.FC<TenantScopeConfigurationProps> = ({
                                     {scope.scopeDescription}
                                 </Grid2>
                                 <Grid2 size={1}>
-                                    <RemoveCircleOutlineIcon
-                                        sx={{cursor: "pointer"}}
-                                        onClick={() => {setSelectedScopeToRemove({id: scope.scopeId, name: scope.scopeName}); setShowRemoveConfirmationDialog(true);}}
-                                    />
+                                    { !(tenantType === TENANT_TYPE_ROOT_TENANT && scope.scopeUse === SCOPE_USE_IAM_MANAGEMENT) &&
+                                        <RemoveCircleOutlineIcon
+                                            sx={{cursor: "pointer"}}
+                                            onClick={() => {setSelectedScopeToRemove({id: scope.scopeId, name: scope.scopeName}); setShowRemoveConfirmationDialog(true);}}
+                                        />
+                                    }                                    
                                 </Grid2>
                                 <Grid2 size={12}><Divider /></Grid2>
                             </React.Fragment>
