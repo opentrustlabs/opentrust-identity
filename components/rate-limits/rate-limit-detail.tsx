@@ -22,6 +22,11 @@ import AccordionDetails from "@mui/material/AccordionDetails";
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import SettingsApplicationsIcon from '@mui/icons-material/SettingsApplications';
 import RateLimitTenantRelConfiguration from "./rate-limit-tenant-configuration";
+import { useClipboardCopyContext } from "../contexts/clipboard-copy-context";
+import DetailSectionActionHandler from "../layout/detail-section-action-handler";
+import { useMutation } from "@apollo/client";
+import { RATE_LIMIT_SERVICE_GROUP_UPDATE_MUTATION } from "@/graphql/mutations/oidc-mutations";
+import { RATE_LIMIT_BY_ID_QUERY } from "@/graphql/queries/oidc-queries";
 
 export interface RateLimitDetailProps {
     rateLimitDetail: RateLimitServiceGroup
@@ -33,6 +38,7 @@ const RateLimitDetail: React.FC<RateLimitDetailProps> = ({
 
     // CONTEXT VARIABLES
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
+    const { copyContentToClipboard } = useClipboardCopyContext();
 
     // STATE VARIABLES
     const initInput: RateLimitServiceGroupUpdateInput = {
@@ -46,6 +52,24 @@ const RateLimitDetail: React.FC<RateLimitDetailProps> = ({
     const [markDirty, setMarkDirty] = React.useState<boolean>(false);
     const [showMutationBackdrop, setShowMutationBackdrop] = React.useState<boolean>(false);
     const [showMutationSnackbar, setShowMutationSnackbar] = React.useState<boolean>(false);
+
+
+    // GRAPHQL FUNCTIONS
+    const [updateRateLimitServiceGroupMutation] = useMutation(RATE_LIMIT_SERVICE_GROUP_UPDATE_MUTATION, {
+        variables: {
+            rateLimitServiceGroupInput: serviceGroupInput
+        },
+        onCompleted() {
+            setShowMutationBackdrop(false);
+            setMarkDirty(false);
+            setShowMutationSnackbar(true);
+        }, 
+        onError(error) {
+            setShowMutationBackdrop(false);
+            setErrorMessage(error.message);
+        },
+        refetchQueries: [RATE_LIMIT_BY_ID_QUERY]
+    });
 
     const arrBreadcrumbs = [];
     arrBreadcrumbs.push({
@@ -94,10 +118,21 @@ const RateLimitDetail: React.FC<RateLimitDetailProps> = ({
                                             fullWidth={true}
                                             size="small" />
                                     </Grid2>
-                                    <Grid2 sx={{ textDecoration: "underline" }}>Object ID</Grid2>
-                                    <Grid2 container size={12} marginBottom={"16px"}>
-                                        <Grid2 alignContent={"center"} size={10}>{serviceGroupInput.servicegroupid}</Grid2>
-                                        <Grid2 size={2}><ContentCopyIcon /></Grid2>
+                                    <Grid2 marginBottom={"16px"}>
+                                        <div style={{textDecoration: "underline"}}>Object ID</div>
+                                        <Grid2 marginTop={"8px"} container display={"inline-flex"} size={12}>
+                                            <Grid2  size={11}>
+                                                {rateLimitDetail.servicegroupid}
+                                            </Grid2>
+                                            <Grid2 size={1}>
+                                                <ContentCopyIcon 
+                                                    sx={{cursor: "pointer"}}
+                                                    onClick={() => {
+                                                        copyContentToClipboard(rateLimitDetail.servicegroupid, "Service Group ID copied to clipboard");
+                                                    }}
+                                                />
+                                            </Grid2>
+                                        </Grid2>
                                     </Grid2>
                                 </Grid2>
                                 <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
@@ -115,28 +150,17 @@ const RateLimitDetail: React.FC<RateLimitDetailProps> = ({
                                     </Grid2>
                                 </Grid2>
                             </Grid2>
-                            <Stack sx={{ marginTop: "8px" }} direction={"row"} flexDirection={"row-reverse"} >
-                                <Button
-                                    disabled={!markDirty}
-                                    onClick={() => {
-                                        setShowMutationBackdrop(true);
-                                        //oidcProviderUpdateMutation();                                            
-                                    }}
-                                >
-                                    Update
-                                </Button>
-                                <Button
-                                    sx={{ marginRight: "8px" }}
-                                    onClick={() => {
-                                        //setOIDCProviderInput(initInput);
-                                        setMarkDirty(false);
-                                        //setChangeClientSecret(false);
-                                    }}
-                                    disabled={!markDirty}
-                                >
-                                    Undo Changes
-                                </Button>
-                            </Stack>
+                            <DetailSectionActionHandler
+                                onDiscardClickedHandler={() => {
+                                    setServiceGroupInput(initInput);
+                                    setMarkDirty(false);
+                                }}
+                                onUpdateClickedHandler={() => {
+                                    setShowMutationBackdrop(true);
+                                    updateRateLimitServiceGroupMutation();
+                                }}
+                                markDirty={markDirty}
+                            />
                         </Paper>
                     </Grid2>
                     <Grid2 size={12} marginBottom={"16px"}>
@@ -183,10 +207,15 @@ const RateLimitDetail: React.FC<RateLimitDetailProps> = ({
             <Snackbar
                 open={showMutationSnackbar}
                 autoHideDuration={4000}
-                onClose={() => setShowMutationSnackbar(false)}
-                message="Rate Limit Updated"
-                anchorOrigin={{ horizontal: "center", vertical: "top" }}
-            />
+                onClose={() => setShowMutationSnackbar(false)}                
+                anchorOrigin={{horizontal: "center", vertical: "top"}}
+            >
+                <Alert sx={{fontSize: "1em"}}
+                    onClose={() => setShowMutationSnackbar(false)}
+                >
+                    Rate Limit Updated
+                </Alert>
+            </Snackbar>	            
         </Typography >
     )
 }

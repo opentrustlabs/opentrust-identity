@@ -24,6 +24,9 @@ import { USER_DETAIL_QUERY } from "@/graphql/queries/oidc-queries";
 import UserTenantConfiguration from "./user-tenant-configuration";
 import UserAuthorizationGroupConfiguration from "./user-authorization-group-configuration";
 import UserAuthenticationGroupConfiguration from "./user-authentication-group-configuration";
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import { useClipboardCopyContext } from "../contexts/clipboard-copy-context";
+import DetailSectionActionHandler from "../layout/detail-section-action-handler";
 
 export interface UserDetailProps {
     user: User;
@@ -35,6 +38,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
 
     // CONTEXT VARIABLES
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
+    const { copyContentToClipboard } = useClipboardCopyContext();
 
     const initInput: UserUpdateInput = {
         domain: user.domain,
@@ -197,6 +201,22 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                             />
                                         </Grid2>
                                         <Grid2 marginBottom={"16px"}>
+                                            <div style={{textDecoration: "underline"}}>User ID</div>
+                                            <Grid2 marginTop={"8px"} container display={"inline-flex"} size={12}>
+                                                <Grid2  size={11}>
+                                                    {user.userId}
+                                                </Grid2>
+                                                <Grid2 size={1}>
+                                                    <ContentCopyIcon 
+                                                        sx={{cursor: "pointer"}}
+                                                        onClick={() => {
+                                                            copyContentToClipboard(user.userId, "User ID copied to clipboard");
+                                                        }}
+                                                    />
+                                                </Grid2>
+                                            </Grid2>
+                                        </Grid2>
+                                        <Grid2 marginBottom={"16px"}>
                                             <div>Name Order</div>
                                             <Select 
                                                 name="nameOrder"
@@ -245,10 +265,10 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                                     )
                                                 }                        
                                                 value={getDefaultLanguageCodeDef(userInput.preferredLanguageCode || "")}
-                                                onChange={ (_, value: any) => {                                  
-                                                    // tenantAnonymousUserConfigInput.defaultlangugecode = value ? value.id : "";
-                                                    // setTenantAnonymousUserConfigInput({ ...tenantAnonymousUserConfigInput });
+                                                onChange={ (_, value: any) => {
+                                                    userInput.preferredLanguageCode = value.id;
                                                     setMarkDirty(true);
+                                                    setUserInput({...userInput});
                                                 }}                        
                                             />
                                         </Grid2>
@@ -362,27 +382,17 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                         </Grid2>
                                     </Grid2>
                                 </Grid2>
-                                <Stack sx={{ marginTop: "8px" }} direction={"row"} flexDirection={"row-reverse"} >
-
-                                    <Button sx={{ border: "solid 1px lightgrey", borderRadius: "4px"}} 
-                                        disabled={!markDirty}
-                                        onClick={() => {
-                                            setShowMutationBackdrop(true);
-                                            updateUserMutation();
-                                        }}
-                                    >
-                                        Update
-                                    </Button>
-                                    <Button sx={{ border: "solid 1px lightgrey", borderRadius: "4px", marginRight: "8px"}} 
-                                        disabled={!markDirty}
-                                        onClick={() => {
-                                            setMarkDirty(false);
-                                            setUserInput(initInput);
-                                        }}
-                                    >
-                                        Undo
-                                    </Button>
-                                </Stack>
+                                <DetailSectionActionHandler
+                                    onDiscardClickedHandler={() => {
+                                        setMarkDirty(false);
+                                        setUserInput(initInput);
+                                    }}
+                                    onUpdateClickedHandler={() => {
+                                        setShowMutationBackdrop(true);
+                                        updateUserMutation();
+                                    }}
+                                    markDirty={markDirty}
+                                />
                             </Paper>
                         </Grid2>
 
@@ -485,11 +495,15 @@ const UserDetail: React.FC<UserDetailProps> = ({
             <Snackbar
                 open={showMutationSnackbar}
                 autoHideDuration={4000}
-                onClose={() => setShowMutationSnackbar(false)}
-                message="User Updated"
+                onClose={() => setShowMutationSnackbar(false)}                
                 anchorOrigin={{horizontal: "center", vertical: "top"}}
-            />
-
+            >
+                <Alert sx={{fontSize: "1em"}}
+                    onClose={() => setShowMutationSnackbar(false)}
+                >
+                    User Updated
+                </Alert>
+            </Snackbar>	            
         </Typography>
     )
 

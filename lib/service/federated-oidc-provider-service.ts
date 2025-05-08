@@ -8,10 +8,12 @@ import { FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL, FEDERATED_OIDC_PROVIDER_TYPES_DISP
 import { Client } from "@opensearch-project/opensearch";
 import { getOpenSearchClient } from "@/lib/data-sources/search";
 import { DaoFactory } from "../data-sources/dao-factory";
+import Kms from "../kms/kms";
 
 const searchClient: Client = getOpenSearchClient();
 const federatedOIDCProviderDao: FederatedOIDCProviderDao = DaoFactory.getInstance().getFederatedOIDCProvicerDao();
 const tenantDao = DaoFactory.getInstance().getTenantDao();
+const kms: Kms = DaoFactory.getInstance().getKms();
 
 class FederatedOIDCProviderService {
 
@@ -40,7 +42,15 @@ class FederatedOIDCProviderService {
             throw new GraphQLError(errorMessage);
         }
         
-        // TODO - Encrypt the secret value if it exists
+        if(federatedOIDCProvider.federatedOIDCProviderClientSecret && federatedOIDCProvider.federatedOIDCProviderClientSecret !== ""){
+            const encryptedSecret: string | null = await kms.encrypt(federatedOIDCProvider.federatedOIDCProviderClientSecret);
+            if(encryptedSecret === null){
+                throw new GraphQLError("ERROR_UNABLE_TO_ENCRYPT_OIDC_PROVIDER_CLIENT_SECRET");
+            }
+            else{
+                federatedOIDCProvider.federatedOIDCProviderClientSecret = encryptedSecret;
+            }
+        }
 
         federatedOIDCProvider.federatedOIDCProviderId = randomUUID().toString();
         await federatedOIDCProviderDao.createFederatedOidcProvider(federatedOIDCProvider);
@@ -71,12 +81,20 @@ class FederatedOIDCProviderService {
             throw new GraphQLError("ERROR_NO_FEDERATED_OIDC_PROVIDER_FOUND");
         }
         // If the user intended to update the client secret, then overwrite the existing secret. Otherwise, just use the
-        // existing secret.
-        // TODO - Encrypt the new secret value
+        // existing secret.                
         if(federatedOIDCProvider.federatedOIDCProviderClientSecret === null || federatedOIDCProvider.federatedOIDCProviderClientSecret === ""){
             if(existingProvider.federatedOIDCProviderClientSecret !== null && existingProvider.federatedOIDCProviderClientSecret !== ""){                
                 federatedOIDCProvider.federatedOIDCProviderClientSecret = existingProvider.federatedOIDCProviderClientSecret;
+            }   
+        }
+        else if(federatedOIDCProvider.federatedOIDCProviderClientSecret && federatedOIDCProvider.federatedOIDCProviderClientSecret !== ""){
+            const encryptedSecret: string | null = await kms.encrypt(federatedOIDCProvider.federatedOIDCProviderClientSecret);
+            if(encryptedSecret === null){
+                throw new GraphQLError("ERROR_UNABLE_TO_ENCRYPT_OIDC_PROVIDER_CLIENT_SECRET");
             }
+            else{
+                federatedOIDCProvider.federatedOIDCProviderClientSecret = encryptedSecret;
+            }            
         }
 
         // Since the both the provider type and the social provider values are write-once, 

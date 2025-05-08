@@ -20,7 +20,7 @@ abstract class ScopeDao {
     
         abstract deleteScope(scopeId: string): Promise<void>;
     
-        abstract getTenantAvailableScope(tenantId?: String): Promise<Array<TenantAvailableScope>>;
+        abstract getTenantAvailableScope(tenantId?: string, scopeId?: string): Promise<Array<TenantAvailableScope>>;
         
         abstract assignScopeToTenant(tenantId: string, scopeId: string, accessRuleId?: string): Promise<TenantAvailableScope>;
     

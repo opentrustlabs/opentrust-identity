@@ -329,7 +329,6 @@ const AuthorizationGroupsAssignDialog: React.FC<AuthorizationGroupAssignDialogPr
                 <Grid2 container size={12} spacing={1} marginBottom={"16px"} paddingTop={"8px"}>
                     <Grid2 size={12}>
                         <TextField
-                            autoFocus={true}
                             label={"Filter"}
                             fullWidth={true}
                             size={"small"}

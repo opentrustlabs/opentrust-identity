@@ -9,7 +9,7 @@ import Grid2 from "@mui/material/Grid2";
 import Alert from "@mui/material/Alert";
 import { ASSIGN_FEDERATED_OIDC_PROVIDER_TO_TENANT_MUTATION, REMOVE_FEDERATED_OIDC_PROVIDER_FROM_TENANT_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import Dialog from "@mui/material/Dialog";
-import { Button, DialogActions, DialogContent, Divider, TextField } from "@mui/material";
+import { Button, DialogActions, DialogContent, Divider, TablePagination, TextField } from "@mui/material";
 import AddBoxIcon from '@mui/icons-material/AddBox';
 import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
 import { Tenant } from "@/graphql/generated/graphql-types";
@@ -38,6 +38,7 @@ const FederatedOIDCProviderTenantConfiguration: React.FC<FederatedOIDCProviderTe
     const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
     const [showAddDialog, setShowAddDialog] = React.useState<boolean>(false);
     const [showRemoveDialog, setShowRemoveDialog] = React.useState<boolean>(false);
+    const [page, setPage] = React.useState<number>(1);
 
 
     // GRAPHQL FUNCTIONS
@@ -82,6 +83,11 @@ const FederatedOIDCProviderTenantConfiguration: React.FC<FederatedOIDCProviderTe
         },
         refetchQueries: [TENANTS_QUERY]
     });
+
+    // HANDLER FUNCTIONS
+    const handlePageChange = (_: React.MouseEvent<HTMLButtonElement> | null, page: number) => {
+        setPage(page + 1);
+    }
 
 
     if (loading) return <DataLoading dataLoadingSize="md" color={null} />
@@ -177,7 +183,7 @@ const FederatedOIDCProviderTenantConfiguration: React.FC<FederatedOIDCProviderTe
             }
             {data.getTenants.length > 0 &&
                 <Grid2 spacing={1} container size={12}>
-                    {data.getTenants.map(
+                    {data.getTenants.slice((page - 1) * 10, page * 10).map(                    
                         (tenant: Tenant) => (
                             <React.Fragment key={tenant.tenantId}>
                                 <Grid2 size={12}><Divider /></Grid2>
@@ -194,7 +200,15 @@ const FederatedOIDCProviderTenantConfiguration: React.FC<FederatedOIDCProviderTe
                         )
                     )}
                 </Grid2>
-            }   
+            }
+            <TablePagination
+                component={"div"}
+                page={page - 1}
+                rowsPerPage={10}
+                count={data.getTenants.length}
+                onPageChange={handlePageChange}
+                rowsPerPageOptions={[]}
+            />
 
         </Typography>
     )

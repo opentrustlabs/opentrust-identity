@@ -22,27 +22,6 @@ export const MIN_END_USER_TOKEN_TTL_SECONDS = 600; // 10 minutes
 //                  FILE-SYSTEM-BASED DAO CONSTANTS
 // 
 // ************************************************************************** //
-export const ROOT_TENANT_FILE = "root-tenant.json";
-export const TENANT_FILE = "tenants.json";
-export const TENANT_MANAGEMENT_DOMAIN_REL_FILE = "tenant-management-domain-rel.json";
-export const CLIENT_FILE = "clients.json";
-export const KEY_FILE = "keys.json";
-export const RATE_LIMIT_FILE = "rate-limits.json";
-export const TENANT_RATE_LIMIT_REL_FILE = "tenant-rate-limit-rel.json";
-export const SCOPE_FILE = "scope.json";
-export const TENANT_SCOPE_REL_FILE = "tenant-scope-rel.json";
-export const CLIENT_TENANT_SCOPE_REL_FILE = "client-tenant-scope-rel.json";
-export const AUTHENTICATION_GROUP_FILE = "authentication-groups.json";
-export const AUTHENTICATION_GROUP_CLIENT_REL_FILE = "authentication-groups-client-rel.json";
-export const GROUP_FILE = "groups.json";
-export const FEDERATED_OIDC_PROVIDER_FILE = "federated-oidc-provider.json";
-export const FEDERATED_OIDC_PROVIDER_TENANT_REL_FILE = "federated-oidc-provider-tenant-rel.json";
-export const FEDERATED_OIDC_PROVIDER_DOMAIN_REL_FILE = "federated-oidc-provider-domain-rel.json";
-export const PRE_AUTHENTICATION_STATE_FILE = "pre-authentication-state.json";
-export const AUTHORIZATION_CODE_DATA_FILE = "authorization-code-data.json";
-export const REFRESH_TOKEN_FILE = "refresh-token.json";
-export const FEDERATED_OIDC_AUTHORIZATION_REL_FILE = "federated-oidc-authorization-rel.json";
-export const CLIENT_AUTH_HISTORY_FILE = "client-auth-history.json";
 export const KMS_KEYS_FILE = "kms-keys.json"
 
 
@@ -105,7 +84,7 @@ export const SCOPE_NAME_PATTERN="[A-Z,a-z,0-9_-\.]"
 // General-purpose tenant.read scope. It is a short-hand way of saying a user
 // has read access to the entire tenant and all of the objects within, such 
 // as clients, keys, authn/z groups, etc.
-export const TENANT_READ_ALL_SCOPE="tenant.*.read";
+export const TENANT_READ_ALL_SCOPE="tenant.all.read";
 export const TENANT_CREATE_SCOPE="tenant.create";
 export const TENANT_UPDATE_SCOPE="tenant.update";
 export const TENANT_DELETE_SCOPE="tenant.delete";
@@ -117,6 +96,7 @@ export const CLIENT_DELETE_SCOPE="client.delete";
 export const CLIENT_READ_SCOPE="client.read";
 // A scope specific to reading the client secret
 export const CLIENT_SECRET_VIEW_SCOPE="client.secret.view";
+
 
 export const SCOPE_CREATE_SCOPE="scope.create";
 export const SCOPE_UPDATE_SCOPE="scope.update";
@@ -182,6 +162,10 @@ export const FEDERATED_OIDC_PROVIDER_DELETE_SCOPE="federatedoidcprovider.delete"
 export const FEDERATED_OIDC_PROVIDER_READ_SCOPE="federatedoidcprovider.read";
 export const FEDERATED_OIDC_PROVIDER_TENANT_ASSIGN_SCOPE="federatedoidcprovider.tenant.assign";
 export const FEDERATED_OIDC_PROVIDER_TENANT_REMOVE_SCOPE="federatedoidcprovider.tenant.remove";
+// A scope specific to reading the oidc provider client secret
+// or the passcode for the private key (if encrypted)
+export const FEDERATED_OIDC_PROVIDER_SECRET_VIEW_SCOPE="federatedoidcprovider.secret.view";
+
 
 export const SCOPE_USE_IAM_MANAGEMENT="IAM_MANAGEMENT";
 export const SCOPE_USE_APPLICATION_MANAGEMENT="APPLICATION_MANAGEMENT";
@@ -222,7 +206,7 @@ export const ALL_INTERNAL_SCOPE_NAMES = [
     // Users
     USER_CREATE_SCOPE, USER_UPDATE_SCOPE, USER_DELETE_SCOPE, USER_READ_SCOPE,
     // External OIDC providers
-    FEDERATED_OIDC_PROVIDER_CREATE_SCOPE, FEDERATED_OIDC_PROVIDER_UPDATE_SCOPE, FEDERATED_OIDC_PROVIDER_DELETE_SCOPE, FEDERATED_OIDC_PROVIDER_READ_SCOPE, FEDERATED_OIDC_PROVIDER_TENANT_ASSIGN_SCOPE, FEDERATED_OIDC_PROVIDER_TENANT_REMOVE_SCOPE
+    FEDERATED_OIDC_PROVIDER_CREATE_SCOPE, FEDERATED_OIDC_PROVIDER_UPDATE_SCOPE, FEDERATED_OIDC_PROVIDER_DELETE_SCOPE, FEDERATED_OIDC_PROVIDER_READ_SCOPE, FEDERATED_OIDC_PROVIDER_TENANT_ASSIGN_SCOPE, FEDERATED_OIDC_PROVIDER_TENANT_REMOVE_SCOPE, FEDERATED_OIDC_PROVIDER_SECRET_VIEW_SCOPE
 ];
 
 
@@ -240,7 +224,7 @@ export const ROOT_TENANT_EXCLUSIVE_INTERNAL_SCOPE_NAMES = [
     // Rate limits
     RATE_LIMIT_CREATE_SCOPE, RATE_LIMIT_UPDATE_SCOPE, RATE_LIMIT_DELETE_SCOPE, RATE_LIMIT_TENANT_ASSIGN_SCOPE, RATE_LIMIT_TENANT_REMOVE_SCOPE, RATE_LIMIT_TENANT_UPDATE_SCOPE,
     // External OIDC providers
-    FEDERATED_OIDC_PROVIDER_CREATE_SCOPE, FEDERATED_OIDC_PROVIDER_UPDATE_SCOPE, FEDERATED_OIDC_PROVIDER_DELETE_SCOPE, FEDERATED_OIDC_PROVIDER_TENANT_ASSIGN_SCOPE, FEDERATED_OIDC_PROVIDER_TENANT_REMOVE_SCOPE
+    FEDERATED_OIDC_PROVIDER_CREATE_SCOPE, FEDERATED_OIDC_PROVIDER_UPDATE_SCOPE, FEDERATED_OIDC_PROVIDER_DELETE_SCOPE, FEDERATED_OIDC_PROVIDER_TENANT_ASSIGN_SCOPE, FEDERATED_OIDC_PROVIDER_TENANT_REMOVE_SCOPE, FEDERATED_OIDC_PROVIDER_SECRET_VIEW_SCOPE
 ];
 
 // These are the scope values which can be used WITHIN a tenant. So actions such as 

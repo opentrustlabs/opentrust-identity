@@ -1,12 +1,12 @@
 "use client";
 import React, { useContext } from "react";
-import { Accordion, AccordionDetails, AccordionSummary, Alert, Backdrop, Button, Checkbox, CircularProgress, MenuItem, Paper, Select, Snackbar, Stack, TextField } from "@mui/material";
+import { Accordion, AccordionDetails, AccordionSummary, Alert, Backdrop, Button, Checkbox, CircularProgress, Fade, MenuItem, Paper, Select, Snackbar, Stack, TextField } from "@mui/material";
 import Grid2 from "@mui/material/Grid2";
 import Typography from "@mui/material/Typography";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
 import BreadcrumbComponent from "../breadcrumbs/breadcrumbs";
 import { CLIENT_TYPE_SERVICE_ACCOUNT_AND_USER_DELEGATED_PERMISSIONS, CLIENT_TYPE_SERVICE_ACCOUNT_ONLY, CLIENT_TYPE_USER_DELEGATED_PERMISSIONS_ONLY, CLIENT_TYPES_DISPLAY, DEFAULT_BACKGROUND_COLOR, DEFAULT_END_USER_TOKEN_TTL_SECONDS, DEFAULT_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS, MAX_END_USER_TOKEN_TTL_SECONDS, MAX_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS, MIN_END_USER_TOKEN_TTL_SECONDS, MIN_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
-import { Client, ClientUpdateInput } from "@/graphql/generated/graphql-types";
+import { Client, ClientUpdateInput, SecretObjectType } from "@/graphql/generated/graphql-types";
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import SyncIcon from '@mui/icons-material/Sync';
 import GroupIcon from '@mui/icons-material/Group';
@@ -18,15 +18,22 @@ import { useMutation } from "@apollo/client";
 import { CLIENT_UPDATE_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import ClientRedirectUriConfiguration from "./client-redirect-uri-configuration";
 import ClientAuthenticationGroupConfiguration from "./client-authentication-group-configuration";
+import { useClipboardCopyContext } from "../contexts/clipboard-copy-context";
+import SecretViewerDialog from "../dialogs/secret-viewer-dialog";
+import { CLIENT_DETAIL_QUERY } from "@/graphql/queries/oidc-queries";
+import DetailSectionActionHandler from "../layout/detail-section-action-handler";
 
 export interface ClientDetailProps {
     client: Client
 }
 const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
 
+    // CONTEXT OBJECTS
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
+    const { copyContentToClipboard } = useClipboardCopyContext();
 
 
+    // STATE VARIABLES
     const initInput: ClientUpdateInput = {
         clientId: client.clientId,
         clientName: client.clientName,
@@ -46,7 +53,9 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
     const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
     const [showMutationBackdrop, setShowMutationBackdrop] = React.useState<boolean>(false);
     const [showMutationSnackbar, setShowMutationSnackbar] = React.useState<boolean>(false);
+    const [secretDialogOpen, setSecretDialogOpen] = React.useState<boolean>(false);
 
+    // GRAPHQLQL FUNCTIONS
     const [clientUpdateMutation] = useMutation(CLIENT_UPDATE_MUTATION, {
         variables: {
             clientInput: clientUpdateInput
@@ -60,6 +69,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
             setErrorMessage(error.message);
             setShowMutationBackdrop(false);
         },
+        refetchQueries: [CLIENT_DETAIL_QUERY]
     })
 
     return (
@@ -128,7 +138,12 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                                     {client.clientId}
                                                 </Grid2>
                                                 <Grid2 size={1}>
-                                                    <ContentCopyIcon sx={{cursor: "pointer"}} />
+                                                    <ContentCopyIcon 
+                                                        sx={{cursor: "pointer"}}
+                                                        onClick={() => {
+                                                            copyContentToClipboard(client.clientId, "Client ID copied to clipboard");
+                                                        }}
+                                                    />
                                                 </Grid2>
                                             </Grid2>
                                         </Grid2>
@@ -146,7 +161,10 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                                         2.  onclick hander to retrieve the client secret. this handler should first
                                                             show a dialog indicating the the viewing of the secret will be logged
                                                     */}
-                                                    <VisibilityOutlinedIcon sx={{cursor: "pointer"}} />
+                                                    <VisibilityOutlinedIcon 
+                                                        sx={{cursor: "pointer"}} 
+                                                        onClick={() => setSecretDialogOpen(true)}
+                                                    />
                                                 </Grid2>
                                             </Grid2>
                                         </Grid2>
@@ -240,24 +258,17 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                         </Grid2>
                                     </Grid2>
                                 </Grid2>
-
-                                <Stack sx={{ marginTop: "8px" }} direction={"row"} flexDirection={"row-reverse"} >
-                                    
-                                    <Button  
-                                        onClick={() => {setShowMutationBackdrop(true); clientUpdateMutation(); }}
-                                        disabled={!markDirty} 
-                                        sx={{ border: "solid 1px lightgrey", borderRadius: "4px" }} 
-                                    >
-                                        Update
-                                    </Button>
-                                    
-                                        <Button
-                                            disabled={!markDirty}
-                                            sx={{marginRight: "8px"}}
-                                            onClick={() => {setClientUpdateInput(initInput); setMarkDirty(false); }}
-                                        >Cancel</Button>
-                                    
-                                </Stack>
+                                <DetailSectionActionHandler
+                                    onDiscardClickedHandler={() => {
+                                        setClientUpdateInput(initInput); 
+                                        setMarkDirty(false);
+                                    }}
+                                    onUpdateClickedHandler={() => {
+                                        setShowMutationBackdrop(true); 
+                                        clientUpdateMutation();
+                                    }}
+                                    markDirty={markDirty}
+                                />
                             </Paper>
                         </Grid2>
 
@@ -353,10 +364,23 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
             <Snackbar
                 open={showMutationSnackbar}
                 autoHideDuration={4000}
-                onClose={() => setShowMutationSnackbar(false)}
-                message="Client Updated"
+                onClose={() => setShowMutationSnackbar(false)}                
                 anchorOrigin={{horizontal: "center", vertical: "top"}}
-            />
+            >
+                <Alert sx={{fontSize: "1em"}}
+                    onClose={() => setShowMutationSnackbar(false)}
+                >
+                    Client Updated
+                </Alert>
+            </Snackbar>
+            {secretDialogOpen &&                    
+                <SecretViewerDialog 
+                    open={secretDialogOpen}
+                    onClose={() => setSecretDialogOpen(false)}
+                    objectId={client.clientId}
+                    secretObjectType={SecretObjectType.ClientSecret}                    
+                />
+            }                      
         </Typography >
     )
 }

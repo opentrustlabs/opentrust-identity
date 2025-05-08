@@ -18,6 +18,7 @@ import FaceIcon from '@mui/icons-material/Face';
 import InputIcon from '@mui/icons-material/Input';
 import PolicyIcon from '@mui/icons-material/Policy';
 import AddBoxIcon from '@mui/icons-material/AddBox';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import DisplaySettingsIcon from '@mui/icons-material/DisplaySettings';
 import AutoAwesomeMosaicIcon from '@mui/icons-material/AutoAwesomeMosaic';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -32,6 +33,9 @@ import TenantAuthenticationDomainConfiguration from "./tenant-authentication-dom
 import TenantFederatedOIDCProviderConfiguration from "./tenant-federated-oidc-provider-configuration";
 import ContactConfiguration from "../contacts/contact-configuration";
 import Link from "next/link";
+import { useClipboardCopyContext } from "../contexts/clipboard-copy-context";
+import DetailSectionActionHandler from "../layout/detail-section-action-handler";
+import TenantScopeConfiguration from "./tenant-scope-configuration";
 
 export interface TenantDetailProps {
     tenantId: string
@@ -39,6 +43,7 @@ export interface TenantDetailProps {
 const TenantDetail: React.FC<TenantDetailProps> = ({ tenantId }) => {
 
 
+    // GRAPHQL FUNCTIONS
     const { data, loading, error } = useQuery(
         TENANT_DETAIL_QUERY,
         {
@@ -112,6 +117,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
 
     // CONTEXT VARIABLES
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
+    const { copyContentToClipboard } = useClipboardCopyContext();
 
 
     // HANDLER FUNCTIONS
@@ -187,6 +193,22 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                                     <MenuItem value={TENANT_TYPE_SERVICES}>{TENANT_TYPES_DISPLAY.get(TENANT_TYPE_SERVICES)}</MenuItem>
                                                 </Select>
                                             }
+                                        </Grid2>
+                                        <Grid2 marginBottom={"16px"}>
+                                            <div style={{textDecoration: "underline"}}>Object ID</div>
+                                            <Grid2 marginTop={"8px"} container display={"inline-flex"} size={12}>
+                                                <Grid2  size={11}>
+                                                    {tenant.tenantId}
+                                                </Grid2>
+                                                <Grid2 size={1}>
+                                                    <ContentCopyIcon 
+                                                        sx={{cursor: "pointer"}}
+                                                        onClick={() => {
+                                                            copyContentToClipboard(tenant.tenantId, "Tenant ID copied to clipboard");
+                                                        }}
+                                                    />
+                                                </Grid2>
+                                            </Grid2>                                                                                        
                                         </Grid2>
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Federated OIDC Provider Constraint</div>
@@ -322,9 +344,16 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                         </Grid2>
                                     </Grid2>                                    
                                 </Grid2>
-                                <Stack sx={{marginTop: "8px"}} direction={"row"} flexDirection={"row-reverse"} >
-                                    <Button disabled={!overviewDirty} onClick={() => performUpdate()} sx={{border: "solid 1px lightgrey", borderRadius: "4px"}} >Update</Button>
-                                </Stack>
+                                <DetailSectionActionHandler
+                                    onDiscardClickedHandler={() => {
+                                        setTenantInput(initInput); 
+                                        setOverviewDirty(false);
+                                    }}
+                                    onUpdateClickedHandler={() => {
+                                        performUpdate();
+                                    }}
+                                    markDirty={overviewDirty}
+                                />
                             </Paper>
                         </Grid2>                        
                         
@@ -487,28 +516,19 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                     </div>
                                 </AccordionSummary>
                                 <AccordionDetails>
-                                    <Typography component={"div"} fontWeight={"bold"} >
-                                        <Grid2 container size={12} spacing={1} marginBottom={"16px"} >
-                                            <Stack spacing={1} justifyContent={"space-between"} direction={"row"} fontWeight={"bold"} fontSize={"0.95em"} margin={"8px 0px 24px 0px"}>
-                                                <div style={{ display: "inline-flex", alignItems: "center" }}>
-                                                    <AddBoxIcon sx={{ marginRight: "8px", cursor: "pointer" }} />
-                                                    <span>Add Scope</span>
-                                                </div>
-                                            </Stack>
-                                        </Grid2>
-                                    </Typography>
-                                    <Divider></Divider>
-                                    {["Read Reports in QA", "Update Reports in QA", "Delete Reports in QA"].map(
-                                        (uri: string) => (
-                                            <Typography key={`${uri}`} component={"div"} fontSize={"0.9em"} fontWeight={"bold"}>
-                                                <Divider></Divider>
-                                                <Grid2 margin={"8px 0px 8px 0px"} container size={12} spacing={1}>
-                                                    <Grid2 size={11}><Link href={`/123412341234/authentication-groups/1234372987349`}>{uri}</Link></Grid2>
-                                                    <Grid2 size={1}><DeleteForeverOutlinedIcon /></Grid2>
-                                                </Grid2>
-                                            </Typography>
-                                        )
-                                    )}
+                                    <TenantScopeConfiguration 
+                                        tenantId={tenant.tenantId}
+                                        tenantType={tenant.tenantType}
+                                        onUpdateEnd={(success: boolean) => {
+                                            setShowMutationBackdrop(false);
+                                            if(success){
+                                                setShowMutationSnackbar(true);
+                                            }
+                                        }}
+                                        onUpdateStart={() => {
+                                            setShowMutationBackdrop(true);                                            
+                                        }}
+                                    />
 
                                 </AccordionDetails>
                             </Accordion>
@@ -618,11 +638,15 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
             <Snackbar
                 open={showMutationSnackbar}
                 autoHideDuration={4000}
-                onClose={() => setShowMutationSnackbar(false)}
-                message="Tenant Updated"
+                onClose={() => setShowMutationSnackbar(false)}                
                 anchorOrigin={{horizontal: "center", vertical: "top"}}
-            />
-
+            >
+                <Alert sx={{fontSize: "1em"}}
+                    onClose={() => setShowMutationSnackbar(false)}
+                >
+                    Tenant Updated
+                </Alert>
+            </Snackbar>	
         </Typography >
     )
 }

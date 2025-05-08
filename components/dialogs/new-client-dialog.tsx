@@ -8,6 +8,8 @@ import React, { useContext } from "react";
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
 import { useRouter } from 'next/navigation';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import PriorityHighOutlinedIcon from '@mui/icons-material/PriorityHighOutlined';
+import { useClipboardCopyContext } from "../contexts/clipboard-copy-context";
 
 
 export interface NewClientDialogProps {
@@ -44,6 +46,7 @@ const NewClientDialog: React.FC<NewClientDialogProps> = ({
 
     // CONTEXT
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
+    const { copyContentToClipboard } = useClipboardCopyContext();
 
     // STATE VARIABLES    
     const [clientInput, setClientInput] = React.useState<ClientCreateInput>(initInput);
@@ -76,17 +79,22 @@ const NewClientDialog: React.FC<NewClientDialogProps> = ({
     return (
         <>
             {createdClient !== null &&
-                <DialogTitle>Client Successfully Created</DialogTitle>
+                <DialogTitle fontWeight={"bold"}>Client Successfully Created</DialogTitle>
             }
             {createdClient === null &&
-                <DialogTitle>New Client</DialogTitle>
+                <DialogTitle >New Client</DialogTitle>
             }
             <DialogContent>
                 <Typography component={"div"}>
                     {createdClient !== null &&
                         <Grid2 container size={12} spacing={1} marginBottom={"16px"} >
-                            <Grid2 fontWeight={"bold"} size={12}>
-                                (Copy the client id and client secret values to secure storage)
+                            <Grid2 container size={12}>
+                                <Grid2 size={0.5}>
+                                    <PriorityHighOutlinedIcon sx={{color: "red"}}/>
+                                </Grid2>
+                                <Grid2 size={11.5}>
+                                    Copy the client id and client secret values to secure storage
+                                </Grid2>
                             </Grid2>
                             <Grid2 size={12}>
                                 <div style={{ textDecoration: "underline" }}>Client ID</div>
@@ -96,18 +104,28 @@ const NewClientDialog: React.FC<NewClientDialogProps> = ({
                                     {createdClient.clientId}
                                 </Grid2>
                                 <Grid2 size={1}>
-                                    <ContentCopyIcon sx={{ cursor: "pointer" }} />
+                                    <ContentCopyIcon 
+                                        sx={{ cursor: "pointer" }} 
+                                        onClick={() => {
+                                            copyContentToClipboard(createdClient.clientId, "Client ID copied to clipboard");
+                                        }}    
+                                    />
                                 </Grid2>
                             </Grid2>
                             <Grid2 size={12} marginBottom={"8px"}>
-                                <div style={{ textDecoration: "underline" }}>Client Secret</div>
+                                <div style={{ textDecoration: "underline" }}>Client Secret (Base64 Encoded)</div>
                             </Grid2>
                             <Grid2 container display={"inline-flex"} size={12}>
                                 <Grid2 size={11}>
                                     {createdClient.clientSecret}
                                 </Grid2>
                                 <Grid2 size={1}>
-                                    <ContentCopyIcon sx={{ cursor: "pointer" }} />
+                                    <ContentCopyIcon 
+                                        sx={{ cursor: "pointer" }} 
+                                        onClick={() => {
+                                            copyContentToClipboard(createdClient.clientSecret, "Client secret copied to clipboard");
+                                        }} 
+                                    />
                                 </Grid2>
                             </Grid2>                            
                         </Grid2>

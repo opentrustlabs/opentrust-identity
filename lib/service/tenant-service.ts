@@ -1,4 +1,4 @@
-import { TenantAnonymousUserConfiguration, Contact, ObjectSearchResultItem, SearchResultType, Tenant, TenantLegacyUserMigrationConfig, TenantLookAndFeel, TenantManagementDomainRel, TenantMetaData, TenantPasswordConfig, TenantRestrictedAuthenticationDomainRel, FederatedOidcProviderTenantRel } from "@/graphql/generated/graphql-types";
+import { TenantAnonymousUserConfiguration, Contact, ObjectSearchResultItem, SearchResultType, Tenant, TenantLegacyUserMigrationConfig, TenantLookAndFeel, TenantManagementDomainRel, TenantMetaData, TenantPasswordConfig, TenantRestrictedAuthenticationDomainRel, FederatedOidcProviderTenantRel, TenantAvailableScope } from "@/graphql/generated/graphql-types";
 import { OIDCContext } from "@/graphql/graphql-context";
 import TenantDao from "@/lib/dao/tenant-dao";
 import { GraphQLError } from "graphql";
@@ -8,11 +8,12 @@ import { Client } from "@opensearch-project/opensearch";
 import { getOpenSearchClient } from "@/lib/data-sources/search";
 import FederatedOIDCProviderDao from "../dao/federated-oidc-provider-dao";
 import { DaoFactory } from "../data-sources/dao-factory";
+import ScopeDao from "../dao/scope-dao";
 
 const searchClient: Client = getOpenSearchClient();
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
 const federatedOIDCProviderDao: FederatedOIDCProviderDao = DaoFactory.getInstance().getFederatedOIDCProvicerDao();
-
+const scopeDao: ScopeDao = DaoFactory.getInstance().getScopeDao();
 
 class TenantService {
 
@@ -44,7 +45,7 @@ class TenantService {
         return Promise.resolve(tenant);
     }
         
-    public async getTenants(tenantIds?: Array<string>, federatedOIDCProviderId?: string): Promise<Array<Tenant>> {
+    public async getTenants(tenantIds?: Array<string>, federatedOIDCProviderId?: string, scopeId?: string): Promise<Array<Tenant>> {
 
         let tenantFilterIds: Array<string> | undefined = undefined;
 
@@ -54,6 +55,10 @@ class TenantService {
         }
         else if(tenantIds){
             tenantFilterIds = tenantIds;
+        }
+        else if(scopeId){
+            const s: Array<TenantAvailableScope> = await scopeDao.getTenantAvailableScope(undefined, scopeId);
+            tenantFilterIds = s.map((e: TenantAvailableScope) => e.tenantId);
         }
         return tenantDao.getTenants(tenantFilterIds);    
     }

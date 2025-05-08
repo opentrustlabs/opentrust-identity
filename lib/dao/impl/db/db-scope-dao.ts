@@ -7,9 +7,10 @@ import { Op, Sequelize } from "sequelize";
 
 class DBScopeDao extends ScopeDao {
 
-    public async getTenantAvailableScope(tenantId?: String): Promise<Array<TenantAvailableScope>> {
-        throw new Error("Method not implemented.");
+    public async getTenantAvailableScope(tenantId?: string, scopeId?: string): Promise<Array<TenantAvailableScope>> {
+        return this.getTenantScopeRel(tenantId, scopeId);
     }
+
     public async getClientScopeRels(clientId: string): Promise<Array<ClientScopeRel>> {
         throw new Error("Method not implemented.");
     }
@@ -34,19 +35,25 @@ class DBScopeDao extends ScopeDao {
 
     public async getScope(tenantId?: string): Promise<Array<Scope>> {
         const sequelize: Sequelize = await DBDriver.getConnection();
-        if(tenantId){
-            const queryParams: any = {};
+        if(tenantId){            
             const rels = await this.getTenantScopeRel(tenantId);
             const scopeIds = rels.map(r => r.scopeId);
             const resultList: Array<ScopeEntity> = await sequelize.models.scope.findAll({
                 where: {
                     scopeId: {[Op.in]: scopeIds}
-                }
+                },
+                order: [
+                    ["scopeName", "ASC"]
+                ]
             });
             return resultList.map(e => e.dataValues);
         }
         else{
-            const resultList: Array<ScopeEntity> = await sequelize.models.scope.findAll();
+            const resultList: Array<ScopeEntity> = await sequelize.models.scope.findAll({
+                order: [
+                    ["scopeName", "ASC"]
+                ]
+            });
             return resultList.map(e => e.dataValues);
         }
     }
@@ -92,19 +99,23 @@ class DBScopeDao extends ScopeDao {
         return Promise.resolve();
     }
 
-    public async getTenantScopeRel(tenantId?: string): Promise<Array<TenantAvailableScope>> {
+    protected async getTenantScopeRel(tenantId?: string, scopeId?: string): Promise<Array<TenantAvailableScope>> {
         const sequelize: Sequelize = await DBDriver.getConnection();
-        
+        const params: any = {};
         if(tenantId){
+            params.tenantId = tenantId;
+        }
+        if(scopeId){
+            params.scopeId = scopeId;
+        }
+        if(tenantId || scopeId){
             const entities: Array<TenantAvailableScopeEntity> = await sequelize.models.tenantAvailableScope.findAll({
-                where: {tenantId: tenantId}
+                where: params
             });
             return entities.map(e => e.dataValues);
         }
         else{
-            const entities: Array<TenantAvailableScopeEntity> = await sequelize.models.tenantAvailableScope.findAll({
-                
-            });
+            const entities: Array<TenantAvailableScopeEntity> = await sequelize.models.tenantAvailableScope.findAll();
             return entities.map(e => e.dataValues);
         }
     }

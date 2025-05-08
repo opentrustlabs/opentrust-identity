@@ -1,8 +1,8 @@
 import { gql } from "@apollo/client";
 
 export const TENANTS_QUERY = gql(`
-    query getTenants($tenantIds: [String!], $federatedOIDCProviderId: String) {
-        getTenants(tenantIds: $tenantIds, federatedOIDCProviderId: $federatedOIDCProviderId) {
+    query getTenants($tenantIds: [String!], $federatedOIDCProviderId: String, $scopeId: String) {
+        getTenants(tenantIds: $tenantIds, federatedOIDCProviderId: $federatedOIDCProviderId, scopeId: $scopeId) {
             tenantId
             tenantName
             tenantDescription
@@ -594,3 +594,8 @@ export const USER_AUTHORIZATION_GROUP_QUERY = gql(`
     }
 `);
 
+export const GET_SECRET_VALUE_QUERY = gql(`
+    query getSecretValue($objectId: String!, $objectType: SecretObjectType!){
+        getSecretValue(objectId: $objectId, objectType: $objectType)
+    }
+`);

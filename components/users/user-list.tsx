@@ -12,7 +12,7 @@ import UnfoldLessOutlinedIcon from '@mui/icons-material/UnfoldLessOutlined';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import CheckOutlinedIcon from '@mui/icons-material/CheckOutlined';
 import { ResultListProps } from "../layout/search-result-list-layout";
-
+import { useClipboardCopyContext } from "../contexts/clipboard-copy-context";
 
 const UserResultList: React.FC<ResultListProps> = ({
     searchResults
@@ -22,6 +22,7 @@ const UserResultList: React.FC<ResultListProps> = ({
     // CONTEXT HOOKS
     const c: ResponsiveBreakpoints = useContext(ResponsiveContext);
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
+    const { copyContentToClipboard } = useClipboardCopyContext();
 
     // STATE VARIABLES
     const [mapViewExpanded, setMapViewExpanded] = React.useState(new Map());
@@ -95,7 +96,14 @@ const UserResultList: React.FC<ResultListProps> = ({
                                         <Grid2 size={1}></Grid2>
                                         <Grid2 size={11} container>
                                             <Grid2 sx={{ textDecoration: "underline" }} size={12}>Object ID</Grid2>
-                                            <Grid2 size={12} display={"inline-flex"}><div style={{ marginRight: "8px" }}>{user.objectid}</div><ContentCopyIcon /></Grid2>
+                                            <Grid2 size={12} display={"inline-flex"}><div style={{ marginRight: "8px" }}>{user.objectid}</div>
+                                                <ContentCopyIcon 
+                                                    sx={{cursor: "pointer"}} 
+                                                    onClick={() => {
+                                                        copyContentToClipboard(user.objectid, "User ID copied to clipboard");
+                                                    }}
+                                                />
+                                            </Grid2>
                                         </Grid2>
                                     </Grid2>
                                 }
@@ -138,7 +146,14 @@ const UserResultList: React.FC<ResultListProps> = ({
                                         }
                                     </Grid2>
                                     <Grid2 size={3.5} display={"inline-flex"} columnGap={1} ><div>{user.objectid}</div></Grid2>
-                                    <Grid2 size={0.5} ><ContentCopyIcon /></Grid2>
+                                    <Grid2 size={0.5} >
+                                        <ContentCopyIcon 
+                                            sx={{cursor: "pointer"}} 
+                                            onClick={() => {
+                                                copyContentToClipboard(user.objectid, "User ID copied to clipboard");
+                                            }}
+                                        />
+                                    </Grid2>
                                 </Grid2>
                                                                
                             </Typography>

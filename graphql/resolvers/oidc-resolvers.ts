@@ -12,6 +12,7 @@ import ContactService from "@/lib/service/contact-service";
 import IdentitySerivce from "@/lib/service/identity-service";
 import RateLimitService from "@/lib/service/rate-limit-service";
 import { OIDCContext } from "../graphql-context";
+import ViewSecretService from "@/lib/service/view-secret-service";
 
 
 const resolvers: Resolvers = {
@@ -70,9 +71,9 @@ const resolvers: Resolvers = {
             const tenantService: TenantService = new TenantService(oidcContext);
             return tenantService.getRootTenant();
         },
-        getTenants: (_, { tenantIds, federatedOIDCProviderId }, oidcContext) => {
+        getTenants: (_, { tenantIds, federatedOIDCProviderId, scopeId }, oidcContext) => {
             const tenantService: TenantService = new TenantService(oidcContext);
-            return tenantService.getTenants(tenantIds || undefined, federatedOIDCProviderId || undefined);
+            return tenantService.getTenants(tenantIds || undefined, federatedOIDCProviderId || undefined, scopeId || undefined);
         },
         getTenantById: (_: any, { tenantId }, oidcContext: any ) => {
             const tenantService: TenantService = new TenantService(oidcContext);
@@ -98,9 +99,9 @@ const resolvers: Resolvers = {
             const keysService: SigningKeysService = new SigningKeysService(oidcContext);
             return keysService.getSigningKeyById(signingKeyId);
         },
-        getScope: (_: any, __: any, oidcContext) => {
+        getScope: (_: any, { tenantId }, oidcContext) => {
             const scopeService: ScopeService = new ScopeService(oidcContext);
-            return scopeService.getScope();
+            return scopeService.getScope(tenantId || undefined);
         },
         getScopeById: (_: any, { scopeId }, oidcContext) => {
             const scopeService: ScopeService = new ScopeService(oidcContext);
@@ -203,6 +204,11 @@ const resolvers: Resolvers = {
         getUserAuthorizationGroups: (_: any, { userId }, oidcContext) => {
             const service: GroupService = new GroupService(oidcContext);
             return service.getUserAuthorizationGroups(userId);
+        },
+        getSecretValue: async (_: any, { objectId, objectType }, oidcContext) => {
+            const service: ViewSecretService = new ViewSecretService(oidcContext);
+            const val: string | null | undefined = await service.viewSecret(objectId, objectType);
+            return val;
         }
     },
     Mutation: {
@@ -428,11 +434,11 @@ const resolvers: Resolvers = {
             await scopeService.deleteScope(scopeId);
             return scopeId;
         },
-        // assignScopeToTenant: async(_: any, { scopeId, tenantId, accessRuleId }, oidcContext) => {
-        //     const scopeService: ScopeService = new ScopeService(oidcContext);
-        //     const rel = await scopeService.assignScopeToTenant(tenantId, scopeId, accessRuleId || null);
-        //     return rel;
-        // },
+        assignScopeToTenant: async(_: any, { scopeId, tenantId, accessRuleId }, oidcContext) => {
+            const scopeService: ScopeService = new ScopeService(oidcContext);
+            const rel = await scopeService.assignScopeToTenant(tenantId, scopeId, accessRuleId || null);
+            return rel;
+        },
         removeScopeFromTenant: async(_: any, { scopeId, tenantId }, oidcContext ) => {
             const scopeService: ScopeService = new ScopeService(oidcContext);
             await scopeService.removeScopeFromTenant(tenantId, scopeId);

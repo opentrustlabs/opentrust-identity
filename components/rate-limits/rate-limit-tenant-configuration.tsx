@@ -1,6 +1,6 @@
 "use client";
 import React, { useContext } from "react";
-import { Tenant, TenantRateLimitRel, TenantRateLimitRelView } from "@/graphql/generated/graphql-types";
+import { TenantRateLimitRel, TenantRateLimitRelView } from "@/graphql/generated/graphql-types";
 import { TENANT_RATE_LIMIT_ASSIGN_MUTATION, TENANT_RATE_LIMIT_REMOVE_MUTATION, TENANT_RATE_LIMIT_UPDATE_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import { TENANT_DETAIL_QUERY, TENANT_RATE_LIMIT_REL_QUERY, TENANT_RATE_LIMIT_REL_VIEW_QUERY } from "@/graphql/queries/oidc-queries";
 import { useMutation, useQuery } from "@apollo/client";
@@ -17,11 +17,11 @@ import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import CheckOutlinedIcon from '@mui/icons-material/CheckOutlined';
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
-import { Checkbox, DialogTitle, InputAdornment, TablePagination, TextField } from "@mui/material";
+import { Checkbox, InputAdornment, TablePagination, TextField } from "@mui/material";
 import { ResponsiveBreakpoints, ResponsiveContext } from "../contexts/responsive-context";
 import TenantSelector from "../dialogs/tenant-selector";
 import { DEFAULT_RATE_LIMIT_PERIOD_MINUTES } from "@/utils/consts";
-import ErrorComponent from "../error/error-component";
+
 import Link from "next/link";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
 
@@ -43,33 +43,40 @@ const RateLimitTenantRelConfiguration: React.FC<RateLimitTenantRelConfigurationP
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
 
     // STATE VARIABLES
-    const perPage = 10;
+    
     const [page, setPage] = React.useState<number>(1);
-    const [filterTerm, setFilterTerm] = React.useState<string>("");
     const [showRemoveConfirmationDialog, setShowRemoveConfirmationDialog] = React.useState(false);
     const [tenantIdToAdd, setTenantIdToAdd] = React.useState<string | null>(null);
-    // const [tenantToAdd, setTenantToAdd] = React.useState<Tenant | null>(null);
     const [tenantToRemove, setTenantToRemove] = React.useState<{ id: string, name: string } | null>(null);
     const [tenantRateLimitRelToEdit, setTenantRateLimitRelToEdit] = React.useState<TenantRateLimitRelView | null>(null);
     const [showTenantEditDialogOpen, setShowTenantEditDialogOpen] = React.useState<boolean>(false);
     const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
     const [selectDialogOpen, setSelectDialogOpen] = React.useState(false);
     const [configureRateLimitDialogOpen, setConfigureRateLimitDialogOpen] = React.useState<boolean>(false);
+    const [arr, setArr] = React.useState<Array<TenantRateLimitRelView>>([]);
+    const [filteredArr, setFilteredArr] = React.useState<Array<TenantRateLimitRelView>>([]);
+    const [filterTerm, setFilterTerm] = React.useState<string>("");
+    
 
     // GRAPHQL FUNCTIONS
     const { data, loading, error } = useQuery(TENANT_RATE_LIMIT_REL_VIEW_QUERY, {
         variables: {
             rateLimitServiceGroupId: rateLimitServiceGroupId
-        }
+        },
+        onCompleted(data) {
+            setArr(data.getRateLimitTenantRelViews);
+            setFilteredArr(data.getRateLimitTenantRelViews);
+        },
+        fetchPolicy: "no-cache",
+        nextFetchPolicy: "no-cache",
+        notifyOnNetworkStatusChange: true
     });
 
 
-    //    mutation assignRateLimitToTenant($tenantId: String!, $serviceGroupId: String!, $allowUnlimited: Boolean, $limit: Int, $rateLimitPeriodMinutes: Int) {
     const [assignTenantToRateLimitGroupMutation] = useMutation(TENANT_RATE_LIMIT_ASSIGN_MUTATION, {
         onCompleted() {
             onUpdateEnd(true);
             setTenantIdToAdd(null);
-            // setTenantToAdd(null);
             setErrorMessage(null);
         },
         onError(error) {
@@ -112,6 +119,24 @@ const RateLimitTenantRelConfiguration: React.FC<RateLimitTenantRelConfigurationP
     // HANDLER FUNCTIONS
     const handlePageChange = (evt: any, page: number) => {
         setPage(page + 1);
+    }
+    const filterValues = (searchTerm: string) => {        
+        if(searchTerm.length < 3){            
+            setFilteredArr([...arr]);
+        }
+        else{            
+            const regExtTerm = searchTerm.replace(/[.+?^${}()|[\]\\]/g, '\\$&');
+            const regex = new RegExp(regExtTerm, "i");
+            const filteredVals = arr.filter(
+                (item: TenantRateLimitRelView) => {
+                    if(item.tenantName.match(regex)){
+                        return true;
+                    }
+                    return false;
+                }
+            );            
+            setFilteredArr(filteredVals);
+        }        
     }
 
     return (
@@ -172,11 +197,8 @@ const RateLimitTenantRelConfiguration: React.FC<RateLimitTenantRelConfigurationP
                         onCancel={() => {
                             setConfigureRateLimitDialogOpen(false);
                             setTenantIdToAdd(null);
-                            // setTenantToAdd(null);
                         }}                        
                     />
-                    
-
                 </Dialog>
             }
             {showTenantEditDialogOpen &&
@@ -247,12 +269,17 @@ const RateLimitTenantRelConfiguration: React.FC<RateLimitTenantRelConfigurationP
                     <div style={{ marginLeft: "8px", fontWeight: "bold" }}>Add Tenant</div>
                 </Grid2>
             </Grid2>
-            {/* <Grid2 marginBottom={"32px"} marginTop={"16px"} spacing={2} container size={12}>
+            <Grid2 marginBottom={"32px"} marginTop={"16px"} spacing={2} container size={12}>
                 <Grid2 size={12} display={"inline-flex"} alignItems="center" alignContent={"center"}>
                     <TextField
-                        name="filter"
-                        id="filter"
-                        onChange={(evt) => setFilterTerm(evt.target.value)}
+                        value={filterTerm}
+                        name="filterTenants"
+                        id="filterTenants"
+                        onChange={(evt) => {
+                            setFilterTerm(evt.target.value);
+                            filterValues(evt.target.value);
+
+                        }}
                         size="small"
                         placeholder="Filter Tenants"
                         slotProps={{
@@ -261,6 +288,10 @@ const RateLimitTenantRelConfiguration: React.FC<RateLimitTenantRelConfigurationP
                                     <InputAdornment position="end">
                                         <CloseOutlinedIcon
                                             sx={{ cursor: "pointer" }}
+                                            onClick={() =>{
+                                                setFilterTerm("");
+                                                setFilteredArr([...arr]);
+                                            }}
                                         />
                                     </InputAdornment>
                                 )
@@ -268,7 +299,7 @@ const RateLimitTenantRelConfiguration: React.FC<RateLimitTenantRelConfigurationP
                         }}
                     />
                 </Grid2>
-            </Grid2> */}
+            </Grid2>
 
             {loading &&
                 <Grid2 marginTop={"16px"} spacing={2} container size={12} textAlign={"center"} >
@@ -284,14 +315,14 @@ const RateLimitTenantRelConfiguration: React.FC<RateLimitTenantRelConfigurationP
                     </Grid2>
                 </Grid2>
             }
-            {data && data.getRateLimitTenantRelViews.length === 0 &&
+            {data && !loading && !error && filteredArr.length === 0 &&
                 <Grid2 marginTop={"16px"} spacing={2} container size={12} textAlign={"center"} >
                     <Grid2 margin={"8px 0px 8px 0px"} textAlign={"center"} size={12} spacing={1}>
                         No tenants to display
                     </Grid2>
                 </Grid2>
             }
-            {data && data.getRateLimitTenantRelViews.length > 0 &&
+            {data && !loading && !error && filteredArr.length > 0 &&
                 <>
                     {!breakPoints.isMedium &&
                         <>
@@ -305,7 +336,7 @@ const RateLimitTenantRelConfiguration: React.FC<RateLimitTenantRelConfigurationP
                             </Grid2>
                             <Divider />
                             <Grid2 marginTop={"16px"} spacing={1} container size={12}  >
-                                {data.getRateLimitTenantRelViews.map(
+                                {filteredArr.map(
                                     (item: TenantRateLimitRelView) => (
                                         <React.Fragment key={`${item.tenantId}`}>
                                             <Grid2 size={1}>
@@ -362,7 +393,7 @@ const RateLimitTenantRelConfiguration: React.FC<RateLimitTenantRelConfigurationP
                             </Grid2>
                             <Divider />
                             <Grid2 marginTop={"16px"} spacing={1} container size={12}  >
-                                {data.getRateLimitTenantRelViews.map(
+                                {filteredArr.map(
                                     (item: TenantRateLimitRelView) => (
                                         <React.Fragment key={`${item.tenantId}`}>
                                             <Grid2 size={2}>
@@ -410,14 +441,14 @@ const RateLimitTenantRelConfiguration: React.FC<RateLimitTenantRelConfigurationP
                             </Grid2>
                         </>
                     }
-                    {/* <TablePagination
+                    <TablePagination
                         component={"div"}
                         page={page - 1}
-                        rowsPerPage={perPage}
+                        rowsPerPage={10}
                         count={data.getRateLimitTenantRelViews.length}
                         onPageChange={handlePageChange}
                         rowsPerPageOptions={[]}
-                    /> */}
+                    />
                 </>
             }
         </Typography>
@@ -485,34 +516,31 @@ const TenatRateLimitConfiguration: React.FC<TenatRateLimitConfigurationProps> = 
                     </Grid2>
                     <Grid2 marginBottom={"8px"} size={9} fontWeight={"bold"}>
                         <span>{tenantDetailData.getTenantById.tenantName} </span>
-                    </Grid2>
-                    
-                        <>
-                            <Grid2 marginBottom={"0px"} sx={{ textDecoration: "underline" }} size={3} >
-                                <span>Total limit:</span>
-                            </Grid2>
-                            <Grid2 marginBottom={"0px"} size={9} >
-                                {tenantDetailData.getTenantById.allowUnlimitedRate &&
-                                    <span>Unlimited</span>    
-                                }
-                                {!tenantDetailData.getTenantById.allowUnlimitedRate &&
-                                    <span>{tenantDetailData.getTenantById.defaultRateLimit}</span>
-                                }                                
-                            </Grid2>
-                            {data && data.getRateLimitTenantRels &&
-                                <>
-                                    <Grid2 marginBottom={"16px"} sx={{ textDecoration: "underline" }} size={3} >
-                                        <span>Used:</span>
-                                    </Grid2>
-                                    <Grid2 marginBottom={"16px"} size={9} >
-                                        <span>{getTotalUsed(data.getRateLimitTenantRels)}</span>
-                                    </Grid2>
-                                </>
-
+                    </Grid2>                    
+                    <>
+                        <Grid2 marginBottom={"0px"} sx={{ textDecoration: "underline" }} size={3} >
+                            <span>Total limit:</span>
+                        </Grid2>
+                        <Grid2 marginBottom={"0px"} size={9} >
+                            {tenantDetailData.getTenantById.allowUnlimitedRate &&
+                                <span>Unlimited</span>    
                             }
-                        </>
-                    
+                            {!tenantDetailData.getTenantById.allowUnlimitedRate &&
+                                <span>{tenantDetailData.getTenantById.defaultRateLimit}</span>
+                            }                                
+                        </Grid2>
+                        {data && data.getRateLimitTenantRels &&
+                            <>
+                                <Grid2 marginBottom={"16px"} sx={{ textDecoration: "underline" }} size={3} >
+                                    <span>Used:</span>
+                                </Grid2>
+                                <Grid2 marginBottom={"16px"} size={9} >
+                                    <span>{getTotalUsed(data.getRateLimitTenantRels)}</span>
+                                </Grid2>
+                            </>
 
+                        }
+                    </>
                     <Grid2 size={11}>Allow unlimited</Grid2>
                     <Grid2 size={1}>
                         <Checkbox

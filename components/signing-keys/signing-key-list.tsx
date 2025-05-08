@@ -1,18 +1,9 @@
 "use client";
 import React, { useContext } from "react";
 import { ResponsiveBreakpoints, ResponsiveContext } from "../contexts/responsive-context";
-import { useQuery } from "@apollo/client";
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
-import ErrorComponent from "../error/error-component";
-import DataLoading from "../layout/data-loading";
-import { SIGNING_KEYS_QUERY } from "@/graphql/queries/oidc-queries";
-import { KEY_USE_DISPLAY, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
+import { KEY_USE_DISPLAY } from "@/utils/consts";
 import Typography from "@mui/material/Typography";
-import BreadcrumbComponent from "../breadcrumbs/breadcrumbs";
-import Stack from "@mui/material/Stack";
-import TextField from "@mui/material/TextField";
-import InputAdornment from "@mui/material/InputAdornment";
-import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
 import UnfoldLessOutlinedIcon from '@mui/icons-material/UnfoldLessOutlined';
 import UnfoldMoreOutlinedIcon from "@mui/icons-material/UnfoldMoreOutlined";
 import DeleteForeverOutlinedIcon from '@mui/icons-material/DeleteForeverOutlined';
@@ -21,9 +12,9 @@ import Divider from "@mui/material/Divider";
 import Grid2 from "@mui/material/Grid2";
 import Link from "next/link";
 import { ObjectSearchResultItem, SigningKey } from "@/graphql/generated/graphql-types";
-import { formatISODateFromMs } from "@/utils/date-utils";
-import { ResultListProps } from "../layout/search-result-list-layout";
 
+import { ResultListProps } from "../layout/search-result-list-layout";
+import { useClipboardCopyContext } from "../contexts/clipboard-copy-context";
 
 
 const SigningKeyList: React.FC<ResultListProps> = ({
@@ -36,7 +27,7 @@ const SigningKeyList: React.FC<ResultListProps> = ({
     // HOOKS
     const c: ResponsiveBreakpoints = useContext(ResponsiveContext);
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
-
+    const { copyContentToClipboard } = useClipboardCopyContext();
 
     // HANDLER FUNCTIONS
     const setExpanded = (section: string): void => {
@@ -108,7 +99,14 @@ const SigningKeyList: React.FC<ResultListProps> = ({
 
 
                                             <Grid2 sx={{ textDecoration: "underline" }} size={12}>Object ID</Grid2>
-                                            <Grid2 size={12} display={"inline-flex"}><div style={{ marginRight: "8px" }}>{item.objectid}</div><ContentCopyIcon /></Grid2>
+                                            <Grid2 size={12} display={"inline-flex"}><div style={{ marginRight: "8px" }}>{item.objectid}</div>
+                                                <ContentCopyIcon 
+                                                    sx={{cursor: "pointer"}}
+                                                    onClick={() => {
+                                                        copyContentToClipboard(item.objectid, "Key ID copied to clipboard");
+                                                    }}
+                                                />
+                                            </Grid2>
                                         </Grid2>
                                     </Grid2>
                                 }
@@ -141,7 +139,14 @@ const SigningKeyList: React.FC<ResultListProps> = ({
                                     <Grid2 size={2}>{KEY_USE_DISPLAY.get(item.description || "")}</Grid2>
                                     <Grid2 size={1}>{item.enabled === true ? "ACTIVE" : "REVOKED"}</Grid2>
                                     <Grid2 size={3}>{item.objectid}</Grid2>                                    
-                                    <Grid2 size={1}><ContentCopyIcon /></Grid2>
+                                    <Grid2 size={1}>
+                                        <ContentCopyIcon 
+                                            sx={{cursor: "pointer"}}
+                                            onClick={() => {
+                                                copyContentToClipboard(item.objectid, "Key ID copied to clipboard");
+                                            }}
+                                        />
+                                    </Grid2>
                                 </Grid2>
                             </Typography>
 

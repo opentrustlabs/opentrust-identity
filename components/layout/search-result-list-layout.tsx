@@ -157,8 +157,7 @@ const SearchResultListLayout: React.FC<SearchResultListProps> = ({
                                 size={"small"}
                                 name={"filter"}
                                 value={filterTerm}
-                                onChange={handleFilterTermChange}
-                                autoFocus={true}
+                                onChange={handleFilterTermChange}                                
                                 slotProps={{
                                     input: {
                                         endAdornment: (

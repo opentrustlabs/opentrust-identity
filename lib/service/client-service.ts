@@ -8,10 +8,12 @@ import { randomUUID } from 'crypto';
 import { CLIENT_SECRET_ENCODING, CLIENT_TYPES_DISPLAY, SEARCH_INDEX_OBJECT_SEARCH } from "@/utils/consts";
 import { getOpenSearchClient } from "@/lib/data-sources/search";
 import { DaoFactory } from "../data-sources/dao-factory";
+import Kms from "../kms/kms";
 
 const clientDao: ClientDao = DaoFactory.getInstance().getClientDao();
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
 const searchClient = getOpenSearchClient();
+const kms: Kms = DaoFactory.getInstance().getKms();
 
 class ClientService {
 
@@ -23,19 +25,20 @@ class ClientService {
 
 
     public async getClients(tenantId?: string): Promise<Array<Client>> {
-        return clientDao.getClients(tenantId);
-    }
-
-    public async getClientsByTenant(tenantId: string): Promise<Array<Client>> {
-        const allClients = await this.getClients();
-        const clients: Array<Client> = allClients.filter(
-            (client: Client) => client.tenantId === tenantId
+        return (await clientDao.getClients(tenantId)).map(
+            (client: Client) => {
+                client.clientSecret = "";
+                return client;
+            }
         );
-        return Promise.resolve(clients)
     }
+    
 
     public async getClientById(clientId: string): Promise<Client | null> {
-        const client = await clientDao.getClientById(clientId);        
+        const client = await clientDao.getClientById(clientId);  
+        if(client){
+            client.clientSecret = "";
+        }
         return client === undefined ? Promise.resolve(null) : Promise.resolve(client);
     }
 
@@ -47,9 +50,18 @@ class ClientService {
             })
         }
         client.clientId = randomUUID().toString();
-        client.clientSecret = generateRandomToken(32, CLIENT_SECRET_ENCODING);
+        const clientSecret = generateRandomToken(32, CLIENT_SECRET_ENCODING);
+        const encryptedClientSecret = await kms.encrypt(clientSecret);
+        if(encryptedClientSecret === null){
+            throw new GraphQLError("ERROR_UNABLE_TO_ENCRYPT_CLIENT_SECRET");
+        }        
+        client.clientSecret = encryptedClientSecret;
+
         await clientDao.createClient(client);
         await this.updateSearchIndex(client);
+        // Now we need to set the actual client secret back on the object that
+        // we are going to return so that the user can copy it somewhere.
+        client.clientSecret = clientSecret;
         return Promise.resolve(client);
     }
 
