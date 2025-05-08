@@ -1,5 +1,5 @@
 "use client";
-import { ASSIGN_TENANT_FEDERATED_OIDC_PROVIDER_MUTATION, REMOVE_TENANT_FEDERATED_OIDC_PROVIDER_MUTATION } from "@/graphql/mutations/oidc-mutations";
+import { TENANT_SCOPE_ASSIGN_MUTATION, TENANT_SCOPE_REMOVE_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import { SCOPE_QUERY } from "@/graphql/queries/oidc-queries";
 import { useMutation, useQuery } from "@apollo/client";
 import React, { useContext } from "react";
@@ -10,12 +10,13 @@ import Grid2 from "@mui/material/Grid2";
 import AddBoxIcon from '@mui/icons-material/AddBox';
 import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
 import { Scope } from "@/graphql/generated/graphql-types";
-import { SCOPE_USE_IAM_MANAGEMENT, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
+import { SCOPE_USE_DISPLAY, SCOPE_USE_IAM_MANAGEMENT, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import Divider from "@mui/material/Divider";
 import { Alert, Button, Dialog, DialogActions, DialogContent, TablePagination } from "@mui/material";
 import Link from "next/link";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
 import GeneralSelector from "../dialogs/general-selector";
+import { ResponsiveBreakpoints, ResponsiveContext } from "../contexts/responsive-context";
 
 export interface TenantScopeConfigurationProps {
     tenantId: string,
@@ -34,6 +35,7 @@ const TenantScopeConfiguration: React.FC<TenantScopeConfigurationProps> = ({
 
     // CONTEXT VARIABLES
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
+    const responseBreakPoints: ResponsiveBreakpoints = useContext(ResponsiveContext);
 
     // STATE VARIABLES
     const [selectedScopeToRemove, setSelectedScopeToRemove] = React.useState<{id: string, name: string} | null>(null);
@@ -44,42 +46,38 @@ const TenantScopeConfiguration: React.FC<TenantScopeConfigurationProps> = ({
 
 
     // GRAPHQL 
-    const {data, loading, error, refetch} = useQuery(SCOPE_QUERY, {
+    const {data, loading, error} = useQuery(SCOPE_QUERY, {
         variables: {
             tenantId: tenantId
         }
     });
 
-    // data.getScope
+    const [assignTenantToScopeMutation] = useMutation(TENANT_SCOPE_ASSIGN_MUTATION, {
+        onCompleted() {
+            onUpdateEnd(true);
+            setErrorMessage(null);
+        },
+        onError(error) {
+            setErrorMessage(error.message);
+        },
+        refetchQueries: [SCOPE_QUERY]
+    });
 
-    // const [assignTenantFederatedOIDCProviderMutation] = useMutation(ASSIGN_TENANT_FEDERATED_OIDC_PROVIDER_MUTATION, {        
-    //     onCompleted() {
-    //         onUpdateEnd(true);
-    //         refetch();
-
-    //     },
-    //     onError(error) {
-    //         onUpdateEnd(false);
-    //         setErrorMessage(error.message);
-    //     },
-        
-    // });
-
-    // const [removeTenantFederatedOIDCProviderMutation] = useMutation(REMOVE_TENANT_FEDERATED_OIDC_PROVIDER_MUTATION, {
-    //     variables: {
-    //         tenantId: tenantId,
-    //         federatedOIDCProviderId: selectedOIDCProviderToRemove?.id
-    //     },
-    //     onCompleted() {
-    //         onUpdateEnd(true);
-    //         refetch();
-
-    //     },
-    //     onError(error) {
-    //         onUpdateEnd(false);
-    //         setErrorMessage(error.message);
-    //     },
-    // });
+    const [removeTenantFromScopeMutation] = useMutation(TENANT_SCOPE_REMOVE_MUTATION, {
+        variables: {
+            scopeId: selectedScopeToRemove?.id,
+            tenantId: tenantId
+        },
+        onCompleted() {
+            onUpdateEnd(true);
+            setErrorMessage(null);
+        },
+        onError(error) {
+            onUpdateEnd(true);
+            setErrorMessage(error.message);
+        },
+        refetchQueries: [SCOPE_QUERY]
+    });
 
     // HANDLER FUNCTIONS
     const handlePageChange = (_: React.MouseEvent<HTMLButtonElement> | null, page: number) => {
@@ -113,7 +111,7 @@ const TenantScopeConfiguration: React.FC<TenantScopeConfigurationProps> = ({
                         <Button onClick={() => {
                             setShowRemoveConfirmationDialog(false);
                             onUpdateStart();
-                            //removeTenantFederatedOIDCProviderMutation();
+                            removeTenantFromScopeMutation();
                         }}>Confirm</Button>
                     </DialogActions>
 
@@ -142,7 +140,7 @@ const TenantScopeConfiguration: React.FC<TenantScopeConfigurationProps> = ({
                                     (scope: Scope) => {
                                         return {
                                             id: scope.scopeId,
-                                            label: scope.scopeName //`${scope.scopeName} (${scope.scopeDescription})`
+                                            label: scope.scopeName
                                         }
                                     }
                                 )
@@ -153,17 +151,17 @@ const TenantScopeConfiguration: React.FC<TenantScopeConfigurationProps> = ({
                         }}
                         helpText="Select a Scope"
                         onCancel={() => setSelectDialogOpen(false)}
-                        onSelected={(oidcProviderId: string) => {
+                        onSelected={(scopeId: string) => {
                             setSelectDialogOpen(false); 
                             onUpdateStart();
-                            // assignTenantFederatedOIDCProviderMutation({
-                            //     variables: {
-                            //         tenantId: tenantId,
-                            //         federatedOIDCProviderId: oidcProviderId
-                            //     }
-                            // }); 
+                            assignTenantToScopeMutation({
+                                variables: {
+                                    scopeId: scopeId,
+                                    tenantId: tenantId
+                                }
+                            });                            
                         }}
-                        selectorLabel="Select a provider"
+                        selectorLabel="Select a scope"
                     />
                 </Dialog>
             }
@@ -189,7 +187,7 @@ const TenantScopeConfiguration: React.FC<TenantScopeConfigurationProps> = ({
                     {data.getScope.slice((page - 1) * 10, page * 10).map(
                         (scope: Scope) => (
                             <React.Fragment key={scope.scopeId}>                                
-                                <Grid2 size={4}>
+                                <Grid2 size={responseBreakPoints.isMedium ? 11 : 3}>
                                     <span style={{textDecoration: "underline"}}>
                                         {tenantBean.getTenantMetaData().tenant.tenantType === TENANT_TYPE_ROOT_TENANT &&
                                             <Link href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/scope-access-control/${scope.scopeId}`}>{scope.scopeName}</Link>
@@ -199,9 +197,17 @@ const TenantScopeConfiguration: React.FC<TenantScopeConfigurationProps> = ({
                                         }
                                     </span>
                                 </Grid2>
-                                <Grid2 size={7}>
-                                    {scope.scopeDescription}
-                                </Grid2>
+                                {!responseBreakPoints.isMedium &&
+                                    <Grid2 size={4.5}>
+                                        {scope.scopeDescription}
+                                    </Grid2>
+                                }
+                                {!responseBreakPoints.isMedium &&
+                                    <Grid2 size={3.5}>
+                                        {SCOPE_USE_DISPLAY.get(scope.scopeUse)}
+                                    </Grid2>
+                                }
+                                
                                 <Grid2 size={1}>
                                     { !(tenantType === TENANT_TYPE_ROOT_TENANT && scope.scopeUse === SCOPE_USE_IAM_MANAGEMENT) &&
                                         <RemoveCircleOutlineIcon
