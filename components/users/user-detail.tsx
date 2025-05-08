@@ -265,10 +265,10 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                                     )
                                                 }                        
                                                 value={getDefaultLanguageCodeDef(userInput.preferredLanguageCode || "")}
-                                                onChange={ (_, value: any) => {                                  
-                                                    // tenantAnonymousUserConfigInput.defaultlangugecode = value ? value.id : "";
-                                                    // setTenantAnonymousUserConfigInput({ ...tenantAnonymousUserConfigInput });
+                                                onChange={ (_, value: any) => {
+                                                    userInput.preferredLanguageCode = value.id;
                                                     setMarkDirty(true);
+                                                    setUserInput({...userInput});
                                                 }}                        
                                             />
                                         </Grid2>
