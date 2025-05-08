@@ -24,6 +24,9 @@ import SettingsApplicationsIcon from '@mui/icons-material/SettingsApplications';
 import RateLimitTenantRelConfiguration from "./rate-limit-tenant-configuration";
 import { useClipboardCopyContext } from "../contexts/clipboard-copy-context";
 import DetailSectionActionHandler from "../layout/detail-section-action-handler";
+import { useMutation } from "@apollo/client";
+import { RATE_LIMIT_SERVICE_GROUP_UPDATE_MUTATION } from "@/graphql/mutations/oidc-mutations";
+import { RATE_LIMIT_BY_ID_QUERY } from "@/graphql/queries/oidc-queries";
 
 export interface RateLimitDetailProps {
     rateLimitDetail: RateLimitServiceGroup
@@ -49,6 +52,24 @@ const RateLimitDetail: React.FC<RateLimitDetailProps> = ({
     const [markDirty, setMarkDirty] = React.useState<boolean>(false);
     const [showMutationBackdrop, setShowMutationBackdrop] = React.useState<boolean>(false);
     const [showMutationSnackbar, setShowMutationSnackbar] = React.useState<boolean>(false);
+
+
+    // GRAPHQL FUNCTIONS
+    const [updateRateLimitServiceGroupMutation] = useMutation(RATE_LIMIT_SERVICE_GROUP_UPDATE_MUTATION, {
+        variables: {
+            rateLimitServiceGroupInput: serviceGroupInput
+        },
+        onCompleted() {
+            setShowMutationBackdrop(false);
+            setMarkDirty(false);
+            setShowMutationSnackbar(true);
+        }, 
+        onError(error) {
+            setShowMutationBackdrop(false);
+            setErrorMessage(error.message);
+        },
+        refetchQueries: [RATE_LIMIT_BY_ID_QUERY]
+    });
 
     const arrBreadcrumbs = [];
     arrBreadcrumbs.push({
@@ -131,13 +152,12 @@ const RateLimitDetail: React.FC<RateLimitDetailProps> = ({
                             </Grid2>
                             <DetailSectionActionHandler
                                 onDiscardClickedHandler={() => {
-                                    //setOIDCProviderInput(initInput);
                                     setServiceGroupInput(initInput);
                                     setMarkDirty(false);
                                 }}
                                 onUpdateClickedHandler={() => {
                                     setShowMutationBackdrop(true);
-                                    //oidcProviderUpdateMutation();   
+                                    updateRateLimitServiceGroupMutation();
                                 }}
                                 markDirty={markDirty}
                             />
