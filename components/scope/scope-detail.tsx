@@ -9,21 +9,11 @@ import { DetailPageContainer, DetailPageMainContentContainer, DetailPageRightNav
 import Grid2 from "@mui/material/Grid2";
 import TextField from "@mui/material/TextField";
 import Paper from "@mui/material/Paper";
-import Stack from "@mui/material/Stack";
-import Button from "@mui/material/Button";
 import Accordion from "@mui/material/Accordion";
 import AccordionSummary from "@mui/material/AccordionSummary";
-import Divider from "@mui/material/Divider";
 import AccordionDetails from "@mui/material/AccordionDetails";
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import AddBoxIcon from '@mui/icons-material/AddBox';
-import DeleteForeverOutlinedIcon from '@mui/icons-material/DeleteForeverOutlined';
-import SchemaIcon from '@mui/icons-material/Schema';
-import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import SettingsApplicationsIcon from '@mui/icons-material/SettingsApplications';
-import InputAdornment from "@mui/material/InputAdornment";
-import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
-import StraightenIcon from '@mui/icons-material/Straighten';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import { useClipboardCopyContext } from "../contexts/clipboard-copy-context";
 import DetailSectionActionHandler from "../layout/detail-section-action-handler";
@@ -35,7 +25,6 @@ import { SCOPE_UPDATE_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import { useMutation } from "@apollo/client";
 import { SCOPE_DETAIL_QUERY } from "@/graphql/queries/oidc-queries";
 import ScopeTenantConfiguration from "./scope-tenant-configuration";
-
 
 export interface ScopeDetailProps {
     scope: Scope
