@@ -16,11 +16,14 @@ const ManagementFooter: React.FC<ManagementFooterProps> = ({
     return (
         <div 
             style={{
-                backgroundColor: tenantMetaData.tenantLookAndFeel?.adminheaderbackgroundcolor || "#1976d2", 
+                backgroundImage: "linear-gradient(#1976d2, #34111194)",
+                backgroundColor: "#1976d2", 
                 width: "100%", 
-                minHeight: "6vh", 
+                minHeight: "4vh", 
                 color: tenantMetaData.tenantLookAndFeel?.adminheadertextcolor || "white",
-                borderTop: "solid 1px lightgray"
+                borderTop: "solid 1px lightgray",
+                marginTop: "8px",
+                boxShadow: "2vh 0px 0px 0px grey",
             }}
 
         >        

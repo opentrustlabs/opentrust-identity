@@ -161,9 +161,9 @@ const resolvers: Resolvers = {
             const service: RateLimitService = new RateLimitService(oidcContext);
             return service.getRateLimitServiceGroupById(serviceGroupId);
         },
-        getRateLimitTenantRelViews: (_: any, { rateLimitServiceGroupId }, oidcContext) => {
+        getRateLimitTenantRelViews: (_: any, { rateLimitServiceGroupId, tenantId }, oidcContext) => {
             const service: RateLimitService = new RateLimitService(oidcContext);
-            return service.getRateLimitTenantRelViews(rateLimitServiceGroupId);
+            return service.getRateLimitTenantRelViews(rateLimitServiceGroupId || null, tenantId || null);
         },
         getRateLimitTenantRels: (_: any, { tenantId, rateLimitServiceGroupId }, oidcContext) => {
             const service: RateLimitService = new RateLimitService(oidcContext);
@@ -304,7 +304,7 @@ const resolvers: Resolvers = {
                 migrateLegacyUsers: tenantInput.migrateLegacyUsers,
                 allowLoginByPhoneNumber: tenantInput.allowLoginByPhoneNumber,
                 allowForgotPassword: tenantInput.allowForgotPassword,
-                defaultRateLimit: tenantInput.defaultRateLimit,
+                defaultRateLimit: tenantInput.allowUnlimitedRate ? null : tenantInput.defaultRateLimit,
                 defaultRateLimitPeriodMinutes: tenantInput.allowUnlimitedRate ? null: DEFAULT_RATE_LIMIT_PERIOD_MINUTES
             }
             const updatedTenant: Tenant = await tenantService.updateTenant(tenant);

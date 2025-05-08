@@ -181,29 +181,6 @@ class TenantService {
         return tenantDao.getDomainTenantManagementRels(tenantId, domain);
     }
 
-    // public async assignContactsToTenant(tenantId: string, contactList: Array<Contact>): Promise<Array<Contact>>{
-    //     contactList.forEach(
-    //         (c: Contact) => {
-    //             c.objectid = tenantId;
-    //             c.objecttype = CONTACT_TYPE_FOR_TENANT
-    //         }
-    //     );
-    //     const invalidContacts = contactList.filter(
-    //         (c: Contact) => {
-    //             if(c.email === null || c.email === "" || c.email.length < 3 || c.email.indexOf("@") < 0){
-    //                 return true;
-    //             }
-    //             if(c.name === null || c.name === "" || c.name.length < 3){
-    //                 return true;
-    //             }
-    //             return false;
-    //         }
-    //     );
-    //     if(invalidContacts.length > 0){
-    //         throw new GraphQLError("ERROR_INVALID_CONTACT_INFORMATION");
-    //     }
-    //     return tenantDao.assignContactsToTenant(tenantId, contactList);
-    // }
 
     public async createAnonymousUserConfiguration(tenantId: string, anonymousUserConfiguration: TenantAnonymousUserConfiguration): Promise<TenantAnonymousUserConfiguration>{
         return tenantDao.createAnonymousUserConfiguration(tenantId, anonymousUserConfiguration);

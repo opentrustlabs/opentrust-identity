@@ -7,6 +7,7 @@ import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
 import TenantLeftNavigation from "../left-navigation/tenant-left-navigation";
 import { ResponsiveBreakpoints, ResponsiveContext } from "../contexts/responsive-context";
 import { useSearchParams } from "next/navigation";
+import ManagementFooter from "./management-footer";
 
 
 interface Props {
@@ -64,6 +65,11 @@ const ManagementLayout: React.FC<Props> = ({children}) => {
                     </Grid2>
                 </Box>
             </Container>
+            <ManagementFooter 
+                tenantMetaData={
+                    tenantBean.getTenantMetaData()
+                } 
+            />
         </div>
     )
 }
