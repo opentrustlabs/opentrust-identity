@@ -553,7 +553,6 @@ const TenatRateLimitConfiguration: React.FC<TenatRateLimitConfigurationProps> = 
                                 }
                                 else {
                                     setRateLimitPeriodMinutes(DEFAULT_RATE_LIMIT_PERIOD_MINUTES);
-
                                 }
                             }}
                         />
@@ -609,19 +608,19 @@ const TenatRateLimitConfiguration: React.FC<TenatRateLimitConfigurationProps> = 
                 >
                     Cancel
                 </Button>
-                <Button onClick={() => {
-                    if (typeof limit === "string") {
-                        if (limit !== "") {
-                            // TODO
-                            // convert from string to number
+                <Button 
+                    onClick={() => {
+                        if (typeof limit === "string") {
+                            if (limit !== "") {
+                                // TODO
+                                // convert from string to number
+                            }
                         }
-                    }
-                    onCompleted(allowUnlimited, limit, rateLimitPeriodMinutes);
-                }}
+                        onCompleted(allowUnlimited, limit, rateLimitPeriodMinutes);
+                    }}
                 >
                     Submit
                 </Button>
-
             </DialogActions>
         </Typography>
     )
