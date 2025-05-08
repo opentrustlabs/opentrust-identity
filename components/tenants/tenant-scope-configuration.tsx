@@ -105,7 +105,7 @@ const TenantScopeConfiguration: React.FC<TenantScopeConfigurationProps> = ({
                 >
                     <DialogContent>
                         <Typography component="div">
-                            <span>Confirm removal of OIDC provider: </span><span style={{fontWeight: "bold"}}>{selectedScopeToRemove?.name || ""}</span>
+                            <span>Confirm removal of scope: </span><span style={{fontWeight: "bold"}}>{selectedScopeToRemove?.name || ""}</span>
                         </Typography>
                     </DialogContent>
                     <DialogActions>

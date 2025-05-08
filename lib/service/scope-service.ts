@@ -1,4 +1,4 @@
-import { AccessRule, Client, ClientScopeRel, ObjectSearchResultItem, Scope, SearchResultType, Tenant } from "@/graphql/generated/graphql-types";
+import { AccessRule, Client, ClientScopeRel, ObjectSearchResultItem, Scope, SearchResultType, Tenant, TenantAvailableScope } from "@/graphql/generated/graphql-types";
 import { OIDCContext } from "@/graphql/graphql-context";
 import { GraphQLError } from "graphql/error/GraphQLError";
 import ScopeDao from "../dao/scope-dao";
@@ -110,23 +110,23 @@ class ScopeService {
     }
         
     
-    // public async assignScopeToTenant(tenantId: string, scopeId: string, accessRuleId: string | null): Promise<TenantScopeRel> {
-    //     const tenant: Tenant | null = await tenantDao.getTenantById(tenantId);
-    //     if(!tenant){
-    //         throw new GraphQLError("ERROR_CANNOT_FIND_TENANT_FOR_SCOPE_ASSIGNMENT");
-    //     }
-    //     const scope: Scope | null = await this.getScopeById(scopeId);
-    //     if(!scope){
-    //         throw new GraphQLError("ERROR_CANNOT_FIND_SCOPE_TO_ASSIGN_TO_TENANT");
-    //     }
-    //     if(accessRuleId){
-    //         const accessRule: AccessRule | null = await accessRuleDao.getAccessRuleById(accessRuleId);
-    //         if(!accessRule){
-    //             throw new GraphQLError("ERROR_CANNOT_FIND_ACCESS_RULE_ID")
-    //         }
-    //     }
-    //     return scopeDao.assignScopeToTenant(tenantId, scopeId, accessRuleId);
-    // }
+    public async assignScopeToTenant(tenantId: string, scopeId: string, accessRuleId: string | null): Promise<TenantAvailableScope> {
+        const tenant: Tenant | null = await tenantDao.getTenantById(tenantId);
+        if(!tenant){
+            throw new GraphQLError("ERROR_CANNOT_FIND_TENANT_FOR_SCOPE_ASSIGNMENT");
+        }
+        const scope: Scope | null = await this.getScopeById(scopeId);
+        if(!scope){
+            throw new GraphQLError("ERROR_CANNOT_FIND_SCOPE_TO_ASSIGN_TO_TENANT");
+        }
+        if(accessRuleId){
+            const accessRule: AccessRule | null = await accessRuleDao.getAccessRuleById(accessRuleId);
+            if(!accessRule){
+                throw new GraphQLError("ERROR_CANNOT_FIND_ACCESS_RULE_ID")
+            }
+        }
+        return scopeDao.assignScopeToTenant(tenantId, scopeId, accessRuleId || undefined);
+    }
 
 
     public async removeScopeFromTenant(tenantId: string, scopeId: string): Promise<void> {

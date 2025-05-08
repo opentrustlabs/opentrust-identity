@@ -186,6 +186,9 @@ const ScopeDetail: React.FC<ScopeDetailProps> = ({ scope }) => {
                                 />
                             </Paper>
                         </Grid2>
+                        
+                        {/* TODO
+                            work out the access rule schema using FGA or ABAC
                         <Grid2 size={12} marginBottom={"16px"}>
                             <Accordion defaultExpanded={true}  >
                                 <AccordionSummary
@@ -219,7 +222,7 @@ const ScopeDetail: React.FC<ScopeDetailProps> = ({ scope }) => {
                                         </Grid2>
                                     </Typography>
                                     <Divider />
-                                    {["1", "2", "3"].map(                                            
+                                    {[].map(                                            
                                         (name: string) => (
                                             <Typography key={`${name}`} component={"div"} fontSize={"0.9em"} >
                                                 <Divider></Divider>
@@ -234,7 +237,7 @@ const ScopeDetail: React.FC<ScopeDetailProps> = ({ scope }) => {
                                     )}
                                 </AccordionDetails>
                             </Accordion>
-                        </Grid2>
+                        </Grid2> */}
 
                         <Grid2 size={12} marginBottom={"16px"}>
                             <Accordion defaultExpanded={true}  >
@@ -250,12 +253,16 @@ const ScopeDetail: React.FC<ScopeDetailProps> = ({ scope }) => {
                                 </AccordionSummary>
                                 <AccordionDetails>
                                     <ScopeTenantConfiguration 
-                                        scopeId={scope.scopeId} 
-                                        onUpdateStart={function (): void {
-                                        
+                                        scopeId={scope.scopeId}
+                                        scopeUse={scope.scopeUse}
+                                        onUpdateStart={() => {
+                                            setShowMutationBackdrop(true);
                                         } } 
-                                        onUpdateEnd={function (success: boolean): void {
-                                            
+                                        onUpdateEnd={(success: boolean) => {
+                                            setShowMutationBackdrop(false);
+                                            if(success){
+                                                setShowMutationSnackbar(true);
+                                            }
                                         } }
                                     />
                                 </AccordionDetails>

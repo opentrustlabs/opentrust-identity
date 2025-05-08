@@ -480,3 +480,18 @@ export const SCOPE_DELETE_MUTATION = gql(`
     }
 `);
 
+export const TENANT_SCOPE_ASSIGN_MUTATION = gql(`
+    mutation assignScopeToTenant($tenantId: String!, $scopeId: String!, $accessRuleId: String) {
+        assignScopeToTenant(tenantId: $tenantId, scopeId: $scopeId, accessRuleId: $accessRuleId) {
+            tenantId
+            scopeId
+        }
+    }
+`);
+
+export const TENANT_SCOPE_REMOVE_MUTATION = gql(`
+    mutation removeScopeFromTenant($tenantId: String!, $scopeId: String!){
+        removeScopeFromTenant(tenantId: $tenantId, scopeId: $scopeId)
+    }
+`);
+

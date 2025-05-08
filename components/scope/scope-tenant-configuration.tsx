@@ -1,8 +1,8 @@
 "use client";
 import React, { useContext } from "react";
-import { Tenant, TenantRateLimitRel, TenantRateLimitRelView } from "@/graphql/generated/graphql-types";
-import { TENANT_RATE_LIMIT_ASSIGN_MUTATION, TENANT_RATE_LIMIT_REMOVE_MUTATION, TENANT_RATE_LIMIT_UPDATE_MUTATION } from "@/graphql/mutations/oidc-mutations";
-import { TENANT_DETAIL_QUERY, TENANT_RATE_LIMIT_REL_QUERY, TENANT_RATE_LIMIT_REL_VIEW_QUERY, TENANTS_QUERY } from "@/graphql/queries/oidc-queries";
+import { Tenant } from "@/graphql/generated/graphql-types";
+import { TENANT_SCOPE_ASSIGN_MUTATION, TENANT_SCOPE_REMOVE_MUTATION } from "@/graphql/mutations/oidc-mutations";
+import { TENANTS_QUERY } from "@/graphql/queries/oidc-queries";
 import { useMutation, useQuery } from "@apollo/client";
 import Alert from "@mui/material/Alert";
 import Button from "@mui/material/Button";
@@ -15,10 +15,9 @@ import Typography from "@mui/material/Typography";
 import AddBoxIcon from '@mui/icons-material/AddBox';
 import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
-import { Checkbox, InputAdornment, TablePagination, TextField } from "@mui/material";
-import { ResponsiveBreakpoints, ResponsiveContext } from "../contexts/responsive-context";
+import { InputAdornment, TablePagination, TextField } from "@mui/material";
 import TenantSelector from "../dialogs/tenant-selector";
-import { DEFAULT_RATE_LIMIT_PERIOD_MINUTES, TENANT_TYPES_DISPLAY } from "@/utils/consts";
+import { SCOPE_USE_IAM_MANAGEMENT, TENANT_TYPE_ROOT_TENANT, TENANT_TYPES_DISPLAY } from "@/utils/consts";
 
 import Link from "next/link";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
@@ -26,25 +25,24 @@ import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
 
 export interface ScopeTenantConfigurationProps {
     scopeId: string,
+    scopeUse: string,
     onUpdateStart: () => void;
     onUpdateEnd: (success: boolean) => void;
 };
 
 const ScopeTenantConfiguration: React.FC<ScopeTenantConfigurationProps> = ({
     scopeId,
+    scopeUse,
     onUpdateEnd,
     onUpdateStart
 }) => {
 
-    // CONTEXT VARIABLES
-    const breakPoints: ResponsiveBreakpoints = useContext(ResponsiveContext);
+    // CONTEXT VARIABLES    
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
 
     // STATE VARIABLES
-
     const [page, setPage] = React.useState<number>(1);
-    const [showRemoveDialog, setShowRemoveDialog] = React.useState(false);
-    const [tenantToAdd, setTenantToAdd] = React.useState<string | null>(null);
+    const [showRemoveDialog, setShowRemoveDialog] = React.useState(false);    
     const [tenantToRemove, setTenantToRemove] = React.useState<Tenant | null>(null);
     const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
     const [selectDialogOpen, setSelectDialogOpen] = React.useState(false);
@@ -68,37 +66,39 @@ const ScopeTenantConfiguration: React.FC<ScopeTenantConfigurationProps> = ({
     });
 
 
-    const [assignTenantToRateLimitGroupMutation] = useMutation(TENANT_RATE_LIMIT_ASSIGN_MUTATION, {
+    const [assignTenantToScopeMutation] = useMutation(TENANT_SCOPE_ASSIGN_MUTATION, {
         onCompleted() {
             onUpdateEnd(true);
-            // setTenantIdToAdd(null);
             setErrorMessage(null);
         },
         onError(error) {
             setErrorMessage(error.message);
         },
-        refetchQueries: [TENANT_RATE_LIMIT_REL_VIEW_QUERY]
+        refetchQueries: [TENANTS_QUERY]
     });
 
-    const [removeTenantFromRateLimitGroupMutation] = useMutation(TENANT_RATE_LIMIT_REMOVE_MUTATION, {
+    const [removeTenantFromScopeMutation] = useMutation(TENANT_SCOPE_REMOVE_MUTATION, {
         variables: {
-
+            scopeId: scopeId,
+            tenantId: tenantToRemove?.tenantId
         },
         onCompleted() {
             onUpdateEnd(true);
             setErrorMessage(null);
         },
         onError(error) {
+            onUpdateEnd(true);
             setErrorMessage(error.message);
         },
-        refetchQueries: [TENANT_RATE_LIMIT_REL_VIEW_QUERY]
+        refetchQueries: [TENANTS_QUERY]
     });
 
 
     // HANDLER FUNCTIONS
-    const handlePageChange = (evt: any, page: number) => {
+    const handlePageChange = (_: any, page: number) => {
         setPage(page + 1);
     }
+
     const filterValues = (searchTerm: string) => {
         if (searchTerm.length < 3) {
             setFilteredArr([...arr]);
@@ -134,9 +134,14 @@ const ScopeTenantConfiguration: React.FC<ScopeTenantConfigurationProps> = ({
                 >
                     <TenantSelector
                         onCancel={() => setSelectDialogOpen(false)}
-                        onSelected={(tenantId: string) => {
-                            setTenantToAdd(tenantId);
+                        onSelected={(tenantId: string) => {                            
                             setSelectDialogOpen(false);
+                            assignTenantToScopeMutation({
+                                variables: {
+                                    scopeId: scopeId,
+                                    tenantId: tenantId
+                                }
+                            });
                         }}
                         existingTenantIds={
                             (data && data.getTenants.length === 0) ?
@@ -153,6 +158,8 @@ const ScopeTenantConfiguration: React.FC<ScopeTenantConfigurationProps> = ({
                 <Dialog
                     open={showRemoveDialog}
                     onClose={() => setShowRemoveDialog(false)}
+                    maxWidth={"sm"}
+                    fullWidth={true}
                 >
                     <DialogContent>
                         <Typography component={"div"}>
@@ -171,7 +178,8 @@ const ScopeTenantConfiguration: React.FC<ScopeTenantConfigurationProps> = ({
                         <Button
                             onClick={() => {
                                 onUpdateStart();
-                                //removeFederatedOIDCDomainMutation();
+                                removeTenantFromScopeMutation();
+                                setShowRemoveDialog(false);
                             }}
                         >
                             Confirm
@@ -267,22 +275,21 @@ const ScopeTenantConfiguration: React.FC<ScopeTenantConfigurationProps> = ({
                                         {TENANT_TYPES_DISPLAY.get(item.tenantType)}
                                     </Grid2>
                                     <Grid2 size={1}>
+                                        { !(item.tenantType === TENANT_TYPE_ROOT_TENANT && scopeUse === SCOPE_USE_IAM_MANAGEMENT) && 
                                         <RemoveCircleOutlineIcon
                                             sx={{ cursor: "pointer" }}
                                             onClick={() => {
-                                                // setTenantToRemove({ id: item.tenantId, name: item.tenantName || "" });
-                                                // setShowRemoveConfirmationDialog(true);
+                                                setTenantToRemove(item);
+                                                setShowRemoveDialog(true);
                                             }}
                                         />
+                                        }
                                     </Grid2>
                                     <Grid2 size={12}><Divider /></Grid2>
                                 </React.Fragment>
                             )
                         )}
                     </Grid2>
-
-
-
                     <TablePagination
                         component={"div"}
                         page={page - 1}
