@@ -42,7 +42,7 @@ type Query {
     getRateLimitServiceGroups(tenantId: String): [RateLimitServiceGroup!]!
     getRateLimitServiceGroupById(serviceGroupId: String!): RateLimitServiceGroup
     getRateLimitTenantRels(tenantId: String, rateLimitServiceGroupId: String): [TenantRateLimitRel!]!
-    getRateLimitTenantRelViews(rateLimitServiceGroupId: String!): [TenantRateLimitRelView!]!
+    getRateLimitTenantRelViews(rateLimitServiceGroupId: String, tenantId: String): [TenantRateLimitRelView!]!
 
     ## Scope
     getScope(tenantId: String): [Scope!]!
@@ -552,6 +552,7 @@ type TenantRateLimitRelView {
     tenantId: String!
     tenantName: String!
     servicegroupid: String!
+    servicegroupname: String!
     allowUnlimitedRate: Boolean
     rateLimit: Int
     rateLimitPeriodMinutes: Int

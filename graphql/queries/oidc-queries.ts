@@ -260,11 +260,12 @@ export const LOOKAHEAD_SEARCH_QUERY = gql(`
 `);
 
 export const TENANT_RATE_LIMIT_REL_VIEW_QUERY = gql(`
-    query getRateLimitTenantRelViews($rateLimitServiceGroupId: String!) {
-        getRateLimitTenantRelViews(rateLimitServiceGroupId: $rateLimitServiceGroupId) {
+    query getRateLimitTenantRelViews($rateLimitServiceGroupId: String, $tenantId: String) {
+        getRateLimitTenantRelViews(rateLimitServiceGroupId: $rateLimitServiceGroupId, tenantId: $tenantId) {
             tenantId
             tenantName
             servicegroupid
+            servicegroupname
             allowUnlimitedRate
             rateLimit
             rateLimitPeriodMinutes           
