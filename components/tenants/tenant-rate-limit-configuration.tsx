@@ -69,7 +69,8 @@ const TenantRateLimitConfiguration: React.FC<TenantRateLimitConfigurationProps> 
         onError(error) {
             rateLimitSummaryHandler(0);
             setErrorMessage(error.message)
-        }
+        },
+        notifyOnNetworkStatusChange: true
     });
 
     const [assignTenantToRateLimitGroupMutation] = useMutation(TENANT_RATE_LIMIT_ASSIGN_MUTATION, {
