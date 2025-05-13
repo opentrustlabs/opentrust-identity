@@ -567,10 +567,6 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                         rateLimitSummaryHandler={(totalUsed: number) => {
                                             setTotalRateUsed(totalUsed);
                                         }}
-                                    />
-                                    {/* <TenantScopeConfiguration 
-                                        tenantId={tenant.tenantId}
-                                        tenantType={tenant.tenantType}
                                         onUpdateEnd={(success: boolean) => {
                                             setShowMutationBackdrop(false);
                                             if(success){
@@ -580,16 +576,10 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                         onUpdateStart={() => {
                                             setShowMutationBackdrop(true);                                            
                                         }}
-                                    /> */}
-
+                                    />
                                 </AccordionDetails>
                             </Accordion>
                         </Grid2>
-
-
-
-                        
-
 
                         <Grid2 size={12}>
                             <Accordion >

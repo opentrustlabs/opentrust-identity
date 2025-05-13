@@ -171,8 +171,13 @@ const TenantFederatedOIDCProviderConfiguration: React.FC<TenantFederatedOIDCProv
                         onClick={() => setSelectDialogOpen(true)}
                     />
                     <div style={{marginLeft: "8px", fontWeight: "bold"}}>Add OIDC Provider</div>
-                </Grid2>
-                
+                </Grid2>                
+            </Grid2>
+            <Divider />
+            <Grid2 marginBottom={"16px"} marginTop={"16px"} spacing={1} container size={12} fontWeight={"bold"}>
+                <Grid2 size={8}>Provider Name</Grid2>
+                <Grid2 size={3}>Type</Grid2>
+                <Grid2 size={1}></Grid2>
             </Grid2>
             <Divider />
             {data.getFederatedOIDCProviders.length === 0 &&

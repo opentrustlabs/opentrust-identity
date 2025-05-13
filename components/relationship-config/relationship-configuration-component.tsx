@@ -259,8 +259,7 @@ const RelationshipConfigurationComponent: React.FC<RelationshipConfigurationComp
                     </DialogActions>
                 </Dialog>
             }
-
-            <Divider />
+            
             {loading && previousData &&
                 <RelList
                     relSearchResults={previousData.relSearch}
@@ -546,6 +545,10 @@ const RelList: React.FC<RelListProps> = ({
 
     return (
         <>
+            <Grid2 marginTop={"16px"} marginBottom={"8px"} spacing={1} container size={12} fontWeight={"bold"}>
+                <Grid2 size={11}>Name</Grid2>
+                <Grid2 size={1}></Grid2>
+            </Grid2>
             {relSearchResults.total > 0 &&
                 <Grid2 spacing={1} container size={12}>
                     {relSearchResults.resultlist.map(
