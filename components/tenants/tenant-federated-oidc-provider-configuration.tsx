@@ -10,7 +10,7 @@ import Grid2 from "@mui/material/Grid2";
 import AddBoxIcon from '@mui/icons-material/AddBox';
 import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
 import { FederatedOidcProvider } from "@/graphql/generated/graphql-types";
-import { FEDERATED_OIDC_PROVIDER_TYPE_ENTERPRISE, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
+import { FEDERATED_OIDC_PROVIDER_TYPE_ENTERPRISE, FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import Divider from "@mui/material/Divider";
 import { Alert, Button, Dialog, DialogActions, DialogContent, TablePagination } from "@mui/material";
 import Link from "next/link";
@@ -19,12 +19,14 @@ import GeneralSelector from "../dialogs/general-selector";
 
 export interface TenantFederatedOIDCProviderConfigurationProps {
     tenantId: string,
-    onUpdateStart: () => void;
-    onUpdateEnd: (success: boolean) => void;
+    allowSocialLogin: boolean,
+    onUpdateStart: () => void,
+    onUpdateEnd: (success: boolean) => void
 }
 
 const TenantFederatedOIDCProviderConfiguration: React.FC<TenantFederatedOIDCProviderConfigurationProps> = ({
     tenantId,
+    allowSocialLogin,
     onUpdateEnd,
     onUpdateStart
 }) => {
@@ -130,6 +132,15 @@ const TenantFederatedOIDCProviderConfiguration: React.FC<TenantFederatedOIDCProv
                             const preExistingIds = data.getFederatedOIDCProviders.map( (provider: FederatedOidcProvider) => provider.federatedOIDCProviderId);                            
                             if(d && d.getFederatedOIDCProviders){
                                 return d.getFederatedOIDCProviders
+                                .filter(
+                                    (provider: FederatedOidcProvider) => {
+                                        
+                                        if(provider.federatedOIDCProviderType === FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL && !allowSocialLogin){
+                                            return false;
+                                        }
+                                        return true;
+                                    }
+                                )
                                 .filter(
                                     (provider: FederatedOidcProvider) => {
                                         return !preExistingIds.includes(provider.federatedOIDCProviderId)

@@ -514,6 +514,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                         onUpdateStart={() => {
                                             setShowMutationBackdrop(true);                                            
                                         }}
+                                        allowSocialLogin={tenant.allowSocialLogin}
                                     />                                    
                                 </AccordionDetails>
                             </Accordion>

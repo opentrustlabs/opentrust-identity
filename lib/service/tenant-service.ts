@@ -36,10 +36,14 @@ class TenantService {
     }
 
     public async updateRootTenant(tenant: Tenant): Promise<Tenant> {
-        const {valid, errorMessage} = await this.validateTenantInput(tenant);
+        const {valid, errorMessage} = await this.validateTenantInput(tenant);        
         if(!valid){
             throw new GraphQLError(errorMessage);
         }
+
+        // TODO
+        // If the tenant.allowSocialLogin is set to false, then delete any OIDC
+        // provider with a provider type of "SOCIAL"
         await tenantDao.updateRootTenant(tenant);
         await this.updateSearchIndex(tenant);
         return Promise.resolve(tenant);
@@ -125,6 +129,10 @@ class TenantService {
         if(!valid){
             throw new GraphQLError(errorMessage);
         }
+        
+        // TODO
+        // If the tenant.allowSocialLogin is set to false, then delete any OIDC
+        // provider with a provider type of "SOCIAL"
         await tenantDao.updateTenant(tenant);
         await this.updateSearchIndex(tenant);
         return Promise.resolve(tenant);
