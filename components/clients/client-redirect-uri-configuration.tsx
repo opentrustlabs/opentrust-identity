@@ -22,12 +22,14 @@ import { TextField } from "@mui/material";
 
 export interface ClientRedirectUriConfigurationProps {
     clientId: string,
+    oidcEnabled: boolean,
     onUpdateStart: () => void,
     onUpdateEnd: (success: boolean) => void
 }
 
 const ClientRedirectUriConfiguration: React.FC<ClientRedirectUriConfigurationProps> = ({
     clientId,
+    oidcEnabled,
     onUpdateEnd,
     onUpdateStart
 }) => {
@@ -174,44 +176,54 @@ const ClientRedirectUriConfiguration: React.FC<ClientRedirectUriConfigurationPro
                     
                 </Dialog>
             }
-            <Grid2 marginBottom={"16px"} marginTop={"16px"} spacing={2} container size={12}>
-                <Grid2 size={12} display={"inline-flex"} alignItems="center" alignContent={"center"}>
-                    <AddBoxIcon
-                        sx={{cursor: "pointer"}}
-                        onClick={() => setSelectDialogOpen(true)}
-                    />
-                    <div style={{marginLeft: "8px", fontWeight: "bold"}}>Add Redirect URI</div>
-                </Grid2>
-                
-            </Grid2>
-            <Divider />
-            {data.getRedirectURIs.length === 0 &&
-                <Grid2 marginTop={"16px"}  spacing={2} container size={12} textAlign={"center"} >    
-                    <Grid2 margin={"8px 0px 8px 0px"} textAlign={"center"} size={12} spacing={1}>
-                        No redirect URIs
-                    </Grid2>
+            {!oidcEnabled && 
+                <Grid2 size={12} margin={"8px 0px 8px 0px"} container justifyContent={"center"} fontWeight={"bold"}>
+                    Enable OIDC to add redirect URIs
                 </Grid2>
             }
-            {data.getRedirectURIs.length > 0 &&
-                <Grid2 spacing={1} container size={12}>
-                    {data.getRedirectURIs.map(
-                        (uri: string) => (
-                            <React.Fragment key={uri}>
-                                <Grid2 size={12}><Divider /></Grid2>
-                                <Grid2 size={11}>
-                                    {uri}                                    
-                                </Grid2>
-                                <Grid2 size={1}>
-                                    <RemoveCircleOutlineIcon
-                                        sx={{cursor: "pointer"}}
-                                        onClick={() => {setUriToRemove(uri); setShowRemoveConfirmationDialog(true);}}
-                                    />
-                                </Grid2>                                
-                            </React.Fragment>
-                        )
-                    )}
-                </Grid2>
-            }            
+            {oidcEnabled &&
+                <React.Fragment>
+                    <Grid2 marginBottom={"16px"} marginTop={"16px"} spacing={2} container size={12}>
+                        <Grid2 size={12} display={"inline-flex"} alignItems="center" alignContent={"center"}>
+                            <AddBoxIcon
+                                sx={{cursor: "pointer"}}
+                                onClick={() => setSelectDialogOpen(true)}
+                            />
+                            <div style={{marginLeft: "8px", fontWeight: "bold"}}>Add Redirect URI</div>
+                        </Grid2>
+                        
+                    </Grid2>
+                    <Divider />
+                    
+                    {data.getRedirectURIs.length === 0 &&
+                        <Grid2 marginTop={"16px"}  spacing={2} container size={12} textAlign={"center"} >    
+                            <Grid2 margin={"8px 0px 8px 0px"} textAlign={"center"} size={12} spacing={1}>
+                                No redirect URIs
+                            </Grid2>
+                        </Grid2>
+                    }
+                    {data.getRedirectURIs.length > 0 &&
+                        <Grid2 spacing={1} container size={12}>
+                            {data.getRedirectURIs.map(
+                                (uri: string) => (
+                                    <React.Fragment key={uri}>
+                                        <Grid2 size={12}><Divider /></Grid2>
+                                        <Grid2 size={11}>
+                                            {uri}                                    
+                                        </Grid2>
+                                        <Grid2 size={1}>
+                                            <RemoveCircleOutlineIcon
+                                                sx={{cursor: "pointer"}}
+                                                onClick={() => {setUriToRemove(uri); setShowRemoveConfirmationDialog(true);}}
+                                            />
+                                        </Grid2>                                
+                                    </React.Fragment>
+                                )
+                            )}
+                        </Grid2>
+                    }  
+                </React.Fragment> 
+            }         
         </Typography>        
     )
 
