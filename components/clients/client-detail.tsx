@@ -183,7 +183,16 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                             <Grid2 size={2}>
                                                 <Checkbox 
                                                     checked={clientUpdateInput.oidcEnabled}
-                                                    onChange={(_, checked: boolean) => {clientUpdateInput.oidcEnabled = checked; setClientUpdateInput({...clientUpdateInput}); setMarkDirty(true);}}
+                                                    onChange={(_, checked: boolean) => {
+                                                        clientUpdateInput.oidcEnabled = checked;
+                                                        // Make sure that we also disable the pkce since it does not
+                                                        // make any sense to have it enabled if SSO is dislabed.
+                                                        if(checked === false){
+                                                            clientUpdateInput.pkceEnabled = false;
+                                                        }
+                                                        setClientUpdateInput({...clientUpdateInput}); 
+                                                        setMarkDirty(true);
+                                                    }}
                                                 />
                                             </Grid2>
                                             
@@ -191,7 +200,12 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                             <Grid2 size={2}>
                                                 <Checkbox 
                                                     checked={clientUpdateInput.pkceEnabled}
-                                                    onChange={(_, checked: boolean) => {clientUpdateInput.pkceEnabled = checked; setClientUpdateInput({...clientUpdateInput}); setMarkDirty(true);}}
+                                                    disabled={clientUpdateInput.oidcEnabled === false}
+                                                    onChange={(_, checked: boolean) => {
+                                                        clientUpdateInput.pkceEnabled = checked; 
+                                                        setClientUpdateInput({...clientUpdateInput}); 
+                                                        setMarkDirty(true);
+                                                    }}
                                                 />
                                             </Grid2>
 
@@ -287,6 +301,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                 </AccordionSummary>
                                 <AccordionDetails>
                                     <ClientRedirectUriConfiguration 
+                                        oidcEnabled={client.oidcEnabled}
                                         clientId={client.clientId} 
                                         onUpdateStart={() => setShowMutationBackdrop(true)}
                                         onUpdateEnd={(success: boolean) => {
