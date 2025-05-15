@@ -6,7 +6,7 @@ import Typography from "@mui/material/Typography";
 import BreadcrumbComponent from "../breadcrumbs/breadcrumbs";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
 import { DEFAULT_RATE_LIMIT_PERIOD_MINUTES, FEDERATED_AUTHN_CONSTRAINT_DISPLAY, FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE, FEDERATED_AUTHN_CONSTRAINT_NOT_ALLOWED, FEDERATED_AUTHN_CONSTRAINT_PERMISSIVE, TENANT_TYPE_IDENTITY_MANAGEMENT, TENANT_TYPE_IDENTITY_MANAGEMENT_AND_SERVICES, TENANT_TYPE_ROOT_TENANT, TENANT_TYPE_SERVICES, TENANT_TYPES_DISPLAY } from "@/utils/consts";
-import { Tenant, TenantUpdateInput } from "@/graphql/generated/graphql-types";
+import { MarkForDeleteObjectType, Tenant, TenantUpdateInput } from "@/graphql/generated/graphql-types";
 import { useMutation, useQuery } from "@apollo/client";
 import { TENANT_DETAIL_QUERY, TENANT_RATE_LIMIT_REL_QUERY } from "@/graphql/queries/oidc-queries";
 import DataLoading from "../layout/data-loading";
@@ -35,6 +35,8 @@ import { useClipboardCopyContext } from "../contexts/clipboard-copy-context";
 import DetailSectionActionHandler from "../layout/detail-section-action-handler";
 import TenantScopeConfiguration from "./tenant-scope-configuration";
 import TenantRateLimitConfiguration from "./tenant-rate-limit-configuration";
+import SubmitMarkForDelete from "../deletion/submit-mark-for-delete";
+import MarkForDeleteAlert from "../deletion/mark-for-delete-alert";
 
 export interface TenantDetailProps {
     tenantId: string
@@ -94,6 +96,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
     const [showMutationBackdrop, setShowMutationBackdrop] = React.useState<boolean>(false);
     const [showMutationSnackbar, setShowMutationSnackbar] = React.useState<boolean>(false);
     const [totalRateUsed, setTotalRateUsed] = React.useState<number | null>(null);
+    const [isMarkedForDelete, setIsMarkedForDelete] = React.useState<boolean>(tenant.markForDelete);
 
     // GRAPHQL FUNCTIONS
     const [tenantUpdateMutation] = useMutation(TENANT_UPDATE_MUTATION, {
@@ -146,20 +149,48 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
             <Grid2 container size={12} spacing={3} marginBottom={"16px"} >
                 <Grid2 size={{ xs: 12, sm: 12, md: 12, lg: 9, xl: 9 }}>
                     <Grid2 container size={12} spacing={2}>
-                        {errorMessage &&
-                            <Grid2 size={{ xs: 12 }} textAlign={"center"}>
-                                <Stack
-                                    direction={"row"}
-                                    justifyItems={"center"}
-                                    alignItems={"center"}
-                                    sx={{ width: "100%" }}
-                                >
-                                    <Alert onClose={() => setErrorMessage(null)} sx={{ width: "100%" }} severity="error">{errorMessage}</Alert>
-                                </Stack>
+                                               
+                        <Grid2 className="detail-page-subheader" alignItems={"center"} sx={{ backgroundColor: "#1976d2", color: "white", padding: "8px", borderRadius: "2px" }} container size={12}>
+                            <Grid2 size={11}>Overview</Grid2>
+                            <Grid2 size={1} display={"flex"} >
+                                {isMarkedForDelete !== true && 
+                                    <SubmitMarkForDelete 
+                                        objectId={tenant.tenantId}
+                                        objectType={MarkForDeleteObjectType.Tenant}
+                                        confirmationMessage={`Confirm deletion of tenant: ${tenant.tenantName}. Once submitted the operation cannot be undone.`}
+                                        onDeleteEnd={(successful: boolean, errorMessage?: string) => {
+                                            setShowMutationBackdrop(false);
+                                            if(successful){
+                                                setShowMutationSnackbar(true);
+                                                setIsMarkedForDelete(true);
+                                            }
+                                            else{
+                                                setErrorMessage(errorMessage || "ERROR");
+                                            }
+                                        }}
+                                        onDeleteStart={() => setShowMutationBackdrop(true)}
+                                    />
+                                }
                             </Grid2>
-                        }
-                        <Grid2 className="detail-page-subheader" sx={{backgroundColor: "#1976d2", color: "white", padding: "8px", borderRadius: "2px"}}  fontWeight={"bold"} size={12}>Overview</Grid2>
-                        <Grid2 size={12}>
+                        </Grid2>
+                        <Grid2 size={12} marginBottom={"16px"}>
+                            {errorMessage &&
+                                <Grid2 size={{ xs: 12 }} textAlign={"center"}>
+                                    <Stack
+                                        direction={"row"}
+                                        justifyItems={"center"}
+                                        alignItems={"center"}
+                                        sx={{ width: "100%" }}
+                                    >
+                                        <Alert onClose={() => setErrorMessage(null)} sx={{ width: "100%" }} severity="error">{errorMessage}</Alert>
+                                    </Stack>
+                                </Grid2>
+                            } 
+                            {isMarkedForDelete === true &&
+                                <MarkForDeleteAlert 
+                                    message={"This tenant has been marked for deletion. No changes to the tenant are permitted."}
+                                />
+                            }
                             <Paper sx={{ padding: "8px" }} elevation={1}>
                                 <Grid2 container size={12} spacing={2}>
                                     <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>

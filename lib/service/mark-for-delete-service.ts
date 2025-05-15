@@ -1,4 +1,4 @@
-import { Client, DeletionStatus, MarkForDelete, MarkForDeleteObjectType } from "@/graphql/generated/graphql-types";
+import { AuthenticationGroup, AuthorizationGroup, Client, DeletionStatus, FederatedOidcProvider, MarkForDelete, MarkForDeleteObjectType, RateLimitServiceGroup, Scope, SigningKey, Tenant, User } from "@/graphql/generated/graphql-types";
 import { OIDCContext } from "@/graphql/graphql-context";
 import { DaoFactory } from "../data-sources/dao-factory";
 import TenantDao from "../dao/tenant-dao";
@@ -13,8 +13,7 @@ import AuthorizationGroupDao from "../dao/authorization-group-dao";
 import SigningKeysDao from "../dao/signing-keys-dao";
 import { GraphQLError } from "graphql/error";
 import { randomUUID } from 'crypto'; 
-
-
+import { SCOPE_USE_IAM_MANAGEMENT } from "@/utils/consts";
 
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
 const markForDeleteDao: MarkForDeleteDao = DaoFactory.getInstance().getMarkForDeleteDao();
@@ -71,22 +70,64 @@ class MarkForDeleteService {
 
         // Now update the individual records with the mark for delete flag before 
         // submitting the mark for delete record.
+        if(markForDelete.objectType === MarkForDeleteObjectType.Tenant){
+            const t: Tenant = object as Tenant;
+            t.markForDelete = true;
+            await tenantDao.updateTenant(t);
+        }
         if(markForDelete.objectType === MarkForDeleteObjectType.Client){
             const c: Client = object as Client;
             c.markForDelete = true;
             await clientDao.updateClient(c);
+        }        
+        if(markForDelete.objectType === MarkForDeleteObjectType.User){
+            const u: User = object as User;
+            u.markForDelete = true;
+            await identityDao.updateUser(u);
         }
-
+        if(markForDelete.objectType === MarkForDeleteObjectType.AuthorizationGroup){
+            const a: AuthorizationGroup = object as AuthorizationGroup;
+            a.markForDelete = true;
+            await authzGroupDao.updateAuthorizationGroup(a);
+        }
+        if(markForDelete.objectType === MarkForDeleteObjectType.AuthenticationGroup){
+            const a: AuthenticationGroup = object as AuthenticationGroup;
+            a.markForDelete = true;
+            await authnGroupDao.updateAuthenticationGroup(a);
+        }
+        if(markForDelete.objectType === MarkForDeleteObjectType.Scope){
+            const s: Scope = object as Scope;
+            // We cannot delete a scope value that is used for IAM management,
+            // only those scope values defined for application management.
+            if(s.scopeUse === SCOPE_USE_IAM_MANAGEMENT){
+                throw new GraphQLError("ERROR_UNABLE_TO_DELETE_IAM_MANAGEMENT_SCOPE");
+            }
+        
+            s.markForDelete = true;
+            await scopeDao.updateScope(s);
+        }
+        if(markForDelete.objectType === MarkForDeleteObjectType.FederatedOidcProvider){
+            const f: FederatedOidcProvider = object as FederatedOidcProvider;
+            f.markForDelete = true;
+            await oidcProviderDao.updateFederatedOidcProvider(f);
+        }
+        if(markForDelete.objectType === MarkForDeleteObjectType.RateLimitServiceGroup){
+            const r: RateLimitServiceGroup = object as RateLimitServiceGroup;
+            r.markForDelete = true;
+            await rateLimitDao.updateRateLimitServiceGroup(r);
+        }
+        if(markForDelete.objectType === MarkForDeleteObjectType.SigningKey){
+            const k: SigningKey = object as SigningKey;
+            k.markForDelete = true;
+            await signingKeysDao.updateSigningKey(k);
+        }
+        
         markForDelete.markForDeleteId = randomUUID().toString();
         markForDelete.submittedDate = Date.now();
+
+        // markForDelete.submittedBy = this.oidcContext.oidcPrincipal.sub
         markForDelete.submittedBy = "anonymous";
-        
-        
-        
         await markForDeleteDao.markForDelete(markForDelete);
-
-
-
         return Promise.resolve(markForDelete);
     }
 

@@ -126,7 +126,9 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                         </Grid2>
                         <Grid2 size={12} marginBottom={"16px"}>
                             {errorMessage &&
-                                <Alert severity={"error"} onClose={() => setErrorMessage(null)}>{errorMessage}</Alert>
+                                <Grid2 size={12} marginBottom={"8px"}>
+                                    <Alert onClose={() => setErrorMessage(null)} sx={{ width: "100%" }} severity="error">{errorMessage}</Alert>
+                                </Grid2>   
                             }
                             {isMarkedForDelete === true &&
                                 <MarkForDeleteAlert 

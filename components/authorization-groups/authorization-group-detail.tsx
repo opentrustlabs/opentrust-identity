@@ -3,7 +3,7 @@ import React, { useContext } from "react";
 import { Accordion, AccordionDetails, AccordionSummary, Button, Checkbox, Paper, Stack, TextField, Alert, Backdrop, CircularProgress, Snackbar } from "@mui/material";
 import Grid2 from "@mui/material/Grid2";
 import Typography from "@mui/material/Typography";
-import { AuthorizationGroup, AuthorizationGroupUpdateInput, SearchResultType } from "@/graphql/generated/graphql-types";
+import { AuthorizationGroup, AuthorizationGroupUpdateInput, MarkForDeleteObjectType, SearchResultType } from "@/graphql/generated/graphql-types";
 import BreadcrumbComponent from "../breadcrumbs/breadcrumbs";
 import { TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
@@ -18,6 +18,8 @@ import { AUTHORIZATION_GROUP_UPDATE_MUTATION, AUTHORIZATION_GROUP_USER_ADD_MUTAT
 import { AUTHORIZATION_GROUP_DETAIL_QUERY } from "@/graphql/queries/oidc-queries";
 import { useClipboardCopyContext } from "../contexts/clipboard-copy-context";
 import DetailSectionActionHandler from "../layout/detail-section-action-handler";
+import SubmitMarkForDelete from "../deletion/submit-mark-for-delete";
+import MarkForDeleteAlert from "../deletion/mark-for-delete-alert";
 
 export interface AuthorizationGroupDetailProps {
     authorizationGroup: AuthorizationGroup
@@ -44,6 +46,7 @@ const AuthorizationGroupDetail: React.FC<AuthorizationGroupDetailProps> = ({ aut
     const [showMutationBackdrop, setShowMutationBackdrop] = React.useState<boolean>(false);
     const [showMutationSnackbar, setShowMutationSnackbar] = React.useState<boolean>(false);
     const [renderKey, setRenderKey] = React.useState<string>(Date.now().toString());
+    const [isMarkedForDelete, setIsMarkedForDelete] = React.useState<boolean>(authorizationGroup.markForDelete);
 
     // GRAPHQL FUNCTIONS
     const [updateAuthzGroupMutation] = useMutation(AUTHORIZATION_GROUP_UPDATE_MUTATION, {
@@ -113,10 +116,39 @@ const AuthorizationGroupDetail: React.FC<AuthorizationGroupDetailProps> = ({ aut
             <Grid2 container size={12} spacing={3} marginBottom={"16px"}>
                 <Grid2 size={{ xs: 12, sm: 12, md: 12, lg: 9, xl: 9 }}>
                     <Grid2 container size={12} spacing={2}>
-                        <Grid2 className="detail-page-subheader" sx={{ backgroundColor: "#1976d2", color: "white", padding: "8px", borderRadius: "2px" }} size={12}>Overview</Grid2>
+                        <Grid2 className="detail-page-subheader" alignItems={"center"} sx={{ backgroundColor: "#1976d2", color: "white", padding: "8px", borderRadius: "2px" }} container size={12}>
+                            <Grid2 size={11}>Overview</Grid2>
+                            <Grid2 size={1} display={"flex"} >
+                                {isMarkedForDelete !== true && 
+                                    <SubmitMarkForDelete 
+                                        objectId={authorizationGroup.groupId}
+                                        objectType={MarkForDeleteObjectType.AuthorizationGroup}
+                                        confirmationMessage={`Confirm deletion of authorization group: ${authorizationGroup.groupName}. Once submitted the operation cannot be undone.`}
+                                        onDeleteEnd={(successful: boolean, errorMessage?: string) => {
+                                            setShowMutationBackdrop(false);
+                                            if(successful){
+                                                setShowMutationSnackbar(true);
+                                                setIsMarkedForDelete(true);
+                                            }
+                                            else{
+                                                setErrorMessage(errorMessage || "ERROR");
+                                            }
+                                        }}
+                                        onDeleteStart={() => setShowMutationBackdrop(true)}
+                                    />
+                                }
+                            </Grid2>
+                        </Grid2>
                         <Grid2 size={12} marginBottom={"16px"}>
                             {errorMessage &&
-                                <Alert severity={"error"} onClose={() => setErrorMessage(null)}>{errorMessage}</Alert>
+                                <Grid2 size={12} marginBottom={"8px"}>
+                                    <Alert onClose={() => setErrorMessage(null)} sx={{ width: "100%" }} severity="error">{errorMessage}</Alert>
+                                </Grid2>   
+                            }
+                            {isMarkedForDelete === true &&
+                                <MarkForDeleteAlert 
+                                    message={"This authorization group has been marked for deletion. No changes to the group are permitted."}
+                                />
                             }
                             <Paper elevation={0} sx={{ padding: "8px" }}>
                                 <Grid2 container size={12} spacing={2}>
