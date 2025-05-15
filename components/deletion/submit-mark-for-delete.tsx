@@ -3,7 +3,7 @@ import React from "react";
 import AutoDeleteOutlinedIcon from '@mui/icons-material/AutoDeleteOutlined';
 import { MarkForDeleteInput, MarkForDeleteObjectType } from "@/graphql/generated/graphql-types";
 import Dialog from "@mui/material/Dialog";
-import { Alert, Button, DialogActions, DialogContent, Typography } from "@mui/material";
+import { Alert, Button, DialogActions, DialogContent, DialogTitle, Typography } from "@mui/material";
 import { useMutation } from "@apollo/client";
 import { MARK_FOR_DELETE_MUTATION } from "@/graphql/mutations/oidc-mutations";
 
@@ -59,14 +59,14 @@ const SubmitMarkForDelete: React.FC<SubmitMarkForDeleteProps> = ({
                     fullWidth={true}
                 >
                     <DialogContent>
-                        <Typography component="div">
-                            <div>{confirmationMessage}</div>
-                            <div style={{margin: "16px 0px 8px 0px"}}>
-                                The deletion process may take some time to complete.
-                            </div>
-                        </Typography>
+                            <Alert sx={{fontSize: "0.90em", backgroundColor: "white"}} severity="warning">
+                                <div>{confirmationMessage}</div>                                
+                                <div style={{margin: "16px 0px 8px 0px"}}>
+                                    The deletion process may take some time to complete.
+                                </div>
+                            </Alert>
                     </DialogContent>
-                    <DialogActions>
+                    <DialogActions >
                         <Button
                             onClick={() => {
                                 setShowConfirmDialogOpen(false)
