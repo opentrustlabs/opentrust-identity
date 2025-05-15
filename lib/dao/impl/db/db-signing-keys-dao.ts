@@ -50,7 +50,8 @@ class DBSigningKeysDao extends SigningKeysDao {
             tenantId: entity.getDataValue("tenantId"),
             certificate: Buffer.from(entity.getDataValue("certificate") || "").toString("utf-8"),
             password: entity.getDataValue("password"),
-            publicKey: Buffer.from(entity.getDataValue("publicKey") || "").toString("utf-8")
+            publicKey: Buffer.from(entity.getDataValue("publicKey") || "").toString("utf-8"),
+            markForDelete: entity.getDataValue("markForDelete")
         }
         
         return key;
