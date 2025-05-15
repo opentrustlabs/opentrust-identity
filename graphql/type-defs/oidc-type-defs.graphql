@@ -810,7 +810,7 @@ enum MarkForDeleteObjectType {
 
 type MarkForDelete {
     markForDeleteId: String!
-    markForDeleteObjectType: MarkForDeleteObjectType!
+    objectType: MarkForDeleteObjectType!
     objectId: String!
     submittedBy: String!
     submittedDate: Float!

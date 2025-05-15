@@ -36,7 +36,7 @@ export class MarkForDeleteEntity extends Model {
             completedDate: {
                 type: DataTypes.BIGINT,
                 primaryKey: false,
-                allowNull: false,
+                allowNull: true,
                 field: "completedate"
             }
         }, {
