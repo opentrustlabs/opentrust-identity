@@ -6,11 +6,12 @@ import Typography from "@mui/material/Typography";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
 import BreadcrumbComponent from "../breadcrumbs/breadcrumbs";
 import { CLIENT_TYPE_SERVICE_ACCOUNT_AND_USER_DELEGATED_PERMISSIONS, CLIENT_TYPE_SERVICE_ACCOUNT_ONLY, CLIENT_TYPE_USER_DELEGATED_PERMISSIONS_ONLY, CLIENT_TYPES_DISPLAY, DEFAULT_BACKGROUND_COLOR, DEFAULT_END_USER_TOKEN_TTL_SECONDS, DEFAULT_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS, MAX_END_USER_TOKEN_TTL_SECONDS, MAX_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS, MIN_END_USER_TOKEN_TTL_SECONDS, MIN_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
-import { Client, ClientUpdateInput, SecretObjectType } from "@/graphql/generated/graphql-types";
+import { Client, ClientUpdateInput, MarkForDeleteObjectType, SecretObjectType } from "@/graphql/generated/graphql-types";
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import SyncIcon from '@mui/icons-material/Sync';
 import GroupIcon from '@mui/icons-material/Group';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
+// import AutoDeleteOutlinedIcon from '@mui/icons-material/AutoDeleteOutlined';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import TenantHighlight from "../tenants/tenant-highlight";
 import ContactConfiguration from "../contacts/contact-configuration";
@@ -22,6 +23,8 @@ import { useClipboardCopyContext } from "../contexts/clipboard-copy-context";
 import SecretViewerDialog from "../dialogs/secret-viewer-dialog";
 import { CLIENT_DETAIL_QUERY } from "@/graphql/queries/oidc-queries";
 import DetailSectionActionHandler from "../layout/detail-section-action-handler";
+import MarkForDeleteAlert from "../deletion/mark-for-delete-alert";
+import SubmitMarkForDelete from "../deletion/submit-mark-for-delete";
 
 export interface ClientDetailProps {
     client: Client
@@ -97,10 +100,33 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
             <Grid2 container size={12} spacing={3} marginBottom={"16px"}>
                 <Grid2 size={{ xs: 12, sm: 12, md: 12, lg: 9, xl: 9 }}>
                     <Grid2 container size={12} spacing={2}>                        
-                        <Grid2 className="detail-page-subheader" sx={{ backgroundColor: "#1976d2", color: "white", padding: "8px", borderRadius: "2px" }} size={12}>Overview</Grid2>
+                        <Grid2 className="detail-page-subheader" alignItems={"center"} sx={{ backgroundColor: "#1976d2", color: "white", padding: "8px", borderRadius: "2px" }} container size={12}>
+                            <Grid2 size={11}>Overview</Grid2>
+                            <Grid2 size={1} display={"flex"} >
+                                {client.markForDelete !== true && 
+                                    <SubmitMarkForDelete 
+                                        objectId={client.clientId}
+                                        objectType={MarkForDeleteObjectType.Client}
+                                        confirmationMessage={`Confirm deletion of client: ${client.clientName}. Once submitted the operation cannot be undone.`}
+                                        onDeleteEnd={(successful: boolean) => {
+                                            setShowMutationBackdrop(false);
+                                            if(successful){
+                                                setShowMutationSnackbar(true);
+                                            }
+                                        }}
+                                        onDeleteStart={() => setShowMutationBackdrop(true)}
+                                    />
+                                }
+                            </Grid2>
+                        </Grid2>
                         <Grid2 size={12} marginBottom={"16px"}>
                             {errorMessage &&
                                 <Alert severity={"error"} onClose={() => setErrorMessage(null)}>{errorMessage}</Alert>
+                            }
+                            {client.markForDelete === true &&
+                                <MarkForDeleteAlert 
+                                    message={"This client has been marked for deletion. No changes to the client are permitted."}
+                                />
                             }
                             <Paper elevation={1} sx={{ padding: "8px" }}>
                                 <Grid2 container size={12} spacing={2}>

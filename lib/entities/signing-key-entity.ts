@@ -68,6 +68,12 @@ class SigningKeyEntity extends Model {
                 primaryKey: false,
                 allowNull: true,
                 field: "tenantid"
+            },
+            markForDelete: {
+                type: DataTypes.BOOLEAN,
+                primaryKey: false,
+                allowNull: false,
+                field: "markfordelete"
             }
         }, 
 		{

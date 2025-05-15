@@ -74,6 +74,12 @@ class ClientEntity extends Model {
                 primaryKey: false,
                 allowNull: true,
                 field: "usertokenttlseconds"
+            },
+            markForDelete: {
+                type: DataTypes.BOOLEAN,
+                primaryKey: false,
+                allowNull: false,
+                field: "markfordelete"
             }
         }, 
 		{

@@ -76,8 +76,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
         allowUnlimitedRate: tenant.allowUnlimitedRate,
         allowUserSelfRegistration: tenant.allowUserSelfRegistration,
         enabled: tenant.enabled,
-        federatedAuthenticationConstraint: tenant.federatedAuthenticationConstraint,
-        markForDelete: tenant.markForDelete,
+        federatedAuthenticationConstraint: tenant.federatedAuthenticationConstraint,        
         migrateLegacyUsers: tenant.migrateLegacyUsers,
         tenantId: tenant.tenantId,
         tenantName: tenant.tenantName,
@@ -270,14 +269,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                                     checked={tenantInput.enabled}
                                                     onChange={(_, checked: boolean) => {tenantInput.enabled = checked; setTenantInput({...tenantInput}); setOverviewDirty(true);}}
                                                 />
-                                            </Grid2>
-                                            <Grid2 alignContent={"center"} size={10}>Mark for delete</Grid2>
-                                            <Grid2 size={2}>
-                                                <Checkbox 
-                                                    checked={tenantInput.markForDelete}
-                                                    onChange={(_, checked: boolean) => {tenantInput.markForDelete = checked; setTenantInput({...tenantInput}); setOverviewDirty(true);}}
-                                                />
-                                            </Grid2>
+                                            </Grid2>                                            
                                             <Grid2 alignContent={"center"} size={10}>Allow unlimited rate</Grid2>
                                             <Grid2 size={2}>
                                                 <Checkbox 

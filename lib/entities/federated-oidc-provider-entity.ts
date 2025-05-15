@@ -95,6 +95,12 @@ class FederatedOIDCProviderEntity extends Model {
                 primaryKey: false,
                 allowNull: true,
                 field: "socialloginprovider"
+            },
+            markForDelete: {
+                type: DataTypes.BOOLEAN,
+                primaryKey: false,
+                allowNull: false,
+                field: "markfordelete"
             }
         }, 
 		{

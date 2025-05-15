@@ -90,6 +90,10 @@ type Query {
     ## Viewing secrets or private keys
     getSecretValue(objectId: String!, objectType: SecretObjectType!): String
 
+    ## Mark for deletion
+    getMarkForDeleteById(markForDeleteId: String!): MarkForDelete
+    getDeletionStatus(markForDeleteId: String!): [DeletionStatus!]!
+
 }
 
 type Mutation {
@@ -202,7 +206,12 @@ type Mutation {
     addContact(contactCreateInput: ContactCreateInput!): Contact!
     removeContact(contactId: String!): String!
 
+    ## Mark for deletion
+    markForDelete(markForDeleteInput: MarkForDeleteInput!): MarkForDelete    
+
 }
+
+
 
 enum SecretObjectType {
     CLIENT_SECRET
@@ -300,6 +309,7 @@ type FederatedOIDCProvider {
     federatedOIDCProviderType: String!
     federatedoidcprovidertypeid: String
     socialLoginProvider: String
+    markForDelete: Boolean!
 }
 
 type FederatedOIDCProviderTenantRel {    
@@ -379,6 +389,7 @@ type Client {
     userTokenTTLSeconds: Int
     clientTokenTTLSeconds: Int
     maxRefreshTokenCount: Int
+    markForDelete: Boolean!
 }
 
 type PortalUserProfile {
@@ -426,6 +437,7 @@ type User {
     locked: Boolean!
     enabled: Boolean!
     nameOrder: String!
+    markForDelete: Boolean!
 }
 
 type UserTenantRel {
@@ -448,6 +460,7 @@ type AuthenticationGroup {
     authenticationGroupName: String!
     authenticationGroupDescription: String
     defaultGroup: Boolean!
+    markForDelete: Boolean!
 }
 
 type AuthenticationGroupClientRel {
@@ -469,6 +482,7 @@ type AuthorizationGroup {
     groupDescription: String
     default: Boolean!
     allowForAnonymousUsers: Boolean!
+    markForDelete: Boolean!
 }
 
 type AuthorizationGroupUserRel {
@@ -499,6 +513,7 @@ type SigningKey {
     expiresAtMs: Float!
     status: String!
     statusId: String
+    markForDelete: Boolean!
 }
 
 # Can optionally have a constraint definition tied to this scope.
@@ -511,6 +526,7 @@ type Scope {
     scopeName: String!
     scopeDescription: String!
     scopeUse: String!
+    markForDelete: Boolean!
 }
 
 type ScopeAccessRuleSchema {
@@ -531,6 +547,7 @@ type RateLimitServiceGroup {
     servicegroupid: String!
     servicegroupname: String!
     servicegroupdescription: String
+    markForDelete: Boolean!
 }
 
 
@@ -779,6 +796,34 @@ type LoginAuthenticationHandlerResponse {
     errorActionHandler: ErrorActionHandler
 }
 
+enum MarkForDeleteObjectType {
+    TENANT
+    CLIENT
+    USER
+    AUTHORIZATION_GROUP
+    AUTHENTICATION_GROUP
+    SCOPE
+    FEDERATED_OIDC_PROVIDER
+    RATE_LIMIT_SERVICE_GROUP
+    SIGNING_KEY
+}
+
+type MarkForDelete {
+    markForDeleteId: String!
+    markForDeleteObjectType: MarkForDeleteObjectType!
+    objectId: String!
+    submittedBy: String!
+    submittedDate: Float!
+    completedData: Float
+}
+
+type DeletionStatus {
+    markForDeleteId: String!
+    step: String!
+    startedAt: Float!
+    completedAt: Float
+}
+
 
 ############################################################################
 ################ SEARCH TYPES AND RESPONSES FOR MUTATATIONS ################
@@ -1002,8 +1047,7 @@ input TenantUpdateInput {
     allowAnonymousUsers: Boolean!
     verifyEmailOnSelfRegistration: Boolean!
     allowSocialLogin: Boolean!
-    federatedAuthenticationConstraint: String!    
-    markForDelete: Boolean!
+    federatedAuthenticationConstraint: String!
     tenantType: String!
     migrateLegacyUsers: Boolean!
     allowLoginByPhoneNumber: Boolean!
@@ -1228,3 +1272,7 @@ input UserUpdateInput {
     nameOrder: String!
 }
 
+input MarkForDeleteInput {
+    markForDeleteObjectType: MarkForDeleteObjectType!
+    objectId: String!
+}

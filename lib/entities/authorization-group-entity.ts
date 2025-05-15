@@ -38,6 +38,12 @@ class AuthorizationGroupEntity extends Model {
                 primaryKey: false,
                 allowNull: false,
                 field: "allowforanonymoususers"
+            },
+            markForDelete: {
+                type: DataTypes.BOOLEAN,
+                primaryKey: false,
+                allowNull: false,
+                field: "markfordelete"
             }
         }, 
 		{

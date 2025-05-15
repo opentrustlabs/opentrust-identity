@@ -1,6 +1,6 @@
 import ClientService from "@/lib/service/client-service";
 import TenantService from "@/lib/service/tenant-service";
-import { Resolvers, QueryResolvers, MutationResolvers, Tenant, Client, SigningKey, Scope, AuthenticationGroup, AuthorizationGroup, FederatedOidcProvider, Contact, LoginUserNameHandlerResponse, LoginUserNameHandlerAction, LoginAuthenticationHandlerResponse, LoginAuthenticationHandlerAction, SecondFactorType, PortalUserProfile, User, LoginFailurePolicy, TenantPasswordConfig, TenantLegacyUserMigrationConfig, TenantAnonymousUserConfiguration, TenantLookAndFeel, RateLimitServiceGroup, TenantRateLimitRel, RelSearchResultItem } from "@/graphql/generated/graphql-types";
+import { Resolvers, QueryResolvers, MutationResolvers, Tenant, Client, SigningKey, Scope, AuthenticationGroup, AuthorizationGroup, FederatedOidcProvider, Contact, LoginUserNameHandlerResponse, LoginUserNameHandlerAction, LoginAuthenticationHandlerResponse, LoginAuthenticationHandlerAction, SecondFactorType, PortalUserProfile, User, LoginFailurePolicy, TenantPasswordConfig, TenantLegacyUserMigrationConfig, TenantAnonymousUserConfiguration, TenantLookAndFeel, RateLimitServiceGroup, TenantRateLimitRel, RelSearchResultItem, MarkForDelete } from "@/graphql/generated/graphql-types";
 import SigningKeysService from "@/lib/service/keys-service";
 import ScopeService from "@/lib/service/scope-service";
 import GroupService from "@/lib/service/group-service";
@@ -13,6 +13,7 @@ import IdentitySerivce from "@/lib/service/identity-service";
 import RateLimitService from "@/lib/service/rate-limit-service";
 import { OIDCContext } from "../graphql-context";
 import ViewSecretService from "@/lib/service/view-secret-service";
+import MarkForDeleteService from "@/lib/service/mark-for-delete-service";
 
 
 const resolvers: Resolvers = {
@@ -31,7 +32,8 @@ const resolvers: Resolvers = {
                     scopeId: "id",
                     scopeName: "all",
                     scopeDescription: "",
-                    scopeUse: ""
+                    scopeUse: "",
+                    markForDelete: false
                 }],
                 tenantId: "8256c1db-cd40-48d1-914f-71672b4d42fa",
                 tenantName: "First Tenant",
@@ -209,6 +211,14 @@ const resolvers: Resolvers = {
             const service: ViewSecretService = new ViewSecretService(oidcContext);
             const val: string | null | undefined = await service.viewSecret(objectId, objectType);
             return val;
+        },
+        getMarkForDeleteById: (_: any, { markForDeleteId }, oidcContext) => {
+            const service: MarkForDeleteService = new MarkForDeleteService(oidcContext);
+            return service.getMarkForDeleteById(markForDeleteId);
+        },
+        getDeletionStatus: (_: any, { markForDeleteId }, oidcContext) => {
+            const service: MarkForDeleteService = new MarkForDeleteService(oidcContext);
+            return service.getDeletionStatus(markForDeleteId);
         }
     },
     Mutation: {
@@ -231,9 +241,7 @@ const resolvers: Resolvers = {
                 allowLoginByPhoneNumber: false,
                 allowForgotPassword: false
             };
-            await tenantService.createRootTenant(tenant);
-            //const contacts: Array<Contact> = tenantInput.contactInput.map((i: ContactInput) => { return {email: i.email, name: i.name, objectid: tenant.tenantId, objecttype:""}});
-            //await tenantService.assignContactsToTenant(tenant.tenantId, contacts);            
+            await tenantService.createRootTenant(tenant);          
             return tenant;
         },
         updateRootTenant: async(_: any, { tenantInput }, oidcContext) => {
@@ -247,7 +255,7 @@ const resolvers: Resolvers = {
                 allowUserSelfRegistration: tenantInput.allowUserSelfRegistration,
                 verifyEmailOnSelfRegistration: tenantInput.verifyEmailOnSelfRegistration,
                 federatedAuthenticationConstraint: tenantInput.federatedAuthenticationConstraint,
-                markForDelete: tenantInput.markForDelete,
+                markForDelete: false,
                 tenantType: TENANT_TYPE_ROOT_TENANT,
                 allowSocialLogin: false,
                 allowAnonymousUsers: false,
@@ -297,7 +305,7 @@ const resolvers: Resolvers = {
                 allowUserSelfRegistration: tenantInput.allowUserSelfRegistration,
                 verifyEmailOnSelfRegistration: tenantInput.verifyEmailOnSelfRegistration,
                 federatedAuthenticationConstraint: tenantInput.federatedAuthenticationConstraint,
-                markForDelete: tenantInput.markForDelete,
+                markForDelete: false,
                 tenantType: tenantInput.tenantType,
                 allowSocialLogin: tenantInput.allowSocialLogin,
                 allowAnonymousUsers: tenantInput.allowAnonymousUsers,
@@ -332,7 +340,8 @@ const resolvers: Resolvers = {
                 userTokenTTLSeconds: clientInput.userTokenTTLSeconds || 0,
                 maxRefreshTokenCount: clientInput.maxRefreshTokenCount,
                 clientTokenTTLSeconds: clientInput.clientTokenTTLSeconds,
-                clienttypeid: ""
+                clienttypeid: "",
+                markForDelete: false
             }
             await clientService.createClient(client);            
             return client;
@@ -352,7 +361,8 @@ const resolvers: Resolvers = {
                 userTokenTTLSeconds: clientInput.userTokenTTLSeconds || 0,
                 maxRefreshTokenCount: clientInput.maxRefreshTokenCount,
                 clientTokenTTLSeconds: clientInput.clientTokenTTLSeconds,
-                clienttypeid: ""
+                clienttypeid: "",
+                markForDelete: false
             }
             await clientService.updateClient(client);
             return client;
@@ -377,7 +387,8 @@ const resolvers: Resolvers = {
                 status: SIGNING_KEY_STATUS_ACTIVE,
                 keyTypeId: "",
                 publicKey: keyInput.publicKey,
-                statusId: ""
+                statusId: "",
+                markForDelete: false
             };
             await keysService.createSigningKey(key);
             return key;
@@ -397,7 +408,8 @@ const resolvers: Resolvers = {
                 status: keyInput.status,
                 keyTypeId: "",
                 publicKey: "",
-                statusId: ""
+                statusId: "",
+                markForDelete: false
             };
             const updatedKey = await keysService.updateSigningKey(key);
             return updatedKey;
@@ -413,7 +425,8 @@ const resolvers: Resolvers = {
                 scopeId: "",
                 scopeName: scopeInput.scopeName,
                 scopeDescription: scopeInput.scopeDescription,
-                scopeUse: SCOPE_USE_APPLICATION_MANAGEMENT
+                scopeUse: SCOPE_USE_APPLICATION_MANAGEMENT,
+                markForDelete: false
             };
             await scopeService.createScope(scope);
             return scope;
@@ -424,7 +437,8 @@ const resolvers: Resolvers = {
                 scopeId: scopeInput.scopeId,
                 scopeName: scopeInput.scopeName,
                 scopeDescription: scopeInput.scopeDescription,
-                scopeUse: SCOPE_USE_APPLICATION_MANAGEMENT
+                scopeUse: SCOPE_USE_APPLICATION_MANAGEMENT,
+                markForDelete: false
             };
             await scopeService.updateScope(scope);
             return scope;
@@ -461,7 +475,8 @@ const resolvers: Resolvers = {
                 authenticationGroupName: authenticationGroupInput.authenticationGroupName,
                 authenticationGroupDescription: authenticationGroupInput.authenticationGroupDescription,
                 tenantId: authenticationGroupInput.tenantId,
-                defaultGroup: authenticationGroupInput.defaultGroup
+                defaultGroup: authenticationGroupInput.defaultGroup,
+                markForDelete: false
             }
             await authenticationGroupService.createAuthenticationGroup(authenticationGroup);
             return authenticationGroup;
@@ -473,10 +488,11 @@ const resolvers: Resolvers = {
                 authenticationGroupName: authenticationGroupInput.authenticationGroupName,
                 authenticationGroupDescription: authenticationGroupInput.authenticationGroupDescription,
                 tenantId: authenticationGroupInput.tenantId,
-                defaultGroup: authenticationGroupInput.defaultGroup
+                defaultGroup: authenticationGroupInput.defaultGroup,
+                markForDelete: false
             }
             await authenticationGroupService.updateAuthenticationGroup(authenticationGroup);
-            return authenticationGroupInput;
+            return authenticationGroup;
         },
         deleteAuthenticationGroup: async(_: any, { authenticationGroupId }, oidcContext) => {
             const authenticationGroupService: AuthenticationGroupService = new AuthenticationGroupService(oidcContext);
@@ -501,7 +517,8 @@ const resolvers: Resolvers = {
                 groupName: groupInput.groupName,
                 tenantId: groupInput.tenantId,
                 groupDescription: groupInput.groupDescription,
-                allowForAnonymousUsers: groupInput.allowForAnonymousUsers
+                allowForAnonymousUsers: groupInput.allowForAnonymousUsers,
+                markForDelete: false
             };
             await groupService.createGroup(group);
             return group;
@@ -514,7 +531,8 @@ const resolvers: Resolvers = {
                 groupName: groupInput.groupName,
                 tenantId: groupInput.tenantId,
                 groupDescription: groupInput.groupDescription,
-                allowForAnonymousUsers: groupInput.allowForAnonymousUsers
+                allowForAnonymousUsers: groupInput.allowForAnonymousUsers,
+                markForDelete: false
             };
             await groupService.updateGroup(group);
             return group;
@@ -548,8 +566,8 @@ const resolvers: Resolvers = {
                 federatedOIDCProviderTenantId: oidcProviderInput.federatedOIDCProviderTenantId,
                 scopes: oidcProviderInput.scopes,
                 federatedOIDCProviderType: oidcProviderInput.federatedOIDCProviderType,
-                socialLoginProvider: oidcProviderInput.socialLoginProvider
-                
+                socialLoginProvider: oidcProviderInput.socialLoginProvider,
+                markForDelete: false
             };
             const providerService: FederatedOIDCProviderService = new FederatedOIDCProviderService(oidcContext);
             await providerService.createFederatedOIDCProvider(oidcProvider);
@@ -569,7 +587,8 @@ const resolvers: Resolvers = {
                 federatedOIDCProviderTenantId: oidcProviderInput.federatedOIDCProviderTenantId,
                 scopes: oidcProviderInput.scopes,
                 federatedOIDCProviderType: oidcProviderInput.federatedOIDCProviderType,
-                socialLoginProvider: oidcProviderInput.socialLoginProvider
+                socialLoginProvider: oidcProviderInput.socialLoginProvider,
+                markForDelete: false
             };
             const providerService: FederatedOIDCProviderService = new FederatedOIDCProviderService(oidcContext);
             await providerService.updateFederatedOIDCProvider(oidcProvider);
@@ -769,7 +788,8 @@ const resolvers: Resolvers = {
                 postalCode: userInput.postalCode,
                 preferredLanguageCode: userInput.preferredLanguageCode,
                 stateRegionProvince: userInput.stateRegionProvince,
-                twoFactorAuthType: userInput.twoFactorAuthType
+                twoFactorAuthType: userInput.twoFactorAuthType,
+                markForDelete: false
             }
             await service.updateUser(user);
             return user;
@@ -792,7 +812,8 @@ const resolvers: Resolvers = {
             const r: RateLimitServiceGroup = await service.createRateLimitServiceGroup({
                 servicegroupid: "",
                 servicegroupname: rateLimitServiceGroupInput.servicegroupname,
-                servicegroupdescription: rateLimitServiceGroupInput.servicegroupdescription
+                servicegroupdescription: rateLimitServiceGroupInput.servicegroupdescription,
+                markForDelete: false
             });
             return r;
         },
@@ -801,7 +822,8 @@ const resolvers: Resolvers = {
             const r: RateLimitServiceGroup = await service.updateRateLimitServiceGroup({
                 servicegroupid: rateLimitServiceGroupInput.servicegroupid,
                 servicegroupname: rateLimitServiceGroupInput.servicegroupname,
-                servicegroupdescription: rateLimitServiceGroupInput.servicegroupdescription
+                servicegroupdescription: rateLimitServiceGroupInput.servicegroupdescription,
+                markForDelete: false
             });
             return r;
         },
@@ -824,6 +846,20 @@ const resolvers: Resolvers = {
             const service: RateLimitService = new RateLimitService(oidcContext);
             await service.removeRateLimitFromTenant(tenantId, serviceGroupId);
             return serviceGroupId;
+        },
+        markForDelete: async(_: any, { markForDeleteInput }, oidcContext) => {
+            const service: MarkForDeleteService = new MarkForDeleteService(oidcContext);
+            // markForDeleteId, submitted by, and submitted date to be assigned by the service class.
+            const m: MarkForDelete = {
+                markForDeleteId: "",
+                markForDeleteObjectType: markForDeleteInput.markForDeleteObjectType,
+                objectId: markForDeleteInput.objectId,
+                submittedBy: "",
+                submittedDate: 0
+            }
+            await service.markForDelete(m);
+            return m;
+
         }
     },
     RelSearchResultItem : {
