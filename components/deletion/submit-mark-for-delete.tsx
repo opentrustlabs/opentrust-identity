@@ -59,8 +59,11 @@ const SubmitMarkForDelete: React.FC<SubmitMarkForDeleteProps> = ({
                     fullWidth={true}
                 >
                     <DialogContent>
-                        <Typography component="div">                            
-                            {confirmationMessage}                            
+                        <Typography component="div">
+                            <div>{confirmationMessage}</div>
+                            <div style={{margin: "16px 0px 8px 0px"}}>
+                                The deletion process may take some time to complete.
+                            </div>
                         </Typography>
                     </DialogContent>
                     <DialogActions>
