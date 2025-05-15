@@ -3,8 +3,6 @@ import React from "react";
 import Alert from "@mui/material/Alert";
 import { Box } from "@mui/material";
 
-
-
 type ErrorComponentSizeType = "full-page" | "xl" | "lg" | "md" | "sm" | "xs";
 
 export interface ErrorComponentProps {
@@ -40,14 +38,10 @@ const ErrorComponent: React.FC<ErrorComponentProps> = ({
     return (
         <Box display={"flex"} height={height} justifyContent={"center"} alignItems={"center"}>
             <Alert severity="error">
-                    {message}
-                </Alert>
+                {message}
+            </Alert>
         </Box>
-
-        
     )
-
-
 }
 
 export default ErrorComponent
