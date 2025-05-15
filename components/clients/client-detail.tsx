@@ -57,6 +57,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
     const [showMutationBackdrop, setShowMutationBackdrop] = React.useState<boolean>(false);
     const [showMutationSnackbar, setShowMutationSnackbar] = React.useState<boolean>(false);
     const [secretDialogOpen, setSecretDialogOpen] = React.useState<boolean>(false);
+    const [isMarkedForDelete, setIsMarkedForDelete] = React.useState<boolean>(client.markForDelete);
 
     // GRAPHQLQL FUNCTIONS
     const [clientUpdateMutation] = useMutation(CLIENT_UPDATE_MUTATION, {
@@ -103,15 +104,19 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                         <Grid2 className="detail-page-subheader" alignItems={"center"} sx={{ backgroundColor: "#1976d2", color: "white", padding: "8px", borderRadius: "2px" }} container size={12}>
                             <Grid2 size={11}>Overview</Grid2>
                             <Grid2 size={1} display={"flex"} >
-                                {client.markForDelete !== true && 
+                                {isMarkedForDelete !== true && 
                                     <SubmitMarkForDelete 
                                         objectId={client.clientId}
                                         objectType={MarkForDeleteObjectType.Client}
                                         confirmationMessage={`Confirm deletion of client: ${client.clientName}. Once submitted the operation cannot be undone.`}
-                                        onDeleteEnd={(successful: boolean) => {
+                                        onDeleteEnd={(successful: boolean, errorMessage?: string) => {
                                             setShowMutationBackdrop(false);
                                             if(successful){
                                                 setShowMutationSnackbar(true);
+                                                setIsMarkedForDelete(true);
+                                            }
+                                            else{
+                                                setErrorMessage(errorMessage || "ERROR");
                                             }
                                         }}
                                         onDeleteStart={() => setShowMutationBackdrop(true)}
@@ -123,7 +128,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                             {errorMessage &&
                                 <Alert severity={"error"} onClose={() => setErrorMessage(null)}>{errorMessage}</Alert>
                             }
-                            {client.markForDelete === true &&
+                            {isMarkedForDelete === true &&
                                 <MarkForDeleteAlert 
                                     message={"This client has been marked for deletion. No changes to the client are permitted."}
                                 />

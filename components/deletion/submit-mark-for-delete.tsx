@@ -3,7 +3,9 @@ import React from "react";
 import AutoDeleteOutlinedIcon from '@mui/icons-material/AutoDeleteOutlined';
 import { MarkForDeleteInput, MarkForDeleteObjectType } from "@/graphql/generated/graphql-types";
 import Dialog from "@mui/material/Dialog";
-import { Button, DialogActions, DialogContent, Typography } from "@mui/material";
+import { Alert, Button, DialogActions, DialogContent, Typography } from "@mui/material";
+import { useMutation } from "@apollo/client";
+import { MARK_FOR_DELETE_MUTATION } from "@/graphql/mutations/oidc-mutations";
 
 
 export interface SubmitMarkForDeleteProps {
@@ -11,7 +13,7 @@ export interface SubmitMarkForDeleteProps {
     objectType: MarkForDeleteObjectType,
     confirmationMessage: string,
     onDeleteStart: () => void,
-    onDeleteEnd: (successful: boolean) => void
+    onDeleteEnd: (successful: boolean, errorMessage?: string) => void
 }
 
 
@@ -24,12 +26,27 @@ const SubmitMarkForDelete: React.FC<SubmitMarkForDeleteProps> = ({
 }) => {
 
 
+    // STATE VARIABLES
     const [showConfirmDialogOpen, setShowConfirmDialogOpen] = React.useState<boolean>(false);
-
+    
     const input: MarkForDeleteInput = {
         markForDeleteObjectType: objectType,
         objectId: objectId
     }
+    // GRAPHQL FUNCTIONS
+    const [markForDeleteMutaion] = useMutation(MARK_FOR_DELETE_MUTATION, {
+        variables: {
+            markForDeleteInput: input
+        },
+        onCompleted() {
+            onDeleteEnd(true);
+            setShowConfirmDialogOpen(false);
+        },
+        onError(error) {
+            onDeleteEnd(false, error.message);
+            setShowConfirmDialogOpen(false);
+        },
+    });
 
 
     return (
@@ -42,16 +59,23 @@ const SubmitMarkForDelete: React.FC<SubmitMarkForDeleteProps> = ({
                     fullWidth={true}
                 >
                     <DialogContent>
-                        <Typography>{confirmationMessage}</Typography>                        
+                        <Typography component="div">                            
+                            {confirmationMessage}                            
+                        </Typography>
                     </DialogContent>
                     <DialogActions>
                         <Button
-                            onClick={() => setShowConfirmDialogOpen(false)}
+                            onClick={() => {
+                                setShowConfirmDialogOpen(false)
+                            }}
                         >
                             Cancel
                         </Button>
                         <Button
-                        
+                            onClick={() => {
+                                onDeleteStart();
+                                markForDeleteMutaion();
+                            }}
                         >
                             Submit
                         </Button>

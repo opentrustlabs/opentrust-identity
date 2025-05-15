@@ -852,7 +852,7 @@ const resolvers: Resolvers = {
             // markForDeleteId, submitted by, and submitted date to be assigned by the service class.
             const m: MarkForDelete = {
                 markForDeleteId: "",
-                markForDeleteObjectType: markForDeleteInput.markForDeleteObjectType,
+                objectType: markForDeleteInput.markForDeleteObjectType,
                 objectId: markForDeleteInput.objectId,
                 submittedBy: "",
                 submittedDate: 0

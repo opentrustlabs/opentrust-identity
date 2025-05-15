@@ -38,31 +38,31 @@ class MarkForDeleteService {
     public async markForDelete(markForDelete: MarkForDelete): Promise<MarkForDelete> {
         let object: any | null = null;
 
-        if(markForDelete.markForDeleteObjectType === MarkForDeleteObjectType.Client){
+        if(markForDelete.objectType === MarkForDeleteObjectType.Client){
             object = await clientDao.getClientById(markForDelete.objectId);
         }
-        else if(markForDelete.markForDeleteObjectType === MarkForDeleteObjectType.Tenant){
+        else if(markForDelete.objectType === MarkForDeleteObjectType.Tenant){
             object = await tenantDao.getTenantById(markForDelete.objectId);
         }
-        else if(markForDelete.markForDeleteObjectType === MarkForDeleteObjectType.User){
+        else if(markForDelete.objectType === MarkForDeleteObjectType.User){
             object = await identityDao.getUserBy("id", markForDelete.objectId);
         }
-        else if(markForDelete.markForDeleteObjectType === MarkForDeleteObjectType.FederatedOidcProvider){
+        else if(markForDelete.objectType === MarkForDeleteObjectType.FederatedOidcProvider){
             object = await oidcProviderDao.getFederatedOidcProviderById(markForDelete.objectId);
         }
-        else if(markForDelete.markForDeleteObjectType === MarkForDeleteObjectType.Scope){
+        else if(markForDelete.objectType === MarkForDeleteObjectType.Scope){
             object = await scopeDao.getScopeById(markForDelete.objectId);
         }
-        else if(markForDelete.markForDeleteObjectType === MarkForDeleteObjectType.RateLimitServiceGroup){
+        else if(markForDelete.objectType === MarkForDeleteObjectType.RateLimitServiceGroup){
             object = await rateLimitDao.getRateLimitServiceGroupById(markForDelete.objectId);
         }
-        else if(markForDelete.markForDeleteObjectType === MarkForDeleteObjectType.AuthenticationGroup){
+        else if(markForDelete.objectType === MarkForDeleteObjectType.AuthenticationGroup){
             object = await authnGroupDao.getAuthenticationGroupById(markForDelete.objectId);
         }
-        else if(markForDelete.markForDeleteObjectType === MarkForDeleteObjectType.AuthorizationGroup){
+        else if(markForDelete.objectType === MarkForDeleteObjectType.AuthorizationGroup){
             object = await authzGroupDao.getAuthorizationGroupById(markForDelete.objectId);
         }
-        else if(markForDelete.markForDeleteObjectType === MarkForDeleteObjectType.SigningKey){
+        else if(markForDelete.objectType === MarkForDeleteObjectType.SigningKey){
             object = await signingKeysDao.getSigningKeyById(markForDelete.objectId);
         }
         if(object === null){
@@ -71,7 +71,7 @@ class MarkForDeleteService {
 
         // Now update the individual records with the mark for delete flag before 
         // submitting the mark for delete record.
-        if(markForDelete.markForDeleteObjectType === MarkForDeleteObjectType.Client){
+        if(markForDelete.objectType === MarkForDeleteObjectType.Client){
             const c: Client = object as Client;
             c.markForDelete = true;
             await clientDao.updateClient(c);
