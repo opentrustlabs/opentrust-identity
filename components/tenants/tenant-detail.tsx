@@ -114,7 +114,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                 setShowMutationBackdrop(false);
                 setErrorMessage(error.message);
             },
-            refetchQueries: [TENANT_DETAIL_QUERY]
+            refetchQueries: [{query: TENANT_DETAIL_QUERY, variables: {tenantId: tenant.tenantId}}]
         }
     );
 

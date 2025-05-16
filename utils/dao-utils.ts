@@ -1,5 +1,5 @@
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
-import { randomBytes, hash, createHash, pbkdf2Sync } from "node:crypto";
+import { randomBytes, hash, createHash, pbkdf2Sync, scryptSync } from "node:crypto";
 import bcrypt from "bcrypt";
 
 
@@ -68,6 +68,10 @@ export function generateHash(data: string, hashAlgorithm?: HashAlgorithm, encodi
     return hash(hashAlgorithm, data, encoding);
 }
 
+/**
+ * 
+ * @returns 
+ */
 export function generateSalt(): string {
     return generateRandomToken(16, "base64");
 }
@@ -86,22 +90,64 @@ export function sha256HashPassword(password: string, salt: string, iterations: n
     return hash;
 }
 
+/**
+ * 
+ * @param password 
+ * @param rounds 
+ * @returns 
+ */
 export function bcryptHashPassword(password: string, rounds: number): string {
     const hashedPassword = bcrypt.hashSync(password, rounds);
     return hashedPassword;
 }
 
+/**
+ * 
+ * @param password 
+ * @param hash 
+ * @returns 
+ */
 export function bcryptValidatePassword(password: string, hash: string): boolean {
     return bcrypt.compareSync(password, hash);
 }
 
+/**
+ * 
+ * @param password 
+ * @param salt 
+ * @param keyLength 
+ * @param cost 
+ * @returns 
+ */
+export function scryptHashPassword(password: string, salt: string, cost: number): string {
+    const b: Buffer = scryptSync(password, salt, 64, {
+        blockSize: 8,
+        cost: cost,
+        parallelization: 1,
+        maxmem: 128 * cost * 9
+    });
+    return b.toString("base64");
+}
+
+/**
+ * 
+ * @param password 
+ * @param salt 
+ * @param iterations 
+ * @returns 
+ */
 export function pbkdf2HashPassword(password: string, salt: string, iterations: number): string {
     const hashed: Buffer = pbkdf2Sync(password, salt, iterations, 32, "sha256");
     return hashed.toString("base64");
 }
 
-
-// To retrieve the key in an enum. This can then be used as an index into the enum
+/**
+ * To retrieve the key in an enum. This can then be used as an index into the enum
+ * 
+ * @param enumObj 
+ * @param value 
+ * @returns 
+ */
 export function getKeyByValue<T extends Record<string, string>>(enumObj: T, value: string): keyof T {
     for (const key in enumObj) {
         if (enumObj[key] === value) {

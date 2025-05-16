@@ -4,7 +4,7 @@ import { pem, sha256, hmac, pki } from "node-forge";
 import { OIDCPrincipal } from '@/lib/models/principal';
 import JwtService from '@/lib/service/jwt-service';
 import { JWTPayload,  } from 'jose';
-import { bcryptHashPassword, bcryptValidatePassword, generateRandomToken, pbkdf2HashPassword, sha256HashPassword } from '@/utils/dao-utils';
+import { bcryptHashPassword, bcryptValidatePassword, generateRandomToken, pbkdf2HashPassword, scryptHashPassword, sha256HashPassword } from '@/utils/dao-utils';
 import FSBasedKms from '@/lib/kms/fs-based-kms';
 import { CLIENT_TYPE_SERVICE_ACCOUNT_AND_USER_DELEGATED_PERMISSIONS, PASSWORD_HASH_ITERATION_64K, TOKEN_TYPE_END_USER_TOKEN } from '@/utils/consts';
 
@@ -173,38 +173,64 @@ export default async function handler(
     //     decryptedData: decryptedData ? decryptedData.toString("utf-8") : null
     // }
 
+
+    // const timeStart = Date.now();
+    // const password = "DdvkUJYn9oQ2XL4";
+    // const salt = generateRandomToken(16, "base64");
+    // const hashedPassword = sha256HashPassword(password, salt, PASSWORD_HASH_ITERATION_64K);
+    // const timeEnd = Date.now();
+    // const hashTime = timeEnd - timeStart;
+
+    // const bcryptStart = Date.now();
+    // const bcryptHashedPassword = bcryptHashPassword(password, 11);
+    // const bcryptEnd = Date.now();
+    // const bcryptHashTime = bcryptEnd - bcryptStart;
+    // const bcryptValid = bcryptValidatePassword(password, bcryptHashedPassword);
+
+    // const pbkdf2Start = Date.now();
+    // const pbkdf2HashedPassword = pbkdf2HashPassword(passphrase, salt, 100000);
+    // const pbkdf2End = Date.now();
+    // const pbkdf2HashTime = pbkdf2End - pbkdf2Start;
+
+    // const obj = {
+    //     password,
+    //     salt,
+    //     hashedPassword,
+    //     timeStart,
+    //     timeEnd,
+    //     hashTime,
+    //     bcryptHashedPassword,
+    //     bcryptHashTime,
+    //     bcryptValid,
+    //     pbkdf2HashedPassword,
+    //     pbkdf2HashTime
+    // };
+
     const timeStart = Date.now();
     const password = "DdvkUJYn9oQ2XL4";
     const salt = generateRandomToken(16, "base64");
-    const hashedPassword = sha256HashPassword(password, salt, PASSWORD_HASH_ITERATION_64K);
+    const hashedPassword = scryptHashPassword(password, salt, 16384);
     const timeEnd = Date.now();
     const hashTime = timeEnd - timeStart;
 
-    const bcryptStart = Date.now();
-    const bcryptHashedPassword = bcryptHashPassword(password, 11);
-    const bcryptEnd = Date.now();
-    const bcryptHashTime = bcryptEnd - bcryptStart;
-    const bcryptValid = bcryptValidatePassword(password, bcryptHashedPassword);
+    const timeStart2 = Date.now();
+    //const hashedPassword2 = scryptHashPassword(password, salt, 64, 1048576);
+    const hashedPassword2 = scryptHashPassword(password, salt, 32768);
+    const timeEnd2 = Date.now();
+    const hashTime2 = timeEnd2 - timeStart2;
 
-    const pbkdf2Start = Date.now();
-    const pbkdf2HashedPassword = pbkdf2HashPassword(passphrase, salt, 100000);
-    const pbkdf2End = Date.now();
-    const pbkdf2HashTime = pbkdf2End - pbkdf2Start;
 
-    const obj = {
+
+    const obj: any = {
+        timeStart,
+        timeEnd,
         password,
         salt,
         hashedPassword,
-        timeStart,
-        timeEnd,
         hashTime,
-        bcryptHashedPassword,
-        bcryptHashTime,
-        bcryptValid,
-        pbkdf2HashedPassword,
-        pbkdf2HashTime
-    };
-
+        hashTime2,
+        hashedPassword2
+    }
 
 
 

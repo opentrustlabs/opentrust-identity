@@ -5,12 +5,10 @@ import React from "react";
 import DataLoading from "../layout/data-loading";
 import ErrorComponent from "../error/error-component";
 import { PasswordConfigInput, TenantPasswordConfig } from "@/graphql/generated/graphql-types";
-import { DEFAULT_PASSWORD_SPECIAL_CHARACTERS_ALLOWED, LOGIN_FAILURE_POLICY_BACKOFF, LOGIN_FAILURE_POLICY_BACKOFF_THEN_LOCK, LOGIN_FAILURE_POLICY_LOCK_USER_ACCOUNT, LOGIN_FAILURE_POLICY_PAUSE, LOGIN_FAILURE_POLICY_PAUSE_THEN_LOCK, LOGIN_FAILURE_POLICY_TYPE_DISPLAY, MFA_AUTH_TYPE_DISPLAY, MFA_AUTH_TYPE_EMAIL, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_SMS, MFA_AUTH_TYPE_TIME_BASED_OTP, PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS, PASSWORD_HASHING_ALGORITHMS_DISPLAY } from "@/utils/consts";
+import { DEFAULT_PASSWORD_SPECIAL_CHARACTERS_ALLOWED, MFA_AUTH_TYPE_DISPLAY, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_SMS, MFA_AUTH_TYPE_TIME_BASED_OTP, PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS, PASSWORD_HASHING_ALGORITHMS, PASSWORD_HASHING_ALGORITHMS_DISPLAY } from "@/utils/consts";
 import Grid2 from "@mui/material/Grid2";
 import TextField from "@mui/material/TextField";
-import Stack from "@mui/material/Stack";
-import Button from "@mui/material/Button";
-import { Alert, Autocomplete, AutocompleteRenderInputParams, Checkbox, Divider, MenuItem, Select } from "@mui/material";
+import { Alert, Autocomplete, Checkbox, Divider, MenuItem, Select } from "@mui/material";
 import { PASSWORD_CONFIGURATION_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import DetailSectionActionHandler from "../layout/detail-section-action-handler";
 
@@ -162,13 +160,11 @@ const PasswordRulesConfiguration: React.FC<PasswordRulesConfigurationProps> = ({
                             value={passwordConfigInput.passwordHashingAlgorithm}
                             onChange={(evt) => { passwordConfigInput.passwordHashingAlgorithm = evt.target.value; setPasswordConfigInput({ ...passwordConfigInput }); setMarkDirty(true); }}
                         >
-                            <MenuItem value={PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS}>{PASSWORD_HASHING_ALGORITHMS_DISPLAY.get(PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS)}</MenuItem>
-                            <MenuItem value={PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS}>{PASSWORD_HASHING_ALGORITHMS_DISPLAY.get(PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS)}</MenuItem>
-                            <MenuItem value={PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS}>{PASSWORD_HASHING_ALGORITHMS_DISPLAY.get(PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS)}</MenuItem>
-                            <MenuItem value={PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS}>{PASSWORD_HASHING_ALGORITHMS_DISPLAY.get(PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS)}</MenuItem>
-                            <MenuItem value={PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS}>{PASSWORD_HASHING_ALGORITHMS_DISPLAY.get(PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS)}</MenuItem>
-                            <MenuItem value={PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS}>{PASSWORD_HASHING_ALGORITHMS_DISPLAY.get(PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS)}</MenuItem>
-                            <MenuItem value={PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS}>{PASSWORD_HASHING_ALGORITHMS_DISPLAY.get(PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS)}</MenuItem>
+                            {PASSWORD_HASHING_ALGORITHMS.map(
+                                (algorithm: string) => (
+                                    <MenuItem value={algorithm}>{PASSWORD_HASHING_ALGORITHMS_DISPLAY.get(algorithm)}</MenuItem>
+                                )
+                            )}
                         </Select>
                     </Grid2>
                 </Grid2>
