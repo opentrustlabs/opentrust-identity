@@ -153,6 +153,7 @@ const FederatedOIDCProviderDetail: React.FC<FederatedOIDCProviderDetailProps> = 
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Provider Name</div>
                                             <TextField
+                                                disabled={isMarkedForDelete}
                                                 required name="providerName" id="providerName"
                                                 onChange={(evt) => { oidcProviderInput.federatedOIDCProviderName = evt?.target.value; setOIDCProviderInput({ ...oidcProviderInput }); setMarkDirty(true); }}
                                                 value={oidcProviderInput.federatedOIDCProviderName}
@@ -162,6 +163,7 @@ const FederatedOIDCProviderDetail: React.FC<FederatedOIDCProviderDetailProps> = 
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Provider Description</div>
                                             <TextField
+                                                disabled={isMarkedForDelete}
                                                 name="providerDescription" id="providerDescription"
                                                 value={oidcProviderInput.federatedOIDCProviderDescription}
                                                 fullWidth={true}
@@ -173,7 +175,7 @@ const FederatedOIDCProviderDetail: React.FC<FederatedOIDCProviderDetailProps> = 
                                         </Grid2>
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Provider Type</div>
-                                            <Select
+                                            <Select                                                
                                                 size="small"
                                                 fullWidth={true}
                                                 value={oidcProviderInput.federatedOIDCProviderType}
@@ -212,6 +214,7 @@ const FederatedOIDCProviderDetail: React.FC<FederatedOIDCProviderDetailProps> = 
                                             <Grid2 marginBottom={"16px"}>
                                                 <div>Social Provider (Requires an account with the provider)</div>
                                                 <Autocomplete
+                                                    disabled={isMarkedForDelete}
                                                     id="socialLoginProvider"
                                                     size="small"
                                                     options={SOCIAL_OIDC_PROVIDERS}
@@ -222,14 +225,14 @@ const FederatedOIDCProviderDetail: React.FC<FederatedOIDCProviderDetailProps> = 
                                                         oidcProviderInput.socialLoginProvider = value;
                                                         setOIDCProviderInput({ ...oidcProviderInput });
                                                     }}
-                                                    value={oidcProviderInput.socialLoginProvider}
-                                                    disabled={true}
+                                                    value={oidcProviderInput.socialLoginProvider}                                                    
                                                 />
                                             </Grid2>
                                         }
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Provider Client ID</div>
                                             <TextField name="clientId" id="clientId"
+                                                disabled={isMarkedForDelete}
                                                 value={oidcProviderInput.federatedOIDCProviderClientId || ""}
                                                 onChange={(evt) => { oidcProviderInput.federatedOIDCProviderClientId = evt.target.value; setOIDCProviderInput({ ...oidcProviderInput }); setMarkDirty(true); }}
                                                 fullWidth={true} size="small" />
@@ -240,6 +243,7 @@ const FederatedOIDCProviderDetail: React.FC<FederatedOIDCProviderDetailProps> = 
                                                 {changeClientSecret === true &&
                                                     <Grid2 size={12}>
                                                         <TextField type="password" name="clientSecret" id="clientSecret"
+                                                            disabled={isMarkedForDelete}
                                                             value={oidcProviderInput.federatedOIDCProviderClientSecret}
                                                             onChange={(evt) => { 
                                                                 oidcProviderInput.federatedOIDCProviderClientSecret = evt.target.value; 
@@ -272,13 +276,15 @@ const FederatedOIDCProviderDetail: React.FC<FederatedOIDCProviderDetailProps> = 
                                                             <div>*******************************************</div>
                                                         </Grid2>
                                                         
-                                                        <Grid2 size={1}>                                                        
-                                                            <EditOutlinedIcon
-                                                                sx={{cursor: "pointer"}}
-                                                                onClick={() => {
-                                                                    setChangeClientSecret(true);
-                                                                }}
-                                                            />
+                                                        <Grid2 size={1}>
+                                                            {!isMarkedForDelete &&
+                                                                <EditOutlinedIcon
+                                                                    sx={{cursor: "pointer"}}
+                                                                    onClick={() => {
+                                                                        setChangeClientSecret(true);
+                                                                    }}
+                                                                />
+                                                            }
                                                         </Grid2>
                                                         <Grid2 size={1}>
                                                             <VisibilityOutlinedIcon 
@@ -297,6 +303,7 @@ const FederatedOIDCProviderDetail: React.FC<FederatedOIDCProviderDetailProps> = 
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Well Known URI</div>
                                             <TextField name="providerWellKnownUri" id="providerWellKnownUri"
+                                                disabled={isMarkedForDelete}
                                                 value={oidcProviderInput.federatedOIDCProviderWellKnownUri}
                                                 onChange={(evt) => { oidcProviderInput.federatedOIDCProviderWellKnownUri = evt.target.value; setOIDCProviderInput({ ...oidcProviderInput }); setMarkDirty(true); }}
                                                 fullWidth={true} size="small" />
@@ -304,6 +311,7 @@ const FederatedOIDCProviderDetail: React.FC<FederatedOIDCProviderDetailProps> = 
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Authentication Type</div>
                                             <Select
+                                                disabled={isMarkedForDelete}
                                                 size="small"
                                                 fullWidth={true}
                                                 value={oidcProviderInput.clientAuthType}
@@ -319,6 +327,7 @@ const FederatedOIDCProviderDetail: React.FC<FederatedOIDCProviderDetailProps> = 
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Scope</div>
                                             <Autocomplete
+                                                disabled={isMarkedForDelete}
                                                 id="scopes"
                                                 multiple={true}
                                                 size="small"
@@ -351,6 +360,7 @@ const FederatedOIDCProviderDetail: React.FC<FederatedOIDCProviderDetailProps> = 
                                                 <Grid2 alignContent={"center"} size={10}>Use PKCE</Grid2>
                                                 <Grid2 size={2}>
                                                     <Checkbox
+                                                        disabled={isMarkedForDelete}
                                                         checked={oidcProviderInput.usePkce}
                                                         onChange={(_, checked: boolean) => {
                                                             oidcProviderInput.usePkce = checked;
@@ -365,6 +375,7 @@ const FederatedOIDCProviderDetail: React.FC<FederatedOIDCProviderDetailProps> = 
                                                 <Grid2 alignContent={"center"} size={10}>Refresh Token Allowed</Grid2>
                                                 <Grid2 size={2}>
                                                     <Checkbox
+                                                        disabled={isMarkedForDelete}
                                                         id="refreshTokensAllowed"
                                                         checked={oidcProviderInput.refreshTokenAllowed}
                                                         onChange={(_, checked: boolean) => {
@@ -394,62 +405,66 @@ const FederatedOIDCProviderDetail: React.FC<FederatedOIDCProviderDetailProps> = 
                         </Grid2>
                         
                         <Grid2 size={12} marginBottom={"16px"}>
-                            <Accordion defaultExpanded={true}  >
-                                <AccordionSummary
-                                    expandIcon={<ExpandMoreIcon />}
-                                    id={"domain-configuration"}
-                                    sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center"}}
+                            {!isMarkedForDelete &&
+                                <Accordion defaultExpanded={true}  >
+                                    <AccordionSummary
+                                        expandIcon={<ExpandMoreIcon />}
+                                        id={"domain-configuration"}
+                                        sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center"}}
 
-                                >
-                                    <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
-                                        <AlternateEmailIcon /><div style={{marginLeft: "8px"}}>Domains</div>
-                                    </div>
-                                </AccordionSummary>
-                                <AccordionDetails>
-                                    <FederatedOIDCProviderDomainConfiguration
-                                        federatedOIDCProviderId={federatedOIDCProvider.federatedOIDCProviderId}
-                                        onUpdateEnd={(success: boolean) =>{
-                                            setShowMutationBackdrop(false);
-                                            if(success){
-                                                setShowMutationSnackbar(true);
-                                            }
-                                        }}
-                                        onUpdateStart={() =>{
-                                            setShowMutationBackdrop(true);
-                                        }}
-                                    />
-                                </AccordionDetails>
-                            </Accordion>
+                                    >
+                                        <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
+                                            <AlternateEmailIcon /><div style={{marginLeft: "8px"}}>Domains</div>
+                                        </div>
+                                    </AccordionSummary>
+                                    <AccordionDetails>
+                                        <FederatedOIDCProviderDomainConfiguration
+                                            federatedOIDCProviderId={federatedOIDCProvider.federatedOIDCProviderId}
+                                            onUpdateEnd={(success: boolean) =>{
+                                                setShowMutationBackdrop(false);
+                                                if(success){
+                                                    setShowMutationSnackbar(true);
+                                                }
+                                            }}
+                                            onUpdateStart={() =>{
+                                                setShowMutationBackdrop(true);
+                                            }}
+                                        />
+                                    </AccordionDetails>
+                                </Accordion>
+                            }
                         </Grid2>
                         
                         <Grid2 size={12} marginBottom={"16px"}>
-                            <Accordion defaultExpanded={false}  >
-                                <AccordionSummary
-                                    expandIcon={<ExpandMoreIcon />}
-                                    id={"login-failure-configuration"}
-                                    sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center"}}
+                            {!isMarkedForDelete &&
+                                <Accordion defaultExpanded={false}  >
+                                    <AccordionSummary
+                                        expandIcon={<ExpandMoreIcon />}
+                                        id={"login-failure-configuration"}
+                                        sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center"}}
 
-                                >
-                                    <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
-                                        <SettingsApplicationsIcon /><div style={{marginLeft: "8px"}}>Tenants</div>
-                                    </div>
-                                </AccordionSummary>
-                                <AccordionDetails>
-                                    <FederatedOIDCProviderTenantConfiguration
-                                        federatedOIDCProviderId={federatedOIDCProvider.federatedOIDCProviderId}
-                                        onUpdateEnd={(success: boolean) =>{
-                                            setShowMutationBackdrop(false);
-                                            if(success){
-                                                setShowMutationSnackbar(true);
-                                            }
-                                        }}
-                                        onUpdateStart={() =>{
-                                            setShowMutationBackdrop(true);
-                                        }}
-                                    />
-                                    
-                                </AccordionDetails>
-                            </Accordion>
+                                    >
+                                        <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
+                                            <SettingsApplicationsIcon /><div style={{marginLeft: "8px"}}>Tenants</div>
+                                        </div>
+                                    </AccordionSummary>
+                                    <AccordionDetails>
+                                        <FederatedOIDCProviderTenantConfiguration
+                                            federatedOIDCProviderId={federatedOIDCProvider.federatedOIDCProviderId}
+                                            onUpdateEnd={(success: boolean) =>{
+                                                setShowMutationBackdrop(false);
+                                                if(success){
+                                                    setShowMutationSnackbar(true);
+                                                }
+                                            }}
+                                            onUpdateStart={() =>{
+                                                setShowMutationBackdrop(true);
+                                            }}
+                                        />
+                                        
+                                    </AccordionDetails>
+                                </Accordion>
+                            }
                         </Grid2>
                     </Grid2>
                 </DetailPageMainContentContainer>

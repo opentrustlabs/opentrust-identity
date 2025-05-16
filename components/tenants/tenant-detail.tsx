@@ -59,7 +59,7 @@ const TenantDetail: React.FC<TenantDetailProps> = ({ tenantId }) => {
     if (loading) return <DataLoading dataLoadingSize="xl" color={null} />
     if (error) return <ErrorComponent message={error.message} componentSize='lg' />
     if (data && data.getTenantById === null) return <ErrorComponent message={"Tenant Not Found"} componentSize='lg' />
-    
+
     return <InnerComponent tenant={data.getTenantById} />
 }
 
@@ -114,7 +114,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                 setShowMutationBackdrop(false);
                 setErrorMessage(error.message);
             },
-            refetchQueries: [TENANT_DETAIL_QUERY]
+            refetchQueries: [{query: TENANT_DETAIL_QUERY, variables: {tenantId: tenant.tenantId}}]
         }
     );
 
@@ -197,11 +197,14 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                     <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Tenant Name</div>
-                                            <TextField name="tenantName" id="tenantName" onChange={(evt) => { tenantInput.tenantName = evt?.target.value; setTenantInput({ ...tenantInput }); setOverviewDirty(true); }} value={tenantInput.tenantName} fullWidth={true} size="small" />
+                                            <TextField
+                                                disabled={isMarkedForDelete}
+                                                name="tenantName" id="tenantName" onChange={(evt) => { tenantInput.tenantName = evt?.target.value; setTenantInput({ ...tenantInput }); setOverviewDirty(true); }} value={tenantInput.tenantName} fullWidth={true} size="small" />
                                         </Grid2>
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Tenant Descripton</div>
                                             <TextField  
+                                                disabled={isMarkedForDelete}
                                                 name="tenantDescription" id="tenantDescription" 
                                                 value={tenantInput.tenantDescription} fullWidth={true} size="small" multiline={true} rows={2} 
                                                 onChange={(evt) => { tenantInput.tenantDescription = evt?.target.value; setTenantInput({ ...tenantInput }); setOverviewDirty(true); }}
@@ -214,6 +217,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                             }
                                             {tenant.tenantType !== TENANT_TYPE_ROOT_TENANT &&
                                                 <Select
+                                                    disabled={isMarkedForDelete}
                                                     size="small"
                                                     fullWidth={true}
                                                     value={tenantInput.tenantType}
@@ -245,6 +249,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Federated OIDC Provider Constraint</div>
                                             <Select
+                                                disabled={isMarkedForDelete}
                                                 required={true}
                                                 size="small"
                                                 fullWidth={true}
@@ -265,7 +270,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                                 }
                                             </div>
                                             <TextField name="defaultRateLimit" id="defaultRateLimit" 
-                                                disabled={tenantInput.allowUnlimitedRate === true}
+                                                disabled={tenantInput.allowUnlimitedRate === true || isMarkedForDelete === true}
                                                 onChange={(evt) => {
                                                     const n = parseInt(evt.target.value); 
                                                     if(n){
@@ -298,6 +303,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                             <Grid2 alignContent={"center"} size={10}>Enabled</Grid2>
                                             <Grid2 size={2}>
                                                 <Checkbox 
+                                                    disabled={isMarkedForDelete}
                                                     checked={tenantInput.enabled}
                                                     onChange={(_, checked: boolean) => {tenantInput.enabled = checked; setTenantInput({...tenantInput}); setOverviewDirty(true);}}
                                                 />
@@ -305,6 +311,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                             <Grid2 alignContent={"center"} size={10}>Allow unlimited rate</Grid2>
                                             <Grid2 size={2}>
                                                 <Checkbox 
+                                                    disabled={isMarkedForDelete}
                                                     checked={tenantInput.allowUnlimitedRate === true}
                                                     onChange={(_, checked: boolean) => {
                                                         tenantInput.allowUnlimitedRate = checked;                                                         
@@ -323,6 +330,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                             <Grid2 alignContent={"center"} size={10}>Allow user self-registration</Grid2>
                                             <Grid2 size={2}>
                                                 <Checkbox 
+                                                    disabled={isMarkedForDelete}
                                                     checked={tenantInput.allowUserSelfRegistration === true}
                                                     onChange={(_, checked: boolean) => {tenantInput.allowUserSelfRegistration = checked; setTenantInput({...tenantInput}); setOverviewDirty(true);}}
                                                 />
@@ -330,6 +338,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                             <Grid2 alignContent={"center"} size={10}>Allow anonymous users</Grid2>
                                             <Grid2 size={2}>
                                                 <Checkbox 
+                                                    disabled={isMarkedForDelete}
                                                     checked={tenantInput.allowAnonymousUsers === true}
                                                     onChange={(_, checked: boolean) => {tenantInput.allowAnonymousUsers = checked; setTenantInput({...tenantInput}); setOverviewDirty(true);}}
                                                 />
@@ -337,6 +346,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                             <Grid2 alignContent={"center"} size={10}>Allow social login</Grid2>
                                             <Grid2 size={2}>
                                                 <Checkbox 
+                                                    disabled={isMarkedForDelete}
                                                     checked={tenantInput.allowSocialLogin === true}
                                                     onChange={(_, checked: boolean) => {tenantInput.allowSocialLogin = checked; setTenantInput({...tenantInput}); setOverviewDirty(true);}}
                                                 />
@@ -344,6 +354,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                             <Grid2 alignContent={"center"} size={10}>Verify email on registration</Grid2>
                                             <Grid2 size={2}>
                                                 <Checkbox 
+                                                    disabled={isMarkedForDelete}
                                                     checked={tenantInput.verifyEmailOnSelfRegistration === true}
                                                     onChange={(_, checked: boolean) => {tenantInput.verifyEmailOnSelfRegistration = checked; setTenantInput({...tenantInput}); setOverviewDirty(true);}}
                                                 />
@@ -351,6 +362,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                             <Grid2 alignContent={"center"} size={10}>Migrate legacy users</Grid2>
                                             <Grid2 size={2}>
                                                 <Checkbox 
+                                                    disabled={isMarkedForDelete}
                                                     checked={tenantInput.migrateLegacyUsers === true}
                                                     onChange={(_, checked: boolean) => {tenantInput.migrateLegacyUsers = checked; setTenantInput({...tenantInput}); setOverviewDirty(true);}}
                                                 />
@@ -358,6 +370,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                             <Grid2 alignContent={"center"} size={10}>Allow login by phone number</Grid2>
                                             <Grid2 size={2}>
                                                 <Checkbox 
+                                                    disabled={isMarkedForDelete}
                                                     checked={tenantInput.allowLoginByPhoneNumber === true}
                                                     onChange={(_, checked: boolean) => {tenantInput.allowLoginByPhoneNumber = checked; setTenantInput({...tenantInput}); setOverviewDirty(true);}}
                                                 />
@@ -365,12 +378,17 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                             <Grid2 alignContent={"center"} size={10}>Allow password recovery</Grid2>
                                             <Grid2 size={2}>
                                                 <Checkbox 
+                                                    disabled={isMarkedForDelete}
                                                     checked={tenantInput.allowForgotPassword === true}
                                                     onChange={(_, checked: boolean) => {tenantInput.allowForgotPassword = checked; setTenantInput({...tenantInput}); setOverviewDirty(true);}}
                                                 />
                                             </Grid2>
                                             <Grid2 alignContent={"center"} size={10}>Require CAPTCHA on Registration</Grid2>
-                                            <Grid2 size={2}><Checkbox /></Grid2>
+                                            <Grid2 size={2}>
+                                                <Checkbox 
+                                                    disabled={isMarkedForDelete}
+                                                />
+                                            </Grid2>
                                         </Grid2>
                                     </Grid2>                                    
                                 </Grid2>
@@ -398,241 +416,258 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                         </Grid2>                        
                         
                         <Grid2 size={12}>
-                            <Accordion defaultExpanded={false}  >
-                                <AccordionSummary
-                                    expandIcon={<ExpandMoreIcon />}
-                                    id={"login-failure-configuration"}
-                                    sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center"}}
+                            {!isMarkedForDelete &&
+                                <Accordion defaultExpanded={false}  >
+                                    <AccordionSummary
+                                        expandIcon={<ExpandMoreIcon />}
+                                        id={"login-failure-configuration"}
+                                        sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center"}}
 
-                                >
-                                    <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
-                                        <LoginIcon /><div style={{marginLeft: "8px"}}>Login Failure Configuration</div>
-                                    </div>
-                                </AccordionSummary>
-                                <AccordionDetails>
-                                    <LoginFailureConfiguration 
-                                        tenantId={tenant.tenantId}
-                                        onUpdateEnd={(success: boolean) => {
-                                            setShowMutationBackdrop(false);
-                                            if(success){
-                                                setShowMutationSnackbar(true);
-                                            }
-                                        }}
-                                        onUpdateStart={() => {
-                                            setShowMutationBackdrop(true);                                            
-                                        }}
-                                    />
-                                </AccordionDetails>
-                            </Accordion>
+                                    >
+                                        <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
+                                            <LoginIcon /><div style={{marginLeft: "8px"}}>Login Failure Configuration</div>
+                                        </div>
+                                    </AccordionSummary>
+                                    <AccordionDetails>
+                                        <LoginFailureConfiguration 
+                                            tenantId={tenant.tenantId}
+                                            onUpdateEnd={(success: boolean) => {
+                                                setShowMutationBackdrop(false);
+                                                if(success){
+                                                    setShowMutationSnackbar(true);
+                                                }
+                                            }}
+                                            onUpdateStart={() => {
+                                                setShowMutationBackdrop(true);                                            
+                                            }}
+                                        />
+                                    </AccordionDetails>
+                                </Accordion>
+                            }
                         </Grid2>
 
                         <Grid2 size={12}>
-                            <Accordion >
-                                <AccordionSummary
-                                    expandIcon={<ExpandMoreIcon />}
-                                    id={"password-rules-configuration"}
-                                    sx={{ fontWeight: "bold" }}
-                                >
-                                    <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
-                                        <PasswordIcon /><div style={{marginLeft: "8px"}}>Password Rules Configuration</div>
-                                    </div>                                    
-                                </AccordionSummary>
-                                <AccordionDetails>
-                                    <PasswordRulesConfiguration
-                                        tenantId={tenant.tenantId}
-                                        onUpdateEnd={(success: boolean) => {
-                                            setShowMutationBackdrop(false);
-                                            if(success){
-                                                setShowMutationSnackbar(true);
-                                            }
-                                        }}
-                                        onUpdateStart={() => {
-                                            setShowMutationBackdrop(true);                                            
-                                        }}
-                                    />
-                                </AccordionDetails>
-                            </Accordion>
+                            {!isMarkedForDelete &&
+                                <Accordion >
+                                    <AccordionSummary
+                                        expandIcon={<ExpandMoreIcon />}
+                                        id={"password-rules-configuration"}
+                                        sx={{ fontWeight: "bold" }}
+                                    >
+                                        <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
+                                            <PasswordIcon /><div style={{marginLeft: "8px"}}>Password Rules Configuration</div>
+                                        </div>                                    
+                                    </AccordionSummary>
+                                    <AccordionDetails>
+                                        <PasswordRulesConfiguration
+                                            tenantId={tenant.tenantId}
+                                            onUpdateEnd={(success: boolean) => {
+                                                setShowMutationBackdrop(false);
+                                                if(success){
+                                                    setShowMutationSnackbar(true);
+                                                }
+                                            }}
+                                            onUpdateStart={() => {
+                                                setShowMutationBackdrop(true);                                            
+                                            }}
+                                        />
+                                    </AccordionDetails>
+                                </Accordion>
+                            }
                         </Grid2>
 
                         <Grid2 size={12}>
-                            <Accordion >
-                                <AccordionSummary
-                                    expandIcon={<ExpandMoreIcon />}
-                                    id={"anonymous-user-configuration"}
-                                    sx={{ fontWeight: "bold" }}
-                                >
-                                    <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
-                                        <FaceIcon /><div style={{marginLeft: "8px"}}>Anonymous User Configuration</div>
-                                    </div>
-                                    
-                                </AccordionSummary>
-                                <AccordionDetails>
-                                    <AnonymousUserConfiguration
-                                        tenant={tenant}
-                                        allowAnonymousUsers={tenantInput.allowAnonymousUsers}
-                                        onUpdateEnd={(success: boolean) => {
-                                            setShowMutationBackdrop(false);
-                                            if(success){
-                                                setShowMutationSnackbar(true);
-                                            }
-                                        }}
-                                        onUpdateStart={() => {
-                                            setShowMutationBackdrop(true);                                            
-                                        }}
-                                    />
-                                </AccordionDetails>
-                            </Accordion>
+                            {!isMarkedForDelete &&
+                                <Accordion >
+                                    <AccordionSummary
+                                        expandIcon={<ExpandMoreIcon />}
+                                        id={"anonymous-user-configuration"}
+                                        sx={{ fontWeight: "bold" }}
+                                    >
+                                        <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
+                                            <FaceIcon /><div style={{marginLeft: "8px"}}>Anonymous User Configuration</div>
+                                        </div>
+                                        
+                                    </AccordionSummary>
+                                    <AccordionDetails>
+                                        <AnonymousUserConfiguration
+                                            tenant={tenant}
+                                            allowAnonymousUsers={tenantInput.allowAnonymousUsers}
+                                            onUpdateEnd={(success: boolean) => {
+                                                setShowMutationBackdrop(false);
+                                                if(success){
+                                                    setShowMutationSnackbar(true);
+                                                }
+                                            }}
+                                            onUpdateStart={() => {
+                                                setShowMutationBackdrop(true);                                            
+                                            }}
+                                        />
+                                    </AccordionDetails>
+                                </Accordion>
+                            }
                         </Grid2>
 
                         <Grid2 size={12}>
-                            <Accordion >
-                                <AccordionSummary
-                                    expandIcon={<ExpandMoreIcon />}
-                                    id={"legacy-user-migration-configuration"}
-                                    sx={{ fontWeight: "bold"}}
-                                >
-                                    <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
-                                        <InputIcon /><div style={{marginLeft: "8px"}}>Legacy User Migration Configuration</div>
-                                    </div>
-                                    
-                                </AccordionSummary>
-                                <AccordionDetails>
-                                    <LegacyUserMigrationConfiguration
-                                        tenantId={tenant.tenantId}
-                                        allowLegacyUserMigration={tenantInput.migrateLegacyUsers}
-                                        onUpdateEnd={(success: boolean) => {
-                                            setShowMutationBackdrop(false);
-                                            if(success){
-                                                setShowMutationSnackbar(true);
-                                            }
-                                        }}
-                                        onUpdateStart={() => {
-                                            setShowMutationBackdrop(true);                                            
-                                        }}
-                                    />
-                                </AccordionDetails>
-                            </Accordion>
+                            {!isMarkedForDelete &&
+                                <Accordion >
+                                    <AccordionSummary
+                                        expandIcon={<ExpandMoreIcon />}
+                                        id={"legacy-user-migration-configuration"}
+                                        sx={{ fontWeight: "bold"}}
+                                    >
+                                        <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
+                                            <InputIcon /><div style={{marginLeft: "8px"}}>Legacy User Migration Configuration</div>
+                                        </div>
+                                        
+                                    </AccordionSummary>
+                                    <AccordionDetails>
+                                        <LegacyUserMigrationConfiguration
+                                            tenantId={tenant.tenantId}
+                                            allowLegacyUserMigration={tenantInput.migrateLegacyUsers}
+                                            onUpdateEnd={(success: boolean) => {
+                                                setShowMutationBackdrop(false);
+                                                if(success){
+                                                    setShowMutationSnackbar(true);
+                                                }
+                                            }}
+                                            onUpdateStart={() => {
+                                                setShowMutationBackdrop(true);                                            
+                                            }}
+                                        />
+                                    </AccordionDetails>
+                                </Accordion>
+                            }
                         </Grid2>
 
                         <Grid2 size={12}>
-                            <Accordion >
-                                <AccordionSummary
-                                    expandIcon={<ExpandMoreIcon />}
-                                    id={"federated-oidc-providers"}
-                                    sx={{ fontWeight: "bold" }}
-                                >
-                                    <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
-                                        <AutoAwesomeMosaicIcon /><div style={{marginLeft: "8px"}}>Federated OIDC Providers</div>
-                                    </div>
-                                    
-                                </AccordionSummary>
-                                <AccordionDetails>
-                                    <TenantFederatedOIDCProviderConfiguration
-                                        tenantId={tenant.tenantId}
-                                        onUpdateEnd={(success: boolean) => {
-                                            setShowMutationBackdrop(false);
-                                            if(success){
-                                                setShowMutationSnackbar(true);
-                                            }
-                                        }}
-                                        onUpdateStart={() => {
-                                            setShowMutationBackdrop(true);                                            
-                                        }}
-                                        allowSocialLogin={tenant.allowSocialLogin}
-                                    />                                    
-                                </AccordionDetails>
-                            </Accordion>
+                            {!isMarkedForDelete &&
+                                <Accordion >
+                                    <AccordionSummary
+                                        expandIcon={<ExpandMoreIcon />}
+                                        id={"federated-oidc-providers"}
+                                        sx={{ fontWeight: "bold" }}
+                                    >
+                                        <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
+                                            <AutoAwesomeMosaicIcon /><div style={{marginLeft: "8px"}}>Federated OIDC Providers</div>
+                                        </div>
+                                        
+                                    </AccordionSummary>
+                                    <AccordionDetails>
+                                        <TenantFederatedOIDCProviderConfiguration
+                                            tenantId={tenant.tenantId}
+                                            onUpdateEnd={(success: boolean) => {
+                                                setShowMutationBackdrop(false);
+                                                if(success){
+                                                    setShowMutationSnackbar(true);
+                                                }
+                                            }}
+                                            onUpdateStart={() => {
+                                                setShowMutationBackdrop(true);                                            
+                                            }}
+                                            allowSocialLogin={tenant.allowSocialLogin}
+                                        />                                    
+                                    </AccordionDetails>
+                                </Accordion>
+                            }
                         </Grid2>
                         
                         <Grid2 size={12} >
-                            <Accordion >
-                                <AccordionSummary
-                                    expandIcon={<ExpandMoreIcon />}
-                                    id={"redirect-uri-configuration"}
-                                    sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center" }}
+                            {!isMarkedForDelete &&
+                                <Accordion >
+                                    <AccordionSummary
+                                        expandIcon={<ExpandMoreIcon />}
+                                        id={"redirect-uri-configuration"}
+                                        sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center" }}
 
-                                >
-                                    <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-                                        <PolicyIcon /><div style={{ marginLeft: "8px" }}>Access Control</div>
-                                    </div>
-                                </AccordionSummary>
-                                <AccordionDetails>
-                                    <TenantScopeConfiguration 
-                                        tenantId={tenant.tenantId}
-                                        tenantType={tenant.tenantType}
-                                        onUpdateEnd={(success: boolean) => {
-                                            setShowMutationBackdrop(false);
-                                            if(success){
-                                                setShowMutationSnackbar(true);
-                                            }
-                                        }}
-                                        onUpdateStart={() => {
-                                            setShowMutationBackdrop(true);                                            
-                                        }}
-                                    />
+                                    >
+                                        <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+                                            <PolicyIcon /><div style={{ marginLeft: "8px" }}>Access Control</div>
+                                        </div>
+                                    </AccordionSummary>
+                                    <AccordionDetails>
+                                        <TenantScopeConfiguration 
+                                            tenantId={tenant.tenantId}
+                                            tenantType={tenant.tenantType}
+                                            onUpdateEnd={(success: boolean) => {
+                                                setShowMutationBackdrop(false);
+                                                if(success){
+                                                    setShowMutationSnackbar(true);
+                                                }
+                                            }}
+                                            onUpdateStart={() => {
+                                                setShowMutationBackdrop(true);                                            
+                                            }}
+                                        />
 
-                                </AccordionDetails>
-                            </Accordion>
+                                    </AccordionDetails>
+                                </Accordion>
+                            }
                         </Grid2>
-                        <Grid2 size={12} >
-                            <Accordion >
-                                <AccordionSummary
-                                    expandIcon={<ExpandMoreIcon />}
-                                    id={"redirect-uri-configuration"}
-                                    sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center" }}
 
-                                >
-                                    <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-                                        <SpeedIcon /><div style={{ marginLeft: "8px" }}>Rate Limits</div>
-                                    </div>
-                                </AccordionSummary>
-                                <AccordionDetails>
-                                    <TenantRateLimitConfiguration 
-                                        tenantId={tenant.tenantId}
-                                        rateLimitSummaryHandler={(totalUsed: number) => {
-                                            setTotalRateUsed(totalUsed);
-                                        }}
-                                        onUpdateEnd={(success: boolean) => {
-                                            setShowMutationBackdrop(false);
-                                            if(success){
-                                                setShowMutationSnackbar(true);
-                                            }
-                                        }}
-                                        onUpdateStart={() => {
-                                            setShowMutationBackdrop(true);                                            
-                                        }}
-                                    />
-                                </AccordionDetails>
-                            </Accordion>
+                        <Grid2 size={12} >
+                            {!isMarkedForDelete &&
+                                <Accordion >
+                                    <AccordionSummary
+                                        expandIcon={<ExpandMoreIcon />}
+                                        id={"redirect-uri-configuration"}
+                                        sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center" }}
+
+                                    >
+                                        <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+                                            <SpeedIcon /><div style={{ marginLeft: "8px" }}>Rate Limits</div>
+                                        </div>
+                                    </AccordionSummary>
+                                    <AccordionDetails>
+                                        <TenantRateLimitConfiguration 
+                                            tenantId={tenant.tenantId}
+                                            rateLimitSummaryHandler={(totalUsed: number) => {
+                                                setTotalRateUsed(totalUsed);
+                                            }}
+                                            onUpdateEnd={(success: boolean) => {
+                                                setShowMutationBackdrop(false);
+                                                if(success){
+                                                    setShowMutationSnackbar(true);
+                                                }
+                                            }}
+                                            onUpdateStart={() => {
+                                                setShowMutationBackdrop(true);                                            
+                                            }}
+                                        />
+                                    </AccordionDetails>
+                                </Accordion>
+                            }
                         </Grid2>
 
                         <Grid2 size={12}>
-                            <Accordion >
-                                <AccordionSummary
-                                    expandIcon={<ExpandMoreIcon />}
-                                    id={"tenant-look-and-feel-configuration"}
-                                    sx={{ fontWeight: "bold" }}
-                                >
-                                    <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
-                                        <DisplaySettingsIcon /><div style={{marginLeft: "8px"}}>Tenant Look and Feel</div>
-                                    </div>
-                                    
-                                </AccordionSummary>
-                                <AccordionDetails>
-                                    <TenantLookAndFeelConfiguration
-                                        tenantId={tenant.tenantId}
-                                        onUpdateEnd={(success: boolean) => {
-                                            setShowMutationBackdrop(false);
-                                            if(success){
-                                                setShowMutationSnackbar(true);
-                                            }
-                                        }}
-                                        onUpdateStart={() => {
-                                            setShowMutationBackdrop(true);                                            
-                                        }}
-                                    />                                    
-                                </AccordionDetails>
-                            </Accordion>
+                            {!isMarkedForDelete &&
+                                <Accordion >
+                                    <AccordionSummary
+                                        expandIcon={<ExpandMoreIcon />}
+                                        id={"tenant-look-and-feel-configuration"}
+                                        sx={{ fontWeight: "bold" }}
+                                    >
+                                        <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
+                                            <DisplaySettingsIcon /><div style={{marginLeft: "8px"}}>Tenant Look and Feel</div>
+                                        </div>
+                                        
+                                    </AccordionSummary>
+                                    <AccordionDetails>
+                                        <TenantLookAndFeelConfiguration
+                                            tenantId={tenant.tenantId}
+                                            onUpdateEnd={(success: boolean) => {
+                                                setShowMutationBackdrop(false);
+                                                if(success){
+                                                    setShowMutationSnackbar(true);
+                                                }
+                                            }}
+                                            onUpdateStart={() => {
+                                                setShowMutationBackdrop(true);                                            
+                                            }}
+                                        />                                    
+                                    </AccordionDetails>
+                                </Accordion>
+                            }
                         </Grid2>
 
                     </Grid2>
@@ -641,43 +676,6 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                 <Grid2 spacing={2} size={{ xs: 12, sm: 12, md: 12, lg: 3, xl: 3 }}>
                     <Grid2 container spacing={2} size={12}>
                         <Grid2 size={{ xs: 12, sm: 6, lg: 12, md: 6, xl: 12 }} >                            
-                            <Paper elevation={3} >
-                                <div className="detail-page-subheader">Tenant Management Domains</div>
-                                <TenantManagementDomainConfiguration
-                                    tenantId={tenant.tenantId}
-                                    onUpdateEnd={(success: boolean) => {
-                                        setShowMutationBackdrop(false);
-                                        if(success){
-                                            setShowMutationSnackbar(true);
-                                        }
-                                    }}
-                                    onUpdateStart={() => {
-                                        setShowMutationBackdrop(true);                                            
-                                    }}
-                                />
-                            </Paper>
-                        </Grid2>
-
-
-                        <Grid2 size={{ xs: 12, sm: 6, lg: 12, md: 6, xl: 12 }} >                            
-                            <Paper elevation={3} >
-                                <div className="detail-page-subheader">Tenant Authentication Domains</div>
-                                <TenantAuthenticationDomainConfiguration
-                                    tenantId={tenant.tenantId}
-                                    onUpdateEnd={(success: boolean) => {
-                                        setShowMutationBackdrop(false);
-                                        if(success){
-                                            setShowMutationSnackbar(true);
-                                        }
-                                    }}
-                                    onUpdateStart={() => {
-                                        setShowMutationBackdrop(true);                                            
-                                    }}
-                                />
-                            </Paper>
-                        </Grid2>
-
-                        <Grid2 size={{ xs: 12, sm: 6, lg: 12, md: 6, xl: 12 }} >
                             <Paper elevation={3} >                                                                
                                 <ContactConfiguration
                                     contactForId={tenant.tenantId}
@@ -691,10 +689,52 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                     onUpdateStart={() => {
                                         setShowMutationBackdrop(true);                                            
                                     }}
+                                    readOnly={!isMarkedForDelete}
                                 />
                             </Paper>
                         </Grid2>
 
+                        <Grid2 size={{ xs: 12, sm: 6, lg: 12, md: 6, xl: 12 }} > 
+                            {!isMarkedForDelete &&
+                                <Paper elevation={3} >
+                                    <div className="detail-page-subheader">Tenant Management Domains</div>
+                                    <TenantManagementDomainConfiguration
+                                        tenantId={tenant.tenantId}
+                                        onUpdateEnd={(success: boolean) => {
+                                            setShowMutationBackdrop(false);
+                                            if(success){
+                                                setShowMutationSnackbar(true);
+                                            }
+                                        }}
+                                        onUpdateStart={() => {
+                                            setShowMutationBackdrop(true);                                            
+                                        }}
+                                    />
+                                </Paper>
+                            }
+                        </Grid2>
+
+                        <Grid2 size={{ xs: 12, sm: 6, lg: 12, md: 6, xl: 12 }} >
+                            {!isMarkedForDelete &&
+                                <Paper elevation={3} >
+                                    <div className="detail-page-subheader">Tenant Authentication Domains</div>
+                                    <TenantAuthenticationDomainConfiguration
+                                        tenantId={tenant.tenantId}
+                                        onUpdateEnd={(success: boolean) => {
+                                            setShowMutationBackdrop(false);
+                                            if(success){
+                                                setShowMutationSnackbar(true);
+                                            }
+                                        }}
+                                        onUpdateStart={() => {
+                                            setShowMutationBackdrop(true);                                            
+                                        }}
+                                    />
+                                </Paper>
+                            }
+                        </Grid2>
+
+                        
                     </Grid2>
                 </Grid2>
 

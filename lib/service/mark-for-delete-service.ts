@@ -73,16 +73,19 @@ class MarkForDeleteService {
         if(markForDelete.objectType === MarkForDeleteObjectType.Tenant){
             const t: Tenant = object as Tenant;
             t.markForDelete = true;
+            t.enabled = false;
             await tenantDao.updateTenant(t);
         }
         if(markForDelete.objectType === MarkForDeleteObjectType.Client){
             const c: Client = object as Client;
             c.markForDelete = true;
+            c.enabled = false;
             await clientDao.updateClient(c);
         }        
         if(markForDelete.objectType === MarkForDeleteObjectType.User){
             const u: User = object as User;
             u.markForDelete = true;
+            u.enabled = false;
             await identityDao.updateUser(u);
         }
         if(markForDelete.objectType === MarkForDeleteObjectType.AuthorizationGroup){
@@ -101,8 +104,7 @@ class MarkForDeleteService {
             // only those scope values defined for application management.
             if(s.scopeUse === SCOPE_USE_IAM_MANAGEMENT){
                 throw new GraphQLError("ERROR_UNABLE_TO_DELETE_IAM_MANAGEMENT_SCOPE");
-            }
-        
+            }        
             s.markForDelete = true;
             await scopeDao.updateScope(s);
         }

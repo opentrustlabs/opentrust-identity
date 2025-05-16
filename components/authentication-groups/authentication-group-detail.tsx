@@ -158,6 +158,7 @@ const AuthenticationGroupDetail: React.FC<AuthenticationGroupDetailProps> = ({ a
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Group Name</div>
                                             <TextField name="authnGroupName" id="authnGroupName" 
+                                                disabled={isMarkedForDelete}
                                                 value={authnGroupInput.authenticationGroupName} 
                                                 onChange={(evt) => {authnGroupInput.authenticationGroupName = evt.target.value; setMarkDirty(true); setAuthnGroupInput({...authnGroupInput})}}                                            
                                                 fullWidth={true} size="small" 
@@ -166,6 +167,7 @@ const AuthenticationGroupDetail: React.FC<AuthenticationGroupDetailProps> = ({ a
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Group Description</div>
                                             <TextField  
+                                                disabled={isMarkedForDelete}
                                                 name="authnGroupDescription" id="authnGroupDescription" 
                                                 value={authnGroupInput.authenticationGroupDescription} fullWidth={true} size="small" multiline={true} rows={2}
                                                 onChange={(evt) => {authnGroupInput.authenticationGroupDescription = evt.target.value; setMarkDirty(true); setAuthnGroupInput({...authnGroupInput})}}
@@ -193,6 +195,7 @@ const AuthenticationGroupDetail: React.FC<AuthenticationGroupDetailProps> = ({ a
                                             <Grid2 alignContent={"center"} size={10}>Default</Grid2>
                                             <Grid2 size={2}>
                                                 <Checkbox 
+                                                    disabled={isMarkedForDelete}
                                                     name="defaultGroup"
                                                     checked={authnGroupInput.defaultGroup}
                                                     onChange={(_, checked) => {
@@ -220,73 +223,75 @@ const AuthenticationGroupDetail: React.FC<AuthenticationGroupDetailProps> = ({ a
                         </Grid2>
 
                         <Grid2 size={12} marginBottom={"16px"}>
-                            <Accordion defaultExpanded={true}  >
-                                <AccordionSummary
-                                    expandIcon={<ExpandMoreIcon />}
-                                    id={"redirect-uri-configuration"}
-                                    sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center" }}
+                            {!isMarkedForDelete &&
+                                <Accordion defaultExpanded={true}  >
+                                    <AccordionSummary
+                                        expandIcon={<ExpandMoreIcon />}
+                                        id={"redirect-uri-configuration"}
+                                        sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center" }}
 
-                                >
-                                    <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-                                        <PersonIcon /><div style={{ marginLeft: "8px" }}>Users</div>
-                                    </div>
-                                </AccordionSummary>
-                                <AccordionDetails key={renderKey}>
-                                    {authnGroupInput.defaultGroup &&
-                                        <Grid2 size={12} container spacing={2} marginTop={"16px"}>
-                                            <Grid2 size={1}>
-                                                <InfoOutlinedIcon
-                                                    sx={{color: "red"}}
-                                                />
+                                    >
+                                        <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+                                            <PersonIcon /><div style={{ marginLeft: "8px" }}>Users</div>
+                                        </div>
+                                    </AccordionSummary>
+                                    <AccordionDetails key={renderKey}>
+                                        {authnGroupInput.defaultGroup &&
+                                            <Grid2 size={12} container spacing={2} marginTop={"16px"}>
+                                                <Grid2 size={1}>
+                                                    <InfoOutlinedIcon
+                                                        sx={{color: "red"}}
+                                                    />
+                                                </Grid2>
+                                                <Grid2 size={11}>
+                                                    <Typography>
+                                                        For default authentication groups, ALL users who belong to the tenant will also automatically belong to this group. To
+                                                        select users individually, uncheck the "Default" checkbox above and save your changes.
+                                                    </Typography>
+                                                </Grid2>
                                             </Grid2>
-                                            <Grid2 size={11}>
-                                                <Typography>
-                                                    For default authentication groups, ALL users who belong to the tenant will also automatically belong to this group. To
-                                                    select users individually, uncheck the "Default" checkbox above and save your changes.
-                                                </Typography>
-                                            </Grid2>
-                                        </Grid2>
-                                    }
-                                    {!authnGroupInput.defaultGroup && 
-                                        <RelationshipConfigurationComponent                                            
-                                            addObjectText="Add user to authentication group"
-                                            canAdd={true}
-                                            canDelete={true}
-                                            confirmRemovalText="Confirm removal of user"
-                                            filterObjectsText="Filter users"
-                                            noObjectsFoundText="No users found"
-                                            searchObjectsText="Search users"
-                                            relSearchInput={{
-                                                page: 1,
-                                                perPage: 10,
-                                                childtype: SearchResultType.User,
-                                                owningtenantid: authenticationGroup.tenantId,
-                                                parentid: authenticationGroup.authenticationGroupId,
-                                                term: ""
-                                            }}                                            
-                                            tenantId={authenticationGroup.tenantId}
-                                            onAdd={(id: string) => {
-                                                setShowMutationBackdrop(true);
-                                                authenticationGroupUserAddMutation({
-                                                    variables: {
-                                                        userId: id,
-                                                        authenticationGroupId: authenticationGroup.authenticationGroupId
-                                                    }
-                                                });
-                                            }}
-                                            onRemove={(id: string) => {
-                                                setShowMutationBackdrop(true);
-                                                authenticationGroupUserRemoveMutation({
-                                                    variables: {
-                                                        userId: id,
-                                                        authenticationGroupId: authenticationGroup.authenticationGroupId
-                                                    } 
-                                                });
-                                            }}
-                                        />
-                                    }
-                                </AccordionDetails>
-                            </Accordion>
+                                        }
+                                        {!authnGroupInput.defaultGroup && 
+                                            <RelationshipConfigurationComponent                                            
+                                                addObjectText="Add user to authentication group"
+                                                canAdd={true}
+                                                canDelete={true}
+                                                confirmRemovalText="Confirm removal of user"
+                                                filterObjectsText="Filter users"
+                                                noObjectsFoundText="No users found"
+                                                searchObjectsText="Search users"
+                                                relSearchInput={{
+                                                    page: 1,
+                                                    perPage: 10,
+                                                    childtype: SearchResultType.User,
+                                                    owningtenantid: authenticationGroup.tenantId,
+                                                    parentid: authenticationGroup.authenticationGroupId,
+                                                    term: ""
+                                                }}                                            
+                                                tenantId={authenticationGroup.tenantId}
+                                                onAdd={(id: string) => {
+                                                    setShowMutationBackdrop(true);
+                                                    authenticationGroupUserAddMutation({
+                                                        variables: {
+                                                            userId: id,
+                                                            authenticationGroupId: authenticationGroup.authenticationGroupId
+                                                        }
+                                                    });
+                                                }}
+                                                onRemove={(id: string) => {
+                                                    setShowMutationBackdrop(true);
+                                                    authenticationGroupUserRemoveMutation({
+                                                        variables: {
+                                                            userId: id,
+                                                            authenticationGroupId: authenticationGroup.authenticationGroupId
+                                                        } 
+                                                    });
+                                                }}
+                                            />
+                                        }
+                                    </AccordionDetails>
+                                </Accordion>
+                            }
                         </Grid2>
                     </Grid2>
                 </Grid2>

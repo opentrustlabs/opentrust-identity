@@ -131,7 +131,8 @@ const ScopeDetail: React.FC<ScopeDetailProps> = ({ scope }) => {
                                     <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Name</div>
-                                            <TextField disabled={scope.scopeUse === SCOPE_USE_IAM_MANAGEMENT} 
+                                            <TextField 
+                                                disabled={scope.scopeUse === SCOPE_USE_IAM_MANAGEMENT || isMarkedForDelete === true} 
                                                 name="scopeName" 
                                                 id="scopeName" 
                                                 value={scopeUpdateInput.scopeName} 
@@ -142,12 +143,13 @@ const ScopeDetail: React.FC<ScopeDetailProps> = ({ scope }) => {
                                                     setScopeUpdateInput({...scopeUpdateInput});
                                                     setMarkDirty(true);
                                                 }}
+                                                
                                             />
                                         </Grid2>
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Description</div>
                                             <TextField
-                                                disabled={scope.scopeUse === SCOPE_USE_IAM_MANAGEMENT}
+                                                disabled={scope.scopeUse === SCOPE_USE_IAM_MANAGEMENT || isMarkedForDelete === true}
                                                 name="scopeDescription"
                                                 id="scopeDescription"
                                                 value={scopeUpdateInput.scopeDescription}
@@ -254,33 +256,35 @@ const ScopeDetail: React.FC<ScopeDetailProps> = ({ scope }) => {
                         </Grid2> */}
 
                         <Grid2 size={12} marginBottom={"16px"}>
-                            <Accordion defaultExpanded={true}  >
-                                <AccordionSummary
-                                    expandIcon={<ExpandMoreIcon />}
-                                    id={"login-failure-configuration"}
-                                    sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center"}}
+                            {!isMarkedForDelete &&
+                                <Accordion defaultExpanded={true}  >
+                                    <AccordionSummary
+                                        expandIcon={<ExpandMoreIcon />}
+                                        id={"login-failure-configuration"}
+                                        sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center"}}
 
-                                >
-                                    <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
-                                        <SettingsApplicationsIcon /><div style={{marginLeft: "8px"}}>Tenants</div>
-                                    </div>
-                                </AccordionSummary>
-                                <AccordionDetails>
-                                    <ScopeTenantConfiguration 
-                                        scopeId={scope.scopeId}
-                                        scopeUse={scope.scopeUse}
-                                        onUpdateStart={() => {
-                                            setShowMutationBackdrop(true);
-                                        } } 
-                                        onUpdateEnd={(success: boolean) => {
-                                            setShowMutationBackdrop(false);
-                                            if(success){
-                                                setShowMutationSnackbar(true);
-                                            }
-                                        } }
-                                    />
-                                </AccordionDetails>
-                            </Accordion>
+                                    >
+                                        <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
+                                            <SettingsApplicationsIcon /><div style={{marginLeft: "8px"}}>Tenants</div>
+                                        </div>
+                                    </AccordionSummary>
+                                    <AccordionDetails>
+                                        <ScopeTenantConfiguration 
+                                            scopeId={scope.scopeId}
+                                            scopeUse={scope.scopeUse}
+                                            onUpdateStart={() => {
+                                                setShowMutationBackdrop(true);
+                                            } } 
+                                            onUpdateEnd={(success: boolean) => {
+                                                setShowMutationBackdrop(false);
+                                                if(success){
+                                                    setShowMutationSnackbar(true);
+                                                }
+                                            } }
+                                        />
+                                    </AccordionDetails>
+                                </Accordion>
+                            }
                         </Grid2>
 
                     </Grid2>
