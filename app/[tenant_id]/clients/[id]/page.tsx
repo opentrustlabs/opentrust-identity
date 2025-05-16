@@ -29,7 +29,8 @@ const ClientDetailPage: React.FC = () => {
 
     if (loading) return <DataLoading dataLoadingSize="xl" color={null} />
     if (error) return <ErrorComponent message={error.message} componentSize='lg' />
-    if(data && data.getClientById === null) return <ErrorComponent message={"Client Not Found"} componentSize='lg' />
+    if (data && data.getClientById === null) return <ErrorComponent message={"Client Not Found"} componentSize='lg' />
+
     return (
         <ClientDetail client={data.getClientById} />
     )

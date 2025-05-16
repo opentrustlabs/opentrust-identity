@@ -383,7 +383,7 @@ const resolvers: Resolvers = {
                 certificate: keyInput.certificate,
                 privateKeyPkcs8: keyInput.privateKeyPkcs8,
                 password: keyInput.password,
-                expiresAtMs: keyInput.expiresAtMs ? keyInput.expiresAtMs : Date.now() + (120 * 24 * 60 * 60 * 1000), // TODO - derive from the certificate's expiration
+                expiresAtMs: keyInput.expiresAtMs ? keyInput.expiresAtMs : Date.now() + (120 * 24 * 60 * 60 * 1000), // see service impl for parsing of certificate value
                 status: SIGNING_KEY_STATUS_ACTIVE,
                 keyTypeId: "",
                 publicKey: keyInput.publicKey,

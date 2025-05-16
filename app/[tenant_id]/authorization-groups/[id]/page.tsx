@@ -26,7 +26,7 @@ const AuthorizationGroupDetailPage: React.FC = () => {
 
     if (loading) return <DataLoading dataLoadingSize="xl" color={null} />
     if (error) return <ErrorComponent message={error.message} componentSize='lg' />
-    
+    if (data && data.getAuthorizationGroupById === null) return <ErrorComponent message={"Authorization Group Not Found"} componentSize='lg' />
 
     return (
         <AuthorizationGroupDetail authorizationGroup={data.getAuthorizationGroupById} />

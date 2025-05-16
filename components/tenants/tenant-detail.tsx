@@ -58,7 +58,8 @@ const TenantDetail: React.FC<TenantDetailProps> = ({ tenantId }) => {
 
     if (loading) return <DataLoading dataLoadingSize="xl" color={null} />
     if (error) return <ErrorComponent message={error.message} componentSize='lg' />
-
+    if (data && data.getTenantById === null) return <ErrorComponent message={"Tenant Not Found"} componentSize='lg' />
+    
     return <InnerComponent tenant={data.getTenantById} />
 }
 

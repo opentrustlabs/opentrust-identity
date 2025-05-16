@@ -28,12 +28,8 @@ class GroupService {
         return groupDao.getAuthorizationGroups(tenantId);
     }
 
-    public async getGroupById(groupId: string): Promise<AuthorizationGroup> {
-        
-        const group: AuthorizationGroup | null = await groupDao.getAuthorizationGroupById(groupId);
-        if(!group){
-            throw new GraphQLError("ERROR_GROUP_NOT_FOUND");
-        }
+    public async getGroupById(groupId: string): Promise<AuthorizationGroup | null> {        
+        const group: AuthorizationGroup | null = await groupDao.getAuthorizationGroupById(groupId);        
         return Promise.resolve(group);        
     }
 
