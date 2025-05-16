@@ -393,7 +393,7 @@ const resolvers: Resolvers = {
             await keysService.createSigningKey(key);
             return key;
         },
-        updateSigningKey: async(_: any, {keyInput }, oidcContext) => {
+        updateSigningKey: async(_: any, { keyInput }, oidcContext) => {
             const keysService: SigningKeysService = new SigningKeysService(oidcContext);
             const key: SigningKey = {
                 keyType: "",
