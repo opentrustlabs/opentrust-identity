@@ -549,6 +549,7 @@ const RelList: React.FC<RelListProps> = ({
                 <Grid2 size={11}>Name</Grid2>
                 <Grid2 size={1}></Grid2>
             </Grid2>
+            <Divider />
             {relSearchResults.total > 0 &&
                 <Grid2 spacing={1} container size={12}>
                     {relSearchResults.resultlist.map(

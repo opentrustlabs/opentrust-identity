@@ -151,6 +151,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                         <Grid2 marginBottom={"8px"}>
                                             <div>First Name</div>
                                             <TextField name="firstName" id="firstName" 
+                                                disabled={isMarkedForDelete}
                                                 value={userInput.firstName}
                                                 onChange={(evt) => {userInput.firstName = evt.target.value; setMarkDirty(true); setUserInput({...userInput})}}
                                                 fullWidth={true} size="small" 
@@ -159,6 +160,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                         <Grid2 marginBottom={"8px"}>
                                             <div>Last Name</div>
                                             <TextField name="lastName" id="lastName" 
+                                                disabled={isMarkedForDelete}
                                                 value={userInput.lastName} 
                                                 onChange={(evt) => {userInput.lastName = evt.target.value; setMarkDirty(true); setUserInput({...userInput}); }}
                                                 fullWidth={true} size="small" 
@@ -171,6 +173,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                                 <Grid2 alignContent={"center"} size={10}>Enabled</Grid2>
                                                 <Grid2 size={2}>
                                                     <Checkbox 
+                                                        disabled={isMarkedForDelete}
                                                         name="enabled"
                                                         checked={userInput.enabled}
                                                         onChange={(_, checked) => {
@@ -183,6 +186,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                                 <Grid2 alignContent={"center"} size={10}>Email verified</Grid2>
                                                 <Grid2 size={2}>
                                                     <Checkbox 
+                                                        disabled={isMarkedForDelete}
                                                         name="emailVerified"
                                                         checked={userInput.emailVerified}
                                                         onChange={(_, checked) => {
@@ -194,10 +198,10 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                                 </Grid2>
                                                 <Grid2 alignContent={"center"} size={10}>Locked</Grid2>
                                                 <Grid2 size={2}>
-                                                    <Checkbox 
+                                                    <Checkbox                                                         
                                                         name="locked"
                                                         checked={user.locked}
-                                                        disabled={!user.locked}
+                                                        disabled={!user.locked || isMarkedForDelete === true}
                                                         onChange={(_, checked) => {
                                                             // TODO
                                                             // Rather than update the entire user,
@@ -216,6 +220,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Middle Name</div>
                                             <TextField name="middleName" id="middleName" 
+                                                disabled={isMarkedForDelete}
                                                 value={userInput.middleName} 
                                                 onChange={(evt) => {userInput.middleName = evt.target.value; setMarkDirty(true); setUserInput({...userInput}); }}
                                                 fullWidth={true} size="small" 
@@ -240,6 +245,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Name Order</div>
                                             <Select 
+                                                disabled={isMarkedForDelete}
                                                 name="nameOrder"
                                                 value={userInput.nameOrder}
                                                 onChange={(evt) => {
@@ -258,6 +264,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Email</div>
                                             <TextField name="email" id="email" 
+                                                disabled={isMarkedForDelete}
                                                 value={userInput.email} 
                                                 onChange={(evt) => {userInput.email = evt.target.value; setMarkDirty(true); setUserInput({...userInput}); }}
                                                 fullWidth={true} size="small" 
@@ -266,6 +273,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Phone Number</div>
                                             <TextField name="phoneNumber" id="phoneNumber" 
+                                                disabled={isMarkedForDelete}
                                                 value={userInput.phoneNumber} 
                                                 onChange={(evt) => {userInput.phoneNumber = evt.target.value; setMarkDirty(true); setUserInput({...userInput}); }}
                                                 fullWidth={true} size="small" 
@@ -274,6 +282,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Preferred Language</div>
                                             <Autocomplete
+                                                disabled={isMarkedForDelete}
                                                 id="defaultLanguage"                                                
                                                 sx={{paddingTop: "8px"}}
                                                 size="small"
@@ -306,6 +315,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Multi-factor Authorization</div>
                                             <Autocomplete
+                                                disabled={isMarkedForDelete}
                                                 id="mfa"
                                                 multiple={false}
                                                 size="small"
@@ -342,6 +352,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Address</div>
                                             <TextField name="address" id="address" 
+                                                disabled={isMarkedForDelete}
                                                 value={userInput.address} fullWidth={true} size="small" 
                                                 onChange={(evt) => {userInput.address = evt.target.value; setUserInput({...userInput}); setMarkDirty(true);}}
                                             />
@@ -349,6 +360,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                         <Grid2 marginBottom={"16px"}>
                                             <div>(Optional) Apartment, suite, unit, building, floor</div>
                                             <TextField name="addressline1" id="addressline1" 
+                                                disabled={isMarkedForDelete}
                                                 value={userInput.addressLine1} 
                                                 onChange={(evt) => {userInput.addressLine1 = evt.target.value; setUserInput({...userInput}); setMarkDirty(true);}}
                                                 fullWidth={true} size="small" 
@@ -357,6 +369,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                         <Grid2 marginBottom={"16px"}>
                                             <div>City</div>
                                             <TextField name="city" id="city" 
+                                                disabled={isMarkedForDelete}
                                                 value={userInput.city} 
                                                 onChange={(evt) => {userInput.city = evt.target.value; setUserInput({...userInput}); setMarkDirty(true);}}
                                                 fullWidth={true} size="small" 
@@ -366,6 +379,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                         <Grid2 size={12} marginBottom={"16px"}>
                                             <div>Country</div>
                                             <Autocomplete
+                                                disabled={isMarkedForDelete}
                                                 id="countryCode"                                                
                                                 sx={{paddingTop: "8px"}}
                                                 size="small"
@@ -388,6 +402,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                         <Grid2 marginBottom={"16px"}>
                                             <div>State / Province / Region</div>
                                             <TextField name="stateprovinceregion" id="stateprovinceregion" 
+                                                disabled={isMarkedForDelete}
                                                 value={userInput.stateRegionProvince} 
                                                 onChange={(evt) => {userInput.stateRegionProvince = evt.target.value; setUserInput({...userInput}); setMarkDirty(true);}}
                                                 fullWidth={true} size="small" 
@@ -396,6 +411,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Postal Code</div>
                                             <TextField name="postalCode" id="postalCode" 
+                                                disabled={isMarkedForDelete}
                                                 value={userInput.postalCode} 
                                                 fullWidth={true} size="small" 
                                                 onChange={(evt) => {userInput.postalCode = evt.target.value; setUserInput({...userInput}); setMarkDirty(true);}}
@@ -418,89 +434,95 @@ const UserDetail: React.FC<UserDetailProps> = ({
                         </Grid2>
 
                         <Grid2 size={12} marginBottom={"16px"}>
-                            <Accordion defaultExpanded={true}  >
-                                <AccordionSummary
-                                    expandIcon={<ExpandMoreIcon />}
-                                    id={"login-failure-configuration"}
-                                    sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center"}}
+                            {!isMarkedForDelete &&
+                                <Accordion defaultExpanded={true}  >
+                                    <AccordionSummary
+                                        expandIcon={<ExpandMoreIcon />}
+                                        id={"login-failure-configuration"}
+                                        sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center"}}
 
-                                >
-                                    <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
-                                        <GroupIcon /><div style={{marginLeft: "8px"}}>Authorization Groups</div>
-                                    </div>
-                                </AccordionSummary>
-                                <AccordionDetails>
-                                    <UserAuthorizationGroupConfiguration
-                                        userId={user.userId}
-                                        onUpdateEnd={(success: boolean) => {
-                                            setShowMutationBackdrop(false);
-                                            if(success){
-                                                setShowMutationSnackbar(true);
-                                            }
-                                        }}
-                                        onUpdateStart={() => {
-                                            setShowMutationBackdrop(true);
-                                        }}    
-                                    />
-                                </AccordionDetails>
-                            </Accordion>
+                                    >
+                                        <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
+                                            <GroupIcon /><div style={{marginLeft: "8px"}}>Authorization Groups</div>
+                                        </div>
+                                    </AccordionSummary>
+                                    <AccordionDetails>
+                                        <UserAuthorizationGroupConfiguration
+                                            userId={user.userId}
+                                            onUpdateEnd={(success: boolean) => {
+                                                setShowMutationBackdrop(false);
+                                                if(success){
+                                                    setShowMutationSnackbar(true);
+                                                }
+                                            }}
+                                            onUpdateStart={() => {
+                                                setShowMutationBackdrop(true);
+                                            }}    
+                                        />
+                                    </AccordionDetails>                                
+                                </Accordion>
+                            }
                         </Grid2>
                         <Grid2 size={12}>
-                            <Accordion defaultExpanded={false}  >
-                                <AccordionSummary
-                                    expandIcon={<ExpandMoreIcon />}
-                                    id={"login-failure-configuration"}
-                                    sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center"}}
+                            {!isMarkedForDelete &&
+                                <Accordion defaultExpanded={false}  >
+                                    <AccordionSummary
+                                        expandIcon={<ExpandMoreIcon />}
+                                        id={"login-failure-configuration"}
+                                        sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center"}}
 
-                                >
-                                    <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
-                                        <PeopleIcon /><div style={{marginLeft: "8px"}}>Authentication Groups</div>
-                                    </div>
-                                </AccordionSummary>
-                                <AccordionDetails>
-                                    <UserAuthenticationGroupConfiguration
-                                        userId={user.userId}
-                                        onUpdateEnd={(success: boolean) => {
-                                            setShowMutationBackdrop(false);
-                                            if(success){
-                                                setShowMutationSnackbar(true);
-                                            }
-                                        }}
-                                        onUpdateStart={() => {
-                                            setShowMutationBackdrop(true);
-                                        }} 
-                                    />                                    
-                                </AccordionDetails>
-                            </Accordion>
+                                    >
+                                        <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
+                                            <PeopleIcon /><div style={{marginLeft: "8px"}}>Authentication Groups</div>
+                                        </div>
+                                    </AccordionSummary>
+                                    <AccordionDetails>
+                                        <UserAuthenticationGroupConfiguration
+                                            userId={user.userId}
+                                            onUpdateEnd={(success: boolean) => {
+                                                setShowMutationBackdrop(false);
+                                                if(success){
+                                                    setShowMutationSnackbar(true);
+                                                }
+                                            }}
+                                            onUpdateStart={() => {
+                                                setShowMutationBackdrop(true);
+                                            }} 
+                                        />                                    
+                                    </AccordionDetails>
+                                </Accordion>
+                            }
                         </Grid2>
                         
                         <Grid2 size={12}>
-                            <Accordion defaultExpanded={false}  >
-                                <AccordionSummary
-                                    expandIcon={<ExpandMoreIcon />}
-                                    id={"login-failure-configuration"}
-                                    sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center"}}
+                            {!isMarkedForDelete &&
+                                <Accordion defaultExpanded={false}  >
+                                    <AccordionSummary
+                                        expandIcon={<ExpandMoreIcon />}
+                                        id={"login-failure-configuration"}
+                                        sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center"}}
 
-                                >
-                                    <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
-                                        <SettingsApplicationsIcon /><div style={{marginLeft: "8px"}}>Tenant Memberships</div>
-                                    </div>
-                                </AccordionSummary>
-                                <AccordionDetails>
-                                    <UserTenantConfiguration
-                                        userId={user.userId}
-                                        onUpdateEnd={(success: boolean) => {
-                                            setShowMutationBackdrop(false);
-                                            if(success){
-                                                setShowMutationSnackbar(true);
-                                            }
-                                        }}
-                                        onUpdateStart={() => {
-                                            setShowMutationBackdrop(true);
-                                        }}
-                                    />
-                                </AccordionDetails>
-                            </Accordion>
+                                    >
+                                        <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
+                                            <SettingsApplicationsIcon /><div style={{marginLeft: "8px"}}>Tenant Memberships</div>
+                                        </div>
+                                    </AccordionSummary>
+                                    <AccordionDetails>
+                                        <UserTenantConfiguration
+                                            userId={user.userId}
+                                            onUpdateEnd={(success: boolean) => {
+                                                setShowMutationBackdrop(false);
+                                                if(success){
+                                                    setShowMutationSnackbar(true);
+                                                }
+                                            }}
+                                            onUpdateStart={() => {
+                                                setShowMutationBackdrop(true);
+                                            }}
+                                        />
+                                    </AccordionDetails>
+                                </Accordion>
+                            }
                         </Grid2>
                     </Grid2>
                 </DetailPageMainContentContainer>

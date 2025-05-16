@@ -169,17 +169,18 @@ const SigningKeyDetail: React.FC<SigningKeyDetailProps> = ({ signingKey }) => {
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Key Name / Alias</div>
                                             <TextField 
+                                                
                                                 name="keyName" id="keyName" 
                                                 value={keyUpdateInput.keyName} 
                                                 onChange={(evt) => {keyUpdateInput.keyName = evt.target.value; setKeyUpdateInput({...keyUpdateInput}); setMarkDirty(true)}}
-                                                disabled={keyUpdateInput.status === SIGNING_KEY_STATUS_REVOKED}
+                                                disabled={keyUpdateInput.status === SIGNING_KEY_STATUS_REVOKED || isMarkedForDelete === true}
                                                 fullWidth={true} size="small" 
                                             />
                                         </Grid2>
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Status</div>
                                             {signingKey.status === SIGNING_KEY_STATUS_REVOKED &&
-                                                <TextField 
+                                                <TextField                                                     
                                                     name="keyStatus" 
                                                     id="keyStatus" 
                                                     value={keyUpdateInput.status} 
@@ -187,6 +188,7 @@ const SigningKeyDetail: React.FC<SigningKeyDetailProps> = ({ signingKey }) => {
                                             }
                                             {signingKey.status !== SIGNING_KEY_STATUS_REVOKED &&
                                                 <Select
+                                                    disabled={isMarkedForDelete}
                                                     size="small"
                                                     fullWidth={true}
                                                     value={keyUpdateInput.status}
@@ -363,6 +365,7 @@ const SigningKeyDetail: React.FC<SigningKeyDetailProps> = ({ signingKey }) => {
                             onUpdateStart={() =>{
                                 setShowMutationBackdrop(true);
                             }}
+                            readOnly={!isMarkedForDelete}
                         />                        
                     </Paper>
                 </DetailPageRightNavContainer>
