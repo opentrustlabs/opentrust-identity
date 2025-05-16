@@ -1,5 +1,5 @@
 "use client";
-import { User, UserUpdateInput } from "@/graphql/generated/graphql-types";
+import { MarkForDeleteObjectType, User, UserUpdateInput } from "@/graphql/generated/graphql-types";
 import React, { useContext } from "react";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
 import Typography from "@mui/material/Typography";
@@ -27,6 +27,8 @@ import UserAuthenticationGroupConfiguration from "./user-authentication-group-co
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import { useClipboardCopyContext } from "../contexts/clipboard-copy-context";
 import DetailSectionActionHandler from "../layout/detail-section-action-handler";
+import SubmitMarkForDelete from "../deletion/submit-mark-for-delete";
+import MarkForDeleteAlert from "../deletion/mark-for-delete-alert";
 
 export interface UserDetailProps {
     user: User;
@@ -68,7 +70,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
     const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
     const [showMutationBackdrop, setShowMutationBackdrop] = React.useState<boolean>(false);
     const [showMutationSnackbar, setShowMutationSnackbar] = React.useState<boolean>(false);
-
+    const [isMarkedForDelete, setIsMarkedForDelete] = React.useState<boolean>(user.markForDelete);
 
     // GRAPHQL FUNCTIONS
     const [updateUserMutation] = useMutation(USER_UPDATE_MUTATION, {
@@ -108,21 +110,40 @@ const UserDetail: React.FC<UserDetailProps> = ({
             <DetailPageContainer>
                 <DetailPageMainContentContainer>
                     <Grid2 container size={12} spacing={2}>
-                        <Grid2
-                            className="detail-page-subheader"
-                            sx={{ backgroundColor: "#1976d2", color: "white", padding: "8px", borderRadius: "2px" }}
-                            fontWeight={"bold"}
-                            size={12}
-                        >
-                            Overview
-                        </Grid2>
-                        {errorMessage &&
-                            <Grid2 size={12}>
-                            
-                                <Alert severity={"error"} onClose={() => setErrorMessage(null)}>{errorMessage}</Alert>
+                        <Grid2 className="detail-page-subheader" alignItems={"center"} sx={{ backgroundColor: "#1976d2", color: "white", padding: "8px", borderRadius: "2px" }} container size={12}>
+                            <Grid2 size={11}>Overview</Grid2>
+                            <Grid2 size={1} display={"flex"} >
+                                {isMarkedForDelete !== true && 
+                                    <SubmitMarkForDelete 
+                                        objectId={user.userId}
+                                        objectType={MarkForDeleteObjectType.User}
+                                        confirmationMessage={`Confirm deletion of user: ${user.firstName} ${user.lastName}. Once submitted the operation cannot be undone.`}
+                                        onDeleteEnd={(successful: boolean, errorMessage?: string) => {
+                                            setShowMutationBackdrop(false);
+                                            if(successful){
+                                                setShowMutationSnackbar(true);
+                                                setIsMarkedForDelete(true);
+                                            }
+                                            else{
+                                                setErrorMessage(errorMessage || "ERROR");
+                                            }
+                                        }}
+                                        onDeleteStart={() => setShowMutationBackdrop(true)}
+                                    />
+                                }
                             </Grid2>
-                        }
-                        <Grid2 size={12}>                            
+                        </Grid2>                        
+                        <Grid2 size={12} marginBottom={"16px"}>                            
+                            {errorMessage &&
+                                <Grid2 size={12}>                            
+                                    <Alert severity={"error"} onClose={() => setErrorMessage(null)}>{errorMessage}</Alert>
+                                </Grid2>
+                            }
+                            {isMarkedForDelete === true &&
+                                <MarkForDeleteAlert 
+                                    message={"This user has been marked for deletion. No changes to the user are permitted."}
+                                />
+                            }	
                             <Paper sx={{ padding: "8px" }} elevation={1}>                            
                                 <Grid2 container size={12} spacing={2}>  
                                     

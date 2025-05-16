@@ -7,7 +7,7 @@ abstract class RateLimitDao {
 
     abstract getRateLimitServiceGroupById(serviceGroupId: string): Promise<RateLimitServiceGroup | null>;
 
-    abstract getRateLimitTenantRelViews(rateLimitServiceGroupId: string): Promise<Array<TenantRateLimitRelView>> ;
+    abstract getRateLimitTenantRelViews(rateLimitServiceGroupId: string | null, tenantId: string | null): Promise<Array<TenantRateLimitRelView>>;
 
     abstract createRateLimitServiceGroup(rateLimitServiceGroup: RateLimitServiceGroup): Promise<RateLimitServiceGroup>;
 

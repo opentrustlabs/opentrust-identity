@@ -26,6 +26,7 @@ const ScopeDetailPage: React.FC = () => {
 
     if (loading) return <DataLoading dataLoadingSize="xl" color={null} />
     if (error || !scopeId) return <ErrorComponent message={error ? error.message : "No scope detail could be found."} componentSize='lg' />
+    if (data && data.getScopeById === null) return <ErrorComponent message={"Scope Not Found"} componentSize='lg' />
 
     return (
         <ScopeDetail scope={data.getScopeById} />

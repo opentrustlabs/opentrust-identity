@@ -38,7 +38,7 @@ class DBSigningKeysDao extends SigningKeysDao {
     // Remove either the password or the private key from the returned data.
     // Those values can only be viewed by somebody with the correct permissions.
     protected entityToModel(entity: SigningKeyEntity): SigningKey {
-        
+
         const key: SigningKey = {
             expiresAtMs: entity.getDataValue("expiresAtMs"),
             keyId: entity.getDataValue("keyId"),
@@ -50,7 +50,8 @@ class DBSigningKeysDao extends SigningKeysDao {
             tenantId: entity.getDataValue("tenantId"),
             certificate: Buffer.from(entity.getDataValue("certificate") || "").toString("utf-8"),
             password: entity.getDataValue("password"),
-            publicKey: Buffer.from(entity.getDataValue("publicKey") || "").toString("utf-8")
+            publicKey: Buffer.from(entity.getDataValue("publicKey") || "").toString("utf-8"),
+            markForDelete: entity.getDataValue("markForDelete")
         }
         
         return key;

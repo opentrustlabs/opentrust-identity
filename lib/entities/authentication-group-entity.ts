@@ -32,6 +32,12 @@ class AuthenticationGroupEntity extends Model {
                 primaryKey: false,
                 allowNull: false,
                 field: "defaultgroup"
+            },
+            markForDelete: {
+                type: DataTypes.BOOLEAN,
+                primaryKey: false,
+                allowNull: false,
+                field: "markfordelete"
             }
         }, 
 		{

@@ -1,5 +1,5 @@
 "use client";
-import { Scope, ScopeUpdateInput } from "@/graphql/generated/graphql-types";
+import { MarkForDeleteObjectType, Scope, ScopeUpdateInput } from "@/graphql/generated/graphql-types";
 import React, { useContext } from "react";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
 import { SCOPE_USE_DISPLAY, SCOPE_USE_IAM_MANAGEMENT, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
@@ -25,6 +25,8 @@ import { SCOPE_UPDATE_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import { useMutation } from "@apollo/client";
 import { SCOPE_DETAIL_QUERY } from "@/graphql/queries/oidc-queries";
 import ScopeTenantConfiguration from "./scope-tenant-configuration";
+import SubmitMarkForDelete from "../deletion/submit-mark-for-delete";
+import MarkForDeleteAlert from "../deletion/mark-for-delete-alert";
 
 export interface ScopeDetailProps {
     scope: Scope
@@ -48,6 +50,7 @@ const ScopeDetail: React.FC<ScopeDetailProps> = ({ scope }) => {
     const [showMutationBackdrop, setShowMutationBackdrop] = React.useState<boolean>(false);
     const [showMutationSnackbar, setShowMutationSnackbar] = React.useState<boolean>(false);
     const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
+    const [isMarkedForDelete, setIsMarkedForDelete] = React.useState<boolean>(scope.markForDelete);
 
 
     // GRAPHQL FUNCTIONS
@@ -89,17 +92,39 @@ const ScopeDetail: React.FC<ScopeDetailProps> = ({ scope }) => {
             <DetailPageContainer>
                 <DetailPageMainContentContainer>
                     <Grid2 container size={12} spacing={2}>
-                        <Grid2
-                            className="detail-page-subheader"
-                            sx={{ backgroundColor: "#1976d2", color: "white", padding: "8px", borderRadius: "2px" }}
-                            fontWeight={"bold"}
-                            size={12}
-                        >
-                            Overview
+                        <Grid2 className="detail-page-subheader" alignItems={"center"} sx={{ backgroundColor: "#1976d2", color: "white", padding: "8px", borderRadius: "2px" }} container size={12}>
+                            <Grid2 size={11}>Overview</Grid2>
+                            <Grid2 size={1} display={"flex"} >
+                                {isMarkedForDelete !== true && scope.scopeUse !== SCOPE_USE_IAM_MANAGEMENT &&
+                                    <SubmitMarkForDelete 
+                                        objectId={scope.scopeId}
+                                        objectType={MarkForDeleteObjectType.Scope}
+                                        confirmationMessage={`Confirm deletion of scope: ${scope.scopeName}. Once submitted the operation cannot be undone.`}
+                                        onDeleteEnd={(successful: boolean, errorMessage?: string) => {
+                                            setShowMutationBackdrop(false);
+                                            if(successful){
+                                                setShowMutationSnackbar(true);
+                                                setIsMarkedForDelete(true);
+                                            }
+                                            else{
+                                                setErrorMessage(errorMessage || "ERROR");
+                                            }
+                                        }}
+                                        onDeleteStart={() => setShowMutationBackdrop(true)}
+                                    />
+                                }
+                            </Grid2>
                         </Grid2>
                         <Grid2 size={12}>
                             {errorMessage &&
-                                <Alert severity={"error"} onClose={() => setErrorMessage(null)}>{errorMessage}</Alert>
+                                <Grid2 size={12} marginBottom={"8px"}>
+                                    <Alert onClose={() => setErrorMessage(null)} sx={{ width: "100%" }} severity="error">{errorMessage}</Alert>
+                                </Grid2>                                
+                            }
+                            {isMarkedForDelete === true &&
+                                <MarkForDeleteAlert 
+                                    message={"This scope definition has been marked for deletion. No changes to the scope definition are permitted."}
+                                />
                             }
                             <Paper sx={{ padding: "8px" }} elevation={1}>
                                 <Grid2 container size={12} spacing={2}>

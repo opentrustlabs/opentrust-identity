@@ -142,8 +142,8 @@ class RateLimitService {
         return Promise.resolve(existingRel);
     }
 
-    public async getRateLimitTenantRelViews(rateLimitServiceGroupId: string): Promise<Array<TenantRateLimitRelView>>{
-        const rels = await rateLimitDao.getRateLimitTenantRelViews(rateLimitServiceGroupId);
+    public async getRateLimitTenantRelViews(rateLimitServiceGroupId: string | null, tenantId: string | null): Promise<Array<TenantRateLimitRelView>>{
+        const rels = await rateLimitDao.getRateLimitTenantRelViews(rateLimitServiceGroupId, tenantId);
         return rels;
     }
 

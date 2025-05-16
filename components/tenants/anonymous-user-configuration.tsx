@@ -30,11 +30,11 @@ const AnonymousUserConfiguration: React.FC<AnonymousUserConfigurationProps> = ({
     onUpdateStart
 }) => {
 
-    let initInput: TenantAnonymousUserConfigInput = {        
+    let initInput: TenantAnonymousUserConfigInput = {
         defaultcountrycode: "",
         defaultlangugecode: "",
         tokenttlseconds: 0,
-        tenantId: tenant.tenantId        
+        tenantId: tenant.tenantId
     }
 
     // STATE VARIABLES
@@ -57,7 +57,7 @@ const AnonymousUserConfiguration: React.FC<AnonymousUserConfigurationProps> = ({
                 initInput.defaultlangugecode = config.defaultlangugecode;
                 initInput.tokenttlseconds = config.tokenttlseconds ? config.tokenttlseconds : 0;
             }
-            setTenantAnonymousUserConfigInput({...initInput});
+            setTenantAnonymousUserConfigInput({ ...initInput });
             // setRevertToInput({...initInput});
         },
     });
@@ -90,78 +90,88 @@ const AnonymousUserConfiguration: React.FC<AnonymousUserConfigurationProps> = ({
                         <div>{errorMessage}</div>
                     </Grid2>
                 }
-                <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
-                    <div>Default Country</div>
-                    <Autocomplete
-                        id="defaultCountry"
-                        disabled={allowAnonymousUsers !== true}
-                        sx={{paddingTop: "8px"}}
-                        size="small"
-                        renderInput={(params) => <TextField {...params} label="" />}
-                        options={
-                            [{countryCode: "", country: ""}, ...COUNTRY_CODES].map(
-                                (cc: CountryCodeDef) => {
-                                    return {id: cc.countryCode, label: cc.country}
+                {!allowAnonymousUsers &&
+                    <Grid2 container size={12} margin={"8px 0px"} justifyContent={"center"} fontWeight={"bold"} fontSize={"0.9em"}>
+                        To make configuration changes to anonymous users, update the tenant to allow anonymous users.
+                    </Grid2>
+                }
+                {allowAnonymousUsers &&
+                    <React.Fragment>
+                        <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
+                            <div>Default Country</div>
+                            <Autocomplete
+                                id="defaultCountry"
+                                disabled={allowAnonymousUsers !== true}
+                                sx={{ paddingTop: "8px" }}
+                                size="small"
+                                renderInput={(params) => <TextField {...params} label="" />}
+                                options={
+                                    [{ countryCode: "", country: "" }, ...COUNTRY_CODES].map(
+                                        (cc: CountryCodeDef) => {
+                                            return { id: cc.countryCode, label: cc.country }
+                                        }
+                                    )
                                 }
-                            )
-                        }                        
-                        value={ allowAnonymousUsers ? getDefaultCountryCodeDef(tenantAnonymousUserConfigInput.defaultcountrycode || "" ): {id: "", label: ""}}
-                        onChange={ (_, value: any) => {                            
-                            tenantAnonymousUserConfigInput.defaultcountrycode = value ? value.id : "";
-                            setTenantAnonymousUserConfigInput({ ...tenantAnonymousUserConfigInput });
-                            setMarkDirty(true);
-                        }}                        
-                    />
-                </Grid2>
-                <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
-                    <div>Default Language</div>
-                    <Autocomplete
-                        id="defaultLanguage"
-                        disabled={allowAnonymousUsers !== true}
-                        sx={{paddingTop: "8px"}}
-                        size="small"
-                        renderInput={(params) => <TextField {...params} label="" />}
-                        options={
-                            [{languageCode: "", language: ""}, ...LANGUAGE_CODES].map(
-                                (lc: LanguageCodeDef) => {
-                                    return {id: lc.languageCode, label: lc.language}
+                                value={allowAnonymousUsers ? getDefaultCountryCodeDef(tenantAnonymousUserConfigInput.defaultcountrycode || "") : { id: "", label: "" }}
+                                onChange={(_, value: any) => {
+                                    tenantAnonymousUserConfigInput.defaultcountrycode = value ? value.id : "";
+                                    setTenantAnonymousUserConfigInput({ ...tenantAnonymousUserConfigInput });
+                                    setMarkDirty(true);
+                                }}
+                            />
+                        </Grid2>
+                        <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
+                            <div>Default Language</div>
+                            <Autocomplete
+                                id="defaultLanguage"
+                                disabled={allowAnonymousUsers !== true}
+                                sx={{ paddingTop: "8px" }}
+                                size="small"
+                                renderInput={(params) => <TextField {...params} label="" />}
+                                options={
+                                    [{ languageCode: "", language: "" }, ...LANGUAGE_CODES].map(
+                                        (lc: LanguageCodeDef) => {
+                                            return { id: lc.languageCode, label: lc.language }
+                                        }
+                                    )
                                 }
-                            )
-                        }                        
-                        value={allowAnonymousUsers ? getDefaultLanguageCodeDef(tenantAnonymousUserConfigInput.defaultlangugecode || ""): {id: "", label: ""}}
-                        onChange={ (_, value: any) => {                                  
-                            tenantAnonymousUserConfigInput.defaultlangugecode = value ? value.id : "";
-                            setTenantAnonymousUserConfigInput({ ...tenantAnonymousUserConfigInput });
-                            setMarkDirty(true);
-                        }}                        
-                    />
-                </Grid2>
-                <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
-                    <div>Token Time-To-Live (in seconds)</div>
-                    <TextField name="tokenTTLSeconds" id="tokenTTLSeconds"
-                        type="number"
-                        disabled={allowAnonymousUsers !== true}
-                        value={ allowAnonymousUsers !== true ? "" : tenantAnonymousUserConfigInput.tokenttlseconds > 0 ? tenantAnonymousUserConfigInput.tokenttlseconds : ""}
-                        onChange={(evt) => { tenantAnonymousUserConfigInput.tokenttlseconds = parseInt(evt.target.value || "0"); setTenantAnonymousUserConfigInput({ ...tenantAnonymousUserConfigInput }); setMarkDirty(true); }}
-                        fullWidth={true} size="small"
-                    />
-                </Grid2>
-            </Grid2>
-            <DetailSectionActionHandler
-                onDiscardClickedHandler={() => {   
-                    setTenantAnonymousUserConfigInput({...initInput});                                    
-                    setMarkDirty(false);
-                }}
-                onUpdateClickedHandler={() => {
-                    onUpdateStart(); 
-                    mutateAnonymousUserConfiguration();
-                }}
-                markDirty={markDirty}
-            />
+                                value={allowAnonymousUsers ? getDefaultLanguageCodeDef(tenantAnonymousUserConfigInput.defaultlangugecode || "") : { id: "", label: "" }}
+                                onChange={(_, value: any) => {
+                                    tenantAnonymousUserConfigInput.defaultlangugecode = value ? value.id : "";
+                                    setTenantAnonymousUserConfigInput({ ...tenantAnonymousUserConfigInput });
+                                    setMarkDirty(true);
+                                }}
+                            />
+                        </Grid2>
+                        <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
+                            <div>Token Time-To-Live (in seconds)</div>
+                            <TextField name="tokenTTLSeconds" id="tokenTTLSeconds"
+                                type="number"
+                                disabled={allowAnonymousUsers !== true}
+                                value={allowAnonymousUsers !== true ? "" : tenantAnonymousUserConfigInput.tokenttlseconds > 0 ? tenantAnonymousUserConfigInput.tokenttlseconds : ""}
+                                onChange={(evt) => { tenantAnonymousUserConfigInput.tokenttlseconds = parseInt(evt.target.value || "0"); setTenantAnonymousUserConfigInput({ ...tenantAnonymousUserConfigInput }); setMarkDirty(true); }}
+                                fullWidth={true} size="small"
+                            />
+                        </Grid2>
+                    </React.Fragment>
+                }
+            </Grid2 >
+            {allowAnonymousUsers &&
+                <DetailSectionActionHandler
+                    onDiscardClickedHandler={() => {
+                        setTenantAnonymousUserConfigInput({ ...initInput });
+                        setMarkDirty(false);
+                    }}
+                    onUpdateClickedHandler={() => {
+                        onUpdateStart();
+                        mutateAnonymousUserConfiguration();
+                    }}
+                    markDirty={markDirty}
+                />
+            }
+
         </>
-
     )
-
 }
 
 export default AnonymousUserConfiguration;

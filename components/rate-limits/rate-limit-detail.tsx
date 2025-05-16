@@ -1,5 +1,5 @@
 "use client";
-import { RateLimitServiceGroup, RateLimitServiceGroupUpdateInput } from "@/graphql/generated/graphql-types";
+import { MarkForDeleteObjectType, RateLimitServiceGroup, RateLimitServiceGroupUpdateInput } from "@/graphql/generated/graphql-types";
 import React, { useContext } from "react";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
 import { TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
@@ -27,6 +27,8 @@ import DetailSectionActionHandler from "../layout/detail-section-action-handler"
 import { useMutation } from "@apollo/client";
 import { RATE_LIMIT_SERVICE_GROUP_UPDATE_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import { RATE_LIMIT_BY_ID_QUERY } from "@/graphql/queries/oidc-queries";
+import SubmitMarkForDelete from "../deletion/submit-mark-for-delete";
+import MarkForDeleteAlert from "../deletion/mark-for-delete-alert";
 
 export interface RateLimitDetailProps {
     rateLimitDetail: RateLimitServiceGroup
@@ -52,6 +54,7 @@ const RateLimitDetail: React.FC<RateLimitDetailProps> = ({
     const [markDirty, setMarkDirty] = React.useState<boolean>(false);
     const [showMutationBackdrop, setShowMutationBackdrop] = React.useState<boolean>(false);
     const [showMutationSnackbar, setShowMutationSnackbar] = React.useState<boolean>(false);
+    const [isMarkedForDelete, setIsMarkedForDelete] = React.useState<boolean>(rateLimitDetail.markForDelete);
 
 
     // GRAPHQL FUNCTIONS
@@ -91,23 +94,44 @@ const RateLimitDetail: React.FC<RateLimitDetailProps> = ({
             <DetailPageContainer>
                 <DetailPageMainContentContainer>
                     <Grid2 container size={12} spacing={2}>
-                        <Grid2
-                            className="detail-page-subheader"
-                            sx={{ backgroundColor: "#1976d2", color: "white", padding: "8px", borderRadius: "2px" }}
-                            fontWeight={"bold"}
-                            size={12}
-                        >
-                            Overview
+                        <Grid2 className="detail-page-subheader" alignItems={"center"} sx={{ backgroundColor: "#1976d2", color: "white", padding: "8px", borderRadius: "2px" }} container size={12}>
+                            <Grid2 size={11}>Overview</Grid2>
+                            <Grid2 size={1} display={"flex"} >
+                                {isMarkedForDelete !== true && 
+                                    <SubmitMarkForDelete 
+                                        objectId={rateLimitDetail.servicegroupid}
+                                        objectType={MarkForDeleteObjectType.RateLimitServiceGroup}
+                                        confirmationMessage={`Confirm deletion of rate limit: ${rateLimitDetail.servicegroupname}. Once submitted the operation cannot be undone.`}
+                                        onDeleteEnd={(successful: boolean, errorMessage?: string) => {
+                                            setShowMutationBackdrop(false);
+                                            if(successful){
+                                                setShowMutationSnackbar(true);
+                                                setIsMarkedForDelete(true);
+                                            }
+                                            else{
+                                                setErrorMessage(errorMessage || "ERROR");
+                                            }
+                                        }}
+                                        onDeleteStart={() => setShowMutationBackdrop(true)}
+                                    />
+                                }
+                            </Grid2>
                         </Grid2>
                     </Grid2>
                     <Grid2 size={12} marginBottom={"16px"} marginTop={"16px"}>
+                        {errorMessage &&
+                            <Grid2 size={12} marginBottom={"8px"}>
+                                <Alert onClose={() => setErrorMessage(null)} sx={{ width: "100%" }} severity="error">{errorMessage}</Alert>
+                            </Grid2>
+                        }
+                        {isMarkedForDelete === true &&
+                            <MarkForDeleteAlert 
+                                message={"This rate limit has been marked for deletion. No changes to the rate limit are permitted."}
+                            />
+                        }
                         <Paper sx={{ padding: "8px" }} elevation={1}>
                             <Grid2 container size={12} spacing={2}>
-                                {errorMessage &&
-                                    <Grid2 size={12}>
-                                        <Alert onClose={() => setErrorMessage(null)} sx={{ width: "100%" }} severity="error">{errorMessage}</Alert>
-                                    </Grid2>
-                                }
+                                
                                 <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
                                     <Grid2 marginBottom={"16px"}>
                                         <div>Service Group Name</div>

@@ -44,23 +44,41 @@ class DBRateLimitDao extends RateLimitDao {
         return r ? Promise.resolve(r as any as RateLimitServiceGroup) : Promise.resolve(null);
     }
 
-    public async getRateLimitTenantRelViews(rateLimitServiceGroupId: string): Promise<Array<TenantRateLimitRelView>> {
+    public async getRateLimitTenantRelViews(rateLimitServiceGroupId: string | null, tenantId: string | null): Promise<Array<TenantRateLimitRelView>> {
         const sequelize: Sequelize = await DBDriver.getConnection();
+        const whereClauses = [];
+        let bindVars: any = {};
+        if(rateLimitServiceGroupId){
+            whereClauses.push("tenant_rate_limit_rel.servicegroupid = $servicegroupid");
+            bindVars.servicegroupid = rateLimitServiceGroupId;
+        }
+        if(tenantId){
+            whereClauses.push("tenant.tenantid = $tenantid");
+            bindVars.tenantid = tenantId;
+        }
+        let where = "";
+        if(whereClauses.length > 0){
+            where = `WHERE ${whereClauses.join(" AND ")}`
+        }
+
         const [resultList, _] = await sequelize.query(
-            "select tenant_rate_limit_rel.*, tenant.tenantname from tenant_rate_limit_rel INNER JOIN tenant ON tenant_rate_limit_rel.tenantid = tenant.tenantid WHERE tenant_rate_limit_rel.servicegroupid = $servicegroupid ORDER BY tenant.tenantname ASC",
+            "select tenant_rate_limit_rel.*, tenant.tenantname, rate_limit_service_group.servicegroupname " +
+            "    FROM tenant_rate_limit_rel " + 
+            "    INNER JOIN tenant ON tenant_rate_limit_rel.tenantid = tenant.tenantid " +
+            "    INNER JOIN rate_limit_service_group ON tenant_rate_limit_rel.servicegroupid = rate_limit_service_group.servicegroupid " + 
+            where +
+            "    ORDER BY tenant.tenantname ASC, rate_limit_service_group.servicegroupname ASC ",
             {
-                bind: {
-                    servicegroupid: rateLimitServiceGroupId
-                }
+                bind: bindVars
             }
         );
         
         
-        // $servicegroupid
         return resultList.map(
             (item: any) => {
                 const view: TenantRateLimitRelView = {
                     servicegroupid: item.servicegroupid,
+                    servicegroupname: item.servicegroupname,
                     tenantId: item.tenantid,
                     tenantName: item.tenantname,
                     allowUnlimitedRate: item.allowunlimitedrate,

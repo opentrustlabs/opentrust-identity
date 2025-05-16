@@ -16,7 +16,8 @@ create TABLE federated_oidc_provider(
     usepkce BOOLEAN NOT NULL,
     clientauthtype varchar(128) NOT NULL,
     federatedoidcprovidertype varchar(128) NOT NULL,
-    socialloginprovider VARCHAR(128)
+    socialloginprovider VARCHAR(128),
+    markfordelete BOOLEAN NOT NULL,
 );
 
 create TABLE tenant (
@@ -106,6 +107,7 @@ create TABLE client (
     usertokenttlseconds INT,
     clienttokenttlseconds INT,
     maxrefreshtokencount INT,
+    markfordelete BOOLEAN NOT NULL,
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid)
 );
 
@@ -136,7 +138,8 @@ create TABLE user (
     twofactorauthtype VARCHAR(64),
     locked BOOLEAN,
     enabled BOOLEAN NOT NULL,
-    nameorder VARCHAR(64) NOT NULL
+    nameorder VARCHAR(64) NOT NULL,
+    markfordelete BOOLEAN NOT NULL,
 );
 
 CREATE INDEX user_email_idx on user(email);
@@ -161,6 +164,7 @@ create TABLE authentication_group (
     authenticationgroupname VARCHAR(128) NOT NULL,
     authenticationgroupdescription VARCHAR(256),
     defaultgroup BOOLEAN NOT NULL,
+    markfordelete BOOLEAN NOT NULL,
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid)
 );
 
@@ -187,6 +191,7 @@ create TABLE authorization_group (
     groupdescription VARCHAR(256),
     defaultgroup BOOLEAN NOT NULL,
     allowforanonymoususers BOOLEAN NOT NULL,
+    markfordelete BOOLEAN NOT NULL,
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid) 
 );
 
@@ -221,13 +226,15 @@ create TABLE signing_key (
     publickey BLOB,
     expiresatms BIGINT,
     status VARCHAR(64),
+    markfordelete BOOLEAN NOT NULL,
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid)
 );
 
 create TABLE rate_limit_service_group (
     servicegroupid VARCHAR(64) PRIMARY KEY,
     servicegroupname VARCHAR(128) NOT NULL,
-    servicegroupdescription VARCHAR(256)    
+    servicegroupdescription VARCHAR(256),
+    markfordelete BOOLEAN NOT NULL 
 );
 CREATE INDEX rate_limit_service_group_servicegroupname_idx on rate_limit_service_group(servicegroupname);
 
@@ -235,7 +242,8 @@ create TABLE scope (
     scopeid VARCHAR(64) PRIMARY KEY,
     scopename VARCHAR(128) UNIQUE NOT NULL,
     scopedescription VARCHAR(256) NOT NULL,
-    scopeuse VARCHAR(64) NOT NULL
+    scopeuse VARCHAR(64) NOT NULL,
+    markfordelete BOOLEAN NOT NULL
 );
 
 create TABLE scope_access_rule_schema (
@@ -541,4 +549,21 @@ create TABLE tenant_legacy_user_migration_config (
     userprofileuri VARCHAR(256) NOT NULL,
     usernamecheckuri VARCHAR (256) NOT NULL,
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid)
+);
+
+create TABLE mark_for_delete (
+	markfordeleteid VARCHAR(64) NOT NULL PRIMARY KEY,
+	objectid VARCHAR(64) NOT NULL,
+	objecttype VARCHAR(128) NOT NULL,
+	submittedby VARCHAR(128) NOT NULL,
+	submitteddate BIGINT NOT NULL,
+	completeddate BIGINT
+);
+
+create TABLE deletion_status (
+	markfordeleteid VARCHAR(64) NOT NULL,
+	step VARCHAR(128) NOT NULL,
+	startedat BIGINT NOT NULL,
+	completedat BIGINT,
+	FOREIGN KEY (markfordeleteid) REFERENCES mark_for_delete(markfordeleteid)
 );

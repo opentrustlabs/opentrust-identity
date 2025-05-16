@@ -1,7 +1,7 @@
 "use client";
 import { TenantCreateInput } from "@/graphql/generated/graphql-types";
 import { TENANT_CREATE_MUTATION } from "@/graphql/mutations/oidc-mutations";
-import { FEDERATED_AUTHN_CONSTRAINT_DISPLAY, FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE, FEDERATED_AUTHN_CONSTRAINT_NOT_ALLOWED, FEDERATED_AUTHN_CONSTRAINT_PERMISSIVE, TENANT_TYPE_IDENTITY_MANAGEMENT, TENANT_TYPE_IDENTITY_MANAGEMENT_AND_SERVICES, TENANT_TYPE_SERVICES, TENANT_TYPES_DISPLAY } from "@/utils/consts";
+import { DEFAULT_RATE_LIMIT_PERIOD_MINUTES, FEDERATED_AUTHN_CONSTRAINT_DISPLAY, FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE, FEDERATED_AUTHN_CONSTRAINT_NOT_ALLOWED, FEDERATED_AUTHN_CONSTRAINT_PERMISSIVE, TENANT_TYPE_IDENTITY_MANAGEMENT, TENANT_TYPE_IDENTITY_MANAGEMENT_AND_SERVICES, TENANT_TYPE_SERVICES, TENANT_TYPES_DISPLAY } from "@/utils/consts";
 import { useMutation } from "@apollo/client";
 import { Alert, Button, Checkbox, DialogActions, DialogContent, DialogTitle, Grid2, MenuItem, Select, Stack, TextField, Typography } from "@mui/material";
 import React, { useContext } from "react";
@@ -22,7 +22,6 @@ const NewTenantDialog: React.FC<NewTenantDialogProps> = ({
     onCreateEnd,
     onCreateStart
 }) => {
-
 
 
     const initInput: TenantCreateInput = {
@@ -136,23 +135,37 @@ const NewTenantDialog: React.FC<NewTenantDialogProps> = ({
                                 <Grid2 size={2}>
                                     <Checkbox 
                                         checked={tenantInput.allowUnlimitedRate === true}
-                                        onChange={(_, checked: boolean) => {tenantInput.allowUnlimitedRate = checked; setTenantInput({...tenantInput})}}
+                                        onChange={(_, checked: boolean) => {
+                                            tenantInput.allowUnlimitedRate = checked; 
+                                            // if checked, clear out the rate limit and the default rate limit period values too
+                                            if(checked){
+                                                tenantInput.defaultRateLimit = 0;
+                                                tenantInput.defaultRateLimitPeriodMinutes = 0;
+                                            }
+                                            else{
+                                                tenantInput.defaultRateLimitPeriodMinutes = DEFAULT_RATE_LIMIT_PERIOD_MINUTES;
+                                            }
+                                            setTenantInput({...tenantInput});
+                                        }}
                                     />
                                 </Grid2>
                             </Grid2>
                             <Grid2 marginBottom={"16px"}>
                                 <div>Default Rate Limit</div>
                                 <TextField name="defaultRateLimit" id="defaultRateLimit" 
+                                    type="number"
                                     onChange={(evt) => {const n = parseInt(evt.target.value); if(n){tenantInput.defaultRateLimit = n; setTenantInput({...tenantInput})}}}
-                                    value={tenantInput.defaultRateLimit} fullWidth={true} size="small" 
+                                    value={tenantInput.defaultRateLimit ? tenantInput.defaultRateLimit : ""} fullWidth={true} size="small" 
+                                    disabled={tenantInput.allowUnlimitedRate === true}
                                 />
                             </Grid2>
                             <Grid2 marginBottom={"16px"}>
                                 <div>Default Rate Limit Period (minutes)</div>
                                 <TextField 
-                                    onChange={(evt) => {const n = parseInt(evt.target.value); if(n){tenantInput.defaultRateLimitPeriodMinutes = n; setTenantInput({...tenantInput})}}}
+                                    disabled={true}
+                                    type="number"
                                     name="defaultRateLimitPeriodMinutes" id="defaultRateLimitPeriodMinutes" 
-                                    value={tenantInput.defaultRateLimitPeriodMinutes} fullWidth={true} size="small" 
+                                    value={tenantInput.defaultRateLimitPeriodMinutes ? tenantInput.defaultRateLimitPeriodMinutes : "" } fullWidth={true} size="small"                                     
                                 />
                             </Grid2>
 

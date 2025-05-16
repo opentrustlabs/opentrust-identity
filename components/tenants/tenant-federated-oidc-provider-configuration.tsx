@@ -10,7 +10,7 @@ import Grid2 from "@mui/material/Grid2";
 import AddBoxIcon from '@mui/icons-material/AddBox';
 import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
 import { FederatedOidcProvider } from "@/graphql/generated/graphql-types";
-import { FEDERATED_OIDC_PROVIDER_TYPE_ENTERPRISE, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
+import { FEDERATED_OIDC_PROVIDER_TYPE_ENTERPRISE, FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import Divider from "@mui/material/Divider";
 import { Alert, Button, Dialog, DialogActions, DialogContent, TablePagination } from "@mui/material";
 import Link from "next/link";
@@ -19,12 +19,14 @@ import GeneralSelector from "../dialogs/general-selector";
 
 export interface TenantFederatedOIDCProviderConfigurationProps {
     tenantId: string,
-    onUpdateStart: () => void;
-    onUpdateEnd: (success: boolean) => void;
+    allowSocialLogin: boolean,
+    onUpdateStart: () => void,
+    onUpdateEnd: (success: boolean) => void
 }
 
 const TenantFederatedOIDCProviderConfiguration: React.FC<TenantFederatedOIDCProviderConfigurationProps> = ({
     tenantId,
+    allowSocialLogin,
     onUpdateEnd,
     onUpdateStart
 }) => {
@@ -132,6 +134,15 @@ const TenantFederatedOIDCProviderConfiguration: React.FC<TenantFederatedOIDCProv
                                 return d.getFederatedOIDCProviders
                                 .filter(
                                     (provider: FederatedOidcProvider) => {
+                                        
+                                        if(provider.federatedOIDCProviderType === FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL && !allowSocialLogin){
+                                            return false;
+                                        }
+                                        return true;
+                                    }
+                                )
+                                .filter(
+                                    (provider: FederatedOidcProvider) => {
                                         return !preExistingIds.includes(provider.federatedOIDCProviderId)
                                     }
                                 )                                
@@ -171,8 +182,13 @@ const TenantFederatedOIDCProviderConfiguration: React.FC<TenantFederatedOIDCProv
                         onClick={() => setSelectDialogOpen(true)}
                     />
                     <div style={{marginLeft: "8px", fontWeight: "bold"}}>Add OIDC Provider</div>
-                </Grid2>
-                
+                </Grid2>                
+            </Grid2>
+            <Divider />
+            <Grid2 marginBottom={"16px"} marginTop={"16px"} spacing={1} container size={12} fontWeight={"bold"}>
+                <Grid2 size={8}>Provider Name</Grid2>
+                <Grid2 size={3}>Type</Grid2>
+                <Grid2 size={1}></Grid2>
             </Grid2>
             <Divider />
             {data.getFederatedOIDCProviders.length === 0 &&

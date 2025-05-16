@@ -24,6 +24,8 @@ import DBIdentityDao from "@/lib/dao/impl/db/db-identity-dao";
 import DBContactDao from "@/lib/dao/impl/db/db-contact-dao";
 import Kms from "../kms/kms";
 import FSBasedKms from "../kms/fs-based-kms";
+import MarkForDeleteDao from "../dao/mark-for-delete-dao";
+import DBMarkForDeleteDao from "../dao/impl/db/db-mark-for-delete-dao";
 
 const daoStrategy = process.env.DAO_STRATEGY;
 const ksmStrategy = process.env.KMS_STRATEGY;
@@ -43,6 +45,7 @@ class DaoFactory {
     protected identityDao: IdentityDao;
     protected accessRuleDao: AccessRuleDao;
     protected contactDao: ContactDao;
+    protected markForDeleteDao: MarkForDeleteDao;
     protected kms: Kms;
 
     private constructor() {
@@ -73,9 +76,22 @@ class DaoFactory {
         if(DaoFactory.instance.tenantDao){
             return DaoFactory.instance.tenantDao;
         }
-        if(daoStrategy=== "rdb"){
+        if(daoStrategy === "rdb"){
             DaoFactory.instance.tenantDao = new DBTenantDao();
             return DaoFactory.instance.tenantDao;
+        }
+        else{
+            throw new Error("ERROR_DAO_STRATEGY_NOT_DEFINED");
+        }
+    }
+
+    public getMarkForDeleteDao(): MarkForDeleteDao {
+        if(DaoFactory.instance.markForDeleteDao){
+            return DaoFactory.instance.markForDeleteDao;
+        }
+        if(daoStrategy === "rdb"){
+            DaoFactory.instance.markForDeleteDao = new DBMarkForDeleteDao();
+            return DaoFactory.instance.markForDeleteDao;
         }
         else{
             throw new Error("ERROR_DAO_STRATEGY_NOT_DEFINED");
@@ -99,7 +115,7 @@ class DaoFactory {
         if(DaoFactory.instance.signingKeysDao){
             return DaoFactory.instance.signingKeysDao;
         }
-        if(daoStrategy=== "rdb"){
+        if(daoStrategy === "rdb"){
             DaoFactory.instance.signingKeysDao = new DBSigningKeysDao();
             return DaoFactory.instance.signingKeysDao;
         }
@@ -113,7 +129,7 @@ class DaoFactory {
             return DaoFactory.instance.rateLimitDao;
         }
     
-        if(daoStrategy=== "rdb"){
+        if(daoStrategy === "rdb"){
             DaoFactory.instance.rateLimitDao = new DBRateLimitDao();
             return DaoFactory.instance.rateLimitDao
         }
@@ -126,7 +142,7 @@ class DaoFactory {
         if(DaoFactory.instance.scopeDao){
             return DaoFactory.instance.scopeDao;
         }
-        if(daoStrategy=== "rdb"){
+        if(daoStrategy === "rdb"){
             DaoFactory.instance.scopeDao = new DBScopeDao();
             return DaoFactory.instance.scopeDao; 
         }
@@ -139,7 +155,7 @@ class DaoFactory {
         if(DaoFactory.instance.authenticationGroupDao){
             return DaoFactory.instance.authenticationGroupDao;
         }
-        if(daoStrategy=== "rdb"){
+        if(daoStrategy === "rdb"){
             DaoFactory.instance.authenticationGroupDao = new DBAuthenticationGroupDao();
             return DaoFactory.instance.authenticationGroupDao;
         }
@@ -152,7 +168,7 @@ class DaoFactory {
         if(DaoFactory.instance.authorizationGroupDao){
             return DaoFactory.instance.authorizationGroupDao;
         }
-        if(daoStrategy=== "rdb"){
+        if(daoStrategy === "rdb"){
             DaoFactory.instance.authorizationGroupDao = new DBAuthorizationGroupDao();
             return DaoFactory.instance.authorizationGroupDao; 
         }
@@ -165,7 +181,7 @@ class DaoFactory {
         if(DaoFactory.instance.federatedOIDCProviderDao){
             return DaoFactory.instance.federatedOIDCProviderDao;
         }
-        if(daoStrategy=== "rdb"){
+        if(daoStrategy === "rdb"){
             DaoFactory.instance.federatedOIDCProviderDao = new DBFederatedOIDCProviderDao();
             return DaoFactory.instance.federatedOIDCProviderDao;
         }
@@ -178,7 +194,7 @@ class DaoFactory {
         if(DaoFactory.instance.authDao){
             return DaoFactory.instance.authDao;
         }
-        if(daoStrategy=== "rdb"){
+        if(daoStrategy === "rdb"){
             DaoFactory.instance.authDao = new DBAuthDao();
             return DaoFactory.instance.authDao;
         }
@@ -191,7 +207,7 @@ class DaoFactory {
         if(DaoFactory.instance.identityDao){
             return DaoFactory.instance.identityDao;
         }
-        if(daoStrategy=== "rdb"){
+        if(daoStrategy === "rdb"){
             DaoFactory.instance.identityDao = new DBIdentityDao();
             return DaoFactory.instance.identityDao; 
         }
@@ -204,7 +220,7 @@ class DaoFactory {
         if(DaoFactory.instance.accessRuleDao){
             return DaoFactory.instance.accessRuleDao;
         }
-        if(daoStrategy=== "rdb"){
+        if(daoStrategy === "rdb"){
             DaoFactory.instance.accessRuleDao = new DBAccessRuleDao();
             return DaoFactory.instance.accessRuleDao; 
         }

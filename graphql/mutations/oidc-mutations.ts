@@ -495,3 +495,16 @@ export const TENANT_SCOPE_REMOVE_MUTATION = gql(`
     }
 `);
 
+export const MARK_FOR_DELETE_MUTATION = gql(`
+    mutation markForDelete($markForDeleteInput: MarkForDeleteInput!) {
+        markForDelete(markForDeleteInput: $markForDeleteInput) {
+            markForDeleteId
+            objectType
+            objectId
+            submittedBy
+            submittedDate
+            completedData
+        }
+    }  
+`);
+

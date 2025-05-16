@@ -174,6 +174,10 @@ const FederatedOIDCProviderTenantConfiguration: React.FC<FederatedOIDCProviderTe
                 
             </Grid2>
             <Divider />
+            <Grid2 marginBottom={"8px"} marginTop={"16px"} spacing={1} container size={12} fontWeight={"bold"}>
+                <Grid2 size={11} >Tenant Name</Grid2>                        
+                <Grid2 size={1}></Grid2>
+            </Grid2>
             {data.getTenants.length === 0 &&
                 <Grid2 marginTop={"16px"}  spacing={2} container size={12} textAlign={"center"} >    
                     <Grid2 margin={"8px 0px 8px 0px"} textAlign={"center"} size={12} spacing={1}>
