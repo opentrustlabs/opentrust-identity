@@ -58,12 +58,14 @@ class SigningKeysService {
         if(key.keyUse === "" || !KEY_USES.includes(key.keyUse)){
             throw new GraphQLError("ERROR_MISSING_OR_INVALID_KEY_USE");
         }
-        // TODO
-        // Get the actual expiration for the public key
-        if(key.publicKey !== "" && key.expiresAtMs < 0){
-            throw new GraphQLError("ERROR_INVALID_EXPIRATION_FOR_PUBLIC_KEY");
-        }
-        
+        if(key.publicKey !== ""){            
+            const now: number = new Date().getTime();                                                    
+            const diff: number = key.expiresAtMs - now;
+            // if negative or greater than a year, then reject
+            if(diff < 0 || diff > 31557600000){
+                throw new GraphQLError("ERROR_INVALID_EXPIRATION_FOR_PUBLIC_KEY");    
+            }
+        }        
         
         const plainText = key.password && key.password !== "" ? key.password : key.privateKeyPkcs8;
         const encrypted: string | null = await kms.encrypt(plainText);
@@ -78,17 +80,18 @@ class SigningKeysService {
         }
         
         key.keyId = randomUUID().toString();
+
         await signingKeysDao.createSigningKey(key);
         await this.updateSearchIndex(key);
         return Promise.resolve(key);        
     } 
 
     public async updateSigningKey(key: SigningKey): Promise<SigningKey> {
-
+        
         if( ! (key.status === SIGNING_KEY_STATUS_REVOKED || key.status === SIGNING_KEY_STATUS_ACTIVE)) {
             throw new GraphQLError("ERROR_INVALID_SIGNING_KEY_STATUS");
         }
-        const existingKey: SigningKey | null = await this.getSigningKeyById(key.keyId);
+        const existingKey: SigningKey | null = await signingKeysDao.getSigningKeyById(key.keyId);
         if(!existingKey){
             throw new GraphQLError("ERROR_SIGNING_KEY_DOES_NOT_EXIST");
         }
@@ -98,11 +101,10 @@ class SigningKeysService {
         
         existingKey.keyName = key.keyName;
         existingKey.status = key.status;
-        existingKey.expiresAtMs = key.expiresAtMs;
+
         await signingKeysDao.updateSigningKey(existingKey);
         await this.updateSearchIndex(existingKey);
         return Promise.resolve(existingKey);
-
     }
 
     public async getSigningKeyById(keyId: string): Promise<SigningKey | null> {

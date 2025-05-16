@@ -63,7 +63,7 @@ const SigningKeyDetail: React.FC<SigningKeyDetailProps> = ({ signingKey }) => {
             setShowMutationBackdrop(false);
             setErrorMessage(error.message);
         },
-        refetchQueries: [SIGNING_KEY_DETAIL_QUERY]
+        refetchQueries: [ {query: SIGNING_KEY_DETAIL_QUERY, variables: {signingKeyId: signingKey.keyId}}]
     });
 
     // HANDLER FUNCTIONS
