@@ -15,7 +15,8 @@ export interface GeneralSelectorProps {
     onCancel: () => void,
     onSelected: (id: string) => void,
     selectorLabel: string,
-    helpText: string
+    helpText: string,
+    submitButtonText?: string
 }
 
 const GeneralSelector: React.FC<GeneralSelectorProps> = ({
@@ -25,7 +26,8 @@ const GeneralSelector: React.FC<GeneralSelectorProps> = ({
     onCancel,
     onSelected,
     selectorLabel,
-    helpText
+    helpText,
+    submitButtonText
 }) => {
 
     const perPage: number = 10;
@@ -172,7 +174,9 @@ const GeneralSelector: React.FC<GeneralSelectorProps> = ({
             </DialogContent>
             <DialogActions>
                 <Button onClick={() => onCancel()}>Cancel</Button>
-                <Button disabled={selectedId === null} onClick={() => { selectedId !== null ? onSelected(selectedId) : setErrorMessage(helpText) }}>Submit</Button>
+                <Button disabled={selectedId === null} onClick={() => { selectedId !== null ? onSelected(selectedId) : setErrorMessage(helpText) }}>
+                    {submitButtonText ? submitButtonText : "Submit"}
+                </Button>
             </DialogActions>
 
         </>

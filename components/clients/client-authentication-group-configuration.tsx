@@ -173,10 +173,13 @@ const ClientAuthenticationGroupConfiguration: React.FC<ClientAuthenticationGroup
                         onClick={() => setSelectDialogOpen(true)}
                     />
                     <div style={{marginLeft: "8px", fontWeight: "bold"}}>Add Authentication Group</div>
-                </Grid2>
-                
-            </Grid2>
+                </Grid2>                
+            </Grid2>            
             <Divider />
+            <Grid2 marginTop={"16px"} marginBottom={"8px"} spacing={1} container size={12} fontWeight={"bold"}>
+                <Grid2 size={11}>Group name</Grid2>
+                <Grid2 size={1}></Grid2>
+            </Grid2>
             {data.getAuthenticationGroups.length === 0 &&
                 <Grid2 marginTop={"16px"}  spacing={2} container size={12} textAlign={"center"} >    
                     <Grid2 margin={"8px 0px 8px 0px"} textAlign={"center"} size={12} spacing={1}>

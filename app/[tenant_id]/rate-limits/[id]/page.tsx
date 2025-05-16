@@ -26,7 +26,8 @@ const RateLimitServiceGroupDetailPage: React.FC = () => {
 
     if (loading) return <DataLoading dataLoadingSize="xl" color={null} />
     if (error || !rateLimitServiceGroupId) return <ErrorComponent message={error ? error.message : "There was an unexpected error retrieving the signing key details."} componentSize='lg' />
-    
+    if (data && data.getRateLimitServiceGroupById === null) return <ErrorComponent message={"Rate Limit Not Found"} componentSize='lg' />
+
     return (
         <RateLimitDetail rateLimitDetail={data.getRateLimitServiceGroupById} />
     )

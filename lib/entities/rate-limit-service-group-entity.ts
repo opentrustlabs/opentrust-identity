@@ -20,6 +20,12 @@ class RateLimitServiceGroupEntity extends Model {
                 primaryKey: false,
                 allowNull: true,
                 field: "servicegroupdescription"
+            },
+            markForDelete: {
+                type: DataTypes.BOOLEAN,
+                primaryKey: false,
+                allowNull: false,
+                field: "markfordelete"
             }
         }, 
 		{

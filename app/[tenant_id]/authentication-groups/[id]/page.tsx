@@ -25,6 +25,7 @@ const AuthenticationGroupDetailPage: React.FC = () => {
 
     if (loading) return <DataLoading dataLoadingSize="xl" color={null} />
     if (error || !authenticationGroupId) return <ErrorComponent message={error ? error.message : "No authentication group with this ID can be found"} componentSize='lg' />
+    if (data && data.getAuthenticationGroupById === null) return <ErrorComponent message={"Authentication Group Not Found"} componentSize='lg' />
 
     return (
         <AuthenticationGroupDetail authenticationGroup={data.getAuthenticationGroupById} />

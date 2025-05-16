@@ -77,7 +77,8 @@ class ClientService {
         clientToUpdate.clientName = client.clientName;
         clientToUpdate.enabled = client.enabled;
         clientToUpdate.oidcEnabled = client.oidcEnabled;
-        clientToUpdate.pkceEnabled = client.pkceEnabled;
+        // Only allow the pkce entension when oidc (i.e. SSO) is enabled.
+        clientToUpdate.pkceEnabled = client.oidcEnabled === false ? false : client.pkceEnabled;
         clientToUpdate.clientTokenTTLSeconds = client.clientTokenTTLSeconds;
         clientToUpdate.clientType = client.clientType;
         clientToUpdate.maxRefreshTokenCount = client.maxRefreshTokenCount;
@@ -124,6 +125,13 @@ class ClientService {
     }
 
     public async addRedirectURI(clientId: string, uri: string): Promise<string>{
+        const client: Client | null = await this.getClientById(clientId);
+        if(!client){
+            throw new GraphQLError("ERROR_UNABLE_TO_FIND_CLIENT_BY_ID");
+        }
+        if(client.oidcEnabled === false){
+            throw new GraphQLError("ERROR_OIDC_NOT_ENABLED_FOR_THIS_CLIENT");
+        }
         return clientDao.addRedirectURI(clientId, uri);
     }
 

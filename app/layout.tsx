@@ -17,6 +17,7 @@ import { createTheme } from '@mui/material/styles';
 import { ThemeProvider } from '@mui/material/styles';
 import { ClipboardCopyContextProvider } from "@/components/contexts/clipboard-copy-context";
 
+
 const theme = createTheme({    
     components: {
         MuiButton: {

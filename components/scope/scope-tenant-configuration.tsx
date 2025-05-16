@@ -252,7 +252,7 @@ const ScopeTenantConfiguration: React.FC<ScopeTenantConfigurationProps> = ({
             }
             {data && !loading && !error && filteredArr.length > 0 &&
                 <>
-                    <Grid2 marginTop={"16px"} spacing={1} container size={12}>
+                    <Grid2 marginBottom={"8px"} marginTop={"16px"} spacing={1} container size={12} fontWeight={"bold"}>
                         <Grid2 size={6} >Tenant Name</Grid2>
                         <Grid2 size={5} >Tenant Type</Grid2>
                         <Grid2 size={1}></Grid2>

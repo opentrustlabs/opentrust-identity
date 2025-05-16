@@ -25,7 +25,8 @@ const SigningKeyDetailPage: React.FC = () => {
 
     if (loading) return <DataLoading dataLoadingSize="xl" color={null} />
     if (error || !signingKeyId) return <ErrorComponent message={error ? error.message : "There was an unexpected error retrieving the signing key details."} componentSize='lg' />
-    
+    if (data && data.getSigningKeyById === null) return <ErrorComponent message={"Signing Key Not Found"} componentSize='lg' />
+
     return (
         <SigningKeyDetail signingKey={data.getSigningKeyById} />
     )

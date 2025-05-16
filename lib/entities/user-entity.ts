@@ -122,6 +122,12 @@ class UserEntity extends Model {
                 primaryKey: false,
                 allowNull: false,
                 field: "twofactorauthtype"
+            },
+            markForDelete: {
+                type: DataTypes.BOOLEAN,
+                primaryKey: false,
+                allowNull: false,
+                field: "markfordelete"
             }
         }, 
 		{

@@ -1,5 +1,5 @@
 "use client";
-import { SecretObjectType, SigningKey, SigningKeyUpdateInput } from "@/graphql/generated/graphql-types";
+import { MarkForDeleteObjectType, SecretObjectType, SigningKey, SigningKeyUpdateInput } from "@/graphql/generated/graphql-types";
 import Typography from "@mui/material/Typography";
 import React, { useContext } from "react";
 import { DetailPageContainer, DetailPageMainContentContainer, DetailPageRightNavContainer } from "../layout/detail-page-container";
@@ -19,6 +19,8 @@ import { formatISODateFromMs } from "@/utils/date-utils";
 import { useClipboardCopyContext } from "../contexts/clipboard-copy-context";
 import SecretViewerDialog from "../dialogs/secret-viewer-dialog";
 import DetailSectionActionHandler from "../layout/detail-section-action-handler";
+import SubmitMarkForDelete from "../deletion/submit-mark-for-delete";
+import MarkForDeleteAlert from "../deletion/mark-for-delete-alert";
 
 export interface SigningKeyDetailProps {
     signingKey: SigningKey
@@ -44,6 +46,7 @@ const SigningKeyDetail: React.FC<SigningKeyDetailProps> = ({ signingKey }) => {
     const [keyUpdateInput, setKeyUpdateInput] = React.useState<SigningKeyUpdateInput>(initInput);
     const [showRevokeConfirmationDialog, setShowRevokeConfirmationDialog] = React.useState<boolean>(false);
     const [secretDialogOpen, setSecretDialogOpen] = React.useState<boolean>(false);
+    const [isMarkedForDelete, setIsMarkedForDelete] = React.useState<boolean>(signingKey.markForDelete);
 
     // GRAPHQL FUNCTIONS
 
@@ -60,7 +63,7 @@ const SigningKeyDetail: React.FC<SigningKeyDetailProps> = ({ signingKey }) => {
             setShowMutationBackdrop(false);
             setErrorMessage(error.message);
         },
-        refetchQueries: [SIGNING_KEY_DETAIL_QUERY]
+        refetchQueries: [ {query: SIGNING_KEY_DETAIL_QUERY, variables: {signingKeyId: signingKey.keyId}}]
     });
 
     // HANDLER FUNCTIONS
@@ -125,22 +128,43 @@ const SigningKeyDetail: React.FC<SigningKeyDetailProps> = ({ signingKey }) => {
             <DetailPageContainer>
                 <DetailPageMainContentContainer>
                     <Grid2 container size={12} spacing={2}>
-                        <Grid2
-                            className="detail-page-subheader"
-                            sx={{ backgroundColor: "#1976d2", color: "white", padding: "8px", borderRadius: "2px" }}
-                            fontWeight={"bold"}
-                            size={12}
-                        >
-                            Overview
+                        <Grid2 className="detail-page-subheader" alignItems={"center"} sx={{ backgroundColor: "#1976d2", color: "white", padding: "8px", borderRadius: "2px" }} container size={12}>
+                            <Grid2 size={11}>Overview</Grid2>
+                            <Grid2 size={1} display={"flex"} >
+                                {isMarkedForDelete !== true && 
+                                    <SubmitMarkForDelete 
+                                        objectId={signingKey.keyId}
+                                        objectType={MarkForDeleteObjectType.SigningKey}
+                                        confirmationMessage={`Confirm deletion of key: ${signingKey.keyName}. Once submitted the operation cannot be undone.`}
+                                        onDeleteEnd={(successful: boolean, errorMessage?: string) => {
+                                            setShowMutationBackdrop(false);
+                                            if(successful){
+                                                setShowMutationSnackbar(true);
+                                                setIsMarkedForDelete(true);
+                                            }
+                                            else{
+                                                setErrorMessage(errorMessage || "ERROR");
+                                            }
+                                        }}
+                                        onDeleteStart={() => setShowMutationBackdrop(true)}
+                                    />
+                                }
+                            </Grid2>
                         </Grid2>
                         <Grid2 size={12}>
+                            {errorMessage &&
+                                <Grid2 size={12} marginBottom={"8px"}>
+                                    <Alert onClose={() => setErrorMessage(null)} sx={{ width: "100%" }} severity="error">{errorMessage}</Alert>
+                                </Grid2>
+                            }
+                            {isMarkedForDelete === true &&
+                                <MarkForDeleteAlert 
+                                    message={"This key has been marked for deletion. No changes to the key are permitted."}
+                                />
+                            }
                             <Paper sx={{ padding: "8px" }} elevation={1}>
                                 <Grid2 container size={12} spacing={2}>
-                                    {errorMessage &&
-                                        <Grid2 size={12}>
-                                            <Alert onClose={() => setErrorMessage(null)} sx={{ width: "100%" }} severity="error">{errorMessage}</Alert>
-                                        </Grid2>
-                                    }
+                                    
                                     <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Key Name / Alias</div>

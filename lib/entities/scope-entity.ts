@@ -26,6 +26,12 @@ class ScopeEntity extends Model {
                 primaryKey: false,
                 allowNull: false,
                 field: "scopeuse"
+            },
+            markForDelete: {
+                type: DataTypes.BOOLEAN,
+                primaryKey: false,
+                allowNull: false,
+                field: "markfordelete"
             }
         }, 
 		{

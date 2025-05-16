@@ -26,7 +26,8 @@ const UserDetailPage: React.FC = () => {
 
     if (loading) return <DataLoading dataLoadingSize="xl" color={null} />
     if (error || !userId) return <ErrorComponent message={error ? error.message : "No user with this ID can be found"} componentSize='lg' />
-    
+    if (data && data.getUserById === null) return <ErrorComponent message={"User Not Found"} componentSize='lg' />
+
     return (
         <UserDetail user={data.getUserById} />
     )

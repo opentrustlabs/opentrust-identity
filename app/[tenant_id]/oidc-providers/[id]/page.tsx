@@ -25,7 +25,8 @@ const FederatedOIDCProviderDetailPage: React.FC = () => {
 
     if (loading) return <DataLoading dataLoadingSize="xl" color={null} />
     if (error || !federatedOIDCProviderId) return <ErrorComponent message={error ? error.message : "There was an unexpected error retrieving the OIDC provider details."} componentSize='lg' />
-    
+    if (data && data.getFederatedOIDCProviderById === null) return <ErrorComponent message={"OIDC Provider Not Found"} componentSize='lg' />
+
     return (
         <FederatedOIDCProviderDetail federatedOIDCProvider={data.getFederatedOIDCProviderById} />
     )

@@ -182,6 +182,7 @@ export const CLIENT_DETAIL_QUERY = gql(`
             userTokenTTLSeconds
             clientTokenTTLSeconds
             maxRefreshTokenCount
+            markForDelete
         }
     }
 `);
@@ -195,6 +196,7 @@ export const AUTHORIZATION_GROUP_DETAIL_QUERY = gql(`
             tenantId
             allowForAnonymousUsers
             default
+            markForDelete
         }
     }
 `);
@@ -260,11 +262,12 @@ export const LOOKAHEAD_SEARCH_QUERY = gql(`
 `);
 
 export const TENANT_RATE_LIMIT_REL_VIEW_QUERY = gql(`
-    query getRateLimitTenantRelViews($rateLimitServiceGroupId: String!) {
-        getRateLimitTenantRelViews(rateLimitServiceGroupId: $rateLimitServiceGroupId) {
+    query getRateLimitTenantRelViews($rateLimitServiceGroupId: String, $tenantId: String) {
+        getRateLimitTenantRelViews(rateLimitServiceGroupId: $rateLimitServiceGroupId, tenantId: $tenantId) {
             tenantId
             tenantName
             servicegroupid
+            servicegroupname
             allowUnlimitedRate
             rateLimit
             rateLimitPeriodMinutes           
@@ -309,6 +312,7 @@ export const USER_DETAIL_QUERY = gql(`
             locked
             enabled
             nameOrder
+            markForDelete
         }
     }    
 `);
@@ -333,6 +337,7 @@ export const AUTHENTICATION_GROUP_DETAIL_QUERY = gql(`
             authenticationGroupName
             authenticationGroupDescription
             defaultGroup
+            markForDelete
         }
     }
 `);
@@ -366,7 +371,8 @@ export const FEDERATED_OIDC_PROVIDER_DETAIL_QUERY = gql(`
             clientauthtypeid
             federatedOIDCProviderTenantId	
             federatedoidcprovidertypeid
-            socialLoginProvider       
+            socialLoginProvider
+            markForDelete
         }
     }
 `);
@@ -402,6 +408,7 @@ export const SIGNING_KEY_DETAIL_QUERY = gql(`
             expiresAtMs
             status
             statusId
+            markForDelete
         }
     }
 `);
@@ -444,6 +451,7 @@ export const RATE_LIMIT_BY_ID_QUERY = gql(`
             servicegroupid
             servicegroupname
             servicegroupdescription
+            markForDelete
         }
     }
 `);
