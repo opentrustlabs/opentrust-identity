@@ -140,19 +140,24 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                     <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Client Name</div>
-                                            <TextField name="clientName" id="clientName" value={clientUpdateInput.clientName} fullWidth={true} size="small" 
+                                            <TextField 
+                                                disabled={isMarkedForDelete}
+                                                name="clientName" id="clientName" value={clientUpdateInput.clientName} fullWidth={true} size="small" 
                                                 onChange={(evt) => {clientUpdateInput.clientName = evt.target.value; console.log(clientUpdateInput.clientName); setClientUpdateInput({...clientUpdateInput}); setMarkDirty(true);}}
                                             />
                                         </Grid2>
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Client Descripton</div>
-                                            <TextField name="clientDescription" id="clientDescription" value={clientUpdateInput.clientDescription} fullWidth={true} size="small" multiline={true} rows={2} 
+                                            <TextField 
+                                                disabled={isMarkedForDelete}
+                                                name="clientDescription" id="clientDescription" value={clientUpdateInput.clientDescription} fullWidth={true} size="small" multiline={true} rows={2} 
                                                 onChange={(evt) => {clientUpdateInput.clientDescription = evt.target.value; setClientUpdateInput({...clientUpdateInput}); setMarkDirty(true); }}
                                             />
                                         </Grid2>
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Client Type</div>
                                             <Select
+                                                disabled={isMarkedForDelete}
                                                 size="small"
                                                 fullWidth={true}
                                                 value={clientUpdateInput.clientType}
@@ -207,6 +212,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                             <Grid2 alignContent={"center"} size={10}>Enabled</Grid2>
                                             <Grid2 size={2}>
                                                 <Checkbox 
+                                                    disabled={isMarkedForDelete}
                                                     checked={clientUpdateInput.enabled} 
                                                     onChange={(_, checked: boolean) => {clientUpdateInput.enabled = checked; setClientUpdateInput({...clientUpdateInput}); setMarkDirty(true);}}
                                                 />
@@ -215,6 +221,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                             <Grid2 alignContent={"center"} size={10}>OIDC (SSO) Enabled</Grid2>
                                             <Grid2 size={2}>
                                                 <Checkbox 
+                                                    disabled={isMarkedForDelete}
                                                     checked={clientUpdateInput.oidcEnabled}
                                                     onChange={(_, checked: boolean) => {
                                                         clientUpdateInput.oidcEnabled = checked;
@@ -232,8 +239,9 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                             <Grid2 alignContent={"center"} size={10}>PKCE Enabled</Grid2>
                                             <Grid2 size={2}>
                                                 <Checkbox 
+                                                    
                                                     checked={clientUpdateInput.pkceEnabled}
-                                                    disabled={clientUpdateInput.oidcEnabled === false}
+                                                    disabled={clientUpdateInput.oidcEnabled === false || isMarkedForDelete}
                                                     onChange={(_, checked: boolean) => {
                                                         clientUpdateInput.pkceEnabled = checked; 
                                                         setClientUpdateInput({...clientUpdateInput}); 
@@ -245,6 +253,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                             <Grid2 marginTop={"16px"} alignContent={"center"} size={12}>User Token TTL (Seconds) - Max: {MAX_END_USER_TOKEN_TTL_SECONDS}, Min: {MIN_END_USER_TOKEN_TTL_SECONDS}</Grid2>
                                             <Grid2 marginBottom={"16px"} alignContent={"center"} size={12}>
                                                 <TextField type="number" name="userTokenTTL" id="userTokenTTL" 
+                                                    disabled={isMarkedForDelete}
                                                     value={
                                                         clientUpdateInput.userTokenTTLSeconds || ""
                                                     }
@@ -267,6 +276,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                             <Grid2 alignContent={"center"} size={12}>Client Token TTL (Seconds) - Max: {MAX_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS}, Min: {MIN_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS}</Grid2>
                                             <Grid2 marginBottom={"16px"} alignContent={"center"} size={12}>
                                                 <TextField type="number" name="clientTokenTTLSeconds" id="clientTokenTTLSeconds" 
+                                                    disabled={isMarkedForDelete}
                                                     value={
                                                         clientUpdateInput.clientTokenTTLSeconds || ""
                                                     }
@@ -289,6 +299,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                             <Grid2 alignContent={"center"} size={12}>Max Refresh Token Count</Grid2>
                                             <Grid2 marginBottom={"16px"} alignContent={"center"} size={12}>
                                                 <TextField type="number" name="maxRefreshTokenCount" id="maxRefreshTokenCount" 
+                                                    disabled={isMarkedForDelete}
                                                     value={
                                                         clientUpdateInput.maxRefreshTokenCount || ""
                                                     }                                                   
@@ -321,60 +332,64 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
 
 
                         <Grid2 size={12} marginBottom={"16px"}>
-                            <Accordion defaultExpanded={true}  >
-                                <AccordionSummary
-                                    expandIcon={<ExpandMoreIcon />}
-                                    id={"redirect-uri-configuration"}
-                                    sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center" }}
+                            {!isMarkedForDelete &&
+                                <Accordion defaultExpanded={true}  >
+                                    <AccordionSummary
+                                        expandIcon={<ExpandMoreIcon />}
+                                        id={"redirect-uri-configuration"}
+                                        sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center" }}
 
-                                >
-                                    <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-                                        <SyncIcon /><div style={{ marginLeft: "8px" }}>Redirect URI Configuration</div>
-                                    </div>
-                                </AccordionSummary>
-                                <AccordionDetails>
-                                    <ClientRedirectUriConfiguration 
-                                        oidcEnabled={client.oidcEnabled}
-                                        clientId={client.clientId} 
-                                        onUpdateStart={() => setShowMutationBackdrop(true)}
-                                        onUpdateEnd={(success: boolean) => {
-                                            setShowMutationBackdrop(false);
-                                            if(success){
-                                                setShowMutationSnackbar(true);
-                                            }
-                                        }}
-                                    />                                    
-                                </AccordionDetails>
-                            </Accordion>
+                                    >
+                                        <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+                                            <SyncIcon /><div style={{ marginLeft: "8px" }}>Redirect URI Configuration</div>
+                                        </div>
+                                    </AccordionSummary>
+                                    <AccordionDetails>
+                                        <ClientRedirectUriConfiguration 
+                                            oidcEnabled={client.oidcEnabled}
+                                            clientId={client.clientId} 
+                                            onUpdateStart={() => setShowMutationBackdrop(true)}
+                                            onUpdateEnd={(success: boolean) => {
+                                                setShowMutationBackdrop(false);
+                                                if(success){
+                                                    setShowMutationSnackbar(true);
+                                                }
+                                            }}
+                                        />                                    
+                                    </AccordionDetails>
+                                </Accordion>
+                            }
                         </Grid2>
 
 
                         <Grid2 size={12} marginBottom={"16px"}>
-                            <Accordion >
-                                <AccordionSummary
-                                    expandIcon={<ExpandMoreIcon />}
-                                    id={"redirect-uri-configuration"}
-                                    sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center" }}
+                            {!isMarkedForDelete &&
+                                <Accordion >
+                                    <AccordionSummary
+                                        expandIcon={<ExpandMoreIcon />}
+                                        id={"redirect-uri-configuration"}
+                                        sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center" }}
 
-                                >
-                                    <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-                                        <GroupIcon /><div style={{ marginLeft: "8px" }}>Authentication Groups</div>
-                                    </div>
-                                </AccordionSummary>
-                                <AccordionDetails>
-                                    <ClientAuthenticationGroupConfiguration
-                                        tenantId={client.tenantId}
-                                        clientId={client.clientId}
-                                        onUpdateEnd={(success: boolean) => {
-                                            setShowMutationBackdrop(false);
-                                            if(success){
-                                                setShowMutationSnackbar(true);
-                                            }
-                                        }}
-                                        onUpdateStart={() => setShowMutationBackdrop(true)}
-                                    />
-                                </AccordionDetails>
-                            </Accordion>
+                                    >
+                                        <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+                                            <GroupIcon /><div style={{ marginLeft: "8px" }}>Authentication Groups</div>
+                                        </div>
+                                    </AccordionSummary>
+                                    <AccordionDetails>
+                                        <ClientAuthenticationGroupConfiguration
+                                            tenantId={client.tenantId}
+                                            clientId={client.clientId}
+                                            onUpdateEnd={(success: boolean) => {
+                                                setShowMutationBackdrop(false);
+                                                if(success){
+                                                    setShowMutationSnackbar(true);
+                                                }
+                                            }}
+                                            onUpdateStart={() => setShowMutationBackdrop(true)}
+                                        />
+                                    </AccordionDetails>
+                                </Accordion>
+                            }
                         </Grid2>
                     </Grid2>
                 </Grid2>
@@ -395,6 +410,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                         onUpdateStart={() => {
                                             setShowMutationBackdrop(true);
                                         }}
+                                        readOnly={!isMarkedForDelete}
                                     />
                                 </Paper>
                             </Grid2>

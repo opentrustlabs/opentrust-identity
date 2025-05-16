@@ -156,6 +156,7 @@ const AuthorizationGroupDetail: React.FC<AuthorizationGroupDetailProps> = ({ aut
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Group Name</div>
                                             <TextField name="authzGroupName" id="authzGroupName" 
+                                                disabled={isMarkedForDelete}
                                                 value={authzGroupInput.groupName} 
                                                 onChange={(evt) => {authzGroupInput.groupName = evt.target.value; setAuthzGroupInput({...authzGroupInput}); setMarkDirty(true)}}
                                                 fullWidth={true} size="small" />
@@ -163,6 +164,7 @@ const AuthorizationGroupDetail: React.FC<AuthorizationGroupDetailProps> = ({ aut
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Group Description</div>
                                             <TextField name="authzGroupDescription" id="authzGroupDescription" 
+                                                disabled={isMarkedForDelete}
                                                 multiline={true}
                                                 rows={2}
                                                 value={authzGroupInput.groupDescription} 
@@ -192,6 +194,7 @@ const AuthorizationGroupDetail: React.FC<AuthorizationGroupDetailProps> = ({ aut
                                             <Grid2 alignContent={"center"} size={10}>Default</Grid2>
                                             <Grid2 size={2}>
                                                 <Checkbox
+                                                    disabled={isMarkedForDelete}
                                                     name="default" 
                                                     checked={authzGroupInput.default}
                                                     onChange={(_, checked) => {
@@ -206,6 +209,7 @@ const AuthorizationGroupDetail: React.FC<AuthorizationGroupDetailProps> = ({ aut
                                             <Grid2 alignContent={"center"} size={10}>Allow for anonymous users</Grid2>
                                             <Grid2 size={2}>
                                                 <Checkbox 
+                                                    disabled={isMarkedForDelete}
                                                     name="allowForAnonymous"
                                                     checked={authzGroupInput.allowForAnonymousUsers}
                                                     onChange={(_, checked) => {
@@ -233,73 +237,75 @@ const AuthorizationGroupDetail: React.FC<AuthorizationGroupDetailProps> = ({ aut
                         </Grid2>
 
                         <Grid2 size={12} marginBottom={"16px"}>
-                            <Accordion defaultExpanded={true}  >
-                                <AccordionSummary
-                                    expandIcon={<ExpandMoreIcon />}
-                                    id={"redirect-uri-configuration"}
-                                    sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center" }}
+                            {!isMarkedForDelete &&
+                                <Accordion defaultExpanded={true}  >
+                                    <AccordionSummary
+                                        expandIcon={<ExpandMoreIcon />}
+                                        id={"redirect-uri-configuration"}
+                                        sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center" }}
 
-                                >
-                                    <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-                                        <PersonIcon /><div style={{ marginLeft: "8px" }}>Users</div>
-                                    </div>
-                                </AccordionSummary>
-                                <AccordionDetails key={renderKey}>
-                                    {authzGroupInput.default &&
-                                        <Grid2 size={12} container spacing={2} marginTop={"16px"}>
-                                            <Grid2 size={1}>
-                                                <InfoOutlinedIcon
-                                                    sx={{color: "red"}}
-                                                />
+                                    >
+                                        <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+                                            <PersonIcon /><div style={{ marginLeft: "8px" }}>Users</div>
+                                        </div>
+                                    </AccordionSummary>
+                                    <AccordionDetails key={renderKey}>
+                                        {authzGroupInput.default &&
+                                            <Grid2 size={12} container spacing={2} marginTop={"16px"}>
+                                                <Grid2 size={1}>
+                                                    <InfoOutlinedIcon
+                                                        sx={{color: "red"}}
+                                                    />
+                                                </Grid2>
+                                                <Grid2 size={11}>
+                                                    <Typography>
+                                                        For default authorization groups, ALL users who belong to the tenant will also automatically belong to this group. To
+                                                        select users individually, uncheck the "Default" checkbox above and save your changes.
+                                                    </Typography>
+                                                </Grid2>
                                             </Grid2>
-                                            <Grid2 size={11}>
-                                                <Typography>
-                                                    For default authorization groups, ALL users who belong to the tenant will also automatically belong to this group. To
-                                                    select users individually, uncheck the "Default" checkbox above and save your changes.
-                                                </Typography>
-                                            </Grid2>
-                                        </Grid2>
-                                    }
-                                    {!authzGroupInput.default && 
-                                        <RelationshipConfigurationComponent                                            
-                                            addObjectText="Add user to authorization group"
-                                            canAdd={true}
-                                            canDelete={true}
-                                            confirmRemovalText="Confirm removal of user"
-                                            filterObjectsText="Filter users"
-                                            noObjectsFoundText="No users found"
-                                            searchObjectsText="Search users"
-                                            relSearchInput={{
-                                                page: 1,
-                                                perPage: 10,
-                                                childtype: SearchResultType.User,
-                                                owningtenantid: authorizationGroup.tenantId,
-                                                parentid: authorizationGroup.groupId,
-                                                term: ""
-                                            }}                                            
-                                            tenantId={authorizationGroup.tenantId}
-                                            onAdd={(id: string) => {
-                                                setShowMutationBackdrop(true);
-                                                authorizationGroupUserAddMutation({
-                                                    variables: {
-                                                        userId: id,
-                                                        groupId: authorizationGroup.groupId
-                                                    }
-                                                });
-                                            }}
-                                            onRemove={(id: string) => {
-                                                setShowMutationBackdrop(true);
-                                                authorizationGroupUserRemoveMutation({
-                                                    variables: {
-                                                        userId: id,
-                                                        groupId: authorizationGroup.groupId
-                                                    } 
-                                                });
-                                            }}
-                                        />
-                                    }
-                                </AccordionDetails>
-                            </Accordion>
+                                        }
+                                        {!authzGroupInput.default && 
+                                            <RelationshipConfigurationComponent                                            
+                                                addObjectText="Add user to authorization group"
+                                                canAdd={true}
+                                                canDelete={true}
+                                                confirmRemovalText="Confirm removal of user"
+                                                filterObjectsText="Filter users"
+                                                noObjectsFoundText="No users found"
+                                                searchObjectsText="Search users"
+                                                relSearchInput={{
+                                                    page: 1,
+                                                    perPage: 10,
+                                                    childtype: SearchResultType.User,
+                                                    owningtenantid: authorizationGroup.tenantId,
+                                                    parentid: authorizationGroup.groupId,
+                                                    term: ""
+                                                }}                                            
+                                                tenantId={authorizationGroup.tenantId}
+                                                onAdd={(id: string) => {
+                                                    setShowMutationBackdrop(true);
+                                                    authorizationGroupUserAddMutation({
+                                                        variables: {
+                                                            userId: id,
+                                                            groupId: authorizationGroup.groupId
+                                                        }
+                                                    });
+                                                }}
+                                                onRemove={(id: string) => {
+                                                    setShowMutationBackdrop(true);
+                                                    authorizationGroupUserRemoveMutation({
+                                                        variables: {
+                                                            userId: id,
+                                                            groupId: authorizationGroup.groupId
+                                                        } 
+                                                    });
+                                                }}
+                                            />
+                                        }
+                                    </AccordionDetails>
+                                </Accordion>
+                            }
                         </Grid2>
                     </Grid2>
                 </Grid2>

@@ -163,21 +163,20 @@ const FederatedOIDCProviderTenantConfiguration: React.FC<FederatedOIDCProviderTe
                     />
                 </Dialog>
             }
-            <Grid2 marginBottom={"16px"} marginTop={"16px"} spacing={2} container size={12}>
+            <Grid2 marginBottom={"24px"} marginTop={"16px"} spacing={2} container size={12}>
                 <Grid2 size={12} display={"inline-flex"} alignItems="center" alignContent={"center"}>
                     <AddBoxIcon
                         sx={{cursor: "pointer"}}
                         onClick={() => setShowAddDialog(true)}
                     />
                     <div style={{marginLeft: "8px", fontWeight: "bold"}}>Add Tenant</div>
-                </Grid2>
-                
+                </Grid2>                
             </Grid2>
-            <Divider />
             <Grid2 marginBottom={"8px"} marginTop={"16px"} spacing={1} container size={12} fontWeight={"bold"}>
                 <Grid2 size={11} >Tenant Name</Grid2>                        
                 <Grid2 size={1}></Grid2>
             </Grid2>
+            <Divider />
             {data.getTenants.length === 0 &&
                 <Grid2 marginTop={"16px"}  spacing={2} container size={12} textAlign={"center"} >    
                     <Grid2 margin={"8px 0px 8px 0px"} textAlign={"center"} size={12} spacing={1}>

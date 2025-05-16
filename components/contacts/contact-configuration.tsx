@@ -29,14 +29,16 @@ export interface ContactConfigurationProps {
     contactForType: ContactForType,
     contactForId: string,
     onUpdateStart: () => void,
-    onUpdateEnd: (success: boolean) => void
+    onUpdateEnd: (success: boolean) => void,
+    readOnly: boolean
 }
 
 const ContactConfiguration: React.FC<ContactConfigurationProps> = ({
     contactForType,
     contactForId,
     onUpdateEnd,
-    onUpdateStart
+    onUpdateStart,
+    readOnly
 }) => {
 
     
@@ -191,7 +193,11 @@ const ContactConfiguration: React.FC<ContactConfigurationProps> = ({
                             <Grid2 sx={{whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis"}} size={10.8}>
                                 {contact.email}
                             </Grid2>
-                            <Grid2 size={1.2}><RemoveCircleOutlineIcon sx={{cursor: "pointer"}} onClick={() => {setContactToRemove(contact); setRemoveDialogOpen(true); }} /></Grid2>                            
+                            <Grid2 size={1.2}>
+                                {readOnly === true &&
+                                    <RemoveCircleOutlineIcon sx={{cursor: "pointer"}} onClick={() => {setContactToRemove(contact); setRemoveDialogOpen(true); }} />
+                                }
+                            </Grid2>                            
                         </Grid2>
                     )
                 )}
@@ -199,7 +205,9 @@ const ContactConfiguration: React.FC<ContactConfigurationProps> = ({
             <Divider />
             <Grid2 padding={"8px"} container size={12} spacing={0}>                
                 <Grid2 size={1}>
-                    <AddBoxIcon onClick={() => setAddDialogOpen(true)} sx={{cursor: "pointer"}}/>
+                    {readOnly === true &&
+                        <AddBoxIcon onClick={() => setAddDialogOpen(true)} sx={{cursor: "pointer"}}/>
+                    }
                 </Grid2>
                 <Grid2 size={11}></Grid2>
             </Grid2>

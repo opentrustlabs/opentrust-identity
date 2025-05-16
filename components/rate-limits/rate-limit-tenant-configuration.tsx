@@ -302,6 +302,29 @@ const RateLimitTenantRelConfiguration: React.FC<RateLimitTenantRelConfigurationP
                 </Grid2>
             </Grid2>
 
+            {!breakPoints.isMedium &&
+                <>
+                    <Grid2 marginTop={"16px"} marginBottom={"8px"} spacing={1} container size={12} fontWeight={"bold"}>
+                        <Grid2 size={1} ></Grid2>
+                        <Grid2 size={4} >Tenant Name</Grid2>
+                        <Grid2 size={2} >Unlimited</Grid2>
+                        <Grid2 size={2} >Limit</Grid2>
+                        <Grid2 size={2} >Period (min)</Grid2>
+                        <Grid2 size={1}></Grid2>
+                    </Grid2>
+                    <Divider />
+                </>
+            }
+            {breakPoints.isMedium &&
+                <>
+                    <Grid2 marginTop={"16px"} spacing={1} container size={12}>
+                        <Grid2 size={2} ></Grid2>
+                        <Grid2 size={9} >Tenant Name</Grid2>
+                        <Grid2 size={1}></Grid2>
+                    </Grid2>
+                    <Divider />
+                </>
+            }
             {loading &&
                 <Grid2 marginTop={"16px"} spacing={2} container size={12} textAlign={"center"} >
                     <Grid2 margin={"8px 0px 8px 0px"} textAlign={"center"} size={12} spacing={1}>
@@ -326,16 +349,7 @@ const RateLimitTenantRelConfiguration: React.FC<RateLimitTenantRelConfigurationP
             {data && !loading && !error && filteredArr.length > 0 &&
                 <>
                     {!breakPoints.isMedium &&
-                        <>
-                            <Grid2 marginTop={"16px"} marginBottom={"8px"} spacing={1} container size={12} fontWeight={"bold"}>
-                                <Grid2 size={1} ></Grid2>
-                                <Grid2 size={4} >Tenant Name</Grid2>
-                                <Grid2 size={2} >Unlimited</Grid2>
-                                <Grid2 size={2} >Limit</Grid2>
-                                <Grid2 size={2} >Period (min)</Grid2>
-                                <Grid2 size={1}></Grid2>
-                            </Grid2>
-                            <Divider />
+                        <>                            
                             <Grid2 marginTop={"16px"} spacing={1} container size={12}  >
                                 {filteredArr.map(
                                     (item: TenantRateLimitRelView) => (
@@ -386,13 +400,7 @@ const RateLimitTenantRelConfiguration: React.FC<RateLimitTenantRelConfigurationP
                         </>
                     }
                     {breakPoints.isMedium &&
-                        <>
-                            <Grid2 marginTop={"16px"} spacing={1} container size={12}>
-                                <Grid2 size={2} ></Grid2>
-                                <Grid2 size={9} >Tenant Name</Grid2>
-                                <Grid2 size={1}></Grid2>
-                            </Grid2>
-                            <Divider />
+                        <>                            
                             <Grid2 marginTop={"16px"} spacing={1} container size={12}  >
                                 {filteredArr.map(
                                     (item: TenantRateLimitRelView) => (

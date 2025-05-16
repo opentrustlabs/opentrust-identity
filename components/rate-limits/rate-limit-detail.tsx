@@ -136,6 +136,7 @@ const RateLimitDetail: React.FC<RateLimitDetailProps> = ({
                                     <Grid2 marginBottom={"16px"}>
                                         <div>Service Group Name</div>
                                         <TextField
+                                            disabled={isMarkedForDelete}
                                             required name="serviceGroupName" id="serviceGroupName"
                                             onChange={(evt) => { serviceGroupInput.servicegroupname = evt?.target.value; setServiceGroupInput({ ...serviceGroupInput }); setMarkDirty(true); }}
                                             value={serviceGroupInput.servicegroupname}
@@ -163,6 +164,7 @@ const RateLimitDetail: React.FC<RateLimitDetailProps> = ({
                                     <Grid2 marginBottom={"16px"}>
                                         <div>Service Group Description</div>
                                         <TextField
+                                            disabled={isMarkedForDelete}
                                             name="serviceGroupDescription" id="serviceGroupDescription"
                                             value={serviceGroupInput.servicegroupdescription}
                                             fullWidth={true}
@@ -188,33 +190,35 @@ const RateLimitDetail: React.FC<RateLimitDetailProps> = ({
                         </Paper>
                     </Grid2>
                     <Grid2 size={12} marginBottom={"16px"}>
-                        <Accordion defaultExpanded={true}  >
-                            <AccordionSummary
-                                expandIcon={<ExpandMoreIcon />}
-                                id={"login-failure-configuration"}
-                                sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center" }}
+                        {!isMarkedForDelete &&
+                            <Accordion defaultExpanded={true}  >
+                                <AccordionSummary
+                                    expandIcon={<ExpandMoreIcon />}
+                                    id={"login-failure-configuration"}
+                                    sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center" }}
 
-                            >
-                                <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-                                    <SettingsApplicationsIcon /><div style={{ marginLeft: "8px" }}>Tenants</div>
-                                </div>
-                            </AccordionSummary>
-                            <AccordionDetails>
-                                <RateLimitTenantRelConfiguration
-                                    onUpdateEnd={(success: boolean) => {
-                                        setShowMutationBackdrop(false);
-                                        if(success){
-                                            setShowMutationSnackbar(true);
-                                        }
-                                    }}
-                                    onUpdateStart={() => {
-                                        setShowMutationBackdrop(true);
-                                    }}
-                                    rateLimitServiceGroupId={rateLimitDetail.servicegroupid}
+                                >
+                                    <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+                                        <SettingsApplicationsIcon /><div style={{ marginLeft: "8px" }}>Tenants</div>
+                                    </div>
+                                </AccordionSummary>
+                                <AccordionDetails>
+                                    <RateLimitTenantRelConfiguration
+                                        onUpdateEnd={(success: boolean) => {
+                                            setShowMutationBackdrop(false);
+                                            if(success){
+                                                setShowMutationSnackbar(true);
+                                            }
+                                        }}
+                                        onUpdateStart={() => {
+                                            setShowMutationBackdrop(true);
+                                        }}
+                                        rateLimitServiceGroupId={rateLimitDetail.servicegroupid}
 
-                                />
-                            </AccordionDetails>
-                        </Accordion>
+                                    />
+                                </AccordionDetails>
+                            </Accordion>
+                        }
                     </Grid2>
                 </DetailPageMainContentContainer>
             </DetailPageContainer >
