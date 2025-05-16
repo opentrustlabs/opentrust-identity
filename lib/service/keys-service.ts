@@ -7,6 +7,8 @@ import { DaoFactory } from "../data-sources/dao-factory";
 import { Client } from "@opensearch-project/opensearch";
 import { getOpenSearchClient } from "../data-sources/search";
 import Kms from "../kms/kms";
+import { X509Certificate } from "crypto";
+
 
 const signingKeysDao = DaoFactory.getInstance().getSigningKeysDao();
 const tenantDao = DaoFactory.getInstance().getTenantDao();
@@ -58,14 +60,19 @@ class SigningKeysService {
         if(key.keyUse === "" || !KEY_USES.includes(key.keyUse)){
             throw new GraphQLError("ERROR_MISSING_OR_INVALID_KEY_USE");
         }
-        if(key.publicKey !== ""){            
+        if(key.publicKey && key.publicKey.length > 0){
             const now: number = new Date().getTime();                                                    
             const diff: number = key.expiresAtMs - now;
             // if negative or greater than a year, then reject
             if(diff < 0 || diff > 31557600000){
                 throw new GraphQLError("ERROR_INVALID_EXPIRATION_FOR_PUBLIC_KEY");    
             }
-        }        
+        }
+        if(key.certificate && key.certificate.length > 0){
+            const x509Cert: X509Certificate = new X509Certificate(key.certificate);            
+            const d: Date = new Date(x509Cert.validTo);
+            key.expiresAtMs = d.getTime();
+        }
         
         const plainText = key.password && key.password !== "" ? key.password : key.privateKeyPkcs8;
         const encrypted: string | null = await kms.encrypt(plainText);

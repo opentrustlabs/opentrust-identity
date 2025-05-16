@@ -53,6 +53,7 @@ class DBSigningKeysDao extends SigningKeysDao {
             publicKey: Buffer.from(entity.getDataValue("publicKey") || "").toString("utf-8"),
             markForDelete: entity.getDataValue("markForDelete")
         }
+        
         return key;
     }
 
