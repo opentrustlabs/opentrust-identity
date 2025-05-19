@@ -34,7 +34,7 @@ export type HashAlgorithm = "sha256" | "sha384" | "sha512";
 export function generateRandomToken(lengthInBytes: number, encoding?: TokenEncodingType){
     if(!encoding){
         encoding = "base64url";
-    }
+    }    
     return randomBytes(lengthInBytes).toString(encoding);
 }
 

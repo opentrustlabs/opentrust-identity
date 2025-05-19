@@ -508,3 +508,23 @@ export const MARK_FOR_DELETE_MUTATION = gql(`
     }  
 `);
 
+export const GENERATE_TOTP_MUTATION = gql(`
+    mutation generateTOTP($userId: String!) {
+        generateTOTP(userId: $userId) {
+            uri
+            userMFARel {
+                userId
+                mfaType
+                primaryMfa
+                totpSecret
+                totpHashAlgorithm
+                fido2PublicKey
+                fido2CredentialId
+                fido2Algorithm
+                fido2Transports
+                fido2KeySupportsCounters
+            }
+        }
+    }
+
+`);

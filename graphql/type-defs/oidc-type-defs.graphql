@@ -30,6 +30,7 @@ type Query {
     getUserById(userId: String!): User
     getLoginUserNameHandler(username: String!, tenantId: String, preauthToken: String): LoginUserNameHandlerResponse!
     getUserTenantRels(userId: String!): [UserTenantRelView!]!
+    validateTOTP(userId: String!, totpValue: String!): Boolean!
 
     ## For tenant management and access
     me: PortalUserProfile
@@ -135,6 +136,8 @@ type Mutation {
     updateUserTenantRel(tenantId: String!, userId: String!, relType: String!): UserTenantRel!
     assignUserToTenant(tenantId: String!, userId: String!, relType: String!): UserTenantRel!
     removeUserFromTenant(tenantId: String!, userId: String!): String
+    generateTOTP(userId: String!): TOTPResponse
+      
     
     ## Keys
     createSigningKey(keyInput: SigningKeyCreateInput!): SigningKey!
@@ -902,6 +905,25 @@ enum SearchRelType {
     AUTHORIZATION_GROUP_USER_REL
     AUTHENTICATION_GROUP_USER_REL
     CLIENT_AUTHENTICATION_GROUP_REL
+}
+    
+
+type UserMFARel {
+    userId: String!
+    mfaType: String!
+    primaryMfa: Boolean!
+    totpSecret: String
+    totpHashAlgorithm: String
+    fido2PublicKey: String
+    fido2CredentialId: String
+    fido2Algorithm: String
+    fido2Transports: String
+    fido2KeySupportsCounters: Boolean
+}
+
+type TOTPResponse {
+    userMFARel: UserMFARel!
+    uri: String!
 }
 
 ############################################################################

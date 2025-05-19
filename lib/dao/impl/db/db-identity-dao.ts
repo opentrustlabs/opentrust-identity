@@ -1,19 +1,55 @@
-import { User, AuthenticationGroup, AuthorizationGroup, SuccessfulLoginResponse, UserFailedLoginAttempts, UserTenantRel, UserCredential } from "@/graphql/generated/graphql-types";
+import { User, AuthenticationGroup, AuthorizationGroup, SuccessfulLoginResponse, UserFailedLoginAttempts, UserTenantRel, UserCredential, UserMfaRel } from "@/graphql/generated/graphql-types";
 import IdentityDao, { UserLookupType } from "../../identity-dao";
 import UserAuthorizationGroupRelEntity from "@/lib/entities/authorization-group-user-rel-entity";
 import AuthorizationGroupEntity from "@/lib/entities/authorization-group-entity";
 import AuthenticationGroupEntity from "@/lib/entities/authentication-group-entity";
 import UserEntity from "@/lib/entities/user-entity";
 import UserCredentialEntity from "@/lib/entities/user-credential-entity";
-import { MFA_AUTH_TYPE_FIDO2, PASSWORD_HASH_ITERATION_128K, PASSWORD_HASH_ITERATION_256K, PASSWORD_HASH_ITERATION_32K, PASSWORD_HASH_ITERATION_64K, PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_32K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_64K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS, SEARCH_INDEX_OBJECT_SEARCH, VERIFICATION_TOKEN_TYPE_PASSWORD_RESET } from "@/utils/consts";
+import { MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, PASSWORD_HASH_ITERATION_128K, PASSWORD_HASH_ITERATION_256K, PASSWORD_HASH_ITERATION_32K, PASSWORD_HASH_ITERATION_64K, PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_32K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_64K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS, SEARCH_INDEX_OBJECT_SEARCH, VERIFICATION_TOKEN_TYPE_PASSWORD_RESET } from "@/utils/consts";
 import { bcryptValidatePassword, generateRandomToken, pbkdf2HashPassword, scryptHashPassword, sha256HashPassword } from "@/utils/dao-utils";
 import UserMfaRelEntity from "@/lib/entities/user-mfa-rel-entity";
 import UserTenantRelEntity from "@/lib/entities/user-tenant-rel-entity";
 import DBDriver from "@/lib/data-sources/sequelize-db";
-import { Op, Sequelize } from "sequelize";
+import { FindOptions, IncrementDecrementOptionsWithBy, InstanceDestroyOptions, InstanceRestoreOptions, InstanceUpdateOptions, Model, Op, SaveOptions, Sequelize, SetOptions } from "sequelize";
+import { SequelizeHooks } from "sequelize/lib/hooks";
+import { ValidationOptions } from "sequelize/lib/instance-validator";
 
 class DBIdentityDao extends IdentityDao {
     
+
+    public async saveTOTP(userMfaRel: UserMfaRel): Promise<void> {
+        const sequelize: Sequelize = await DBDriver.getConnection();             
+        await sequelize.models.userMfaRel.create(userMfaRel);
+        return Promise.resolve();
+    }
+
+
+    public async deleteTOTP(userId: string): Promise<void>{
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.userMfaRel.destroy({
+            where: {
+                userId: userId,
+                mfaType: MFA_AUTH_TYPE_TIME_BASED_OTP
+            }
+        });
+        return Promise.resolve();
+    }
+
+    public async getTOTP(userId: string): Promise<UserMfaRel | null>{
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        const entity: UserMfaRelEntity | null = await sequelize.models.userMfaRel.findOne({
+            where: {
+                userId: userId,
+                mfaType: MFA_AUTH_TYPE_TIME_BASED_OTP
+            }
+        });
+        if(entity){
+            return entity.dataValues
+        }
+        else{
+            return null;
+        }
+    }
     
     public async getUserGroups(userId: string): Promise<Array<AuthorizationGroup>> {
         const sequelize: Sequelize = await DBDriver.getConnection();
@@ -118,7 +154,7 @@ class DBIdentityDao extends IdentityDao {
         else{
             return new Error("ERROR_UNABLE_TO_LOGIN_USER");
         }
-        
+
         if(!valid){
             throw new Error("ERROR_AUTHENTICATING_USER");
         }

@@ -14,6 +14,7 @@ import RateLimitService from "@/lib/service/rate-limit-service";
 import { OIDCContext } from "../graphql-context";
 import ViewSecretService from "@/lib/service/view-secret-service";
 import MarkForDeleteService from "@/lib/service/mark-for-delete-service";
+import { urlToUrlWithoutFlightMarker } from "next/dist/client/components/router-reducer/fetch-server-response";
 
 
 const resolvers: Resolvers = {
@@ -219,6 +220,11 @@ const resolvers: Resolvers = {
         getDeletionStatus: (_: any, { markForDeleteId }, oidcContext) => {
             const service: MarkForDeleteService = new MarkForDeleteService(oidcContext);
             return service.getDeletionStatus(markForDeleteId);
+        },
+        validateTOTP: async (_: any, { userId, totpValue }, oidcContext) => {
+            const service: IdentitySerivce = new IdentitySerivce(oidcContext);
+            const b = await service.validateTOTP(userId, totpValue); 
+            return b;
         }
     },
     Mutation: {
@@ -860,6 +866,11 @@ const resolvers: Resolvers = {
             await service.markForDelete(m);
             return m;
 
+        },
+        generateTOTP: async(_: any, { userId }, oidcContext) => {
+            const service: IdentitySerivce = new IdentitySerivce(oidcContext);
+            const totpResponse = await service.createTOTP(userId);
+            return totpResponse;
         }
     },
     RelSearchResultItem : {

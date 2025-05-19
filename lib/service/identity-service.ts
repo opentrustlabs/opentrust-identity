@@ -1,21 +1,26 @@
 import { OIDCContext } from "@/graphql/graphql-context";
-
+import * as OTPAuth from "otpauth";
 import IdentityDao from "../dao/identity-dao";
-import { ObjectSearchResultItem, RelSearchResultItem, SearchResultType, Tenant, TenantPasswordConfig, User, UserCreateInput, UserCredential, UserTenantRel, UserTenantRelView } from "@/graphql/generated/graphql-types";
+import { ObjectSearchResultItem, RelSearchResultItem, SearchResultType, Tenant, TenantPasswordConfig, TotpResponse, User, UserCreateInput, UserCredential, UserMfaRel, UserTenantRel, UserTenantRelView } from "@/graphql/generated/graphql-types";
 import { DaoFactory } from "../data-sources/dao-factory";
 import TenantDao from "../dao/tenant-dao";
 import { GraphQLError } from "graphql/error";
 import { randomUUID } from "crypto";
-import { NAME_ORDER_WESTERN, PASSWORD_HASH_ITERATION_128K, PASSWORD_HASH_ITERATION_256K, PASSWORD_HASH_ITERATION_32K, PASSWORD_HASH_ITERATION_64K, PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_32K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_64K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_TYPE_ROOT_TENANT, USER_TENANT_REL_TYPE_GUEST, USER_TENANT_REL_TYPE_PRIMARY } from "@/utils/consts";
-import { sha256HashPassword, pbkdf2HashPassword, bcryptHashPassword, generateSalt, scryptHashPassword } from "@/utils/dao-utils";
+import { MFA_AUTH_TYPE_TIME_BASED_OTP, NAME_ORDER_WESTERN, PASSWORD_HASH_ITERATION_128K, PASSWORD_HASH_ITERATION_256K, PASSWORD_HASH_ITERATION_32K, PASSWORD_HASH_ITERATION_64K, PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_32K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_64K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_TYPE_ROOT_TENANT, TOTP_HASH_ALGORITHM_SHA1, USER_TENANT_REL_TYPE_GUEST, USER_TENANT_REL_TYPE_PRIMARY } from "@/utils/consts";
+import { sha256HashPassword, pbkdf2HashPassword, bcryptHashPassword, generateSalt, scryptHashPassword, generateRandomToken } from "@/utils/dao-utils";
 import { Client } from "@opensearch-project/opensearch";
 import { getOpenSearchClient } from "../data-sources/search";
 import { Get_Response } from "@opensearch-project/opensearch/api/index.js";
-
+import Kms from "../kms/kms";
 
 const identityDao: IdentityDao = DaoFactory.getInstance().getIdentityDao();
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
 const searchClient: Client = getOpenSearchClient();
+const kms: Kms = DaoFactory.getInstance().getKms();
+
+const {
+    TOTP_ISSUER
+} = process.env;
 
 class IdentitySerivce {
     
@@ -151,6 +156,121 @@ class IdentitySerivce {
         else {
             throw new GraphQLError("ERROR_USER_DOES_NOT_EXIST");
         }
+    }
+
+    public async createTOTP(userId: string): Promise<TotpResponse> {
+        const user: User | null = await identityDao.getUserBy("id", userId);
+        if(!user){
+            throw new GraphQLError("ERROR_USER_NOT_FOUND");
+        }
+        let userMfaRel: UserMfaRel | null = await identityDao.getTOTP(userId);
+
+        let totp: OTPAuth.TOTP | null = null;
+        // TODO remove this if block.
+        if(userMfaRel && userMfaRel.totpSecret){
+            const decryptedSecret: string | null = await kms.decrypt(userMfaRel.totpSecret);
+            if(!decryptedSecret){
+                throw new GraphQLError("ERROR_DECRYPTING_SECRET");
+            }
+            else{
+                userMfaRel.totpSecret = decryptedSecret;
+                // Microsoft authentication only support SHA1 as a hashing algorithm (at the momemt)
+                totp = new OTPAuth.TOTP({
+                    issuer: TOTP_ISSUER || "Open Trust",
+                    label: user.email,
+                    algorithm: TOTP_HASH_ALGORITHM_SHA1, 
+                    digits: 6,
+                    period: 30,
+                    secret: decryptedSecret
+                });
+            }
+        }
+        else{
+            const newSecret = new OTPAuth.Secret({size: 20});            
+            const encryptedSecret = await kms.encrypt(newSecret.base32);
+            if(!encryptedSecret){
+                throw new GraphQLError("ERROR_UNABLE_TO_GENERATE_TOPT_SECRET");
+            }
+
+            // Save the data using the encrypted value, but
+            // return the plain text value to the user to scan
+            // or enter into their device.
+            userMfaRel = {
+                mfaType: MFA_AUTH_TYPE_TIME_BASED_OTP,
+                userId: userId,
+                primaryMfa: true,
+                fido2Algorithm: null,
+                fido2CredentialId: null,
+                fido2KeySupportsCounters: null,
+                fido2PublicKey: null,
+                fido2Transports: null,
+                totpHashAlgorithm: TOTP_HASH_ALGORITHM_SHA1,
+                totpSecret: encryptedSecret
+            }
+
+            await identityDao.saveTOTP(userMfaRel);
+            console.log("secret: " + newSecret + ", encrypted secret: " + encryptedSecret);
+            userMfaRel.totpSecret = newSecret.base32;
+
+            // Microsoft authentication only support SHA1 as a hashing algorithm (at the momemt)
+            totp = new OTPAuth.TOTP({
+                issuer: TOTP_ISSUER || "Open Trust",
+                label: user.email,
+                algorithm: TOTP_HASH_ALGORITHM_SHA1, 
+                digits: 6,
+                period: 30,
+                secret: newSecret
+            });
+            
+        }
+        
+        const token = totp.generate();
+        console.log("Token is: " + token);
+
+        const counter = totp.counter();
+        console.log("counter is: " + counter);
+
+        const uri = totp.toString();
+        console.log("uri is: " + uri);
+
+        const response: TotpResponse = {
+            uri: uri,
+            userMFARel: userMfaRel
+        }
+        return response;
+    }
+
+    public async validateTOTP(userId: string, totpValue: string): Promise<boolean> {
+        const userMfaRel: UserMfaRel | null = await identityDao.getTOTP(userId);
+        if(!userMfaRel || !userMfaRel.totpSecret){
+            throw new GraphQLError("ERROR_NO_TOTP_ASSIGNED_TO_USER");
+        }
+
+        const secret = await kms.decrypt(userMfaRel.totpSecret);
+        if(!secret){
+            throw new GraphQLError("ERROR_UNABLE_TO_DETERMINE_TOPT_SECRET");
+        }
+        // Microsoft authentication only support SHA1 as a hashing algorithm (at the momemt)
+        const totp = new OTPAuth.TOTP({
+            issuer: TOTP_ISSUER || "Open Trust",
+            label: userId,
+            algorithm: TOTP_HASH_ALGORITHM_SHA1, 
+            digits: 6,
+            period: 30,
+            secret: secret
+        });
+
+        console.log("token on validate is " + totp.generate());
+
+        let delta = totp.validate({
+            token: totpValue,
+            window: 1
+        });
+        console.log("delta is: " + delta);
+        if(delta === null){
+            return false;
+        }
+        return true;
     }
 
     protected async _createUser(userCreateInput: UserCreateInput, tenant: Tenant, enabled: boolean): Promise<User>  {
