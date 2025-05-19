@@ -607,3 +607,9 @@ export const GET_SECRET_VALUE_QUERY = gql(`
         getSecretValue(objectId: $objectId, objectType: $objectType)
     }
 `);
+
+export const VALIDATE_TOTP_TOKEN_QUERY = gql(`
+    query validateTOTP($userId: String!, $totpValue: String!) {
+        validateTOTP(userId: $userId, totpValue: $totpValue)
+    }
+`);

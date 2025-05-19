@@ -495,6 +495,10 @@ export const MFA_AUTH_TYPES=[
     MFA_AUTH_TYPE_TIME_BASED_OTP,
     MFA_AUTH_TYPE_FIDO2
 ];
+
+export const TOTP_HASH_ALGORITHM_SHA256="SHA256";
+export const TOTP_HASH_ALGORITHM_SHA1="SHA1"
+
 export const MFA_AUTH_TYPE_DISPLAY: Map<string, string> = new Map([
     [MFA_AUTH_TYPE_NONE, "None"],
     [MFA_AUTH_TYPE_SMS, "SMS - Not recommended"],
@@ -686,8 +690,10 @@ export const AUTHENTICATION_LAYOUT_PAGES = [
     "/authorize/login",
     "/authorize/forgot-password",
     "/authorize/register",
+    "/authorize/verify-registration",
     "/access-error",
-    "/verify-registration"
+    "/totp"
+    
 ]
 
 

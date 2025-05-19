@@ -26,6 +26,12 @@ class UserMfaRelEntity extends Model {
                 allowNull: true,
 				field: "totpsecret"
             },
+            totpHashAlgorithm: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: true,
+                field: "totphashalgorithm"
+            },
             fido2PublicKey: {
                 type: DataTypes.STRING,
                 primaryKey: false,

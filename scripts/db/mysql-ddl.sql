@@ -520,6 +520,7 @@ create TABLE user_mfa_rel (
     primarymfa BOOLEAN NOT NULL,
     mfatype VARCHAR(64) NOT NULL,
     totpsecret VARCHAR(1024),
+    totphashalgorithm VARCHAR(32),
     fido2publickey VARCHAR(4000),
     fido2credentialid VARCHAR(1024),
     fido2algorithm VARCHAR(1024),

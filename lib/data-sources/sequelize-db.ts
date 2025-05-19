@@ -38,6 +38,7 @@ import ScopeEntity from "../entities/scope-entity";
 import SigningKeyEntity from "../entities/signing-key-entity";
 import { MarkForDeleteEntity } from "../entities/mark-for-delete-entity";
 import { DeletionStatusEntity } from "../entities/deletion-status-entity";
+import UserMfaRelEntity from "../entities/user-mfa-rel-entity";
 
 const {
     DB_USER,
@@ -149,6 +150,7 @@ class DBDriver {
             SigningKeyEntity.initModel(global.sequelize);
             MarkForDeleteEntity.initModel(global.sequelize);
             DeletionStatusEntity.initModel(global.sequelize);
+            UserMfaRelEntity.initModel(global.sequelize);
         } 
 
         return global.sequelize;

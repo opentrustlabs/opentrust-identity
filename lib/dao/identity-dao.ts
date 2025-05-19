@@ -1,4 +1,4 @@
-import { AuthenticationGroup, User, AuthorizationGroup, SuccessfulLoginResponse, UserFailedLoginAttempts, UserTenantRel, UserCredential } from "@/graphql/generated/graphql-types";
+import { AuthenticationGroup, User, AuthorizationGroup, SuccessfulLoginResponse, UserFailedLoginAttempts, UserTenantRel, UserCredential, UserMfaRel } from "@/graphql/generated/graphql-types";
 
 export type UserLookupType = "id" | "email" | "phone";
 abstract class IdentityDao {
@@ -18,6 +18,12 @@ abstract class IdentityDao {
 
     // challengeType could be email (as for registration of new users), sms, time-based-otp, or security key
     abstract validateOTP(userId: string, challenge: string, challengeId: string, challengeType: string): Promise<boolean>;
+
+    abstract saveTOTP(userMfaRel: UserMfaRel): Promise<void>;
+
+    abstract deleteTOTP(userId: string): Promise<void>;
+
+    abstract getTOTP(userId: string): Promise<UserMfaRel | null>;
 
     abstract getUserBy(userLookupType: UserLookupType, value: string): Promise<User | null>;
 
