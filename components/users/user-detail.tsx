@@ -3,7 +3,7 @@ import { MarkForDeleteObjectType, User, UserUpdateInput } from "@/graphql/genera
 import React, { useContext } from "react";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
 import Typography from "@mui/material/Typography";
-import { MFA_AUTH_TYPE_DISPLAY, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_NONE, MFA_AUTH_TYPE_SMS, MFA_AUTH_TYPE_TIME_BASED_OTP, NAME_ORDER_DISPLAY, NAME_ORDER_EASTERN, NAME_ORDER_WESTERN, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
+import { MFA_AUTH_TYPE_DISPLAY, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_NONE, MFA_AUTH_TYPE_SMS, MFA_AUTH_TYPE_TIME_BASED_OTP, MFA_AUTH_TYPES, NAME_ORDER_DISPLAY, NAME_ORDER_EASTERN, NAME_ORDER_WESTERN, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import BreadcrumbComponent from "../breadcrumbs/breadcrumbs";
 import { DetailPageContainer, DetailPageMainContentContainer, DetailPageRightNavContainer } from "../layout/detail-page-container";
 import Grid2 from "@mui/material/Grid2";
@@ -321,12 +321,13 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                                 size="small"
                                                 sx={{ paddingTop: "8px" }}
                                                 renderInput={(params) => <TextField {...params} label="" />}
-                                                options={[
-                                                    { id: MFA_AUTH_TYPE_NONE, label: "None"},
-                                                    { id: MFA_AUTH_TYPE_TIME_BASED_OTP, label: "OTP - Requires an authenticator app" },
-                                                    { id: MFA_AUTH_TYPE_FIDO2, label: "Security Key" },
-                                                    { id: MFA_AUTH_TYPE_SMS, label: "SMS - Not recommended" }
-                                                ]}
+                                                options={
+                                                    MFA_AUTH_TYPES.map(
+                                                        (type: string) => {
+                                                            return {id: type, label: MFA_AUTH_TYPE_DISPLAY.get(type)}
+                                                        }
+                                                    )
+                                                }
                                                 isOptionEqualToValue={(option, value) => option.id === value.id}
                                                 value={
                                                     userInput.twoFactorAuthType ?
