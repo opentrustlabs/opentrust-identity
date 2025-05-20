@@ -313,7 +313,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                             />
                                         </Grid2>
                                         <Grid2 marginBottom={"16px"}>
-                                            <div>Multi-factor Authorization</div>
+                                            <div>Multi-factor Authentication</div>
                                             <Autocomplete
                                                 disabled={isMarkedForDelete}
                                                 id="mfa"

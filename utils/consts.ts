@@ -691,6 +691,8 @@ export const AUTHENTICATION_LAYOUT_PAGES = [
     "/authorize/forgot-password",
     "/authorize/register",
     "/authorize/verify-registration",
+    "/authorize/security-key",
+    "/authorize/totp",
     "/access-error",
     "/totp"
     
