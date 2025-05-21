@@ -102,9 +102,9 @@ const resolvers: Resolvers = {
             const keysService: SigningKeysService = new SigningKeysService(oidcContext);
             return keysService.getSigningKeyById(signingKeyId);
         },
-        getScope: (_: any, { tenantId }, oidcContext) => {
+        getScope: (_: any, { tenantId, filterBy }, oidcContext) => {
             const scopeService: ScopeService = new ScopeService(oidcContext);
-            return scopeService.getScope(tenantId || undefined);
+            return scopeService.getScope(tenantId || undefined, filterBy || undefined);
         },
         getScopeById: (_: any, { scopeId }, oidcContext) => {
             const scopeService: ScopeService = new ScopeService(oidcContext);
@@ -460,8 +460,11 @@ const resolvers: Resolvers = {
             return rel;
         },
         removeScopeFromTenant: async(_: any, { scopeId, tenantId }, oidcContext ) => {
+            console.log("resolver checkpoint 1");
             const scopeService: ScopeService = new ScopeService(oidcContext);
+            console.log("resolver checkpoint 2");
             await scopeService.removeScopeFromTenant(tenantId, scopeId);
+            console.log("resolver checkpoint 3");
             return scopeId;
         },
         // assignScopeToClient: async(_: any, { scopeId, clientId, tenantId }, oidcContext) => {

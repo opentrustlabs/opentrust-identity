@@ -9,7 +9,7 @@ import Typography from "@mui/material/Typography";
 import Grid2 from "@mui/material/Grid2";
 import AddBoxIcon from '@mui/icons-material/AddBox';
 import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
-import { Scope } from "@/graphql/generated/graphql-types";
+import { Scope, ScopeFilterCriteria } from "@/graphql/generated/graphql-types";
 import { SCOPE_USE_DISPLAY, SCOPE_USE_IAM_MANAGEMENT, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import Divider from "@mui/material/Divider";
 import { Alert, Button, Dialog, DialogActions, DialogContent, TablePagination } from "@mui/material";
@@ -48,8 +48,11 @@ const TenantScopeConfiguration: React.FC<TenantScopeConfigurationProps> = ({
     // GRAPHQL 
     const {data, loading, error} = useQuery(SCOPE_QUERY, {
         variables: {
-            tenantId: tenantId
-        }
+            tenantId: tenantId,
+            filterBy: ScopeFilterCriteria.Existing
+        },
+        fetchPolicy: "no-cache",
+        nextFetchPolicy: "no-cache"
     });
 
     const [assignTenantToScopeMutation] = useMutation(TENANT_SCOPE_ASSIGN_MUTATION, {
@@ -126,7 +129,7 @@ const TenantScopeConfiguration: React.FC<TenantScopeConfigurationProps> = ({
                 >
                     <GeneralSelector 
                         query={SCOPE_QUERY}
-                        queryVars={{}}
+                        queryVars={{tenantId: tenantId, filterBy: ScopeFilterCriteria.Available}}
                         dataMapper={(d) => {
                             const preExistingIds = data.getScope.map( (scope: Scope) => scope.scopeId);                            
                             if(d && d.getScope){

@@ -46,7 +46,7 @@ type Query {
     getRateLimitTenantRelViews(rateLimitServiceGroupId: String, tenantId: String): [TenantRateLimitRelView!]!
 
     ## Scope
-    getScope(tenantId: String): [Scope!]!
+    getScope(tenantId: String, filterBy: ScopeFilterCriteria): [Scope!]!
     getScopeById(scopeId: String!): Scope
     getClientScopes(clientId: String!): [Scope!]!
     getAuthorizationGroupScopes(groupId: String!): [Scope!]!
@@ -214,7 +214,10 @@ type Mutation {
 
 }
 
-
+enum ScopeFilterCriteria {
+    EXISTING
+    AVAILABLE
+}
 
 enum SecretObjectType {
     CLIENT_SECRET
