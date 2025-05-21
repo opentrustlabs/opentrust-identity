@@ -10,7 +10,7 @@ class AuthorizationGroupScopeRelEntity extends Model {
                 field: "groupid"
             },
             scopeId: {
-                type: DataTypes.DATE,
+                type: DataTypes.STRING,
                 primaryKey: true,
                 field: "scopeid"
             },

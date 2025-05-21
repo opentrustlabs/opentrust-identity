@@ -11,6 +11,7 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import PersonIcon from '@mui/icons-material/Person';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import PolicyIcon from '@mui/icons-material/Policy';
 import TenantHighlight from "../tenants/tenant-highlight";
 import RelationshipConfigurationComponent from "../relationship-config/relationship-configuration-component";
 import { useMutation } from "@apollo/client";
@@ -20,6 +21,7 @@ import { useClipboardCopyContext } from "../contexts/clipboard-copy-context";
 import DetailSectionActionHandler from "../layout/detail-section-action-handler";
 import SubmitMarkForDelete from "../deletion/submit-mark-for-delete";
 import MarkForDeleteAlert from "../deletion/mark-for-delete-alert";
+import ScopeRelConfiguration, { ScopeRelType } from "../scope/scope-rel-configuration";
 
 export interface AuthorizationGroupDetailProps {
     authorizationGroup: AuthorizationGroup
@@ -303,6 +305,38 @@ const AuthorizationGroupDetail: React.FC<AuthorizationGroupDetailProps> = ({ aut
                                                 }}
                                             />
                                         }
+                                    </AccordionDetails>
+                                </Accordion>
+                            }
+                        </Grid2>
+                        <Grid2 size={12} >
+                            {!isMarkedForDelete &&
+                                <Accordion >
+                                    <AccordionSummary
+                                        expandIcon={<ExpandMoreIcon />}
+                                        id={"redirect-uri-configuration"}
+                                        sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center" }}
+
+                                    >
+                                        <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+                                            <PolicyIcon /><div style={{ marginLeft: "8px" }}>Access Control</div>
+                                        </div>
+                                    </AccordionSummary>
+                                    <AccordionDetails>
+                                        <ScopeRelConfiguration
+                                            tenantId={authorizationGroup.tenantId}
+                                            id={authorizationGroup.groupId}
+                                            scopeRelType={ScopeRelType.AUTHORIZATION_GROUP}
+                                            onUpdateEnd={(success: boolean) => {
+                                                setShowMutationBackdrop(false);
+                                                if (success) {
+                                                    setShowMutationSnackbar(true);
+                                                }
+                                            }}
+                                            onUpdateStart={() => {
+                                                setShowMutationBackdrop(true);
+                                            }}
+                                        />
                                     </AccordionDetails>
                                 </Accordion>
                             }

@@ -10,7 +10,7 @@ class UserScopeRelEntity extends Model {
                 field: "userid"
             },
             scopeId: {
-                type: DataTypes.DATE,
+                type: DataTypes.STRING,
                 primaryKey: true,
                 field: "scopeid"
             },
