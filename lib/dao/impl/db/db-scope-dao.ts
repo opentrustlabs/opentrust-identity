@@ -38,6 +38,7 @@ class DBScopeDao extends ScopeDao {
         );
     }
     public async assignScopeToAuthorizationGroup(tenantId: string, authorizationGroupId: string, scopeId: string): Promise<AuthorizationGroupScopeRel> {
+        // scopeDao.assignScopeToAuthorizationGroup(tenantId, groupId, scopeId);
         const sequelize: Sequelize = await DBDriver.getConnection();
         const authorizationGroupScopeRel: AuthorizationGroupScopeRel = {
             groupId: authorizationGroupId,

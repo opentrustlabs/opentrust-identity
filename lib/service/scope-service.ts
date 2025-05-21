@@ -306,6 +306,7 @@ class ScopeService {
         if(authnGroup.tenantId !== tenantId){
             throw new GraphQLError("ERROR_AUTHORIZATION_GROUP_DOES_NOT_BELONG_TO_TENANT");
         }
+        console.log("checkpoint scopeservice 1");
         return scopeDao.assignScopeToAuthorizationGroup(tenantId, groupId, scopeId);
 
     }

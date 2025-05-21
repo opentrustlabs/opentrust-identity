@@ -487,7 +487,7 @@ const resolvers: Resolvers = {
             return scopeId;
         },
         assignScopeToAuthorizationGroup: async(_: any, { scopeId, tenantId, groupId }, oidcContext) => {
-            const scopeService: ScopeService = new ScopeService(oidcContext);
+            const scopeService: ScopeService = new ScopeService(oidcContext);            
             const rel = await scopeService.assignScopeToAuthorizationGroup(groupId, scopeId, tenantId);
             return rel;
         },
