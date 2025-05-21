@@ -225,7 +225,19 @@ const resolvers: Resolvers = {
             const service: IdentitySerivce = new IdentitySerivce(oidcContext);
             const b = await service.validateTOTP(userId, totpValue); 
             return b;
-        }
+        },
+        getClientScopes: (_: any, { clientId }, oidcContext) => {
+            const service: ScopeService = new ScopeService(oidcContext);
+            return service.getClientScopes(clientId);
+        },
+        getAuthorizationGroupScopes: (_: any, { groupId }, oidcContext) => {
+            const service: ScopeService = new ScopeService(oidcContext);
+            return service.getAuthorizationGroupScopes(groupId);
+        },
+        getUserScopes: (_: any, { userId }, oidcContext) => {
+            const service: ScopeService = new ScopeService(oidcContext);
+            return service.getUserScopes(userId);
+        }        
     },
     Mutation: {
         createRootTenant: async(_: any, { tenantInput }, oidcContext) => {
@@ -460,22 +472,40 @@ const resolvers: Resolvers = {
             return rel;
         },
         removeScopeFromTenant: async(_: any, { scopeId, tenantId }, oidcContext ) => {
-            console.log("resolver checkpoint 1");
             const scopeService: ScopeService = new ScopeService(oidcContext);
-            console.log("resolver checkpoint 2");
             await scopeService.removeScopeFromTenant(tenantId, scopeId);
-            console.log("resolver checkpoint 3");
             return scopeId;
         },
-        // assignScopeToClient: async(_: any, { scopeId, clientId, tenantId }, oidcContext) => {
-        //     const scopeService: ScopeService = new ScopeService(oidcContext);
-        //     const rel = await scopeService.assignScopeToClient(tenantId, clientId, scopeId);
-        //     return rel;
-        // },
+        assignScopeToClient: async(_: any, { scopeId, clientId, tenantId }, oidcContext) => {
+            const scopeService: ScopeService = new ScopeService(oidcContext);
+            const rel = await scopeService.assignScopeToClient(tenantId, clientId, scopeId);
+            return rel;
+        },
         removeScopeFromClient: async(_: any, { scopeId, tenantId, clientId }, oidcContext) => {
             const scopeService: ScopeService = new ScopeService(oidcContext);
             await scopeService.removeScopeFromClient(tenantId, clientId, scopeId);
             return scopeId;
+        },
+        assignScopeToAuthorizationGroup: async(_: any, { scopeId, tenantId, groupId }, oidcContext) => {
+            const scopeService: ScopeService = new ScopeService(oidcContext);
+            const rel = await scopeService.assignScopeToAuthorizationGroup(groupId, scopeId, tenantId);
+            return rel;
+        },
+        removeScopeFromAuthorizationGroup: async(_: any, { scopeId, tenantId, groupId }, oidcContext) => {
+            const scopeService: ScopeService = new ScopeService(oidcContext);
+            await scopeService.removeScopeFromAuthorizationGroup(groupId, scopeId, tenantId);
+            return scopeId;
+        },
+        assignScopeToUser: async(_: any, { userId, scopeId, tenantId }, oidcContext) => {
+            const scopeService: ScopeService = new ScopeService(oidcContext);
+            const rel = await scopeService.assignScopeToUser(userId, tenantId, scopeId);
+            return rel;
+        },
+        removeScopeFromUser: async(_: any, { userId, scopeId, tenantId }, oidcContext) => {
+            const scopeService: ScopeService = new ScopeService(oidcContext);
+            await scopeService.removeScopeFromUser(userId, tenantId, scopeId);
+            return scopeId;
+
         },
         createAuthenticationGroup: async(_: any, { authenticationGroupInput }, oidcContext) => {
             const authenticationGroupService: AuthenticationGroupService = new AuthenticationGroupService(oidcContext);
