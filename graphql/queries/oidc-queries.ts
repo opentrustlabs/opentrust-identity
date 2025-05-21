@@ -613,3 +613,36 @@ export const VALIDATE_TOTP_TOKEN_QUERY = gql(`
         validateTOTP(userId: $userId, totpValue: $totpValue)
     }
 `);
+
+export const GET_CLIENT_SCOPE_QUERY = gql(`
+    query getClientScopes($clientId: String!) {
+        getClientScopes(clientId: $clientId) {
+            scopeId
+            scopeName
+            scopeDescription
+            scopeUse          
+        }
+    }    
+`);
+
+export const GET_AUTHORIZATION_GROUP_SCOPE_QUERY = gql(`
+    query getAuthorizationGroupScopes($groupId: String!) {
+        getAuthorizationGroupScopes(groupId: $groupId) {
+            scopeId
+            scopeName
+            scopeDescription
+            scopeUse          
+        }
+    }     
+`);
+
+export const GET_USER_SCOPE_QUERY = gql(`
+    query getUserScopes($userId: String!) {
+        getUserScopes(userId: $userId) {
+            scopeId
+            scopeName
+            scopeDescription
+            scopeUse          
+        }
+    }     
+`);

@@ -25,6 +25,8 @@ import { CLIENT_DETAIL_QUERY } from "@/graphql/queries/oidc-queries";
 import DetailSectionActionHandler from "../layout/detail-section-action-handler";
 import MarkForDeleteAlert from "../deletion/mark-for-delete-alert";
 import SubmitMarkForDelete from "../deletion/submit-mark-for-delete";
+import PolicyIcon from '@mui/icons-material/Policy';
+import ScopeRelConfiguration, { ScopeRelType } from "../scope/scope-rel-configuration";
 
 export interface ClientDetailProps {
     client: Client
@@ -392,7 +394,40 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                             }
                         </Grid2>
                     </Grid2>
-                </Grid2>
+                    <Grid2 size={12} >
+                            {!isMarkedForDelete &&
+                                <Accordion >
+                                    <AccordionSummary
+                                        expandIcon={<ExpandMoreIcon />}
+                                        id={"redirect-uri-configuration"}
+                                        sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center" }}
+
+                                    >
+                                        <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+                                            <PolicyIcon /><div style={{ marginLeft: "8px" }}>Access Control</div>
+                                        </div>
+                                    </AccordionSummary>
+                                    <AccordionDetails>
+                                        <ScopeRelConfiguration 
+                                            tenantId={client.tenantId}
+                                            id={client.clientId}
+                                            scopeRelType={ScopeRelType.CLIENT}
+                                            onUpdateEnd={(success: boolean) => {
+                                                setShowMutationBackdrop(false);
+                                                if(success){
+                                                    setShowMutationSnackbar(true);
+                                                }
+                                            }}
+                                            onUpdateStart={() => {
+                                                setShowMutationBackdrop(true);                                            
+                                            }}
+                                        />
+
+                                    </AccordionDetails>
+                                </Accordion>
+                            }
+                        </Grid2>
+                    </Grid2>
                     <Grid2 spacing={2} size={{ xs: 12, sm: 12, md: 12, lg: 3, xl: 3 }}>
                         <Grid2 container spacing={2} size={12}>
                             <Grid2 size={{ xs: 12, sm: 6, lg: 12, md: 6, xl: 12 }} >                            

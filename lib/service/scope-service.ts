@@ -212,7 +212,7 @@ class ScopeService {
 
     public async getClientScopes(clientId: string): Promise<Array<Scope>> {
         const arr: Array<ClientScopeRel> = await scopeDao.getClientScopeRels(clientId);
-        if(arr.length > 1){
+        if(arr.length > 0){
             const ids = arr.map((rel: ClientScopeRel) => rel.scopeId);
             const scopes: Array<Scope> = await scopeDao.getScope(undefined, ids);
             return scopes;
@@ -223,7 +223,7 @@ class ScopeService {
 
     public async getAuthorizationGroupScopes(groupId: string): Promise<Array<Scope>> {
         const arr: Array<AuthorizationGroupScopeRel> = await scopeDao.getAuthorizationGroupScopeRels(groupId);
-        if(arr.length > 1){
+        if(arr.length > 0){
             const ids = arr.map((rel: AuthorizationGroupScopeRel) => rel.scopeId);
             const scopes: Array<Scope> = await scopeDao.getScope(undefined, ids);
             return scopes;
@@ -234,7 +234,7 @@ class ScopeService {
 
     public async getUserScopes(userId: string): Promise<Array<Scope>> {
         const arr: Array<UserScopeRel> = await scopeDao.getUserScopeRels(userId);
-        if(arr.length > 1){
+        if(arr.length > 0){
             const ids = arr.map((rel: UserScopeRel) => rel.scopeId);
             const scopes: Array<Scope> = await scopeDao.getScope(undefined, ids);
             return scopes;

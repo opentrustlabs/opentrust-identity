@@ -526,5 +526,4 @@ export const GENERATE_TOTP_MUTATION = gql(`
             }
         }
     }
-
 `);
