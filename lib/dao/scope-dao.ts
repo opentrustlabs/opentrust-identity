@@ -4,7 +4,7 @@ import { Scope, TenantAvailableScope, ClientScopeRel, AuthorizationGroupScopeRel
 
 abstract class ScopeDao {
 
-        abstract getScope(tenantId?: string): Promise<Array<Scope>>;
+        abstract getScope(tenantId?: string, scopeIds?: Array<string>): Promise<Array<Scope>>;
 
         abstract getScopeById(scopeId: string): Promise<Scope | null>;
 

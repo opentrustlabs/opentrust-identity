@@ -160,8 +160,8 @@ type Mutation {
     removeScopeFromTenant(tenantId: String!, scopeId: String!): String
     assignScopeToClient(clientId: String!, tenantId: String!, scopeId: String!): ClientScopeRel
     removeScopeFromClient(clientId: String!, tenantId: String!, scopeId: String!): String
-    assignScopeToAuthorizationGroup(groupId: String!, scopeId: String!): AuthorizationGroupScopeRel
-    removeScopeFromAuthorizationGroup(groupId: String!, scopeId: String!): String
+    assignScopeToAuthorizationGroup(groupId: String!, scopeId: String!, tenantId: String!): AuthorizationGroupScopeRel
+    removeScopeFromAuthorizationGroup(groupId: String!, scopeId: String!, tenantId: String!): String
     assignScopeToUser(userId: String!, tenantId: String!, scopeId: String!): UserScopeRel
     removeScopeFromUser(userId: String!, tenantId: String!, scopeId: String!): String
 
