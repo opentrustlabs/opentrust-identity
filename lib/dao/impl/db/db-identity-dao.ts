@@ -383,18 +383,30 @@ class DBIdentityDao extends IdentityDao {
     // userTenantRel
     public async assignUserToTenant(tenantId: string, userId: string, relType: string): Promise<UserTenantRel> {
         const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.userTenantRel.create({
-            userId: userId,
-            tenantId: tenantId,
-            relType: relType,
-            enabled: true
-        })
         const model: UserTenantRel = {
             userId: userId,
             tenantId: tenantId,
             relType: relType,
             enabled: true
         };
+        await sequelize.models.userTenantRel.create(model);        
+        return model;
+    }
+
+    public async updateUserTenantRel(tenantId: string, userId: string, relType: string): Promise<UserTenantRel> {
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        const model: UserTenantRel = {
+            userId: userId,
+            tenantId: tenantId,
+            relType: relType,
+            enabled: true
+        };
+        await sequelize.models.userTenantRel.update(model, {
+            where: {
+                userId: userId,
+                tenantId: tenantId
+            }
+        });
         return model;
     }
 

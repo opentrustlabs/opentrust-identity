@@ -61,11 +61,12 @@ class DBScopeDao extends ScopeDao {
         return Promise.resolve();
     }
 
-    public async getUserScopeRels(userId: string): Promise<Array<UserScopeRel>> {
+    public async getUserScopeRels(userId: string, tenantId: string): Promise<Array<UserScopeRel>> {
         const sequelize: Sequelize = await DBDriver.getConnection();
         const arr: Array<UserScopeRelEntity> = await sequelize.models.userScopeRel.findAll({
             where: {
-                userId: userId
+                userId: userId,
+                tenantId: tenantId
             }
         });
         return arr.map(

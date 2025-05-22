@@ -75,6 +75,14 @@ abstract class IdentityDao {
     abstract assignUserToTenant(tenantId: string, userId: string, relType: string): Promise<UserTenantRel>;
 
     /**
+     * Used for changing the assignment of the relationship type to an existing user-tenant-rel record
+     * @param tenantId 
+     * @param userId 
+     * @param relType 
+     */
+    abstract updateUserTenantRel(tenantId: string, userId: string, relType: string): Promise<UserTenantRel>;
+
+    /**
      * Cannot remove a user from their PRIMARY tenant. If necessary, a user can be assigned a
      * GUEST relationship type to the tenant, then assigned a PRIMARY relationship to another
      * tenant

@@ -556,7 +556,7 @@ export const USER_SCOPE_ASSIGN_MUTATION = gql(`
 
 export const USER_SCOPE_REMOVE_MUTATION = gql(`
     mutation removeScopeFromUser($userId: String!, $tenantId: String!, $scopeId: String!){
-        removeScopeFromUser(userId: $clientId, tenantId: $tenantId, scopeId: $scopeId)
+        removeScopeFromUser(userId: $userId, tenantId: $tenantId, scopeId: $scopeId)
     }
 `);
 

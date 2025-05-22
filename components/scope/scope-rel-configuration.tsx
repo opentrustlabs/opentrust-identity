@@ -17,11 +17,15 @@ import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
 import Alert from "@mui/material/Alert";
 import DataLoading from "../layout/data-loading";
 import ErrorComponent from "../error/error-component";
-import { Scope, ScopeFilterCriteria } from "@/graphql/generated/graphql-types";
+import { Scope, ScopeFilterCriteria, UserTenantRelView } from "@/graphql/generated/graphql-types";
 import Link from "next/link";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
 import { SCOPE_USE_DISPLAY, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import { USER_SCOPE_ASSIGN_MUTATION, CLIENT_SCOPE_ASSIGN_MUTATION, AUTHORIZATION_GROUP_SCOPE_ASSIGN_MUTATION, USER_SCOPE_REMOVE_MUTATION, AUTHORIZATION_GROUP_SCOPE_REMOVE_MUTATION, CLIENT_SCOPE_REMOVE_MUTATION } from "@/graphql/mutations/oidc-mutations";
+import Checkbox from "@mui/material/Checkbox";
+import RadioButtonUncheckedOutlinedIcon from '@mui/icons-material/RadioButtonUncheckedOutlined';
+import RadioButtonCheckedIcon from '@mui/icons-material/RadioButtonChecked';
+import DialogTitle from "@mui/material/DialogTitle";
 
 
 export enum ScopeRelType {
@@ -56,7 +60,7 @@ const ScopeRelConfiguration: React.FC<ScopeRelConfigurationProps> = ({
     const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
     const [selectDialogOpen, setSelectDialogOpen] = React.useState(false);    
     const [scopeToRemove, setScopeToRemove] = React.useState<null | Scope>(null);
-    const [scopeIdToAdd, setScopeIdToAdd] = React.useState<string | null>(null);
+    const [scopeIdToAdd, setScopeIdToAdd] = React.useState<string | null>(null);    
     const [arrScope, setArrScope] = React.useState<Array<Scope>>([]);
 
     // GRAAPHQL FUNCTIONS
@@ -64,7 +68,7 @@ const ScopeRelConfiguration: React.FC<ScopeRelConfigurationProps> = ({
                     scopeRelType === ScopeRelType.CLIENT ? GET_CLIENT_SCOPE_QUERY :
                     GET_AUTHORIZATION_GROUP_SCOPE_QUERY;
 
-    const variables = scopeRelType === ScopeRelType.USER ? {userId: id} :
+    const variables = scopeRelType === ScopeRelType.USER ? {userId: id, tenantId: tenantId} :
                         scopeRelType === ScopeRelType.CLIENT ? {clientId: id} :
                         {groupId: id};
 
@@ -133,7 +137,7 @@ const ScopeRelConfiguration: React.FC<ScopeRelConfigurationProps> = ({
                 <Grid2 marginBottom={"16px"} size={12} >
                     <Alert onClose={() => setErrorMessage(null)} severity="error">{errorMessage}</Alert>
                 </Grid2>
-            }
+            }            
             {showRemoveConfirmationDialog &&
                 <Dialog 
                     open={showRemoveConfirmationDialog}
@@ -160,7 +164,6 @@ const ScopeRelConfiguration: React.FC<ScopeRelConfigurationProps> = ({
                             });
                         }}>Confirm</Button>
                     </DialogActions>
-
                 </Dialog>
             }
             {selectDialogOpen &&
@@ -213,17 +216,19 @@ const ScopeRelConfiguration: React.FC<ScopeRelConfigurationProps> = ({
                     />
                 </Dialog>
             } 
-            <Grid2 marginBottom={"16px"} marginTop={"16px"} spacing={2} container size={12}>
+            <Grid2 marginBottom={"32px"} marginTop={"16px"} spacing={2} container size={12}>
                 <Grid2 size={12} display={"inline-flex"} alignItems="center" alignContent={"center"}>
                     <AddBoxIcon
                         sx={{cursor: "pointer"}}
-                        onClick={() => setSelectDialogOpen(true)}
+                        onClick={() => {
+                            setSelectDialogOpen(true);
+                        }}
                     />
                     <div style={{marginLeft: "8px", fontWeight: "bold"}}>Add Scope</div>
                 </Grid2>                
             </Grid2>
-            <Divider />
-            <Grid2 marginBottom={"16px"} marginTop={"16px"} spacing={1} container size={12} fontWeight={"bold"}>
+            
+            <Grid2 marginBottom={"8px"} marginTop={"16px"} spacing={1} container size={12} fontWeight={"bold"}>
                 <Grid2 size={responseBreakPoints.isMedium ? 11 : 3}>Name</Grid2>
                 {!responseBreakPoints.isMedium &&
                     <Grid2 size={4.5}>

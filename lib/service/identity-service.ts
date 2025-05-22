@@ -413,10 +413,7 @@ class IdentitySerivce {
             const primaryRel: UserTenantRel | undefined  = rels.find(
                 (rel: UserTenantRel) => rel.relType === USER_TENANT_REL_TYPE_PRIMARY
             );
-            // There should always be a primary rel
-            // TODO
-            // There might not be a primary rel in cases where the tenant has been deleted, leaving
-            // orphaned users. Re-factor this code to account for that.
+            // There should always be a primary rel            
             if(!primaryRel){
                 throw new GraphQLError("ERROR_NO_PRIMARY_RELATIONSHIP_EXISTS_FOR_THE_USER_AND_TENANT");
             }
@@ -448,11 +445,11 @@ class IdentitySerivce {
                 }
                 else if(existingTenantRel.relType === USER_TENANT_REL_TYPE_GUEST && relType === USER_TENANT_REL_TYPE_PRIMARY){
                     // Assign the incoming as primary
-                    userTenantRel = await identityDao.assignUserToTenant(tenantId, userId, relType);
+                    userTenantRel = await identityDao.updateUserTenantRel(tenantId, userId, relType);
                     // The incoming tenant becomes the new owning tenant as well as the parent.
                     await this.updateRelSearchIndex(tenantId, tenantId, user, relType);
                     // Then update the existing primary as guest
-                    await identityDao.assignUserToTenant(primaryRel.tenantId, primaryRel.userId, USER_TENANT_REL_TYPE_GUEST);
+                    await identityDao.updateUserTenantRel(primaryRel.tenantId, primaryRel.userId, USER_TENANT_REL_TYPE_GUEST);
                     // The incoming tenant is the owning tenant, which the existing primary becomes just the parent
                     await this.updateRelSearchIndex(tenantId, primaryRel.tenantId, user, relType);
                 }

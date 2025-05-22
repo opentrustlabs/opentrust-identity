@@ -38,7 +38,7 @@ abstract class ScopeDao {
 
         abstract removeScopeFromAuthorizationGroup(tenantId: string, authorizationGroupId: string, scopeId: string): Promise<void>;
 
-        abstract getUserScopeRels(userId: string): Promise<Array<UserScopeRel>>;
+        abstract getUserScopeRels(userId: string, tenantId: string): Promise<Array<UserScopeRel>>;
 
         abstract assignScopeToUser(tenantId: string, userId: string, scopeId: string): Promise<UserScopeRel>;
 

@@ -234,9 +234,9 @@ const resolvers: Resolvers = {
             const service: ScopeService = new ScopeService(oidcContext);
             return service.getAuthorizationGroupScopes(groupId);
         },
-        getUserScopes: (_: any, { userId }, oidcContext) => {
+        getUserScopes: (_: any, { userId, tenantId }, oidcContext) => {
             const service: ScopeService = new ScopeService(oidcContext);
-            return service.getUserScopes(userId);
+            return service.getUserScopes(userId, tenantId);
         }        
     },
     Mutation: {

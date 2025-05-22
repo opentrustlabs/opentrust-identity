@@ -232,8 +232,8 @@ class ScopeService {
         else return [];
     }
 
-    public async getUserScopes(userId: string): Promise<Array<Scope>> {
-        const arr: Array<UserScopeRel> = await scopeDao.getUserScopeRels(userId);
+    public async getUserScopes(userId: string, tenantId: string): Promise<Array<Scope>> {
+        const arr: Array<UserScopeRel> = await scopeDao.getUserScopeRels(userId, tenantId);
         if(arr.length > 0){
             const ids = arr.map((rel: UserScopeRel) => rel.scopeId);
             const scopes: Array<Scope> = await scopeDao.getScope(undefined, ids);
@@ -306,7 +306,6 @@ class ScopeService {
         if(authnGroup.tenantId !== tenantId){
             throw new GraphQLError("ERROR_AUTHORIZATION_GROUP_DOES_NOT_BELONG_TO_TENANT");
         }
-        console.log("checkpoint scopeservice 1");
         return scopeDao.assignScopeToAuthorizationGroup(tenantId, groupId, scopeId);
 
     }

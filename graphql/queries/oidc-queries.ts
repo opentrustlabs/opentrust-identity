@@ -637,8 +637,8 @@ export const GET_AUTHORIZATION_GROUP_SCOPE_QUERY = gql(`
 `);
 
 export const GET_USER_SCOPE_QUERY = gql(`
-    query getUserScopes($userId: String!) {
-        getUserScopes(userId: $userId) {
+    query getUserScopes($userId: String!, $tenantId: String!) {
+        getUserScopes(userId: $userId, tenantId: $tenantId) {
             scopeId
             scopeName
             scopeDescription

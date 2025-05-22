@@ -1,20 +1,20 @@
 "use client";
-import { MarkForDeleteObjectType, User, UserUpdateInput } from "@/graphql/generated/graphql-types";
+import { MarkForDeleteObjectType, User, UserTenantRelView, UserUpdateInput } from "@/graphql/generated/graphql-types";
 import React, { useContext } from "react";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
 import Typography from "@mui/material/Typography";
-import { MFA_AUTH_TYPE_DISPLAY, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_NONE, MFA_AUTH_TYPE_SMS, MFA_AUTH_TYPE_TIME_BASED_OTP, MFA_AUTH_TYPES, NAME_ORDER_DISPLAY, NAME_ORDER_EASTERN, NAME_ORDER_WESTERN, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
+import { MFA_AUTH_TYPE_DISPLAY, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_NONE, MFA_AUTH_TYPE_SMS, MFA_AUTH_TYPE_TIME_BASED_OTP, MFA_AUTH_TYPES, NAME_ORDER_DISPLAY, NAME_ORDER_EASTERN, NAME_ORDER_WESTERN, TENANT_TYPE_ROOT_TENANT, USER_TENANT_REL_TYPE_PRIMARY } from "@/utils/consts";
 import BreadcrumbComponent from "../breadcrumbs/breadcrumbs";
 import { DetailPageContainer, DetailPageMainContentContainer, DetailPageRightNavContainer } from "../layout/detail-page-container";
 import Grid2 from "@mui/material/Grid2";
 import Paper from "@mui/material/Paper";
 import TextField from "@mui/material/TextField";
 import Checkbox from "@mui/material/Checkbox";
-import Stack from "@mui/material/Stack";
 import { Accordion, AccordionDetails, AccordionSummary, Alert, Autocomplete, Backdrop, Button, CircularProgress, MenuItem, Select, Snackbar } from "@mui/material";
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import GroupIcon from '@mui/icons-material/Group';
 import PeopleIcon from '@mui/icons-material/People';
+import PolicyIcon from '@mui/icons-material/Policy';
 import SettingsApplicationsIcon from '@mui/icons-material/SettingsApplications';
 import { COUNTRY_CODES, CountryCodeDef, LANGUAGE_CODES, LanguageCodeDef } from "@/utils/i18n";
 import { getDefaultCountryCodeDef, getDefaultLanguageCodeDef } from "@/utils/client-utils";
@@ -29,6 +29,7 @@ import { useClipboardCopyContext } from "../contexts/clipboard-copy-context";
 import DetailSectionActionHandler from "../layout/detail-section-action-handler";
 import SubmitMarkForDelete from "../deletion/submit-mark-for-delete";
 import MarkForDeleteAlert from "../deletion/mark-for-delete-alert";
+import ScopeRelConfiguration, { ScopeRelType } from "../scope/scope-rel-configuration";
 
 export interface UserDetailProps {
     user: User;
@@ -71,6 +72,8 @@ const UserDetail: React.FC<UserDetailProps> = ({
     const [showMutationBackdrop, setShowMutationBackdrop] = React.useState<boolean>(false);
     const [showMutationSnackbar, setShowMutationSnackbar] = React.useState<boolean>(false);
     const [isMarkedForDelete, setIsMarkedForDelete] = React.useState<boolean>(user.markForDelete);
+    const [userTenantRels, setUserTenantRels] = React.useState<Array<UserTenantRelView> | undefined>(undefined);
+    const [primaryTenantId, setPrimaryTenantId] = React.useState<string | null>(null);
 
     // GRAPHQL FUNCTIONS
     const [updateUserMutation] = useMutation(USER_UPDATE_MUTATION, {
@@ -90,6 +93,20 @@ const UserDetail: React.FC<UserDetailProps> = ({
 
     });
 
+    // HANDLER FUNCTIONS
+    const hasPrimaryTenant = (rels: Array<UserTenantRelView>): boolean => {
+        const rel = rels.find(
+            (r: UserTenantRelView) => r.relType === USER_TENANT_REL_TYPE_PRIMARY
+        )
+        return rel !== undefined;
+    }
+
+    const getPrimaryTenantId = (rels: Array<UserTenantRelView>): string | null => {
+        const rel = rels.find(
+            (r: UserTenantRelView) => r.relType === USER_TENANT_REL_TYPE_PRIMARY
+        );
+        return rel?.tenantId || null;
+    }
 
     return (
         <Typography component={"div"} >
@@ -510,6 +527,11 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                     </AccordionSummary>
                                     <AccordionDetails>
                                         <UserTenantConfiguration
+                                            onLoadCompleted={(tenants: Array<UserTenantRelView>) => {
+                                                console.log("onLoadCompleted is called")
+                                                setUserTenantRels(tenants);
+                                                setPrimaryTenantId(getPrimaryTenantId(tenants));
+                                            }}
                                             userId={user.userId}
                                             onUpdateEnd={(success: boolean) => {
                                                 setShowMutationBackdrop(false);
@@ -520,7 +542,47 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                             onUpdateStart={() => {
                                                 setShowMutationBackdrop(true);
                                             }}
-                                        />
+                                        />                                        
+                                    </AccordionDetails>
+                                </Accordion>
+                            }
+                        </Grid2>
+                        <Grid2 size={12} >
+                            {!isMarkedForDelete &&
+                                <Accordion >
+                                    <AccordionSummary
+                                        expandIcon={<ExpandMoreIcon />}
+                                        id={"redirect-uri-configuration"}
+                                        sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center" }}
+
+                                    >
+                                        <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+                                            <PolicyIcon /><div style={{ marginLeft: "8px" }}>Access Control</div>
+                                        </div>
+                                    </AccordionSummary>
+                                    <AccordionDetails>
+                                        {userTenantRels && userTenantRels.length > 0 && primaryTenantId &&
+                                            <ScopeRelConfiguration
+                                                tenantId={primaryTenantId}
+                                                id={user.userId}
+                                                scopeRelType={ScopeRelType.USER}
+                                                onUpdateEnd={(success: boolean) => {
+                                                    setShowMutationBackdrop(false);
+                                                    if (success) {
+                                                        setShowMutationSnackbar(true);
+                                                    }
+                                                }}
+                                                onUpdateStart={() => {
+                                                    setShowMutationBackdrop(true);
+                                                }}
+                                            />
+                                        }
+                                        {userTenantRels && userTenantRels.length === 0 &&
+                                            <div>This user does not belong to any tenants and so no scope can be assigned to this user</div>
+                                        }
+                                        {!userTenantRels &&
+                                            <div></div>
+                                        }
                                     </AccordionDetails>
                                 </Accordion>
                             }
