@@ -620,46 +620,54 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                 </Accordion>
                             }
                         </Grid2>
-                        <Grid2 size={12} >
-                            {!isMarkedForDelete &&
-                                <Accordion >
-                                    <AccordionSummary
-                                        expandIcon={<ExpandMoreIcon />}
-                                        id={"redirect-uri-configuration"}
-                                        sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center" }}
+                        {!isMarkedForDelete &&
+                            <React.Fragment>
+                                {userTenantRels && userTenantRels.length === 0 &&
+                                    <div>This user does not belong to any tenants and so no scope can be assigned to this user</div>
+                                }
+                                {!userTenantRels &&
+                                    <div></div>
+                                }
+                                {userTenantRels && userTenantRels.length > 0 && 
+                                    <React.Fragment>
+                                        {userTenantRels.map(
+                                            (rel: UserTenantRelView) => (
+                                                <Grid2 size={12} key={rel.tenantId} >                            
+                                                    <Accordion >
+                                                        <AccordionSummary
+                                                            expandIcon={<ExpandMoreIcon />}
+                                                            id={"redirect-uri-configuration"}
+                                                            sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center" }}
 
-                                    >
-                                        <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-                                            <PolicyIcon /><div style={{ marginLeft: "8px" }}>Access Control</div>
-                                        </div>
-                                    </AccordionSummary>
-                                    <AccordionDetails>
-                                        {userTenantRels && userTenantRels.length > 0 && primaryTenantId &&
-                                            <ScopeRelConfiguration
-                                                tenantId={primaryTenantId}
-                                                id={user.userId}
-                                                scopeRelType={ScopeRelType.USER}
-                                                onUpdateEnd={(success: boolean) => {
-                                                    setShowMutationBackdrop(false);
-                                                    if (success) {
-                                                        setShowMutationSnackbar(true);
-                                                    }
-                                                }}
-                                                onUpdateStart={() => {
-                                                    setShowMutationBackdrop(true);
-                                                }}
-                                            />
-                                        }
-                                        {userTenantRels && userTenantRels.length === 0 &&
-                                            <div>This user does not belong to any tenants and so no scope can be assigned to this user</div>
-                                        }
-                                        {!userTenantRels &&
-                                            <div></div>
-                                        }
-                                    </AccordionDetails>
-                                </Accordion>
-                            }
-                        </Grid2>
+                                                        >
+                                                            <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+                                                                <PolicyIcon /><div style={{ marginLeft: "8px" }}>Access Control (Tenant: {rel.tenantName})</div>
+                                                            </div>
+                                                        </AccordionSummary>
+                                                        <AccordionDetails>                                                            
+                                                            <ScopeRelConfiguration
+                                                                tenantId={rel.tenantId}
+                                                                id={user.userId}
+                                                                scopeRelType={ScopeRelType.USER}
+                                                                onUpdateEnd={(success: boolean) => {
+                                                                    setShowMutationBackdrop(false);
+                                                                    if (success) {
+                                                                        setShowMutationSnackbar(true);
+                                                                    }
+                                                                }}
+                                                                onUpdateStart={() => {
+                                                                    setShowMutationBackdrop(true);
+                                                                }}
+                                                            />                                                            
+                                                        </AccordionDetails>
+                                                    </Accordion>                            
+                                                </Grid2>
+                                            )
+                                        )}
+                                    </React.Fragment>
+                                }
+                            </React.Fragment>                            
+                        }
                     </Grid2>
                 </DetailPageMainContentContainer>
                 <DetailPageRightNavContainer><div></div></DetailPageRightNavContainer>
