@@ -13,20 +13,22 @@ import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
 import { UserTenantRelView } from "@/graphql/generated/graphql-types";
 import { DEFAULT_BACKGROUND_COLOR, USER_TENANT_REL_TYPE_GUEST, USER_TENANT_REL_TYPE_PRIMARY, USER_TENANT_REL_TYPES_DISPLAY } from "@/utils/consts";
 
-import { Tooltip } from "@mui/material";
+import { Alert, Tooltip } from "@mui/material";
 import { USER_TENANT_REL_REMOVE_MUTATION, USER_TENANT_REL_UPDATE_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
 import Link from "next/link";
 
 
 export interface UserTenantConfigurationProps {
-    userId: string
-    onUpdateStart: () => void;
-    onUpdateEnd: (success: boolean) => void;
+    userId: string,
+    onLoadCompleted: (tenants: Array<UserTenantRelView>) => void,
+    onUpdateStart: () => void,
+    onUpdateEnd: (success: boolean) => void
 }
 
 const UserTenantConfiguration: React.FC<UserTenantConfigurationProps> = ({
     userId,
+    onLoadCompleted,
     onUpdateEnd,
     onUpdateStart
 }) => {
@@ -43,7 +45,11 @@ const UserTenantConfiguration: React.FC<UserTenantConfigurationProps> = ({
     const {data, loading, error} = useQuery(USER_TENANT_RELS_QUERY, {
         variables: {
             userId: userId
-        }
+        },
+        onCompleted(data) {
+            onLoadCompleted(data.getUserTenantRels);
+        },
+        notifyOnNetworkStatusChange: true
     });
 
     const [assignUserToTenantMutation] = useMutation(USER_TENANT_REL_UPDATE_MUTATION, {
@@ -69,12 +75,17 @@ const UserTenantConfiguration: React.FC<UserTenantConfigurationProps> = ({
     });
 
 
-    if (loading) return <DataLoading dataLoadingSize="md" color={null} />
+    if (loading) return <DataLoading dataLoadingSize="xs" color={null} />
     if (error) return <ErrorComponent message={error.message} componentSize='md' />
     
     return (
         <>
             <Typography component={"div"} fontWeight={"bold"} >
+                {errorMessage &&
+                    <Grid2 marginBottom={"16px"} size={12} >
+                        <Alert onClose={() => setErrorMessage(null)} severity="error">{errorMessage}</Alert>
+                    </Grid2>
+                }
                 <Grid2 container size={12} spacing={1} marginTop={"16px"} marginBottom={"16px"} >
                     {data.getUserTenantRels.length === 1 &&
                         <Grid2 size={8}>Tenant Name</Grid2>
@@ -84,8 +95,7 @@ const UserTenantConfiguration: React.FC<UserTenantConfigurationProps> = ({
                             <Grid2 size={1.4}></Grid2>
                             <Grid2 size={6.6}>Tenant Name</Grid2>
                         </Grid2>
-                    }
-                    
+                    }                    
                     <Grid2 size={3}>Membership Type</Grid2>
                     <Grid2 size={1}></Grid2>                                                                                        
                 </Grid2>

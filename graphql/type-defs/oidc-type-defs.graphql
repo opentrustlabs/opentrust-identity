@@ -50,7 +50,7 @@ type Query {
     getScopeById(scopeId: String!): Scope
     getClientScopes(clientId: String!): [Scope!]!
     getAuthorizationGroupScopes(groupId: String!): [Scope!]!
-    getUserScopes(userId: String!): [Scope!]!
+    getUserScopes(userId: String!, tenantId: String!): [Scope!]!
 
 
     ## Scope constraints
