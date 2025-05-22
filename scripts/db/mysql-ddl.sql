@@ -135,7 +135,6 @@ create TABLE user (
     stateregionprovince VARCHAR(64),
     countrycode VARCHAR(8),
     preferredlanguagecode VARCHAR(8),
-    twofactorauthtype VARCHAR(64),
     locked BOOLEAN,
     enabled BOOLEAN NOT NULL,
     nameorder VARCHAR(64) NOT NULL,
@@ -372,6 +371,9 @@ create TABLE refresh_data (
     FOREIGN KEY (clientid) REFERENCES client(clientid),
     FOREIGN KEY (userid) REFERENCES user(userid)
 );
+CREATE INDEX refresh_data_user_id_idx ON refresh_data(userid);
+CREATE INDEX refresh_data_client_id_idx ON refresh_data(clientid);
+CREATE INDEX refresh_data_tenant_id_idx ON refresh_data(tenantid);
 
 create TABLE federated_oidc_authorization_rel (
     state VARCHAR(256) NOT NULL PRIMARY KEY,
@@ -520,6 +522,7 @@ create TABLE user_mfa_rel (
     primarymfa BOOLEAN NOT NULL,
     mfatype VARCHAR(64) NOT NULL,
     totpsecret VARCHAR(1024),
+    totphashalgorithm VARCHAR(32),
     fido2publickey VARCHAR(4000),
     fido2credentialid VARCHAR(1024),
     fido2algorithm VARCHAR(1024),

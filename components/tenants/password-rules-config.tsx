@@ -5,7 +5,7 @@ import React from "react";
 import DataLoading from "../layout/data-loading";
 import ErrorComponent from "../error/error-component";
 import { PasswordConfigInput, TenantPasswordConfig } from "@/graphql/generated/graphql-types";
-import { DEFAULT_PASSWORD_SPECIAL_CHARACTERS_ALLOWED, MFA_AUTH_TYPE_DISPLAY, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_SMS, MFA_AUTH_TYPE_TIME_BASED_OTP, PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS, PASSWORD_HASHING_ALGORITHMS, PASSWORD_HASHING_ALGORITHMS_DISPLAY } from "@/utils/consts";
+import { DEFAULT_PASSWORD_SPECIAL_CHARACTERS_ALLOWED, MFA_AUTH_TYPE_DISPLAY, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_NONE, MFA_AUTH_TYPE_SMS, MFA_AUTH_TYPE_TIME_BASED_OTP, MFA_AUTH_TYPES, PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS, PASSWORD_HASHING_ALGORITHMS, PASSWORD_HASHING_ALGORITHMS_DISPLAY } from "@/utils/consts";
 import Grid2 from "@mui/material/Grid2";
 import TextField from "@mui/material/TextField";
 import { Alert, Autocomplete, Checkbox, Divider, MenuItem, Select } from "@mui/material";
@@ -114,6 +114,7 @@ const PasswordRulesConfiguration: React.FC<PasswordRulesConfigurationProps> = ({
                     <Grid2 marginBottom={"16px"}>
                         <div>Password Minimum Length</div>
                         <TextField name="passwordMinLength" id="passwordMinLength"
+                            type="number"
                             value={passwordConfigInput.passwordMinLength > 0 ? passwordConfigInput.passwordMinLength : ""}
                             onChange={(evt) => { passwordConfigInput.passwordMinLength = parseInt(evt.target.value || "0"); setPasswordConfigInput({ ...passwordConfigInput }); setMarkDirty(true); }}
                             fullWidth={true} size="small"
@@ -122,6 +123,7 @@ const PasswordRulesConfiguration: React.FC<PasswordRulesConfigurationProps> = ({
                     <Grid2 marginBottom={"16px"} >
                         <div>Password Maximum Length</div>
                         <TextField name="passwordMaxLength" id="passwordMaxLength"
+                            type="number"
                             value={passwordConfigInput.passwordMaxLength > 0 ? passwordConfigInput.passwordMaxLength : ""}
                             onChange={(evt) => { passwordConfigInput.passwordMaxLength = parseInt(evt.target.value || "0"); setPasswordConfigInput({ ...passwordConfigInput }); setMarkDirty(true); }}
                             fullWidth={true} size="small"
@@ -130,6 +132,7 @@ const PasswordRulesConfiguration: React.FC<PasswordRulesConfigurationProps> = ({
                     <Grid2 marginBottom={"16px"} >
                         <div>Maximum Consecutive Length Of Identical Characters</div>
                         <TextField name="maxConsecutiveRepeatingChars" id="maxConsecutiveRepeatingChars"
+                            type="number"
                             value={passwordConfigInput.maxRepeatingCharacterLength && passwordConfigInput.maxRepeatingCharacterLength > 0 ? passwordConfigInput.maxRepeatingCharacterLength : ""}
                             onChange={(evt) => { passwordConfigInput.maxRepeatingCharacterLength = parseInt(evt.target.value || "0"); setPasswordConfigInput({ ...passwordConfigInput }); setMarkDirty(true); }}
                             fullWidth={true} size="small"
@@ -138,6 +141,7 @@ const PasswordRulesConfiguration: React.FC<PasswordRulesConfigurationProps> = ({
                     <Grid2 marginBottom={"16px"} >
                         <div>Password History Period</div>
                         <TextField name="passwordHistoryPeriod" id="passwordHistoryPeriod"
+                            type="number"
                             value={passwordConfigInput.passwordHistoryPeriod && passwordConfigInput.passwordHistoryPeriod > 0 ? passwordConfigInput.passwordHistoryPeriod : ""}
                             onChange={(evt) => { passwordConfigInput.passwordHistoryPeriod = parseInt(evt.target.value || "0"); setPasswordConfigInput({ ...passwordConfigInput }); setMarkDirty(true); }}
                             fullWidth={true} size="small"
@@ -146,6 +150,7 @@ const PasswordRulesConfiguration: React.FC<PasswordRulesConfigurationProps> = ({
                     <Grid2 marginBottom={"16px"} >
                         <div>Change Password Period (days)</div>
                         <TextField name="passwordRotationPeriodDays" id="passwordRotationPeriodDays"
+                            type="number"
                             value={passwordConfigInput.passwordRotationPeriodDays && passwordConfigInput.passwordRotationPeriodDays > 0 ? passwordConfigInput.passwordRotationPeriodDays : ""}
                             onChange={(evt) => { passwordConfigInput.passwordRotationPeriodDays = parseInt(evt.target.value || "0"); setPasswordConfigInput({ ...passwordConfigInput }); setMarkDirty(true); }}
                             fullWidth={true} size="small"
@@ -265,11 +270,17 @@ const PasswordRulesConfiguration: React.FC<PasswordRulesConfigurationProps> = ({
                                 size="small"
                                 sx={{ paddingTop: "8px" }}
                                 renderInput={(params) => <TextField {...params} label="" />}
-                                options={[
-                                    { id: MFA_AUTH_TYPE_TIME_BASED_OTP, label: "OTP - Requires an authenticator app" },
-                                    { id: MFA_AUTH_TYPE_FIDO2, label: "Security Key" },
-                                    { id: MFA_AUTH_TYPE_SMS, label: "SMS - Not recommended" }
-                                ]}
+                                options={
+                                    MFA_AUTH_TYPES
+                                    .filter(
+                                        (type: string) => type !== MFA_AUTH_TYPE_NONE
+                                    )
+                                    .map(
+                                        (type: string) => {
+                                            return {id: type, label: MFA_AUTH_TYPE_DISPLAY.get(type)}
+                                        }
+                                    )
+                                }
                                 isOptionEqualToValue={(option, value) => option.id === value.id}
                                 value={
                                     passwordConfigInput.mfaTypesAllowed && passwordConfigInput.mfaTypesAllowed !== "" ?

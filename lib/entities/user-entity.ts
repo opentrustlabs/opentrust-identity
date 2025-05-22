@@ -117,12 +117,6 @@ class UserEntity extends Model {
                 allowNull: true,
                 field: "preferredlanguagecode"
             },
-            twoFactorAuthType: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                field: "twofactorauthtype"
-            },
             markForDelete: {
                 type: DataTypes.BOOLEAN,
                 primaryKey: false,

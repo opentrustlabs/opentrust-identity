@@ -485,22 +485,26 @@ export const TOKEN_TYPES=[
 
 export const MFA_AUTH_TYPE_NONE="NONE";
 export const MFA_AUTH_TYPE_SMS="SMS";
-export const MFA_AUTH_TYPE_EMAIL="EMAIL";
+//export const MFA_AUTH_TYPE_EMAIL="EMAIL";
 export const MFA_AUTH_TYPE_TIME_BASED_OTP="TIME_BASED_OTP";
 export const MFA_AUTH_TYPE_FIDO2="FIDO2";
 export const MFA_AUTH_TYPES=[
-    MFA_AUTH_TYPE_NONE,
-    MFA_AUTH_TYPE_SMS,
-    MFA_AUTH_TYPE_EMAIL,
+    MFA_AUTH_TYPE_NONE,    
+    //MFA_AUTH_TYPE_EMAIL,
     MFA_AUTH_TYPE_TIME_BASED_OTP,
-    MFA_AUTH_TYPE_FIDO2
+    MFA_AUTH_TYPE_FIDO2,
+    MFA_AUTH_TYPE_SMS,
 ];
+
+export const TOTP_HASH_ALGORITHM_SHA256="SHA256";
+export const TOTP_HASH_ALGORITHM_SHA1="SHA1"
+
 export const MFA_AUTH_TYPE_DISPLAY: Map<string, string> = new Map([
-    [MFA_AUTH_TYPE_NONE, "None"],
+    [MFA_AUTH_TYPE_NONE, "None"],    
+    //[MFA_AUTH_TYPE_EMAIL, "Email - Not recommended"],
+    [MFA_AUTH_TYPE_TIME_BASED_OTP, "TOTP - Requires an authenticator app"],
+    [MFA_AUTH_TYPE_FIDO2, "Security Key"],
     [MFA_AUTH_TYPE_SMS, "SMS - Not recommended"],
-    [MFA_AUTH_TYPE_EMAIL, "Email - Not recommended"],
-    [MFA_AUTH_TYPE_TIME_BASED_OTP, "OTP - Requires an authenticator app"],
-    [MFA_AUTH_TYPE_FIDO2, "Security Key"]
 ]);
 
 export const NAME_ORDER_EASTERN="EASTER_NAME_ORDER";
@@ -686,8 +690,12 @@ export const AUTHENTICATION_LAYOUT_PAGES = [
     "/authorize/login",
     "/authorize/forgot-password",
     "/authorize/register",
+    "/authorize/verify-registration",
+    "/authorize/security-key",
+    "/authorize/totp",
     "/access-error",
-    "/verify-registration"
+    "/totp"
+    
 ]
 
 

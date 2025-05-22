@@ -9,7 +9,7 @@ import FederatedOIDCProviderService from "@/lib/service/federated-oidc-provider-
 import { DEFAULT_RATE_LIMIT_PERIOD_MINUTES, NAME_ORDER_WESTERN, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_POST, SCOPE_USE_APPLICATION_MANAGEMENT, SIGNING_KEY_STATUS_ACTIVE, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import SearchService from "@/lib/service/search-service";
 import ContactService from "@/lib/service/contact-service";
-import IdentitySerivce from "@/lib/service/identity-service";
+import IdentityService from "@/lib/service/identity-service";
 import RateLimitService from "@/lib/service/rate-limit-service";
 import { OIDCContext } from "../graphql-context";
 import ViewSecretService from "@/lib/service/view-secret-service";
@@ -49,11 +49,11 @@ const resolvers: Resolvers = {
             return profile;
         },
         getUserById: (_, { userId }, oidcContext) => {
-            const identityService: IdentitySerivce = new IdentitySerivce(oidcContext);
+            const identityService: IdentityService = new IdentityService(oidcContext);
             return identityService.getUserById(userId);            
         },
         getUserTenantRels: (_, { userId }, oidcContext) => {
-            const identityService: IdentitySerivce = new IdentitySerivce(oidcContext);
+            const identityService: IdentityService = new IdentityService(oidcContext);
             return identityService.getUserTenantRels(userId);
         },
         search: (_, { searchInput }, oidcContext) => {
@@ -101,9 +101,9 @@ const resolvers: Resolvers = {
             const keysService: SigningKeysService = new SigningKeysService(oidcContext);
             return keysService.getSigningKeyById(signingKeyId);
         },
-        getScope: (_: any, { tenantId }, oidcContext) => {
+        getScope: (_: any, { tenantId, filterBy }, oidcContext) => {
             const scopeService: ScopeService = new ScopeService(oidcContext);
-            return scopeService.getScope(tenantId || undefined);
+            return scopeService.getScope(tenantId || undefined, filterBy || undefined);
         },
         getScopeById: (_: any, { scopeId }, oidcContext) => {
             const scopeService: ScopeService = new ScopeService(oidcContext);
@@ -219,6 +219,31 @@ const resolvers: Resolvers = {
         getDeletionStatus: (_: any, { markForDeleteId }, oidcContext) => {
             const service: MarkForDeleteService = new MarkForDeleteService(oidcContext);
             return service.getDeletionStatus(markForDeleteId);
+        },
+        validateTOTP: async (_: any, { userId, totpValue }, oidcContext) => {
+            const service: IdentityService = new IdentityService(oidcContext);
+            const b = await service.validateTOTP(userId, totpValue); 
+            return b;
+        },
+        getClientScopes: (_: any, { clientId }, oidcContext) => {
+            const service: ScopeService = new ScopeService(oidcContext);
+            return service.getClientScopes(clientId);
+        },
+        getAuthorizationGroupScopes: (_: any, { groupId }, oidcContext) => {
+            const service: ScopeService = new ScopeService(oidcContext);
+            return service.getAuthorizationGroupScopes(groupId);
+        },
+        getUserScopes: (_: any, { userId, tenantId }, oidcContext) => {
+            const service: ScopeService = new ScopeService(oidcContext);
+            return service.getUserScopes(userId, tenantId);
+        },
+        getUserMFARels: (_: any, { userId }, oidcContext) => {
+            const service: IdentityService = new IdentityService(oidcContext);
+            return service.getUserMFARels(userId);            
+        },
+        getUserSessions: (_: any, { userId }, oidcContext) => {
+            const service: IdentityService = new IdentityService(oidcContext);
+            return service.getUserSessions(userId);
         }
     },
     Mutation: {
@@ -458,15 +483,36 @@ const resolvers: Resolvers = {
             await scopeService.removeScopeFromTenant(tenantId, scopeId);
             return scopeId;
         },
-        // assignScopeToClient: async(_: any, { scopeId, clientId, tenantId }, oidcContext) => {
-        //     const scopeService: ScopeService = new ScopeService(oidcContext);
-        //     const rel = await scopeService.assignScopeToClient(tenantId, clientId, scopeId);
-        //     return rel;
-        // },
+        assignScopeToClient: async(_: any, { scopeId, clientId, tenantId }, oidcContext) => {
+            const scopeService: ScopeService = new ScopeService(oidcContext);
+            const rel = await scopeService.assignScopeToClient(tenantId, clientId, scopeId);
+            return rel;
+        },
         removeScopeFromClient: async(_: any, { scopeId, tenantId, clientId }, oidcContext) => {
             const scopeService: ScopeService = new ScopeService(oidcContext);
             await scopeService.removeScopeFromClient(tenantId, clientId, scopeId);
             return scopeId;
+        },
+        assignScopeToAuthorizationGroup: async(_: any, { scopeId, tenantId, groupId }, oidcContext) => {
+            const scopeService: ScopeService = new ScopeService(oidcContext);            
+            const rel = await scopeService.assignScopeToAuthorizationGroup(groupId, scopeId, tenantId);
+            return rel;
+        },
+        removeScopeFromAuthorizationGroup: async(_: any, { scopeId, tenantId, groupId }, oidcContext) => {
+            const scopeService: ScopeService = new ScopeService(oidcContext);
+            await scopeService.removeScopeFromAuthorizationGroup(groupId, scopeId, tenantId);
+            return scopeId;
+        },
+        assignScopeToUser: async(_: any, { userId, scopeId, tenantId }, oidcContext) => {
+            const scopeService: ScopeService = new ScopeService(oidcContext);
+            const rel = await scopeService.assignScopeToUser(userId, tenantId, scopeId);
+            return rel;
+        },
+        removeScopeFromUser: async(_: any, { userId, scopeId, tenantId }, oidcContext) => {
+            const scopeService: ScopeService = new ScopeService(oidcContext);
+            await scopeService.removeScopeFromUser(userId, tenantId, scopeId);
+            return scopeId;
+
         },
         createAuthenticationGroup: async(_: any, { authenticationGroupInput }, oidcContext) => {
             const authenticationGroupService: AuthenticationGroupService = new AuthenticationGroupService(oidcContext);
@@ -768,7 +814,7 @@ const resolvers: Resolvers = {
             return authenticationGroupId;
         },
         updateUser: async(_: any, { userInput }, oidcContext) => {
-            const service: IdentitySerivce = new IdentitySerivce(oidcContext);            
+            const service: IdentityService = new IdentityService(oidcContext);            
             const user: User = {
                 domain: userInput.domain,
                 email: userInput.email,
@@ -788,22 +834,21 @@ const resolvers: Resolvers = {
                 postalCode: userInput.postalCode,
                 preferredLanguageCode: userInput.preferredLanguageCode,
                 stateRegionProvince: userInput.stateRegionProvince,
-                twoFactorAuthType: userInput.twoFactorAuthType,
                 markForDelete: false
             }
             await service.updateUser(user);
             return user;
         },
         assignUserToTenant: async(_: any, { tenantId, userId, relType }, oidcContext) => {
-            const service: IdentitySerivce = new IdentitySerivce(oidcContext);
+            const service: IdentityService = new IdentityService(oidcContext);
             return service.assignUserToTenant(tenantId, userId, relType);
         },
         updateUserTenantRel: async(_: any, { tenantId, userId, relType }, oidcContext) => {
-            const service: IdentitySerivce = new IdentitySerivce(oidcContext);
+            const service: IdentityService = new IdentityService(oidcContext);
             return service.assignUserToTenant(tenantId, userId, relType);
         },
         removeUserFromTenant: async(_: any, { tenantId, userId }, oidcContext) => {
-            const service: IdentitySerivce = new IdentitySerivce(oidcContext);
+            const service: IdentityService = new IdentityService(oidcContext);
             await service.removeUserFromTenant(tenantId, userId);
             return userId;
         },
@@ -860,6 +905,26 @@ const resolvers: Resolvers = {
             await service.markForDelete(m);
             return m;
 
+        },
+        generateTOTP: async(_: any, { userId }, oidcContext) => {
+            const service: IdentityService = new IdentityService(oidcContext);
+            const totpResponse = await service.createTOTP(userId);
+            return totpResponse;
+        },
+        deleteTOTP: async(_: any, { userId }, oidcContext) => {
+            const service: IdentityService = new IdentityService(oidcContext);
+            await service.deleteTOTP(userId);
+            return userId;
+        },
+        deleteFIDOKey: async(_: any, { userId }, oidcContext) => {
+            const service: IdentityService = new IdentityService(oidcContext);
+            await service.deleteFIDOKey(userId);
+            return userId;
+        },
+        deleteUserSession: async(_: any, { userId, tenantId, clientId }, oidcContext) => {
+            const service: IdentityService = new IdentityService(oidcContext);
+            await service.deleteUserSession(userId, clientId, tenantId);
+            return userId;
         }
     },
     RelSearchResultItem : {

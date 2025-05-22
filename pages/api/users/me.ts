@@ -61,7 +61,6 @@ export default async function handler(
     //         federatedOIDCProviderSubjectId: "",
     //         middleName: "",
     //         phoneNumber: "",
-    //         twoFactorAuthType: MFA_FACTOR_AUTH_TYPE_NONE
     //     }
     //     await identityDao.createUser(user);
     //     users.push(user);

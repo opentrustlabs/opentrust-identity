@@ -1,23 +1,32 @@
 import { OIDCContext } from "@/graphql/graphql-context";
-
+import * as OTPAuth from "otpauth";
 import IdentityDao from "../dao/identity-dao";
-import { ObjectSearchResultItem, RelSearchResultItem, SearchResultType, Tenant, TenantPasswordConfig, User, UserCreateInput, UserCredential, UserTenantRel, UserTenantRelView } from "@/graphql/generated/graphql-types";
+import { Client, ObjectSearchResultItem, RefreshData, RelSearchResultItem, SearchResultType, Tenant, TenantPasswordConfig, TotpResponse, User, UserCreateInput, UserCredential, UserMfaRel, UserSession, UserTenantRel, UserTenantRelView } from "@/graphql/generated/graphql-types";
 import { DaoFactory } from "../data-sources/dao-factory";
 import TenantDao from "../dao/tenant-dao";
 import { GraphQLError } from "graphql/error";
 import { randomUUID } from "crypto";
-import { NAME_ORDER_WESTERN, PASSWORD_HASH_ITERATION_128K, PASSWORD_HASH_ITERATION_256K, PASSWORD_HASH_ITERATION_32K, PASSWORD_HASH_ITERATION_64K, PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_32K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_64K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_TYPE_ROOT_TENANT, USER_TENANT_REL_TYPE_GUEST, USER_TENANT_REL_TYPE_PRIMARY } from "@/utils/consts";
-import { sha256HashPassword, pbkdf2HashPassword, bcryptHashPassword, generateSalt, scryptHashPassword } from "@/utils/dao-utils";
-import { Client } from "@opensearch-project/opensearch";
+import { MFA_AUTH_TYPE_TIME_BASED_OTP, NAME_ORDER_WESTERN, PASSWORD_HASH_ITERATION_128K, PASSWORD_HASH_ITERATION_256K, PASSWORD_HASH_ITERATION_32K, PASSWORD_HASH_ITERATION_64K, PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_32K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_64K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_TYPE_ROOT_TENANT, TOTP_HASH_ALGORITHM_SHA1, USER_TENANT_REL_TYPE_GUEST, USER_TENANT_REL_TYPE_PRIMARY } from "@/utils/consts";
+import { sha256HashPassword, pbkdf2HashPassword, bcryptHashPassword, generateSalt, scryptHashPassword, generateRandomToken } from "@/utils/dao-utils";
+import { Client as OpenSearchClient } from "@opensearch-project/opensearch";
 import { getOpenSearchClient } from "../data-sources/search";
 import { Get_Response } from "@opensearch-project/opensearch/api/index.js";
-
+import Kms from "../kms/kms";
+import AuthDao from "../dao/auth-dao";
+import ClientDao from "../dao/client-dao";
 
 const identityDao: IdentityDao = DaoFactory.getInstance().getIdentityDao();
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
-const searchClient: Client = getOpenSearchClient();
+const searchClient: OpenSearchClient = getOpenSearchClient();
+const kms: Kms = DaoFactory.getInstance().getKms();
+const authDao: AuthDao = DaoFactory.getInstance().getAuthDao();
+const clientDao: ClientDao = DaoFactory.getInstance().getClientDao();
 
-class IdentitySerivce {
+const {
+    TOTP_ISSUER
+} = process.env;
+
+class IdentityService {
     
     oidcContext: OIDCContext;
 
@@ -153,6 +162,161 @@ class IdentitySerivce {
         }
     }
 
+    public async createTOTP(userId: string): Promise<TotpResponse> {
+        const user: User | null = await identityDao.getUserBy("id", userId);
+        if(!user){
+            throw new GraphQLError("ERROR_USER_NOT_FOUND");
+        }
+        let userMfaRel: UserMfaRel | null = await identityDao.getTOTP(userId);
+
+        let totp: OTPAuth.TOTP | null = null;
+        // TODO remove this if block.
+        if(userMfaRel && userMfaRel.totpSecret){
+            const decryptedSecret: string | null = await kms.decrypt(userMfaRel.totpSecret);
+            if(!decryptedSecret){
+                throw new GraphQLError("ERROR_DECRYPTING_SECRET");
+            }
+            else{
+                userMfaRel.totpSecret = decryptedSecret;
+                // Microsoft authentication only support SHA1 as a hashing algorithm (at the momemt)
+                totp = new OTPAuth.TOTP({
+                    issuer: TOTP_ISSUER || "Open Trust",
+                    label: user.email,
+                    algorithm: TOTP_HASH_ALGORITHM_SHA1, 
+                    digits: 6,
+                    period: 30,
+                    secret: decryptedSecret
+                });
+            }
+        }
+        else{
+            const newSecret = new OTPAuth.Secret({size: 20});            
+            const encryptedSecret = await kms.encrypt(newSecret.base32);
+            if(!encryptedSecret){
+                throw new GraphQLError("ERROR_UNABLE_TO_GENERATE_TOPT_SECRET");
+            }
+
+            // Save the data using the encrypted value, but
+            // return the plain text value to the user to scan
+            // or enter into their device.
+            userMfaRel = {
+                mfaType: MFA_AUTH_TYPE_TIME_BASED_OTP,
+                userId: userId,
+                primaryMfa: true,
+                fido2Algorithm: null,
+                fido2CredentialId: null,
+                fido2KeySupportsCounters: null,
+                fido2PublicKey: null,
+                fido2Transports: null,
+                totpHashAlgorithm: TOTP_HASH_ALGORITHM_SHA1,
+                totpSecret: encryptedSecret
+            }
+
+            await identityDao.saveTOTP(userMfaRel);
+            console.log("secret: " + newSecret + ", encrypted secret: " + encryptedSecret);
+            userMfaRel.totpSecret = newSecret.base32;
+
+            // Microsoft authentication only support SHA1 as a hashing algorithm (at the momemt)
+            totp = new OTPAuth.TOTP({
+                issuer: TOTP_ISSUER || "Open Trust",
+                label: user.email,
+                algorithm: TOTP_HASH_ALGORITHM_SHA1, 
+                digits: 6,
+                period: 30,
+                secret: newSecret
+            });
+            
+        }
+        
+        const uri = totp.toString();
+        const response: TotpResponse = {
+            uri: uri,
+            userMFARel: userMfaRel
+        }
+        return response;
+    }
+
+    public async validateTOTP(userId: string, totpValue: string): Promise<boolean> {
+        const userMfaRel: UserMfaRel | null = await identityDao.getTOTP(userId);
+        if(!userMfaRel || !userMfaRel.totpSecret){
+            throw new GraphQLError("ERROR_NO_TOTP_ASSIGNED_TO_USER");
+        }
+
+        const secret = await kms.decrypt(userMfaRel.totpSecret);
+        if(!secret){
+            throw new GraphQLError("ERROR_UNABLE_TO_DETERMINE_TOPT_SECRET");
+        }
+        // Microsoft authentication only support SHA1 as a hashing algorithm (at the momemt)
+        const totp = new OTPAuth.TOTP({
+            issuer: TOTP_ISSUER || "Open Trust",
+            label: userId,
+            algorithm: TOTP_HASH_ALGORITHM_SHA1, 
+            digits: 6,
+            period: 30,
+            secret: secret
+        });
+
+        let delta = totp.validate({
+            token: totpValue,
+            window: 1
+        });
+
+        if(delta === null){
+            return false;
+        }
+        return true;
+    }
+
+    public async getUserMFARels(userId: string): Promise<Array<UserMfaRel>> {
+        const arr: Array<UserMfaRel> = await identityDao.getUserMFARels(userId);
+
+        // clear out any sensitive information before returning to the client.
+        arr.forEach(
+            (rel: UserMfaRel) => {
+                rel.totpSecret = "";
+                rel.fido2Algorithm = "";
+                rel.fido2CredentialId = "";
+                rel.fido2PublicKey = "";
+                rel.fido2Transports = "";
+                rel.fido2KeySupportsCounters = false;
+            }
+        );
+        return arr;       
+    }
+
+    public async deleteTOTP(userId: string): Promise<void> {
+        return identityDao.deleteTOTP(userId);
+    }
+
+    public async deleteFIDOKey(userId: string): Promise<void> {
+        return identityDao.deleteFIDOKey(userId);
+    }
+
+    public async getUserSessions(userId: string): Promise<Array<UserSession>> {
+        const arr: Array<RefreshData> = await authDao.getRefreshDataByUserId(userId);
+
+        const retArr: Array<UserSession> = [];
+        for(let i = 0; i < arr.length; i++){
+            const r: RefreshData = arr[i];
+            const tenant: Tenant | null = await tenantDao.getTenantById(r.tenantId);
+            const client: Client | null = await clientDao.getClientById(r.clientId);
+            const userSession: UserSession = {
+                clientId: r.clientId,
+                clientName: client ? client.clientName : "Unknown",
+                tenantId: r.tenantId,
+                tenantName: tenant ? tenant.tenantName : "Unknown",
+                userId: userId
+            }
+            retArr.push(userSession);
+        }
+        return retArr;
+    }
+
+    public async deleteUserSession(userId: string, clientId: string, tenantId: string): Promise<void>{
+        await authDao.deleteRefreshData(userId, tenantId, clientId);
+        return Promise.resolve();
+    }
+
     protected async _createUser(userCreateInput: UserCreateInput, tenant: Tenant, enabled: boolean): Promise<User>  {
 
         const domain: string = userCreateInput.email.substring(
@@ -173,7 +337,6 @@ class IdentitySerivce {
             middleName: userCreateInput.middleName,
             phoneNumber: userCreateInput.phoneNumber,
             preferredLanguageCode: userCreateInput.preferredLanguageCode,
-            twoFactorAuthType: userCreateInput.twoFactorAuthType,
             federatedOIDCProviderSubjectId: userCreateInput.federatedOIDCProviderSubjectId,
             markForDelete: false
         }
@@ -293,10 +456,7 @@ class IdentitySerivce {
             const primaryRel: UserTenantRel | undefined  = rels.find(
                 (rel: UserTenantRel) => rel.relType === USER_TENANT_REL_TYPE_PRIMARY
             );
-            // There should always be a primary rel
-            // TODO
-            // There might not be a primary rel in cases where the tenant has been deleted, leaving
-            // orphaned users. Re-factor this code to account for that.
+            // There should always be a primary rel            
             if(!primaryRel){
                 throw new GraphQLError("ERROR_NO_PRIMARY_RELATIONSHIP_EXISTS_FOR_THE_USER_AND_TENANT");
             }
@@ -328,11 +488,11 @@ class IdentitySerivce {
                 }
                 else if(existingTenantRel.relType === USER_TENANT_REL_TYPE_GUEST && relType === USER_TENANT_REL_TYPE_PRIMARY){
                     // Assign the incoming as primary
-                    userTenantRel = await identityDao.assignUserToTenant(tenantId, userId, relType);
+                    userTenantRel = await identityDao.updateUserTenantRel(tenantId, userId, relType);
                     // The incoming tenant becomes the new owning tenant as well as the parent.
                     await this.updateRelSearchIndex(tenantId, tenantId, user, relType);
                     // Then update the existing primary as guest
-                    await identityDao.assignUserToTenant(primaryRel.tenantId, primaryRel.userId, USER_TENANT_REL_TYPE_GUEST);
+                    await identityDao.updateUserTenantRel(primaryRel.tenantId, primaryRel.userId, USER_TENANT_REL_TYPE_GUEST);
                     // The incoming tenant is the owning tenant, which the existing primary becomes just the parent
                     await this.updateRelSearchIndex(tenantId, primaryRel.tenantId, user, relType);
                 }
@@ -398,4 +558,4 @@ class IdentitySerivce {
 
 }
 
-export default IdentitySerivce;
+export default IdentityService;

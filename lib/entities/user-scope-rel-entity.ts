@@ -1,25 +1,32 @@
-import type { UserScopeRel } from "@/graphql/generated/graphql-types";
+import { Model, DataTypes, Sequelize } from 'sequelize';
 
+class UserScopeRelEntity extends Model {
 
-// @Entity({
-//     tableName: "user_scope_rel"
-// })
-class UserScopeRelEntity implements UserScopeRel {
-
-    constructor(m?: UserScopeRel){
-        if(m){
-            Object.assign(this, m);
-        }
-    }
-    __typename?: "UserScopeRel";
-
-    userId: string;
-
-    scopeId: string;
-
-    tenantId: string;
-
-    
+    static initModel(sequelize: Sequelize): typeof UserScopeRelEntity {
+        return UserScopeRelEntity.init({
+            userId: {
+                type: DataTypes.STRING,
+                primaryKey: true,
+                field: "userid"
+            },
+            scopeId: {
+                type: DataTypes.STRING,
+                primaryKey: true,
+                field: "scopeid"
+            },
+            tenantId: {
+                type: DataTypes.STRING,
+                primaryKey: true,
+                field: "tenantid"
+            }
+        }, 
+        {
+            sequelize,
+            tableName: "user_scope_rel",
+            modelName: "userScopeRel",
+            timestamps: false
+        });
+    }    
 }
 
 export default UserScopeRelEntity;

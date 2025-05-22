@@ -508,3 +508,88 @@ export const MARK_FOR_DELETE_MUTATION = gql(`
     }  
 `);
 
+export const GENERATE_TOTP_MUTATION = gql(`
+    mutation generateTOTP($userId: String!) {
+        generateTOTP(userId: $userId) {
+            uri
+            userMFARel {
+                userId
+                mfaType
+                primaryMfa
+                totpSecret
+                totpHashAlgorithm
+                fido2PublicKey
+                fido2CredentialId
+                fido2Algorithm
+                fido2Transports
+                fido2KeySupportsCounters
+            }
+        }
+    }
+`);
+
+export const CLIENT_SCOPE_ASSIGN_MUTATION = gql(`
+    mutation assignScopeToClient($clientId: String!, $tenantId: String!, $scopeId: String!){
+        assignScopeToClient(clientId: $clientId, tenantId: $tenantId, scopeId: $scopeId){
+            tenantId
+            clientId
+            scopeId            
+        }
+    }
+`);
+
+export const CLIENT_SCOPE_REMOVE_MUTATION = gql(`
+    mutation removeScopeFromClient($clientId: String!, $tenantId: String!, $scopeId: String!){
+        removeScopeFromClient(clientId: $clientId, tenantId: $tenantId, scopeId: $scopeId)
+    }
+`);
+
+export const USER_SCOPE_ASSIGN_MUTATION = gql(`
+    mutation assignScopeToUser($userId: String!, $tenantId: String!, $scopeId: String!){
+        assignScopeToUser(userId: $userId, tenantId: $tenantId, scopeId: $scopeId){
+            tenantId
+            userId
+            scopeId            
+        }
+    }    
+`);
+
+export const USER_SCOPE_REMOVE_MUTATION = gql(`
+    mutation removeScopeFromUser($userId: String!, $tenantId: String!, $scopeId: String!){
+        removeScopeFromUser(userId: $userId, tenantId: $tenantId, scopeId: $scopeId)
+    }
+`);
+
+export const AUTHORIZATION_GROUP_SCOPE_ASSIGN_MUTATION = gql(`
+    mutation assignScopeToAuthorizationGroup($groupId: String!, $tenantId: String!, $scopeId: String!){
+        assignScopeToAuthorizationGroup(groupId: $groupId, tenantId: $tenantId, scopeId: $scopeId){
+            tenantId
+            groupId
+            scopeId            
+        }
+    }  
+`);
+
+export const AUTHORIZATION_GROUP_SCOPE_REMOVE_MUTATION = gql(`
+    mutation removeScopeFromAuthorizationGroup($groupId: String!, $tenantId: String!, $scopeId: String!){
+        removeScopeFromAuthorizationGroup(groupId: $groupId, tenantId: $tenantId, scopeId: $scopeId)
+    }
+`);
+
+export const TOPT_DELETION_MUTATION = gql(`
+    mutation deleteTOTP($userId: String!) {
+        deleteTOTP(userId: $userId)
+    }
+`);
+
+export const FIDO_KEY_DELETION_MUTATION = gql(`
+    mutation deleteFIDOKey($userId: String!) {
+        deleteFIDOKey(userId: $userId)
+    }
+`);
+
+export const USER_SESSION_DELETE_MUTATION =gql(`
+    mutation deleteUserSession($userId: String!, $clientId: String!, $tenantId: String!) {
+        deleteUserSession(userId: $userId, clientId: $clientId, tenantId: $tenantId)
+    }
+`);

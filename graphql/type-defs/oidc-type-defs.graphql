@@ -30,6 +30,9 @@ type Query {
     getUserById(userId: String!): User
     getLoginUserNameHandler(username: String!, tenantId: String, preauthToken: String): LoginUserNameHandlerResponse!
     getUserTenantRels(userId: String!): [UserTenantRelView!]!
+    validateTOTP(userId: String!, totpValue: String!): Boolean!
+    getUserMFARels(userId: String!): [UserMFARel!]!
+    getUserSessions(userId: String!): [UserSession!]!
 
     ## For tenant management and access
     me: PortalUserProfile
@@ -45,11 +48,11 @@ type Query {
     getRateLimitTenantRelViews(rateLimitServiceGroupId: String, tenantId: String): [TenantRateLimitRelView!]!
 
     ## Scope
-    getScope(tenantId: String): [Scope!]!
+    getScope(tenantId: String, filterBy: ScopeFilterCriteria): [Scope!]!
     getScopeById(scopeId: String!): Scope
     getClientScopes(clientId: String!): [Scope!]!
     getAuthorizationGroupScopes(groupId: String!): [Scope!]!
-    getUserScopes(userId: String!): [Scope!]!
+    getUserScopes(userId: String!, tenantId: String!): [Scope!]!
 
 
     ## Scope constraints
@@ -135,6 +138,11 @@ type Mutation {
     updateUserTenantRel(tenantId: String!, userId: String!, relType: String!): UserTenantRel!
     assignUserToTenant(tenantId: String!, userId: String!, relType: String!): UserTenantRel!
     removeUserFromTenant(tenantId: String!, userId: String!): String
+    generateTOTP(userId: String!): TOTPResponse
+    deleteTOTP(userId: String!): String
+    deleteFIDOKey(userId: String!): String
+    deleteUserSession(userId: String!, clientId: String!, tenantId: String!): String
+      
     
     ## Keys
     createSigningKey(keyInput: SigningKeyCreateInput!): SigningKey!
@@ -157,8 +165,8 @@ type Mutation {
     removeScopeFromTenant(tenantId: String!, scopeId: String!): String
     assignScopeToClient(clientId: String!, tenantId: String!, scopeId: String!): ClientScopeRel
     removeScopeFromClient(clientId: String!, tenantId: String!, scopeId: String!): String
-    assignScopeToAuthorizationGroup(groupId: String!, scopeId: String!): AuthorizationGroupScopeRel
-    removeScopeFromAuthorizationGroup(groupId: String!, scopeId: String!): String
+    assignScopeToAuthorizationGroup(groupId: String!, scopeId: String!, tenantId: String!): AuthorizationGroupScopeRel
+    removeScopeFromAuthorizationGroup(groupId: String!, scopeId: String!, tenantId: String!): String
     assignScopeToUser(userId: String!, tenantId: String!, scopeId: String!): UserScopeRel
     removeScopeFromUser(userId: String!, tenantId: String!, scopeId: String!): String
 
@@ -211,7 +219,10 @@ type Mutation {
 
 }
 
-
+enum ScopeFilterCriteria {
+    EXISTING
+    AVAILABLE
+}
 
 enum SecretObjectType {
     CLIENT_SECRET
@@ -405,7 +416,6 @@ type PortalUserProfile {
     address: String
     countryCode: String
     preferredLanguageCode: String
-    twoFactorAuthType: String
     locked: Boolean!
     enabled: Boolean!
     nameOrder: String!
@@ -433,7 +443,6 @@ type User {
     stateRegionProvince: String
     countryCode: String
     preferredLanguageCode: String
-    twoFactorAuthType: String
     locked: Boolean!
     enabled: Boolean!
     nameOrder: String!
@@ -640,6 +649,14 @@ type SuccessfulLoginResponse {
     userId: String!
     mfaType: String
     challenge: String
+}
+
+type UserSession {
+    tenantId: String!
+    clientId: String!
+    userId: String!
+    tenantName: String!
+    clientName: String!
 }
 
 type RefreshData {
@@ -902,6 +919,25 @@ enum SearchRelType {
     AUTHORIZATION_GROUP_USER_REL
     AUTHENTICATION_GROUP_USER_REL
     CLIENT_AUTHENTICATION_GROUP_REL
+}
+    
+
+type UserMFARel {
+    userId: String!
+    mfaType: String!
+    primaryMfa: Boolean!
+    totpSecret: String
+    totpHashAlgorithm: String
+    fido2PublicKey: String
+    fido2CredentialId: String
+    fido2Algorithm: String
+    fido2Transports: String
+    fido2KeySupportsCounters: Boolean
+}
+
+type TOTPResponse {
+    userMFARel: UserMFARel!
+    uri: String!
 }
 
 ############################################################################
@@ -1243,7 +1279,6 @@ input UserCreateInput {
     stateRegionProvince: String
     countryCode: String
     preferredLanguageCode: String
-    twoFactorAuthType: String
     locked: Boolean!
     enabled: Boolean!
     nameOrder: String!
@@ -1266,7 +1301,6 @@ input UserUpdateInput {
     stateRegionProvince: String
     countryCode: String
     preferredLanguageCode: String
-    twoFactorAuthType: String
     locked: Boolean!
     enabled: Boolean!
     nameOrder: String!

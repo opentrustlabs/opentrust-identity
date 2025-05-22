@@ -282,31 +282,26 @@ const RelationshipConfigurationComponent: React.FC<RelationshipConfigurationComp
                     nameFormatter={relSearchInput.childtype === SearchResultType.User ? usernameFormatter : undefined}
                 />
             }
-            <Grid2 container size={12} spacing={1} marginTop={"16px"} marginBottom={"16px"} >
-                <Grid2 size={12}>
-                    {loading && previousData &&
-                        <TablePagination
-                            component={"div"}
-                            page={page - 1}
-                            rowsPerPage={perPage}
-                            count={previousData.relSearch.total}
-                            onPageChange={handlePageChange}
-                            rowsPerPageOptions={[]}
-                        />
-                    }
-                    {data &&
-                        <TablePagination
-                            component={"div"}
-                            page={page - 1}
-                            rowsPerPage={perPage}
-                            count={data.relSearch.total}
-                            onPageChange={handlePageChange}
-                            rowsPerPageOptions={[]}
-                        />
-                    }
-                </Grid2>
-            </Grid2>
-
+            {loading && previousData &&
+                <TablePagination
+                    component={"div"}
+                    page={page - 1}
+                    rowsPerPage={perPage}
+                    count={previousData.relSearch.total}
+                    onPageChange={handlePageChange}
+                    rowsPerPageOptions={[]}
+                />
+            }
+            {data &&
+                <TablePagination
+                    component={"div"}
+                    page={page - 1}
+                    rowsPerPage={perPage}
+                    count={data.relSearch.total}
+                    onPageChange={handlePageChange}
+                    rowsPerPageOptions={[]}
+                />
+            }
         </Typography>
     )
 }
@@ -497,32 +492,29 @@ const RelSearch: React.FC<RelSearchProps> = ({
                             )}
                         </>
                     }
-                </Grid2>                
-                <Grid2 container size={12} spacing={1} marginTop={"16px"} marginBottom={"16px"} >
-                    <Grid2 size={12}>
-                        {loading && previousData &&
-                            <TablePagination
-                                component={"div"}
-                                page={page - 1}
-                                rowsPerPage={10}
-                                count={previousData.relSearch.total}
-                                onPageChange={handlePageChange}
-                                rowsPerPageOptions={[]}
-                            />
-                        }
-                        {data &&
-                            <TablePagination
-                                component={"div"}
-                                page={page - 1}
-                                rowsPerPage={10}
-                                count={data.relSearch.total}
-                                onPageChange={handlePageChange}
-                                rowsPerPageOptions={[]}
-                            />
-                        }
-                    </Grid2>
-                </Grid2>                                        
+                </Grid2>
+                                                          
             </Grid2>
+            {loading && previousData &&
+                <TablePagination
+                    component={"div"}
+                    page={page - 1}
+                    rowsPerPage={10}
+                    count={previousData.relSearch.total}
+                    onPageChange={handlePageChange}
+                    rowsPerPageOptions={[]}
+                />
+            }
+            {data &&
+                <TablePagination
+                    component={"div"}
+                    page={page - 1}
+                    rowsPerPage={10}
+                    count={data.relSearch.total}
+                    onPageChange={handlePageChange}
+                    rowsPerPageOptions={[]}
+                />
+            }   
         </Typography>
     )
 
@@ -545,29 +537,31 @@ const RelList: React.FC<RelListProps> = ({
 
     return (
         <>
-            <Grid2 marginTop={"16px"} marginBottom={"8px"} spacing={1} container size={12} fontWeight={"bold"}>
+            <Grid2 marginTop={"16px"} marginBottom={"16px"} spacing={1} container size={12} fontWeight={"bold"}>
                 <Grid2 size={11}>Name</Grid2>
                 <Grid2 size={1}></Grid2>
             </Grid2>
             <Divider />
+            
             {relSearchResults.total > 0 &&
-                <Grid2 spacing={1} container size={12}>
-                    {relSearchResults.resultlist.map(
-                        (item: RelSearchResultItem) => (
-                            <React.Fragment key={item.childid}>
-                                <Grid2 size={12}><Divider /></Grid2>
-                                <Grid2 size={11}>
-                                    { nameFormatter ? nameFormatter(item.childname) : item.childname}
-                                </Grid2>
-                                <Grid2 size={1}>
-                                    <RemoveCircleOutlineIcon
-                                        sx={{ cursor: "pointer" }}
-                                        onClick={() => removeRelAction(item.childid)}
-                                    />
-                                </Grid2>
-                            </React.Fragment>
-                        )
-                    )}
+                <Grid2 marginTop={"16px"} spacing={1} container size={12}>
+                        {relSearchResults.resultlist.map(
+                            (item: RelSearchResultItem) => (
+                                <React.Fragment key={item.childid}>
+                                    
+                                    <Grid2 size={11}>
+                                        { nameFormatter ? nameFormatter(item.childname) : item.childname}
+                                    </Grid2>
+                                    <Grid2 size={1}>
+                                        <RemoveCircleOutlineIcon
+                                            sx={{ cursor: "pointer" }}
+                                            onClick={() => removeRelAction(item.childid)}
+                                        />
+                                    </Grid2>
+                                    <Grid2 size={12}><Divider /></Grid2>
+                                </React.Fragment>
+                            )
+                        )}
                 </Grid2>
             }
             {relSearchResults.total === 0 &&

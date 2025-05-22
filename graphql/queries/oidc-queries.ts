@@ -123,7 +123,6 @@ export const ME_QUERY = gql(`
             }
             tenantId
             tenantName
-            twoFactorAuthType
             userId
         }
     }
@@ -308,7 +307,6 @@ export const USER_DETAIL_QUERY = gql(`
             postalCode
             countryCode
             preferredLanguageCode
-            twoFactorAuthType
             locked
             enabled
             nameOrder
@@ -414,8 +412,8 @@ export const SIGNING_KEY_DETAIL_QUERY = gql(`
 `);
 
 export const SCOPE_QUERY = gql(`
-    query getScope($tenantId: String) {
-        getScope(tenantId: $tenantId){
+    query getScope($tenantId: String, $filterBy: ScopeFilterCriteria) {
+        getScope(tenantId: $tenantId, filterBy: $filterBy){
             scopeId
             scopeName
             scopeDescription
@@ -605,5 +603,66 @@ export const USER_AUTHORIZATION_GROUP_QUERY = gql(`
 export const GET_SECRET_VALUE_QUERY = gql(`
     query getSecretValue($objectId: String!, $objectType: SecretObjectType!){
         getSecretValue(objectId: $objectId, objectType: $objectType)
+    }
+`);
+
+export const VALIDATE_TOTP_TOKEN_QUERY = gql(`
+    query validateTOTP($userId: String!, $totpValue: String!) {
+        validateTOTP(userId: $userId, totpValue: $totpValue)
+    }
+`);
+
+export const GET_CLIENT_SCOPE_QUERY = gql(`
+    query getClientScopes($clientId: String!) {
+        getClientScopes(clientId: $clientId) {
+            scopeId
+            scopeName
+            scopeDescription
+            scopeUse          
+        }
+    }    
+`);
+
+export const GET_AUTHORIZATION_GROUP_SCOPE_QUERY = gql(`
+    query getAuthorizationGroupScopes($groupId: String!) {
+        getAuthorizationGroupScopes(groupId: $groupId) {
+            scopeId
+            scopeName
+            scopeDescription
+            scopeUse          
+        }
+    }     
+`);
+
+export const GET_USER_SCOPE_QUERY = gql(`
+    query getUserScopes($userId: String!, $tenantId: String!) {
+        getUserScopes(userId: $userId, tenantId: $tenantId) {
+            scopeId
+            scopeName
+            scopeDescription
+            scopeUse          
+        }
+    }     
+`);
+
+export const USER_MFA_REL_QUERY = gql(`
+    query getUserMFARels($userId: String!) {
+        getUserMFARels(userId: $userId) {
+            userId
+            mfaType
+            primaryMfa
+        }
+    }
+`);
+
+export const USER_SESSIONS_QUERY = gql(`
+    query getUserSessions($userId: String!) {
+        getUserSessions(userId: $userId) {
+            tenantId
+            clientId
+            userId
+            tenantName
+            clientName
+        }
     }
 `);

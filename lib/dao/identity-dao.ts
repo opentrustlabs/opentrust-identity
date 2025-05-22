@@ -1,4 +1,4 @@
-import { AuthenticationGroup, User, AuthorizationGroup, SuccessfulLoginResponse, UserFailedLoginAttempts, UserTenantRel, UserCredential } from "@/graphql/generated/graphql-types";
+import { AuthenticationGroup, User, AuthorizationGroup, SuccessfulLoginResponse, UserFailedLoginAttempts, UserTenantRel, UserCredential, UserMfaRel, UserSession, RefreshData } from "@/graphql/generated/graphql-types";
 
 export type UserLookupType = "id" | "email" | "phone";
 abstract class IdentityDao {
@@ -19,6 +19,20 @@ abstract class IdentityDao {
     // challengeType could be email (as for registration of new users), sms, time-based-otp, or security key
     abstract validateOTP(userId: string, challenge: string, challengeId: string, challengeType: string): Promise<boolean>;
 
+    abstract saveTOTP(userMfaRel: UserMfaRel): Promise<void>;
+
+    abstract deleteTOTP(userId: string): Promise<void>;
+
+    abstract getTOTP(userId: string): Promise<UserMfaRel | null>;
+    
+    abstract saveFIDOKey(userMfaRel: UserMfaRel): Promise<void>;
+
+    abstract getFIDOKey(userId: string): Promise<UserMfaRel | null>;
+
+    abstract deleteFIDOKey(userId: string): Promise<void>;
+
+    abstract getUserMFARels(userId: string): Promise<Array<UserMfaRel>>;
+
     abstract getUserBy(userLookupType: UserLookupType, value: string): Promise<User | null>;
 
     abstract savePasswordResetToken(userId: string, token: string): Promise<void>;
@@ -32,9 +46,6 @@ abstract class IdentityDao {
     abstract getUserByEmailConfirmationToken(userId: string): Promise<User | null>;
 
     abstract deleteEmailConfirmationToken(token: string): Promise<void>;
-
-
-
 
     /**
      * Creates a user (if they user does not already exist based on email or phone number) 
@@ -67,6 +78,14 @@ abstract class IdentityDao {
      * @param relType 
      */
     abstract assignUserToTenant(tenantId: string, userId: string, relType: string): Promise<UserTenantRel>;
+
+    /**
+     * Used for changing the assignment of the relationship type to an existing user-tenant-rel record
+     * @param tenantId 
+     * @param userId 
+     * @param relType 
+     */
+    abstract updateUserTenantRel(tenantId: string, userId: string, relType: string): Promise<UserTenantRel>;
 
     /**
      * Cannot remove a user from their PRIMARY tenant. If necessary, a user can be assigned a
