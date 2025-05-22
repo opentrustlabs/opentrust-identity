@@ -906,6 +906,16 @@ const resolvers: Resolvers = {
             const service: IdentityService = new IdentityService(oidcContext);
             const totpResponse = await service.createTOTP(userId);
             return totpResponse;
+        },
+        deleteTOTP: async(_: any, { userId }, oidcContext) => {
+            const service: IdentityService = new IdentityService(oidcContext);
+            await service.deleteTOTP(userId);
+            return userId;
+        },
+        deleteFIDOKey: async(_: any, { userId }, oidcContext) => {
+            const service: IdentityService = new IdentityService(oidcContext);
+            await service.deleteFIDOKey(userId);
+            return userId;
         }
     },
     RelSearchResultItem : {

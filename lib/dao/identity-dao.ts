@@ -24,6 +24,12 @@ abstract class IdentityDao {
     abstract deleteTOTP(userId: string): Promise<void>;
 
     abstract getTOTP(userId: string): Promise<UserMfaRel | null>;
+    
+    abstract saveFIDOKey(userMfaRel: UserMfaRel): Promise<void>;
+
+    abstract getFIDOKey(userId: string): Promise<UserMfaRel | null>;
+
+    abstract deleteFIDOKey(userId: string): Promise<void>;
 
     abstract getUserMFARels(userId: string): Promise<Array<UserMfaRel>>;
 

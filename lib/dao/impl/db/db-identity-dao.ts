@@ -10,11 +10,43 @@ import { bcryptValidatePassword, generateRandomToken, pbkdf2HashPassword, scrypt
 import UserMfaRelEntity from "@/lib/entities/user-mfa-rel-entity";
 import UserTenantRelEntity from "@/lib/entities/user-tenant-rel-entity";
 import DBDriver from "@/lib/data-sources/sequelize-db";
-import { FindOptions, IncrementDecrementOptionsWithBy, InstanceDestroyOptions, InstanceRestoreOptions, InstanceUpdateOptions, Model, Op, SaveOptions, Sequelize, SetOptions } from "sequelize";
-import { SequelizeHooks } from "sequelize/lib/hooks";
-import { ValidationOptions } from "sequelize/lib/instance-validator";
+import { Op, Sequelize } from "sequelize";
 
 class DBIdentityDao extends IdentityDao {
+
+
+    public async saveFIDOKey(userMfaRel: UserMfaRel): Promise<void> {
+        const sequelize: Sequelize = await DBDriver.getConnection();             
+        await sequelize.models.userMfaRel.create(userMfaRel);
+        return Promise.resolve();
+    }
+    
+    public async getFIDOKey(userId: string): Promise<UserMfaRel | null> {
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        const entity: UserMfaRelEntity | null = await sequelize.models.userMfaRel.findOne({
+            where: {
+                userId: userId,
+                mfaType: MFA_AUTH_TYPE_FIDO2
+            }
+        });
+        if(entity){
+            return entity.dataValues
+        }
+        else{
+            return null;
+        }
+    }
+    
+    public async deleteFIDOKey(userId: string): Promise<void> {
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.userMfaRel.destroy({
+            where: {
+                userId: userId,
+                mfaType: MFA_AUTH_TYPE_FIDO2
+            }
+        });
+        return Promise.resolve();
+    }
     
 
     public async saveTOTP(userMfaRel: UserMfaRel): Promise<void> {

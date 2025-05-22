@@ -280,6 +280,14 @@ class IdentityService {
         return arr;       
     }
 
+    public async deleteTOTP(userId: string): Promise<void> {
+        return identityDao.deleteTOTP(userId);
+    }
+
+    public async deleteFIDOKey(userId: string): Promise<void> {
+        return identityDao.deleteFIDOKey(userId);
+    }
+
     protected async _createUser(userCreateInput: UserCreateInput, tenant: Tenant, enabled: boolean): Promise<User>  {
 
         const domain: string = userCreateInput.email.substring(

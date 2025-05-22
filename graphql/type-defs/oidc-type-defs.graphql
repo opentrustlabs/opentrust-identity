@@ -138,6 +138,8 @@ type Mutation {
     assignUserToTenant(tenantId: String!, userId: String!, relType: String!): UserTenantRel!
     removeUserFromTenant(tenantId: String!, userId: String!): String
     generateTOTP(userId: String!): TOTPResponse
+    deleteTOTP(userId: String!): String
+    deleteFIDOKey(userId: String!): String
       
     
     ## Keys

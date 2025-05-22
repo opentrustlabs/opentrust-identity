@@ -575,3 +575,15 @@ export const AUTHORIZATION_GROUP_SCOPE_REMOVE_MUTATION = gql(`
         removeScopeFromAuthorizationGroup(groupId: $groupId, tenantId: $tenantId, scopeId: $scopeId)
     }
 `);
+
+export const TOPT_DELETION_MUTATION = gql(`
+    mutation deleteTOTP($userId: String!) {
+        deleteTOTP(userId: $userId)
+    }
+`);
+
+export const FIDO_KEY_DELETION_MUTATION = gql(`
+    mutation deleteFIDOKey($userId: String!) {
+        deleteFIDOKey(userId: $userId)
+    }
+`);
