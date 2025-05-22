@@ -415,7 +415,7 @@ async function handleRefreshTokenGrant(tokenData: TokenData, res: NextApiRespons
         // Delete the refresh token ONLY in this error case, since in the others
         // there is still a possibility that the client was malicious or misconfigured
         // and so we should maintain the refresh token in the meantime.
-        authDao.deleteRefreshData(hashedRefreshToken);
+        authDao.deleteRefreshDataByRefreshToken(hashedRefreshToken);
         const error: OIDCErrorResponseBody = {
             error: OIDC_TOKEN_ERROR_INVALID_REQUEST,
             error_code: "0000730",
@@ -452,7 +452,7 @@ async function handleRefreshTokenGrant(tokenData: TokenData, res: NextApiRespons
         }
         await authDao.saveRefreshData(newRefreshData);
     };
-    await authDao.deleteRefreshData(hashedRefreshToken);
+    await authDao.deleteRefreshDataByRefreshToken(hashedRefreshToken);
     
     return res.status(200).json(oidcTokenResponse);
 

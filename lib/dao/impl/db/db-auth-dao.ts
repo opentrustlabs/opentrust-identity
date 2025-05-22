@@ -9,6 +9,28 @@ import DBDriver from "@/lib/data-sources/sequelize-db";
 
 class DBAuthDao extends AuthDao {
 
+    public async getRefreshDataByUserId(userId: string): Promise<Array<RefreshData>> {        
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        const arr: Array<RefreshDataEntity> = await sequelize.models.refreshData.findAll({
+            where: {
+                userId: userId
+            }
+        });        
+        return arr.map((e: RefreshDataEntity) => e.dataValues);
+    }
+
+    public async deleteRefreshData(userId: string, tenantId: string, clientId: string): Promise<void> {
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.refreshData.destroy({
+            where: {
+                userId: userId,
+                clientId: clientId,
+                tenantId: tenantId
+            }
+        });
+        return Promise.resolve();
+    }
+
     public async savePreAuthenticationState(preAuthenticationState: PreAuthenticationState): Promise<PreAuthenticationState> {
         const sequelize: Sequelize = await DBDriver.getConnection();
         await sequelize.models.preauthenticationState.create(preAuthenticationState);        
@@ -78,7 +100,7 @@ class DBAuthDao extends AuthDao {
         return entity ? Promise.resolve(entity.dataValues as RefreshData) : Promise.resolve(null);
     }
 
-    public async deleteRefreshData(refreshToken: string): Promise<void> {
+    public async deleteRefreshDataByRefreshToken(refreshToken: string): Promise<void> {
         const sequelize: Sequelize = await DBDriver.getConnection();
         await sequelize.models.refreshData.destroy({
             where: {

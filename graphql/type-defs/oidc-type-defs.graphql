@@ -32,6 +32,7 @@ type Query {
     getUserTenantRels(userId: String!): [UserTenantRelView!]!
     validateTOTP(userId: String!, totpValue: String!): Boolean!
     getUserMFARels(userId: String!): [UserMFARel!]!
+    getUserSessions(userId: String!): [UserSession!]!
 
     ## For tenant management and access
     me: PortalUserProfile
@@ -140,6 +141,7 @@ type Mutation {
     generateTOTP(userId: String!): TOTPResponse
     deleteTOTP(userId: String!): String
     deleteFIDOKey(userId: String!): String
+    deleteUserSession(userId: String!, clientId: String!, tenantId: String!): String
       
     
     ## Keys
@@ -647,6 +649,14 @@ type SuccessfulLoginResponse {
     userId: String!
     mfaType: String
     challenge: String
+}
+
+type UserSession {
+    tenantId: String!
+    clientId: String!
+    userId: String!
+    tenantName: String!
+    clientName: String!
 }
 
 type RefreshData {

@@ -240,6 +240,10 @@ const resolvers: Resolvers = {
         getUserMFARels: (_: any, { userId }, oidcContext) => {
             const service: IdentityService = new IdentityService(oidcContext);
             return service.getUserMFARels(userId);            
+        },
+        getUserSessions: (_: any, { userId }, oidcContext) => {
+            const service: IdentityService = new IdentityService(oidcContext);
+            return service.getUserSessions(userId);
         }
     },
     Mutation: {
@@ -915,6 +919,11 @@ const resolvers: Resolvers = {
         deleteFIDOKey: async(_: any, { userId }, oidcContext) => {
             const service: IdentityService = new IdentityService(oidcContext);
             await service.deleteFIDOKey(userId);
+            return userId;
+        },
+        deleteUserSession: async(_: any, { userId, tenantId, clientId }, oidcContext) => {
+            const service: IdentityService = new IdentityService(oidcContext);
+            await service.deleteUserSession(userId, clientId, tenantId);
             return userId;
         }
     },

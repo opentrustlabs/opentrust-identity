@@ -1,4 +1,4 @@
-import { User, AuthenticationGroup, AuthorizationGroup, SuccessfulLoginResponse, UserFailedLoginAttempts, UserTenantRel, UserCredential, UserMfaRel } from "@/graphql/generated/graphql-types";
+import { User, AuthenticationGroup, AuthorizationGroup, SuccessfulLoginResponse, UserFailedLoginAttempts, UserTenantRel, UserCredential, UserMfaRel, UserSession, RefreshData } from "@/graphql/generated/graphql-types";
 import IdentityDao, { UserLookupType } from "../../identity-dao";
 import UserAuthorizationGroupRelEntity from "@/lib/entities/authorization-group-user-rel-entity";
 import AuthorizationGroupEntity from "@/lib/entities/authorization-group-entity";
@@ -14,9 +14,10 @@ import { Op, Sequelize } from "sequelize";
 
 class DBIdentityDao extends IdentityDao {
 
+    
 
     public async saveFIDOKey(userMfaRel: UserMfaRel): Promise<void> {
-        const sequelize: Sequelize = await DBDriver.getConnection();             
+        const sequelize: Sequelize = await DBDriver.getConnection();
         await sequelize.models.userMfaRel.create(userMfaRel);
         return Promise.resolve();
     }

@@ -371,6 +371,9 @@ create TABLE refresh_data (
     FOREIGN KEY (clientid) REFERENCES client(clientid),
     FOREIGN KEY (userid) REFERENCES user(userid)
 );
+CREATE INDEX refresh_data_user_id_idx ON refresh_data(userid);
+CREATE INDEX refresh_data_client_id_idx ON refresh_data(clientid);
+CREATE INDEX refresh_data_tenant_id_idx ON refresh_data(tenantid);
 
 create TABLE federated_oidc_authorization_rel (
     state VARCHAR(256) NOT NULL PRIMARY KEY,

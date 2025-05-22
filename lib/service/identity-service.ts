@@ -1,22 +1,26 @@
 import { OIDCContext } from "@/graphql/graphql-context";
 import * as OTPAuth from "otpauth";
 import IdentityDao from "../dao/identity-dao";
-import { ObjectSearchResultItem, RelSearchResultItem, SearchResultType, Tenant, TenantPasswordConfig, TotpResponse, User, UserCreateInput, UserCredential, UserMfaRel, UserTenantRel, UserTenantRelView } from "@/graphql/generated/graphql-types";
+import { Client, ObjectSearchResultItem, RefreshData, RelSearchResultItem, SearchResultType, Tenant, TenantPasswordConfig, TotpResponse, User, UserCreateInput, UserCredential, UserMfaRel, UserSession, UserTenantRel, UserTenantRelView } from "@/graphql/generated/graphql-types";
 import { DaoFactory } from "../data-sources/dao-factory";
 import TenantDao from "../dao/tenant-dao";
 import { GraphQLError } from "graphql/error";
 import { randomUUID } from "crypto";
 import { MFA_AUTH_TYPE_TIME_BASED_OTP, NAME_ORDER_WESTERN, PASSWORD_HASH_ITERATION_128K, PASSWORD_HASH_ITERATION_256K, PASSWORD_HASH_ITERATION_32K, PASSWORD_HASH_ITERATION_64K, PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_32K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_64K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_TYPE_ROOT_TENANT, TOTP_HASH_ALGORITHM_SHA1, USER_TENANT_REL_TYPE_GUEST, USER_TENANT_REL_TYPE_PRIMARY } from "@/utils/consts";
 import { sha256HashPassword, pbkdf2HashPassword, bcryptHashPassword, generateSalt, scryptHashPassword, generateRandomToken } from "@/utils/dao-utils";
-import { Client } from "@opensearch-project/opensearch";
+import { Client as OpenSearchClient } from "@opensearch-project/opensearch";
 import { getOpenSearchClient } from "../data-sources/search";
 import { Get_Response } from "@opensearch-project/opensearch/api/index.js";
 import Kms from "../kms/kms";
+import AuthDao from "../dao/auth-dao";
+import ClientDao from "../dao/client-dao";
 
 const identityDao: IdentityDao = DaoFactory.getInstance().getIdentityDao();
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
-const searchClient: Client = getOpenSearchClient();
+const searchClient: OpenSearchClient = getOpenSearchClient();
 const kms: Kms = DaoFactory.getInstance().getKms();
+const authDao: AuthDao = DaoFactory.getInstance().getAuthDao();
+const clientDao: ClientDao = DaoFactory.getInstance().getClientDao();
 
 const {
     TOTP_ISSUER
@@ -286,6 +290,31 @@ class IdentityService {
 
     public async deleteFIDOKey(userId: string): Promise<void> {
         return identityDao.deleteFIDOKey(userId);
+    }
+
+    public async getUserSessions(userId: string): Promise<Array<UserSession>> {
+        const arr: Array<RefreshData> = await authDao.getRefreshDataByUserId(userId);
+
+        const retArr: Array<UserSession> = [];
+        for(let i = 0; i < arr.length; i++){
+            const r: RefreshData = arr[i];
+            const tenant: Tenant | null = await tenantDao.getTenantById(r.tenantId);
+            const client: Client | null = await clientDao.getClientById(r.clientId);
+            const userSession: UserSession = {
+                clientId: r.clientId,
+                clientName: client ? client.clientName : "Unknown",
+                tenantId: r.tenantId,
+                tenantName: tenant ? tenant.tenantName : "Unknown",
+                userId: userId
+            }
+            retArr.push(userSession);
+        }
+        return retArr;
+    }
+
+    public async deleteUserSession(userId: string, clientId: string, tenantId: string): Promise<void>{
+        await authDao.deleteRefreshData(userId, tenantId, clientId);
+        return Promise.resolve();
     }
 
     protected async _createUser(userCreateInput: UserCreateInput, tenant: Tenant, enabled: boolean): Promise<User>  {

@@ -587,3 +587,9 @@ export const FIDO_KEY_DELETION_MUTATION = gql(`
         deleteFIDOKey(userId: $userId)
     }
 `);
+
+export const USER_SESSION_DELETE_MUTATION =gql(`
+    mutation deleteUserSession($userId: String!, $clientId: String!, $tenantId: String!) {
+        deleteUserSession(userId: $userId, clientId: $clientId, tenantId: $tenantId)
+    }
+`);

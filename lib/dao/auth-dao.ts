@@ -18,7 +18,11 @@ abstract class AuthDao {
     
     abstract getRefreshData(refreshToken: string): Promise<RefreshData | null>;
 
-    abstract deleteRefreshData(refreshToken: string): Promise<void>;
+    abstract deleteRefreshDataByRefreshToken(refreshToken: string): Promise<void>;
+
+    abstract getRefreshDataByUserId(userId: string): Promise<Array<RefreshData>>;
+
+    abstract deleteRefreshData(userId: string, tenantId: string, clientId: string): Promise<void>;
 
     abstract saveFederatedOIDCAuthorizationRel(federatedOIDCAuthorizationRel: FederatedOidcAuthorizationRel): Promise<FederatedOidcAuthorizationRel>;
 

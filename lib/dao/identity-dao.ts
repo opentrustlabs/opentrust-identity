@@ -1,4 +1,4 @@
-import { AuthenticationGroup, User, AuthorizationGroup, SuccessfulLoginResponse, UserFailedLoginAttempts, UserTenantRel, UserCredential, UserMfaRel } from "@/graphql/generated/graphql-types";
+import { AuthenticationGroup, User, AuthorizationGroup, SuccessfulLoginResponse, UserFailedLoginAttempts, UserTenantRel, UserCredential, UserMfaRel, UserSession, RefreshData } from "@/graphql/generated/graphql-types";
 
 export type UserLookupType = "id" | "email" | "phone";
 abstract class IdentityDao {
@@ -46,9 +46,6 @@ abstract class IdentityDao {
     abstract getUserByEmailConfirmationToken(userId: string): Promise<User | null>;
 
     abstract deleteEmailConfirmationToken(token: string): Promise<void>;
-
-
-
 
     /**
      * Creates a user (if they user does not already exist based on email or phone number) 

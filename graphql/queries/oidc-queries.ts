@@ -654,3 +654,15 @@ export const USER_MFA_REL_QUERY = gql(`
         }
     }
 `);
+
+export const USER_SESSIONS_QUERY = gql(`
+    query getUserSessions($userId: String!) {
+        getUserSessions(userId: $userId) {
+            tenantId
+            clientId
+            userId
+            tenantName
+            clientName
+        }
+    }
+`);
