@@ -35,6 +35,18 @@ class DBIdentityDao extends IdentityDao {
         return Promise.resolve();
     }
 
+    public async getUserMFARels(userId: string): Promise<Array<UserMfaRel>> {
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        const arr: Array<UserMfaRelEntity> = await sequelize.models.userMfaRel.findAll({
+            where: {
+                userId: userId
+            }
+        });
+        return arr.map((
+            (rel: UserMfaRelEntity) => rel.dataValues
+        ));
+    }
+
     public async getTOTP(userId: string): Promise<UserMfaRel | null>{
         const sequelize: Sequelize = await DBDriver.getConnection();
         const entity: UserMfaRelEntity | null = await sequelize.models.userMfaRel.findOne({

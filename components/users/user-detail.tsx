@@ -1,5 +1,5 @@
 "use client";
-import { MarkForDeleteObjectType, User, UserTenantRelView, UserUpdateInput } from "@/graphql/generated/graphql-types";
+import { MarkForDeleteObjectType, User, UserMfaRel, UserTenantRelView, UserUpdateInput } from "@/graphql/generated/graphql-types";
 import React, { useContext } from "react";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
 import Typography from "@mui/material/Typography";
@@ -15,12 +15,13 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import GroupIcon from '@mui/icons-material/Group';
 import PeopleIcon from '@mui/icons-material/People';
 import PolicyIcon from '@mui/icons-material/Policy';
+import DeleteForeverOutlinedIcon from '@mui/icons-material/DeleteForeverOutlined';
 import SettingsApplicationsIcon from '@mui/icons-material/SettingsApplications';
 import { COUNTRY_CODES, CountryCodeDef, LANGUAGE_CODES, LanguageCodeDef } from "@/utils/i18n";
 import { getDefaultCountryCodeDef, getDefaultLanguageCodeDef } from "@/utils/client-utils";
-import { useMutation } from "@apollo/client";
+import { useMutation, useQuery } from "@apollo/client";
 import { USER_UPDATE_MUTATION } from "@/graphql/mutations/oidc-mutations";
-import { USER_DETAIL_QUERY } from "@/graphql/queries/oidc-queries";
+import { USER_DETAIL_QUERY, USER_MFA_REL_QUERY } from "@/graphql/queries/oidc-queries";
 import UserTenantConfiguration from "./user-tenant-configuration";
 import UserAuthorizationGroupConfiguration from "./user-authorization-group-configuration";
 import UserAuthenticationGroupConfiguration from "./user-authentication-group-configuration";
@@ -62,8 +63,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
         federatedOIDCProviderSubjectId: user.federatedOIDCProviderSubjectId,
         middleName: user.middleName,
         phoneNumber: user.phoneNumber,
-        preferredLanguageCode: user.preferredLanguageCode,
-        twoFactorAuthType: user.twoFactorAuthType
+        preferredLanguageCode: user.preferredLanguageCode
     }
     // STATE VARIABLES
     const [userInput, setUserInput] = React.useState<UserUpdateInput>(initInput);
@@ -76,6 +76,13 @@ const UserDetail: React.FC<UserDetailProps> = ({
     const [primaryTenantId, setPrimaryTenantId] = React.useState<string | null>(null);
 
     // GRAPHQL FUNCTIONS
+    const {data, loading, error} = useQuery(USER_MFA_REL_QUERY, {
+        variables: {
+            userId: user.userId
+        }
+    })
+
+
     const [updateUserMutation] = useMutation(USER_UPDATE_MUTATION, {
         variables: {
             userInput: userInput
@@ -330,39 +337,42 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                             />
                                         </Grid2>
                                         <Grid2 marginBottom={"16px"}>
-                                            <div>Multi-factor Authentication</div>
-                                            <Autocomplete
-                                                disabled={isMarkedForDelete}
-                                                id="mfa"
-                                                multiple={false}
-                                                size="small"
-                                                sx={{ paddingTop: "8px" }}
-                                                renderInput={(params) => <TextField {...params} label="" />}
-                                                options={
-                                                    MFA_AUTH_TYPES.map(
-                                                        (type: string) => {
-                                                            return {id: type, label: MFA_AUTH_TYPE_DISPLAY.get(type)}
-                                                        }
-                                                    )
-                                                }
-                                                isOptionEqualToValue={(option, value) => option.id === value.id}
-                                                value={
-                                                    userInput.twoFactorAuthType ?
-                                                        {id: userInput.twoFactorAuthType, label: MFA_AUTH_TYPE_DISPLAY.get(userInput.twoFactorAuthType)}
-                                                        :
-                                                        {id: "", label: ""}
-                                                }
-                                                onChange={(_, value: any) => {
-                                                    if(!value){
-                                                        userInput.twoFactorAuthType = MFA_AUTH_TYPE_NONE;
-                                                    }
-                                                    else{
-                                                        userInput.twoFactorAuthType = value.id;
-                                                    }
-                                                    setUserInput({...userInput});
-                                                    setMarkDirty(true);
-                                                }}
-                                            />
+                                            <div style={{textDecoration: "underline", marginBottom: "8px"}}>Multi-factor Authentication</div>
+                                            {loading && 
+                                                <div></div>
+                                            }
+                                            {error &&
+                                                <Alert severity="error">Unable to retrive MFA information</Alert>
+                                            }
+                                            {data && data.getUserMFARels && data.getUserMFARels.length === 0 &&
+                                                <div>No MFA configured for this user</div>
+                                            }
+                                            {data && data.getUserMFARels && data.getUserMFARels.length > 0 &&
+                                                <React.Fragment>
+                                                    {data.getUserMFARels.map(
+                                                        (rel: UserMfaRel) => (
+                                                            <Grid2 container size={12} spacing={1} key={rel.mfaType}>
+                                                                <Grid2 size={11}>
+                                                                    {rel.mfaType === MFA_AUTH_TYPE_TIME_BASED_OTP &&
+                                                                        "Time-based One Time Passcode"
+                                                                    }
+                                                                    {rel.mfaType === MFA_AUTH_TYPE_FIDO2 &&
+                                                                        "Security Key"
+                                                                    }
+                                                                </Grid2>
+                                                                <Grid2 size={1}>
+                                                                    <DeleteForeverOutlinedIcon 
+                                                                        sx={{cursor: "pointer"}}
+                                                                        onClick={() => {
+                                                                            
+                                                                        }}
+                                                                    />
+                                                                </Grid2>
+                                                            </Grid2>
+                                                        )
+                                                    )}
+                                                </React.Fragment>
+                                            }
                                         </Grid2>
                                         
                                     </Grid2>

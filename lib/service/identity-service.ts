@@ -22,7 +22,7 @@ const {
     TOTP_ISSUER
 } = process.env;
 
-class IdentitySerivce {
+class IdentityService {
     
     oidcContext: OIDCContext;
 
@@ -224,15 +224,7 @@ class IdentitySerivce {
             
         }
         
-        const token = totp.generate();
-        console.log("Token is: " + token);
-
-        const counter = totp.counter();
-        console.log("counter is: " + counter);
-
         const uri = totp.toString();
-        console.log("uri is: " + uri);
-
         const response: TotpResponse = {
             uri: uri,
             userMFARel: userMfaRel
@@ -260,17 +252,32 @@ class IdentitySerivce {
             secret: secret
         });
 
-        console.log("token on validate is " + totp.generate());
-
         let delta = totp.validate({
             token: totpValue,
             window: 1
         });
-        console.log("delta is: " + delta);
+
         if(delta === null){
             return false;
         }
         return true;
+    }
+
+    public async getUserMFARels(userId: string): Promise<Array<UserMfaRel>> {
+        const arr: Array<UserMfaRel> = await identityDao.getUserMFARels(userId);
+
+        // clear out any sensitive information before returning to the client.
+        arr.forEach(
+            (rel: UserMfaRel) => {
+                rel.totpSecret = "";
+                rel.fido2Algorithm = "";
+                rel.fido2CredentialId = "";
+                rel.fido2PublicKey = "";
+                rel.fido2Transports = "";
+                rel.fido2KeySupportsCounters = false;
+            }
+        );
+        return arr;       
     }
 
     protected async _createUser(userCreateInput: UserCreateInput, tenant: Tenant, enabled: boolean): Promise<User>  {
@@ -293,7 +300,6 @@ class IdentitySerivce {
             middleName: userCreateInput.middleName,
             phoneNumber: userCreateInput.phoneNumber,
             preferredLanguageCode: userCreateInput.preferredLanguageCode,
-            twoFactorAuthType: userCreateInput.twoFactorAuthType,
             federatedOIDCProviderSubjectId: userCreateInput.federatedOIDCProviderSubjectId,
             markForDelete: false
         }
@@ -515,4 +521,4 @@ class IdentitySerivce {
 
 }
 
-export default IdentitySerivce;
+export default IdentityService;

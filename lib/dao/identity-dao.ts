@@ -25,6 +25,8 @@ abstract class IdentityDao {
 
     abstract getTOTP(userId: string): Promise<UserMfaRel | null>;
 
+    abstract getUserMFARels(userId: string): Promise<Array<UserMfaRel>>;
+
     abstract getUserBy(userLookupType: UserLookupType, value: string): Promise<User | null>;
 
     abstract savePasswordResetToken(userId: string, token: string): Promise<void>;

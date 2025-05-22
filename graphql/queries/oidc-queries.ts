@@ -123,7 +123,6 @@ export const ME_QUERY = gql(`
             }
             tenantId
             tenantName
-            twoFactorAuthType
             userId
         }
     }
@@ -308,7 +307,6 @@ export const USER_DETAIL_QUERY = gql(`
             postalCode
             countryCode
             preferredLanguageCode
-            twoFactorAuthType
             locked
             enabled
             nameOrder
@@ -645,4 +643,14 @@ export const GET_USER_SCOPE_QUERY = gql(`
             scopeUse          
         }
     }     
+`);
+
+export const USER_MFA_REL_QUERY = gql(`
+    query getUserMFARels($userId: String!) {
+        getUserMFARels(userId: $userId) {
+            userId
+            mfaType
+            primaryMfa
+        }
+    }
 `);

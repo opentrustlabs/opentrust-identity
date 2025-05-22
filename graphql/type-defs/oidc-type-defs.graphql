@@ -31,6 +31,7 @@ type Query {
     getLoginUserNameHandler(username: String!, tenantId: String, preauthToken: String): LoginUserNameHandlerResponse!
     getUserTenantRels(userId: String!): [UserTenantRelView!]!
     validateTOTP(userId: String!, totpValue: String!): Boolean!
+    getUserMFARels(userId: String!): [UserMFARel!]!
 
     ## For tenant management and access
     me: PortalUserProfile
@@ -411,7 +412,6 @@ type PortalUserProfile {
     address: String
     countryCode: String
     preferredLanguageCode: String
-    twoFactorAuthType: String
     locked: Boolean!
     enabled: Boolean!
     nameOrder: String!
@@ -439,7 +439,6 @@ type User {
     stateRegionProvince: String
     countryCode: String
     preferredLanguageCode: String
-    twoFactorAuthType: String
     locked: Boolean!
     enabled: Boolean!
     nameOrder: String!
@@ -1268,7 +1267,6 @@ input UserCreateInput {
     stateRegionProvince: String
     countryCode: String
     preferredLanguageCode: String
-    twoFactorAuthType: String
     locked: Boolean!
     enabled: Boolean!
     nameOrder: String!
@@ -1291,7 +1289,6 @@ input UserUpdateInput {
     stateRegionProvince: String
     countryCode: String
     preferredLanguageCode: String
-    twoFactorAuthType: String
     locked: Boolean!
     enabled: Boolean!
     nameOrder: String!

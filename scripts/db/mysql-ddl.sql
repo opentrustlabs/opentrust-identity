@@ -135,7 +135,6 @@ create TABLE user (
     stateregionprovince VARCHAR(64),
     countrycode VARCHAR(8),
     preferredlanguagecode VARCHAR(8),
-    twofactorauthtype VARCHAR(64),
     locked BOOLEAN,
     enabled BOOLEAN NOT NULL,
     nameorder VARCHAR(64) NOT NULL,
