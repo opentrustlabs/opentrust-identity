@@ -10,7 +10,7 @@ import Grid2 from "@mui/material/Grid2";
 import Paper from "@mui/material/Paper";
 import TextField from "@mui/material/TextField";
 import Checkbox from "@mui/material/Checkbox";
-import { Accordion, AccordionDetails, AccordionSummary, Alert, Autocomplete, Backdrop, Button, CircularProgress, MenuItem, Select, Snackbar } from "@mui/material";
+import { Accordion, AccordionDetails, AccordionSummary, Alert, Autocomplete, Backdrop, Button, CircularProgress, Dialog, DialogActions, DialogContent, MenuItem, Select, Snackbar } from "@mui/material";
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import GroupIcon from '@mui/icons-material/Group';
 import PeopleIcon from '@mui/icons-material/People';
@@ -20,7 +20,7 @@ import SettingsApplicationsIcon from '@mui/icons-material/SettingsApplications';
 import { COUNTRY_CODES, CountryCodeDef, LANGUAGE_CODES, LanguageCodeDef } from "@/utils/i18n";
 import { getDefaultCountryCodeDef, getDefaultLanguageCodeDef } from "@/utils/client-utils";
 import { useMutation, useQuery } from "@apollo/client";
-import { USER_UPDATE_MUTATION } from "@/graphql/mutations/oidc-mutations";
+import { FIDO_KEY_DELETION_MUTATION, TOPT_DELETION_MUTATION, USER_UPDATE_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import { USER_DETAIL_QUERY, USER_MFA_REL_QUERY } from "@/graphql/queries/oidc-queries";
 import UserTenantConfiguration from "./user-tenant-configuration";
 import UserAuthorizationGroupConfiguration from "./user-authorization-group-configuration";
@@ -74,13 +74,45 @@ const UserDetail: React.FC<UserDetailProps> = ({
     const [isMarkedForDelete, setIsMarkedForDelete] = React.useState<boolean>(user.markForDelete);
     const [userTenantRels, setUserTenantRels] = React.useState<Array<UserTenantRelView> | undefined>(undefined);
     const [primaryTenantId, setPrimaryTenantId] = React.useState<string | null>(null);
+    const [showMFADeletionConfirmationDialog, setShowMFADeletionConfirmationDialog] = React.useState<boolean>(false);
+    const [mfaTypeToDelete, setMfaTypeToDelete] = React.useState<string | null>(null);
 
     // GRAPHQL FUNCTIONS
     const {data, loading, error} = useQuery(USER_MFA_REL_QUERY, {
         variables: {
             userId: user.userId
         }
-    })
+    });
+
+    const [deleteTOTPMutation] = useMutation(TOPT_DELETION_MUTATION, {
+        variables: {
+            userId: user.userId
+        },
+        onCompleted() {
+            setShowMutationBackdrop(false);
+            setShowMutationSnackbar(true);
+        },
+        onError(error) {
+            setShowMutationBackdrop(false);
+            setErrorMessage(error.message)
+        },
+        refetchQueries: [USER_MFA_REL_QUERY]
+    });
+
+    const [deleteFIDOKeyMutation] = useMutation(FIDO_KEY_DELETION_MUTATION, {
+        variables: {
+            userId: user.userId
+        },
+        onCompleted() {
+            setShowMutationBackdrop(false);
+            setShowMutationSnackbar(true);
+        },
+        onError(error) {
+            setShowMutationBackdrop(false);
+            setErrorMessage(error.message)
+        },
+        refetchQueries: [USER_MFA_REL_QUERY]
+    });
 
 
     const [updateUserMutation] = useMutation(USER_UPDATE_MUTATION, {
@@ -131,6 +163,36 @@ const UserDetail: React.FC<UserDetailProps> = ({
                     linkText: user.nameOrder === NAME_ORDER_WESTERN ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`
                 }
             ]} />
+            {showMFADeletionConfirmationDialog &&
+                <Dialog
+                    open={showMFADeletionConfirmationDialog}
+                    onClose={() => setShowMFADeletionConfirmationDialog(false)}
+                    maxWidth="sm"
+                    fullWidth={true}
+                >
+                    <DialogContent>
+                        <Typography>
+                            Confirm deletion of MFA
+                        </Typography>
+                    </DialogContent>
+                    <DialogActions>
+                        <Button onClick={() => setShowMFADeletionConfirmationDialog(false)}>Cancel</Button>
+                        <Button onClick={() => {
+                            if(mfaTypeToDelete === MFA_AUTH_TYPE_TIME_BASED_OTP){
+                                setShowMutationBackdrop(true);
+                                deleteTOTPMutation();
+                                setShowMFADeletionConfirmationDialog(false);
+                            }
+                            else if(mfaTypeToDelete === MFA_AUTH_TYPE_FIDO2){
+                                setShowMutationBackdrop(true);
+                                deleteFIDOKeyMutation();
+                                setShowMFADeletionConfirmationDialog(false);
+                            }
+                        }}>Submit</Button>
+                    </DialogActions>
+                    
+                </Dialog>
+            }
             <DetailPageContainer>
                 <DetailPageMainContentContainer>
                     <Grid2 container size={12} spacing={2}>
@@ -364,7 +426,8 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                                                     <DeleteForeverOutlinedIcon 
                                                                         sx={{cursor: "pointer"}}
                                                                         onClick={() => {
-                                                                            
+                                                                            setMfaTypeToDelete(rel.mfaType)
+                                                                            setShowMFADeletionConfirmationDialog(true);
                                                                         }}
                                                                     />
                                                                 </Grid2>
