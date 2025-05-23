@@ -14,6 +14,7 @@ import RateLimitService from "@/lib/service/rate-limit-service";
 import { OIDCContext } from "../graphql-context";
 import ViewSecretService from "@/lib/service/view-secret-service";
 import MarkForDeleteService from "@/lib/service/mark-for-delete-service";
+import I18NService from "@/lib/service/i18n-service";
 
 
 const resolvers: Resolvers = {
@@ -244,6 +245,10 @@ const resolvers: Resolvers = {
         getUserSessions: (_: any, { userId }, oidcContext) => {
             const service: IdentityService = new IdentityService(oidcContext);
             return service.getUserSessions(userId);
+        },
+        getStateProvinceRegions: (_: any, { countryCode }, oidcContext) => {
+            const service: I18NService = new I18NService(oidcContext);
+            return service.getStateProvinceRegions(countryCode);
         }
     },
     Mutation: {

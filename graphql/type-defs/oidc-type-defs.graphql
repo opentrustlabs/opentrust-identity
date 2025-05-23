@@ -97,6 +97,9 @@ type Query {
     getMarkForDeleteById(markForDeleteId: String!): MarkForDelete
     getDeletionStatus(markForDeleteId: String!): [DeletionStatus!]!
 
+    ## i18n
+    getStateProvinceRegions(countryCode: String!): [StateProvinceRegion!]!
+
 }
 
 type Mutation {
@@ -938,6 +941,13 @@ type UserMFARel {
 type TOTPResponse {
     userMFARel: UserMFARel!
     uri: String!
+}
+
+type StateProvinceRegion {
+    isoCountryCode: String!
+    isoEntryCode: String!
+    isoEntryName: String!
+    isoSubsetType: String!
 }
 
 ############################################################################

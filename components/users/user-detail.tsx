@@ -1,5 +1,5 @@
 "use client";
-import { MarkForDeleteObjectType, User, UserMfaRel, UserTenantRelView, UserUpdateInput } from "@/graphql/generated/graphql-types";
+import { MarkForDeleteObjectType, StateProvinceRegion, User, UserMfaRel, UserTenantRelView, UserUpdateInput } from "@/graphql/generated/graphql-types";
 import React, { useContext } from "react";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
 import Typography from "@mui/material/Typography";
@@ -33,6 +33,7 @@ import SubmitMarkForDelete from "../deletion/submit-mark-for-delete";
 import MarkForDeleteAlert from "../deletion/mark-for-delete-alert";
 import ScopeRelConfiguration, { ScopeRelType } from "../scope/scope-rel-configuration";
 import UserSessionDetails from "./user-session-details";
+import StateProvinceRegionSelector from "./state-province-region-selector";
 
 export interface UserDetailProps {
     user: User;
@@ -494,12 +495,22 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                         </Grid2>
                                         <Grid2 marginBottom={"16px"}>
                                             <div>State / Province / Region</div>
-                                            <TextField name="stateprovinceregion" id="stateprovinceregion" 
+                                            <StateProvinceRegionSelector
+                                                countryCode={userInput.countryCode || undefined}
+                                                initValue={userInput.stateRegionProvince || undefined}
+                                                isDisabled={isMarkedForDelete}
+                                                onChange={(stateProvinceRegion: StateProvinceRegion | null) => {                                                    
+                                                    userInput.stateRegionProvince = stateProvinceRegion ? stateProvinceRegion.isoEntryCode : "";
+                                                    setUserInput({...userInput});
+                                                    setMarkDirty(true);
+                                                }}
+                                            />
+                                            {/* <TextField name="stateprovinceregion" id="stateprovinceregion" 
                                                 disabled={isMarkedForDelete}
                                                 value={userInput.stateRegionProvince} 
                                                 onChange={(evt) => {userInput.stateRegionProvince = evt.target.value; setUserInput({...userInput}); setMarkDirty(true);}}
                                                 fullWidth={true} size="small" 
-                                            />
+                                            /> */}
                                         </Grid2>
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Postal Code</div>

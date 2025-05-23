@@ -138,6 +138,28 @@ const passphrase = "thisisthepassphraseforencryptingtheprivatekey";
 const kms: FSBasedKms = new FSBasedKms();
 
 
+
+interface ISO3166Subset {
+    iso_3166_2_entry_code: string,
+    iso_3166_2_entry_name: string,
+    iso_3166_2_entry_parent?: string
+}
+
+interface ISO3166Country {
+    iso_3166_subset_type: string,
+    iso_3166_subset: ISO3166Subset | Array<ISO3166Subset>
+}
+
+interface ISO3166Entry {
+    iso_3166_country_code: string,
+    iso_3166_country: ISO3166Country | Array<ISO3166Country>
+}
+
+interface ISO3166Entries {
+    iso_3166_2_entries: Array<ISO3166Entry>
+}
+
+
 export default async function handler(
 	req: NextApiRequest,
 	res: NextApiResponse
@@ -234,7 +256,7 @@ export default async function handler(
     //     hashedPassword2
     // }
 
-
+   
     return res.status(200).json("{}");
 
 }
