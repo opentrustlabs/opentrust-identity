@@ -570,3 +570,17 @@ create TABLE deletion_status (
 	completedat BIGINT,
 	FOREIGN KEY (markfordeleteid) REFERENCES mark_for_delete(markfordeleteid)
 );
+
+create TABLE country (
+    isocountrycode VARCHAR(8) NOT NULL PRIMARY KEY,
+    countryname VARCHAR(128) NOT NULL
+);
+
+create TABLE state_province_region (
+    isocountrycode VARCHAR(8) NOT NULL,
+    isoentrycode VARCHAR(8) NOT NULL,
+    isoentryname VARCHAR(128) NOT NULL,
+    isosubsettype VARCHAR(64) NOT NULL,
+    PRIMARY KEY (isocountrycode, isoentrycode), 
+	FOREIGN KEY (isocountrycode) REFERENCES country(isocountrycode)	
+);

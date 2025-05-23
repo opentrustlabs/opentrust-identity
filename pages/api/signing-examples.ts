@@ -1,10 +1,11 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { writeFileSync, createWriteStream, WriteStream } from "node:fs";
 import { generateKeyPairSync, createPublicKey, KeyObject, PrivateKeyInput, createPrivateKey } from "node:crypto";
 import { pem, sha256, hmac, pki } from "node-forge";
 import { OIDCPrincipal } from '@/lib/models/principal';
 import JwtService from '@/lib/service/jwt-service';
 import { JWTPayload,  } from 'jose';
-import { bcryptHashPassword, bcryptValidatePassword, generateRandomToken, pbkdf2HashPassword, scryptHashPassword, sha256HashPassword } from '@/utils/dao-utils';
+import { bcryptHashPassword, bcryptValidatePassword, generateRandomToken, getFileContents, pbkdf2HashPassword, scryptHashPassword, sha256HashPassword } from '@/utils/dao-utils';
 import FSBasedKms from '@/lib/kms/fs-based-kms';
 import { CLIENT_TYPE_SERVICE_ACCOUNT_AND_USER_DELEGATED_PERMISSIONS, PASSWORD_HASH_ITERATION_64K, TOKEN_TYPE_END_USER_TOKEN } from '@/utils/consts';
 
@@ -136,6 +137,7 @@ const passphrase = "thisisthepassphraseforencryptingtheprivatekey";
 
 const kms: FSBasedKms = new FSBasedKms();
 
+
 export default async function handler(
 	req: NextApiRequest,
 	res: NextApiResponse
@@ -206,34 +208,34 @@ export default async function handler(
     //     pbkdf2HashTime
     // };
 
-    const timeStart = Date.now();
-    const password = "DdvkUJYn9oQ2XL4";
-    const salt = generateRandomToken(16, "base64");
-    const hashedPassword = scryptHashPassword(password, salt, 16384);
-    const timeEnd = Date.now();
-    const hashTime = timeEnd - timeStart;
+    // const timeStart = Date.now();
+    // const password = "DdvkUJYn9oQ2XL4";
+    // const salt = generateRandomToken(16, "base64");
+    // const hashedPassword = scryptHashPassword(password, salt, 16384);
+    // const timeEnd = Date.now();
+    // const hashTime = timeEnd - timeStart;
 
-    const timeStart2 = Date.now();
-    //const hashedPassword2 = scryptHashPassword(password, salt, 64, 1048576);
-    const hashedPassword2 = scryptHashPassword(password, salt, 32768);
-    const timeEnd2 = Date.now();
-    const hashTime2 = timeEnd2 - timeStart2;
-
-
-
-    const obj: any = {
-        timeStart,
-        timeEnd,
-        password,
-        salt,
-        hashedPassword,
-        hashTime,
-        hashTime2,
-        hashedPassword2
-    }
+    // const timeStart2 = Date.now();
+    // //const hashedPassword2 = scryptHashPassword(password, salt, 64, 1048576);
+    // const hashedPassword2 = scryptHashPassword(password, salt, 32768);
+    // const timeEnd2 = Date.now();
+    // const hashTime2 = timeEnd2 - timeStart2;
 
 
 
-    return res.status(200).json(obj);
+    // const obj: any = {
+    //     timeStart,
+    //     timeEnd,
+    //     password,
+    //     salt,
+    //     hashedPassword,
+    //     hashTime,
+    //     hashTime2,
+    //     hashedPassword2
+    // }
+
+
+    return res.status(200).json("{}");
 
 }
+

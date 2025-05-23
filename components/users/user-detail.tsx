@@ -485,9 +485,9 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                                     )
                                                 }                        
                                                 value={getDefaultCountryCodeDef(userInput.countryCode || "")}
-                                                onChange={ (_, value: any) => {                            
-                                                    // tenantAnonymousUserConfigInput.defaultcountrycode = value ? value.id : "";
-                                                    // setTenantAnonymousUserConfigInput({ ...tenantAnonymousUserConfigInput });
+                                                onChange={ (_, value: any) => {      
+                                                    userInput.countryCode = value.id;
+                                                    setUserInput({...userInput});                                                    
                                                     setMarkDirty(true);
                                                 }}                        
                                             />                                            
