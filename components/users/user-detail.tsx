@@ -614,7 +614,6 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                     <AccordionDetails>
                                         <UserTenantConfiguration
                                             onLoadCompleted={(tenants: Array<UserTenantRelView>) => {
-                                                console.log("onLoadCompleted is called")
                                                 setUserTenantRels(tenants);
                                                 setPrimaryTenantId(getPrimaryTenantId(tenants));
                                             }}
