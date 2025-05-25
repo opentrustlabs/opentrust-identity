@@ -21,9 +21,8 @@ const StateProvinceRegionSelector: React.FC<StateProvinceRegionSelectorProps> = 
     onChange
 }) => {
 
-
     // STATE VARIABLES
-    const [stateProvinceRegion, setStateProvinceRegion] = React.useState({id: "", label: ""});
+    const [stateProvinceRegion, setStateProvinceRegion] = React.useState({id: initValue || "", label: ""});
 
     // GRAPHQL FUNCTIONS
     const {data, loading, error} = useQuery(STATE_PROVINCE_REGIONS_QUERY, {
@@ -32,7 +31,7 @@ const StateProvinceRegionSelector: React.FC<StateProvinceRegionSelectorProps> = 
         },
         onCompleted(data) {
             setStateProvinceRegion(getInitValue(data.getStateProvinceRegions));
-        },
+        }
     });
 
     // HANDLER FUNCTIONS
@@ -70,7 +69,7 @@ const StateProvinceRegionSelector: React.FC<StateProvinceRegionSelectorProps> = 
                         }
                     )
                 }                        
-                value={stateProvinceRegion}
+                value={data && data.getStateProvinceRegions ? getInitValue(data.getStateProvinceRegions) : stateProvinceRegion}
                 onChange={ (_, value: any) => {      
                     setStateProvinceRegion(value || {id: "", label: ""});
                     if(value){

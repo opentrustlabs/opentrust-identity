@@ -505,12 +505,6 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                                     setMarkDirty(true);
                                                 }}
                                             />
-                                            {/* <TextField name="stateprovinceregion" id="stateprovinceregion" 
-                                                disabled={isMarkedForDelete}
-                                                value={userInput.stateRegionProvince} 
-                                                onChange={(evt) => {userInput.stateRegionProvince = evt.target.value; setUserInput({...userInput}); setMarkDirty(true);}}
-                                                fullWidth={true} size="small" 
-                                            /> */}
                                         </Grid2>
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Postal Code</div>
