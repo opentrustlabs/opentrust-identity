@@ -44,11 +44,11 @@ class UserMfaRelEntity extends Model {
                 allowNull: true,
                 field: "fido2credentialid"
             },
-            fido2Algorithm: {
-                type: DataTypes.STRING,
+            fido2PublicKeyAlgorithm: {
+                type: DataTypes.INTEGER,
                 primaryKey: false,
                 allowNull: true,
-                field: "fido2algorithm"
+                field: "fido2publickeyalgorithm"
             },
             fido2Transports: {
                 type: DataTypes.STRING,

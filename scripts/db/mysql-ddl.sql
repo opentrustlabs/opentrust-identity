@@ -525,7 +525,7 @@ create TABLE user_mfa_rel (
     totphashalgorithm VARCHAR(32),
     fido2publickey VARCHAR(4000),
     fido2credentialid VARCHAR(1024),
-    fido2algorithm VARCHAR(1024),
+    fido2publickeyalgorithm INT,
     fido2transports VARCHAR(1024),
     fido2keysupportscounters BOOLEAN,
     PRIMARY KEY (userid, mfatype),

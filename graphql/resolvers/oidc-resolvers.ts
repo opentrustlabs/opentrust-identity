@@ -930,6 +930,22 @@ const resolvers: Resolvers = {
             const service: IdentityService = new IdentityService(oidcContext);
             await service.deleteUserSession(userId, clientId, tenantId);
             return userId;
+        },
+        registerFIDO2Key: async (_: any, { userId, fido2KeyRegistrationInput }, oidcContext) => {
+            const service: IdentityService = new IdentityService(oidcContext);
+            return service.registerFIDO2Key(userId, fido2KeyRegistrationInput);
+        },
+        createFido2RegistrationChallenge: async(_: any, {userId }, oidcContext) => {
+            const service: IdentityService = new IdentityService(oidcContext);
+            return service.createFido2RegistrationChallenge(userId);
+        },
+        createFido2AuthenticationChallenge: async(_: any, { userId }, oidcContext) => {
+            const service: IdentityService = new IdentityService(oidcContext);
+            return service.createFido2AuthenticationChallenge(userId);
+        },
+        authenticateFIDO2Key: async(_: any, { userId, fido2KeyAuthenticationInput }, oidcContext) => {
+            const service: IdentityService = new IdentityService(oidcContext);
+            return service.authenticateFIDO2Key(userId, fido2KeyAuthenticationInput);
         }
     },
     RelSearchResultItem : {

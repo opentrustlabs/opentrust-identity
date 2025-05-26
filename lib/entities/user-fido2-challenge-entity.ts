@@ -15,13 +15,13 @@ class UserFido2ChallengeEntity extends Model {
                 allowNull: false,
                 field: "challenge"
             },
-            issuedAtMS: {
+            issuedAtMs: {
                 type: DataTypes.NUMBER,
                 primaryKey: false,
                 allowNull: false,
                 field: "issuedatms"
             },
-            expiresAtMS: {
+            expiresAtMs: {
                 type: DataTypes.NUMBER,
                 primaryKey: false,
                 allowNull: false,

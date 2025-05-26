@@ -1,4 +1,4 @@
-import { AuthenticationGroup, User, AuthorizationGroup, SuccessfulLoginResponse, UserFailedLoginAttempts, UserTenantRel, UserCredential, UserMfaRel, UserSession, RefreshData } from "@/graphql/generated/graphql-types";
+import { AuthenticationGroup, User, AuthorizationGroup, SuccessfulLoginResponse, UserFailedLoginAttempts, UserTenantRel, UserCredential, UserMfaRel, Fido2Challenge } from "@/graphql/generated/graphql-types";
 
 export type UserLookupType = "id" | "email" | "phone";
 abstract class IdentityDao {
@@ -31,7 +31,21 @@ abstract class IdentityDao {
 
     abstract deleteFIDOKey(userId: string): Promise<void>;
 
+    abstract getFIDO2Challenge(userId: string): Promise<Fido2Challenge | null>;
+
+    abstract saveFIDO2Challenge(fido2Challenge: Fido2Challenge): Promise<void>;
+
+    abstract deleteFIDO2Challenge(userId: string): Promise<void>;
+
     abstract getUserMFARels(userId: string): Promise<Array<UserMfaRel>>;
+
+    abstract getFido2Count(userId: string): Promise<number | null>;
+
+    abstract updateFido2Count(userId: string, count: number): Promise<void>;
+
+    abstract initFidoCount(userId: string, count: number): Promise<void>;
+
+    abstract deleteFido2Count(userId: string): Promise<void>;
 
     abstract getUserBy(userLookupType: UserLookupType, value: string): Promise<User | null>;
 

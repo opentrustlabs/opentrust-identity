@@ -141,11 +141,17 @@ type Mutation {
     updateUserTenantRel(tenantId: String!, userId: String!, relType: String!): UserTenantRel!
     assignUserToTenant(tenantId: String!, userId: String!, relType: String!): UserTenantRel!
     removeUserFromTenant(tenantId: String!, userId: String!): String
+    deleteUserSession(userId: String!, clientId: String!, tenantId: String!): String
+    ## Users: TOPT
     generateTOTP(userId: String!): TOTPResponse
     deleteTOTP(userId: String!): String
+    ## Users: FIDO Key
     deleteFIDOKey(userId: String!): String
-    deleteUserSession(userId: String!, clientId: String!, tenantId: String!): String
-      
+    registerFIDO2Key(userId: String!, fido2KeyRegistrationInput: Fido2KeyRegistrationInput!): UserMFARel
+    createFido2RegistrationChallenge(userId: String!): Fido2RegistrationChallengeResponse
+    authenticateFIDO2Key(userId: String!, fido2KeyAuthenticationInput: Fido2KeyAuthenticationInput!): Boolean!
+    createFido2AuthenticationChallenge(userId: String!): Fido2AuthenticationChallengeResponse    
+         
     
     ## Keys
     createSigningKey(keyInput: SigningKeyCreateInput!): SigningKey!
@@ -933,7 +939,7 @@ type UserMFARel {
     totpHashAlgorithm: String
     fido2PublicKey: String
     fido2CredentialId: String
-    fido2Algorithm: String
+    fido2PublicKeyAlgorithm: Int
     fido2Transports: String
     fido2KeySupportsCounters: Boolean
 }
@@ -948,6 +954,32 @@ type StateProvinceRegion {
     isoEntryCode: String!
     isoEntryName: String!
     isoSubsetType: String!
+}
+
+type Fido2Challenge {
+    userId: String!
+    challenge: String!
+    issuedAtMs: Float!
+    expiresAtMs: Float!
+}
+
+type Fido2RegistrationChallengeResponse {
+    fido2Challenge: Fido2Challenge!
+    userName: String!
+    email: String!
+    rpName: String!
+    rpId: String!
+}
+
+type Fido2AuthenticationChallengePasskey {
+    id: String!,
+    transports: [String!]!
+}
+
+type Fido2AuthenticationChallengeResponse {
+    fido2Challenge: Fido2Challenge!
+    rpId: String!
+    fido2AuthenticationChallengePasskeys: [Fido2AuthenticationChallengePasskey!]!
 }
 
 ############################################################################
@@ -1319,4 +1351,36 @@ input UserUpdateInput {
 input MarkForDeleteInput {
     markForDeleteObjectType: MarkForDeleteObjectType!
     objectId: String!
+}
+
+
+input AuthenticatorAttestationResponseInput {
+    clientDataJSON: String!
+    attestationObject: String!
+    authenticatorData: String!
+    transports: [String!]!
+    publicKeyAlgorithm: Int!
+    publicKey: String!
+}
+
+input Fido2KeyRegistrationInput {
+    id: String!
+    rawId: String!
+    response: AuthenticatorAttestationResponseInput!
+    type: String!
+    authenticationAttachment: String!
+}
+
+input AuthenticatorAuthenticationResponseInput {
+    authenticatorData: String!
+    clientDataJSON: String!
+    signature: String!
+}
+
+input Fido2KeyAuthenticationInput {
+    id: String!
+    rawId: String!
+    type: String!
+    authenticationAttachment: String!
+    response: AuthenticatorAuthenticationResponseInput!
 }
