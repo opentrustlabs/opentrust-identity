@@ -483,8 +483,6 @@ export const TENANT_PASSWORD_CONFIG_QUERY = gql(`
             specialCharactersAllowed
             requireMfa
             mfaTypesRequired
-            allowMfa
-            mfaTypesAllowed
             maxRepeatingCharacterLength
             passwordRotationPeriodDays        
         }

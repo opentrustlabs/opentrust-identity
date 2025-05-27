@@ -8,6 +8,9 @@ import { Grid2 } from "@mui/material";
 import { DEFAULT_TENANT_META_DATA, QUERY_PARAM_PREAUTH_TENANT_ID } from "@/utils/consts";
 import { useQuery } from "@apollo/client";
 import { TENANT_META_DATA_QUERY } from "@/graphql/queries/oidc-queries";
+import { useSearchParams } from "next/navigation";
+import { createTheme } from '@mui/material/styles';
+import { ThemeProvider } from '@mui/material/styles';
 
 interface LayoutProps {
     children: ReactNode
@@ -17,8 +20,7 @@ const AuthenticationLayout: React.FC<LayoutProps> = ({
   }) => {
 
 
-    // const params = useSearchParams();
-    const params = new Map<string, string>();
+    const params = useSearchParams();
     const tenantId = params?.get(QUERY_PARAM_PREAUTH_TENANT_ID);
 
     const {data, error, loading} = useQuery(TENANT_META_DATA_QUERY, {
@@ -30,40 +32,71 @@ const AuthenticationLayout: React.FC<LayoutProps> = ({
 
     if(loading) return <div />
 
-    if(!tenantId || error || data)
+    if(!tenantId || error || data){
+        const theme = createTheme({    
+            components: {
+                MuiButton: {
+                    defaultProps: {
+                        
+                    },                    
+                    styleOverrides: {
+                        root: {
+                            "&:disabled": {
+                                color: "white",
+                                backgroundColor: "lightgrey"
+                            },
+                            variants: [
+                                {
+        
+                                }
+                            ],
+                            color: data.getTenantMetaData.tenantLookAndFeel?.authenticationheadertextcolor || "white",
+                            backgroundColor: data.getTenantMetaData.tenantLookAndFeel?.authenticationheaderbackgroundcolor || "#1976d2",
+                            fontWeight: "bold",
+                            fontSize: "0.9em",
+                            height: "100%", 
+                            padding: "8px 32px 8px 32px", 
+                            marginLeft: "8px" 
+                        }                        
+                    }        
+                }
+            }
+        });
+
         return (
             <div
                 style={{ }}
             >
-                
-                <AuthenticationHeader
-                    tenantMetaData={
-                        !tenantId || error ? DEFAULT_TENANT_META_DATA : data.getTenantMetaData
-                    }
-                ></AuthenticationHeader>
-                <Container
-                    maxWidth="xl"
-                >
-                    <Grid2 
-                        container
-                        spacing={0}
-                        alignItems={"center"}
-                        justifyContent={"center"}
-                        sx={{minHeight: "84vh"}}
+                <ThemeProvider theme={theme}>                
+                    <AuthenticationHeader
+                        tenantMetaData={
+                            !tenantId || error ? DEFAULT_TENANT_META_DATA : data.getTenantMetaData
+                        }
+                    ></AuthenticationHeader>
+                    <Container
+                        maxWidth="xl"                        
                     >
-                        <Grid2>
-                            <div>{children}</div>
-                        </Grid2>
-                    </Grid2>                
-                </Container>
-                <AuthenticationFooter
-                    tenantMetaData={
-                        !tenantId || error ? DEFAULT_TENANT_META_DATA : data.getTenantMetaData
-                    }
-                ></AuthenticationFooter>
-                
+                        <Grid2 
+                            container
+                            spacing={0}
+                            alignItems={"center"}
+                            justifyContent={"center"}
+                            sx={{minHeight: "84vh"}}
+                        >
+                            <Grid2>
+                                <div>{children}</div>
+                            </Grid2>
+                        </Grid2>                
+                    </Container>
+                    <AuthenticationFooter
+                        tenantMetaData={
+                            !tenantId || error ? DEFAULT_TENANT_META_DATA : data.getTenantMetaData
+                        }
+                    ></AuthenticationFooter>
+                </ThemeProvider>                
             </div>
         )
+    }
 }
 
 export default AuthenticationLayout;

@@ -686,7 +686,6 @@ const resolvers: Resolvers = {
             // TODO
             // Implement the service and DAO classes
             const tenantPasswordConfig: TenantPasswordConfig = {
-                allowMfa: passwordConfigInput.allowMfa,
                 passwordHashingAlgorithm: passwordConfigInput.passwordHashingAlgorithm,
                 passwordMaxLength: passwordConfigInput.passwordMaxLength,
                 passwordMinLength: passwordConfigInput.passwordMinLength,
@@ -697,7 +696,6 @@ const resolvers: Resolvers = {
                 requireUpperCase: passwordConfigInput.requireUpperCase,
                 tenantId: passwordConfigInput.tenantId,
                 maxRepeatingCharacterLength: passwordConfigInput.maxRepeatingCharacterLength,
-                mfaTypesAllowed: passwordConfigInput.mfaTypesAllowed,
                 mfaTypesRequired: passwordConfigInput.mfaTypesRequired,
                 passwordHistoryPeriod: passwordConfigInput.passwordHistoryPeriod,
                 passwordRotationPeriodDays: passwordConfigInput.passwordRotationPeriodDays,

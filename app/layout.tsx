@@ -1,5 +1,4 @@
 "use client";
-//import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import { ApolloProvider } from '@apollo/client';
@@ -23,8 +22,7 @@ const theme = createTheme({
         MuiButton: {
             defaultProps: {
                 
-            },
-            
+            },            
             styleOverrides: {
                 root: {
                     "&:disabled": {
@@ -38,16 +36,13 @@ const theme = createTheme({
                     ],
                     color: "white",
                     backgroundColor: "#1976d2"                    
-                },
-                
+                }                
             }
-
         },
         MuiAccordion: {
             styleOverrides: {
                 heading: {
-                    backgroundColor: "#f8f8f8",
-                    
+                    backgroundColor: "#f8f8f8"
                 }                
             }
         },

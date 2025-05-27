@@ -367,8 +367,6 @@ type TenantPasswordConfig {
 	specialCharactersAllowed: String
     requireMfa: Boolean!
     mfaTypesRequired: String
-    allowMfa: Boolean!
-    mfaTypesAllowed: String
     maxRepeatingCharacterLength: Int
     passwordRotationPeriodDays: Int
     passwordHistoryPeriod: Int
@@ -1082,8 +1080,6 @@ input PasswordConfigInput {
 	specialCharactersAllowed: String
     requireMfa: Boolean!
     mfaTypesRequired: String
-    allowMfa: Boolean!
-    mfaTypesAllowed: String
     maxRepeatingCharacterLength: Int
     passwordRotationPeriodDays: Int
     passwordHistoryPeriod: Int
@@ -1307,7 +1303,7 @@ input LoginFailurePolicyInput {
 
 input UserCreateInput {
     federatedOIDCProviderSubjectId: String
-    email: String!
+    email: String!    
     emailVerified: Boolean!
     domain: String!
     firstName: String!
@@ -1324,6 +1320,7 @@ input UserCreateInput {
     locked: Boolean!
     enabled: Boolean!
     nameOrder: String!
+    password: String!
 }
 
 input UserUpdateInput {

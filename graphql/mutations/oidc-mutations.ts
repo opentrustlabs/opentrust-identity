@@ -68,8 +68,6 @@ export const PASSWORD_CONFIGURATION_MUTATION = gql(`
             specialCharactersAllowed
             requireMfa
             mfaTypesRequired
-            allowMfa
-            mfaTypesAllowed
             maxRepeatingCharacterLength
             passwordRotationPeriodDays        
         }

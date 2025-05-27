@@ -11,6 +11,8 @@ const AuthenticationHeader: React.FC<AuthenticationHeaderProps> = ({
     tenantMetaData
 }) => {
 
+    console.log(tenantMetaData);
+
     return (
         <div 
             style={{

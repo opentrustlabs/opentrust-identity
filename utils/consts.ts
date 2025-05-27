@@ -741,7 +741,6 @@ export const DEFAULT_TENANT_META_DATA: TenantMetaData = {
 }
 
 export const DEFAULT_TENANT_PASSWORD_CONFIGURATION: TenantPasswordConfig = {
-    allowMfa: false,
     passwordHashingAlgorithm: PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS,
     passwordMaxLength: 64,
     passwordMinLength: 10,
@@ -751,7 +750,6 @@ export const DEFAULT_TENANT_PASSWORD_CONFIGURATION: TenantPasswordConfig = {
     requireSpecialCharacters: true,
     requireUpperCase: true,
     tenantId: "",
-    mfaTypesAllowed: "",
     mfaTypesRequired: "",
     specialCharactersAllowed: DEFAULT_PASSWORD_SPECIAL_CHARACTERS_ALLOWED
 }
