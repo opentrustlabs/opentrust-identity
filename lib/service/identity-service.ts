@@ -486,20 +486,9 @@ class IdentityService {
         if(count === null){
             throw new GraphQLError("ERROR_CANNOT_OBTAIN_COUNTER_VALUE");
         }
-
-        console.log("public key is " + userMfaRel.fido2PublicKey);
-        
+       
         const publicKeyBuffer: Buffer = Buffer.from(userMfaRel.fido2PublicKey || "", "base64url");
         const publicKeyUint8Array = Uint8Array.from(publicKeyBuffer);
-
-        const credential = {
-            counter: count,
-            id: userMfaRel.fido2CredentialId || "",
-            publicKey: publicKeyUint8Array,
-            transports: userMfaRel.fido2Transports?.split(",") as Array<AuthenticatorTransport>
-        };
-        console.log(credential);
-
         
         let verification: VerifiedAuthenticationResponse;
         try{
