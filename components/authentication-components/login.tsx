@@ -4,7 +4,7 @@ import { Button, CircularProgress, Divider, Grid2, Paper, Stack, TextField } fro
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import Link from 'next/link';
-import {  useRouter } from 'next/navigation';
+import {  useRouter, useSearchParams } from 'next/navigation';
 import { DEFAULT_TENANT_META_DATA, QUERY_PARAM_PREAUTH_REDIRECT_URI, QUERY_PARAM_PREAUTH_TENANT_ID, QUERY_PARAM_PREAUTHN_TOKEN } from "@/utils/consts";
 import { LOGIN_USERNAME_HANDLER_QUERY, TENANT_META_DATA_QUERY } from "@/graphql/queries/oidc-queries";
 import { useLazyQuery, useMutation, useQuery } from "@apollo/client";
@@ -25,8 +25,7 @@ const Login: React.FC = () => {
     // titleSetter.setPageTitle("Login");
 
     // QUERY PARAMS
-    // const params = useSearchParams();
-    const params = new Map<string, string>();
+    const params = useSearchParams();
     const preauthToken = params?.get(QUERY_PARAM_PREAUTHN_TOKEN);
     const tenantId = params?.get(QUERY_PARAM_PREAUTH_TENANT_ID);
     const redirectUri = params?.get(QUERY_PARAM_PREAUTH_REDIRECT_URI);

@@ -57,18 +57,6 @@ class TenantPasswordConfigEntity extends Model {
                 allowNull: true,
                 field: "specialcharactersallowed"
             },
-            allowMfa: {
-                type: DataTypes.BOOLEAN,
-                primaryKey: false,
-                allowNull: false,
-                field: "allowmfa"
-            },
-            mfaTypesAllowed: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: true,
-                field: "mfatypesallowed"
-            },
             requireMfa: {
                 type: DataTypes.BOOLEAN,
                 primaryKey: false,

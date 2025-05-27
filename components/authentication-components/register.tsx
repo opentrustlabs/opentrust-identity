@@ -1,17 +1,22 @@
 "use client";
 import React, { Suspense, useContext, useState } from "react";
-import { Button, CircularProgress, Divider, Grid2, Paper, Stack, TextField } from "@mui/material";
+import { Autocomplete, Button, CircularProgress, Divider, Grid2, InputAdornment, MenuItem, Paper, Select, Stack, TextField, Typography } from "@mui/material";
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import Link from 'next/link';
-import {  useRouter } from 'next/navigation';
-import { DEFAULT_TENANT_META_DATA, QUERY_PARAM_PREAUTH_REDIRECT_URI, QUERY_PARAM_PREAUTH_TENANT_ID, QUERY_PARAM_PREAUTHN_TOKEN } from "@/utils/consts";
+import { useRouter } from 'next/navigation';
+import { DEFAULT_TENANT_META_DATA, NAME_ORDER_DISPLAY, NAME_ORDER_EASTERN, NAME_ORDER_WESTERN, NAME_ORDERS, QUERY_PARAM_PREAUTH_REDIRECT_URI, QUERY_PARAM_PREAUTH_TENANT_ID, QUERY_PARAM_PREAUTHN_TOKEN } from "@/utils/consts";
 import { LOGIN_USERNAME_HANDLER_QUERY, TENANT_META_DATA_QUERY } from "@/graphql/queries/oidc-queries";
 import { useLazyQuery, useMutation, useQuery } from "@apollo/client";
-import { LoginAuthenticationHandlerAction, LoginAuthenticationHandlerResponse, LoginUserNameHandlerAction, LoginUserNameHandlerResponse } from "@/graphql/generated/graphql-types";
+import { LoginAuthenticationHandlerAction, LoginAuthenticationHandlerResponse, LoginUserNameHandlerAction, LoginUserNameHandlerResponse, StateProvinceRegion, UserCreateInput } from "@/graphql/generated/graphql-types";
 import Alert from '@mui/material/Alert';
 import { LOGIN_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import { PageTitleContext } from "@/components/contexts/page-title-context";
+import { COUNTRY_CODES, CountryCodeDef, LANGUAGE_CODES, LanguageCodeDef } from "@/utils/i18n";
+import { getDefaultCountryCodeDef, getDefaultLanguageCodeDef } from "@/utils/client-utils";
+import StateProvinceRegionSelector from "../users/state-province-region-selector";
+import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
+import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
 
 
 const MIN_USERNAME_LENGTH = 6;
@@ -31,11 +36,41 @@ const Register: React.FC = () => {
     const tenantId = params?.get(QUERY_PARAM_PREAUTH_TENANT_ID);
     const redirectUri = params?.get(QUERY_PARAM_PREAUTH_REDIRECT_URI);
 
-    // // PAGE STATE MANAGEMENT VARIABLES
-    // const [username, setUsername] = useState<string | null>("");
-    // const [password, setPassword] = useState<string | null>("");
+    const countryInput = React.useRef(null);
+
+
+    // PAGE STATE MANAGEMENT VARIABLES    
+    const initInput: UserCreateInput = {
+        domain: "",
+        email: "",
+        emailVerified: false,
+        enabled: false,
+        firstName: "",
+        lastName: "",
+        locked: false,
+        nameOrder: "",
+        address: "",
+        addressLine1: "",
+        city: "",
+        countryCode: "",
+        federatedOIDCProviderSubjectId: "",
+        middleName: "",
+        phoneNumber: "",
+        postalCode: "",
+        preferredLanguageCode: "",
+        stateRegionProvince: "",
+        password: ""
+    };
+
+    const [userInput, setUserInput] = React.useState<UserCreateInput>(initInput);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [tenantMetaData, setTenantMetaData] = useState(tenantId ? null : DEFAULT_TENANT_META_DATA);
+    const [registrationPage, setRegistrationPage] = React.useState<number>(1);
+    const [repeatPassword, setRepeatPassword] = React.useState<string>("");
+    const [viewPassword, setViewPassword] = React.useState<boolean>(false);
+    const [viewRepeatPassword, setViewRepeatPassword] = React.useState<boolean>(false);
+
+
     // // To toggle between USERNAME_COMPONENT and PASSWORD_COMPONENT for display
     // const [displayComponent, setDisplayComponent] = useState<string>(USERNAME_COMPONENT);
 
@@ -44,13 +79,13 @@ const Register: React.FC = () => {
     const theme = useTheme();
     const isMd: boolean = useMediaQuery(theme.breakpoints.down("md"));
     const isSm: boolean = useMediaQuery(theme.breakpoints.down("sm"));
-    const maxWidth = isSm ? "90vw" : isMd ? "80vw" : "650px";
+    const maxWidth = isSm ? "90vw" : isMd ? "80vw" : "550px";
 
 
     // GRAPHQL FUNCTIONS    
     // TODO -> Need to add the token to this query and get the redirect uri if it exists
     // Need to get password min length from password config, or use default min length
-    const {  } = useQuery(TENANT_META_DATA_QUERY, {
+    const { } = useQuery(TENANT_META_DATA_QUERY, {
         variables: {
             tenantId: tenantId
         },
@@ -63,186 +98,349 @@ const Register: React.FC = () => {
         }
     });
 
-    // const [getLoginUsernameHandler, {  }] = useLazyQuery(
-    //     LOGIN_USERNAME_HANDLER_QUERY, {
-    //         fetchPolicy: "network-only",
-    //         onCompleted(data) {
-    //             const response: LoginUserNameHandlerResponse = data.getLoginUserNameHandler as LoginUserNameHandlerResponse;
-    //             if (response.action === LoginUserNameHandlerAction.EnterPassword) {
-    //                 setDisplayComponent(PASSWORD_COMPONENT);
-    //             }
-    //             else if (response.action === LoginUserNameHandlerAction.OidcRedirect) {
-    //                 let redirectUri = `${response.oidcRedirectActionHandlerConfig?.redirectUri}?`;
-    //                 const params = new URLSearchParams({
-    //                     client_id: response.oidcRedirectActionHandlerConfig?.clientId || "",
-    //                     state: response.oidcRedirectActionHandlerConfig?.state || "",
-    //                     redirect_uri: response.oidcRedirectActionHandlerConfig?.redirectUri || "",
-    //                     response_type: response.oidcRedirectActionHandlerConfig?.responseType || ""
-    //                 })
-    //                 if(response.oidcRedirectActionHandlerConfig?.responseMode){
-    //                     params.set("response_mode", response.oidcRedirectActionHandlerConfig?.responseMode);
-    //                 }                
-    //                 if(response.oidcRedirectActionHandlerConfig?.codeChallenge){
-    //                     params.set("code_challenge", response.oidcRedirectActionHandlerConfig.codeChallenge);
-    //                     params.set("code_challenge_method", response.oidcRedirectActionHandlerConfig.codeChallengeMethod || "");
-    //                 }
-    //                 if(response.oidcRedirectActionHandlerConfig?.scope){
-    //                     params.set("scope", response.oidcRedirectActionHandlerConfig.scope);
-    //                 }
-    //                 router.push(redirectUri + params.toString());
-    //             }
-    //             else {
-    //                 setErrorMessage(response.errorActionHandler?.errorMessage || "Error with the user account. It is either disabled or not permitted for this tenant or client.");
-    //             }
-    //         }
-    //     }            
-    // );
+    // HANDLER FUNCTIONS
+    const isPage1InputValid = (): boolean => {
+        let bRetVal = true;
+        if(!userInput.firstName || userInput.firstName.length < 3){
+            bRetVal = false;
+        }
+        if(!userInput.lastName || userInput.lastName.length < 3){
+            bRetVal = false;
+        }
+        if(!userInput.nameOrder || !NAME_ORDERS.includes(userInput.nameOrder)){
+            bRetVal = false;
+        }
+        if(!userInput.email || userInput.email.length < 5){
+            bRetVal = false;
+        }
+        if(!userInput.password || userInput.password.length < 8){
+            bRetVal = false;
+        }
+        if(!repeatPassword || repeatPassword.length < 8 || repeatPassword !== userInput.password){
+            bRetVal = false;
+        }
+        return bRetVal;
+    }
 
-    // const [getPasswordAuthenticationResponse, {}] = useMutation(
-    //     LOGIN_MUTATION,
-    //     {
-    //         onCompleted(data) {
-    //             const response: LoginAuthenticationHandlerResponse = data.login as LoginAuthenticationHandlerResponse;
-    //             if(response.status === LoginAuthenticationHandlerAction.SecondFactorInput){
-    //                 router.push(`/authorize/mfa?mfa_type=${response.secondFactorType}`);
-    //             }
-    //             else if(response.status === LoginAuthenticationHandlerAction.Authenticated){
-    //                 let redirectUri = `${response.successConfig?.redirectUri}`
-    //                 if(response.successConfig?.responseMode && response.successConfig.responseMode === "fragment"){
-    //                     redirectUri = redirectUri + "#";
-    //                 }
-    //                 else{
-    //                     redirectUri = redirectUri + "?";
-    //                 }
-    //                 const params = new URLSearchParams({
-    //                     code: response.successConfig?.code || "",
-    //                 });
-    //                 if(response.successConfig?.state){
-    //                     params.set("state", response.successConfig.state);
-    //                 }
-    //                 router.push(redirectUri + params.toString());
-    //             }
-    //             else {
-    //                 setErrorMessage(response.errorActionHandler?.errorMessage || "Error with authentication. Either the user name or password is incorrect.")
-    //             }
-                
-    //         },
-    //         onError() {
-    //             setErrorMessage("Error with authentication. Either the user name or password is incorrect, or the system is unable to perform authentication.")
-    //         }
-    //     }
-    // );
+    const isPage2InputValid = (): boolean => {
+        let bRetVal = true;
+        if(!userInput.preferredLanguageCode || userInput.preferredLanguageCode.length < 2){
+            bRetVal = false;
+        }
+        if(!userInput.address || userInput.address.length < 3){
+            bRetVal = false;
+        }
+        if(!userInput.city || userInput.city.length < 2){
+            bRetVal = false;
+        }
+        if(!userInput.countryCode || userInput.countryCode.length < 2){
+            bRetVal = false;
+        }
+        if(!userInput.postalCode || userInput.postalCode.length < 3){
+            bRetVal = false;
+        }
+        return bRetVal;
+    }
 
 
-    // // EVENT HANDLERS
-    // const handleNextClick = (evt: any) => {
-    //     getLoginUsernameHandler({
-    //         variables: {
-    //             username: username,
-    //             tenantId: tenantId,
-    //             preauthToken: preauthToken
-    //         }
-    //     });
-    // }
-    // const handleEnterButtonPress = (evt: React.KeyboardEvent) => {        
-    //     if (evt.key.valueOf().toLowerCase() === "enter") {
-    //         if (username && username.length > MIN_USERNAME_LENGTH) {
-    //             getLoginUsernameHandler({
-    //                 variables: {
-    //                     username: username,
-    //                     tenantId: tenantId,
-    //                     preauthToken: preauthToken
-    //                 }
-    //             });
-    //         }
-    //     }
-    //     // Remove the error message if the user makes any changes to the user name
-    //     else{
-    //         if(errorMessage !== null){
-    //             setErrorMessage(null);
-    //         }
-    //     }
-    // }
-
-    // const enterKeyLoginHandler = (evt: React.KeyboardEvent) => {
-    //     if (evt.key.valueOf().toLowerCase() === "enter") {
-    //         if (username && username.length > MIN_USERNAME_LENGTH && password && password.length >= 8) {
-    //             getPasswordAuthenticationResponse({
-    //                 variables: {
-    //                     username: username,
-    //                     password: password
-    //                 }
-    //             });
-    //         }
-    //     }
-    //     // Remove the error message if the user makes any changes to the password
-    //     else{
-    //         if(errorMessage !== null){
-    //             setErrorMessage(null);
-    //         }
-    //     }
-        
-    // }
-
-    // const buttonLoginHandler = () => {
-    //     getPasswordAuthenticationResponse({
-    //         variables: {
-    //             username: username,
-    //             password: password
-    //         }
-    //     });
-    // }
-
-    // const getQueryParams = (): string => {
-    //     const params = new URLSearchParams();
-    //     if(tenantId){
-    //         params.set("_tid", tenantId);
-    //     }
-    //     if(preauthToken){
-    //         params.set("_tk", preauthToken)
-    //     }
-    //     return params.toString();
-    // }
-
-    // if (loading) return <CircularProgress />
     return (
         <Suspense>
-            {tenantMetaData && 
-            <Paper
-            elevation={4}
-            sx={{ padding: 2, height: "100%", maxWidth: maxWidth, width: maxWidth }}
-        >
-            <Grid2 spacing={4} container size={{ xs: 12 }}>
-                {errorMessage !== null &&
-                    <>
-                        <Grid2 size={{ xs: 12 }} textAlign={"center"}>
-                            <Stack
-                                direction={"row"}
-                                justifyItems={"center"}
-                                alignItems={"center"}
-                                sx={{width: "100%"}}
+            {tenantMetaData &&
+                <Paper
+                    elevation={4}
+                    sx={{ padding: 2, height: "100%", maxWidth: maxWidth, width: maxWidth, margin: "16px 0px" }}
+                >
+                    <Typography component="div" fontSize={"0.95em"}>
+                        <Grid2 spacing={1} container size={{ xs: 12 }}>
+                            {errorMessage !== null &&
+                                <>
+                                    <Grid2 size={{ xs: 12 }} textAlign={"center"}>
+                                        <Stack
+                                            direction={"row"}
+                                            justifyItems={"center"}
+                                            alignItems={"center"}
+                                            sx={{ width: "100%" }}
+                                        >
+                                            <Alert onClose={() => setErrorMessage(null)} sx={{ width: "100%" }} severity="error">{errorMessage}</Alert>
+
+                                        </Stack>
+                                    </Grid2>
+                                </>
+                            }
+                            <Grid2 size={{ xs: 12 }}>
+                                <div style={{ marginBottom: "16px", fontWeight: "bold", fontSize: "1.0em" }}>Register</div>
+                            </Grid2>
+                            {registrationPage === 1 &&
+                                <Grid2 size={12} container spacing={1}>
+                                    <Grid2 marginBottom={"8px"} size={12}>
+                                        <div>First Name</div>
+                                        <TextField name="firstName" id="firstName"
+                                            value={userInput.firstName}
+                                            onChange={(evt) => { userInput.firstName = evt.target.value; setUserInput({ ...userInput }) }}
+                                            fullWidth={true} size="small"
+                                        />
+                                    </Grid2>
+                                    <Grid2 marginBottom={"8px"} size={12}>
+                                        <div>Last Name</div>
+                                        <TextField name="lastName" id="lastName"
+                                            value={userInput.lastName}
+                                            onChange={(evt) => { userInput.lastName = evt.target.value; setUserInput({ ...userInput }); }}
+                                            fullWidth={true} size="small"
+                                        />
+                                    </Grid2>
+                                    <Grid2 marginBottom={"8px"} size={12}>
+                                        <div>Middle Name</div>
+                                        <TextField name="middleName" id="middleName"
+                                            value={userInput.middleName}
+                                            onChange={(evt) => { userInput.middleName = evt.target.value; setUserInput({ ...userInput }); }}
+                                            fullWidth={true} size="small"
+                                        />
+                                    </Grid2>
+                                    <Grid2 marginBottom={"8px"} size={12}>
+                                        <div>Name Order</div>
+                                        <Select
+                                            name="nameOrder"
+                                            value={userInput.nameOrder}
+                                            onChange={(evt) => {
+                                                userInput.nameOrder = evt.target.value;
+                                                setUserInput({ ...userInput });
+                                            }}
+                                            size="small"
+                                            fullWidth={true}
+                                        >
+                                            <MenuItem value={NAME_ORDER_EASTERN}>{NAME_ORDER_DISPLAY.get(NAME_ORDER_EASTERN)}</MenuItem>
+                                            <MenuItem value={NAME_ORDER_WESTERN}>{NAME_ORDER_DISPLAY.get(NAME_ORDER_WESTERN)}</MenuItem>
+
+                                        </Select>
+                                    </Grid2>
+                                    <Grid2 marginBottom={"8px"} size={12}>
+                                        <div>Email</div>
+                                        <TextField name="email" id="email"
+                                            value={userInput.email}
+                                            onChange={(evt) => { userInput.email = evt.target.value; setUserInput({ ...userInput }); }}
+                                            fullWidth={true} size="small"
+                                        />
+                                    </Grid2>
+                                    <Grid2 marginBottom={"8px"} size={12}>
+                                        <div>Password</div>
+                                        <TextField name="password" id="password"
+                                            type={ viewPassword === true ? "text" : "password"}
+                                            value={userInput.password}
+                                            onChange={(evt) => { userInput.password = evt.target.value; setUserInput({ ...userInput }); }}
+                                            fullWidth={true} size="small"
+                                            slotProps={{
+                                                input: {
+                                                    endAdornment: (
+                                                        <InputAdornment position="end">
+                                                            {viewPassword === true &&
+                                                                <CloseOutlinedIcon
+                                                                    sx={{ cursor: "pointer" }}
+                                                                    onClick={() => { 
+                                                                        setViewPassword(false);
+                                                                    }}
+                                                                />
+                                                            }
+                                                            {viewPassword === false &&
+                                                                <VisibilityOutlinedIcon
+                                                                    sx={{ cursor: "pointer" }}
+                                                                    onClick={() => { 
+                                                                        setViewPassword(true);
+                                                                    }}
+                                                                />
+                                                            }
+                                                        </InputAdornment>
+                                                    )
+                                                }
+                                            }}
+                                        />
+                                    </Grid2>
+                                    <Grid2 marginBottom={"8px"} size={12}>
+                                        <div>Repeat Password</div>
+                                        <TextField name="repeatPassword" id="repeatPassword"
+                                            type={viewRepeatPassword === true ? "text" : "password"}
+                                            value={repeatPassword}
+                                            onChange={(evt) => { setRepeatPassword(evt.target.value);}}
+                                            fullWidth={true} size="small"
+                                            slotProps={{
+                                                input: {
+                                                    endAdornment: (
+                                                        <InputAdornment position="end">
+                                                            {viewRepeatPassword === true &&
+                                                                <CloseOutlinedIcon
+                                                                    sx={{ cursor: "pointer" }}
+                                                                    onClick={() => { 
+                                                                        setViewRepeatPassword(false);
+                                                                    }}
+                                                                />
+                                                            }
+                                                            {viewRepeatPassword === false &&
+                                                                <VisibilityOutlinedIcon
+                                                                    sx={{ cursor: "pointer" }}
+                                                                    onClick={() => { 
+                                                                        setViewRepeatPassword(true);
+                                                                    }}
+                                                                />
+                                                            }
+                                                        </InputAdornment>
+                                                    )
+                                                }
+                                            }}
+                                        />
+                                    </Grid2>
+                                    <Grid2 marginBottom={"8px"} size={12}>
+                                        <div>Phone Number</div>
+                                        <TextField name="phoneNumber" id="phoneNumber"
+                                            value={userInput.phoneNumber}
+                                            onChange={(evt) => { userInput.phoneNumber = evt.target.value; setUserInput({ ...userInput }); }}
+                                            fullWidth={true} size="small"
+                                        />
+                                    </Grid2>
+                                    
+                                </Grid2>
+                            }
+                            {registrationPage === 2 &&
+                                <Grid2 size={12} container spacing={1}>
+                                    <Grid2 marginBottom={"8px"} size={12}>
+                                        <div>Preferred Language</div>
+                                        <Autocomplete
+                                            id="defaultLanguage"
+                                            sx={{ paddingTop: "8px" }}
+                                            size="small"
+                                            renderInput={(params) => <TextField {...params} label="" />}
+                                            options={
+                                                [{ languageCode: "", language: "" }, ...LANGUAGE_CODES].map(
+                                                    (lc: LanguageCodeDef) => {
+                                                        return { id: lc.languageCode, label: lc.language }
+                                                    }
+                                                )
+                                            }
+                                            value={getDefaultLanguageCodeDef(userInput.preferredLanguageCode || "")}
+                                            onChange={(_, value: any) => {
+                                                userInput.preferredLanguageCode = value.id;
+
+                                                setUserInput({ ...userInput });
+                                            }}
+                                        />
+                                    </Grid2>
+                                    <Grid2 marginBottom={"8px"} size={12}>
+                                        <div>Address</div>
+                                        <TextField name="address" id="address"
+                                            value={userInput.address} fullWidth={true} size="small"
+                                            onChange={(evt) => { userInput.address = evt.target.value; setUserInput({ ...userInput }); }}
+                                        />
+                                    </Grid2>
+                                    <Grid2 marginBottom={"8px"} size={12}>
+                                        <div>(Optional) Apartment, suite, unit, building, floor</div>
+                                        <TextField name="addressline1" id="addressline1"
+                                            value={userInput.addressLine1}
+                                            onChange={(evt) => { userInput.addressLine1 = evt.target.value; setUserInput({ ...userInput }); }}
+                                            fullWidth={true} size="small"
+                                        />
+                                    </Grid2>
+                                    <Grid2 marginBottom={"8px"} size={12}>
+                                        <div>City</div>
+                                        <TextField name="city" id="city"
+                                            value={userInput.city}
+                                            onChange={(evt) => { userInput.city = evt.target.value; setUserInput({ ...userInput }); }}
+                                            fullWidth={true} size="small"
+
+                                        />
+                                    </Grid2>
+                                    <Grid2 marginBottom={"8px"} size={12}>
+                                        <div>Country</div>
+                                        <Autocomplete
+                                            sx={{ paddingTop: "8px" }}
+                                            size="small"
+                                            renderInput={(params) =>
+                                                <TextField
+                                                    {...params}
+                                                    label=""
+                                                    autoComplete="one-time-code"
+                                                />
+                                            }
+                                            options={
+                                                [{ countryCode: "", country: "" }, ...COUNTRY_CODES].map(
+                                                    (cc: CountryCodeDef) => {
+                                                        return { id: cc.countryCode, label: cc.country }
+                                                    }
+                                                )
+                                            }
+                                            value={getDefaultCountryCodeDef(userInput.countryCode || "")}
+                                            onChange={(_, value: any) => {
+                                                userInput.countryCode = value.id;
+                                                setUserInput({ ...userInput });
+                                            }}
+                                        />
+                                    </Grid2>
+                                    <Grid2 marginBottom={"8px"} size={12}>
+                                        <div>State / Province / Region</div>
+                                        <StateProvinceRegionSelector
+                                            countryCode={userInput.countryCode || undefined}
+                                            initValue={userInput.stateRegionProvince || ""}
+                                            onChange={(stateProvinceRegion: StateProvinceRegion | null) => {
+                                                userInput.stateRegionProvince = stateProvinceRegion ? stateProvinceRegion.isoEntryCode : "";
+                                                setUserInput({ ...userInput });
+                                            }}
+                                            isDisabled={false}
+                                        />
+                                    </Grid2>
+                                    <Grid2 marginBottom={"8px"} size={12}>
+                                        <div>Postal Code</div>
+                                        <TextField name="postalCode" id="postalCode"
+                                            value={userInput.postalCode}
+                                            fullWidth={true} size="small"
+                                            onChange={(evt) => { userInput.postalCode = evt.target.value; setUserInput({ ...userInput }); }}
+                                        />
+                                    </Grid2>
+                                </Grid2>
+                            }
+                            <Stack 
+                                width={"100%"}
+                                direction={"row-reverse"}
+                                spacing={2}
                             >
-                                <Alert onClose={() => setErrorMessage(null)} sx={{width: "100%"}}severity="error">{errorMessage}</Alert>
-                                
+                                {registrationPage === 2 &&
+                                    <Button
+                                        onClick={() => {
+                                            setRegistrationPage(registrationPage - 1);
+                                        }}
+                                        disabled={
+                                            !isPage2InputValid()
+                                        }
+                                    >
+                                        Finish
+                                    </Button>
+                                }
+                                {registrationPage === 1 &&
+                                    <Button 
+                                        onClick={() => {
+                                            setRegistrationPage(registrationPage + 1);
+                                        }}
+                                        disabled={
+                                            !isPage1InputValid()
+                                        }
+                                    >
+                                        Next
+                                    </Button>
+                                }
+                                {registrationPage === 2 &&
+                                    <Button
+                                        onClick={() => {
+                                            setRegistrationPage(registrationPage - 1);
+                                        }}
+                                    >
+                                        Back
+                                    </Button>
+                                }
+
                             </Stack>
                         </Grid2>
-                    </>
-                }
-                <Grid2 size={{ xs: 12 }}>
-                    <div style={{ marginBottom: "16px", fontWeight: "bold", fontSize: "1.2em" }}>Register</div>                        
-                </Grid2>
-                
-                <Grid2 size={{ xs: 12 }}>
-                    <div>Here in the register page content section</div>
-                </Grid2>
-                
-            </Grid2>
-
-        </Paper>
+                    </Typography>
+                </Paper>
             }
-        </Suspense>
+        </Suspense >
     )
-    
+
 }
 
 export default Register;

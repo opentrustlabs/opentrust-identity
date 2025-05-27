@@ -189,9 +189,6 @@ const SecurityKey: React.FC = () => {
                 console.log(err);
             }
         }
-        else{
-            console.log("challengeResponse is still null");
-        }
     }
 
     
