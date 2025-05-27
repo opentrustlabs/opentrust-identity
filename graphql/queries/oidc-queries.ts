@@ -666,3 +666,14 @@ export const USER_SESSIONS_QUERY = gql(`
         }
     }
 `);
+
+export const STATE_PROVINCE_REGIONS_QUERY = gql(`
+    query getStateProvinceRegions($countryCode: String!) {
+        getStateProvinceRegions(countryCode: $countryCode) {
+            isoCountryCode
+            isoEntryCode
+            isoEntryName
+            isoSubsetType
+        }
+    }   
+`);

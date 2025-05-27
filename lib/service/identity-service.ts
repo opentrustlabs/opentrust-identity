@@ -1,12 +1,12 @@
 import { OIDCContext } from "@/graphql/graphql-context";
 import * as OTPAuth from "otpauth";
 import IdentityDao from "../dao/identity-dao";
-import { Client, ObjectSearchResultItem, RefreshData, RelSearchResultItem, SearchResultType, Tenant, TenantPasswordConfig, TotpResponse, User, UserCreateInput, UserCredential, UserMfaRel, UserSession, UserTenantRel, UserTenantRelView } from "@/graphql/generated/graphql-types";
+import { Client, Fido2AuthenticationChallengeResponse, Fido2Challenge, Fido2RegistrationChallengeResponse, Fido2KeyRegistrationInput, ObjectSearchResultItem, RefreshData, RelSearchResultItem, SearchResultType, Tenant, TenantPasswordConfig, TotpResponse, User, UserCreateInput, UserCredential, UserMfaRel, UserSession, UserTenantRel, UserTenantRelView, Fido2KeyAuthenticationInput } from "@/graphql/generated/graphql-types";
 import { DaoFactory } from "../data-sources/dao-factory";
 import TenantDao from "../dao/tenant-dao";
 import { GraphQLError } from "graphql/error";
 import { randomUUID } from "crypto";
-import { MFA_AUTH_TYPE_TIME_BASED_OTP, NAME_ORDER_WESTERN, PASSWORD_HASH_ITERATION_128K, PASSWORD_HASH_ITERATION_256K, PASSWORD_HASH_ITERATION_32K, PASSWORD_HASH_ITERATION_64K, PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_32K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_64K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_TYPE_ROOT_TENANT, TOTP_HASH_ALGORITHM_SHA1, USER_TENANT_REL_TYPE_GUEST, USER_TENANT_REL_TYPE_PRIMARY } from "@/utils/consts";
+import { MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, NAME_ORDER_WESTERN, PASSWORD_HASH_ITERATION_128K, PASSWORD_HASH_ITERATION_256K, PASSWORD_HASH_ITERATION_32K, PASSWORD_HASH_ITERATION_64K, PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_32K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_64K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_TYPE_ROOT_TENANT, TOTP_HASH_ALGORITHM_SHA1, USER_TENANT_REL_TYPE_GUEST, USER_TENANT_REL_TYPE_PRIMARY } from "@/utils/consts";
 import { sha256HashPassword, pbkdf2HashPassword, bcryptHashPassword, generateSalt, scryptHashPassword, generateRandomToken } from "@/utils/dao-utils";
 import { Client as OpenSearchClient } from "@opensearch-project/opensearch";
 import { getOpenSearchClient } from "../data-sources/search";
@@ -14,6 +14,8 @@ import { Get_Response } from "@opensearch-project/opensearch/api/index.js";
 import Kms from "../kms/kms";
 import AuthDao from "../dao/auth-dao";
 import ClientDao from "../dao/client-dao";
+import { VerifiedRegistrationResponse, verifyRegistrationResponse, verifyAuthenticationResponse, VerifiedAuthenticationResponse } from '@simplewebauthn/server';
+import { isoBase64URL, decodeCredentialPublicKey } from '@simplewebauthn/server/helpers';
 
 const identityDao: IdentityDao = DaoFactory.getInstance().getIdentityDao();
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
@@ -23,7 +25,9 @@ const authDao: AuthDao = DaoFactory.getInstance().getAuthDao();
 const clientDao: ClientDao = DaoFactory.getInstance().getClientDao();
 
 const {
-    TOTP_ISSUER
+    MFA_ISSUER,
+    MFA_ORIGIN,
+    MFA_ID
 } = process.env;
 
 class IdentityService {
@@ -180,7 +184,7 @@ class IdentityService {
                 userMfaRel.totpSecret = decryptedSecret;
                 // Microsoft authentication only support SHA1 as a hashing algorithm (at the momemt)
                 totp = new OTPAuth.TOTP({
-                    issuer: TOTP_ISSUER || "Open Trust",
+                    issuer: MFA_ISSUER || "Open Trust",
                     label: user.email,
                     algorithm: TOTP_HASH_ALGORITHM_SHA1, 
                     digits: 6,
@@ -203,7 +207,7 @@ class IdentityService {
                 mfaType: MFA_AUTH_TYPE_TIME_BASED_OTP,
                 userId: userId,
                 primaryMfa: true,
-                fido2Algorithm: null,
+                fido2PublicKeyAlgorithm: null,
                 fido2CredentialId: null,
                 fido2KeySupportsCounters: null,
                 fido2PublicKey: null,
@@ -213,12 +217,11 @@ class IdentityService {
             }
 
             await identityDao.saveTOTP(userMfaRel);
-            console.log("secret: " + newSecret + ", encrypted secret: " + encryptedSecret);
             userMfaRel.totpSecret = newSecret.base32;
 
             // Microsoft authentication only support SHA1 as a hashing algorithm (at the momemt)
             totp = new OTPAuth.TOTP({
-                issuer: TOTP_ISSUER || "Open Trust",
+                issuer: MFA_ISSUER || "Open Trust",
                 label: user.email,
                 algorithm: TOTP_HASH_ALGORITHM_SHA1, 
                 digits: 6,
@@ -248,7 +251,7 @@ class IdentityService {
         }
         // Microsoft authentication only support SHA1 as a hashing algorithm (at the momemt)
         const totp = new OTPAuth.TOTP({
-            issuer: TOTP_ISSUER || "Open Trust",
+            issuer: MFA_ISSUER || "Open Trust",
             label: userId,
             algorithm: TOTP_HASH_ALGORITHM_SHA1, 
             digits: 6,
@@ -274,7 +277,7 @@ class IdentityService {
         arr.forEach(
             (rel: UserMfaRel) => {
                 rel.totpSecret = "";
-                rel.fido2Algorithm = "";
+                rel.fido2PublicKeyAlgorithm = 0;
                 rel.fido2CredentialId = "";
                 rel.fido2PublicKey = "";
                 rel.fido2Transports = "";
@@ -289,7 +292,251 @@ class IdentityService {
     }
 
     public async deleteFIDOKey(userId: string): Promise<void> {
+        await identityDao.deleteFido2Count(userId);
         return identityDao.deleteFIDOKey(userId);
+    }
+
+    public async registerFIDO2Key(userId: string, fido2KeyRegistrationInput: Fido2KeyRegistrationInput): Promise<UserMfaRel> {
+        
+        // Validate the input
+        const user: User | null = await identityDao.getUserBy("id", userId);
+        if(!user){
+            throw new GraphQLError("ERROR_USER_DOES_NOT_EXIST");
+        }
+        
+        const existingChallenge: Fido2Challenge | null = await identityDao.getFIDO2Challenge(userId);
+        if(!existingChallenge){
+            throw new GraphQLError("ERROR_NO_EXISTING_CHALLENGE_FOR_USER");
+        }
+        if(existingChallenge.expiresAtMs < Date.now()){
+            // Delete it and throw an error
+            await identityDao.deleteFIDO2Challenge(userId);
+            throw new GraphQLError("ERROR_CHALLENGE_HAS_EXPIRED");
+        }
+
+        let verification: VerifiedRegistrationResponse;
+        try{
+            verification = await verifyRegistrationResponse({
+                response: {
+                    id: fido2KeyRegistrationInput.id,
+                    rawId: fido2KeyRegistrationInput.rawId,
+                    response: {
+                        attestationObject: fido2KeyRegistrationInput.response.attestationObject,
+                        clientDataJSON: fido2KeyRegistrationInput.response.clientDataJSON,
+                        authenticatorData: fido2KeyRegistrationInput.response.authenticatorData,
+                        publicKey: fido2KeyRegistrationInput.response.publicKey,
+                        publicKeyAlgorithm: fido2KeyRegistrationInput.response.publicKeyAlgorithm,
+                        transports: fido2KeyRegistrationInput.response.transports as Array<AuthenticatorTransport>
+                    },
+                    clientExtensionResults: {},
+                    type: "public-key"
+                },
+                expectedChallenge: existingChallenge.challenge,
+                expectedOrigin: MFA_ORIGIN || "",
+                expectedRPID: MFA_ID
+            });
+        }
+        catch(error){
+            // TODO 
+            // Log the error for real
+            console.log(error);            
+            await identityDao.deleteFIDO2Challenge(userId);
+            throw new GraphQLError("ERROR_VALIDATING_FIDO2_REGISTRATION");
+        }
+        const { verified, registrationInfo } = verification;
+        if(!registrationInfo){
+            throw new GraphQLError("ERROR_UNABLE_OBTAIN_REGISTRATION_INFO_FOR_THE_KEY");
+        }
+
+        const count: number = registrationInfo.credential.counter;
+        // why this goofiness? because the key from the response is not correctly encoded. blah..
+        const publicKeyUint8Array: Uint8Array = registrationInfo.credential.publicKey;
+        const buffer = Buffer.from(publicKeyUint8Array);        
+        const publicKeyAsString = buffer.toString("base64url");
+
+        if(!verified){
+            throw new GraphQLError("ERROR_FIDO2_REGISTRATION_IS_INVALID");
+        }
+        // fido2PublicKey: fido2KeyRegistrationInput.response.publicKey,
+        await identityDao.deleteFIDO2Challenge(userId);
+        const userMfaRel: UserMfaRel = {
+            mfaType: MFA_AUTH_TYPE_FIDO2,
+            primaryMfa: false,
+            userId: user.userId,
+            fido2CredentialId: fido2KeyRegistrationInput.id,
+            fido2KeySupportsCounters: true,
+            fido2PublicKey: publicKeyAsString,
+            fido2PublicKeyAlgorithm: fido2KeyRegistrationInput.response.publicKeyAlgorithm,
+            fido2Transports: fido2KeyRegistrationInput.response.transports.join(",")
+        }
+
+        await identityDao.saveFIDOKey(userMfaRel);        
+        await identityDao.initFidoCount(userId, count);
+        return Promise.resolve(userMfaRel);
+
+    }
+
+    public async createFido2RegistrationChallenge(userId: string): Promise<Fido2RegistrationChallengeResponse> {
+
+        // does the user exist and are they not locked, not enabled, or marked for delete?
+        const user: User | null = await identityDao.getUserBy("id", userId);
+        if(!user){
+            throw new GraphQLError("ERROR_USER_DOES_NOT_EXIST");
+        }
+        if(user.locked === true || user.enabled === false || user.markForDelete === true){
+            throw new GraphQLError("ERROR_USER_IS_NOT_ELIGIBLE_FOR_MODIFICATION");
+        }
+
+        // If there is an existing challenge, then delete it and create a new one
+        const existingChallenge = await identityDao.getFIDO2Challenge(userId);
+        if(existingChallenge){
+            await identityDao.deleteFIDO2Challenge(userId);
+        }
+
+        const challenge: string = generateRandomToken(20, "base64url");
+
+        // Allow up to 15 minutes for the process to complete
+        const fido2Challenge: Fido2Challenge = {
+            challenge: challenge,
+            expiresAtMs: Date.now() + (15 * 60 * 1000),
+            issuedAtMs: Date.now(),
+            userId: user.userId
+        }
+        await identityDao.saveFIDO2Challenge(fido2Challenge);
+
+        const fido2ChallengeResponse: Fido2RegistrationChallengeResponse = {
+            email: user.email,
+            fido2Challenge: fido2Challenge,
+            rpId: MFA_ID || "opentrust",
+            rpName: MFA_ISSUER || "Open Trust",
+            userName: user.nameOrder === NAME_ORDER_WESTERN ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`
+        }
+
+        return Promise.resolve(fido2ChallengeResponse);
+    }
+
+    public async createFido2AuthenticationChallenge(userId: string): Promise<Fido2AuthenticationChallengeResponse> {
+        // does the user exist and are they not locked, not enabled, or marked for delete?
+        const user: User | null = await identityDao.getUserBy("id", userId);
+        if(!user){
+            throw new GraphQLError("ERROR_USER_DOES_NOT_EXIST");
+        }
+        if(user.locked === true || user.enabled === false || user.markForDelete === true){
+            throw new GraphQLError("ERROR_USER_IS_NOT_ELIGIBLE_FOR_MODIFICATION");
+        }
+
+        // Does the user have a security key configured?
+        const userMfaRel: UserMfaRel | null = await identityDao.getFIDOKey(userId);
+        if(!userMfaRel){
+            throw new GraphQLError("ERROR_NO_SECURITY_KEY_CONFIGURED_FOR_USER");
+        }
+
+        // If there is an existing challenge, then delete it and create a new one
+        const existingChallenge = await identityDao.getFIDO2Challenge(userId);
+        if(existingChallenge){
+            await identityDao.deleteFIDO2Challenge(userId);
+        }
+
+        const challenge: string = generateRandomToken(20, "base64url");
+        // Allow up to 15 minutes for the process to complete
+        const fido2Challenge: Fido2Challenge = {
+            challenge: challenge,
+            expiresAtMs: Date.now() + (15 * 60 * 1000),
+            issuedAtMs: Date.now(),
+            userId: user.userId
+        };
+        await identityDao.saveFIDO2Challenge(fido2Challenge);
+
+        const authnResponse: Fido2AuthenticationChallengeResponse = {
+            fido2AuthenticationChallengePasskeys: [{
+                id: userMfaRel.fido2CredentialId || "",
+                transports: userMfaRel.fido2Transports ? userMfaRel.fido2Transports.split(",") : []
+            }],
+            rpId: MFA_ID || "",
+            fido2Challenge: fido2Challenge
+        };
+
+        return Promise.resolve(authnResponse);
+    }
+
+    public async authenticateFIDO2Key(userId: string, fido2KeyAuthenticationInput: Fido2KeyAuthenticationInput): Promise<boolean> {
+
+        const existingChallenge: Fido2Challenge | null = await identityDao.getFIDO2Challenge(userId);
+        if(!existingChallenge){
+            throw new GraphQLError("ERROR_NO_EXISTING_CHALLENGE_FOR_USER");
+        }
+        if(existingChallenge.expiresAtMs < Date.now()){
+            // Delete it and throw an error
+            await identityDao.deleteFIDO2Challenge(userId);
+            throw new GraphQLError("ERROR_CHALLENGE_HAS_EXPIRED");
+        }
+
+        const userMfaRel: UserMfaRel | null = await identityDao.getFIDOKey(userId);
+        if(!userMfaRel){
+            throw new GraphQLError("ERROR_NO_KEY_CONFIGURED_FOR_USER");
+        }
+        if(!userMfaRel.fido2CredentialId){
+            throw new GraphQLError("ERROR_INVALID_MFA_TYPE");
+        }
+        if(userMfaRel.fido2CredentialId !== fido2KeyAuthenticationInput.id){
+            throw new GraphQLError("ERROR_INVALID_CREDENTIAL_ID");
+        }
+
+        const count: number | null = await identityDao.getFido2Count(userId);
+        if(count === null){
+            throw new GraphQLError("ERROR_CANNOT_OBTAIN_COUNTER_VALUE");
+        }
+       
+        const publicKeyBuffer: Buffer = Buffer.from(userMfaRel.fido2PublicKey || "", "base64url");
+        const publicKeyUint8Array = Uint8Array.from(publicKeyBuffer);
+        
+        let verification: VerifiedAuthenticationResponse;
+        try{
+            verification = await verifyAuthenticationResponse({
+                response: {
+                    clientExtensionResults: {},
+                    id: fido2KeyAuthenticationInput.id,
+                    rawId: fido2KeyAuthenticationInput.rawId,
+                    type: "public-key",
+                    authenticatorAttachment: fido2KeyAuthenticationInput.authenticationAttachment as AuthenticatorAttachment,
+                    response: {
+                        authenticatorData: fido2KeyAuthenticationInput.response.authenticatorData,
+                        clientDataJSON: fido2KeyAuthenticationInput.response.clientDataJSON,
+                        signature: fido2KeyAuthenticationInput.response.signature
+                    },                
+
+                },
+                expectedChallenge: existingChallenge.challenge,
+                expectedOrigin: MFA_ORIGIN || "",
+                expectedRPID: MFA_ID || "",
+                credential: {
+                    counter: count,
+                    id: userMfaRel.fido2CredentialId || "",
+                    publicKey: publicKeyUint8Array,
+                    transports: userMfaRel.fido2Transports?.split(",") as Array<AuthenticatorTransport>
+                }
+            });
+
+            const { verified, authenticationInfo } = verification;
+            if(!verified || !authenticationInfo){
+                await identityDao.deleteFIDO2Challenge(userId);
+                throw new GraphQLError("ERROR_UNABLE_TO_VERIFY_AUTHENTICATOR")
+            }
+            const newCount = authenticationInfo.newCounter;            
+            await identityDao.deleteFIDO2Challenge(userId);
+            await identityDao.updateFido2Count(userId, newCount);
+            return true;
+
+        }
+        catch(error){
+            // TODO
+            // log error
+            console.log(error);
+            await identityDao.deleteFIDO2Challenge(userId);
+            throw new GraphQLError("ERROR_CANNOT_VALIDATE_AUTHENTICATION_KEY");
+        }
+
+        
     }
 
     public async getUserSessions(userId: string): Promise<Array<UserSession>> {

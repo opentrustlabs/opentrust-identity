@@ -525,7 +525,7 @@ create TABLE user_mfa_rel (
     totphashalgorithm VARCHAR(32),
     fido2publickey VARCHAR(4000),
     fido2credentialid VARCHAR(1024),
-    fido2algorithm VARCHAR(1024),
+    fido2publickeyalgorithm INT,
     fido2transports VARCHAR(1024),
     fido2keysupportscounters BOOLEAN,
     PRIMARY KEY (userid, mfatype),
@@ -569,4 +569,18 @@ create TABLE deletion_status (
 	startedat BIGINT NOT NULL,
 	completedat BIGINT,
 	FOREIGN KEY (markfordeleteid) REFERENCES mark_for_delete(markfordeleteid)
+);
+
+create TABLE country (
+    isocountrycode VARCHAR(8) NOT NULL PRIMARY KEY,
+    countryname VARCHAR(128) NOT NULL
+);
+
+create TABLE state_province_region (
+    isocountrycode VARCHAR(8) NOT NULL,
+    isoentrycode VARCHAR(8) NOT NULL,
+    isoentryname VARCHAR(128) NOT NULL,
+    isosubsettype VARCHAR(64) NOT NULL,
+    PRIMARY KEY (isocountrycode, isoentrycode), 
+	FOREIGN KEY (isocountrycode) REFERENCES country(isocountrycode)	
 );

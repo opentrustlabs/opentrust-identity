@@ -1,4 +1,4 @@
-import { User, AuthenticationGroup, AuthorizationGroup, SuccessfulLoginResponse, UserFailedLoginAttempts, UserTenantRel, UserCredential, UserMfaRel, UserSession, RefreshData } from "@/graphql/generated/graphql-types";
+import { User, AuthenticationGroup, AuthorizationGroup, SuccessfulLoginResponse, UserFailedLoginAttempts, UserTenantRel, UserCredential, UserMfaRel, Fido2Challenge } from "@/graphql/generated/graphql-types";
 import IdentityDao, { UserLookupType } from "../../identity-dao";
 import UserAuthorizationGroupRelEntity from "@/lib/entities/authorization-group-user-rel-entity";
 import AuthorizationGroupEntity from "@/lib/entities/authorization-group-entity";
@@ -11,9 +11,10 @@ import UserMfaRelEntity from "@/lib/entities/user-mfa-rel-entity";
 import UserTenantRelEntity from "@/lib/entities/user-tenant-rel-entity";
 import DBDriver from "@/lib/data-sources/sequelize-db";
 import { Op, Sequelize } from "sequelize";
+import UserFido2ChallengeEntity from "@/lib/entities/user-fido2-challenge-entity";
+import UserFido2CounterRelEntity from "@/lib/entities/user-fido2-counter-rel-entity";
 
 class DBIdentityDao extends IdentityDao {
-
     
 
     public async saveFIDOKey(userMfaRel: UserMfaRel): Promise<void> {
@@ -95,6 +96,84 @@ class DBIdentityDao extends IdentityDao {
             return null;
         }
     }
+
+    public async  getFIDO2Challenge(userId: string): Promise<Fido2Challenge | null> {
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        const e: UserFido2ChallengeEntity | null = await sequelize.models.userFido2Challenge.findOne({
+            where: {
+                userId: userId
+            }
+        });
+        if(e){
+            return e.dataValues;
+        }
+        else{
+            return null;
+        }
+
+    }
+
+    public async  saveFIDO2Challenge(fido2Challenge: Fido2Challenge): Promise<void> {
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.userFido2Challenge.create(fido2Challenge);
+    }
+
+    public async deleteFIDO2Challenge(userId: string): Promise<void> {
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.userFido2Challenge.destroy({
+            where: {
+                userId: userId
+            }
+        });
+        return Promise.resolve();
+    }
+
+    public async getFido2Count(userId: string): Promise<number | null> {
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        const e: UserFido2CounterRelEntity | null = await sequelize.models.userFido2CountrerRel.findOne({
+            where: {
+                userId: userId
+            }
+        });
+        return e ? Promise.resolve(e.getDataValue("fido2Counter")) : Promise.resolve(null);
+    }
+
+    public async updateFido2Count(userId: string, count: number): Promise<void> {
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.userFido2CountrerRel.update(
+            {
+                userId: userId,
+                fido2Counter: count
+            },
+            {
+                where: {
+                    userId: userId
+                }
+            }
+        )
+        return Promise.resolve();
+    }
+
+    public async initFidoCount(userId: string, count: number): Promise<void> {
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.userFido2CountrerRel.create(
+            {
+                userId: userId,
+                fido2Counter: count
+            }
+        )
+        return Promise.resolve();
+    }
+
+    public async deleteFido2Count(userId: string): Promise<void> {
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.userFido2CountrerRel.destroy({
+            where: {
+                userId: userId
+            }
+        });
+        return Promise.resolve();
+    }
     
     public async getUserGroups(userId: string): Promise<Array<AuthorizationGroup>> {
         const sequelize: Sequelize = await DBDriver.getConnection();
@@ -103,7 +182,6 @@ class DBIdentityDao extends IdentityDao {
                 userId: userId
             }
         });
-
         
         const groupIds = rels.map(r => r.getDataValue("groupId"));
         const groups: Array<AuthorizationGroupEntity> = await sequelize.models.authorizationGroup.findAll({

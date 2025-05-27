@@ -26,6 +26,8 @@ import Kms from "../kms/kms";
 import FSBasedKms from "../kms/fs-based-kms";
 import MarkForDeleteDao from "../dao/mark-for-delete-dao";
 import DBMarkForDeleteDao from "../dao/impl/db/db-mark-for-delete-dao";
+import I18NDao from "../dao/i18n-dao";
+import DBI18NDao from "../dao/impl/db/db-i18n-dao";
 
 const daoStrategy = process.env.DAO_STRATEGY;
 const ksmStrategy = process.env.KMS_STRATEGY;
@@ -46,6 +48,7 @@ class DaoFactory {
     protected accessRuleDao: AccessRuleDao;
     protected contactDao: ContactDao;
     protected markForDeleteDao: MarkForDeleteDao;
+    protected i18nDao: I18NDao;
     protected kms: Kms;
 
     private constructor() {
@@ -236,6 +239,19 @@ class DaoFactory {
         if(daoStrategy=== "rdb"){
             DaoFactory.instance.contactDao = new DBContactDao();
             return DaoFactory.instance.contactDao; 
+        }
+        else{
+            throw new Error("ERROR_DAO_STRATEGY_NOT_DEFINED");
+        }
+    }
+
+    public getI18NDao(): I18NDao {
+        if(DaoFactory.instance.i18nDao){
+            return DaoFactory.instance.i18nDao;
+        }
+        if(daoStrategy=== "rdb"){
+            DaoFactory.instance.i18nDao = new DBI18NDao();
+            return DaoFactory.instance.i18nDao; 
         }
         else{
             throw new Error("ERROR_DAO_STRATEGY_NOT_DEFINED");

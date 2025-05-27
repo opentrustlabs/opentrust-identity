@@ -520,7 +520,7 @@ export const GENERATE_TOTP_MUTATION = gql(`
                 totpHashAlgorithm
                 fido2PublicKey
                 fido2CredentialId
-                fido2Algorithm
+                fido2PublicKeyAlgorithm
                 fido2Transports
                 fido2KeySupportsCounters
             }
@@ -591,5 +591,63 @@ export const FIDO_KEY_DELETION_MUTATION = gql(`
 export const USER_SESSION_DELETE_MUTATION =gql(`
     mutation deleteUserSession($userId: String!, $clientId: String!, $tenantId: String!) {
         deleteUserSession(userId: $userId, clientId: $clientId, tenantId: $tenantId)
+    }
+`);
+
+export const CREATE_FIDO2_REGISTRATION_CHALLENGE_MUTATION = gql(`
+    mutation createFido2RegistrationChallenge($userId: String!) {
+        createFido2RegistrationChallenge(userId: $userId) {
+            fido2Challenge {
+                userId
+                challenge
+                issuedAtMs
+                expiresAtMs
+            }
+            userName
+            email
+            rpName
+            rpId
+        }
+    }
+`);
+
+export const CREATE_FIDO2_AUTHENTICATION_CHALLENGE_MUTATION = gql(`
+    mutation createFido2AuthenticationChallenge($userId: String!) {
+        createFido2AuthenticationChallenge(userId: $userId) {
+            fido2Challenge {
+                userId
+                challenge
+                issuedAtMs
+                expiresAtMs
+            }
+            rpId
+            fido2AuthenticationChallengePasskeys {
+                id
+                transports
+            }            
+        }
+    }
+`);
+
+export const REGISTER_FIDO2_KEY_MUTATION = gql(`
+    mutation registerFIDO2Key($userId: String!, $fido2KeyRegistrationInput: Fido2KeyRegistrationInput!){
+        registerFIDO2Key(userId: $userId, fido2KeyRegistrationInput: $fido2KeyRegistrationInput) {
+            userId
+            mfaType
+            primaryMfa
+            totpSecret
+            totpHashAlgorithm
+            fido2PublicKey
+            fido2CredentialId
+            fido2PublicKeyAlgorithm
+            fido2Transports
+            fido2KeySupportsCounters
+        }
+    }
+`);
+
+export const AUTHENTICATE_FIDO2_KEY_MUATATION = gql(`
+    mutation authenticateFIDO2Key($userId: String!, $fido2KeyAuthenticationInput: Fido2KeyAuthenticationInput!) {
+        authenticateFIDO2Key(userId: $userId, fido2KeyAuthenticationInput: $fido2KeyAuthenticationInput)
     }
 `);

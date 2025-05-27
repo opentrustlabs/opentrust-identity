@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync, existsSync } from "node:fs";
+import { readFileSync, existsSync } from "node:fs";
 import { randomBytes, hash, createHash, pbkdf2Sync, scryptSync } from "node:crypto";
 import bcrypt from "bcrypt";
 
@@ -14,8 +14,7 @@ export function getFileContents(fileName: string, defaultContents?: string): any
     let fileContents; 
 
     if(!existsSync(fileName)){
-        writeFileSync(fileName, defaultContents ?? "", {encoding: "utf-8"});
-        fileContents = defaultContents ?? "";
+        throw new Error("ERROR_FILE_DOES_NOT_EXIST");
     }
     else{
         fileContents = readFileSync(fileName, {encoding: "utf-8"});
