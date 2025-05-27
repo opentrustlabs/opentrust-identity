@@ -751,7 +751,8 @@ export const DEFAULT_TENANT_PASSWORD_CONFIGURATION: TenantPasswordConfig = {
     requireUpperCase: true,
     tenantId: "",
     mfaTypesRequired: "",
-    specialCharactersAllowed: DEFAULT_PASSWORD_SPECIAL_CHARACTERS_ALLOWED
+    specialCharactersAllowed: DEFAULT_PASSWORD_SPECIAL_CHARACTERS_ALLOWED,
+    maxRepeatingCharacterLength: 2
 }
 
 // ************************************************************************** //

@@ -5,10 +5,10 @@ import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { DEFAULT_TENANT_META_DATA, NAME_ORDER_DISPLAY, NAME_ORDER_EASTERN, NAME_ORDER_WESTERN, NAME_ORDERS, QUERY_PARAM_PREAUTH_REDIRECT_URI, QUERY_PARAM_PREAUTH_TENANT_ID, QUERY_PARAM_PREAUTHN_TOKEN } from "@/utils/consts";
-import { LOGIN_USERNAME_HANDLER_QUERY, TENANT_META_DATA_QUERY } from "@/graphql/queries/oidc-queries";
+import { DEFAULT_TENANT_META_DATA, DEFAULT_TENANT_PASSWORD_CONFIGURATION, NAME_ORDER_DISPLAY, NAME_ORDER_EASTERN, NAME_ORDER_WESTERN, NAME_ORDERS, QUERY_PARAM_PREAUTH_REDIRECT_URI, QUERY_PARAM_PREAUTH_TENANT_ID, QUERY_PARAM_PREAUTHN_TOKEN } from "@/utils/consts";
+import { LOGIN_USERNAME_HANDLER_QUERY, TENANT_META_DATA_QUERY, TENANT_PASSWORD_CONFIG_QUERY } from "@/graphql/queries/oidc-queries";
 import { useLazyQuery, useMutation, useQuery } from "@apollo/client";
-import { LoginAuthenticationHandlerAction, LoginAuthenticationHandlerResponse, LoginUserNameHandlerAction, LoginUserNameHandlerResponse, StateProvinceRegion, UserCreateInput } from "@/graphql/generated/graphql-types";
+import { LoginAuthenticationHandlerAction, LoginAuthenticationHandlerResponse, LoginUserNameHandlerAction, LoginUserNameHandlerResponse, StateProvinceRegion, TenantPasswordConfig, UserCreateInput } from "@/graphql/generated/graphql-types";
 import Alert from '@mui/material/Alert';
 import { LOGIN_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import { PageTitleContext } from "@/components/contexts/page-title-context";
@@ -17,6 +17,8 @@ import { getDefaultCountryCodeDef, getDefaultLanguageCodeDef } from "@/utils/cli
 import StateProvinceRegionSelector from "../users/state-province-region-selector";
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
+import ArrowDropDownOutlinedIcon from '@mui/icons-material/ArrowDropDownOutlined';
+import ArrowDropUpOutlinedIcon from '@mui/icons-material/ArrowDropUpOutlined';
 
 
 const MIN_USERNAME_LENGTH = 6;
@@ -69,10 +71,8 @@ const Register: React.FC = () => {
     const [repeatPassword, setRepeatPassword] = React.useState<string>("");
     const [viewPassword, setViewPassword] = React.useState<boolean>(false);
     const [viewRepeatPassword, setViewRepeatPassword] = React.useState<boolean>(false);
-
-
-    // // To toggle between USERNAME_COMPONENT and PASSWORD_COMPONENT for display
-    // const [displayComponent, setDisplayComponent] = useState<string>(USERNAME_COMPONENT);
+    const [passwordConfig, setPasswordConfig] = React.useState<TenantPasswordConfig>(DEFAULT_TENANT_PASSWORD_CONFIGURATION);
+    const [showPasswordRules, setShowPasswordRules] = React.useState<boolean>(false);
 
     // HOOKS FROM NEXTJS OR MUI
     const router = useRouter();
@@ -95,6 +95,19 @@ const Register: React.FC = () => {
         },
         onError() {
             setTenantMetaData(DEFAULT_TENANT_META_DATA);
+        }
+    });
+
+    // data for password config may be null, so present some sensible defaults
+    const { loading, error } = useQuery(TENANT_PASSWORD_CONFIG_QUERY, {
+        variables: {
+            tenantId: tenantId
+        },
+        onCompleted(data) {
+            if (data && data.getTenantPasswordConfig) {
+                const config: TenantPasswordConfig = data.getTenantPasswordConfig as TenantPasswordConfig;
+                setPasswordConfig(config);
+            }
         }
     });
 
@@ -142,6 +155,12 @@ const Register: React.FC = () => {
         return bRetVal;
     }
 
+    const validatePassword = (password: string): boolean => {
+        let bRetVal = true;
+
+        return bRetVal;
+    }
+
 
     return (
         <Suspense>
@@ -174,15 +193,17 @@ const Register: React.FC = () => {
                                 <Grid2 size={12} container spacing={1}>
                                     <Grid2 marginBottom={"8px"} size={12}>
                                         <div>First Name</div>
-                                        <TextField name="firstName" id="firstName"
+                                        <TextField name="firstName" id="firstName" 
+                                            error={!userInput.firstName || userInput.firstName.length < 3}
                                             value={userInput.firstName}
                                             onChange={(evt) => { userInput.firstName = evt.target.value; setUserInput({ ...userInput }) }}
-                                            fullWidth={true} size="small"
+                                            fullWidth={true} size="small" required={true}
                                         />
                                     </Grid2>
                                     <Grid2 marginBottom={"8px"} size={12}>
                                         <div>Last Name</div>
                                         <TextField name="lastName" id="lastName"
+                                            error={!userInput.lastName || userInput.lastName.length < 3}
                                             value={userInput.lastName}
                                             onChange={(evt) => { userInput.lastName = evt.target.value; setUserInput({ ...userInput }); }}
                                             fullWidth={true} size="small"
@@ -207,6 +228,7 @@ const Register: React.FC = () => {
                                             }}
                                             size="small"
                                             fullWidth={true}
+                                            error={!userInput.nameOrder || !NAME_ORDERS.includes(userInput.nameOrder)}
                                         >
                                             <MenuItem value={NAME_ORDER_EASTERN}>{NAME_ORDER_DISPLAY.get(NAME_ORDER_EASTERN)}</MenuItem>
                                             <MenuItem value={NAME_ORDER_WESTERN}>{NAME_ORDER_DISPLAY.get(NAME_ORDER_WESTERN)}</MenuItem>
@@ -219,15 +241,63 @@ const Register: React.FC = () => {
                                             value={userInput.email}
                                             onChange={(evt) => { userInput.email = evt.target.value; setUserInput({ ...userInput }); }}
                                             fullWidth={true} size="small"
+                                            error={!userInput.email || userInput.email.length < 7}
                                         />
                                     </Grid2>
                                     <Grid2 marginBottom={"8px"} size={12}>
-                                        <div>Password</div>
+                                        <Stack spacing={1} direction={"row"}>
+                                            <div>Password</div>
+                                            <div>
+                                                (Rules) 
+                                            </div>
+                                                <div>
+                                                    {showPasswordRules === false &&
+                                                        <ArrowDropDownOutlinedIcon 
+                                                            sx={{cursor: "pointer"}}
+                                                            onClick={() => setShowPasswordRules(true)}
+                                                        />
+                                                    }
+                                                    {showPasswordRules === true &&
+                                                        <ArrowDropUpOutlinedIcon
+                                                            sx={{cursor: "pointer"}}
+                                                            onClick={() => setShowPasswordRules(false)}
+                                                        />
+                                                    }
+                                            </div>
+                                        </Stack>
+                                        <Stack spacing={1} direction={"column"}>
+                                            {showPasswordRules === true &&  
+                                                <>
+                                                    <div style={{paddingLeft: "16px", textDecoration: "underline"}}>The following are required</div>                                          
+                                                    <ul  style={{paddingLeft: "32px", marginBottom: "8px"}}>
+                                                        {passwordConfig.requireLowerCase &&
+                                                            <li>Lowercase</li>
+                                                        }
+                                                        {passwordConfig.requireUpperCase &&
+                                                            <li>Uppercase</li>
+                                                        }
+                                                        {passwordConfig.requireNumbers &&
+                                                            <li>Numbers</li>
+                                                        }
+                                                        {passwordConfig.requireSpecialCharacters &&
+                                                            <li>Special Characters: {passwordConfig.specialCharactersAllowed}</li>                                                    
+                                                        }
+                                                        <li>Minimum Length: {passwordConfig.passwordMinLength}</li>
+                                                        <li>Maximum Length: {passwordConfig.passwordMaxLength}</li>
+                                                        {passwordConfig.maxRepeatingCharacterLength &&
+                                                            <li>Maximum repeating character length: {passwordConfig.maxRepeatingCharacterLength}</li>
+                                                        }
+                                                        <li>Leading and trailing spaces will be removed</li>
+                                                    </ul>  
+                                                </>                                          
+                                            }
+                                        </Stack>
                                         <TextField name="password" id="password"
                                             type={ viewPassword === true ? "text" : "password"}
                                             value={userInput.password}
                                             onChange={(evt) => { userInput.password = evt.target.value; setUserInput({ ...userInput }); }}
                                             fullWidth={true} size="small"
+                                            error={true}
                                             slotProps={{
                                                 input: {
                                                     endAdornment: (
@@ -261,6 +331,7 @@ const Register: React.FC = () => {
                                             value={repeatPassword}
                                             onChange={(evt) => { setRepeatPassword(evt.target.value);}}
                                             fullWidth={true} size="small"
+                                            error={!repeatPassword || repeatPassword !== userInput.password}
                                             slotProps={{
                                                 input: {
                                                     endAdornment: (
