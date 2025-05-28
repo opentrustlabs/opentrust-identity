@@ -944,6 +944,14 @@ const resolvers: Resolvers = {
         authenticateFIDO2Key: async(_: any, { userId, fido2KeyAuthenticationInput }, oidcContext) => {
             const service: IdentityService = new IdentityService(oidcContext);
             return service.authenticateFIDO2Key(userId, fido2KeyAuthenticationInput);
+        },
+        createUser: async(_: any, { tenantId, userInput }, oidcContext) => {
+            const service: IdentityService = new IdentityService(oidcContext);
+            return service.createUser(userInput, tenantId);
+        },
+        registerUser: async(_: any, { tenantId, userInput }, oidcContext) => {
+            const service: IdentityService = new IdentityService(oidcContext);
+            return service.registerUser(userInput, tenantId);
         }
     },
     RelSearchResultItem : {

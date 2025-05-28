@@ -6,7 +6,7 @@ import { DaoFactory } from "../data-sources/dao-factory";
 import TenantDao from "../dao/tenant-dao";
 import { GraphQLError } from "graphql/error";
 import { randomUUID } from "crypto";
-import { MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, NAME_ORDER_WESTERN, PASSWORD_HASH_ITERATION_128K, PASSWORD_HASH_ITERATION_256K, PASSWORD_HASH_ITERATION_32K, PASSWORD_HASH_ITERATION_64K, PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_32K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_64K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_TYPE_ROOT_TENANT, TOTP_HASH_ALGORITHM_SHA1, USER_TENANT_REL_TYPE_GUEST, USER_TENANT_REL_TYPE_PRIMARY } from "@/utils/consts";
+import { DEFAULT_TENANT_PASSWORD_CONFIGURATION, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, NAME_ORDER_WESTERN, PASSWORD_HASH_ITERATION_128K, PASSWORD_HASH_ITERATION_256K, PASSWORD_HASH_ITERATION_32K, PASSWORD_HASH_ITERATION_64K, PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_32K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_64K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_TYPE_ROOT_TENANT, TOTP_HASH_ALGORITHM_SHA1, USER_TENANT_REL_TYPE_GUEST, USER_TENANT_REL_TYPE_PRIMARY } from "@/utils/consts";
 import { sha256HashPassword, pbkdf2HashPassword, bcryptHashPassword, generateSalt, scryptHashPassword, generateRandomToken } from "@/utils/dao-utils";
 import { Client as OpenSearchClient } from "@opensearch-project/opensearch";
 import { getOpenSearchClient } from "../data-sources/search";
@@ -16,6 +16,7 @@ import AuthDao from "../dao/auth-dao";
 import ClientDao from "../dao/client-dao";
 import { VerifiedRegistrationResponse, verifyRegistrationResponse, verifyAuthenticationResponse, VerifiedAuthenticationResponse } from '@simplewebauthn/server';
 import { isoBase64URL, decodeCredentialPublicKey } from '@simplewebauthn/server/helpers';
+import { validatePassword } from "@/utils/password-utils";
 
 const identityDao: IdentityDao = DaoFactory.getInstance().getIdentityDao();
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
@@ -38,7 +39,7 @@ class IdentityService {
         this.oidcContext = oidcContext;
     }
 
-    public async registerUser(userCreateInput: UserCreateInput, tenantId: string, password: string){
+    public async registerUser(userCreateInput: UserCreateInput, tenantId: string){
         const tenant: Tenant | null = await tenantDao.getTenantById(tenantId);
         if(!tenant){
             throw new GraphQLError("ERROR_TENANT_DOES_NOT_EXIST");
@@ -49,21 +50,26 @@ class IdentityService {
         if(tenant.allowUserSelfRegistration === false){
             throw new GraphQLError("ERROR_TENANT_DOES_NOT_ALLOW_USER_SELF_REGISTRATION");
         }
-        const passwordConfig: TenantPasswordConfig | null = await tenantDao.getTenantPasswordConfig(tenantId);
-        if(!passwordConfig){
-            throw new GraphQLError("ERROR_NO_PASSWORD_CONFIGURATION_FOR_TENANT");
-        }
-        const isValidPassword: boolean = await this.validatePassword(password, passwordConfig);
+        const passwordConfig: TenantPasswordConfig | null = await tenantDao.getTenantPasswordConfig(tenantId) || DEFAULT_TENANT_PASSWORD_CONFIGURATION;
+        
+        const isValidPassword: boolean = await this.checkPassword(userCreateInput.password, passwordConfig);
         if(!isValidPassword){
-            throw new GraphQLError("ERROR_INVALID_PASSWORD");
+            throw new GraphQLError("INVALID_PASSWORD_EITHER_PROHIBITED_OR_INVALID_FORMAT");
         }
 
         const enabled: boolean = !tenant.verifyEmailOnSelfRegistration;
         const user: User = await this._createUser(userCreateInput, tenant, enabled);
         
-        const userCredential: UserCredential = this.generateUserCredential(user.userId, password, passwordConfig.passwordHashingAlgorithm);
+        const userCredential: UserCredential = this.generateUserCredential(user.userId, userCreateInput.password, passwordConfig.passwordHashingAlgorithm);
 
         await identityDao.addUserCredential(userCredential);
+
+        if(tenant.verifyEmailOnSelfRegistration){
+            const token: string = generateRandomToken(8, "hex").toUpperCase();
+            await identityDao.saveEmailConfirmationToken(user.userId, token);
+            // TODO
+            // Send email to the user with the token value.
+        }
 
         return Promise.resolve(user);
         
@@ -81,22 +87,31 @@ class IdentityService {
         if(tenant.enabled === false){
             throw new GraphQLError("ERROR_TENANT_IS_NOT_ENABLED");
         }
+        const existingUser: User | null = await identityDao.getUserBy("email", userCreateInput.email);
+        if(existingUser){
+            throw new GraphQLError("ERROR_USER_WITH_EMAIL_ALREADY_EXISTS");
+        }
+        const tenantPasswordConfig: TenantPasswordConfig = await tenantDao.getTenantPasswordConfig(tenantId) || DEFAULT_TENANT_PASSWORD_CONFIGURATION;
+        const isValidPassword: boolean = await this.checkPassword(userCreateInput.password, tenantPasswordConfig);
+        if(!isValidPassword){
+            throw new GraphQLError("INVALID_PASSWORD_EITHER_PROHIBITED_OR_INVALID_FORMAT");
+        }   
+
         const user: User = await this._createUser(userCreateInput, tenant, true);
         return user;
     }
 
-    protected async validatePassword(password: string, passwordConfig: TenantPasswordConfig): Promise<boolean> {
-        // TODO
-        // Validate length, complexity, etc.
+    protected async checkPassword(password: string, passwordConfig: TenantPasswordConfig): Promise<boolean> {
+        
 
-        // Finally, need to check to see if the password is diallowed because is has been
+        // Need to check to see if the password is diallowed because is has been
         // previously found to be easily cracked, as in the top 100K or top 1M cracked passwords.
         const passwordProhibited: boolean = await identityDao.passwordProhibited(password);
         if(passwordProhibited){
             return Promise.resolve(false);
         }
-
-        return Promise.resolve(true);
+        const passwordFormatIsValid: boolean = validatePassword(password, passwordConfig).result;
+        return Promise.resolve(passwordFormatIsValid);
     }
 
     public async updateUser(user: User): Promise<User> {
@@ -589,6 +604,7 @@ class IdentityService {
         }
 
         await identityDao.createUser(user);
+        
         await identityDao.assignUserToTenant(tenant.tenantId, user.userId, "PRIMARY");
         await this.updateObjectSearchIndex(tenant, user, "PRIMARY");
         await this.updateRelSearchIndex(tenant.tenantId, tenant.tenantId, user, USER_TENANT_REL_TYPE_PRIMARY);
