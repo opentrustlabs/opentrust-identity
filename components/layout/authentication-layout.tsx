@@ -59,6 +59,14 @@ const AuthenticationLayout: React.FC<LayoutProps> = ({
                             marginLeft: "8px" 
                         }                        
                     }        
+                },
+                MuiTextField: {
+                    styleOverrides: {
+                        root: {
+                            
+                        },
+                        
+                    }
                 }
             }
         });

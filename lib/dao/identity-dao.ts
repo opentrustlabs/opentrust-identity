@@ -51,13 +51,13 @@ abstract class IdentityDao {
 
     abstract savePasswordResetToken(userId: string, token: string): Promise<void>;
 
-    abstract getUserByPasswordResetToken(userId: string): Promise<User | null>;
+    abstract getUserByPasswordResetToken(token: string): Promise<User | null>;
 
     abstract deletePasswordResetToken(token: string): Promise<void>;
 
     abstract saveEmailConfirmationToken(userId: string, token: string): Promise<void>;
 
-    abstract getUserByEmailConfirmationToken(userId: string): Promise<User | null>;
+    abstract getUserByEmailConfirmationToken(token: string): Promise<User | null>;
 
     abstract deleteEmailConfirmationToken(token: string): Promise<void>;
 

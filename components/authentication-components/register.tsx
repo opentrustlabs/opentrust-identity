@@ -1,6 +1,6 @@
 "use client";
-import React, { Suspense, useContext, useState } from "react";
-import { Autocomplete, Button, CircularProgress, Divider, Grid2, InputAdornment, MenuItem, Paper, Select, Stack, TextField, Typography } from "@mui/material";
+import React, { Suspense, useState } from "react";
+import { Autocomplete, Backdrop, Button, CircularProgress, Grid2, InputAdornment, MenuItem, Paper, Select, Snackbar, Stack, TextField, Typography } from "@mui/material";
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import Link from 'next/link';
@@ -8,9 +8,8 @@ import { useRouter } from 'next/navigation';
 import { DEFAULT_TENANT_META_DATA, DEFAULT_TENANT_PASSWORD_CONFIGURATION, NAME_ORDER_DISPLAY, NAME_ORDER_EASTERN, NAME_ORDER_WESTERN, NAME_ORDERS, QUERY_PARAM_PREAUTH_REDIRECT_URI, QUERY_PARAM_PREAUTH_TENANT_ID, QUERY_PARAM_PREAUTHN_TOKEN } from "@/utils/consts";
 import { LOGIN_USERNAME_HANDLER_QUERY, TENANT_META_DATA_QUERY, TENANT_PASSWORD_CONFIG_QUERY } from "@/graphql/queries/oidc-queries";
 import { useLazyQuery, useMutation, useQuery } from "@apollo/client";
-import { LoginAuthenticationHandlerAction, LoginAuthenticationHandlerResponse, LoginUserNameHandlerAction, LoginUserNameHandlerResponse, StateProvinceRegion, TenantPasswordConfig, UserCreateInput } from "@/graphql/generated/graphql-types";
+import { StateProvinceRegion, TenantPasswordConfig, UserCreateInput } from "@/graphql/generated/graphql-types";
 import Alert from '@mui/material/Alert';
-import { LOGIN_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import { PageTitleContext } from "@/components/contexts/page-title-context";
 import { COUNTRY_CODES, CountryCodeDef, LANGUAGE_CODES, LanguageCodeDef } from "@/utils/i18n";
 import { getDefaultCountryCodeDef, getDefaultLanguageCodeDef } from "@/utils/client-utils";
@@ -19,6 +18,8 @@ import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
 import ArrowDropDownOutlinedIcon from '@mui/icons-material/ArrowDropDownOutlined';
 import ArrowDropUpOutlinedIcon from '@mui/icons-material/ArrowDropUpOutlined';
+import { validatePassword } from "@/utils/password-utils";
+import { REGISTER_USER_MUTATION } from "@/graphql/mutations/oidc-mutations";
 
 
 const MIN_USERNAME_LENGTH = 6;
@@ -73,6 +74,8 @@ const Register: React.FC = () => {
     const [viewRepeatPassword, setViewRepeatPassword] = React.useState<boolean>(false);
     const [passwordConfig, setPasswordConfig] = React.useState<TenantPasswordConfig>(DEFAULT_TENANT_PASSWORD_CONFIGURATION);
     const [showPasswordRules, setShowPasswordRules] = React.useState<boolean>(false);
+    const [showMutationBackdrop, setShowMutationBackdrop] = React.useState<boolean>(false);
+    const [showMutationSnackbar, setShowMutationSnackbar] = React.useState<boolean>(false);
 
     // HOOKS FROM NEXTJS OR MUI
     const router = useRouter();
@@ -84,7 +87,7 @@ const Register: React.FC = () => {
 
     // GRAPHQL FUNCTIONS    
     // TODO -> Need to add the token to this query and get the redirect uri if it exists
-    // Need to get password min length from password config, or use default min length
+    
     const { } = useQuery(TENANT_META_DATA_QUERY, {
         variables: {
             tenantId: tenantId
@@ -99,7 +102,7 @@ const Register: React.FC = () => {
     });
 
     // data for password config may be null, so present some sensible defaults
-    const { loading, error } = useQuery(TENANT_PASSWORD_CONFIG_QUERY, {
+    const { } = useQuery(TENANT_PASSWORD_CONFIG_QUERY, {
         variables: {
             tenantId: tenantId
         },
@@ -110,6 +113,24 @@ const Register: React.FC = () => {
             }
         }
     });
+
+    const [registerUser] = useMutation(REGISTER_USER_MUTATION, {
+        onCompleted(data) {
+            setShowMutationBackdrop(false);
+            if(tenantMetaData?.tenant.verifyEmailOnSelfRegistration){
+                // Await the user to enter an 8 character validation code
+                setRegistrationPage(3);
+            }
+            else{
+                // Either offer or require the user to configure MFA
+                setRegistrationPage(4);
+            }
+        },
+        onError(error) {
+            setShowMutationBackdrop(false);
+            setErrorMessage(error.message);
+        },
+    })
 
     // HANDLER FUNCTIONS
     const isPage1InputValid = (): boolean => {
@@ -152,12 +173,6 @@ const Register: React.FC = () => {
         if(!userInput.postalCode || userInput.postalCode.length < 3){
             bRetVal = false;
         }
-        return bRetVal;
-    }
-
-    const validatePassword = (password: string): boolean => {
-        let bRetVal = true;
-
         return bRetVal;
     }
 
@@ -268,19 +283,13 @@ const Register: React.FC = () => {
                                         <Stack spacing={1} direction={"column"}>
                                             {showPasswordRules === true &&  
                                                 <>
-                                                    <div style={{paddingLeft: "16px", textDecoration: "underline"}}>The following are required</div>                                          
+                                                    <div style={{paddingLeft: "16px", textDecoration: "underline"}}>The following are required (for non-ASCII passwords)</div>
                                                     <ul  style={{paddingLeft: "32px", marginBottom: "8px"}}>
-                                                        {passwordConfig.requireLowerCase &&
-                                                            <li>Lowercase</li>
-                                                        }
-                                                        {passwordConfig.requireUpperCase &&
-                                                            <li>Uppercase</li>
-                                                        }
                                                         {passwordConfig.requireNumbers &&
                                                             <li>Numbers</li>
                                                         }
                                                         {passwordConfig.requireSpecialCharacters &&
-                                                            <li>Special Characters: {passwordConfig.specialCharactersAllowed}</li>                                                    
+                                                            <li>Special Characters: <pre style={{letterSpacing: "5px"}}>{passwordConfig.specialCharactersAllowed}</pre></li>
                                                         }
                                                         <li>Minimum Length: {passwordConfig.passwordMinLength}</li>
                                                         <li>Maximum Length: {passwordConfig.passwordMaxLength}</li>
@@ -288,16 +297,44 @@ const Register: React.FC = () => {
                                                             <li>Maximum repeating character length: {passwordConfig.maxRepeatingCharacterLength}</li>
                                                         }
                                                         <li>Leading and trailing spaces will be removed</li>
-                                                    </ul>  
+                                                    </ul>
+                                                    { (passwordConfig.requireLowerCase || passwordConfig.requireUpperCase) &&
+                                                        <>
+                                                            <div style={{paddingLeft: "16px", textDecoration: "underline"}}>The following are required (for ASCII passwords)</div>  
+                                                                <ul  style={{paddingLeft: "32px", marginBottom: "8px"}}>
+                                                                    {passwordConfig.requireLowerCase &&
+                                                                        <li>Lowercase</li>
+                                                                    }
+                                                                    {passwordConfig.requireUpperCase &&
+                                                                        <li>Uppercase</li>
+                                                                    }
+                                                            </ul>
+                                                        </>
+                                                    }
+                                                    {!passwordConfig.requireSpecialCharacters &&
+                                                        <>
+                                                            {passwordConfig.specialCharactersAllowed &&
+                                                                <>
+                                                                    <div style={{paddingLeft: "16px", textDecoration: "underline"}}>The following special characters are allowed:</div>
+                                                                    <pre style={{letterSpacing: "5px"}}>{passwordConfig.specialCharactersAllowed}</pre>
+                                                                </>
+                                                            }
+
+                                                        </>
+                                                    }
                                                 </>                                          
                                             }
                                         </Stack>
                                         <TextField name="password" id="password"
                                             type={ viewPassword === true ? "text" : "password"}
                                             value={userInput.password}
-                                            onChange={(evt) => { userInput.password = evt.target.value; setUserInput({ ...userInput }); }}
+                                            onChange={(evt) => { 
+                                                const p: string = evt.target.value;
+                                                userInput.password = p ? p.trim() : ""; 
+                                                setUserInput({ ...userInput }); 
+                                            }}
                                             fullWidth={true} size="small"
-                                            error={true}
+                                            error={!validatePassword(userInput.password, passwordConfig).result}
                                             slotProps={{
                                                 input: {
                                                     endAdornment: (
@@ -374,10 +411,16 @@ const Register: React.FC = () => {
                                     <Grid2 marginBottom={"8px"} size={12}>
                                         <div>Preferred Language</div>
                                         <Autocomplete
+                                            
                                             id="defaultLanguage"
                                             sx={{ paddingTop: "8px" }}
                                             size="small"
-                                            renderInput={(params) => <TextField {...params} label="" />}
+                                            renderInput={(params) => 
+                                                <TextField 
+                                                    {...params} 
+                                                    label="" 
+                                                    error={!userInput.preferredLanguageCode || userInput.preferredLanguageCode === ""} 
+                                                />}
                                             options={
                                                 [{ languageCode: "", language: "" }, ...LANGUAGE_CODES].map(
                                                     (lc: LanguageCodeDef) => {
@@ -396,6 +439,7 @@ const Register: React.FC = () => {
                                     <Grid2 marginBottom={"8px"} size={12}>
                                         <div>Address</div>
                                         <TextField name="address" id="address"
+                                            error={!userInput.address || userInput.address.length < 3}
                                             value={userInput.address} fullWidth={true} size="small"
                                             onChange={(evt) => { userInput.address = evt.target.value; setUserInput({ ...userInput }); }}
                                         />
@@ -411,6 +455,7 @@ const Register: React.FC = () => {
                                     <Grid2 marginBottom={"8px"} size={12}>
                                         <div>City</div>
                                         <TextField name="city" id="city"
+                                            error={!userInput.city || userInput.city.length < 3}
                                             value={userInput.city}
                                             onChange={(evt) => { userInput.city = evt.target.value; setUserInput({ ...userInput }); }}
                                             fullWidth={true} size="small"
@@ -427,6 +472,7 @@ const Register: React.FC = () => {
                                                     {...params}
                                                     label=""
                                                     autoComplete="one-time-code"
+                                                    error={!userInput.countryCode || userInput.countryCode.length < 2}
                                                 />
                                             }
                                             options={
@@ -458,6 +504,7 @@ const Register: React.FC = () => {
                                     <Grid2 marginBottom={"8px"} size={12}>
                                         <div>Postal Code</div>
                                         <TextField name="postalCode" id="postalCode"
+                                            error={!userInput.postalCode || userInput.postalCode.length < 3}
                                             value={userInput.postalCode}
                                             fullWidth={true} size="small"
                                             onChange={(evt) => { userInput.postalCode = evt.target.value; setUserInput({ ...userInput }); }}
@@ -508,7 +555,27 @@ const Register: React.FC = () => {
                         </Grid2>
                     </Typography>
                 </Paper>
+                
             }
+            <Backdrop
+                sx={{ color: '#fff' }}
+                open={showMutationBackdrop}
+                onClick={() => setShowMutationBackdrop(false)}
+            >
+                <CircularProgress color="info" />
+            </Backdrop>
+            <Snackbar
+                open={showMutationSnackbar}
+                autoHideDuration={4000}
+                onClose={() => setShowMutationSnackbar(false)}
+                anchorOrigin={{ horizontal: "center", vertical: "top" }}
+            >
+                <Alert sx={{ fontSize: "1em" }}
+                    onClose={() => setShowMutationSnackbar(false)}
+                >
+                    User Created
+                </Alert>
+            </Snackbar>
         </Suspense >
     )
 
