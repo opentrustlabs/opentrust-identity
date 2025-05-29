@@ -952,6 +952,10 @@ const resolvers: Resolvers = {
         registerUser: async(_: any, { tenantId, userInput }, oidcContext) => {
             const service: IdentityService = new IdentityService(oidcContext);
             return service.registerUser(userInput, tenantId);
+        },
+        verifyVerificationToken: async(_: any, { userId, token }, oidcContext) => {
+            const service: IdentityService = new IdentityService(oidcContext);
+            return service.verifyVerificationToken(userId, token);
         }
     },
     RelSearchResultItem : {

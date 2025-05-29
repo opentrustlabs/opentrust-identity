@@ -4,7 +4,7 @@ import { Autocomplete, Backdrop, Button, CircularProgress, Grid2, InputAdornment
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { DEFAULT_TENANT_META_DATA, DEFAULT_TENANT_PASSWORD_CONFIGURATION, NAME_ORDER_DISPLAY, NAME_ORDER_EASTERN, NAME_ORDER_WESTERN, NAME_ORDERS, QUERY_PARAM_PREAUTH_REDIRECT_URI, QUERY_PARAM_PREAUTH_TENANT_ID, QUERY_PARAM_PREAUTHN_TOKEN } from "@/utils/consts";
 import { LOGIN_USERNAME_HANDLER_QUERY, TENANT_META_DATA_QUERY, TENANT_PASSWORD_CONFIG_QUERY } from "@/graphql/queries/oidc-queries";
 import { useLazyQuery, useMutation, useQuery } from "@apollo/client";
@@ -19,12 +19,8 @@ import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
 import ArrowDropDownOutlinedIcon from '@mui/icons-material/ArrowDropDownOutlined';
 import ArrowDropUpOutlinedIcon from '@mui/icons-material/ArrowDropUpOutlined';
 import { validatePassword } from "@/utils/password-utils";
-import { REGISTER_USER_MUTATION } from "@/graphql/mutations/oidc-mutations";
+import { REGISTER_USER_MUTATION, VERIFY_REGISTRATION_TOKEN_MUTATION } from "@/graphql/mutations/oidc-mutations";
 
-
-const MIN_USERNAME_LENGTH = 6;
-const USERNAME_COMPONENT = "USERNAME_COMPONENT";
-const PASSWORD_COMPONENT = "PASSWORD_COMPONENT";
 
 const Register: React.FC = () => {
 
@@ -33,13 +29,10 @@ const Register: React.FC = () => {
     // titleSetter.setPageTitle("Register");
 
     // QUERY PARAMS
-    // const params = useSearchParams();
-    const params = new Map<string, string>();
+    const params = useSearchParams();    
     const preauthToken = params?.get(QUERY_PARAM_PREAUTHN_TOKEN);
     const tenantId = params?.get(QUERY_PARAM_PREAUTH_TENANT_ID);
     const redirectUri = params?.get(QUERY_PARAM_PREAUTH_REDIRECT_URI);
-
-    const countryInput = React.useRef(null);
 
 
     // PAGE STATE MANAGEMENT VARIABLES    
@@ -76,6 +69,8 @@ const Register: React.FC = () => {
     const [showPasswordRules, setShowPasswordRules] = React.useState<boolean>(false);
     const [showMutationBackdrop, setShowMutationBackdrop] = React.useState<boolean>(false);
     const [showMutationSnackbar, setShowMutationSnackbar] = React.useState<boolean>(false);
+    const [verificationCode, setVerificationCode] = React.useState<string>("");
+    const [createdUserId, setCreatedUserId] = React.useState<string | null>(null);
 
     // HOOKS FROM NEXTJS OR MUI
     const router = useRouter();
@@ -117,8 +112,9 @@ const Register: React.FC = () => {
     const [registerUser] = useMutation(REGISTER_USER_MUTATION, {
         onCompleted(data) {
             setShowMutationBackdrop(false);
-            if(tenantMetaData?.tenant.verifyEmailOnSelfRegistration){
-                // Await the user to enter an 8 character validation code
+            setCreatedUserId(data.registerUser.userId);
+            if(tenantMetaData?.tenant.verifyEmailOnSelfRegistration){                
+                // Await the user to enter a 16 character validation code
                 setRegistrationPage(3);
             }
             else{
@@ -129,6 +125,22 @@ const Register: React.FC = () => {
         onError(error) {
             setShowMutationBackdrop(false);
             setErrorMessage(error.message);
+        },
+    });
+
+    const [verifyEmailRegistrationToken] = useMutation(VERIFY_REGISTRATION_TOKEN_MUTATION, {
+        onCompleted(data) {
+            setShowMutationBackdrop(false);
+            if(data.verifyVerificationToken === true){
+                setRegistrationPage(4);
+            }
+            else{
+                setErrorMessage("ERROR: Token value is invalid or expired");
+            }
+        },
+        onError(error) {
+            setShowMutationBackdrop(false);
+            setErrorMessage(error.message)
         },
     })
 
@@ -512,6 +524,31 @@ const Register: React.FC = () => {
                                     </Grid2>
                                 </Grid2>
                             }
+                            {registrationPage === 3 &&
+                                <Grid2 size={12} container spacing={1}>
+                                    <Grid2 marginBottom={"8px"} size={12}>
+                                        <div style={{marginBottom: "16px"}}>A verification code has been sent to your email address. Please enter it below. The code is valid for 60 minutes</div>
+                                        <TextField name="verificationCode" id="verificationCode"
+                                            value={verificationCode}
+                                            onChange={(evt) => setVerificationCode(evt.target.value)}
+                                            fullWidth={true}
+                                            size="small"
+                                        />
+                                    </Grid2>
+                                </Grid2>
+                            }
+                            {registrationPage === 4 &&
+                                <Grid2 size={12} container spacing={1}>
+                                    <Grid2 marginBottom={"8px"} size={12}>
+                                        {passwordConfig.requireMfa &&
+                                            <div style={{marginBottom: "16px"}}>This tenant requires multi-factor authentication. This will need to be completed before access to tenant is allowed</div>
+                                        }
+                                        {!passwordConfig.requireMfa &&
+                                            <div style={{marginBottom: "16px"}}>Do you want to configure multi-factor authentication?</div>
+                                        }
+                                    </Grid2>
+                                </Grid2>
+                            }
                             <Stack 
                                 width={"100%"}
                                 direction={"row-reverse"}
@@ -520,7 +557,14 @@ const Register: React.FC = () => {
                                 {registrationPage === 2 &&
                                     <Button
                                         onClick={() => {
-                                            setRegistrationPage(registrationPage - 1);
+                                            setShowMutationBackdrop(true);
+                                            console.log(tenantId);
+                                            registerUser({
+                                                variables: {
+                                                    tenantId: tenantId,
+                                                    userInput: userInput
+                                                }
+                                            });
                                         }}
                                         disabled={
                                             !isPage2InputValid()
@@ -548,6 +592,33 @@ const Register: React.FC = () => {
                                         }}
                                     >
                                         Back
+                                    </Button>
+                                }
+                                {registrationPage === 3 &&
+                                    <Button
+                                        onClick={() => {
+                                            setShowMutationBackdrop(true);
+                                            verifyEmailRegistrationToken({
+                                                variables: {
+                                                    userId: createdUserId,
+                                                    token: verificationCode
+
+                                                }
+                                            });
+                                        }}
+                                        disabled={createdUserId === null || verificationCode === null || verificationCode === ""}
+                                    >
+                                        Confirm
+                                    </Button>
+                                }
+                                {registrationPage === 4 &&
+                                    <Button
+                                        onClick={() => {
+
+                                        }}  
+
+                                    >                                        
+                                        Skip
                                     </Button>
                                 }
 

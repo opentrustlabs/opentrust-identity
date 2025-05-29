@@ -657,3 +657,9 @@ export const REGISTER_USER_MUTATION = gql(`
         }
     }
 `);
+
+export const VERIFY_REGISTRATION_TOKEN_MUTATION = gql(`
+    mutation verifyVerificationToken($userId: String!, $token: String!) {
+        verifyVerificationToken(userId: $userId, token: $token)
+    }
+`);
