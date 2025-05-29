@@ -6,7 +6,7 @@ import useMediaQuery from '@mui/material/useMediaQuery';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { DEFAULT_TENANT_META_DATA, DEFAULT_TENANT_PASSWORD_CONFIGURATION, NAME_ORDER_DISPLAY, NAME_ORDER_EASTERN, NAME_ORDER_WESTERN, NAME_ORDERS, QUERY_PARAM_PREAUTH_REDIRECT_URI, QUERY_PARAM_PREAUTH_TENANT_ID, QUERY_PARAM_PREAUTHN_TOKEN } from "@/utils/consts";
-import { LOGIN_USERNAME_HANDLER_QUERY, TENANT_META_DATA_QUERY, TENANT_PASSWORD_CONFIG_QUERY } from "@/graphql/queries/oidc-queries";
+import { TENANT_META_DATA_QUERY, TENANT_PASSWORD_CONFIG_QUERY } from "@/graphql/queries/oidc-queries";
 import { useLazyQuery, useMutation, useQuery } from "@apollo/client";
 import { StateProvinceRegion, TenantPasswordConfig, UserCreateInput } from "@/graphql/generated/graphql-types";
 import Alert from '@mui/material/Alert';
@@ -15,7 +15,7 @@ import { COUNTRY_CODES, CountryCodeDef, LANGUAGE_CODES, LanguageCodeDef } from "
 import { getDefaultCountryCodeDef, getDefaultLanguageCodeDef } from "@/utils/client-utils";
 import StateProvinceRegionSelector from "../users/state-province-region-selector";
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
-import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
+import VisibilityOffOutlinedIcon from '@mui/icons-material/VisibilityOffOutlined';
 import ArrowDropDownOutlinedIcon from '@mui/icons-material/ArrowDropDownOutlined';
 import ArrowDropUpOutlinedIcon from '@mui/icons-material/ArrowDropUpOutlined';
 import { validatePassword } from "@/utils/password-utils";
@@ -77,7 +77,7 @@ const Register: React.FC = () => {
     const theme = useTheme();
     const isMd: boolean = useMediaQuery(theme.breakpoints.down("md"));
     const isSm: boolean = useMediaQuery(theme.breakpoints.down("sm"));
-    const maxWidth = isSm ? "90vw" : isMd ? "80vw" : "550px";
+    const maxWidth = isSm ? "90vw" : isMd ? "80vw" : "650px";
 
 
     // GRAPHQL FUNCTIONS    
@@ -295,7 +295,7 @@ const Register: React.FC = () => {
                                         <Stack spacing={1} direction={"column"}>
                                             {showPasswordRules === true &&  
                                                 <>
-                                                    <div style={{paddingLeft: "16px", textDecoration: "underline"}}>The following are required (for non-ASCII passwords)</div>
+                                                    <div style={{paddingLeft: "16px", textDecoration: "underline"}}>The following are required for all passwords</div>
                                                     <ul  style={{paddingLeft: "32px", marginBottom: "8px"}}>
                                                         {passwordConfig.requireNumbers &&
                                                             <li>Numbers</li>
@@ -308,11 +308,11 @@ const Register: React.FC = () => {
                                                         {passwordConfig.maxRepeatingCharacterLength &&
                                                             <li>Maximum repeating character length: {passwordConfig.maxRepeatingCharacterLength}</li>
                                                         }
-                                                        <li>Leading and trailing spaces will be removed</li>
+                                                        <li>Leading and trailing spaces are not allowed</li>
                                                     </ul>
                                                     { (passwordConfig.requireLowerCase || passwordConfig.requireUpperCase) &&
                                                         <>
-                                                            <div style={{paddingLeft: "16px", textDecoration: "underline"}}>The following are required (for ASCII passwords)</div>  
+                                                            <div style={{paddingLeft: "16px", textDecoration: "underline"}}>The following are required for passwords with ASCII characters</div>  
                                                                 <ul  style={{paddingLeft: "32px", marginBottom: "8px"}}>
                                                                     {passwordConfig.requireLowerCase &&
                                                                         <li>Lowercase</li>
@@ -341,8 +341,7 @@ const Register: React.FC = () => {
                                             type={ viewPassword === true ? "text" : "password"}
                                             value={userInput.password}
                                             onChange={(evt) => { 
-                                                const p: string = evt.target.value;
-                                                userInput.password = p ? p.trim() : ""; 
+                                                userInput.password = evt.target.value;
                                                 setUserInput({ ...userInput }); 
                                             }}
                                             fullWidth={true} size="small"
@@ -352,7 +351,7 @@ const Register: React.FC = () => {
                                                     endAdornment: (
                                                         <InputAdornment position="end">
                                                             {viewPassword === true &&
-                                                                <CloseOutlinedIcon
+                                                                <VisibilityOffOutlinedIcon
                                                                     sx={{ cursor: "pointer" }}
                                                                     onClick={() => { 
                                                                         setViewPassword(false);
@@ -386,7 +385,7 @@ const Register: React.FC = () => {
                                                     endAdornment: (
                                                         <InputAdornment position="end">
                                                             {viewRepeatPassword === true &&
-                                                                <CloseOutlinedIcon
+                                                                <VisibilityOffOutlinedIcon
                                                                     sx={{ cursor: "pointer" }}
                                                                     onClick={() => { 
                                                                         setViewRepeatPassword(false);
@@ -539,14 +538,36 @@ const Register: React.FC = () => {
                             }
                             {registrationPage === 4 &&
                                 <Grid2 size={12} container spacing={1}>
-                                    <Grid2 marginBottom={"8px"} size={12}>
-                                        {passwordConfig.requireMfa &&
-                                            <div style={{marginBottom: "16px"}}>This tenant requires multi-factor authentication. This will need to be completed before access to tenant is allowed</div>
-                                        }
-                                        {!passwordConfig.requireMfa &&
-                                            <div style={{marginBottom: "16px"}}>Do you want to configure multi-factor authentication?</div>
-                                        }
-                                    </Grid2>
+                                    <Typography component="div" fontSize={"0.95em"}>
+                                        <Grid2 marginBottom={"8px"} size={12}>
+                                            {passwordConfig.requireMfa &&
+                                                <div style={{marginBottom: "24px", fontWeight: "bold"}}>This tenant requires multi-factor authentication. This will need to be completed before access to tenant is allowed</div>
+                                            }
+                                            {!passwordConfig.requireMfa &&
+                                                <div style={{marginBottom: "24px", fontWeight: "bold"}}>Do you want to configure multi-factor authentication?</div>
+                                            }
+                                        </Grid2>
+                                        <Grid2 marginBottom={"16px"} spacing={2} container size={12}>                                            
+                                            <Grid2 size={3}>
+                                                <Stack><Button sx={{padding: "8px"}}>TOTP</Button></Stack> 
+                                            </Grid2>
+                                            <Grid2 size={9}>
+                                                <div style={{fontWeight: "bold", textDecoration: "underline", marginBottom: "8px"}}>REQUIRED: </div>
+                                                <div style={{marginBottom: "8px"}}>
+                                                    Time-based One-Time Passcode. This requires an authenticator app (such as <span style={{fontWeight: "bold"}}>Microsoft Authenticator</span> or <span style={{fontWeight: "bold"}}>Google Authenticator</span>) on a device such as your phone
+                                                </div>
+                                            </Grid2>
+                                            <Grid2 size={3}>
+                                                <Stack><Button sx={{padding: "8px"}}>Security Key</Button></Stack> 
+                                            </Grid2>
+                                            <Grid2 size={9}>
+                                                <div style={{fontWeight: "bold", textDecoration: "underline", marginBottom: "8px"}}>OPTIONAL: </div>
+                                                <div style={{marginBottom: "8px"}}>
+                                                    This requires a hardware device such as <span style={{fontWeight: "bold"}}>Yubi Key</span> or <span style={{fontWeight: "bold"}}>Titan Key</span>
+                                                </div>
+                                            </Grid2>
+                                        </Grid2>
+                                    </Typography>
                                 </Grid2>
                             }
                             <Stack 
@@ -614,7 +635,8 @@ const Register: React.FC = () => {
                                 {registrationPage === 4 &&
                                     <Button
                                         onClick={() => {
-
+                                            // TODO
+                                            // Only show the button when the MFAs are optional
                                         }}  
 
                                     >                                        

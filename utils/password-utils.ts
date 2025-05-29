@@ -10,57 +10,52 @@ import { DEFAULT_PASSWORD_SPECIAL_CHARACTERS_ALLOWED } from "./consts";
  * @param tenantPasswordConfig 
  * @returns 
  */
-export function validatePassword(pword: string, tenantPasswordConfig: TenantPasswordConfig): {result: boolean, errorMessage: string, password: string} {
+export function validatePassword(password: string, tenantPasswordConfig: TenantPasswordConfig): {result: boolean, errorMessage: string, password: string} {
 
-    console.log("checkpoint 1");
-    const password: string = pword.trim();
-    let retVal = {result: true, errorMessage: "", password: password};
-    console.log("checkpoint 2");
+    
+    let retVal = {result: true, errorMessage: "", password: password};   
+
     if(password.length < tenantPasswordConfig.passwordMinLength || password.length > tenantPasswordConfig.passwordMaxLength){
-        console.log("checkpoint 3");
         retVal.result = false;
         retVal.errorMessage = "ERROR_PASSWORD_INVALID_LENGTH";
         return retVal;
     }
+    if(password[0] === " " || password[password.length - 1] === " "){
+        retVal.result = false;
+        retVal.errorMessage = "ERROR_PASSWORD_HAS_LEADING_OR_TRAILING_SPACES";
+        return retVal;
+    }
     if(!containsAcceptableCodePoints(password)){
-        console.log("checkpoint 4");
         retVal.result = false;
         retVal.errorMessage = "ERROR_PASSWORD_HAS_INVALID_CHARACTERS";
         return retVal;
     }
     if(tenantPasswordConfig.requireNumbers && !containsNumericCharacters(password)){
-        console.log("checkpoint 5");
         retVal.result = false;
         retVal.errorMessage = "ERROR_PASSWORD_CONTAINS_NO_NUMERIC_CHARACTERS";
         return retVal;
     }
     if(containsAsciiLetterCharacters(password)){
-        console.log("checkpoint 6");
         if(tenantPasswordConfig.requireLowerCase && !containsAsciiLowerCase(password)){
             retVal.result = false;
             retVal.errorMessage = "ERROR_PASSWORD_CONTAINS_NO_LOWERCASE_CHARACTERS";
             return retVal;
         }
         if(tenantPasswordConfig.requireUpperCase && !containsAsciiUpperCase(password)){
-            console.log("checkpoint 7");
             retVal.result = false;
             retVal.errorMessage = "ERROR_PASSWORD_CONTAINS_NO_UPPERCASE_CHARACTERS";
             return retVal;
         }
     }
     if(tenantPasswordConfig.requireSpecialCharacters){
-        console.log("checkpoint 7");
         if(!containsSpecialCharacterInAllowedList(password, tenantPasswordConfig.specialCharactersAllowed || DEFAULT_PASSWORD_SPECIAL_CHARACTERS_ALLOWED)){
-            console.log("checkpoint 8");
             retVal.result = false;
             retVal.errorMessage = "ERROR_PASSWORD_CONTAINS_NO_ALLOWED_SPECIAL_CHARACTERS";
             return retVal;
         }
     }
     if(tenantPasswordConfig.maxRepeatingCharacterLength){
-        console.log("checkpoint 9");
         if(!satisfiesMaxRepeatingCharLength(password, tenantPasswordConfig.maxRepeatingCharacterLength)){
-            console.log("checkpoint 10");
             retVal.result = false;
             retVal.errorMessage = "ERROR_PASSWORD_CONTAINS_REPEATING_CHARACTERS";
             return retVal;
