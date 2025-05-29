@@ -1,7 +1,7 @@
 import { OIDCContext } from "@/graphql/graphql-context";
 import * as OTPAuth from "otpauth";
 import IdentityDao from "../dao/identity-dao";
-import { Client, Fido2AuthenticationChallengeResponse, Fido2Challenge, Fido2RegistrationChallengeResponse, Fido2KeyRegistrationInput, ObjectSearchResultItem, RefreshData, RelSearchResultItem, SearchResultType, Tenant, TenantPasswordConfig, TotpResponse, User, UserCreateInput, UserCredential, UserMfaRel, UserSession, UserTenantRel, UserTenantRelView, Fido2KeyAuthenticationInput } from "@/graphql/generated/graphql-types";
+import { Client, Fido2AuthenticationChallengeResponse, Fido2Challenge, Fido2RegistrationChallengeResponse, Fido2KeyRegistrationInput, ObjectSearchResultItem, RefreshData, RelSearchResultItem, SearchResultType, Tenant, TenantPasswordConfig, TotpResponse, User, UserCreateInput, UserCredential, UserMfaRel, UserSession, UserTenantRel, UserTenantRelView, Fido2KeyAuthenticationInput, TenantRestrictedAuthenticationDomainRel } from "@/graphql/generated/graphql-types";
 import { DaoFactory } from "../data-sources/dao-factory";
 import TenantDao from "../dao/tenant-dao";
 import { GraphQLError } from "graphql/error";
@@ -40,43 +40,8 @@ class IdentityService {
     }
 
     public async registerUser(userCreateInput: UserCreateInput, tenantId: string){
-        const tenant: Tenant | null = await tenantDao.getTenantById(tenantId);
-        if(!tenant){
-            throw new GraphQLError("ERROR_TENANT_DOES_NOT_EXIST");
-        }
-        if(tenant.enabled === false){
-            throw new GraphQLError("ERROR_TENANT_IS_NOT_ENABLED");
-        }
-        if(tenant.allowUserSelfRegistration === false){
-            throw new GraphQLError("ERROR_TENANT_DOES_NOT_ALLOW_USER_SELF_REGISTRATION");
-        }
-        const passwordConfig: TenantPasswordConfig | null = await tenantDao.getTenantPasswordConfig(tenantId) || DEFAULT_TENANT_PASSWORD_CONFIGURATION;
-        
-        const isValidPassword: boolean = await this.checkPassword(userCreateInput.password, passwordConfig);
-        if(!isValidPassword){
-            throw new GraphQLError("INVALID_PASSWORD_EITHER_PROHIBITED_OR_INVALID_FORMAT");
-        }
-        const existingUser: User | null = await identityDao.getUserBy("email", userCreateInput.email);
-        if(existingUser){
-            throw new GraphQLError("ERROR_USER_WITH_EMAIL_ALREADY_EXISTS");
-        }
-
-        const enabled: boolean = !tenant.verifyEmailOnSelfRegistration;
-        const user: User = await this._createUser(userCreateInput, tenant, enabled);
-        
-        const userCredential: UserCredential = this.generateUserCredential(user.userId, userCreateInput.password, passwordConfig.passwordHashingAlgorithm);
-
-        await identityDao.addUserCredential(userCredential);
-
-        if(tenant.verifyEmailOnSelfRegistration){
-            const token: string = generateRandomToken(8, "hex").toUpperCase();
-            await identityDao.saveEmailConfirmationToken(user.userId, token);
-            // TODO
-            // Send email to the user with the token value.
-        }
-
-        return Promise.resolve(user);
-        
+        const user: User = await this._createUser(userCreateInput, tenantId, true);
+        return Promise.resolve(user);        
     }
 
     public async verifyVerificationToken(userId: string, token: string): Promise<boolean>{
@@ -90,6 +55,9 @@ class IdentityService {
             }
             // One-time token, so need to delete it in success case
             identityDao.deleteEmailConfirmationToken(token);
+            user.enabled = true;
+            user.emailVerified = true;
+            await identityDao.updateUser(user);
             return Promise.resolve(true);
         }        
     }
@@ -98,27 +66,10 @@ class IdentityService {
         return identityDao.getUserBy("id", userId);
     }
 
-    public async createUser(userCreateInput: UserCreateInput, tenantId: string): Promise<User>{
-        const tenant: Tenant | null = await tenantDao.getTenantById(tenantId);
-        if(!tenant){
-            throw new GraphQLError("ERROR_TENANT_DOES_NOT_EXIST");
-        }
-        if(tenant.enabled === false){
-            throw new GraphQLError("ERROR_TENANT_IS_NOT_ENABLED");
-        }
-        const existingUser: User | null = await identityDao.getUserBy("email", userCreateInput.email);
-        if(existingUser){
-            throw new GraphQLError("ERROR_USER_WITH_EMAIL_ALREADY_EXISTS");
-        }
-        const tenantPasswordConfig: TenantPasswordConfig = await tenantDao.getTenantPasswordConfig(tenantId) || DEFAULT_TENANT_PASSWORD_CONFIGURATION;
-        const isValidPassword: boolean = await this.checkPassword(userCreateInput.password, tenantPasswordConfig);
-        if(!isValidPassword){
-            throw new GraphQLError("INVALID_PASSWORD_EITHER_PROHIBITED_OR_INVALID_FORMAT");
-        }   
+    
 
-        const user: User = await this._createUser(userCreateInput, tenant, true);
-        const userCredential: UserCredential = this.generateUserCredential(user.userId, userCreateInput.password, tenantPasswordConfig.passwordHashingAlgorithm);
-        await identityDao.addUserCredential(userCredential);
+    public async createUser(userCreateInput: UserCreateInput, tenantId: string): Promise<User>{
+        const user: User = await this._createUser(userCreateInput, tenantId, false);
         return user;
     }
 
@@ -600,16 +551,69 @@ class IdentityService {
         return Promise.resolve();
     }
 
-    protected async _createUser(userCreateInput: UserCreateInput, tenant: Tenant, enabled: boolean): Promise<User>  {
+    /**
+     * Checks
+     * 1.   Does the tenant exist
+     * 2.   Is the tenant enabled
+     * 3.   Does the tenant allow user self registration if this is a registration flow?
+     * 4.   Does a user with the given email already exist?
+     * 5.   Is the password valid
+     * 6.   Is the domain allowed by the tenant or are there resitricted domains for this tenant?
+     * @param userCreateInput 
+     * @param tenantId 
+     * @param isRegistration 
+     * @returns 
+     */
+    protected async _createUser(userCreateInput: UserCreateInput, tenantId: string, isRegistration: boolean): Promise<User>  {
+
+        const tenant: Tenant | null = await tenantDao.getTenantById(tenantId);
+        if(!tenant){
+            throw new GraphQLError("ERROR_TENANT_DOES_NOT_EXIST");
+        }
+        if(tenant.enabled === false){
+            throw new GraphQLError("ERROR_TENANT_IS_NOT_ENABLED");
+        }
+        if(isRegistration && tenant.allowUserSelfRegistration === false){
+            throw new GraphQLError("ERROR_TENANT_DOES_NOT_ALLOW_USER_SELF_REGISTRATION");
+        }
+
+        const existingUser: User | null = await identityDao.getUserBy("email", userCreateInput.email);
+        if(existingUser){
+            throw new GraphQLError("ERROR_USER_WITH_EMAIL_ALREADY_EXISTS");
+        }
+
+        const tenantPasswordConfig: TenantPasswordConfig = await tenantDao.getTenantPasswordConfig(tenantId) || DEFAULT_TENANT_PASSWORD_CONFIGURATION;
+        const isValidPassword: boolean = await this.checkPassword(userCreateInput.password, tenantPasswordConfig);
+        if(!isValidPassword){
+            throw new GraphQLError("INVALID_PASSWORD_EITHER_PROHIBITED_OR_INVALID_FORMAT");
+        }
 
         const domain: string = userCreateInput.email.substring(
             userCreateInput.email.indexOf("@") + 1
-        )
+        );
+        const arrRestrictedDomainRel: Array<TenantRestrictedAuthenticationDomainRel> = await tenantDao.getDomainsForTenantRestrictedAuthentication(tenantId);
+        if(arrRestrictedDomainRel.length > 0){
+            const restrictedDomainRel: TenantRestrictedAuthenticationDomainRel | undefined = arrRestrictedDomainRel.find(
+                (rel: TenantRestrictedAuthenticationDomainRel) => rel.domain === domain
+            );
+            if(restrictedDomainRel === undefined){
+                throw new GraphQLError("ERROR_TENANT_HAS_RESTRICTED_EMAIL_DOMAINS")
+            }
+        }       
+
+
+        let userEnabled = true;
+        let emailVerified = true;
+        if(isRegistration && tenant.verifyEmailOnSelfRegistration){
+            userEnabled = false;
+            emailVerified = false;
+        }        
+
         const user: User = {
             domain: domain,
             email: userCreateInput.email,
-            emailVerified: userCreateInput.emailVerified,
-            enabled: enabled,
+            emailVerified: emailVerified,
+            enabled: userEnabled,
             firstName: userCreateInput.firstName,
             lastName: userCreateInput.lastName,
             locked: false,
@@ -628,9 +632,17 @@ class IdentityService {
             markForDelete: false
         }
 
-        await identityDao.createUser(user);
-        
+        await identityDao.createUser(user);        
         await identityDao.assignUserToTenant(tenant.tenantId, user.userId, "PRIMARY");
+        const userCredential: UserCredential = this.generateUserCredential(user.userId, userCreateInput.password, tenantPasswordConfig.passwordHashingAlgorithm);
+        await identityDao.addUserCredential(userCredential);
+
+        if(isRegistration && tenant.verifyEmailOnSelfRegistration){
+            const token: string = generateRandomToken(8, "hex").toUpperCase();
+            await identityDao.saveEmailConfirmationToken(user.userId, token);
+            // TODO
+            // Send email to the user with the token value.
+        }
         await this.updateObjectSearchIndex(tenant, user, "PRIMARY");
         await this.updateRelSearchIndex(tenant.tenantId, tenant.tenantId, user, USER_TENANT_REL_TYPE_PRIMARY);
 
@@ -723,7 +735,7 @@ class IdentityService {
         }
         const user: User | null = await identityDao.getUserBy("id", userId);
         if(!user){
-            throw new GraphQLError("ERROR_UNABLE_TO_FIND_USERS");
+            throw new GraphQLError("ERROR_UNABLE_TO_FIND_USER");
         }
 
         const rels: Array<UserTenantRel> = await identityDao.getUserTenantRelsByUserId(userId);
