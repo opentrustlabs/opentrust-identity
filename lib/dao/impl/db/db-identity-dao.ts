@@ -439,7 +439,7 @@ class DBIdentityDao extends IdentityDao {
     public async saveEmailConfirmationToken(userId: string, token: string): Promise<void> {
         const sequelize: Sequelize = await DBDriver.getConnection();
         await sequelize.models.userVerificationToken.create({
-            expiresAtMS: Date.now() + (30 * 60 * 1000),  // allow 30 minutes
+            expiresAtMS: Date.now() + (60 * 60 * 1000),  // allow 60 minutes
             issuedAtMS:  Date.now(),
             userId: userId,
             token: token,

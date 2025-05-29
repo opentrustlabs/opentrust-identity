@@ -143,6 +143,7 @@ type Mutation {
     assignUserToTenant(tenantId: String!, userId: String!, relType: String!): UserTenantRel!
     removeUserFromTenant(tenantId: String!, userId: String!): String
     deleteUserSession(userId: String!, clientId: String!, tenantId: String!): String
+    verifyVerificationToken(userId: String!, token: String!): Boolean!
     ## Users: TOPT
     generateTOTP(userId: String!): TOTPResponse
     deleteTOTP(userId: String!): String

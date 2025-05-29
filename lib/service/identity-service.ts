@@ -56,6 +56,10 @@ class IdentityService {
         if(!isValidPassword){
             throw new GraphQLError("INVALID_PASSWORD_EITHER_PROHIBITED_OR_INVALID_FORMAT");
         }
+        const existingUser: User | null = await identityDao.getUserBy("email", userCreateInput.email);
+        if(existingUser){
+            throw new GraphQLError("ERROR_USER_WITH_EMAIL_ALREADY_EXISTS");
+        }
 
         const enabled: boolean = !tenant.verifyEmailOnSelfRegistration;
         const user: User = await this._createUser(userCreateInput, tenant, enabled);
@@ -73,6 +77,21 @@ class IdentityService {
 
         return Promise.resolve(user);
         
+    }
+
+    public async verifyVerificationToken(userId: string, token: string): Promise<boolean>{
+        const user: User | null = await identityDao.getUserByEmailConfirmationToken(token);
+        if(user === null){
+            return Promise.resolve(false);
+        }
+        else{            
+            if(user.userId !== userId){
+                return Promise.resolve(false);
+            }
+            // One-time token, so need to delete it in success case
+            identityDao.deleteEmailConfirmationToken(token);
+            return Promise.resolve(true);
+        }        
     }
 
     public async getUserById(userId: string): Promise<User | null> {
@@ -98,6 +117,8 @@ class IdentityService {
         }   
 
         const user: User = await this._createUser(userCreateInput, tenant, true);
+        const userCredential: UserCredential = this.generateUserCredential(user.userId, userCreateInput.password, tenantPasswordConfig.passwordHashingAlgorithm);
+        await identityDao.addUserCredential(userCredential);
         return user;
     }
 
@@ -595,6 +616,10 @@ class IdentityService {
             nameOrder: userCreateInput.nameOrder,
             userId: randomUUID().toString(),
             address: userCreateInput.address,
+            addressLine1: userCreateInput.addressLine1,
+            city: userCreateInput.city,
+            postalCode: userCreateInput.postalCode,
+            stateRegionProvince: userCreateInput.stateRegionProvince,
             countryCode: userCreateInput.countryCode,
             middleName: userCreateInput.middleName,
             phoneNumber: userCreateInput.phoneNumber,
@@ -657,7 +682,7 @@ class IdentityService {
         }
 
         return {
-            dateCreated: Date.now().valueOf().toString(),
+            dateCreated: new Date().toISOString(),
             hashedPassword: hashedPassword,
             salt: salt,
             hashingAlgorithm: hashAlgorithm,
