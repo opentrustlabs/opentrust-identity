@@ -144,6 +144,7 @@ type Mutation {
     removeUserFromTenant(tenantId: String!, userId: String!): String
     deleteUserSession(userId: String!, clientId: String!, tenantId: String!): String
     verifyVerificationToken(userId: String!, token: String!): Boolean!
+    createPortalEmailHandlerResponse(email: String!, tenantId: String): PortalEmailHandlerResponse!
     ## Users: TOPT
     generateTOTP(userId: String!): TOTPResponse
     deleteTOTP(userId: String!): String
@@ -802,8 +803,6 @@ enum LoginAuthenticationHandlerAction {
 }
 
 enum SecondFactorType {
-    EMAIL
-    SMS
     TOTP
     SECURITY_KEY
 }
@@ -817,10 +816,42 @@ type LoginAuthenticationSuccessConfig {
 
 type LoginAuthenticationHandlerResponse {
     status: LoginAuthenticationHandlerAction!
-    secondFactorType: SecondFactorType
+    secondFactorType: [SecondFactorType!]
     successConfig: LoginAuthenticationSuccessConfig
     errorActionHandler: ErrorActionHandler
 }
+
+enum PortalEmailHandlerErrorTypes {    
+    NO_MANAGEMENT_DOMAIN
+    NO_MATCHING_FEDERATED_PROVIDER_FOR_TENANT
+    EXCLUSIVE_TENANT_AND_NO_FEDERATED_OIDC_PROVIDER
+    NO_MATCHING_USER_AND_NO_TENANT_SELF_REGISTRATION
+}
+
+enum PortalEmailHandlerSuccessNextStep {
+    LOGIN
+    SELECT_TENANT
+    AUTH_WITH_FEDERATED_PROVIDER
+    REGISTER
+}
+
+type TenantSelectorData {
+    tenantId: String!
+    tenantName: String!
+}
+
+type PortalEmailHandlerResponse {
+    errorType: PortalEmailHandlerErrorTypes
+    tenantSelectors: [TenantSelectorData!]
+    federatedOIDCProviderId: String
+    state: String
+    redirectUri: String
+    clientId: String
+    authorizationEndpoint: String
+    scope: [String!]
+    successNextStep: PortalEmailHandlerSuccessNextStep
+}
+
 
 enum MarkForDeleteObjectType {
     TENANT

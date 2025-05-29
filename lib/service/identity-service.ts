@@ -1,12 +1,12 @@
 import { OIDCContext } from "@/graphql/graphql-context";
 import * as OTPAuth from "otpauth";
 import IdentityDao from "../dao/identity-dao";
-import { Client, Fido2AuthenticationChallengeResponse, Fido2Challenge, Fido2RegistrationChallengeResponse, Fido2KeyRegistrationInput, ObjectSearchResultItem, RefreshData, RelSearchResultItem, SearchResultType, Tenant, TenantPasswordConfig, TotpResponse, User, UserCreateInput, UserCredential, UserMfaRel, UserSession, UserTenantRel, UserTenantRelView, Fido2KeyAuthenticationInput, TenantRestrictedAuthenticationDomainRel } from "@/graphql/generated/graphql-types";
+import { Client, Fido2AuthenticationChallengeResponse, Fido2Challenge, Fido2RegistrationChallengeResponse, Fido2KeyRegistrationInput, ObjectSearchResultItem, RefreshData, RelSearchResultItem, SearchResultType, Tenant, TenantPasswordConfig, TotpResponse, User, UserCreateInput, UserCredential, UserMfaRel, UserSession, UserTenantRel, UserTenantRelView, Fido2KeyAuthenticationInput, TenantRestrictedAuthenticationDomainRel, PortalEmailHandlerResponse, TenantManagementDomainRel, PortalEmailHandlerErrorTypes, FederatedOidcProvider, FederatedOidcProviderTenantRel, PortalEmailHandlerSuccessNextStep } from "@/graphql/generated/graphql-types";
 import { DaoFactory } from "../data-sources/dao-factory";
 import TenantDao from "../dao/tenant-dao";
 import { GraphQLError } from "graphql/error";
 import { randomUUID } from "crypto";
-import { DEFAULT_TENANT_PASSWORD_CONFIGURATION, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, NAME_ORDER_WESTERN, PASSWORD_HASH_ITERATION_128K, PASSWORD_HASH_ITERATION_256K, PASSWORD_HASH_ITERATION_32K, PASSWORD_HASH_ITERATION_64K, PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_32K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_64K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_TYPE_ROOT_TENANT, TOTP_HASH_ALGORITHM_SHA1, USER_TENANT_REL_TYPE_GUEST, USER_TENANT_REL_TYPE_PRIMARY } from "@/utils/consts";
+import { DEFAULT_TENANT_PASSWORD_CONFIGURATION, FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, NAME_ORDER_WESTERN, PASSWORD_HASH_ITERATION_128K, PASSWORD_HASH_ITERATION_256K, PASSWORD_HASH_ITERATION_32K, PASSWORD_HASH_ITERATION_64K, PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_32K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_64K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_TYPE_ROOT_TENANT, TOTP_HASH_ALGORITHM_SHA1, USER_TENANT_REL_TYPE_GUEST, USER_TENANT_REL_TYPE_PRIMARY } from "@/utils/consts";
 import { sha256HashPassword, pbkdf2HashPassword, bcryptHashPassword, generateSalt, scryptHashPassword, generateRandomToken } from "@/utils/dao-utils";
 import { Client as OpenSearchClient } from "@opensearch-project/opensearch";
 import { getOpenSearchClient } from "../data-sources/search";
@@ -17,6 +17,7 @@ import ClientDao from "../dao/client-dao";
 import { VerifiedRegistrationResponse, verifyRegistrationResponse, verifyAuthenticationResponse, VerifiedAuthenticationResponse } from '@simplewebauthn/server';
 import { isoBase64URL, decodeCredentialPublicKey } from '@simplewebauthn/server/helpers';
 import { validatePassword } from "@/utils/password-utils";
+import FederatedOIDCProviderDao from "../dao/federated-oidc-provider-dao";
 
 const identityDao: IdentityDao = DaoFactory.getInstance().getIdentityDao();
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
@@ -24,6 +25,7 @@ const searchClient: OpenSearchClient = getOpenSearchClient();
 const kms: Kms = DaoFactory.getInstance().getKms();
 const authDao: AuthDao = DaoFactory.getInstance().getAuthDao();
 const clientDao: ClientDao = DaoFactory.getInstance().getClientDao();
+const federatedOIDCProviderDao: FederatedOIDCProviderDao = DaoFactory.getInstance().getFederatedOIDCProvicerDao();
 
 const {
     MFA_ISSUER,
@@ -551,6 +553,13 @@ class IdentityService {
         return Promise.resolve();
     }
 
+    protected getDomainFromEmail(email: string): string {
+        const domain: string = email.substring(
+            email.indexOf("@") + 1
+        );
+        return domain;
+    }
+
     /**
      * Checks
      * 1.   Does the tenant exist
@@ -588,9 +597,8 @@ class IdentityService {
             throw new GraphQLError("INVALID_PASSWORD_EITHER_PROHIBITED_OR_INVALID_FORMAT");
         }
 
-        const domain: string = userCreateInput.email.substring(
-            userCreateInput.email.indexOf("@") + 1
-        );
+        const domain: string = this.getDomainFromEmail(userCreateInput.email); 
+
         const arrRestrictedDomainRel: Array<TenantRestrictedAuthenticationDomainRel> = await tenantDao.getDomainsForTenantRestrictedAuthentication(tenantId);
         if(arrRestrictedDomainRel.length > 0){
             const restrictedDomainRel: TenantRestrictedAuthenticationDomainRel | undefined = arrRestrictedDomainRel.find(
@@ -815,6 +823,122 @@ class IdentityService {
         return Promise.resolve();
     }
 
+    public async createPortalEmailHandlerResponse(email: string, tenantId?: string): Promise<PortalEmailHandlerResponse> {
+        const retVal: PortalEmailHandlerResponse = {
+
+        }
+
+        const domain: string = this.getDomainFromEmail(email);
+        const managementDomains: Array<TenantManagementDomainRel> = await tenantDao.getDomainTenantManagementRels(tenantId, domain);
+        if(!managementDomains || managementDomains.length === 0){
+            retVal.errorType = PortalEmailHandlerErrorTypes.NoManagementDomain;
+            return retVal;
+        }
+        // does the user exist, and can they log in via SSO through a federated IdP?
+        const user: User | null = await identityDao.getUserBy("email", email);
+        const provider: FederatedOidcProvider | null = await federatedOIDCProviderDao.getFederatedOidcProviderByDomain(domain);
+        let providerTenantRels: Array<FederatedOidcProviderTenantRel> = [];
+        if(provider !== null){
+            providerTenantRels = await federatedOIDCProviderDao.getFederatedOidcProviderTenantRels(tenantId, provider.federatedOIDCProviderId);            
+        }
+        const tenants: Array<Tenant> = await tenantDao.getTenants(managementDomains.map( (d: TenantManagementDomainRel) => d.tenantId));
+        const tenantsThatAllowSelfRegistration = tenants.filter(
+            (t: Tenant) => t.allowUserSelfRegistration === true
+        );
+        // There is no existing user, no federated provider for their login, and no tenants
+        // that will accept user registrations, then error
+        if(user === null && provider === null && tenantsThatAllowSelfRegistration.length === 0){
+            retVal.errorType = PortalEmailHandlerErrorTypes.NoMatchingUserAndNoTenantSelfRegistration;
+            return retVal;
+        }
+        if(user === null && provider === null && tenantsThatAllowSelfRegistration.length > 0){
+            retVal.successNextStep = tenantsThatAllowSelfRegistration.length === 0 ? PortalEmailHandlerSuccessNextStep.Register : PortalEmailHandlerSuccessNextStep.SelectTenant;
+            retVal.tenantSelectors = [];
+            tenantsThatAllowSelfRegistration.forEach(
+                (t: Tenant) => retVal.tenantSelectors?.push(
+                    {
+                        tenantId: tenantsThatAllowSelfRegistration[0].tenantId, 
+                        tenantName: tenantsThatAllowSelfRegistration[0].tenantName
+                    }                    
+                ));
+            return retVal;
+        }
+
+        // Are any of the providers attached to any of the tenants?
+        const tenantsThatAreAttachedToProviders = tenants.filter(
+            (t: Tenant) => {
+                const rel = providerTenantRels.find(
+                    (f: FederatedOidcProviderTenantRel) => f.tenantId === t.tenantId
+                )
+                return rel !== undefined;
+            }
+        );
+
+        // There is no user, but there is a federated IdP for this domain. So we need to
+        // make sure that there is at least one tenant that has been assigned to one of the 
+        // federated IdPs.
+        if(user === null && provider !== null){
+            if(tenantsThatAreAttachedToProviders.length === 0){
+                retVal.errorType = PortalEmailHandlerErrorTypes.NoMatchingFederatedProviderForTenant;
+                return retVal;
+            }
+            // Set the tenant information and then decide what the next steps are.
+            retVal.tenantSelectors = [];
+                tenantsThatAreAttachedToProviders.forEach(
+                (t: Tenant) => retVal.tenantSelectors?.push(
+                    {
+                        tenantId: tenantsThatAllowSelfRegistration[0].tenantId, 
+                        tenantName: tenantsThatAllowSelfRegistration[0].tenantName
+                    }                    
+                ));
+            if(tenantsThatAreAttachedToProviders.length === 1){
+                retVal.successNextStep = PortalEmailHandlerSuccessNextStep.AuthWithFederatedProvider;
+                // TODO
+                // Create the state value, get the auth URI, redirect URI, etc.
+                return retVal;
+            }
+            if(tenantsThatAreAttachedToProviders.length > 1){
+                retVal.successNextStep = PortalEmailHandlerSuccessNextStep.SelectTenant;                
+            }
+            return retVal;            
+        }
+
+        const tenantsThatAllowPasswordLogin: Array<Tenant> = tenants.filter(
+            (t: Tenant) => t.federatedAuthenticationConstraint !== FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE
+        );
+
+        // We have a user, but there is no IdP for them and none of the tenants allows
+        // login with username/password
+        if(user !== null && provider === null && tenantsThatAllowPasswordLogin.length === 0){
+            retVal.errorType = PortalEmailHandlerErrorTypes.ExclusiveTenantAndNoFederatedOidcProvider;
+            return retVal;
+        }
+
+        retVal.tenantSelectors = [];
+        for(let i = 0; i < tenants.length; i++){
+            retVal.tenantSelectors.push({tenantId: tenants[i].tenantId, tenantName: tenants[i].tenantName});                
+        }
+        if(managementDomains.length > 1){
+            retVal.successNextStep = PortalEmailHandlerSuccessNextStep.SelectTenant;
+            // retVal.tenantSelectors = [];
+            // for(let i = 0; i < tenants.length; i++){
+            //     retVal.tenantSelectors.push({tenantId: tenants[i].tenantId, tenantName: tenants[i].tenantName});                
+            // }
+            
+        }
+        else{
+            retVal.successNextStep = PortalEmailHandlerSuccessNextStep.AuthWithFederatedProvider;
+            // TODO
+            // create a state value, get the redirect uri, authorization uri, etc. based on the 
+            // federated oidc provider
+        }
+        return retVal;
+              
+
+
+        
+    }
+
 
     protected async updateObjectSearchIndex(tenant: Tenant, user: User, relType: string): Promise<void> {
         let owningTenantId: string = tenant.tenantId;
@@ -855,6 +979,8 @@ class IdentityService {
             body: relDocument
         })
     }
+
+    
 
 }
 

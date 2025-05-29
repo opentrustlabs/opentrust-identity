@@ -1,5 +1,5 @@
 "use client";
-import React, { ReactNode } from "react";
+import React, { ReactNode, useContext } from "react";
 import AuthenticationHeader from "./authentication-header";
 import AuthenticationFooter from "./authentication-footer";
 import Container from "@mui/material/Container";
@@ -11,6 +11,7 @@ import { TENANT_META_DATA_QUERY } from "@/graphql/queries/oidc-queries";
 import { useSearchParams } from "next/navigation";
 import { createTheme } from '@mui/material/styles';
 import { ThemeProvider } from '@mui/material/styles';
+import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
 
 interface LayoutProps {
     children: ReactNode
@@ -19,20 +20,36 @@ const AuthenticationLayout: React.FC<LayoutProps> = ({
     children,
   }) => {
 
+    // CONTEXT VARIABLES
+    const tenantBean: TenantMetaDataBean  = useContext(TenantContext);
 
+    // REACT HOOKS
     const params = useSearchParams();
     const tenantId = params?.get(QUERY_PARAM_PREAUTH_TENANT_ID);
 
-    const {data, error, loading} = useQuery(TENANT_META_DATA_QUERY, {
+    // STATE VARIABLES
+    const [isComplete, setIsComplete] = React.useState<boolean>(tenantId === undefined || tenantId === null ? true : false);
+
+    // GRAPHQL FUNCTIONS
+    const {error, loading} = useQuery(TENANT_META_DATA_QUERY, {
         variables: {
             tenantId: tenantId
         },
-        skip: tenantId === null || tenantId === undefined
+        skip: tenantId === null || tenantId === undefined,
+        onCompleted(data) {
+            setIsComplete(true);
+            if(data.getTenantMetaData !== null){             
+                tenantBean.setTenantMetaData(data.getTenantMetaData);             
+            }    
+        },
+        onError() {
+            setIsComplete(true);
+        }
     });
 
     if(loading) return <div />
 
-    if(!tenantId || error || data){
+    if(isComplete){
         const theme = createTheme({    
             components: {
                 MuiButton: {
@@ -50,8 +67,8 @@ const AuthenticationLayout: React.FC<LayoutProps> = ({
         
                                 }
                             ],
-                            color: data.getTenantMetaData.tenantLookAndFeel?.authenticationheadertextcolor || "white",
-                            backgroundColor: data.getTenantMetaData.tenantLookAndFeel?.authenticationheaderbackgroundcolor || "#1976d2",
+                            color: tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheadertextcolor || "white",
+                            backgroundColor: tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheaderbackgroundcolor || "#1976d2",
                             fontWeight: "bold",
                             fontSize: "0.9em",
                             height: "100%", 
@@ -78,7 +95,7 @@ const AuthenticationLayout: React.FC<LayoutProps> = ({
                 <ThemeProvider theme={theme}>                
                     <AuthenticationHeader
                         tenantMetaData={
-                            !tenantId || error ? DEFAULT_TENANT_META_DATA : data.getTenantMetaData
+                            !tenantId || error ? DEFAULT_TENANT_META_DATA : tenantBean.getTenantMetaData()
                         }
                     ></AuthenticationHeader>
                     <Container
@@ -98,7 +115,7 @@ const AuthenticationLayout: React.FC<LayoutProps> = ({
                     </Container>
                     <AuthenticationFooter
                         tenantMetaData={
-                            !tenantId || error ? DEFAULT_TENANT_META_DATA : data.getTenantMetaData
+                            !tenantId || error ? DEFAULT_TENANT_META_DATA : tenantBean.getTenantMetaData()
                         }
                     ></AuthenticationFooter>
                 </ThemeProvider>                

@@ -103,7 +103,11 @@ export default function RootLayout({
                     <ResponsiveContextProvider>                        
                         <PageTitleContextProvider>
                             {isAuthenticationLayoutPage &&
-                                <AuthenticationLayout>{children}</AuthenticationLayout>
+                                <ClipboardCopyContextProvider>
+                                    <TenantContextProvider>
+                                        <AuthenticationLayout>{children}</AuthenticationLayout>
+                                    </TenantContextProvider>
+                                </ClipboardCopyContextProvider>
                             }
                             {!isAuthenticationLayoutPage &&
                                 <AuthContextProvider>

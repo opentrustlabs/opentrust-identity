@@ -659,7 +659,7 @@ const resolvers: Resolvers = {
                     responseMode: "fragment",
                     state: "347820198273401987324"
                 },
-                secondFactorType: SecondFactorType.Totp,
+                secondFactorType: [SecondFactorType.Totp],
                 errorActionHandler: {
                     errorCode: "error code",
                     errorMessage: "Authentication failed"
@@ -956,6 +956,10 @@ const resolvers: Resolvers = {
         verifyVerificationToken: async(_: any, { userId, token }, oidcContext) => {
             const service: IdentityService = new IdentityService(oidcContext);
             return service.verifyVerificationToken(userId, token);
+        },
+        createPortalEmailHandlerResponse: async(_: any, { email, tenantId }, oidcContext) => {
+            const service: IdentityService = new IdentityService(oidcContext);
+            return service.createPortalEmailHandlerResponse(email, tenantId || undefined);
         }
     },
     RelSearchResultItem : {

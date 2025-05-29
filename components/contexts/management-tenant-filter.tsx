@@ -55,7 +55,7 @@ const ManagementTenantFilter: React.FC<LayoutProps> = ({
 
     const tenantIdFromLocalStorage: string | null = localStorage.getItem("management-tenant-id");
     let needsRedirect = true;
-    let redirectUri: string = `/authorize/login?${QUERY_PARAM_AUTHENTICATE_TO_PORTAL}=true`;;
+    let redirectUri: string = `/authorize/login?${QUERY_PARAM_AUTHENTICATE_TO_PORTAL}=true`;
     
     // TODO
     // Add return URI in cases where the profile is null.
@@ -123,7 +123,6 @@ const ManagementTenantFilter: React.FC<LayoutProps> = ({
             }
         },
         onError(error) {
-            console.log("will set error message");
             router.push(`/access-error?access_error_code=00024&extended_message=${error.message}`)
             // TODO
             // Need to inspect the error message and redirect the user to the

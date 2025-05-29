@@ -1,11 +1,11 @@
 "use client";
-import React, { Suspense, useState } from "react";
+import React, { Suspense, useContext, useEffect, useState } from "react";
 import { Autocomplete, Backdrop, Button, CircularProgress, Grid2, InputAdornment, MenuItem, Paper, Select, Snackbar, Stack, TextField, Typography } from "@mui/material";
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { DEFAULT_TENANT_META_DATA, DEFAULT_TENANT_PASSWORD_CONFIGURATION, NAME_ORDER_DISPLAY, NAME_ORDER_EASTERN, NAME_ORDER_WESTERN, NAME_ORDERS, QUERY_PARAM_PREAUTH_REDIRECT_URI, QUERY_PARAM_PREAUTH_TENANT_ID, QUERY_PARAM_PREAUTHN_TOKEN } from "@/utils/consts";
+import { DEFAULT_TENANT_META_DATA, DEFAULT_TENANT_PASSWORD_CONFIGURATION, NAME_ORDER_DISPLAY, NAME_ORDER_EASTERN, NAME_ORDER_WESTERN, NAME_ORDERS, QUERY_PARAM_AUTHENTICATE_TO_PORTAL, QUERY_PARAM_PREAUTH_REDIRECT_URI, QUERY_PARAM_PREAUTH_TENANT_ID, QUERY_PARAM_PREAUTHN_TOKEN } from "@/utils/consts";
 import { TENANT_META_DATA_QUERY, TENANT_PASSWORD_CONFIG_QUERY } from "@/graphql/queries/oidc-queries";
 import { useLazyQuery, useMutation, useQuery } from "@apollo/client";
 import { StateProvinceRegion, TenantPasswordConfig, UserCreateInput } from "@/graphql/generated/graphql-types";
@@ -20,20 +20,22 @@ import ArrowDropDownOutlinedIcon from '@mui/icons-material/ArrowDropDownOutlined
 import ArrowDropUpOutlinedIcon from '@mui/icons-material/ArrowDropUpOutlined';
 import { validatePassword } from "@/utils/password-utils";
 import { REGISTER_USER_MUTATION, VERIFY_REGISTRATION_TOKEN_MUTATION } from "@/graphql/mutations/oidc-mutations";
+import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
 
 
 const Register: React.FC = () => {
 
-    // Context objects
-    // const titleSetter = useContext(PageTitleContext);
-    // titleSetter.setPageTitle("Register");
+    // CONTEXT VARIABLES
+    const tenantBean: TenantMetaDataBean  = useContext(TenantContext);    
+    const titleSetter = useContext(PageTitleContext);
+    titleSetter.setPageTitle("Register");
 
     // QUERY PARAMS
     const params = useSearchParams();    
     const preauthToken = params?.get(QUERY_PARAM_PREAUTHN_TOKEN);
     const tenantId = params?.get(QUERY_PARAM_PREAUTH_TENANT_ID);
     const redirectUri = params?.get(QUERY_PARAM_PREAUTH_REDIRECT_URI);
-
+    
 
     // PAGE STATE MANAGEMENT VARIABLES    
     const initInput: UserCreateInput = {
@@ -59,8 +61,7 @@ const Register: React.FC = () => {
     };
 
     const [userInput, setUserInput] = React.useState<UserCreateInput>(initInput);
-    const [errorMessage, setErrorMessage] = useState<string | null>(null);
-    const [tenantMetaData, setTenantMetaData] = useState(tenantId ? null : DEFAULT_TENANT_META_DATA);
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);    
     const [registrationPage, setRegistrationPage] = React.useState<number>(1);
     const [repeatPassword, setRepeatPassword] = React.useState<string>("");
     const [viewPassword, setViewPassword] = React.useState<boolean>(false);
@@ -81,21 +82,6 @@ const Register: React.FC = () => {
 
 
     // GRAPHQL FUNCTIONS    
-    // TODO -> Need to add the token to this query and get the redirect uri if it exists
-    
-    const { } = useQuery(TENANT_META_DATA_QUERY, {
-        variables: {
-            tenantId: tenantId
-        },
-        skip: tenantId === null || tenantId === undefined,
-        onCompleted(data) {
-            setTenantMetaData(data.getTenantMetaData);
-        },
-        onError() {
-            setTenantMetaData(DEFAULT_TENANT_META_DATA);
-        }
-    });
-
     // data for password config may be null, so present some sensible defaults
     const { } = useQuery(TENANT_PASSWORD_CONFIG_QUERY, {
         variables: {
@@ -113,7 +99,7 @@ const Register: React.FC = () => {
         onCompleted(data) {
             setShowMutationBackdrop(false);
             setCreatedUserId(data.registerUser.userId);
-            if(tenantMetaData?.tenant.verifyEmailOnSelfRegistration){                
+            if(tenantBean.getTenantMetaData()?.tenant.verifyEmailOnSelfRegistration){                
                 // Await the user to enter a 16 character validation code
                 setRegistrationPage(3);
             }
@@ -188,10 +174,16 @@ const Register: React.FC = () => {
         return bRetVal;
     }
 
+    // Cannot register without a valid tenant id to register against
+    useEffect(() => {
+        if(tenantBean.getTenantMetaData().tenant.tenantId === ""){
+            router.push(`/authorize/login?${QUERY_PARAM_AUTHENTICATE_TO_PORTAL}=true`);
+        }
+    }, []);
 
     return (
         <Suspense>
-            {tenantMetaData &&
+            {tenantBean.getTenantMetaData().tenant.tenantId !== "" &&
                 <Paper
                     elevation={4}
                     sx={{ padding: 2, height: "100%", maxWidth: maxWidth, width: maxWidth, margin: "16px 0px" }}
