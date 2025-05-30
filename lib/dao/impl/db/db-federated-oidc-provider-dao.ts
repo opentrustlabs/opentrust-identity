@@ -25,12 +25,7 @@ class DBFederatedOIDCProviderDao extends FederatedOIDCProviderDao {
              ;
        
         const providers: Array<FederatedOidcProvider> = t.map(
-            (e: FederatedOIDCProviderEntity) => {
-                return {                    
-                    ...e.dataValues,
-                    scopes: e.dataValues.scopes ? e.dataValues.scopes.split(",") : [],
-                }                
-            }
+            (e: FederatedOIDCProviderEntity) => this.providerEntityToModel(e)
         );
         return Promise.resolve(providers);
     }
@@ -46,10 +41,7 @@ class DBFederatedOIDCProviderDao extends FederatedOIDCProviderDao {
         });
         
         if(e){     
-            return {                    
-                ...e.dataValues,
-                scopes: e.dataValues.scopes ? e.dataValues.scopes.split(",") : [],
-            } 
+            return this.providerEntityToModel(e);
         }
         else{
             return null;
@@ -113,7 +105,8 @@ class DBFederatedOIDCProviderDao extends FederatedOIDCProviderDao {
         if(!federatedOIDCProviderEntity){
             return Promise.resolve(null);
         }
-        return Promise.resolve(federatedOIDCProviderEntity.dataValues as FederatedOidcProvider);
+
+        return Promise.resolve(this.providerEntityToModel(federatedOIDCProviderEntity));
     }
 
     public async assignFederatedOidcProviderToTenant(federatedOIDCProviderId: string, tenantId: string): Promise<FederatedOidcProviderTenantRel> {
@@ -191,6 +184,13 @@ class DBFederatedOIDCProviderDao extends FederatedOIDCProviderDao {
 
     public async deleteFederatedOidcProvider(federatedOIDCProviderId: string): Promise<void> {
         throw new Error("Method not implemented.");
+    }
+
+    protected providerEntityToModel(entity: FederatedOIDCProviderEntity): FederatedOidcProvider {
+        return {                    
+            ...entity.dataValues,
+            scopes: entity.dataValues.scopes ? entity.dataValues.scopes.split(",") : [],
+        }
     }
 
 }

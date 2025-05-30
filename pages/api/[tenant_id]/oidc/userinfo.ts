@@ -7,7 +7,7 @@ import FederatedOIDCProviderDao from '@/lib/dao/federated-oidc-provider-dao';
 import TenantDao from '@/lib/dao/tenant-dao';
 import { DaoFactory } from '@/lib/data-sources/dao-factory';
 import { WellknownConfig } from '@/lib/models/wellknown-config';
-import OIDCServiceClient from '@/lib/service/oidc-service-client';
+import OIDCServiceClient from '@/lib/service/oidc-service-utils';
 import { ALL_OIDC_SUPPORTED_SCOPE_VALUES, OIDC_OPENID_SCOPE } from '@/utils/consts';
 import { generateCodeVerifierAndChallenge, generateRandomToken} from '@/utils/dao-utils';
 import type { NextApiRequest, NextApiResponse } from 'next'

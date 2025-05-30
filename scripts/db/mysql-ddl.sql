@@ -377,6 +377,8 @@ CREATE INDEX refresh_data_tenant_id_idx ON refresh_data(tenantid);
 
 create TABLE federated_oidc_authorization_rel (
     state VARCHAR(256) NOT NULL PRIMARY KEY,
+    federatedoidcauthorizationreltype VARCHAR(64) NOT NULL,
+    email VARCHAR(128),
     codeverifier VARCHAR(256),
     codechallengemethod VARCHAR(16),
     federatedoidcproviderid VARCHAR(64) NOT NULL,
@@ -392,7 +394,8 @@ create TABLE federated_oidc_authorization_rel (
     expiresatms BIGINT NOT NULL,    
     FOREIGN KEY (inittenantid) REFERENCES tenant(tenantid),
     FOREIGN KEY (initclientid) REFERENCES client(clientid),
-    FOREIGN KEY (federatedoidcproviderid) REFERENCES federated_oidc_provider(federatedoidcproviderid)
+    FOREIGN KEY (federatedoidcproviderid) REFERENCES federated_oidc_provider(federatedoidcproviderid),
+    FOREIGN KEY (userid) REFERENCES user(userid)
 );
 
 create TABLE client_auth_history (

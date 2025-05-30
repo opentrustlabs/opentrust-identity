@@ -1,5 +1,5 @@
 "use client";
-import React, { useContext, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { Button, Divider, Grid2, Paper, Stack, TextField } from "@mui/material";
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
@@ -10,7 +10,7 @@ import { LOGIN_USERNAME_HANDLER_QUERY } from "@/graphql/queries/oidc-queries";
 import { useLazyQuery, useMutation, useQuery } from "@apollo/client";
 import { LoginAuthenticationHandlerAction, LoginAuthenticationHandlerResponse, LoginUserNameHandlerAction, LoginUserNameHandlerResponse } from "@/graphql/generated/graphql-types";
 import Alert from '@mui/material/Alert';
-import { LOGIN_MUTATION } from "@/graphql/mutations/oidc-mutations";
+import { LOGIN_MUTATION, PORTAL_LOGIN_EMAIL_HANDLER_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import { PageTitleContext } from "@/components/contexts/page-title-context";
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
 
@@ -20,7 +20,7 @@ const USERNAME_COMPONENT = "USERNAME_COMPONENT";
 const PASSWORD_COMPONENT = "PASSWORD_COMPONENT";
 
 export interface PortalLoginProps {
-    tenantId: string,
+    tenantId?: string,
     redirectUri: string,
     preauthToken: string,
     tenantBean: TenantMetaDataBean
@@ -36,7 +36,10 @@ const PortalLogin: React.FC<PortalLoginProps> = ({
 
     // CONTEXT VARIABLES
     const titleSetter = useContext(PageTitleContext);
-    titleSetter.setPageTitle("Login");    
+    useEffect(() => {
+        titleSetter.setPageTitle("Login");
+    }, []);
+        
 
 
     // PAGE STATE MANAGEMENT VARIABLES
@@ -55,95 +58,67 @@ const PortalLogin: React.FC<PortalLoginProps> = ({
 
 
     // GRAPHQL FUNCTIONS    
-    const [getLoginUsernameHandler, {  }] = useLazyQuery(
-        LOGIN_USERNAME_HANDLER_QUERY, {
-            fetchPolicy: "network-only",
-            onCompleted(data) {
-                const response: LoginUserNameHandlerResponse = data.getLoginUserNameHandler as LoginUserNameHandlerResponse;
-                if (response.action === LoginUserNameHandlerAction.EnterPassword) {
-                    setDisplayComponent(PASSWORD_COMPONENT);
-                }
-                else if (response.action === LoginUserNameHandlerAction.OidcRedirect) {
-                    let redirectUri = `${response.oidcRedirectActionHandlerConfig?.redirectUri}?`;
-                    const params = new URLSearchParams({
-                        client_id: response.oidcRedirectActionHandlerConfig?.clientId || "",
-                        state: response.oidcRedirectActionHandlerConfig?.state || "",
-                        redirect_uri: response.oidcRedirectActionHandlerConfig?.redirectUri || "",
-                        response_type: response.oidcRedirectActionHandlerConfig?.responseType || ""
-                    })
-                    if(response.oidcRedirectActionHandlerConfig?.responseMode){
-                        params.set("response_mode", response.oidcRedirectActionHandlerConfig?.responseMode);
-                    }                
-                    if(response.oidcRedirectActionHandlerConfig?.codeChallenge){
-                        params.set("code_challenge", response.oidcRedirectActionHandlerConfig.codeChallenge);
-                        params.set("code_challenge_method", response.oidcRedirectActionHandlerConfig.codeChallengeMethod || "");
-                    }
-                    if(response.oidcRedirectActionHandlerConfig?.scope){
-                        params.set("scope", response.oidcRedirectActionHandlerConfig.scope);
-                    }
-                    router.push(redirectUri + params.toString());
-                }
-                else {
-                    setErrorMessage(response.errorActionHandler?.errorMessage || "Error with the user account. It is either disabled or not permitted for this tenant or client.");
-                }
-            }
-        }            
-    );
+    const [portalLoginEmailHandler] = useMutation(PORTAL_LOGIN_EMAIL_HANDLER_MUTATION, {
+        onCompleted(data) {
+            setErrorMessage(JSON.stringify(data.createPortalLoginEmailHandlerResponse));
+        },
+        onError(error) {
+            setErrorMessage(error.message);
+        },
+    })
 
-    const [getPasswordAuthenticationResponse, {}] = useMutation(
-        LOGIN_MUTATION,
-        {
-            onCompleted(data) {
-                const response: LoginAuthenticationHandlerResponse = data.login as LoginAuthenticationHandlerResponse;
-                if(response.status === LoginAuthenticationHandlerAction.SecondFactorInput){
-                    router.push(`/authorize/mfa?mfa_type=${response.secondFactorType}`);
-                }
-                else if(response.status === LoginAuthenticationHandlerAction.Authenticated){
-                    let redirectUri = `${response.successConfig?.redirectUri}`
-                    if(response.successConfig?.responseMode && response.successConfig.responseMode === "fragment"){
-                        redirectUri = redirectUri + "#";
-                    }
-                    else{
-                        redirectUri = redirectUri + "?";
-                    }
-                    const params = new URLSearchParams({
-                        code: response.successConfig?.code || "",
-                    });
-                    if(response.successConfig?.state){
-                        params.set("state", response.successConfig.state);
-                    }
-                    router.push(redirectUri + params.toString());
-                }
-                else {
-                    setErrorMessage(response.errorActionHandler?.errorMessage || "Error with authentication. Either the user name or password is incorrect.")
-                }
+    // const [getPasswordAuthenticationResponse, {}] = useMutation(
+    //     LOGIN_MUTATION,
+    //     {
+    //         onCompleted(data) {
+    //             const response: LoginAuthenticationHandlerResponse = data.login as LoginAuthenticationHandlerResponse;
+    //             if(response.status === LoginAuthenticationHandlerAction.SecondFactorInput){
+    //                 router.push(`/authorize/mfa?mfa_type=${response.secondFactorType}`);
+    //             }
+    //             else if(response.status === LoginAuthenticationHandlerAction.Authenticated){
+    //                 let redirectUri = `${response.successConfig?.redirectUri}`
+    //                 if(response.successConfig?.responseMode && response.successConfig.responseMode === "fragment"){
+    //                     redirectUri = redirectUri + "#";
+    //                 }
+    //                 else{
+    //                     redirectUri = redirectUri + "?";
+    //                 }
+    //                 const params = new URLSearchParams({
+    //                     code: response.successConfig?.code || "",
+    //                 });
+    //                 if(response.successConfig?.state){
+    //                     params.set("state", response.successConfig.state);
+    //                 }
+    //                 router.push(redirectUri + params.toString());
+    //             }
+    //             else {
+    //                 setErrorMessage(response.errorActionHandler?.errorMessage || "Error with authentication. Either the user name or password is incorrect.")
+    //             }
                 
-            },
-            onError() {
-                setErrorMessage("Error with authentication. Either the user name or password is incorrect, or the system is unable to perform authentication.")
-            }
-        }
-    );
+    //         },
+    //         onError() {
+    //             setErrorMessage("Error with authentication. Either the user name or password is incorrect, or the system is unable to perform authentication.")
+    //         }
+    //     }
+    // );
 
 
     // EVENT HANDLERS
     const handleNextClick = (evt: any) => {
-        getLoginUsernameHandler({
+        portalLoginEmailHandler({
             variables: {
-                username: username,
-                tenantId: tenantId,
-                preauthToken: preauthToken
+                email: username,
+                tenantId: tenantId
             }
         });
     }
     const handleEnterButtonPress = (evt: React.KeyboardEvent) => {        
         if (evt.key.valueOf().toLowerCase() === "enter") {
             if (username && username.length > MIN_USERNAME_LENGTH) {
-                getLoginUsernameHandler({
+                portalLoginEmailHandler({
                     variables: {
-                        username: username,
-                        tenantId: tenantId,
-                        preauthToken: preauthToken
+                        email: username,
+                        tenantId: tenantId
                     }
                 });
             }
@@ -156,34 +131,34 @@ const PortalLogin: React.FC<PortalLoginProps> = ({
         }
     }
 
-    const enterKeyLoginHandler = (evt: React.KeyboardEvent) => {
-        if (evt.key.valueOf().toLowerCase() === "enter") {
-            if (username && username.length > MIN_USERNAME_LENGTH && password && password.length >= 8) {
-                getPasswordAuthenticationResponse({
-                    variables: {
-                        username: username,
-                        password: password
-                    }
-                });
-            }
-        }
-        // Remove the error message if the user makes any changes to the password
-        else{
-            if(errorMessage !== null){
-                setErrorMessage(null);
-            }
-        }
+    // const enterKeyLoginHandler = (evt: React.KeyboardEvent) => {
+    //     if (evt.key.valueOf().toLowerCase() === "enter") {
+    //         if (username && username.length > MIN_USERNAME_LENGTH && password && password.length >= 8) {
+    //             getPasswordAuthenticationResponse({
+    //                 variables: {
+    //                     username: username,
+    //                     password: password
+    //                 }
+    //             });
+    //         }
+    //     }
+    //     // Remove the error message if the user makes any changes to the password
+    //     else{
+    //         if(errorMessage !== null){
+    //             setErrorMessage(null);
+    //         }
+    //     }
         
-    }
+    // }
 
-    const buttonLoginHandler = () => {
-        getPasswordAuthenticationResponse({
-            variables: {
-                username: username,
-                password: password
-            }
-        });
-    }
+    // const buttonLoginHandler = () => {
+    //     getPasswordAuthenticationResponse({
+    //         variables: {
+    //             username: username,
+    //             password: password
+    //         }
+    //     });
+    // }
 
     const getQueryParams = (): string => {
         const params = new URLSearchParams();
@@ -254,7 +229,7 @@ const PortalLogin: React.FC<PortalLoginProps> = ({
                             >
                             </TextField>
                         }
-                        {displayComponent === PASSWORD_COMPONENT &&
+                        {/* {displayComponent === PASSWORD_COMPONENT &&
                             <TextField
                                 type="password"
                                 id="password"
@@ -287,7 +262,7 @@ const PortalLogin: React.FC<PortalLoginProps> = ({
                                 }}
                             >
                             </TextField>
-                        }
+                        } */}
                     </Grid2>
                     {tenantBean.getTenantMetaData().tenant.allowForgotPassword &&
                         <Grid2 size={{ xs: 12 }}>
@@ -314,21 +289,6 @@ const PortalLogin: React.FC<PortalLoginProps> = ({
                                     }}
                                     onClick={handleNextClick}
                                 >Next</Button>
-                                {preauthToken &&
-                                    <a href={`${redirectUri}?error=access_denied`}>
-                                        <Button
-                                            disabled={false}
-                                            variant="contained"
-                                            sx={{ height: "100%", padding: "8px 32px 8px 32px", 
-                                                backgroundColor: tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheaderbackgroundcolor,
-                                                color: tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheadertextcolor,
-                                                fontWeight: "bold",
-                                                fontSize: "0.9em"
-                                            }}
-                                        >Cancel</Button>
-                                    </a>
-                                }
-
                             </Stack>
                         }
                         {displayComponent === PASSWORD_COMPONENT &&
@@ -344,7 +304,7 @@ const PortalLogin: React.FC<PortalLoginProps> = ({
                                         fontWeight: "bold",
                                         fontSize: "0.9em"
                                     }}
-                                    onClick={buttonLoginHandler}
+                                    // onClick={buttonLoginHandler}
                                 >Login</Button>
                                 <Button
                                     disabled={false}

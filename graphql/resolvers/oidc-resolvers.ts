@@ -957,9 +957,9 @@ const resolvers: Resolvers = {
             const service: IdentityService = new IdentityService(oidcContext);
             return service.verifyVerificationToken(userId, token);
         },
-        createPortalEmailHandlerResponse: async(_: any, { email, tenantId }, oidcContext) => {
+        createPortalLoginEmailHandlerResponse: async(_: any, { email, tenantId }, oidcContext) => {
             const service: IdentityService = new IdentityService(oidcContext);
-            return service.createPortalEmailHandlerResponse(email, tenantId || undefined);
+            return service.createPortalLoginEmailHandlerResponse(email, tenantId || undefined);
         }
     },
     RelSearchResultItem : {
