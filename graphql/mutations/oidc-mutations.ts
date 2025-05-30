@@ -663,3 +663,18 @@ export const VERIFY_REGISTRATION_TOKEN_MUTATION = gql(`
         verifyVerificationToken(userId: $userId, token: $token)
     }
 `);
+
+export const PORTAL_LOGIN_EMAIL_HANDLER_MUTATION = gql(`
+    mutation createPortalLoginEmailHandlerResponse($email: String!, $tenantId: String) {
+        createPortalLoginEmailHandlerResponse(email: $email, tenantId: $tenantId) {
+            errorType
+            tenantSelectors{
+                tenantId
+                tenantName
+            }
+            federatedOIDCProviderId            
+            authorizationEndpoint
+            successNextStep
+        }
+    }
+`);

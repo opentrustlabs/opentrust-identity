@@ -15,7 +15,9 @@ export interface AuthContextProps {
 
 const setter: PageTitleSetter = {
     setPageTitle: function (title: string): void {
-        document.title = title;
+        if(window){
+            document.title = title;
+        }
     }
 }
 

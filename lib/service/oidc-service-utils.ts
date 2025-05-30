@@ -18,7 +18,7 @@ const oidcJwksCache = new NodeCache(
     }
 );
 
-class OIDCServiceClient {
+class OIDCServiceUtils {
 
     /**
      * 
@@ -71,4 +71,4 @@ class OIDCServiceClient {
 
 }
 
-export default OIDCServiceClient;
+export default OIDCServiceUtils;
