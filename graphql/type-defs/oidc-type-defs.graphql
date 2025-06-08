@@ -689,6 +689,7 @@ enum FederatedOIDCAuthorizationRelType {
 type FederatedOIDCAuthorizationRel {
     federatedOIDCAuthorizationRelType: FederatedOIDCAuthorizationRelType!
     email: String
+    userId: String
     state: String!
     codeVerifier: String
     codechallengemethod: String
@@ -696,7 +697,7 @@ type FederatedOIDCAuthorizationRel {
     initState: String!
     initRedirectUri: String!
     initTenantId: String!
-    initClientId: String!
+    initClientId: String
     initScope: String!
     initCodeChallengeMethod: String
     initCodeChallenge: String

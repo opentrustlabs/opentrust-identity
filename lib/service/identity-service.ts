@@ -939,7 +939,7 @@ class IdentityService {
                 ));
             if(tenantsThatAreAttachedToProviders.length === 1){
                 retVal.successNextStep = PortalLoginEmailHandlerSuccessNextStep.AuthWithFederatedProvider;
-                const {hasError, errorMessage, authorizationEndpoint} = await this.createFederatedOIDCRequestProperties(email, provider, tenantsThatAreAttachedToProviders[0].tenantId);
+                const {hasError, errorMessage, authorizationEndpoint} = await this.createFederatedOIDCRequestProperties(email, null, provider, tenantsThatAreAttachedToProviders[0].tenantId);
                 if(hasError){
                     throw new GraphQLError(errorMessage);
                 }                
@@ -980,7 +980,7 @@ class IdentityService {
                 ));
             if(tenantsThatAreAttachedToProviders.length === 1){
                 retVal.successNextStep = PortalLoginEmailHandlerSuccessNextStep.AuthWithFederatedProvider;                
-                const {hasError, errorMessage, authorizationEndpoint} = await this.createFederatedOIDCRequestProperties(user.email, provider, tenantsThatAreAttachedToProviders[0].tenantId);
+                const {hasError, errorMessage, authorizationEndpoint} = await this.createFederatedOIDCRequestProperties(user.email, user.userId, provider, tenantsThatAreAttachedToProviders[0].tenantId);
                 if(hasError){
                     throw new GraphQLError(errorMessage);
                 }                
@@ -999,16 +999,17 @@ class IdentityService {
         
     }
 
-    protected async createFederatedOIDCRequestProperties(email: string, provider: FederatedOidcProvider, tenantId: string): Promise<{hasError: boolean, errorMessage: string, authorizationEndpoint: string}> {
+    protected async createFederatedOIDCRequestProperties(email: string, userId: string | null, provider: FederatedOidcProvider, tenantId: string): Promise<{hasError: boolean, errorMessage: string, authorizationEndpoint: string}> {
 
         const federatedOIDCAuthorizationRel: FederatedOidcAuthorizationRel = {
             federatedOIDCAuthorizationRelType: FederatedOidcAuthorizationRelType.AuthorizationRelTypePortalAuth,
             email: email,
+            userId: userId,
             expiresAtMs: 0,
             federatedOIDCProviderId: "",
-            initClientId: "",
             initRedirectUri: "",
             initResponseMode: "",
+            initClientId: null,
             initResponseType: "",
             initScope: "",
             initState: "",
@@ -1016,11 +1017,14 @@ class IdentityService {
             state: ""
         }
         const retVal = {errorMessage: "", hasError: false, authorizationEndpoint: ""};
-
+        
         const wellKnownConfig: WellknownConfig | null = await oidcServiceUtils.getWellKnownConfig(
-            //provider.federatedOIDCProviderWellKnownUri
-            "https://api.sigmaaldrich.com/auth/.well-known/openid-configuration"
+            provider.federatedOIDCProviderWellKnownUri
+            // "https://api.sigmaaldrich.com/auth/.well-known/openid-configuration"
         );
+        
+        console.log(wellKnownConfig);
+
         if(wellKnownConfig === null){
             retVal.errorMessage = "ERROR_UNABLE_TO_DETERMINE_AUTHORIZATION_PARAMETERS_FROM_FEDERATED_OIDC_PROVIDER";
             retVal.hasError = true;
@@ -1032,13 +1036,9 @@ class IdentityService {
         federatedOIDCAuthorizationRel.state = generateRandomToken(32, "hex");
         federatedOIDCAuthorizationRel.codeVerifier = verifier;
         federatedOIDCAuthorizationRel.expiresAtMs = Date.now() + 5 /* minutes */ * 60 /* seconds/min  */ * 1000 /* ms/sec */;
-        federatedOIDCAuthorizationRel.federatedOIDCProviderId = provider.federatedOIDCProviderId;
-        federatedOIDCAuthorizationRel.initClientId = provider.federatedOIDCProviderClientId;
+        federatedOIDCAuthorizationRel.federatedOIDCProviderId = provider.federatedOIDCProviderId;        
         federatedOIDCAuthorizationRel.initRedirectUri = "";
         federatedOIDCAuthorizationRel.initResponseMode = "";
-        
-        console.log(provider.scopes);
-
         federatedOIDCAuthorizationRel.initScope = provider.scopes.join(" ");
         federatedOIDCAuthorizationRel.initState = federatedOIDCAuthorizationRel.state;
         federatedOIDCAuthorizationRel.initTenantId = tenantId;
@@ -1049,8 +1049,10 @@ class IdentityService {
         
         await authDao.saveFederatedOIDCAuthorizationRel(federatedOIDCAuthorizationRel);
 
+        const scopeParameter = provider.scopes.join("%20");
+
         const codeChallengeQueryParams = provider.usePkce ? `&code_challenge=${challenge}&code_challenge_method=S256` : "";
-        const authnUri = `${wellKnownConfig.authorization_endpoint}?client_id=${provider.federatedOIDCProviderClientId}&state=${federatedOIDCAuthorizationRel.state}&response_type=code&response_mode=query&redirect_uri=${AUTH_DOMAIN}/api/federated-oidc-provider/return&scope=${federatedOIDCAuthorizationRel.initScope}${codeChallengeQueryParams}`;
+        const authnUri = `${wellKnownConfig.authorization_endpoint}?client_id=${provider.federatedOIDCProviderClientId}&state=${federatedOIDCAuthorizationRel.state}&response_type=code&response_mode=query&redirect_uri=${AUTH_DOMAIN}/api/federated-auth/return&scope=${scopeParameter}${codeChallengeQueryParams}`;
         retVal.authorizationEndpoint = authnUri;
         return retVal;
     }

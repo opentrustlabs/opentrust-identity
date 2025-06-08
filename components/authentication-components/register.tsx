@@ -5,7 +5,7 @@ import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { DEFAULT_TENANT_META_DATA, DEFAULT_TENANT_PASSWORD_CONFIGURATION, NAME_ORDER_DISPLAY, NAME_ORDER_EASTERN, NAME_ORDER_WESTERN, NAME_ORDERS, QUERY_PARAM_AUTHENTICATE_TO_PORTAL, QUERY_PARAM_PREAUTH_REDIRECT_URI, QUERY_PARAM_PREAUTH_TENANT_ID, QUERY_PARAM_PREAUTHN_TOKEN } from "@/utils/consts";
+import { DEFAULT_TENANT_META_DATA, DEFAULT_TENANT_PASSWORD_CONFIGURATION, NAME_ORDER_DISPLAY, NAME_ORDER_EASTERN, NAME_ORDER_WESTERN, NAME_ORDERS, QUERY_PARAM_AUTHENTICATE_TO_PORTAL, QUERY_PARAM_PREAUTH_REDIRECT_URI, QUERY_PARAM_PREAUTH_TENANT_ID, QUERY_PARAM_PREAUTHN_TOKEN, QUERY_PARAM_USERNAME } from "@/utils/consts";
 import { TENANT_META_DATA_QUERY, TENANT_PASSWORD_CONFIG_QUERY } from "@/graphql/queries/oidc-queries";
 import { useLazyQuery, useMutation, useQuery } from "@apollo/client";
 import { StateProvinceRegion, TenantPasswordConfig, UserCreateInput } from "@/graphql/generated/graphql-types";
@@ -34,13 +34,15 @@ const Register: React.FC = () => {
     const params = useSearchParams();    
     const preauthToken = params?.get(QUERY_PARAM_PREAUTHN_TOKEN);
     const tenantId = params?.get(QUERY_PARAM_PREAUTH_TENANT_ID);
+    const username = params?.get(QUERY_PARAM_USERNAME);
     const redirectUri = params?.get(QUERY_PARAM_PREAUTH_REDIRECT_URI);
+    
     
 
     // PAGE STATE MANAGEMENT VARIABLES    
     const initInput: UserCreateInput = {
         domain: "",
-        email: "",
+        email: username ? username : "",
         emailVerified: false,
         enabled: false,
         firstName: "",
@@ -261,6 +263,7 @@ const Register: React.FC = () => {
                                             onChange={(evt) => { userInput.email = evt.target.value; setUserInput({ ...userInput }); }}
                                             fullWidth={true} size="small"
                                             error={!userInput.email || userInput.email.length < 7}
+                                            disabled={! (username === null || username === undefined)}
                                         />
                                     </Grid2>
                                     <Grid2 marginBottom={"8px"} size={12}>

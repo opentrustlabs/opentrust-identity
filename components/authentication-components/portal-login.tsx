@@ -5,10 +5,10 @@ import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { } from "@/utils/consts";
+import { QUERY_PARAM_PREAUTH_TENANT_ID } from "@/utils/consts";
 import { LOGIN_USERNAME_HANDLER_QUERY } from "@/graphql/queries/oidc-queries";
 import { useLazyQuery, useMutation, useQuery } from "@apollo/client";
-import { LoginAuthenticationHandlerAction, LoginAuthenticationHandlerResponse, LoginUserNameHandlerAction, LoginUserNameHandlerResponse } from "@/graphql/generated/graphql-types";
+import { LoginAuthenticationHandlerAction, LoginAuthenticationHandlerResponse, LoginUserNameHandlerAction, LoginUserNameHandlerResponse, PortalLoginEmailHandlerErrorTypes, PortalLoginEmailHandlerResponse, PortalLoginEmailHandlerSuccessNextStep, TenantSelectorData } from "@/graphql/generated/graphql-types";
 import Alert from '@mui/material/Alert';
 import { LOGIN_MUTATION, PORTAL_LOGIN_EMAIL_HANDLER_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import { PageTitleContext } from "@/components/contexts/page-title-context";
@@ -39,8 +39,7 @@ const PortalLogin: React.FC<PortalLoginProps> = ({
     useEffect(() => {
         titleSetter.setPageTitle("Login");
     }, []);
-        
-
+    
 
     // PAGE STATE MANAGEMENT VARIABLES
     const [username, setUsername] = useState<string | null>("");
@@ -48,6 +47,8 @@ const PortalLogin: React.FC<PortalLoginProps> = ({
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     // To toggle between USERNAME_COMPONENT and PASSWORD_COMPONENT for display
     const [displayComponent, setDisplayComponent] = useState<string>(USERNAME_COMPONENT);
+    const [showTenantSelector, setShowTenantSelector] = useState<boolean>(false);
+    const [tenantsToSelect, setTenantsToSelect] = useState<Array<TenantSelectorData>>([]);
 
     // HOOKS FROM NEXTJS OR MUI
     const router = useRouter();
@@ -60,7 +61,43 @@ const PortalLogin: React.FC<PortalLoginProps> = ({
     // GRAPHQL FUNCTIONS    
     const [portalLoginEmailHandler] = useMutation(PORTAL_LOGIN_EMAIL_HANDLER_MUTATION, {
         onCompleted(data) {
-            setErrorMessage(JSON.stringify(data.createPortalLoginEmailHandlerResponse));
+            //setErrorMessage(JSON.stringify(data.createPortalLoginEmailHandlerResponse));
+            const portalLoginEmailHandlerResponse: PortalLoginEmailHandlerResponse = data.createPortalLoginEmailHandlerResponse;
+            if(portalLoginEmailHandlerResponse.errorType){
+                setErrorMessage(portalLoginEmailHandlerResponse.errorType)
+            }
+            else{
+                if(portalLoginEmailHandlerResponse.successNextStep === PortalLoginEmailHandlerSuccessNextStep.AuthWithFederatedProvider){
+                    if(!portalLoginEmailHandlerResponse.authorizationEndpoint){
+                        setErrorMessage("ERROR_NO_AUTHORIZATION_ENDPOINT_CONFIGURED");
+                    }
+
+                    else{
+                        router.push(portalLoginEmailHandlerResponse.authorizationEndpoint);
+                    }
+                }
+                if(portalLoginEmailHandlerResponse.successNextStep === PortalLoginEmailHandlerSuccessNextStep.SelectTenant){ 
+                    if(portalLoginEmailHandlerResponse.tenantSelectors){
+                        setTenantsToSelect(portalLoginEmailHandlerResponse.tenantSelectors);
+                        setShowTenantSelector(true);
+                    }
+                    else{
+                        setErrorMessage("ERROR_NO_TENANT_TO_SELECT");
+                    }
+                }
+                if(portalLoginEmailHandlerResponse.successNextStep === PortalLoginEmailHandlerSuccessNextStep.Login){
+                    setDisplayComponent(PASSWORD_COMPONENT);                    
+                }
+                if(portalLoginEmailHandlerResponse.successNextStep === PortalLoginEmailHandlerSuccessNextStep.Register){
+                    if(portalLoginEmailHandlerResponse.tenantSelectors){
+                        router.push(`/authorize/register?${QUERY_PARAM_PREAUTH_TENANT_ID}=${portalLoginEmailHandlerResponse?.tenantSelectors[0].tenantId}&username=${username}`);
+                    }
+                    else{
+                        setErrorMessage("ERROR_NO_TENANT_TO_SELECT_FOR_REGISTRATION");
+                    }
+                }
+            }
+
         },
         onError(error) {
             setErrorMessage(error.message);
@@ -131,33 +168,21 @@ const PortalLogin: React.FC<PortalLoginProps> = ({
         }
     }
 
-    // const enterKeyLoginHandler = (evt: React.KeyboardEvent) => {
-    //     if (evt.key.valueOf().toLowerCase() === "enter") {
-    //         if (username && username.length > MIN_USERNAME_LENGTH && password && password.length >= 8) {
-    //             getPasswordAuthenticationResponse({
-    //                 variables: {
-    //                     username: username,
-    //                     password: password
-    //                 }
-    //             });
-    //         }
-    //     }
-    //     // Remove the error message if the user makes any changes to the password
-    //     else{
-    //         if(errorMessage !== null){
-    //             setErrorMessage(null);
-    //         }
-    //     }
-        
-    // }
+    const enterKeyLoginHandler = (evt: React.KeyboardEvent) => {
 
-    // const buttonLoginHandler = () => {
-    //     getPasswordAuthenticationResponse({
-    //         variables: {
-    //             username: username,
-    //             password: password
-    //         }
-    //     });
+    }
+
+    // const setLoginErrorMessage = (errorType: PortalLoginEmailHandlerErrorTypes) => {
+    //     // enum PortalLoginEmailHandlerErrorTypes {    
+    //     //     CONDITIONS_FOR_AUTHENTICATION_NOT_MET
+    //     //     NO_MANAGEMENT_DOMAIN
+    //     //     NO_MATCHING_FEDERATED_PROVIDER_FOR_TENANT
+    //     //     EXCLUSIVE_TENANT_AND_NO_FEDERATED_OIDC_PROVIDER
+    //     //     NO_MATCHING_USER_AND_NO_TENANT_SELF_REGISTRATION
+    //     // }
+    //     if(errorType === PortalLoginEmailHandlerErrorTypes.ConditionsForAuthenticationNotMet){
+
+    //     }
     // }
 
     const getQueryParams = (): string => {
@@ -229,7 +254,7 @@ const PortalLogin: React.FC<PortalLoginProps> = ({
                             >
                             </TextField>
                         }
-                        {/* {displayComponent === PASSWORD_COMPONENT &&
+                        {displayComponent === PASSWORD_COMPONENT &&
                             <TextField
                                 type="password"
                                 id="password"
@@ -262,7 +287,7 @@ const PortalLogin: React.FC<PortalLoginProps> = ({
                                 }}
                             >
                             </TextField>
-                        } */}
+                        }
                     </Grid2>
                     {tenantBean.getTenantMetaData().tenant.allowForgotPassword &&
                         <Grid2 size={{ xs: 12 }}>
@@ -333,37 +358,7 @@ const PortalLogin: React.FC<PortalLoginProps> = ({
                                 }
                             </Stack>
                         }
-                    </Grid2>
-                    {tenantBean.getTenantMetaData().tenant.allowUserSelfRegistration &&
-                        <>
-                            <Grid2 size={{ xs: 12 }}>
-                                <Divider></Divider>
-                            </Grid2>
-
-                            <Grid2 size={{ xs: 12 }} textAlign={"center"}>
-                                <Stack
-                                    direction={"row-reverse"}
-                                    justifyItems={"center"}
-                                    alignItems={"center"}
-                                >
-                                    <Link prefetch={false} href={`/authorize/register?${getQueryParams()}`}>
-                                        <Button
-                                            disabled={false}
-                                            variant="contained"
-                                            sx={{ height: "100%", padding: "8px 32px 8px 32px", marginLeft: "8px",
-                                                backgroundColor: tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheaderbackgroundcolor,
-                                                color: tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheadertextcolor,
-                                                fontWeight: "bold",
-                                                fontSize: "0.9em"
-                                            }}
-                                        >Register</Button>
-                                    </Link>
-
-                                    <div style={{ verticalAlign: "center", fontWeight: "bold", fontSize: "0.9em" }}>Need to create an account?</div>
-                                </Stack>
-                            </Grid2>
-                        </>
-                    }
+                    </Grid2>                    
                 </Grid2>
             </Paper>
         )

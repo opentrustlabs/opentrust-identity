@@ -683,6 +683,7 @@ export const QUERY_PARAM_AUTHENTICATE_TO_PORTAL="_pa";
 export const QUERY_PARAM_COUNTRY_CODE="country_code";
 export const QUERY_PARAM_LANGUAGE_CODE="language_code";
 export const QUERY_PARAM_RETURN_URI="return_uri";
+export const QUERY_PARAM_USERNAME="username";
 
 
 

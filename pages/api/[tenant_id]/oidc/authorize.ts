@@ -228,7 +228,7 @@ export default async function handler(
             await authDao.saveFederatedOIDCAuthorizationRel(federatedOidcAuthorizationRel);
             
             const codeChallengeQueryParams = oidcProviders[0].usePkce ? `&code_challenge=${challenge}&code_challenge_method=S256` : "";
-            res.status(302).setHeader("location", `${wellKnownConfig.authorization_endpoint}?client_id=${oidcProviders[0].federatedOIDCProviderClientId}&state=${federatedOidcAuthorizationRel.state}&response_type=code&response_mode=query&redirect_uri=${AUTH_DOMAIN}${"/api/federated-oidc-provider/return&scope=openid%20email%20profile%20offline_access"}${codeChallengeQueryParams}`);
+            res.status(302).setHeader("location", `${wellKnownConfig.authorization_endpoint}?client_id=${oidcProviders[0].federatedOIDCProviderClientId}&state=${federatedOidcAuthorizationRel.state}&response_type=code&response_mode=query&redirect_uri=${AUTH_DOMAIN}${"/api/federated-auth/return&scope=openid%20email%20profile%20offline_access"}${codeChallengeQueryParams}`);
 			res.end();
 			return;            
         }
