@@ -220,10 +220,19 @@ class DBTenantDao extends TenantDao {
         }        
     }
 
-    public async assignPasswordConfigToTenant(tenantId: string, tenantPasswordConfig: TenantPasswordConfig): Promise<TenantPasswordConfig> {        
-        tenantPasswordConfig.tenantId = tenantId;
+    public async assignPasswordConfigToTenant(tenantPasswordConfig: TenantPasswordConfig): Promise<TenantPasswordConfig> {                
         const sequelize: Sequelize = await DBDriver.getConnection();
         await sequelize.models.tenantPasswordConfig.create(tenantPasswordConfig);        
+        return Promise.resolve(tenantPasswordConfig);
+    }
+
+    public async updatePasswordConfig(tenantPasswordConfig: TenantPasswordConfig): Promise<TenantPasswordConfig> {
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.tenantPasswordConfig.update(tenantPasswordConfig, {
+            where: {
+                tenantId: tenantPasswordConfig.tenantId
+            }
+        });
         return Promise.resolve(tenantPasswordConfig);
     }
 

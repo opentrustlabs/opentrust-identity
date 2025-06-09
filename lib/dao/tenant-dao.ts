@@ -42,7 +42,9 @@ abstract class TenantDao {
 
     abstract deleteTenantLookAndFeel(tenantId: string): Promise<void>;
 
-    abstract assignPasswordConfigToTenant(tenantId: string, tenantPasswordConfig: TenantPasswordConfig): Promise<TenantPasswordConfig>;
+    abstract assignPasswordConfigToTenant(tenantPasswordConfig: TenantPasswordConfig): Promise<TenantPasswordConfig>;
+
+    abstract updatePasswordConfig(tenantPasswordConfig: TenantPasswordConfig): Promise<TenantPasswordConfig>;
 
     abstract getTenantPasswordConfig(tenantId: string): Promise<TenantPasswordConfig | null>;
 

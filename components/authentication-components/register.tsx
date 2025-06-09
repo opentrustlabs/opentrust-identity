@@ -6,7 +6,7 @@ import useMediaQuery from '@mui/material/useMediaQuery';
 import Link from 'next/link';
 import { QRCodeSVG } from 'qrcode.react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { DEFAULT_TENANT_META_DATA, DEFAULT_TENANT_PASSWORD_CONFIGURATION, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, NAME_ORDER_DISPLAY, NAME_ORDER_EASTERN, NAME_ORDER_WESTERN, NAME_ORDERS, QUERY_PARAM_AUTHENTICATE_TO_PORTAL, QUERY_PARAM_PREAUTH_REDIRECT_URI, QUERY_PARAM_PREAUTH_TENANT_ID, QUERY_PARAM_PREAUTHN_TOKEN, QUERY_PARAM_USERNAME } from "@/utils/consts";
+import { DEFAULT_TENANT_PASSWORD_CONFIGURATION, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, NAME_ORDER_DISPLAY, NAME_ORDER_EASTERN, NAME_ORDER_WESTERN, NAME_ORDERS, QUERY_PARAM_AUTHENTICATE_TO_PORTAL, QUERY_PARAM_PREAUTH_REDIRECT_URI, QUERY_PARAM_PREAUTH_TENANT_ID, QUERY_PARAM_PREAUTHN_TOKEN, QUERY_PARAM_USERNAME } from "@/utils/consts";
 import {  TENANT_PASSWORD_CONFIG_QUERY, VALIDATE_TOTP_TOKEN_QUERY } from "@/graphql/queries/oidc-queries";
 import { useLazyQuery, useMutation, useQuery } from "@apollo/client";
 import { Fido2KeyRegistrationInput, Fido2RegistrationChallengeResponse, StateProvinceRegion, TenantPasswordConfig, TotpResponse, UserCreateInput } from "@/graphql/generated/graphql-types";
@@ -22,7 +22,7 @@ import ArrowDropUpOutlinedIcon from '@mui/icons-material/ArrowDropUpOutlined';
 import { validatePassword } from "@/utils/password-utils";
 import { CREATE_FIDO2_REGISTRATION_CHALLENGE_MUTATION, GENERATE_TOTP_MUTATION, REGISTER_FIDO2_KEY_MUTATION, REGISTER_USER_MUTATION, VERIFY_REGISTRATION_TOKEN_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
-import { RegistrationResponseJSON, startRegistration, startAuthentication, PublicKeyCredentialRequestOptionsJSON, AuthenticatorTransport, AuthenticationResponseJSON } from "@simplewebauthn/browser";
+import { RegistrationResponseJSON, startRegistration } from "@simplewebauthn/browser";
 
 
 const Register: React.FC = () => {
@@ -34,7 +34,7 @@ const Register: React.FC = () => {
 
     // QUERY PARAMS
     const params = useSearchParams();    
-    const preauthToken = params?.get(QUERY_PARAM_PREAUTHN_TOKEN);
+    const preauthToken: string | null | undefined = params?.get(QUERY_PARAM_PREAUTHN_TOKEN);
     const tenantId = params?.get(QUERY_PARAM_PREAUTH_TENANT_ID);
     const username = params?.get(QUERY_PARAM_USERNAME);
     const redirectUri = params?.get(QUERY_PARAM_PREAUTH_REDIRECT_URI);
@@ -162,7 +162,8 @@ const Register: React.FC = () => {
         onCompleted(data) {
             console.log("success");
             setShowMutationBackdrop(false);
-            console.log(data);            
+            console.log(data);
+            setSecurityKeySuccessfullyConfigured(true);
         },
         onError(error) {
             console.log("error");
@@ -176,6 +177,7 @@ const Register: React.FC = () => {
             userId: createdUserId
         },
         onCompleted(data) {
+            setTotpSuccessfullyConfigured(true);
             setShowMutationBackdrop(false);
             setTotpResponse(data.generateTOTP);
             setShowTotpQRCodeDialog(true);
@@ -313,6 +315,8 @@ const Register: React.FC = () => {
             }
         }
     }
+
+
 
     // Cannot register without a valid tenant id to register against
     useEffect(() => {
@@ -752,7 +756,7 @@ const Register: React.FC = () => {
                                                 <Stack>
                                                     <Button sx={{padding: "8px"}}
                                                         onClick={() => generateQRCode()}
-                                                        disabled={!totpSuccessfullyConfigured}
+                                                        disabled={totpSuccessfullyConfigured}
                                                     >
                                                         TOTP
                                                     </Button>
@@ -770,7 +774,7 @@ const Register: React.FC = () => {
                                                 <Stack>
                                                     <Button 
                                                         sx={{padding: "8px"}}
-                                                        disabled={!securityKeySuccessfullyConfigured}
+                                                        disabled={securityKeySuccessfullyConfigured}
                                                         onClick={() => {
                                                             setShowMutationBackdrop(true);
                                                             createFido2Challenge();
@@ -856,11 +860,33 @@ const Register: React.FC = () => {
                                 {registrationPage === 4 && !passwordConfig.requireMfa &&
                                     <Button
                                         onClick={() => {
-                                            
+                                            /*
+                                                If this is a user who is accessing an application and NOT the
+                                                IdP tool itself, then the pre-auth token (_tk) will be non-null and non-empty.
+                                                In this case, use the preauth token to generate an authorization code and
+                                                get a redirect URL back and then redirect the user.
+
+                                                If this is a user who is accessing the IdP tool itself, then the pre-auth token
+                                                will be null or undefined. In this case, take the user to the landing page for
+                                                the tenant they have just registered against - that is: /{tenant_id}
+
+                                            */
                                         }}  
 
                                     >                                        
-                                        {!passwordConfig.requireMfa ? "Skip" : "Finish"}
+                                        Skip
+                                    </Button>
+                                }
+                                {registrationPage === 4 && passwordConfig.requireMfa &&
+                                    <Button
+                                        disabled={
+                                            passwordConfig.mfaTypesRequired !== null
+                                        }
+                                        onClick={() => {
+                                            // See the comments in the onClick() function above. The same logic applies here too.
+                                        }}
+                                    >                                        
+                                        Finish
                                     </Button>
                                 }
 

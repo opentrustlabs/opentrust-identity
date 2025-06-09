@@ -342,8 +342,8 @@ export const PASSWORD_HASH_ITERATION_256K=262144;
 
 // 16 byte salt (minimum recommended by NIST is 32 bits / 4 bytes)
 export const PASSWORD_SALT_LENGTH=16; 
-export const PASSWORD_MINIMUM_LENGTH=10;
-export const PASSWORD_MAXIMUM_LENGTH=64;
+export const PASSWORD_MINIMUM_LENGTH=8;
+export const PASSWORD_MAXIMUM_LENGTH=96;
 export const PASSWORD_PATTERN="[A-Za-z0-9_-!@#[]<>=?+*.,%/:;]";
 export const DEFAULT_PASSWORD_SPECIAL_CHARACTERS_ALLOWED="_-!@#[]<>=?+*.,%/:;";
 
@@ -484,16 +484,14 @@ export const TOKEN_TYPES=[
 ];
 
 export const MFA_AUTH_TYPE_NONE="NONE";
-export const MFA_AUTH_TYPE_SMS="SMS";
+// export const MFA_AUTH_TYPE_SMS="SMS";
 //export const MFA_AUTH_TYPE_EMAIL="EMAIL";
 export const MFA_AUTH_TYPE_TIME_BASED_OTP="TIME_BASED_OTP";
 export const MFA_AUTH_TYPE_FIDO2="FIDO2";
 export const MFA_AUTH_TYPES=[
-    MFA_AUTH_TYPE_NONE,    
-    //MFA_AUTH_TYPE_EMAIL,
+    MFA_AUTH_TYPE_NONE,   
     MFA_AUTH_TYPE_TIME_BASED_OTP,
-    MFA_AUTH_TYPE_FIDO2,
-    MFA_AUTH_TYPE_SMS,
+    MFA_AUTH_TYPE_FIDO2
 ];
 
 export const TOTP_HASH_ALGORITHM_SHA256="SHA256";
@@ -501,10 +499,8 @@ export const TOTP_HASH_ALGORITHM_SHA1="SHA1"
 
 export const MFA_AUTH_TYPE_DISPLAY: Map<string, string> = new Map([
     [MFA_AUTH_TYPE_NONE, "None"],    
-    //[MFA_AUTH_TYPE_EMAIL, "Email - Not recommended"],
     [MFA_AUTH_TYPE_TIME_BASED_OTP, "TOTP - Requires an authenticator app"],
-    [MFA_AUTH_TYPE_FIDO2, "Security Key"],
-    [MFA_AUTH_TYPE_SMS, "SMS - Not recommended"],
+    [MFA_AUTH_TYPE_FIDO2, "Security Key"]
 ]);
 
 export const NAME_ORDER_EASTERN="EASTER_NAME_ORDER";
@@ -742,9 +738,9 @@ export const DEFAULT_TENANT_META_DATA: TenantMetaData = {
 }
 
 export const DEFAULT_TENANT_PASSWORD_CONFIGURATION: TenantPasswordConfig = {
-    passwordHashingAlgorithm: PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS,
-    passwordMaxLength: 64,
-    passwordMinLength: 10,
+    passwordHashingAlgorithm: PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS,
+    passwordMaxLength: PASSWORD_MAXIMUM_LENGTH,
+    passwordMinLength: PASSWORD_MINIMUM_LENGTH,
     requireLowerCase: true,
     requireMfa: false,
     requireNumbers: true,
