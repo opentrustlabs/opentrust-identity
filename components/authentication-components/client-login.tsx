@@ -5,7 +5,7 @@ import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { } from "@/utils/consts";
+import { PASSWORD_MINIMUM_LENGTH } from "@/utils/consts";
 import { LOGIN_USERNAME_HANDLER_QUERY } from "@/graphql/queries/oidc-queries";
 import { useLazyQuery, useMutation, useQuery } from "@apollo/client";
 import { LoginAuthenticationHandlerAction, LoginAuthenticationHandlerResponse, LoginUserNameHandlerAction, LoginUserNameHandlerResponse } from "@/graphql/generated/graphql-types";
@@ -335,7 +335,7 @@ const ClientLogin: React.FC<ClientLoginProps> = ({
                                 direction={"row-reverse"}
                             >
                                 <Button
-                                    disabled={password === null || password.length < MIN_USERNAME_LENGTH}
+                                    disabled={password === null || password.length < PASSWORD_MINIMUM_LENGTH}
                                     variant="contained"
                                     sx={{ height: "100%", padding: "8px 32px 8px 32px", marginLeft: "8px",
                                         backgroundColor: tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheaderbackgroundcolor,
@@ -344,7 +344,9 @@ const ClientLogin: React.FC<ClientLoginProps> = ({
                                         fontSize: "0.9em"
                                     }}
                                     onClick={buttonLoginHandler}
-                                >Login</Button>
+                                >
+                                    Login
+                                </Button>
                                 <Button
                                     disabled={false}
                                     variant="contained"
@@ -355,7 +357,9 @@ const ClientLogin: React.FC<ClientLoginProps> = ({
                                         fontSize: "0.9em"
                                     }}
                                     onClick={() => {setErrorMessage(null); setPassword(""); setDisplayComponent(USERNAME_COMPONENT);}}
-                                >Back</Button>
+                                >
+                                    Back
+                                </Button>
                                 {preauthToken &&
                                     <a href={`${redirectUri}?error=access_denied`}>
                                         <Button
@@ -367,7 +371,9 @@ const ClientLogin: React.FC<ClientLoginProps> = ({
                                                 fontWeight: "bold",
                                                 fontSize: "0.9em"
                                             }}
-                                        >Cancel</Button>
+                                        >
+                                            Cancel
+                                        </Button>
                                     </a>
                                 }
                             </Stack>

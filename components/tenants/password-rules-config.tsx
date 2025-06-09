@@ -5,7 +5,7 @@ import React from "react";
 import DataLoading from "../layout/data-loading";
 import ErrorComponent from "../error/error-component";
 import { PasswordConfigInput, TenantPasswordConfig } from "@/graphql/generated/graphql-types";
-import { DEFAULT_PASSWORD_SPECIAL_CHARACTERS_ALLOWED, MFA_AUTH_TYPE_DISPLAY, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_NONE, MFA_AUTH_TYPE_SMS, MFA_AUTH_TYPE_TIME_BASED_OTP, MFA_AUTH_TYPES, PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS, PASSWORD_HASHING_ALGORITHMS, PASSWORD_HASHING_ALGORITHMS_DISPLAY } from "@/utils/consts";
+import { DEFAULT_TENANT_PASSWORD_CONFIGURATION, MFA_AUTH_TYPE_DISPLAY, MFA_AUTH_TYPE_NONE, MFA_AUTH_TYPES, PASSWORD_HASHING_ALGORITHMS, PASSWORD_HASHING_ALGORITHMS_DISPLAY } from "@/utils/consts";
 import Grid2 from "@mui/material/Grid2";
 import TextField from "@mui/material/TextField";
 import { Alert, Autocomplete, Checkbox, Divider, MenuItem, Select } from "@mui/material";
@@ -24,22 +24,8 @@ const PasswordRulesConfiguration: React.FC<PasswordRulesConfigurationProps> = ({
     onUpdateStart
 }) => {
 
-    let initInput: PasswordConfigInput = {
-        passwordHashingAlgorithm: PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS,
-        passwordMaxLength: 64,
-        passwordMinLength: 8,
-        requireLowerCase: true,
-        requireMfa: false,
-        requireNumbers: true,
-        requireSpecialCharacters: true,
-        requireUpperCase: true,
-        tenantId: tenantId,
-        maxRepeatingCharacterLength: 2,
-        mfaTypesRequired: "",
-        passwordHistoryPeriod: 0,
-        passwordRotationPeriodDays: 0,
-        specialCharactersAllowed: DEFAULT_PASSWORD_SPECIAL_CHARACTERS_ALLOWED
-    }
+    let initInput: PasswordConfigInput = DEFAULT_TENANT_PASSWORD_CONFIGURATION;
+    initInput.tenantId = tenantId;
 
     // STATE VARIABLES
     const [markDirty, setMarkDirty] = React.useState<boolean>(false);
@@ -69,7 +55,6 @@ const PasswordRulesConfiguration: React.FC<PasswordRulesConfigurationProps> = ({
                 initInput.requireSpecialCharacters = config.requireSpecialCharacters;
                 initInput.requireUpperCase = config.requireUpperCase;
                 initInput.specialCharactersAllowed = config.specialCharactersAllowed;
-                initInput.tenantId = tenantId;
                 initInput.passwordHistoryPeriod = config.passwordHistoryPeriod;
             }
             setPasswordConfigInput(initInput);
@@ -90,6 +75,7 @@ const PasswordRulesConfiguration: React.FC<PasswordRulesConfigurationProps> = ({
             setPasswordConfigInput(revertToInput);
             setErrorMessage(error.message)
         },
+        refetchQueries: [TENANT_PASSWORD_CONFIG_QUERY]
     }
 
     )

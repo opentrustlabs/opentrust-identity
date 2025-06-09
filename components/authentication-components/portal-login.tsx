@@ -60,8 +60,7 @@ const PortalLogin: React.FC<PortalLoginProps> = ({
 
     // GRAPHQL FUNCTIONS    
     const [portalLoginEmailHandler] = useMutation(PORTAL_LOGIN_EMAIL_HANDLER_MUTATION, {
-        onCompleted(data) {
-            //setErrorMessage(JSON.stringify(data.createPortalLoginEmailHandlerResponse));
+        onCompleted(data) {            
             const portalLoginEmailHandlerResponse: PortalLoginEmailHandlerResponse = data.createPortalLoginEmailHandlerResponse;
             if(portalLoginEmailHandlerResponse.errorType){
                 setErrorMessage(portalLoginEmailHandlerResponse.errorType)

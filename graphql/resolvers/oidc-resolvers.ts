@@ -682,9 +682,7 @@ const resolvers: Resolvers = {
             return loginFailurePolicy;
         },
         setTenantPasswordConfig: async(_: any, { passwordConfigInput }, oidcContext) => {
-            //const tenantService: TenantService = new TenantService(oidcContext);
-            // TODO
-            // Implement the service and DAO classes
+            const tenantService: TenantService = new TenantService(oidcContext);            
             const tenantPasswordConfig: TenantPasswordConfig = {
                 passwordHashingAlgorithm: passwordConfigInput.passwordHashingAlgorithm,
                 passwordMaxLength: passwordConfigInput.passwordMaxLength,
@@ -701,7 +699,7 @@ const resolvers: Resolvers = {
                 passwordRotationPeriodDays: passwordConfigInput.passwordRotationPeriodDays,
                 specialCharactersAllowed: passwordConfigInput.specialCharactersAllowed
             }
-            //await tenantService.assignPasswordConfigToTenant(passwordConfigInput.tenantId, tenantPasswordConfig);
+            await tenantService.assignPasswordConfigToTenant(tenantPasswordConfig);
             return tenantPasswordConfig;
         },
         setTenantLegacyUserMigrationConfig: async(_: any, { tenantLegacyUserMigrationConfigInput }, oidcContext) => {
