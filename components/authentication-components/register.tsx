@@ -1,14 +1,15 @@
 "use client";
 import React, { Suspense, useContext, useEffect, useState } from "react";
-import { Autocomplete, Backdrop, Button, CircularProgress, Grid2, InputAdornment, MenuItem, Paper, Select, Snackbar, Stack, TextField, Typography } from "@mui/material";
+import { Autocomplete, Backdrop, Button, CircularProgress, Dialog, DialogActions, DialogContent, Grid2, InputAdornment, MenuItem, Paper, Select, Snackbar, Stack, TextField, Typography } from "@mui/material";
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import Link from 'next/link';
+import { QRCodeSVG } from 'qrcode.react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { DEFAULT_TENANT_META_DATA, DEFAULT_TENANT_PASSWORD_CONFIGURATION, NAME_ORDER_DISPLAY, NAME_ORDER_EASTERN, NAME_ORDER_WESTERN, NAME_ORDERS, QUERY_PARAM_AUTHENTICATE_TO_PORTAL, QUERY_PARAM_PREAUTH_REDIRECT_URI, QUERY_PARAM_PREAUTH_TENANT_ID, QUERY_PARAM_PREAUTHN_TOKEN, QUERY_PARAM_USERNAME } from "@/utils/consts";
-import { TENANT_META_DATA_QUERY, TENANT_PASSWORD_CONFIG_QUERY } from "@/graphql/queries/oidc-queries";
+import { DEFAULT_TENANT_META_DATA, DEFAULT_TENANT_PASSWORD_CONFIGURATION, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, NAME_ORDER_DISPLAY, NAME_ORDER_EASTERN, NAME_ORDER_WESTERN, NAME_ORDERS, QUERY_PARAM_AUTHENTICATE_TO_PORTAL, QUERY_PARAM_PREAUTH_REDIRECT_URI, QUERY_PARAM_PREAUTH_TENANT_ID, QUERY_PARAM_PREAUTHN_TOKEN, QUERY_PARAM_USERNAME } from "@/utils/consts";
+import {  TENANT_PASSWORD_CONFIG_QUERY, VALIDATE_TOTP_TOKEN_QUERY } from "@/graphql/queries/oidc-queries";
 import { useLazyQuery, useMutation, useQuery } from "@apollo/client";
-import { StateProvinceRegion, TenantPasswordConfig, UserCreateInput } from "@/graphql/generated/graphql-types";
+import { Fido2KeyRegistrationInput, Fido2RegistrationChallengeResponse, StateProvinceRegion, TenantPasswordConfig, TotpResponse, UserCreateInput } from "@/graphql/generated/graphql-types";
 import Alert from '@mui/material/Alert';
 import { PageTitleContext } from "@/components/contexts/page-title-context";
 import { COUNTRY_CODES, CountryCodeDef, LANGUAGE_CODES, LanguageCodeDef } from "@/utils/i18n";
@@ -19,8 +20,9 @@ import VisibilityOffOutlinedIcon from '@mui/icons-material/VisibilityOffOutlined
 import ArrowDropDownOutlinedIcon from '@mui/icons-material/ArrowDropDownOutlined';
 import ArrowDropUpOutlinedIcon from '@mui/icons-material/ArrowDropUpOutlined';
 import { validatePassword } from "@/utils/password-utils";
-import { REGISTER_USER_MUTATION, VERIFY_REGISTRATION_TOKEN_MUTATION } from "@/graphql/mutations/oidc-mutations";
+import { CREATE_FIDO2_REGISTRATION_CHALLENGE_MUTATION, GENERATE_TOTP_MUTATION, REGISTER_FIDO2_KEY_MUTATION, REGISTER_USER_MUTATION, VERIFY_REGISTRATION_TOKEN_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
+import { RegistrationResponseJSON, startRegistration, startAuthentication, PublicKeyCredentialRequestOptionsJSON, AuthenticatorTransport, AuthenticationResponseJSON } from "@simplewebauthn/browser";
 
 
 const Register: React.FC = () => {
@@ -38,7 +40,6 @@ const Register: React.FC = () => {
     const redirectUri = params?.get(QUERY_PARAM_PREAUTH_REDIRECT_URI);
     
     
-
     // PAGE STATE MANAGEMENT VARIABLES    
     const initInput: UserCreateInput = {
         domain: "",
@@ -74,6 +75,11 @@ const Register: React.FC = () => {
     const [showMutationSnackbar, setShowMutationSnackbar] = React.useState<boolean>(false);
     const [verificationCode, setVerificationCode] = React.useState<string>("");
     const [createdUserId, setCreatedUserId] = React.useState<string | null>(null);
+    const [showTotpQRCodeDialog, setShowTotpQRCodeDialog] = React.useState(false);
+    const [totpResponse, setTotpResponse] = React.useState<TotpResponse | null>(null);
+    const [totpValidationMessage, setTotpValidationMessage] = React.useState<string | null>(null);
+    const [totpTestValue, setTotpTestValue] = React.useState<string>("");
+    const [totpValidationErrorMessage, setTotpValidationErrorMessage] = React.useState<string | null>(null);
 
     // HOOKS FROM NEXTJS OR MUI
     const router = useRouter();
@@ -85,7 +91,7 @@ const Register: React.FC = () => {
 
     // GRAPHQL FUNCTIONS    
     // data for password config may be null, so present some sensible defaults
-    const { } = useQuery(TENANT_PASSWORD_CONFIG_QUERY, {
+    const {} = useQuery(TENANT_PASSWORD_CONFIG_QUERY, {
         variables: {
             tenantId: tenantId
         },
@@ -94,6 +100,9 @@ const Register: React.FC = () => {
                 const config: TenantPasswordConfig = data.getTenantPasswordConfig as TenantPasswordConfig;
                 setPasswordConfig(config);
             }
+        },
+        onError(error) {
+            setErrorMessage(error.message);            
         }
     });
 
@@ -130,7 +139,68 @@ const Register: React.FC = () => {
             setShowMutationBackdrop(false);
             setErrorMessage(error.message)
         },
-    })
+    });
+
+    const [createFido2Challenge] = useMutation(CREATE_FIDO2_REGISTRATION_CHALLENGE_MUTATION, {
+        variables: {
+            userId: createdUserId
+        },
+        onCompleted(data) {
+            setShowMutationBackdrop(false);
+            const challengeResponse: Fido2RegistrationChallengeResponse = data.createFido2RegistrationChallenge;
+            createKeyRegistration(challengeResponse);
+        },
+        onError(error) {
+            setShowMutationBackdrop(false);
+            setErrorMessage(error.message)
+        },
+    });
+
+    const [registerFido2KeyMutation] = useMutation(REGISTER_FIDO2_KEY_MUTATION, {
+        onCompleted(data) {
+            console.log("success");
+            setShowMutationBackdrop(false);
+            console.log(data);            
+        },
+        onError(error) {
+            console.log("error");
+            setShowMutationBackdrop(false);
+            setErrorMessage(error.message);
+        }
+    });
+
+    const [generateQRCode] = useMutation(GENERATE_TOTP_MUTATION, {
+        variables: {
+            userId: createdUserId
+        },
+        onCompleted(data) {
+            setShowMutationBackdrop(false);
+            setTotpResponse(data.generateTOTP);
+            setShowTotpQRCodeDialog(true);
+        },
+        onError(error) {
+            setShowMutationBackdrop(false);
+            setErrorMessage(error.message);
+        },
+        notifyOnNetworkStatusChange: true
+    });
+
+    const [validateTotp] = useLazyQuery(VALIDATE_TOTP_TOKEN_QUERY, {        
+        onCompleted(data) {
+            if(data.validateTOTP === true){
+                setTotpValidationMessage("Test Passed")
+            }
+            else{
+                setTotpValidationMessage("Test failed");
+            }            
+        },
+        onError(error) {
+            setTotpValidationErrorMessage(error.message)
+        },
+        fetchPolicy: "no-cache",
+        nextFetchPolicy: "no-cache"
+
+    });
 
     // HANDLER FUNCTIONS
     const isPage1InputValid = (): boolean => {
@@ -176,9 +246,75 @@ const Register: React.FC = () => {
         return bRetVal;
     }
 
+    const createKeyRegistration = async (challengeResponse: Fido2RegistrationChallengeResponse) => {        
+        if(challengeResponse){
+            try{
+                const attResp: RegistrationResponseJSON = await startRegistration({
+                    optionsJSON: {
+                        rp: {
+                            name: challengeResponse.rpName,
+                            id: challengeResponse.rpId
+                        },
+                        user: {
+                            displayName: challengeResponse.userName,
+                            id: challengeResponse.fido2Challenge.userId,
+                            name: challengeResponse.email
+                        },
+                        challenge: challengeResponse.fido2Challenge.challenge,
+                        pubKeyCredParams: [
+                            {
+                                type: "public-key",
+                                alg: -257
+                            },
+                            {
+                                type: "public-key",
+                                alg: -7
+                            },
+                            {
+                                type: "public-key",
+                                alg: -8
+                            }
+                        ],
+                        timeout: 300000,                    
+                        attestation: "direct",
+                        authenticatorSelection: {
+                            authenticatorAttachment: "cross-platform"
+                        }
+                    }
+                });
+                console.log(attResp);
+
+                const fido2KeyRegistrationInput: Fido2KeyRegistrationInput = {
+                    authenticationAttachment: attResp.authenticatorAttachment || "",
+                    id: attResp.id,
+                    rawId: attResp.rawId,
+                    response: {
+                        attestationObject: attResp.response.attestationObject,
+                        authenticatorData: attResp.response.authenticatorData || "",
+                        clientDataJSON: attResp.response.clientDataJSON,
+                        publicKey: attResp.response.publicKey || "",
+                        publicKeyAlgorithm: attResp.response.publicKeyAlgorithm || 0,
+                        transports: attResp.response.transports || []
+                    },
+                    type: attResp.type
+                }
+                setShowMutationBackdrop(true);
+                registerFido2KeyMutation({
+                    variables: {
+                        userId: challengeResponse.fido2Challenge.userId, 
+                        fido2KeyRegistrationInput: fido2KeyRegistrationInput    
+                    }
+                });
+            }
+            catch(err){
+                console.log(err);
+            }
+        }
+    }
+
     // Cannot register without a valid tenant id to register against
     useEffect(() => {
-        if(tenantBean.getTenantMetaData().tenant.tenantId === ""){
+        if(tenantBean.getTenantMetaData().tenant.tenantId === "" || tenantId === null || tenantId === undefined){
             router.push(`/authorize/login?${QUERY_PARAM_AUTHENTICATE_TO_PORTAL}=true`);
         }
     }, []);
@@ -191,6 +327,73 @@ const Register: React.FC = () => {
                     sx={{ padding: 2, height: "100%", maxWidth: maxWidth, width: maxWidth, margin: "16px 0px" }}
                 >
                     <Typography component="div" fontSize={"0.95em"}>
+                        {showTotpQRCodeDialog &&
+                            <Dialog
+                                open={showTotpQRCodeDialog}
+                                maxWidth="sm"
+                                fullWidth={true}
+                            >
+                                <DialogContent>
+                                    {totpValidationErrorMessage &&
+                                        <Alert onClose={() => setTotpValidationErrorMessage(null)} severity="error">{totpValidationErrorMessage}</Alert>
+                                    }
+                                    {totpResponse &&
+                                        <>                                            
+                                            <div style={{display: "flex", justifyContent: "center"}}>
+                                                <QRCodeSVG
+                                                    value={totpResponse.uri}
+                                                    size={256}
+                                                />                                            
+                                            </div>
+                                            <div style={{margin: "35px 0px"}}>
+                                                <div style={{marginBottom: "8px"}}>If you do not have a QR code scanner you can enter the secret value below:</div>
+                                                <div><pre style={{fontSize: "1.4em", letterSpacing: "3px", wordWrap: "break-word", whiteSpace: "pre-wrap"}}>{totpResponse.userMFARel.totpSecret}</pre></div>
+                                            </div>
+                                        </>
+                                    }
+                                    {!totpResponse &&
+                                        <div>Unable to generate a valid QR code.</div>
+                                    }
+                                    <Grid2 container size={12} spacing={1} margin={"55px 0px"}>
+                                        <Grid2 size={12}>Confirm your passcode.</Grid2>
+                                        <Grid2 size={8}>
+                                            <TextField
+                                                value={totpTestValue}
+                                                onChange={(evt) => setTotpTestValue(evt.target.value)}
+                                                size="small"
+                                                fullWidth={true}
+                                            />
+                                        </Grid2>
+                                        <Grid2 size={4}>
+                                            <Button
+                                                sx={{cursor: "pointer"}}
+                                                onClick={() => {
+                                                    setTotpValidationMessage(null);
+                                                    validateTotp({
+                                                        variables: {
+                                                            userId: createdUserId,
+                                                            totpValue: totpTestValue
+                                                        }
+                                                    })
+                                                }}
+                                            >
+                                                Test
+                                            </Button>
+                                        </Grid2>
+                                        {totpValidationMessage &&
+                                            <Grid2 size={12}>{totpValidationMessage}</Grid2>
+                                        }
+                                    </Grid2>
+                                </DialogContent>
+                                <DialogActions>
+                                    <Button
+                                        onClick={() => setShowTotpQRCodeDialog(false)}
+                                    >
+                                        Close
+                                    </Button>
+                                </DialogActions>
+                            </Dialog>
+                        }
                         <Grid2 spacing={1} container size={{ xs: 12 }}>
                             {errorMessage !== null &&
                                 <>
@@ -544,19 +747,39 @@ const Register: React.FC = () => {
                                         </Grid2>
                                         <Grid2 marginBottom={"16px"} spacing={2} container size={12}>                                            
                                             <Grid2 size={3}>
-                                                <Stack><Button sx={{padding: "8px"}}>TOTP</Button></Stack> 
+                                                <Stack>
+                                                    <Button sx={{padding: "8px"}}
+                                                        onClick={() => generateQRCode()}
+                                                    >
+                                                        TOTP
+                                                    </Button>
+                                                </Stack> 
                                             </Grid2>
                                             <Grid2 size={9}>
-                                                <div style={{fontWeight: "bold", textDecoration: "underline", marginBottom: "8px"}}>REQUIRED: </div>
+                                                <div style={{fontWeight: "bold", textDecoration: "underline", marginBottom: "8px"}}>
+                                                    {passwordConfig.requireMfa && passwordConfig.mfaTypesRequired?.includes(MFA_AUTH_TYPE_TIME_BASED_OTP) ? "REQUIRED" : "OPTIONAL"}
+                                                </div>
                                                 <div style={{marginBottom: "8px"}}>
                                                     Time-based One-Time Passcode. This requires an authenticator app (such as <span style={{fontWeight: "bold"}}>Microsoft Authenticator</span> or <span style={{fontWeight: "bold"}}>Google Authenticator</span>) on a device such as your phone
                                                 </div>
                                             </Grid2>
                                             <Grid2 size={3}>
-                                                <Stack><Button sx={{padding: "8px"}}>Security Key</Button></Stack> 
+                                                <Stack>
+                                                    <Button 
+                                                        sx={{padding: "8px"}}
+                                                        onClick={() => {
+                                                            setShowMutationBackdrop(true);
+                                                            createFido2Challenge();
+                                                        }}
+                                                    >
+                                                        Security Key
+                                                    </Button>
+                                                </Stack> 
                                             </Grid2>
                                             <Grid2 size={9}>
-                                                <div style={{fontWeight: "bold", textDecoration: "underline", marginBottom: "8px"}}>OPTIONAL: </div>
+                                                <div style={{fontWeight: "bold", textDecoration: "underline", marginBottom: "8px"}}>
+                                                    {passwordConfig.requireMfa && passwordConfig.mfaTypesRequired?.includes(MFA_AUTH_TYPE_FIDO2) ? "REQUIRED" : "OPTIONAL"}
+                                                </div>
                                                 <div style={{marginBottom: "8px"}}>
                                                     This requires a hardware device such as <span style={{fontWeight: "bold"}}>Yubi Key</span> or <span style={{fontWeight: "bold"}}>Titan Key</span>
                                                 </div>
@@ -573,8 +796,7 @@ const Register: React.FC = () => {
                                 {registrationPage === 2 &&
                                     <Button
                                         onClick={() => {
-                                            setShowMutationBackdrop(true);
-                                            console.log(tenantId);
+                                            setShowMutationBackdrop(true);                                            
                                             registerUser({
                                                 variables: {
                                                     tenantId: tenantId,
@@ -627,15 +849,14 @@ const Register: React.FC = () => {
                                         Confirm
                                     </Button>
                                 }
-                                {registrationPage === 4 &&
+                                {registrationPage === 4 && !passwordConfig.requireMfa &&
                                     <Button
                                         onClick={() => {
-                                            // TODO
-                                            // Only show the button when the MFAs are optional
+                                            
                                         }}  
 
                                     >                                        
-                                        Skip
+                                        {!passwordConfig.requireMfa ? "Skip" : "Finish"}
                                     </Button>
                                 }
 

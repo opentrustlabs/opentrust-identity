@@ -18,7 +18,7 @@ const SecurityKeyPage: React.FC = () => {
     
     return (
         <Suspense>
-            <SecurityKey />
+            <div></div>
         </Suspense>
     )
 }

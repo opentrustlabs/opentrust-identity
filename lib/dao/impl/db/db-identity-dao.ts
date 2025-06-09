@@ -467,7 +467,7 @@ class DBIdentityDao extends IdentityDao {
         const user: UserEntity | null = await sequelize.models.user.findOne({
             where: {userId: tokenEntity.getDataValue("userId")}
         });
-        return user ? Promise.resolve(user as any as User) : Promise.resolve(null);
+        return user ? Promise.resolve(user.dataValues as User) : Promise.resolve(null);
     }
     
     public async deleteEmailConfirmationToken(token: string): Promise<void> {
@@ -513,12 +513,21 @@ class DBIdentityDao extends IdentityDao {
     }
 
     public async updateUser(user: User): Promise<User> {
+        console.log(user);
         const sequelize: Sequelize = await DBDriver.getConnection();
         await sequelize.models.user.update(user, {
             where: {
                 userId: user.userId
             }
         });
+
+        const e: UserEntity  | null = await sequelize.models.user.findOne({
+            where: {
+                userId: user.userId
+            }
+        });
+        if(e) console.log(e.dataValues);
+
         return Promise.resolve(user);
     }
 

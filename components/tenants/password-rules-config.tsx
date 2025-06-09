@@ -226,7 +226,7 @@ const PasswordRulesConfiguration: React.FC<PasswordRulesConfigurationProps> = ({
                 <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
                     <Grid2 size={12}>
                         <Grid2 container size={12} marginBottom={"16px"}>
-                            <Grid2 alignContent={"center"} size={11}>Multi-factor Authentication</Grid2>
+                            <Grid2 alignContent={"center"} size={11}>Require Multi-factor Authentication</Grid2>
                             <Grid2 size={1}>
                                 <Checkbox
                                     checked={passwordConfigInput.requireMfa === true}                                
@@ -242,7 +242,7 @@ const PasswordRulesConfiguration: React.FC<PasswordRulesConfigurationProps> = ({
                             </Grid2>                        
                         </Grid2>
                         <Grid2 alignContent={"center"} size={12}>
-                            MFA Types Allowed/Required
+                            MFA Types Required
                         </Grid2>
                         <Grid2 alignContent={"center"} size={12}>
                             <Autocomplete

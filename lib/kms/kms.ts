@@ -119,8 +119,7 @@ abstract class Kms {
                 2 + ivLength + 2, 
                 2 + ivLength + 2 + algorithmLength            
             );
-            if(algorithm.toString() !== AES_GCM_CIPHER){
-                console.log("checpoint 2");
+            if(algorithm.toString() !== AES_GCM_CIPHER){                
                 return Promise.resolve(null);
             }
             
@@ -142,7 +141,6 @@ abstract class Kms {
             // decrypt the encrypted data making sure to add in any additoinal authentication data.
             const key: Buffer | null = await this.decryptBuffer(keyBuffer, aad);
             if(!key){
-                console.log("checpoint 5");
                 return Promise.resolve(null);
             }
 
