@@ -9,9 +9,20 @@ import { RegistrationResponseJSON, startRegistration, startAuthentication, Publi
 import Alert from "@mui/material/Alert";
 
 
+export interface SecurityKeyConfigurationProps {
+    tenantId: string,
+    userId: string,
+    onUpdateStart: () => void,
+    onUpdateEnd: (success: boolean) => void
+}
 
 
-const SecurityKey: React.FC = () => {
+const SecurityKeyConfiguration: React.FC<SecurityKeyConfigurationProps> = ({
+    tenantId,
+    userId,
+    onUpdateEnd,
+    onUpdateStart
+}) => {
 
     const [data, setData] = React.useState<TotpResponse | null>(null);
     const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
@@ -19,7 +30,7 @@ const SecurityKey: React.FC = () => {
 
     const [createFido2Challenge] = useMutation(CREATE_FIDO2_REGISTRATION_CHALLENGE_MUTATION, {
         variables: {
-            userId: "83fb0831-8a00-459c-82c5-9fe69c42dbf7"
+            userId: userId
         },
         onCompleted(data) {
             // TODO
@@ -234,4 +245,4 @@ const SecurityKey: React.FC = () => {
 }
 
 
-export default SecurityKey;
+export default SecurityKeyConfiguration;

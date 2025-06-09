@@ -33,8 +33,6 @@ const ClientLogin: React.FC<ClientLoginProps> = ({
     tenantBean
 }) => {
 
-    console.log("in client login");
-
     // CONTEXT VARIABLES
     const titleSetter = useContext(PageTitleContext);
     titleSetter.setPageTitle("Login");    

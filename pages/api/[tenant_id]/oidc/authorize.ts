@@ -238,10 +238,10 @@ export default async function handler(
 	// In the success case, create a unique key for the query parameter which maps 
 	// all of the incoming values to a single record and return it instead of the multiple 
 	// query params.
-	console.log('tenantId is: ' + tenantId);
-	console.log("scope is " + (scope as string));
-	console.log("state is: " + (state as string));
-	console.log("clientId is " + clientId);
+	// console.log('tenantId is: ' + tenantId);
+	// console.log("scope is " + (scope as string));
+	// console.log("state is: " + (state as string));
+	// console.log("clientId is " + clientId);
 
     const preAuthenticationState: PreAuthenticationState = {
         clientId: clientId,

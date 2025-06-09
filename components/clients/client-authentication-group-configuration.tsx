@@ -28,8 +28,8 @@ import Link from "next/link";
 export interface ClientAuthenticationGroupConfigurationProps {
     tenantId: string,
     clientId: string,
-    onUpdateStart: () => void;
-    onUpdateEnd: (success: boolean) => void;
+    onUpdateStart: () => void,
+    onUpdateEnd: (success: boolean) => void
 }
 
 const ClientAuthenticationGroupConfiguration: React.FC<ClientAuthenticationGroupConfigurationProps> = ({

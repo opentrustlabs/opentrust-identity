@@ -59,10 +59,12 @@ class IdentityService {
                 return Promise.resolve(false);
             }
             // One-time token, so need to delete it in success case
-            identityDao.deleteEmailConfirmationToken(token);
+            identityDao.deleteEmailConfirmationToken(token);           
+
             user.enabled = true;
             user.emailVerified = true;
             await identityDao.updateUser(user);
+            await this.updateSearchIndexUserDocument(user);
             return Promise.resolve(true);
         }        
     }
@@ -99,7 +101,6 @@ class IdentityService {
                 user.locked = true;
             }
             user.federatedOIDCProviderSubjectId = existingUser.federatedOIDCProviderSubjectId;
-            user.emailVerified = existingUser.emailVerified;
             user.domain = existingUser.domain;
 
             // Did the email change and if so, what parts of the email have changed?
@@ -132,24 +133,7 @@ class IdentityService {
                 user.lastName !== existingUser.lastName ||
                 user.enabled !== existingUser.enabled
             ) {
-                const getResponse: Get_Response = await searchClient.get({
-                    id: user.userId,
-                    index: SEARCH_INDEX_OBJECT_SEARCH
-                });
-                
-                if (getResponse.body) {
-                    const document: ObjectSearchResultItem = getResponse.body._source as ObjectSearchResultItem;
-                    document.name = user.nameOrder === NAME_ORDER_WESTERN ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`,
-                    document.email = user.email;
-                    document.enabled = user.enabled;
-                    await searchClient.index({
-                        id: user.userId,
-                        index: SEARCH_INDEX_OBJECT_SEARCH,
-                        body: document
-                    })
-                }
-                // TODO: Update the rel_index as well, but do NOT wait on the results since
-                // there could be 1000s of records to modify.
+                await this.updateSearchIndexUserDocument(user);                
             }
             return user;
         }
@@ -849,6 +833,7 @@ class IdentityService {
 
         }
 
+        console.log("checkpoint 1");
         const domain: string = this.getDomainFromEmail(email);
         const managementDomains: Array<TenantManagementDomainRel> = await tenantDao.getDomainTenantManagementRels(tenantId, domain);
         
@@ -857,6 +842,7 @@ class IdentityService {
             retVal.errorType = PortalLoginEmailHandlerErrorTypes.NoManagementDomain;
             return retVal;
         }
+        console.log("checkpoint 2");
         
         // Obtain the basic information for deciding on error conditions or the next steps
         const user: User | null = await identityDao.getUserBy("email", email);
@@ -866,6 +852,7 @@ class IdentityService {
             providerTenantRels = await federatedOIDCProviderDao.getFederatedOidcProviderTenantRels(tenantId, provider.federatedOIDCProviderId);            
         }
 
+        console.log("checkpoint 3");
         const tenants: Array<Tenant> = await tenantDao.getTenants(managementDomains.map( (d: TenantManagementDomainRel) => d.tenantId));
         const tenantsThatAllowSelfRegistration = tenants.filter(
             (t: Tenant) => t.allowUserSelfRegistration === true
@@ -874,6 +861,7 @@ class IdentityService {
             (t: Tenant) => t.federatedAuthenticationConstraint !== FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE
         );
 
+        console.log("checkpoint 4");
         // Find all of the providers attached to any of the tenants
         const tenantsThatAreAttachedToProviders = tenants.filter(
             (t: Tenant) => {
@@ -889,6 +877,7 @@ class IdentityService {
             retVal.errorType = PortalLoginEmailHandlerErrorTypes.NoMatchingUserAndNoTenantSelfRegistration;
             return retVal;
         }
+        console.log("checkpoint 5");
 
         // 3.   Error condition #3: No user, there IS a federated IdP, but the IdP is not attached
         //      to any of the tenants that the domain can manage
@@ -896,6 +885,7 @@ class IdentityService {
             retVal.errorType = PortalLoginEmailHandlerErrorTypes.NoMatchingFederatedProviderForTenant;
             return retVal;
         }
+        console.log("checkpoint 6");
 
         //  4.   Error condition # 3: User exists, there is NO IdP for the user, and none of the tenants allows
         //       username/password authentication
@@ -903,6 +893,7 @@ class IdentityService {
             retVal.errorType = PortalLoginEmailHandlerErrorTypes.ExclusiveTenantAndNoFederatedOidcProvider;
             return retVal;
         }
+        console.log("checkpoint 7");
 
         //  5.   Error condition #5: User exists, there is an IdP for the user, but the IdP is not attached
         //       to any tenant
@@ -911,6 +902,7 @@ class IdentityService {
             return retVal;
         }
         
+        console.log("checkpoint 8");
         // SUCCESS SCENARIOS 
         // 1.   The user can select the tenant and register       
         if(user === null && provider === null && tenantsThatAllowSelfRegistration.length > 0){
@@ -925,10 +917,12 @@ class IdentityService {
                 ));
             return retVal;
         }
+        console.log("checkpoint 9");
                 
         // 2.   The user can select the tenant by which they want to do SSO and thereby "autoregister"        
         if(user === null && provider !== null && tenantsThatAreAttachedToProviders.length > 0){            
             // Otherwise, set the tenant information and then decide what the next steps are.
+            console.log("checkpoint 9.1");
             retVal.tenantSelectors = [];
                 tenantsThatAreAttachedToProviders.forEach(
                 (t: Tenant) => retVal.tenantSelectors?.push(
@@ -937,21 +931,28 @@ class IdentityService {
                         tenantName: t.tenantName
                     }                    
                 ));
+                console.log("checkpoint 9.2");
             if(tenantsThatAreAttachedToProviders.length === 1){
                 retVal.successNextStep = PortalLoginEmailHandlerSuccessNextStep.AuthWithFederatedProvider;
+                console.log("checkpoint 9.22");
                 const {hasError, errorMessage, authorizationEndpoint} = await this.createFederatedOIDCRequestProperties(email, null, provider, tenantsThatAreAttachedToProviders[0].tenantId);
+                console.log("checkpoint 9.23");
                 if(hasError){
                     throw new GraphQLError(errorMessage);
-                }                
+                }
+                console.log("checkpoint 9.24");
                 retVal.federatedOIDCProviderId = provider.federatedOIDCProviderId;                
                 retVal.authorizationEndpoint = authorizationEndpoint;
                 return retVal;
             }
+            console.log("checkpoint 9.3");
             if(tenantsThatAreAttachedToProviders.length > 1){
                 retVal.successNextStep = PortalLoginEmailHandlerSuccessNextStep.SelectTenant;                
             }
+            console.log("checkpoint 9.4");
             return retVal;            
         }
+        console.log("checkpoint 10");
 
         // 3.   The user can select which tenant to log into with username/password (plus
         //      one or more MFA types)
@@ -968,6 +969,7 @@ class IdentityService {
             return retVal;
         }        
 
+        console.log("checkpoint 11");
         // 4.   The user can select which tenant they want to do SSO with
         if(user !== null && provider !== null && tenantsThatAreAttachedToProviders.length > 0){            
             retVal.tenantSelectors = [];
@@ -1023,7 +1025,6 @@ class IdentityService {
             // "https://api.sigmaaldrich.com/auth/.well-known/openid-configuration"
         );
         
-        console.log(wellKnownConfig);
 
         if(wellKnownConfig === null){
             retVal.errorMessage = "ERROR_UNABLE_TO_DETERMINE_AUTHORIZATION_PARAMETERS_FROM_FEDERATED_OIDC_PROVIDER";
@@ -1054,9 +1055,30 @@ class IdentityService {
         const codeChallengeQueryParams = provider.usePkce ? `&code_challenge=${challenge}&code_challenge_method=S256` : "";
         const authnUri = `${wellKnownConfig.authorization_endpoint}?client_id=${provider.federatedOIDCProviderClientId}&state=${federatedOIDCAuthorizationRel.state}&response_type=code&response_mode=query&redirect_uri=${AUTH_DOMAIN}/api/federated-auth/return&scope=${scopeParameter}${codeChallengeQueryParams}`;
         retVal.authorizationEndpoint = authnUri;
+
         return retVal;
     }
 
+    protected async updateSearchIndexUserDocument(user: User): Promise<void> {
+        const getResponse: Get_Response = await searchClient.get({
+            id: user.userId,
+            index: SEARCH_INDEX_OBJECT_SEARCH
+        });
+        
+        if (getResponse.body) {
+            const document: ObjectSearchResultItem = getResponse.body._source as ObjectSearchResultItem;
+            document.name = user.nameOrder === NAME_ORDER_WESTERN ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`,
+            document.email = user.email;
+            document.enabled = user.enabled;
+            await searchClient.index({
+                id: user.userId,
+                index: SEARCH_INDEX_OBJECT_SEARCH,
+                body: document
+            })
+        }
+        // TODO: Update the rel_index as well, but do NOT wait on the results since
+        // there could be 1000s of records to modify.
+    }
 
     protected async updateObjectSearchIndex(tenant: Tenant, user: User, relType: string): Promise<void> {
         let owningTenantId: string = tenant.tenantId;

@@ -145,7 +145,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                             <TextField
                                                 disabled={isMarkedForDelete}
                                                 name="clientName" id="clientName" value={clientUpdateInput.clientName} fullWidth={true} size="small"
-                                                onChange={(evt) => { clientUpdateInput.clientName = evt.target.value; console.log(clientUpdateInput.clientName); setClientUpdateInput({ ...clientUpdateInput }); setMarkDirty(true); }}
+                                                onChange={(evt) => { clientUpdateInput.clientName = evt.target.value;  setClientUpdateInput({ ...clientUpdateInput }); setMarkDirty(true); }}
                                             />
                                         </Grid2>
                                         <Grid2 marginBottom={"16px"}>

@@ -257,7 +257,6 @@ const NewSigningKeyDialog: React.FC<NewSigningKeyDialogProps> = ({
                                         name="keyPassphrase" 
                                         id="keyPassphrase"
                                         onChange={(evt) => { 
-                                            console.log("passphrase is: " + evt?.target.value);
                                             signingKeyInput.password = evt?.target.value; 
                                             setSigningKeyInput({ ...signingKeyInput }); 
                                         }}

@@ -21,8 +21,7 @@ const Login: React.FC = () => {
     const tenantId = params?.get(QUERY_PARAM_PREAUTH_TENANT_ID);
     const redirectUri = params?.get(QUERY_PARAM_PREAUTH_REDIRECT_URI);
     const authenticateToPortal = params?.get(QUERY_PARAM_AUTHENTICATE_TO_PORTAL);
-
-    console.log(tenantBean.getTenantMetaData().tenant.tenantId);
+    
 
     if(tenantId === undefined || tenantId === null || tenantBean.getTenantMetaData().tenant.tenantId === "" || authenticateToPortal === "true") return (
         <PortalLogin tenantId={""} redirectUri={redirectUri || ""} preauthToken={preauthToken || ""} tenantBean={tenantBean} />
