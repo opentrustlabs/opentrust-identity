@@ -80,6 +80,8 @@ const Register: React.FC = () => {
     const [totpValidationMessage, setTotpValidationMessage] = React.useState<string | null>(null);
     const [totpTestValue, setTotpTestValue] = React.useState<string>("");
     const [totpValidationErrorMessage, setTotpValidationErrorMessage] = React.useState<string | null>(null);
+    const [totpSuccessfullyConfigured, setTotpSuccessfullyConfigured] = React.useState<boolean>(false);
+    const [securityKeySuccessfullyConfigured, setSecurityKeySuccessfullyConfigured] = React.useState<boolean>(false);
 
     // HOOKS FROM NEXTJS OR MUI
     const router = useRouter();
@@ -750,6 +752,7 @@ const Register: React.FC = () => {
                                                 <Stack>
                                                     <Button sx={{padding: "8px"}}
                                                         onClick={() => generateQRCode()}
+                                                        disabled={!totpSuccessfullyConfigured}
                                                     >
                                                         TOTP
                                                     </Button>
@@ -767,6 +770,7 @@ const Register: React.FC = () => {
                                                 <Stack>
                                                     <Button 
                                                         sx={{padding: "8px"}}
+                                                        disabled={!securityKeySuccessfullyConfigured}
                                                         onClick={() => {
                                                             setShowMutationBackdrop(true);
                                                             createFido2Challenge();
