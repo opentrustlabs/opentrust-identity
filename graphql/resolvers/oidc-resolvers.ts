@@ -652,7 +652,7 @@ const resolvers: Resolvers = {
             await providerService.deleteFederatedOIDCProvider(federatedOIDCProviderId);
             return federatedOIDCProviderId;
         },
-        login: async(_: any, { username, password }, oidcContext ) => {
+        login: async(_: any, { username, password, tenantId }, oidcContext ) => {
             const response: LoginAuthenticationHandlerResponse = {
                 status: LoginAuthenticationHandlerAction.Error,
                 successConfig: {
@@ -960,6 +960,10 @@ const resolvers: Resolvers = {
         createPortalLoginEmailHandlerResponse: async(_: any, { email, tenantId }, oidcContext) => {
             const service: IdentityService = new IdentityService(oidcContext);
             return service.createPortalLoginEmailHandlerResponse(email, tenantId || undefined);
+        },
+        generateAuthorizationReturnUri: async(_: any, { preAuthToken }, oidcContext) => {
+            const service: IdentityService = new IdentityService(oidcContext);
+            return service.generateAuthorizationCode(preAuthToken);
         }
     },
     RelSearchResultItem : {

@@ -72,7 +72,7 @@ async function getOIDCContext(req: NextApiRequest): Promise<OIDCContext> {
     }
 
     if(bearerToken){
-        const jwt: string = bearerToken.replace(/Bearer\s+/, "");
+        jwt = bearerToken.replace(/Bearer\s+/, "");
         const p = await jwtServiceUtils.validateJwt(jwt);
         if(p){
             principal = p;
@@ -82,7 +82,7 @@ async function getOIDCContext(req: NextApiRequest): Promise<OIDCContext> {
     const rootTenant: Tenant = await tenantDao.getRootTenant();
 
     const context: OIDCContext = {
-        authToken: "",
+        authToken: jwt || "",
         oidcPrincipal: principal,
         rootTenant: rootTenant,
         requestCache: new Map()

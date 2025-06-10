@@ -18,7 +18,7 @@ const AuthenticationFooter: React.FC<AuthenticationFooterProps> = ({
             style={{
                 backgroundColor: tenantMetaData.tenantLookAndFeel?.authenticationheaderbackgroundcolor || "#1976d2", 
                 width: "100%", 
-                height: "8vh", 
+                height: "5vh", 
                 color: tenantMetaData.tenantLookAndFeel?.authenticationheadertextcolor || "white"
             }}
 

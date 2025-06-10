@@ -106,7 +106,7 @@ const AuthenticationLayout: React.FC<LayoutProps> = ({
                             spacing={0}
                             alignItems={"center"}
                             justifyContent={"center"}
-                            sx={{minHeight: "84vh"}}
+                            sx={{minHeight: "90vh"}}
                         >
                             <Grid2>
                                 <div>{children}</div>

@@ -8,6 +8,7 @@ import TenantLeftNavigation from "../left-navigation/tenant-left-navigation";
 import { ResponsiveBreakpoints, ResponsiveContext } from "../contexts/responsive-context";
 import { useSearchParams } from "next/navigation";
 import ManagementFooter from "./management-footer";
+import { PageTitleContext } from "../contexts/page-title-context";
 
 
 interface Props {
@@ -19,6 +20,8 @@ const ManagementLayout: React.FC<Props> = ({children}) => {
     // CONTEXT OBJECTS
     const tenantBean: TenantMetaDataBean  = useContext(TenantContext);
     const breakPoints: ResponsiveBreakpoints = useContext(ResponsiveContext);
+    const titleSetter = useContext(PageTitleContext);
+    titleSetter.setPageTitle("OpenTrust IAM");
 
     // QUERY PARAMS
     const params = useSearchParams();

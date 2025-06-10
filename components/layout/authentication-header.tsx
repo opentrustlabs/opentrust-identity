@@ -16,7 +16,7 @@ const AuthenticationHeader: React.FC<AuthenticationHeaderProps> = ({
             style={{
                 backgroundColor: tenantMetaData.tenantLookAndFeel?.authenticationheaderbackgroundcolor || "#1976d2", 
                 width: "100%", 
-                height: "8vh",
+                height: "5vh",
                 minHeight: "70px",
                 color: tenantMetaData.tenantLookAndFeel?.authenticationheadertextcolor || "white",
                 borderBottom: "1px solid grey"

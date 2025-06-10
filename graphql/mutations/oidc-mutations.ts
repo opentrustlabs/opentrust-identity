@@ -681,3 +681,13 @@ export const PORTAL_LOGIN_EMAIL_HANDLER_MUTATION = gql(`
         }
     }
 `);
+
+export const GENERATE_AUTHORIZATION_RETURN_URI_MUTATION = gql(`
+    mutation generateAuthorizationReturnUri($preAuthToken: String!) {
+        generateAuthorizationReturnUri(preAuthToken: $preAuthToken) {
+            uri
+            code
+            state
+        }
+    }
+`);

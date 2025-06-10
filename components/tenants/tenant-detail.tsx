@@ -153,26 +153,31 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                                
                         <Grid2 className="detail-page-subheader" alignItems={"center"} sx={{ backgroundColor: "#1976d2", color: "white", padding: "8px", borderRadius: "2px" }} container size={12}>
                             <Grid2 size={11}>Overview</Grid2>
-                            <Grid2 size={1} display={"flex"} >
-                                {isMarkedForDelete !== true && 
-                                    <SubmitMarkForDelete 
-                                        objectId={tenant.tenantId}
-                                        objectType={MarkForDeleteObjectType.Tenant}
-                                        confirmationMessage={`Confirm deletion of tenant: ${tenant.tenantName}. Once submitted the operation cannot be undone.`}
-                                        onDeleteEnd={(successful: boolean, errorMessage?: string) => {
-                                            setShowMutationBackdrop(false);
-                                            if(successful){
-                                                setShowMutationSnackbar(true);
-                                                setIsMarkedForDelete(true);
-                                            }
-                                            else{
-                                                setErrorMessage(errorMessage || "ERROR");
-                                            }
-                                        }}
-                                        onDeleteStart={() => setShowMutationBackdrop(true)}
-                                    />
-                                }
-                            </Grid2>
+                            {tenantBean.getTenantMetaData().tenant.tenantType === TENANT_TYPE_ROOT_TENANT &&
+                                <Grid2 size={1}></Grid2>
+                            }
+                            {tenantBean.getTenantMetaData().tenant.tenantType !== TENANT_TYPE_ROOT_TENANT &&
+                                <Grid2 size={1} display={"flex"} >
+                                    {isMarkedForDelete !== true && 
+                                        <SubmitMarkForDelete 
+                                            objectId={tenant.tenantId}
+                                            objectType={MarkForDeleteObjectType.Tenant}
+                                            confirmationMessage={`Confirm deletion of tenant: ${tenant.tenantName}. Once submitted the operation cannot be undone.`}
+                                            onDeleteEnd={(successful: boolean, errorMessage?: string) => {
+                                                setShowMutationBackdrop(false);
+                                                if(successful){
+                                                    setShowMutationSnackbar(true);
+                                                    setIsMarkedForDelete(true);
+                                                }
+                                                else{
+                                                    setErrorMessage(errorMessage || "ERROR");
+                                                }
+                                            }}
+                                            onDeleteStart={() => setShowMutationBackdrop(true)}
+                                        />
+                                    }
+                                </Grid2>
+                            }
                         </Grid2>
                         <Grid2 size={12} marginBottom={"16px"}>
                             {errorMessage &&
