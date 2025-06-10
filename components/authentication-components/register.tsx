@@ -20,7 +20,7 @@ import VisibilityOffOutlinedIcon from '@mui/icons-material/VisibilityOffOutlined
 import ArrowDropDownOutlinedIcon from '@mui/icons-material/ArrowDropDownOutlined';
 import ArrowDropUpOutlinedIcon from '@mui/icons-material/ArrowDropUpOutlined';
 import { validatePassword } from "@/utils/password-utils";
-import { CREATE_FIDO2_REGISTRATION_CHALLENGE_MUTATION, GENERATE_TOTP_MUTATION, REGISTER_FIDO2_KEY_MUTATION, REGISTER_USER_MUTATION, VERIFY_REGISTRATION_TOKEN_MUTATION } from "@/graphql/mutations/oidc-mutations";
+import { CREATE_FIDO2_REGISTRATION_CHALLENGE_MUTATION, GENERATE_AUTHORIZATION_RETURN_URI_MUTATION, GENERATE_TOTP_MUTATION, REGISTER_FIDO2_KEY_MUTATION, REGISTER_USER_MUTATION, VERIFY_REGISTRATION_TOKEN_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
 import { RegistrationResponseJSON, startRegistration } from "@simplewebauthn/browser";
 
@@ -34,11 +34,12 @@ const Register: React.FC = () => {
 
     // QUERY PARAMS
     const params = useSearchParams();    
-    const preauthToken: string | null | undefined = params?.get(QUERY_PARAM_PREAUTHN_TOKEN);
+    const preAuthToken: string | null | undefined = params?.get(QUERY_PARAM_PREAUTHN_TOKEN);
     const tenantId = params?.get(QUERY_PARAM_PREAUTH_TENANT_ID);
     const username = params?.get(QUERY_PARAM_USERNAME);
     const redirectUri = params?.get(QUERY_PARAM_PREAUTH_REDIRECT_URI);
     
+    console.log("tenantId from query params is: " + tenantId);
     
     // PAGE STATE MANAGEMENT VARIABLES    
     const initInput: UserCreateInput = {
@@ -70,6 +71,7 @@ const Register: React.FC = () => {
     const [viewPassword, setViewPassword] = React.useState<boolean>(false);
     const [viewRepeatPassword, setViewRepeatPassword] = React.useState<boolean>(false);
     const [passwordConfig, setPasswordConfig] = React.useState<TenantPasswordConfig>(DEFAULT_TENANT_PASSWORD_CONFIGURATION);
+    const [requriedMFAs, setRequiredMFAs] = React.useState<Array<string>>([]);
     const [showPasswordRules, setShowPasswordRules] = React.useState<boolean>(false);
     const [showMutationBackdrop, setShowMutationBackdrop] = React.useState<boolean>(false);
     const [showMutationSnackbar, setShowMutationSnackbar] = React.useState<boolean>(false);
@@ -101,6 +103,9 @@ const Register: React.FC = () => {
             if (data && data.getTenantPasswordConfig) {
                 const config: TenantPasswordConfig = data.getTenantPasswordConfig as TenantPasswordConfig;
                 setPasswordConfig(config);
+                if(config.requireMfa && config.mfaTypesRequired){
+                    setRequiredMFAs(config.mfaTypesRequired.split(","));
+                }
             }
         },
         onError(error) {
@@ -207,6 +212,37 @@ const Register: React.FC = () => {
         nextFetchPolicy: "no-cache"
 
     });
+
+    const [generateAuthorizationReturnUri] = useMutation(GENERATE_AUTHORIZATION_RETURN_URI_MUTATION, {
+        variables: {
+            preAuthToken: preAuthToken
+        },
+        onCompleted(data) {
+            setShowMutationBackdrop(false);
+            router.push(data.generateAuthorizationReturnUri.uri);            
+        },
+        onError(error) {
+            setShowMutationBackdrop(false);
+            setErrorMessage(error.message);
+        },
+    })
+
+    const mfaConfigIsComplete = (): boolean => {
+        let bRetVal = true;
+        if(requriedMFAs.length > 0){
+            for(let i = 0; i < requriedMFAs.length; i++){
+                if(requriedMFAs[i] === MFA_AUTH_TYPE_TIME_BASED_OTP && !totpSuccessfullyConfigured){
+                    bRetVal = false;
+                    break;
+                }
+                if(requriedMFAs[i] === MFA_AUTH_TYPE_FIDO2 && !securityKeySuccessfullyConfigured){
+                    bRetVal = false;
+                    break;
+                }
+            }
+        }
+        return bRetVal;
+    }
 
     // HANDLER FUNCTIONS
     const isPage1InputValid = (): boolean => {
@@ -322,7 +358,7 @@ const Register: React.FC = () => {
 
     // Cannot register without a valid tenant id to register against
     useEffect(() => {
-        if(tenantBean.getTenantMetaData().tenant.tenantId === "" || tenantId === null || tenantId === undefined){
+        if(tenantBean.getTenantMetaData().tenant.tenantId === "" &&  (tenantId === null || tenantId === undefined)){
             router.push(`/authorize/login?${QUERY_PARAM_AUTHENTICATE_TO_PORTAL}=true`);
         }
     }, []);
@@ -534,7 +570,9 @@ const Register: React.FC = () => {
                                                             {passwordConfig.specialCharactersAllowed &&
                                                                 <>
                                                                     <div style={{paddingLeft: "16px", textDecoration: "underline"}}>The following special characters are allowed:</div>
-                                                                    <pre style={{letterSpacing: "5px"}}>{passwordConfig.specialCharactersAllowed}</pre>
+                                                                    <div style={{paddingLeft: "16px", marginBottom: "16px"}}>
+                                                                        <pre style={{letterSpacing: "5px"}}>{passwordConfig.specialCharactersAllowed}</pre>
+                                                                    </div>
                                                                 </>
                                                             }
 
@@ -872,6 +910,15 @@ const Register: React.FC = () => {
                                                 will be null or undefined. In this case, take the user to the landing page for
                                                 the tenant they have just registered against - that is: /{tenant_id}
                                             */
+                                            // generateValidAuthToken()
+                                            if(preAuthToken === null || preAuthToken === undefined){
+                                                router.push(`/${tenantId}`);
+                                            }
+                                            else{
+                                                setShowMutationBackdrop(true);
+                                                generateAuthorizationReturnUri();
+                                            }                                            
+                                            
                                         }}  
 
                                     >                                        
@@ -881,10 +928,17 @@ const Register: React.FC = () => {
                                 {registrationPage === 4 && passwordConfig.requireMfa &&
                                     <Button
                                         disabled={
-                                            passwordConfig.mfaTypesRequired !== null
+                                            !mfaConfigIsComplete()
                                         }
                                         onClick={() => {
-                                            // See the comments in the onClick() function above. The same logic applies here too.
+                                            // See the comments in the onClick() function above. The same logic applies here too.    
+                                            if(preAuthToken === null || preAuthToken === undefined){
+                                                router.push(`/${tenantId}`);
+                                            }
+                                            else{
+                                                setShowMutationBackdrop(true);
+                                                generateAuthorizationReturnUri();
+                                            }  
                                         }}
                                     >                                        
                                         Finish

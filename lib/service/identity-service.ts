@@ -1,12 +1,12 @@
 import { OIDCContext } from "@/graphql/graphql-context";
 import * as OTPAuth from "otpauth";
 import IdentityDao from "../dao/identity-dao";
-import { Client, Fido2AuthenticationChallengeResponse, Fido2Challenge, Fido2RegistrationChallengeResponse, Fido2KeyRegistrationInput, ObjectSearchResultItem, RefreshData, RelSearchResultItem, SearchResultType, Tenant, TenantPasswordConfig, TotpResponse, User, UserCreateInput, UserCredential, UserMfaRel, UserSession, UserTenantRel, UserTenantRelView, Fido2KeyAuthenticationInput, TenantRestrictedAuthenticationDomainRel, PortalLoginEmailHandlerResponse, TenantManagementDomainRel, PortalLoginEmailHandlerErrorTypes, FederatedOidcProvider, FederatedOidcProviderTenantRel, PortalLoginEmailHandlerSuccessNextStep, FederatedOidcAuthorizationRel, FederatedOidcAuthorizationRelType, RegisterUserResponse } from "@/graphql/generated/graphql-types";
+import { Client, Fido2AuthenticationChallengeResponse, Fido2Challenge, Fido2RegistrationChallengeResponse, Fido2KeyRegistrationInput, ObjectSearchResultItem, RefreshData, RelSearchResultItem, SearchResultType, Tenant, TenantPasswordConfig, TotpResponse, User, UserCreateInput, UserCredential, UserMfaRel, UserSession, UserTenantRel, UserTenantRelView, Fido2KeyAuthenticationInput, TenantRestrictedAuthenticationDomainRel, PortalLoginEmailHandlerResponse, TenantManagementDomainRel, PortalLoginEmailHandlerErrorTypes, FederatedOidcProvider, FederatedOidcProviderTenantRel, PortalLoginEmailHandlerSuccessNextStep, FederatedOidcAuthorizationRel, FederatedOidcAuthorizationRelType, RegisterUserResponse, AuthorizationCodeData, PreAuthenticationState, AuthorizationReturnUri } from "@/graphql/generated/graphql-types";
 import { DaoFactory } from "../data-sources/dao-factory";
 import TenantDao from "../dao/tenant-dao";
 import { GraphQLError } from "graphql/error";
 import { randomUUID } from "crypto";
-import { DEFAULT_TENANT_PASSWORD_CONFIGURATION, FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, NAME_ORDER_WESTERN, PASSWORD_HASH_ITERATION_128K, PASSWORD_HASH_ITERATION_256K, PASSWORD_HASH_ITERATION_32K, PASSWORD_HASH_ITERATION_64K, PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_32K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_64K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_TYPE_ROOT_TENANT, TOTP_HASH_ALGORITHM_SHA1, USER_TENANT_REL_TYPE_GUEST, USER_TENANT_REL_TYPE_PRIMARY } from "@/utils/consts";
+import { DEFAULT_TENANT_PASSWORD_CONFIGURATION, FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, NAME_ORDER_WESTERN, PASSWORD_HASH_ITERATION_128K, PASSWORD_HASH_ITERATION_256K, PASSWORD_HASH_ITERATION_32K, PASSWORD_HASH_ITERATION_64K, PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_32K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_64K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_TYPE_ROOT_TENANT, TOKEN_TYPE_END_USER, TOKEN_TYPE_PROVISIONAL_USER, TOTP_HASH_ALGORITHM_SHA1, USER_TENANT_REL_TYPE_GUEST, USER_TENANT_REL_TYPE_PRIMARY } from "@/utils/consts";
 import { sha256HashPassword, pbkdf2HashPassword, bcryptHashPassword, generateSalt, scryptHashPassword, generateRandomToken, generateCodeVerifierAndChallenge } from "@/utils/dao-utils";
 import { Client as OpenSearchClient } from "@opensearch-project/opensearch";
 import { getOpenSearchClient } from "../data-sources/search";
@@ -20,7 +20,7 @@ import FederatedOIDCProviderDao from "../dao/federated-oidc-provider-dao";
 import OIDCServiceUtils from "./oidc-service-utils";
 import { WellknownConfig } from "../models/wellknown-config";
 import JwtServiceUtils from "./jwt-service-utils";
-import graphql from "@/pages/api/graphql";
+
 
 const identityDao: IdentityDao = DaoFactory.getInstance().getIdentityDao();
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
@@ -49,9 +49,10 @@ class IdentityService {
     }
 
     public async registerUser(userCreateInput: UserCreateInput, tenantId: string): Promise<RegisterUserResponse>{
-        const {user, tenant} = await this._createUser(userCreateInput, tenantId, true);
+        const {user, tenant, tenantPasswordConfig} = await this._createUser(userCreateInput, tenantId, true);
 
-        const authToken: string | null = await jwtServiceUtils.signIAMPortalUserJwt(user, tenant, 60 * 60 * 12);
+        const tokenType = tenantPasswordConfig.requireMfa ? TOKEN_TYPE_PROVISIONAL_USER : TOKEN_TYPE_END_USER;
+        const authToken: string | null = await jwtServiceUtils.signIAMPortalUserJwt(user, tenant, 60 * 60 * 12, tokenType);
         if(authToken === null){
             throw new GraphQLError("ERROR_UNABLE_TO_GENERATE_AN_ACCESS_TOKEN_FOR_USER");
         }
@@ -573,7 +574,7 @@ class IdentityService {
      * @param isRegistration 
      * @returns 
      */
-    protected async _createUser(userCreateInput: UserCreateInput, tenantId: string, isRegistration: boolean): Promise<{user: User, tenant: Tenant}>  {
+    protected async _createUser(userCreateInput: UserCreateInput, tenantId: string, isRegistration: boolean): Promise<{user: User, tenant: Tenant, tenantPasswordConfig: TenantPasswordConfig}>  {
 
         const tenant: Tenant | null = await tenantDao.getTenantById(tenantId);
         if(!tenant){
@@ -654,7 +655,7 @@ class IdentityService {
         await this.updateObjectSearchIndex(tenant, user, "PRIMARY");
         await this.updateRelSearchIndex(tenant.tenantId, tenant.tenantId, user, USER_TENANT_REL_TYPE_PRIMARY);
 
-        return Promise.resolve({user: user, tenant: tenant});
+        return Promise.resolve({user: user, tenant: tenant, tenantPasswordConfig: tenantPasswordConfig});
     }
 
     protected generateUserCredential(userId: string, password: string, hashAlgorithm: string): UserCredential {
@@ -1133,7 +1134,46 @@ class IdentityService {
         })
     }
 
-    
+    public async generateAuthorizationCode(preAuthToken: string): Promise<AuthorizationReturnUri | null> {
+        
+        console.log("principal: " + this.oidcContext.oidcPrincipal);
+
+        if(this.oidcContext.oidcPrincipal === null || this.oidcContext.oidcPrincipal.sub === ""){
+            throw new GraphQLError("ERROR_INVALID_PRINCIPAL")
+        }
+        const preAuthenticationState: PreAuthenticationState | null = await authDao.getPreAuthenticationState(preAuthToken);
+        if(preAuthenticationState === null){
+            throw new GraphQLError("ERROR_INVALID_PRE_AUTHENTICATION_TOKEN")
+        }
+        await authDao.deletePreAuthenticationState(preAuthToken);
+        if(preAuthenticationState.expiresAtMs < Date.now()){
+            throw new GraphQLError("ERROR_PRE_AUTHENTICATION_TOKEN_IS_EXPIRED");
+        }
+
+        const authorizationCodeData: AuthorizationCodeData = {
+            clientId: preAuthenticationState.clientId,
+            code: generateRandomToken(32, "hex"),
+            expiresAtMs: Date.now() + (30 * 60 * 1000),
+            redirectUri: preAuthenticationState.redirectUri,
+            scope: preAuthenticationState.scope,
+            tenantId: preAuthenticationState.tenantId,
+            userId: this.oidcContext.oidcPrincipal.sub,
+            codeChallenge: preAuthenticationState.codeChallenge,
+            codeChallengeMethod: preAuthenticationState.codeChallengeMethod            
+        }
+        await authDao.saveAuthorizationCodeData(authorizationCodeData);
+
+        const uri = preAuthenticationState.state ?
+            `${preAuthenticationState.redirectUri}?code=${authorizationCodeData.code}&state=${preAuthenticationState.state}` :
+            `${preAuthenticationState.redirectUri}?code=${authorizationCodeData.code}`;
+
+        const response: AuthorizationReturnUri = {
+            uri: uri,
+            code: authorizationCodeData.code,
+            state: preAuthenticationState.state
+        }
+        return response;
+    }
 
 }
 

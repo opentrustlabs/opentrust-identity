@@ -9,7 +9,7 @@ import SigningKeysDao from "../dao/signing-keys-dao";
 import { OIDCPrincipal } from "../models/principal";
 import { randomUUID, createPrivateKey, PrivateKeyInput, KeyObject, createSecretKey, createPublicKey, PublicKeyInput } from "node:crypto"; 
 import NodeCache from "node-cache";
-import { CLIENT_SECRET_ENCODING, DEFAULT_END_USER_TOKEN_TTL_SECONDS, DEFAULT_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS, NAME_ORDER_WESTERN, TOKEN_TYPE_END_USER_TOKEN, TOKEN_TYPE_SERVICE_ACCOUNT_TOKEN } from "@/utils/consts";
+import { CLIENT_SECRET_ENCODING, DEFAULT_END_USER_TOKEN_TTL_SECONDS, DEFAULT_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS, NAME_ORDER_WESTERN, TOKEN_TYPE_END_USER, TOKEN_TYPE_SERVICE_ACCOUNT_TOKEN } from "@/utils/consts";
 import { DaoFactory } from "../data-sources/dao-factory";
 
 const SIGNING_KEY_ARRAY_CACHE_KEY = "SIGNING_KEY_ARRAY_CACHE_KEY"
@@ -51,7 +51,7 @@ class JwtServiceUtils {
      * @param ttlInSeconds 
      * @returns 
      */
-    public async signIAMPortalUserJwt(user: User, tenant: Tenant, ttlInSeconds: number): Promise<string | null> {
+    public async signIAMPortalUserJwt(user: User, tenant: Tenant, ttlInSeconds: number, tokenType: string): Promise<string | null> {
         const now = Date.now();
         const principal: JWTPayload = {
             sub: user.userId,
@@ -79,7 +79,7 @@ class JwtServiceUtils {
             client_id: "",
             client_name: "",
             client_type: "",
-            token_type: TOKEN_TYPE_END_USER_TOKEN
+            token_type: tokenType
         };
         const s: string | null = await this.signJwt(principal);
         return Promise.resolve(s);
@@ -133,7 +133,7 @@ class JwtServiceUtils {
             client_id: clientId,
             client_name: client.clientName,
             client_type: client.clientType,
-            token_type: TOKEN_TYPE_END_USER_TOKEN
+            token_type: TOKEN_TYPE_END_USER
         };
 
         const s: string | null = await this.signJwt(principal);

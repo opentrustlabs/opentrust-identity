@@ -100,6 +100,7 @@ type Query {
     ## i18n
     getStateProvinceRegions(countryCode: String!): [StateProvinceRegion!]!
 
+
 }
 
 type Mutation {
@@ -135,7 +136,7 @@ type Mutation {
 
     ## Users
     logout(userId: String): String
-    login(username: String!, password: String!): LoginAuthenticationHandlerResponse!
+    login(username: String!, password: String!, tenantId: String!): LoginAuthenticationHandlerResponse!
     createUser(tenantId: String!, userInput: UserCreateInput!): User!
     registerUser(tenantId: String!, userInput: UserCreateInput!): RegisterUserResponse!
     updateUser(userInput: UserUpdateInput!): User!
@@ -154,7 +155,8 @@ type Mutation {
     createFido2RegistrationChallenge(userId: String!): Fido2RegistrationChallengeResponse
     authenticateFIDO2Key(userId: String!, fido2KeyAuthenticationInput: Fido2KeyAuthenticationInput!): Boolean!
     createFido2AuthenticationChallenge(userId: String!): Fido2AuthenticationChallengeResponse    
-         
+    ## Users: complete the OAuth2 authorization code flow
+    generateAuthorizationReturnUri(preAuthToken: String!): AuthorizationReturnUri
     
     ## Keys
     createSigningKey(keyInput: SigningKeyCreateInput!): SigningKey!
@@ -652,6 +654,12 @@ type AuthorizationCodeData {
     codeChallenge: String
     userId: String!
     expiresAtMs: Float!
+}
+
+type AuthorizationReturnUri {
+    uri: String!
+    code: String!
+    state: String
 }
 
 type SuccessfulLoginResponse {
