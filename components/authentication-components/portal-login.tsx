@@ -1,6 +1,6 @@
 "use client";
 import React, { useContext, useEffect, useState } from "react";
-import { Button, Divider, Grid2, Paper, Stack, TextField } from "@mui/material";
+import { Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, Divider, Grid2, Paper, Stack, TextField, Typography } from "@mui/material";
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import Link from 'next/link';
@@ -13,6 +13,8 @@ import Alert from '@mui/material/Alert';
 import { LOGIN_MUTATION, PORTAL_LOGIN_EMAIL_HANDLER_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import { PageTitleContext } from "@/components/contexts/page-title-context";
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
+import RadioStyledCheckbox from "../input/radio-styled-checkbox";
+import { channel } from "diagnostics_channel";
 
 
 const MIN_USERNAME_LENGTH = 6;
@@ -49,6 +51,7 @@ const PortalLogin: React.FC<PortalLoginProps> = ({
     const [displayComponent, setDisplayComponent] = useState<string>(USERNAME_COMPONENT);
     const [showTenantSelector, setShowTenantSelector] = useState<boolean>(false);
     const [tenantsToSelect, setTenantsToSelect] = useState<Array<TenantSelectorData>>([]);
+    const [selectedTenant, setSelectedTenant] = useState<string | undefined>(tenantId);
 
     // HOOKS FROM NEXTJS OR MUI
     const router = useRouter();
@@ -140,11 +143,11 @@ const PortalLogin: React.FC<PortalLoginProps> = ({
 
 
     // EVENT HANDLERS
-    const handleNextClick = (evt: any) => {
+    const handleNextClick = () => {
         portalLoginEmailHandler({
             variables: {
                 email: username,
-                tenantId: tenantId
+                tenantId: selectedTenant
             }
         });
     }
@@ -154,7 +157,7 @@ const PortalLogin: React.FC<PortalLoginProps> = ({
                 portalLoginEmailHandler({
                     variables: {
                         email: username,
-                        tenantId: tenantId
+                        tenantId: selectedTenant
                     }
                 });
             }
@@ -184,6 +187,11 @@ const PortalLogin: React.FC<PortalLoginProps> = ({
     //     }
     // }
 
+    const closeTenantSelector = () => {
+        setShowTenantSelector(false);
+        setSelectedTenant(undefined);
+    }
+
     const getQueryParams = (): string => {
         const params = new URLSearchParams();
         if(tenantId){
@@ -201,6 +209,66 @@ const PortalLogin: React.FC<PortalLoginProps> = ({
                 elevation={4}
                 sx={{ padding: 2, height: "100%", maxWidth: maxWidth, width: maxWidth }}
             >
+                {showTenantSelector &&
+                    <Dialog
+                        open={showTenantSelector}
+                        maxWidth="sm"
+                        fullWidth={true}
+                        onClose={() => closeTenantSelector()}
+                    >
+                        
+                        <DialogTitle><Typography fontSize={"0.95em"}>Select Tenant</Typography></DialogTitle>
+                        <Typography component="div" fontSize={"0.90em"}>
+                        <DialogContent>
+                            <Grid2 alignItems={"center"} container size={12} spacing={0}>
+                                {tenantsToSelect.map(
+                                    (t: TenantSelectorData) => (
+                                        <React.Fragment key={t.tenantId}>
+                                            <Grid2 size={11}>
+                                                {t.tenantName}
+                                            </Grid2>
+                                            <Grid2 size={1}>
+                                                <RadioStyledCheckbox                                                    
+                                                    checked={selectedTenant === t.tenantId}                                                    
+                                                    onChange={(_, checked: boolean) => {
+                                                        if(checked){
+                                                            setSelectedTenant(t.tenantId);
+                                                        }
+                                                        else{
+                                                            setSelectedTenant(undefined);
+                                                        }
+                                                    }}
+
+                                                />
+                                            </Grid2>
+                                            <Grid2 size={12}><Divider /></Grid2>
+                                        </React.Fragment>
+                                    )                                
+                                )
+                            }
+                            </Grid2>
+                        </DialogContent>
+                        <DialogActions>
+                            
+                            <Button
+                                onClick={() => closeTenantSelector()}
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                onClick={() => {
+                                    setShowTenantSelector(false);
+                                    handleNextClick();
+                                }}
+                                disabled={selectedTenant === null}
+                            >
+                                Next
+                            </Button>
+                            
+                        </DialogActions>
+                        </Typography>                        
+                    </Dialog>
+                }
                 <Grid2 spacing={4} container size={{ xs: 12 }}>
                     {errorMessage !== null &&
                         <>

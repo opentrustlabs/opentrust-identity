@@ -84,7 +84,20 @@ const AuthenticationLayout: React.FC<LayoutProps> = ({
                         },
                         
                     }
+                },
+                MuiTypography: {
+                    styleOverrides: {
+                        root: {
+                            fontSize: "0.9em"
+                        }
+                    },
+                    defaultProps: {                
+                        fontSize: "0.9em"
+                    }
                 }
+            },
+            typography: {        
+              fontSize: 12
             }
         });
 
