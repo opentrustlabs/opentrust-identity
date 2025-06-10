@@ -3,7 +3,7 @@ import { writeFileSync, createWriteStream, WriteStream } from "node:fs";
 import { generateKeyPairSync, createPublicKey, KeyObject, PrivateKeyInput, createPrivateKey } from "node:crypto";
 import { pem, sha256, hmac, pki } from "node-forge";
 import { OIDCPrincipal } from '@/lib/models/principal';
-import JwtService from '@/lib/service/jwt-service';
+import JwtService from '@/lib/service/jwt-service-utils';
 import { JWTPayload,  } from 'jose';
 import { bcryptHashPassword, bcryptValidatePassword, generateRandomToken, getFileContents, pbkdf2HashPassword, scryptHashPassword, sha256HashPassword } from '@/utils/dao-utils';
 import FSBasedKms from '@/lib/kms/fs-based-kms';

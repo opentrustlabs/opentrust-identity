@@ -19,13 +19,6 @@ interface CachedSigningKeyData {
     publicKeyObject: KeyObject
 };
 
-const SigningKeyCache = new NodeCache(
-    {
-        stdTTL: 43200, // 12 hours
-        useClones: false,
-        checkperiod: 1800, 
-    }
-);
 
 const identityDao: IdentityDao = DaoFactory.getInstance().getIdentityDao();
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
@@ -36,7 +29,61 @@ const {
     AUTH_DOMAIN
 } = process.env;
 
-class JwtService {
+class JwtServiceUtils {
+
+    static SigningKeyCache = new NodeCache({
+            stdTTL: 43200, // 12 hours
+            useClones: false,
+            checkperiod: 1800, 
+        }
+    );
+
+    static OIDCPrincipalCache = new NodeCache({
+        stdTTL: 900, // 15 minutes
+        useClones: false,
+        checkperiod: 1800, 
+    })
+
+    /**
+     * 
+     * @param user 
+     * @param tenant 
+     * @param ttlInSeconds 
+     * @returns 
+     */
+    public async signIAMPortalUserJwt(user: User, tenant: Tenant, ttlInSeconds: number): Promise<string | null> {
+        const now = Date.now();
+        const principal: JWTPayload = {
+            sub: user.userId,
+            iss: `${AUTH_DOMAIN}/api/${tenant.tenantId}`,
+            aud: `${AUTH_DOMAIN}/api`,
+            iat: now / 1000,
+            exp: ( now / 1000 ) + ttlInSeconds,
+            at_hash: "",
+            name: user.nameOrder === NAME_ORDER_WESTERN ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`,
+            given_name: user.firstName,
+            family_name: user.lastName,
+            middle_name: "",
+            nickname: "",
+            preferred_username: "",
+            profile: "",
+            phone_number: user.phoneNumber,
+            address: user.address,
+            updated_at: "", // TODO get the history of the updates to the user
+            email: user.email,
+            country_code: user.countryCode,
+            language_code: user.preferredLanguageCode,
+            jwt_id: randomUUID().toString(),
+            tenant_id: tenant.tenantId,
+            tenant_name: tenant.tenantName,
+            client_id: "",
+            client_name: "",
+            client_type: "",
+            token_type: TOKEN_TYPE_END_USER_TOKEN
+        };
+        const s: string | null = await this.signJwt(principal);
+        return Promise.resolve(s);
+    }
 
     /**
      * 
@@ -89,6 +136,24 @@ class JwtService {
             token_type: TOKEN_TYPE_END_USER_TOKEN
         };
 
+        const s: string | null = await this.signJwt(principal);
+        if(s === null){
+            return Promise.resolve(null);
+        }
+        
+        const oidcTokenResponse: OIDCTokenResponse = {
+            access_token: s,
+            token_type: "Bearer",
+            refresh_token: client.maxRefreshTokenCount && client.maxRefreshTokenCount > 0 ? generateRandomToken(32) : null,
+            expires_in: client.userTokenTTLSeconds ? ( now / 1000 ) + client.userTokenTTLSeconds : ( now / 1000 ) + DEFAULT_END_USER_TOKEN_TTL_SECONDS,
+            id_token: s
+        }
+        
+        return Promise.resolve(oidcTokenResponse);
+    }
+
+
+    protected async signJwt(principal: JWTPayload): Promise<string | null> {
         const cachedSigningKeyData: CachedSigningKeyData | null = await this.getCachedSigningKey();
         if(!cachedSigningKeyData){
             return Promise.resolve(null);
@@ -100,16 +165,7 @@ class JwtService {
                 kid: cachedSigningKeyData.signingKey.keyId
             })
             .sign(cachedSigningKeyData.privateKeyObject);
-        
-        const oidcTokenResponse: OIDCTokenResponse = {
-            access_token: s,
-            token_type: "Bearer",
-            refresh_token: client.maxRefreshTokenCount && client.maxRefreshTokenCount > 0 ? generateRandomToken(32) : null,
-            expires_in: client.userTokenTTLSeconds ? ( now / 1000 ) + client.userTokenTTLSeconds : ( now / 1000 ) + DEFAULT_END_USER_TOKEN_TTL_SECONDS,
-            id_token: s
-        }
-        
-        return Promise.resolve(oidcTokenResponse);
+        return s;
     }
 
     /**
@@ -148,19 +204,12 @@ class JwtService {
             client_type: client.clientType,
             token_type: TOKEN_TYPE_SERVICE_ACCOUNT_TOKEN
         };
-
-        const cachedSigningKeyData: CachedSigningKeyData | null = await this.getCachedSigningKey();
-        if(!cachedSigningKeyData){
+        
+        const s: string | null = await this.signJwt(principal);
+        if(s === null){
             return Promise.resolve(null);
         }
-        
-        const s: string = await new SignJWT(principal)
-            .setProtectedHeader({
-                alg: "RS256",
-                kid: cachedSigningKeyData.signingKey.keyId
-            })
-            .sign(cachedSigningKeyData.privateKeyObject);
-        
+
         const oidcTokenResponse: OIDCTokenResponse = {
             access_token: s,
             token_type: "Bearer",
@@ -275,11 +324,18 @@ class JwtService {
      */
     public async validateJwt(jwt: string): Promise<OIDCPrincipal | null> {
 
-        // TODO
-        // Create a jwt cache, check that first. Always check the expiration
-        // value of the cached data too.
-
-
+        // Always check the expiration value of the cached data too.
+        const nowInSeconds = Date.now() / 1000;
+        if(JwtServiceUtils.OIDCPrincipalCache.has(jwt)){
+            const principal: OIDCPrincipal = JwtServiceUtils.OIDCPrincipalCache.get(jwt) as OIDCPrincipal;
+            if(principal.exp < nowInSeconds){                
+                return Promise.resolve(null);
+            }
+            else{
+                return principal;
+            }
+        }
+        
         const protectedHeader: ProtectedHeaderParameters = decodeProtectedHeader(jwt);
         const keyId = protectedHeader.kid;
         if(!keyId){
@@ -289,7 +345,7 @@ class JwtService {
             return Promise.resolve(null);
         }
         const payload: JWTPayload = decodeJwt(jwt);
-        const nowInSeconds = Date.now() / 1000;
+        
         if(!payload.exp || payload.exp < nowInSeconds){
             return Promise.resolve(null);
         }
@@ -301,10 +357,11 @@ class JwtService {
 
         try {
             const p: JWTVerifyResult = await jwtVerify(jwt, cachedSigningKeyData.publicKeyObject)
-            if(!p.payload){
+            if(!p.payload){                
                 return Promise.resolve(null);
             }
             else{
+                JwtServiceUtils.OIDCPrincipalCache.set(jwt, p.payload);
                 return Promise.resolve(p.payload as unknown as OIDCPrincipal);
             }
         }
@@ -385,8 +442,8 @@ class JwtService {
      * @returns 
      */
     protected async getCachedSigningKeyById(keyId: string): Promise<CachedSigningKeyData | null>{
-        if(SigningKeyCache.has(keyId)){
-            return Promise.resolve(SigningKeyCache.get(keyId) as CachedSigningKeyData);
+        if(JwtServiceUtils.SigningKeyCache.has(keyId)){
+            return Promise.resolve(JwtServiceUtils.SigningKeyCache.get(keyId) as CachedSigningKeyData);
         }
         else{
             const key: SigningKey | null = await signingKeysDao.getSigningKeyById(keyId);
@@ -413,7 +470,7 @@ class JwtService {
                 privateKeyObject: privateKeyObject,
                 publicKeyObject: publicKeyObject
             };
-            SigningKeyCache.set(keyId, cachedData);
+            JwtServiceUtils.SigningKeyCache.set(keyId, cachedData);
             return Promise.resolve(cachedData);
         }
     }
@@ -424,8 +481,8 @@ class JwtService {
      */
     protected async getCachedSigningKey(): Promise<CachedSigningKeyData | null> {
         
-        if(SigningKeyCache.has(SIGNING_KEY_ARRAY_CACHE_KEY)){
-            const a: Array<CachedSigningKeyData> = SigningKeyCache.get(SIGNING_KEY_ARRAY_CACHE_KEY) as Array<CachedSigningKeyData>;
+        if(JwtServiceUtils.SigningKeyCache.has(SIGNING_KEY_ARRAY_CACHE_KEY)){
+            const a: Array<CachedSigningKeyData> = JwtServiceUtils.SigningKeyCache.get(SIGNING_KEY_ARRAY_CACHE_KEY) as Array<CachedSigningKeyData>;
             if(a.length > 0){
                 return Promise.resolve(a[0]);
             }
@@ -472,7 +529,7 @@ class JwtService {
                 }
             );
 
-            SigningKeyCache.set(SIGNING_KEY_ARRAY_CACHE_KEY, cachedArray);
+            JwtServiceUtils.SigningKeyCache.set(SIGNING_KEY_ARRAY_CACHE_KEY, cachedArray);
             if(cachedArray.length > 0){
                 return Promise.resolve(cachedArray[0]);
             }
@@ -485,4 +542,4 @@ class JwtService {
 
 }
 
-export default JwtService;
+export default JwtServiceUtils;

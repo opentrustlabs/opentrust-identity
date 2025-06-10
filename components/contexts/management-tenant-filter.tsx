@@ -1,7 +1,7 @@
 "use client";
 import React, { ReactNode, useContext, useEffect } from "react";
 import { useParams, useRouter } from 'next/navigation';
-import { QUERY_PARAM_AUTHENTICATE_TO_PORTAL, QUERY_PARAM_PREAUTH_TENANT_ID } from "@/utils/consts";
+import { MANAGEMENT_TENANT_LOCAL_STORAGE_KEY, QUERY_PARAM_AUTHENTICATE_TO_PORTAL, QUERY_PARAM_PREAUTH_TENANT_ID } from "@/utils/consts";
 import { useQuery } from "@apollo/client";
 import { TENANT_META_DATA_QUERY } from "@/graphql/queries/oidc-queries";
 import { PortalUserProfile } from "@/graphql/generated/graphql-types";
@@ -53,7 +53,7 @@ const ManagementTenantFilter: React.FC<LayoutProps> = ({
     // Any redirects to the authorization screen will ALSO include any saved language and country
     // values that were saved in local storage, or defaulted to en-US
 
-    const tenantIdFromLocalStorage: string | null = localStorage.getItem("management-tenant-id");
+    const tenantIdFromLocalStorage: string | null = localStorage.getItem(MANAGEMENT_TENANT_LOCAL_STORAGE_KEY);
     let needsRedirect = true;
     let redirectUri: string = `/authorize/login?${QUERY_PARAM_AUTHENTICATE_TO_PORTAL}=true`;
     

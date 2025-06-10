@@ -15,7 +15,8 @@ export const DEFAULT_END_USER_TOKEN_TTL_SECONDS = 3600; // 1 hour
 export const MAX_END_USER_TOKEN_TTL_SECONDS = 43200; // 12 hours
 export const MIN_END_USER_TOKEN_TTL_SECONDS = 600; // 10 minutes
 
-
+export const AUTH_TOKEN_LOCAL_STORAGE_KEY="auth-token";
+export const MANAGEMENT_TENANT_LOCAL_STORAGE_KEY="management-tenant-id";
 
 // ************************************************************************** //
 // 

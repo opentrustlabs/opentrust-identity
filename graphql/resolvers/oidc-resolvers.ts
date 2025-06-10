@@ -15,7 +15,9 @@ import { OIDCContext } from "../graphql-context";
 import ViewSecretService from "@/lib/service/view-secret-service";
 import MarkForDeleteService from "@/lib/service/mark-for-delete-service";
 import I18NService from "@/lib/service/i18n-service";
+import JwtService from "@/lib/service/jwt-service-utils";
 
+const jwtService: JwtService = new JwtService();
 
 const resolvers: Resolvers = {
     Query: {

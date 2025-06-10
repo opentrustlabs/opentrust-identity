@@ -1,14 +1,27 @@
+import { AUTH_TOKEN_LOCAL_STORAGE_KEY } from '@/utils/consts';
 import { ApolloClient, InMemoryCache, HttpLink, GraphQLRequest, DefaultContext } from '@apollo/client';
 import { setContext } from "@apollo/client/link/context";
 
 
 
-const authLink = setContext(
-    (operation: GraphQLRequest, prevContext: DefaultContext) => {
-        return {
-            headers: {
-                ...prevContext.headers,
-                "x-opercerts-oidc-graphql-operation-name": operation.operationName
+const authLink = setContext( (operation: GraphQLRequest, prevContext: DefaultContext) => {
+
+        const accessToken: string | null = localStorage.getItem(AUTH_TOKEN_LOCAL_STORAGE_KEY);
+        if(!accessToken){
+            return {
+                headers: {
+                    ...prevContext.headers,
+                    "x-opentrust-oidc-graphql-operation-name": operation.operationName
+                }
+            }
+        }
+        else{
+            return {
+                headers: {
+                    ...prevContext.headers,
+                    "x-opentrust-oidc-graphql-operation-name": operation.operationName,
+                    "Authorization": `Bearer ${accessToken}`
+                }
             }
         }
     }

@@ -137,7 +137,7 @@ type Mutation {
     logout(userId: String): String
     login(username: String!, password: String!): LoginAuthenticationHandlerResponse!
     createUser(tenantId: String!, userInput: UserCreateInput!): User!
-    registerUser(tenantId: String!, userInput: UserCreateInput!): User!
+    registerUser(tenantId: String!, userInput: UserCreateInput!): RegisterUserResponse!
     updateUser(userInput: UserUpdateInput!): User!
     updateUserTenantRel(tenantId: String!, userId: String!, relType: String!): UserTenantRel!
     assignUserToTenant(tenantId: String!, userId: String!, relType: String!): UserTenantRel!
@@ -1016,6 +1016,11 @@ type Fido2AuthenticationChallengeResponse {
     fido2Challenge: Fido2Challenge!
     rpId: String!
     fido2AuthenticationChallengePasskeys: [Fido2AuthenticationChallengePasskey!]!
+}
+
+type RegisterUserResponse {
+    user: User!
+    authToken: String!
 }
 
 ############################################################################

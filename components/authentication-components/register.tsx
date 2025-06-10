@@ -6,7 +6,7 @@ import useMediaQuery from '@mui/material/useMediaQuery';
 import Link from 'next/link';
 import { QRCodeSVG } from 'qrcode.react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { DEFAULT_TENANT_PASSWORD_CONFIGURATION, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, NAME_ORDER_DISPLAY, NAME_ORDER_EASTERN, NAME_ORDER_WESTERN, NAME_ORDERS, QUERY_PARAM_AUTHENTICATE_TO_PORTAL, QUERY_PARAM_PREAUTH_REDIRECT_URI, QUERY_PARAM_PREAUTH_TENANT_ID, QUERY_PARAM_PREAUTHN_TOKEN, QUERY_PARAM_USERNAME } from "@/utils/consts";
+import { AUTH_TOKEN_LOCAL_STORAGE_KEY, DEFAULT_TENANT_PASSWORD_CONFIGURATION, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, NAME_ORDER_DISPLAY, NAME_ORDER_EASTERN, NAME_ORDER_WESTERN, NAME_ORDERS, QUERY_PARAM_AUTHENTICATE_TO_PORTAL, QUERY_PARAM_PREAUTH_REDIRECT_URI, QUERY_PARAM_PREAUTH_TENANT_ID, QUERY_PARAM_PREAUTHN_TOKEN, QUERY_PARAM_USERNAME } from "@/utils/consts";
 import {  TENANT_PASSWORD_CONFIG_QUERY, VALIDATE_TOTP_TOKEN_QUERY } from "@/graphql/queries/oidc-queries";
 import { useLazyQuery, useMutation, useQuery } from "@apollo/client";
 import { Fido2KeyRegistrationInput, Fido2RegistrationChallengeResponse, StateProvinceRegion, TenantPasswordConfig, TotpResponse, UserCreateInput } from "@/graphql/generated/graphql-types";
@@ -111,7 +111,9 @@ const Register: React.FC = () => {
     const [registerUser] = useMutation(REGISTER_USER_MUTATION, {
         onCompleted(data) {
             setShowMutationBackdrop(false);
-            setCreatedUserId(data.registerUser.userId);
+            setCreatedUserId(data.registerUser.user.userId);
+            localStorage.setItem(AUTH_TOKEN_LOCAL_STORAGE_KEY, data.registerUser.authToken);
+
             if(tenantBean.getTenantMetaData()?.tenant.verifyEmailOnSelfRegistration){                
                 // Await the user to enter a 16 character validation code
                 setRegistrationPage(3);
@@ -869,7 +871,6 @@ const Register: React.FC = () => {
                                                 If this is a user who is accessing the IdP tool itself, then the pre-auth token
                                                 will be null or undefined. In this case, take the user to the landing page for
                                                 the tenant they have just registered against - that is: /{tenant_id}
-
                                             */
                                         }}  
 

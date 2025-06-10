@@ -8,7 +8,7 @@ import { CLIENT_TYPE_SERVICE_ACCOUNT_ONLY, CLIENT_TYPE_USER_DELEGATED_PERMISSION
 import { generateHash } from '@/utils/dao-utils';
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { randomUUID } from 'crypto'; 
-import JwtService from '@/lib/service/jwt-service';
+import JwtService from '@/lib/service/jwt-service-utils';
 import { OIDCTokenResponse } from '@/lib/models/token-response';
 import { DaoFactory } from '@/lib/data-sources/dao-factory';
 

@@ -1,7 +1,7 @@
 import { OIDCContext } from "@/graphql/graphql-context";
 import * as OTPAuth from "otpauth";
 import IdentityDao from "../dao/identity-dao";
-import { Client, Fido2AuthenticationChallengeResponse, Fido2Challenge, Fido2RegistrationChallengeResponse, Fido2KeyRegistrationInput, ObjectSearchResultItem, RefreshData, RelSearchResultItem, SearchResultType, Tenant, TenantPasswordConfig, TotpResponse, User, UserCreateInput, UserCredential, UserMfaRel, UserSession, UserTenantRel, UserTenantRelView, Fido2KeyAuthenticationInput, TenantRestrictedAuthenticationDomainRel, PortalLoginEmailHandlerResponse, TenantManagementDomainRel, PortalLoginEmailHandlerErrorTypes, FederatedOidcProvider, FederatedOidcProviderTenantRel, PortalLoginEmailHandlerSuccessNextStep, FederatedOidcAuthorizationRel, FederatedOidcAuthorizationRelType } from "@/graphql/generated/graphql-types";
+import { Client, Fido2AuthenticationChallengeResponse, Fido2Challenge, Fido2RegistrationChallengeResponse, Fido2KeyRegistrationInput, ObjectSearchResultItem, RefreshData, RelSearchResultItem, SearchResultType, Tenant, TenantPasswordConfig, TotpResponse, User, UserCreateInput, UserCredential, UserMfaRel, UserSession, UserTenantRel, UserTenantRelView, Fido2KeyAuthenticationInput, TenantRestrictedAuthenticationDomainRel, PortalLoginEmailHandlerResponse, TenantManagementDomainRel, PortalLoginEmailHandlerErrorTypes, FederatedOidcProvider, FederatedOidcProviderTenantRel, PortalLoginEmailHandlerSuccessNextStep, FederatedOidcAuthorizationRel, FederatedOidcAuthorizationRelType, RegisterUserResponse } from "@/graphql/generated/graphql-types";
 import { DaoFactory } from "../data-sources/dao-factory";
 import TenantDao from "../dao/tenant-dao";
 import { GraphQLError } from "graphql/error";
@@ -19,6 +19,8 @@ import { validatePassword } from "@/utils/password-utils";
 import FederatedOIDCProviderDao from "../dao/federated-oidc-provider-dao";
 import OIDCServiceUtils from "./oidc-service-utils";
 import { WellknownConfig } from "../models/wellknown-config";
+import JwtServiceUtils from "./jwt-service-utils";
+import graphql from "@/pages/api/graphql";
 
 const identityDao: IdentityDao = DaoFactory.getInstance().getIdentityDao();
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
@@ -28,6 +30,8 @@ const authDao: AuthDao = DaoFactory.getInstance().getAuthDao();
 const clientDao: ClientDao = DaoFactory.getInstance().getClientDao();
 const federatedOIDCProviderDao: FederatedOIDCProviderDao = DaoFactory.getInstance().getFederatedOIDCProvicerDao();
 const oidcServiceUtils: OIDCServiceUtils = new OIDCServiceUtils();
+
+const jwtServiceUtils: JwtServiceUtils = new JwtServiceUtils();
 
 const {
     MFA_ISSUER,
@@ -44,9 +48,18 @@ class IdentityService {
         this.oidcContext = oidcContext;
     }
 
-    public async registerUser(userCreateInput: UserCreateInput, tenantId: string){
-        const user: User = await this._createUser(userCreateInput, tenantId, true);
-        return Promise.resolve(user);        
+    public async registerUser(userCreateInput: UserCreateInput, tenantId: string): Promise<RegisterUserResponse>{
+        const {user, tenant} = await this._createUser(userCreateInput, tenantId, true);
+
+        const authToken: string | null = await jwtServiceUtils.signIAMPortalUserJwt(user, tenant, 60 * 60 * 12);
+        if(authToken === null){
+            throw new GraphQLError("ERROR_UNABLE_TO_GENERATE_AN_ACCESS_TOKEN_FOR_USER");
+        }
+        const response: RegisterUserResponse = {
+            user: user,
+            authToken: authToken
+        }
+        return Promise.resolve(response);        
     }
 
     public async verifyVerificationToken(userId: string, token: string): Promise<boolean>{
@@ -76,7 +89,7 @@ class IdentityService {
     
 
     public async createUser(userCreateInput: UserCreateInput, tenantId: string): Promise<User>{
-        const user: User = await this._createUser(userCreateInput, tenantId, false);
+        const { user } = await this._createUser(userCreateInput, tenantId, false);
         return user;
     }
 
@@ -560,13 +573,13 @@ class IdentityService {
      * @param isRegistration 
      * @returns 
      */
-    protected async _createUser(userCreateInput: UserCreateInput, tenantId: string, isRegistration: boolean): Promise<User>  {
+    protected async _createUser(userCreateInput: UserCreateInput, tenantId: string, isRegistration: boolean): Promise<{user: User, tenant: Tenant}>  {
 
         const tenant: Tenant | null = await tenantDao.getTenantById(tenantId);
         if(!tenant){
             throw new GraphQLError("ERROR_TENANT_DOES_NOT_EXIST");
         }
-        if(tenant.enabled === false){
+        if(tenant.enabled === false || tenant.markForDelete === true){
             throw new GraphQLError("ERROR_TENANT_IS_NOT_ENABLED");
         }
         if(isRegistration && tenant.allowUserSelfRegistration === false){
@@ -641,7 +654,7 @@ class IdentityService {
         await this.updateObjectSearchIndex(tenant, user, "PRIMARY");
         await this.updateRelSearchIndex(tenant.tenantId, tenant.tenantId, user, USER_TENANT_REL_TYPE_PRIMARY);
 
-        return Promise.resolve(user);
+        return Promise.resolve({user: user, tenant: tenant});
     }
 
     protected generateUserCredential(userId: string, password: string, hashAlgorithm: string): UserCredential {

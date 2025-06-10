@@ -653,7 +653,10 @@ export const AUTHENTICATE_FIDO2_KEY_MUATATION = gql(`
 export const REGISTER_USER_MUTATION = gql(`
     mutation registerUser($tenantId: String!, $userInput: UserCreateInput!) {
         registerUser(tenantId: $tenantId, userInput: $userInput) {
-            userId            
+            user {
+                userId
+            }
+            authToken
         }
     }
 `);
