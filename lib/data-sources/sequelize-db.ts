@@ -44,6 +44,8 @@ import ClientScopeRelEntity from "../entities/client-scope-rel-entity";
 import UserScopeRelEntity from "../entities/user-scope-rel-entity";
 import { StateProvinceRegionEntity } from "../entities/state-province-region-entity";
 import UserFido2CounterRelEntity from "../entities/user-fido2-counter-rel-entity";
+import UserAuthenticationStateEntity from "../entities/user-authentication-state-entity";
+import UserRegistrationStateEntity from "../entities/user-registration-state-entity";
 
 const {
     DB_USER,
@@ -161,6 +163,8 @@ class DBDriver {
             ClientScopeRelEntity.initModel(global.sequelize);
             StateProvinceRegionEntity.initModel(global.sequelize);
             UserFido2CounterRelEntity.initModel(global.sequelize);
+            UserAuthenticationStateEntity.initModel(global.sequelize);
+            UserRegistrationStateEntity.initModel(global.sequelize);
         } 
 
         return global.sequelize;

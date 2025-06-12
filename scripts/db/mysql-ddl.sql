@@ -586,3 +586,32 @@ create TABLE state_province_region (
     PRIMARY KEY (isocountrycode, isoentrycode), 
 	FOREIGN KEY (isocountrycode) REFERENCES country(isocountrycode)	
 );
+
+create TABLE user_authentication_state (
+    userid VARCHAR(64) NOT NULL,
+    tenantid VARCHAR(64) NOT NULL,
+    authenticationsessiontoken VARCHAR(128) NOT NULL,    
+    authenticationstate VARCHAR(64) NOT NULL,
+    authenticationstateorder INT NOT NULL,
+    authenticationstatestatus VARCHAR(32) NOT NULL,
+    preauthtoken VARCHAR(128),
+    expiresatms BIGINT NOT NULL,
+    PRIMARY KEY (userid, authenticationsessiontoken, authenticationstate),
+    FOREIGN KEY (userid) REFERENCES user(userid),
+    FOREIGN KEY (tenantid) REFERENCES tenant(tenantid) 
+);
+
+create TABLE user_registration_state (
+    userid VARCHAR(64) NOT NULL,
+    email VARCHAR(128) NOT NULL,
+    tenantid VARCHAR(64) NOT NULL,
+    registrationsessiontoken VARCHAR(128) NOT NULL,    
+    registrationstate VARCHAR(64) NOT NULL,
+    registrationstateorder INT NOT NULL,
+    registrationstatestatus VARCHAR(32) NOT NULL,
+    preauthtoken VARCHAR(128),
+    expiresatms BIGINT NOT NULL,
+    PRIMARY KEY (userid, registrationsessiontoken, registrationstate),
+    FOREIGN KEY (userid) REFERENCES user(userid),
+    FOREIGN KEY (tenantid) REFERENCES tenant(tenantid) 
+);

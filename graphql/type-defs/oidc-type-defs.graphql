@@ -28,9 +28,7 @@ type Query {
     ## Users
     getUsers(tenantId: String): [User!]!
     getUserById(userId: String!): User
-    getLoginUserNameHandler(username: String!, tenantId: String, preauthToken: String): LoginUserNameHandlerResponse!
     getUserTenantRels(userId: String!): [UserTenantRelView!]!
-    validateTOTP(userId: String!, totpValue: String!): Boolean!
     getUserMFARels(userId: String!): [UserMFARel!]!
     getUserSessions(userId: String!): [UserSession!]!
 
@@ -135,28 +133,51 @@ type Mutation {
     removeAuthenticationGroupFromClient(authenticationGroupId: String!, clientId: String!): String
 
     ## Users
-    logout(userId: String): String
-    login(username: String!, password: String!, tenantId: String!): LoginAuthenticationHandlerResponse!
-    createUser(tenantId: String!, userInput: UserCreateInput!): User!
-    registerUser(tenantId: String!, userInput: UserCreateInput!): RegisterUserResponse!
+    createUser(tenantId: String!, userInput: UserCreateInput!): User!    
     updateUser(userInput: UserUpdateInput!): User!
     updateUserTenantRel(tenantId: String!, userId: String!, relType: String!): UserTenantRel!
     assignUserToTenant(tenantId: String!, userId: String!, relType: String!): UserTenantRel!
     removeUserFromTenant(tenantId: String!, userId: String!): String
     deleteUserSession(userId: String!, clientId: String!, tenantId: String!): String
-    verifyVerificationToken(userId: String!, token: String!): Boolean!
-    createPortalLoginEmailHandlerResponse(email: String!, tenantId: String): PortalLoginEmailHandlerResponse!
-    ## Users: TOPT
-    generateTOTP(userId: String!): TOTPResponse
+    
+    #createPortalLoginEmailHandlerResponse(email: String!, tenantId: String): PortalLoginEmailHandlerResponse!
+    
+
+    ## Authentication Flows
+    logout(userId: String): String
+    authenticateUserNameInput(username: String!, tenantId: String, preAuthToken: String): UserAuthenticationStateResponse!
+    authenticateUser(username: String!, password: String!, tenantId: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
+    authenticateConfigureTOTP(userId: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
+    authenticateValidateTOTP(userId: String!, totpTokenValue: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
+    authenticateRegisterSecurityKey(userId: String!, fido2KeyRegistrationInput: Fido2KeyRegistrationInput!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
+    authenticateValidateSecurityKey(userId: String!, fido2KeyAuthenticationInput: Fido2KeyAuthenticationInput!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
+
+
+    #login(username: String!, password: String!, tenantId: String!): LoginAuthenticationHandlerResponse!
+    ## Registration Flows
+    registerUser(tenantId: String!, userInput: UserCreateInput!, preAuthToken: String): UserRegistrationStateResponse!
+    registerVerifyEmailAddress(userId: String!, token: String!, registrationSessionToken: String!, preAuthToken: String): UserRegistrationStateResponse!
+    registerConfigureTOTP(userId: String!, registrationSessionToken: String!, preAuthToken: String): UserRegistrationStateResponse!
+    registerSkipConfigureTOTP(userId: String, registrationSessionToken: String, preAuthToken: String): UserRegistrationStateResponse!
+    registerValidateTOTP(userId: String, registrationSessionToken: String, totpTokenValue: String, preAuthToken: String): UserRegistrationStateResponse!
+    registerConfigureSecurityKey(userId: String!, registrationSessionToken: String, fido2KeyRegistrationInput: Fido2KeyRegistrationInput!, preAuthToken: String): UserRegistrationStateResponse!
+    registerSkipConfigureSecurityKey(userId: String!, registrationSessionToken: String!, preAuthToken: String): UserRegistrationStateResponse!
+    registerValidateSecurityKey(userId: String!, registrationSessionToken: String!, fido2KeyAuthenticationInput: Fido2KeyAuthenticationInput!, preAuthToken: String): UserRegistrationStateResponse!
+    finishRegistration(userId: String!, registrationSessionToken: String!, preAuthToken: String): UserRegistrationStateResponse!
+
+
+    ## MFA Utilities
     deleteTOTP(userId: String!): String
-    ## Users: FIDO Key
     deleteFIDOKey(userId: String!): String
-    registerFIDO2Key(userId: String!, fido2KeyRegistrationInput: Fido2KeyRegistrationInput!): UserMFARel
     createFido2RegistrationChallenge(userId: String!): Fido2RegistrationChallengeResponse
-    authenticateFIDO2Key(userId: String!, fido2KeyAuthenticationInput: Fido2KeyAuthenticationInput!): Boolean!
     createFido2AuthenticationChallenge(userId: String!): Fido2AuthenticationChallengeResponse    
-    ## Users: complete the OAuth2 authorization code flow
-    generateAuthorizationReturnUri(preAuthToken: String!): AuthorizationReturnUri
+
+    
+    # validateTOTP(userId: String!, totpValue: String!): Boolean!
+    # generateTOTP(userId: String!): TOTPResponse    
+    # registerFIDO2Key(userId: String!, fido2KeyRegistrationInput: Fido2KeyRegistrationInput!): UserMFARel
+    # authenticateFIDO2Key(userId: String!, fido2KeyAuthenticationInput: Fido2KeyAuthenticationInput!): Boolean!
+    
     
     ## Keys
     createSigningKey(keyInput: SigningKeyCreateInput!): SigningKey!
@@ -256,12 +277,6 @@ type LoginFailurePolicy {
     numberOfBackoffCyclesBeforeLocking: Int
 }
 
-########
-# 1.    tenantId -           Write once, read only
-# 2.    enabled -            true | false
-# 3.    allowedScopeValues - ALL of the scopes that are available for the tenant. A subset of these are
-#                            available to each of the clients
-# 4.    allowUnlimitedRate - true | false. True will override any rate limit set in the rateLimits property
 
 type Tenant {
     tenantId: String!
@@ -312,12 +327,6 @@ type TenantRestrictedAuthenticationDomainRel {
     domain: String!
 }
 
-# Either client secret should be defined or usePkce should be set to true
-# if no client secret, then client auth type should be NONE
-# refreshTokenAllowed - does the external provider allow for refresh tokens? default false 
-#
-# socialLoginIcon -> social login, in case the login screen wants to display a "Sign in with Google/Facebook/Twitter + <Google/Facebook/Twitter Icon>"
-# socialLoginDisplayName -> social login, the name to display 
 type FederatedOIDCProvider {
     federatedOIDCProviderId: String!
     federatedOIDCProviderName: String!
@@ -353,13 +362,6 @@ type FederatedOIDCProviderDomainRel {
     domain: String!
 }
 
-## TODO
-## Change this to TenantRegistrationConfig
-## and add
-## 1.   requireAccessTermsAndConditions    Boolean!
-## 2.   termsAncConditionsUri              String
-## 3.   requireCaptchaOnRegistration       Boolean!
-## 4.   captchaConfig                      To be determined
 type TenantPasswordConfig {
     tenantId: String!
     passwordMinLength: Int!
@@ -385,19 +387,6 @@ type TenantLegacyUserMigrationConfig {
     usernameCheckUri: String!
 }
 
-# 1.    tenantId -      Parent tenant (write once, read only)
-# 2.    clientId -      GUID
-# 3.    clientSecret -  A 256-bit hex-encoded value
-# 4.    clientName
-# 5.    clientDescription
-# 6.    enabled -       true | false
-# 7.    redirectUris - List of redirect URIs for authorization
-# 8.    oidcEnabled -  Allow SSO for this client
-# 9.    pkceEnabled
-# 10.   clientType
-# 11.   userTokenTTLSeconds default is 60 minutes, configurable up to 12 hours
-# 12.   allowUserSelfRegistration default false
-# 13.   allowDelegatedAuthentication default false
 type Client {
     tenantId: String!
     clientId: String!
@@ -784,85 +773,102 @@ type UserFailedLoginAttempts {
     failureAtMS: Float!
 }
 
-enum LoginUserNameHandlerAction {
-    OIDC_REDIRECT
-    ERROR
-    ENTER_PASSWORD
-}
-
-type OIDCRedirectActionHandlerConfig {
-    redirectUri: String!
-    state: String!
-    clientId: String!
-    codeChallenge: String
-    codeChallengeMethod: String
-    scope: String
-    responseType: String!
-    responseMode: String!
-}
-
-type ErrorActionHandler {
-    errorCode: String!
-    errorMessage: String!
-}
-
-type LoginUserNameHandlerResponse {
-    action: LoginUserNameHandlerAction!
-    oidcRedirectActionHandlerConfig: OIDCRedirectActionHandlerConfig
-    errorActionHandler: ErrorActionHandler
-}
-
-enum LoginAuthenticationHandlerAction {
-    ERROR
-    AUTHENTICATED
-    SECOND_FACTOR_INPUT
-}
-
-enum SecondFactorType {
-    TOTP
-    SECURITY_KEY
-}
-
-type LoginAuthenticationSuccessConfig {
-    code: String!
-    redirectUri: String!
-    responseMode: String
-    state: String
-}
-
-type LoginAuthenticationHandlerResponse {
-    status: LoginAuthenticationHandlerAction!
-    secondFactorType: [SecondFactorType!]
-    successConfig: LoginAuthenticationSuccessConfig
-    errorActionHandler: ErrorActionHandler
-}
-
-enum PortalLoginEmailHandlerErrorTypes {    
-    CONDITIONS_FOR_AUTHENTICATION_NOT_MET
-    NO_MANAGEMENT_DOMAIN
-    NO_MATCHING_FEDERATED_PROVIDER_FOR_TENANT
-    EXCLUSIVE_TENANT_AND_NO_FEDERATED_OIDC_PROVIDER
-    NO_MATCHING_USER_AND_NO_TENANT_SELF_REGISTRATION
-}
-
-enum PortalLoginEmailHandlerSuccessNextStep {
-    LOGIN
-    SELECT_TENANT
-    AUTH_WITH_FEDERATED_PROVIDER
-    REGISTER
-}
 
 type TenantSelectorData {
     tenantId: String!
     tenantName: String!
 }
 
-type PortalLoginEmailHandlerResponse {
-    errorType: PortalLoginEmailHandlerErrorTypes
-    tenantSelectors: [TenantSelectorData!]
-    federatedOIDCProviderId: String    
-    authorizationEndpoint: String
-    successNextStep: PortalLoginEmailHandlerSuccessNextStep
+enum AuthenticationState {
+    AUTH_WITH_FEDERATED_OIDC
+    SELECT_TENANT
+    REGISTER
+    ENTER_PASSWORD
+    CONFIGURE_TOTP
+    VALIDATE_TOTP
+    CONFIGURE_SECURITY_KEY
+    VALIDATE_SECURITY_KEY
+    REDIRECT_BACK_TO_APPLICATION
+    COMPLETED
+    ERROR
+}
+
+type AuthenticationError {
+    errorCode: String!
+    errorMessage: String!
+}
+
+type UserAuthenticationStateResponse {
+    userAuthenticationState: UserAuthenticationState!
+    authenticationError: AuthenticationError
+    availableTenants: [TenantSelectorData!]
+    uri: String
+    accessToken: String
+}
+
+type UserAuthenticationState {
+	userId: String!
+    authenticationSessionToken: String!
+    tenantId: String!
+	authenticationState: AuthenticationState!
+    authenticationStateOrder: Int!
+    authenticationStateStatus: String!
+    preAuthToken: String
+	expiresAtMs: Float!
+}
+
+
+enum RegistrationState {
+    VALIDATE_EMAIL
+    CONFIGURE_TOTP_REQUIRED
+    CONFIGURE_TOTP_OPTIONAL
+    VALIDATE_TOTP
+    CONFIGURE_SECURITY_KEY_REQUIRED
+    CONFIGURE_SECURITY_KEY_OPTIONAL
+    VALIDATE_SECURITY_KEY
+    COMPLETED
+    REDIRECT_BACK_TO_APPLICATION
+    ERROR
+}
+
+type RegistrationError {
+    errorCode: String!
+    errorMessage: String!
+}
+
+type UserRegistrationStateResponse {
+    userRegistrationState: UserRegistrationState!
+    registrationError: RegistrationError    
+	accessToken: String
+	uri: String
+}
+
+type UserRegistrationState {
+	userId: String!
+    email: String!
+    tenantId: String!
+    registrationSessionToken: String!
+	registrationState: RegistrationState!
+    registrationStateOrder: Int!
+    registrationStateStatus: String!
+    preAuthToken: String
+	expiresAtMs: Float!
+}
+
+
+enum SecondFactorType {
+    TOTP
+    SECURITY_KEY
+}
+
+
+enum AuthenticationErrorTypes {
+    ERROR_INVALID_USERNAME_OR_PASSWORD
+    ERROR_CONDITIONS_FOR_AUTHENTICATION_NOT_MET
+    ERROR_NO_MANAGEMENT_DOMAIN
+    ERROR_NO_MATCHING_FEDERATED_PROVIDER_FOR_TENANT
+    ERROR_EXCLUSIVE_TENANT_AND_NO_FEDERATED_OIDC_PROVIDER
+    ERROR_NO_MATCHING_USER_AND_NO_TENANT_SELF_REGISTRATION
 }
 
 

@@ -662,14 +662,16 @@ export const REGISTER_USER_MUTATION = gql(`
 `);
 
 export const VERIFY_REGISTRATION_TOKEN_MUTATION = gql(`
-    mutation verifyVerificationToken($userId: String!, $token: String!) {
-        verifyVerificationToken(userId: $userId, token: $token)
+    mutation registerVerifyEmailAddress($userId: String!, $token: String!, $registrationSessionToken: String!, $preAuthToken: String) {
+        registerVerifyEmailAddress(userId: $userId, token: $token, registrationSessionToken: $registrationSessionToken, preAuthToken: $preAuthToken) {
+        
+        }
     }
 `);
 
-export const PORTAL_LOGIN_EMAIL_HANDLER_MUTATION = gql(`
-    mutation createPortalLoginEmailHandlerResponse($email: String!, $tenantId: String) {
-        createPortalLoginEmailHandlerResponse(email: $email, tenantId: $tenantId) {
+export const AUTHENTICATE_USERNAME_INPUT_MUTATION = gql(`
+    mutation authenticateUserNameInput($email: String!, $tenantId: String, preAuthToken: String) {
+        authenticateUserNameInput(email: $email, tenantId: $tenantId, preAuthToken: $preAuthToken) {
             errorType
             tenantSelectors{
                 tenantId

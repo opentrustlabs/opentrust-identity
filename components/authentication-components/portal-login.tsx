@@ -8,9 +8,9 @@ import { useRouter } from 'next/navigation';
 import { QUERY_PARAM_PREAUTH_TENANT_ID } from "@/utils/consts";
 import { LOGIN_USERNAME_HANDLER_QUERY } from "@/graphql/queries/oidc-queries";
 import { useLazyQuery, useMutation, useQuery } from "@apollo/client";
-import { LoginAuthenticationHandlerAction, LoginAuthenticationHandlerResponse, LoginUserNameHandlerAction, LoginUserNameHandlerResponse, PortalLoginEmailHandlerErrorTypes, PortalLoginEmailHandlerResponse, PortalLoginEmailHandlerSuccessNextStep, TenantSelectorData } from "@/graphql/generated/graphql-types";
+import {  UserAuthenticationStateResponse, TenantSelectorData, AuthenticationState } from "@/graphql/generated/graphql-types";
 import Alert from '@mui/material/Alert';
-import { LOGIN_MUTATION, PORTAL_LOGIN_EMAIL_HANDLER_MUTATION } from "@/graphql/mutations/oidc-mutations";
+import { AUTHENTICATE_USERNAME_INPUT_MUTATION, LOGIN_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import { PageTitleContext } from "@/components/contexts/page-title-context";
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
 import RadioStyledCheckbox from "../input/radio-styled-checkbox";
@@ -62,40 +62,40 @@ const PortalLogin: React.FC<PortalLoginProps> = ({
 
 
     // GRAPHQL FUNCTIONS    
-    const [portalLoginEmailHandler] = useMutation(PORTAL_LOGIN_EMAIL_HANDLER_MUTATION, {
+    const [portalLoginEmailHandler] = useMutation(AUTHENTICATE_USERNAME_INPUT_MUTATION, {
         onCompleted(data) {            
-            const portalLoginEmailHandlerResponse: PortalLoginEmailHandlerResponse = data.createPortalLoginEmailHandlerResponse;
-            if(portalLoginEmailHandlerResponse.errorType){
-                setErrorMessage(portalLoginEmailHandlerResponse.errorType)
+            const authnStateResponse: UserAuthenticationStateResponse = data.authenticateUserNameInput;
+            if(authnStateResponse.userAuthenticationState.authenticationState === AuthenticationState.Error){
+                setErrorMessage(authnStateResponse.authenticationError?.errorMessage || "ERROR");
             }
             else{
-                if(portalLoginEmailHandlerResponse.successNextStep === PortalLoginEmailHandlerSuccessNextStep.AuthWithFederatedProvider){
-                    if(!portalLoginEmailHandlerResponse.authorizationEndpoint){
+                if(authnStateResponse.userAuthenticationState.authenticationState === AuthenticationState.AuthWithFederatedOidc){
+                    if(!authnStateResponse.uri){
                         setErrorMessage("ERROR_NO_AUTHORIZATION_ENDPOINT_CONFIGURED");
                     }
 
                     else{
-                        router.push(portalLoginEmailHandlerResponse.authorizationEndpoint);
+                        router.push(authnStateResponse.uri);
                     }
                 }
-                if(portalLoginEmailHandlerResponse.successNextStep === PortalLoginEmailHandlerSuccessNextStep.SelectTenant){ 
-                    if(portalLoginEmailHandlerResponse.tenantSelectors){
-                        setTenantsToSelect(portalLoginEmailHandlerResponse.tenantSelectors);
+                if(authnStateResponse.userAuthenticationState.authenticationState === AuthenticationState.SelectTenant){ 
+                    if(authnStateResponse.availableTenants){
+                        setTenantsToSelect(authnStateResponse.availableTenants);
                         setShowTenantSelector(true);
                     }
                     else{
                         setErrorMessage("ERROR_NO_TENANT_TO_SELECT");
                     }
                 }
-                if(portalLoginEmailHandlerResponse.successNextStep === PortalLoginEmailHandlerSuccessNextStep.Login){
+                if(authnStateResponse.userAuthenticationState.authenticationState === AuthenticationState.EnterPassword){
                     setDisplayComponent(PASSWORD_COMPONENT);                    
                 }
-                if(portalLoginEmailHandlerResponse.successNextStep === PortalLoginEmailHandlerSuccessNextStep.Register){
-                    if(portalLoginEmailHandlerResponse.tenantSelectors){
-                        router.push(`/authorize/register?${QUERY_PARAM_PREAUTH_TENANT_ID}=${portalLoginEmailHandlerResponse?.tenantSelectors[0].tenantId}&username=${username}`);
+                if(authnStateResponse.userAuthenticationState.authenticationState === AuthenticationState.Register){
+                    if(authnStateResponse.availableTenants && authnStateResponse.availableTenants.length === 1){
+                        router.push(`/authorize/register?${QUERY_PARAM_PREAUTH_TENANT_ID}=${authnStateResponse.availableTenants[0].tenantId}&username=${username}`);
                     }
                     else{
-                        setErrorMessage("ERROR_NO_TENANT_TO_SELECT_FOR_REGISTRATION");
+                        setErrorMessage("ERROR_INVALID_TENANTS_TO_SELECT_FOR_REGISTRATION");
                     }
                 }
             }

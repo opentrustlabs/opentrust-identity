@@ -8,7 +8,7 @@ import { useRouter } from 'next/navigation';
 import { PASSWORD_MINIMUM_LENGTH } from "@/utils/consts";
 import { LOGIN_USERNAME_HANDLER_QUERY } from "@/graphql/queries/oidc-queries";
 import { useLazyQuery, useMutation, useQuery } from "@apollo/client";
-import { LoginAuthenticationHandlerAction, LoginAuthenticationHandlerResponse, LoginUserNameHandlerAction, LoginUserNameHandlerResponse } from "@/graphql/generated/graphql-types";
+import {  } from "@/graphql/generated/graphql-types";
 import Alert from '@mui/material/Alert';
 import { LOGIN_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import { PageTitleContext } from "@/components/contexts/page-title-context";
@@ -54,97 +54,97 @@ const ClientLogin: React.FC<ClientLoginProps> = ({
 
 
     // GRAPHQL FUNCTIONS    
-    const [getLoginUsernameHandler, {  }] = useLazyQuery(
-        LOGIN_USERNAME_HANDLER_QUERY, {
-            fetchPolicy: "network-only",
-            onCompleted(data) {
-                const response: LoginUserNameHandlerResponse = data.getLoginUserNameHandler as LoginUserNameHandlerResponse;
-                if (response.action === LoginUserNameHandlerAction.EnterPassword) {
-                    setDisplayComponent(PASSWORD_COMPONENT);
-                }
-                else if (response.action === LoginUserNameHandlerAction.OidcRedirect) {
-                    let redirectUri = `${response.oidcRedirectActionHandlerConfig?.redirectUri}?`;
-                    const params = new URLSearchParams({
-                        client_id: response.oidcRedirectActionHandlerConfig?.clientId || "",
-                        state: response.oidcRedirectActionHandlerConfig?.state || "",
-                        redirect_uri: response.oidcRedirectActionHandlerConfig?.redirectUri || "",
-                        response_type: response.oidcRedirectActionHandlerConfig?.responseType || ""
-                    })
-                    if(response.oidcRedirectActionHandlerConfig?.responseMode){
-                        params.set("response_mode", response.oidcRedirectActionHandlerConfig?.responseMode);
-                    }                
-                    if(response.oidcRedirectActionHandlerConfig?.codeChallenge){
-                        params.set("code_challenge", response.oidcRedirectActionHandlerConfig.codeChallenge);
-                        params.set("code_challenge_method", response.oidcRedirectActionHandlerConfig.codeChallengeMethod || "");
-                    }
-                    if(response.oidcRedirectActionHandlerConfig?.scope){
-                        params.set("scope", response.oidcRedirectActionHandlerConfig.scope);
-                    }
-                    router.push(redirectUri + params.toString());
-                }
-                else {
-                    setErrorMessage(response.errorActionHandler?.errorMessage || "Error with the user account. It is either disabled or not permitted for this tenant or client.");
-                }
-            }
-        }            
-    );
+    // const [getLoginUsernameHandler, {  }] = useLazyQuery(
+    //     LOGIN_USERNAME_HANDLER_QUERY, {
+    //         fetchPolicy: "network-only",
+    //         onCompleted(data) {
+    //             const response: LoginUserNameHandlerResponse = data.getLoginUserNameHandler as LoginUserNameHandlerResponse;
+    //             if (response.action === LoginUserNameHandlerAction.EnterPassword) {
+    //                 setDisplayComponent(PASSWORD_COMPONENT);
+    //             }
+    //             else if (response.action === LoginUserNameHandlerAction.OidcRedirect) {
+    //                 let redirectUri = `${response.oidcRedirectActionHandlerConfig?.redirectUri}?`;
+    //                 const params = new URLSearchParams({
+    //                     client_id: response.oidcRedirectActionHandlerConfig?.clientId || "",
+    //                     state: response.oidcRedirectActionHandlerConfig?.state || "",
+    //                     redirect_uri: response.oidcRedirectActionHandlerConfig?.redirectUri || "",
+    //                     response_type: response.oidcRedirectActionHandlerConfig?.responseType || ""
+    //                 })
+    //                 if(response.oidcRedirectActionHandlerConfig?.responseMode){
+    //                     params.set("response_mode", response.oidcRedirectActionHandlerConfig?.responseMode);
+    //                 }                
+    //                 if(response.oidcRedirectActionHandlerConfig?.codeChallenge){
+    //                     params.set("code_challenge", response.oidcRedirectActionHandlerConfig.codeChallenge);
+    //                     params.set("code_challenge_method", response.oidcRedirectActionHandlerConfig.codeChallengeMethod || "");
+    //                 }
+    //                 if(response.oidcRedirectActionHandlerConfig?.scope){
+    //                     params.set("scope", response.oidcRedirectActionHandlerConfig.scope);
+    //                 }
+    //                 router.push(redirectUri + params.toString());
+    //             }
+    //             else {
+    //                 setErrorMessage(response.errorActionHandler?.errorMessage || "Error with the user account. It is either disabled or not permitted for this tenant or client.");
+    //             }
+    //         }
+    //     }            
+    // );
 
-    const [getPasswordAuthenticationResponse, {}] = useMutation(
-        LOGIN_MUTATION,
-        {
-            onCompleted(data) {
-                const response: LoginAuthenticationHandlerResponse = data.login as LoginAuthenticationHandlerResponse;
-                if(response.status === LoginAuthenticationHandlerAction.SecondFactorInput){
-                    router.push(`/authorize/mfa?mfa_type=${response.secondFactorType}`);
-                }
-                else if(response.status === LoginAuthenticationHandlerAction.Authenticated){
-                    let redirectUri = `${response.successConfig?.redirectUri}`
-                    if(response.successConfig?.responseMode && response.successConfig.responseMode === "fragment"){
-                        redirectUri = redirectUri + "#";
-                    }
-                    else{
-                        redirectUri = redirectUri + "?";
-                    }
-                    const params = new URLSearchParams({
-                        code: response.successConfig?.code || "",
-                    });
-                    if(response.successConfig?.state){
-                        params.set("state", response.successConfig.state);
-                    }
-                    router.push(redirectUri + params.toString());
-                }
-                else {
-                    setErrorMessage(response.errorActionHandler?.errorMessage || "Error with authentication. Either the user name or password is incorrect.")
-                }
+    // const [getPasswordAuthenticationResponse, {}] = useMutation(
+    //     LOGIN_MUTATION,
+    //     {
+    //         onCompleted(data) {
+    //             const response: LoginAuthenticationHandlerResponse = data.login as LoginAuthenticationHandlerResponse;
+    //             if(response.status === LoginAuthenticationHandlerAction.SecondFactorInput){
+    //                 router.push(`/authorize/mfa?mfa_type=${response.secondFactorType}`);
+    //             }
+    //             else if(response.status === LoginAuthenticationHandlerAction.Authenticated){
+    //                 let redirectUri = `${response.successConfig?.redirectUri}`
+    //                 if(response.successConfig?.responseMode && response.successConfig.responseMode === "fragment"){
+    //                     redirectUri = redirectUri + "#";
+    //                 }
+    //                 else{
+    //                     redirectUri = redirectUri + "?";
+    //                 }
+    //                 const params = new URLSearchParams({
+    //                     code: response.successConfig?.code || "",
+    //                 });
+    //                 if(response.successConfig?.state){
+    //                     params.set("state", response.successConfig.state);
+    //                 }
+    //                 router.push(redirectUri + params.toString());
+    //             }
+    //             else {
+    //                 setErrorMessage(response.errorActionHandler?.errorMessage || "Error with authentication. Either the user name or password is incorrect.")
+    //             }
                 
-            },
-            onError() {
-                setErrorMessage("Error with authentication. Either the user name or password is incorrect, or the system is unable to perform authentication.")
-            }
-        }
-    );
+    //         },
+    //         onError() {
+    //             setErrorMessage("Error with authentication. Either the user name or password is incorrect, or the system is unable to perform authentication.")
+    //         }
+    //     }
+    // );
 
 
     // EVENT HANDLERS
     const handleNextClick = (evt: any) => {
-        getLoginUsernameHandler({
-            variables: {
-                username: username,
-                tenantId: tenantId,
-                preauthToken: preauthToken
-            }
-        });
+        // getLoginUsernameHandler({
+        //     variables: {
+        //         username: username,
+        //         tenantId: tenantId,
+        //         preauthToken: preauthToken
+        //     }
+        // });
     }
     const handleEnterButtonPress = (evt: React.KeyboardEvent) => {        
         if (evt.key.valueOf().toLowerCase() === "enter") {
             if (username && username.length > MIN_USERNAME_LENGTH) {
-                getLoginUsernameHandler({
-                    variables: {
-                        username: username,
-                        tenantId: tenantId,
-                        preauthToken: preauthToken
-                    }
-                });
+                // getLoginUsernameHandler({
+                //     variables: {
+                //         username: username,
+                //         tenantId: tenantId,
+                //         preauthToken: preauthToken
+                //     }
+                // });
             }
         }
         // Remove the error message if the user makes any changes to the user name
@@ -158,12 +158,12 @@ const ClientLogin: React.FC<ClientLoginProps> = ({
     const enterKeyLoginHandler = (evt: React.KeyboardEvent) => {
         if (evt.key.valueOf().toLowerCase() === "enter") {
             if (username && username.length > MIN_USERNAME_LENGTH && password && password.length >= 8) {
-                getPasswordAuthenticationResponse({
-                    variables: {
-                        username: username,
-                        password: password
-                    }
-                });
+                // getPasswordAuthenticationResponse({
+                //     variables: {
+                //         username: username,
+                //         password: password
+                //     }
+                // });
             }
         }
         // Remove the error message if the user makes any changes to the password
@@ -176,12 +176,12 @@ const ClientLogin: React.FC<ClientLoginProps> = ({
     }
 
     const buttonLoginHandler = () => {
-        getPasswordAuthenticationResponse({
-            variables: {
-                username: username,
-                password: password
-            }
-        });
+        // getPasswordAuthenticationResponse({
+        //     variables: {
+        //         username: username,
+        //         password: password
+        //     }
+        // });
     }
 
     const getQueryParams = (): string => {

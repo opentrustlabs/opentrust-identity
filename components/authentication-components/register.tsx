@@ -357,11 +357,12 @@ const Register: React.FC = () => {
 
 
     // Cannot register without a valid tenant id to register against
-    useEffect(() => {
-        if(tenantBean.getTenantMetaData().tenant.tenantId === "" &&  (tenantId === null || tenantId === undefined)){
-            router.push(`/authorize/login?${QUERY_PARAM_AUTHENTICATE_TO_PORTAL}=true`);
-        }
-    }, []);
+    
+    if(tenantBean.getTenantMetaData().tenant.tenantId === "" &&  (tenantId === null || tenantId === undefined)){
+        router.push(`/authorize/login?${QUERY_PARAM_AUTHENTICATE_TO_PORTAL}=true`);
+        return <></>
+    }
+    
 
     return (
         <Suspense>
