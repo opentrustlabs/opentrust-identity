@@ -140,8 +140,6 @@ type Mutation {
     removeUserFromTenant(tenantId: String!, userId: String!): String
     deleteUserSession(userId: String!, clientId: String!, tenantId: String!): String
     
-    #createPortalLoginEmailHandlerResponse(email: String!, tenantId: String): PortalLoginEmailHandlerResponse!
-    
 
     ## Authentication Flows
     logout(userId: String): String
@@ -152,8 +150,6 @@ type Mutation {
     authenticateRegisterSecurityKey(userId: String!, fido2KeyRegistrationInput: Fido2KeyRegistrationInput!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
     authenticateValidateSecurityKey(userId: String!, fido2KeyAuthenticationInput: Fido2KeyAuthenticationInput!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
 
-
-    #login(username: String!, password: String!, tenantId: String!): LoginAuthenticationHandlerResponse!
     ## Registration Flows
     registerUser(tenantId: String!, userInput: UserCreateInput!, preAuthToken: String): UserRegistrationStateResponse!
     registerVerifyEmailAddress(userId: String!, token: String!, registrationSessionToken: String!, preAuthToken: String): UserRegistrationStateResponse!
@@ -165,19 +161,12 @@ type Mutation {
     registerValidateSecurityKey(userId: String!, registrationSessionToken: String!, fido2KeyAuthenticationInput: Fido2KeyAuthenticationInput!, preAuthToken: String): UserRegistrationStateResponse!
     finishRegistration(userId: String!, registrationSessionToken: String!, preAuthToken: String): UserRegistrationStateResponse!
 
-
     ## MFA Utilities
     deleteTOTP(userId: String!): String
     deleteFIDOKey(userId: String!): String
     createFido2RegistrationChallenge(userId: String!): Fido2RegistrationChallengeResponse
-    createFido2AuthenticationChallenge(userId: String!): Fido2AuthenticationChallengeResponse    
+    createFido2AuthenticationChallenge(userId: String!): Fido2AuthenticationChallengeResponse
 
-    
-    # validateTOTP(userId: String!, totpValue: String!): Boolean!
-    # generateTOTP(userId: String!): TOTPResponse    
-    # registerFIDO2Key(userId: String!, fido2KeyRegistrationInput: Fido2KeyRegistrationInput!): UserMFARel
-    # authenticateFIDO2Key(userId: String!, fido2KeyAuthenticationInput: Fido2KeyAuthenticationInput!): Boolean!
-    
     
     ## Keys
     createSigningKey(keyInput: SigningKeyCreateInput!): SigningKey!
