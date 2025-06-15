@@ -1,12 +1,12 @@
 import { OIDCContext } from "@/graphql/graphql-context";
 import * as OTPAuth from "otpauth";
 import IdentityDao from "../dao/identity-dao";
-import { Client, Fido2AuthenticationChallengeResponse, Fido2Challenge, Fido2RegistrationChallengeResponse, Fido2KeyRegistrationInput, ObjectSearchResultItem, RefreshData, RelSearchResultItem, SearchResultType, Tenant, TenantPasswordConfig, TotpResponse, User, UserCreateInput, UserCredential, UserMfaRel, UserSession, UserTenantRel, UserTenantRelView, Fido2KeyAuthenticationInput, TenantRestrictedAuthenticationDomainRel, TenantManagementDomainRel, FederatedOidcProvider, FederatedOidcProviderTenantRel, FederatedOidcAuthorizationRel, FederatedOidcAuthorizationRelType, RegisterUserResponse, AuthorizationCodeData, PreAuthenticationState, AuthorizationReturnUri, UserRegistrationStateResponse, UserRegistrationState, RegistrationState, UserAuthenticationStateResponse, AuthenticationState } from "@/graphql/generated/graphql-types";
+import { Client, Fido2AuthenticationChallengeResponse, Fido2Challenge, Fido2RegistrationChallengeResponse, Fido2KeyRegistrationInput, ObjectSearchResultItem, RefreshData, RelSearchResultItem, SearchResultType, Tenant, TenantPasswordConfig, TotpResponse, User, UserCreateInput, UserCredential, UserMfaRel, UserSession, UserTenantRel, UserTenantRelView, Fido2KeyAuthenticationInput, TenantRestrictedAuthenticationDomainRel, TenantManagementDomainRel, FederatedOidcProvider, FederatedOidcProviderTenantRel, FederatedOidcAuthorizationRel, FederatedOidcAuthorizationRelType, RegisterUserResponse, AuthorizationCodeData, PreAuthenticationState, AuthorizationReturnUri, UserRegistrationStateResponse, UserRegistrationState, RegistrationState, UserAuthenticationStateResponse, AuthenticationState, AuthenticationErrorTypes } from "@/graphql/generated/graphql-types";
 import { DaoFactory } from "../data-sources/dao-factory";
 import TenantDao from "../dao/tenant-dao";
 import { GraphQLError } from "graphql/error";
 import { randomUUID } from "crypto";
-import { DEFAULT_TENANT_PASSWORD_CONFIGURATION, FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, NAME_ORDER_WESTERN, PASSWORD_HASH_ITERATION_128K, PASSWORD_HASH_ITERATION_256K, PASSWORD_HASH_ITERATION_32K, PASSWORD_HASH_ITERATION_64K, PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_32K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_64K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_TYPE_ROOT_TENANT, TOKEN_TYPE_END_USER, TOKEN_TYPE_PROVISIONAL_USER, TOTP_HASH_ALGORITHM_SHA1, USER_TENANT_REL_TYPE_GUEST, USER_TENANT_REL_TYPE_PRIMARY } from "@/utils/consts";
+import { DEFAULT_TENANT_PASSWORD_CONFIGURATION, FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, NAME_ORDER_WESTERN, PASSWORD_HASH_ITERATION_128K, PASSWORD_HASH_ITERATION_256K, PASSWORD_HASH_ITERATION_32K, PASSWORD_HASH_ITERATION_64K, PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_32K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_64K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, STATUS_COMPLETE, STATUS_INCOMPLETE, TENANT_TYPE_ROOT_TENANT, TOKEN_TYPE_END_USER, TOKEN_TYPE_PROVISIONAL_USER, TOTP_HASH_ALGORITHM_SHA1, USER_TENANT_REL_TYPE_GUEST, USER_TENANT_REL_TYPE_PRIMARY } from "@/utils/consts";
 import { sha256HashPassword, pbkdf2HashPassword, bcryptHashPassword, generateSalt, scryptHashPassword, generateRandomToken, generateCodeVerifierAndChallenge } from "@/utils/dao-utils";
 import { Client as OpenSearchClient } from "@opensearch-project/opensearch";
 import { getOpenSearchClient } from "../data-sources/search";
@@ -65,7 +65,7 @@ class IdentityService {
                 registrationSessionToken: registrationSessionToken,
                 registrationState: RegistrationState.ValidateEmail,
                 registrationStateOrder: order,
-                registrationStateStatus: "INCOMPLETE",
+                registrationStateStatus: STATUS_INCOMPLETE,
                 userId: user.userId,
                 preAuthToken: preAuthToken
             });
@@ -74,46 +74,93 @@ class IdentityService {
         if(tenantPasswordConfig.requireMfa === true){
             const mfas = tenantPasswordConfig.mfaTypesRequired?.split(",") || [];
             if(mfas.includes(MFA_AUTH_TYPE_TIME_BASED_OTP)){
-
+                arrState.push({
+                    email: user.email,
+                    tenantId: tenant.tenantId,
+                    expiresAtMs: expiresAt,
+                    registrationSessionToken: registrationSessionToken,
+                    registrationState: RegistrationState.ConfigureTotpRequired,
+                    registrationStateOrder: order,
+                    registrationStateStatus: STATUS_INCOMPLETE,
+                    userId: user.userId,
+                    preAuthToken: preAuthToken
+                });
+                order++;
             }
             if(mfas.includes(MFA_AUTH_TYPE_FIDO2)){
-
+                arrState.push({
+                    email: user.email,
+                    tenantId: tenant.tenantId,
+                    expiresAtMs: expiresAt,
+                    registrationSessionToken: registrationSessionToken,
+                    registrationState: RegistrationState.ConfigureSecurityKeyRequired,
+                    registrationStateOrder: order,
+                    registrationStateStatus: STATUS_INCOMPLETE,
+                    userId: user.userId,
+                    preAuthToken: preAuthToken
+                });
+                order++;
             }
         }
+        else{
+            arrState.push({
+                email: user.email,
+                tenantId: tenant.tenantId,
+                expiresAtMs: expiresAt,
+                registrationSessionToken: registrationSessionToken,
+                registrationState: RegistrationState.ConfigureTotpOptional,
+                registrationStateOrder: order,
+                registrationStateStatus: STATUS_INCOMPLETE,
+                userId: user.userId,
+                preAuthToken: preAuthToken
+            });
+            order++;
 
-        // const tokenType = tenantPasswordConfig.requireMfa ? TOKEN_TYPE_PROVISIONAL_USER : TOKEN_TYPE_END_USER;
-        // const authToken: string | null = await jwtServiceUtils.signIAMPortalUserJwt(user, tenant, 60 * 60 * 12, tokenType);
-        // if(authToken === null){
-        //     throw new GraphQLError("ERROR_UNABLE_TO_GENERATE_AN_ACCESS_TOKEN_FOR_USER");
-        // }
-        // const response: RegisterUserResponse = {
-        //     user: user,
-        //     authToken: authToken
-        // }
-        // return Promise.resolve(response);  
+            arrState.push({
+                email: user.email,
+                tenantId: tenant.tenantId,
+                expiresAtMs: expiresAt,
+                registrationSessionToken: registrationSessionToken,
+                registrationState: RegistrationState.ConfigureSecurityKeyOptional,
+                registrationStateOrder: order,
+                registrationStateStatus: STATUS_INCOMPLETE,
+                userId: user.userId,
+                preAuthToken: preAuthToken
+            });
+            order++;
+        }
+
+        await identityDao.createUserRegistrationStates(arrState);
+        
         const response: UserRegistrationStateResponse = {
             userRegistrationState: arrState[0],
             accessToken: "",
             uri: "",
-            registrationError: null
+            registrationError: {
+                errorCode: "",
+                errorMessage: ""
+            }
         }
         return Promise.resolve(response);
     }
 
-    public async registerVerifyEmailAddress(userId: string, token: string): Promise<UserRegistrationStateResponse>{
+    public async registerVerifyEmailAddress(userId: string, token: string, registrationSessionToken: string, preAuthToken: string): Promise<UserRegistrationStateResponse>{
         const user: User | null = await identityDao.getUserByEmailConfirmationToken(token);
         const response: UserRegistrationStateResponse = {
             userRegistrationState: {
-                __typename: undefined,
                 email: "",
                 expiresAtMs: 0,
                 preAuthToken: undefined,
                 registrationSessionToken: "",
-                registrationState: RegistrationState.Completed,
+                registrationState: RegistrationState.ValidateEmail,
                 registrationStateOrder: 0,
-                registrationStateStatus: "",
+                registrationStateStatus: STATUS_COMPLETE,
                 tenantId: "",
                 userId: ""
+            },
+            registrationError: {
+                errorCode: "",
+                errorMessage: ""
             }
         }
         return Promise.resolve(response);
@@ -897,182 +944,191 @@ class IdentityService {
     public async authenticateUserNameInput(email: string, tenantId?: string, preAuthToken?: string): Promise<UserAuthenticationStateResponse> {
         const retVal: UserAuthenticationStateResponse = {
             userAuthenticationState: {
-                __typename: undefined,
                 authenticationSessionToken: "",
-                authenticationState: AuthenticationState.AuthWithFederatedOidc,
+                authenticationState: AuthenticationState.Error,
                 authenticationStateOrder: 0,
                 authenticationStateStatus: "",
                 expiresAtMs: 0,
                 preAuthToken: undefined,
                 tenantId: "",
-                userId: ""
+                userId: ""                 
+            },
+            authenticationError: {
+                errorCode: "",
+                errorMessage: ""
             }
+            
         }
 
-        // console.log("checkpoint 1");
-        // const domain: string = this.getDomainFromEmail(email);
-        // const managementDomains: Array<TenantManagementDomainRel> = await tenantDao.getDomainTenantManagementRels(tenantId, domain);
+        console.log("checkpoint 1");
+        const domain: string = this.getDomainFromEmail(email);
+        const managementDomains: Array<TenantManagementDomainRel> = await tenantDao.getDomainTenantManagementRels(tenantId, domain);
         
-        // // 1.   Error condition #1: No domains for management of a tenant
-        // if(!managementDomains || managementDomains.length === 0){
-        //     retVal.errorType = PortalLoginEmailHandlerErrorTypes.NoManagementDomain;
-        //     return retVal;
-        // }
-        // console.log("checkpoint 2");
+        // 1.   Error condition #1: No domains for management of a tenant
+        if(!managementDomains || managementDomains.length === 0){
+            retVal.authenticationError.errorCode = AuthenticationErrorTypes.ErrorNoManagementDomain;
+            return retVal;
+        }
+        console.log("checkpoint 2");
         
-        // // Obtain the basic information for deciding on error conditions or the next steps
-        // const user: User | null = await identityDao.getUserBy("email", email);
-        // const provider: FederatedOidcProvider | null = await federatedOIDCProviderDao.getFederatedOidcProviderByDomain(domain);
-        // let providerTenantRels: Array<FederatedOidcProviderTenantRel> = [];
-        // if(provider !== null){
-        //     providerTenantRels = await federatedOIDCProviderDao.getFederatedOidcProviderTenantRels(tenantId, provider.federatedOIDCProviderId);            
-        // }
+        // Obtain the basic information for deciding on error conditions or the next steps
+        const user: User | null = await identityDao.getUserBy("email", email);
+        const provider: FederatedOidcProvider | null = await federatedOIDCProviderDao.getFederatedOidcProviderByDomain(domain);
+        let providerTenantRels: Array<FederatedOidcProviderTenantRel> = [];
+        if(provider !== null){
+            providerTenantRels = await federatedOIDCProviderDao.getFederatedOidcProviderTenantRels(tenantId, provider.federatedOIDCProviderId);            
+        }
 
-        // console.log("checkpoint 3");
-        // const tenants: Array<Tenant> = await tenantDao.getTenants(managementDomains.map( (d: TenantManagementDomainRel) => d.tenantId));
-        // const tenantsThatAllowSelfRegistration = tenants.filter(
-        //     (t: Tenant) => t.allowUserSelfRegistration === true
-        // );
-        // const tenantsThatAllowPasswordLogin: Array<Tenant> = tenants.filter(
-        //     (t: Tenant) => t.federatedAuthenticationConstraint !== FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE
-        // );
+        console.log("checkpoint 3");
+        const tenants: Array<Tenant> = await tenantDao.getTenants(managementDomains.map( (d: TenantManagementDomainRel) => d.tenantId));
+        const tenantsThatAllowSelfRegistration = tenants.filter(
+            (t: Tenant) => t.allowUserSelfRegistration === true
+        );
+        const tenantsThatAllowPasswordLogin: Array<Tenant> = tenants.filter(
+            (t: Tenant) => t.federatedAuthenticationConstraint !== FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE
+        );
 
-        // console.log("checkpoint 4");
-        // // Find all of the providers attached to any of the tenants
-        // const tenantsThatAreAttachedToProviders = tenants.filter(
-        //     (t: Tenant) => {
-        //         const rel = providerTenantRels.find(
-        //             (f: FederatedOidcProviderTenantRel) => f.tenantId === t.tenantId
-        //         )
-        //         return rel !== undefined;
-        //     }
-        // );
+        console.log("checkpoint 4");
+        // Find all of the providers attached to any of the tenants
+        const tenantsThatAreAttachedToProviders = tenants.filter(
+            (t: Tenant) => {
+                const rel = providerTenantRels.find(
+                    (f: FederatedOidcProviderTenantRel) => f.tenantId === t.tenantId
+                )
+                return rel !== undefined;
+            }
+        );
 
-        // // 2.   Error condition #2: No user, no federated IdP, and no tenants that allow self-registration        
-        // if(user === null && provider === null && tenantsThatAllowSelfRegistration.length === 0){
-        //     retVal.errorType = PortalLoginEmailHandlerErrorTypes.NoMatchingUserAndNoTenantSelfRegistration;
-        //     return retVal;
-        // }
-        // console.log("checkpoint 5");
+        // 2.   Error condition #2: No user, no federated IdP, and no tenants that allow self-registration        
+        if(user === null && provider === null && tenantsThatAllowSelfRegistration.length === 0){
+            retVal.authenticationError.errorCode = AuthenticationErrorTypes.ErrorNoMatchingUserAndNoTenantSelfRegistration;
+            return retVal;
+        }
+        console.log("checkpoint 5");
 
-        // // 3.   Error condition #3: No user, there IS a federated IdP, but the IdP is not attached
-        // //      to any of the tenants that the domain can manage
-        // if(user === null && provider !== null && tenantsThatAreAttachedToProviders.length === 0){            
-        //     retVal.errorType = PortalLoginEmailHandlerErrorTypes.NoMatchingFederatedProviderForTenant;
-        //     return retVal;
-        // }
-        // console.log("checkpoint 6");
+        // 3.   Error condition #3: No user, there IS a federated IdP, but the IdP is not attached
+        //      to any of the tenants that the domain can manage
+        if(user === null && provider !== null && tenantsThatAreAttachedToProviders.length === 0){            
+            retVal.authenticationError.errorCode = AuthenticationErrorTypes.ErrorNoMatchingFederatedProviderForTenant;
+            return retVal;
+        }
+        console.log("checkpoint 6");
 
-        // //  4.   Error condition # 3: User exists, there is NO IdP for the user, and none of the tenants allows
-        // //       username/password authentication
-        // if(user !== null && provider === null && tenantsThatAllowPasswordLogin.length === 0){
-        //     retVal.errorType = PortalLoginEmailHandlerErrorTypes.ExclusiveTenantAndNoFederatedOidcProvider;
-        //     return retVal;
-        // }
-        // console.log("checkpoint 7");
+        //  4.   Error condition # 3: User exists, there is NO IdP for the user, and none of the tenants allows
+        //       username/password authentication
+        if(user !== null && provider === null && tenantsThatAllowPasswordLogin.length === 0){
+            retVal.authenticationError.errorCode = AuthenticationErrorTypes.ErrorExclusiveTenantAndNoFederatedOidcProvider;
+            return retVal;
+        }
+        console.log("checkpoint 7");
 
-        // //  5.   Error condition #5: User exists, there is an IdP for the user, but the IdP is not attached
-        // //       to any tenant
-        // if(user !== null && provider !== null && tenantsThatAreAttachedToProviders.length === 0){            
-        //     retVal.errorType = PortalLoginEmailHandlerErrorTypes.NoMatchingFederatedProviderForTenant;
-        //     return retVal;
-        // }
+        //  5.   Error condition #5: User exists, there is an IdP for the user, but the IdP is not attached
+        //       to any tenant
+        if(user !== null && provider !== null && tenantsThatAreAttachedToProviders.length === 0){            
+            retVal.authenticationError.errorCode = AuthenticationErrorTypes.ErrorNoMatchingFederatedProviderForTenant;
+            return retVal;
+        }
         
-        // console.log("checkpoint 8");
-        // // SUCCESS SCENARIOS 
-        // // 1.   The user can select the tenant and register       
-        // if(user === null && provider === null && tenantsThatAllowSelfRegistration.length > 0){
-        //     retVal.successNextStep = tenantsThatAllowSelfRegistration.length === 1 ? PortalLoginEmailHandlerSuccessNextStep.Register : PortalLoginEmailHandlerSuccessNextStep.SelectTenant;
-        //     retVal.tenantSelectors = [];
-        //     tenantsThatAllowSelfRegistration.forEach(
-        //         (t: Tenant) => retVal.tenantSelectors?.push(
-        //             {
-        //                 tenantId: t.tenantId, 
-        //                 tenantName: t.tenantName
-        //             }                    
-        //         ));
-        //     return retVal;
-        // }
-        // console.log("checkpoint 9");
+        console.log("checkpoint 8");
+        // SUCCESS SCENARIOS 
+        // 1.   The user can select the tenant and register. In this scenario, there is no
+        //      need to create database entries for the user authentication state. Instead
+        //      there will be entries created for the user registration state later.    
+        if(user === null && provider === null && tenantsThatAllowSelfRegistration.length > 0){
+            retVal.userAuthenticationState.authenticationState = tenantsThatAllowSelfRegistration.length === 1 ? AuthenticationState.Register : AuthenticationState.SelectTenant;            
+            retVal.availableTenants = [];
+            tenantsThatAllowSelfRegistration.forEach(
+                (t: Tenant) => retVal.availableTenants?.push(
+                    {
+                        tenantId: t.tenantId, 
+                        tenantName: t.tenantName
+                    }                    
+                ));
+            return retVal;
+        }
+        console.log("checkpoint 9");
                 
-        // // 2.   The user can select the tenant by which they want to do SSO and thereby "autoregister"        
-        // if(user === null && provider !== null && tenantsThatAreAttachedToProviders.length > 0){            
-        //     // Otherwise, set the tenant information and then decide what the next steps are.
-        //     console.log("checkpoint 9.1");
-        //     retVal.tenantSelectors = [];
-        //         tenantsThatAreAttachedToProviders.forEach(
-        //         (t: Tenant) => retVal.tenantSelectors?.push(
-        //             {
-        //                 tenantId: t.tenantId, 
-        //                 tenantName: t.tenantName
-        //             }                    
-        //         ));
-        //         console.log("checkpoint 9.2");
-        //     if(tenantsThatAreAttachedToProviders.length === 1){
-        //         retVal.successNextStep = PortalLoginEmailHandlerSuccessNextStep.AuthWithFederatedProvider;
-        //         console.log("checkpoint 9.22");
-        //         const {hasError, errorMessage, authorizationEndpoint} = await this.createFederatedOIDCRequestProperties(email, null, provider, tenantsThatAreAttachedToProviders[0].tenantId);
-        //         console.log("checkpoint 9.23");
-        //         if(hasError){
-        //             throw new GraphQLError(errorMessage);
-        //         }
-        //         console.log("checkpoint 9.24");
-        //         retVal.federatedOIDCProviderId = provider.federatedOIDCProviderId;                
-        //         retVal.authorizationEndpoint = authorizationEndpoint;
-        //         return retVal;
-        //     }
-        //     console.log("checkpoint 9.3");
-        //     if(tenantsThatAreAttachedToProviders.length > 1){
-        //         retVal.successNextStep = PortalLoginEmailHandlerSuccessNextStep.SelectTenant;                
-        //     }
-        //     console.log("checkpoint 9.4");
-        //     return retVal;            
-        // }
-        // console.log("checkpoint 10");
+        // 2.   The user can select the tenant by which they want to do SSO and thereby "autoregister"
+        //      or just "autoregister" if there is exactly one tenant
+        if(user === null && provider !== null && tenantsThatAreAttachedToProviders.length > 0){            
+            // Otherwise, set the tenant information and then decide what the next steps are.
+            console.log("checkpoint 9.1");
+            retVal.availableTenants = [];
+                tenantsThatAreAttachedToProviders.forEach(
+                (t: Tenant) => retVal.availableTenants?.push(
+                    {
+                        tenantId: t.tenantId, 
+                        tenantName: t.tenantName
+                    }                    
+                ));
+                console.log("checkpoint 9.2");
+            if(tenantsThatAreAttachedToProviders.length === 1){
+                retVal.userAuthenticationState.authenticationState = AuthenticationState.AuthWithFederatedOidc;
+                console.log("checkpoint 9.22");
+                const {hasError, errorMessage, authorizationEndpoint} = await this.createFederatedOIDCRequestProperties(email, null, provider, tenantsThatAreAttachedToProviders[0].tenantId);
+                console.log("checkpoint 9.23");
+                if(hasError){
+                    throw new GraphQLError(errorMessage);
+                }
+                console.log("checkpoint 9.24");            
+                retVal.uri = authorizationEndpoint;
+                return retVal;
+            }
+            console.log("checkpoint 9.3");
+            if(tenantsThatAreAttachedToProviders.length > 1){
+                retVal.userAuthenticationState.authenticationState = AuthenticationState.SelectTenant;                
+            }
+            console.log("checkpoint 9.4");
+            return retVal;            
+        }
+        console.log("checkpoint 10");
 
-        // // 3.   The user can select which tenant to log into with username/password (plus
-        // //      one or more MFA types)
-        // if(user !== null && provider === null && tenantsThatAllowPasswordLogin.length > 0){
-        //     retVal.tenantSelectors = [];
-        //     tenantsThatAllowPasswordLogin.forEach(
-        //         (t: Tenant) => retVal.tenantSelectors?.push(
-        //             {
-        //                 tenantId: t.tenantId, tenantName: t.tenantName
-        //             }
-        //         )
-        //     )
-        //     retVal.successNextStep = tenantsThatAllowPasswordLogin.length === 1 ? PortalLoginEmailHandlerSuccessNextStep.Login : PortalLoginEmailHandlerSuccessNextStep.SelectTenant;
-        //     return retVal;
-        // }        
+        // 3.   The user can select which tenant to log into with username/password (plus
+        //      one or more MFA types). In this case, if the tenant list contains exactly 1
+        //      tenant, then we need to create the authentication state values in the database
+        //      to track the authentication process.
+        if(user !== null && provider === null && tenantsThatAllowPasswordLogin.length > 0){
+            retVal.availableTenants = [];
+            tenantsThatAllowPasswordLogin.forEach(
+                (t: Tenant) => retVal.availableTenants?.push(
+                    {
+                        tenantId: t.tenantId, tenantName: t.tenantName
+                    }
+                )
+            )
+            retVal.userAuthenticationState.authenticationState = tenantsThatAllowPasswordLogin.length === 1 ? AuthenticationState.EnterPassword : AuthenticationState.SelectTenant;
 
-        // console.log("checkpoint 11");
-        // // 4.   The user can select which tenant they want to do SSO with
-        // if(user !== null && provider !== null && tenantsThatAreAttachedToProviders.length > 0){            
-        //     retVal.tenantSelectors = [];
-        //         tenantsThatAreAttachedToProviders.forEach(
-        //         (t: Tenant) => retVal.tenantSelectors?.push(
-        //             {
-        //                 tenantId: t.tenantId, 
-        //                 tenantName: t.tenantName
-        //             }                    
-        //         ));
-        //     if(tenantsThatAreAttachedToProviders.length === 1){
-        //         retVal.successNextStep = PortalLoginEmailHandlerSuccessNextStep.AuthWithFederatedProvider;                
-        //         const {hasError, errorMessage, authorizationEndpoint} = await this.createFederatedOIDCRequestProperties(user.email, user.userId, provider, tenantsThatAreAttachedToProviders[0].tenantId);
-        //         if(hasError){
-        //             throw new GraphQLError(errorMessage);
-        //         }                
-        //         retVal.federatedOIDCProviderId = provider.federatedOIDCProviderId;                
-        //         retVal.authorizationEndpoint = authorizationEndpoint;
-        //         return retVal;
-        //     }
-        //     if(tenantsThatAreAttachedToProviders.length > 1){
-        //         retVal.successNextStep = PortalLoginEmailHandlerSuccessNextStep.SelectTenant;                
-        //     }
-        //     return retVal;
-        // }
+            return retVal;
+        }        
+
+        console.log("checkpoint 11");
+        // 4.   The user can select which tenant they want to do SSO with, if there is more than on,
+        //      or just automatically be redirected to the federated oidc providers authentication endpoint.
+        if(user !== null && provider !== null && tenantsThatAreAttachedToProviders.length > 0){            
+            retVal.availableTenants = [];
+                tenantsThatAreAttachedToProviders.forEach(
+                (t: Tenant) => retVal.availableTenants?.push(
+                    {
+                        tenantId: t.tenantId, 
+                        tenantName: t.tenantName
+                    }                    
+                ));
+            if(tenantsThatAreAttachedToProviders.length === 1){
+                retVal.userAuthenticationState.authenticationState = AuthenticationState.AuthWithFederatedOidc;
+                const {hasError, errorMessage, authorizationEndpoint} = await this.createFederatedOIDCRequestProperties(user.email, user.userId, provider, tenantsThatAreAttachedToProviders[0].tenantId);
+                if(hasError){
+                    throw new GraphQLError(errorMessage);
+                }                              
+                retVal.uri = authorizationEndpoint;
+                return retVal;
+            }
+            if(tenantsThatAreAttachedToProviders.length > 1){
+                retVal.userAuthenticationState.authenticationState = AuthenticationState.SelectTenant;                
+            }
+            return retVal;
+        }
         
-        // retVal.errorType = PortalLoginEmailHandlerErrorTypes.ConditionsForAuthenticationNotMet;
+        retVal.authenticationError.errorCode = AuthenticationErrorTypes.ErrorConditionsForAuthenticationNotMet;
         return retVal;
         
     }

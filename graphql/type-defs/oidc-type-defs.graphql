@@ -789,7 +789,7 @@ type AuthenticationError {
 
 type UserAuthenticationStateResponse {
     userAuthenticationState: UserAuthenticationState!
-    authenticationError: AuthenticationError
+    authenticationError: AuthenticationError!
     availableTenants: [TenantSelectorData!]
     uri: String
     accessToken: String
@@ -827,7 +827,7 @@ type RegistrationError {
 
 type UserRegistrationStateResponse {
     userRegistrationState: UserRegistrationState!
-    registrationError: RegistrationError    
+    registrationError: RegistrationError! 
 	accessToken: String
 	uri: String
 }
