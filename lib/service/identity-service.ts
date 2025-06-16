@@ -1,12 +1,12 @@
 import { OIDCContext } from "@/graphql/graphql-context";
 import * as OTPAuth from "otpauth";
 import IdentityDao from "../dao/identity-dao";
-import { Client, Fido2AuthenticationChallengeResponse, Fido2Challenge, Fido2RegistrationChallengeResponse, Fido2KeyRegistrationInput, ObjectSearchResultItem, RefreshData, RelSearchResultItem, SearchResultType, Tenant, TenantPasswordConfig, TotpResponse, User, UserCreateInput, UserCredential, UserMfaRel, UserSession, UserTenantRel, UserTenantRelView, Fido2KeyAuthenticationInput, TenantRestrictedAuthenticationDomainRel, TenantManagementDomainRel, FederatedOidcProvider, FederatedOidcProviderTenantRel, FederatedOidcAuthorizationRel, FederatedOidcAuthorizationRelType, RegisterUserResponse, AuthorizationCodeData, PreAuthenticationState, AuthorizationReturnUri, UserRegistrationStateResponse, UserRegistrationState, RegistrationState, UserAuthenticationStateResponse, AuthenticationState, AuthenticationErrorTypes } from "@/graphql/generated/graphql-types";
+import { Client, Fido2AuthenticationChallengeResponse, Fido2Challenge, Fido2RegistrationChallengeResponse, Fido2KeyRegistrationInput, ObjectSearchResultItem, RefreshData, RelSearchResultItem, SearchResultType, Tenant, TenantPasswordConfig, TotpResponse, User, UserCreateInput, UserCredential, UserMfaRel, UserSession, UserTenantRel, UserTenantRelView, Fido2KeyAuthenticationInput, TenantRestrictedAuthenticationDomainRel, TenantManagementDomainRel, FederatedOidcProvider, FederatedOidcProviderTenantRel, FederatedOidcAuthorizationRel, FederatedOidcAuthorizationRelType, AuthorizationCodeData, PreAuthenticationState, AuthorizationReturnUri, UserRegistrationStateResponse, UserRegistrationState, RegistrationState, UserAuthenticationStateResponse, AuthenticationState, AuthenticationErrorTypes } from "@/graphql/generated/graphql-types";
 import { DaoFactory } from "../data-sources/dao-factory";
 import TenantDao from "../dao/tenant-dao";
 import { GraphQLError } from "graphql/error";
 import { randomUUID } from "crypto";
-import { DEFAULT_TENANT_PASSWORD_CONFIGURATION, FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, NAME_ORDER_WESTERN, PASSWORD_HASH_ITERATION_128K, PASSWORD_HASH_ITERATION_256K, PASSWORD_HASH_ITERATION_32K, PASSWORD_HASH_ITERATION_64K, PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_32K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_64K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, STATUS_COMPLETE, STATUS_INCOMPLETE, TENANT_TYPE_ROOT_TENANT, TOKEN_TYPE_END_USER, TOKEN_TYPE_PROVISIONAL_USER, TOTP_HASH_ALGORITHM_SHA1, USER_TENANT_REL_TYPE_GUEST, USER_TENANT_REL_TYPE_PRIMARY } from "@/utils/consts";
+import { DEFAULT_TENANT_PASSWORD_CONFIGURATION, FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, NAME_ORDER_WESTERN, PASSWORD_HASH_ITERATION_128K, PASSWORD_HASH_ITERATION_256K, PASSWORD_HASH_ITERATION_32K, PASSWORD_HASH_ITERATION_64K, PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_32K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_64K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, STATUS_COMPLETE, STATUS_INCOMPLETE, STATUS_OMITTED, TENANT_TYPE_ROOT_TENANT, TOKEN_TYPE_END_USER, TOKEN_TYPE_PROVISIONAL_USER, TOTP_HASH_ALGORITHM_SHA1, USER_TENANT_REL_TYPE_GUEST, USER_TENANT_REL_TYPE_PRIMARY } from "@/utils/consts";
 import { sha256HashPassword, pbkdf2HashPassword, bcryptHashPassword, generateSalt, scryptHashPassword, generateRandomToken, generateCodeVerifierAndChallenge } from "@/utils/dao-utils";
 import { Client as OpenSearchClient } from "@opensearch-project/opensearch";
 import { getOpenSearchClient } from "../data-sources/search";
@@ -20,6 +20,7 @@ import FederatedOIDCProviderDao from "../dao/federated-oidc-provider-dao";
 import OIDCServiceUtils from "./oidc-service-utils";
 import { WellknownConfig } from "../models/wellknown-config";
 import JwtServiceUtils from "./jwt-service-utils";
+
 
 
 const identityDao: IdentityDao = DaoFactory.getInstance().getIdentityDao();
@@ -49,6 +50,13 @@ class IdentityService {
     }
 
     public async registerUser(userCreateInput: UserCreateInput, tenantId: string, preAuthToken: string | null | undefined): Promise<UserRegistrationStateResponse>{
+        
+        // TODO
+        // Need to check to see if there is an active registration session happening with the
+        // user, based on their email. If so, then return error if the session has not expired.
+        // Otherwise, delete the old registration session, any user and relationships that were
+        // created, and continue.
+        
         const {user, tenant, tenantPasswordConfig} = await this._createUser(userCreateInput, tenantId, true);
 
         const registrationSessionToken: string = generateRandomToken(20, "hex");
@@ -58,6 +66,8 @@ class IdentityService {
         const arrState: Array<UserRegistrationState> = [];
         let order: number = 1;
         if(tenant.verifyEmailOnSelfRegistration === true){
+            // Note that the _createUser function will generate an email token and
+            // send it to the user. No need to do that here.
             arrState.push({
                 email: user.email,
                 tenantId: tenant.tenantId,
@@ -73,6 +83,10 @@ class IdentityService {
         }
         if(tenantPasswordConfig.requireMfa === true){
             const mfas = tenantPasswordConfig.mfaTypesRequired?.split(",") || [];
+            // TODO. If only one is required, then we need to include the optional
+            // other MFA type. But we always need to show the REQUIRED MFA type first,
+            // followed by the optional MFA type in cases where there is only 1 required
+            // MFA type.
             if(mfas.includes(MFA_AUTH_TYPE_TIME_BASED_OTP)){
                 arrState.push({
                     email: user.email,
@@ -80,6 +94,18 @@ class IdentityService {
                     expiresAtMs: expiresAt,
                     registrationSessionToken: registrationSessionToken,
                     registrationState: RegistrationState.ConfigureTotpRequired,
+                    registrationStateOrder: order,
+                    registrationStateStatus: STATUS_INCOMPLETE,
+                    userId: user.userId,
+                    preAuthToken: preAuthToken
+                });
+                order++;
+                arrState.push({
+                    email: user.email,
+                    tenantId: tenant.tenantId,
+                    expiresAtMs: expiresAt,
+                    registrationSessionToken: registrationSessionToken,
+                    registrationState: RegistrationState.ValidateTotp,
                     registrationStateOrder: order,
                     registrationStateStatus: STATUS_INCOMPLETE,
                     userId: user.userId,
@@ -100,7 +126,20 @@ class IdentityService {
                     preAuthToken: preAuthToken
                 });
                 order++;
+                arrState.push({
+                    email: user.email,
+                    tenantId: tenant.tenantId,
+                    expiresAtMs: expiresAt,
+                    registrationSessionToken: registrationSessionToken,
+                    registrationState: RegistrationState.ValidateSecurityKey,
+                    registrationStateOrder: order,
+                    registrationStateStatus: STATUS_INCOMPLETE,
+                    userId: user.userId,
+                    preAuthToken: preAuthToken
+                });
+                order++;
             }
+            
         }
         else{
             arrState.push({
@@ -114,7 +153,6 @@ class IdentityService {
                 userId: user.userId,
                 preAuthToken: preAuthToken
             });
-            order++;
 
             arrState.push({
                 email: user.email,
@@ -127,8 +165,19 @@ class IdentityService {
                 userId: user.userId,
                 preAuthToken: preAuthToken
             });
-            order++;
         }
+        arrState.push({
+            email: user.email,
+            tenantId: tenant.tenantId,
+            expiresAtMs: expiresAt,
+            registrationSessionToken: registrationSessionToken,
+            registrationState: preAuthToken ? RegistrationState.RedirectBackToApplication : RegistrationState.Completed,
+            registrationStateOrder: order,
+            registrationStateStatus: STATUS_INCOMPLETE,
+            userId: user.userId,
+            preAuthToken: preAuthToken
+        });
+        order++;
 
         await identityDao.createUserRegistrationStates(arrState);
         
@@ -144,8 +193,73 @@ class IdentityService {
         return Promise.resolve(response);
     }
 
+
+    /**
+     * 
+     * @param registrationSessionToken 
+     * @returns 
+     */
+    protected async getSortedRegistartionStates(registrationSessionToken: string): Promise<Array<UserRegistrationState>>{
+
+        let arrUserRegistrationState: Array<UserRegistrationState> = await identityDao.getUserRegistrationStates(registrationSessionToken);
+        arrUserRegistrationState.sort(
+            (a: UserRegistrationState, b: UserRegistrationState) => a.registrationStateOrder - b.registrationStateOrder
+        );
+        return Promise.resolve(arrUserRegistrationState);
+    }
+
+    /**
+     * returns the index of the 
+     * @param arrUserRegistrationState 
+     * @param response 
+     * @param expectedState 
+     * @returns 
+     */
+    protected async validateStep(arrUserRegistrationState: Array<UserRegistrationState>, response: UserRegistrationStateResponse, expectedState: RegistrationState): Promise<number> {
+        
+        let stepIndex: number = -1;
+        let expectedRegistrationState: UserRegistrationState | null = null;
+        for(let i = 0; i < arrUserRegistrationState.length; i++){
+            if(arrUserRegistrationState[i].registrationState === expectedState){
+                stepIndex = i;
+                expectedRegistrationState = arrUserRegistrationState[i];
+                break;
+            }
+        }
+
+        if(expectedRegistrationState === null){
+            response.userRegistrationState.registrationState = RegistrationState.Error;
+            response.registrationError.errorCode = "ERROR_NO_VALID_REGISTRATION_STATE_FOUND";
+            return stepIndex;
+        }
+
+        // If expired before registration has been completed, then delete everything,
+        // including the email token, the user that was previous created, and any other relationships.
+        if(expectedRegistrationState.expiresAtMs < Date.now()){
+            response.userRegistrationState.registrationState = RegistrationState.Expired;
+            response.registrationError.errorCode = "ERROR_REGISTRATION_HAS_EXPIRED";
+            for(let i = 0; i < arrUserRegistrationState.length; i++){
+                await identityDao.deleteUserRegistrationState(arrUserRegistrationState[i]);
+            }
+            await this.deleteRegisteredUser(expectedRegistrationState.tenantId, expectedRegistrationState.userId);
+            return -1;
+        }
+        
+        // Is there a previous step and has the previous step incomplete?
+        if(stepIndex > 0){
+            const previousState: UserRegistrationState = arrUserRegistrationState[stepIndex - 1];
+            if(previousState.registrationStateStatus === STATUS_INCOMPLETE){
+                response.userRegistrationState.registrationState = RegistrationState.Error;
+                response.registrationError.errorCode = "ERROR_PREVIOUS_REGISTRATION_STEP_IS_INCOMPLETE";
+                return -1;
+            }
+        }
+
+        return stepIndex;
+    }
+
+
     public async registerVerifyEmailAddress(userId: string, token: string, registrationSessionToken: string, preAuthToken: string): Promise<UserRegistrationStateResponse>{
-        const user: User | null = await identityDao.getUserByEmailConfirmationToken(token);
         const response: UserRegistrationStateResponse = {
             userRegistrationState: {
                 email: "",
@@ -154,33 +268,54 @@ class IdentityService {
                 registrationSessionToken: "",
                 registrationState: RegistrationState.ValidateEmail,
                 registrationStateOrder: 0,
-                registrationStateStatus: STATUS_COMPLETE,
+                registrationStateStatus: STATUS_INCOMPLETE,
                 tenantId: "",
-                userId: ""
+                userId: userId
             },
             registrationError: {
                 errorCode: "",
                 errorMessage: ""
             }
         }
-        return Promise.resolve(response);
-        // if(user === null){
-        //     return Promise.resolve(false);
-        // }
-        // else{            
-        //     if(user.userId !== userId){
-        //         return Promise.resolve(false);
-        //     }
-        //     // One-time token, so need to delete it in success case
-        //     identityDao.deleteEmailConfirmationToken(token);           
+        const arrUserRegistrationState: Array<UserRegistrationState> = await this.getSortedRegistartionStates(registrationSessionToken);
+        await this.validateStep(arrUserRegistrationState, response, RegistrationState.ValidateEmail);
+        if(response.userRegistrationState.registrationState === RegistrationState.Error){
+            return Promise.resolve(response);
+        }
+        if(response.userRegistrationState.registrationState === RegistrationState.Expired){
+            await identityDao.deleteEmailConfirmationToken(token);
+            return Promise.resolve(response);
+        }        
 
-        //     user.enabled = true;
-        //     user.emailVerified = true;
-        //     await identityDao.updateUser(user);
-        //     await this.updateSearchIndexUserDocument(user);
-        //     return Promise.resolve(true);
-        // }        
+        const user: User | null = await identityDao.getUserByEmailConfirmationToken(token);
+        if(user === null){
+            await identityDao.deleteEmailConfirmationToken(token);
+            response.userRegistrationState.registrationState = RegistrationState.Error;
+            response.registrationError.errorCode = "ERROR_NO_USER_FOUND_FOR_TOKEN"
+            return Promise.resolve(response);
+        }
+               
+        if(user.userId !== userId){
+            response.userRegistrationState.registrationState = RegistrationState.Error;
+            response.registrationError.errorCode = "ERROR_INVALID_USER_FOUND_FOR_TOKEN"
+            return Promise.resolve(response);
+        }
+
+        // For the one-time token, need to delete it in success case and
+        // update the user profile and this registration state to a status
+        // of complete and set the next state as the return value.
+        await identityDao.deleteEmailConfirmationToken(token);
+        user.emailVerified = true;
+        await identityDao.updateUser(user);
+        await this.updateSearchIndexUserDocument(user);
+        arrUserRegistrationState[0].registrationStateStatus = STATUS_COMPLETE;
+        await identityDao.updateUserRegistrationState(arrUserRegistrationState[0]);
+        const nextRegistrationState = arrUserRegistrationState[1];
+        response.userRegistrationState = nextRegistrationState;
+        return Promise.resolve(response);        
     }
+
+
 
     public async getUserById(userId: string): Promise<User | null> {
         return identityDao.getUserBy("id", userId);
@@ -328,6 +463,51 @@ class IdentityService {
         return response;
     }
 
+    public async registerValidateTOTP(userId: string, registrationSessionToken: string, totpTokenValue: string, preAuthToken: string): Promise<UserRegistrationStateResponse> {
+        const response: UserRegistrationStateResponse = {
+            userRegistrationState: {
+                email: "",
+                expiresAtMs: 0,
+                preAuthToken: undefined,
+                registrationSessionToken: "",
+                registrationState: RegistrationState.ValidateTotp,
+                registrationStateOrder: 0,
+                registrationStateStatus: STATUS_INCOMPLETE,
+                tenantId: "",
+                userId: userId
+            },
+            registrationError: {
+                errorCode: "",
+                errorMessage: ""
+            }
+        }
+
+        const arrUserRegistrationState: Array<UserRegistrationState> = await this.getSortedRegistartionStates(registrationSessionToken);
+        await this.validateStep(arrUserRegistrationState, response, RegistrationState.ValidateTotp);
+        if(response.userRegistrationState.registrationState === RegistrationState.Error){
+            return Promise.resolve(response);
+        }
+        if(response.userRegistrationState.registrationState === RegistrationState.Expired){            
+            return Promise.resolve(response);
+        }
+
+        // Validate the token itself, which should have been registered previously
+        const validToken: boolean = await this.validateTOTP(userId, totpTokenValue);
+        if(!validToken){
+            response.userRegistrationState.registrationState = RegistrationState.Error;
+            response.registrationError.errorCode = "ERROR_INVALID_TOTP_TOKEN_VALUE";
+            return response;
+        }
+
+        arrUserRegistrationState[0].registrationStateStatus = STATUS_COMPLETE;
+        await identityDao.updateUserRegistrationState(arrUserRegistrationState[0]);
+        const nextRegistrationState = arrUserRegistrationState[1];
+        response.userRegistrationState = nextRegistrationState;
+        return Promise.resolve(response);
+    }
+
+
+    
     public async validateTOTP(userId: string, totpValue: string): Promise<boolean> {
         const userMfaRel: UserMfaRel | null = await identityDao.getTOTP(userId);
         if(!userMfaRel || !userMfaRel.totpSecret){
@@ -1291,6 +1471,24 @@ class IdentityService {
             state: preAuthenticationState.state
         }
         return response;
+    }
+
+    protected async deleteRegisteredUser(tenantId: string, userId: string): Promise<void> {
+        await identityDao.deleteFIDO2Challenge(userId);
+        await identityDao.deleteFido2Count(userId);
+        await identityDao.deleteFIDOKey(userId);
+        await identityDao.deleteTOTP(userId);
+        await identityDao.removeUserFromTenant(tenantId, userId);
+        await identityDao.deleteUserCredential(userId);
+        await searchClient.delete({
+            id: `${tenantId}::${userId}`,
+            index: SEARCH_INDEX_REL_SEARCH,
+        });
+        await identityDao.deleteUser(userId);
+        await searchClient.delete({
+            id: userId,
+            index: SEARCH_INDEX_OBJECT_SEARCH
+        });
     }
 
 }

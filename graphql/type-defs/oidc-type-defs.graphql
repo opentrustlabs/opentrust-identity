@@ -153,11 +153,11 @@ type Mutation {
     ## Registration Flows
     registerUser(tenantId: String!, userInput: UserCreateInput!, preAuthToken: String): UserRegistrationStateResponse!
     registerVerifyEmailAddress(userId: String!, token: String!, registrationSessionToken: String!, preAuthToken: String): UserRegistrationStateResponse!
-    registerConfigureTOTP(userId: String!, registrationSessionToken: String!, preAuthToken: String): UserRegistrationStateResponse!
-    registerSkipConfigureTOTP(userId: String, registrationSessionToken: String, preAuthToken: String): UserRegistrationStateResponse!
-    registerValidateTOTP(userId: String, registrationSessionToken: String, totpTokenValue: String, preAuthToken: String): UserRegistrationStateResponse!
-    registerConfigureSecurityKey(userId: String!, registrationSessionToken: String, fido2KeyRegistrationInput: Fido2KeyRegistrationInput!, preAuthToken: String): UserRegistrationStateResponse!
-    registerSkipConfigureSecurityKey(userId: String!, registrationSessionToken: String!, preAuthToken: String): UserRegistrationStateResponse!
+    registerConfigureTOTP(userId: String!, registrationSessionToken: String!, preAuthToken: String, skip: Boolean!): UserRegistrationStateResponse!
+    # registerSkipConfigureTOTP(userId: String, registrationSessionToken: String, preAuthToken: String): UserRegistrationStateResponse!
+    registerValidateTOTP(userId: String, registrationSessionToken: String!, totpTokenValue: String, preAuthToken: String): UserRegistrationStateResponse!
+    registerConfigureSecurityKey(userId: String!, registrationSessionToken: String!, fido2KeyRegistrationInput: Fido2KeyRegistrationInput, preAuthToken: String, skip: Boolean!): UserRegistrationStateResponse!
+    # registerSkipConfigureSecurityKey(userId: String!, registrationSessionToken: String!, preAuthToken: String): UserRegistrationStateResponse!
     registerValidateSecurityKey(userId: String!, registrationSessionToken: String!, fido2KeyAuthenticationInput: Fido2KeyAuthenticationInput!, preAuthToken: String): UserRegistrationStateResponse!
     finishRegistration(userId: String!, registrationSessionToken: String!, preAuthToken: String): UserRegistrationStateResponse!
 
@@ -792,6 +792,7 @@ type UserAuthenticationStateResponse {
     authenticationError: AuthenticationError!
     availableTenants: [TenantSelectorData!]
     uri: String
+    totpSecret: String
     accessToken: String
 }
 
@@ -817,6 +818,7 @@ enum RegistrationState {
     VALIDATE_SECURITY_KEY
     COMPLETED
     REDIRECT_BACK_TO_APPLICATION
+    EXPIRED
     ERROR
 }
 
@@ -829,6 +831,7 @@ type UserRegistrationStateResponse {
     userRegistrationState: UserRegistrationState!
     registrationError: RegistrationError! 
 	accessToken: String
+    totpSecret: String
 	uri: String
 }
 
@@ -1021,10 +1024,7 @@ type Fido2AuthenticationChallengeResponse {
     fido2AuthenticationChallengePasskeys: [Fido2AuthenticationChallengePasskey!]!
 }
 
-type RegisterUserResponse {
-    user: User!
-    authToken: String!
-}
+
 
 ############################################################################
 ################ INPUT TYPES AND RESPONSES FOR MUTATATIONS #################

@@ -1,4 +1,4 @@
-import { User, AuthenticationGroup, AuthorizationGroup, SuccessfulLoginResponse, UserFailedLoginAttempts, UserTenantRel, UserCredential, UserMfaRel, Fido2Challenge } from "@/graphql/generated/graphql-types";
+import { User, AuthenticationGroup, AuthorizationGroup, SuccessfulLoginResponse, UserFailedLoginAttempts, UserTenantRel, UserCredential, UserMfaRel, Fido2Challenge, UserAuthenticationState, UserRegistrationState } from "@/graphql/generated/graphql-types";
 import IdentityDao, { UserLookupType } from "../../identity-dao";
 import UserAuthorizationGroupRelEntity from "@/lib/entities/authorization-group-user-rel-entity";
 import AuthorizationGroupEntity from "@/lib/entities/authorization-group-entity";
@@ -13,9 +13,11 @@ import DBDriver from "@/lib/data-sources/sequelize-db";
 import { Op, Sequelize } from "sequelize";
 import UserFido2ChallengeEntity from "@/lib/entities/user-fido2-challenge-entity";
 import UserFido2CounterRelEntity from "@/lib/entities/user-fido2-counter-rel-entity";
+import UserAuthenticationStateEntity from "@/lib/entities/user-authentication-state-entity";
+import UserRegistrationStateEntity from "@/lib/entities/user-registration-state-entity";
 
 class DBIdentityDao extends IdentityDao {
-    
+        
 
     public async saveFIDOKey(userMfaRel: UserMfaRel): Promise<void> {
         const sequelize: Sequelize = await DBDriver.getConnection();
@@ -506,6 +508,20 @@ class DBIdentityDao extends IdentityDao {
         return Promise.resolve();
     }
 
+    public async deleteUserCredential(userId: string, dateCreated?: Date): Promise<void> {
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        const queryParams: any = {
+            userId: userId
+        };
+        if(dateCreated){
+            queryParams.dateCreated = dateCreated
+        }
+        await sequelize.models.userCredential.destroy({
+            where: queryParams
+        });
+        return Promise.resolve();
+    }
+
     public async createUser(user: User): Promise<User> {
         const sequelize: Sequelize = await DBDriver.getConnection();
         await sequelize.models.user.create(user);
@@ -541,7 +557,13 @@ class DBIdentityDao extends IdentityDao {
     }
 
     public async deleteUser(userId: string): Promise<void> {
-        throw new Error("Method not implemented.");
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.user.destroy({
+            where: {
+                userId: userId
+            }
+        });
+        return Promise.resolve();
     }
 
     // userTenantRel
@@ -604,6 +626,90 @@ class DBIdentityDao extends IdentityDao {
             }
         });
         return list.map(e => e.dataValues);
+    }
+
+    public async createUserAuthenticationStates(arrUserAuthenticationState: Array<UserAuthenticationState>): Promise<Array<UserAuthenticationState>> {
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        for(let i = 0; i < arrUserAuthenticationState.length; i++){
+            await sequelize.models.userAuthenticationState.create(arrUserAuthenticationState[i]);
+        }
+        return arrUserAuthenticationState;
+    }
+
+    public async getUserAuthenticationStates(authenticationSessionToken: string): Promise<Array<UserAuthenticationState>> {
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        const arr: Array<UserAuthenticationStateEntity> = await sequelize.models.userAuthenticationState.findAll({
+            where: {
+                authenticationSessionToken: authenticationSessionToken
+            }
+        });
+        return arr.map((entity: UserAuthenticationStateEntity) => entity.dataValues);
+    }
+
+    public async updateUserAuthenticationState(userAuthenticationState: UserAuthenticationState): Promise<UserAuthenticationState> {
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.userAuthenticationState.update(userAuthenticationState, {
+            where: {
+                userId: userAuthenticationState.userId,
+                authenticationSessionToken: userAuthenticationState.authenticationSessionToken,
+                authenticationState: userAuthenticationState.authenticationState
+            }
+        });
+        return userAuthenticationState;
+    }
+
+    public async deleteUserAuthenticationState(userAuthenticationState: UserAuthenticationState): Promise<UserAuthenticationState> {
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.userAuthenticationState.destroy({
+            where: {
+                userId: userAuthenticationState.userId,
+                authenticationSessionToken: userAuthenticationState.authenticationSessionToken,
+                authenticationState: userAuthenticationState.authenticationState
+            }
+        });
+        return userAuthenticationState;
+    }
+
+    public async createUserRegistrationStates(arrRegistrationState: Array<UserRegistrationState>): Promise<Array<UserRegistrationState>> {
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        for(let i = 0; i < arrRegistrationState.length; i++){
+            await sequelize.models.userRegistrationState.create(arrRegistrationState[i]);
+        }
+        return arrRegistrationState;
+    }
+
+    public async getUserRegistrationStates(registrationSessionToken: string): Promise<Array<UserRegistrationState>> {
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        const arr: Array<UserRegistrationStateEntity> = await sequelize.models.userRegistrationState.findAll({
+            where: {
+                registrationSessionToken: registrationSessionToken
+            }
+        });
+        return arr.map((entity: UserRegistrationStateEntity) => entity.dataValues);
+    }
+
+    public async updateUserRegistrationState(userRegistrationState: UserRegistrationState): Promise<UserRegistrationState> {
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.userRegistrationState.update(userRegistrationState, {
+            where: {
+                userId: userRegistrationState.userId,
+                registrationSessionToken: userRegistrationState.registrationSessionToken,
+                registrationState: userRegistrationState.registrationState
+            }
+        });
+        return userRegistrationState;
+    }
+
+    public async deleteUserRegistrationState(userRegistrationState: UserRegistrationState): Promise<UserRegistrationState> {
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.userRegistrationState.destroy({
+            where: {
+                userId: userRegistrationState.userId,
+                registrationSessionToken: userRegistrationState.registrationSessionToken,
+                registrationState: userRegistrationState.registrationState
+            }
+        });
+        return userRegistrationState;
     }
 
 }

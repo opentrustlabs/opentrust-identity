@@ -74,6 +74,8 @@ abstract class IdentityDao {
 
     abstract addUserCredential(userCredential: UserCredential): Promise<void>;
 
+    abstract deleteUserCredential(userId: string, dateCreated?: Date): Promise<void>;
+
     abstract updateUser(user: User): Promise<User>;
 
     abstract unlockUser(userId: string): Promise<void>;
