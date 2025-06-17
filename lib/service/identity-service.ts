@@ -6,7 +6,7 @@ import { DaoFactory } from "../data-sources/dao-factory";
 import TenantDao from "../dao/tenant-dao";
 import { GraphQLError } from "graphql/error";
 import { randomUUID } from "crypto";
-import { DEFAULT_TENANT_PASSWORD_CONFIGURATION, FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, NAME_ORDER_WESTERN, PASSWORD_HASH_ITERATION_128K, PASSWORD_HASH_ITERATION_256K, PASSWORD_HASH_ITERATION_32K, PASSWORD_HASH_ITERATION_64K, PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_32K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_64K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, STATUS_COMPLETE, STATUS_INCOMPLETE, STATUS_OMITTED, TENANT_TYPE_ROOT_TENANT, TOKEN_TYPE_END_USER, TOKEN_TYPE_PROVISIONAL_USER, TOTP_HASH_ALGORITHM_SHA1, USER_TENANT_REL_TYPE_GUEST, USER_TENANT_REL_TYPE_PRIMARY } from "@/utils/consts";
+import { DEFAULT_TENANT_PASSWORD_CONFIGURATION, FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, NAME_ORDER_WESTERN, OIDC_AUTHORIZATION_ERROR_ACCESS_DENIED, PASSWORD_HASH_ITERATION_128K, PASSWORD_HASH_ITERATION_256K, PASSWORD_HASH_ITERATION_32K, PASSWORD_HASH_ITERATION_64K, PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_32K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_64K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, STATUS_COMPLETE, STATUS_INCOMPLETE, STATUS_OMITTED, TENANT_TYPE_ROOT_TENANT, TOKEN_TYPE_END_USER, TOKEN_TYPE_IAM_PORTAL_USER, TOKEN_TYPE_PROVISIONAL_USER, TOTP_HASH_ALGORITHM_SHA1, USER_TENANT_REL_TYPE_GUEST, USER_TENANT_REL_TYPE_PRIMARY } from "@/utils/consts";
 import { sha256HashPassword, pbkdf2HashPassword, bcryptHashPassword, generateSalt, scryptHashPassword, generateRandomToken, generateCodeVerifierAndChallenge } from "@/utils/dao-utils";
 import { Client as OpenSearchClient } from "@opensearch-project/opensearch";
 import { getOpenSearchClient } from "../data-sources/search";
@@ -227,12 +227,8 @@ class IdentityService {
         };
 
         const arrUserRegistrationState: Array<UserRegistrationState> = await this.getSortedRegistartionStates(registrationSessionToken);
-        await this.validateStep(arrUserRegistrationState, response, RegistrationState.ValidateEmail);
-        if(response.userRegistrationState.registrationState === RegistrationState.Error){
-            return Promise.resolve(response);
-        }
-        if(response.userRegistrationState.registrationState === RegistrationState.Expired){
-            await identityDao.deleteEmailConfirmationToken(token);
+        const index: number = await this.validateStep(arrUserRegistrationState, response, RegistrationState.ValidateEmail);
+        if(index < 0){
             return Promise.resolve(response);
         }        
 
@@ -257,9 +253,9 @@ class IdentityService {
         user.emailVerified = true;
         await identityDao.updateUser(user);
         await this.updateSearchIndexUserDocument(user);
-        arrUserRegistrationState[0].registrationStateStatus = STATUS_COMPLETE;
+        arrUserRegistrationState[index].registrationStateStatus = STATUS_COMPLETE;
         await identityDao.updateUserRegistrationState(arrUserRegistrationState[0]);
-        const nextRegistrationState = arrUserRegistrationState[1];
+        const nextRegistrationState = arrUserRegistrationState[index + 1];
         response.userRegistrationState = nextRegistrationState;
         return Promise.resolve(response);        
     }
@@ -286,13 +282,10 @@ class IdentityService {
             totpSecret: null,
             uri: null
         };
-        let index = -1;
-        if(skip === true){
-            index = await this.validateStep(arrUserRegistrationState, response, RegistrationState.ConfigureSecurityKeyOptional);            
-        }
-        else{
-            index = await this.validateStep(arrUserRegistrationState, response, RegistrationState.ConfigureSecurityKeyRequired);
-        }
+        const  index = skip ? 
+                        await this.validateStep(arrUserRegistrationState, response, RegistrationState.ConfigureSecurityKeyOptional) :
+                        await this.validateStep(arrUserRegistrationState, response, RegistrationState.ConfigureSecurityKeyRequired);
+        
         if(index < 0){
             return response;
         }
@@ -306,31 +299,22 @@ class IdentityService {
             arrUserRegistrationState[index + 1].registrationStateStatus = STATUS_COMPLETE;
             await identityDao.updateUserRegistrationState(arrUserRegistrationState[index + 1]);
             const nextRegistrationState: UserRegistrationState = arrUserRegistrationState[index + 2];
-            
-            //response.userRegistrationState = nextRegistrationState;
-            if(nextRegistrationState.registrationState === RegistrationState.RedirectBackToApplication){
-                try{
-                    const authorizationCode: AuthorizationReturnUri = await this.generateAuthorizationCode(userId, preAuthToken || "");
-                    response.userRegistrationState = nextRegistrationState;
-                    response.uri = authorizationCode.uri;
-                }
-                catch(err: any){
-                    response.registrationError.errorCode = err.message;
-                    response.userRegistrationState.registrationState = RegistrationState.Error;
-                }
+            response.userRegistrationState = nextRegistrationState;
+                        
+            if(nextRegistrationState.registrationState === RegistrationState.RedirectBackToApplication || nextRegistrationState.registrationState === RegistrationState.RedirectToIamPortal){
+                await this.handleRegistrationCompletion(nextRegistrationState, response);
             }
-            else if(nextRegistrationState.registrationState === RegistrationState.RedirectToIamPortal){
-                
-            }
-            
         }
         else {
-            // This will be the validation of the totp token            
+            // This will be the generation of the totp token for validation in the next step.
             try{
                 const totpResponse: TotpResponse = await this.createTOTP(userId);
                 response.userRegistrationState = arrUserRegistrationState[index + 1];
                 response.totpSecret = totpResponse.userMFARel.totpSecret;
                 response.uri = totpResponse.uri;
+                
+                arrUserRegistrationState[index].registrationStateStatus = STATUS_COMPLETE;
+                await identityDao.updateUserRegistrationState(arrUserRegistrationState[index]);
             }
             catch(err){
                 response.userRegistrationState.registrationState = RegistrationState.Error;
@@ -355,21 +339,47 @@ class IdentityService {
         else{
             user.enabled = true;
             await identityDao.updateUser(user);
-        }
 
-        if(userRegistrationState.registrationState === RegistrationState.RedirectBackToApplication){
-            try{
-                const authorizationCode: AuthorizationReturnUri = await this.generateAuthorizationCode(userRegistrationState.userId, userRegistrationState.preAuthToken || "");
-                response.userRegistrationState = userRegistrationState;
-                response.uri = authorizationCode.uri;
+            if(userRegistrationState.registrationState === RegistrationState.RedirectBackToApplication){
+                try{
+                    const authorizationCode: AuthorizationReturnUri = await this.generateAuthorizationCode(userRegistrationState.userId, userRegistrationState.preAuthToken || "");
+                    response.userRegistrationState = userRegistrationState;
+                    response.uri = authorizationCode.uri;
+                    userRegistrationState.registrationStateStatus = STATUS_COMPLETE;
+                    await identityDao.updateUserRegistrationState(userRegistrationState);
+                }
+                catch(err: any){
+                    response.registrationError.errorCode = err.message;
+                    response.userRegistrationState.registrationState = RegistrationState.Error;
+                }
             }
-            catch(err: any){
-                response.registrationError.errorCode = err.message;
-                response.userRegistrationState.registrationState = RegistrationState.Error;
+            else if(userRegistrationState.registrationState === RegistrationState.RedirectToIamPortal){
+                try{
+                    const tenant: Tenant | null = await tenantDao.getTenantById(userRegistrationState.tenantId);
+                    if(tenant === null){
+                        response.registrationError.errorCode = "ERROR_INVALID_TENANT_FOR_REGISTRATION_COMPLETION";
+                        response.userRegistrationState.registrationState = RegistrationState.Error;
+                    }
+                    else{
+                        const accessToken: string | null = await jwtServiceUtils.signIAMPortalUserJwt(user, tenant, 60 * 60 * 12, TOKEN_TYPE_IAM_PORTAL_USER);
+                        if(accessToken === null){
+                            response.registrationError.errorCode = "ERROR_GENERATING_ACCESS_TOKEN_REGISTRATION_COMPLETION";
+                            response.userRegistrationState.registrationState = RegistrationState.Error;
+                        }
+                        else{
+                            response.userRegistrationState = userRegistrationState;
+                            response.uri = `/${userRegistrationState.tenantId}`;
+                            response.accessToken = accessToken;
+                            userRegistrationState.registrationStateStatus = STATUS_COMPLETE;
+                            await identityDao.updateUserRegistrationState(userRegistrationState);
+                        }
+                    }
+                }
+                catch(err: any){
+                    response.registrationError.errorCode = err.message;
+                    response.userRegistrationState.registrationState = RegistrationState.Error;
+                }
             }
-        }
-        else if(userRegistrationState.registrationState === RegistrationState.RedirectToIamPortal){
-            
         }
     }
 
@@ -453,8 +463,7 @@ class IdentityService {
         }
         let userMfaRel: UserMfaRel | null = await identityDao.getTOTP(userId);
 
-        let totp: OTPAuth.TOTP | null = null;
-        // TODO remove this if block.
+        let totp: OTPAuth.TOTP | null = null;        
         if(userMfaRel){
             throw new GraphQLError("ERROR_TOTP_ALREADY_CONFIGURED_FOR_THE_USER");            
         }
@@ -509,7 +518,7 @@ class IdentityService {
             userRegistrationState: {
                 email: "",
                 expiresAtMs: 0,
-                preAuthToken: undefined,
+                preAuthToken: preAuthToken,
                 registrationSessionToken: "",
                 registrationState: RegistrationState.ValidateTotp,
                 registrationStateOrder: 0,
@@ -524,14 +533,11 @@ class IdentityService {
         }
 
         const arrUserRegistrationState: Array<UserRegistrationState> = await this.getSortedRegistartionStates(registrationSessionToken);
-        await this.validateStep(arrUserRegistrationState, response, RegistrationState.ValidateTotp);
-        if(response.userRegistrationState.registrationState === RegistrationState.Error){
+        const index = await this.validateStep(arrUserRegistrationState, response, RegistrationState.ValidateTotp);
+        if(index < 0){
             return Promise.resolve(response);
         }
-        if(response.userRegistrationState.registrationState === RegistrationState.Expired){            
-            return Promise.resolve(response);
-        }
-
+        
         // Validate the token itself, which should have been registered previously
         const validToken: boolean = await this.validateTOTP(userId, totpTokenValue);
         if(!validToken){
@@ -540,23 +546,172 @@ class IdentityService {
             return response;
         }
 
-        arrUserRegistrationState[0].registrationStateStatus = STATUS_COMPLETE;
-        await identityDao.updateUserRegistrationState(arrUserRegistrationState[0]);
-        const nextRegistrationState = arrUserRegistrationState[1];
+        arrUserRegistrationState[index].registrationStateStatus = STATUS_COMPLETE;
+        await identityDao.updateUserRegistrationState(arrUserRegistrationState[index]);
+        const nextRegistrationState = arrUserRegistrationState[index + 1];
         response.userRegistrationState = nextRegistrationState;
-        if(nextRegistrationState.registrationState === RegistrationState.RedirectBackToApplication){
 
+        if(nextRegistrationState.registrationState === RegistrationState.RedirectBackToApplication || nextRegistrationState.registrationState === RegistrationState.RedirectToIamPortal){
+            await this.handleRegistrationCompletion(nextRegistrationState, response);
         }
-        else if(nextRegistrationState.registrationState === RegistrationState.RedirectToIamPortal){
-
-        }
-
-
 
         return Promise.resolve(response);
     }
 
+    public async registerConfigureSecurityKey(userId: string, registrationSessionToken: string, fido2KeyRegistrationInput: Fido2KeyRegistrationInput | null, preAuthToken: string | null, skip: boolean): Promise<UserRegistrationStateResponse> {
+        const response: UserRegistrationStateResponse = {
+            userRegistrationState: {
+                email: "",
+                expiresAtMs: 0,
+                preAuthToken: preAuthToken,
+                registrationSessionToken: registrationSessionToken,
+                registrationState: skip ? RegistrationState.ConfigureSecurityKeyOptional : RegistrationState.ConfigureSecurityKeyRequired,
+                registrationStateOrder: 0,
+                registrationStateStatus: STATUS_INCOMPLETE,
+                tenantId: "",
+                userId: userId
+            },
+            registrationError: {
+                errorCode: "",
+                errorMessage: ""
+            }
+        };
 
+        const arrUserRegistrationState: Array<UserRegistrationState> = await this.getSortedRegistartionStates(registrationSessionToken);
+        const index = skip ? 
+                        await this.validateStep(arrUserRegistrationState, response, RegistrationState.ConfigureSecurityKeyOptional) :
+                        await this.validateStep(arrUserRegistrationState, response, RegistrationState.ConfigureSecurityKeyRequired);
+
+        if(index < 0){            
+            return Promise.resolve(response);
+        }
+
+        if(skip === true){
+            // Then we can mark this as complete, as well as the validation step, which we do not need,
+            // and go to the step after. Since configuration and validation could be the last steps
+            // in the registration process, we may have to either generate an access token for the
+            // user or generate a redirect URI
+            arrUserRegistrationState[index].registrationStateStatus = STATUS_COMPLETE;
+            await identityDao.updateUserRegistrationState(arrUserRegistrationState[index]);
+            arrUserRegistrationState[index + 1].registrationStateStatus = STATUS_COMPLETE;
+            await identityDao.updateUserRegistrationState(arrUserRegistrationState[index + 1]);
+            const nextRegistrationState: UserRegistrationState = arrUserRegistrationState[index + 2];
+            response.userRegistrationState = nextRegistrationState;
+
+            if(nextRegistrationState.registrationState === RegistrationState.RedirectBackToApplication || nextRegistrationState.registrationState === RegistrationState.RedirectToIamPortal){
+                await this.handleRegistrationCompletion(nextRegistrationState, response);
+            }
+        }
+        else{
+            if(fido2KeyRegistrationInput === null){
+                response.registrationError.errorCode = "ERROR_INVALID_SECURITY_KEY_REGISTRATION_INPUT";
+                response.userRegistrationState.registrationState = RegistrationState.Error;
+            }
+            else{
+                try{
+                    await this.registerFIDO2Key(userId, fido2KeyRegistrationInput);
+                    arrUserRegistrationState[index].registrationStateStatus = STATUS_COMPLETE;
+                    await identityDao.updateUserRegistrationState(arrUserRegistrationState[index]);
+                    response.userRegistrationState = arrUserRegistrationState[index + 1];
+                }
+                catch(err: any){
+                    response.registrationError.errorCode = "ERROR_VALIDATING_SECURITY_KEY_REGISTRATION_INPUT";
+                    response.userRegistrationState.registrationState = RegistrationState.Error;
+                }
+            }
+        }
+        return Promise.resolve(response);
+    }
+
+    public async registerValidateSecurityKey(userId: string, registrationSessionToken: string, fido2KeyAuthenticationInput: Fido2KeyAuthenticationInput, preAuthToken: string | null | undefined): Promise<UserRegistrationStateResponse> {
+        const response: UserRegistrationStateResponse = {
+            userRegistrationState: {
+                email: "",
+                expiresAtMs: 0,
+                preAuthToken: preAuthToken,
+                registrationSessionToken: registrationSessionToken,
+                registrationState: RegistrationState.ValidateSecurityKey,
+                registrationStateOrder: 0,
+                registrationStateStatus: STATUS_INCOMPLETE,
+                tenantId: "",
+                userId: userId
+            },
+            registrationError: {
+                errorCode: "",
+                errorMessage: ""
+            }
+        };
+
+        const arrUserRegistrationState: Array<UserRegistrationState> = await this.getSortedRegistartionStates(registrationSessionToken);
+        const index = await this.validateStep(arrUserRegistrationState, response, RegistrationState.ValidateSecurityKey);
+        if(index < 0){
+            return Promise.resolve(response);
+        }
+        try{
+            const isValid: boolean = await this.authenticateFIDO2Key(userId, fido2KeyAuthenticationInput);
+            if(!isValid){
+                response.registrationError.errorCode = "ERROR_VALIDATING_SECURITY_KEY_VALIDATION_INPUT";
+                response.userRegistrationState.registrationState = RegistrationState.Error;
+            }
+            else{
+                arrUserRegistrationState[index].registrationStateStatus = STATUS_COMPLETE;
+                await identityDao.updateUserRegistrationState(arrUserRegistrationState[index]);
+                const nextRegistrationState = arrUserRegistrationState[index + 1];
+                response.userRegistrationState = nextRegistrationState;
+
+                if(nextRegistrationState.registrationState === RegistrationState.RedirectBackToApplication || nextRegistrationState.registrationState === RegistrationState.RedirectToIamPortal){
+                    await this.handleRegistrationCompletion(nextRegistrationState, response);
+                }
+            }
+        }
+        catch(err){
+            response.registrationError.errorCode = "ERROR_VALIDATING_SECURITY_KEY_VALIDATION_INPUT";
+            response.userRegistrationState.registrationState = RegistrationState.Error;
+        }
+
+        return Promise.resolve(response);
+    }
+
+    public async cancelRegistration(userId: string, registrationSessionToken: string, preAuthToken: string | null): Promise<UserRegistrationStateResponse> {
+        const response: UserRegistrationStateResponse = {
+            userRegistrationState: {
+                email: "",
+                expiresAtMs: 0,
+                preAuthToken: preAuthToken,
+                registrationSessionToken: registrationSessionToken,
+                registrationState: RegistrationState.Cancelled,
+                registrationStateOrder: 0,
+                registrationStateStatus: STATUS_COMPLETE,
+                tenantId: "",
+                userId: userId
+            },
+            registrationError: {
+                errorCode: "",
+                errorMessage: ""
+            }
+        };
+        const arrUserRegistrationState: Array<UserRegistrationState> = await this.getSortedRegistartionStates(registrationSessionToken);
+        let tenantId: string | null = null;
+        if(arrUserRegistrationState.length > 0){
+            tenantId = arrUserRegistrationState[0].tenantId;
+        }
+        for(let i = 0; i < arrUserRegistrationState.length; i++){
+            await identityDao.deleteUserRegistrationState(arrUserRegistrationState[i]);
+        }
+        if(tenantId){
+            await this.deleteRegisteredUser(tenantId, userId);
+        }
+        if(preAuthToken){            
+            const preAuthenticationState: PreAuthenticationState | null = await authDao.getPreAuthenticationState(preAuthToken);
+            if(preAuthenticationState){
+                const redirectUri = `${preAuthenticationState.redirectUri}?error=${OIDC_AUTHORIZATION_ERROR_ACCESS_DENIED}&error_description=ERROR_USER_CANCELLED_REGISTRATION`;
+                response.userRegistrationState.registrationState = RegistrationState.RedirectBackToApplication;
+                response.uri = redirectUri;
+                await authDao.deletePreAuthenticationState(preAuthToken);
+            }            
+        }
+        return Promise.resolve(response);
+    }
     
     public async validateTOTP(userId: string, totpValue: string): Promise<boolean> {
         const userMfaRel: UserMfaRel | null = await identityDao.getTOTP(userId);
@@ -668,7 +823,7 @@ class IdentityService {
         }
 
         const count: number = registrationInfo.credential.counter;
-        // why this goofiness? because the key from the response is not correctly encoded. blah..
+        // why this code here? because the key from the response is not correctly encoded.
         const publicKeyUint8Array: Uint8Array = registrationInfo.credential.publicKey;
         const buffer = Buffer.from(publicKeyUint8Array);        
         const publicKeyAsString = buffer.toString("base64url");
@@ -676,7 +831,7 @@ class IdentityService {
         if(!verified){
             throw new GraphQLError("ERROR_FIDO2_REGISTRATION_IS_INVALID");
         }
-        // fido2PublicKey: fido2KeyRegistrationInput.response.publicKey,
+
         await identityDao.deleteFIDO2Challenge(userId);
         const userMfaRel: UserMfaRel = {
             mfaType: MFA_AUTH_TYPE_FIDO2,
@@ -695,15 +850,28 @@ class IdentityService {
 
     }
 
-    public async createFido2RegistrationChallenge(userId: string): Promise<Fido2RegistrationChallengeResponse> {
+    
+    public async createFido2RegistrationChallenge(userId: string, sessionToken: string | null, sessionTokenType: string | null): Promise<Fido2RegistrationChallengeResponse> {
 
         // does the user exist and are they not locked, not enabled, or marked for delete?
         const user: User | null = await identityDao.getUserBy("id", userId);
         if(!user){
             throw new GraphQLError("ERROR_USER_DOES_NOT_EXIST");
         }
-        if(user.locked === true || user.enabled === false || user.markForDelete === true){
+        if(user.locked === true || user.markForDelete === true){
             throw new GraphQLError("ERROR_USER_IS_NOT_ELIGIBLE_FOR_MODIFICATION");
+        }
+        if(sessionToken === null && user.enabled === false){
+            throw new GraphQLError("ERROR_USER_IS_NOT_ENABLED_FOR_SECURITY_KEY_REGISTRATION");
+        }
+        if(sessionToken !== null){
+            const arrUserRegistrationState: Array<UserRegistrationState> = await this.getSortedRegistartionStates(sessionToken);
+            const index = arrUserRegistrationState.findIndex(
+                (value: UserRegistrationState) => (value.registrationState === RegistrationState.ConfigureSecurityKeyRequired || value.registrationState === RegistrationState.ConfigureSecurityKeyOptional)
+            );
+            if(index < 0){
+                throw new GraphQLError("ERROR_INVALID_REGISTRATION_TOKEN_FOR_SECURITY_KEY_REGISTRATION");
+            }
         }
 
         // If there is an existing challenge, then delete it and create a new one
@@ -734,14 +902,26 @@ class IdentityService {
         return Promise.resolve(fido2ChallengeResponse);
     }
 
-    public async createFido2AuthenticationChallenge(userId: string): Promise<Fido2AuthenticationChallengeResponse> {
+    public async createFido2AuthenticationChallenge(userId: string, sessionToken: string | null, sessionTokenType: string | null): Promise<Fido2AuthenticationChallengeResponse> {
         // does the user exist and are they not locked, not enabled, or marked for delete?
         const user: User | null = await identityDao.getUserBy("id", userId);
         if(!user){
             throw new GraphQLError("ERROR_USER_DOES_NOT_EXIST");
         }
-        if(user.locked === true || user.enabled === false || user.markForDelete === true){
+        if(user.locked === true || user.markForDelete === true){
             throw new GraphQLError("ERROR_USER_IS_NOT_ELIGIBLE_FOR_MODIFICATION");
+        }
+        if(sessionToken === null && user.enabled === false){
+            throw new GraphQLError("ERROR_USER_IS_NOT_ENABLED_FOR_SECURITY_KEY_REGISTRATION");
+        }
+        if(sessionToken !== null){
+            const arrUserRegistrationState: Array<UserRegistrationState> = await this.getSortedRegistartionStates(sessionToken);
+            const index = arrUserRegistrationState.findIndex(
+                (value: UserRegistrationState) => (value.registrationState === RegistrationState.ValidateSecurityKey)
+            );
+            if(index < 0){
+                throw new GraphQLError("ERROR_INVALID_REGISTRATION_TOKEN_FOR_SECURITY_KEY_VALIDATION");
+            }
         }
 
         // Does the user have a security key configured?

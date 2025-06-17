@@ -154,19 +154,18 @@ type Mutation {
     registerUser(tenantId: String!, userInput: UserCreateInput!, preAuthToken: String): UserRegistrationStateResponse!
     registerVerifyEmailAddress(userId: String!, token: String!, registrationSessionToken: String!, preAuthToken: String): UserRegistrationStateResponse!
     registerConfigureTOTP(userId: String!, registrationSessionToken: String!, preAuthToken: String, skip: Boolean!): UserRegistrationStateResponse!
-    # registerSkipConfigureTOTP(userId: String, registrationSessionToken: String, preAuthToken: String): UserRegistrationStateResponse!
-    registerValidateTOTP(userId: String!, registrationSessionToken: String!, totpTokenValue: String, preAuthToken: String): UserRegistrationStateResponse!
+    registerValidateTOTP(userId: String!, registrationSessionToken: String!, totpTokenValue: String!, preAuthToken: String): UserRegistrationStateResponse!
     registerConfigureSecurityKey(userId: String!, registrationSessionToken: String!, fido2KeyRegistrationInput: Fido2KeyRegistrationInput, preAuthToken: String, skip: Boolean!): UserRegistrationStateResponse!
-    # registerSkipConfigureSecurityKey(userId: String!, registrationSessionToken: String!, preAuthToken: String): UserRegistrationStateResponse!
     registerValidateSecurityKey(userId: String!, registrationSessionToken: String!, fido2KeyAuthenticationInput: Fido2KeyAuthenticationInput!, preAuthToken: String): UserRegistrationStateResponse!
-    # finishRegistration(userId: String!, registrationSessionToken: String!, preAuthToken: String): UserRegistrationStateResponse!
     cancelRegistration(userId: String!, registrationSessionToken: String!, preAuthToken: String): UserRegistrationStateResponse!
 
     ## MFA Utilities
+    generateTOTP(userId: String!): TOTPResponse!
+    validateTOTP(userId: String!, totpToken: String!): Boolean!
     deleteTOTP(userId: String!): String
     deleteFIDOKey(userId: String!): String
-    createFido2RegistrationChallenge(userId: String!): Fido2RegistrationChallengeResponse
-    createFido2AuthenticationChallenge(userId: String!): Fido2AuthenticationChallengeResponse
+    createFido2RegistrationChallenge(userId: String!, sessionToken: String, sessionTokenType: String): Fido2RegistrationChallengeResponse
+    createFido2AuthenticationChallenge(userId: String!, sessionToken: String, sessionTokenType: String): Fido2AuthenticationChallengeResponse
 
     
     ## Keys
@@ -822,6 +821,7 @@ enum RegistrationState {
     REDIRECT_BACK_TO_APPLICATION
     REDIRECT_TO_IAM_PORTAL
     EXPIRED
+    CANCELLED
     ERROR
 }
 
