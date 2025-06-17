@@ -155,11 +155,12 @@ type Mutation {
     registerVerifyEmailAddress(userId: String!, token: String!, registrationSessionToken: String!, preAuthToken: String): UserRegistrationStateResponse!
     registerConfigureTOTP(userId: String!, registrationSessionToken: String!, preAuthToken: String, skip: Boolean!): UserRegistrationStateResponse!
     # registerSkipConfigureTOTP(userId: String, registrationSessionToken: String, preAuthToken: String): UserRegistrationStateResponse!
-    registerValidateTOTP(userId: String, registrationSessionToken: String!, totpTokenValue: String, preAuthToken: String): UserRegistrationStateResponse!
+    registerValidateTOTP(userId: String!, registrationSessionToken: String!, totpTokenValue: String, preAuthToken: String): UserRegistrationStateResponse!
     registerConfigureSecurityKey(userId: String!, registrationSessionToken: String!, fido2KeyRegistrationInput: Fido2KeyRegistrationInput, preAuthToken: String, skip: Boolean!): UserRegistrationStateResponse!
     # registerSkipConfigureSecurityKey(userId: String!, registrationSessionToken: String!, preAuthToken: String): UserRegistrationStateResponse!
     registerValidateSecurityKey(userId: String!, registrationSessionToken: String!, fido2KeyAuthenticationInput: Fido2KeyAuthenticationInput!, preAuthToken: String): UserRegistrationStateResponse!
-    finishRegistration(userId: String!, registrationSessionToken: String!, preAuthToken: String): UserRegistrationStateResponse!
+    # finishRegistration(userId: String!, registrationSessionToken: String!, preAuthToken: String): UserRegistrationStateResponse!
+    cancelRegistration(userId: String!, registrationSessionToken: String!, preAuthToken: String): UserRegistrationStateResponse!
 
     ## MFA Utilities
     deleteTOTP(userId: String!): String
@@ -778,6 +779,7 @@ enum AuthenticationState {
     CONFIGURE_SECURITY_KEY
     VALIDATE_SECURITY_KEY
     REDIRECT_BACK_TO_APPLICATION
+    REDIRECT_TO_IAM_PORTAL
     COMPLETED
     ERROR
 }
@@ -818,6 +820,7 @@ enum RegistrationState {
     VALIDATE_SECURITY_KEY
     COMPLETED
     REDIRECT_BACK_TO_APPLICATION
+    REDIRECT_TO_IAM_PORTAL
     EXPIRED
     ERROR
 }
