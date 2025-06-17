@@ -63,121 +63,63 @@ class IdentityService {
 
         // registration completion will expire after 12 hours. 
         const expiresAt: number = Date.now() + (60 * 60 * 12);
-        const arrState: Array<UserRegistrationState> = [];
-        let order: number = 1;
-        if(tenant.verifyEmailOnSelfRegistration === true){
+        const arrState: Array<UserRegistrationState> = [];        
+        const stateOrder: Array<RegistrationState> = [];
+        if(tenant.verifyEmailOnSelfRegistration === true){            
             // Note that the _createUser function will generate an email token and
             // send it to the user. No need to do that here.
-            arrState.push({
-                email: user.email,
-                tenantId: tenant.tenantId,
-                expiresAtMs: expiresAt,
-                registrationSessionToken: registrationSessionToken,
-                registrationState: RegistrationState.ValidateEmail,
-                registrationStateOrder: order,
-                registrationStateStatus: STATUS_INCOMPLETE,
-                userId: user.userId,
-                preAuthToken: preAuthToken
-            });
-            order++;
+            stateOrder.push(RegistrationState.ValidateEmail);
         }
+        
         if(tenantPasswordConfig.requireMfa === true){
-            const mfas = tenantPasswordConfig.mfaTypesRequired?.split(",") || [];
-            // TODO. If only one is required, then we need to include the optional
-            // other MFA type. But we always need to show the REQUIRED MFA type first,
-            // followed by the optional MFA type in cases where there is only 1 required
-            // MFA type.
-            if(mfas.includes(MFA_AUTH_TYPE_TIME_BASED_OTP)){
-                arrState.push({
-                    email: user.email,
-                    tenantId: tenant.tenantId,
-                    expiresAtMs: expiresAt,
-                    registrationSessionToken: registrationSessionToken,
-                    registrationState: RegistrationState.ConfigureTotpRequired,
-                    registrationStateOrder: order,
-                    registrationStateStatus: STATUS_INCOMPLETE,
-                    userId: user.userId,
-                    preAuthToken: preAuthToken
-                });
-                order++;
-                arrState.push({
-                    email: user.email,
-                    tenantId: tenant.tenantId,
-                    expiresAtMs: expiresAt,
-                    registrationSessionToken: registrationSessionToken,
-                    registrationState: RegistrationState.ValidateTotp,
-                    registrationStateOrder: order,
-                    registrationStateStatus: STATUS_INCOMPLETE,
-                    userId: user.userId,
-                    preAuthToken: preAuthToken
-                });
-                order++;
+            const mfas = tenantPasswordConfig.mfaTypesRequired?.split(",") || [];            
+            if(mfas.includes(MFA_AUTH_TYPE_TIME_BASED_OTP) && mfas.includes(MFA_AUTH_TYPE_FIDO2)){
+                stateOrder.push(RegistrationState.ConfigureTotpRequired);
+                stateOrder.push(RegistrationState.ValidateTotp);
+                stateOrder.push(RegistrationState.ConfigureSecurityKeyRequired);
+                stateOrder.push(RegistrationState.ValidateSecurityKey);
             }
-            if(mfas.includes(MFA_AUTH_TYPE_FIDO2)){
-                arrState.push({
-                    email: user.email,
-                    tenantId: tenant.tenantId,
-                    expiresAtMs: expiresAt,
-                    registrationSessionToken: registrationSessionToken,
-                    registrationState: RegistrationState.ConfigureSecurityKeyRequired,
-                    registrationStateOrder: order,
-                    registrationStateStatus: STATUS_INCOMPLETE,
-                    userId: user.userId,
-                    preAuthToken: preAuthToken
-                });
-                order++;
-                arrState.push({
-                    email: user.email,
-                    tenantId: tenant.tenantId,
-                    expiresAtMs: expiresAt,
-                    registrationSessionToken: registrationSessionToken,
-                    registrationState: RegistrationState.ValidateSecurityKey,
-                    registrationStateOrder: order,
-                    registrationStateStatus: STATUS_INCOMPLETE,
-                    userId: user.userId,
-                    preAuthToken: preAuthToken
-                });
-                order++;
+            else if(mfas.includes(MFA_AUTH_TYPE_TIME_BASED_OTP) && !mfas.includes(MFA_AUTH_TYPE_FIDO2)){
+                stateOrder.push(RegistrationState.ConfigureTotpRequired);
+                stateOrder.push(RegistrationState.ValidateTotp);
+                stateOrder.push(RegistrationState.ConfigureSecurityKeyOptional);
+                stateOrder.push(RegistrationState.ValidateSecurityKey);
             }
-            
+            else if(!mfas.includes(MFA_AUTH_TYPE_TIME_BASED_OTP) && mfas.includes(MFA_AUTH_TYPE_FIDO2)){                
+                stateOrder.push(RegistrationState.ConfigureSecurityKeyRequired);
+                stateOrder.push(RegistrationState.ValidateSecurityKey);
+                stateOrder.push(RegistrationState.ConfigureTotpOptional);
+                stateOrder.push(RegistrationState.ValidateTotp);
+            }
+        }
+        else {
+            stateOrder.push(RegistrationState.ConfigureTotpOptional);
+            stateOrder.push(RegistrationState.ValidateTotp);
+            stateOrder.push(RegistrationState.ConfigureSecurityKeyOptional);
+            stateOrder.push(RegistrationState.ValidateSecurityKey);
+        }
+
+        // Is the user coming from a 3rd party client and needs to be redirected
+        // with an authorization code
+        if(preAuthToken){
+            stateOrder.push(RegistrationState.RedirectBackToApplication)
         }
         else{
+            stateOrder.push(RegistrationState.RedirectToIamPortal);
+        }
+        for(let i = 0; i < stateOrder.length; i++){
             arrState.push({
                 email: user.email,
                 tenantId: tenant.tenantId,
                 expiresAtMs: expiresAt,
                 registrationSessionToken: registrationSessionToken,
-                registrationState: RegistrationState.ConfigureTotpOptional,
-                registrationStateOrder: order,
-                registrationStateStatus: STATUS_INCOMPLETE,
-                userId: user.userId,
-                preAuthToken: preAuthToken
-            });
-
-            arrState.push({
-                email: user.email,
-                tenantId: tenant.tenantId,
-                expiresAtMs: expiresAt,
-                registrationSessionToken: registrationSessionToken,
-                registrationState: RegistrationState.ConfigureSecurityKeyOptional,
-                registrationStateOrder: order,
+                registrationState: stateOrder[i],
+                registrationStateOrder: i + 1,
                 registrationStateStatus: STATUS_INCOMPLETE,
                 userId: user.userId,
                 preAuthToken: preAuthToken
             });
         }
-        arrState.push({
-            email: user.email,
-            tenantId: tenant.tenantId,
-            expiresAtMs: expiresAt,
-            registrationSessionToken: registrationSessionToken,
-            registrationState: preAuthToken ? RegistrationState.RedirectBackToApplication : RegistrationState.Completed,
-            registrationStateOrder: order,
-            registrationStateStatus: STATUS_INCOMPLETE,
-            userId: user.userId,
-            preAuthToken: preAuthToken
-        });
-        order++;
 
         await identityDao.createUserRegistrationStates(arrState);
         
@@ -245,26 +187,29 @@ class IdentityService {
             return -1;
         }
         
-        // Is there a previous step and has the previous step incomplete?
+        // Are there previous steps and have the previous steps been completed?
         if(stepIndex > 0){
-            const previousState: UserRegistrationState = arrUserRegistrationState[stepIndex - 1];
-            if(previousState.registrationStateStatus === STATUS_INCOMPLETE){
-                response.userRegistrationState.registrationState = RegistrationState.Error;
-                response.registrationError.errorCode = "ERROR_PREVIOUS_REGISTRATION_STEP_IS_INCOMPLETE";
-                return -1;
-            }
+            for(let i = 0; i < stepIndex; i++){
+                const previousState: UserRegistrationState = arrUserRegistrationState[i];
+                if(previousState.registrationStateStatus !== STATUS_COMPLETE){
+                    response.userRegistrationState.registrationState = RegistrationState.Error;
+                    response.registrationError.errorCode = "ERROR_INCOMPLETE_REGISTRATION_STATE_FOUND";
+                    stepIndex = -1;
+                    break;
+                }
+            }            
         }
 
         return stepIndex;
     }
 
 
-    public async registerVerifyEmailAddress(userId: string, token: string, registrationSessionToken: string, preAuthToken: string): Promise<UserRegistrationStateResponse>{
+    public async registerVerifyEmailAddress(userId: string, token: string, registrationSessionToken: string, preAuthToken: string | null | undefined): Promise<UserRegistrationStateResponse>{
         const response: UserRegistrationStateResponse = {
             userRegistrationState: {
                 email: "",
                 expiresAtMs: 0,
-                preAuthToken: undefined,
+                preAuthToken: preAuthToken,
                 registrationSessionToken: "",
                 registrationState: RegistrationState.ValidateEmail,
                 registrationStateOrder: 0,
@@ -275,8 +220,12 @@ class IdentityService {
             registrationError: {
                 errorCode: "",
                 errorMessage: ""
-            }
-        }
+            },
+            accessToken: null,
+            totpSecret: null,
+            uri: null
+        };
+
         const arrUserRegistrationState: Array<UserRegistrationState> = await this.getSortedRegistartionStates(registrationSessionToken);
         await this.validateStep(arrUserRegistrationState, response, RegistrationState.ValidateEmail);
         if(response.userRegistrationState.registrationState === RegistrationState.Error){
@@ -315,7 +264,114 @@ class IdentityService {
         return Promise.resolve(response);        
     }
 
+    public async registerConfigureTOTP(userId: string, registrationSessionToken: string, preAuthToken: string | null | undefined, skip: boolean): Promise<UserRegistrationStateResponse> {
+        const arrUserRegistrationState: Array<UserRegistrationState> = await this.getSortedRegistartionStates(registrationSessionToken);
+        const response: UserRegistrationStateResponse = {
+            userRegistrationState: {
+                email: "",
+                expiresAtMs: 0,
+                preAuthToken: preAuthToken,
+                registrationSessionToken: "",
+                registrationState: skip ? RegistrationState.ConfigureSecurityKeyOptional : RegistrationState.ConfigureSecurityKeyRequired,
+                registrationStateOrder: 0,
+                registrationStateStatus: STATUS_INCOMPLETE,
+                tenantId: "",
+                userId: userId
+            },
+            registrationError: {
+                errorCode: "",
+                errorMessage: ""
+            },
+            accessToken: null,
+            totpSecret: null,
+            uri: null
+        };
+        let index = -1;
+        if(skip === true){
+            index = await this.validateStep(arrUserRegistrationState, response, RegistrationState.ConfigureSecurityKeyOptional);            
+        }
+        else{
+            index = await this.validateStep(arrUserRegistrationState, response, RegistrationState.ConfigureSecurityKeyRequired);
+        }
+        if(index < 0){
+            return response;
+        }
+        if(skip === true){
+            // Then we can mark this as complete, as well as the validation step, which we do not need,
+            // and go to the step after. Since configuration and validation could be the last steps
+            // in the registration process, we may have to either generate an access token for the
+            // user or generate a redirect URI
+            arrUserRegistrationState[index].registrationStateStatus = STATUS_COMPLETE;
+            await identityDao.updateUserRegistrationState(arrUserRegistrationState[index]);
+            arrUserRegistrationState[index + 1].registrationStateStatus = STATUS_COMPLETE;
+            await identityDao.updateUserRegistrationState(arrUserRegistrationState[index + 1]);
+            const nextRegistrationState: UserRegistrationState = arrUserRegistrationState[index + 2];
+            
+            //response.userRegistrationState = nextRegistrationState;
+            if(nextRegistrationState.registrationState === RegistrationState.RedirectBackToApplication){
+                try{
+                    const authorizationCode: AuthorizationReturnUri = await this.generateAuthorizationCode(userId, preAuthToken || "");
+                    response.userRegistrationState = nextRegistrationState;
+                    response.uri = authorizationCode.uri;
+                }
+                catch(err: any){
+                    response.registrationError.errorCode = err.message;
+                    response.userRegistrationState.registrationState = RegistrationState.Error;
+                }
+            }
+            else if(nextRegistrationState.registrationState === RegistrationState.RedirectToIamPortal){
+                
+            }
+            
+        }
+        else {
+            // This will be the validation of the totp token            
+            try{
+                const totpResponse: TotpResponse = await this.createTOTP(userId);
+                response.userRegistrationState = arrUserRegistrationState[index + 1];
+                response.totpSecret = totpResponse.userMFARel.totpSecret;
+                response.uri = totpResponse.uri;
+            }
+            catch(err){
+                response.userRegistrationState.registrationState = RegistrationState.Error;
+                response.registrationError.errorCode = "ERROR_CREATING_TOTP"
+            }            
+        }
+        return Promise.resolve(response);
+    }
 
+    /**
+     * 
+     * @param userRegistrationState 
+     * @param response 
+     */
+    protected async handleRegistrationCompletion(userRegistrationState: UserRegistrationState, response: UserRegistrationStateResponse): Promise<void> {
+        
+        const user: User | null = await identityDao.getUserBy("id", userRegistrationState.userId);
+        if(!user){
+            response.registrationError.errorCode = "ERROR_NO_USER_FOUND_FOR_REGISTRATION_COMPLETION";
+            response.userRegistrationState.registrationState = RegistrationState.Error;
+        }
+        else{
+            user.enabled = true;
+            await identityDao.updateUser(user);
+        }
+
+        if(userRegistrationState.registrationState === RegistrationState.RedirectBackToApplication){
+            try{
+                const authorizationCode: AuthorizationReturnUri = await this.generateAuthorizationCode(userRegistrationState.userId, userRegistrationState.preAuthToken || "");
+                response.userRegistrationState = userRegistrationState;
+                response.uri = authorizationCode.uri;
+            }
+            catch(err: any){
+                response.registrationError.errorCode = err.message;
+                response.userRegistrationState.registrationState = RegistrationState.Error;
+            }
+        }
+        else if(userRegistrationState.registrationState === RegistrationState.RedirectToIamPortal){
+            
+        }
+    }
 
     public async getUserById(userId: string): Promise<User | null> {
         return identityDao.getUserBy("id", userId);
@@ -399,23 +455,8 @@ class IdentityService {
 
         let totp: OTPAuth.TOTP | null = null;
         // TODO remove this if block.
-        if(userMfaRel && userMfaRel.totpSecret){
-            const decryptedSecret: string | null = await kms.decrypt(userMfaRel.totpSecret);
-            if(!decryptedSecret){
-                throw new GraphQLError("ERROR_DECRYPTING_SECRET");
-            }
-            else{
-                userMfaRel.totpSecret = decryptedSecret;
-                // Microsoft authentication only support SHA1 as a hashing algorithm (at the momemt)
-                totp = new OTPAuth.TOTP({
-                    issuer: MFA_ISSUER || "Open Trust",
-                    label: user.email,
-                    algorithm: TOTP_HASH_ALGORITHM_SHA1, 
-                    digits: 6,
-                    period: 30,
-                    secret: decryptedSecret
-                });
-            }
+        if(userMfaRel){
+            throw new GraphQLError("ERROR_TOTP_ALREADY_CONFIGURED_FOR_THE_USER");            
         }
         else{
             const newSecret = new OTPAuth.Secret({size: 20});            
@@ -463,7 +504,7 @@ class IdentityService {
         return response;
     }
 
-    public async registerValidateTOTP(userId: string, registrationSessionToken: string, totpTokenValue: string, preAuthToken: string): Promise<UserRegistrationStateResponse> {
+    public async registerValidateTOTP(userId: string, registrationSessionToken: string, totpTokenValue: string, preAuthToken: string | undefined | null): Promise<UserRegistrationStateResponse> {
         const response: UserRegistrationStateResponse = {
             userRegistrationState: {
                 email: "",
@@ -503,6 +544,15 @@ class IdentityService {
         await identityDao.updateUserRegistrationState(arrUserRegistrationState[0]);
         const nextRegistrationState = arrUserRegistrationState[1];
         response.userRegistrationState = nextRegistrationState;
+        if(nextRegistrationState.registrationState === RegistrationState.RedirectBackToApplication){
+
+        }
+        else if(nextRegistrationState.registrationState === RegistrationState.RedirectToIamPortal){
+
+        }
+
+
+
         return Promise.resolve(response);
     }
 
@@ -1432,19 +1482,15 @@ class IdentityService {
         })
     }
 
-    public async generateAuthorizationCode(preAuthToken: string): Promise<AuthorizationReturnUri | null> {
-        
-        console.log("principal: " + this.oidcContext.oidcPrincipal);
-
-        if(this.oidcContext.oidcPrincipal === null || this.oidcContext.oidcPrincipal.sub === ""){
-            throw new GraphQLError("ERROR_INVALID_PRINCIPAL")
-        }
+    protected async generateAuthorizationCode(userId: string, preAuthToken: string): Promise<AuthorizationReturnUri> {
+                
         const preAuthenticationState: PreAuthenticationState | null = await authDao.getPreAuthenticationState(preAuthToken);
         if(preAuthenticationState === null){
-            throw new GraphQLError("ERROR_INVALID_PRE_AUTHENTICATION_TOKEN")
+            throw new GraphQLError("ERROR_INVALID_PRE_AUTHENTICATION_TOKEN");
         }
         await authDao.deletePreAuthenticationState(preAuthToken);
         if(preAuthenticationState.expiresAtMs < Date.now()){
+            await authDao.deletePreAuthenticationState(preAuthToken);
             throw new GraphQLError("ERROR_PRE_AUTHENTICATION_TOKEN_IS_EXPIRED");
         }
 
@@ -1455,7 +1501,7 @@ class IdentityService {
             redirectUri: preAuthenticationState.redirectUri,
             scope: preAuthenticationState.scope,
             tenantId: preAuthenticationState.tenantId,
-            userId: this.oidcContext.oidcPrincipal.sub,
+            userId: userId,
             codeChallenge: preAuthenticationState.codeChallenge,
             codeChallengeMethod: preAuthenticationState.codeChallengeMethod            
         }
