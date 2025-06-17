@@ -880,11 +880,11 @@ const resolvers: Resolvers = {
             return m;
 
         },
-        // generateTOTP: async(_: any, { userId }, oidcContext) => {
-        //     const service: IdentityService = new IdentityService(oidcContext);
-        //     const totpResponse = await service.createTOTP(userId);
-        //     return totpResponse;
-        // },
+        generateTOTP: async(_: any, { userId }, oidcContext) => {
+            const service: IdentityService = new IdentityService(oidcContext);
+            const totpResponse = await service.createTOTP(userId);
+            return totpResponse;
+        },
         deleteTOTP: async(_: any, { userId }, oidcContext) => {
             const service: IdentityService = new IdentityService(oidcContext);
             await service.deleteTOTP(userId);
@@ -900,42 +900,51 @@ const resolvers: Resolvers = {
             await service.deleteUserSession(userId, clientId, tenantId);
             return userId;
         },
-        // registerFIDO2Key: async (_: any, { userId, fido2KeyRegistrationInput }, oidcContext) => {
-        //     const service: IdentityService = new IdentityService(oidcContext);
-        //     return service.registerFIDO2Key(userId, fido2KeyRegistrationInput);
-        // },
-        createFido2RegistrationChallenge: async(_: any, {userId }, oidcContext) => {
+        createFido2RegistrationChallenge: async(_: any, {userId, sessionToken, sessionTokenType }, oidcContext) => {
             const service: IdentityService = new IdentityService(oidcContext);
-            return service.createFido2RegistrationChallenge(userId);
+            return service.createFido2RegistrationChallenge(userId, sessionToken || null, sessionTokenType || null);
         },
-        createFido2AuthenticationChallenge: async(_: any, { userId }, oidcContext) => {
+        createFido2AuthenticationChallenge: async(_: any, { userId, sessionToken, sessionTokenType }, oidcContext) => {
             const service: IdentityService = new IdentityService(oidcContext);
-            return service.createFido2AuthenticationChallenge(userId);
+            return service.createFido2AuthenticationChallenge(userId, sessionToken || null, sessionTokenType || null);
         },
-        // authenticateFIDO2Key: async(_: any, { userId, fido2KeyAuthenticationInput }, oidcContext) => {
-        //     const service: IdentityService = new IdentityService(oidcContext);
-        //     return service.authenticateFIDO2Key(userId, fido2KeyAuthenticationInput);
-        // },
         createUser: async(_: any, { tenantId, userInput }, oidcContext) => {
             const service: IdentityService = new IdentityService(oidcContext);
             return service.createUser(userInput, tenantId);
+        },        
+        authenticateUserNameInput: async(_: any, { username, tenantId, preAuthToken}, oidcContext) => {
+            const service: IdentityService = new IdentityService(oidcContext);
+            return service.authenticateUserNameInput(username, tenantId || undefined, preAuthToken || undefined);
         },
         registerUser: async(_: any, { tenantId, userInput, preAuthToken }, oidcContext) => {
             const service: IdentityService = new IdentityService(oidcContext);
             return service.registerUser(userInput, tenantId, preAuthToken);
         },
-        // verifyVerificationToken: async(_: any, { userId, token }, oidcContext) => {
-        //     const service: IdentityService = new IdentityService(oidcContext);
-        //     return service.verifyVerificationToken(userId, token);
-        // },
-        // createPortalLoginEmailHandlerResponse: async(_: any, { email, tenantId }, oidcContext) => {
-        //     const service: IdentityService = new IdentityService(oidcContext);
-        //     return service.createPortalLoginEmailHandlerResponse(email, tenantId || undefined);
-        // },
-        // generateAuthorizationReturnUri: async(_: any, { preAuthToken }, oidcContext) => {
-        //     const service: IdentityService = new IdentityService(oidcContext);
-        //     return service.generateAuthorizationCode(preAuthToken);
-        // }
+        registerVerifyEmailAddress: async(_: any, { userId, token, registrationSessionToken, preAuthToken }, oidcContext) => {
+            const service: IdentityService = new IdentityService(oidcContext);
+            return service.registerVerifyEmailAddress(userId, token, registrationSessionToken, preAuthToken);
+        },
+        registerConfigureTOTP: async(_: any, { userId, skip, registrationSessionToken, preAuthToken }, oidcContext) => {
+            const service: IdentityService = new IdentityService(oidcContext);
+            return service.registerConfigureTOTP(userId, registrationSessionToken, preAuthToken, skip);
+        },
+        registerValidateTOTP: async(_: any, { userId, totpTokenValue, registrationSessionToken, preAuthToken }, oidcContext) => {
+            const service: IdentityService = new IdentityService(oidcContext);
+            return service.registerValidateTOTP(userId, registrationSessionToken, totpTokenValue, preAuthToken);
+        },
+        registerConfigureSecurityKey: async(_: any, { userId, registrationSessionToken, skip, fido2KeyRegistrationInput, preAuthToken }, oidcContext) => {
+            const service: IdentityService = new IdentityService(oidcContext);
+            return service.registerConfigureSecurityKey(userId, registrationSessionToken, fido2KeyRegistrationInput || null, preAuthToken || null, skip);
+        },
+        registerValidateSecurityKey: async(_: any, { userId, registrationSessionToken, fido2KeyAuthenticationInput, preAuthToken }, oidcContext) => {
+            const service: IdentityService = new IdentityService(oidcContext);
+            return service.registerValidateSecurityKey(userId, registrationSessionToken, fido2KeyAuthenticationInput, preAuthToken || null);
+        },
+        cancelRegistration: async(_: any, { userId, registrationSessionToken, preAuthToken }, oidcContext) => {
+            const service: IdentityService = new IdentityService(oidcContext);
+            return service.cancelRegistration(userId, registrationSessionToken, preAuthToken || null);
+        }
+
     },
     RelSearchResultItem : {
         owningtenantname: async (item: RelSearchResultItem, _: any, oidcContext: OIDCContext) => {
