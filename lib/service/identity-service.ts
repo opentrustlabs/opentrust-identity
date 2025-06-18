@@ -1662,8 +1662,8 @@ class IdentityService {
                 retVal.uri = authorizationEndpoint;
                 return retVal;
             }
-            console.log("checkpoint 9.3");
-            if(tenantsThatAreAttachedToProviders.length > 1){
+            
+            else {
                 retVal.userAuthenticationState.authenticationState = AuthenticationState.SelectTenant;                
             }
             console.log("checkpoint 9.4");
@@ -1684,8 +1684,67 @@ class IdentityService {
                     }
                 )
             )
-            retVal.userAuthenticationState.authenticationState = tenantsThatAllowPasswordLogin.length === 1 ? AuthenticationState.EnterPassword : AuthenticationState.SelectTenant;
+            if(tenantsThatAllowPasswordLogin.length === 1){
+                const stateOrder: Array<AuthenticationState> = [];
+                stateOrder.push(AuthenticationState.EnterPassword);
+                const passwordConfig: TenantPasswordConfig | null = await tenantDao.getTenantPasswordConfig(tenantsThatAllowPasswordLogin[0].tenantId);
+                let requiredMfaTypes: Array<string> = [];
+                if(passwordConfig && passwordConfig.requireMfa){
+                    requiredMfaTypes = passwordConfig.mfaTypesRequired?.split(",") || [];
+                }
+                const arrUserMfaConfig: Array<UserMfaRel> = await identityDao.getUserMFARels(user.userId);
+                const userMfaRelTotp: UserMfaRel | undefined = arrUserMfaConfig.find(
+                    (v: UserMfaRel) => v.mfaType === MFA_AUTH_TYPE_TIME_BASED_OTP
+                );
+                const userMfaRelSecurityKey : UserMfaRel | undefined = arrUserMfaConfig.find(
+                    (v: UserMfaRel) => v.mfaType === MFA_AUTH_TYPE_FIDO2
+                );
+                // If the user has configured totp, always use it first
+                if(userMfaRelTotp){
+                    stateOrder.push(AuthenticationState.ValidateTotp);
+                }
+                // Otherwise, if the tenant requires it and the user does not have totp, then
+                // require the user to configure totp and validate it
+                if(requiredMfaTypes.includes(MFA_AUTH_TYPE_TIME_BASED_OTP) && !userMfaRelTotp){
+                    stateOrder.push(AuthenticationState.ConfigureTotp);
+                    stateOrder.push(AuthenticationState.ValidateTotp);
+                }
+                // If the user has configured a security key, always use it after totp (if that exists);
+                if(userMfaRelSecurityKey){
+                    stateOrder.push(AuthenticationState.ValidateSecurityKey);
+                }
+                // Otherwise, if the tenant requires it and the user does not have a security key configured, then
+                // require the user to configure a security key and validate it
+                if(requiredMfaTypes.includes(MFA_AUTH_TYPE_FIDO2) && !userMfaRelSecurityKey){
+                    stateOrder.push(AuthenticationState.ConfigureSecurityKey);
+                    stateOrder.push(AuthenticationState.ValidateSecurityKey);
+                }
+                stateOrder.push(AuthenticationState.RedirectBackToApplication);
 
+                const arrUserAuthenticationStates: Array<UserAuthenticationState> = [];
+                const authenticationSessionToken: string = generateRandomToken(20, "hex");
+                // authentication completion will expire after 30 minutes. 
+                const expiresAt: number = Date.now() + (60 * 30 * 1000);
+
+                for(let i = 0; i < stateOrder.length; i++){
+                    const uas: UserAuthenticationState = {
+                        authenticationSessionToken: authenticationSessionToken,
+                        authenticationState: stateOrder[i],
+                        authenticationStateOrder: i + 1,
+                        authenticationStateStatus: STATUS_INCOMPLETE,
+                        expiresAtMs: expiresAt,
+                        tenantId: tenantsThatAllowPasswordLogin[0].tenantId,
+                        userId: user.userId
+                    }
+                    arrUserAuthenticationStates.push(uas);
+                }
+                await identityDao.createUserAuthenticationStates(arrUserAuthenticationStates);
+                retVal.userAuthenticationState = arrUserAuthenticationStates[0];
+            }
+            else{
+                retVal.userAuthenticationState.authenticationState = AuthenticationState.SelectTenant;    
+            }
+            
             return retVal;
         }
 
