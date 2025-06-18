@@ -5,7 +5,7 @@ import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { QUERY_PARAM_PREAUTH_TENANT_ID } from "@/utils/consts";
+import { QUERY_PARAM_TENANT_ID } from "@/utils/consts";
 import { LOGIN_USERNAME_HANDLER_QUERY } from "@/graphql/queries/oidc-queries";
 import { useLazyQuery, useMutation, useQuery } from "@apollo/client";
 import {  UserAuthenticationStateResponse, TenantSelectorData, AuthenticationState } from "@/graphql/generated/graphql-types";
@@ -90,13 +90,8 @@ const PortalLogin: React.FC<PortalLoginProps> = ({
                 if(authnStateResponse.userAuthenticationState.authenticationState === AuthenticationState.EnterPassword){
                     setDisplayComponent(PASSWORD_COMPONENT);                    
                 }
-                if(authnStateResponse.userAuthenticationState.authenticationState === AuthenticationState.Register){
-                    if(authnStateResponse.availableTenants && authnStateResponse.availableTenants.length === 1){
-                        router.push(`/authorize/register?${QUERY_PARAM_PREAUTH_TENANT_ID}=${authnStateResponse.availableTenants[0].tenantId}&username=${username}`);
-                    }
-                    else{
-                        setErrorMessage("ERROR_INVALID_TENANTS_TO_SELECT_FOR_REGISTRATION");
-                    }
+                if(authnStateResponse.userAuthenticationState.authenticationState === AuthenticationState.Register && authnStateResponse.uri){                    
+                    router.push(authnStateResponse.uri);                    
                 }
             }
 
