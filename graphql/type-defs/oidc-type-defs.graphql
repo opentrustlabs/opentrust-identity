@@ -143,12 +143,13 @@ type Mutation {
 
     ## Authentication Flows
     logout(userId: String): String
-    authenticateUserNameInput(username: String!, tenantId: String, preAuthToken: String): UserAuthenticationStateResponse!
+    authenticateHandleUserNameInput(username: String!, tenantId: String, preAuthToken: String): UserAuthenticationStateResponse!
     authenticateUser(username: String!, password: String!, tenantId: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
     authenticateConfigureTOTP(userId: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
     authenticateValidateTOTP(userId: String!, totpTokenValue: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
     authenticateRegisterSecurityKey(userId: String!, fido2KeyRegistrationInput: Fido2KeyRegistrationInput!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
     authenticateValidateSecurityKey(userId: String!, fido2KeyAuthenticationInput: Fido2KeyAuthenticationInput!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
+    cancelAuthentication(userId: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
 
     ## Registration Flows
     registerUser(tenantId: String!, userInput: UserCreateInput!, preAuthToken: String): UserRegistrationStateResponse!
@@ -772,6 +773,7 @@ enum AuthenticationState {
     AUTH_WITH_FEDERATED_OIDC
     SELECT_TENANT
     REGISTER
+    SELECT_TENANT_THEN_REGISTER
     ENTER_PASSWORD
     CONFIGURE_TOTP
     VALIDATE_TOTP

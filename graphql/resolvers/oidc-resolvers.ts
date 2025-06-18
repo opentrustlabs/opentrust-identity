@@ -912,9 +912,9 @@ const resolvers: Resolvers = {
             const service: IdentityService = new IdentityService(oidcContext);
             return service.createUser(userInput, tenantId);
         },        
-        authenticateUserNameInput: async(_: any, { username, tenantId, preAuthToken}, oidcContext) => {
+        authenticateHandleUserNameInput: async(_: any, { username, tenantId, preAuthToken}, oidcContext) => {
             const service: IdentityService = new IdentityService(oidcContext);
-            return service.authenticateUserNameInput(username, tenantId || undefined, preAuthToken || undefined);
+            return service.authenticateHandleUserNameInput(username, tenantId || undefined, preAuthToken || undefined);
         },
         registerUser: async(_: any, { tenantId, userInput, preAuthToken }, oidcContext) => {
             const service: IdentityService = new IdentityService(oidcContext);
