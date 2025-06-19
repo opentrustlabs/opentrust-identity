@@ -46,6 +46,7 @@ import { StateProvinceRegionEntity } from "../entities/state-province-region-ent
 import UserFido2CounterRelEntity from "../entities/user-fido2-counter-rel-entity";
 import UserAuthenticationStateEntity from "../entities/user-authentication-state-entity";
 import UserRegistrationStateEntity from "../entities/user-registration-state-entity";
+import { LoginFailurePolicyEntity } from "../entities/login-failure-policy-entity";
 
 const {
     DB_USER,
@@ -165,6 +166,7 @@ class DBDriver {
             UserFido2CounterRelEntity.initModel(global.sequelize);
             UserAuthenticationStateEntity.initModel(global.sequelize);
             UserRegistrationStateEntity.initModel(global.sequelize);
+            LoginFailurePolicyEntity.initModel(global.sequelize);
         } 
 
         return global.sequelize;

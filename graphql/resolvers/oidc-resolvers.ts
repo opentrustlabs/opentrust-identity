@@ -916,6 +916,10 @@ const resolvers: Resolvers = {
             const service: IdentityService = new IdentityService(oidcContext);
             return service.authenticateHandleUserNameInput(username, tenantId || undefined, preAuthToken || undefined);
         },
+        authenticateUser: async(_: any, { username, password, authenticationSessionToken, tenantId, preAuthToken }, oidcContext) => {
+            const service: IdentityService = new IdentityService(oidcContext);
+            return service.authenticateUser(username, password, tenantId, authenticationSessionToken, preAuthToken || null);
+        },
         registerUser: async(_: any, { tenantId, userInput, preAuthToken }, oidcContext) => {
             const service: IdentityService = new IdentityService(oidcContext);
             return service.registerUser(userInput, tenantId, preAuthToken);

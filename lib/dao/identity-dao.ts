@@ -8,13 +8,13 @@ abstract class IdentityDao {
 
     abstract getUserAuthenticationGroups(userId: string): Promise<Array<AuthenticationGroup>>;
 
-    abstract loginUser(username: string, password: string): Promise<SuccessfulLoginResponse | Error>;
+    // abstract loginUser(username: string, password: string): Promise<SuccessfulLoginResponse | Error>;
 
-    abstract getLoginAttempts(userId: string): Promise<Array<UserFailedLoginAttempts>>;
+    abstract getFailedLoginAttempts(userId: string): Promise<Array<UserFailedLoginAttempts>>;
 
-    abstract incrementLoginAttempts(userId: string): Promise<void>;
+    abstract incrementFailedLoginAttempts(userId: string): Promise<void>;
 
-    abstract resetLoginAttempts(userId: string): Promise<void>;
+    abstract resetFailedLoginAttempts(userId: string): Promise<void>;
 
     // challengeType could be email (as for registration of new users), sms, time-based-otp, or security key
     abstract validateOTP(userId: string, challenge: string, challengeId: string, challengeType: string): Promise<boolean>;
@@ -71,6 +71,8 @@ abstract class IdentityDao {
      * @param user 
      */
     abstract createUser(user: User): Promise<User>;
+
+    abstract getUserCredentialForAuthentication(userId: string): Promise<UserCredential | null>;
 
     abstract addUserCredential(userCredential: UserCredential): Promise<void>;
 

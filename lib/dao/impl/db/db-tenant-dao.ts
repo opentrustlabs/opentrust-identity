@@ -11,18 +11,10 @@ import TenantRestrictedAuthenticationDomainRelEntity from "@/lib/entities/tenant
 import DBDriver from "@/lib/data-sources/sequelize-db";
 import { Op, Sequelize } from "sequelize";
 import { TenantEntity } from "@/lib/entities/tenant-entity";
+import { LoginFailurePolicyEntity } from "@/lib/entities/login-failure-policy-entity";
 
 class DBTenantDao extends TenantDao {
 
-        
-    public async removeLegacyUserMigrationConfiguration(tenantId: string): Promise<void> {
-        throw new Error("Method not implemented.");
-    }
-
-    
-    public async updateLoginFailurePolicy(loginFailurePolicy: LoginFailurePolicy): Promise<LoginFailurePolicy> {
-        throw new Error("Method not implemented.");
-    }
 
     public async getRootTenant(): Promise<Tenant> {
         const sequelize: Sequelize = await DBDriver.getConnection();
@@ -313,18 +305,7 @@ class DBTenantDao extends TenantDao {
         return entity ? Promise.resolve(entity as any as TenantLegacyUserMigrationConfig) : Promise.resolve(null);
     }
 
-    // TODO 
-    // Remove the conflict where clause. Refactor the DAO to use an update and create, instead of just a set...
-    public async setTenantLegacyUserMigrationConfiguration(tenantLegacyUserMigrationConfig: TenantLegacyUserMigrationConfig): Promise<TenantLegacyUserMigrationConfig | null> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.tenantLegacyUserMigrationConfig.upsert(tenantLegacyUserMigrationConfig, {
-            conflictWhere: {
-                tenantId: tenantLegacyUserMigrationConfig.tenantId
-            }
-        });
-        return Promise.resolve(tenantLegacyUserMigrationConfig);
-    }
-
+    
     public async getDomainsForTenantRestrictedAuthentication(tenantId: string): Promise<Array<TenantRestrictedAuthenticationDomainRel>> {
         const sequelize: Sequelize = await DBDriver.getConnection();
         const entities: Array<TenantRestrictedAuthenticationDomainRelEntity> = await sequelize.models.tenantRestrictedAuthenticationDomainRel.findAll({
@@ -355,7 +336,59 @@ class DBTenantDao extends TenantDao {
             }
         })
         return Promise.resolve();
-    }       
+    }
+
+    public async getLoginFailurePolicy(tenantId: String): Promise<LoginFailurePolicy | null>{
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        const entity: LoginFailurePolicyEntity | null = await sequelize.models.loginFailurePolicy.findOne({
+            where: {
+                tenantId: tenantId
+            }
+        });
+        return entity ? Promise.resolve(entity.dataValues) : Promise.resolve(null);
+    }
+
+    public async createLoginFailurePolicy(loginFailurePolicy: LoginFailurePolicy): Promise<LoginFailurePolicy> {
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.loginFailurePolicy.create(loginFailurePolicy);
+        return loginFailurePolicy;
+    }
+
+    public async updateLoginFailurePolicy(loginFailurePolicy: LoginFailurePolicy): Promise<LoginFailurePolicy> {
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.loginFailurePolicy.update(loginFailurePolicy, {
+            where: {
+                tenantId: loginFailurePolicy.tenantId
+            }
+        });
+        return Promise.resolve(loginFailurePolicy);
+    }
+
+    public async removeLegacyUserMigrationConfiguration(tenantId: string): Promise<void> {
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.tenantLegacyUserMigrationConfig.destroy({
+            where: {
+                tenantId: tenantId
+            }
+        })
+        return Promise.resolve();
+    }
+
+    public async setTenantLegacyUserMigrationConfiguration(tenantLegacyUserMigrationConfig: TenantLegacyUserMigrationConfig): Promise<TenantLegacyUserMigrationConfig | null> {
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.tenantLegacyUserMigrationConfig.update(tenantLegacyUserMigrationConfig, {
+            where: {
+                tenantId: tenantLegacyUserMigrationConfig.tenantId
+            }
+        });
+        return Promise.resolve(tenantLegacyUserMigrationConfig);
+    }
+
+    public async createTenantLegacyUserMigrationConfiguration(tenantLegacyUserMigrationConfig: TenantLegacyUserMigrationConfig): Promise<TenantLegacyUserMigrationConfig | null> {
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.tenantLegacyUserMigrationConfig.create(tenantLegacyUserMigrationConfig);
+        return tenantLegacyUserMigrationConfig;
+    }
 
 }
 
