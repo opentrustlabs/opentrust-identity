@@ -4,7 +4,7 @@
 //                    AUTH-TOKEN-RELATED CONSTANTS
 // 
 
-import { TenantMetaData, TenantPasswordConfig } from "@/graphql/generated/graphql-types";
+import { LoginFailurePolicy, TenantMetaData, TenantPasswordConfig } from "@/graphql/generated/graphql-types";
 
 // ************************************************************************** //
 export const DEFAULT_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS = 600; // 10 minutes 
@@ -424,7 +424,7 @@ export const TENANT_TYPES_DISPLAY = new Map<string, string>(
     ]
 );
 
-export const DEFAULT_LOGIN_FAILURE_LOCK_THRESHOLD=6;
+export const DEFAULT_LOGIN_FAILURE_LOCK_THRESHOLD=8;
 export const LOGIN_FAILURE_POLICY_LOCK_USER_ACCOUNT="LOCK_USER_ACCOUNT";
 export const LOGIN_FAILURE_POLICY_PAUSE="PAUSE";
 export const LOGIN_FAILURE_POLICY_PAUSE_THEN_LOCK="PAUSE_THEN_LOCK";
@@ -764,6 +764,17 @@ export const DEFAULT_TENANT_PASSWORD_CONFIGURATION: TenantPasswordConfig = {
     mfaTypesRequired: "",
     specialCharactersAllowed: DEFAULT_PASSWORD_SPECIAL_CHARACTERS_ALLOWED,
     maxRepeatingCharacterLength: 2
+}
+
+export const DEFAULT_LOGIN_FAILURE_POLICY: LoginFailurePolicy = {
+    failureThreshold: DEFAULT_LOGIN_FAILURE_LOCK_THRESHOLD,
+    loginFailurePolicyType: LOGIN_FAILURE_POLICY_LOCK_USER_ACCOUNT,
+    tenantId: "",
+    initBackoffDurationMinutes: 0,
+    loginfailurepolicytypeid: "",
+    numberOfBackoffCyclesBeforeLocking: 0,
+    numberOfPauseCyclesBeforeLocking: 0,
+    pauseDurationMinutes: 0
 }
 
 // ************************************************************************** //

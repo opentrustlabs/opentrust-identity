@@ -80,11 +80,9 @@ const Register: React.FC = () => {
     const [viewPassword, setViewPassword] = React.useState<boolean>(false);
     const [viewRepeatPassword, setViewRepeatPassword] = React.useState<boolean>(false);
     const [passwordConfig, setPasswordConfig] = React.useState<TenantPasswordConfig>(DEFAULT_TENANT_PASSWORD_CONFIGURATION);
-    const [requriedMFAs, setRequiredMFAs] = React.useState<Array<string>>([]);
     const [showPasswordRules, setShowPasswordRules] = React.useState<boolean>(false);
     const [showMutationBackdrop, setShowMutationBackdrop] = React.useState<boolean>(false);
     const [showMutationSnackbar, setShowMutationSnackbar] = React.useState<boolean>(false);
-    const [verificationCode, setVerificationCode] = React.useState<string>("");
     const [createdUserId, setCreatedUserId] = React.useState<string | null>(null);
     const [showTotpQRCodeDialog, setShowTotpQRCodeDialog] = React.useState(false);
     const [totpResponse, setTotpResponse] = React.useState<TotpResponse | null>(null);
@@ -113,9 +111,6 @@ const Register: React.FC = () => {
             if (data && data.getTenantPasswordConfig) {
                 const config: TenantPasswordConfig = data.getTenantPasswordConfig as TenantPasswordConfig;
                 setPasswordConfig(config);
-                if(config.requireMfa && config.mfaTypesRequired){
-                    setRequiredMFAs(config.mfaTypesRequired.split(","));
-                }
             }
         },
         onError(error) {
@@ -204,36 +199,8 @@ const Register: React.FC = () => {
 
     });
 
-    const [generateAuthorizationReturnUri] = useMutation(GENERATE_AUTHORIZATION_RETURN_URI_MUTATION, {
-        variables: {
-            preAuthToken: preAuthToken
-        },
-        onCompleted(data) {
-            setShowMutationBackdrop(false);
-            router.push(data.generateAuthorizationReturnUri.uri);            
-        },
-        onError(error) {
-            setShowMutationBackdrop(false);
-            setErrorMessage(error.message);
-        },
-    })
 
-    const mfaConfigIsComplete = (): boolean => {
-        let bRetVal = true;
-        if(requriedMFAs.length > 0){
-            for(let i = 0; i < requriedMFAs.length; i++){
-                if(requriedMFAs[i] === MFA_AUTH_TYPE_TIME_BASED_OTP && !totpSuccessfullyConfigured){
-                    bRetVal = false;
-                    break;
-                }
-                if(requriedMFAs[i] === MFA_AUTH_TYPE_FIDO2 && !securityKeySuccessfullyConfigured){
-                    bRetVal = false;
-                    break;
-                }
-            }
-        }
-        return bRetVal;
-    }
+
 
     // HANDLER FUNCTIONS
     const isPage1InputValid = (): boolean => {
@@ -892,8 +859,6 @@ const Register: React.FC = () => {
                                                 router.push(`/${tenantId}`);
                                             }
                                             else{
-                                                setShowMutationBackdrop(true);
-                                                generateAuthorizationReturnUri();
                                             }                                            
                                             
                                         }}  
@@ -904,17 +869,12 @@ const Register: React.FC = () => {
                                 }
                                 {registrationPage === 4 && passwordConfig.requireMfa &&
                                     <Button
-                                        disabled={
-                                            !mfaConfigIsComplete()
-                                        }
                                         onClick={() => {
                                             // See the comments in the onClick() function above. The same logic applies here too.    
                                             if(preAuthToken === null || preAuthToken === undefined){
                                                 router.push(`/${tenantId}`);
                                             }
                                             else{
-                                                setShowMutationBackdrop(true);
-                                                generateAuthorizationReturnUri();
                                             }  
                                         }}
                                     >                                        

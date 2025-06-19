@@ -1,13 +1,13 @@
 import { OIDCContext } from "@/graphql/graphql-context";
 import * as OTPAuth from "otpauth";
 import IdentityDao from "../dao/identity-dao";
-import { Client, Fido2AuthenticationChallengeResponse, Fido2Challenge, Fido2RegistrationChallengeResponse, Fido2KeyRegistrationInput, ObjectSearchResultItem, RefreshData, RelSearchResultItem, SearchResultType, Tenant, TenantPasswordConfig, TotpResponse, User, UserCreateInput, UserCredential, UserMfaRel, UserSession, UserTenantRel, UserTenantRelView, Fido2KeyAuthenticationInput, TenantRestrictedAuthenticationDomainRel, TenantManagementDomainRel, FederatedOidcProvider, FederatedOidcProviderTenantRel, FederatedOidcAuthorizationRel, FederatedOidcAuthorizationRelType, AuthorizationCodeData, PreAuthenticationState, AuthorizationReturnUri, UserRegistrationStateResponse, UserRegistrationState, RegistrationState, UserAuthenticationStateResponse, AuthenticationState, AuthenticationErrorTypes, UserAuthenticationState } from "@/graphql/generated/graphql-types";
+import { Client, Fido2AuthenticationChallengeResponse, Fido2Challenge, Fido2RegistrationChallengeResponse, Fido2KeyRegistrationInput, ObjectSearchResultItem, RefreshData, RelSearchResultItem, SearchResultType, Tenant, TenantPasswordConfig, TotpResponse, User, UserCreateInput, UserCredential, UserMfaRel, UserSession, UserTenantRel, UserTenantRelView, Fido2KeyAuthenticationInput, TenantRestrictedAuthenticationDomainRel, TenantManagementDomainRel, FederatedOidcProvider, FederatedOidcProviderTenantRel, FederatedOidcAuthorizationRel, FederatedOidcAuthorizationRelType, AuthorizationCodeData, PreAuthenticationState, AuthorizationReturnUri, UserRegistrationStateResponse, UserRegistrationState, RegistrationState, UserAuthenticationStateResponse, AuthenticationState, AuthenticationErrorTypes, UserAuthenticationState, UserFailedLoginAttempts, LoginFailurePolicy } from "@/graphql/generated/graphql-types";
 import { DaoFactory } from "../data-sources/dao-factory";
 import TenantDao from "../dao/tenant-dao";
 import { GraphQLError } from "graphql/error";
 import { randomUUID } from "crypto";
-import { DEFAULT_TENANT_PASSWORD_CONFIGURATION, FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, NAME_ORDER_WESTERN, OIDC_AUTHORIZATION_ERROR_ACCESS_DENIED, PASSWORD_HASH_ITERATION_128K, PASSWORD_HASH_ITERATION_256K, PASSWORD_HASH_ITERATION_32K, PASSWORD_HASH_ITERATION_64K, PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_32K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_64K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS, QUERY_PARAM_TENANT_ID, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, STATUS_COMPLETE, STATUS_INCOMPLETE, STATUS_OMITTED, TENANT_TYPE_ROOT_TENANT, TOKEN_TYPE_END_USER, TOKEN_TYPE_IAM_PORTAL_USER, TOKEN_TYPE_PROVISIONAL_USER, TOTP_HASH_ALGORITHM_SHA1, USER_TENANT_REL_TYPE_GUEST, USER_TENANT_REL_TYPE_PRIMARY } from "@/utils/consts";
-import { sha256HashPassword, pbkdf2HashPassword, bcryptHashPassword, generateSalt, scryptHashPassword, generateRandomToken, generateCodeVerifierAndChallenge } from "@/utils/dao-utils";
+import { DEFAULT_LOGIN_FAILURE_POLICY, DEFAULT_TENANT_PASSWORD_CONFIGURATION, FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE, LOGIN_FAILURE_POLICY_LOCK_USER_ACCOUNT, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, NAME_ORDER_WESTERN, OIDC_AUTHORIZATION_ERROR_ACCESS_DENIED, PASSWORD_HASH_ITERATION_128K, PASSWORD_HASH_ITERATION_256K, PASSWORD_HASH_ITERATION_32K, PASSWORD_HASH_ITERATION_64K, PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_32K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_64K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS, QUERY_PARAM_TENANT_ID, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, STATUS_COMPLETE, STATUS_INCOMPLETE, STATUS_OMITTED, TENANT_TYPE_ROOT_TENANT, TOKEN_TYPE_END_USER, TOKEN_TYPE_IAM_PORTAL_USER, TOKEN_TYPE_PROVISIONAL_USER, TOTP_HASH_ALGORITHM_SHA1, USER_TENANT_REL_TYPE_GUEST, USER_TENANT_REL_TYPE_PRIMARY } from "@/utils/consts";
+import { sha256HashPassword, pbkdf2HashPassword, bcryptHashPassword, generateSalt, scryptHashPassword, generateRandomToken, generateCodeVerifierAndChallenge, bcryptValidatePassword } from "@/utils/dao-utils";
 import { Client as OpenSearchClient } from "@opensearch-project/opensearch";
 import { getOpenSearchClient } from "../data-sources/search";
 import { Get_Response } from "@opensearch-project/opensearch/api/index.js";
@@ -138,6 +138,130 @@ class IdentityService {
     }
 
 
+    public async authenticateUser(username: string, password: string, tenantId: string, authenticationSessionToken: string, preAuthToken: string | null): Promise<UserAuthenticationStateResponse>{
+        const response: UserAuthenticationStateResponse = {
+            userAuthenticationState: {
+                expiresAtMs: 0,
+                preAuthToken: preAuthToken,
+                authenticationSessionToken: authenticationSessionToken,
+                authenticationState: AuthenticationState.Error,
+                authenticationStateOrder: 0,
+                authenticationStateStatus: STATUS_INCOMPLETE,
+                tenantId: tenantId,
+                userId: ""
+            },
+            authenticationError: {
+                errorCode: "",
+                errorMessage: ""
+            },
+            accessToken: null,
+            totpSecret: null,
+            uri: null
+        };
+
+
+        const arrUserAuthenticationStates: Array<UserAuthenticationState> = await this.getSortedAuthenticationStates(authenticationSessionToken);
+        const index: number = await this.validateAuthenticationStep(arrUserAuthenticationStates, response, AuthenticationState.EnterPassword);
+        if(index < 0){
+            return Promise.resolve(response);
+        }
+        
+        const user: User | null = await identityDao.getUserBy("email", username);
+        if(!user){
+            throw new GraphQLError("ERROR_USER_NOT_FOUND_FOR_AUTHENTICATION");
+        }
+        if(user.enabled === false || user.markForDelete === true || user.locked === true){
+            throw new GraphQLError("ERROR_AUTHENTICATION_DISLABLED_FOR_USER");
+        }
+        
+
+        const userFailedLoginAttempts: Array<UserFailedLoginAttempts> = await identityDao.getFailedLoginAttempts(user.userId);
+        let loginFailurePolicy: LoginFailurePolicy | null = await tenantDao.getLoginFailurePolicy(arrUserAuthenticationStates[index].tenantId);
+        if(loginFailurePolicy === null){
+            loginFailurePolicy = DEFAULT_LOGIN_FAILURE_POLICY;
+        }
+
+        // We check in order to allow the user to authenticate based on the number of failures they have previously
+        // and the type of failure policy they have
+        if(userFailedLoginAttempts.length > 0){
+
+        }
+
+
+        const userCredential: UserCredential | null = await identityDao.getUserCredentialForAuthentication(user.userId);
+        if(!userCredential){
+            throw new GraphQLError("ERROR_UNABLE_TO_FIND_CREDENTIALS_FOR_USER");
+        }
+
+        // Note that the bcrypt hashing algorithm CAN automatically generate a random salt
+        // and save both the salt value and the iteration value as part of the hashed password,
+        // so we do NOT need to pass both those pieces of information to the validation
+        // function.
+        let valid: boolean = false;
+        if(
+            userCredential.hashingAlgorithm === PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS ||
+            userCredential.hashingAlgorithm === PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS ||
+            userCredential.hashingAlgorithm === PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS
+        ){
+            valid = bcryptValidatePassword(password, userCredential.hashedPassword)
+        }
+        else if(userCredential.hashingAlgorithm === PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS){
+            const hashedPassword = sha256HashPassword(password, userCredential.salt, PASSWORD_HASH_ITERATION_64K);
+            valid = hashedPassword === userCredential.hashedPassword;
+        }
+        else if(userCredential.hashingAlgorithm === PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS){
+            const hashedPassword = sha256HashPassword(password, userCredential.salt, PASSWORD_HASH_ITERATION_128K);
+            valid = hashedPassword === userCredential.hashedPassword;
+        }
+        else if(userCredential.hashingAlgorithm === PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS){
+            const hashedPassword = pbkdf2HashPassword(password, userCredential.salt, PASSWORD_HASH_ITERATION_128K);
+            valid = hashedPassword === userCredential.hashedPassword;
+        }
+        else if(userCredential.hashingAlgorithm === PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS){
+            const hashedPassword = pbkdf2HashPassword(password, userCredential.salt, PASSWORD_HASH_ITERATION_256K);
+            valid = hashedPassword === userCredential.hashedPassword;
+        }
+        else if(userCredential.hashingAlgorithm === PASSWORD_HASHING_ALGORITHM_SCRYPT_32K_ITERATIONS){
+            const hashedPassword = scryptHashPassword(password, userCredential.salt, PASSWORD_HASH_ITERATION_32K);
+            valid = hashedPassword === userCredential.hashedPassword;
+        }
+        else if(userCredential.hashingAlgorithm === PASSWORD_HASHING_ALGORITHM_SCRYPT_64K_ITERATIONS){
+            const hashedPassword = scryptHashPassword(password, userCredential.salt, PASSWORD_HASH_ITERATION_64K);
+            valid = hashedPassword === userCredential.hashedPassword;
+        }
+        else if(userCredential.hashingAlgorithm === PASSWORD_HASHING_ALGORITHM_SCRYPT_128K_ITERATIONS){
+            const hashedPassword = scryptHashPassword(password, userCredential.salt, PASSWORD_HASH_ITERATION_128K);
+            valid = hashedPassword === userCredential.hashedPassword;
+        }
+
+        if(!valid){
+            await identityDao.incrementFailedLoginAttempts(user.userId);
+            if(loginFailurePolicy.loginFailurePolicyType === LOGIN_FAILURE_POLICY_LOCK_USER_ACCOUNT){
+                if(loginFailurePolicy.failureThreshold <= (userFailedLoginAttempts.length + 1)){
+                    user.locked = true;
+                    await identityDao.updateUser(user);
+                }
+            }
+            response.authenticationError.errorCode = "ERROR_INVALID_CREDENTIALS";
+            return Promise.resolve(response);
+        }
+        identityDao.resetFailedLoginAttempts(user.userId);
+
+        arrUserAuthenticationStates[index].authenticationStateStatus = STATUS_COMPLETE;
+        await identityDao.updateUserAuthenticationState(arrUserAuthenticationStates[index]);
+        const nextUserAuthenticationState: UserAuthenticationState = arrUserAuthenticationStates[index + 1];
+                
+        if(nextUserAuthenticationState.authenticationState === AuthenticationState.RedirectBackToApplication || nextUserAuthenticationState.authenticationState === AuthenticationState.RedirectToIamPortal){
+            await this.handleAuthenticationCompletion(user, nextUserAuthenticationState, response);
+        }
+        else{
+            response.userAuthenticationState = nextUserAuthenticationState;
+        }
+        
+        return Promise.resolve(response);
+
+    }
+
     /**
      * 
      * @param registrationSessionToken 
@@ -145,11 +269,71 @@ class IdentityService {
      */
     protected async getSortedRegistartionStates(registrationSessionToken: string): Promise<Array<UserRegistrationState>>{
 
-        let arrUserRegistrationState: Array<UserRegistrationState> = await identityDao.getUserRegistrationStates(registrationSessionToken);
+        const arrUserRegistrationState: Array<UserRegistrationState> = await identityDao.getUserRegistrationStates(registrationSessionToken);
         arrUserRegistrationState.sort(
             (a: UserRegistrationState, b: UserRegistrationState) => a.registrationStateOrder - b.registrationStateOrder
         );
         return Promise.resolve(arrUserRegistrationState);
+    }
+
+    protected async getSortedAuthenticationStates(authenticationSessionToken: string): Promise<Array<UserAuthenticationState>> {
+        const arrUserAuthenticationState: Array<UserAuthenticationState> = await identityDao.getUserAuthenticationStates(authenticationSessionToken);
+        arrUserAuthenticationState.sort(
+            (a: UserAuthenticationState, b: UserAuthenticationState) => a.authenticationStateOrder - b.authenticationStateOrder
+        );
+        return arrUserAuthenticationState;
+    }
+
+    /**
+     * 
+     * @param arrUserAuthenticationState 
+     * @param response 
+     * @param expectedState 
+     * @returns 
+     */
+    protected async validateAuthenticationStep(arrUserAuthenticationState: Array<UserAuthenticationState>, response: UserAuthenticationStateResponse, expectedState: AuthenticationState): Promise<number> {
+        
+        let stepIndex: number = -1;
+        let expectedAuthenticationState: UserAuthenticationState | null = null;
+        for(let i = 0; i < arrUserAuthenticationState.length; i++){
+            if(arrUserAuthenticationState[i].authenticationState === expectedState){
+                stepIndex = i;
+                expectedAuthenticationState = arrUserAuthenticationState[i];
+                break;
+            }
+        }
+
+        if(expectedAuthenticationState === null){
+            response.userAuthenticationState.authenticationState = AuthenticationState.Error;
+            response.authenticationError.errorCode = "ERROR_NO_VALID_AUTHENTICATION_SESSION_FOUND";
+            return stepIndex;
+        }
+
+        // If expired before registration has been completed, then delete everything,
+        // including the email token, the user that was previous created, and any other relationships.
+        if(expectedAuthenticationState.expiresAtMs < Date.now()){
+            response.userAuthenticationState.authenticationState = AuthenticationState.Expired;
+            response.authenticationError.errorCode = "ERROR_AUTHORIZATION_SESSION_HAS_EXPIRED";
+            for(let i = 0; i < arrUserAuthenticationState.length; i++){
+                await identityDao.deleteUserAuthenticationState(arrUserAuthenticationState[i]);
+            }
+            return -1;
+        }
+        
+        // Are there previous steps and have the previous steps been completed?
+        if(stepIndex > 0){
+            for(let i = 0; i < stepIndex; i++){
+                const previousState: UserAuthenticationState = arrUserAuthenticationState[i];
+                if(previousState.authenticationStateStatus !== STATUS_COMPLETE){
+                    response.userAuthenticationState.authenticationState = AuthenticationState.Error;
+                    response.authenticationError.errorCode = "ERROR_INCOMPLETE_AUTHENTICATION_STATE_FOUND";
+                    stepIndex = -1;
+                    break;
+                }
+            }
+        }
+
+        return stepIndex;
     }
 
     /**
@@ -381,6 +565,50 @@ class IdentityService {
                     response.registrationError.errorCode = err.message;
                     response.userRegistrationState.registrationState = RegistrationState.Error;
                 }
+            }
+        }
+    }
+
+    protected async handleAuthenticationCompletion(user: User, userAuthenticationState: UserAuthenticationState, response: UserAuthenticationStateResponse): Promise<void> {
+        if(userAuthenticationState.authenticationState === AuthenticationState.RedirectBackToApplication){
+            try {
+                const authorizationCode: AuthorizationReturnUri = await this.generateAuthorizationCode(userAuthenticationState.userId, userAuthenticationState.preAuthToken || "");
+                response.userAuthenticationState = userAuthenticationState;
+                response.uri = authorizationCode.uri;
+                userAuthenticationState.authenticationStateStatus = STATUS_COMPLETE;
+                await identityDao.updateUserAuthenticationState(userAuthenticationState);
+
+            }
+            catch(err: any){
+                response.authenticationError.errorCode = err.message;
+                response.userAuthenticationState.authenticationState = AuthenticationState.Error;
+            }            
+        }
+        else if(userAuthenticationState.authenticationState === AuthenticationState.RedirectToIamPortal){
+            try {
+                const tenant: Tenant | null = await tenantDao.getTenantById(userAuthenticationState.tenantId);
+                if(tenant === null){
+                    response.authenticationError.errorCode = "ERROR_INVALID_TENANT_FOR_AUTHENTICATION_COMPLETION";
+                    response.userAuthenticationState.authenticationState = AuthenticationState.Error;
+                }
+                else{
+                    const accessToken: string | null = await jwtServiceUtils.signIAMPortalUserJwt(user, tenant, 60 * 60 * 12, TOKEN_TYPE_IAM_PORTAL_USER);
+                    if(accessToken === null){
+                        response.authenticationError.errorCode = "ERROR_GENERATING_ACCESS_TOKEN_AUTHENTICATION_COMPLETION";
+                        response.userAuthenticationState.authenticationState = AuthenticationState.Error;
+                    }
+                    else{
+                        response.userAuthenticationState = userAuthenticationState;
+                        response.uri = `/${userAuthenticationState.tenantId}`;
+                        response.accessToken = accessToken;
+                        userAuthenticationState.authenticationStateStatus = STATUS_COMPLETE;
+                        await identityDao.updateUserAuthenticationState(userAuthenticationState);
+                    }
+                }
+            }
+            catch(err: any){
+                response.authenticationError.errorCode = err.message;
+                response.userAuthenticationState.authenticationState = AuthenticationState.Error;
             }
         }
     }
@@ -1665,8 +1893,7 @@ class IdentityService {
                 console.log("checkpoint 9.24");            
                 retVal.uri = authorizationEndpoint;
                 return retVal;
-            }
-            
+            }            
             else {
                 retVal.userAuthenticationState.authenticationState = AuthenticationState.SelectTenant;                
             }

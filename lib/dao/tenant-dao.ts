@@ -50,9 +50,15 @@ abstract class TenantDao {
 
     abstract removePasswordConfigFromTenant(tenantId: string): Promise<void>;
 
+    abstract getLoginFailurePolicy(tenantId: String): Promise<LoginFailurePolicy | null>;
+
+    abstract createLoginFailurePolicy(loginFailurePolicy: LoginFailurePolicy): Promise<LoginFailurePolicy>;
+
     abstract updateLoginFailurePolicy(loginFailurePolicy: LoginFailurePolicy): Promise<LoginFailurePolicy>;
 
     abstract getLegacyUserMigrationConfiguration(tenantId: string): Promise<TenantLegacyUserMigrationConfig | null>;
+
+    abstract createTenantLegacyUserMigrationConfiguration(tenantLegacyUserMigrationConfig: TenantLegacyUserMigrationConfig): Promise<TenantLegacyUserMigrationConfig | null>;
 
     abstract setTenantLegacyUserMigrationConfiguration(tenantLegacyUserMigrationConfig: TenantLegacyUserMigrationConfig): Promise<TenantLegacyUserMigrationConfig | null>;
 

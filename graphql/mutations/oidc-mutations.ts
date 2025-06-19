@@ -658,13 +658,16 @@ export const USER_AUTHENTICATION_STATE_RESPONSE_FRAGMENT = gql(`
 // Start here for refactoring authentication and registration flows
 // Authentication flows
 /*
+    ## Authentication Flows
     logout(userId: String): String
-    authenticateUserNameInput(username: String!, tenantId: String, preAuthToken: String): UserAuthenticationStateResponse!
+    authenticateHandleUserNameInput(username: String!, tenantId: String, preAuthToken: String): UserAuthenticationStateResponse!
     authenticateUser(username: String!, password: String!, tenantId: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
     authenticateConfigureTOTP(userId: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
     authenticateValidateTOTP(userId: String!, totpTokenValue: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
     authenticateRegisterSecurityKey(userId: String!, fido2KeyRegistrationInput: Fido2KeyRegistrationInput!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
     authenticateValidateSecurityKey(userId: String!, fido2KeyAuthenticationInput: Fido2KeyAuthenticationInput!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
+    cancelAuthentication(userId: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
+
 */
 export const AUTHENTICATE_USERNAME_INPUT_MUTATION = gql`    
     mutation authenticateHandleUserNameInput($username: String!, $tenantId: String, $preAuthToken: String) {
@@ -676,6 +679,25 @@ export const AUTHENTICATE_USERNAME_INPUT_MUTATION = gql`
     ${USER_AUTHENTICATION_STATE_RESPONSE_FRAGMENT}
 `;
 
+export const AUTHENTICATE_USER = gql`
+    mutation authenticateUser($username: String!, $password: String!, $tenantId: String!, $authenticationSessionToken: String!, $preAuthToken: String){
+        authenticateUser(username: $username, password: $password, tenantId: $tenantId, authenticationSessionToken: $authenticationSessionToken, preAuthToken: $preAuthToken) {
+            ...UserAuthenticationStateResponseFragment
+        }
+    }
+    
+    ${USER_AUTHENTICATION_STATE_RESPONSE_FRAGMENT}
+`;
+
+export const AUTHENTICATE_VALIDATE_TOTP = gql`
+    mutation authenticateValidateTOTP($userId: String!, $totpTokenValue: String!, $authenticationSessionToken: String!, $preAuthToken: String) {
+        authenticateValidateTOTP(userId: $userId, totpTokenValue: $totpTokenValue, authenticationSessionToken: $authenticationSessionToken, preAuthToken: $preAuthToken) {
+            ...UserAuthenticationStateResponseFragment
+        }
+    }
+
+    ${USER_AUTHENTICATION_STATE_RESPONSE_FRAGMENT}
+`;
 
 export const REGISTER_FIDO2_KEY_MUTATION = gql(`
     mutation registerFIDO2Key($userId: String!, $fido2KeyRegistrationInput: Fido2KeyRegistrationInput!){

@@ -1,24 +1,30 @@
 "use client";
 import React, { useContext, useEffect, useState } from "react";
-import { Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, Divider, Grid2, Paper, Stack, TextField, Typography } from "@mui/material";
+import { Backdrop, Button, Checkbox, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, Divider, Grid2, Paper, Stack, TextField, Typography } from "@mui/material";
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { QUERY_PARAM_PREAUTHN_TOKEN, QUERY_PARAM_REDIRECT_URI, QUERY_PARAM_TENANT_ID } from "@/utils/consts";
+import { PASSWORD_MINIMUM_LENGTH, QUERY_PARAM_PREAUTHN_TOKEN, QUERY_PARAM_REDIRECT_URI, QUERY_PARAM_TENANT_ID } from "@/utils/consts";
 import { LOGIN_USERNAME_HANDLER_QUERY } from "@/graphql/queries/oidc-queries";
 import { useLazyQuery, useMutation, useQuery } from "@apollo/client";
-import {  UserAuthenticationStateResponse, TenantSelectorData, AuthenticationState, UserAuthenticationState } from "@/graphql/generated/graphql-types";
+import { UserAuthenticationStateResponse, TenantSelectorData, AuthenticationState, UserAuthenticationState } from "@/graphql/generated/graphql-types";
 import Alert from '@mui/material/Alert';
-import { AUTHENTICATE_USERNAME_INPUT_MUTATION, LOGIN_MUTATION } from "@/graphql/mutations/oidc-mutations";
+import { AUTHENTICATE_USER, AUTHENTICATE_USERNAME_INPUT_MUTATION, LOGIN_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import { PageTitleContext } from "@/components/contexts/page-title-context";
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
 import RadioStyledCheckbox from "../input/radio-styled-checkbox";
+import { AuthentiationValidateTotp } from "./validate-totp";
 
 
 const MIN_USERNAME_LENGTH = 6;
-const USERNAME_COMPONENT = "USERNAME_COMPONENT";
-const PASSWORD_COMPONENT = "PASSWORD_COMPONENT";
+
+export interface AuthenticationComponentsProps {
+    initialUserAuthenticationState: UserAuthenticationState,
+    onAuthenticationCancelled: () => void,
+    onUpdateStart: () => void,
+    onUpdateEnd: (success: boolean, userAuthenticationStateResponse: UserAuthenticationStateResponse | null) => void
+}
 
 export interface PortalLoginProps {
     tenantId?: string,
@@ -39,16 +45,15 @@ const PortalLogin: React.FC<PortalLoginProps> = ({
     const titleSetter = useContext(PageTitleContext);
     useEffect(() => {
         titleSetter.setPageTitle("Login");
-    }, []);    
-    
+    }, []);
+
 
     // PAGE STATE MANAGEMENT VARIABLES
     const [username, setUsername] = useState<string | null>("");
     const [password, setPassword] = useState<string | null>("");
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
-    // To toggle between USERNAME_COMPONENT and PASSWORD_COMPONENT for display
-    const [displayComponent, setDisplayComponent] = useState<string>(USERNAME_COMPONENT);
     const [showTenantSelector, setShowTenantSelector] = useState<boolean>(false);
+    const [showMutationBackdrop, setShowMutationBackdrop] = React.useState<boolean>(false);
     const [tenantsToSelect, setTenantsToSelect] = useState<Array<TenantSelectorData>>([]);
     const [selectedTenant, setSelectedTenant] = useState<string | undefined>(tenantId);
     const [userAuthenticationState, setUserAuthenticationState] = React.useState<UserAuthenticationState | null>(null);
@@ -63,64 +68,72 @@ const PortalLogin: React.FC<PortalLoginProps> = ({
 
     // GRAPHQL FUNCTIONS    
     const [portalLoginEmailHandler] = useMutation(AUTHENTICATE_USERNAME_INPUT_MUTATION, {
-        onCompleted(data) {            
+        onCompleted(data) {
             const authnStateResponse: UserAuthenticationStateResponse = data.authenticateHandleUserNameInput;
-            if(authnStateResponse.userAuthenticationState.authenticationState === AuthenticationState.Error){
-                setErrorMessage(authnStateResponse.authenticationError.errorCode || "ERROR");
-            }
-            else if(authnStateResponse.userAuthenticationState.authenticationState === AuthenticationState.AuthWithFederatedOidc){
-                if(!authnStateResponse.uri){
-                    setErrorMessage("ERROR_NO_AUTHORIZATION_ENDPOINT_CONFIGURED");
-                }
-                else{
-                    router.push(authnStateResponse.uri);
-                }
-            }
-            else if(authnStateResponse.userAuthenticationState.authenticationState === AuthenticationState.Register){    
-                if(!authnStateResponse.uri){
-                    setErrorMessage("ERROR_NO_REGISTRATION_REDIRECT_URI_CONFIGURED");
-                }
-                else{
-                    router.push(authnStateResponse.uri);
-                }                
-            }
-
-            else if(authnStateResponse.userAuthenticationState.authenticationState === AuthenticationState.SelectTenant ||
-                    authnStateResponse.userAuthenticationState.authenticationState === AuthenticationState.SelectTenantThenRegister
-            ){ 
-                if(authnStateResponse.availableTenants){
-                    setTenantsToSelect(authnStateResponse.availableTenants);                    
-                    setShowTenantSelector(true);
-                }
-                else{
-                    setErrorMessage("ERROR_NO_TENANT_TO_SELECT");
-                }
-            }
-            else if(authnStateResponse.userAuthenticationState.authenticationState === AuthenticationState.EnterPassword){
-                setDisplayComponent(PASSWORD_COMPONENT);                    
-            }
-            else if(authnStateResponse.userAuthenticationState.authenticationState === AuthenticationState.ConfigureTotp){
-
-            }
-            else if(authnStateResponse.userAuthenticationState.authenticationState === AuthenticationState.ValidateTotp){
-
-            }
-            else if(authnStateResponse.userAuthenticationState.authenticationState === AuthenticationState.ConfigureSecurityKey){
-
-            }
-            else if(authnStateResponse.userAuthenticationState.authenticationState === AuthenticationState.ValidateSecurityKey){
-
-            }
-            else if(authnStateResponse.userAuthenticationState.authenticationState === AuthenticationState.RedirectBackToApplication){
-
-            }
-            else if(authnStateResponse.userAuthenticationState.authenticationState === AuthenticationState.RedirectToIamPortal){
-
-            }            
+            handleUserAuthenticationResponse(authnStateResponse);
         },
         onError(error) {
             setErrorMessage(error.message);
+        }
+    });
+
+
+    const handleUserAuthenticationResponse = (authnStateResponse: UserAuthenticationStateResponse) => {
+        if (authnStateResponse.userAuthenticationState.authenticationState === AuthenticationState.Error) {
+            setErrorMessage(authnStateResponse.authenticationError.errorCode || "ERROR");
+        }
+        else if (authnStateResponse.userAuthenticationState.authenticationState === AuthenticationState.AuthWithFederatedOidc) {
+            if (!authnStateResponse.uri) {
+                setErrorMessage("ERROR_NO_AUTHORIZATION_ENDPOINT_CONFIGURED");
+            }
+            else {
+                router.push(authnStateResponse.uri);
+            }
+        }
+        else if (authnStateResponse.userAuthenticationState.authenticationState === AuthenticationState.Register) {
+            if (!authnStateResponse.uri) {
+                setErrorMessage("ERROR_NO_REGISTRATION_REDIRECT_URI_CONFIGURED");
+            }
+            else {
+                router.push(authnStateResponse.uri);
+            }
+        }
+        else if (
+            authnStateResponse.userAuthenticationState.authenticationState === AuthenticationState.RedirectBackToApplication ||
+            authnStateResponse.userAuthenticationState.authenticationState === AuthenticationState.RedirectToIamPortal
+        ) {
+            if (!authnStateResponse.uri) {
+                setErrorMessage("ERROR_NO_REDIRECT_ENDPOINT_CONFIGURED");
+            }
+            else {
+                router.push(authnStateResponse.uri);
+            }
+        }
+        else {
+            setUserAuthenticationState(authnStateResponse.userAuthenticationState)
+            if (
+                authnStateResponse.userAuthenticationState.authenticationState === AuthenticationState.SelectTenant ||
+                authnStateResponse.userAuthenticationState.authenticationState === AuthenticationState.SelectTenantThenRegister
+            ) {
+                if (authnStateResponse.availableTenants) {
+                    setTenantsToSelect(authnStateResponse.availableTenants);
+                    setShowTenantSelector(true);
+                }
+                else {
+                    setErrorMessage("ERROR_NO_TENANT_TO_SELECT");
+                }
+            }
+        }
+    }
+
+    const [authenticateUser] = useMutation(AUTHENTICATE_USER, {
+        onCompleted(data) {
+            const authnStateResponse: UserAuthenticationStateResponse = data.authenticateHandleUserNameInput;
+            handleUserAuthenticationResponse(authnStateResponse);
         },
+        onError(error) {
+            setErrorMessage(error.message);
+        }
     })
 
     // const [getPasswordAuthenticationResponse, {}] = useMutation(
@@ -150,7 +163,7 @@ const PortalLogin: React.FC<PortalLoginProps> = ({
     //             else {
     //                 setErrorMessage(response.errorActionHandler?.errorMessage || "Error with authentication. Either the user name or password is incorrect.")
     //             }
-                
+
     //         },
     //         onError() {
     //             setErrorMessage("Error with authentication. Either the user name or password is incorrect, or the system is unable to perform authentication.")
@@ -160,7 +173,7 @@ const PortalLogin: React.FC<PortalLoginProps> = ({
 
 
     // EVENT HANDLERS
-    const handleNextClick = () => {
+    const handleUserNameInputClick = () => {
         portalLoginEmailHandler({
             variables: {
                 username: username,
@@ -169,20 +182,21 @@ const PortalLogin: React.FC<PortalLoginProps> = ({
             }
         });
     }
-    const handleEnterButtonPress = (evt: React.KeyboardEvent) => {        
+    const handleEnterButtonPress = (evt: React.KeyboardEvent) => {
         if (evt.key.valueOf().toLowerCase() === "enter") {
             if (username && username.length > MIN_USERNAME_LENGTH) {
                 portalLoginEmailHandler({
                     variables: {
                         email: username,
-                        tenantId: selectedTenant
+                        tenantId: selectedTenant,
+                        preAuthToken: preAuthToken
                     }
                 });
             }
         }
         // Remove the error message if the user makes any changes to the user name
-        else{
-            if(errorMessage !== null){
+        else {
+            if (errorMessage !== null) {
                 setErrorMessage(null);
             }
         }
@@ -212,13 +226,13 @@ const PortalLogin: React.FC<PortalLoginProps> = ({
 
     const getQueryParams = (): string => {
         const params = new URLSearchParams();
-        if(tenantId){
+        if (tenantId) {
             params.set(QUERY_PARAM_TENANT_ID, tenantId);
         }
-        if(preAuthToken){
+        if (preAuthToken) {
             params.set(QUERY_PARAM_PREAUTHN_TOKEN, preAuthToken)
         }
-        if(redirectUri){
+        if (redirectUri) {
             params.set(QUERY_PARAM_REDIRECT_URI, redirectUri);
         }
         return params.toString();
@@ -237,243 +251,288 @@ const PortalLogin: React.FC<PortalLoginProps> = ({
                         fullWidth={true}
                         onClose={() => closeTenantSelector()}
                     >
-                        
+
                         <DialogTitle><Typography fontSize={"0.95em"}>Select Tenant</Typography></DialogTitle>
                         <Typography component="div" fontSize={"0.90em"}>
-                        <DialogContent>
-                            <Grid2 alignItems={"center"} container size={12} spacing={0}>
-                                {tenantsToSelect.map(
-                                    (t: TenantSelectorData) => (
-                                        <React.Fragment key={t.tenantId}>
-                                            <Grid2 size={11}>
-                                                {t.tenantName}
-                                            </Grid2>
-                                            <Grid2 size={1}>
-                                                <RadioStyledCheckbox                                                    
-                                                    checked={selectedTenant === t.tenantId}                                                    
-                                                    onChange={(_, checked: boolean) => {
-                                                        if(checked){
-                                                            setSelectedTenant(t.tenantId);
-                                                        }
-                                                        else{
-                                                            setSelectedTenant(undefined);
-                                                        }
-                                                    }}
+                            <DialogContent>
+                                <Grid2 alignItems={"center"} container size={12} spacing={0}>
+                                    {tenantsToSelect.map(
+                                        (t: TenantSelectorData) => (
+                                            <React.Fragment key={t.tenantId}>
+                                                <Grid2 size={11}>
+                                                    {t.tenantName}
+                                                </Grid2>
+                                                <Grid2 size={1}>
+                                                    <RadioStyledCheckbox
+                                                        checked={selectedTenant === t.tenantId}
+                                                        onChange={(_, checked: boolean) => {
+                                                            if (checked) {
+                                                                setSelectedTenant(t.tenantId);
+                                                            }
+                                                            else {
+                                                                setSelectedTenant(undefined);
+                                                            }
+                                                        }}
 
-                                                />
-                                            </Grid2>
-                                            <Grid2 size={12}><Divider /></Grid2>
-                                        </React.Fragment>
-                                    )                                
-                                )
-                            }
-                            </Grid2>
-                        </DialogContent>
-                        <DialogActions>
-                            
-                            <Button
-                                onClick={() => closeTenantSelector()}
-                            >
-                                Cancel
-                            </Button>
-                            <Button
-                                onClick={() => {
-                                    setShowTenantSelector(false);
-                                    handleNextClick();
-                                }}
-                                disabled={selectedTenant === null}
-                            >
-                                Next
-                            </Button>
-                            
-                        </DialogActions>
-                        </Typography>                        
+                                                    />
+                                                </Grid2>
+                                                <Grid2 size={12}><Divider /></Grid2>
+                                            </React.Fragment>
+                                        )
+                                    )
+                                    }
+                                </Grid2>
+                            </DialogContent>
+                            <DialogActions>
+
+                                <Button
+                                    onClick={() => closeTenantSelector()}
+                                >
+                                    Cancel
+                                </Button>
+                                <Button
+                                    onClick={() => {
+                                        setShowTenantSelector(false);
+                                        handleUserNameInputClick();
+                                    }}
+                                    disabled={selectedTenant === null}
+                                >
+                                    Next
+                                </Button>
+                            </DialogActions>
+                        </Typography>
                     </Dialog>
                 }
                 <Grid2 spacing={4} container size={{ xs: 12 }}>
                     {errorMessage !== null &&
-                        <>
-                            <Grid2 size={{ xs: 12 }} textAlign={"center"}>
-                                <Stack
-                                    direction={"row"}
-                                    justifyItems={"center"}
-                                    alignItems={"center"}
-                                    sx={{width: "100%"}}
-                                >
-                                    <Alert onClose={() => setErrorMessage(null)} sx={{width: "100%"}}severity="error">{errorMessage}</Alert>
-                                    
-                                </Stack>
-                            </Grid2>
-                        </>
-                    }
-                    <Grid2 size={{ xs: 12 }}>
-                        <div style={{ marginBottom: "16px", fontWeight: "bold", fontSize: "1.2em" }}>Sign In</div>
-                        {displayComponent === USERNAME_COMPONENT &&
-                            <TextField
-                                id="email"
-                                required={true}
-                                autoFocus={true}
-                                label={tenantBean.getTenantMetaData().tenant.allowLoginByPhoneNumber ? "Email or phone number" : "Email"}
-                                name="email"
-                                fullWidth
-                                onChange={(evt) => setUsername(evt.target.value)}
-                                onKeyDown={handleEnterButtonPress}
-                                value={username}
-                                sx={{                                    
-                                    "& .MuiOutlinedInput-root": {
-                                        "&.Mui-focused fieldset": {
-                                            borderColor: 
-                                                (tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheaderbackgroundcolor === "white" ||
-                                                    tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheaderbackgroundcolor === "FFF" ||
-                                                tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheaderbackgroundcolor === "fff") ?
-                                                "lightgray" :
-                                                tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheaderbackgroundcolor
-                                                
-                                        }
-                                    },
-                                    "& .MuiFormLabel-root": {
-                                        "&.MuiInputLabel-root": {
-                                            "&.Mui-focused": {
-                                                color: "black"
-                                            }
-                                        }
-                                    }                                
-                                }}
-                            >
-                            </TextField>
-                        }
-                        {displayComponent === PASSWORD_COMPONENT &&
-                            <TextField
-                                type="password"
-                                id="password"
-                                required={true}
-                                autoFocus={true}
-                                label={"Password"}
-                                name="password"
-                                fullWidth
-                                onChange={(evt) => setPassword(evt.target.value)}
-                                onKeyDown={enterKeyLoginHandler}
-                                value={password}
-                                sx={{
-                                    "& .MuiOutlinedInput-root": {
-                                        "&.Mui-focused fieldset": {
-                                            borderColor: 
-                                                (tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheaderbackgroundcolor === "white" ||
-                                                tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheaderbackgroundcolor === "FFF" ||
-                                                tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheaderbackgroundcolor === "fff") ?
-                                                "lightgray" :
-                                                tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheaderbackgroundcolor
-                                        }
-                                    },
-                                    "& .MuiFormLabel-root": {
-                                        "&.MuiInputLabel-root": {
-                                            "&.Mui-focused": {
-                                                color: "black"
-                                            }
-                                        }
-                                    }
-                                }}
-                            >
-                            </TextField>
-                        }
-                    </Grid2>
-                    {tenantBean.getTenantMetaData().tenant.allowForgotPassword &&
-                        <Grid2 size={{ xs: 12 }}>
+                        <Grid2 size={{ xs: 12 }} textAlign={"center"}>
                             <Stack
-                                direction={"row-reverse"}
+                                direction={"row"}
+                                justifyItems={"center"}
+                                alignItems={"center"}
+                                sx={{ width: "100%" }}
                             >
-                                <span><Link prefetch={false} href={`/authorize/forgot-password?${getQueryParams()}`} style={{ color: "black", fontWeight: "bold", fontSize: "0.9em"}}>Forgot password?</Link></span>
+                                <Alert onClose={() => setErrorMessage(null)} sx={{ width: "100%" }} severity="error">{errorMessage}</Alert>
+
                             </Stack>
                         </Grid2>
                     }
-                    <Grid2 size={{ xs: 12 }}>
-                        {displayComponent === USERNAME_COMPONENT &&
-                            <Stack
-                                direction={"row-reverse"}
-                            >
-                                <Button
-                                    disabled={username === null || username.length < MIN_USERNAME_LENGTH || (!tenantBean.getTenantMetaData().tenant.allowLoginByPhoneNumber && username.indexOf("@") < 1)}
-                                    variant="contained"
-                                    sx={{ height: "100%", padding: "8px 32px 8px 32px", marginLeft: "8px", 
-                                        backgroundColor: tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheaderbackgroundcolor,
-                                        color: tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheadertextcolor,
-                                        fontWeight: "bold",
-                                        fontSize: "0.9em"
-                                    }}
-                                    onClick={handleNextClick}
-                                >Next</Button>
-                            </Stack>
-                        }
-                        {displayComponent === PASSWORD_COMPONENT &&
-                            <Stack
-                                direction={"row-reverse"}
-                            >
-                                <Button
-                                    disabled={password === null || password.length < MIN_USERNAME_LENGTH}
-                                    variant="contained"
-                                    sx={{ height: "100%", padding: "8px 32px 8px 32px", marginLeft: "8px",
-                                        backgroundColor: tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheaderbackgroundcolor,
-                                        color: tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheadertextcolor,
-                                        fontWeight: "bold",
-                                        fontSize: "0.9em"
-                                    }}
-                                    // onClick={buttonLoginHandler}
-                                >Login</Button>
-                                <Button
-                                    disabled={false}
-                                    variant="contained"
-                                    sx={{ height: "100%", padding: "8px 32px 8px 32px", marginLeft: "8px",
-                                        backgroundColor: tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheaderbackgroundcolor,
-                                        color: tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheadertextcolor,
-                                        fontWeight: "bold",
-                                        fontSize: "0.9em"
-                                    }}
-                                    onClick={() => {setErrorMessage(null); setPassword(""); setDisplayComponent(USERNAME_COMPONENT);}}
-                                >Back</Button>
-                                {preAuthToken &&
-                                    <a href={`${redirectUri}?error=access_denied`}>
-                                        <Button
-                                            disabled={false}
-                                            variant="contained"
-                                            sx={{ height: "100%", padding: "8px 32px 8px 32px",
-                                                backgroundColor: tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheaderbackgroundcolor,
-                                                color: tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheadertextcolor,
-                                                fontWeight: "bold",
-                                                fontSize: "0.9em"
-                                            }}
-                                        >Cancel</Button>
-                                    </a>
-                                }
-                            </Stack>
-                        }
-                    </Grid2> 
-                    {tenantBean.getTenantMetaData().tenant.allowUserSelfRegistration &&
-                        <>
-                            <Grid2 size={{ xs: 12 }} textAlign={"center"}>
-                                <Stack
-                                    direction={"row-reverse"}
-                                    justifyItems={"center"}
-                                    alignItems={"center"}
-                                >
-                                    <Link prefetch={false} href={`/authorize/register?${getQueryParams()}`}>
-                                        <Button
-                                            disabled={false}
-                                            variant="contained"
-                                            sx={{ height: "100%", padding: "8px 32px 8px 32px", marginLeft: "8px",
-                                                backgroundColor: tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheaderbackgroundcolor,
-                                                color: tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheadertextcolor,
-                                                fontWeight: "bold",
-                                                fontSize: "0.9em"
-                                            }}
-                                        >Register</Button>
-                                    </Link>
+                    {userAuthenticationState === null &&
+                        <React.Fragment>
+                            <Grid2 size={{ xs: 12 }}>
+                                <div style={{ marginBottom: "16px", fontWeight: "bold", fontSize: "1.2em" }}>Sign In</div>
+                                <TextField
+                                    id="email"
+                                    required={true}
+                                    autoFocus={true}
+                                    label={tenantBean.getTenantMetaData().tenant.allowLoginByPhoneNumber ? "Email or phone number" : "Email"}
+                                    name="email"
+                                    fullWidth
+                                    onChange={(evt) => setUsername(evt.target.value)}
+                                    onKeyDown={handleEnterButtonPress}
+                                    value={username}
+                                    sx={{
+                                        "& .MuiOutlinedInput-root": {
+                                            "&.Mui-focused fieldset": {
+                                                borderColor:
+                                                    (tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheaderbackgroundcolor === "white" ||
+                                                        tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheaderbackgroundcolor === "FFF" ||
+                                                        tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheaderbackgroundcolor === "fff") ?
+                                                        "lightgray" :
+                                                        tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheaderbackgroundcolor
 
-                                    <div style={{ verticalAlign: "center", fontWeight: "bold", fontSize: "0.9em" }}>Need to create an account?</div>
+                                            }
+                                        },
+                                        "& .MuiFormLabel-root": {
+                                            "&.MuiInputLabel-root": {
+                                                "&.Mui-focused": {
+                                                    color: "black"
+                                                }
+                                            }
+                                        }
+                                    }}
+                                >
+                                </TextField>
+                            </Grid2>
+                            <Grid2 size={{xs: 12}}>
+                                <Stack                                    
+                                    direction={"row-reverse"}
+                                >
+                                    <Button
+                                        disabled={username === null || username.length < MIN_USERNAME_LENGTH || (!tenantBean.getTenantMetaData().tenant.allowLoginByPhoneNumber && username.indexOf("@") < 1)}
+                                        variant="contained"
+                                        sx={{
+                                            height: "100%", padding: "8px 32px 8px 32px", marginLeft: "8px",
+                                            backgroundColor: tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheaderbackgroundcolor,
+                                            color: tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheadertextcolor,
+                                            fontWeight: "bold",
+                                            fontSize: "0.9em"
+                                        }}
+                                        onClick={() => handleUserNameInputClick()}
+                                    >Next</Button>
                                 </Stack>
                             </Grid2>
-                        </>
-                    }                   
+                            {tenantBean.getTenantMetaData().tenant.allowUserSelfRegistration &&
+                                <Grid2 size={{ xs: 12 }} textAlign={"center"}>
+                                    <Stack
+                                        direction={"row-reverse"}
+                                        justifyItems={"center"}
+                                        alignItems={"center"}
+                                    >
+                                        <Link prefetch={false} href={`/authorize/register?${getQueryParams()}`}>
+                                            <Button
+                                                disabled={false}
+                                                variant="contained"
+                                                sx={{
+                                                    height: "100%", padding: "8px 32px 8px 32px", marginLeft: "8px",
+                                                    backgroundColor: tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheaderbackgroundcolor,
+                                                    color: tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheadertextcolor,
+                                                    fontWeight: "bold",
+                                                    fontSize: "0.9em"
+                                                }}
+                                            >Register</Button>
+                                        </Link>
+
+                                        <div style={{ verticalAlign: "center", fontWeight: "bold", fontSize: "0.9em" }}>Need to create an account?</div>
+                                    </Stack>
+                                </Grid2>
+                            }
+                        </React.Fragment>
+                    }
+                    {userAuthenticationState && userAuthenticationState.authenticationState === AuthenticationState.EnterPassword &&
+                        <React.Fragment>
+                            <Grid2 size={{ xs: 12 }}>
+                                <div style={{ marginBottom: "16px", fontWeight: "bold", fontSize: "1.2em" }}>Sign In</div>
+                                <TextField
+                                    type="password"
+                                    id="password"
+                                    required={true}
+                                    autoFocus={true}
+                                    label={"Password"}
+                                    name="password"
+                                    fullWidth
+                                    onChange={(evt) => setPassword(evt.target.value)}
+                                    onKeyDown={enterKeyLoginHandler}
+                                    value={password}
+                                    sx={{
+                                        "& .MuiOutlinedInput-root": {
+                                            "&.Mui-focused fieldset": {
+                                                borderColor:
+                                                    (tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheaderbackgroundcolor === "white" ||
+                                                        tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheaderbackgroundcolor === "FFF" ||
+                                                        tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheaderbackgroundcolor === "fff") ?
+                                                        "lightgray" :
+                                                        tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheaderbackgroundcolor
+                                            }
+                                        },
+                                        "& .MuiFormLabel-root": {
+                                            "&.MuiInputLabel-root": {
+                                                "&.Mui-focused": {
+                                                    color: "black"
+                                                }
+                                            }
+                                        }
+                                    }}
+                                >
+                                </TextField>
+                            </Grid2>
+                            {tenantBean.getTenantMetaData().tenant.allowForgotPassword &&
+                                <Grid2 size={{ xs: 12 }}>
+                                    <Stack
+                                        direction={"row-reverse"}
+                                    >
+                                        <span><Link prefetch={false} href={`/authorize/forgot-password?${getQueryParams()}`} style={{ color: "black", fontWeight: "bold", fontSize: "0.9em" }}>Forgot password?</Link></span>
+                                    </Stack>
+                                </Grid2>
+                            }
+                            <Grid2 size={{ xs: 12 }}>
+                                <Stack
+                                    direction={"row-reverse"}
+                                >
+                                    <Button
+                                        disabled={password === null || password.length < PASSWORD_MINIMUM_LENGTH}
+                                        variant="contained"
+                                        sx={{
+                                            height: "100%", padding: "8px 32px 8px 32px", marginLeft: "8px",
+                                            backgroundColor: tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheaderbackgroundcolor,
+                                            color: tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheadertextcolor,
+                                            fontWeight: "bold",
+                                            fontSize: "0.9em"
+                                        }}
+                                        onClick={() => authenticateUser({
+                                            variables: {                                                
+                                                username: username,
+                                                password: password,
+                                                tenantId: userAuthenticationState.tenantId,
+                                                authenticationSessionToken: userAuthenticationState.authenticationSessionToken,
+                                                preAuthToken: userAuthenticationState.preAuthToken
+                                            }
+                                        })}
+                                    >Login</Button>
+                                    <Button
+                                        disabled={false}
+                                        variant="contained"
+                                        sx={{
+                                            height: "100%", padding: "8px 32px 8px 32px", marginLeft: "8px",
+                                            backgroundColor: tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheaderbackgroundcolor,
+                                            color: tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheadertextcolor,
+                                            fontWeight: "bold",
+                                            fontSize: "0.9em"
+                                        }}
+                                        onClick={() => { setErrorMessage(null); setPassword(""); setUserAuthenticationState(null); }}
+                                    >Back</Button>
+                                    {preAuthToken &&
+                                        <a href={`${redirectUri}?error=access_denied`}>
+                                            <Button
+                                                disabled={false}
+                                                variant="contained"
+                                                sx={{
+                                                    height: "100%", padding: "8px 32px 8px 32px",
+                                                    backgroundColor: tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheaderbackgroundcolor,
+                                                    color: tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheadertextcolor,
+                                                    fontWeight: "bold",
+                                                    fontSize: "0.9em"
+                                                }}
+                                            >Cancel</Button>
+                                        </a>
+                                    }
+                                </Stack>
+                            </Grid2>
+                        </React.Fragment>
+                    }
+                    {userAuthenticationState && userAuthenticationState.authenticationState === AuthenticationState.ConfigureTotp &&
+                        <div></div>
+                    }
+                    {userAuthenticationState && userAuthenticationState.authenticationState === AuthenticationState.ValidateTotp &&
+                        <AuthentiationValidateTotp
+                            initialUserAuthenticationState={userAuthenticationState}
+                            onAuthenticationCancelled={() => console.log("authentication calcelled")}
+                            onUpdateEnd={(success, userAuthenticationStateResponse) => {
+                                setShowMutationBackdrop(false);
+                                if(success && userAuthenticationStateResponse){
+                                    setUserAuthenticationState(userAuthenticationStateResponse.userAuthenticationState);
+                                    handleUserAuthenticationResponse(userAuthenticationStateResponse);
+                                }
+                            }}
+                            onUpdateStart={() => {
+                                setShowMutationBackdrop(true);
+                            }}
+                        />
+                    }
+                    {userAuthenticationState && userAuthenticationState.authenticationState === AuthenticationState.ConfigureSecurityKey &&
+                        <div></div>
+                    }
+                    {userAuthenticationState && userAuthenticationState.authenticationState === AuthenticationState.ValidateSecurityKey &&
+                        <div></div>
+                    }
                 </Grid2>
+                <Backdrop
+                    sx={{ color: '#fff' }}
+                    open={showMutationBackdrop}
+                    onClick={() => setShowMutationBackdrop(false)}
+                >
+                    <CircularProgress color="info" />
+                </Backdrop>
             </Paper>
         )
     }
