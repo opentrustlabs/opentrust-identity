@@ -24,19 +24,19 @@ const nextConfig: NextConfig = {
     // your project has ESLint errors.
     ignoreDuringBuilds: true,
   },
-  async headers () {
-    return [
-        {
-            source: '/(.*)',
-            headers: [
-              {
-                key: 'Content-Security-Policy',
-                value: cspHeader.replace(/\n/g, ''),
-              },
-            ],
-          }
-    ]
-  }
+//   async headers () {
+//     return [
+//         {
+//             source: '/(.*)',
+//             headers: [
+//               {
+//                 key: 'Content-Security-Policy',
+//                 value: cspHeader.replace(/\n/g, ''),
+//               },
+//             ],
+//           }
+//     ]
+//   }
   
 
 };

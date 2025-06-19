@@ -31,7 +31,7 @@ class UserRegistrationStateEntity extends Model {
                 primaryKey: true,
                 field: "registrationstate"
             },
-            registrationstateOrder: {
+            registrationStateOrder: {
                 type: DataTypes.INTEGER,
                 primaryKey: false,
                 allowNull: false,

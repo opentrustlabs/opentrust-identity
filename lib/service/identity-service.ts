@@ -1623,6 +1623,7 @@ class IdentityService {
         //      need to create database entries for the user authentication state. Instead
         //      there will be entries created for the user registration state later.    
         if(user === null && federatedOidcProvider === null && tenantsThatAllowSelfRegistration.length > 0){
+            
             retVal.userAuthenticationState.authenticationState = tenantsThatAllowSelfRegistration.length === 1 ? AuthenticationState.Register : AuthenticationState.SelectTenantThenRegister;            
             retVal.availableTenants = [];
             tenantsThatAllowSelfRegistration.forEach(
@@ -1632,6 +1633,9 @@ class IdentityService {
                         tenantName: t.tenantName
                     }                    
                 ));
+            if(tenantsThatAllowSelfRegistration.length === 1){
+                retVal.uri = `/authorize/register?${QUERY_PARAM_TENANT_ID}=${tenantsThatAllowSelfRegistration[0].tenantId}&username=${email.toLowerCase()}`;
+            }
             return retVal;
         }
         console.log("checkpoint 9");

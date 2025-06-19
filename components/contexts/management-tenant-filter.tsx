@@ -1,7 +1,7 @@
 "use client";
 import React, { ReactNode, useContext, useEffect } from "react";
 import { useParams, useRouter } from 'next/navigation';
-import { MANAGEMENT_TENANT_LOCAL_STORAGE_KEY, QUERY_PARAM_AUTHENTICATE_TO_PORTAL, QUERY_PARAM_PREAUTH_TENANT_ID } from "@/utils/consts";
+import { MANAGEMENT_TENANT_LOCAL_STORAGE_KEY, QUERY_PARAM_AUTHENTICATE_TO_PORTAL, QUERY_PARAM_TENANT_ID } from "@/utils/consts";
 import { useQuery } from "@apollo/client";
 import { TENANT_META_DATA_QUERY } from "@/graphql/queries/oidc-queries";
 import { PortalUserProfile } from "@/graphql/generated/graphql-types";
@@ -61,7 +61,7 @@ const ManagementTenantFilter: React.FC<LayoutProps> = ({
     // Add return URI in cases where the profile is null.
     if(tenantIdFromPath === null && profile === null){
         if(tenantIdFromLocalStorage){
-            redirectUri = `/authorize/login?${QUERY_PARAM_AUTHENTICATE_TO_PORTAL}=true&${QUERY_PARAM_PREAUTH_TENANT_ID}=${tenantIdFromLocalStorage}`;
+            redirectUri = `/authorize/login?${QUERY_PARAM_AUTHENTICATE_TO_PORTAL}=true&${QUERY_PARAM_TENANT_ID}=${tenantIdFromLocalStorage}`;
         }     
     }
     else if(tenantIdFromPath === null && profile !== null){
@@ -75,7 +75,7 @@ const ManagementTenantFilter: React.FC<LayoutProps> = ({
         }
     }
     else if(tenantIdFromPath !== null && profile === null){
-        redirectUri = `/authorize/login?${QUERY_PARAM_AUTHENTICATE_TO_PORTAL}=true&${QUERY_PARAM_PREAUTH_TENANT_ID}=${tenantIdFromPath}`;
+        redirectUri = `/authorize/login?${QUERY_PARAM_AUTHENTICATE_TO_PORTAL}=true&${QUERY_PARAM_TENANT_ID}=${tenantIdFromPath}`;
     }
     else if(tenantIdFromPath !== null && profile !== null){
         

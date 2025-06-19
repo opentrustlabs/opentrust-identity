@@ -769,6 +769,7 @@ type TenantSelectorData {
     tenantName: String!
 }
 
+## TODO? DO I need a state called: SELECT_TENANT_THEN_ENTER_PASSWORD? I think I do.
 enum AuthenticationState {
     AUTH_WITH_FEDERATED_OIDC
     SELECT_TENANT

@@ -649,6 +649,7 @@ export const USER_AUTHENTICATION_STATE_RESPONSE_FRAGMENT = gql(`
             tenantName
         }
         uri
+        totpSecret
         accessToken
     }
 `);
@@ -665,13 +666,15 @@ export const USER_AUTHENTICATION_STATE_RESPONSE_FRAGMENT = gql(`
     authenticateRegisterSecurityKey(userId: String!, fido2KeyRegistrationInput: Fido2KeyRegistrationInput!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
     authenticateValidateSecurityKey(userId: String!, fido2KeyAuthenticationInput: Fido2KeyAuthenticationInput!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
 */
-export const AUTHENTICATE_USERNAME_INPUT_MUTATION = gql(`
-    mutation authenticateUserNameInput($username: String!, $tenantId: String, $preAuthToken: String) {
-        authenticateUserNameInput(username: $username, tenantId: $tenantId, preAuthToken: $preAuthToken) {
+export const AUTHENTICATE_USERNAME_INPUT_MUTATION = gql`    
+    mutation authenticateHandleUserNameInput($username: String!, $tenantId: String, $preAuthToken: String) {
+        authenticateHandleUserNameInput(username: $username, tenantId: $tenantId, preAuthToken: $preAuthToken) {
             ...UserAuthenticationStateResponseFragment
-        }
+        } 
     }
-`);
+
+    ${USER_AUTHENTICATION_STATE_RESPONSE_FRAGMENT}
+`;
 
 
 export const REGISTER_FIDO2_KEY_MUTATION = gql(`
@@ -714,41 +717,46 @@ export const AUTHENTICATE_FIDO2_KEY_MUATATION = gql(`
 
 export const USER_REGISTRATION_STATE_RESPONSE_FRAGMENT = gql(`
     fragment UserRegistrationStateResponseFragment on UserRegistrationStateResponse {
-            userRegistrationState {
-	            userId
-                email
-                registrationSessionToken
-                tenantId
-                registrationState
-                registrationStateOrder
-                registrationStateStatus
-                preAuthToken
-                expiresAtMs
-            }
-            registrationError {
-                errorCode
-                errorMessage            
-            }
-            uri
-            accessToken
+        userRegistrationState {
+            userId
+            email
+            registrationSessionToken
+            tenantId
+            registrationState
+            registrationStateOrder
+            registrationStateStatus
+            preAuthToken
+            expiresAtMs
+        }
+        registrationError {
+            errorCode
+            errorMessage            
+        }
+        uri
+        totpSecret
+        accessToken
     }
 `);
 
-export const REGISTER_USER_MUTATION = gql(`
+export const REGISTER_USER_MUTATION = gql`
     mutation registerUser($tenantId: String!, $userInput: UserCreateInput!, $preAuthToken: String) {
         registerUser(tenantId: $tenantId, userInput: $userInput, preAuthToken: $preAuthToken) {
             ...UserRegistrationStateResponseFragment
         }
     }
-`);
 
-export const VERIFY_REGISTRATION_TOKEN_MUTATION = gql(`
+    ${USER_REGISTRATION_STATE_RESPONSE_FRAGMENT}
+`;
+
+export const VERIFY_REGISTRATION_TOKEN_MUTATION = gql`
     mutation registerVerifyEmailAddress($userId: String!, $token: String!, $registrationSessionToken: String!, $preAuthToken: String) {
         registerVerifyEmailAddress(userId: $userId, token: $token, registrationSessionToken: $registrationSessionToken, preAuthToken: $preAuthToken) {
             ...UserRegistrationStateResponseFragment
         }
     }
-`);
+
+    ${USER_REGISTRATION_STATE_RESPONSE_FRAGMENT}
+`;
 
 
 

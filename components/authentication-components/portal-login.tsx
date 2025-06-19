@@ -5,16 +5,15 @@ import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { QUERY_PARAM_TENANT_ID } from "@/utils/consts";
+import { QUERY_PARAM_PREAUTHN_TOKEN, QUERY_PARAM_REDIRECT_URI, QUERY_PARAM_TENANT_ID } from "@/utils/consts";
 import { LOGIN_USERNAME_HANDLER_QUERY } from "@/graphql/queries/oidc-queries";
 import { useLazyQuery, useMutation, useQuery } from "@apollo/client";
-import {  UserAuthenticationStateResponse, TenantSelectorData, AuthenticationState } from "@/graphql/generated/graphql-types";
+import {  UserAuthenticationStateResponse, TenantSelectorData, AuthenticationState, UserAuthenticationState } from "@/graphql/generated/graphql-types";
 import Alert from '@mui/material/Alert';
 import { AUTHENTICATE_USERNAME_INPUT_MUTATION, LOGIN_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import { PageTitleContext } from "@/components/contexts/page-title-context";
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
 import RadioStyledCheckbox from "../input/radio-styled-checkbox";
-import { channel } from "diagnostics_channel";
 
 
 const MIN_USERNAME_LENGTH = 6;
@@ -23,15 +22,15 @@ const PASSWORD_COMPONENT = "PASSWORD_COMPONENT";
 
 export interface PortalLoginProps {
     tenantId?: string,
-    redirectUri: string,
-    preauthToken: string,
+    redirectUri?: string,
+    preAuthToken?: string,
     tenantBean: TenantMetaDataBean
 }
 
 const PortalLogin: React.FC<PortalLoginProps> = ({
     tenantId,
     redirectUri,
-    preauthToken,
+    preAuthToken,
     tenantBean
 }) => {
 
@@ -40,7 +39,7 @@ const PortalLogin: React.FC<PortalLoginProps> = ({
     const titleSetter = useContext(PageTitleContext);
     useEffect(() => {
         titleSetter.setPageTitle("Login");
-    }, []);
+    }, []);    
     
 
     // PAGE STATE MANAGEMENT VARIABLES
@@ -52,6 +51,7 @@ const PortalLogin: React.FC<PortalLoginProps> = ({
     const [showTenantSelector, setShowTenantSelector] = useState<boolean>(false);
     const [tenantsToSelect, setTenantsToSelect] = useState<Array<TenantSelectorData>>([]);
     const [selectedTenant, setSelectedTenant] = useState<string | undefined>(tenantId);
+    const [userAuthenticationState, setUserAuthenticationState] = React.useState<UserAuthenticationState | null>(null);
 
     // HOOKS FROM NEXTJS OR MUI
     const router = useRouter();
@@ -64,37 +64,59 @@ const PortalLogin: React.FC<PortalLoginProps> = ({
     // GRAPHQL FUNCTIONS    
     const [portalLoginEmailHandler] = useMutation(AUTHENTICATE_USERNAME_INPUT_MUTATION, {
         onCompleted(data) {            
-            const authnStateResponse: UserAuthenticationStateResponse = data.authenticateUserNameInput;
+            const authnStateResponse: UserAuthenticationStateResponse = data.authenticateHandleUserNameInput;
             if(authnStateResponse.userAuthenticationState.authenticationState === AuthenticationState.Error){
-                setErrorMessage(authnStateResponse.authenticationError?.errorMessage || "ERROR");
+                setErrorMessage(authnStateResponse.authenticationError.errorCode || "ERROR");
             }
-            else{
-                if(authnStateResponse.userAuthenticationState.authenticationState === AuthenticationState.AuthWithFederatedOidc){
-                    if(!authnStateResponse.uri){
-                        setErrorMessage("ERROR_NO_AUTHORIZATION_ENDPOINT_CONFIGURED");
-                    }
-
-                    else{
-                        router.push(authnStateResponse.uri);
-                    }
+            else if(authnStateResponse.userAuthenticationState.authenticationState === AuthenticationState.AuthWithFederatedOidc){
+                if(!authnStateResponse.uri){
+                    setErrorMessage("ERROR_NO_AUTHORIZATION_ENDPOINT_CONFIGURED");
                 }
-                if(authnStateResponse.userAuthenticationState.authenticationState === AuthenticationState.SelectTenant){ 
-                    if(authnStateResponse.availableTenants){
-                        setTenantsToSelect(authnStateResponse.availableTenants);
-                        setShowTenantSelector(true);
-                    }
-                    else{
-                        setErrorMessage("ERROR_NO_TENANT_TO_SELECT");
-                    }
-                }
-                if(authnStateResponse.userAuthenticationState.authenticationState === AuthenticationState.EnterPassword){
-                    setDisplayComponent(PASSWORD_COMPONENT);                    
-                }
-                if(authnStateResponse.userAuthenticationState.authenticationState === AuthenticationState.Register && authnStateResponse.uri){                    
-                    router.push(authnStateResponse.uri);                    
+                else{
+                    router.push(authnStateResponse.uri);
                 }
             }
+            else if(authnStateResponse.userAuthenticationState.authenticationState === AuthenticationState.Register){    
+                if(!authnStateResponse.uri){
+                    setErrorMessage("ERROR_NO_REGISTRATION_REDIRECT_URI_CONFIGURED");
+                }
+                else{
+                    router.push(authnStateResponse.uri);
+                }                
+            }
 
+            else if(authnStateResponse.userAuthenticationState.authenticationState === AuthenticationState.SelectTenant ||
+                    authnStateResponse.userAuthenticationState.authenticationState === AuthenticationState.SelectTenantThenRegister
+            ){ 
+                if(authnStateResponse.availableTenants){
+                    setTenantsToSelect(authnStateResponse.availableTenants);                    
+                    setShowTenantSelector(true);
+                }
+                else{
+                    setErrorMessage("ERROR_NO_TENANT_TO_SELECT");
+                }
+            }
+            else if(authnStateResponse.userAuthenticationState.authenticationState === AuthenticationState.EnterPassword){
+                setDisplayComponent(PASSWORD_COMPONENT);                    
+            }
+            else if(authnStateResponse.userAuthenticationState.authenticationState === AuthenticationState.ConfigureTotp){
+
+            }
+            else if(authnStateResponse.userAuthenticationState.authenticationState === AuthenticationState.ValidateTotp){
+
+            }
+            else if(authnStateResponse.userAuthenticationState.authenticationState === AuthenticationState.ConfigureSecurityKey){
+
+            }
+            else if(authnStateResponse.userAuthenticationState.authenticationState === AuthenticationState.ValidateSecurityKey){
+
+            }
+            else if(authnStateResponse.userAuthenticationState.authenticationState === AuthenticationState.RedirectBackToApplication){
+
+            }
+            else if(authnStateResponse.userAuthenticationState.authenticationState === AuthenticationState.RedirectToIamPortal){
+
+            }            
         },
         onError(error) {
             setErrorMessage(error.message);
@@ -141,8 +163,9 @@ const PortalLogin: React.FC<PortalLoginProps> = ({
     const handleNextClick = () => {
         portalLoginEmailHandler({
             variables: {
-                email: username,
-                tenantId: selectedTenant
+                username: username,
+                tenantId: selectedTenant,
+                preAuthToken: preAuthToken
             }
         });
     }
@@ -190,10 +213,13 @@ const PortalLogin: React.FC<PortalLoginProps> = ({
     const getQueryParams = (): string => {
         const params = new URLSearchParams();
         if(tenantId){
-            params.set("_tid", tenantId);
+            params.set(QUERY_PARAM_TENANT_ID, tenantId);
         }
-        if(preauthToken){
-            params.set("_tk", preauthToken)
+        if(preAuthToken){
+            params.set(QUERY_PARAM_PREAUTHN_TOKEN, preAuthToken)
+        }
+        if(redirectUri){
+            params.set(QUERY_PARAM_REDIRECT_URI, redirectUri);
         }
         return params.toString();
     }
@@ -404,7 +430,7 @@ const PortalLogin: React.FC<PortalLoginProps> = ({
                                     }}
                                     onClick={() => {setErrorMessage(null); setPassword(""); setDisplayComponent(USERNAME_COMPONENT);}}
                                 >Back</Button>
-                                {preauthToken &&
+                                {preAuthToken &&
                                     <a href={`${redirectUri}?error=access_denied`}>
                                         <Button
                                             disabled={false}
@@ -420,7 +446,33 @@ const PortalLogin: React.FC<PortalLoginProps> = ({
                                 }
                             </Stack>
                         }
-                    </Grid2>                    
+                    </Grid2> 
+                    {tenantBean.getTenantMetaData().tenant.allowUserSelfRegistration &&
+                        <>
+                            <Grid2 size={{ xs: 12 }} textAlign={"center"}>
+                                <Stack
+                                    direction={"row-reverse"}
+                                    justifyItems={"center"}
+                                    alignItems={"center"}
+                                >
+                                    <Link prefetch={false} href={`/authorize/register?${getQueryParams()}`}>
+                                        <Button
+                                            disabled={false}
+                                            variant="contained"
+                                            sx={{ height: "100%", padding: "8px 32px 8px 32px", marginLeft: "8px",
+                                                backgroundColor: tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheaderbackgroundcolor,
+                                                color: tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheadertextcolor,
+                                                fontWeight: "bold",
+                                                fontSize: "0.9em"
+                                            }}
+                                        >Register</Button>
+                                    </Link>
+
+                                    <div style={{ verticalAlign: "center", fontWeight: "bold", fontSize: "0.9em" }}>Need to create an account?</div>
+                                </Stack>
+                            </Grid2>
+                        </>
+                    }                   
                 </Grid2>
             </Paper>
         )

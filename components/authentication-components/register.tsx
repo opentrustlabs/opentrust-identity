@@ -9,7 +9,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { AUTH_TOKEN_LOCAL_STORAGE_KEY, DEFAULT_TENANT_PASSWORD_CONFIGURATION, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, NAME_ORDER_DISPLAY, NAME_ORDER_EASTERN, NAME_ORDER_WESTERN, NAME_ORDERS, QUERY_PARAM_AUTHENTICATE_TO_PORTAL, QUERY_PARAM_REDIRECT_URI, QUERY_PARAM_TENANT_ID, QUERY_PARAM_PREAUTHN_TOKEN, QUERY_PARAM_USERNAME } from "@/utils/consts";
 import {  TENANT_PASSWORD_CONFIG_QUERY, VALIDATE_TOTP_TOKEN_QUERY } from "@/graphql/queries/oidc-queries";
 import { useLazyQuery, useMutation, useQuery } from "@apollo/client";
-import { Fido2KeyRegistrationInput, Fido2RegistrationChallengeResponse, StateProvinceRegion, TenantPasswordConfig, TotpResponse, UserCreateInput } from "@/graphql/generated/graphql-types";
+import { Fido2KeyRegistrationInput, Fido2RegistrationChallengeResponse, RegistrationState, StateProvinceRegion, TenantPasswordConfig, TotpResponse, UserCreateInput, UserRegistrationState, UserRegistrationStateResponse } from "@/graphql/generated/graphql-types";
 import Alert from '@mui/material/Alert';
 import { PageTitleContext } from "@/components/contexts/page-title-context";
 import { COUNTRY_CODES, CountryCodeDef, LANGUAGE_CODES, LanguageCodeDef } from "@/utils/i18n";
@@ -23,6 +23,15 @@ import { validatePassword } from "@/utils/password-utils";
 import { CREATE_FIDO2_REGISTRATION_CHALLENGE_MUTATION, GENERATE_AUTHORIZATION_RETURN_URI_MUTATION, GENERATE_TOTP_MUTATION, REGISTER_FIDO2_KEY_MUTATION, REGISTER_USER_MUTATION, VERIFY_REGISTRATION_TOKEN_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
 import { RegistrationResponseJSON, startRegistration } from "@simplewebauthn/browser";
+import ValidateEmailOnRegistration from "./validate-email-on-registration";
+
+
+export interface RegistrationComponentsProps {
+    initialUserRegistrationState: UserRegistrationState,    
+    onRegistrationCancelled: () => void,
+    onUpdateStart: () => void,
+    onUpdateEnd: (success: boolean, userRegistrationStateResponse: UserRegistrationStateResponse | null) => void
+}
 
 
 const Register: React.FC = () => {
@@ -84,6 +93,7 @@ const Register: React.FC = () => {
     const [totpValidationErrorMessage, setTotpValidationErrorMessage] = React.useState<string | null>(null);
     const [totpSuccessfullyConfigured, setTotpSuccessfullyConfigured] = React.useState<boolean>(false);
     const [securityKeySuccessfullyConfigured, setSecurityKeySuccessfullyConfigured] = React.useState<boolean>(false);
+    const [userRegistrationState, setUserRegistrationState] = React.useState<UserRegistrationState | null>(null);
 
     // HOOKS FROM NEXTJS OR MUI
     const router = useRouter();
@@ -116,17 +126,14 @@ const Register: React.FC = () => {
     const [registerUser] = useMutation(REGISTER_USER_MUTATION, {
         onCompleted(data) {
             setShowMutationBackdrop(false);
-            setCreatedUserId(data.registerUser.user.userId);
-            localStorage.setItem(AUTH_TOKEN_LOCAL_STORAGE_KEY, data.registerUser.authToken);
-
-            if(tenantBean.getTenantMetaData()?.tenant.verifyEmailOnSelfRegistration){                
-                // Await the user to enter a 16 character validation code
-                setRegistrationPage(3);
+            const userRegistrationStateResponse: UserRegistrationStateResponse = data.registerUser;
+            if(userRegistrationStateResponse.userRegistrationState.registrationState === RegistrationState.Error){
+                setErrorMessage(userRegistrationStateResponse.registrationError.errorCode);
             }
             else{
-                // Either offer or require the user to configure MFA
-                setRegistrationPage(4);
+                setUserRegistrationState(userRegistrationStateResponse.userRegistrationState);
             }
+            setCreatedUserId(userRegistrationStateResponse.userRegistrationState.userId);
         },
         onError(error) {
             setShowMutationBackdrop(false);
@@ -134,23 +141,7 @@ const Register: React.FC = () => {
         },
     });
 
-    const [verifyEmailRegistrationToken] = useMutation(VERIFY_REGISTRATION_TOKEN_MUTATION, {
-        onCompleted(data) {
-            setShowMutationBackdrop(false);
-            if(data.verifyVerificationToken === true){
-                setRegistrationPage(4);
-            }
-            else{
-                setErrorMessage("ERROR: Token value is invalid or expired");
-            }
-        },
-        onError(error) {
-            setShowMutationBackdrop(false);
-            setErrorMessage(error.message)
-        },
-    });
-
-    const [createFido2Challenge] = useMutation(CREATE_FIDO2_REGISTRATION_CHALLENGE_MUTATION, {
+     const [createFido2Challenge] = useMutation(CREATE_FIDO2_REGISTRATION_CHALLENGE_MUTATION, {
         variables: {
             userId: createdUserId
         },
@@ -355,9 +346,7 @@ const Register: React.FC = () => {
     }
 
 
-
-    // Cannot register without a valid tenant id to register against
-    
+    // Cannot register without a valid tenant id to register against    
     if(tenantBean.getTenantMetaData().tenant.tenantId === "" &&  (tenantId === null || tenantId === undefined)){
         router.push(`/authorize/login?${QUERY_PARAM_AUTHENTICATE_TO_PORTAL}=true`);
         return <></>
@@ -458,7 +447,7 @@ const Register: React.FC = () => {
                             <Grid2 size={{ xs: 12 }}>
                                 <div style={{ marginBottom: "16px", fontWeight: "bold", fontSize: "1.0em" }}>Register</div>
                             </Grid2>
-                            {registrationPage === 1 &&
+                            {userRegistrationState === null && registrationPage === 1 &&
                                 <Grid2 size={12} container spacing={1}>
                                     <Grid2 marginBottom={"8px"} size={12}>
                                         <div>First Name</div>
@@ -662,7 +651,7 @@ const Register: React.FC = () => {
                                     
                                 </Grid2>
                             }
-                            {registrationPage === 2 &&
+                            {userRegistrationState === null && registrationPage === 2 &&
                                 <Grid2 size={12} container spacing={1}>
                                     <Grid2 marginBottom={"8px"} size={12}>
                                         <div>Preferred Language</div>
@@ -768,18 +757,22 @@ const Register: React.FC = () => {
                                     </Grid2>
                                 </Grid2>
                             }
-                            {registrationPage === 3 &&
-                                <Grid2 size={12} container spacing={1}>
-                                    <Grid2 marginBottom={"8px"} size={12}>
-                                        <div style={{marginBottom: "16px"}}>A verification code has been sent to your email address. Please enter it below. The code is valid for 60 minutes</div>
-                                        <TextField name="verificationCode" id="verificationCode"
-                                            value={verificationCode}
-                                            onChange={(evt) => setVerificationCode(evt.target.value)}
-                                            fullWidth={true}
-                                            size="small"
-                                        />
-                                    </Grid2>
-                                </Grid2>
+                            {userRegistrationState && userRegistrationState.registrationState === RegistrationState.ValidateEmail &&
+                                <ValidateEmailOnRegistration 
+                                    initialUserRegistrationState={userRegistrationState}
+                                    onRegistrationCancelled={() => console.log("registration cancelled")} 
+                                    onUpdateStart={() => setShowMutationBackdrop(true)} 
+                                    onUpdateEnd={(success: boolean, userRegistrationStateResponse: UserRegistrationStateResponse | null) => {
+                                        setShowMutationBackdrop(false);
+                                        if(success){
+                                            setShowMutationSnackbar(true);
+                                        }
+                                        if(userRegistrationStateResponse){
+                                            setUserRegistrationState(userRegistrationStateResponse.userRegistrationState);
+                                        }
+                                    }}                               
+                                />
+                                
                             }
                             {registrationPage === 4 &&
                                 <Grid2 size={12} container spacing={1}>
@@ -880,24 +873,7 @@ const Register: React.FC = () => {
                                     >
                                         Back
                                     </Button>
-                                }
-                                {registrationPage === 3 &&
-                                    <Button
-                                        onClick={() => {
-                                            setShowMutationBackdrop(true);
-                                            verifyEmailRegistrationToken({
-                                                variables: {
-                                                    userId: createdUserId,
-                                                    token: verificationCode
-
-                                                }
-                                            });
-                                        }}
-                                        disabled={createdUserId === null || verificationCode === null || verificationCode === ""}
-                                    >
-                                        Confirm
-                                    </Button>
-                                }
+                                }                                
                                 {registrationPage === 4 && !passwordConfig.requireMfa &&
                                     <Button
                                         onClick={() => {
