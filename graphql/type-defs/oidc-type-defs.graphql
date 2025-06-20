@@ -139,6 +139,7 @@ type Mutation {
     assignUserToTenant(tenantId: String!, userId: String!, relType: String!): UserTenantRel!
     removeUserFromTenant(tenantId: String!, userId: String!): String
     deleteUserSession(userId: String!, clientId: String!, tenantId: String!): String
+    replacePassword(userId: String!, oldPassword: String!, newPassword: String!): Boolean
     
 
     ## Authentication Flows
@@ -770,6 +771,7 @@ enum AuthenticationState {
     REGISTER
     SELECT_TENANT_THEN_REGISTER
     ENTER_PASSWORD
+    REPLACE_PASSWORD
     CONFIGURE_TOTP
     VALIDATE_TOTP
     CONFIGURE_SECURITY_KEY

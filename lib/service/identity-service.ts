@@ -156,6 +156,9 @@ class IdentityService {
      */
     public async authenticateHandleUserNameInput(email: string, tenantId: string | null, preAuthToken: string | null): Promise<UserAuthenticationStateResponse> {        
 
+        // TODO
+        // Need to consider password rotation periods and password history.
+
         // 1.   If the user is coming from a 3rd party site for authentication
         if(preAuthToken){
             return this.authenticateExternalUserNameHandler(email, preAuthToken);
