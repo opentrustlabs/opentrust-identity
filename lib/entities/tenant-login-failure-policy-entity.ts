@@ -1,8 +1,10 @@
 import { Model, DataTypes, Sequelize } from 'sequelize';
-export class LoginFailurePolicyEntity extends Model {
 
-    static initModel(sequelize: Sequelize): typeof LoginFailurePolicyEntity {
-        return LoginFailurePolicyEntity.init({
+
+class TenantLoginFailurePolicyEntity extends Model {
+
+    static initModel(sequelize: Sequelize): typeof TenantLoginFailurePolicyEntity {
+        return TenantLoginFailurePolicyEntity.init({
             tenantId: {
                 type: DataTypes.STRING,
                 primaryKey: true,
@@ -26,30 +28,19 @@ export class LoginFailurePolicyEntity extends Model {
                 allowNull: true,
                 field: "pausedurationminutes"
             },
-            numberOfPauseCyclesBeforeLocking: {
+            maximumLoginFailures: {
                 type: DataTypes.INTEGER,
                 primaryKey: false,
                 allowNull: true,
-                field: "numberofpausecyclesbeforelocking"
-            },
-            initBackoffDurationMinutes: {
-                type: DataTypes.INTEGER,
-                primaryKey: false,
-                allowNull: true,
-                field: "initbackoffdurationminutes"
-            },
-            numberOfBackoffCyclesBeforeLocking: {
-                type: DataTypes.INTEGER,
-                primaryKey: false,
-                allowNull: true,
-                field: "numberofbackoffcyclesbeforelocking"
+                field: "maximumloginfailures"
             }
         }, {
             sequelize,
-            tableName: "login_failure_policy",
-            modelName: "loginFailurePolicy",
+            tableName: "tenant_login_failure_policy",
+            modelName: "tenantLoginFailurePolicy",
             timestamps: false
         })
     }
 }
 
+export default TenantLoginFailurePolicyEntity;

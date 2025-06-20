@@ -1,4 +1,4 @@
-import { AuthenticationGroup, User, AuthorizationGroup, SuccessfulLoginResponse, UserFailedLoginAttempts, UserTenantRel, UserCredential, UserMfaRel, Fido2Challenge, UserRegistrationState, UserAuthenticationState } from "@/graphql/generated/graphql-types";
+import { AuthenticationGroup, User, AuthorizationGroup, UserFailedLogin, UserTenantRel, UserCredential, UserMfaRel, Fido2Challenge, UserRegistrationState, UserAuthenticationState } from "@/graphql/generated/graphql-types";
 
 export type UserLookupType = "id" | "email" | "phone";
 abstract class IdentityDao {
@@ -8,11 +8,11 @@ abstract class IdentityDao {
 
     abstract getUserAuthenticationGroups(userId: string): Promise<Array<AuthenticationGroup>>;
 
-    // abstract loginUser(username: string, password: string): Promise<SuccessfulLoginResponse | Error>;
+    abstract getFailedLogins(userId: string): Promise<Array<UserFailedLogin>>;
 
-    abstract getFailedLoginAttempts(userId: string): Promise<Array<UserFailedLoginAttempts>>;
+    abstract addFailedLogin(userFailedLogins: UserFailedLogin): Promise<void>;
 
-    abstract incrementFailedLoginAttempts(userId: string): Promise<void>;
+    abstract removeFailedLogin(userId: string, failureAtMs: number): Promise<void>;
 
     abstract resetFailedLoginAttempts(userId: string): Promise<void>;
 

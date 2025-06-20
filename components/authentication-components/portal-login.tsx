@@ -77,6 +77,15 @@ const PortalLogin: React.FC<PortalLoginProps> = ({
         }
     });
 
+    const [authenticateUser] = useMutation(AUTHENTICATE_USER, {
+        onCompleted(data) {
+            const authnStateResponse: UserAuthenticationStateResponse = data.authenticateUser;
+            handleUserAuthenticationResponse(authnStateResponse);
+        },
+        onError(error) {
+            setErrorMessage(error.message);
+        }
+    });
 
     const handleUserAuthenticationResponse = (authnStateResponse: UserAuthenticationStateResponse) => {
         if (authnStateResponse.userAuthenticationState.authenticationState === AuthenticationState.Error) {
@@ -126,16 +135,7 @@ const PortalLogin: React.FC<PortalLoginProps> = ({
         }
     }
 
-    const [authenticateUser] = useMutation(AUTHENTICATE_USER, {
-        onCompleted(data) {
-            const authnStateResponse: UserAuthenticationStateResponse = data.authenticateHandleUserNameInput;
-            handleUserAuthenticationResponse(authnStateResponse);
-        },
-        onError(error) {
-            setErrorMessage(error.message);
-        }
-    })
-
+    
     // const [getPasswordAuthenticationResponse, {}] = useMutation(
     //     LOGIN_MUTATION,
     //     {

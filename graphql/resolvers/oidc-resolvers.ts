@@ -1,6 +1,6 @@
 import ClientService from "@/lib/service/client-service";
 import TenantService from "@/lib/service/tenant-service";
-import { Resolvers, QueryResolvers, MutationResolvers, Tenant, Client, SigningKey, Scope, AuthenticationGroup, AuthorizationGroup, FederatedOidcProvider, Contact, SecondFactorType, PortalUserProfile, User, LoginFailurePolicy, TenantPasswordConfig, TenantLegacyUserMigrationConfig, TenantAnonymousUserConfiguration, TenantLookAndFeel, RateLimitServiceGroup, TenantRateLimitRel, RelSearchResultItem, MarkForDelete } from "@/graphql/generated/graphql-types";
+import { Resolvers, QueryResolvers, MutationResolvers, Tenant, Client, SigningKey, Scope, AuthenticationGroup, AuthorizationGroup, FederatedOidcProvider, Contact, SecondFactorType, PortalUserProfile, User, TenantLoginFailurePolicy, TenantPasswordConfig, TenantLegacyUserMigrationConfig, TenantAnonymousUserConfiguration, TenantLookAndFeel, RateLimitServiceGroup, TenantRateLimitRel, RelSearchResultItem, MarkForDelete } from "@/graphql/generated/graphql-types";
 import SigningKeysService from "@/lib/service/keys-service";
 import ScopeService from "@/lib/service/scope-service";
 import GroupService from "@/lib/service/group-service";
@@ -623,37 +623,25 @@ const resolvers: Resolvers = {
             await providerService.deleteFederatedOIDCProvider(federatedOIDCProviderId);
             return federatedOIDCProviderId;
         },
-        // login: async(_: any, { username, password, tenantId }, oidcContext ) => {
-        //     const response: LoginAuthenticationHandlerResponse = {
-        //         status: LoginAuthenticationHandlerAction.Error,
-        //         successConfig: {
-        //             code: "123412341234",
-        //             redirectUri: "http://localhost:3000/not/avalid/uri",
-        //             responseMode: "fragment",
-        //             state: "347820198273401987324"
-        //         },
-        //         secondFactorType: [SecondFactorType.Totp],
-        //         errorActionHandler: {
-        //             errorCode: "error code",
-        //             errorMessage: "Authentication failed"
-        //         }
-        //     }
-        //     return response;
-        // },
-        updateLoginFailurePolicy: async(_: any, { loginFailurePolicyInput }, oidcContext) => {
-            const loginFailurePolicy: LoginFailurePolicy = {
-                failureThreshold: loginFailurePolicyInput.failureThreshold,
-                loginFailurePolicyType: loginFailurePolicyInput.loginFailurePolicyType,
-                tenantId: loginFailurePolicyInput.tenantId,
-                initBackoffDurationMinutes: loginFailurePolicyInput.initBackoffDurationMinutes || 0,
-                numberOfBackoffCyclesBeforeLocking: loginFailurePolicyInput.numberOfBackoffCyclesBeforeLocking || 0,
-                numberOfPauseCyclesBeforeLocking: loginFailurePolicyInput.numberOfPauseCyclesBeforeLocking || 0,
-                pauseDurationMinutes: loginFailurePolicyInput.pauseDurationMinutes || 0
+        setTenantLoginFailurePolicy: async(_: any, { tenantLoginFailurePolicyInput }, oidcContext) => {
+            const loginFailurePolicy: TenantLoginFailurePolicy = {
+                failureThreshold: tenantLoginFailurePolicyInput.failureThreshold,
+                loginFailurePolicyType: tenantLoginFailurePolicyInput.loginFailurePolicyType,
+                tenantId: tenantLoginFailurePolicyInput.tenantId,
+                pauseDurationMinutes: tenantLoginFailurePolicyInput.pauseDurationMinutes || 0,
+                maximumLoginFailures: tenantLoginFailurePolicyInput.maximumLoginFailures
             }            
             // TODO 
             // Implement the DAO and Service interfaces for assigning login failure policies.
-            return loginFailurePolicy;
+            const service: TenantService = new TenantService(oidcContext);
+            return service.setTenantLoginFailurePolicy(loginFailurePolicy);
+            
         },
+        removeTenantLoginFailurePolicy: async(_: any, { tenantId }, oidcContext) => {
+            const service: TenantService = new TenantService(oidcContext);
+            await service.removeTenantLoginFailurePolicy(tenantId);
+            return tenantId;
+        },  
         setTenantPasswordConfig: async(_: any, { passwordConfigInput }, oidcContext) => {
             const tenantService: TenantService = new TenantService(oidcContext);            
             const tenantPasswordConfig: TenantPasswordConfig = {

@@ -80,7 +80,7 @@ type Query {
     getChangeEvents(objectId: String!): [ChangeEvent!]!
 
     ## Login Failure Configuration
-    getLoginFailurePolicy(tenantId: String!): LoginFailurePolicy
+    getTenantLoginFailurePolicy(tenantId: String!): TenantLoginFailurePolicy
 
     ## Scheduler
     getSchedulerLocks: [SchedulerLock]
@@ -230,7 +230,8 @@ type Mutation {
 
     ## Login failure policy
     ## createLoginFailurePolicy(loginFailurePolicyInput: LoginFailurePolicyInput!): LoginFailurePolicy!
-    updateLoginFailurePolicy(loginFailurePolicyInput: LoginFailurePolicyInput!): LoginFailurePolicy!
+    setTenantLoginFailurePolicy(tenantLoginFailurePolicyInput: TenantLoginFailurePolicyInput!): TenantLoginFailurePolicy!
+    removeTenantLoginFailurePolicy(tenantId: String!): String!
 
     ## Scheduler locks
     deleteSchedulerLock(instanceId: String!): String!
@@ -256,15 +257,12 @@ enum SecretObjectType {
     OIDC_PROVIDER_CLIENT_SECRET
 }
 
-type LoginFailurePolicy {
+type TenantLoginFailurePolicy {
     tenantId: String!
     loginFailurePolicyType: String!
-    loginfailurepolicytypeid: String
     failureThreshold: Int!
     pauseDurationMinutes: Int
-    numberOfPauseCyclesBeforeLocking: Int
-    initBackoffDurationMinutes: Int
-    numberOfBackoffCyclesBeforeLocking: Int
+    maximumLoginFailures: Int
 }
 
 
@@ -758,9 +756,11 @@ type SchedulerLock {
     lockExpiresAtMS: Float!
 }
 
-type UserFailedLoginAttempts {
+type UserFailedLogin {
     userId: String!
-    failureAtMS: Float!
+    failureAtMs: Float!
+    nextLoginNotBefore: Float!
+    failureCount: Float!
 }
 
 
@@ -1343,15 +1343,12 @@ input AccessRuleUpdateInput {
     accessRuleDefinition: String!
 }
 
-input LoginFailurePolicyInput {
+input TenantLoginFailurePolicyInput {
     tenantId: String!
     loginFailurePolicyType: String!
-    loginfailurepolicytypeid: String
     failureThreshold: Int!
     pauseDurationMinutes: Int
-    numberOfPauseCyclesBeforeLocking: Int
-    initBackoffDurationMinutes: Int
-    numberOfBackoffCyclesBeforeLocking: Int
+    maximumLoginFailures: Int
 }
 
 input UserCreateInput {

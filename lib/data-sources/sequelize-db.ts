@@ -27,7 +27,6 @@ import FederatedOIDCProviderDomainRelEntity from "../entities/federated-oidc-pro
 import UserEntity from "../entities/user-entity";
 import UserCredentialEntity from "../entities/user-credential-entity";
 import UserFido2ChallengeEntity from "../entities/user-fido2-challenge-entity";
-import UserFailedLoginAttemptsEntity from "../entities/user-failed-login-attempts-entity";
 import UserVerificationTokenEntity from "../entities/user-verification-token-entity";
 import ProhibitedPasswordEntity from "../entities/prohibited-password-entity";
 import UserTenantRelEntity from "../entities/user-tenant-rel-entity";
@@ -46,7 +45,9 @@ import { StateProvinceRegionEntity } from "../entities/state-province-region-ent
 import UserFido2CounterRelEntity from "../entities/user-fido2-counter-rel-entity";
 import UserAuthenticationStateEntity from "../entities/user-authentication-state-entity";
 import UserRegistrationStateEntity from "../entities/user-registration-state-entity";
-import { LoginFailurePolicyEntity } from "../entities/login-failure-policy-entity";
+import TenantLoginFailurePolicyEntity from "../entities/tenant-login-failure-policy-entity";
+import UserFailedLoginEntity from "../entities/user-failed-login-entity";
+
 
 const {
     DB_USER,
@@ -146,7 +147,7 @@ class DBDriver {
             UserEntity.initModel(global.sequelize);
             UserCredentialEntity.initModel(global.sequelize);
             UserFido2ChallengeEntity.initModel(global.sequelize);
-            UserFailedLoginAttemptsEntity.initModel(global.sequelize);
+            UserFailedLoginEntity.initModel(global.sequelize);
             UserVerificationTokenEntity.initModel(global.sequelize);
             ProhibitedPasswordEntity.initModel(global.sequelize);
             UserTenantRelEntity.initModel(global.sequelize);
@@ -166,7 +167,7 @@ class DBDriver {
             UserFido2CounterRelEntity.initModel(global.sequelize);
             UserAuthenticationStateEntity.initModel(global.sequelize);
             UserRegistrationStateEntity.initModel(global.sequelize);
-            LoginFailurePolicyEntity.initModel(global.sequelize);
+            TenantLoginFailurePolicyEntity.initModel(global.sequelize);
         } 
 
         return global.sequelize;

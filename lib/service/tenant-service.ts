@@ -1,4 +1,4 @@
-import { TenantAnonymousUserConfiguration, Contact, ObjectSearchResultItem, SearchResultType, Tenant, TenantLegacyUserMigrationConfig, TenantLookAndFeel, TenantManagementDomainRel, TenantMetaData, TenantPasswordConfig, TenantRestrictedAuthenticationDomainRel, FederatedOidcProviderTenantRel, TenantAvailableScope } from "@/graphql/generated/graphql-types";
+import { TenantAnonymousUserConfiguration, Contact, ObjectSearchResultItem, SearchResultType, Tenant, TenantLegacyUserMigrationConfig, TenantLookAndFeel, TenantManagementDomainRel, TenantMetaData, TenantPasswordConfig, TenantRestrictedAuthenticationDomainRel, FederatedOidcProviderTenantRel, TenantAvailableScope, TenantLoginFailurePolicy } from "@/graphql/generated/graphql-types";
 import { OIDCContext } from "@/graphql/graphql-context";
 import TenantDao from "@/lib/dao/tenant-dao";
 import { GraphQLError } from "graphql";
@@ -311,6 +311,21 @@ class TenantService {
 
     public async removeDomainFromTenantRestrictedAuthentication(tenantId: string, domain: string): Promise<void>{
         return tenantDao.removeDomainFromTenantRestrictedAuthentication(tenantId, domain);
+    }
+
+    public async setTenantLoginFailurePolicy(loginFailurePolicy: TenantLoginFailurePolicy): Promise<TenantLoginFailurePolicy> {
+        const existing: TenantLoginFailurePolicy | null = await tenantDao.getLoginFailurePolicy(loginFailurePolicy.tenantId);
+        if(!existing){
+            await tenantDao.createLoginFailurePolicy(loginFailurePolicy);
+        }
+        else{
+            await tenantDao.updateLoginFailurePolicy(loginFailurePolicy);
+        }
+        return loginFailurePolicy;
+    }
+
+    public async removeTenantLoginFailurePolicy(tenantId: string): Promise<void> {
+        await tenantDao.removeLoginFailurePolicy(tenantId);
     }
 
     /*

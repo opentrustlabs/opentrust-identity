@@ -1,4 +1,4 @@
-import { Tenant, TenantManagementDomainRel, TenantAnonymousUserConfiguration, TenantLookAndFeel, TenantPasswordConfig, LoginFailurePolicy, TenantLegacyUserMigrationConfig, TenantRestrictedAuthenticationDomainRel } from "@/graphql/generated/graphql-types";
+import { Tenant, TenantManagementDomainRel, TenantAnonymousUserConfiguration, TenantLookAndFeel, TenantPasswordConfig, TenantLoginFailurePolicy, TenantLegacyUserMigrationConfig, TenantRestrictedAuthenticationDomainRel } from "@/graphql/generated/graphql-types";
 import TenantDao from "../../tenant-dao";
 import { TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import { GraphQLError } from "graphql";
@@ -11,7 +11,7 @@ import TenantRestrictedAuthenticationDomainRelEntity from "@/lib/entities/tenant
 import DBDriver from "@/lib/data-sources/sequelize-db";
 import { Op, Sequelize } from "sequelize";
 import { TenantEntity } from "@/lib/entities/tenant-entity";
-import { LoginFailurePolicyEntity } from "@/lib/entities/login-failure-policy-entity";
+import TenantLoginFailurePolicyEntity from "@/lib/entities/tenant-login-failure-policy-entity";
 
 class DBTenantDao extends TenantDao {
 
@@ -338,9 +338,9 @@ class DBTenantDao extends TenantDao {
         return Promise.resolve();
     }
 
-    public async getLoginFailurePolicy(tenantId: String): Promise<LoginFailurePolicy | null>{
+    public async getLoginFailurePolicy(tenantId: String): Promise<TenantLoginFailurePolicy | null>{
         const sequelize: Sequelize = await DBDriver.getConnection();
-        const entity: LoginFailurePolicyEntity | null = await sequelize.models.loginFailurePolicy.findOne({
+        const entity: TenantLoginFailurePolicyEntity | null = await sequelize.models.tenantLoginFailurePolicy.findOne({
             where: {
                 tenantId: tenantId
             }
@@ -348,20 +348,30 @@ class DBTenantDao extends TenantDao {
         return entity ? Promise.resolve(entity.dataValues) : Promise.resolve(null);
     }
 
-    public async createLoginFailurePolicy(loginFailurePolicy: LoginFailurePolicy): Promise<LoginFailurePolicy> {
+    public async createLoginFailurePolicy(loginFailurePolicy: TenantLoginFailurePolicy): Promise<TenantLoginFailurePolicy> {
         const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.loginFailurePolicy.create(loginFailurePolicy);
+        await sequelize.models.tenantLoginFailurePolicy.create(loginFailurePolicy);
         return loginFailurePolicy;
     }
 
-    public async updateLoginFailurePolicy(loginFailurePolicy: LoginFailurePolicy): Promise<LoginFailurePolicy> {
+    public async updateLoginFailurePolicy(loginFailurePolicy: TenantLoginFailurePolicy): Promise<TenantLoginFailurePolicy> {
         const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.loginFailurePolicy.update(loginFailurePolicy, {
+        await sequelize.models.tenantLoginFailurePolicy.update(loginFailurePolicy, {
             where: {
                 tenantId: loginFailurePolicy.tenantId
             }
         });
         return Promise.resolve(loginFailurePolicy);
+    }
+
+    public async removeLoginFailurePolicy(tenantId: string): Promise<void> {
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.tenantLoginFailurePolicy.destroy({
+            where: {
+                tenantId: tenantId
+            }
+        });
+        return Promise.resolve();
     }
 
     public async removeLegacyUserMigrationConfiguration(tenantId: string): Promise<void> {

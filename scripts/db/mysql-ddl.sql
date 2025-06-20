@@ -41,14 +41,12 @@ create TABLE tenant (
 );
 CREATE INDEX tenant_tenant_type_idx ON tenant(tenanttype);
 
-create TABLE login_failure_policy (
+create TABLE tenant_login_failure_policy (
     tenantid VARCHAR(64) PRIMARY KEY,
     loginfailurepolicytype VARCHAR(128) NOT NULL,
     failurethreshold INT NOT NULL,
+    maximumloginfailures INT,
     pausedurationminutes INT,
-    numberofpausecyclesbeforelocking INT,
-    initbackoffdurationminutes INT,
-    numberofbackoffcyclesbeforelocking INT,    
     FOREIGN KEY (tenantid) references tenant(tenantid)
 );
 
@@ -503,9 +501,11 @@ create TABLE prohibited_passwords (
     password VARCHAR(128) NOT NULL PRIMARY KEY
 );
 
-create TABLE user_failed_login_attempts (
+create TABLE user_failed_login (
     userid VARCHAR(64) NOT NULL,
     failureatms BIGINT NOT NULL,
+    nextloginnotbefore BIGINT NOT NULL,
+    failurecount INT NOT NULL,
     PRIMARY KEY (userid, failureatms),
     FOREIGN KEY (userid) REFERENCES user(userid)
 );

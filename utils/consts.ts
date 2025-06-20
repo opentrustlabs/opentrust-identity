@@ -4,7 +4,7 @@
 //                    AUTH-TOKEN-RELATED CONSTANTS
 // 
 
-import { LoginFailurePolicy, TenantMetaData, TenantPasswordConfig } from "@/graphql/generated/graphql-types";
+import { TenantLoginFailurePolicy, TenantMetaData, TenantPasswordConfig } from "@/graphql/generated/graphql-types";
 
 // ************************************************************************** //
 export const DEFAULT_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS = 600; // 10 minutes 
@@ -425,25 +425,27 @@ export const TENANT_TYPES_DISPLAY = new Map<string, string>(
 );
 
 export const DEFAULT_LOGIN_FAILURE_LOCK_THRESHOLD=8;
+export const DEFAULT_MAXIMUM_LOGIN_FAILURES=100;
+export const DEFAULT_LOGIN_PAUSE_TIME_MINUTES=30;
 export const LOGIN_FAILURE_POLICY_LOCK_USER_ACCOUNT="LOCK_USER_ACCOUNT";
 export const LOGIN_FAILURE_POLICY_PAUSE="PAUSE";
-export const LOGIN_FAILURE_POLICY_PAUSE_THEN_LOCK="PAUSE_THEN_LOCK";
-export const LOGIN_FAILURE_POLICY_BACKOFF="BACKOFF";
-export const LOGIN_FAILURE_POLICY_BACKOFF_THEN_LOCK="BACKOFF_THEN_LOCK";
+// export const LOGIN_FAILURE_POLICY_PAUSE_THEN_LOCK="PAUSE_THEN_LOCK";
+// export const LOGIN_FAILURE_POLICY_BACKOFF="BACKOFF";
+// export const LOGIN_FAILURE_POLICY_BACKOFF_THEN_LOCK="BACKOFF_THEN_LOCK";
 export const LOGIN_FAILURE_POLICY_TYPES=[
     LOGIN_FAILURE_POLICY_LOCK_USER_ACCOUNT,
-    LOGIN_FAILURE_POLICY_PAUSE,
-    LOGIN_FAILURE_POLICY_PAUSE_THEN_LOCK,
-    LOGIN_FAILURE_POLICY_BACKOFF,
-    LOGIN_FAILURE_POLICY_BACKOFF_THEN_LOCK
+    LOGIN_FAILURE_POLICY_PAUSE
+    // LOGIN_FAILURE_POLICY_PAUSE_THEN_LOCK,
+    // LOGIN_FAILURE_POLICY_BACKOFF,
+    // LOGIN_FAILURE_POLICY_BACKOFF_THEN_LOCK
 ];
 export const LOGIN_FAILURE_POLICY_TYPE_DISPLAY = new Map<string, string>(
     [
         [LOGIN_FAILURE_POLICY_LOCK_USER_ACCOUNT, "Lock"],
-        [LOGIN_FAILURE_POLICY_PAUSE, "Pause"],
-        [LOGIN_FAILURE_POLICY_PAUSE_THEN_LOCK, "Pause then lock"],
-        [LOGIN_FAILURE_POLICY_BACKOFF, "Backoff"],
-        [LOGIN_FAILURE_POLICY_BACKOFF_THEN_LOCK, "Backoff then lock"],
+        [LOGIN_FAILURE_POLICY_PAUSE, "Pause"]
+        // [LOGIN_FAILURE_POLICY_PAUSE_THEN_LOCK, "Pause then lock"],
+        // [LOGIN_FAILURE_POLICY_BACKOFF, "Backoff"],
+        // [LOGIN_FAILURE_POLICY_BACKOFF_THEN_LOCK, "Backoff then lock"],
     ]
 )
 
@@ -766,15 +768,12 @@ export const DEFAULT_TENANT_PASSWORD_CONFIGURATION: TenantPasswordConfig = {
     maxRepeatingCharacterLength: 2
 }
 
-export const DEFAULT_LOGIN_FAILURE_POLICY: LoginFailurePolicy = {
+export const DEFAULT_LOGIN_FAILURE_POLICY: TenantLoginFailurePolicy = {
     failureThreshold: DEFAULT_LOGIN_FAILURE_LOCK_THRESHOLD,
     loginFailurePolicyType: LOGIN_FAILURE_POLICY_LOCK_USER_ACCOUNT,
     tenantId: "",
-    initBackoffDurationMinutes: 0,
-    loginfailurepolicytypeid: "",
-    numberOfBackoffCyclesBeforeLocking: 0,
-    numberOfPauseCyclesBeforeLocking: 0,
-    pauseDurationMinutes: 0
+    pauseDurationMinutes: null,
+    maximumLoginFailures: null
 }
 
 // ************************************************************************** //

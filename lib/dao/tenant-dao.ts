@@ -1,4 +1,4 @@
-import { TenantAnonymousUserConfiguration, LoginFailurePolicy, Tenant, TenantLegacyUserMigrationConfig, TenantLookAndFeel, TenantManagementDomainRel, TenantPasswordConfig, TenantRestrictedAuthenticationDomainRel } from "@/graphql/generated/graphql-types";
+import { TenantAnonymousUserConfiguration, TenantLoginFailurePolicy, Tenant, TenantLegacyUserMigrationConfig, TenantLookAndFeel, TenantManagementDomainRel, TenantPasswordConfig, TenantRestrictedAuthenticationDomainRel } from "@/graphql/generated/graphql-types";
 
 
 abstract class TenantDao {
@@ -50,11 +50,13 @@ abstract class TenantDao {
 
     abstract removePasswordConfigFromTenant(tenantId: string): Promise<void>;
 
-    abstract getLoginFailurePolicy(tenantId: String): Promise<LoginFailurePolicy | null>;
+    abstract getLoginFailurePolicy(tenantId: String): Promise<TenantLoginFailurePolicy | null>;
 
-    abstract createLoginFailurePolicy(loginFailurePolicy: LoginFailurePolicy): Promise<LoginFailurePolicy>;
+    abstract createLoginFailurePolicy(loginFailurePolicy: TenantLoginFailurePolicy): Promise<TenantLoginFailurePolicy>;
 
-    abstract updateLoginFailurePolicy(loginFailurePolicy: LoginFailurePolicy): Promise<LoginFailurePolicy>;
+    abstract updateLoginFailurePolicy(loginFailurePolicy: TenantLoginFailurePolicy): Promise<TenantLoginFailurePolicy>;
+
+    abstract removeLoginFailurePolicy(tenantId: string): Promise<void>;
 
     abstract getLegacyUserMigrationConfiguration(tenantId: string): Promise<TenantLegacyUserMigrationConfig | null>;
 

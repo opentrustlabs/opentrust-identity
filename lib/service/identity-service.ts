@@ -1,12 +1,12 @@
 import { OIDCContext } from "@/graphql/graphql-context";
 import * as OTPAuth from "otpauth";
 import IdentityDao from "../dao/identity-dao";
-import { Client, Fido2AuthenticationChallengeResponse, Fido2Challenge, Fido2RegistrationChallengeResponse, Fido2KeyRegistrationInput, ObjectSearchResultItem, RefreshData, RelSearchResultItem, SearchResultType, Tenant, TenantPasswordConfig, TotpResponse, User, UserCreateInput, UserCredential, UserMfaRel, UserSession, UserTenantRel, UserTenantRelView, Fido2KeyAuthenticationInput, TenantRestrictedAuthenticationDomainRel, TenantManagementDomainRel, FederatedOidcProvider, FederatedOidcProviderTenantRel, FederatedOidcAuthorizationRel, FederatedOidcAuthorizationRelType, AuthorizationCodeData, PreAuthenticationState, AuthorizationReturnUri, UserRegistrationStateResponse, UserRegistrationState, RegistrationState, UserAuthenticationStateResponse, AuthenticationState, AuthenticationErrorTypes, UserAuthenticationState, UserFailedLoginAttempts, LoginFailurePolicy } from "@/graphql/generated/graphql-types";
+import { Client, Fido2AuthenticationChallengeResponse, Fido2Challenge, Fido2RegistrationChallengeResponse, Fido2KeyRegistrationInput, ObjectSearchResultItem, RefreshData, RelSearchResultItem, SearchResultType, Tenant, TenantPasswordConfig, TotpResponse, User, UserCreateInput, UserCredential, UserMfaRel, UserSession, UserTenantRel, UserTenantRelView, Fido2KeyAuthenticationInput, TenantRestrictedAuthenticationDomainRel, TenantManagementDomainRel, FederatedOidcProvider, FederatedOidcProviderTenantRel, FederatedOidcAuthorizationRel, FederatedOidcAuthorizationRelType, AuthorizationCodeData, PreAuthenticationState, AuthorizationReturnUri, UserRegistrationStateResponse, UserRegistrationState, RegistrationState, UserAuthenticationStateResponse, AuthenticationState, AuthenticationErrorTypes, UserAuthenticationState, UserFailedLogin, TenantLoginFailurePolicy } from "@/graphql/generated/graphql-types";
 import { DaoFactory } from "../data-sources/dao-factory";
 import TenantDao from "../dao/tenant-dao";
 import { GraphQLError } from "graphql/error";
 import { randomUUID } from "crypto";
-import { DEFAULT_LOGIN_FAILURE_POLICY, DEFAULT_TENANT_PASSWORD_CONFIGURATION, FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE, LOGIN_FAILURE_POLICY_LOCK_USER_ACCOUNT, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, NAME_ORDER_WESTERN, OIDC_AUTHORIZATION_ERROR_ACCESS_DENIED, PASSWORD_HASH_ITERATION_128K, PASSWORD_HASH_ITERATION_256K, PASSWORD_HASH_ITERATION_32K, PASSWORD_HASH_ITERATION_64K, PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_32K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_64K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS, QUERY_PARAM_TENANT_ID, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, STATUS_COMPLETE, STATUS_INCOMPLETE, STATUS_OMITTED, TENANT_TYPE_ROOT_TENANT, TOKEN_TYPE_END_USER, TOKEN_TYPE_IAM_PORTAL_USER, TOKEN_TYPE_PROVISIONAL_USER, TOTP_HASH_ALGORITHM_SHA1, USER_TENANT_REL_TYPE_GUEST, USER_TENANT_REL_TYPE_PRIMARY } from "@/utils/consts";
+import { DEFAULT_LOGIN_FAILURE_POLICY, DEFAULT_LOGIN_PAUSE_TIME_MINUTES, DEFAULT_MAXIMUM_LOGIN_FAILURES, DEFAULT_TENANT_PASSWORD_CONFIGURATION, FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE, LOGIN_FAILURE_POLICY_LOCK_USER_ACCOUNT, LOGIN_FAILURE_POLICY_PAUSE, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, NAME_ORDER_WESTERN, OIDC_AUTHORIZATION_ERROR_ACCESS_DENIED, PASSWORD_HASH_ITERATION_128K, PASSWORD_HASH_ITERATION_256K, PASSWORD_HASH_ITERATION_32K, PASSWORD_HASH_ITERATION_64K, PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_32K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_64K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS, QUERY_PARAM_TENANT_ID, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, STATUS_COMPLETE, STATUS_INCOMPLETE, STATUS_OMITTED, TENANT_TYPE_ROOT_TENANT, TOKEN_TYPE_END_USER, TOKEN_TYPE_IAM_PORTAL_USER, TOKEN_TYPE_PROVISIONAL_USER, TOTP_HASH_ALGORITHM_SHA1, USER_TENANT_REL_TYPE_GUEST, USER_TENANT_REL_TYPE_PRIMARY } from "@/utils/consts";
 import { sha256HashPassword, pbkdf2HashPassword, bcryptHashPassword, generateSalt, scryptHashPassword, generateRandomToken, generateCodeVerifierAndChallenge, bcryptValidatePassword } from "@/utils/dao-utils";
 import { Client as OpenSearchClient } from "@opensearch-project/opensearch";
 import { getOpenSearchClient } from "../data-sources/search";
@@ -20,8 +20,6 @@ import FederatedOIDCProviderDao from "../dao/federated-oidc-provider-dao";
 import OIDCServiceUtils from "./oidc-service-utils";
 import { WellknownConfig } from "../models/wellknown-config";
 import JwtServiceUtils from "./jwt-service-utils";
-import { ApolloServerPluginLandingPageProductionDefault } from "@apollo/server/plugin/landingPage/default";
-import TenantDetail from "@/components/tenants/tenant-detail";
 
 
 
@@ -175,18 +173,19 @@ class IdentityService {
         }
         
 
-        const userFailedLoginAttempts: Array<UserFailedLoginAttempts> = await identityDao.getFailedLoginAttempts(user.userId);
-        let loginFailurePolicy: LoginFailurePolicy | null = await tenantDao.getLoginFailurePolicy(arrUserAuthenticationStates[index].tenantId);
+        const userFailedLoginAttempts: Array<UserFailedLogin> = await identityDao.getFailedLogins(user.userId);
+        let loginFailurePolicy: TenantLoginFailurePolicy | null = await tenantDao.getLoginFailurePolicy(arrUserAuthenticationStates[index].tenantId);
         if(loginFailurePolicy === null){
             loginFailurePolicy = DEFAULT_LOGIN_FAILURE_POLICY;
         }
 
-        // We check in order to allow the user to authenticate based on the number of failures they have previously
-        // and the type of failure policy they have
-        if(userFailedLoginAttempts.length > 0){
-
+        // We will check to see if the user can authenticate based on the number of failures they have previously
+        // and if we have a failure policy type of pause and the next login time allowed is at some point in the past.
+        if(userFailedLoginAttempts.length > 0 && loginFailurePolicy.loginFailurePolicyType === LOGIN_FAILURE_POLICY_PAUSE){
+            if(userFailedLoginAttempts[length - 1].nextLoginNotBefore > Date.now()){
+                throw new GraphQLError("ERROR_AUTHENTICTION_IS_PAUSED_FOR_USER");
+            }
         }
-
 
         const userCredential: UserCredential | null = await identityDao.getUserCredentialForAuthentication(user.userId);
         if(!userCredential){
@@ -235,16 +234,63 @@ class IdentityService {
         }
 
         if(!valid){
-            await identityDao.incrementFailedLoginAttempts(user.userId);
+
+            // 1.   Do we need to lock the user
+            // 2.   If not, do we need to pause the login attempts for any length of time?
+            const nowMs = Date.now();
+            const failureCount: number = userFailedLoginAttempts.length === 0 ? 1 : userFailedLoginAttempts[userFailedLoginAttempts.length - 1].failureCount + 1;
+            let nextLoginTime = nowMs;
+            let lockUser: boolean = false;
+
             if(loginFailurePolicy.loginFailurePolicyType === LOGIN_FAILURE_POLICY_LOCK_USER_ACCOUNT){
-                if(loginFailurePolicy.failureThreshold <= (userFailedLoginAttempts.length + 1)){
-                    user.locked = true;
-                    await identityDao.updateUser(user);
+                if(failureCount >= loginFailurePolicy.failureThreshold){
+                    nextLoginTime = Number.MAX_SAFE_INTEGER;
+                    lockUser = true;
                 }
             }
+            else if(loginFailurePolicy.loginFailurePolicyType === LOGIN_FAILURE_POLICY_PAUSE){
+                // Have we surpassed the globally maximum allowed login failures (globally, either by tenant configuration or by system default)?
+                const maximumLoginFailures: number = loginFailurePolicy.maximumLoginFailures ? loginFailurePolicy.maximumLoginFailures : DEFAULT_MAXIMUM_LOGIN_FAILURES;
+                if(failureCount >= maximumLoginFailures){
+                    nextLoginTime = Number.MAX_SAFE_INTEGER;
+                    lockUser = true;
+                }
+                else{
+                    const failureThreshold = loginFailurePolicy.failureThreshold;
+                    // Are we just at the threshold for another pause? For example, the threshold is 8 consecutive
+                    // failed logins before a pause at we are at the 8th or 16th or 24th or ... failure, 
+                    if(failureCount % failureThreshold === 0){
+                        const pauseDurationInMinutes: number = loginFailurePolicy.pauseDurationMinutes ? loginFailurePolicy.pauseDurationMinutes : DEFAULT_LOGIN_PAUSE_TIME_MINUTES;
+                        nextLoginTime = nowMs + (pauseDurationInMinutes * 60 * 1000);
+                    }
+                }
+            }
+
+            await identityDao.addFailedLogin({
+                failureAtMs: nowMs,
+                failureCount: failureCount,
+                nextLoginNotBefore: nextLoginTime,
+                userId: user.userId
+            });
+
+            if(lockUser){
+                user.locked = true;
+                await identityDao.updateUser(user);
+            }
+            // We can safely delete the previous failed attempts
+            if(userFailedLoginAttempts.length > 0){
+                for(let i = 0; i < userFailedLoginAttempts.length; i++){
+                    identityDao.removeFailedLogin(userFailedLoginAttempts[i].userId, userFailedLoginAttempts[i].failureAtMs);
+                }
+            }
+            
             response.authenticationError.errorCode = "ERROR_INVALID_CREDENTIALS";
             return Promise.resolve(response);
         }
+
+
+        // Otherwise the password is valid and we should remove the failed login attempts
+        // and update the existing authentication state and return the new state.
         identityDao.resetFailedLoginAttempts(user.userId);
 
         arrUserAuthenticationStates[index].authenticationStateStatus = STATUS_COMPLETE;
@@ -2039,6 +2085,7 @@ class IdentityService {
         }
         return retVal;
     }
+
 
     protected async createFederatedOIDCRequestProperties(email: string, userId: string | null, provider: FederatedOidcProvider, tenantId: string): Promise<{hasError: boolean, errorMessage: string, authorizationEndpoint: string}> {
 
