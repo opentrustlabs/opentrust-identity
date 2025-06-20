@@ -455,16 +455,13 @@ export const RATE_LIMIT_BY_ID_QUERY = gql(`
 `);
 
 export const LOGIN_FAILURE_CONFIGURATION_QUERY = gql(`
-    query getLoginFailurePolicy($tenantId: String!){
-        getLoginFailurePolicy(tenantId: $tenantId) {
+    query getTenantLoginFailurePolicy($tenantId: String!){
+        getTenantLoginFailurePolicy(tenantId: $tenantId) {
             tenantId
             loginFailurePolicyType
-            loginfailurepolicytypeid
             failureThreshold
             pauseDurationMinutes
-            numberOfPauseCyclesBeforeLocking
-            initBackoffDurationMinutes
-            numberOfBackoffCyclesBeforeLocking
+            maximumLoginFailures
         }
     }
 `);

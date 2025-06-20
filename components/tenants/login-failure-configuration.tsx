@@ -4,12 +4,10 @@ import { useMutation, useQuery } from "@apollo/client";
 import React from "react";
 import DataLoading from "../layout/data-loading";
 import ErrorComponent from "../error/error-component";
-import { LoginFailurePolicy, LoginFailurePolicyInput } from "@/graphql/generated/graphql-types";
-import { DEFAULT_LOGIN_FAILURE_LOCK_THRESHOLD, LOGIN_FAILURE_POLICY_BACKOFF, LOGIN_FAILURE_POLICY_BACKOFF_THEN_LOCK, LOGIN_FAILURE_POLICY_LOCK_USER_ACCOUNT, LOGIN_FAILURE_POLICY_PAUSE, LOGIN_FAILURE_POLICY_PAUSE_THEN_LOCK, LOGIN_FAILURE_POLICY_TYPE_DISPLAY } from "@/utils/consts";
+import { TenantLoginFailurePolicy, TenantLoginFailurePolicyInput } from "@/graphql/generated/graphql-types";
+import { DEFAULT_LOGIN_FAILURE_LOCK_THRESHOLD, DEFAULT_LOGIN_PAUSE_TIME_MINUTES, DEFAULT_MAXIMUM_LOGIN_FAILURES, LOGIN_FAILURE_POLICY_LOCK_USER_ACCOUNT, LOGIN_FAILURE_POLICY_PAUSE, LOGIN_FAILURE_POLICY_TYPE_DISPLAY } from "@/utils/consts";
 import Grid2 from "@mui/material/Grid2";
 import TextField from "@mui/material/TextField";
-import Stack from "@mui/material/Stack";
-import Button from "@mui/material/Button";
 import { MenuItem, Select } from "@mui/material";
 import { LOGIN_FAILURE_POLICY_CONFIGURATION_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import DetailSectionActionHandler from "../layout/detail-section-action-handler";
@@ -26,21 +24,19 @@ const LoginFailureConfiguration: React.FC<LoginFailureConfigurationProps> = ({
     onUpdateStart
 }) => {
 
-    let initInput: LoginFailurePolicyInput = {
+    let initInput: TenantLoginFailurePolicyInput = {
         failureThreshold: DEFAULT_LOGIN_FAILURE_LOCK_THRESHOLD,
         loginFailurePolicyType: LOGIN_FAILURE_POLICY_LOCK_USER_ACCOUNT,
         tenantId: tenantId,
         pauseDurationMinutes: 0,
-        numberOfPauseCyclesBeforeLocking: 0,
-        initBackoffDurationMinutes: 0,
-        numberOfBackoffCyclesBeforeLocking: 0,
+        maximumLoginFailures: 0
     }
 
     // STATE VARIABLES
     const [markDirty, setMarkDirty] = React.useState<boolean>(false);
     const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
-    const [failurePolicyInput, setFailurePolicyInput] = React.useState<LoginFailurePolicyInput | null>(null);
-    const [revertToPolicyInput, setRevertToPolicyInput] = React.useState<LoginFailurePolicyInput | null>(null);
+    const [failurePolicyInput, setFailurePolicyInput] = React.useState<TenantLoginFailurePolicyInput | null>(null);
+    const [revertToPolicyInput, setRevertToPolicyInput] = React.useState<TenantLoginFailurePolicyInput | null>(null);
 
 
     // GRAPHQL FUNCTIONS
@@ -50,14 +46,12 @@ const LoginFailureConfiguration: React.FC<LoginFailureConfigurationProps> = ({
             tenantId: tenantId
         },
         onCompleted(data) {
-            if (data && data.getLoginFailurePolicy) {
-                const policy: LoginFailurePolicy = data.getLoginFailurePolicy as LoginFailurePolicy;
+            if (data && data.getTenantLoginFailurePolicy) {
+                const policy: TenantLoginFailurePolicy = data.getTenantLoginFailurePolicy as TenantLoginFailurePolicy;
                 initInput.failureThreshold = policy.failureThreshold;
-                initInput.initBackoffDurationMinutes = policy.initBackoffDurationMinutes;
-                initInput.loginFailurePolicyType = policy.loginFailurePolicyType;
-                initInput.numberOfBackoffCyclesBeforeLocking = policy.numberOfBackoffCyclesBeforeLocking;
-                initInput.numberOfPauseCyclesBeforeLocking = policy.numberOfPauseCyclesBeforeLocking;
+                initInput.loginFailurePolicyType = policy.loginFailurePolicyType;                
                 initInput.pauseDurationMinutes = policy.pauseDurationMinutes;
+                initInput.maximumLoginFailures = policy.maximumLoginFailures;
             }
             setFailurePolicyInput(initInput);
             setRevertToPolicyInput(initInput);
@@ -66,7 +60,7 @@ const LoginFailureConfiguration: React.FC<LoginFailureConfigurationProps> = ({
 
     const [mutateLoginFailureConfiguration] = useMutation(LOGIN_FAILURE_POLICY_CONFIGURATION_MUTATION, {
         variables: {
-            loginFailurePolicyInput: failurePolicyInput
+            tenantLoginFailurePolicyInput: failurePolicyInput
         },
         onCompleted() {
             onUpdateEnd(true);
@@ -100,13 +94,21 @@ const LoginFailureConfiguration: React.FC<LoginFailureConfigurationProps> = ({
                         size="small"
                         fullWidth={true}
                         value={failurePolicyInput.loginFailurePolicyType}
-                        onChange={ (evt) => {failurePolicyInput.loginFailurePolicyType = evt.target.value; setFailurePolicyInput({...failurePolicyInput}); setMarkDirty(true);}}
+                        onChange={ (evt) => {
+                            failurePolicyInput.loginFailurePolicyType = evt.target.value;
+                            if(evt.target.value === LOGIN_FAILURE_POLICY_LOCK_USER_ACCOUNT){
+                                failurePolicyInput.maximumLoginFailures = null;
+                                failurePolicyInput.pauseDurationMinutes = null;
+                            }
+                            else{
+                                failurePolicyInput.maximumLoginFailures = DEFAULT_MAXIMUM_LOGIN_FAILURES;
+                                failurePolicyInput.pauseDurationMinutes = DEFAULT_LOGIN_PAUSE_TIME_MINUTES;
+                            }
+                            setFailurePolicyInput({...failurePolicyInput}); 
+                            setMarkDirty(true);}}
                     >
                         <MenuItem value={LOGIN_FAILURE_POLICY_LOCK_USER_ACCOUNT}>{LOGIN_FAILURE_POLICY_TYPE_DISPLAY.get(LOGIN_FAILURE_POLICY_LOCK_USER_ACCOUNT)}</MenuItem>
                         <MenuItem value={LOGIN_FAILURE_POLICY_PAUSE}>{LOGIN_FAILURE_POLICY_TYPE_DISPLAY.get(LOGIN_FAILURE_POLICY_PAUSE)}</MenuItem>
-                        <MenuItem value={LOGIN_FAILURE_POLICY_PAUSE_THEN_LOCK}>{LOGIN_FAILURE_POLICY_TYPE_DISPLAY.get(LOGIN_FAILURE_POLICY_PAUSE_THEN_LOCK)}</MenuItem>
-                        <MenuItem value={LOGIN_FAILURE_POLICY_BACKOFF}>{LOGIN_FAILURE_POLICY_TYPE_DISPLAY.get(LOGIN_FAILURE_POLICY_BACKOFF)}</MenuItem>
-                        <MenuItem value={LOGIN_FAILURE_POLICY_BACKOFF_THEN_LOCK}>{LOGIN_FAILURE_POLICY_TYPE_DISPLAY.get(LOGIN_FAILURE_POLICY_BACKOFF_THEN_LOCK)}</MenuItem>
                     </Select>
 
                 </Grid2>
@@ -121,50 +123,26 @@ const LoginFailureConfiguration: React.FC<LoginFailureConfigurationProps> = ({
                 <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
                     <div>Pause Duration (in minutes)</div>
                     <TextField name="pauseDuration" id="pauseDuration" 
-                        disabled={ ! (failurePolicyInput.loginFailurePolicyType === LOGIN_FAILURE_POLICY_PAUSE || failurePolicyInput.loginFailurePolicyType === LOGIN_FAILURE_POLICY_PAUSE_THEN_LOCK) }
+                        disabled={ ! (failurePolicyInput.loginFailurePolicyType === LOGIN_FAILURE_POLICY_PAUSE) }
                         value={
-                            ! (failurePolicyInput.loginFailurePolicyType === LOGIN_FAILURE_POLICY_PAUSE || failurePolicyInput.loginFailurePolicyType === LOGIN_FAILURE_POLICY_PAUSE_THEN_LOCK) ?
-                            "0" :
+                            ! (failurePolicyInput.loginFailurePolicyType === LOGIN_FAILURE_POLICY_PAUSE) ?
+                            "" :
                             failurePolicyInput.pauseDurationMinutes || ""} 
                         onChange={(evt) => {failurePolicyInput.pauseDurationMinutes = parseInt(evt.target.value || "0"); setFailurePolicyInput({...failurePolicyInput}); setMarkDirty(true);}}
                         fullWidth={true} size="small" 
                     />
                 </Grid2>
                 <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
-                    <div>Number of pause cycles before locking</div>
-                    <TextField name="numberOfPauseCycles" id="numberOfPauseCycles" 
-                        disabled={failurePolicyInput.loginFailurePolicyType !== LOGIN_FAILURE_POLICY_PAUSE_THEN_LOCK}
+                    <div>Maximum Login Failures</div>
+                    <TextField name="maximumLoginFailures" id="maximumLoginFailures" 
+                        disabled={failurePolicyInput.loginFailurePolicyType !== LOGIN_FAILURE_POLICY_PAUSE}
                         value={
-                            failurePolicyInput.loginFailurePolicyType !== LOGIN_FAILURE_POLICY_PAUSE_THEN_LOCK ?
-                            "0" :
-                            failurePolicyInput.numberOfPauseCyclesBeforeLocking || ""} 
-                        onChange={(evt) => {failurePolicyInput.numberOfPauseCyclesBeforeLocking = parseInt(evt.target.value || "0"); setFailurePolicyInput({...failurePolicyInput}); setMarkDirty(true);}}
+                            failurePolicyInput.loginFailurePolicyType !== LOGIN_FAILURE_POLICY_PAUSE ?
+                            "" :
+                            failurePolicyInput.maximumLoginFailures || DEFAULT_MAXIMUM_LOGIN_FAILURES} 
+                        onChange={(evt) => {failurePolicyInput.maximumLoginFailures = parseInt(evt.target.value || "0"); setFailurePolicyInput({...failurePolicyInput}); setMarkDirty(true);}}
                         fullWidth={true} size="small" />
-                </Grid2>
-                <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
-                    <div>Initial backoff duration (in minutes)</div>
-                    <TextField name="initialBackoffDurationMins" id="initialBackoffDurationMins" 
-                        disabled={ ! (failurePolicyInput.loginFailurePolicyType === LOGIN_FAILURE_POLICY_BACKOFF || failurePolicyInput.loginFailurePolicyType === LOGIN_FAILURE_POLICY_BACKOFF_THEN_LOCK) }
-                        value={
-                            ! (failurePolicyInput.loginFailurePolicyType === LOGIN_FAILURE_POLICY_BACKOFF || failurePolicyInput.loginFailurePolicyType === LOGIN_FAILURE_POLICY_BACKOFF_THEN_LOCK) ?
-                            "0" :
-                            failurePolicyInput.initBackoffDurationMinutes || ""} 
-                        onChange={(evt) => {failurePolicyInput.initBackoffDurationMinutes = parseInt(evt.target.value || "0"); setFailurePolicyInput({...failurePolicyInput}); setMarkDirty(true);}}
-                        fullWidth={true} size="small" 
-                    />
-                </Grid2>
-                <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
-                    <div>Number of backoff cycles before locking</div>
-                    <TextField name="numberOfBackoffCyclesBeforeLocking" id="numberOfBackoffCyclesBeforeLocking"
-                        disabled={failurePolicyInput.loginFailurePolicyType !== LOGIN_FAILURE_POLICY_BACKOFF_THEN_LOCK}                
-                        value={
-                            failurePolicyInput.loginFailurePolicyType !== LOGIN_FAILURE_POLICY_BACKOFF_THEN_LOCK ?
-                            "0" :
-                            failurePolicyInput.numberOfBackoffCyclesBeforeLocking || ""} 
-                        onChange={(evt) => {failurePolicyInput.numberOfBackoffCyclesBeforeLocking = parseInt(evt.target.value || "0"); setFailurePolicyInput({...failurePolicyInput}); setMarkDirty(true);}}
-                        fullWidth={true} size="small" 
-                    />
-                </Grid2>
+                </Grid2>                
             </Grid2>
             <DetailSectionActionHandler
                 onDiscardClickedHandler={() => {   

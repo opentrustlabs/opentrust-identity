@@ -19,6 +19,7 @@ type Query {
     getLegacyUserMigrationConfiguration(tenantId: String!): TenantLegacyUserMigrationConfig
     getTenantLookAndFeel(tenantId: String!): TenantLookAndFeel
     getTenantPasswordConfig(tenantId: String!): TenantPasswordConfig
+    getTenantLoginFailurePolicy(tenantId: String!): TenantLoginFailurePolicy
 
     ## Clients
     getClients(tenantId: String): [Client!]!
@@ -79,9 +80,6 @@ type Query {
     ## Change events
     getChangeEvents(objectId: String!): [ChangeEvent!]!
 
-    ## Login Failure Configuration
-    getTenantLoginFailurePolicy(tenantId: String!): TenantLoginFailurePolicy
-
     ## Scheduler
     getSchedulerLocks: [SchedulerLock]
 
@@ -121,6 +119,8 @@ type Mutation {
     removeTenantAnonymousUserConfig(tenantId: String!): String
     setTenantLookAndFeel(tenantLookAndFeelInput: TenantLookAndFeelInput!): TenantLookAndFeel    
     removeTenantLookAndFeel(tenantId: String!): String
+    setTenantLoginFailurePolicy(tenantLoginFailurePolicyInput: TenantLoginFailurePolicyInput!): TenantLoginFailurePolicy!
+    removeTenantLoginFailurePolicy(tenantId: String!): String!
     
     ## Clients
     createClient(clientInput: ClientCreateInput!): Client
@@ -227,11 +227,6 @@ type Mutation {
     assignFederatedOIDCProviderToDomain(federatedOIDCProviderId: String!, domain: String!): FederatedOIDCProviderDomainRel!
     removeFederatedOIDCProviderFromDomain(federatedOIDCProviderId: String!, domain: String!): FederatedOIDCProviderDomainRel!
     deleteFederatedOIDCProvider(federatedOIDCProviderId: String!): String!
-
-    ## Login failure policy
-    ## createLoginFailurePolicy(loginFailurePolicyInput: LoginFailurePolicyInput!): LoginFailurePolicy!
-    setTenantLoginFailurePolicy(tenantLoginFailurePolicyInput: TenantLoginFailurePolicyInput!): TenantLoginFailurePolicy!
-    removeTenantLoginFailurePolicy(tenantId: String!): String!
 
     ## Scheduler locks
     deleteSchedulerLock(instanceId: String!): String!

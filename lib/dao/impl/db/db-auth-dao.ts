@@ -33,13 +33,13 @@ class DBAuthDao extends AuthDao {
 
     public async savePreAuthenticationState(preAuthenticationState: PreAuthenticationState): Promise<PreAuthenticationState> {
         const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.preauthenticationState.create(preAuthenticationState);        
+        await sequelize.models.preAuthenticationState.create(preAuthenticationState);        
         return Promise.resolve(preAuthenticationState);
     }
 
     public async getPreAuthenticationState(tk: string): Promise<PreAuthenticationState | null> {
         const sequelize: Sequelize = await DBDriver.getConnection();
-        const entity: PreAuthenticationStateEntity | null = await sequelize.models.preauthenticationState.findOne({
+        const entity: PreAuthenticationStateEntity | null = await sequelize.models.preAuthenticationState.findOne({
             where: {
                 token: tk
             }
@@ -50,7 +50,7 @@ class DBAuthDao extends AuthDao {
 
     public async deletePreAuthenticationState(tk: string): Promise<void> {
         const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.preauthenticationState.destroy({
+        await sequelize.models.preAuthenticationState.destroy({
             where: {
                 token: tk
             } 

@@ -313,13 +313,23 @@ class TenantService {
         return tenantDao.removeDomainFromTenantRestrictedAuthentication(tenantId, domain);
     }
 
+    public async getTenantLoginFailurePolicy(tenantId: string): Promise<TenantLoginFailurePolicy | null> {
+        return tenantDao.getLoginFailurePolicy(tenantId);
+    }
+
     public async setTenantLoginFailurePolicy(loginFailurePolicy: TenantLoginFailurePolicy): Promise<TenantLoginFailurePolicy> {
+        console.log("checkpoint 1");
         const existing: TenantLoginFailurePolicy | null = await tenantDao.getLoginFailurePolicy(loginFailurePolicy.tenantId);
+        console.log("checkpoint 2");
         if(!existing){
+            console.log("checkpoint 3");
             await tenantDao.createLoginFailurePolicy(loginFailurePolicy);
+            console.log("checkpoint 4");
         }
         else{
+            console.log("checkpoint 5");
             await tenantDao.updateLoginFailurePolicy(loginFailurePolicy);
+            console.log("checkpoint 6");
         }
         return loginFailurePolicy;
     }

@@ -222,6 +222,10 @@ const resolvers: Resolvers = {
         getStateProvinceRegions: (_: any, { countryCode }, oidcContext) => {
             const service: I18NService = new I18NService(oidcContext);
             return service.getStateProvinceRegions(countryCode);
+        },
+        getTenantLoginFailurePolicy: (_: any, { tenantId }, oidcContext) => {
+            const service: TenantService = new TenantService(oidcContext);
+            return service.getTenantLoginFailurePolicy(tenantId);
         }
     },
     Mutation: {
@@ -628,11 +632,9 @@ const resolvers: Resolvers = {
                 failureThreshold: tenantLoginFailurePolicyInput.failureThreshold,
                 loginFailurePolicyType: tenantLoginFailurePolicyInput.loginFailurePolicyType,
                 tenantId: tenantLoginFailurePolicyInput.tenantId,
-                pauseDurationMinutes: tenantLoginFailurePolicyInput.pauseDurationMinutes || 0,
+                pauseDurationMinutes: tenantLoginFailurePolicyInput.pauseDurationMinutes,
                 maximumLoginFailures: tenantLoginFailurePolicyInput.maximumLoginFailures
-            }            
-            // TODO 
-            // Implement the DAO and Service interfaces for assigning login failure policies.
+            }
             const service: TenantService = new TenantService(oidcContext);
             return service.setTenantLoginFailurePolicy(loginFailurePolicy);
             
@@ -902,11 +904,15 @@ const resolvers: Resolvers = {
         },        
         authenticateHandleUserNameInput: async(_: any, { username, tenantId, preAuthToken}, oidcContext) => {
             const service: IdentityService = new IdentityService(oidcContext);
-            return service.authenticateHandleUserNameInput(username, tenantId || undefined, preAuthToken || undefined);
+            return service.authenticateHandleUserNameInput(username, tenantId || null, preAuthToken || null);
         },
         authenticateUser: async(_: any, { username, password, authenticationSessionToken, tenantId, preAuthToken }, oidcContext) => {
             const service: IdentityService = new IdentityService(oidcContext);
             return service.authenticateUser(username, password, tenantId, authenticationSessionToken, preAuthToken || null);
+        },
+        authenticateValidateTOTP: async(_: any, { authenticationSessionToken, totpTokenValue, userId, preAuthToken }, oidcContext) => {
+            const service: IdentityService = new IdentityService(oidcContext);
+            return service.authenticateValidateTOTP(userId, totpTokenValue, authenticationSessionToken, preAuthToken || null);
         },
         registerUser: async(_: any, { tenantId, userInput, preAuthToken }, oidcContext) => {
             const service: IdentityService = new IdentityService(oidcContext);

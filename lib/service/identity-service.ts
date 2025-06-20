@@ -136,27 +136,48 @@ class IdentityService {
     }
 
 
-    public async authenticateUser(username: string, password: string, tenantId: string, authenticationSessionToken: string, preAuthToken: string | null): Promise<UserAuthenticationStateResponse>{
-        const response: UserAuthenticationStateResponse = {
-            userAuthenticationState: {
-                expiresAtMs: 0,
-                preAuthToken: preAuthToken,
-                authenticationSessionToken: authenticationSessionToken,
-                authenticationState: AuthenticationState.Error,
-                authenticationStateOrder: 0,
-                authenticationStateStatus: STATUS_INCOMPLETE,
-                tenantId: tenantId,
-                userId: ""
-            },
-            authenticationError: {
-                errorCode: "",
-                errorMessage: ""
-            },
-            accessToken: null,
-            totpSecret: null,
-            uri: null
-        };
+    /**
+     * Error conditions:
+     * 1.   preAuthToken argument is present but no preauth state exists, or is
+     *      different from the supplied tenant id
+     * 2.   The tenant exists and does not allow authentication for the given domain.
+     * 3.   No domains for management of a tenant
+     * 4.   No user, no federated IdP, and no tenants that allow self-registration
+     * 5.   No user, there IS a federated IdP, but the IdP is not attached to 
+     *      any of the tenants that the domain can manage
+     * 6.   User exists, there is NO IdP for the user, and none of the tenants allows
+     *      username/password authentication
+     * 7.   User exists, there is an IdP for the user, but the IdP is not attached
+     *      to the tenant
+     * 
+     * @param email 
+     * @param tenantId 
+     * @returns 
+     */
+    public async authenticateHandleUserNameInput(email: string, tenantId: string | null, preAuthToken: string | null): Promise<UserAuthenticationStateResponse> {        
 
+        // 1.   If the user is coming from a 3rd party site for authentication
+        if(preAuthToken){
+            return this.authenticateExternalUserNameHandler(email, preAuthToken);
+        }
+        // Otherwise they are trying to log directly into the IAM portal itself.
+        else{
+            return this.authenticatePortalUserNameHandler(email, tenantId);
+            
+        }        
+    }
+
+    /**
+     * 
+     * @param username 
+     * @param password 
+     * @param tenantId 
+     * @param authenticationSessionToken 
+     * @param preAuthToken 
+     * @returns 
+     */
+    public async authenticateUser(username: string, password: string, tenantId: string, authenticationSessionToken: string, preAuthToken: string | null): Promise<UserAuthenticationStateResponse>{
+        const response: UserAuthenticationStateResponse = this.initUserAuthenticationStateResponse(authenticationSessionToken, tenantId, preAuthToken);
 
         const arrUserAuthenticationStates: Array<UserAuthenticationState> = await this.getSortedAuthenticationStates(authenticationSessionToken);
         const index: number = await this.validateAuthenticationStep(arrUserAuthenticationStates, response, AuthenticationState.EnterPassword);
@@ -307,6 +328,460 @@ class IdentityService {
         return Promise.resolve(response);
 
     }
+
+
+    /**
+     * 
+     * @param userId 
+     * @param totpTokenValue 
+     * @param authenticationSessionToken 
+     * @param preAuthToken 
+     * @returns 
+     */
+    public async authenticateValidateTOTP(userId: string, totpTokenValue: string, authenticationSessionToken: string, preAuthToken: string | null): Promise<UserAuthenticationStateResponse> {
+        const response: UserAuthenticationStateResponse = this.initUserAuthenticationStateResponse(authenticationSessionToken, "", preAuthToken);
+        const arrUserAuthenticationStates: Array<UserAuthenticationState> = await this.getSortedAuthenticationStates(authenticationSessionToken);
+        const index: number = await this.validateAuthenticationStep(arrUserAuthenticationStates, response, AuthenticationState.ValidateTotp);
+        if(index < 0){
+            return Promise.resolve(response);
+        }
+        const user: User | null = await identityDao.getUserBy("id", userId);
+        if(user === null){
+            response.authenticationError.errorCode = "ERROR_INVALID_USER_ID";
+            response.userAuthenticationState.authenticationState = AuthenticationState.Error;
+            return response;
+        }
+
+        const isTokenValid: boolean = await this.validateTOTP(userId, totpTokenValue);
+        if(!isTokenValid){
+            response.authenticationError.errorCode = "ERROR_INVALID_TOTP_TOKEN";
+            response.userAuthenticationState.authenticationState = AuthenticationState.Error;
+            return response;
+        }
+
+        // Update the authentication state values;
+        arrUserAuthenticationStates[index].authenticationStateStatus = STATUS_COMPLETE;
+        await identityDao.updateUserAuthenticationState(arrUserAuthenticationStates[index]);
+        const nextUserAuthenticationState = arrUserAuthenticationStates[index + 1];
+        if(nextUserAuthenticationState.authenticationState === AuthenticationState.RedirectBackToApplication || nextUserAuthenticationState.authenticationState === AuthenticationState.RedirectToIamPortal){
+            await this.handleAuthenticationCompletion(user, nextUserAuthenticationState, response);
+        }
+        else{
+            response.userAuthenticationState = nextUserAuthenticationState;
+        }
+        return response;
+    }
+
+
+    public async cancelAuthentication(userId: string, authenticationSessionToken: string, preAuthToken: string | null): Promise<UserAuthenticationStateResponse> {
+        const response: UserAuthenticationStateResponse = this.initUserAuthenticationStateResponse(authenticationSessionToken, "", preAuthToken);
+        return response;
+    } 
+
+    /**
+     * 
+     * @param email 
+     * @param preAuthToken 
+     * @returns 
+     */
+    protected async authenticateExternalUserNameHandler(email: string, preAuthToken: string): Promise<UserAuthenticationStateResponse> {
+        const response: UserAuthenticationStateResponse = this.initUserAuthenticationStateResponse("", "", preAuthToken);
+
+        const p: PreAuthenticationState | null = await authDao.getPreAuthenticationState(preAuthToken);
+        if(!p){
+            response.authenticationError.errorCode = "ERROR_INVALID_PRE_AUTH_TOKEN";
+            return response;
+        }
+        const domain: string = this.getDomainFromEmail(email);
+        const tenant: Tenant | null = await tenantDao.getTenantById(p.tenantId);
+        if(tenant === null){
+            response.authenticationError.errorCode = "ERROR_INVALID_TENANT_FOR_PRE_AUTH_TOKEN";
+            return response;
+        }
+        const federatedOidcProvider: FederatedOidcProvider | null = await federatedOIDCProviderDao.getFederatedOidcProviderByDomain(domain);
+        let providerTenantRels: Array<FederatedOidcProviderTenantRel> = [];
+        if(federatedOidcProvider !== null){            
+            providerTenantRels = await federatedOIDCProviderDao.getFederatedOidcProviderTenantRels(p.tenantId, federatedOidcProvider.federatedOIDCProviderId);
+            
+            // If there is a federated provider for the domain and is not attached to the tenant, then error
+            const r: FederatedOidcProviderTenantRel | undefined = providerTenantRels.find(
+                (v: FederatedOidcProviderTenantRel) => v.tenantId === tenant.tenantId
+            )
+            if(!r){
+                response.authenticationError.errorCode = "ERROR_DOMAIN_IS_NOT_PERMITTED_ACCESS_TO_THIS_TENANT";
+                return response;
+            }
+        }
+        else{
+            // There is no federated provider, and the tenant exclusively uses federated OIDC provider for authentication
+            if(tenant.federatedAuthenticationConstraint === FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE){
+                response.authenticationError.errorCode = "ERROR_USER_REGISTRATION_IS_NOT_PERMITTED_FOR_THIS_TENANT";
+                return response;
+            }
+        }
+        
+        const user: User | null = await identityDao.getUserBy("email", email.toLowerCase()); 
+
+        // If user does not exist, there is no provider, and the tenant does not allow self-registration
+        if(user === null && federatedOidcProvider === null && tenant.allowUserSelfRegistration === false){
+            response.authenticationError.errorCode = "ERROR_USER_REGISTRATION_IS_NOT_PERMITTED_FOR_THIS_TENANT";
+            return response;
+        }
+        // If the user exists but is not in a state where they can be authenticated.
+        if(user && (user.enabled === false || user.locked === true || user.markForDelete === true)){
+            response.authenticationError.errorCode = "ERROR_USER_ACCOUNT_STATUS_NOT_VALID_FOR_AUTHENTICATION";
+            return response;
+        }
+        
+
+        // Success cases
+        //
+        // At this point we know that the tenant exists and allows either a external OIDC provider
+        // or allows the user to login with a username/password or allows the user to register
+
+        response.userAuthenticationState.tenantId = p.tenantId;
+        // 1.   There is a provider, and regardless of whether the user exists, send the the user to the provider
+        //      for authentication.
+        if(federatedOidcProvider !== null){
+            response.userAuthenticationState.authenticationState = AuthenticationState.AuthWithFederatedOidc;
+            const {hasError, errorMessage, authorizationEndpoint} = await this.createFederatedOIDCRequestProperties(email.toLowerCase(), user ? user.userId : null, federatedOidcProvider, tenant.tenantId);
+            console.log("checkpoint 9.23");
+            if(hasError){
+                throw new GraphQLError(errorMessage);
+            }
+            console.log("checkpoint 9.24");            
+            response.uri = authorizationEndpoint;
+        }
+        // 2.   There is no provider, so we either need to register the user if they do not exist, or
+        //      authenticate with username/password + other MFA types.
+        else {
+            if(user === null){
+                response.userAuthenticationState.authenticationState = AuthenticationState.Register;                
+                response.uri = `/authorize/register?${QUERY_PARAM_TENANT_ID}=${p.tenantId}&username=${email.toLowerCase()}`;
+                return response;
+            }
+            else{
+                const stateOrder: Array<AuthenticationState> = [];
+                stateOrder.push(AuthenticationState.EnterPassword);
+                const passwordConfig: TenantPasswordConfig | null = await tenantDao.getTenantPasswordConfig(p.tenantId);
+                let requiredMfaTypes: Array<string> = [];
+                if(passwordConfig && passwordConfig.requireMfa){
+                    requiredMfaTypes = passwordConfig.mfaTypesRequired?.split(",") || [];
+                }
+                const arrUserMfaConfig: Array<UserMfaRel> = await identityDao.getUserMFARels(user.userId);
+                const userMfaRelTotp: UserMfaRel | undefined = arrUserMfaConfig.find(
+                    (v: UserMfaRel) => v.mfaType === MFA_AUTH_TYPE_TIME_BASED_OTP
+                );
+                const userMfaRelSecurityKey : UserMfaRel | undefined = arrUserMfaConfig.find(
+                    (v: UserMfaRel) => v.mfaType === MFA_AUTH_TYPE_FIDO2
+                );
+                // If the user has configured totp, always use it first
+                if(userMfaRelTotp){
+                    stateOrder.push(AuthenticationState.ValidateTotp);
+                }
+                // Otherwise, if the tenant requires it and the user does not have totp, then
+                // require the user to configure totp and validate it
+                if(requiredMfaTypes.includes(MFA_AUTH_TYPE_TIME_BASED_OTP) && !userMfaRelTotp){
+                    stateOrder.push(AuthenticationState.ConfigureTotp);
+                    stateOrder.push(AuthenticationState.ValidateTotp);
+                }
+                // If the user has configured a security key, always use it after totp (if that exists);
+                if(userMfaRelSecurityKey){
+                    stateOrder.push(AuthenticationState.ValidateSecurityKey);
+                }
+                // Otherwise, if the tenant requires it and the user does not have a security key configured, then
+                // require the user to configure a security key and validate it
+                if(requiredMfaTypes.includes(MFA_AUTH_TYPE_FIDO2) && !userMfaRelSecurityKey){
+                    stateOrder.push(AuthenticationState.ConfigureSecurityKey);
+                    stateOrder.push(AuthenticationState.ValidateSecurityKey);
+                }
+                stateOrder.push(AuthenticationState.RedirectBackToApplication);
+
+                const arrUserAuthenticationStates: Array<UserAuthenticationState> = [];
+                const authenticationSessionToken: string = generateRandomToken(20, "hex");
+                // authentication completion will expire after 30 minutes. 
+                const expiresAt: number = Date.now() + (60 * 30 * 1000);
+
+                for(let i = 0; i < stateOrder.length; i++){
+                    const uas: UserAuthenticationState = {
+                        authenticationSessionToken: authenticationSessionToken,
+                        authenticationState: stateOrder[i],
+                        authenticationStateOrder: i + 1,
+                        authenticationStateStatus: STATUS_INCOMPLETE,
+                        expiresAtMs: expiresAt,
+                        tenantId: p.tenantId,
+                        userId: user.userId
+                    }
+                    arrUserAuthenticationStates.push(uas);
+                }
+                await identityDao.createUserAuthenticationStates(arrUserAuthenticationStates);
+                response.userAuthenticationState = arrUserAuthenticationStates[0];
+            }
+            
+        }
+
+        return response;
+           
+    }
+
+    protected async authenticatePortalUserNameHandler(email: string, tenantId: string | null): Promise<UserAuthenticationStateResponse> {
+        const response: UserAuthenticationStateResponse = this.initUserAuthenticationStateResponse("", tenantId || "", null);
+        
+        console.log("checkpoint 1");
+        
+        const domain: string = this.getDomainFromEmail(email);
+        const tenant: Tenant | null = tenantId ? await tenantDao.getTenantById(tenantId) : null;
+        const federatedOidcProvider: FederatedOidcProvider | null = await federatedOIDCProviderDao.getFederatedOidcProviderByDomain(domain);
+        let providerTenantRels: Array<FederatedOidcProviderTenantRel> = [];
+        if(federatedOidcProvider !== null){
+            providerTenantRels = await federatedOIDCProviderDao.getFederatedOidcProviderTenantRels(tenantId || undefined, federatedOidcProvider.federatedOIDCProviderId);            
+        }
+        const managementDomains: Array<TenantManagementDomainRel> = await tenantDao.getDomainTenantManagementRels(tenantId || undefined, domain);
+        
+        // 1.   Error condition #1: No domains for management of a tenant
+        if(!managementDomains || managementDomains.length === 0){
+            response.authenticationError.errorCode = AuthenticationErrorTypes.ErrorNoManagementDomain;
+            return response;
+        }
+        console.log("checkpoint 2");
+
+        const d = managementDomains.find(
+            (v: TenantManagementDomainRel) => v.domain === domain
+        );
+        if(!d){
+            response.authenticationError.errorCode = AuthenticationErrorTypes.ErrorNoManagementDomain;
+            return response;
+        }
+        console.log("checkpoint 2.1");
+        
+        // Obtain the basic information for deciding on error conditions or the next steps
+        const user: User | null = await identityDao.getUserBy("email", email);
+
+        console.log("checkpoint 3");
+        const tenants: Array<Tenant> = tenant ? 
+                                        await tenantDao.getTenants([tenant.tenantId]) :
+                                        await tenantDao.getTenants(managementDomains.map( (d: TenantManagementDomainRel) => d.tenantId));
+        const tenantsThatAllowSelfRegistration = tenants.filter(
+            (t: Tenant) => t.allowUserSelfRegistration === true
+        );
+
+        // 2.   Error condition #2: No user, no federated IdP, and no tenants that allow self-registration        
+        if(user === null && federatedOidcProvider === null && tenantsThatAllowSelfRegistration.length === 0){
+            response.authenticationError.errorCode = AuthenticationErrorTypes.ErrorNoMatchingUserAndNoTenantSelfRegistration;
+            return response;
+        }
+        console.log("checkpoint 4");
+
+        // 4.   Error condition #4. The user is disabled, marked for delete, or locked
+        if(user && (user.enabled === false || user.locked === true || user.markForDelete === true)){
+            response.authenticationError.errorCode = "ERROR_USER_ACCOUNT_STATUS_NOT_VALID_FOR_AUTHENTICATION";
+            return response;
+        }
+        console.log("checkpoint 4.1");
+
+        // Find all of the providers attached to any of the tenants
+        const tenantsThatAreAttachedToProviders = tenants.filter(
+            (t: Tenant) => {
+                const rel = providerTenantRels.find(
+                    (f: FederatedOidcProviderTenantRel) => f.tenantId === t.tenantId
+                )
+                return rel !== undefined;
+            }
+        );
+        console.log("checkpoint 5");
+
+        // 3.   Error condition #3: No user, there IS a federated IdP, but the IdP is not attached
+        //      to any of the tenants that the domain can manage
+        if(user === null && federatedOidcProvider !== null && tenantsThatAreAttachedToProviders.length === 0){            
+            response.authenticationError.errorCode = AuthenticationErrorTypes.ErrorNoMatchingFederatedProviderForTenant;
+            return response;
+        }
+        console.log("checkpoint 6");
+
+        const tenantsThatAllowPasswordLogin: Array<Tenant> = tenants.filter(
+            (t: Tenant) => t.federatedAuthenticationConstraint !== FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE
+        );
+        //  4.   Error condition # 3: User exists, there is NO IdP for the user, and none of the tenants allows
+        //       username/password authentication
+        if(user !== null && federatedOidcProvider === null && tenantsThatAllowPasswordLogin.length === 0){
+            response.authenticationError.errorCode = AuthenticationErrorTypes.ErrorExclusiveTenantAndNoFederatedOidcProvider;
+            return response;
+        }
+        console.log("checkpoint 7");
+
+        //  5.   Error condition #5: User exists, there is an IdP for the user, but the IdP is not attached
+        //       to any tenant that has the user's domain for management
+        if(user !== null && federatedOidcProvider !== null && tenantsThatAreAttachedToProviders.length === 0){            
+            response.authenticationError.errorCode = AuthenticationErrorTypes.ErrorNoMatchingFederatedProviderForTenant;
+            return response;
+        }
+        
+        console.log("checkpoint 8");
+
+        // SUCCESS SCENARIOS 
+        // 1.   The user can select the tenant and register. In this scenario, there is no
+        //      need to create database entries for the user authentication state. Instead
+        //      there will be entries created for the user registration state later.    
+        if(user === null && federatedOidcProvider === null && tenantsThatAllowSelfRegistration.length > 0){
+            
+            response.userAuthenticationState.authenticationState = tenantsThatAllowSelfRegistration.length === 1 ? AuthenticationState.Register : AuthenticationState.SelectTenantThenRegister;            
+            response.availableTenants = [];
+            tenantsThatAllowSelfRegistration.forEach(
+                (t: Tenant) => response.availableTenants?.push(
+                    {
+                        tenantId: t.tenantId, 
+                        tenantName: t.tenantName
+                    }                    
+                ));
+            if(tenantsThatAllowSelfRegistration.length === 1){
+                response.uri = `/authorize/register?${QUERY_PARAM_TENANT_ID}=${tenantsThatAllowSelfRegistration[0].tenantId}&username=${email.toLowerCase()}`;
+            }
+            return response;
+        }
+        console.log("checkpoint 9");
+                
+        // 2.   The user can select the tenant by which they want to do SSO and thereby "autoregister"
+        //      or just "autoregister" if there is exactly one tenant
+        if(federatedOidcProvider !== null && tenantsThatAreAttachedToProviders.length > 0){            
+            // Otherwise, set the tenant information and then decide what the next steps are.
+            console.log("checkpoint 9.1");
+            response.availableTenants = [];
+                tenantsThatAreAttachedToProviders.forEach(
+                (t: Tenant) => response.availableTenants?.push(
+                    {
+                        tenantId: t.tenantId, 
+                        tenantName: t.tenantName
+                    }                    
+                ));
+                console.log("checkpoint 9.2");
+            if(tenantsThatAreAttachedToProviders.length === 1){
+                response.userAuthenticationState.authenticationState = AuthenticationState.AuthWithFederatedOidc;
+                console.log("checkpoint 9.22");
+                const {hasError, errorMessage, authorizationEndpoint} = await this.createFederatedOIDCRequestProperties(email, user ? user.userId : null, federatedOidcProvider, tenantsThatAreAttachedToProviders[0].tenantId);
+                console.log("checkpoint 9.23");
+                if(hasError){
+                    throw new GraphQLError(errorMessage);
+                }
+                console.log("checkpoint 9.24");            
+                response.uri = authorizationEndpoint;
+                return response;
+            }            
+            else {
+                response.userAuthenticationState.authenticationState = AuthenticationState.SelectTenant;                
+            }
+            console.log("checkpoint 9.4");
+            return response;            
+        }
+        console.log("checkpoint 10");
+
+        // 3.   The user can select which tenant to log into with username/password (plus
+        //      one or more MFA types). In this case, if the tenant list contains exactly 1
+        //      tenant, then we need to create the authentication state values in the database
+        //      to track the authentication process.
+        if(user !== null && federatedOidcProvider === null && tenantsThatAllowPasswordLogin.length > 0){
+            response.availableTenants = [];
+            tenantsThatAllowPasswordLogin.forEach(
+                (t: Tenant) => response.availableTenants?.push(
+                    {
+                        tenantId: t.tenantId, tenantName: t.tenantName
+                    }
+                )
+            )
+            if(tenantsThatAllowPasswordLogin.length === 1){
+                const stateOrder: Array<AuthenticationState> = [];
+                stateOrder.push(AuthenticationState.EnterPassword);
+                const passwordConfig: TenantPasswordConfig | null = await tenantDao.getTenantPasswordConfig(tenantsThatAllowPasswordLogin[0].tenantId);
+                let requiredMfaTypes: Array<string> = [];
+                if(passwordConfig && passwordConfig.requireMfa){
+                    requiredMfaTypes = passwordConfig.mfaTypesRequired?.split(",") || [];
+                }
+                const arrUserMfaConfig: Array<UserMfaRel> = await identityDao.getUserMFARels(user.userId);
+                const userMfaRelTotp: UserMfaRel | undefined = arrUserMfaConfig.find(
+                    (v: UserMfaRel) => v.mfaType === MFA_AUTH_TYPE_TIME_BASED_OTP
+                );
+                const userMfaRelSecurityKey : UserMfaRel | undefined = arrUserMfaConfig.find(
+                    (v: UserMfaRel) => v.mfaType === MFA_AUTH_TYPE_FIDO2
+                );
+                // If the user has configured totp, always use it first
+                if(userMfaRelTotp){
+                    stateOrder.push(AuthenticationState.ValidateTotp);
+                }
+                // Otherwise, if the tenant requires it and the user does not have totp, then
+                // require the user to configure totp and validate it
+                if(requiredMfaTypes.includes(MFA_AUTH_TYPE_TIME_BASED_OTP) && !userMfaRelTotp){
+                    stateOrder.push(AuthenticationState.ConfigureTotp);
+                    stateOrder.push(AuthenticationState.ValidateTotp);
+                }
+                // If the user has configured a security key, always use it after totp (if that exists);
+                if(userMfaRelSecurityKey){
+                    stateOrder.push(AuthenticationState.ValidateSecurityKey);
+                }
+                // Otherwise, if the tenant requires it and the user does not have a security key configured, then
+                // require the user to configure a security key and validate it
+                if(requiredMfaTypes.includes(MFA_AUTH_TYPE_FIDO2) && !userMfaRelSecurityKey){
+                    stateOrder.push(AuthenticationState.ConfigureSecurityKey);
+                    stateOrder.push(AuthenticationState.ValidateSecurityKey);
+                }
+                stateOrder.push(AuthenticationState.RedirectToIamPortal);
+
+                const arrUserAuthenticationStates: Array<UserAuthenticationState> = [];
+                const authenticationSessionToken: string = generateRandomToken(20, "hex");
+                // authentication completion will expire after 30 minutes. 
+                const expiresAt: number = Date.now() + (60 * 30 * 1000);
+
+                for(let i = 0; i < stateOrder.length; i++){
+                    const uas: UserAuthenticationState = {
+                        authenticationSessionToken: authenticationSessionToken,
+                        authenticationState: stateOrder[i],
+                        authenticationStateOrder: i + 1,
+                        authenticationStateStatus: STATUS_INCOMPLETE,
+                        expiresAtMs: expiresAt,
+                        tenantId: tenantsThatAllowPasswordLogin[0].tenantId,
+                        userId: user.userId
+                    }
+                    arrUserAuthenticationStates.push(uas);
+                }
+                await identityDao.createUserAuthenticationStates(arrUserAuthenticationStates);
+                response.userAuthenticationState = arrUserAuthenticationStates[0];
+            }
+            else{
+                response.userAuthenticationState.authenticationState = AuthenticationState.SelectTenant;    
+            }
+            
+            return response;
+        }
+
+        console.log("checkpoint 11");
+        
+        response.authenticationError.errorCode = AuthenticationErrorTypes.ErrorConditionsForAuthenticationNotMet;
+        return response;
+    }
+
+   
+
+    protected initUserAuthenticationStateResponse(authenticationSessionToken: string, tenantId: string, preAuthToken: string | null): UserAuthenticationStateResponse {
+        const response: UserAuthenticationStateResponse = {
+            userAuthenticationState: {
+                expiresAtMs: 0,
+                preAuthToken: preAuthToken,
+                authenticationSessionToken: authenticationSessionToken,
+                authenticationState: AuthenticationState.Error,
+                authenticationStateOrder: 0,
+                authenticationStateStatus: STATUS_INCOMPLETE,
+                tenantId: tenantId,
+                userId: ""
+            },
+            authenticationError: {
+                errorCode: "",
+                errorMessage: ""
+            },
+            accessToken: null,
+            totpSecret: null,
+            uri: null
+        };
+        return response;
+    }
+
 
     /**
      * 
@@ -1614,477 +2089,6 @@ class IdentityService {
         return Promise.resolve();
     }
 
-
-    /**
-     * 
-     * @param email 
-     * @param preAuthToken 
-     * @returns 
-     */
-    protected async authenticateExternalUserNameHandler(email: string, preAuthToken: string): Promise<UserAuthenticationStateResponse> {
-        const retVal: UserAuthenticationStateResponse = {
-            userAuthenticationState: {
-                authenticationSessionToken: "",
-                authenticationState: AuthenticationState.Error,
-                authenticationStateOrder: 0,
-                authenticationStateStatus: "",
-                expiresAtMs: 0,
-                preAuthToken: preAuthToken,
-                tenantId: "",
-                userId: ""
-            },
-            authenticationError: {
-                errorCode: "",
-                errorMessage: ""
-            },
-            accessToken: null,
-            availableTenants: [],
-            totpSecret: null,
-            uri: null
-        }
-        const p: PreAuthenticationState | null = await authDao.getPreAuthenticationState(preAuthToken);
-        if(!p){
-            retVal.authenticationError.errorCode = "ERROR_INVALID_PRE_AUTH_TOKEN";
-            return retVal;
-        }
-        const domain: string = this.getDomainFromEmail(email);
-        const tenant: Tenant | null = await tenantDao.getTenantById(p.tenantId);
-        if(tenant === null){
-            retVal.authenticationError.errorCode = "ERROR_INVALID_TENANT_FOR_PRE_AUTH_TOKEN";
-            return retVal;
-        }
-        const federatedOidcProvider: FederatedOidcProvider | null = await federatedOIDCProviderDao.getFederatedOidcProviderByDomain(domain);
-        let providerTenantRels: Array<FederatedOidcProviderTenantRel> = [];
-        if(federatedOidcProvider !== null){            
-            providerTenantRels = await federatedOIDCProviderDao.getFederatedOidcProviderTenantRels(p.tenantId, federatedOidcProvider.federatedOIDCProviderId);
-            
-            // If there is a federated provider for the domain and is not attached to the tenant, then error
-            const r: FederatedOidcProviderTenantRel | undefined = providerTenantRels.find(
-                (v: FederatedOidcProviderTenantRel) => v.tenantId === tenant.tenantId
-            )
-            if(!r){
-                retVal.authenticationError.errorCode = "ERROR_DOMAIN_IS_NOT_PERMITTED_ACCESS_TO_THIS_TENANT";
-                return retVal;
-            }
-        }
-        else{
-            // There is no federated provider, and the tenant exclusively uses federated OIDC provider for authentication
-            if(tenant.federatedAuthenticationConstraint === FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE){
-                retVal.authenticationError.errorCode = "ERROR_USER_REGISTRATION_IS_NOT_PERMITTED_FOR_THIS_TENANT";
-                return retVal;
-            }
-        }
-        
-        const user: User | null = await identityDao.getUserBy("email", email.toLowerCase()); 
-
-        // If user does not exist, there is no provider, and the tenant does not allow self-registration
-        if(user === null && federatedOidcProvider === null && tenant.allowUserSelfRegistration === false){
-            retVal.authenticationError.errorCode = "ERROR_USER_REGISTRATION_IS_NOT_PERMITTED_FOR_THIS_TENANT";
-            return retVal;
-        }
-        // If the user exists but is not in a state where they can be authenticated.
-        if(user && (user.enabled === false || user.locked === true || user.markForDelete === true)){
-            retVal.authenticationError.errorCode = "ERROR_USER_ACCOUNT_STATUS_NOT_VALID_FOR_AUTHENTICATION";
-            return retVal;
-        }
-        
-
-        // Success cases
-        //
-        // At this point we know that the tenant exists and allows either a external OIDC provider
-        // or allows the user to login with a username/password or allows the user to register
-
-        retVal.userAuthenticationState.tenantId = p.tenantId;
-        // 1.   There is a provider, and regardless of whether the user exists, send the the user to the provider
-        //      for authentication.
-        if(federatedOidcProvider !== null){
-            retVal.userAuthenticationState.authenticationState = AuthenticationState.AuthWithFederatedOidc;
-            const {hasError, errorMessage, authorizationEndpoint} = await this.createFederatedOIDCRequestProperties(email.toLowerCase(), user ? user.userId : null, federatedOidcProvider, tenant.tenantId);
-            console.log("checkpoint 9.23");
-            if(hasError){
-                throw new GraphQLError(errorMessage);
-            }
-            console.log("checkpoint 9.24");            
-            retVal.uri = authorizationEndpoint;
-        }
-        // 2.   There is no provider, so we either need to register the user if they do not exist, or
-        //      authenticate with username/password + other MFA types.
-        else {
-            if(user === null){
-                retVal.userAuthenticationState.authenticationState = AuthenticationState.Register;                
-                retVal.uri = `/authorize/register?${QUERY_PARAM_TENANT_ID}=${p.tenantId}&username=${email.toLowerCase()}`;
-                return retVal;
-            }
-            else{
-                const stateOrder: Array<AuthenticationState> = [];
-                stateOrder.push(AuthenticationState.EnterPassword);
-                const passwordConfig: TenantPasswordConfig | null = await tenantDao.getTenantPasswordConfig(p.tenantId);
-                let requiredMfaTypes: Array<string> = [];
-                if(passwordConfig && passwordConfig.requireMfa){
-                    requiredMfaTypes = passwordConfig.mfaTypesRequired?.split(",") || [];
-                }
-                const arrUserMfaConfig: Array<UserMfaRel> = await identityDao.getUserMFARels(user.userId);
-                const userMfaRelTotp: UserMfaRel | undefined = arrUserMfaConfig.find(
-                    (v: UserMfaRel) => v.mfaType === MFA_AUTH_TYPE_TIME_BASED_OTP
-                );
-                const userMfaRelSecurityKey : UserMfaRel | undefined = arrUserMfaConfig.find(
-                    (v: UserMfaRel) => v.mfaType === MFA_AUTH_TYPE_FIDO2
-                );
-                // If the user has configured totp, always use it first
-                if(userMfaRelTotp){
-                    stateOrder.push(AuthenticationState.ValidateTotp);
-                }
-                // Otherwise, if the tenant requires it and the user does not have totp, then
-                // require the user to configure totp and validate it
-                if(requiredMfaTypes.includes(MFA_AUTH_TYPE_TIME_BASED_OTP) && !userMfaRelTotp){
-                    stateOrder.push(AuthenticationState.ConfigureTotp);
-                    stateOrder.push(AuthenticationState.ValidateTotp);
-                }
-                // If the user has configured a security key, always use it after totp (if that exists);
-                if(userMfaRelSecurityKey){
-                    stateOrder.push(AuthenticationState.ValidateSecurityKey);
-                }
-                // Otherwise, if the tenant requires it and the user does not have a security key configured, then
-                // require the user to configure a security key and validate it
-                if(requiredMfaTypes.includes(MFA_AUTH_TYPE_FIDO2) && !userMfaRelSecurityKey){
-                    stateOrder.push(AuthenticationState.ConfigureSecurityKey);
-                    stateOrder.push(AuthenticationState.ValidateSecurityKey);
-                }
-                stateOrder.push(AuthenticationState.RedirectBackToApplication);
-
-                const arrUserAuthenticationStates: Array<UserAuthenticationState> = [];
-                const authenticationSessionToken: string = generateRandomToken(20, "hex");
-                // authentication completion will expire after 30 minutes. 
-                const expiresAt: number = Date.now() + (60 * 30 * 1000);
-
-                for(let i = 0; i < stateOrder.length; i++){
-                    const uas: UserAuthenticationState = {
-                        authenticationSessionToken: authenticationSessionToken,
-                        authenticationState: stateOrder[i],
-                        authenticationStateOrder: i + 1,
-                        authenticationStateStatus: STATUS_INCOMPLETE,
-                        expiresAtMs: expiresAt,
-                        tenantId: p.tenantId,
-                        userId: user.userId
-                    }
-                    arrUserAuthenticationStates.push(uas);
-                }
-                await identityDao.createUserAuthenticationStates(arrUserAuthenticationStates);
-                retVal.userAuthenticationState = arrUserAuthenticationStates[0];
-            }
-            
-        }
-
-        return retVal;
-           
-    }
-
-    protected async authenticatePortalUserNameHandler(email: string, tenantId?: string): Promise<UserAuthenticationStateResponse> {
-
-        const retVal: UserAuthenticationStateResponse = {
-            userAuthenticationState: {
-                authenticationSessionToken: "",
-                authenticationState: AuthenticationState.Error,
-                authenticationStateOrder: 0,
-                authenticationStateStatus: "",
-                expiresAtMs: 0,
-                preAuthToken: null,
-                tenantId: "",
-                userId: ""                 
-            },
-            authenticationError: {
-                errorCode: "",
-                errorMessage: ""
-            },
-            accessToken: null,
-            availableTenants: [],
-            totpSecret: null,
-            uri: null
-        }
-        console.log("checkpoint 1");
-        
-        const domain: string = this.getDomainFromEmail(email);
-        const tenant: Tenant | null = tenantId ? await tenantDao.getTenantById(tenantId) : null;
-        const federatedOidcProvider: FederatedOidcProvider | null = await federatedOIDCProviderDao.getFederatedOidcProviderByDomain(domain);
-        let providerTenantRels: Array<FederatedOidcProviderTenantRel> = [];
-        if(federatedOidcProvider !== null){
-            providerTenantRels = await federatedOIDCProviderDao.getFederatedOidcProviderTenantRels(tenantId, federatedOidcProvider.federatedOIDCProviderId);            
-        }
-        const managementDomains: Array<TenantManagementDomainRel> = await tenantDao.getDomainTenantManagementRels(tenantId, domain);
-        
-        // 1.   Error condition #1: No domains for management of a tenant
-        if(!managementDomains || managementDomains.length === 0){
-            retVal.authenticationError.errorCode = AuthenticationErrorTypes.ErrorNoManagementDomain;
-            return retVal;
-        }
-        console.log("checkpoint 2");
-
-        const d = managementDomains.find(
-            (v: TenantManagementDomainRel) => v.domain === domain
-        );
-        if(!d){
-            retVal.authenticationError.errorCode = AuthenticationErrorTypes.ErrorNoManagementDomain;
-            return retVal;
-        }
-        console.log("checkpoint 2.1");
-        
-        // Obtain the basic information for deciding on error conditions or the next steps
-        const user: User | null = await identityDao.getUserBy("email", email);
-
-        console.log("checkpoint 3");
-        const tenants: Array<Tenant> = tenant ? 
-                                        await tenantDao.getTenants([tenant.tenantId]) :
-                                        await tenantDao.getTenants(managementDomains.map( (d: TenantManagementDomainRel) => d.tenantId));
-        const tenantsThatAllowSelfRegistration = tenants.filter(
-            (t: Tenant) => t.allowUserSelfRegistration === true
-        );
-
-        // 2.   Error condition #2: No user, no federated IdP, and no tenants that allow self-registration        
-        if(user === null && federatedOidcProvider === null && tenantsThatAllowSelfRegistration.length === 0){
-            retVal.authenticationError.errorCode = AuthenticationErrorTypes.ErrorNoMatchingUserAndNoTenantSelfRegistration;
-            return retVal;
-        }
-        console.log("checkpoint 4");
-
-        // 4.   Error condition #4. The user is disabled, marked for delete, or locked
-        if(user && (user.enabled === false || user.locked === true || user.markForDelete === true)){
-            retVal.authenticationError.errorCode = "ERROR_USER_ACCOUNT_STATUS_NOT_VALID_FOR_AUTHENTICATION";
-            return retVal;
-        }
-        console.log("checkpoint 4.1");
-
-        // Find all of the providers attached to any of the tenants
-        const tenantsThatAreAttachedToProviders = tenants.filter(
-            (t: Tenant) => {
-                const rel = providerTenantRels.find(
-                    (f: FederatedOidcProviderTenantRel) => f.tenantId === t.tenantId
-                )
-                return rel !== undefined;
-            }
-        );
-        console.log("checkpoint 5");
-
-        // 3.   Error condition #3: No user, there IS a federated IdP, but the IdP is not attached
-        //      to any of the tenants that the domain can manage
-        if(user === null && federatedOidcProvider !== null && tenantsThatAreAttachedToProviders.length === 0){            
-            retVal.authenticationError.errorCode = AuthenticationErrorTypes.ErrorNoMatchingFederatedProviderForTenant;
-            return retVal;
-        }
-        console.log("checkpoint 6");
-
-        const tenantsThatAllowPasswordLogin: Array<Tenant> = tenants.filter(
-            (t: Tenant) => t.federatedAuthenticationConstraint !== FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE
-        );
-        //  4.   Error condition # 3: User exists, there is NO IdP for the user, and none of the tenants allows
-        //       username/password authentication
-        if(user !== null && federatedOidcProvider === null && tenantsThatAllowPasswordLogin.length === 0){
-            retVal.authenticationError.errorCode = AuthenticationErrorTypes.ErrorExclusiveTenantAndNoFederatedOidcProvider;
-            return retVal;
-        }
-        console.log("checkpoint 7");
-
-        //  5.   Error condition #5: User exists, there is an IdP for the user, but the IdP is not attached
-        //       to any tenant that has the user's domain for management
-        if(user !== null && federatedOidcProvider !== null && tenantsThatAreAttachedToProviders.length === 0){            
-            retVal.authenticationError.errorCode = AuthenticationErrorTypes.ErrorNoMatchingFederatedProviderForTenant;
-            return retVal;
-        }
-        
-        console.log("checkpoint 8");
-
-        // SUCCESS SCENARIOS 
-        // 1.   The user can select the tenant and register. In this scenario, there is no
-        //      need to create database entries for the user authentication state. Instead
-        //      there will be entries created for the user registration state later.    
-        if(user === null && federatedOidcProvider === null && tenantsThatAllowSelfRegistration.length > 0){
-            
-            retVal.userAuthenticationState.authenticationState = tenantsThatAllowSelfRegistration.length === 1 ? AuthenticationState.Register : AuthenticationState.SelectTenantThenRegister;            
-            retVal.availableTenants = [];
-            tenantsThatAllowSelfRegistration.forEach(
-                (t: Tenant) => retVal.availableTenants?.push(
-                    {
-                        tenantId: t.tenantId, 
-                        tenantName: t.tenantName
-                    }                    
-                ));
-            if(tenantsThatAllowSelfRegistration.length === 1){
-                retVal.uri = `/authorize/register?${QUERY_PARAM_TENANT_ID}=${tenantsThatAllowSelfRegistration[0].tenantId}&username=${email.toLowerCase()}`;
-            }
-            return retVal;
-        }
-        console.log("checkpoint 9");
-                
-        // 2.   The user can select the tenant by which they want to do SSO and thereby "autoregister"
-        //      or just "autoregister" if there is exactly one tenant
-        if(federatedOidcProvider !== null && tenantsThatAreAttachedToProviders.length > 0){            
-            // Otherwise, set the tenant information and then decide what the next steps are.
-            console.log("checkpoint 9.1");
-            retVal.availableTenants = [];
-                tenantsThatAreAttachedToProviders.forEach(
-                (t: Tenant) => retVal.availableTenants?.push(
-                    {
-                        tenantId: t.tenantId, 
-                        tenantName: t.tenantName
-                    }                    
-                ));
-                console.log("checkpoint 9.2");
-            if(tenantsThatAreAttachedToProviders.length === 1){
-                retVal.userAuthenticationState.authenticationState = AuthenticationState.AuthWithFederatedOidc;
-                console.log("checkpoint 9.22");
-                const {hasError, errorMessage, authorizationEndpoint} = await this.createFederatedOIDCRequestProperties(email, user ? user.userId : null, federatedOidcProvider, tenantsThatAreAttachedToProviders[0].tenantId);
-                console.log("checkpoint 9.23");
-                if(hasError){
-                    throw new GraphQLError(errorMessage);
-                }
-                console.log("checkpoint 9.24");            
-                retVal.uri = authorizationEndpoint;
-                return retVal;
-            }            
-            else {
-                retVal.userAuthenticationState.authenticationState = AuthenticationState.SelectTenant;                
-            }
-            console.log("checkpoint 9.4");
-            return retVal;            
-        }
-        console.log("checkpoint 10");
-
-        // 3.   The user can select which tenant to log into with username/password (plus
-        //      one or more MFA types). In this case, if the tenant list contains exactly 1
-        //      tenant, then we need to create the authentication state values in the database
-        //      to track the authentication process.
-        if(user !== null && federatedOidcProvider === null && tenantsThatAllowPasswordLogin.length > 0){
-            retVal.availableTenants = [];
-            tenantsThatAllowPasswordLogin.forEach(
-                (t: Tenant) => retVal.availableTenants?.push(
-                    {
-                        tenantId: t.tenantId, tenantName: t.tenantName
-                    }
-                )
-            )
-            if(tenantsThatAllowPasswordLogin.length === 1){
-                const stateOrder: Array<AuthenticationState> = [];
-                stateOrder.push(AuthenticationState.EnterPassword);
-                const passwordConfig: TenantPasswordConfig | null = await tenantDao.getTenantPasswordConfig(tenantsThatAllowPasswordLogin[0].tenantId);
-                let requiredMfaTypes: Array<string> = [];
-                if(passwordConfig && passwordConfig.requireMfa){
-                    requiredMfaTypes = passwordConfig.mfaTypesRequired?.split(",") || [];
-                }
-                const arrUserMfaConfig: Array<UserMfaRel> = await identityDao.getUserMFARels(user.userId);
-                const userMfaRelTotp: UserMfaRel | undefined = arrUserMfaConfig.find(
-                    (v: UserMfaRel) => v.mfaType === MFA_AUTH_TYPE_TIME_BASED_OTP
-                );
-                const userMfaRelSecurityKey : UserMfaRel | undefined = arrUserMfaConfig.find(
-                    (v: UserMfaRel) => v.mfaType === MFA_AUTH_TYPE_FIDO2
-                );
-                // If the user has configured totp, always use it first
-                if(userMfaRelTotp){
-                    stateOrder.push(AuthenticationState.ValidateTotp);
-                }
-                // Otherwise, if the tenant requires it and the user does not have totp, then
-                // require the user to configure totp and validate it
-                if(requiredMfaTypes.includes(MFA_AUTH_TYPE_TIME_BASED_OTP) && !userMfaRelTotp){
-                    stateOrder.push(AuthenticationState.ConfigureTotp);
-                    stateOrder.push(AuthenticationState.ValidateTotp);
-                }
-                // If the user has configured a security key, always use it after totp (if that exists);
-                if(userMfaRelSecurityKey){
-                    stateOrder.push(AuthenticationState.ValidateSecurityKey);
-                }
-                // Otherwise, if the tenant requires it and the user does not have a security key configured, then
-                // require the user to configure a security key and validate it
-                if(requiredMfaTypes.includes(MFA_AUTH_TYPE_FIDO2) && !userMfaRelSecurityKey){
-                    stateOrder.push(AuthenticationState.ConfigureSecurityKey);
-                    stateOrder.push(AuthenticationState.ValidateSecurityKey);
-                }
-                stateOrder.push(AuthenticationState.RedirectBackToApplication);
-
-                const arrUserAuthenticationStates: Array<UserAuthenticationState> = [];
-                const authenticationSessionToken: string = generateRandomToken(20, "hex");
-                // authentication completion will expire after 30 minutes. 
-                const expiresAt: number = Date.now() + (60 * 30 * 1000);
-
-                for(let i = 0; i < stateOrder.length; i++){
-                    const uas: UserAuthenticationState = {
-                        authenticationSessionToken: authenticationSessionToken,
-                        authenticationState: stateOrder[i],
-                        authenticationStateOrder: i + 1,
-                        authenticationStateStatus: STATUS_INCOMPLETE,
-                        expiresAtMs: expiresAt,
-                        tenantId: tenantsThatAllowPasswordLogin[0].tenantId,
-                        userId: user.userId
-                    }
-                    arrUserAuthenticationStates.push(uas);
-                }
-                await identityDao.createUserAuthenticationStates(arrUserAuthenticationStates);
-                retVal.userAuthenticationState = arrUserAuthenticationStates[0];
-            }
-            else{
-                retVal.userAuthenticationState.authenticationState = AuthenticationState.SelectTenant;    
-            }
-            
-            return retVal;
-        }
-
-        console.log("checkpoint 11");
-        
-        retVal.authenticationError.errorCode = AuthenticationErrorTypes.ErrorConditionsForAuthenticationNotMet;
-        return retVal;
-    }
-
-    /**
-     * Error conditions:
-     * 1.   preAuthToken argument is present but no preauth state exists, or is
-     *      different from the supplied tenant id
-     * 2.   The tenant exists and does not allow authentication for the given domain.
-     * 3.   No domains for management of a tenant
-     * 4.   No user, no federated IdP, and no tenants that allow self-registration
-     * 5.   No user, there IS a federated IdP, but the IdP is not attached to 
-     *      any of the tenants that the domain can manage
-     * 6.   User exists, there is NO IdP for the user, and none of the tenants allows
-     *      username/password authentication
-     * 7.   User exists, there is an IdP for the user, but the IdP is not attached
-     *      to the tenant
-     * 
-     * @param email 
-     * @param tenantId 
-     * @returns 
-     */
-    public async authenticateHandleUserNameInput(email: string, tenantId?: string, preAuthToken?: string): Promise<UserAuthenticationStateResponse> {        
-
-        // 1.   If the user is coming from a 3rd party site for authentication
-        if(preAuthToken){
-            return this.authenticateExternalUserNameHandler(email, preAuthToken);
-        }
-        // Otherwise they are trying to log directly into the IAM portal itself.
-        else{
-            return this.authenticatePortalUserNameHandler(email, tenantId);
-            
-        }        
-    }
-
-    public async cancelAuthentication(userId: string, authenticationSessionToken: string, preAuthToken: string | null): Promise<UserAuthenticationStateResponse> {
-        const retVal: UserAuthenticationStateResponse = {
-            userAuthenticationState: {
-                authenticationSessionToken: "",
-                authenticationState: AuthenticationState.Error,
-                authenticationStateOrder: 0,
-                authenticationStateStatus: "",
-                expiresAtMs: 0,
-                preAuthToken: preAuthToken,
-                tenantId: "",
-                userId: ""                 
-            },
-            authenticationError: {
-                errorCode: "",
-                errorMessage: ""
-            },
-            accessToken: null,
-            availableTenants: [],
-            totpSecret: null,
-            uri: null
-        }
-        return retVal;
-    }
 
 
     protected async createFederatedOIDCRequestProperties(email: string, userId: string | null, provider: FederatedOidcProvider, tenantId: string): Promise<{hasError: boolean, errorMessage: string, authorizationEndpoint: string}> {

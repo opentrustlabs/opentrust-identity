@@ -206,19 +206,6 @@ const PortalLogin: React.FC<PortalLoginProps> = ({
 
     }
 
-    // const setLoginErrorMessage = (errorType: PortalLoginEmailHandlerErrorTypes) => {
-    //     // enum PortalLoginEmailHandlerErrorTypes {    
-    //     //     CONDITIONS_FOR_AUTHENTICATION_NOT_MET
-    //     //     NO_MANAGEMENT_DOMAIN
-    //     //     NO_MATCHING_FEDERATED_PROVIDER_FOR_TENANT
-    //     //     EXCLUSIVE_TENANT_AND_NO_FEDERATED_OIDC_PROVIDER
-    //     //     NO_MATCHING_USER_AND_NO_TENANT_SELF_REGISTRATION
-    //     // }
-    //     if(errorType === PortalLoginEmailHandlerErrorTypes.ConditionsForAuthenticationNotMet){
-
-    //     }
-    // }
-
     const closeTenantSelector = () => {
         setShowTenantSelector(false);
         setSelectedTenant(undefined);
@@ -459,15 +446,18 @@ const PortalLogin: React.FC<PortalLoginProps> = ({
                                             fontWeight: "bold",
                                             fontSize: "0.9em"
                                         }}
-                                        onClick={() => authenticateUser({
-                                            variables: {                                                
-                                                username: username,
-                                                password: password,
-                                                tenantId: userAuthenticationState.tenantId,
-                                                authenticationSessionToken: userAuthenticationState.authenticationSessionToken,
-                                                preAuthToken: userAuthenticationState.preAuthToken
-                                            }
-                                        })}
+                                        onClick={() => {
+                                            setErrorMessage(null);
+                                            authenticateUser({
+                                                variables: {                                                
+                                                    username: username,
+                                                    password: password,
+                                                    tenantId: userAuthenticationState.tenantId,
+                                                    authenticationSessionToken: userAuthenticationState.authenticationSessionToken,
+                                                    preAuthToken: userAuthenticationState.preAuthToken
+                                                }
+                                            });
+                                        }}
                                     >Login</Button>
                                     <Button
                                         disabled={false}
@@ -492,6 +482,9 @@ const PortalLogin: React.FC<PortalLoginProps> = ({
                                                     color: tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheadertextcolor,
                                                     fontWeight: "bold",
                                                     fontSize: "0.9em"
+                                                }}
+                                                onClick={() => {
+                                                    console.log('cancelled login')
                                                 }}
                                             >Cancel</Button>
                                         </a>
