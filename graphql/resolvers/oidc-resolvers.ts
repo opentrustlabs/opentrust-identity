@@ -910,6 +910,10 @@ const resolvers: Resolvers = {
             const service: IdentityService = new IdentityService(oidcContext);
             return service.authenticateUser(username, password, tenantId, authenticationSessionToken, preAuthToken || null);
         },
+        authenticateRotatePassword: async(_: any, { userId, newPassword, authenticationSessionToken, preAuthToken}, oidcContext) => {
+            const service: IdentityService = new IdentityService(oidcContext);
+            return service.authenticateRotatePassword(userId, newPassword, authenticationSessionToken, preAuthToken || null);
+        },
         authenticateValidateTOTP: async(_: any, { authenticationSessionToken, totpTokenValue, userId, preAuthToken }, oidcContext) => {
             const service: IdentityService = new IdentityService(oidcContext);
             return service.authenticateValidateTOTP(userId, totpTokenValue, authenticationSessionToken, preAuthToken || null);

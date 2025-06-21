@@ -493,6 +493,9 @@ const PortalLogin: React.FC<PortalLoginProps> = ({
                             </Grid2>
                         </React.Fragment>
                     }
+                    {userAuthenticationState && userAuthenticationState.authenticationState === AuthenticationState.RotatePassword &&
+                        <div></div>
+                    }
                     {userAuthenticationState && userAuthenticationState.authenticationState === AuthenticationState.ConfigureTotp &&
                         <div></div>
                     }

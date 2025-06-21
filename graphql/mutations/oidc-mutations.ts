@@ -659,6 +659,7 @@ export const USER_AUTHENTICATION_STATE_RESPONSE_FRAGMENT = gql(`
     logout(userId: String): String
     authenticateHandleUserNameInput(username: String!, tenantId: String, preAuthToken: String): UserAuthenticationStateResponse!
     authenticateUser(username: String!, password: String!, tenantId: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
+    authenticateRotatePassword(userId: String!, newPassword: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
     authenticateConfigureTOTP(userId: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
     authenticateValidateTOTP(userId: String!, totpTokenValue: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
     authenticateRegisterSecurityKey(userId: String!, fido2KeyRegistrationInput: Fido2KeyRegistrationInput!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
@@ -679,6 +680,16 @@ export const AUTHENTICATE_USERNAME_INPUT_MUTATION = gql`
 export const AUTHENTICATE_USER = gql`
     mutation authenticateUser($username: String!, $password: String!, $tenantId: String!, $authenticationSessionToken: String!, $preAuthToken: String){
         authenticateUser(username: $username, password: $password, tenantId: $tenantId, authenticationSessionToken: $authenticationSessionToken, preAuthToken: $preAuthToken) {
+            ...UserAuthenticationStateResponseFragment
+        }
+    }
+    
+    ${USER_AUTHENTICATION_STATE_RESPONSE_FRAGMENT}
+`;
+
+export const AUTHENTICATE_ROTATE_PASSWORD = gql`
+    mutation authenticateRotatePassword($username: String!, $newPassword: String!, $authenticationSessionToken: String!, $preAuthToken: String){
+        authenticateRotatePassword(username: $username, newPassword: $newPassword, authenticationSessionToken: $authenticationSessionToken, preAuthToken: $preAuthToken) {
             ...UserAuthenticationStateResponseFragment
         }
     }

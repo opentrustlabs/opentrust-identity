@@ -72,6 +72,8 @@ abstract class IdentityDao {
      */
     abstract createUser(user: User): Promise<User>;
 
+    abstract getUserCredentials(userId: string): Promise<Array<UserCredential>>;
+
     abstract getUserCredentialForAuthentication(userId: string): Promise<UserCredential | null>;
 
     abstract addUserCredential(userCredential: UserCredential): Promise<void>;

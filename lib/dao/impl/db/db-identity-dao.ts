@@ -213,6 +213,19 @@ class DBIdentityDao extends IdentityDao {
         return Promise.resolve(authnGroups as any as Array<AuthenticationGroup>);
     }
 
+    public async getUserCredentials(userId: string): Promise<Array<UserCredential>>{
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        const arrUserCredentialEntity: Array<UserCredentialEntity> = await sequelize.models.userCredential.findAll({
+            where: {
+                userId: userId
+            },
+            order: [
+                ["dateCreated", "DESC"]
+            ]
+        });
+        return arrUserCredentialEntity.map( (e: UserCredentialEntity) => e.dataValues);
+    }
+
     public async getUserCredentialForAuthentication(userId: string): Promise<UserCredential | null> {
         const sequelize: Sequelize = await DBDriver.getConnection();
         const userCredentialEntity: UserCredentialEntity | null = await sequelize.models.userCredential.findOne({

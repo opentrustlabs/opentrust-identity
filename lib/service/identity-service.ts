@@ -6,7 +6,7 @@ import { DaoFactory } from "../data-sources/dao-factory";
 import TenantDao from "../dao/tenant-dao";
 import { GraphQLError } from "graphql/error";
 import { randomUUID } from "crypto";
-import { DEFAULT_LOGIN_FAILURE_POLICY, DEFAULT_LOGIN_PAUSE_TIME_MINUTES, DEFAULT_MAXIMUM_LOGIN_FAILURES, DEFAULT_TENANT_PASSWORD_CONFIGURATION, FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE, LOGIN_FAILURE_POLICY_LOCK_USER_ACCOUNT, LOGIN_FAILURE_POLICY_PAUSE, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, NAME_ORDER_WESTERN, OIDC_AUTHORIZATION_ERROR_ACCESS_DENIED, PASSWORD_HASH_ITERATION_128K, PASSWORD_HASH_ITERATION_256K, PASSWORD_HASH_ITERATION_32K, PASSWORD_HASH_ITERATION_64K, PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_32K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_64K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS, QUERY_PARAM_TENANT_ID, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, STATUS_COMPLETE, STATUS_INCOMPLETE, STATUS_OMITTED, TENANT_TYPE_ROOT_TENANT, TOKEN_TYPE_END_USER, TOKEN_TYPE_IAM_PORTAL_USER, TOKEN_TYPE_PROVISIONAL_USER, TOTP_HASH_ALGORITHM_SHA1, USER_TENANT_REL_TYPE_GUEST, USER_TENANT_REL_TYPE_PRIMARY } from "@/utils/consts";
+import { DEFAULT_LOGIN_FAILURE_POLICY, DEFAULT_LOGIN_PAUSE_TIME_MINUTES, DEFAULT_MAXIMUM_LOGIN_FAILURES, DEFAULT_PASSWORD_HISTORY_PERIOD, DEFAULT_TENANT_PASSWORD_CONFIGURATION, FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE, LOGIN_FAILURE_POLICY_LOCK_USER_ACCOUNT, LOGIN_FAILURE_POLICY_PAUSE, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, NAME_ORDER_WESTERN, OIDC_AUTHORIZATION_ERROR_ACCESS_DENIED, PASSWORD_HASH_ITERATION_128K, PASSWORD_HASH_ITERATION_256K, PASSWORD_HASH_ITERATION_32K, PASSWORD_HASH_ITERATION_64K, PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_32K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_64K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS, QUERY_PARAM_TENANT_ID, RANKED_DESCENDING_HASHING_ALGORITHS, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, STATUS_COMPLETE, STATUS_INCOMPLETE, STATUS_OMITTED, TENANT_TYPE_ROOT_TENANT, TOKEN_TYPE_END_USER, TOKEN_TYPE_IAM_PORTAL_USER, TOKEN_TYPE_PROVISIONAL_USER, TOTP_HASH_ALGORITHM_SHA1, USER_TENANT_REL_TYPE_GUEST, USER_TENANT_REL_TYPE_PRIMARY } from "@/utils/consts";
 import { sha256HashPassword, pbkdf2HashPassword, bcryptHashPassword, generateSalt, scryptHashPassword, generateRandomToken, generateCodeVerifierAndChallenge, bcryptValidatePassword } from "@/utils/dao-utils";
 import { Client as OpenSearchClient } from "@opensearch-project/opensearch";
 import { getOpenSearchClient } from "../data-sources/search";
@@ -49,93 +49,196 @@ class IdentityService {
         this.oidcContext = oidcContext;
     }
 
-    public async registerUser(userCreateInput: UserCreateInput, tenantId: string, preAuthToken: string | null | undefined): Promise<UserRegistrationStateResponse>{
-        
-        // TODO
-        // Need to check to see if there is an active registration session happening with the
-        // user, based on their email. If so, then return error if the session has not expired.
-        // Otherwise, delete the old registration session, any user and relationships that were
-        // created, and continue.
-        
-        const {user, tenant, tenantPasswordConfig} = await this._createUser(userCreateInput, tenantId, true);
+    // ##########################################################################
+    // 
+    //                    USER CREATE METHODS
+    //
+    // ##########################################################################
 
-        const registrationSessionToken: string = generateRandomToken(20, "hex");
-
-        // registration completion will expire after 12 hours. 
-        const expiresAt: number = Date.now() + (60 * 60 * 12 * 1000);
-        const arrState: Array<UserRegistrationState> = [];        
-        const stateOrder: Array<RegistrationState> = [];
-        if(tenant.verifyEmailOnSelfRegistration === true){            
-            // Note that the _createUser function will generate an email token and
-            // send it to the user. No need to do that here.
-            stateOrder.push(RegistrationState.ValidateEmail);
-        }
-        
-        if(tenantPasswordConfig.requireMfa === true){
-            const mfas = tenantPasswordConfig.mfaTypesRequired?.split(",") || [];            
-            if(mfas.includes(MFA_AUTH_TYPE_TIME_BASED_OTP) && mfas.includes(MFA_AUTH_TYPE_FIDO2)){
-                stateOrder.push(RegistrationState.ConfigureTotpRequired);
-                stateOrder.push(RegistrationState.ValidateTotp);
-                stateOrder.push(RegistrationState.ConfigureSecurityKeyRequired);
-                stateOrder.push(RegistrationState.ValidateSecurityKey);
-            }
-            else if(mfas.includes(MFA_AUTH_TYPE_TIME_BASED_OTP) && !mfas.includes(MFA_AUTH_TYPE_FIDO2)){
-                stateOrder.push(RegistrationState.ConfigureTotpRequired);
-                stateOrder.push(RegistrationState.ValidateTotp);
-                stateOrder.push(RegistrationState.ConfigureSecurityKeyOptional);
-                stateOrder.push(RegistrationState.ValidateSecurityKey);
-            }
-            else if(!mfas.includes(MFA_AUTH_TYPE_TIME_BASED_OTP) && mfas.includes(MFA_AUTH_TYPE_FIDO2)){                
-                stateOrder.push(RegistrationState.ConfigureSecurityKeyRequired);
-                stateOrder.push(RegistrationState.ValidateSecurityKey);
-                stateOrder.push(RegistrationState.ConfigureTotpOptional);
-                stateOrder.push(RegistrationState.ValidateTotp);
-            }
-        }
-        else {
-            stateOrder.push(RegistrationState.ConfigureTotpOptional);
-            stateOrder.push(RegistrationState.ValidateTotp);
-            stateOrder.push(RegistrationState.ConfigureSecurityKeyOptional);
-            stateOrder.push(RegistrationState.ValidateSecurityKey);
-        }
-
-        // Is the user coming from a 3rd party client and needs to be redirected
-        // with an authorization code
-        if(preAuthToken){
-            stateOrder.push(RegistrationState.RedirectBackToApplication)
-        }
-        else{
-            stateOrder.push(RegistrationState.RedirectToIamPortal);
-        }
-        for(let i = 0; i < stateOrder.length; i++){
-            arrState.push({
-                email: user.email,
-                tenantId: tenant.tenantId,
-                expiresAtMs: expiresAt,
-                registrationSessionToken: registrationSessionToken,
-                registrationState: stateOrder[i],
-                registrationStateOrder: i + 1,
-                registrationStateStatus: STATUS_INCOMPLETE,
-                userId: user.userId,
-                preAuthToken: preAuthToken
-            });
-        }
-
-        await identityDao.createUserRegistrationStates(arrState);
-        
-        const response: UserRegistrationStateResponse = {
-            userRegistrationState: arrState[0],
-            accessToken: "",
-            uri: "",
-            registrationError: {
-                errorCode: "",
-                errorMessage: ""
-            }
-        }
-        return Promise.resolve(response);
+    public async createUser(userCreateInput: UserCreateInput, tenantId: string): Promise<User>{        
+        const { user } = await this._createUser(userCreateInput, tenantId, false);
+        return user;
     }
 
+    protected async checkPassword(password: string, passwordConfig: TenantPasswordConfig): Promise<boolean> {        
 
+        // Need to check to see if the password is diallowed because is has been
+        // previously found to be easily cracked, as in the top 100K or top 1M cracked passwords.
+        const passwordProhibited: boolean = await identityDao.passwordProhibited(password);
+        if(passwordProhibited){
+            return Promise.resolve(false);
+        }
+        const passwordFormatIsValid: boolean = validatePassword(password, passwordConfig).result;
+        return Promise.resolve(passwordFormatIsValid);
+    }
+
+    /**
+     * Checks
+     * 1.   Does the tenant exist
+     * 2.   Is the tenant enabled
+     * 3.   Does the tenant allow user self registration if this is a registration flow?
+     * 4.   Does a user with the given email already exist?
+     * 5.   Is the password valid
+     * 6.   Is the domain allowed by the tenant or are there resitricted domains for this tenant?
+     * 7.   Do the rest of the required data values exist are are they the correct length, format, etc.?
+     * @param userCreateInput 
+     * @param tenantId 
+     * @param isRegistration 
+     * @returns 
+     */
+    protected async _createUser(userCreateInput: UserCreateInput, tenantId: string, isRegistration: boolean): Promise<{user: User, tenant: Tenant, tenantPasswordConfig: TenantPasswordConfig}>  {
+
+        // Always need to make sure that we lower-case the email for consistency purposes.
+        userCreateInput.email = userCreateInput.email.toLowerCase();
+
+        const tenant: Tenant | null = await tenantDao.getTenantById(tenantId);
+        if(!tenant){
+            throw new GraphQLError("ERROR_TENANT_DOES_NOT_EXIST");
+        }
+        if(tenant.enabled === false || tenant.markForDelete === true){
+            throw new GraphQLError("ERROR_TENANT_IS_NOT_ENABLED");
+        }
+        if(isRegistration && tenant.allowUserSelfRegistration === false){
+            throw new GraphQLError("ERROR_TENANT_DOES_NOT_ALLOW_USER_SELF_REGISTRATION");
+        }
+
+        const existingUser: User | null = await identityDao.getUserBy("email", userCreateInput.email);
+        if(existingUser){
+            throw new GraphQLError("ERROR_USER_WITH_EMAIL_ALREADY_EXISTS");
+        }
+
+        const tenantPasswordConfig: TenantPasswordConfig = await tenantDao.getTenantPasswordConfig(tenantId) || DEFAULT_TENANT_PASSWORD_CONFIGURATION;
+        const isValidPassword: boolean = await this.checkPassword(userCreateInput.password, tenantPasswordConfig);
+        if(!isValidPassword){
+            throw new GraphQLError("INVALID_PASSWORD_EITHER_PROHIBITED_OR_INVALID_FORMAT");
+        }
+
+        const domain: string = this.getDomainFromEmail(userCreateInput.email); 
+
+        const arrRestrictedDomainRel: Array<TenantRestrictedAuthenticationDomainRel> = await tenantDao.getDomainsForTenantRestrictedAuthentication(tenantId);
+        if(arrRestrictedDomainRel.length > 0){
+            const restrictedDomainRel: TenantRestrictedAuthenticationDomainRel | undefined = arrRestrictedDomainRel.find(
+                (rel: TenantRestrictedAuthenticationDomainRel) => rel.domain === domain
+            );
+            if(restrictedDomainRel === undefined){
+                throw new GraphQLError("ERROR_TENANT_HAS_RESTRICTED_EMAIL_DOMAINS")
+            }
+        }       
+
+
+        let userEnabled = true;
+        let emailVerified = true;
+        if(isRegistration && tenant.verifyEmailOnSelfRegistration){
+            userEnabled = false;
+            emailVerified = false;
+        }        
+
+        const user: User = {
+            domain: domain,
+            email: userCreateInput.email,
+            emailVerified: emailVerified,
+            enabled: userEnabled,
+            firstName: userCreateInput.firstName,
+            lastName: userCreateInput.lastName,
+            locked: false,
+            nameOrder: userCreateInput.nameOrder,
+            userId: randomUUID().toString(),
+            address: userCreateInput.address,
+            addressLine1: userCreateInput.addressLine1,
+            city: userCreateInput.city,
+            postalCode: userCreateInput.postalCode,
+            stateRegionProvince: userCreateInput.stateRegionProvince,
+            countryCode: userCreateInput.countryCode,
+            middleName: userCreateInput.middleName,
+            phoneNumber: userCreateInput.phoneNumber,
+            preferredLanguageCode: userCreateInput.preferredLanguageCode,
+            federatedOIDCProviderSubjectId: userCreateInput.federatedOIDCProviderSubjectId,
+            markForDelete: false
+        }
+
+        await identityDao.createUser(user);        
+        await identityDao.assignUserToTenant(tenant.tenantId, user.userId, "PRIMARY");
+        const userCredential: UserCredential = this.generateUserCredential(user.userId, userCreateInput.password, tenantPasswordConfig.passwordHashingAlgorithm);
+        await identityDao.addUserCredential(userCredential);
+
+        if(isRegistration && tenant.verifyEmailOnSelfRegistration){
+            const token: string = generateRandomToken(8, "hex").toUpperCase();
+            await identityDao.saveEmailConfirmationToken(user.userId, token);
+            // TODO
+            // Send email to the user with the token value.
+        }
+        await this.updateObjectSearchIndex(tenant, user, "PRIMARY");
+        await this.updateRelSearchIndex(tenant.tenantId, tenant.tenantId, user, USER_TENANT_REL_TYPE_PRIMARY);
+
+        return Promise.resolve({user: user, tenant: tenant, tenantPasswordConfig: tenantPasswordConfig});
+    }
+
+    /**
+     * 
+     * @param userId 
+     * @param password 
+     * @param hashAlgorithm 
+     * @returns 
+     */
+    protected generateUserCredential(userId: string, password: string, hashAlgorithm: string): UserCredential {
+        // For the Bcrypt hashing algorithm, the salt value is included in the final salted password
+        // so we can just leave it as the empty string.
+        let salt = "";
+        let hashedPassword = "";
+
+        if(hashAlgorithm === PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS){
+            hashedPassword = bcryptHashPassword(password, 10);
+        }
+        else if(hashAlgorithm === PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS){
+            hashedPassword = bcryptHashPassword(password, 11);
+        }
+        else if(hashAlgorithm === PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS){
+            hashedPassword = bcryptHashPassword(password, 12);
+        }                   
+        else if(hashAlgorithm === PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS){
+            salt = generateSalt();
+            hashedPassword = sha256HashPassword(password, salt, PASSWORD_HASH_ITERATION_64K);            
+        }
+        else if(hashAlgorithm === PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS){
+            salt = generateSalt();
+            hashedPassword = sha256HashPassword(password, salt, PASSWORD_HASH_ITERATION_128K);            
+        }
+        else if(hashAlgorithm === PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS){
+            salt = generateSalt();
+            hashedPassword = pbkdf2HashPassword(password, salt, PASSWORD_HASH_ITERATION_128K);            
+        }
+        else if(hashAlgorithm === PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS){
+            salt = generateSalt();
+            hashedPassword = pbkdf2HashPassword(password, salt, PASSWORD_HASH_ITERATION_256K);            
+        }
+        else if(hashAlgorithm === PASSWORD_HASHING_ALGORITHM_SCRYPT_32K_ITERATIONS){
+            salt = generateSalt();
+            hashedPassword = scryptHashPassword(password, salt, PASSWORD_HASH_ITERATION_32K);            
+        }
+        else if(hashAlgorithm === PASSWORD_HASHING_ALGORITHM_SCRYPT_64K_ITERATIONS){
+            salt = generateSalt();
+            hashedPassword = scryptHashPassword(password, salt, PASSWORD_HASH_ITERATION_64K);  
+        }
+        else if(hashAlgorithm === PASSWORD_HASHING_ALGORITHM_SCRYPT_128K_ITERATIONS){
+            salt = generateSalt();
+            hashedPassword = scryptHashPassword(password, salt, PASSWORD_HASH_ITERATION_128K);
+        }
+
+        return {
+            dateCreated: new Date().toISOString(),
+            hashedPassword: hashedPassword,
+            salt: salt,
+            hashingAlgorithm: hashAlgorithm,
+            userId: userId
+        }
+    }    
+
+
+    // ##########################################################################
+    // 
+    //                AUTHENTICATION METHODS
+    //
+    // ##########################################################################
     /**
      * Error conditions:
      * 1.   preAuthToken argument is present but no preauth state exists, or is
@@ -156,9 +259,6 @@ class IdentityService {
      */
     public async authenticateHandleUserNameInput(email: string, tenantId: string | null, preAuthToken: string | null): Promise<UserAuthenticationStateResponse> {        
 
-        // TODO
-        // Need to consider password rotation periods and password history.
-
         // 1.   If the user is coming from a 3rd party site for authentication
         if(preAuthToken){
             return this.authenticateExternalUserNameHandler(email, preAuthToken);
@@ -170,216 +270,6 @@ class IdentityService {
         }        
     }
 
-    /**
-     * 
-     * @param username 
-     * @param password 
-     * @param tenantId 
-     * @param authenticationSessionToken 
-     * @param preAuthToken 
-     * @returns 
-     */
-    public async authenticateUser(username: string, password: string, tenantId: string, authenticationSessionToken: string, preAuthToken: string | null): Promise<UserAuthenticationStateResponse>{
-        const response: UserAuthenticationStateResponse = this.initUserAuthenticationStateResponse(authenticationSessionToken, tenantId, preAuthToken);
-
-        const arrUserAuthenticationStates: Array<UserAuthenticationState> = await this.getSortedAuthenticationStates(authenticationSessionToken);
-        const index: number = await this.validateAuthenticationStep(arrUserAuthenticationStates, response, AuthenticationState.EnterPassword);
-        if(index < 0){
-            return Promise.resolve(response);
-        }
-        
-        const user: User | null = await identityDao.getUserBy("email", username);
-        if(!user){
-            throw new GraphQLError("ERROR_USER_NOT_FOUND_FOR_AUTHENTICATION");
-        }
-        if(user.enabled === false || user.markForDelete === true || user.locked === true){
-            throw new GraphQLError("ERROR_AUTHENTICATION_DISLABLED_FOR_USER");
-        }
-        
-
-        const userFailedLoginAttempts: Array<UserFailedLogin> = await identityDao.getFailedLogins(user.userId);
-        let loginFailurePolicy: TenantLoginFailurePolicy | null = await tenantDao.getLoginFailurePolicy(arrUserAuthenticationStates[index].tenantId);
-        if(loginFailurePolicy === null){
-            loginFailurePolicy = DEFAULT_LOGIN_FAILURE_POLICY;
-        }
-
-        // We will check to see if the user can authenticate based on the number of failures they have previously
-        // and if we have a failure policy type of pause and the next login time allowed is at some point in the past.
-        if(userFailedLoginAttempts.length > 0 && loginFailurePolicy.loginFailurePolicyType === LOGIN_FAILURE_POLICY_PAUSE){
-            if(userFailedLoginAttempts[length - 1].nextLoginNotBefore > Date.now()){
-                throw new GraphQLError("ERROR_AUTHENTICTION_IS_PAUSED_FOR_USER");
-            }
-        }
-
-        const userCredential: UserCredential | null = await identityDao.getUserCredentialForAuthentication(user.userId);
-        if(!userCredential){
-            throw new GraphQLError("ERROR_UNABLE_TO_FIND_CREDENTIALS_FOR_USER");
-        }
-
-        // Note that the bcrypt hashing algorithm CAN automatically generate a random salt
-        // and save both the salt value and the iteration value as part of the hashed password,
-        // so we do NOT need to pass both those pieces of information to the validation
-        // function.
-        let valid: boolean = false;
-        if(
-            userCredential.hashingAlgorithm === PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS ||
-            userCredential.hashingAlgorithm === PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS ||
-            userCredential.hashingAlgorithm === PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS
-        ){
-            valid = bcryptValidatePassword(password, userCredential.hashedPassword)
-        }
-        else if(userCredential.hashingAlgorithm === PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS){
-            const hashedPassword = sha256HashPassword(password, userCredential.salt, PASSWORD_HASH_ITERATION_64K);
-            valid = hashedPassword === userCredential.hashedPassword;
-        }
-        else if(userCredential.hashingAlgorithm === PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS){
-            const hashedPassword = sha256HashPassword(password, userCredential.salt, PASSWORD_HASH_ITERATION_128K);
-            valid = hashedPassword === userCredential.hashedPassword;
-        }
-        else if(userCredential.hashingAlgorithm === PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS){
-            const hashedPassword = pbkdf2HashPassword(password, userCredential.salt, PASSWORD_HASH_ITERATION_128K);
-            valid = hashedPassword === userCredential.hashedPassword;
-        }
-        else if(userCredential.hashingAlgorithm === PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS){
-            const hashedPassword = pbkdf2HashPassword(password, userCredential.salt, PASSWORD_HASH_ITERATION_256K);
-            valid = hashedPassword === userCredential.hashedPassword;
-        }
-        else if(userCredential.hashingAlgorithm === PASSWORD_HASHING_ALGORITHM_SCRYPT_32K_ITERATIONS){
-            const hashedPassword = scryptHashPassword(password, userCredential.salt, PASSWORD_HASH_ITERATION_32K);
-            valid = hashedPassword === userCredential.hashedPassword;
-        }
-        else if(userCredential.hashingAlgorithm === PASSWORD_HASHING_ALGORITHM_SCRYPT_64K_ITERATIONS){
-            const hashedPassword = scryptHashPassword(password, userCredential.salt, PASSWORD_HASH_ITERATION_64K);
-            valid = hashedPassword === userCredential.hashedPassword;
-        }
-        else if(userCredential.hashingAlgorithm === PASSWORD_HASHING_ALGORITHM_SCRYPT_128K_ITERATIONS){
-            const hashedPassword = scryptHashPassword(password, userCredential.salt, PASSWORD_HASH_ITERATION_128K);
-            valid = hashedPassword === userCredential.hashedPassword;
-        }
-
-        if(!valid){
-
-            // 1.   Do we need to lock the user
-            // 2.   If not, do we need to pause the login attempts for any length of time?
-            const nowMs = Date.now();
-            const failureCount: number = userFailedLoginAttempts.length === 0 ? 1 : userFailedLoginAttempts[userFailedLoginAttempts.length - 1].failureCount + 1;
-            let nextLoginTime = nowMs;
-            let lockUser: boolean = false;
-
-            if(loginFailurePolicy.loginFailurePolicyType === LOGIN_FAILURE_POLICY_LOCK_USER_ACCOUNT){
-                if(failureCount >= loginFailurePolicy.failureThreshold){
-                    nextLoginTime = Number.MAX_SAFE_INTEGER;
-                    lockUser = true;
-                }
-            }
-            else if(loginFailurePolicy.loginFailurePolicyType === LOGIN_FAILURE_POLICY_PAUSE){
-                // Have we surpassed the globally maximum allowed login failures (globally, either by tenant configuration or by system default)?
-                const maximumLoginFailures: number = loginFailurePolicy.maximumLoginFailures ? loginFailurePolicy.maximumLoginFailures : DEFAULT_MAXIMUM_LOGIN_FAILURES;
-                if(failureCount >= maximumLoginFailures){
-                    nextLoginTime = Number.MAX_SAFE_INTEGER;
-                    lockUser = true;
-                }
-                else{
-                    const failureThreshold = loginFailurePolicy.failureThreshold;
-                    // Are we just at the threshold for another pause? For example, the threshold is 8 consecutive
-                    // failed logins before a pause at we are at the 8th or 16th or 24th or ... failure, 
-                    if(failureCount % failureThreshold === 0){
-                        const pauseDurationInMinutes: number = loginFailurePolicy.pauseDurationMinutes ? loginFailurePolicy.pauseDurationMinutes : DEFAULT_LOGIN_PAUSE_TIME_MINUTES;
-                        nextLoginTime = nowMs + (pauseDurationInMinutes * 60 * 1000);
-                    }
-                }
-            }
-
-            await identityDao.addFailedLogin({
-                failureAtMs: nowMs,
-                failureCount: failureCount,
-                nextLoginNotBefore: nextLoginTime,
-                userId: user.userId
-            });
-
-            if(lockUser){
-                user.locked = true;
-                await identityDao.updateUser(user);
-            }
-            // We can safely delete the previous failed attempts
-            if(userFailedLoginAttempts.length > 0){
-                for(let i = 0; i < userFailedLoginAttempts.length; i++){
-                    identityDao.removeFailedLogin(userFailedLoginAttempts[i].userId, userFailedLoginAttempts[i].failureAtMs);
-                }
-            }
-            
-            response.authenticationError.errorCode = "ERROR_INVALID_CREDENTIALS";
-            return Promise.resolve(response);
-        }
-
-
-        // Otherwise the password is valid and we should remove the failed login attempts
-        // and update the existing authentication state and return the new state.
-        identityDao.resetFailedLoginAttempts(user.userId);
-
-        arrUserAuthenticationStates[index].authenticationStateStatus = STATUS_COMPLETE;
-        await identityDao.updateUserAuthenticationState(arrUserAuthenticationStates[index]);
-        const nextUserAuthenticationState: UserAuthenticationState = arrUserAuthenticationStates[index + 1];
-                
-        if(nextUserAuthenticationState.authenticationState === AuthenticationState.RedirectBackToApplication || nextUserAuthenticationState.authenticationState === AuthenticationState.RedirectToIamPortal){
-            await this.handleAuthenticationCompletion(user, nextUserAuthenticationState, response);
-        }
-        else{
-            response.userAuthenticationState = nextUserAuthenticationState;
-        }
-        
-        return Promise.resolve(response);
-
-    }
-
-
-    /**
-     * 
-     * @param userId 
-     * @param totpTokenValue 
-     * @param authenticationSessionToken 
-     * @param preAuthToken 
-     * @returns 
-     */
-    public async authenticateValidateTOTP(userId: string, totpTokenValue: string, authenticationSessionToken: string, preAuthToken: string | null): Promise<UserAuthenticationStateResponse> {
-        const response: UserAuthenticationStateResponse = this.initUserAuthenticationStateResponse(authenticationSessionToken, "", preAuthToken);
-        const arrUserAuthenticationStates: Array<UserAuthenticationState> = await this.getSortedAuthenticationStates(authenticationSessionToken);
-        const index: number = await this.validateAuthenticationStep(arrUserAuthenticationStates, response, AuthenticationState.ValidateTotp);
-        if(index < 0){
-            return Promise.resolve(response);
-        }
-        const user: User | null = await identityDao.getUserBy("id", userId);
-        if(user === null){
-            response.authenticationError.errorCode = "ERROR_INVALID_USER_ID";
-            response.userAuthenticationState.authenticationState = AuthenticationState.Error;
-            return response;
-        }
-
-        const isTokenValid: boolean = await this.validateTOTP(userId, totpTokenValue);
-        if(!isTokenValid){
-            response.authenticationError.errorCode = "ERROR_INVALID_TOTP_TOKEN";
-            response.userAuthenticationState.authenticationState = AuthenticationState.Error;
-            return response;
-        }
-
-        // Update the authentication state values;
-        arrUserAuthenticationStates[index].authenticationStateStatus = STATUS_COMPLETE;
-        await identityDao.updateUserAuthenticationState(arrUserAuthenticationStates[index]);
-        const nextUserAuthenticationState = arrUserAuthenticationStates[index + 1];
-        if(nextUserAuthenticationState.authenticationState === AuthenticationState.RedirectBackToApplication || nextUserAuthenticationState.authenticationState === AuthenticationState.RedirectToIamPortal){
-            await this.handleAuthenticationCompletion(user, nextUserAuthenticationState, response);
-        }
-        else{
-            response.userAuthenticationState = nextUserAuthenticationState;
-        }
-        return response;
-    }
-
-
-    public async cancelAuthentication(userId: string, authenticationSessionToken: string, preAuthToken: string | null): Promise<UserAuthenticationStateResponse> {
-        const response: UserAuthenticationStateResponse = this.initUserAuthenticationStateResponse(authenticationSessionToken, "", preAuthToken);
-        return response;
-    } 
 
     /**
      * 
@@ -463,14 +353,23 @@ class IdentityService {
                 response.uri = `/authorize/register?${QUERY_PARAM_TENANT_ID}=${p.tenantId}&username=${email.toLowerCase()}`;
                 return response;
             }
+            const userCredential: UserCredential | null = await identityDao.getUserCredentialForAuthentication(user.userId);
+            if(!userCredential){
+                response.authenticationError.errorCode = "ERROR_NO_CREDENTIALS_FOUND_FOR_USER";
+                return response;
+            }
             else{
                 const stateOrder: Array<AuthenticationState> = [];
                 stateOrder.push(AuthenticationState.EnterPassword);
                 const passwordConfig: TenantPasswordConfig | null = await tenantDao.getTenantPasswordConfig(p.tenantId);
+                if(passwordConfig && this.requirePasswordRotation(userCredential, passwordConfig)){
+                    stateOrder.push(AuthenticationState.RotatePassword);
+                }
                 let requiredMfaTypes: Array<string> = [];
                 if(passwordConfig && passwordConfig.requireMfa){
                     requiredMfaTypes = passwordConfig.mfaTypesRequired?.split(",") || [];
                 }
+                
                 const arrUserMfaConfig: Array<UserMfaRel> = await identityDao.getUserMFARels(user.userId);
                 const userMfaRelTotp: UserMfaRel | undefined = arrUserMfaConfig.find(
                     (v: UserMfaRel) => v.mfaType === MFA_AUTH_TYPE_TIME_BASED_OTP
@@ -694,6 +593,14 @@ class IdentityService {
                 const stateOrder: Array<AuthenticationState> = [];
                 stateOrder.push(AuthenticationState.EnterPassword);
                 const passwordConfig: TenantPasswordConfig | null = await tenantDao.getTenantPasswordConfig(tenantsThatAllowPasswordLogin[0].tenantId);
+                const userCredential: UserCredential | null = await identityDao.getUserCredentialForAuthentication(user.userId);
+                if(!userCredential){
+                    response.authenticationError.errorCode = "ERROR_NO_CREDENTIALS_FOUND_FOR_USER";
+                    return response;
+                }
+                if(passwordConfig && this.requirePasswordRotation(userCredential, passwordConfig)){
+                    stateOrder.push(AuthenticationState.RotatePassword);
+                }
                 let requiredMfaTypes: Array<string> = [];
                 if(passwordConfig && passwordConfig.requireMfa){
                     requiredMfaTypes = passwordConfig.mfaTypesRequired?.split(",") || [];
@@ -760,7 +667,369 @@ class IdentityService {
         return response;
     }
 
-   
+    /**
+     * 
+     * @param username 
+     * @param password 
+     * @param tenantId 
+     * @param authenticationSessionToken 
+     * @param preAuthToken 
+     * @returns 
+     */
+    public async authenticateUser(username: string, password: string, tenantId: string, authenticationSessionToken: string, preAuthToken: string | null): Promise<UserAuthenticationStateResponse>{
+        const response: UserAuthenticationStateResponse = this.initUserAuthenticationStateResponse(authenticationSessionToken, tenantId, preAuthToken);
+
+        const arrUserAuthenticationStates: Array<UserAuthenticationState> = await this.getSortedAuthenticationStates(authenticationSessionToken);
+        const index: number = await this.validateAuthenticationStep(arrUserAuthenticationStates, response, AuthenticationState.EnterPassword);
+        if(index < 0){
+            return Promise.resolve(response);
+        }
+        
+        const user: User | null = await identityDao.getUserBy("email", username);
+        if(!user){
+            throw new GraphQLError("ERROR_USER_NOT_FOUND_FOR_AUTHENTICATION");
+        }
+        if(user.enabled === false || user.markForDelete === true || user.locked === true){
+            throw new GraphQLError("ERROR_AUTHENTICATION_DISLABLED_FOR_USER");
+        }
+        
+
+        const userFailedLoginAttempts: Array<UserFailedLogin> = await identityDao.getFailedLogins(user.userId);
+        let loginFailurePolicy: TenantLoginFailurePolicy | null = await tenantDao.getLoginFailurePolicy(arrUserAuthenticationStates[index].tenantId);
+        if(loginFailurePolicy === null){
+            loginFailurePolicy = DEFAULT_LOGIN_FAILURE_POLICY;
+        }
+
+        // We will check to see if the user can authenticate based on the number of failures they have previously
+        // and if we have a failure policy type of pause and the next login time allowed is at some point in the past.
+        if(userFailedLoginAttempts.length > 0 && loginFailurePolicy.loginFailurePolicyType === LOGIN_FAILURE_POLICY_PAUSE){
+            if(userFailedLoginAttempts[length - 1].nextLoginNotBefore > Date.now()){
+                throw new GraphQLError("ERROR_AUTHENTICTION_IS_PAUSED_FOR_USER");
+            }
+        }
+
+        const userCredential: UserCredential | null = await identityDao.getUserCredentialForAuthentication(user.userId);
+        if(!userCredential){
+            throw new GraphQLError("ERROR_UNABLE_TO_FIND_CREDENTIALS_FOR_USER");
+        }
+
+        // Note that the bcrypt hashing algorithm CAN automatically generate a random salt
+        // and save both the salt value and the iteration value as part of the hashed password,
+        // so we do NOT need to pass both those pieces of information to the validation
+        // function.
+        let valid: boolean = false;
+        if(
+            userCredential.hashingAlgorithm === PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS ||
+            userCredential.hashingAlgorithm === PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS ||
+            userCredential.hashingAlgorithm === PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS
+        ){
+            valid = bcryptValidatePassword(password, userCredential.hashedPassword)
+        }
+        else if(userCredential.hashingAlgorithm === PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS){
+            const hashedPassword = sha256HashPassword(password, userCredential.salt, PASSWORD_HASH_ITERATION_64K);
+            valid = hashedPassword === userCredential.hashedPassword;
+        }
+        else if(userCredential.hashingAlgorithm === PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS){
+            const hashedPassword = sha256HashPassword(password, userCredential.salt, PASSWORD_HASH_ITERATION_128K);
+            valid = hashedPassword === userCredential.hashedPassword;
+        }
+        else if(userCredential.hashingAlgorithm === PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS){
+            const hashedPassword = pbkdf2HashPassword(password, userCredential.salt, PASSWORD_HASH_ITERATION_128K);
+            valid = hashedPassword === userCredential.hashedPassword;
+        }
+        else if(userCredential.hashingAlgorithm === PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS){
+            const hashedPassword = pbkdf2HashPassword(password, userCredential.salt, PASSWORD_HASH_ITERATION_256K);
+            valid = hashedPassword === userCredential.hashedPassword;
+        }
+        else if(userCredential.hashingAlgorithm === PASSWORD_HASHING_ALGORITHM_SCRYPT_32K_ITERATIONS){
+            const hashedPassword = scryptHashPassword(password, userCredential.salt, PASSWORD_HASH_ITERATION_32K);
+            valid = hashedPassword === userCredential.hashedPassword;
+        }
+        else if(userCredential.hashingAlgorithm === PASSWORD_HASHING_ALGORITHM_SCRYPT_64K_ITERATIONS){
+            const hashedPassword = scryptHashPassword(password, userCredential.salt, PASSWORD_HASH_ITERATION_64K);
+            valid = hashedPassword === userCredential.hashedPassword;
+        }
+        else if(userCredential.hashingAlgorithm === PASSWORD_HASHING_ALGORITHM_SCRYPT_128K_ITERATIONS){
+            const hashedPassword = scryptHashPassword(password, userCredential.salt, PASSWORD_HASH_ITERATION_128K);
+            valid = hashedPassword === userCredential.hashedPassword;
+        }
+
+        if(!valid){
+
+            // 1.   Do we need to lock the user
+            // 2.   If not, do we need to pause the login attempts for any length of time?
+            const nowMs = Date.now();
+            const failureCount: number = userFailedLoginAttempts.length === 0 ? 1 : userFailedLoginAttempts[userFailedLoginAttempts.length - 1].failureCount + 1;
+            let nextLoginTime = nowMs;
+            let lockUser: boolean = false;
+
+            if(loginFailurePolicy.loginFailurePolicyType === LOGIN_FAILURE_POLICY_LOCK_USER_ACCOUNT){
+                if(failureCount >= loginFailurePolicy.failureThreshold){
+                    nextLoginTime = Number.MAX_SAFE_INTEGER;
+                    lockUser = true;
+                }
+            }
+            else if(loginFailurePolicy.loginFailurePolicyType === LOGIN_FAILURE_POLICY_PAUSE){
+                // Have we surpassed the globally maximum allowed login failures (globally, either by tenant configuration or by system default)?
+                const maximumLoginFailures: number = loginFailurePolicy.maximumLoginFailures ? loginFailurePolicy.maximumLoginFailures : DEFAULT_MAXIMUM_LOGIN_FAILURES;
+                if(failureCount >= maximumLoginFailures){
+                    nextLoginTime = Number.MAX_SAFE_INTEGER;
+                    lockUser = true;
+                }
+                else{
+                    const failureThreshold = loginFailurePolicy.failureThreshold;
+                    // Are we just at the threshold for another pause? For example, the threshold is 8 consecutive
+                    // failed logins before a pause at we are at the 8th or 16th or 24th or ... failure, 
+                    if(failureCount % failureThreshold === 0){
+                        const pauseDurationInMinutes: number = loginFailurePolicy.pauseDurationMinutes ? loginFailurePolicy.pauseDurationMinutes : DEFAULT_LOGIN_PAUSE_TIME_MINUTES;
+                        nextLoginTime = nowMs + (pauseDurationInMinutes * 60 * 1000);
+                    }
+                }
+            }
+
+            await identityDao.addFailedLogin({
+                failureAtMs: nowMs,
+                failureCount: failureCount,
+                nextLoginNotBefore: nextLoginTime,
+                userId: user.userId
+            });
+
+            if(lockUser){
+                user.locked = true;
+                await identityDao.updateUser(user);
+            }
+            // We can safely delete the previous failed attempts
+            if(userFailedLoginAttempts.length > 0){
+                for(let i = 0; i < userFailedLoginAttempts.length; i++){
+                    identityDao.removeFailedLogin(userFailedLoginAttempts[i].userId, userFailedLoginAttempts[i].failureAtMs);
+                }
+            }
+            
+            response.authenticationError.errorCode = "ERROR_INVALID_CREDENTIALS";
+            return Promise.resolve(response);
+        }
+
+
+        // Otherwise the password is valid and we should remove the failed login attempts
+        // and update the existing authentication state and return the new state.
+        identityDao.resetFailedLoginAttempts(user.userId);
+
+        arrUserAuthenticationStates[index].authenticationStateStatus = STATUS_COMPLETE;
+        await identityDao.updateUserAuthenticationState(arrUserAuthenticationStates[index]);
+        const nextUserAuthenticationState: UserAuthenticationState = arrUserAuthenticationStates[index + 1];
+                
+        if(nextUserAuthenticationState.authenticationState === AuthenticationState.RedirectBackToApplication || nextUserAuthenticationState.authenticationState === AuthenticationState.RedirectToIamPortal){
+            await this.handleAuthenticationCompletion(user, nextUserAuthenticationState, response);
+        }
+        else{
+            response.userAuthenticationState = nextUserAuthenticationState;
+        }
+        
+        return Promise.resolve(response);
+
+    }
+
+
+    public async authenticateRotatePassword(userId: string, newPassword: string, authenticationSessionToken: string, preAuthToken: string | null): Promise<UserAuthenticationStateResponse>{
+        const response: UserAuthenticationStateResponse = this.initUserAuthenticationStateResponse(authenticationSessionToken, "", preAuthToken);
+        
+        // 1. Is this the correct step of the authentication process?
+        const arrUserAuthenticationStates: Array<UserAuthenticationState> = await this.getSortedAuthenticationStates(authenticationSessionToken);
+        const index: number = await this.validateAuthenticationStep(arrUserAuthenticationStates, response, AuthenticationState.RotatePassword);
+        if(index < 0){
+            return Promise.resolve(response);
+        }
+        
+        // Does the user exist and have credentials?
+        const user: User | null = await identityDao.getUserBy("id", userId);
+        if(user === null){
+            response.authenticationError.errorCode = "ERROR_USER_NOT_FOUND";
+            return response;
+        }
+        const arrUserCredentials: Array<UserCredential> = await identityDao.getUserCredentials(userId);
+        if(arrUserCredentials.length === 0){
+            response.authenticationError.errorCode = "ERROR_NO_CREDENTIALS_FOUND_FOR_USER";
+            return response;
+        }
+
+        // Need to validate the password and find the hashing algorithm for the new password
+        const tenantPasswordConfig: TenantPasswordConfig = await this.determineTenantPasswordConfig(userId, arrUserAuthenticationStates[0].tenantId);
+        const isValidPassword: boolean = await this.checkPassword(newPassword, tenantPasswordConfig);
+        if(!isValidPassword){
+            response.authenticationError.errorCode = "ERROR_PASSWORD_DOES_NOT_MEET_REQUIRED_FORMAT";
+            return response;
+        }
+        const cred: UserCredential = this.generateUserCredential(userId, newPassword, tenantPasswordConfig.passwordHashingAlgorithm);
+        await identityDao.addUserCredential(cred);
+
+        arrUserAuthenticationStates[index].authenticationStateStatus = STATUS_COMPLETE;
+        await identityDao.updateUserAuthenticationState(arrUserAuthenticationStates[index]);
+        const nextUserAuthenticationState = arrUserAuthenticationStates[index + 1];
+        if(nextUserAuthenticationState.authenticationState === AuthenticationState.RedirectBackToApplication || nextUserAuthenticationState.authenticationState === AuthenticationState.RedirectToIamPortal){
+            await this.handleAuthenticationCompletion(user, nextUserAuthenticationState, response);
+        }
+        else{
+            response.userAuthenticationState = nextUserAuthenticationState;
+        }
+        return response;
+    }
+
+    protected async determineTenantPasswordConfig(userId: string, targetTenantId: string): Promise<TenantPasswordConfig> {
+        // Need to validate the password and find the hashing algorithm for the new password: Does the user belong to any tenants? Prefer, in order
+        // 1.   Primary tenant
+        // 2.   Secondary tenant if there is exactly one user-to-tenant relationshipt
+        // 3.   Default hashing algorithm from the object DEFAULT_TENANT_PASSWORD_CONFIGURATION
+        let tenantPasswordConfig: TenantPasswordConfig = DEFAULT_TENANT_PASSWORD_CONFIGURATION        
+        const userTenantRels = await identityDao.getUserTenantRelsByUserId(userId);
+        if(userTenantRels && userTenantRels.length > 0){
+            let tenantId =  userTenantRels[0].tenantId;
+            if(userTenantRels.length > 1){
+                for(let i = 0; i < userTenantRels.length; i++){
+                    if(userTenantRels[i].relType === USER_TENANT_REL_TYPE_PRIMARY){
+                        tenantId = userTenantRels[i].tenantId;
+                        break;
+                    }
+                }
+            }
+            const config: TenantPasswordConfig | null = await tenantDao.getTenantPasswordConfig(tenantId);
+            if(config){
+                tenantPasswordConfig = config;
+            }
+        }
+        
+        // We need to compare 2 password configurations if the user is logging into a
+        // different tenant than is the user's primary tenant. If one exists for the target tenant
+        // then we need to check to see if then merge the 2 configurations, taking 
+        // the more robust option from each.
+        if(tenantPasswordConfig.tenantId !== targetTenantId){
+        
+            const passwordConfig: TenantPasswordConfig | null = await tenantDao.getTenantPasswordConfig(targetTenantId);
+            if(passwordConfig){
+                // Merge the 2 configurations, taking the more robust option from each.
+                tenantPasswordConfig.passwordMaxLength = tenantPasswordConfig.passwordMaxLength > passwordConfig.passwordMaxLength ? tenantPasswordConfig.passwordMaxLength : passwordConfig.passwordMaxLength;
+                tenantPasswordConfig.passwordMinLength = tenantPasswordConfig.passwordMinLength > passwordConfig.passwordMinLength ? tenantPasswordConfig.passwordMinLength : passwordConfig.passwordMinLength;
+                tenantPasswordConfig.requireLowerCase = tenantPasswordConfig.requireLowerCase || passwordConfig.requireLowerCase;
+                tenantPasswordConfig.requireUpperCase = tenantPasswordConfig.requireUpperCase || passwordConfig.requireUpperCase;
+                tenantPasswordConfig.requireNumbers = tenantPasswordConfig.requireNumbers || passwordConfig.requireNumbers;
+                tenantPasswordConfig.requireSpecialCharacters = tenantPasswordConfig.requireSpecialCharacters || passwordConfig.requireSpecialCharacters;
+                const specialCharactersAllowed = this.findCharacterIntersection(tenantPasswordConfig.specialCharactersAllowed || "", passwordConfig.specialCharactersAllowed || "");
+                // If there are no intersecting special characters and special characters are required, then
+                // select the special characters from the target tenant if they exist, otherwise the choose the user's tenant, otherwise choose default
+                if(specialCharactersAllowed === "" && tenantPasswordConfig.requireSpecialCharacters === true){
+                    tenantPasswordConfig.specialCharactersAllowed = 
+                        passwordConfig.specialCharactersAllowed ? passwordConfig.specialCharactersAllowed :
+                        tenantPasswordConfig.specialCharactersAllowed ? tenantPasswordConfig.specialCharactersAllowed :
+                        DEFAULT_TENANT_PASSWORD_CONFIGURATION.specialCharactersAllowed
+                }
+                else{
+                    tenantPasswordConfig.specialCharactersAllowed = specialCharactersAllowed;
+                }
+                const passwordHistoryPeriod1: number = tenantPasswordConfig.passwordHistoryPeriod ? tenantPasswordConfig.passwordHistoryPeriod : DEFAULT_PASSWORD_HISTORY_PERIOD;
+                const passwordHistoryPeriod2: number = passwordConfig.passwordHistoryPeriod ? passwordConfig.passwordHistoryPeriod : DEFAULT_PASSWORD_HISTORY_PERIOD;
+                tenantPasswordConfig.passwordHistoryPeriod = passwordHistoryPeriod1 > passwordHistoryPeriod2 ? passwordHistoryPeriod1 : passwordHistoryPeriod2;
+                if(tenantPasswordConfig.passwordHashingAlgorithm !== passwordConfig.passwordHashingAlgorithm){
+                    tenantPasswordConfig.passwordHashingAlgorithm = this.determinePreferredHashAlgorithm(tenantPasswordConfig.passwordHashingAlgorithm, passwordConfig.passwordHashingAlgorithm);
+                }
+            }
+        } 
+        return tenantPasswordConfig; 
+    }
+
+    /**
+     * Credit to Google's AI overview
+     * @param str1 
+     * @param str2 
+     * @returns 
+     */
+    protected findCharacterIntersection(str1: string, str2: string): string {
+        const chars1 = str1.split("");
+        const chars2 = str2.split("");
+      
+        const intersection = chars1.filter(char => chars2.includes(char));
+      
+        // Remove duplicates if necessary (filter might produce duplicates if a character appears multiple times in str1)
+        return Array.from(new Set(intersection)).join("");
+    }
+
+    protected determinePreferredHashAlgorithm(hashalgorithm1: string, hashalgorithm2: string): string {
+        let retVal = hashalgorithm1;
+        // prefer scrypt over bcrypt over pbkdf2 over sha256
+        const index1 = RANKED_DESCENDING_HASHING_ALGORITHS.indexOf(hashalgorithm1);
+        const index2 = RANKED_DESCENDING_HASHING_ALGORITHS.indexOf(hashalgorithm2);
+        // Should never happen...
+        if(index1 === -1 && index2 === -1){
+            retVal = DEFAULT_TENANT_PASSWORD_CONFIGURATION.passwordHashingAlgorithm
+        }
+        else{
+            retVal = index1 < index2 ? RANKED_DESCENDING_HASHING_ALGORITHS[index1] : RANKED_DESCENDING_HASHING_ALGORITHS[index2];
+        }
+        return retVal;
+    }
+
+    /**
+     * 
+     * @param userId 
+     * @param totpTokenValue 
+     * @param authenticationSessionToken 
+     * @param preAuthToken 
+     * @returns 
+     */
+    public async authenticateValidateTOTP(userId: string, totpTokenValue: string, authenticationSessionToken: string, preAuthToken: string | null): Promise<UserAuthenticationStateResponse> {
+        const response: UserAuthenticationStateResponse = this.initUserAuthenticationStateResponse(authenticationSessionToken, "", preAuthToken);
+        const arrUserAuthenticationStates: Array<UserAuthenticationState> = await this.getSortedAuthenticationStates(authenticationSessionToken);
+        const index: number = await this.validateAuthenticationStep(arrUserAuthenticationStates, response, AuthenticationState.ValidateTotp);
+        if(index < 0){
+            return Promise.resolve(response);
+        }
+        const user: User | null = await identityDao.getUserBy("id", userId);
+        if(user === null){
+            response.authenticationError.errorCode = "ERROR_INVALID_USER_ID";
+            response.userAuthenticationState.authenticationState = AuthenticationState.Error;
+            return response;
+        }
+
+        const isTokenValid: boolean = await this.validateTOTP(userId, totpTokenValue);
+        if(!isTokenValid){
+            response.authenticationError.errorCode = "ERROR_INVALID_TOTP_TOKEN";
+            response.userAuthenticationState.authenticationState = AuthenticationState.Error;
+            return response;
+        }
+
+        // Update the authentication state values;
+        arrUserAuthenticationStates[index].authenticationStateStatus = STATUS_COMPLETE;
+        await identityDao.updateUserAuthenticationState(arrUserAuthenticationStates[index]);
+        const nextUserAuthenticationState = arrUserAuthenticationStates[index + 1];
+        if(nextUserAuthenticationState.authenticationState === AuthenticationState.RedirectBackToApplication || nextUserAuthenticationState.authenticationState === AuthenticationState.RedirectToIamPortal){
+            await this.handleAuthenticationCompletion(user, nextUserAuthenticationState, response);
+        }
+        else{
+            response.userAuthenticationState = nextUserAuthenticationState;
+        }
+        return response;
+    }
+
+
+    public async cancelAuthentication(userId: string, authenticationSessionToken: string, preAuthToken: string | null): Promise<UserAuthenticationStateResponse> {
+        const response: UserAuthenticationStateResponse = this.initUserAuthenticationStateResponse(authenticationSessionToken, "", preAuthToken);
+        return response;
+    }   
+
+
+    protected async getSortedAuthenticationStates(authenticationSessionToken: string): Promise<Array<UserAuthenticationState>> {
+        const arrUserAuthenticationState: Array<UserAuthenticationState> = await identityDao.getUserAuthenticationStates(authenticationSessionToken);
+        arrUserAuthenticationState.sort(
+            (a: UserAuthenticationState, b: UserAuthenticationState) => a.authenticationStateOrder - b.authenticationStateOrder
+        );
+        return arrUserAuthenticationState;
+    }
+
+    /**
+     * 
+     * @param arrUserAuthenticationState 
+     * @param response 
+     * @param expectedState 
+     * @returns 
+     */
 
     protected initUserAuthenticationStateResponse(authenticationSessionToken: string, tenantId: string, preAuthToken: string | null): UserAuthenticationStateResponse {
         const response: UserAuthenticationStateResponse = {
@@ -785,36 +1054,6 @@ class IdentityService {
         return response;
     }
 
-
-    /**
-     * 
-     * @param registrationSessionToken 
-     * @returns 
-     */
-    protected async getSortedRegistartionStates(registrationSessionToken: string): Promise<Array<UserRegistrationState>>{
-
-        const arrUserRegistrationState: Array<UserRegistrationState> = await identityDao.getUserRegistrationStates(registrationSessionToken);
-        arrUserRegistrationState.sort(
-            (a: UserRegistrationState, b: UserRegistrationState) => a.registrationStateOrder - b.registrationStateOrder
-        );
-        return Promise.resolve(arrUserRegistrationState);
-    }
-
-    protected async getSortedAuthenticationStates(authenticationSessionToken: string): Promise<Array<UserAuthenticationState>> {
-        const arrUserAuthenticationState: Array<UserAuthenticationState> = await identityDao.getUserAuthenticationStates(authenticationSessionToken);
-        arrUserAuthenticationState.sort(
-            (a: UserAuthenticationState, b: UserAuthenticationState) => a.authenticationStateOrder - b.authenticationStateOrder
-        );
-        return arrUserAuthenticationState;
-    }
-
-    /**
-     * 
-     * @param arrUserAuthenticationState 
-     * @param response 
-     * @param expectedState 
-     * @returns 
-     */
     protected async validateAuthenticationStep(arrUserAuthenticationState: Array<UserAuthenticationState>, response: UserAuthenticationStateResponse, expectedState: AuthenticationState): Promise<number> {
         
         let stepIndex: number = -1;
@@ -859,6 +1098,178 @@ class IdentityService {
 
         return stepIndex;
     }
+
+    /**
+     * 
+     * @param user 
+     * @param userAuthenticationState 
+     * @param response 
+     */
+    protected async handleAuthenticationCompletion(user: User, userAuthenticationState: UserAuthenticationState, response: UserAuthenticationStateResponse): Promise<void> {
+        if(userAuthenticationState.authenticationState === AuthenticationState.RedirectBackToApplication){
+            try {
+                const authorizationCode: AuthorizationReturnUri = await this.generateAuthorizationCode(userAuthenticationState.userId, userAuthenticationState.preAuthToken || "");
+                response.userAuthenticationState = userAuthenticationState;
+                response.uri = authorizationCode.uri;
+                userAuthenticationState.authenticationStateStatus = STATUS_COMPLETE;
+                await identityDao.updateUserAuthenticationState(userAuthenticationState);
+
+            }
+            catch(err: any){
+                response.authenticationError.errorCode = err.message;
+                response.userAuthenticationState.authenticationState = AuthenticationState.Error;
+            }            
+        }
+        else if(userAuthenticationState.authenticationState === AuthenticationState.RedirectToIamPortal){
+            try {
+                const tenant: Tenant | null = await tenantDao.getTenantById(userAuthenticationState.tenantId);
+                if(tenant === null){
+                    response.authenticationError.errorCode = "ERROR_INVALID_TENANT_FOR_AUTHENTICATION_COMPLETION";
+                    response.userAuthenticationState.authenticationState = AuthenticationState.Error;
+                }
+                else{
+                    const accessToken: string | null = await jwtServiceUtils.signIAMPortalUserJwt(user, tenant, 60 * 60 * 12, TOKEN_TYPE_IAM_PORTAL_USER);
+                    if(accessToken === null){
+                        response.authenticationError.errorCode = "ERROR_GENERATING_ACCESS_TOKEN_AUTHENTICATION_COMPLETION";
+                        response.userAuthenticationState.authenticationState = AuthenticationState.Error;
+                    }
+                    else{
+                        response.userAuthenticationState = userAuthenticationState;
+                        response.uri = `/${userAuthenticationState.tenantId}`;
+                        response.accessToken = accessToken;
+                        userAuthenticationState.authenticationStateStatus = STATUS_COMPLETE;
+                        await identityDao.updateUserAuthenticationState(userAuthenticationState);
+                    }
+                }
+            }
+            catch(err: any){
+                response.authenticationError.errorCode = err.message;
+                response.userAuthenticationState.authenticationState = AuthenticationState.Error;
+            }
+        }
+    }    
+
+    protected requirePasswordRotation(userCredential: UserCredential, tenantPasswordConfig: TenantPasswordConfig): boolean {
+        let bRetVal = false;
+        if(tenantPasswordConfig.passwordRotationPeriodDays){
+            const t: Date = new Date(userCredential.dateCreated);
+            const now: number = Date.now();
+            const timeForRotation = now + ( tenantPasswordConfig.passwordRotationPeriodDays * 24 * 60 * 60 * 1000);
+            if(t.getTime() > timeForRotation){
+                bRetVal = true;
+            }
+        }
+        return bRetVal;
+    }
+
+    // ##########################################################################
+    // 
+    //                      REGISTRATION METHODS
+    //
+    // ##########################################################################   
+    
+    
+    public async registerUser(userCreateInput: UserCreateInput, tenantId: string, preAuthToken: string | null | undefined): Promise<UserRegistrationStateResponse>{
+        
+        // TODO
+        // Need to check to see if there is an active registration session happening with the
+        // user, based on their email. If so, then return error if the session has not expired.
+        // Otherwise, delete the old registration session, any user and relationships that were
+        // created, and continue.
+        
+        const {user, tenant, tenantPasswordConfig} = await this._createUser(userCreateInput, tenantId, true);
+
+        const registrationSessionToken: string = generateRandomToken(20, "hex");
+
+        // registration completion will expire after 12 hours. 
+        const expiresAt: number = Date.now() + (60 * 60 * 12 * 1000);
+        const arrState: Array<UserRegistrationState> = [];        
+        const stateOrder: Array<RegistrationState> = [];
+        if(tenant.verifyEmailOnSelfRegistration === true){            
+            // Note that the _createUser function will generate an email token and
+            // send it to the user. No need to do that here.
+            stateOrder.push(RegistrationState.ValidateEmail);
+        }
+        
+        if(tenantPasswordConfig.requireMfa === true){
+            const mfas = tenantPasswordConfig.mfaTypesRequired?.split(",") || [];            
+            if(mfas.includes(MFA_AUTH_TYPE_TIME_BASED_OTP) && mfas.includes(MFA_AUTH_TYPE_FIDO2)){
+                stateOrder.push(RegistrationState.ConfigureTotpRequired);
+                stateOrder.push(RegistrationState.ValidateTotp);
+                stateOrder.push(RegistrationState.ConfigureSecurityKeyRequired);
+                stateOrder.push(RegistrationState.ValidateSecurityKey);
+            }
+            else if(mfas.includes(MFA_AUTH_TYPE_TIME_BASED_OTP) && !mfas.includes(MFA_AUTH_TYPE_FIDO2)){
+                stateOrder.push(RegistrationState.ConfigureTotpRequired);
+                stateOrder.push(RegistrationState.ValidateTotp);
+                stateOrder.push(RegistrationState.ConfigureSecurityKeyOptional);
+                stateOrder.push(RegistrationState.ValidateSecurityKey);
+            }
+            else if(!mfas.includes(MFA_AUTH_TYPE_TIME_BASED_OTP) && mfas.includes(MFA_AUTH_TYPE_FIDO2)){                
+                stateOrder.push(RegistrationState.ConfigureSecurityKeyRequired);
+                stateOrder.push(RegistrationState.ValidateSecurityKey);
+                stateOrder.push(RegistrationState.ConfigureTotpOptional);
+                stateOrder.push(RegistrationState.ValidateTotp);
+            }
+        }
+        else {
+            stateOrder.push(RegistrationState.ConfigureTotpOptional);
+            stateOrder.push(RegistrationState.ValidateTotp);
+            stateOrder.push(RegistrationState.ConfigureSecurityKeyOptional);
+            stateOrder.push(RegistrationState.ValidateSecurityKey);
+        }
+
+        // Is the user coming from a 3rd party client and needs to be redirected
+        // with an authorization code
+        if(preAuthToken){
+            stateOrder.push(RegistrationState.RedirectBackToApplication)
+        }
+        else{
+            stateOrder.push(RegistrationState.RedirectToIamPortal);
+        }
+        for(let i = 0; i < stateOrder.length; i++){
+            arrState.push({
+                email: user.email,
+                tenantId: tenant.tenantId,
+                expiresAtMs: expiresAt,
+                registrationSessionToken: registrationSessionToken,
+                registrationState: stateOrder[i],
+                registrationStateOrder: i + 1,
+                registrationStateStatus: STATUS_INCOMPLETE,
+                userId: user.userId,
+                preAuthToken: preAuthToken
+            });
+        }
+
+        await identityDao.createUserRegistrationStates(arrState);
+        
+        const response: UserRegistrationStateResponse = {
+            userRegistrationState: arrState[0],
+            accessToken: "",
+            uri: "",
+            registrationError: {
+                errorCode: "",
+                errorMessage: ""
+            }
+        }
+        return Promise.resolve(response);
+    }
+
+    /**
+     * 
+     * @param registrationSessionToken 
+     * @returns 
+     */
+    protected async getSortedRegistartionStates(registrationSessionToken: string): Promise<Array<UserRegistrationState>>{
+
+        const arrUserRegistrationState: Array<UserRegistrationState> = await identityDao.getUserRegistrationStates(registrationSessionToken);
+        arrUserRegistrationState.sort(
+            (a: UserRegistrationState, b: UserRegistrationState) => a.registrationStateOrder - b.registrationStateOrder
+        );
+        return Promise.resolve(arrUserRegistrationState);
+    }
+
+
 
     /**
      * returns the index of the 
@@ -1032,239 +1443,6 @@ class IdentityService {
             }            
         }
         return Promise.resolve(response);
-    }
-
-    /**
-     * 
-     * @param userRegistrationState 
-     * @param response 
-     */
-    protected async handleRegistrationCompletion(userRegistrationState: UserRegistrationState, response: UserRegistrationStateResponse): Promise<void> {
-        
-        const user: User | null = await identityDao.getUserBy("id", userRegistrationState.userId);
-        if(!user){
-            response.registrationError.errorCode = "ERROR_NO_USER_FOUND_FOR_REGISTRATION_COMPLETION";
-            response.userRegistrationState.registrationState = RegistrationState.Error;
-        }
-        else{
-            user.enabled = true;
-            await identityDao.updateUser(user);
-
-            if(userRegistrationState.registrationState === RegistrationState.RedirectBackToApplication){
-                try{
-                    const authorizationCode: AuthorizationReturnUri = await this.generateAuthorizationCode(userRegistrationState.userId, userRegistrationState.preAuthToken || "");
-                    response.userRegistrationState = userRegistrationState;
-                    response.uri = authorizationCode.uri;
-                    userRegistrationState.registrationStateStatus = STATUS_COMPLETE;
-                    await identityDao.updateUserRegistrationState(userRegistrationState);
-                }
-                catch(err: any){
-                    response.registrationError.errorCode = err.message;
-                    response.userRegistrationState.registrationState = RegistrationState.Error;
-                }
-            }
-            else if(userRegistrationState.registrationState === RegistrationState.RedirectToIamPortal){
-                try{
-                    const tenant: Tenant | null = await tenantDao.getTenantById(userRegistrationState.tenantId);
-                    if(tenant === null){
-                        response.registrationError.errorCode = "ERROR_INVALID_TENANT_FOR_REGISTRATION_COMPLETION";
-                        response.userRegistrationState.registrationState = RegistrationState.Error;
-                    }
-                    else{
-                        const accessToken: string | null = await jwtServiceUtils.signIAMPortalUserJwt(user, tenant, 60 * 60 * 12, TOKEN_TYPE_IAM_PORTAL_USER);
-                        if(accessToken === null){
-                            response.registrationError.errorCode = "ERROR_GENERATING_ACCESS_TOKEN_REGISTRATION_COMPLETION";
-                            response.userRegistrationState.registrationState = RegistrationState.Error;
-                        }
-                        else{
-                            response.userRegistrationState = userRegistrationState;
-                            response.uri = `/${userRegistrationState.tenantId}`;
-                            response.accessToken = accessToken;
-                            userRegistrationState.registrationStateStatus = STATUS_COMPLETE;
-                            await identityDao.updateUserRegistrationState(userRegistrationState);
-                        }
-                    }
-                }
-                catch(err: any){
-                    response.registrationError.errorCode = err.message;
-                    response.userRegistrationState.registrationState = RegistrationState.Error;
-                }
-            }
-        }
-    }
-
-    protected async handleAuthenticationCompletion(user: User, userAuthenticationState: UserAuthenticationState, response: UserAuthenticationStateResponse): Promise<void> {
-        if(userAuthenticationState.authenticationState === AuthenticationState.RedirectBackToApplication){
-            try {
-                const authorizationCode: AuthorizationReturnUri = await this.generateAuthorizationCode(userAuthenticationState.userId, userAuthenticationState.preAuthToken || "");
-                response.userAuthenticationState = userAuthenticationState;
-                response.uri = authorizationCode.uri;
-                userAuthenticationState.authenticationStateStatus = STATUS_COMPLETE;
-                await identityDao.updateUserAuthenticationState(userAuthenticationState);
-
-            }
-            catch(err: any){
-                response.authenticationError.errorCode = err.message;
-                response.userAuthenticationState.authenticationState = AuthenticationState.Error;
-            }            
-        }
-        else if(userAuthenticationState.authenticationState === AuthenticationState.RedirectToIamPortal){
-            try {
-                const tenant: Tenant | null = await tenantDao.getTenantById(userAuthenticationState.tenantId);
-                if(tenant === null){
-                    response.authenticationError.errorCode = "ERROR_INVALID_TENANT_FOR_AUTHENTICATION_COMPLETION";
-                    response.userAuthenticationState.authenticationState = AuthenticationState.Error;
-                }
-                else{
-                    const accessToken: string | null = await jwtServiceUtils.signIAMPortalUserJwt(user, tenant, 60 * 60 * 12, TOKEN_TYPE_IAM_PORTAL_USER);
-                    if(accessToken === null){
-                        response.authenticationError.errorCode = "ERROR_GENERATING_ACCESS_TOKEN_AUTHENTICATION_COMPLETION";
-                        response.userAuthenticationState.authenticationState = AuthenticationState.Error;
-                    }
-                    else{
-                        response.userAuthenticationState = userAuthenticationState;
-                        response.uri = `/${userAuthenticationState.tenantId}`;
-                        response.accessToken = accessToken;
-                        userAuthenticationState.authenticationStateStatus = STATUS_COMPLETE;
-                        await identityDao.updateUserAuthenticationState(userAuthenticationState);
-                    }
-                }
-            }
-            catch(err: any){
-                response.authenticationError.errorCode = err.message;
-                response.userAuthenticationState.authenticationState = AuthenticationState.Error;
-            }
-        }
-    }
-
-    public async getUserById(userId: string): Promise<User | null> {
-        return identityDao.getUserBy("id", userId);
-    }
-
-    
-
-    public async createUser(userCreateInput: UserCreateInput, tenantId: string): Promise<User>{        
-        const { user } = await this._createUser(userCreateInput, tenantId, false);
-        return user;
-    }
-
-    protected async checkPassword(password: string, passwordConfig: TenantPasswordConfig): Promise<boolean> {
-        
-
-        // Need to check to see if the password is diallowed because is has been
-        // previously found to be easily cracked, as in the top 100K or top 1M cracked passwords.
-        const passwordProhibited: boolean = await identityDao.passwordProhibited(password);
-        if(passwordProhibited){
-            return Promise.resolve(false);
-        }
-        const passwordFormatIsValid: boolean = validatePassword(password, passwordConfig).result;
-        return Promise.resolve(passwordFormatIsValid);
-    }
-
-    public async updateUser(user: User): Promise<User> {
-
-        const existingUser: User | null = await identityDao.getUserBy("id", user.userId);
-        if (existingUser !== null) {
-            if (existingUser.locked === true && user.locked !== true) {
-                user.locked = true;
-            }
-            user.federatedOIDCProviderSubjectId = existingUser.federatedOIDCProviderSubjectId;
-            user.domain = existingUser.domain;
-
-            // Did the email change and if so, what parts of the email have changed?
-            // 1    domains 
-            // 2    just the name
-            // 3    both
-            // In case of change.
-            // 1    verify the email does not already exist
-            // 2    unset the verified email flag
-            if (user.email !== existingUser.email) {
-                const userByEmail: User | null = await identityDao.getUserBy("email", user.email);
-                if (userByEmail) {
-                    throw new GraphQLError("ERROR_ATTEMPTING_TO_CHANGE_EMAIL_FAILED");
-                }
-                else {
-                    const domain: string = user.email.substring(
-                        user.email.indexOf("@") + 1
-                    )
-                    user.domain = domain;
-                    user.emailVerified = false;
-                }
-            }
-
-            await identityDao.updateUser(user);
-
-            // Only update the search index if anything has changed
-            if (
-                user.email !== existingUser.email ||
-                user.firstName !== existingUser.firstName ||
-                user.lastName !== existingUser.lastName ||
-                user.enabled !== existingUser.enabled
-            ) {
-                await this.updateSearchIndexUserDocument(user);                
-            }
-            return user;
-        }
-        else {
-            throw new GraphQLError("ERROR_USER_DOES_NOT_EXIST");
-        }
-    }
-
-    public async createTOTP(userId: string): Promise<TotpResponse> {
-        const user: User | null = await identityDao.getUserBy("id", userId);
-        if(!user){
-            throw new GraphQLError("ERROR_USER_NOT_FOUND");
-        }
-        let userMfaRel: UserMfaRel | null = await identityDao.getTOTP(userId);
-
-        let totp: OTPAuth.TOTP | null = null;        
-        if(userMfaRel){
-            throw new GraphQLError("ERROR_TOTP_ALREADY_CONFIGURED_FOR_THE_USER");            
-        }
-        else{
-            const newSecret = new OTPAuth.Secret({size: 20});            
-            const encryptedSecret = await kms.encrypt(newSecret.base32);
-            if(!encryptedSecret){
-                throw new GraphQLError("ERROR_UNABLE_TO_GENERATE_TOPT_SECRET");
-            }
-
-            // Save the data using the encrypted value, but
-            // return the plain text value to the user to scan
-            // or enter into their device.
-            userMfaRel = {
-                mfaType: MFA_AUTH_TYPE_TIME_BASED_OTP,
-                userId: userId,
-                primaryMfa: true,
-                fido2PublicKeyAlgorithm: null,
-                fido2CredentialId: null,
-                fido2KeySupportsCounters: null,
-                fido2PublicKey: null,
-                fido2Transports: null,
-                totpHashAlgorithm: TOTP_HASH_ALGORITHM_SHA1,
-                totpSecret: encryptedSecret
-            }
-
-            await identityDao.saveTOTP(userMfaRel);
-            userMfaRel.totpSecret = newSecret.base32;
-
-            // Microsoft authentication only support SHA1 as a hashing algorithm (at the momemt)
-            totp = new OTPAuth.TOTP({
-                issuer: MFA_ISSUER || "Open Trust",
-                label: user.email,
-                algorithm: TOTP_HASH_ALGORITHM_SHA1, 
-                digits: 6,
-                period: 30,
-                secret: newSecret
-            });
-            
-        }
-        
-        const uri = totp.toString();
-        const response: TotpResponse = {
-            uri: uri,
-            userMFARel: userMfaRel
-        }
-        return response;
     }
 
     public async registerValidateTOTP(userId: string, registrationSessionToken: string, totpTokenValue: string, preAuthToken: string | undefined | null): Promise<UserRegistrationStateResponse> {
@@ -1456,6 +1634,7 @@ class IdentityService {
         if(tenantId){
             await this.deleteRegisteredUser(tenantId, userId);
         }
+        response.userRegistrationState.registrationStateStatus = STATUS_COMPLETE
         if(preAuthToken){            
             const preAuthenticationState: PreAuthenticationState | null = await authDao.getPreAuthenticationState(preAuthToken);
             if(preAuthenticationState){
@@ -1465,8 +1644,239 @@ class IdentityService {
                 await authDao.deletePreAuthenticationState(preAuthToken);
             }            
         }
+        else {
+            response.userRegistrationState.registrationState = RegistrationState.RedirectToIamPortal;
+            response.uri = "/authorize/login";
+        }
         return Promise.resolve(response);
+    }    
+
+    /**
+     * 
+     * @param userRegistrationState 
+     * @param response 
+     */
+    protected async handleRegistrationCompletion(userRegistrationState: UserRegistrationState, response: UserRegistrationStateResponse): Promise<void> {
+        
+        const user: User | null = await identityDao.getUserBy("id", userRegistrationState.userId);
+        if(!user){
+            response.registrationError.errorCode = "ERROR_NO_USER_FOUND_FOR_REGISTRATION_COMPLETION";
+            response.userRegistrationState.registrationState = RegistrationState.Error;
+        }
+        else{
+            user.enabled = true;
+            await identityDao.updateUser(user);
+
+            if(userRegistrationState.registrationState === RegistrationState.RedirectBackToApplication){
+                try{
+                    const authorizationCode: AuthorizationReturnUri = await this.generateAuthorizationCode(userRegistrationState.userId, userRegistrationState.preAuthToken || "");
+                    response.userRegistrationState = userRegistrationState;
+                    response.uri = authorizationCode.uri;
+                    userRegistrationState.registrationStateStatus = STATUS_COMPLETE;
+                    await identityDao.updateUserRegistrationState(userRegistrationState);
+                }
+                catch(err: any){
+                    response.registrationError.errorCode = err.message;
+                    response.userRegistrationState.registrationState = RegistrationState.Error;
+                }
+            }
+            else if(userRegistrationState.registrationState === RegistrationState.RedirectToIamPortal){
+                try{
+                    const tenant: Tenant | null = await tenantDao.getTenantById(userRegistrationState.tenantId);
+                    if(tenant === null){
+                        response.registrationError.errorCode = "ERROR_INVALID_TENANT_FOR_REGISTRATION_COMPLETION";
+                        response.userRegistrationState.registrationState = RegistrationState.Error;
+                    }
+                    else{
+                        const accessToken: string | null = await jwtServiceUtils.signIAMPortalUserJwt(user, tenant, 60 * 60 * 12, TOKEN_TYPE_IAM_PORTAL_USER);
+                        if(accessToken === null){
+                            response.registrationError.errorCode = "ERROR_GENERATING_ACCESS_TOKEN_REGISTRATION_COMPLETION";
+                            response.userRegistrationState.registrationState = RegistrationState.Error;
+                        }
+                        else{
+                            response.userRegistrationState = userRegistrationState;
+                            response.uri = `/${userRegistrationState.tenantId}`;
+                            response.accessToken = accessToken;
+                            userRegistrationState.registrationStateStatus = STATUS_COMPLETE;
+                            await identityDao.updateUserRegistrationState(userRegistrationState);
+                        }
+                    }
+                }
+                catch(err: any){
+                    response.registrationError.errorCode = err.message;
+                    response.userRegistrationState.registrationState = RegistrationState.Error;
+                }
+            }
+        }
     }
+
+    protected async deleteRegisteredUser(tenantId: string, userId: string): Promise<void> {
+        await identityDao.deleteFIDO2Challenge(userId);
+        await identityDao.deleteFido2Count(userId);
+        await identityDao.deleteFIDOKey(userId);
+        await identityDao.deleteTOTP(userId);
+        await identityDao.removeUserFromTenant(tenantId, userId);
+        await identityDao.deleteUserCredential(userId);
+        await searchClient.delete({
+            id: `${tenantId}::${userId}`,
+            index: SEARCH_INDEX_REL_SEARCH,
+        });
+        await identityDao.deleteUser(userId);
+        await searchClient.delete({
+            id: userId,
+            index: SEARCH_INDEX_OBJECT_SEARCH
+        });
+    }    
+    
+
+    // ##########################################################################
+    // 
+    //                IDENTITY MANAGEMENT METHODS
+    //
+    // ##########################################################################     
+
+    public async getUserById(userId: string): Promise<User | null> {
+        return identityDao.getUserBy("id", userId);
+    }
+
+    
+    public async updateUser(user: User): Promise<User> {
+
+        const existingUser: User | null = await identityDao.getUserBy("id", user.userId);
+        if (existingUser !== null) {
+            if (existingUser.locked === true && user.locked !== true) {
+                user.locked = true;
+            }
+            user.federatedOIDCProviderSubjectId = existingUser.federatedOIDCProviderSubjectId;
+            user.domain = existingUser.domain;
+
+            // Did the email change and if so, what parts of the email have changed?
+            // 1    domains 
+            // 2    just the name
+            // 3    both
+            // In case of change.
+            // 1    verify the email does not already exist
+            // 2    unset the verified email flag
+            if (user.email !== existingUser.email) {
+                const userByEmail: User | null = await identityDao.getUserBy("email", user.email);
+                if (userByEmail) {
+                    throw new GraphQLError("ERROR_ATTEMPTING_TO_CHANGE_EMAIL_FAILED");
+                }
+                else {
+                    const domain: string = user.email.substring(
+                        user.email.indexOf("@") + 1
+                    )
+                    user.domain = domain;
+                    user.emailVerified = false;
+                }
+            }
+
+            await identityDao.updateUser(user);
+
+            // Only update the search index if anything has changed
+            if (
+                user.email !== existingUser.email ||
+                user.firstName !== existingUser.firstName ||
+                user.lastName !== existingUser.lastName ||
+                user.enabled !== existingUser.enabled
+            ) {
+                await this.updateSearchIndexUserDocument(user);                
+            }
+            return user;
+        }
+        else {
+            throw new GraphQLError("ERROR_USER_DOES_NOT_EXIST");
+        }
+    }
+
+    public async getUserSessions(userId: string): Promise<Array<UserSession>> {
+        const arr: Array<RefreshData> = await authDao.getRefreshDataByUserId(userId);
+
+        const retArr: Array<UserSession> = [];
+        for(let i = 0; i < arr.length; i++){
+            const r: RefreshData = arr[i];
+            const tenant: Tenant | null = await tenantDao.getTenantById(r.tenantId);
+            const client: Client | null = await clientDao.getClientById(r.clientId);
+            const userSession: UserSession = {
+                clientId: r.clientId,
+                clientName: client ? client.clientName : "Unknown",
+                tenantId: r.tenantId,
+                tenantName: tenant ? tenant.tenantName : "Unknown",
+                userId: userId
+            }
+            retArr.push(userSession);
+        }
+        return retArr;
+    }
+
+    public async deleteUserSession(userId: string, clientId: string, tenantId: string): Promise<void>{
+        await authDao.deleteRefreshData(userId, tenantId, clientId);
+        return Promise.resolve();
+    }
+
+
+    // ##########################################################################
+    // 
+    //                IDENTITY UTILITY METHODS
+    //
+    // ##########################################################################     
+    public async createTOTP(userId: string): Promise<TotpResponse> {
+        const user: User | null = await identityDao.getUserBy("id", userId);
+        if(!user){
+            throw new GraphQLError("ERROR_USER_NOT_FOUND");
+        }
+        let userMfaRel: UserMfaRel | null = await identityDao.getTOTP(userId);
+
+        let totp: OTPAuth.TOTP | null = null;        
+        if(userMfaRel){
+            throw new GraphQLError("ERROR_TOTP_ALREADY_CONFIGURED_FOR_THE_USER");            
+        }
+        else{
+            const newSecret = new OTPAuth.Secret({size: 20});            
+            const encryptedSecret = await kms.encrypt(newSecret.base32);
+            if(!encryptedSecret){
+                throw new GraphQLError("ERROR_UNABLE_TO_GENERATE_TOPT_SECRET");
+            }
+
+            // Save the data using the encrypted value, but
+            // return the plain text value to the user to scan
+            // or enter into their device.
+            userMfaRel = {
+                mfaType: MFA_AUTH_TYPE_TIME_BASED_OTP,
+                userId: userId,
+                primaryMfa: true,
+                fido2PublicKeyAlgorithm: null,
+                fido2CredentialId: null,
+                fido2KeySupportsCounters: null,
+                fido2PublicKey: null,
+                fido2Transports: null,
+                totpHashAlgorithm: TOTP_HASH_ALGORITHM_SHA1,
+                totpSecret: encryptedSecret
+            }
+
+            await identityDao.saveTOTP(userMfaRel);
+            userMfaRel.totpSecret = newSecret.base32;
+
+            // Microsoft authentication only support SHA1 as a hashing algorithm (at the momemt)
+            totp = new OTPAuth.TOTP({
+                issuer: MFA_ISSUER || "Open Trust",
+                label: user.email,
+                algorithm: TOTP_HASH_ALGORITHM_SHA1, 
+                digits: 6,
+                period: 30,
+                secret: newSecret
+            });
+            
+        }
+        
+        const uri = totp.toString();
+        const response: TotpResponse = {
+            uri: uri,
+            userMFARel: userMfaRel
+        }
+        return response;
+    }
+
     
     public async validateTOTP(userId: string, totpValue: string): Promise<boolean> {
         const userMfaRel: UserMfaRel | null = await identityDao.getTOTP(userId);
@@ -1793,190 +2203,12 @@ class IdentityService {
         
     }
 
-    public async getUserSessions(userId: string): Promise<Array<UserSession>> {
-        const arr: Array<RefreshData> = await authDao.getRefreshDataByUserId(userId);
-
-        const retArr: Array<UserSession> = [];
-        for(let i = 0; i < arr.length; i++){
-            const r: RefreshData = arr[i];
-            const tenant: Tenant | null = await tenantDao.getTenantById(r.tenantId);
-            const client: Client | null = await clientDao.getClientById(r.clientId);
-            const userSession: UserSession = {
-                clientId: r.clientId,
-                clientName: client ? client.clientName : "Unknown",
-                tenantId: r.tenantId,
-                tenantName: tenant ? tenant.tenantName : "Unknown",
-                userId: userId
-            }
-            retArr.push(userSession);
-        }
-        return retArr;
-    }
-
-    public async deleteUserSession(userId: string, clientId: string, tenantId: string): Promise<void>{
-        await authDao.deleteRefreshData(userId, tenantId, clientId);
-        return Promise.resolve();
-    }
 
     protected getDomainFromEmail(email: string): string {
         const domain: string = email.substring(
             email.indexOf("@") + 1
         );
         return domain;
-    }
-
-    /**
-     * Checks
-     * 1.   Does the tenant exist
-     * 2.   Is the tenant enabled
-     * 3.   Does the tenant allow user self registration if this is a registration flow?
-     * 4.   Does a user with the given email already exist?
-     * 5.   Is the password valid
-     * 6.   Is the domain allowed by the tenant or are there resitricted domains for this tenant?
-     * 7.   Do the rest of the required data values exist are are they the correct length, format, etc.?
-     * @param userCreateInput 
-     * @param tenantId 
-     * @param isRegistration 
-     * @returns 
-     */
-    protected async _createUser(userCreateInput: UserCreateInput, tenantId: string, isRegistration: boolean): Promise<{user: User, tenant: Tenant, tenantPasswordConfig: TenantPasswordConfig}>  {
-
-        // Always need to make sure that we lower-case the email for consistency purposes.
-        userCreateInput.email = userCreateInput.email.toLowerCase();
-
-        const tenant: Tenant | null = await tenantDao.getTenantById(tenantId);
-        if(!tenant){
-            throw new GraphQLError("ERROR_TENANT_DOES_NOT_EXIST");
-        }
-        if(tenant.enabled === false || tenant.markForDelete === true){
-            throw new GraphQLError("ERROR_TENANT_IS_NOT_ENABLED");
-        }
-        if(isRegistration && tenant.allowUserSelfRegistration === false){
-            throw new GraphQLError("ERROR_TENANT_DOES_NOT_ALLOW_USER_SELF_REGISTRATION");
-        }
-
-        const existingUser: User | null = await identityDao.getUserBy("email", userCreateInput.email);
-        if(existingUser){
-            throw new GraphQLError("ERROR_USER_WITH_EMAIL_ALREADY_EXISTS");
-        }
-
-        const tenantPasswordConfig: TenantPasswordConfig = await tenantDao.getTenantPasswordConfig(tenantId) || DEFAULT_TENANT_PASSWORD_CONFIGURATION;
-        const isValidPassword: boolean = await this.checkPassword(userCreateInput.password, tenantPasswordConfig);
-        if(!isValidPassword){
-            throw new GraphQLError("INVALID_PASSWORD_EITHER_PROHIBITED_OR_INVALID_FORMAT");
-        }
-
-        const domain: string = this.getDomainFromEmail(userCreateInput.email); 
-
-        const arrRestrictedDomainRel: Array<TenantRestrictedAuthenticationDomainRel> = await tenantDao.getDomainsForTenantRestrictedAuthentication(tenantId);
-        if(arrRestrictedDomainRel.length > 0){
-            const restrictedDomainRel: TenantRestrictedAuthenticationDomainRel | undefined = arrRestrictedDomainRel.find(
-                (rel: TenantRestrictedAuthenticationDomainRel) => rel.domain === domain
-            );
-            if(restrictedDomainRel === undefined){
-                throw new GraphQLError("ERROR_TENANT_HAS_RESTRICTED_EMAIL_DOMAINS")
-            }
-        }       
-
-
-        let userEnabled = true;
-        let emailVerified = true;
-        if(isRegistration && tenant.verifyEmailOnSelfRegistration){
-            userEnabled = false;
-            emailVerified = false;
-        }        
-
-        const user: User = {
-            domain: domain,
-            email: userCreateInput.email,
-            emailVerified: emailVerified,
-            enabled: userEnabled,
-            firstName: userCreateInput.firstName,
-            lastName: userCreateInput.lastName,
-            locked: false,
-            nameOrder: userCreateInput.nameOrder,
-            userId: randomUUID().toString(),
-            address: userCreateInput.address,
-            addressLine1: userCreateInput.addressLine1,
-            city: userCreateInput.city,
-            postalCode: userCreateInput.postalCode,
-            stateRegionProvince: userCreateInput.stateRegionProvince,
-            countryCode: userCreateInput.countryCode,
-            middleName: userCreateInput.middleName,
-            phoneNumber: userCreateInput.phoneNumber,
-            preferredLanguageCode: userCreateInput.preferredLanguageCode,
-            federatedOIDCProviderSubjectId: userCreateInput.federatedOIDCProviderSubjectId,
-            markForDelete: false
-        }
-
-        await identityDao.createUser(user);        
-        await identityDao.assignUserToTenant(tenant.tenantId, user.userId, "PRIMARY");
-        const userCredential: UserCredential = this.generateUserCredential(user.userId, userCreateInput.password, tenantPasswordConfig.passwordHashingAlgorithm);
-        await identityDao.addUserCredential(userCredential);
-
-        if(isRegistration && tenant.verifyEmailOnSelfRegistration){
-            const token: string = generateRandomToken(8, "hex").toUpperCase();
-            await identityDao.saveEmailConfirmationToken(user.userId, token);
-            // TODO
-            // Send email to the user with the token value.
-        }
-        await this.updateObjectSearchIndex(tenant, user, "PRIMARY");
-        await this.updateRelSearchIndex(tenant.tenantId, tenant.tenantId, user, USER_TENANT_REL_TYPE_PRIMARY);
-
-        return Promise.resolve({user: user, tenant: tenant, tenantPasswordConfig: tenantPasswordConfig});
-    }
-
-    protected generateUserCredential(userId: string, password: string, hashAlgorithm: string): UserCredential {
-        // For the Bcrypt hashing algorithm, the salt value is included in the final salted password
-        // so we can just leave it as the empty string.
-        let salt = "";
-        let hashedPassword = "";
-
-        if(hashAlgorithm === PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS){
-            hashedPassword = bcryptHashPassword(password, 10);
-        }
-        else if(hashAlgorithm === PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS){
-            hashedPassword = bcryptHashPassword(password, 11);
-        }
-        else if(hashAlgorithm === PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS){
-            hashedPassword = bcryptHashPassword(password, 12);
-        }                   
-        else if(hashAlgorithm === PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS){
-            salt = generateSalt();
-            hashedPassword = sha256HashPassword(password, salt, PASSWORD_HASH_ITERATION_64K);            
-        }
-        else if(hashAlgorithm === PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS){
-            salt = generateSalt();
-            hashedPassword = sha256HashPassword(password, salt, PASSWORD_HASH_ITERATION_128K);            
-        }
-        else if(hashAlgorithm === PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS){
-            salt = generateSalt();
-            hashedPassword = pbkdf2HashPassword(password, salt, PASSWORD_HASH_ITERATION_128K);            
-        }
-        else if(hashAlgorithm === PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS){
-            salt = generateSalt();
-            hashedPassword = pbkdf2HashPassword(password, salt, PASSWORD_HASH_ITERATION_256K);            
-        }
-        else if(hashAlgorithm === PASSWORD_HASHING_ALGORITHM_SCRYPT_32K_ITERATIONS){
-            salt = generateSalt();
-            hashedPassword = scryptHashPassword(password, salt, PASSWORD_HASH_ITERATION_32K);            
-        }
-        else if(hashAlgorithm === PASSWORD_HASHING_ALGORITHM_SCRYPT_64K_ITERATIONS){
-            salt = generateSalt();
-            hashedPassword = scryptHashPassword(password, salt, PASSWORD_HASH_ITERATION_64K);  
-        }
-        else if(hashAlgorithm === PASSWORD_HASHING_ALGORITHM_SCRYPT_128K_ITERATIONS){
-            salt = generateSalt();
-            hashedPassword = scryptHashPassword(password, salt, PASSWORD_HASH_ITERATION_128K);
-        }
-
-        return {
-            dateCreated: new Date().toISOString(),
-            hashedPassword: hashedPassword,
-            salt: salt,
-            hashingAlgorithm: hashAlgorithm,
-            userId: userId
-        }
     }
 
 
@@ -2250,23 +2482,6 @@ class IdentityService {
         return response;
     }
 
-    protected async deleteRegisteredUser(tenantId: string, userId: string): Promise<void> {
-        await identityDao.deleteFIDO2Challenge(userId);
-        await identityDao.deleteFido2Count(userId);
-        await identityDao.deleteFIDOKey(userId);
-        await identityDao.deleteTOTP(userId);
-        await identityDao.removeUserFromTenant(tenantId, userId);
-        await identityDao.deleteUserCredential(userId);
-        await searchClient.delete({
-            id: `${tenantId}::${userId}`,
-            index: SEARCH_INDEX_REL_SEARCH,
-        });
-        await identityDao.deleteUser(userId);
-        await searchClient.delete({
-            id: userId,
-            index: SEARCH_INDEX_OBJECT_SEARCH
-        });
-    }
 
 }
 
