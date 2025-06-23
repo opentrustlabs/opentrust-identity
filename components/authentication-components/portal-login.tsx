@@ -5,16 +5,19 @@ import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { PASSWORD_MINIMUM_LENGTH, QUERY_PARAM_PREAUTHN_TOKEN, QUERY_PARAM_REDIRECT_URI, QUERY_PARAM_TENANT_ID } from "@/utils/consts";
+import { PASSWORD_MINIMUM_LENGTH, QUERY_PARAM_AUTHENTICATE_TO_PORTAL, QUERY_PARAM_PREAUTHN_TOKEN, QUERY_PARAM_REDIRECT_URI, QUERY_PARAM_TENANT_ID } from "@/utils/consts";
 import { LOGIN_USERNAME_HANDLER_QUERY } from "@/graphql/queries/oidc-queries";
 import { useLazyQuery, useMutation, useQuery } from "@apollo/client";
 import { UserAuthenticationStateResponse, TenantSelectorData, AuthenticationState, UserAuthenticationState } from "@/graphql/generated/graphql-types";
 import Alert from '@mui/material/Alert';
-import { AUTHENTICATE_USER, AUTHENTICATE_USERNAME_INPUT_MUTATION, LOGIN_MUTATION } from "@/graphql/mutations/oidc-mutations";
+import { AUTHENTICATE_USER, AUTHENTICATE_USERNAME_INPUT_MUTATION, CANCEL_AUTHENTICATION, LOGIN_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import { PageTitleContext } from "@/components/contexts/page-title-context";
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
 import RadioStyledCheckbox from "../input/radio-styled-checkbox";
 import { AuthentiationValidateTotp } from "./validate-totp";
+import { AuthentiationConfigureTotp } from "./configure-totp";
+import { AuthentiationConfigureSecurityKey } from "./configure-security-key";
+import { AuthentiationValidateSecurityKey } from "./validate-security-key";
 
 
 const MIN_USERNAME_LENGTH = 6;
@@ -86,6 +89,16 @@ const PortalLogin: React.FC<PortalLoginProps> = ({
             setErrorMessage(error.message);
         }
     });
+
+    const [cancelAuthentication] = useMutation(CANCEL_AUTHENTICATION, {
+        onCompleted(data) {
+            const authnStateResponse: UserAuthenticationStateResponse = data.cancelAuthentication;
+            handleUserAuthenticationResponse(authnStateResponse);
+        },
+        onError(error){
+            setErrorMessage(error.message);
+        }
+    })
 
     const handleUserAuthenticationResponse = (authnStateResponse: UserAuthenticationStateResponse) => {
         if (authnStateResponse.userAuthenticationState.authenticationState === AuthenticationState.Error) {
@@ -357,6 +370,18 @@ const PortalLogin: React.FC<PortalLoginProps> = ({
                                         }}
                                         onClick={() => handleUserNameInputClick()}
                                     >Next</Button>
+                                    <Button
+                                        onClick={() =>{
+                                            if(redirectUri){
+                                                router.push(`${redirectUri}?error=access_denied&error_description=authentication_cancelled_by_user`)
+                                            }
+                                            else{
+                                                router.push(`/authorize/login?${QUERY_PARAM_AUTHENTICATE_TO_PORTAL}=true`);
+                                            }
+                                        }}
+                                    >
+                                        Cancel
+                                    </Button>
                                 </Stack>
                             </Grid2>
                             {tenantBean.getTenantMetaData().tenant.allowUserSelfRegistration &&
@@ -471,24 +496,18 @@ const PortalLogin: React.FC<PortalLoginProps> = ({
                                         }}
                                         onClick={() => { setErrorMessage(null); setPassword(""); setUserAuthenticationState(null); }}
                                     >Back</Button>
-                                    {preAuthToken &&
-                                        <a href={`${redirectUri}?error=access_denied`}>
-                                            <Button
-                                                disabled={false}
-                                                variant="contained"
-                                                sx={{
-                                                    height: "100%", padding: "8px 32px 8px 32px",
-                                                    backgroundColor: tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheaderbackgroundcolor,
-                                                    color: tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheadertextcolor,
-                                                    fontWeight: "bold",
-                                                    fontSize: "0.9em"
-                                                }}
-                                                onClick={() => {
-                                                    console.log('cancelled login')
-                                                }}
-                                            >Cancel</Button>
-                                        </a>
-                                    }
+                                    <Button
+                                        onClick={() =>{
+                                            if(redirectUri){
+                                                router.push(`${redirectUri}?error=access_denied&error_description=authentication_cancelled_by_user`)
+                                            }
+                                            else{
+                                                router.push(`/authorize/login?${QUERY_PARAM_AUTHENTICATE_TO_PORTAL}=true`);
+                                            }
+                                        }}
+                                    >
+                                        Cancel
+                                    </Button>                                    
                                 </Stack>
                             </Grid2>
                         </React.Fragment>
@@ -497,15 +516,47 @@ const PortalLogin: React.FC<PortalLoginProps> = ({
                         <div></div>
                     }
                     {userAuthenticationState && userAuthenticationState.authenticationState === AuthenticationState.ConfigureTotp &&
-                        <div></div>
+                        <AuthentiationConfigureTotp
+                            initialUserAuthenticationState={userAuthenticationState}
+                            onAuthenticationCancelled={() => {
+                                console.log("authentication cancelled");                                
+                                cancelAuthentication({
+                                    variables: {
+                                        userId: userAuthenticationState.userId,
+                                        authenticationSessionToken: userAuthenticationState.authenticationSessionToken,
+                                        preAuthToken: userAuthenticationState.preAuthToken
+                                    }
+                                });
+                            }}
+                            onUpdateEnd={(success, userAuthenticationStateResponse) => {
+                                setShowMutationBackdrop(false);
+                                if(userAuthenticationStateResponse){
+                                    setUserAuthenticationState(userAuthenticationStateResponse.userAuthenticationState);
+                                    handleUserAuthenticationResponse(userAuthenticationStateResponse);
+                                }
+                            }}
+                            onUpdateStart={() => {
+                                setShowMutationBackdrop(true);
+                            }}
+
+                        />
                     }
                     {userAuthenticationState && userAuthenticationState.authenticationState === AuthenticationState.ValidateTotp &&
                         <AuthentiationValidateTotp
                             initialUserAuthenticationState={userAuthenticationState}
-                            onAuthenticationCancelled={() => console.log("authentication calcelled")}
+                            onAuthenticationCancelled={() => {
+                                console.log("authentication cancelled");                                
+                                cancelAuthentication({
+                                    variables: {
+                                        userId: userAuthenticationState.userId,
+                                        authenticationSessionToken: userAuthenticationState.authenticationSessionToken,
+                                        preAuthToken: userAuthenticationState.preAuthToken
+                                    }
+                                });
+                            }}
                             onUpdateEnd={(success, userAuthenticationStateResponse) => {
                                 setShowMutationBackdrop(false);
-                                if(success && userAuthenticationStateResponse){
+                                if(userAuthenticationStateResponse){
                                     setUserAuthenticationState(userAuthenticationStateResponse.userAuthenticationState);
                                     handleUserAuthenticationResponse(userAuthenticationStateResponse);
                                 }
@@ -516,10 +567,54 @@ const PortalLogin: React.FC<PortalLoginProps> = ({
                         />
                     }
                     {userAuthenticationState && userAuthenticationState.authenticationState === AuthenticationState.ConfigureSecurityKey &&
-                        <div></div>
+                        <AuthentiationConfigureSecurityKey
+                            initialUserAuthenticationState={userAuthenticationState}
+                            onAuthenticationCancelled={() => {
+                                console.log("authentication cancelled");                                
+                                cancelAuthentication({
+                                    variables: {
+                                        userId: userAuthenticationState.userId,
+                                        authenticationSessionToken: userAuthenticationState.authenticationSessionToken,
+                                        preAuthToken: userAuthenticationState.preAuthToken
+                                    }
+                                });
+                            }}
+                            onUpdateEnd={(success, userAuthenticationStateResponse) => {
+                                setShowMutationBackdrop(false);
+                                if(userAuthenticationStateResponse){
+                                    setUserAuthenticationState(userAuthenticationStateResponse.userAuthenticationState);
+                                    handleUserAuthenticationResponse(userAuthenticationStateResponse);
+                                }
+                            }}
+                            onUpdateStart={() => {
+                                setShowMutationBackdrop(true);
+                            }}
+                        />
                     }
                     {userAuthenticationState && userAuthenticationState.authenticationState === AuthenticationState.ValidateSecurityKey &&
-                        <div></div>
+                        <AuthentiationValidateSecurityKey
+                            initialUserAuthenticationState={userAuthenticationState}
+                            onAuthenticationCancelled={() => {
+                                console.log("authentication cancelled");                                
+                                cancelAuthentication({
+                                    variables: {
+                                        userId: userAuthenticationState.userId,
+                                        authenticationSessionToken: userAuthenticationState.authenticationSessionToken,
+                                        preAuthToken: userAuthenticationState.preAuthToken
+                                    }
+                                });
+                            }}
+                            onUpdateEnd={(success, userAuthenticationStateResponse) => {
+                                setShowMutationBackdrop(false);
+                                if(userAuthenticationStateResponse){
+                                    setUserAuthenticationState(userAuthenticationStateResponse.userAuthenticationState);
+                                    handleUserAuthenticationResponse(userAuthenticationStateResponse);
+                                }
+                            }}
+                            onUpdateStart={() => {
+                                setShowMutationBackdrop(true);
+                            }}
+                        />
                     }
                 </Grid2>
                 <Backdrop

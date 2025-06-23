@@ -367,7 +367,7 @@ class RegisterUserService extends IdentityService {
             totpSecret: null,
             uri: null
         };
-        const  index = skip ? 
+        const index = skip ? 
                         await this.validateRegistrationStep(arrUserRegistrationState, response, RegistrationState.ConfigureSecurityKeyOptional) :
                         await this.validateRegistrationStep(arrUserRegistrationState, response, RegistrationState.ConfigureSecurityKeyRequired);
         

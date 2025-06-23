@@ -694,7 +694,7 @@ export const AUTHENTICATE_VALIDATE_TOTP = gql`
 `;
 
 export const AUTHENTICATE_CONFIGURE_TOTP = gql`
-    mutaion authenticateConfigureTOTP($userId: String!, $authenticationSessionToken: String!, $preAuthToken: String) {
+    mutation authenticateConfigureTOTP($userId: String!, $authenticationSessionToken: String!, $preAuthToken: String) {
         authenticateConfigureTOTP(userId: $userId, authenticationSessionToken: $authenticationSessionToken, preAuthToken: $preAuthToken){
             ...UserAuthenticationStateResponseFragment
         }
@@ -705,7 +705,7 @@ export const AUTHENTICATE_CONFIGURE_TOTP = gql`
 
 export const AUTHENTICATE_VALIDATE_SECURITY_KEY = gql`
     mutation authenticateValidateSecurityKey($userId: String!, $fido2KeyAuthenticationInput: Fido2KeyAuthenticationInput!, $authenticationSessionToken: String!, $preAuthToken: String) {
-        authenticateValidateSecurityKey(userId: $userId, fido2KeyAuthenticationInput: $fido2KeyAuthenticationInput, authenticationSessionToken: $authenticationSessionToken, $preAuthToken: preAuthToken){
+        authenticateValidateSecurityKey(userId: $userId, fido2KeyAuthenticationInput: $fido2KeyAuthenticationInput, authenticationSessionToken: $authenticationSessionToken, preAuthToken: $preAuthToken){
             ...UserAuthenticationStateResponseFragment
         }
     }
@@ -733,39 +733,9 @@ export const CANCEL_AUTHENTICATION = gql`
     ${USER_AUTHENTICATION_STATE_RESPONSE_FRAGMENT}
 `;
 
-export const REGISTER_FIDO2_KEY_MUTATION = gql(`
-    mutation registerFIDO2Key($userId: String!, $fido2KeyRegistrationInput: Fido2KeyRegistrationInput!){
-        registerFIDO2Key(userId: $userId, fido2KeyRegistrationInput: $fido2KeyRegistrationInput) {
-            userId
-            mfaType
-            primaryMfa
-            totpSecret
-            totpHashAlgorithm
-            fido2PublicKey
-            fido2CredentialId
-            fido2PublicKeyAlgorithm
-            fido2Transports
-            fido2KeySupportsCounters
-        }
-    }
-`);
-
-export const AUTHENTICATE_FIDO2_KEY_MUATATION = gql(`
-    mutation authenticateFIDO2Key($userId: String!, $fido2KeyAuthenticationInput: Fido2KeyAuthenticationInput!) {
-        authenticateFIDO2Key(userId: $userId, fido2KeyAuthenticationInput: $fido2KeyAuthenticationInput)
-    }
-`);
-
-
 
 
 // Registration flows
-/*
-    
-    
-    cancelRegistration(userId: String!, registrationSessionToken: String!, preAuthToken: String): UserRegistrationStateResponse!
-*/
-
 export const USER_REGISTRATION_STATE_RESPONSE_FRAGMENT = gql(`
     fragment UserRegistrationStateResponseFragment on UserRegistrationStateResponse {
         userRegistrationState {
@@ -820,8 +790,8 @@ export const REGISTER_CONFIGURE_TOTP = gql`
 `;
 
 export const REGISTER_VALIDATE_TOTP = gql`
-    mutation registerValidateTOTP(userId: String!, registrationSessionToken: String!, totpTokenValue: String!, preAuthToken: String) {
-        registerValidateTOTP(userId: String!, registrationSessionToken: String!, totpTokenValue: String!, preAuthToken: String) {
+    mutation registerValidateTOTP($userId: String!, $registrationSessionToken: String!, $totpTokenValue: String!, $preAuthToken: String) {
+        registerValidateTOTP(userId: $userId, registrationSessionToken: $registrationSessionToken, totpTokenValue: $totpTokenValue, preAuthToken: $preAuthToken) {
             ...UserRegistrationStateResponseFragment
         }
     }
