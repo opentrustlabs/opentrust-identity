@@ -156,3 +156,9 @@ export function getKeyByValue<T extends Record<string, string>>(enumObj: T, valu
     return enumObj[""];
 }
 
+export function getDomainFromEmail(email: string): string {
+    const domain: string = email.substring(
+        email.indexOf("@") + 1
+    );
+    return domain;
+}
