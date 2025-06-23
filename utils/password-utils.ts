@@ -10,7 +10,7 @@ import { DEFAULT_PASSWORD_SPECIAL_CHARACTERS_ALLOWED } from "./consts";
  * @param tenantPasswordConfig 
  * @returns 
  */
-export function validatePassword(password: string, tenantPasswordConfig: TenantPasswordConfig): {result: boolean, errorMessage: string, password: string} {
+export function validatePasswordFormat(password: string, tenantPasswordConfig: TenantPasswordConfig): {result: boolean, errorMessage: string, password: string} {
 
     
     let retVal = {result: true, errorMessage: "", password: password};   

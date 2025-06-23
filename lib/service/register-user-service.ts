@@ -39,6 +39,98 @@ class RegisterUserService extends IdentityService {
         return user;
     }
 
+    /**
+         * 
+         * @param userCreateInput 
+         * @param tenantId 
+         * @param preAuthToken 
+         * @returns 
+         */    
+    public async registerUser(userCreateInput: UserCreateInput, tenantId: string, preAuthToken: string | null | undefined): Promise<UserRegistrationStateResponse>{
+            
+        // TODO
+        // Need to check to see if there is an active registration session happening with the
+        // user, based on their email. If so, then return error if the session has not expired.
+        // Otherwise, delete the old registration session, any user and relationships that were
+        // created, and continue.
+        
+        const {user, tenant, tenantPasswordConfig} = await this._createUser(userCreateInput, tenantId, true);
+
+        const registrationSessionToken: string = generateRandomToken(20, "hex");
+
+        // registration completion will expire after 12 hours. 
+        const expiresAt: number = Date.now() + (60 * 60 * 12 * 1000);
+        const arrState: Array<UserRegistrationState> = [];        
+        const stateOrder: Array<RegistrationState> = [];
+        if(tenant.verifyEmailOnSelfRegistration === true){            
+            // Note that the _createUser function will generate an email token and
+            // send it to the user. No need to do that here.
+            stateOrder.push(RegistrationState.ValidateEmail);
+        }
+        
+        if(tenantPasswordConfig.requireMfa === true){
+            const mfas = tenantPasswordConfig.mfaTypesRequired?.split(",") || [];            
+            if(mfas.includes(MFA_AUTH_TYPE_TIME_BASED_OTP) && mfas.includes(MFA_AUTH_TYPE_FIDO2)){
+                stateOrder.push(RegistrationState.ConfigureTotpRequired);
+                stateOrder.push(RegistrationState.ValidateTotp);
+                stateOrder.push(RegistrationState.ConfigureSecurityKeyRequired);
+                stateOrder.push(RegistrationState.ValidateSecurityKey);
+            }
+            else if(mfas.includes(MFA_AUTH_TYPE_TIME_BASED_OTP) && !mfas.includes(MFA_AUTH_TYPE_FIDO2)){
+                stateOrder.push(RegistrationState.ConfigureTotpRequired);
+                stateOrder.push(RegistrationState.ValidateTotp);
+                stateOrder.push(RegistrationState.ConfigureSecurityKeyOptional);
+                stateOrder.push(RegistrationState.ValidateSecurityKey);
+            }
+            else if(!mfas.includes(MFA_AUTH_TYPE_TIME_BASED_OTP) && mfas.includes(MFA_AUTH_TYPE_FIDO2)){                
+                stateOrder.push(RegistrationState.ConfigureSecurityKeyRequired);
+                stateOrder.push(RegistrationState.ValidateSecurityKey);
+                stateOrder.push(RegistrationState.ConfigureTotpOptional);
+                stateOrder.push(RegistrationState.ValidateTotp);
+            }
+        }
+        else {
+            stateOrder.push(RegistrationState.ConfigureTotpOptional);
+            stateOrder.push(RegistrationState.ValidateTotp);
+            stateOrder.push(RegistrationState.ConfigureSecurityKeyOptional);
+            stateOrder.push(RegistrationState.ValidateSecurityKey);
+        }
+
+        // Is the user coming from a 3rd party client and needs to be redirected
+        // with an authorization code
+        if(preAuthToken){
+            stateOrder.push(RegistrationState.RedirectBackToApplication)
+        }
+        else{
+            stateOrder.push(RegistrationState.RedirectToIamPortal);
+        }
+        for(let i = 0; i < stateOrder.length; i++){
+            arrState.push({
+                email: user.email,
+                tenantId: tenant.tenantId,
+                expiresAtMs: expiresAt,
+                registrationSessionToken: registrationSessionToken,
+                registrationState: stateOrder[i],
+                registrationStateOrder: i + 1,
+                registrationStateStatus: STATUS_INCOMPLETE,
+                userId: user.userId,
+                preAuthToken: preAuthToken
+            });
+        }
+
+        await identityDao.createUserRegistrationStates(arrState);
+        
+        const response: UserRegistrationStateResponse = {
+            userRegistrationState: arrState[0],
+            accessToken: "",
+            uri: "",
+            registrationError: {
+                errorCode: "",
+                errorMessage: ""
+            }
+        }
+        return Promise.resolve(response);
+    }    
 
     /**
      * Checks
@@ -142,101 +234,7 @@ class RegisterUserService extends IdentityService {
     }
 
    
-    /**
-     * 
-     * @param userCreateInput 
-     * @param tenantId 
-     * @param preAuthToken 
-     * @returns 
-     */    
-    public async registerUser(userCreateInput: UserCreateInput, tenantId: string, preAuthToken: string | null | undefined): Promise<UserRegistrationStateResponse>{
-        
-        // TODO
-        // Need to check to see if there is an active registration session happening with the
-        // user, based on their email. If so, then return error if the session has not expired.
-        // Otherwise, delete the old registration session, any user and relationships that were
-        // created, and continue.
-        
-        const {user, tenant, tenantPasswordConfig} = await this._createUser(userCreateInput, tenantId, true);
-
-        const registrationSessionToken: string = generateRandomToken(20, "hex");
-
-        // registration completion will expire after 12 hours. 
-        const expiresAt: number = Date.now() + (60 * 60 * 12 * 1000);
-        const arrState: Array<UserRegistrationState> = [];        
-        const stateOrder: Array<RegistrationState> = [];
-        if(tenant.verifyEmailOnSelfRegistration === true){            
-            // Note that the _createUser function will generate an email token and
-            // send it to the user. No need to do that here.
-            stateOrder.push(RegistrationState.ValidateEmail);
-        }
-        
-        if(tenantPasswordConfig.requireMfa === true){
-            const mfas = tenantPasswordConfig.mfaTypesRequired?.split(",") || [];            
-            if(mfas.includes(MFA_AUTH_TYPE_TIME_BASED_OTP) && mfas.includes(MFA_AUTH_TYPE_FIDO2)){
-                stateOrder.push(RegistrationState.ConfigureTotpRequired);
-                stateOrder.push(RegistrationState.ValidateTotp);
-                stateOrder.push(RegistrationState.ConfigureSecurityKeyRequired);
-                stateOrder.push(RegistrationState.ValidateSecurityKey);
-            }
-            else if(mfas.includes(MFA_AUTH_TYPE_TIME_BASED_OTP) && !mfas.includes(MFA_AUTH_TYPE_FIDO2)){
-                stateOrder.push(RegistrationState.ConfigureTotpRequired);
-                stateOrder.push(RegistrationState.ValidateTotp);
-                stateOrder.push(RegistrationState.ConfigureSecurityKeyOptional);
-                stateOrder.push(RegistrationState.ValidateSecurityKey);
-            }
-            else if(!mfas.includes(MFA_AUTH_TYPE_TIME_BASED_OTP) && mfas.includes(MFA_AUTH_TYPE_FIDO2)){                
-                stateOrder.push(RegistrationState.ConfigureSecurityKeyRequired);
-                stateOrder.push(RegistrationState.ValidateSecurityKey);
-                stateOrder.push(RegistrationState.ConfigureTotpOptional);
-                stateOrder.push(RegistrationState.ValidateTotp);
-            }
-        }
-        else {
-            stateOrder.push(RegistrationState.ConfigureTotpOptional);
-            stateOrder.push(RegistrationState.ValidateTotp);
-            stateOrder.push(RegistrationState.ConfigureSecurityKeyOptional);
-            stateOrder.push(RegistrationState.ValidateSecurityKey);
-        }
-
-        // Is the user coming from a 3rd party client and needs to be redirected
-        // with an authorization code
-        if(preAuthToken){
-            stateOrder.push(RegistrationState.RedirectBackToApplication)
-        }
-        else{
-            stateOrder.push(RegistrationState.RedirectToIamPortal);
-        }
-        for(let i = 0; i < stateOrder.length; i++){
-            arrState.push({
-                email: user.email,
-                tenantId: tenant.tenantId,
-                expiresAtMs: expiresAt,
-                registrationSessionToken: registrationSessionToken,
-                registrationState: stateOrder[i],
-                registrationStateOrder: i + 1,
-                registrationStateStatus: STATUS_INCOMPLETE,
-                userId: user.userId,
-                preAuthToken: preAuthToken
-            });
-        }
-
-        await identityDao.createUserRegistrationStates(arrState);
-        
-        const response: UserRegistrationStateResponse = {
-            userRegistrationState: arrState[0],
-            accessToken: "",
-            uri: "",
-            registrationError: {
-                errorCode: "",
-                errorMessage: ""
-            }
-        }
-        return Promise.resolve(response);
-    }
-
-
-
+    
     /**
      * returns the index of the 
      * @param arrUserRegistrationState 

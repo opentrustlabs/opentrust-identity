@@ -796,7 +796,8 @@ type UserAuthenticationStateResponse {
     availableTenants: [TenantSelectorData!]
     uri: String
     totpSecret: String
-    accessToken: String
+    accessToken: String    
+    passwordConfig: TenantPasswordConfig
 }
 
 type UserAuthenticationState {
@@ -807,7 +808,7 @@ type UserAuthenticationState {
     authenticationStateOrder: Int!
     authenticationStateStatus: String!
     preAuthToken: String
-	expiresAtMs: Float!
+	expiresAtMs: Float!    
 }
 
 

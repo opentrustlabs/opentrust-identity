@@ -14,7 +14,7 @@ import Kms from "../kms/kms";
 import AuthDao from "../dao/auth-dao";
 import ClientDao from "../dao/client-dao";
 import { VerifiedRegistrationResponse, verifyRegistrationResponse, verifyAuthenticationResponse, VerifiedAuthenticationResponse } from '@simplewebauthn/server';
-import { validatePassword } from "@/utils/password-utils";
+import { validatePasswordFormat } from "@/utils/password-utils";
 import OIDCServiceUtils from "./oidc-service-utils";
 import { WellknownConfig } from "../models/wellknown-config";
 
@@ -255,7 +255,7 @@ class IdentityService {
         if(passwordProhibited){
             return Promise.resolve(false);
         }
-        const passwordFormatIsValid: boolean = validatePassword(password, passwordConfig).result;
+        const passwordFormatIsValid: boolean = validatePasswordFormat(password, passwordConfig).result;
         return Promise.resolve(passwordFormatIsValid);
     }
 

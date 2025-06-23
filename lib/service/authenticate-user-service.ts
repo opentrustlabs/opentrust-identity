@@ -1,37 +1,23 @@
 import { OIDCContext } from "@/graphql/graphql-context";
-import * as OTPAuth from "otpauth";
 import IdentityDao from "../dao/identity-dao";
-import { Client, Fido2AuthenticationChallengeResponse, Fido2Challenge, Fido2RegistrationChallengeResponse, Fido2KeyRegistrationInput, ObjectSearchResultItem, RefreshData, RelSearchResultItem, SearchResultType, Tenant, TenantPasswordConfig, TotpResponse, User, UserCreateInput, UserCredential, UserMfaRel, UserSession, UserTenantRel, UserTenantRelView, Fido2KeyAuthenticationInput, TenantRestrictedAuthenticationDomainRel, TenantManagementDomainRel, FederatedOidcProvider, FederatedOidcProviderTenantRel, FederatedOidcAuthorizationRel, FederatedOidcAuthorizationRelType, AuthorizationCodeData, PreAuthenticationState, AuthorizationReturnUri, UserRegistrationStateResponse, UserRegistrationState, RegistrationState, UserAuthenticationStateResponse, AuthenticationState, AuthenticationErrorTypes, UserAuthenticationState, UserFailedLogin, TenantLoginFailurePolicy } from "@/graphql/generated/graphql-types";
+import { Tenant, TenantPasswordConfig, User, UserCredential, UserMfaRel, TenantManagementDomainRel, FederatedOidcProvider, FederatedOidcProviderTenantRel, PreAuthenticationState, AuthorizationReturnUri, UserAuthenticationStateResponse, AuthenticationState, AuthenticationErrorTypes, UserAuthenticationState, UserFailedLogin, TenantLoginFailurePolicy, Fido2KeyAuthenticationInput, Fido2KeyRegistrationInput, TotpResponse } from "@/graphql/generated/graphql-types";
 import { DaoFactory } from "../data-sources/dao-factory";
 import TenantDao from "../dao/tenant-dao";
 import { GraphQLError } from "graphql/error";
-import { randomUUID } from "crypto";
-import { DEFAULT_LOGIN_FAILURE_POLICY, DEFAULT_LOGIN_PAUSE_TIME_MINUTES, DEFAULT_MAXIMUM_LOGIN_FAILURES, DEFAULT_PASSWORD_HISTORY_PERIOD, DEFAULT_TENANT_META_DATA, DEFAULT_TENANT_PASSWORD_CONFIGURATION, FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE, LOGIN_FAILURE_POLICY_LOCK_USER_ACCOUNT, LOGIN_FAILURE_POLICY_PAUSE, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, NAME_ORDER_WESTERN, OIDC_AUTHORIZATION_ERROR_ACCESS_DENIED, PASSWORD_HASH_ITERATION_128K, PASSWORD_HASH_ITERATION_256K, PASSWORD_HASH_ITERATION_32K, PASSWORD_HASH_ITERATION_64K, PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_32K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_64K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS, QUERY_PARAM_AUTHENTICATE_TO_PORTAL, QUERY_PARAM_TENANT_ID, RANKED_DESCENDING_HASHING_ALGORITHS, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, STATUS_COMPLETE, STATUS_INCOMPLETE, STATUS_OMITTED, TENANT_TYPE_ROOT_TENANT, TOKEN_TYPE_END_USER, TOKEN_TYPE_IAM_PORTAL_USER, TOKEN_TYPE_PROVISIONAL_USER, TOTP_HASH_ALGORITHM_SHA1, USER_TENANT_REL_TYPE_GUEST, USER_TENANT_REL_TYPE_PRIMARY } from "@/utils/consts";
-import { sha256HashPassword, pbkdf2HashPassword, bcryptHashPassword, generateSalt, scryptHashPassword, generateRandomToken, generateCodeVerifierAndChallenge, bcryptValidatePassword, getDomainFromEmail } from "@/utils/dao-utils";
-import { Client as OpenSearchClient } from "@opensearch-project/opensearch";
-import { getOpenSearchClient } from "../data-sources/search";
-import Kms from "../kms/kms";
+import { DEFAULT_LOGIN_FAILURE_POLICY, DEFAULT_LOGIN_PAUSE_TIME_MINUTES, DEFAULT_MAXIMUM_LOGIN_FAILURES, DEFAULT_PASSWORD_HISTORY_PERIOD, DEFAULT_TENANT_PASSWORD_CONFIGURATION, FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE, LOGIN_FAILURE_POLICY_LOCK_USER_ACCOUNT, LOGIN_FAILURE_POLICY_PAUSE, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, OIDC_AUTHORIZATION_ERROR_ACCESS_DENIED, QUERY_PARAM_AUTHENTICATE_TO_PORTAL, QUERY_PARAM_TENANT_ID, RANKED_DESCENDING_HASHING_ALGORITHS, STATUS_COMPLETE, STATUS_INCOMPLETE, TOKEN_TYPE_IAM_PORTAL_USER, USER_TENANT_REL_TYPE_PRIMARY } from "@/utils/consts";
+import { generateRandomToken, getDomainFromEmail } from "@/utils/dao-utils";
 import AuthDao from "../dao/auth-dao";
-import ClientDao from "../dao/client-dao";
-import { VerifiedRegistrationResponse, verifyRegistrationResponse, verifyAuthenticationResponse, VerifiedAuthenticationResponse } from '@simplewebauthn/server';
-import { validatePassword } from "@/utils/password-utils";
 import FederatedOIDCProviderDao from "../dao/federated-oidc-provider-dao";
-import OIDCServiceUtils from "./oidc-service-utils";
-import { WellknownConfig } from "../models/wellknown-config";
 import JwtServiceUtils from "./jwt-service-utils";
 import IdentityService from "./identity-service";
+import { error } from "console";
 
 const jwtServiceUtils: JwtServiceUtils = new JwtServiceUtils();
-
-
 const identityDao: IdentityDao = DaoFactory.getInstance().getIdentityDao();
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
-const searchClient: OpenSearchClient = getOpenSearchClient();
-const kms: Kms = DaoFactory.getInstance().getKms();
 const authDao: AuthDao = DaoFactory.getInstance().getAuthDao();
-const clientDao: ClientDao = DaoFactory.getInstance().getClientDao();
 const federatedOIDCProviderDao: FederatedOIDCProviderDao = DaoFactory.getInstance().getFederatedOIDCProvicerDao();
-const oidcServiceUtils: OIDCServiceUtils = new OIDCServiceUtils();
+
 
 
 class AuthenticateUserService extends IdentityService {
@@ -164,9 +150,7 @@ class AuthenticateUserService extends IdentityService {
                 const stateOrder: Array<AuthenticationState> = [];
                 stateOrder.push(AuthenticationState.EnterPassword);
                 const passwordConfig: TenantPasswordConfig | null = await tenantDao.getTenantPasswordConfig(p.tenantId);
-                if(passwordConfig && this.requirePasswordRotation(userCredential, passwordConfig)){
-                    stateOrder.push(AuthenticationState.RotatePassword);
-                }
+                
                 let requiredMfaTypes: Array<string> = [];
                 if(passwordConfig && passwordConfig.requireMfa){
                     requiredMfaTypes = passwordConfig.mfaTypesRequired?.split(",") || [];
@@ -198,6 +182,11 @@ class AuthenticateUserService extends IdentityService {
                 if(requiredMfaTypes.includes(MFA_AUTH_TYPE_FIDO2) && !userMfaRelSecurityKey){
                     stateOrder.push(AuthenticationState.ConfigureSecurityKey);
                     stateOrder.push(AuthenticationState.ValidateSecurityKey);
+                }
+                // Finally, once all the user verification steps have been completed, do we need
+                // to rotate the password before we send the user back to the 3rd party app?
+                if(passwordConfig && this.requirePasswordRotation(userCredential, passwordConfig)){
+                    stateOrder.push(AuthenticationState.RotatePassword);
                 }
                 stateOrder.push(AuthenticationState.RedirectBackToApplication);
 
@@ -400,9 +389,6 @@ class AuthenticateUserService extends IdentityService {
                     response.authenticationError.errorCode = "ERROR_NO_CREDENTIALS_FOUND_FOR_USER";
                     return response;
                 }
-                if(passwordConfig && this.requirePasswordRotation(userCredential, passwordConfig)){
-                    stateOrder.push(AuthenticationState.RotatePassword);
-                }
                 let requiredMfaTypes: Array<string> = [];
                 if(passwordConfig && passwordConfig.requireMfa){
                     requiredMfaTypes = passwordConfig.mfaTypesRequired?.split(",") || [];
@@ -433,6 +419,11 @@ class AuthenticateUserService extends IdentityService {
                 if(requiredMfaTypes.includes(MFA_AUTH_TYPE_FIDO2) && !userMfaRelSecurityKey){
                     stateOrder.push(AuthenticationState.ConfigureSecurityKey);
                     stateOrder.push(AuthenticationState.ValidateSecurityKey);
+                }
+                // Finally, once all the user verification steps have been completed, do we need
+                // to rotate the password before we send the user back to the 3rd party app?
+                if(passwordConfig && this.requirePasswordRotation(userCredential, passwordConfig)){
+                    stateOrder.push(AuthenticationState.RotatePassword);
                 }
                 stateOrder.push(AuthenticationState.RedirectToIamPortal);
 
@@ -579,6 +570,10 @@ class AuthenticateUserService extends IdentityService {
         arrUserAuthenticationStates[index].authenticationStateStatus = STATUS_COMPLETE;
         await identityDao.updateUserAuthenticationState(arrUserAuthenticationStates[index]);
         const nextUserAuthenticationState: UserAuthenticationState = arrUserAuthenticationStates[index + 1];
+        if(nextUserAuthenticationState.authenticationState === AuthenticationState.RotatePassword){
+            const passwordConfig = await this.determineTenantPasswordConfig(nextUserAuthenticationState.userId, nextUserAuthenticationState.tenantId);
+            response.passwordConfig = passwordConfig;
+        }
                 
         if(nextUserAuthenticationState.authenticationState === AuthenticationState.RedirectBackToApplication || nextUserAuthenticationState.authenticationState === AuthenticationState.RedirectToIamPortal){
             await this.handleAuthenticationCompletion(user, nextUserAuthenticationState, response);
@@ -626,6 +621,7 @@ class AuthenticateUserService extends IdentityService {
 
         arrUserAuthenticationStates[index].authenticationStateStatus = STATUS_COMPLETE;
         await identityDao.updateUserAuthenticationState(arrUserAuthenticationStates[index]);
+        
         const nextUserAuthenticationState = arrUserAuthenticationStates[index + 1];
         if(nextUserAuthenticationState.authenticationState === AuthenticationState.RedirectBackToApplication || nextUserAuthenticationState.authenticationState === AuthenticationState.RedirectToIamPortal){
             await this.handleAuthenticationCompletion(user, nextUserAuthenticationState, response);
@@ -760,7 +756,12 @@ class AuthenticateUserService extends IdentityService {
         // Update the authentication state values;
         arrUserAuthenticationStates[index].authenticationStateStatus = STATUS_COMPLETE;
         await identityDao.updateUserAuthenticationState(arrUserAuthenticationStates[index]);
+
         const nextUserAuthenticationState = arrUserAuthenticationStates[index + 1];
+        if(nextUserAuthenticationState.authenticationState === AuthenticationState.RotatePassword){
+            const passwordConfig = await this.determineTenantPasswordConfig(nextUserAuthenticationState.userId, nextUserAuthenticationState.tenantId);
+            response.passwordConfig = passwordConfig;
+        }
         if(nextUserAuthenticationState.authenticationState === AuthenticationState.RedirectBackToApplication || nextUserAuthenticationState.authenticationState === AuthenticationState.RedirectToIamPortal){
             await this.handleAuthenticationCompletion(user, nextUserAuthenticationState, response);
         }
@@ -770,6 +771,107 @@ class AuthenticateUserService extends IdentityService {
         return response;
     }
 
+    public async authenticateConfigureTOTP(userId: string, authenticationSessionToken: string, preAuthToken: string | null): Promise<UserAuthenticationStateResponse>{
+        const response: UserAuthenticationStateResponse = this.initUserAuthenticationStateResponse(authenticationSessionToken, "", preAuthToken);
+        const arrUserAuthenticationStates: Array<UserAuthenticationState> = await this.getSortedAuthenticationStates(authenticationSessionToken);
+        const index: number = await this.validateAuthenticationStep(arrUserAuthenticationStates, response, AuthenticationState.ConfigureTotp);
+        if(index < 0){
+            return Promise.resolve(response);
+        }
+        const user: User | null = await identityDao.getUserBy("id", userId);
+        if(user === null){
+            response.authenticationError.errorCode = "ERROR_INVALID_USER_ID";
+            response.userAuthenticationState.authenticationState = AuthenticationState.Error;
+            return response;
+        }
+        
+        // This will be the generation of the totp token for validation in the next step.
+        try{
+            const totpResponse: TotpResponse = await this.createTOTP(userId);
+            response.userAuthenticationState = arrUserAuthenticationStates[index + 1];
+            response.totpSecret = totpResponse.userMFARel.totpSecret;
+            response.uri = totpResponse.uri;
+            
+            arrUserAuthenticationStates[index].authenticationStateStatus = STATUS_COMPLETE;
+            await identityDao.updateUserAuthenticationState(arrUserAuthenticationStates[index]);
+        }
+        catch(err){
+            response.userAuthenticationState.authenticationState = AuthenticationState.Error;
+            response.authenticationError.errorCode = "ERROR_CREATING_TOTP"
+        }  
+        return response;
+    }
+
+    public async authenticateValidateSecurityKey(userId: string, authenticationSessionToken: string, fido2KeyAuthenticationInput: Fido2KeyAuthenticationInput, preAuthToken: string | null): Promise<UserAuthenticationStateResponse> {
+        const response: UserAuthenticationStateResponse = this.initUserAuthenticationStateResponse(authenticationSessionToken, "", preAuthToken);
+        const arrUserAuthenticationStates: Array<UserAuthenticationState> = await this.getSortedAuthenticationStates(authenticationSessionToken);
+        const index: number = await this.validateAuthenticationStep(arrUserAuthenticationStates, response, AuthenticationState.ValidateSecurityKey);
+        if(index < 0){
+            return Promise.resolve(response);
+        }
+        const user: User | null = await identityDao.getUserBy("id", userId);
+        if(user === null){
+            response.authenticationError.errorCode = "ERROR_INVALID_USER_ID";
+            response.userAuthenticationState.authenticationState = AuthenticationState.Error;
+            return response;
+        }
+        let isValid: boolean = false;
+        try{
+            isValid = await this.authenticateFIDO2Key(userId, fido2KeyAuthenticationInput);
+        }
+        catch(err: any){
+            response.authenticationError.errorCode = err.message
+            return response;
+        }
+        if(!isValid){
+            response.authenticationError.errorCode = "ERROR_INVALID_SECURITY_KEY_INPUT";
+            return response;
+        }
+        // Update the authentication state values;
+        arrUserAuthenticationStates[index].authenticationStateStatus = STATUS_COMPLETE;
+        await identityDao.updateUserAuthenticationState(arrUserAuthenticationStates[index]);
+
+        const nextUserAuthenticationState = arrUserAuthenticationStates[index + 1];
+        if(nextUserAuthenticationState.authenticationState === AuthenticationState.RotatePassword){
+            const passwordConfig = await this.determineTenantPasswordConfig(nextUserAuthenticationState.userId, nextUserAuthenticationState.tenantId);
+            response.passwordConfig = passwordConfig;
+        }
+        if(nextUserAuthenticationState.authenticationState === AuthenticationState.RedirectBackToApplication || nextUserAuthenticationState.authenticationState === AuthenticationState.RedirectToIamPortal){
+            await this.handleAuthenticationCompletion(user, nextUserAuthenticationState, response);
+        }
+        else{
+            response.userAuthenticationState = nextUserAuthenticationState;
+        }
+        return response;
+
+    }
+
+    public async authenticateRegisterSecurityKey(userId: string, authenticationSessionToken: string, fido2KeyRegistrationInput: Fido2KeyRegistrationInput, preAuthToken: string | null): Promise<UserAuthenticationStateResponse> {
+        const response: UserAuthenticationStateResponse = this.initUserAuthenticationStateResponse(authenticationSessionToken, "", preAuthToken);
+        const arrUserAuthenticationStates: Array<UserAuthenticationState> = await this.getSortedAuthenticationStates(authenticationSessionToken);
+        const index: number = await this.validateAuthenticationStep(arrUserAuthenticationStates, response, AuthenticationState.ConfigureSecurityKey);
+        if(index < 0){
+            return Promise.resolve(response);
+        }
+        const user: User | null = await identityDao.getUserBy("id", userId);
+        if(user === null){
+            response.authenticationError.errorCode = "ERROR_INVALID_USER_ID";
+            response.userAuthenticationState.authenticationState = AuthenticationState.Error;
+            return response;
+        }
+
+         try{
+            await this.registerFIDO2Key(userId, fido2KeyRegistrationInput);
+            arrUserAuthenticationStates[index].authenticationStateStatus = STATUS_COMPLETE;
+            await identityDao.updateUserAuthenticationState(arrUserAuthenticationStates[index]);
+            response.userAuthenticationState = arrUserAuthenticationStates[index + 1];
+        }
+        catch(err: any){
+            response.authenticationError.errorCode = "ERROR_VALIDATING_SECURITY_KEY_REGISTRATION_INPUT";
+            response.userAuthenticationState.authenticationState = AuthenticationState.Error;
+        }
+        return response;
+    }
 
     public async cancelAuthentication(userId: string, authenticationSessionToken: string, preAuthToken: string | null): Promise<UserAuthenticationStateResponse> {
         const response: UserAuthenticationStateResponse = this.initUserAuthenticationStateResponse(authenticationSessionToken, "", preAuthToken);
@@ -820,7 +922,8 @@ class AuthenticateUserService extends IdentityService {
             },
             accessToken: null,
             totpSecret: null,
-            uri: null
+            uri: null,
+            passwordConfig: null
         };
         return response;
     }

@@ -920,6 +920,18 @@ const resolvers: Resolvers = {
             const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);
             return service.authenticateValidateTOTP(userId, totpTokenValue, authenticationSessionToken, preAuthToken || null);
         },
+        authenticateConfigureTOTP: async(_: any, { userId, authenticationSessionToken, preAuthToken }, oidcContext) => {
+            const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);
+            return service.authenticateConfigureTOTP(userId, authenticationSessionToken, preAuthToken || null);
+        },
+        authenticateValidateSecurityKey: async(_: any, { userId, authenticationSessionToken, fido2KeyAuthenticationInput, preAuthToken }, oidcContext) => {
+            const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);
+            return service.authenticateValidateSecurityKey(userId, authenticationSessionToken, fido2KeyAuthenticationInput, preAuthToken || null);
+        },
+        authenticateRegisterSecurityKey: async(_: any, { userId, authenticationSessionToken, fido2KeyRegistrationInput, preAuthToken }, oidcContext) => {
+            const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);
+            return service.authenticateRegisterSecurityKey(userId, authenticationSessionToken, fido2KeyRegistrationInput, preAuthToken || null);
+        },
         registerUser: async(_: any, { tenantId, userInput, preAuthToken }, oidcContext) => {
             const service: RegisterUserService = new RegisterUserService(oidcContext);
             return service.registerUser(userInput, tenantId, preAuthToken);
