@@ -652,21 +652,7 @@ export const USER_AUTHENTICATION_STATE_RESPONSE_FRAGMENT = gql(`
 `);
 
 
-// Start here for refactoring authentication and registration flows
 // Authentication flows
-/*
-    ## Authentication Flows
-    logout(userId: String): String
-    authenticateHandleUserNameInput(username: String!, tenantId: String, preAuthToken: String): UserAuthenticationStateResponse!
-    authenticateUser(username: String!, password: String!, tenantId: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
-    authenticateRotatePassword(userId: String!, newPassword: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
-    authenticateConfigureTOTP(userId: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
-    authenticateValidateTOTP(userId: String!, totpTokenValue: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
-    authenticateRegisterSecurityKey(userId: String!, fido2KeyRegistrationInput: Fido2KeyRegistrationInput!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
-    authenticateValidateSecurityKey(userId: String!, fido2KeyAuthenticationInput: Fido2KeyAuthenticationInput!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
-    cancelAuthentication(userId: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
-
-*/
 export const AUTHENTICATE_USERNAME_INPUT_MUTATION = gql`    
     mutation authenticateHandleUserNameInput($username: String!, $tenantId: String, $preAuthToken: String) {
         authenticateHandleUserNameInput(username: $username, tenantId: $tenantId, preAuthToken: $preAuthToken) {
@@ -707,6 +693,46 @@ export const AUTHENTICATE_VALIDATE_TOTP = gql`
     ${USER_AUTHENTICATION_STATE_RESPONSE_FRAGMENT}
 `;
 
+export const AUTHENTICATE_CONFIGURE_TOTP = gql`
+    mutaion authenticateConfigureTOTP($userId: String!, $authenticationSessionToken: String!, $preAuthToken: String) {
+        authenticateConfigureTOTP(userId: $userId, authenticationSessionToken: $authenticationSessionToken, preAuthToken: $preAuthToken){
+            ...UserAuthenticationStateResponseFragment
+        }
+    }
+
+    ${USER_AUTHENTICATION_STATE_RESPONSE_FRAGMENT}
+`;
+
+export const AUTHENTICATE_VALIDATE_SECURITY_KEY = gql`
+    mutation authenticateValidateSecurityKey($userId: String!, $fido2KeyAuthenticationInput: Fido2KeyAuthenticationInput!, $authenticationSessionToken: String!, $preAuthToken: String) {
+        authenticateValidateSecurityKey(userId: $userId, fido2KeyAuthenticationInput: $fido2KeyAuthenticationInput, authenticationSessionToken: $authenticationSessionToken, $preAuthToken: preAuthToken){
+            ...UserAuthenticationStateResponseFragment
+        }
+    }
+
+    ${USER_AUTHENTICATION_STATE_RESPONSE_FRAGMENT}
+`;
+
+export const AUTHENTICATE_REGISTER_SECURITY_KEY = gql`
+    mutation authenticateRegisterSecurityKey($userId: String!, $fido2KeyRegistrationInput: Fido2KeyRegistrationInput!, $authenticationSessionToken: String!, $preAuthToken: String) {
+        authenticateRegisterSecurityKey(userId: $userId, fido2KeyRegistrationInput: $fido2KeyRegistrationInput, authenticationSessionToken: $authenticationSessionToken, preAuthToken: $preAuthToken) {
+            ...UserAuthenticationStateResponseFragment
+        }
+    }
+
+    ${USER_AUTHENTICATION_STATE_RESPONSE_FRAGMENT}
+`;
+
+export const CANCEL_AUTHENTICATION = gql`
+    mutation cancelAuthentication($userId: String!, $authenticationSessionToken: String!, $preAuthToken: String){
+        cancelAuthentication(userId: $userId, authenticationSessionToken: $authenticationSessionToken, preAuthToken: $preAuthToken) {
+            ...UserAuthenticationStateResponseFragment
+        }
+    }
+
+    ${USER_AUTHENTICATION_STATE_RESPONSE_FRAGMENT}
+`;
+
 export const REGISTER_FIDO2_KEY_MUTATION = gql(`
     mutation registerFIDO2Key($userId: String!, $fido2KeyRegistrationInput: Fido2KeyRegistrationInput!){
         registerFIDO2Key(userId: $userId, fido2KeyRegistrationInput: $fido2KeyRegistrationInput) {
@@ -735,14 +761,9 @@ export const AUTHENTICATE_FIDO2_KEY_MUATATION = gql(`
 
 // Registration flows
 /*
-    registerVerifyEmailAddress(userId: String!, token: String!, registrationSessionToken: String!, preAuthToken: String): UserRegistrationStateResponse!
-    registerConfigureTOTP(userId: String!, registrationSessionToken: String!, preAuthToken: String): UserRegistrationStateResponse!
-    registerSkipConfigureTOTP(userId: String, registrationSessionToken: String, preAuthToken: String): UserRegistrationStateResponse!
-    registerValidateTOTP(userId: String, registrationSessionToken: String, totpTokenValue: String, preAuthToken: String): UserRegistrationStateResponse!
-    registerConfigureSecurityKey(userId: String!, registrationSessionToken: String, fido2KeyRegistrationInput: Fido2KeyRegistrationInput!, preAuthToken: String): UserRegistrationStateResponse!
-    registerSkipConfigureSecurityKey(userId: String!, registrationSessionToken: String!, preAuthToken: String): UserRegistrationStateResponse!
-    registerValidateSecurityKey(userId: String!, registrationSessionToken: String!, fido2KeyAuthenticationInput: Fido2KeyAuthenticationInput!, preAuthToken: String): UserRegistrationStateResponse!
-    finishRegistration(userId: String!, registrationSessionToken: String!, preAuthToken: String): UserRegistrationStateResponse!
+    
+    
+    cancelRegistration(userId: String!, registrationSessionToken: String!, preAuthToken: String): UserRegistrationStateResponse!
 */
 
 export const USER_REGISTRATION_STATE_RESPONSE_FRAGMENT = gql(`
@@ -778,7 +799,7 @@ export const REGISTER_USER_MUTATION = gql`
     ${USER_REGISTRATION_STATE_RESPONSE_FRAGMENT}
 `;
 
-export const VERIFY_REGISTRATION_TOKEN_MUTATION = gql`
+export const REGISTER_VERIFY_EMAIL_ADDRESS = gql`
     mutation registerVerifyEmailAddress($userId: String!, $token: String!, $registrationSessionToken: String!, $preAuthToken: String) {
         registerVerifyEmailAddress(userId: $userId, token: $token, registrationSessionToken: $registrationSessionToken, preAuthToken: $preAuthToken) {
             ...UserRegistrationStateResponseFragment
@@ -788,14 +809,52 @@ export const VERIFY_REGISTRATION_TOKEN_MUTATION = gql`
     ${USER_REGISTRATION_STATE_RESPONSE_FRAGMENT}
 `;
 
-
-
-export const GENERATE_AUTHORIZATION_RETURN_URI_MUTATION = gql(`
-    mutation generateAuthorizationReturnUri($preAuthToken: String!) {
-        generateAuthorizationReturnUri(preAuthToken: $preAuthToken) {
-            uri
-            code
-            state
+export const REGISTER_CONFIGURE_TOTP = gql`
+    mutation registerConfigureTOTP($userId: String!, $registrationSessionToken: String!, $preAuthToken: String, $skip: Boolean!) {
+        registerConfigureTOTP(userId: $userId, registrationSessionToken: $registrationSessionToken, preAuthToken: $preAuthToken, skip: $skip){
+            ...UserRegistrationStateResponseFragment
         }
     }
-`);
+    
+    ${USER_REGISTRATION_STATE_RESPONSE_FRAGMENT}
+`;
+
+export const REGISTER_VALIDATE_TOTP = gql`
+    mutation registerValidateTOTP(userId: String!, registrationSessionToken: String!, totpTokenValue: String!, preAuthToken: String) {
+        registerValidateTOTP(userId: String!, registrationSessionToken: String!, totpTokenValue: String!, preAuthToken: String) {
+            ...UserRegistrationStateResponseFragment
+        }
+    }
+
+    ${USER_REGISTRATION_STATE_RESPONSE_FRAGMENT}
+`;
+
+export const REGISTER_CONFIGURE_SECURITY_KEY = gql`
+    mutation registerConfigureSecurityKey($userId: String!, $registrationSessionToken: String!, $fido2KeyRegistrationInput: Fido2KeyRegistrationInput, $preAuthToken: String, $skip: Boolean!) {
+        registerConfigureSecurityKey(userId: $userId, registrationSessionToken: $registrationSessionToken, fido2KeyRegistrationInput: $fido2KeyRegistrationInput, preAuthToken: $preAuthToken, skip: $skip) {
+            ...UserRegistrationStateResponseFragment
+        }
+    }
+
+    ${USER_REGISTRATION_STATE_RESPONSE_FRAGMENT}
+`;
+
+export const REGISTER_VALIDATE_SECURITY_KEY = gql`
+    mutation registerValidateSecurityKey($userId: String!, $registrationSessionToken: String!, $fido2KeyAuthenticationInput: Fido2KeyAuthenticationInput!, $preAuthToken: String) {
+        registerValidateSecurityKey(userId: $userId, registrationSessionToken: $registrationSessionToken, fido2KeyAuthenticationInput: $fido2KeyAuthenticationInput, preAuthToken: $preAuthToken){
+            ...UserRegistrationStateResponseFragment
+        }
+    }
+
+    ${USER_REGISTRATION_STATE_RESPONSE_FRAGMENT}
+`;
+
+export const CANCEL_REGISTRATION = gql`
+    mutation cancelRegistration($userId: String!, $registrationSessionToken: String!, $preAuthToken: String) {
+        cancelRegistration(userId: $userId, registrationSessionToken: $registrationSessionToken, preAuthToken: $preAuthToken){
+            ...UserRegistrationStateResponseFragment
+        }
+    }
+
+    ${USER_REGISTRATION_STATE_RESPONSE_FRAGMENT}
+`;
