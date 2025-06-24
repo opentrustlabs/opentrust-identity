@@ -13,6 +13,8 @@ import { RegistrationResponseJSON, startRegistration } from "@simplewebauthn/bro
 import Backdrop from "@mui/material/Backdrop";
 import Typography from "@mui/material/Typography";
 import WarningOutlinedIcon from '@mui/icons-material/WarningOutlined';
+import PriorityHighOutlinedIcon from '@mui/icons-material/PriorityHighOutlined';
+import { SESSION_TOKEN_TYPE_AUTHENTICATION, SESSION_TOKEN_TYPE_REGISTRATION } from "@/utils/consts";
 
 const AuthentiationConfigureSecurityKey: React.FC<AuthenticationComponentsProps> = ({
     initialUserAuthenticationState,
@@ -30,7 +32,9 @@ const AuthentiationConfigureSecurityKey: React.FC<AuthenticationComponentsProps>
     // GRAPHQL FUNCTIONS
     const [createFido2Challenge] = useMutation(CREATE_FIDO2_REGISTRATION_CHALLENGE_MUTATION, {
         variables: {
-            userId: initialUserAuthenticationState.userId
+            userId: initialUserAuthenticationState.userId,
+            sessionToken: initialUserAuthenticationState.authenticationSessionToken, 
+            sessionTokenType: SESSION_TOKEN_TYPE_AUTHENTICATION
         },
         onCompleted(data) {
             setShowMutationBackdrop(false);
@@ -199,7 +203,9 @@ const RegistrationConfigureSecurityKey: React.FC<RegistrationComponentsProps> = 
     // GRAPHQL FUNCTIONS
     const [createFido2RegistrationChallenge] = useMutation(CREATE_FIDO2_REGISTRATION_CHALLENGE_MUTATION, {
         variables: {
-            userId: initialUserRegistrationState.userId
+            userId: initialUserRegistrationState.userId,
+            sessionToken: initialUserRegistrationState.registrationSessionToken, 
+            sessionTokenType: SESSION_TOKEN_TYPE_REGISTRATION
         },
         onCompleted(data) {
             setShowMutationBackdrop(false);
@@ -311,7 +317,15 @@ const RegistrationConfigureSecurityKey: React.FC<RegistrationComponentsProps> = 
                 </>
             }
             <Grid2 size={12} container spacing={1}>
-                <Grid2 marginBottom={"8px"} size={12}>
+                <Grid2 size={1}>
+                    {initialUserRegistrationState.registrationState === RegistrationState.ConfigureSecurityKeyOptional &&
+                        <PriorityHighOutlinedIcon sx={{height: "1.5em", width: "1.5em"}} color="info" />
+                    }
+                    {initialUserRegistrationState.registrationState === RegistrationState.ConfigureSecurityKeyRequired &&
+                        <WarningOutlinedIcon sx={{height: "1.5em", width: "1.5em"}} color="warning" />
+                    }                    
+                </Grid2>
+                <Grid2 marginBottom={"8px"} size={11}>
                     {initialUserRegistrationState.registrationState === RegistrationState.ConfigureSecurityKeyOptional &&
                         <div style={{ marginBottom: "16px", fontWeight: "bold", fontSize: "1.0em" }}>
                             Do you want to configure a security key? This is an optional step and requires a hardware device
@@ -355,7 +369,7 @@ const RegistrationConfigureSecurityKey: React.FC<RegistrationComponentsProps> = 
                         createFido2RegistrationChallenge();
                     }}
                 >
-                    Validate Key
+                    Configure Key
                 </Button>
                 <Button
                     onClick={() => onRegistrationCancelled()}

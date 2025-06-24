@@ -1,3 +1,4 @@
+"use client";
 import { AUTH_TOKEN_LOCAL_STORAGE_KEY } from '@/utils/consts';
 import { ApolloClient, InMemoryCache, HttpLink, GraphQLRequest, DefaultContext } from '@apollo/client';
 import { setContext } from "@apollo/client/link/context";

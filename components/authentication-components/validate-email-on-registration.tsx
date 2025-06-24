@@ -7,7 +7,7 @@ import Button from "@mui/material/Button";
 import { useMutation } from "@apollo/client";
 import { REGISTER_VERIFY_EMAIL_ADDRESS } from "@/graphql/mutations/oidc-mutations";
 import { RegistrationComponentsProps } from "./register";
-import { RegistrationState, UserRegistrationStateResponse } from "@/graphql/generated/graphql-types";
+import { UserRegistrationStateResponse } from "@/graphql/generated/graphql-types";
 import Alert from "@mui/material/Alert";
 
 

@@ -141,7 +141,7 @@ const RegistrationValidateTotp: React.FC<RegistrationComponentsProps> = ({
                             variables: {
                                 userId: initialUserRegistrationState.userId,
                                 totpTokenValue: passcode,
-                                authenticationSessionToken: initialUserRegistrationState.registrationSessionToken,
+                                registrationSessionToken: initialUserRegistrationState.registrationSessionToken,
                                 preAuthToken: initialUserRegistrationState.preAuthToken
                             }
                         });

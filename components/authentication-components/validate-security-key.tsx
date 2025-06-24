@@ -12,6 +12,7 @@ import { Fido2AuthenticationChallengeResponse, Fido2KeyAuthenticationInput } fro
 import { startAuthentication, PublicKeyCredentialRequestOptionsJSON, AuthenticatorTransport, AuthenticationResponseJSON } from "@simplewebauthn/browser";
 import Backdrop from "@mui/material/Backdrop";
 import Typography from "@mui/material/Typography";
+import { SESSION_TOKEN_TYPE_AUTHENTICATION, SESSION_TOKEN_TYPE_REGISTRATION } from "@/utils/consts";
 
 
 const AuthentiationValidateSecurityKey: React.FC<AuthenticationComponentsProps> = ({
@@ -28,7 +29,9 @@ const AuthentiationValidateSecurityKey: React.FC<AuthenticationComponentsProps> 
     // GRAPHQL FUNCTIONS
     const [createFido2AuthenticationChallenge] = useMutation(CREATE_FIDO2_AUTHENTICATION_CHALLENGE_MUTATION, {
         variables: {
-            userId: initialUserAuthenticationState.userId
+            userId: initialUserAuthenticationState.userId,
+            sessionToken: initialUserAuthenticationState.authenticationSessionToken, 
+            sessionTokenType: SESSION_TOKEN_TYPE_AUTHENTICATION
         },
         onCompleted(data) {
             setShowMutationBackdrop(false);
@@ -132,6 +135,7 @@ const AuthentiationValidateSecurityKey: React.FC<AuthenticationComponentsProps> 
             >
                 <Button
                     onClick={() => {
+                        setErrorMessage(null);
                         setShowMutationBackdrop(true);
                         createFido2AuthenticationChallenge();
                     }}
@@ -171,7 +175,9 @@ const RegistrationValidateSecurityKey: React.FC<RegistrationComponentsProps> = (
     // GRAPHQL FUNCTIONS
     const [createFido2AuthenticationChallenge] = useMutation(CREATE_FIDO2_AUTHENTICATION_CHALLENGE_MUTATION, {
         variables: {
-            userId: initialUserRegistrationState.userId
+            userId: initialUserRegistrationState.userId,
+            sessionToken: initialUserRegistrationState.registrationSessionToken, 
+            sessionTokenType: SESSION_TOKEN_TYPE_REGISTRATION
         },
         onCompleted(data) {
             setShowMutationBackdrop(false);
@@ -274,6 +280,7 @@ const RegistrationValidateSecurityKey: React.FC<RegistrationComponentsProps> = (
             >
                 <Button
                     onClick={() => {
+                        setErrorMessage(null);
                         setShowMutationBackdrop(true);
                         createFido2AuthenticationChallenge();
                     }}

@@ -590,8 +590,8 @@ export const USER_SESSION_DELETE_MUTATION =gql(`
 `);
 
 export const CREATE_FIDO2_REGISTRATION_CHALLENGE_MUTATION = gql(`
-    mutation createFido2RegistrationChallenge($userId: String!) {
-        createFido2RegistrationChallenge(userId: $userId) {
+    mutation createFido2RegistrationChallenge($userId: String!, $sessionToken: String, $sessionTokenType: String) {
+        createFido2RegistrationChallenge(userId: $userId, sessionToken: $sessionToken, sessionTokenType: $sessionTokenType) {
             fido2Challenge {
                 userId
                 challenge
@@ -607,8 +607,8 @@ export const CREATE_FIDO2_REGISTRATION_CHALLENGE_MUTATION = gql(`
 `);
 
 export const CREATE_FIDO2_AUTHENTICATION_CHALLENGE_MUTATION = gql(`
-    mutation createFido2AuthenticationChallenge($userId: String!) {
-        createFido2AuthenticationChallenge(userId: $userId) {
+    mutation createFido2AuthenticationChallenge($userId: String!, $sessionToken: String, $sessionTokenType: String) {
+        createFido2AuthenticationChallenge(userId: $userId, sessionToken: $sessionToken, sessionTokenType: $sessionTokenType) {
             fido2Challenge {
                 userId
                 challenge

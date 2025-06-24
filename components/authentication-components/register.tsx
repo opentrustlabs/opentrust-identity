@@ -621,8 +621,8 @@ const Register: React.FC = () => {
                             }
                             {userRegistrationState && 
                                 (
-                                    userRegistrationState.registrationState === RegistrationState.ConfigureSecurityKeyOptional ||
-                                    userRegistrationState.registrationState === RegistrationState.ConfigureSecurityKeyRequired
+                                    userRegistrationState.registrationState === RegistrationState.ConfigureTotpOptional ||
+                                    userRegistrationState.registrationState === RegistrationState.ConfigureTotpRequired
                                 ) &&
                                 <RegistrationConfigureTotp
                                     initialUserRegistrationState={userRegistrationState}

@@ -604,6 +604,7 @@ class IdentityService {
             }
         }
         if(sessionToken !== null && sessionTokenType === SESSION_TOKEN_TYPE_AUTHENTICATION){
+            
             const arrUserAuthenticationStates: Array<UserAuthenticationState> = await this.getSortedAuthenticationStates(sessionToken);
             const index = arrUserAuthenticationStates.findIndex(
                 (value: UserAuthenticationState) => (value.authenticationState === AuthenticationState.ConfigureSecurityKey)

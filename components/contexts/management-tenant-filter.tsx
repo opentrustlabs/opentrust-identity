@@ -86,7 +86,7 @@ const ManagementTenantFilter: React.FC<LayoutProps> = ({
             if(profile.managementAccessTenantId !== tenantIdFromPath){
                 // Need to update the local storage for next time and redirect the 
                 // user to the correct landing page for their tenant
-                localStorage.setItem("management-tenant-id", profile.managementAccessTenantId);
+                localStorage.setItem(MANAGEMENT_TENANT_LOCAL_STORAGE_KEY, profile.managementAccessTenantId);
                 redirectUri = `/${profile.managementAccessTenantId}/`;
             }
             else{
@@ -107,7 +107,7 @@ const ManagementTenantFilter: React.FC<LayoutProps> = ({
     const [isComplete, setIsComplete] = React.useState(false);
 
     // GRAPHQL QUERIES
-    const {data, error, loading, } = useQuery(TENANT_META_DATA_QUERY, {
+    const {data, loading, } = useQuery(TENANT_META_DATA_QUERY, {
         variables: {
             tenantId: tenantIdFromPath
         },
