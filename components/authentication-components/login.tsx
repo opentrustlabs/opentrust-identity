@@ -19,6 +19,7 @@ import { AuthentiationConfigureSecurityKey } from "./configure-security-key";
 import { AuthentiationValidateSecurityKey } from "./validate-security-key";
 import AuthentiationRotatePassword from "./rotate-password";
 import {  useSearchParams } from 'next/navigation';
+import { setAccessTokenOnLocalStorage } from "@/utils/client-utils";
 
 
 const MIN_USERNAME_LENGTH = 6;
@@ -137,6 +138,11 @@ const Login: React.FC = () => {
                     setErrorMessage("ERROR_NO_REDIRECT_ENDPOINT_CONFIGURED");
                 }
                 else {
+                    if(authnStateResponse.userAuthenticationState.authenticationState === AuthenticationState.RedirectToIamPortal){
+                        if(authnStateResponse.accessToken){
+                            setAccessTokenOnLocalStorage(authnStateResponse.accessToken, authnStateResponse.tokenExpiresAtMs || 0);
+                        }
+                    }
                     router.push(authnStateResponse.uri);
                 }
             }

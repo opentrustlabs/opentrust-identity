@@ -1,4 +1,5 @@
 "use client";
+import { AUTH_TOKEN_LOCAL_STORAGE_KEY, TOKEN_EXPIRIES_AT_MS_LOCAL_KEY } from "./consts";
 import { COUNTRY_CODES, CountryCodeDef, LANGUAGE_CODES, LanguageCodeDef } from "./i18n";
 
 
@@ -39,4 +40,33 @@ export function getDefaultLanguageCodeDef (languageCode: string) {
     }
     
     return retVal;    
+}
+
+export function removeAccessTokenFromLocalStorage(): void {
+    localStorage.removeItem(AUTH_TOKEN_LOCAL_STORAGE_KEY);
+    localStorage.removeItem(TOKEN_EXPIRIES_AT_MS_LOCAL_KEY);
+}
+
+export function getAccessTokenFromLocalStorage(): string | null {
+    return localStorage.getItem(AUTH_TOKEN_LOCAL_STORAGE_KEY);
+}
+
+/**
+ * returns the number of seconds from when the token was issued
+ * that it will expires
+ */
+export function getAccessTokenExpiresIn(): number | null {
+    const t: string | null = localStorage.getItem(TOKEN_EXPIRIES_AT_MS_LOCAL_KEY);
+    if(t){
+        const exp: number = parseInt(t);
+        return exp;
+    }
+    else{
+        return null;
+    }
+}
+
+export function setAccessTokenOnLocalStorage(token: string, expiresAtMs: number): void {
+    localStorage.setItem(AUTH_TOKEN_LOCAL_STORAGE_KEY, token);
+    localStorage.setItem(TOKEN_EXPIRIES_AT_MS_LOCAL_KEY, expiresAtMs.toString())
 }

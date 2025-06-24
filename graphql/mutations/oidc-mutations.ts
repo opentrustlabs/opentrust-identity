@@ -664,6 +664,7 @@ export const USER_AUTHENTICATION_STATE_RESPONSE_FRAGMENT = gql(`
         uri
         totpSecret
         accessToken
+        tokenExpiresAtMs
     }
 `);
 
@@ -772,6 +773,7 @@ export const USER_REGISTRATION_STATE_RESPONSE_FRAGMENT = gql(`
         uri
         totpSecret
         accessToken
+        tokenExpiresAtMs
     }
 `);
 

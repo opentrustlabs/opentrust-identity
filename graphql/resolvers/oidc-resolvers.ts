@@ -17,39 +17,46 @@ import MarkForDeleteService from "@/lib/service/mark-for-delete-service";
 import I18NService from "@/lib/service/i18n-service";
 import RegisterUserService from "@/lib/service/register-user-service";
 import AuthenticateUserService from "@/lib/service/authenticate-user-service";
+import { OIDCPrincipal } from "@/lib/models/principal";
 
 
 const resolvers: Resolvers = {
     Query: {
         me: (_, __, oidcContext) => {
-            const profile: PortalUserProfile = {
-                domain: "charter.net",
-                email: "dhayek@charter.net",
-                emailVerified: true,
-                enabled: true,
-                firstName: "David",
-                lastName: "Hayek",
-                locked: false,
-                nameOrder: NAME_ORDER_WESTERN,
-                scope: [{
-                    scopeId: "id",
-                    scopeName: "all",
-                    scopeDescription: "",
-                    scopeUse: "",
-                    markForDelete: false
-                }],
-                tenantId: "8256c1db-cd40-48d1-914f-71672b4d42fa",
-                tenantName: "First Tenant",
-                userId: "8256c1db-cd40-48d1-914f-71672b4d42fa",
-                countryCode: "US",
-                preferredLanguageCode: "en",
-                managementAccessTenantId: "ad3e45b1-3e62-4fe2-ba59-530d35ae93d5"
+            const principal: OIDCPrincipal | null = oidcContext.oidcPrincipal;
+            if(!principal){
+                return null;
             }
-            // home depot: 2a303f6d-0ebc-4590-9d12-7ebab6531d7e
-            // root tenant: ad3e45b1-3e62-4fe2-ba59-530d35ae93d5
-            // airbnb: c42c29cb-1bf7-4f6a-905e-5f74760218e2
-            // amgen: 73d00cb0-f058-43b0-8fb4-d0e48ff33ba2
-            return profile;
+            else{            
+                const profile: PortalUserProfile = {
+                    domain: principal.email,
+                    email: principal.email,
+                    emailVerified: true,
+                    enabled: true,
+                    firstName: principal.given_name,
+                    lastName: principal.family_name,
+                    locked: false,
+                    nameOrder: NAME_ORDER_WESTERN,
+                    scope: [{
+                        scopeId: "id",
+                        scopeName: "all",
+                        scopeDescription: "",
+                        scopeUse: "",
+                        markForDelete: false
+                    }],
+                    tenantId: principal.tenant_id,
+                    tenantName: principal.tenant_name,
+                    userId: principal.sub,
+                    countryCode: principal.country_code,
+                    preferredLanguageCode: principal.language_code,
+                    managementAccessTenantId: principal.tenant_id
+                }
+                // home depot: 2a303f6d-0ebc-4590-9d12-7ebab6531d7e
+                // root tenant: ad3e45b1-3e62-4fe2-ba59-530d35ae93d5
+                // airbnb: c42c29cb-1bf7-4f6a-905e-5f74760218e2
+                // amgen: 73d00cb0-f058-43b0-8fb4-d0e48ff33ba2
+                return profile;
+            }
         },
         getUserById: (_, { userId }, oidcContext) => {
             const identityService: IdentityService = new IdentityService(oidcContext);

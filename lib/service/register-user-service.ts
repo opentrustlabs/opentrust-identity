@@ -244,8 +244,6 @@ class RegisterUserService extends IdentityService {
      */
     protected async validateRegistrationStep(arrUserRegistrationState: Array<UserRegistrationState>, response: UserRegistrationStateResponse, expectedState: RegistrationState): Promise<number> {
         
-        console.log("checkpoint 1");
-        console.log("expected state: " + expectedState);
         let stepIndex: number = -1;
         let expectedRegistrationState: UserRegistrationState | null = null;
         for(let i = 0; i < arrUserRegistrationState.length; i++){
@@ -256,8 +254,6 @@ class RegisterUserService extends IdentityService {
             }
         }
 
-        console.log("checkpoint 2");
-        console.log("step index is " + stepIndex);
         if(expectedRegistrationState === null){
             response.userRegistrationState.registrationState = RegistrationState.Error;
             response.registrationError.errorCode = "ERROR_NO_VALID_REGISTRATION_STATE_FOUND";
@@ -278,11 +274,9 @@ class RegisterUserService extends IdentityService {
         
         // Are there previous steps and have the previous steps been completed?
         if(stepIndex > 0){
-            console.log("checkpoint 3");
             for(let i = 0; i < stepIndex; i++){
                 const previousState: UserRegistrationState = arrUserRegistrationState[i];
                 if(previousState.registrationStateStatus !== STATUS_COMPLETE){
-                    console.log("checkpoint 4");
                     response.userRegistrationState.registrationState = RegistrationState.Error;
                     response.registrationError.errorCode = "ERROR_INCOMPLETE_REGISTRATION_STATE_FOUND";
                     stepIndex = -1;
@@ -373,7 +367,7 @@ class RegisterUserService extends IdentityService {
             totpSecret: null,
             uri: null
         };
-        console.log("skip is " + skip);
+        
         const index = skip ? 
                         await this.validateRegistrationStep(arrUserRegistrationState, response, RegistrationState.ConfigureTotpOptional) :
                         await this.validateRegistrationStep(arrUserRegistrationState, response, RegistrationState.ConfigureTotpRequired);
@@ -668,6 +662,7 @@ class RegisterUserService extends IdentityService {
                             response.userRegistrationState = userRegistrationState;
                             response.uri = `/${userRegistrationState.tenantId}`;
                             response.accessToken = accessToken;
+                            response.tokenExpiresAtMs = Date.now() + (60 * 60 * 12 * 1000);
                             userRegistrationState.registrationStateStatus = STATUS_COMPLETE;
                             await identityDao.updateUserRegistrationState(userRegistrationState);
                         }

@@ -1009,6 +1009,7 @@ class AuthenticateUserService extends IdentityService {
                         response.userAuthenticationState = userAuthenticationState;
                         response.uri = `/${userAuthenticationState.tenantId}`;
                         response.accessToken = accessToken;
+                        response.tokenExpiresAtMs = Date.now() + (60 * 60 * 12 * 1000);
                         userAuthenticationState.authenticationStateStatus = STATUS_COMPLETE;
                         await identityDao.updateUserAuthenticationState(userAuthenticationState);
                     }

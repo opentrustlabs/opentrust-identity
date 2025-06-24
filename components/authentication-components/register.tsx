@@ -11,7 +11,7 @@ import { RegistrationState, StateProvinceRegion, TenantPasswordConfig, UserCreat
 import Alert from '@mui/material/Alert';
 import { PageTitleContext } from "@/components/contexts/page-title-context";
 import { COUNTRY_CODES, CountryCodeDef, LANGUAGE_CODES, LanguageCodeDef } from "@/utils/i18n";
-import { getDefaultCountryCodeDef, getDefaultLanguageCodeDef } from "@/utils/client-utils";
+import { getDefaultCountryCodeDef, getDefaultLanguageCodeDef, setAccessTokenOnLocalStorage } from "@/utils/client-utils";
 import StateProvinceRegionSelector from "../users/state-province-region-selector";
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import VisibilityOffOutlinedIcon from '@mui/icons-material/VisibilityOffOutlined';
@@ -155,6 +155,11 @@ const Register: React.FC = () => {
                     setErrorMessage("ERROR_NO_REDIRECT_ENDPOINT_CONFIGURED");
                 }
                 else {
+                    if(response.userRegistrationState.registrationState === RegistrationState.RedirectToIamPortal){
+                        if(response.accessToken){
+                            setAccessTokenOnLocalStorage(response.accessToken, response.tokenExpiresAtMs || 0);
+                        }
+                    }
                     router.push(response.uri);
                 }
             }

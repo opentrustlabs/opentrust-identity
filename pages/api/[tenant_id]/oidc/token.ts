@@ -427,6 +427,9 @@ async function handleRefreshTokenGrant(tokenData: TokenData, res: NextApiRespons
         return res.status(400).json(error);
     }
 
+    // This will rotate the refresh token. So we need to remove the old
+    // one (based on its hash value) and save the new one (also based on
+    // its hash value).
     const oidcTokenResponse: OIDCTokenResponse | null = await jwtService.signUserJwt(refreshTokenData.userId, refreshTokenData.clientId, refreshTokenData.tenantId, refreshTokenData.scope);
     if(!oidcTokenResponse){
         const error: OIDCErrorResponseBody = {

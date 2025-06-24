@@ -295,7 +295,7 @@ class DBIdentityDao extends IdentityDao {
             where: where
         });
 
-        return u ? Promise.resolve(u as any as User) : Promise.resolve(null);
+        return u ? Promise.resolve(u.dataValues as User) : Promise.resolve(null);
     }
 
 

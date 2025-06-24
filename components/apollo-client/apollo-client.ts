@@ -1,13 +1,11 @@
 "use client";
-import { AUTH_TOKEN_LOCAL_STORAGE_KEY } from '@/utils/consts';
+import { getAccessTokenFromLocalStorage } from '@/utils/client-utils';
 import { ApolloClient, InMemoryCache, HttpLink, GraphQLRequest, DefaultContext } from '@apollo/client';
 import { setContext } from "@apollo/client/link/context";
 
-
-
 const authLink = setContext( (operation: GraphQLRequest, prevContext: DefaultContext) => {
 
-        const accessToken: string | null = localStorage.getItem(AUTH_TOKEN_LOCAL_STORAGE_KEY);
+        const accessToken: string | null = getAccessTokenFromLocalStorage();        
         if(!accessToken){
             return {
                 headers: {

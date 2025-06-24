@@ -796,7 +796,8 @@ type UserAuthenticationStateResponse {
     availableTenants: [TenantSelectorData!]
     uri: String
     totpSecret: String
-    accessToken: String    
+    accessToken: String
+    tokenExpiresAtMs: Float
     passwordConfig: TenantPasswordConfig
 }
 
@@ -837,6 +838,7 @@ type UserRegistrationStateResponse {
     userRegistrationState: UserRegistrationState!
     registrationError: RegistrationError! 
 	accessToken: String
+    tokenExpiresAtMs: Float
     totpSecret: String
 	uri: String
 }

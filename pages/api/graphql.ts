@@ -42,34 +42,35 @@ async function getOIDCContext(req: NextApiRequest): Promise<OIDCContext> {
     const bearerToken = req.headers.authorization || null;
 
     let jwt: string | null = null;
-    let principal: OIDCPrincipal = {
-        sub: "",
-        iss: "",
-        aud: "",
-        iat: 0,
-        exp: 0,
-        at_hash: "",
-        name: "",
-        given_name: "",
-        family_name: "",
-        middle_name: "",
-        nickname: "",
-        preferred_username: "",
-        profile: "",
-        phone_number: "",
-        address: "",
-        updated_at: "",
-        email: "",
-        country_code: "",
-        language_code: "",
-        jwt_id: "",
-        tenant_id: "",
-        tenant_name: "",
-        client_id: "",
-        client_name: "",
-        client_type: "",
-        token_type: ""
-    }
+    let principal: OIDCPrincipal | null = null;
+    //  = {
+    //     sub: "",
+    //     iss: "",
+    //     aud: "",
+    //     iat: 0,
+    //     exp: 0,
+    //     at_hash: "",
+    //     name: "",
+    //     given_name: "",
+    //     family_name: "",
+    //     middle_name: "",
+    //     nickname: "",
+    //     preferred_username: "",
+    //     profile: "",
+    //     phone_number: "",
+    //     address: "",
+    //     updated_at: "",
+    //     email: "",
+    //     country_code: "",
+    //     language_code: "",
+    //     jwt_id: "",
+    //     tenant_id: "",
+    //     tenant_name: "",
+    //     client_id: "",
+    //     client_name: "",
+    //     client_type: "",
+    //     token_type: ""
+    // }
 
     if(bearerToken){
         jwt = bearerToken.replace(/Bearer\s+/, "");
