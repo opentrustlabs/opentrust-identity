@@ -44,11 +44,11 @@ const AuthentiationValidateSecurityKey: React.FC<AuthenticationComponentsProps> 
 
     const [authenticateValidateSecurityKey] = useMutation(AUTHENTICATE_VALIDATE_SECURITY_KEY, {
         onCompleted(data) {
-            onUpdateEnd(true, data.authenticateValidateSecurityKey);            
+            authenticateValidateSecurityKey
+            onUpdateEnd(data.authenticateValidateSecurityKey, null);
         },
         onError(error) {
-            onUpdateEnd(false, null);
-            setErrorMessage(error.message);
+            onUpdateEnd(null, error.message);
         }
     });
 
