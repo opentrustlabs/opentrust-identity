@@ -481,7 +481,8 @@ export const TENANT_PASSWORD_CONFIG_QUERY = gql(`
             requireMfa
             mfaTypesRequired
             maxRepeatingCharacterLength
-            passwordRotationPeriodDays        
+            passwordRotationPeriodDays
+            passwordHistoryPeriod
         }
     }
 `);

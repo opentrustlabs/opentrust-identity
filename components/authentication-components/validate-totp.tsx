@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { AuthenticationComponentsProps } from "./portal-login";
+import { AuthenticationComponentsProps } from "./login";
 import { RegistrationComponentsProps } from "./register";
 import { useMutation } from "@apollo/client";
 import { AUTHENTICATE_VALIDATE_TOTP, REGISTER_VALIDATE_TOTP } from "@/graphql/mutations/oidc-mutations";
@@ -25,12 +25,11 @@ const AuthentiationValidateTotp: React.FC<AuthenticationComponentsProps> = ({
     // GRAPHQL FUNCTIONS
     const [authenticateValidateTotp] = useMutation(AUTHENTICATE_VALIDATE_TOTP, {
         onCompleted(data) {
-            onUpdateEnd(true, data.authenticateValidateTOTP);
+            onUpdateEnd(data.authenticateValidateTOTP, null);
         },
         onError(error) {
-            onUpdateEnd(false, null);
-            setErrorMessage(error.message);
-        },
+            onUpdateEnd(null, error.message);
+        }
     })
     
     return (
@@ -51,12 +50,15 @@ const AuthentiationValidateTotp: React.FC<AuthenticationComponentsProps> = ({
             }
             <Grid2 size={12} container spacing={1}>
                 <Grid2 marginBottom={"8px"} size={12}>
-                    <div style={{marginBottom: "16px"}}>Enter your passcode</div>
+                    <div style={{ marginBottom: "16px", fontWeight: "bold", fontSize: "1.0em" }}>Enter the code from your authenticator app</div>
                     <TextField name="passcode" id="passcode"
                         value={passcode}
                         onChange={(evt) => setPasscode(evt.target.value)}
                         fullWidth={true}
-                        size="small"
+                        size="small"                        
+                        required={true}
+                        autoFocus={true}
+                        label={"One-time-passcode"}
                     />
                 </Grid2>
             </Grid2>
@@ -99,44 +101,31 @@ const RegistrationValidateTotp: React.FC<RegistrationComponentsProps> = ({
 }) => {
 
     // STATE VARIABLES
-    const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
     const [passcode, setPasscode] = React.useState<string>("");
 
     // GRAPHQL FUNCTIONS
     const [registerValidateTOTP] = useMutation(REGISTER_VALIDATE_TOTP, {
         onCompleted(data) {
-            onUpdateEnd(true, data.registerValidateTOTP);
+            onUpdateEnd(data.registerValidateTOTP, null);
         },
         onError(error) {
-            onUpdateEnd(false, null);
-            setErrorMessage(error.message);
+            onUpdateEnd(null, error.message);            
         },
     })
     
     return (
         <React.Fragment>
-            {errorMessage !== null &&
-                <>
-                    <Grid2 size={{ xs: 12 }} textAlign={"center"}>
-                        <Stack
-                            direction={"row"}
-                            justifyItems={"center"}
-                            alignItems={"center"}
-                            sx={{ width: "100%" }}
-                        >
-                            <Alert onClose={() => setErrorMessage(null)} sx={{ width: "100%" }} severity="error">{errorMessage}</Alert>
-                        </Stack>
-                    </Grid2>
-                </>
-            }
             <Grid2 size={12} container spacing={1}>
                 <Grid2 marginBottom={"8px"} size={12}>
-                    <div style={{marginBottom: "16px"}}>Enter your passcode</div>
+                    <div style={{ marginBottom: "16px", fontWeight: "bold", fontSize: "1.0em" }}>Enter the code from your authenticator app</div>
                     <TextField name="passcode" id="passcode"
                         value={passcode}
                         onChange={(evt) => setPasscode(evt.target.value)}
                         fullWidth={true}
                         size="small"
+                        required={true}
+                        autoFocus={true}
+                        label={"One-time-passcode"}
                     />
                 </Grid2>
             </Grid2>

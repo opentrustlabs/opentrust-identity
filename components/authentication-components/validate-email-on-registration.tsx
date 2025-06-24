@@ -5,7 +5,7 @@ import TextField from "@mui/material/TextField";
 import Stack from "@mui/material/Stack";
 import Button from "@mui/material/Button";
 import { useMutation } from "@apollo/client";
-import { VERIFY_REGISTRATION_TOKEN_MUTATION } from "@/graphql/mutations/oidc-mutations";
+import { REGISTER_VERIFY_EMAIL_ADDRESS } from "@/graphql/mutations/oidc-mutations";
 import { RegistrationComponentsProps } from "./register";
 import { RegistrationState, UserRegistrationStateResponse } from "@/graphql/generated/graphql-types";
 import Alert from "@mui/material/Alert";
@@ -22,20 +22,13 @@ const ValidateEmailOnRegistration: React.FC<RegistrationComponentsProps> = ({
     const [verificationCode, setVerificationCode] = React.useState<string>("");
     const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
 
-    const [verifyEmailRegistrationToken] = useMutation(VERIFY_REGISTRATION_TOKEN_MUTATION, {
+    const [verifyEmailRegistrationToken] = useMutation(REGISTER_VERIFY_EMAIL_ADDRESS, {
         onCompleted(data) {
             const response: UserRegistrationStateResponse = data.registerVerifyEmailAddress as UserRegistrationStateResponse;
-            if(response.userRegistrationState.registrationState === RegistrationState.Error){
-                onUpdateEnd(false, null);
-                setErrorMessage(response.registrationError.errorCode)
-            }
-            else{
-                onUpdateEnd(true, response);
-            }
+            onUpdateEnd(response, null)
         },
         onError(error) {
-            onUpdateEnd(false, null);
-            setErrorMessage(error.message)
+            onUpdateEnd(null, error.message);
         },
     });
     
@@ -57,7 +50,7 @@ const ValidateEmailOnRegistration: React.FC<RegistrationComponentsProps> = ({
             }
             <Grid2 size={12} container spacing={1}>
                 <Grid2 marginBottom={"8px"} size={12}>
-                    <div style={{marginBottom: "16px"}}>A verification code has been sent to your email address. Please enter it below. The code is valid for 60 minutes</div>
+                    <div style={{marginBottom: "16px", fontWeight: "bold", fontSize: "1.0em"}}>A verification code has been sent to your email address. Please enter it below. The code is valid for 60 minutes</div>
                     <TextField name="verificationCode" id="verificationCode"
                         value={verificationCode}
                         onChange={(evt) => setVerificationCode(evt.target.value)}

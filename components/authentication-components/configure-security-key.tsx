@@ -1,18 +1,18 @@
 "use client";
 import React from "react";
-import { AuthenticationComponentsProps } from "./portal-login";
+import { AuthenticationComponentsProps } from "./login";
 import { RegistrationComponentsProps } from "./register";
 import { useMutation } from "@apollo/client";
-import { AUTHENTICATE_REGISTER_SECURITY_KEY, AUTHENTICATE_VALIDATE_SECURITY_KEY, CREATE_FIDO2_AUTHENTICATION_CHALLENGE_MUTATION, CREATE_FIDO2_REGISTRATION_CHALLENGE_MUTATION, REGISTER_CONFIGURE_SECURITY_KEY, REGISTER_VALIDATE_SECURITY_KEY } from "@/graphql/mutations/oidc-mutations";
+import { AUTHENTICATE_REGISTER_SECURITY_KEY, CREATE_FIDO2_REGISTRATION_CHALLENGE_MUTATION, REGISTER_CONFIGURE_SECURITY_KEY } from "@/graphql/mutations/oidc-mutations";
 import Grid2 from "@mui/material/Grid2";
 import Alert from "@mui/material/Alert";
 import Stack from "@mui/material/Stack";
 import Button from "@mui/material/Button";
-import { Fido2AuthenticationChallengeResponse, Fido2KeyAuthenticationInput, Fido2KeyRegistrationInput, Fido2RegistrationChallengeResponse, RegistrationState, UserAuthenticationStateResponse, UserRegistrationStateResponse } from "@/graphql/generated/graphql-types";
-import { RegistrationResponseJSON, startRegistration, startAuthentication, PublicKeyCredentialRequestOptionsJSON, AuthenticatorTransport, AuthenticationResponseJSON } from "@simplewebauthn/browser";
+import { Fido2KeyRegistrationInput, Fido2RegistrationChallengeResponse, RegistrationState, UserAuthenticationStateResponse, UserRegistrationStateResponse } from "@/graphql/generated/graphql-types";
+import { RegistrationResponseJSON, startRegistration } from "@simplewebauthn/browser";
 import Backdrop from "@mui/material/Backdrop";
 import Typography from "@mui/material/Typography";
-
+import WarningOutlinedIcon from '@mui/icons-material/WarningOutlined';
 
 const AuthentiationConfigureSecurityKey: React.FC<AuthenticationComponentsProps> = ({
     initialUserAuthenticationState,
@@ -22,6 +22,8 @@ const AuthentiationConfigureSecurityKey: React.FC<AuthenticationComponentsProps>
 }) => {
     
     // STATE VARIABLES
+    // Need duplicate of the parent state variables for the generation of the 
+    // key challenge.
     const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
     const [showMutationBackdrop, setShowMutationBackdrop] = React.useState<boolean>(false);
 
@@ -31,13 +33,11 @@ const AuthentiationConfigureSecurityKey: React.FC<AuthenticationComponentsProps>
             userId: initialUserAuthenticationState.userId
         },
         onCompleted(data) {
-            onUpdateEnd(false, null);
             setShowMutationBackdrop(false);
             const challengeResponse: Fido2RegistrationChallengeResponse = data.createFido2RegistrationChallenge;
             createKeyRegistration(challengeResponse);
         },
         onError(error) {
-            onUpdateEnd(false, null);
             setShowMutationBackdrop(false);
             setErrorMessage(error.message)
         },
@@ -46,11 +46,10 @@ const AuthentiationConfigureSecurityKey: React.FC<AuthenticationComponentsProps>
     const [authenticateRegisterSecurityKey] = useMutation(AUTHENTICATE_REGISTER_SECURITY_KEY, {
         onCompleted(data) {
             const response: UserAuthenticationStateResponse = data.authenticateRegisterSecurityKey as UserAuthenticationStateResponse;
-            onUpdateEnd(true, response);
+            onUpdateEnd(response, null);
         },
         onError(error){
-            onUpdateEnd(false, null);
-            setErrorMessage(error.message);
+            onUpdateEnd(null, error.message);
         }
     });
 
@@ -142,8 +141,13 @@ const AuthentiationConfigureSecurityKey: React.FC<AuthenticationComponentsProps>
                 </>
             }
             <Grid2 size={12} container spacing={1}>
-                <Grid2 marginBottom={"8px"} size={12}>
-                    <div style={{marginBottom: "16px"}}>Access to this tenant requires multi-factor authentication using a security key</div>                    
+                <Grid2 size={1}>
+                    <WarningOutlinedIcon sx={{height: "1.5em", width: "1.5em"}} color="warning" />
+                </Grid2>
+                <Grid2 marginBottom={"8px"} size={11}>
+                    <div style={{ marginBottom: "16px", fontWeight: "bold", fontSize: "1.0em" }}>
+                        Access to this tenant requires multi-factor authentication using a security key
+                    </div>
                 </Grid2>
             </Grid2>
             <Stack 
@@ -186,6 +190,9 @@ const RegistrationConfigureSecurityKey: React.FC<RegistrationComponentsProps> = 
 }) => {
 
     // STATE VARIABLES
+    // We need a local version of the following two variables because we need to
+    // show the backdrop during the challenge generation step and we may have
+    // errors from that step as well.
     const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
     const [showMutationBackdrop, setShowMutationBackdrop] = React.useState<boolean>(false);
 
@@ -209,11 +216,10 @@ const RegistrationConfigureSecurityKey: React.FC<RegistrationComponentsProps> = 
     const [registerConfigureSecurityKey] = useMutation(REGISTER_CONFIGURE_SECURITY_KEY, {
         onCompleted(data) {
             const response: UserRegistrationStateResponse = data.registerConfigureSecurityKey as UserRegistrationStateResponse;
-            onUpdateEnd(true, response);
+            onUpdateEnd(response, null);
         },
         onError(error) {
-            onUpdateEnd(false, null);
-            setErrorMessage(error.message);            
+            onUpdateEnd(null, error.message);            
         }
     })
 
@@ -307,13 +313,13 @@ const RegistrationConfigureSecurityKey: React.FC<RegistrationComponentsProps> = 
             <Grid2 size={12} container spacing={1}>
                 <Grid2 marginBottom={"8px"} size={12}>
                     {initialUserRegistrationState.registrationState === RegistrationState.ConfigureSecurityKeyOptional &&
-                        <div style={{ marginBottom: "16px" }}>
+                        <div style={{ marginBottom: "16px", fontWeight: "bold", fontSize: "1.0em" }}>
                             Do you want to configure a security key? This is an optional step and requires a hardware device
                             such as a YubiKey or Google's Titan Security Key
                         </div>
                     }
                     {initialUserRegistrationState.registrationState === RegistrationState.ConfigureSecurityKeyRequired &&
-                        <div style={{ marginBottom: "16px" }}>
+                        <div style={{ marginBottom: "16px", fontWeight: "bold", fontSize: "1.0em" }}>
                             You will need to configure a security key to continue. This requires a hardware device
                             such as a YubiKey or Google's Titan Security Key
                         </div>

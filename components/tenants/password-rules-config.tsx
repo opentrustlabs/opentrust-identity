@@ -48,7 +48,6 @@ const PasswordRulesConfiguration: React.FC<PasswordRulesConfigurationProps> = ({
                 initInput.passwordHashingAlgorithm = config.passwordHashingAlgorithm;
                 initInput.passwordMaxLength = config.passwordMaxLength;
                 initInput.passwordMinLength = config.passwordMinLength;
-                initInput.passwordRotationPeriodDays = config.passwordRotationPeriodDays;
                 initInput.requireLowerCase = config.requireLowerCase;
                 initInput.requireMfa = config.requireMfa;
                 initInput.requireNumbers = config.requireNumbers;
@@ -56,6 +55,7 @@ const PasswordRulesConfiguration: React.FC<PasswordRulesConfigurationProps> = ({
                 initInput.requireUpperCase = config.requireUpperCase;
                 initInput.specialCharactersAllowed = config.specialCharactersAllowed;
                 initInput.passwordHistoryPeriod = config.passwordHistoryPeriod;
+                initInput.passwordRotationPeriodDays = config.passwordRotationPeriodDays;
             }
             setPasswordConfigInput(initInput);
             setRevertToInput(initInput)
@@ -125,7 +125,12 @@ const PasswordRulesConfiguration: React.FC<PasswordRulesConfigurationProps> = ({
                         <TextField name="passwordHistoryPeriod" id="passwordHistoryPeriod"
                             type="number"
                             value={passwordConfigInput.passwordHistoryPeriod && passwordConfigInput.passwordHistoryPeriod > 0 ? passwordConfigInput.passwordHistoryPeriod : ""}
-                            onChange={(evt) => { passwordConfigInput.passwordHistoryPeriod = parseInt(evt.target.value || "0"); setPasswordConfigInput({ ...passwordConfigInput }); setMarkDirty(true); }}
+                            onChange={(evt) => { 
+                                const period = parseInt(evt.target.value || "0");
+                                passwordConfigInput.passwordHistoryPeriod = period <= 0 ? null : period;
+                                setPasswordConfigInput({ ...passwordConfigInput }); 
+                                setMarkDirty(true); 
+                            }}
                             fullWidth={true} size="small"
                         />
                     </Grid2>
@@ -134,7 +139,12 @@ const PasswordRulesConfiguration: React.FC<PasswordRulesConfigurationProps> = ({
                         <TextField name="passwordRotationPeriodDays" id="passwordRotationPeriodDays"
                             type="number"
                             value={passwordConfigInput.passwordRotationPeriodDays && passwordConfigInput.passwordRotationPeriodDays > 0 ? passwordConfigInput.passwordRotationPeriodDays : ""}
-                            onChange={(evt) => { passwordConfigInput.passwordRotationPeriodDays = parseInt(evt.target.value || "0"); setPasswordConfigInput({ ...passwordConfigInput }); setMarkDirty(true); }}
+                            onChange={(evt) => { 
+                                const rotationPeriod = parseInt(evt.target.value || "0"); 
+                                passwordConfigInput.passwordRotationPeriodDays = rotationPeriod <= 0 ? null : rotationPeriod;
+                                setPasswordConfigInput({ ...passwordConfigInput }); 
+                                setMarkDirty(true); 
+                            }}
                             fullWidth={true} size="small"
                         />
                     </Grid2>
