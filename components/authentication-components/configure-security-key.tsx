@@ -32,11 +32,13 @@ const AuthentiationConfigureSecurityKey: React.FC<AuthenticationComponentsProps>
         },
         onCompleted(data) {
             onUpdateEnd(false, null);
+            setShowMutationBackdrop(false);
             const challengeResponse: Fido2RegistrationChallengeResponse = data.createFido2RegistrationChallenge;
             createKeyRegistration(challengeResponse);
         },
         onError(error) {
             onUpdateEnd(false, null);
+            setShowMutationBackdrop(false);
             setErrorMessage(error.message)
         },
     });
@@ -45,13 +47,12 @@ const AuthentiationConfigureSecurityKey: React.FC<AuthenticationComponentsProps>
         onCompleted(data) {
             const response: UserAuthenticationStateResponse = data.authenticateRegisterSecurityKey as UserAuthenticationStateResponse;
             onUpdateEnd(true, response);
-
         },
         onError(error){
             onUpdateEnd(false, null);
             setErrorMessage(error.message);
         }
-    })
+    });
 
     
     const createKeyRegistration = async (challengeResponse: Fido2RegistrationChallengeResponse) => {
@@ -90,7 +91,6 @@ const AuthentiationConfigureSecurityKey: React.FC<AuthenticationComponentsProps>
                         }
                     }
                 });
-                console.log(attResp);
 
                 const fido2KeyRegistrationInput: Fido2KeyRegistrationInput = {
                     authenticationAttachment: attResp.authenticatorAttachment || "",
@@ -117,6 +117,7 @@ const AuthentiationConfigureSecurityKey: React.FC<AuthenticationComponentsProps>
                 });
             }
             catch(err){
+                console.log("in catch block");
                 console.log(err);
             }
         }
