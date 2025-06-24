@@ -10,15 +10,12 @@ import AuthDao from "../dao/auth-dao";
 import FederatedOIDCProviderDao from "../dao/federated-oidc-provider-dao";
 import JwtServiceUtils from "./jwt-service-utils";
 import IdentityService from "./identity-service";
-import { error } from "console";
 
 const jwtServiceUtils: JwtServiceUtils = new JwtServiceUtils();
 const identityDao: IdentityDao = DaoFactory.getInstance().getIdentityDao();
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
 const authDao: AuthDao = DaoFactory.getInstance().getAuthDao();
 const federatedOIDCProviderDao: FederatedOIDCProviderDao = DaoFactory.getInstance().getFederatedOIDCProvicerDao();
-
-
 
 class AuthenticateUserService extends IdentityService {
 
@@ -126,11 +123,9 @@ class AuthenticateUserService extends IdentityService {
         if(federatedOidcProvider !== null){
             response.userAuthenticationState.authenticationState = AuthenticationState.AuthWithFederatedOidc;
             const {hasError, errorMessage, authorizationEndpoint} = await this.createFederatedOIDCRequestProperties(email.toLowerCase(), user ? user.userId : null, federatedOidcProvider, tenant.tenantId);
-            console.log("checkpoint 9.23");
             if(hasError){
                 throw new GraphQLError(errorMessage);
             }
-            console.log("checkpoint 9.24");            
             response.uri = authorizationEndpoint;
         }
         // 2.   There is no provider, so we either need to register the user if they do not exist, or
@@ -219,9 +214,7 @@ class AuthenticateUserService extends IdentityService {
 
     protected async authenticatePortalUserNameHandler(email: string, tenantId: string | null): Promise<UserAuthenticationStateResponse> {
         const response: UserAuthenticationStateResponse = this.initUserAuthenticationStateResponse("", tenantId || "", null);
-        
-        console.log("checkpoint 1");
-        
+                
         const domain: string = getDomainFromEmail(email);
         const tenant: Tenant | null = tenantId ? await tenantDao.getTenantById(tenantId) : null;
         const federatedOidcProvider: FederatedOidcProvider | null = await federatedOIDCProviderDao.getFederatedOidcProviderByDomain(domain);
@@ -236,8 +229,6 @@ class AuthenticateUserService extends IdentityService {
             response.authenticationError.errorCode = AuthenticationErrorTypes.ErrorNoManagementDomain;
             return response;
         }
-        console.log("checkpoint 2");
-
         const d = managementDomains.find(
             (v: TenantManagementDomainRel) => v.domain === domain
         );
@@ -245,12 +236,10 @@ class AuthenticateUserService extends IdentityService {
             response.authenticationError.errorCode = AuthenticationErrorTypes.ErrorNoManagementDomain;
             return response;
         }
-        console.log("checkpoint 2.1");
         
         // Obtain the basic information for deciding on error conditions or the next steps
         const user: User | null = await identityDao.getUserBy("email", email);
 
-        console.log("checkpoint 3");
         const tenants: Array<Tenant> = tenant ? 
                                         await tenantDao.getTenants([tenant.tenantId]) :
                                         await tenantDao.getTenants(managementDomains.map( (d: TenantManagementDomainRel) => d.tenantId));
@@ -263,14 +252,12 @@ class AuthenticateUserService extends IdentityService {
             response.authenticationError.errorCode = AuthenticationErrorTypes.ErrorNoMatchingUserAndNoTenantSelfRegistration;
             return response;
         }
-        console.log("checkpoint 4");
-
+        
         // 4.   Error condition #4. The user is disabled, marked for delete, or locked
         if(user && (user.enabled === false || user.locked === true || user.markForDelete === true)){
             response.authenticationError.errorCode = "ERROR_USER_ACCOUNT_STATUS_NOT_VALID_FOR_AUTHENTICATION";
             return response;
         }
-        console.log("checkpoint 4.1");
 
         // Find all of the providers attached to any of the tenants
         const tenantsThatAreAttachedToProviders = tenants.filter(
@@ -281,7 +268,6 @@ class AuthenticateUserService extends IdentityService {
                 return rel !== undefined;
             }
         );
-        console.log("checkpoint 5");
 
         // 3.   Error condition #3: No user, there IS a federated IdP, but the IdP is not attached
         //      to any of the tenants that the domain can manage
@@ -289,7 +275,6 @@ class AuthenticateUserService extends IdentityService {
             response.authenticationError.errorCode = AuthenticationErrorTypes.ErrorNoMatchingFederatedProviderForTenant;
             return response;
         }
-        console.log("checkpoint 6");
 
         const tenantsThatAllowPasswordLogin: Array<Tenant> = tenants.filter(
             (t: Tenant) => t.federatedAuthenticationConstraint !== FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE
@@ -300,7 +285,6 @@ class AuthenticateUserService extends IdentityService {
             response.authenticationError.errorCode = AuthenticationErrorTypes.ErrorExclusiveTenantAndNoFederatedOidcProvider;
             return response;
         }
-        console.log("checkpoint 7");
 
         //  5.   Error condition #5: User exists, there is an IdP for the user, but the IdP is not attached
         //       to any tenant that has the user's domain for management
@@ -309,7 +293,6 @@ class AuthenticateUserService extends IdentityService {
             return response;
         }
         
-        console.log("checkpoint 8");
 
         // SUCCESS SCENARIOS 
         // 1.   The user can select the tenant and register. In this scenario, there is no
@@ -331,13 +314,12 @@ class AuthenticateUserService extends IdentityService {
             }
             return response;
         }
-        console.log("checkpoint 9");
                 
         // 2.   The user can select the tenant by which they want to do SSO and thereby "autoregister"
         //      or just "autoregister" if there is exactly one tenant
         if(federatedOidcProvider !== null && tenantsThatAreAttachedToProviders.length > 0){            
             // Otherwise, set the tenant information and then decide what the next steps are.
-            console.log("checkpoint 9.1");
+            
             response.availableTenants = [];
                 tenantsThatAreAttachedToProviders.forEach(
                 (t: Tenant) => response.availableTenants?.push(
@@ -346,27 +328,22 @@ class AuthenticateUserService extends IdentityService {
                         tenantName: t.tenantName
                     }                    
                 ));
-                console.log("checkpoint 9.2");
             if(tenantsThatAreAttachedToProviders.length === 1){
                 response.userAuthenticationState.authenticationState = AuthenticationState.AuthWithFederatedOidc;
-                console.log("checkpoint 9.22");
+                
                 const {hasError, errorMessage, authorizationEndpoint} = await this.createFederatedOIDCRequestProperties(email, user ? user.userId : null, federatedOidcProvider, tenantsThatAreAttachedToProviders[0].tenantId);
-                console.log("checkpoint 9.23");
                 if(hasError){
                     throw new GraphQLError(errorMessage);
                 }
-                console.log("checkpoint 9.24");            
                 response.uri = authorizationEndpoint;
                 return response;
             }            
             else {
                 response.userAuthenticationState.authenticationState = AuthenticationState.SelectTenant;                
             }
-            console.log("checkpoint 9.4");
             return response;            
         }
-        console.log("checkpoint 10");
-
+        
         // 3.   The user can select which tenant to log into with username/password (plus
         //      one or more MFA types). In this case, if the tenant list contains exactly 1
         //      tenant, then we need to create the authentication state values in the database
@@ -421,7 +398,7 @@ class AuthenticateUserService extends IdentityService {
                     stateOrder.push(AuthenticationState.ValidateSecurityKey);
                 }
                 // Finally, once all the user verification steps have been completed, do we need
-                // to rotate the password before we send the user back to the 3rd party app?
+                // to rotate the password before we send the user back to the 3rd party app?                
                 if(passwordConfig && this.requirePasswordRotation(userCredential, passwordConfig)){
                     stateOrder.push(AuthenticationState.RotatePassword);
                 }
@@ -453,8 +430,6 @@ class AuthenticateUserService extends IdentityService {
             
             return response;
         }
-
-        console.log("checkpoint 11");
         
         response.authenticationError.errorCode = AuthenticationErrorTypes.ErrorConditionsForAuthenticationNotMet;
         return response;
@@ -609,13 +584,34 @@ class AuthenticateUserService extends IdentityService {
             return response;
         }
 
-        // Need to validate the password and find the hashing algorithm for the new password
+        // Need to validate the password format and find the hashing algorithm for the new password
         const tenantPasswordConfig: TenantPasswordConfig = await this.determineTenantPasswordConfig(userId, arrUserAuthenticationStates[0].tenantId);
         const isValidPassword: boolean = await this.checkPassword(newPassword, tenantPasswordConfig);
         if(!isValidPassword){
             response.authenticationError.errorCode = "ERROR_PASSWORD_DOES_NOT_MEET_REQUIRED_FORMAT";
             return response;
         }
+        // Need to validate the password has not been used within the last N password changes,
+        // where N = the password configuration history period. 
+        const historyPeriod: number | null = tenantPasswordConfig.passwordHistoryPeriod || null;        
+        if(historyPeriod){
+            const maxIndex: number = historyPeriod < arrUserCredentials.length ? historyPeriod : arrUserCredentials.length;
+            let passwordHasBeenUsed: boolean = false;
+            // If this password is valid based on ANY of the previously used passwords, then error.
+            for(let i = 0; i < maxIndex; i++){
+                const b: boolean = this.validateUserCredentials(arrUserCredentials[i], newPassword);
+                if(b){
+                    passwordHasBeenUsed = true;
+                    break;
+                }
+            }
+            if(passwordHasBeenUsed){
+                response.userAuthenticationState.authenticationState = AuthenticationState.Error;
+                response.authenticationError.errorCode = "ERROR_PASSWORD_HAS_BEEN_PREVIOUSLY_USED_WITHIN_THE_PASSWORD_HISTORY_PERIOD";
+                return response;
+            }
+        }
+
         const cred: UserCredential = this.generateUserCredential(userId, newPassword, tenantPasswordConfig.passwordHashingAlgorithm);
         await identityDao.addUserCredential(cred);
 
@@ -637,6 +633,7 @@ class AuthenticateUserService extends IdentityService {
         // 1.   Primary tenant
         // 2.   Secondary tenant if there is exactly one user-to-tenant relationshipt
         // 3.   Default hashing algorithm from the object DEFAULT_TENANT_PASSWORD_CONFIGURATION
+        
         let tenantPasswordConfig: TenantPasswordConfig = DEFAULT_TENANT_PASSWORD_CONFIGURATION        
         const userTenantRels = await identityDao.getUserTenantRelsByUserId(userId);
         if(userTenantRels && userTenantRels.length > 0){
@@ -690,6 +687,7 @@ class AuthenticateUserService extends IdentityService {
                 }
             }
         } 
+        
         return tenantPasswordConfig; 
     }
 
@@ -1026,10 +1024,16 @@ class AuthenticateUserService extends IdentityService {
     protected requirePasswordRotation(userCredential: UserCredential, tenantPasswordConfig: TenantPasswordConfig): boolean {
         let bRetVal = false;
         if(tenantPasswordConfig.passwordRotationPeriodDays){
-            const t: Date = new Date(userCredential.dateCreated);
+            /*
+                in milliseconds, we want the distance between now and the time that the user last created a password.
+                if this exceeds the number of milliseconds for the password rotation period, then return true.
+            */
+            const datePasswordLastChanged: Date = new Date(userCredential.dateCreated);
             const now: number = Date.now();
-            const timeForRotation = now + ( tenantPasswordConfig.passwordRotationPeriodDays * 24 * 60 * 60 * 1000);
-            if(t.getTime() > timeForRotation){
+            const timeDiffSinceLastPasswordChangeInMs: number = now - datePasswordLastChanged.getTime();
+            const timeDiffForRotationInMs = tenantPasswordConfig.passwordRotationPeriodDays * 24 * 60 * 60 * 1000;
+            
+            if(timeDiffSinceLastPasswordChangeInMs > timeDiffForRotationInMs){
                 bRetVal = true;
             }
         }

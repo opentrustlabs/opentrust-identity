@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { AuthenticationComponentsProps } from "./portal-login";
+import { AuthenticationComponentsProps } from "./login";
 import { RegistrationComponentsProps } from "./register";
 import { useMutation } from "@apollo/client";
 import { AUTHENTICATE_VALIDATE_SECURITY_KEY, CREATE_FIDO2_AUTHENTICATION_CHALLENGE_MUTATION, REGISTER_VALIDATE_SECURITY_KEY } from "@/graphql/mutations/oidc-mutations";
@@ -9,7 +9,7 @@ import Alert from "@mui/material/Alert";
 import Stack from "@mui/material/Stack";
 import Button from "@mui/material/Button";
 import { Fido2AuthenticationChallengeResponse, Fido2KeyAuthenticationInput } from "@/graphql/generated/graphql-types";
-import { RegistrationResponseJSON, startRegistration, startAuthentication, PublicKeyCredentialRequestOptionsJSON, AuthenticatorTransport, AuthenticationResponseJSON } from "@simplewebauthn/browser";
+import { startAuthentication, PublicKeyCredentialRequestOptionsJSON, AuthenticatorTransport, AuthenticationResponseJSON } from "@simplewebauthn/browser";
 import Backdrop from "@mui/material/Backdrop";
 import Typography from "@mui/material/Typography";
 
@@ -122,7 +122,7 @@ const AuthentiationValidateSecurityKey: React.FC<AuthenticationComponentsProps> 
             }
             <Grid2 size={12} container spacing={1}>
                 <Grid2 marginBottom={"8px"} size={12}>
-                    <div style={{marginBottom: "16px"}}>Validate your security key</div>                    
+                    <div style={{marginBottom: "16px", fontWeight: "bold", fontSize: "1.0em"}}>Validate your security key</div>                    
                 </Grid2>
             </Grid2>
             <Stack 
@@ -187,11 +187,10 @@ const RegistrationValidateSecurityKey: React.FC<RegistrationComponentsProps> = (
 
     const [registerValidateSecurityKey] = useMutation(REGISTER_VALIDATE_SECURITY_KEY, {
         onCompleted(data) {
-            onUpdateEnd(true, data.registerValidateSecurityKey);            
+            onUpdateEnd(data.registerValidateSecurityKey, null);
         },
         onError(error) {
-            onUpdateEnd(false, null);
-            setErrorMessage(error.message);
+            onUpdateEnd(null, error.message);            
         }
     });
 
@@ -265,7 +264,7 @@ const RegistrationValidateSecurityKey: React.FC<RegistrationComponentsProps> = (
             }
             <Grid2 size={12} container spacing={1}>
                 <Grid2 marginBottom={"8px"} size={12}>
-                    <div style={{marginBottom: "16px"}}>Validate your security key</div>                    
+                    <div style={{marginBottom: "16px", fontWeight: "bold", fontSize: "1.0em"}}>Validate your security key</div>                    
                 </Grid2>
             </Grid2>
             <Stack 

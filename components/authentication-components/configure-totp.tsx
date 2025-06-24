@@ -1,15 +1,18 @@
 "use client";
 import React from "react";
 import { QRCodeSVG } from 'qrcode.react';
-import { AuthenticationComponentsProps } from "./portal-login";
+import { AuthenticationComponentsProps } from "./login";
 import { RegistrationComponentsProps } from "./register";
 import { useMutation } from "@apollo/client";
 import { AUTHENTICATE_CONFIGURE_TOTP, REGISTER_CONFIGURE_TOTP } from "@/graphql/mutations/oidc-mutations";
 import Grid2 from "@mui/material/Grid2";
-import Alert from "@mui/material/Alert";
 import Stack from "@mui/material/Stack";
 import Button from "@mui/material/Button";
 import { AuthenticationState, RegistrationState, UserAuthenticationStateResponse, UserRegistrationStateResponse } from "@/graphql/generated/graphql-types";
+import Backdrop from "@mui/material/Backdrop";
+import { CircularProgress } from "@mui/material";
+import WarningOutlinedIcon from '@mui/icons-material/WarningOutlined';
+import PriorityHighOutlinedIcon from '@mui/icons-material/PriorityHighOutlined';
 
 
 const AuthentiationConfigureTotp: React.FC<AuthenticationComponentsProps> = ({
@@ -21,17 +24,17 @@ const AuthentiationConfigureTotp: React.FC<AuthenticationComponentsProps> = ({
 
 
     // STATE VARIABLES
-    const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
+    const [showMutationBackdrop, setShowMutationBackdrop] = React.useState<boolean>(false);
     const [configurationPage, setConfigurationPage] = React.useState<number>(1);
     const [nextUserAuthenticationStateResponse, setNextUserAuthenticationStateResponse] = React.useState<UserAuthenticationStateResponse>();
 
     // GRAPHQL FUNCTIONS
     const [authenticateConfigureTOTP] = useMutation(AUTHENTICATE_CONFIGURE_TOTP, {
         onCompleted(data) {
+            setShowMutationBackdrop(false);
             const response: UserAuthenticationStateResponse = data.authenticateConfigureTOTP as UserAuthenticationStateResponse;
             if(response.userAuthenticationState.authenticationState === AuthenticationState.Error){
-                onUpdateEnd(false, null);
-                setErrorMessage(response.authenticationError.errorCode);
+                onUpdateEnd(response, null);
             }
             else{
                 setNextUserAuthenticationStateResponse(response);
@@ -39,34 +42,23 @@ const AuthentiationConfigureTotp: React.FC<AuthenticationComponentsProps> = ({
             }            
         },
         onError(error) {
-            onUpdateEnd(false, null);
-            setErrorMessage(error.message);
+            setShowMutationBackdrop(false);
+            onUpdateEnd(null, error.message);
         },
     })
 
 
     return (
         <React.Fragment>
-            {errorMessage !== null &&
-                <>
-                    <Grid2 size={{ xs: 12 }} textAlign={"center"}>
-                        <Stack
-                            direction={"row"}
-                            justifyItems={"center"}
-                            alignItems={"center"}
-                            sx={{ width: "100%" }}
-                        >
-                            <Alert onClose={() => setErrorMessage(null)} sx={{ width: "100%" }} severity="error">{errorMessage}</Alert>
-                        </Stack>
-                    </Grid2>
-                </>
-            }
             {configurationPage === 1 &&
                 <React.Fragment>
-                    <Grid2 size={12} container spacing={1}>
-                        <Grid2 marginBottom={"8px"} size={12}>
-                            <div style={{ marginBottom: "16px" }}>
-                                For access you will need to configure a one-time passcode (OTP) using
+                    <Grid2 size={12} marginBottom={"8px"}  container spacing={1}>
+                        <Grid2 size={1}>
+                            <WarningOutlinedIcon sx={{height: "1.5em", width: "1.5em"}} color="warning" />
+                        </Grid2>
+                        <Grid2 size={11}>
+                            <div style={{ marginBottom: "16px", fontWeight: "bold", fontSize: "0.95em" }}>
+                                For access to this tenant you will need to configure a one-time passcode (OTP) using
                                 an authenticator app (such as Google Authenticator or Microsoft Authenticator).
                             </div>
                         </Grid2>
@@ -78,7 +70,7 @@ const AuthentiationConfigureTotp: React.FC<AuthenticationComponentsProps> = ({
                     >                        
                         <Button
                             onClick={() => {
-                                onUpdateStart();
+                                setShowMutationBackdrop(true);
                                 authenticateConfigureTOTP({
                                     variables: {
                                         userId: initialUserAuthenticationState.userId,
@@ -101,11 +93,11 @@ const AuthentiationConfigureTotp: React.FC<AuthenticationComponentsProps> = ({
             {configurationPage === 2 &&
                 <React.Fragment>
                     <Grid2 container size={12} spacing={1}>
-                        <Grid2 marginBottom={"8px"} size={12}>
+                        <Grid2 marginBottom={"8px"} fontWeight={"bold"} fontSize={"1.0em"} size={12}>
                             Use the QR code or the secret value to configure OTP on your device. Once completed click "Next"
                         </Grid2>
                         <Grid2 size={12}>
-                            <div>
+                            <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
                                 {nextUserAuthenticationStateResponse && nextUserAuthenticationStateResponse.uri &&
                                     <QRCodeSVG
                                         value={nextUserAuthenticationStateResponse.uri}
@@ -131,7 +123,7 @@ const AuthentiationConfigureTotp: React.FC<AuthenticationComponentsProps> = ({
                         <Button
                             onClick={() => {
                                 if (nextUserAuthenticationStateResponse) {
-                                    onUpdateEnd(true, nextUserAuthenticationStateResponse);
+                                    onUpdateEnd(nextUserAuthenticationStateResponse, null);
                                 }
                             }}
                         >
@@ -145,7 +137,13 @@ const AuthentiationConfigureTotp: React.FC<AuthenticationComponentsProps> = ({
                     </Stack>
                 </React.Fragment>
             }
-
+            <Backdrop
+                sx={{ color: '#fff' }}
+                open={showMutationBackdrop}
+                onClick={() => setShowMutationBackdrop(false)}
+            >
+                <CircularProgress color="info" />
+            </Backdrop>
         </React.Fragment>
     )
 }
@@ -161,56 +159,55 @@ const RegistrationConfigureTotp: React.FC<RegistrationComponentsProps> = ({
 }) => {
 
     // STATE VARIABLES
-    const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
+    const [showMutationBackdrop, setShowMutationBackdrop] = React.useState<boolean>(false);
     const [nextUserRegistrationResponse, setNextUserRegistrationResponse] = React.useState<UserRegistrationStateResponse>();
     const [configurationPage, setConfigurationPage] = React.useState<number>(1);
 
     // GRAPHQL FUNCTIONS
     const [registerConfigureTOTP] = useMutation(REGISTER_CONFIGURE_TOTP, {
         onCompleted(data) {
+            setShowMutationBackdrop(false);
             const response: UserRegistrationStateResponse = data.registerConfigureTOTP as UserRegistrationStateResponse;
+            // If successful, we will need to validate that the user has actually configured it. In the meantime,
+            // this response will contain both the URI and the secret value so we need to show those to
+            // the user, who will then be able to configure their authenticator with either of those two values.
+            // Once completed, the user will click the "Next" button to go to the validation step.
             if (response.userRegistrationState.registrationState === RegistrationState.ValidateTotp) {
-                setNextUserRegistrationResponse(data.registerConfigureTOTP);
+                setNextUserRegistrationResponse(response);
                 setConfigurationPage(2);
             }
             else {
-                onUpdateEnd(true, response);
+                onUpdateEnd(response, null);
             }
         },
         onError(error) {
-            onUpdateEnd(false, null);
-            setErrorMessage(error.message);
+            setShowMutationBackdrop(false);
+            onUpdateEnd(null, error.message);
         },
     })
 
     return (
         <React.Fragment>
-            {errorMessage !== null &&
-                <>
-                    <Grid2 size={{ xs: 12 }} textAlign={"center"}>
-                        <Stack
-                            direction={"row"}
-                            justifyItems={"center"}
-                            alignItems={"center"}
-                            sx={{ width: "100%" }}
-                        >
-                            <Alert onClose={() => setErrorMessage(null)} sx={{ width: "100%" }} severity="error">{errorMessage}</Alert>
-                        </Stack>
-                    </Grid2>
-                </>
-            }
             {configurationPage === 1 &&
                 <React.Fragment>
                     <Grid2 size={12} container spacing={1}>
-                        <Grid2 marginBottom={"8px"} size={12}>
+                        <Grid2 size={1}>
+                            {initialUserRegistrationState.registrationState === RegistrationState.ConfigureTotpRequired &&
+                                <WarningOutlinedIcon sx={{height: "1.5em", width: "1.5em"}} color="warning" />
+                            }
                             {initialUserRegistrationState.registrationState === RegistrationState.ConfigureTotpOptional &&
-                                <div style={{ marginBottom: "16px" }}>
+                                <PriorityHighOutlinedIcon sx={{height: "1.5em", width: "1.5em"}} color="info" />
+                            }
+                        </Grid2>
+                        <Grid2 marginBottom={"8px"} size={11}>
+                            {initialUserRegistrationState.registrationState === RegistrationState.ConfigureTotpOptional &&
+                                <div style={{ marginBottom: "16px", fontWeight: "bold", fontSize: "1.0em" }}>
                                     Do you want to configure a one-time passcode (OTP)? It is not required, but is recommended. You
                                     will need an authenticator app (such as Google Authenticator or Microsoft Authenticator).
                                 </div>
                             }
-                            {initialUserRegistrationState.registrationState === RegistrationState.ConfigureTotpOptional &&
-                                <div style={{ marginBottom: "16px" }}>
+                            {initialUserRegistrationState.registrationState === RegistrationState.ConfigureTotpRequired &&
+                                <div style={{ marginBottom: "16px", fontWeight: "bold", fontSize: "1.0em" }}>
                                     You will need to configure a one-time passcode (OTP). This is required for access.
                                 </div>
                             }
@@ -240,7 +237,7 @@ const RegistrationConfigureTotp: React.FC<RegistrationComponentsProps> = ({
                         }
                         <Button
                             onClick={() => {
-                                onUpdateStart();
+                                setShowMutationBackdrop(true);
                                 registerConfigureTOTP({
                                     variables: {
                                         userId: initialUserRegistrationState.userId,
@@ -264,11 +261,11 @@ const RegistrationConfigureTotp: React.FC<RegistrationComponentsProps> = ({
             {configurationPage === 2 &&
                 <React.Fragment>
                     <Grid2 container size={12} spacing={1}>
-                        <Grid2 marginBottom={"8px"} size={12}>
+                        <Grid2 marginBottom={"8px"} fontWeight={"bold"} fontSize={"1.0em"} size={12}>
                             Use the QR code or the secret value to configure OTP on your device. Once completed click "Next"
                         </Grid2>
                         <Grid2 size={12}>
-                            <div>
+                            <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
                                 {nextUserRegistrationResponse && nextUserRegistrationResponse.uri &&
                                     <QRCodeSVG
                                         value={nextUserRegistrationResponse.uri}
@@ -294,7 +291,7 @@ const RegistrationConfigureTotp: React.FC<RegistrationComponentsProps> = ({
                         <Button
                             onClick={() => {
                                 if (nextUserRegistrationResponse) {
-                                    onUpdateEnd(true, nextUserRegistrationResponse);
+                                    onUpdateEnd(nextUserRegistrationResponse, null);
                                 }
                             }}
                         >
@@ -308,7 +305,13 @@ const RegistrationConfigureTotp: React.FC<RegistrationComponentsProps> = ({
                     </Stack>
                 </React.Fragment>
             }
-
+            <Backdrop
+                sx={{ color: '#fff' }}
+                open={showMutationBackdrop}
+                onClick={() => setShowMutationBackdrop(false)}
+            >
+                <CircularProgress color="info" />
+            </Backdrop>
         </React.Fragment>
     )
 }

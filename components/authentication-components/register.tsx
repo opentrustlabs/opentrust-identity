@@ -25,13 +25,14 @@ import { RegistrationConfigureTotp } from "./configure-totp";
 import { RegistrationValidateTotp } from "./validate-totp";
 import { RegistrationValidateSecurityKey } from "./validate-security-key";
 import { RegistrationConfigureSecurityKey } from "./configure-security-key";
+import PasswordRulesDisplay from "./password-rules-display";
 
 
 export interface RegistrationComponentsProps {
     initialUserRegistrationState: UserRegistrationState,    
     onRegistrationCancelled: () => void,
     onUpdateStart: () => void,
-    onUpdateEnd: (success: boolean, userRegistrationStateResponse: UserRegistrationStateResponse | null) => void
+    onUpdateEnd: (userRegistrationStateResponse: UserRegistrationStateResponse | null, errorMessage: string | null) => void
 }
 
 
@@ -49,7 +50,6 @@ const Register: React.FC = () => {
     const username = params?.get(QUERY_PARAM_USERNAME);
     const redirectUri = params?.get(QUERY_PARAM_REDIRECT_URI);
     
-    console.log("tenantId from query params is: " + tenantId);
     
     // PAGE STATE MANAGEMENT VARIABLES    
     const initInput: UserCreateInput = {
@@ -83,7 +83,6 @@ const Register: React.FC = () => {
     const [passwordConfig, setPasswordConfig] = React.useState<TenantPasswordConfig>(DEFAULT_TENANT_PASSWORD_CONFIGURATION);
     const [showPasswordRules, setShowPasswordRules] = React.useState<boolean>(false);
     const [showMutationBackdrop, setShowMutationBackdrop] = React.useState<boolean>(false);
-    const [showMutationSnackbar, setShowMutationSnackbar] = React.useState<boolean>(false);
     const [userRegistrationState, setUserRegistrationState] = React.useState<UserRegistrationState | null>(null);
 
     // HOOKS FROM NEXTJS OR MUI
@@ -115,7 +114,7 @@ const Register: React.FC = () => {
         onCompleted(data) {
             setShowMutationBackdrop(false);
             const userRegistrationStateResponse: UserRegistrationStateResponse = data.registerUser;
-            handleUserRegistrationStateResponse(userRegistrationStateResponse);            
+            handleUserRegistrationStateResponse(userRegistrationStateResponse, null);            
         },
         onError(error) {
             setShowMutationBackdrop(false);
@@ -127,7 +126,7 @@ const Register: React.FC = () => {
     const [cancelRegistration] = useMutation(CANCEL_REGISTRATION, {        
         onCompleted(data) {
             const userRegistrationStateResponse: UserRegistrationStateResponse = data.cancelRegistration;
-            handleUserRegistrationStateResponse(userRegistrationStateResponse);
+            handleUserRegistrationStateResponse(userRegistrationStateResponse, null);
         },
         onError(error) {
             setErrorMessage(error.message);
@@ -135,24 +134,50 @@ const Register: React.FC = () => {
     })
 
     // HANDLER FUNCTIONS
-    const handleUserRegistrationStateResponse = (response: UserRegistrationStateResponse) => {
-        if (response.userRegistrationState.registrationState === RegistrationState.Error) {
-            setErrorMessage(response.registrationError.errorCode || "ERROR");
+    const handleUserRegistrationStateResponse = (response: UserRegistrationStateResponse | null, errorMessage: string | null) => {
+        if(response === null){
+            if(errorMessage === null){
+                setErrorMessage("ERROR_RETRIEVING_RESPONSE_FROM_SERVER");
+            }
+            else{
+                setErrorMessage(errorMessage);
+            }
         }
-        else if (
-            response.userRegistrationState.registrationState === RegistrationState.RedirectBackToApplication ||
-            response.userRegistrationState.registrationState === RegistrationState.RedirectToIamPortal
-        ) {
-            if (!response.uri) {
-                setErrorMessage("ERROR_NO_REDIRECT_ENDPOINT_CONFIGURED");
+        else{
+            if (response.userRegistrationState.registrationState === RegistrationState.Error) {
+                setErrorMessage(response.registrationError.errorCode || "ERROR");
+            }
+            else if (
+                response.userRegistrationState.registrationState === RegistrationState.RedirectBackToApplication ||
+                response.userRegistrationState.registrationState === RegistrationState.RedirectToIamPortal
+            ) {
+                if (!response.uri) {
+                    setErrorMessage("ERROR_NO_REDIRECT_ENDPOINT_CONFIGURED");
+                }
+                else {
+                    router.push(response.uri);
+                }
             }
             else {
-                router.push(response.uri);
+                setUserRegistrationState(response.userRegistrationState);            
             }
         }
-        else {
-            setUserRegistrationState(response.userRegistrationState);            
-        }
+    }
+
+    const handleCancelRegistration = (userRegistrationState: UserRegistrationState) => {
+        console.log("registration cancelled");        
+        cancelRegistration({
+            variables: {
+                userId: userRegistrationState.userId,
+                registrationSessionToken: userRegistrationState.registrationSessionToken,
+                preAuthToken: userRegistrationState.preAuthToken
+            }
+        });
+        setUserInput(initInput);
+        setErrorMessage(null);
+        setRegistrationPage(1);
+        setPasswordConfig(DEFAULT_TENANT_PASSWORD_CONFIGURATION);
+        setUserRegistrationState(null);
     }
 
 
@@ -313,50 +338,10 @@ const Register: React.FC = () => {
                                                 </div>
                                             </Stack>
                                             <Stack spacing={1} direction={"column"}>
-                                                {showPasswordRules === true &&  
-                                                    <>
-                                                        <div style={{paddingLeft: "16px", textDecoration: "underline"}}>The following are required for all passwords</div>
-                                                        <ul  style={{paddingLeft: "32px", marginBottom: "8px"}}>
-                                                            {passwordConfig.requireNumbers &&
-                                                                <li>Numbers</li>
-                                                            }
-                                                            {passwordConfig.requireSpecialCharacters &&
-                                                                <li>Special Characters: <pre style={{letterSpacing: "5px"}}>{passwordConfig.specialCharactersAllowed}</pre></li>
-                                                            }
-                                                            <li>Minimum Length: {passwordConfig.passwordMinLength}</li>
-                                                            <li>Maximum Length: {passwordConfig.passwordMaxLength}</li>
-                                                            {passwordConfig.maxRepeatingCharacterLength &&
-                                                                <li>Maximum repeating character length: {passwordConfig.maxRepeatingCharacterLength}</li>
-                                                            }
-                                                            <li>Leading and trailing spaces are not allowed</li>
-                                                        </ul>
-                                                        { (passwordConfig.requireLowerCase || passwordConfig.requireUpperCase) &&
-                                                            <>
-                                                                <div style={{paddingLeft: "16px", textDecoration: "underline"}}>The following are required for passwords with ASCII characters</div>  
-                                                                    <ul  style={{paddingLeft: "32px", marginBottom: "8px"}}>
-                                                                        {passwordConfig.requireLowerCase &&
-                                                                            <li>Lowercase</li>
-                                                                        }
-                                                                        {passwordConfig.requireUpperCase &&
-                                                                            <li>Uppercase</li>
-                                                                        }
-                                                                </ul>
-                                                            </>
-                                                        }
-                                                        {!passwordConfig.requireSpecialCharacters &&
-                                                            <>
-                                                                {passwordConfig.specialCharactersAllowed &&
-                                                                    <>
-                                                                        <div style={{paddingLeft: "16px", textDecoration: "underline"}}>The following special characters are allowed:</div>
-                                                                        <div style={{paddingLeft: "16px", marginBottom: "16px"}}>
-                                                                            <pre style={{letterSpacing: "5px"}}>{passwordConfig.specialCharactersAllowed}</pre>
-                                                                        </div>
-                                                                    </>
-                                                                }
-
-                                                            </>
-                                                        }
-                                                    </>                                          
+                                                {showPasswordRules === true &&
+                                                    <PasswordRulesDisplay 
+                                                        passwordConfig={passwordConfig}
+                                                    />
                                                 }
                                             </Stack>
                                             <TextField name="password" id="password"
@@ -579,6 +564,7 @@ const Register: React.FC = () => {
                                     >
                                         <Button
                                             onClick={() => {
+                                                setErrorMessage(null);
                                                 setShowMutationBackdrop(true);                                            
                                                 registerUser({
                                                     variables: {
@@ -620,24 +606,15 @@ const Register: React.FC = () => {
                                 <ValidateEmailOnRegistration 
                                     initialUserRegistrationState={userRegistrationState}
                                     onRegistrationCancelled={() => {
-                                        console.log("registration cancelled");                                        
-                                        cancelRegistration({
-                                            variables: {
-                                                userId: userRegistrationState.userId,
-                                                registrationSessionToken: userRegistrationState.registrationSessionToken,
-                                                preAuthToken: userRegistrationState.preAuthToken
-                                            }
-                                        });
+                                        handleCancelRegistration(userRegistrationState);
                                     }} 
-                                    onUpdateStart={() => setShowMutationBackdrop(true)} 
-                                    onUpdateEnd={(success: boolean, userRegistrationStateResponse: UserRegistrationStateResponse | null) => {
+                                    onUpdateStart={() => {
+                                        setErrorMessage(null);
+                                        setShowMutationBackdrop(true)
+                                    }}
+                                    onUpdateEnd={(userRegistrationStateResponse: UserRegistrationStateResponse | null, errorMessage: string | null) => {
                                         setShowMutationBackdrop(false);
-                                        if(success){
-                                            setShowMutationSnackbar(true);
-                                        }
-                                        if(userRegistrationStateResponse){
-                                            setUserRegistrationState(userRegistrationStateResponse.userRegistrationState);
-                                        }
+                                        handleUserRegistrationStateResponse(userRegistrationStateResponse, errorMessage);
                                     }}                               
                                 />
                                 
@@ -650,50 +627,32 @@ const Register: React.FC = () => {
                                 <RegistrationConfigureTotp
                                     initialUserRegistrationState={userRegistrationState}
                                     onRegistrationCancelled={() => {
-                                        console.log("registration cancelled")
-                                        cancelRegistration({
-                                            variables: {
-                                                userId: userRegistrationState.userId,
-                                                registrationSessionToken: userRegistrationState.registrationSessionToken,
-                                                preAuthToken: userRegistrationState.preAuthToken
-                                            }
-                                        });
+                                        handleCancelRegistration(userRegistrationState);
                                     }} 
-                                    onUpdateStart={() => setShowMutationBackdrop(true)} 
-                                    onUpdateEnd={(success: boolean, userRegistrationStateResponse: UserRegistrationStateResponse | null) => {
-                                        setShowMutationBackdrop(false);
-                                        if(success){
-                                            setShowMutationSnackbar(true);
-                                        }
-                                        if(userRegistrationStateResponse){
-                                            setUserRegistrationState(userRegistrationStateResponse.userRegistrationState);
-                                        }
+                                    onUpdateStart={() => {
+                                        setErrorMessage(null);
+                                        setShowMutationBackdrop(true)
                                     }}
+                                    onUpdateEnd={(userRegistrationStateResponse: UserRegistrationStateResponse | null, errorMessage: string | null) => {
+                                        setShowMutationBackdrop(false);
+                                        handleUserRegistrationStateResponse(userRegistrationStateResponse, errorMessage);
+                                    }} 
                                 />
                             }
                             {userRegistrationState && userRegistrationState.registrationState === RegistrationState.ValidateTotp &&
                                 <RegistrationValidateTotp
                                     initialUserRegistrationState={userRegistrationState}
                                     onRegistrationCancelled={() => {
-                                        console.log("registration cancelled");
-                                        cancelRegistration({
-                                            variables: {
-                                                userId: userRegistrationState.userId,
-                                                registrationSessionToken: userRegistrationState.registrationSessionToken,
-                                                preAuthToken: userRegistrationState.preAuthToken
-                                            }
-                                        });
+                                        handleCancelRegistration(userRegistrationState);
                                     }} 
-                                    onUpdateStart={() => setShowMutationBackdrop(true)} 
-                                    onUpdateEnd={(success: boolean, userRegistrationStateResponse: UserRegistrationStateResponse | null) => {
-                                        setShowMutationBackdrop(false);
-                                        if(success){
-                                            setShowMutationSnackbar(true);
-                                        }
-                                        if(userRegistrationStateResponse){
-                                            setUserRegistrationState(userRegistrationStateResponse.userRegistrationState);
-                                        }
+                                    onUpdateStart={() => {
+                                        setErrorMessage(null);
+                                        setShowMutationBackdrop(true)
                                     }}
+                                    onUpdateEnd={(userRegistrationStateResponse: UserRegistrationStateResponse | null, errorMessage: string | null) => {
+                                        setShowMutationBackdrop(false);
+                                        handleUserRegistrationStateResponse(userRegistrationStateResponse, errorMessage);
+                                    }} 
                                 />                            
                             }
                             {userRegistrationState && 
@@ -704,50 +663,32 @@ const Register: React.FC = () => {
                                 <RegistrationConfigureSecurityKey
                                     initialUserRegistrationState={userRegistrationState}
                                     onRegistrationCancelled={() => {
-                                        console.log("registration cancelled")
-                                        cancelRegistration({
-                                            variables: {
-                                                userId: userRegistrationState.userId,
-                                                registrationSessionToken: userRegistrationState.registrationSessionToken,
-                                                preAuthToken: userRegistrationState.preAuthToken
-                                            }
-                                        });
+                                        handleCancelRegistration(userRegistrationState);
                                     }}
-                                    onUpdateStart={() => setShowMutationBackdrop(true)} 
-                                    onUpdateEnd={(success: boolean, userRegistrationStateResponse: UserRegistrationStateResponse | null) => {
+                                    onUpdateStart={() => {
+                                        setErrorMessage(null);
+                                        setShowMutationBackdrop(true)
+                                    }}
+                                    onUpdateEnd={(userRegistrationStateResponse: UserRegistrationStateResponse | null, errorMessage: string | null) => {
                                         setShowMutationBackdrop(false);
-                                        if(success){
-                                            setShowMutationSnackbar(true);
-                                        }
-                                        if(userRegistrationStateResponse){
-                                            setUserRegistrationState(userRegistrationStateResponse.userRegistrationState);
-                                        }
-                                    }}
+                                        handleUserRegistrationStateResponse(userRegistrationStateResponse, errorMessage);
+                                    }} 
                                 />
                             }
                             {userRegistrationState && userRegistrationState.registrationState === RegistrationState.ValidateSecurityKey &&
                                 <RegistrationValidateSecurityKey
                                     initialUserRegistrationState={userRegistrationState}
                                     onRegistrationCancelled={() => {
-                                        console.log("registration cancelled")
-                                        cancelRegistration({
-                                            variables: {
-                                                userId: userRegistrationState.userId,
-                                                registrationSessionToken: userRegistrationState.registrationSessionToken,
-                                                preAuthToken: userRegistrationState.preAuthToken
-                                            }
-                                        });
+                                        handleCancelRegistration(userRegistrationState);
                                     }} 
-                                    onUpdateStart={() => setShowMutationBackdrop(true)} 
-                                    onUpdateEnd={(success: boolean, userRegistrationStateResponse: UserRegistrationStateResponse | null) => {
-                                        setShowMutationBackdrop(false);
-                                        if(success){
-                                            setShowMutationSnackbar(true);
-                                        }
-                                        if(userRegistrationStateResponse){
-                                            setUserRegistrationState(userRegistrationStateResponse.userRegistrationState);
-                                        }
+                                    onUpdateStart={() => {
+                                        setErrorMessage(null);
+                                        setShowMutationBackdrop(true)
                                     }}
+                                    onUpdateEnd={(userRegistrationStateResponse: UserRegistrationStateResponse | null, errorMessage: string | null) => {
+                                        setShowMutationBackdrop(false);
+                                        handleUserRegistrationStateResponse(userRegistrationStateResponse, errorMessage);
+                                    }} 
                                 />
                             }
                             
@@ -763,18 +704,6 @@ const Register: React.FC = () => {
             >
                 <CircularProgress color="info" />
             </Backdrop>
-            <Snackbar
-                open={showMutationSnackbar}
-                autoHideDuration={4000}
-                onClose={() => setShowMutationSnackbar(false)}
-                anchorOrigin={{ horizontal: "center", vertical: "top" }}
-            >
-                <Alert sx={{ fontSize: "1em" }}
-                    onClose={() => setShowMutationSnackbar(false)}
-                >
-                    User Created
-                </Alert>
-            </Snackbar>
         </Suspense >
     )
 

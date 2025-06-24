@@ -438,7 +438,7 @@ export const TENANT_TYPES_DISPLAY = new Map<string, string>(
 export const DEFAULT_LOGIN_FAILURE_LOCK_THRESHOLD=8;
 export const DEFAULT_MAXIMUM_LOGIN_FAILURES=100;
 export const DEFAULT_LOGIN_PAUSE_TIME_MINUTES=30;
-export const DEFAULT_PASSWORD_HISTORY_PERIOD=20;
+export const DEFAULT_PASSWORD_HISTORY_PERIOD=8;
 export const LOGIN_FAILURE_POLICY_LOCK_USER_ACCOUNT="LOCK_USER_ACCOUNT";
 export const LOGIN_FAILURE_POLICY_PAUSE="PAUSE";
 // export const LOGIN_FAILURE_POLICY_PAUSE_THEN_LOCK="PAUSE_THEN_LOCK";
@@ -780,7 +780,9 @@ export const DEFAULT_TENANT_PASSWORD_CONFIGURATION: TenantPasswordConfig = {
     tenantId: "",
     mfaTypesRequired: "",
     specialCharactersAllowed: DEFAULT_PASSWORD_SPECIAL_CHARACTERS_ALLOWED,
-    maxRepeatingCharacterLength: 2
+    maxRepeatingCharacterLength: 2,
+    passwordHistoryPeriod: null,
+    passwordRotationPeriodDays: null
 }
 
 export const DEFAULT_LOGIN_FAILURE_POLICY: TenantLoginFailurePolicy = {

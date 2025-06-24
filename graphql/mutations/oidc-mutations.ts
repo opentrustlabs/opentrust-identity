@@ -645,6 +645,22 @@ export const USER_AUTHENTICATION_STATE_RESPONSE_FRAGMENT = gql(`
             tenantId
             tenantName
         }
+        passwordConfig {
+            tenantId
+            passwordMinLength
+            passwordMaxLength
+            passwordHashingAlgorithm
+            requireUpperCase
+            requireLowerCase
+            requireNumbers
+            requireSpecialCharacters
+            specialCharactersAllowed
+            requireMfa
+            mfaTypesRequired
+            maxRepeatingCharacterLength
+            passwordRotationPeriodDays
+            passwordHistoryPeriod
+        }
         uri
         totpSecret
         accessToken
@@ -674,8 +690,8 @@ export const AUTHENTICATE_USER = gql`
 `;
 
 export const AUTHENTICATE_ROTATE_PASSWORD = gql`
-    mutation authenticateRotatePassword($username: String!, $newPassword: String!, $authenticationSessionToken: String!, $preAuthToken: String){
-        authenticateRotatePassword(username: $username, newPassword: $newPassword, authenticationSessionToken: $authenticationSessionToken, preAuthToken: $preAuthToken) {
+    mutation authenticateRotatePassword($userId: String!, $newPassword: String!, $authenticationSessionToken: String!, $preAuthToken: String){
+        authenticateRotatePassword(userId: $userId, newPassword: $newPassword, authenticationSessionToken: $authenticationSessionToken, preAuthToken: $preAuthToken) {
             ...UserAuthenticationStateResponseFragment
         }
     }

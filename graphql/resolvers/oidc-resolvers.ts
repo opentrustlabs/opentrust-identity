@@ -663,7 +663,7 @@ const resolvers: Resolvers = {
                 passwordHistoryPeriod: passwordConfigInput.passwordHistoryPeriod,
                 passwordRotationPeriodDays: passwordConfigInput.passwordRotationPeriodDays,
                 specialCharactersAllowed: passwordConfigInput.specialCharactersAllowed
-            }
+            };
             await tenantService.assignPasswordConfigToTenant(tenantPasswordConfig);
             return tenantPasswordConfig;
         },
