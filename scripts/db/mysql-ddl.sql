@@ -365,6 +365,8 @@ create TABLE refresh_data (
     scope VARCHAR(128) NOT NULL,
     refreshtokenclienttype VARCHAR(128) NOT NULL,
     refreshcount INT,
+    codechallenge VARCHAR(256),
+    codechallengemethod VARCHAR(32),
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid),
     FOREIGN KEY (clientid) REFERENCES client(clientid),
     FOREIGN KEY (userid) REFERENCES user(userid)

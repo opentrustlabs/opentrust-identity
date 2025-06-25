@@ -658,7 +658,8 @@ type RefreshData {
     userId: String!
     redirecturi: String!
     refreshTokenClientType: String!
-    refreshtokenclienttypeid: String
+    codeChallenge: String
+    codeChallengeMethod: String
     refreshCount: Int!
     scope: String!
 }

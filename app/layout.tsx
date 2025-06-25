@@ -98,33 +98,29 @@ export default function RootLayout({
 
     return (
         <html lang="en">
-            <body className={`${geistSans.variable} ${geistMono.variable}`}>
-                <ApolloProvider client={client}>
-                    <ResponsiveContextProvider>                        
-                        <PageTitleContextProvider>
-                            {isAuthenticationLayoutPage &&
-                                <ClipboardCopyContextProvider>
-                                    <TenantContextProvider>
-                                        <AuthenticationLayout>{children}</AuthenticationLayout>
-                                    </TenantContextProvider>
-                                </ClipboardCopyContextProvider>
-                            }
-                            {!isAuthenticationLayoutPage &&
+            <body suppressHydrationWarning className={`${geistSans.variable} ${geistMono.variable}`}>                
+                <ResponsiveContextProvider>                        
+                    <PageTitleContextProvider>
+                        <ClipboardCopyContextProvider>
+                            <ApolloProvider client={client}>
                                 <AuthContextProvider>
-                                    <ClipboardCopyContextProvider>
-                                        <TenantContextProvider>
+                                    <TenantContextProvider>
+                                        {isAuthenticationLayoutPage &&                                         
+                                            <AuthenticationLayout>{children}</AuthenticationLayout>                                        
+                                        }
+                                        {!isAuthenticationLayoutPage &&                                        
                                             <ManagementTenantFilter>
                                                 <ThemeProvider theme={theme}>
                                                     <ManagementLayout>{children}</ManagementLayout>
                                                 </ThemeProvider>
-                                            </ManagementTenantFilter>
-                                        </TenantContextProvider>
-                                    </ClipboardCopyContextProvider>
+                                            </ManagementTenantFilter>                                                                            
+                                        }
+                                    </TenantContextProvider>
                                 </AuthContextProvider>
-                            }
-                        </PageTitleContextProvider>
-                    </ResponsiveContextProvider>
-                </ApolloProvider>
+                            </ApolloProvider>
+                        </ClipboardCopyContextProvider>
+                    </PageTitleContextProvider>
+                </ResponsiveContextProvider>                
             </body>
         </html>
     );

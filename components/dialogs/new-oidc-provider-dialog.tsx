@@ -30,13 +30,13 @@ const NewOIDCProviderDialog: React.FC<NewOIDCProviderDialogProps> = ({
         federatedOIDCProviderClientId: "",
         federatedOIDCProviderClientSecret: "",
         federatedOIDCProviderWellKnownUri: "",
-        refreshTokenAllowed: false,
+        refreshTokenAllowed: true,
         usePkce: false,
         federatedOIDCProviderType: FEDERATED_OIDC_PROVIDER_TYPE_ENTERPRISE,
         federatedoidcprovidertypeid: "",
         clientAuthType: OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_POST,
         clientauthtypeid: "",
-        scopes: [OIDC_OPENID_SCOPE, OIDC_PROFILE_SCOPE, OIDC_EMAIL_SCOPE],
+        scopes: [OIDC_OPENID_SCOPE, OIDC_PROFILE_SCOPE, OIDC_EMAIL_SCOPE, OIDC_OFFLINE_ACCESS_SCOPE],
         socialLoginProvider: ""
     }
 

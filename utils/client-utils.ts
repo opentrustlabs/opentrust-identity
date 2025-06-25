@@ -55,7 +55,7 @@ export function getAccessTokenFromLocalStorage(): string | null {
  * returns the number of seconds from when the token was issued
  * that it will expires
  */
-export function getAccessTokenExpiresIn(): number | null {
+export function getAccessTokenExpiresAtMs(): number | null {
     const t: string | null = localStorage.getItem(TOKEN_EXPIRIES_AT_MS_LOCAL_KEY);
     if(t){
         const exp: number = parseInt(t);

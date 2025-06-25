@@ -7,7 +7,7 @@ import { TENANT_META_DATA_QUERY } from "@/graphql/queries/oidc-queries";
 import { PortalUserProfile } from "@/graphql/generated/graphql-types";
 import { AuthContext } from "./auth-context";
 import { TenantMetaDataBean, TenantContext } from "./tenant-context";
-import { getAccessTokenExpiresIn } from "@/utils/client-utils";
+import { getAccessTokenExpiresAtMs } from "@/utils/client-utils";
 
 
 interface LayoutProps {
@@ -17,7 +17,6 @@ const ManagementTenantFilter: React.FC<LayoutProps> = ({
     children,
   }) => {
 
-    console.log("in tenant management filter");
     // CONTEXT OBJECTS
     const profile: PortalUserProfile | null = useContext(AuthContext);
     const tenantBean: TenantMetaDataBean  = useContext(TenantContext);
@@ -99,7 +98,7 @@ const ManagementTenantFilter: React.FC<LayoutProps> = ({
         }
     }
     // Is there a token and has it expired?
-    const tokenExpiresAtMs: number | null = getAccessTokenExpiresIn();
+    const tokenExpiresAtMs: number | null = getAccessTokenExpiresAtMs();
     if(!tokenExpiresAtMs || tokenExpiresAtMs < Date.now()){
         needsRedirect = true;
         redirectUri = `/authorize/login?${QUERY_PARAM_AUTHENTICATE_TO_PORTAL}=true`;
@@ -115,7 +114,7 @@ const ManagementTenantFilter: React.FC<LayoutProps> = ({
     const [isComplete, setIsComplete] = React.useState(false);
 
     // GRAPHQL QUERIES
-    const {data, loading, } = useQuery(TENANT_META_DATA_QUERY, {
+    const {data, loading } = useQuery(TENANT_META_DATA_QUERY, {
         variables: {
             tenantId: tenantIdFromPath
         },

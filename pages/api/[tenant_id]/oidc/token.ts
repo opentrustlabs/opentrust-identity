@@ -11,6 +11,8 @@ import { randomUUID } from 'crypto';
 import JwtService from '@/lib/service/jwt-service-utils';
 import { OIDCTokenResponse } from '@/lib/models/token-response';
 import { DaoFactory } from '@/lib/data-sources/dao-factory';
+import { validate } from 'graphql';
+import RefreshDataEntity from '@/lib/entities/refresh-data-entity';
 
 
 // TODO 
@@ -162,9 +164,9 @@ export default async function handler(
 
 async function handleAuthorizationCodeGrant(tokenData: TokenData, res: NextApiResponse) {
 
-    const d: AuthorizationCodeData | null = await authDao.getAuthorizationCodeData(tokenData.code || "");
+    const authorizationCodeData: AuthorizationCodeData | null = await authDao.getAuthorizationCodeData(tokenData.code || "");
 
-    if(!d){
+    if(!authorizationCodeData){
         const error: OIDCErrorResponseBody = {
             error: OIDC_TOKEN_ERROR_INVALID_GRANT,
             error_code: "0000717",
@@ -178,19 +180,19 @@ async function handleAuthorizationCodeGrant(tokenData: TokenData, res: NextApiRe
     // Delete the authorization code immediately so that it cannot be reused. No need to wait.
     authDao.deleteAuthorizationCodeData(tokenData.code || "");
 
-    if(d.tenantId !== tokenData.tenantId){
+    if(authorizationCodeData.tenantId !== tokenData.tenantId){
 
     }
-    if(d.clientId !== tokenData.clientId){
+    if(authorizationCodeData.clientId !== tokenData.clientId){
 
     }
-    if(d.redirectUri !== tokenData.redirectUri){
+    if(authorizationCodeData.redirectUri !== tokenData.redirectUri){
 
     }
-    if(d.expiresAtMs < Date.now()){
+    if(authorizationCodeData.expiresAtMs < Date.now()){
 
     }
-    if(d.scope !== tokenData.scope){
+    if(authorizationCodeData.scope !== tokenData.scope){
 
     }
 
@@ -204,30 +206,11 @@ async function handleAuthorizationCodeGrant(tokenData: TokenData, res: NextApiRe
     // extention for the auth and token endpoints. The client will have been
     // validated for the PKCE extension enablement in the authorization call
     // before getting to this point.
-    if(d.codeChallenge){
-        if(!tokenData.codeVerifier || "" === tokenData.codeVerifier){
-            const error: OIDCErrorResponseBody = {
-                error: OIDC_TOKEN_ERROR_INVALID_REQUEST,
-                error_code: "0000718",
-                error_description: "ERROR_TOKEN_REQUEST_FAILED_WITH_MISSING_CODE_VERIFIER",
-                error_uri: "",
-                timestamp: Date.now(),
-                trace_id: tokenData.traceId                
-            }
+    if(authorizationCodeData.codeChallenge){
+        const error: OIDCErrorResponseBody | null = validateCodeVerifier(authorizationCodeData.codeChallenge, tokenData);
+        if(error){
             return res.status(400).json(error);
-        }
-        const hashedVerifier = generateHash(tokenData.codeVerifier);
-        if(hashedVerifier !== d.codeChallenge){
-            const error: OIDCErrorResponseBody = {
-                error: OIDC_TOKEN_ERROR_INVALID_REQUEST,
-                error_code: "0000719",
-                error_description: "ERROR_TOKEN_REQUEST_FAILED_WITH_INVALID_CODE_VERIFIER",
-                error_uri: "",
-                timestamp: Date.now(),
-                trace_id: tokenData.traceId
-            }
-            return res.status(400).json(error);
-        }
+        }        
     }
     else{
         if(tokenData.clientAssertion === null && tokenData.clientSecret === null){
@@ -261,7 +244,7 @@ async function handleAuthorizationCodeGrant(tokenData: TokenData, res: NextApiRe
         }
     }
     
-    const oidcTokenResponse: OIDCTokenResponse | null = await jwtService.signUserJwt(d.userId, d.clientId, d.tenantId, d.scope);
+    const oidcTokenResponse: OIDCTokenResponse | null = await jwtService.signUserJwt(authorizationCodeData.userId, authorizationCodeData.clientId, authorizationCodeData.tenantId, authorizationCodeData.scope);
     
     if(!oidcTokenResponse){
         const error: OIDCErrorResponseBody = {
@@ -277,15 +260,16 @@ async function handleAuthorizationCodeGrant(tokenData: TokenData, res: NextApiRe
 
     if(oidcTokenResponse.refresh_token){
         const refreshData: RefreshData = {
-            clientId: d.clientId,
+            clientId: authorizationCodeData.clientId,
             refreshCount: 1,
             refreshToken: generateHash(oidcTokenResponse.refresh_token),
-            refreshTokenClientType: d.codeChallenge ? REFRESH_TOKEN_CLIENT_TYPE_PKCE : REFRESH_TOKEN_CLIENT_TYPE_SECURE_CLIENT,
-            tenantId: d.tenantId,
-            userId: d.userId,
-            scope: d.scope,            
-            redirecturi: d.redirectUri
-            
+            refreshTokenClientType: authorizationCodeData.codeChallenge ? REFRESH_TOKEN_CLIENT_TYPE_PKCE : REFRESH_TOKEN_CLIENT_TYPE_SECURE_CLIENT,
+            tenantId: authorizationCodeData.tenantId,
+            userId: authorizationCodeData.userId,
+            scope: authorizationCodeData.scope,
+            redirecturi: authorizationCodeData.redirectUri,
+            codeChallenge: authorizationCodeData.codeChallenge ? authorizationCodeData.codeChallenge : null,
+            codeChallengeMethod: authorizationCodeData.codeChallengeMethod ? authorizationCodeData.codeChallengeMethod : null
         }
         await authDao.saveRefreshData(refreshData);
     };
@@ -293,6 +277,45 @@ async function handleAuthorizationCodeGrant(tokenData: TokenData, res: NextApiRe
     return res.status(200).json(oidcTokenResponse);
     
 }
+
+function validateCodeVerifier(codeChallenge: string, tokenData: TokenData): OIDCErrorResponseBody | null {
+    
+    // Validate the code challenge if it exists or validate the
+    // client authentication using either client secret or signed jwt
+    // Issue the token response
+    //
+    // The presence of the code challenge indicates that the client
+    // cannot store a client_secret value securely and so uses the PKCE
+    // extention for the auth and token endpoints. The client will have been
+    // validated for the PKCE extension enablement in the authorization call
+    // before getting to this point.
+    
+    if(!tokenData.codeVerifier || "" === tokenData.codeVerifier){
+        const error: OIDCErrorResponseBody = {
+            error: OIDC_TOKEN_ERROR_INVALID_REQUEST,
+            error_code: "0000718",
+            error_description: "ERROR_TOKEN_REQUEST_FAILED_WITH_MISSING_CODE_VERIFIER",
+            error_uri: "",
+            timestamp: Date.now(),
+            trace_id: tokenData.traceId                
+        }
+        return error;
+    }
+    const hashedVerifier = generateHash(tokenData.codeVerifier, "sha256", "base64url");
+    if(hashedVerifier !== codeChallenge){
+        const error: OIDCErrorResponseBody = {
+            error: OIDC_TOKEN_ERROR_INVALID_REQUEST,
+            error_code: "0000719",
+            error_description: "ERROR_TOKEN_REQUEST_FAILED_WITH_INVALID_CODE_VERIFIER",
+            error_uri: "",
+            timestamp: Date.now(),
+            trace_id: tokenData.traceId
+        }
+        return error;
+    }
+    return null;
+}
+
 
 /**
  * 
@@ -408,6 +431,15 @@ async function handleRefreshTokenGrant(tokenData: TokenData, res: NextApiRespons
             return res.status(400).json(error);
         }
     }
+    // Otherwise validate the original code challenge against the verifier. For PKCE we always
+    // want to require the verifier, but it is a good idea to limit the number of refresh
+    // tokens issued.
+    else if(refreshTokenData.refreshTokenClientType === REFRESH_TOKEN_CLIENT_TYPE_PKCE){
+        const error: OIDCErrorResponseBody | null = validateCodeVerifier(tokenData.codeVerifier || "", tokenData);
+        if(error){
+            return res.status(400).json(error);
+        }
+    }
 
     // Finally, have we maxed out the number of refresh tokens that can be issued?
     if(client.maxRefreshTokenCount && refreshTokenData.refreshCount > client.maxRefreshTokenCount){
@@ -451,7 +483,9 @@ async function handleRefreshTokenGrant(tokenData: TokenData, res: NextApiRespons
             tenantId: refreshTokenData.tenantId,
             userId: refreshTokenData.userId,
             scope: refreshTokenData.scope,
-            redirecturi: ''
+            redirecturi: refreshTokenData.redirecturi,
+            codeChallenge: refreshTokenData.codeChallenge,
+            codeChallengeMethod: refreshTokenData.codeChallengeMethod
         }
         await authDao.saveRefreshData(newRefreshData);
     };
@@ -528,8 +562,7 @@ async function handleClientCredentialsGrant(tokenData: TokenData, res: NextApiRe
         }
         return res.status(400).json(error);
     }
-    // TODO
-    // Issue the JWT based on the client id
+    
     const oidcTokenResponse: OIDCTokenResponse | null = await jwtService.signClientJwt(client, tenant);
     if(!oidcTokenResponse){
         const error: OIDCErrorResponseBody = {

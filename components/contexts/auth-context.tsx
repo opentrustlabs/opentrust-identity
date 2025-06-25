@@ -3,15 +3,12 @@ import React, { Context, ReactNode } from "react";
 import { PortalUserProfile } from "@/graphql/generated/graphql-types";
 import { useQuery } from "@apollo/client";
 import { ME_QUERY } from "@/graphql/queries/oidc-queries";
-import { removeAccessTokenFromLocalStorage } from "@/utils/client-utils";
-
 
 export interface AuthContextProps {
     children: ReactNode
 }
 
 const DEFAULT_PROFILE = null;
-
 export const AuthContext: Context<PortalUserProfile | null> = React.createContext<PortalUserProfile | null>(DEFAULT_PROFILE);
 
 const AuthContextProvider: React.FC<AuthContextProps> = ({
@@ -19,11 +16,11 @@ const AuthContextProvider: React.FC<AuthContextProps> = ({
 }) => {
 
     const {data, error, loading, previousData} = useQuery(ME_QUERY, {          
-            pollInterval: 900000,
+            pollInterval: 20000,
             fetchPolicy: "no-cache",
             notifyOnNetworkStatusChange: true,
             nextFetchPolicy: "no-cache"
-        }        
+        }
     );
 
     if(loading && !previousData && !data) return <div></div>
