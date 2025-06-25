@@ -14,9 +14,9 @@ export const AuthContext: Context<PortalUserProfile | null> = React.createContex
 const AuthContextProvider: React.FC<AuthContextProps> = ({
     children
 }) => {
-
+    
     const {data, error, loading, previousData} = useQuery(ME_QUERY, {          
-            pollInterval: 20000,
+            pollInterval: 900000,
             fetchPolicy: "no-cache",
             notifyOnNetworkStatusChange: true,
             nextFetchPolicy: "no-cache"
@@ -39,6 +39,7 @@ const AuthContextProvider: React.FC<AuthContextProps> = ({
             value={DEFAULT_PROFILE}
         >{children}</AuthContext.Provider>
     )
+    
 
 }
 

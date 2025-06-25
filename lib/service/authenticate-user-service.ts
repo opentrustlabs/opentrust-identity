@@ -1000,7 +1000,7 @@ class AuthenticateUserService extends IdentityService {
                     response.userAuthenticationState.authenticationState = AuthenticationState.Error;
                 }
                 else{
-                    const accessToken: string | null = await jwtServiceUtils.signIAMPortalUserJwt(user, tenant, 60 * 60 * 12, TOKEN_TYPE_IAM_PORTAL_USER);
+                    const accessToken: string | null = await jwtServiceUtils.signIAMPortalUserJwt(user, tenant, this.getPortalAuthenTokenTTLSeconds(), TOKEN_TYPE_IAM_PORTAL_USER);
                     if(accessToken === null){
                         response.authenticationError.errorCode = "ERROR_GENERATING_ACCESS_TOKEN_AUTHENTICATION_COMPLETION";
                         response.userAuthenticationState.authenticationState = AuthenticationState.Error;
@@ -1009,7 +1009,7 @@ class AuthenticateUserService extends IdentityService {
                         response.userAuthenticationState = userAuthenticationState;
                         response.uri = `/${userAuthenticationState.tenantId}`;
                         response.accessToken = accessToken;
-                        response.tokenExpiresAtMs = Date.now() + (60 * 60 * 12 * 1000);
+                        response.tokenExpiresAtMs = Date.now() + (this.getPortalAuthenTokenTTLSeconds() * 1000);
                         userAuthenticationState.authenticationStateStatus = STATUS_COMPLETE;
                         await identityDao.updateUserAuthenticationState(userAuthenticationState);
                     }

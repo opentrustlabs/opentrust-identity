@@ -59,6 +59,7 @@ const AuthentiationValidateTotp: React.FC<AuthenticationComponentsProps> = ({
                         required={true}
                         autoFocus={true}
                         label={"One-time-passcode"}
+                        autoComplete="off"
                     />
                 </Grid2>
             </Grid2>
@@ -126,6 +127,7 @@ const RegistrationValidateTotp: React.FC<RegistrationComponentsProps> = ({
                         required={true}
                         autoFocus={true}
                         label={"One-time-passcode"}
+                        autoComplete="off"
                     />
                 </Grid2>
             </Grid2>

@@ -1,5 +1,5 @@
 "use client";
-import { AUTH_TOKEN_LOCAL_STORAGE_KEY, TOKEN_EXPIRIES_AT_MS_LOCAL_KEY } from "./consts";
+import { AUTH_TOKEN_LOCAL_STORAGE_KEY, MANAGEMENT_TENANT_LOCAL_STORAGE_KEY, TOKEN_EXPIRIES_AT_MS_LOCAL_KEY } from "./consts";
 import { COUNTRY_CODES, CountryCodeDef, LANGUAGE_CODES, LanguageCodeDef } from "./i18n";
 
 
@@ -69,4 +69,12 @@ export function getAccessTokenExpiresAtMs(): number | null {
 export function setAccessTokenOnLocalStorage(token: string, expiresAtMs: number): void {
     localStorage.setItem(AUTH_TOKEN_LOCAL_STORAGE_KEY, token);
     localStorage.setItem(TOKEN_EXPIRIES_AT_MS_LOCAL_KEY, expiresAtMs.toString())
+}
+
+export function setManagementTenantAccessId(tenantId: string): void {
+    localStorage.setItem(MANAGEMENT_TENANT_LOCAL_STORAGE_KEY, tenantId);
+}
+
+export function getManagementTenantAccessId(): string | null {
+    return localStorage.getItem(MANAGEMENT_TENANT_LOCAL_STORAGE_KEY);    
 }

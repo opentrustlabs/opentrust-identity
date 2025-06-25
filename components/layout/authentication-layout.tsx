@@ -12,6 +12,8 @@ import { useSearchParams } from "next/navigation";
 import { createTheme } from '@mui/material/styles';
 import { ThemeProvider } from '@mui/material/styles';
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
+import ErrorComponent from "../error/error-component";
+import DataLoading from "./data-loading";
 
 interface LayoutProps {
     children: ReactNode
@@ -28,7 +30,7 @@ const AuthenticationLayout: React.FC<LayoutProps> = ({
     const tenantId = params?.get(QUERY_PARAM_TENANT_ID);
 
     // STATE VARIABLES
-    const [isComplete, setIsComplete] = React.useState<boolean>(tenantId === undefined || tenantId === null ? true : false);
+    // const [isComplete, setIsComplete] = React.useState<boolean>(tenantId === undefined || tenantId === null ? true : false);
 
     // GRAPHQL FUNCTIONS
     const {error, loading} = useQuery(TENANT_META_DATA_QUERY, {
@@ -36,20 +38,17 @@ const AuthenticationLayout: React.FC<LayoutProps> = ({
             tenantId: tenantId
         },
         skip: tenantId === null || tenantId === undefined,
-        onCompleted(data) {
-            setIsComplete(true);
+        onCompleted(data) {            
             if(data.getTenantMetaData !== null){             
                 tenantBean.setTenantMetaData(data.getTenantMetaData);             
             }    
-        },
-        onError() {
-            setIsComplete(true);
         }
     });
 
-    if(loading) return <div />
+    if(loading) return <DataLoading dataLoadingSize={"lg"} color={null} />
+    if(error) return <ErrorComponent componentSize={"xl"} message={error.message}  />
 
-    if(isComplete){
+    if(tenantBean && tenantBean.getTenantMetaData()){
         const theme = createTheme({    
             components: {
                 MuiButton: {

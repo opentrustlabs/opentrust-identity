@@ -15,7 +15,6 @@ import IdentityService from "./identity-service";
 
 const jwtServiceUtils: JwtServiceUtils = new JwtServiceUtils();
 
-
 const identityDao: IdentityDao = DaoFactory.getInstance().getIdentityDao();
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
 const searchClient: OpenSearchClient = getOpenSearchClient();
@@ -653,7 +652,7 @@ class RegisterUserService extends IdentityService {
                         response.userRegistrationState.registrationState = RegistrationState.Error;
                     }
                     else{
-                        const accessToken: string | null = await jwtServiceUtils.signIAMPortalUserJwt(user, tenant, 60 * 60 * 12, TOKEN_TYPE_IAM_PORTAL_USER);
+                        const accessToken: string | null = await jwtServiceUtils.signIAMPortalUserJwt(user, tenant, this.getPortalAuthenTokenTTLSeconds(), TOKEN_TYPE_IAM_PORTAL_USER);
                         if(accessToken === null){
                             response.registrationError.errorCode = "ERROR_GENERATING_ACCESS_TOKEN_REGISTRATION_COMPLETION";
                             response.userRegistrationState.registrationState = RegistrationState.Error;
@@ -662,7 +661,7 @@ class RegisterUserService extends IdentityService {
                             response.userRegistrationState = userRegistrationState;
                             response.uri = `/${userRegistrationState.tenantId}`;
                             response.accessToken = accessToken;
-                            response.tokenExpiresAtMs = Date.now() + (60 * 60 * 12 * 1000);
+                            response.tokenExpiresAtMs = Date.now() + (this.getPortalAuthenTokenTTLSeconds() * 1000);
                             userRegistrationState.registrationStateStatus = STATUS_COMPLETE;
                             await identityDao.updateUserRegistrationState(userRegistrationState);
                         }
