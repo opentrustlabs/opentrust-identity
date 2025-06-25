@@ -26,6 +26,7 @@ import { RegistrationValidateTotp } from "./validate-totp";
 import { RegistrationValidateSecurityKey } from "./validate-security-key";
 import { RegistrationConfigureSecurityKey } from "./configure-security-key";
 import PasswordRulesDisplay from "./password-rules-display";
+import { AuthSessionProps, useAuthSessionContext } from "../contexts/auth-session-context";
 
 
 export interface RegistrationComponentsProps {
@@ -42,6 +43,7 @@ const Register: React.FC = () => {
     const tenantBean: TenantMetaDataBean  = useContext(TenantContext);    
     const titleSetter = useContext(PageTitleContext);
     titleSetter.setPageTitle("Register");
+    const authSessionProps: AuthSessionProps = useAuthSessionContext();
 
     // QUERY PARAMS
     const params = useSearchParams();    
@@ -157,7 +159,7 @@ const Register: React.FC = () => {
                 else {
                     if(response.userRegistrationState.registrationState === RegistrationState.RedirectToIamPortal){
                         if(response.accessToken){
-                            setAccessTokenOnLocalStorage(response.accessToken, response.tokenExpiresAtMs || 0);
+                            authSessionProps.setAuthSessionData({accessToken: response.accessToken, expiresAtMs: response.tokenExpiresAtMs || 0});                            
                         }
                     }
                     router.push(response.uri);

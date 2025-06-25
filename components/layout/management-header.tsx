@@ -3,6 +3,7 @@ import { TenantMetaData } from "@/graphql/generated/graphql-types";
 import { Container, Stack } from "@mui/material";
 import React, { useContext } from "react";
 import { ResponsiveBreakpoints, ResponsiveContext } from "../contexts/responsive-context";
+import SessionTimerCountdown from "./session-timer-countdown";
 
 export interface ManagementHeaderProps {
     tenantMetaData: TenantMetaData
@@ -11,7 +12,7 @@ export interface ManagementHeaderProps {
 const ManagementHeader: React.FC<ManagementHeaderProps> = ({
     tenantMetaData
 }) => {
-
+    
     const responsiveBreakpoints: ResponsiveBreakpoints = useContext(ResponsiveContext);
     return (
         <div 
@@ -31,12 +32,12 @@ const ManagementHeader: React.FC<ManagementHeaderProps> = ({
             <Container
                 maxWidth={responsiveBreakpoints.isGreaterThanExtraLarge ? "xl" : "xl"}
                 disableGutters={true}
-                sx={{height: "100%", alignItems: "center", display: "flex"}}                
+                sx={{height: "100%", alignItems: "center", display: "flex", justifyContent: "space-between"}}                
             >
                 <Stack 
-                    direction={"row"}
+                    direction={"row"}                    
                     justifyItems={"center"}
-                    alignItems={"center"}                    
+                    alignItems={"center"}
                 >                  
                     {tenantMetaData.tenantLookAndFeel?.adminheadertext &&                        
                         <div style={{verticalAlign: "center", fontWeight: "bold", marginLeft: "8px"}}>{tenantMetaData.tenantLookAndFeel?.adminheadertext}</div>                        
@@ -44,6 +45,13 @@ const ManagementHeader: React.FC<ManagementHeaderProps> = ({
                     {!tenantMetaData.tenantLookAndFeel?.adminheadertext &&                        
                         <div style={{verticalAlign: "center", fontWeight: "bold", padding: "8px"}}>OpenTrust Identity</div>                        
                     }
+                </Stack>
+                <Stack 
+                    direction={"row"}
+                    justifyItems={"center"}
+                    alignItems={"center"}  
+                >
+                    <SessionTimerCountdown />
                 </Stack>
             </Container>
         </div>

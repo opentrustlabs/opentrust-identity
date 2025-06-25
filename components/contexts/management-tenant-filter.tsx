@@ -1,13 +1,13 @@
 "use client";
 import React, { ReactNode, useContext, useEffect } from "react";
 import { useParams, useRouter } from 'next/navigation';
-import { MANAGEMENT_TENANT_LOCAL_STORAGE_KEY, QUERY_PARAM_AUTHENTICATE_TO_PORTAL, QUERY_PARAM_TENANT_ID } from "@/utils/consts";
+import { QUERY_PARAM_AUTHENTICATE_TO_PORTAL, QUERY_PARAM_TENANT_ID } from "@/utils/consts";
 import { useQuery } from "@apollo/client";
 import { TENANT_META_DATA_QUERY } from "@/graphql/queries/oidc-queries";
 import { PortalUserProfile } from "@/graphql/generated/graphql-types";
 import { AuthContext } from "./auth-context";
 import { TenantMetaDataBean, TenantContext } from "./tenant-context";
-import { getAccessTokenExpiresAtMs } from "@/utils/client-utils";
+import { getAccessTokenExpiresAtMs, getManagementTenantAccessId, setManagementTenantAccessId } from "@/utils/client-utils";
 
 
 interface LayoutProps {
@@ -54,7 +54,7 @@ const ManagementTenantFilter: React.FC<LayoutProps> = ({
     // Any redirects to the authorization screen will ALSO include any saved language and country
     // values that were saved in local storage, or defaulted to en-US
 
-    const tenantIdFromLocalStorage: string | null = localStorage.getItem(MANAGEMENT_TENANT_LOCAL_STORAGE_KEY);
+    const tenantIdFromLocalStorage: string | null = getManagementTenantAccessId();
     let needsRedirect = true;
     let redirectUri: string = `/authorize/login?${QUERY_PARAM_AUTHENTICATE_TO_PORTAL}=true`;
     
@@ -87,7 +87,7 @@ const ManagementTenantFilter: React.FC<LayoutProps> = ({
             if(profile.managementAccessTenantId !== tenantIdFromPath){
                 // Need to update the local storage for next time and redirect the 
                 // user to the correct landing page for their tenant
-                localStorage.setItem(MANAGEMENT_TENANT_LOCAL_STORAGE_KEY, profile.managementAccessTenantId);
+                setManagementTenantAccessId(profile.managementAccessTenantId);
                 redirectUri = `/${profile.managementAccessTenantId}/`;
             }
             else{
@@ -97,21 +97,15 @@ const ManagementTenantFilter: React.FC<LayoutProps> = ({
             // their tenant.
         }
     }
-    // Is there a token and has it expired?
-    const tokenExpiresAtMs: number | null = getAccessTokenExpiresAtMs();
-    if(!tokenExpiresAtMs || tokenExpiresAtMs < Date.now()){
-        needsRedirect = true;
-        redirectUri = `/authorize/login?${QUERY_PARAM_AUTHENTICATE_TO_PORTAL}=true`;
-    }
 
     // If either of the profile or the tenant id change, update the tenant context
     useEffect(() => {
         if(needsRedirect){
             router.push(redirectUri);
         }
-    }, [profile, tenantIdFromPath, tokenExpiresAtMs]);
+    }, [profile, tenantIdFromPath]);
 
-    const [isComplete, setIsComplete] = React.useState(false);
+    
 
     // GRAPHQL QUERIES
     const {data, loading } = useQuery(TENANT_META_DATA_QUERY, {
@@ -126,7 +120,6 @@ const ManagementTenantFilter: React.FC<LayoutProps> = ({
             }
             else{
                 tenantBean.setTenantMetaData(data.getTenantMetaData);
-                setIsComplete(true);
             }
         },
         onError(error) {
@@ -143,7 +136,7 @@ const ManagementTenantFilter: React.FC<LayoutProps> = ({
     });
 
     if(!needsRedirect && loading) return <div></div>
-    else if(!needsRedirect && data && isComplete) return <>{children}</>    
+    else if(!needsRedirect && data) return <>{children}</>    
     else return <></>
     
 }

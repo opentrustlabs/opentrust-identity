@@ -24,8 +24,7 @@ const ClipboardCopyContextProvider: React.FC<ClipboardCopyContextProps> = ({ chi
 
     const [open, setOpen] = React.useState(false);
     const [message, setMessage] = React.useState("");
-    const [navigatorAvailable, setNavigatorAvailable] = React.useState(false);
-    const [userAgent, setUserAgent] = React.useState("");
+    const [navigatorAvailable, setNavigatorAvailable] = React.useState(false);    
 
     const copyContentToClipboard = async (val: string, message: string) => {
         try {
@@ -43,7 +42,6 @@ const ClipboardCopyContextProvider: React.FC<ClipboardCopyContextProps> = ({ chi
     useEffect(() => {
         if(typeof window !== "undefined"){
             setNavigatorAvailable(true);
-            setUserAgent(navigator.userAgent);
         }
     }, []);
     

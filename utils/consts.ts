@@ -14,6 +14,7 @@ export const MIN_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS = 120; // 2 minutes
 export const DEFAULT_END_USER_TOKEN_TTL_SECONDS = 3600; // 1 hour
 export const MAX_END_USER_TOKEN_TTL_SECONDS = 43200; // 12 hours
 export const MIN_END_USER_TOKEN_TTL_SECONDS = 600; // 10 minutes
+export const DEFAULT_PORTAL_AUTH_TOKEN_TTL_HOURS=12;
 
 export const AUTH_TOKEN_LOCAL_STORAGE_KEY="auth-token";
 export const TOKEN_EXPIRIES_AT_MS_LOCAL_KEY="token-expires-at-ms";

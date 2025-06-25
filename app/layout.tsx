@@ -15,6 +15,7 @@ import ManagementTenantFilter from "@/components/contexts/management-tenant-filt
 import { createTheme } from '@mui/material/styles';
 import { ThemeProvider } from '@mui/material/styles';
 import { ClipboardCopyContextProvider } from "@/components/contexts/clipboard-copy-context";
+import { AuthenSessionContextProvider } from "@/components/contexts/auth-session-context";
 
 
 const theme = createTheme({    
@@ -102,22 +103,24 @@ export default function RootLayout({
                 <ResponsiveContextProvider>                        
                     <PageTitleContextProvider>
                         <ClipboardCopyContextProvider>
-                            <ApolloProvider client={client}>
-                                <AuthContextProvider>
-                                    <TenantContextProvider>
-                                        {isAuthenticationLayoutPage &&                                         
-                                            <AuthenticationLayout>{children}</AuthenticationLayout>                                        
-                                        }
-                                        {!isAuthenticationLayoutPage &&                                        
-                                            <ManagementTenantFilter>
-                                                <ThemeProvider theme={theme}>
-                                                    <ManagementLayout>{children}</ManagementLayout>
-                                                </ThemeProvider>
-                                            </ManagementTenantFilter>                                                                            
-                                        }
-                                    </TenantContextProvider>
-                                </AuthContextProvider>
-                            </ApolloProvider>
+                            <AuthenSessionContextProvider>
+                                <ApolloProvider client={client}>
+                                    <AuthContextProvider>
+                                        <TenantContextProvider>
+                                            {isAuthenticationLayoutPage &&                                         
+                                                <AuthenticationLayout>{children}</AuthenticationLayout>                                        
+                                            }
+                                            {!isAuthenticationLayoutPage &&                                        
+                                                <ManagementTenantFilter>
+                                                    <ThemeProvider theme={theme}>
+                                                        <ManagementLayout>{children}</ManagementLayout>
+                                                    </ThemeProvider>
+                                                </ManagementTenantFilter>                                                                            
+                                            }
+                                        </TenantContextProvider>
+                                    </AuthContextProvider>
+                                </ApolloProvider>
+                            </AuthenSessionContextProvider>
                         </ClipboardCopyContextProvider>
                     </PageTitleContextProvider>
                 </ResponsiveContextProvider>                
