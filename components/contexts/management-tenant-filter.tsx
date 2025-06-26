@@ -8,6 +8,7 @@ import { PortalUserProfile } from "@/graphql/generated/graphql-types";
 import { AuthContext } from "./auth-context";
 import { TenantMetaDataBean, TenantContext } from "./tenant-context";
 import { getAccessTokenExpiresAtMs, getManagementTenantAccessId, setManagementTenantAccessId } from "@/utils/client-utils";
+import DataLoading from "../layout/data-loading";
 
 
 interface LayoutProps {
@@ -135,7 +136,7 @@ const ManagementTenantFilter: React.FC<LayoutProps> = ({
         },
     });
 
-    if(!needsRedirect && loading) return <div></div>
+    if(!needsRedirect && loading) return <div><DataLoading dataLoadingSize={"xl"} color={null}  /></div>
     else if(!needsRedirect && data) return <>{children}</>    
     else return <></>
     

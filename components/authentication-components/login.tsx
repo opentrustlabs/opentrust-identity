@@ -1,13 +1,11 @@
 "use client";
 import React, { useContext, useEffect, useState } from "react";
 import { Backdrop, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, Divider, Grid2, Paper, Stack, TextField, Typography } from "@mui/material";
-import { useTheme } from '@mui/material/styles';
-import useMediaQuery from '@mui/material/useMediaQuery';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { PASSWORD_MINIMUM_LENGTH, QUERY_PARAM_AUTHENTICATE_TO_PORTAL, QUERY_PARAM_PREAUTHN_TOKEN, QUERY_PARAM_REDIRECT_URI, QUERY_PARAM_TENANT_ID } from "@/utils/consts";
-import { useMutation } from "@apollo/client";
-import { UserAuthenticationStateResponse, TenantSelectorData, AuthenticationState, UserAuthenticationState, TenantPasswordConfig } from "@/graphql/generated/graphql-types";
+import { FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL, PASSWORD_MINIMUM_LENGTH, QUERY_PARAM_AUTHENTICATE_TO_PORTAL, QUERY_PARAM_PREAUTHN_TOKEN, QUERY_PARAM_REDIRECT_URI, QUERY_PARAM_TENANT_ID, SOCIAL_OIDC_PROVIDER_APPLE, SOCIAL_OIDC_PROVIDER_FACEBOOK, SOCIAL_OIDC_PROVIDER_GOOGLE, SOCIAL_OIDC_PROVIDER_LINKEDIN, SOCIAL_OIDC_PROVIDER_SALESFORCE } from "@/utils/consts";
+import { useMutation, useQuery } from "@apollo/client";
+import { UserAuthenticationStateResponse, TenantSelectorData, AuthenticationState, UserAuthenticationState, TenantPasswordConfig, FederatedOidcProvider } from "@/graphql/generated/graphql-types";
 import Alert from '@mui/material/Alert';
 import { AUTHENTICATE_USER, AUTHENTICATE_USERNAME_INPUT_MUTATION, CANCEL_AUTHENTICATION } from "@/graphql/mutations/oidc-mutations";
 import { PageTitleContext } from "@/components/contexts/page-title-context";
@@ -19,8 +17,10 @@ import { AuthentiationConfigureSecurityKey } from "./configure-security-key";
 import { AuthentiationValidateSecurityKey } from "./validate-security-key";
 import AuthentiationRotatePassword from "./rotate-password";
 import {  useSearchParams } from 'next/navigation';
-import { setAccessTokenOnLocalStorage } from "@/utils/client-utils";
 import { AuthSessionProps, useAuthSessionContext } from "../contexts/auth-session-context";
+import { FEDERATED_OIDC_PROVIDERS_QUERY } from "@/graphql/queries/oidc-queries";
+import { ResponsiveBreakpoints, ResponsiveContext } from "../contexts/responsive-context";
+import Skeleton from '@mui/material/Skeleton';
 
 
 const MIN_USERNAME_LENGTH = 6;
@@ -42,7 +42,7 @@ const Login: React.FC = () => {
         titleSetter.setPageTitle("Login");
     }, []);
     const authSessionProps: AuthSessionProps = useAuthSessionContext();
-
+    const breakPoints: ResponsiveBreakpoints = useContext(ResponsiveContext);
     
     // QUERY PARAMS
     const params = useSearchParams();
@@ -61,17 +61,32 @@ const Login: React.FC = () => {
     const [selectedTenant, setSelectedTenant] = useState<string | null>(tenantId);
     const [userAuthenticationState, setUserAuthenticationState] = React.useState<UserAuthenticationState | null>(null);
     const [passwordConfig, setPasswordConfig] = React.useState<TenantPasswordConfig | null>(null);
-
+    const [socialOIDCProviders, setSocialOIDCProviders] = React.useState<Array<FederatedOidcProvider>>([]);
 
     // HOOKS FROM NEXTJS OR MUI
     const router = useRouter();
-    const theme = useTheme();
-    const isMd: boolean = useMediaQuery(theme.breakpoints.down("md"));
-    const isSm: boolean = useMediaQuery(theme.breakpoints.down("sm"));
-    const maxWidth = isSm ? "90vw" : isMd ? "80vw" : "650px";
+    
+    const maxWidth = breakPoints.isSmall ? "90vw" : breakPoints.isMedium ? "80vw" : "650px";
 
+    // GRAPHQL FUNCTIONS
+    const {} = useQuery(FEDERATED_OIDC_PROVIDERS_QUERY, {
+        variables: {
+            tenantId: tenantId
+        },
+        skip: tenantId === null || tenantBean.getTenantMetaData().tenant.allowSocialLogin !== true,
+        onCompleted(data) {
+            if(data && data.getFederatedOIDCProviders){
+                let arr: Array<FederatedOidcProvider> = data.getFederatedOIDCProviders;
+                arr = arr.filter(
+                    (provider: FederatedOidcProvider) => provider.federatedOIDCProviderType === FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL
+                );
+                if(arr.length > 0){
+                    setSocialOIDCProviders(arr);
+                }
+            }
+        }
+    });
 
-    // GRAPHQL FUNCTIONS    
     const [portalLoginEmailHandler] = useMutation(AUTHENTICATE_USERNAME_INPUT_MUTATION, {
         onCompleted(data) {
             const authnStateResponse: UserAuthenticationStateResponse = data.authenticateHandleUserNameInput;
@@ -240,6 +255,27 @@ const Login: React.FC = () => {
         return params.toString();
     }
 
+    const getIconForSocialProvider = (provider: FederatedOidcProvider) => {
+        if(provider.socialLoginProvider === SOCIAL_OIDC_PROVIDER_GOOGLE){
+            return <img src="/google.png" width={"25px"}/>
+        }
+        else if(provider.socialLoginProvider === SOCIAL_OIDC_PROVIDER_FACEBOOK){
+            return <img src="/facebook.png" width={"25px"}/>
+        }
+        else if(provider.socialLoginProvider === SOCIAL_OIDC_PROVIDER_LINKEDIN){
+            return <img src="/linkedin.png" width={"25px"}/>
+        }
+        else if(provider.socialLoginProvider === SOCIAL_OIDC_PROVIDER_APPLE){
+            return <img src="/apple.png" width={"25px"}/>
+        }
+        else if(provider.socialLoginProvider === SOCIAL_OIDC_PROVIDER_SALESFORCE){
+            return <img src="/salesforce.png" width={"25px"}/>
+        }
+        else {
+            return <Skeleton height={"25px"} width={"25px"} />
+        }
+    }
+
     if (tenantBean.getTenantMetaData()) {
         return (
             <Paper
@@ -303,7 +339,7 @@ const Login: React.FC = () => {
                         </Typography>
                     </Dialog>
                 }
-                <Grid2 spacing={4} container size={{ xs: 12 }}>
+                <Grid2 spacing={3} container size={{ xs: 12 }}>
                     {errorMessage !== null &&
                         <Grid2 size={{ xs: 12 }} textAlign={"center"}>
                             <Stack
@@ -410,6 +446,31 @@ const Login: React.FC = () => {
                                     </Stack>
                                 </Grid2>
                             }
+                            {tenantBean.getTenantMetaData().tenant.allowSocialLogin && socialOIDCProviders.length > 0 &&
+                                <React.Fragment>
+                                    <Grid2 size={{xs: 12}}>
+                                        <Divider>OR</Divider>
+                                    </Grid2>
+                                    <Typography width={"100%"} component="div">
+                                        {socialOIDCProviders.map(
+                                            (provider: FederatedOidcProvider) => (
+                                                <Grid2 
+                                                    className="social-media-login-container"
+                                                    key={provider.federatedOIDCProviderId}                                                     
+                                                    onClick={() => {}}                                                     
+                                                    container spacing={0} size={{xs: 12}}
+                                                >
+                                                    <Grid2 size={1.5}>{getIconForSocialProvider(provider)}
+                                                        
+                                                    </Grid2>
+                                                    <Grid2 size={10.5}>Sign in with {provider.federatedOIDCProviderName}</Grid2>
+                                                </Grid2>
+                                            )
+                                        )}
+                                    </Typography>
+                                </React.Fragment>
+                            }
+                            
                         </React.Fragment>
                     }
                     {userAuthenticationState && userAuthenticationState.authenticationState === AuthenticationState.EnterPassword &&

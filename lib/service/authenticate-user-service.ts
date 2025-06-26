@@ -1010,6 +1010,7 @@ class AuthenticateUserService extends IdentityService {
                         response.uri = `/${userAuthenticationState.tenantId}`;
                         response.accessToken = accessToken;
                         response.tokenExpiresAtMs = Date.now() + (this.getPortalAuthenTokenTTLSeconds() * 1000);
+                        //response.tokenExpiresAtMs = Date.now() + (60000);
                         userAuthenticationState.authenticationStateStatus = STATUS_COMPLETE;
                         await identityDao.updateUserAuthenticationState(userAuthenticationState);
                     }
