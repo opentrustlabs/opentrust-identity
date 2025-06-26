@@ -460,10 +460,10 @@ const Login: React.FC = () => {
                                                     onClick={() => {}}                                                     
                                                     container spacing={0} size={{xs: 12}}
                                                 >
-                                                    <Grid2 size={1.5}>{getIconForSocialProvider(provider)}
+                                                    <Grid2 size={breakPoints.isMedium ? 2 : 1.5}>{getIconForSocialProvider(provider)}
                                                         
                                                     </Grid2>
-                                                    <Grid2 size={10.5}>Sign in with {provider.federatedOIDCProviderName}</Grid2>
+                                                    <Grid2 size={breakPoints.isMedium ? 10 : 10.5}>Sign in with {provider.federatedOIDCProviderName}</Grid2>
                                                 </Grid2>
                                             )
                                         )}
