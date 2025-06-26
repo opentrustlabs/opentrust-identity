@@ -348,6 +348,7 @@ export const FEDERATED_OIDC_PROVIDERS_QUERY = gql(`
             federatedOIDCProviderName
             federatedOIDCProviderDescription
             federatedOIDCProviderType
+            socialLoginProvider
         }
     }
 `)
