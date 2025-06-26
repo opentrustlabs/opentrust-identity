@@ -153,6 +153,9 @@ type Mutation {
     authenticateValidateSecurityKey(userId: String!, fido2KeyAuthenticationInput: Fido2KeyAuthenticationInput!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
     cancelAuthentication(userId: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
 
+    ## Social OIDC Authentication Flow
+    authenticateWithSocialOIDCProvider(preAuthToken: String!, federatedOIDCProviderId: String!): UserAuthenticationStateResponse!
+
     ## Registration Flows
     registerUser(tenantId: String!, userInput: UserCreateInput!, preAuthToken: String): UserRegistrationStateResponse!
     registerVerifyEmailAddress(userId: String!, token: String!, registrationSessionToken: String!, preAuthToken: String): UserRegistrationStateResponse!

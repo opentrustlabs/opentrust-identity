@@ -457,8 +457,11 @@ const Login: React.FC = () => {
                                                 <Grid2 
                                                     className="social-media-login-container"
                                                     key={provider.federatedOIDCProviderId}                                                     
-                                                    onClick={() => {}}                                                     
-                                                    container spacing={0} size={{xs: 12}}
+                                                    onClick={() => {
+
+                                                    }}                                                     
+                                                    container spacing={0} 
+                                                    size={{xs: 12}}
                                                 >
                                                     <Grid2 size={breakPoints.isMedium ? 2 : 1.5}>{getIconForSocialProvider(provider)}
                                                         
