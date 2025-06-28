@@ -22,10 +22,10 @@ const SessionTimerCountdown: React.FC = () => {
     const getLoginUri = (): string => {
         const tenantId = getManagementTenantAccessId();
         if(tenantId){
-            return `/authorize/login?${QUERY_PARAM_AUTHENTICATE_TO_PORTAL}=true&${QUERY_PARAM_TENANT_ID}=${tenantId}&${QUERY_PARAM_RETURN_URI}=${window.location.href}`
+            return `/authorize/login?${QUERY_PARAM_AUTHENTICATE_TO_PORTAL}=true&${QUERY_PARAM_TENANT_ID}=${tenantId}&${QUERY_PARAM_RETURN_URI}=${encodeURI(window.location.href)}`
         }
         else{
-            return `/authorize/login?${QUERY_PARAM_AUTHENTICATE_TO_PORTAL}=true&${QUERY_PARAM_RETURN_URI}=${window.location.href}`;
+            return `/authorize/login?${QUERY_PARAM_AUTHENTICATE_TO_PORTAL}=true&${QUERY_PARAM_RETURN_URI}=${encodeURI(window.location.href)}`;
         }
     }
 
