@@ -911,9 +911,9 @@ const resolvers: Resolvers = {
             const service: RegisterUserService = new RegisterUserService(oidcContext);
             return service.createUser(userInput, tenantId);
         },        
-        authenticateHandleUserNameInput: async(_: any, { username, tenantId, preAuthToken}, oidcContext) => {
+        authenticateHandleUserNameInput: async(_: any, { username, tenantId, preAuthToken, returnToUri}, oidcContext) => {
             const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);
-            return service.authenticateHandleUserNameInput(username, tenantId || null, preAuthToken || null);
+            return service.authenticateHandleUserNameInput(username, tenantId || null, preAuthToken || null, returnToUri || null);
         },
         authenticateUser: async(_: any, { username, password, authenticationSessionToken, tenantId, preAuthToken }, oidcContext) => {
             const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);
@@ -942,6 +942,10 @@ const resolvers: Resolvers = {
         cancelAuthentication: async(_: any, { userId, authenticationSessionToken, preAuthToken}, oidcContext) => {
             const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);
             return service.cancelAuthentication(userId, authenticationSessionToken, preAuthToken || null);
+        },
+        authenticateWithSocialOIDCProvider: async(_: any, { federatedOIDCProviderId, preAuthToken, tenantId }, oidcContext) => {
+            const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);
+            return service.authenticateWithSocialOIDCProvider(preAuthToken || null, tenantId, federatedOIDCProviderId);
         },
         registerUser: async(_: any, { tenantId, userInput, preAuthToken }, oidcContext) => {
             const service: RegisterUserService = new RegisterUserService(oidcContext);

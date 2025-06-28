@@ -598,6 +598,7 @@ create TABLE user_authentication_state (
     authenticationstatestatus VARCHAR(32) NOT NULL,
     preauthtoken VARCHAR(128),
     expiresatms BIGINT NOT NULL,
+    returntouri VARCHAR(256),
     PRIMARY KEY (userid, authenticationsessiontoken, authenticationstate),
     FOREIGN KEY (userid) REFERENCES user(userid),
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid) 

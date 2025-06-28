@@ -4,7 +4,7 @@ import { Tenant, TenantPasswordConfig, User, UserCredential, UserMfaRel, TenantM
 import { DaoFactory } from "../data-sources/dao-factory";
 import TenantDao from "../dao/tenant-dao";
 import { GraphQLError } from "graphql/error";
-import { DEFAULT_LOGIN_FAILURE_POLICY, DEFAULT_LOGIN_PAUSE_TIME_MINUTES, DEFAULT_MAXIMUM_LOGIN_FAILURES, DEFAULT_PASSWORD_HISTORY_PERIOD, DEFAULT_TENANT_PASSWORD_CONFIGURATION, FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE, LOGIN_FAILURE_POLICY_LOCK_USER_ACCOUNT, LOGIN_FAILURE_POLICY_PAUSE, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, OIDC_AUTHORIZATION_ERROR_ACCESS_DENIED, QUERY_PARAM_AUTHENTICATE_TO_PORTAL, QUERY_PARAM_TENANT_ID, RANKED_DESCENDING_HASHING_ALGORITHS, STATUS_COMPLETE, STATUS_INCOMPLETE, TOKEN_TYPE_IAM_PORTAL_USER, USER_TENANT_REL_TYPE_PRIMARY } from "@/utils/consts";
+import { DEFAULT_LOGIN_FAILURE_POLICY, DEFAULT_LOGIN_PAUSE_TIME_MINUTES, DEFAULT_MAXIMUM_LOGIN_FAILURES, DEFAULT_PASSWORD_HISTORY_PERIOD, DEFAULT_TENANT_PASSWORD_CONFIGURATION, FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE, FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL, LOGIN_FAILURE_POLICY_LOCK_USER_ACCOUNT, LOGIN_FAILURE_POLICY_PAUSE, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, OIDC_AUTHORIZATION_ERROR_ACCESS_DENIED, QUERY_PARAM_AUTHENTICATE_TO_PORTAL, QUERY_PARAM_TENANT_ID, RANKED_DESCENDING_HASHING_ALGORITHS, STATUS_COMPLETE, STATUS_INCOMPLETE, TOKEN_TYPE_IAM_PORTAL_USER, USER_TENANT_REL_TYPE_PRIMARY } from "@/utils/consts";
 import { generateRandomToken, getDomainFromEmail } from "@/utils/dao-utils";
 import AuthDao from "../dao/auth-dao";
 import FederatedOIDCProviderDao from "../dao/federated-oidc-provider-dao";
@@ -42,7 +42,7 @@ class AuthenticateUserService extends IdentityService {
      * @param tenantId 
      * @returns 
      */
-    public async authenticateHandleUserNameInput(email: string, tenantId: string | null, preAuthToken: string | null): Promise<UserAuthenticationStateResponse> {        
+    public async authenticateHandleUserNameInput(email: string, tenantId: string | null, preAuthToken: string | null, returnToUri: string | null): Promise<UserAuthenticationStateResponse> {        
 
         // 1.   If the user is coming from a 3rd party site for authentication
         if(preAuthToken){
@@ -50,7 +50,7 @@ class AuthenticateUserService extends IdentityService {
         }
         // Otherwise they are trying to log directly into the IAM portal itself.
         else{
-            return this.authenticatePortalUserNameHandler(email, tenantId);
+            return this.authenticatePortalUserNameHandler(email, tenantId, returnToUri);
             
         }        
     }
@@ -65,13 +65,13 @@ class AuthenticateUserService extends IdentityService {
     protected async authenticateExternalUserNameHandler(email: string, preAuthToken: string): Promise<UserAuthenticationStateResponse> {
         const response: UserAuthenticationStateResponse = this.initUserAuthenticationStateResponse("", "", preAuthToken);
 
-        const p: PreAuthenticationState | null = await authDao.getPreAuthenticationState(preAuthToken);
-        if(!p){
+        const preAuthenticationState: PreAuthenticationState | null = await authDao.getPreAuthenticationState(preAuthToken);
+        if(!preAuthenticationState){
             response.authenticationError.errorCode = "ERROR_INVALID_PRE_AUTH_TOKEN";
             return response;
         }
         const domain: string = getDomainFromEmail(email);
-        const tenant: Tenant | null = await tenantDao.getTenantById(p.tenantId);
+        const tenant: Tenant | null = await tenantDao.getTenantById(preAuthenticationState.tenantId);
         if(tenant === null){
             response.authenticationError.errorCode = "ERROR_INVALID_TENANT_FOR_PRE_AUTH_TOKEN";
             return response;
@@ -79,7 +79,7 @@ class AuthenticateUserService extends IdentityService {
         const federatedOidcProvider: FederatedOidcProvider | null = await federatedOIDCProviderDao.getFederatedOidcProviderByDomain(domain);
         let providerTenantRels: Array<FederatedOidcProviderTenantRel> = [];
         if(federatedOidcProvider !== null){            
-            providerTenantRels = await federatedOIDCProviderDao.getFederatedOidcProviderTenantRels(p.tenantId, federatedOidcProvider.federatedOIDCProviderId);
+            providerTenantRels = await federatedOIDCProviderDao.getFederatedOidcProviderTenantRels(preAuthenticationState.tenantId, federatedOidcProvider.federatedOIDCProviderId);
             
             // If there is a federated provider for the domain and is not attached to the tenant, then error
             const r: FederatedOidcProviderTenantRel | undefined = providerTenantRels.find(
@@ -117,12 +117,12 @@ class AuthenticateUserService extends IdentityService {
         // At this point we know that the tenant exists and allows either a external OIDC provider
         // or allows the user to login with a username/password or allows the user to register
 
-        response.userAuthenticationState.tenantId = p.tenantId;
+        response.userAuthenticationState.tenantId = preAuthenticationState.tenantId;
         // 1.   There is a provider, and regardless of whether the user exists, send the the user to the provider
         //      for authentication.
         if(federatedOidcProvider !== null){
             response.userAuthenticationState.authenticationState = AuthenticationState.AuthWithFederatedOidc;
-            const {hasError, errorMessage, authorizationEndpoint} = await this.createFederatedOIDCRequestProperties(email.toLowerCase(), user ? user.userId : null, federatedOidcProvider, tenant.tenantId);
+            const {hasError, errorMessage, authorizationEndpoint} = await this.createFederatedOIDCRequestProperties(email.toLowerCase(), user ? user.userId : null, federatedOidcProvider, tenant.tenantId, preAuthenticationState);
             if(hasError){
                 throw new GraphQLError(errorMessage);
             }
@@ -133,7 +133,7 @@ class AuthenticateUserService extends IdentityService {
         else {
             if(user === null){
                 response.userAuthenticationState.authenticationState = AuthenticationState.Register;                
-                response.uri = `/authorize/register?${QUERY_PARAM_TENANT_ID}=${p.tenantId}&username=${email.toLowerCase()}`;
+                response.uri = `/authorize/register?${QUERY_PARAM_TENANT_ID}=${preAuthenticationState.tenantId}&username=${email.toLowerCase()}`;
                 return response;
             }
             const userCredential: UserCredential | null = await identityDao.getUserCredentialForAuthentication(user.userId);
@@ -144,7 +144,7 @@ class AuthenticateUserService extends IdentityService {
             else{
                 const stateOrder: Array<AuthenticationState> = [];
                 stateOrder.push(AuthenticationState.EnterPassword);
-                const passwordConfig: TenantPasswordConfig | null = await tenantDao.getTenantPasswordConfig(p.tenantId);
+                const passwordConfig: TenantPasswordConfig | null = await tenantDao.getTenantPasswordConfig(preAuthenticationState.tenantId);
                 
                 let requiredMfaTypes: Array<string> = [];
                 if(passwordConfig && passwordConfig.requireMfa){
@@ -197,7 +197,7 @@ class AuthenticateUserService extends IdentityService {
                         authenticationStateOrder: i + 1,
                         authenticationStateStatus: STATUS_INCOMPLETE,
                         expiresAtMs: expiresAt,
-                        tenantId: p.tenantId,
+                        tenantId: preAuthenticationState.tenantId,
                         userId: user.userId
                     }
                     arrUserAuthenticationStates.push(uas);
@@ -212,7 +212,7 @@ class AuthenticateUserService extends IdentityService {
            
     }
 
-    protected async authenticatePortalUserNameHandler(email: string, tenantId: string | null): Promise<UserAuthenticationStateResponse> {
+    protected async authenticatePortalUserNameHandler(email: string, tenantId: string | null, returnToUri: string | null): Promise<UserAuthenticationStateResponse> {
         const response: UserAuthenticationStateResponse = this.initUserAuthenticationStateResponse("", tenantId || "", null);
                 
         const domain: string = getDomainFromEmail(email);
@@ -331,7 +331,7 @@ class AuthenticateUserService extends IdentityService {
             if(tenantsThatAreAttachedToProviders.length === 1){
                 response.userAuthenticationState.authenticationState = AuthenticationState.AuthWithFederatedOidc;
                 
-                const {hasError, errorMessage, authorizationEndpoint} = await this.createFederatedOIDCRequestProperties(email, user ? user.userId : null, federatedOidcProvider, tenantsThatAreAttachedToProviders[0].tenantId);
+                const {hasError, errorMessage, authorizationEndpoint} = await this.createFederatedOIDCRequestProperties(email, user ? user.userId : null, federatedOidcProvider, tenantsThatAreAttachedToProviders[0].tenantId, null);
                 if(hasError){
                     throw new GraphQLError(errorMessage);
                 }
@@ -417,7 +417,8 @@ class AuthenticateUserService extends IdentityService {
                         authenticationStateStatus: STATUS_INCOMPLETE,
                         expiresAtMs: expiresAt,
                         tenantId: tenantsThatAllowPasswordLogin[0].tenantId,
-                        userId: user.userId
+                        userId: user.userId,
+                        returnToUri: returnToUri
                     }
                     arrUserAuthenticationStates.push(uas);
                 }
@@ -871,6 +872,43 @@ class AuthenticateUserService extends IdentityService {
         return response;
     }
 
+    public async authenticateWithSocialOIDCProvider(preAuthToken: string | null, tenantId: string, federatedOIDCProviderId: string): Promise<UserAuthenticationStateResponse> {
+        const response: UserAuthenticationStateResponse = this.initUserAuthenticationStateResponse("", "", preAuthToken);
+        const oidcProvider: FederatedOidcProvider | null = await federatedOIDCProviderDao.getFederatedOidcProviderById(federatedOIDCProviderId);
+        if(oidcProvider === null){
+            response.authenticationError.errorCode = "ERROR_INVALID_OIDC_PROVIDER";
+            return response;
+        }
+        if(oidcProvider.federatedOIDCProviderType !== FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL){
+            response.authenticationError.errorCode = "ERROR_NOT_A_VALID_SOCIAL_OIDC_PROVIDER";
+            return response;
+        }
+
+        const tenant: Tenant | null = await tenantDao.getTenantById(tenantId);
+        if(tenant === null){
+            response.authenticationError.errorCode = "ERROR_INVALID_TENANT";
+            return response;
+        }
+
+        const rels: Array<FederatedOidcProviderTenantRel> = await federatedOIDCProviderDao.getFederatedOidcProviderTenantRels(tenantId, federatedOIDCProviderId);
+        if(rels.length === 0){
+            response.authenticationError.errorCode = "ERROR_SOCIAL_PROVIDER_NOT_ASSIGNED_TO_TENANT";
+            return response;
+        }
+
+        const preAuthenticationState: PreAuthenticationState | null = preAuthToken ? await authDao.getPreAuthenticationState(preAuthToken) : null;
+                
+        const {hasError, errorMessage, authorizationEndpoint} = await this.createFederatedOIDCRequestProperties(null, null, oidcProvider, tenantId, preAuthenticationState);
+        if(hasError){
+            response.authenticationError.errorCode = errorMessage;
+            return response;
+        }
+
+        response.userAuthenticationState.authenticationState = AuthenticationState.AuthWithFederatedOidc;
+        response.uri = authorizationEndpoint;
+        return response;
+    }
+
     public async cancelAuthentication(userId: string, authenticationSessionToken: string, preAuthToken: string | null): Promise<UserAuthenticationStateResponse> {
         const response: UserAuthenticationStateResponse = this.initUserAuthenticationStateResponse(authenticationSessionToken, "", preAuthToken);
         const arrUserAuthenticationState = await identityDao.getUserAuthenticationStates(authenticationSessionToken);
@@ -1007,7 +1045,7 @@ class AuthenticateUserService extends IdentityService {
                     }
                     else{
                         response.userAuthenticationState = userAuthenticationState;
-                        response.uri = `/${userAuthenticationState.tenantId}`;
+                        response.uri = userAuthenticationState.returnToUri ? userAuthenticationState.returnToUri : `/${userAuthenticationState.tenantId}`;
                         response.accessToken = accessToken;
                         response.tokenExpiresAtMs = Date.now() + (this.getPortalAuthenTokenTTLSeconds() * 1000);
                         //response.tokenExpiresAtMs = Date.now() + (60000);

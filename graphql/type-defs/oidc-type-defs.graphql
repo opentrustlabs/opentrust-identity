@@ -144,7 +144,7 @@ type Mutation {
 
     ## Authentication Flows
     logout(userId: String): String
-    authenticateHandleUserNameInput(username: String!, tenantId: String, preAuthToken: String): UserAuthenticationStateResponse!
+    authenticateHandleUserNameInput(username: String!, tenantId: String, preAuthToken: String, returnToUri: String): UserAuthenticationStateResponse!
     authenticateUser(username: String!, password: String!, tenantId: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
     authenticateRotatePassword(userId: String!, newPassword: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
     authenticateConfigureTOTP(userId: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
@@ -154,7 +154,7 @@ type Mutation {
     cancelAuthentication(userId: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
 
     ## Social OIDC Authentication Flow
-    authenticateWithSocialOIDCProvider(preAuthToken: String!, federatedOIDCProviderId: String!): UserAuthenticationStateResponse!
+    authenticateWithSocialOIDCProvider(preAuthToken: String, tenantId: String!, federatedOIDCProviderId: String!): UserAuthenticationStateResponse!
 
     ## Registration Flows
     registerUser(tenantId: String!, userInput: UserCreateInput!, preAuthToken: String): UserRegistrationStateResponse!
@@ -814,6 +814,7 @@ type UserAuthenticationState {
     authenticationStateStatus: String!
     preAuthToken: String
 	expiresAtMs: Float!    
+    returnToUri: String
 }
 
 

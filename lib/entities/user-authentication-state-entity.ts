@@ -48,6 +48,12 @@ class UserAuthenticationStateEntity extends Model {
                 primaryKey: false,
                 allowNull: false,
                 field: "expiresatms"
+            },
+            returnToUri: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: true,
+                field: "returntouri"
             }
         }, 
         {
