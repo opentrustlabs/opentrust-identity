@@ -1,7 +1,7 @@
 import { OIDCContext } from "@/graphql/graphql-context";
 import * as OTPAuth from "otpauth";
 import IdentityDao from "../dao/identity-dao";
-import { Client, Fido2AuthenticationChallengeResponse, Fido2Challenge, Fido2RegistrationChallengeResponse, Fido2KeyRegistrationInput, ObjectSearchResultItem, RefreshData, RelSearchResultItem, SearchResultType, Tenant, TenantPasswordConfig, TotpResponse, User, UserCredential, UserMfaRel, UserSession, UserTenantRel, UserTenantRelView, Fido2KeyAuthenticationInput, FederatedOidcProvider, FederatedOidcAuthorizationRel, FederatedOidcAuthorizationRelType, AuthorizationCodeData, PreAuthenticationState, AuthorizationReturnUri, UserRegistrationState, RegistrationState, AuthenticationState, UserAuthenticationState } from "@/graphql/generated/graphql-types";
+import { Client, Fido2AuthenticationChallengeResponse, Fido2Challenge, Fido2RegistrationChallengeResponse, Fido2KeyRegistrationInput, ObjectSearchResultItem, RefreshData, RelSearchResultItem, SearchResultType, Tenant, TenantPasswordConfig, TotpResponse, User, UserCredential, UserMfaRel, UserSession, UserTenantRel, UserTenantRelView, Fido2KeyAuthenticationInput, FederatedOidcProvider, FederatedOidcAuthorizationRel, FederatedOidcAuthorizationRelType, AuthorizationCodeData, PreAuthenticationState, AuthorizationReturnUri, UserRegistrationState, RegistrationState, AuthenticationState, UserAuthenticationState, PortalUserProfile, UserScopeRel, Scope, AuthorizationGroup } from "@/graphql/generated/graphql-types";
 import { DaoFactory } from "../data-sources/dao-factory";
 import TenantDao from "../dao/tenant-dao";
 import { GraphQLError } from "graphql/error";
@@ -17,7 +17,6 @@ import { VerifiedRegistrationResponse, verifyRegistrationResponse, verifyAuthent
 import { validatePasswordFormat } from "@/utils/password-utils";
 import OIDCServiceUtils from "./oidc-service-utils";
 import { WellknownConfig } from "../models/wellknown-config";
-
 
 
 const identityDao: IdentityDao = DaoFactory.getInstance().getIdentityDao();
@@ -42,6 +41,7 @@ const PORTAL_AUTH_TOKEN_TTL_SECONDS = PORTAL_AUTH_TOKEN_TTL_HOURS ?
         DEFAULT_PORTAL_AUTH_TOKEN_TTL_HOURS * 60 * 60;
 
 class IdentityService {
+
     
     oidcContext: OIDCContext;
 
@@ -49,6 +49,7 @@ class IdentityService {
         this.oidcContext = oidcContext;
     }
 
+    
 
     // ##########################################################################
     // 
@@ -65,12 +66,30 @@ class IdentityService {
 
         const existingUser: User | null = await identityDao.getUserBy("id", user.userId);
         if (existingUser !== null) {
-            if (existingUser.locked === true && user.locked !== true) {
-                user.locked = true;
+            if(existingUser.markForDelete === true){
+                throw new GraphQLError("ERROR_USER_IS_MARKED_FOR_DELETE_AND_CANNOT_BE_UPDATED");
             }
-            user.federatedOIDCProviderSubjectId = existingUser.federatedOIDCProviderSubjectId;
-            user.domain = existingUser.domain;
 
+            // If this user has a domain that is managed via a federated OIDC provider,
+            // then none of the user's properties can be updated because they come from
+            // the federaed OIDC provider. The only changes allowed are to enable/disable
+            // the user.
+            const userHasFederatedOIDCProvider = user.federatedOIDCProviderSubjectId !== null && user.federatedOIDCProviderSubjectId !== "" ? true : false;
+            if(userHasFederatedOIDCProvider && (
+                    user.email !== existingUser.email ||
+                    user.firstName !== existingUser.firstName ||
+                    user.lastName !== existingUser.lastName ||
+                    user.middleName !== existingUser.middleName ||
+                    user.phoneNumber !== existingUser.phoneNumber
+                )
+            ){
+                throw new GraphQLError("ERROR_PROFILE_IS_CONTROLLED_BY_EXTERNAL_OIDC_PROVIDER");
+            }
+            
+
+            // Unlocking the user is done via a separate process, which may require
+            // additional auditing.
+            //
             // Did the email change and if so, what parts of the email have changed?
             // 1    domains 
             // 2    just the name
@@ -78,6 +97,7 @@ class IdentityService {
             // In case of change.
             // 1    verify the email does not already exist
             // 2    unset the verified email flag
+            // 3    send an email to verify the new address
             if (user.email !== existingUser.email) {
                 const userByEmail: User | null = await identityDao.getUserBy("email", user.email);
                 if (userByEmail) {

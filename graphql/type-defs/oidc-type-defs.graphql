@@ -144,13 +144,15 @@ type Mutation {
 
     ## Authentication Flows
     logout(userId: String): String
-    authenticateHandleUserNameInput(username: String!, tenantId: String, preAuthToken: String, returnToUri: String): UserAuthenticationStateResponse!
+    authenticateHandleUserNameInput(username: String!, tenantId: String, preAuthToken: String, returnToUri: String): UserAuthenticationStateResponse!    
     authenticateUser(username: String!, password: String!, tenantId: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
+    authenticateHandleForgotPassword(authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
     authenticateRotatePassword(userId: String!, newPassword: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
     authenticateConfigureTOTP(userId: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
     authenticateValidateTOTP(userId: String!, totpTokenValue: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
     authenticateRegisterSecurityKey(userId: String!, fido2KeyRegistrationInput: Fido2KeyRegistrationInput!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
     authenticateValidateSecurityKey(userId: String!, fido2KeyAuthenticationInput: Fido2KeyAuthenticationInput!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
+    authenticateValidatePasswordResetToken(token: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
     cancelAuthentication(userId: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
 
     ## Social OIDC Authentication Flow
@@ -777,6 +779,7 @@ enum AuthenticationState {
     SELECT_TENANT_THEN_REGISTER
     ENTER_PASSWORD
     ROTATE_PASSWORD
+    VALIDATE_PASSWORD_RESET_TOKEN
     CONFIGURE_TOTP
     VALIDATE_TOTP
     CONFIGURE_SECURITY_KEY

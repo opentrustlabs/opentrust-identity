@@ -690,6 +690,16 @@ export const AUTHENTICATE_USER = gql`
     ${USER_AUTHENTICATION_STATE_RESPONSE_FRAGMENT}
 `;
 
+export const AUTHENTICATE_HANDLE_FORGOT_PASSWORD = gql`
+    mutation authenticateHandleForgotPassword($authenticationSessionToken: String!, $preAuthToken: String) {
+        authenticateHandleForgotPassword(authenticationSessionToken: $authenticationSessionToken, preAuthToken: $preAuthToken){
+            ...UserAuthenticationStateResponseFragment
+        }
+    }
+
+    ${USER_AUTHENTICATION_STATE_RESPONSE_FRAGMENT}
+`;
+
 export const AUTHENTICATE_ROTATE_PASSWORD = gql`
     mutation authenticateRotatePassword($userId: String!, $newPassword: String!, $authenticationSessionToken: String!, $preAuthToken: String){
         authenticateRotatePassword(userId: $userId, newPassword: $newPassword, authenticationSessionToken: $authenticationSessionToken, preAuthToken: $preAuthToken) {
@@ -733,6 +743,16 @@ export const AUTHENTICATE_VALIDATE_SECURITY_KEY = gql`
 export const AUTHENTICATE_REGISTER_SECURITY_KEY = gql`
     mutation authenticateRegisterSecurityKey($userId: String!, $fido2KeyRegistrationInput: Fido2KeyRegistrationInput!, $authenticationSessionToken: String!, $preAuthToken: String) {
         authenticateRegisterSecurityKey(userId: $userId, fido2KeyRegistrationInput: $fido2KeyRegistrationInput, authenticationSessionToken: $authenticationSessionToken, preAuthToken: $preAuthToken) {
+            ...UserAuthenticationStateResponseFragment
+        }
+    }
+
+    ${USER_AUTHENTICATION_STATE_RESPONSE_FRAGMENT}
+`;
+
+export const AUTHENTICATE_VALIDATE_PASSWORD_RESET_TOKEN = gql`
+    mutation authenticateValidatePasswordResetToken($token: String!, $authenticationSessionToken: String!, $preAuthToken: String){
+        authenticateValidatePasswordResetToken(token: $token, authenticationSessionToken: $authenticationSessionToken, preAuthToken: $preAuthToken) {
             ...UserAuthenticationStateResponseFragment
         }
     }

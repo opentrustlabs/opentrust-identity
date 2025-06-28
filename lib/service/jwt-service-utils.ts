@@ -1,4 +1,4 @@
-import { User, Tenant, Client, SigningKey, ClientAuthHistory } from "@/graphql/generated/graphql-types";
+import { User, Tenant, Client, SigningKey, ClientAuthHistory, PortalUserProfile, AuthorizationGroup, UserScopeRel, Scope } from "@/graphql/generated/graphql-types";
 import { generateRandomToken } from "@/utils/dao-utils";
 import ClientDao from "@/lib/dao/client-dao";
 import TenantDao from "@/lib/dao/tenant-dao";
@@ -11,6 +11,8 @@ import { randomUUID, createPrivateKey, PrivateKeyInput, KeyObject, createSecretK
 import NodeCache from "node-cache";
 import { CLIENT_SECRET_ENCODING, DEFAULT_END_USER_TOKEN_TTL_SECONDS, DEFAULT_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS, NAME_ORDER_WESTERN, TOKEN_TYPE_END_USER, TOKEN_TYPE_SERVICE_ACCOUNT_TOKEN } from "@/utils/consts";
 import { DaoFactory } from "../data-sources/dao-factory";
+import ScopeDao from "../dao/scope-dao";
+import AuthorizationGroupDao from "../dao/authorization-group-dao";
 
 const SIGNING_KEY_ARRAY_CACHE_KEY = "SIGNING_KEY_ARRAY_CACHE_KEY"
 interface CachedSigningKeyData {
@@ -24,6 +26,8 @@ const identityDao: IdentityDao = DaoFactory.getInstance().getIdentityDao();
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
 const clientDao: ClientDao = DaoFactory.getInstance().getClientDao();
 const signingKeysDao: SigningKeysDao = DaoFactory.getInstance().getSigningKeysDao();
+const scopeDao: ScopeDao = DaoFactory.getInstance().getScopeDao();
+const authorizationGroupDao: AuthorizationGroupDao = DaoFactory.getInstance().getAuthorizationGroupDao();
 
 const {
     AUTH_DOMAIN
@@ -42,7 +46,79 @@ class JwtServiceUtils {
         stdTTL: 900, // 15 minutes
         useClones: false,
         checkperiod: 1800, 
-    })
+    });
+
+
+    static PortalUserProfileCache = new NodeCache({
+        stdTTL: 900, // 15 minutes
+        useClones: false,
+        checkperiod: 1800, 
+    });
+
+    public async getPortalUserProfile(jwt: string): Promise<PortalUserProfile | null> {
+
+        if(JwtServiceUtils.PortalUserProfileCache.has(jwt)){
+            return JwtServiceUtils.PortalUserProfileCache.get(jwt) as PortalUserProfile;
+        }
+
+        let principal: OIDCPrincipal | null = null;
+
+        const p = await this.validateJwt(jwt);
+        if (p) {
+            principal = p;
+        }
+        if(principal === null){
+            return null;
+        }       
+        
+        else{
+            const user: User | null = await identityDao.getUserBy("id", principal.sub);
+            if(user === null){
+                return null;
+            }
+            const setScopeIds: Set<string> = new Set();
+
+            const arrAuthorizationGroups: Array<AuthorizationGroup> = await authorizationGroupDao.getUserAuthorizationGroups(user.userId);
+            const arrAuthzGroupIds = arrAuthorizationGroups.map((g: AuthorizationGroup) => g.groupId);
+            for(let i = 0; i < arrAuthzGroupIds.length; i++){
+                const arrRels = await scopeDao.getAuthorizationGroupScopeRels(arrAuthzGroupIds[i]);
+                for(let j = 0; j < arrRels.length; j++){
+                    setScopeIds.add(arrRels[j].scopeId);
+                }
+            }
+
+            const userScopeRels: Array<UserScopeRel> = await scopeDao.getUserScopeRels(principal.sub, principal.tenant_id);
+            for(let i = 0; i < userScopeRels.length; i++){
+                setScopeIds.add(userScopeRels[i].scopeId)
+            }            
+            const arrScope: Array<Scope> = await scopeDao.getScope(undefined, Array.from(setScopeIds));            
+
+            const profile: PortalUserProfile = {
+                domain: principal.email,
+                email: principal.email,
+                emailVerified: true,
+                enabled: true,
+                firstName: principal.given_name,
+                lastName: principal.family_name,
+                locked: false,
+                nameOrder: user.nameOrder,
+                scope: arrScope,
+                tenantId: principal.tenant_id,
+                tenantName: principal.tenant_name,
+                userId: principal.sub,
+                countryCode: principal.country_code,
+                preferredLanguageCode: principal.language_code,
+                managementAccessTenantId: principal.tenant_id
+            }
+            
+            // home depot: 2a303f6d-0ebc-4590-9d12-7ebab6531d7e
+            // root tenant: ad3e45b1-3e62-4fe2-ba59-530d35ae93d5
+            // airbnb: c42c29cb-1bf7-4f6a-905e-5f74760218e2
+            // amgen: 73d00cb0-f058-43b0-8fb4-d0e48ff33ba2
+            JwtServiceUtils.PortalUserProfileCache.set(jwt, profile);
+            return profile;
+        }
+    }
 
     /**
      * 
