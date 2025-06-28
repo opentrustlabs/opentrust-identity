@@ -1,4 +1,4 @@
-import { TenantAnonymousUserConfiguration, LoginFailurePolicy, Tenant, TenantLegacyUserMigrationConfig, TenantLookAndFeel, TenantManagementDomainRel, TenantPasswordConfig, TenantRestrictedAuthenticationDomainRel } from "@/graphql/generated/graphql-types";
+import { TenantAnonymousUserConfiguration, TenantLoginFailurePolicy, Tenant, TenantLegacyUserMigrationConfig, TenantLookAndFeel, TenantManagementDomainRel, TenantPasswordConfig, TenantRestrictedAuthenticationDomainRel } from "@/graphql/generated/graphql-types";
 
 
 abstract class TenantDao {
@@ -42,15 +42,25 @@ abstract class TenantDao {
 
     abstract deleteTenantLookAndFeel(tenantId: string): Promise<void>;
 
-    abstract assignPasswordConfigToTenant(tenantId: string, tenantPasswordConfig: TenantPasswordConfig): Promise<TenantPasswordConfig>;
+    abstract assignPasswordConfigToTenant(tenantPasswordConfig: TenantPasswordConfig): Promise<TenantPasswordConfig>;
+
+    abstract updatePasswordConfig(tenantPasswordConfig: TenantPasswordConfig): Promise<TenantPasswordConfig>;
 
     abstract getTenantPasswordConfig(tenantId: string): Promise<TenantPasswordConfig | null>;
 
     abstract removePasswordConfigFromTenant(tenantId: string): Promise<void>;
 
-    abstract updateLoginFailurePolicy(loginFailurePolicy: LoginFailurePolicy): Promise<LoginFailurePolicy>;
+    abstract getLoginFailurePolicy(tenantId: String): Promise<TenantLoginFailurePolicy | null>;
+
+    abstract createLoginFailurePolicy(loginFailurePolicy: TenantLoginFailurePolicy): Promise<TenantLoginFailurePolicy>;
+
+    abstract updateLoginFailurePolicy(loginFailurePolicy: TenantLoginFailurePolicy): Promise<TenantLoginFailurePolicy>;
+
+    abstract removeLoginFailurePolicy(tenantId: string): Promise<void>;
 
     abstract getLegacyUserMigrationConfiguration(tenantId: string): Promise<TenantLegacyUserMigrationConfig | null>;
+
+    abstract createTenantLegacyUserMigrationConfiguration(tenantLegacyUserMigrationConfig: TenantLegacyUserMigrationConfig): Promise<TenantLegacyUserMigrationConfig | null>;
 
     abstract setTenantLegacyUserMigrationConfiguration(tenantLegacyUserMigrationConfig: TenantLegacyUserMigrationConfig): Promise<TenantLegacyUserMigrationConfig | null>;
 

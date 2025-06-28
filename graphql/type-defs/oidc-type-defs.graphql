@@ -19,6 +19,7 @@ type Query {
     getLegacyUserMigrationConfiguration(tenantId: String!): TenantLegacyUserMigrationConfig
     getTenantLookAndFeel(tenantId: String!): TenantLookAndFeel
     getTenantPasswordConfig(tenantId: String!): TenantPasswordConfig
+    getTenantLoginFailurePolicy(tenantId: String!): TenantLoginFailurePolicy
 
     ## Clients
     getClients(tenantId: String): [Client!]!
@@ -28,9 +29,7 @@ type Query {
     ## Users
     getUsers(tenantId: String): [User!]!
     getUserById(userId: String!): User
-    getLoginUserNameHandler(username: String!, tenantId: String, preauthToken: String): LoginUserNameHandlerResponse!
     getUserTenantRels(userId: String!): [UserTenantRelView!]!
-    validateTOTP(userId: String!, totpValue: String!): Boolean!
     getUserMFARels(userId: String!): [UserMFARel!]!
     getUserSessions(userId: String!): [UserSession!]!
 
@@ -81,9 +80,6 @@ type Query {
     ## Change events
     getChangeEvents(objectId: String!): [ChangeEvent!]!
 
-    ## Login Failure Configuration
-    getLoginFailurePolicy(tenantId: String!): LoginFailurePolicy
-
     ## Scheduler
     getSchedulerLocks: [SchedulerLock]
 
@@ -99,6 +95,7 @@ type Query {
 
     ## i18n
     getStateProvinceRegions(countryCode: String!): [StateProvinceRegion!]!
+
 
 }
 
@@ -122,6 +119,8 @@ type Mutation {
     removeTenantAnonymousUserConfig(tenantId: String!): String
     setTenantLookAndFeel(tenantLookAndFeelInput: TenantLookAndFeelInput!): TenantLookAndFeel    
     removeTenantLookAndFeel(tenantId: String!): String
+    setTenantLoginFailurePolicy(tenantLoginFailurePolicyInput: TenantLoginFailurePolicyInput!): TenantLoginFailurePolicy!
+    removeTenantLoginFailurePolicy(tenantId: String!): String!
     
     ## Clients
     createClient(clientInput: ClientCreateInput!): Client
@@ -134,24 +133,46 @@ type Mutation {
     removeAuthenticationGroupFromClient(authenticationGroupId: String!, clientId: String!): String
 
     ## Users
-    logout(userId: String): String
-    login(username: String!, password: String!): LoginAuthenticationHandlerResponse!
-    createUser(tenantId: String!, userInput: UserCreateInput!): User!
+    createUser(tenantId: String!, userInput: UserCreateInput!): User!    
     updateUser(userInput: UserUpdateInput!): User!
     updateUserTenantRel(tenantId: String!, userId: String!, relType: String!): UserTenantRel!
     assignUserToTenant(tenantId: String!, userId: String!, relType: String!): UserTenantRel!
     removeUserFromTenant(tenantId: String!, userId: String!): String
     deleteUserSession(userId: String!, clientId: String!, tenantId: String!): String
-    ## Users: TOPT
-    generateTOTP(userId: String!): TOTPResponse
+    rotatePassword(userId: String!, oldPassword: String!, newPassword: String!): Boolean
+    
+
+    ## Authentication Flows
+    logout(userId: String): String
+    authenticateHandleUserNameInput(username: String!, tenantId: String, preAuthToken: String, returnToUri: String): UserAuthenticationStateResponse!
+    authenticateUser(username: String!, password: String!, tenantId: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
+    authenticateRotatePassword(userId: String!, newPassword: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
+    authenticateConfigureTOTP(userId: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
+    authenticateValidateTOTP(userId: String!, totpTokenValue: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
+    authenticateRegisterSecurityKey(userId: String!, fido2KeyRegistrationInput: Fido2KeyRegistrationInput!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
+    authenticateValidateSecurityKey(userId: String!, fido2KeyAuthenticationInput: Fido2KeyAuthenticationInput!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
+    cancelAuthentication(userId: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
+
+    ## Social OIDC Authentication Flow
+    authenticateWithSocialOIDCProvider(preAuthToken: String, tenantId: String!, federatedOIDCProviderId: String!): UserAuthenticationStateResponse!
+
+    ## Registration Flows
+    registerUser(tenantId: String!, userInput: UserCreateInput!, preAuthToken: String): UserRegistrationStateResponse!
+    registerVerifyEmailAddress(userId: String!, token: String!, registrationSessionToken: String!, preAuthToken: String): UserRegistrationStateResponse!
+    registerConfigureTOTP(userId: String!, registrationSessionToken: String!, preAuthToken: String, skip: Boolean!): UserRegistrationStateResponse!
+    registerValidateTOTP(userId: String!, registrationSessionToken: String!, totpTokenValue: String!, preAuthToken: String): UserRegistrationStateResponse!
+    registerConfigureSecurityKey(userId: String!, registrationSessionToken: String!, fido2KeyRegistrationInput: Fido2KeyRegistrationInput, preAuthToken: String, skip: Boolean!): UserRegistrationStateResponse!
+    registerValidateSecurityKey(userId: String!, registrationSessionToken: String!, fido2KeyAuthenticationInput: Fido2KeyAuthenticationInput!, preAuthToken: String): UserRegistrationStateResponse!
+    cancelRegistration(userId: String!, registrationSessionToken: String!, preAuthToken: String): UserRegistrationStateResponse!
+
+    ## MFA Utilities
+    generateTOTP(userId: String!): TOTPResponse!
+    validateTOTP(userId: String!, totpToken: String!): Boolean!
     deleteTOTP(userId: String!): String
-    ## Users: FIDO Key
     deleteFIDOKey(userId: String!): String
-    registerFIDO2Key(userId: String!, fido2KeyRegistrationInput: Fido2KeyRegistrationInput!): UserMFARel
-    createFido2RegistrationChallenge(userId: String!): Fido2RegistrationChallengeResponse
-    authenticateFIDO2Key(userId: String!, fido2KeyAuthenticationInput: Fido2KeyAuthenticationInput!): Boolean!
-    createFido2AuthenticationChallenge(userId: String!): Fido2AuthenticationChallengeResponse    
-         
+    createFido2RegistrationChallenge(userId: String!, sessionToken: String, sessionTokenType: String): Fido2RegistrationChallengeResponse
+    createFido2AuthenticationChallenge(userId: String!, sessionToken: String, sessionTokenType: String): Fido2AuthenticationChallengeResponse
+
     
     ## Keys
     createSigningKey(keyInput: SigningKeyCreateInput!): SigningKey!
@@ -212,10 +233,6 @@ type Mutation {
     removeFederatedOIDCProviderFromDomain(federatedOIDCProviderId: String!, domain: String!): FederatedOIDCProviderDomainRel!
     deleteFederatedOIDCProvider(federatedOIDCProviderId: String!): String!
 
-    ## Login failure policy
-    ## createLoginFailurePolicy(loginFailurePolicyInput: LoginFailurePolicyInput!): LoginFailurePolicy!
-    updateLoginFailurePolicy(loginFailurePolicyInput: LoginFailurePolicyInput!): LoginFailurePolicy!
-
     ## Scheduler locks
     deleteSchedulerLock(instanceId: String!): String!
 
@@ -240,23 +257,14 @@ enum SecretObjectType {
     OIDC_PROVIDER_CLIENT_SECRET
 }
 
-type LoginFailurePolicy {
+type TenantLoginFailurePolicy {
     tenantId: String!
     loginFailurePolicyType: String!
-    loginfailurepolicytypeid: String
     failureThreshold: Int!
     pauseDurationMinutes: Int
-    numberOfPauseCyclesBeforeLocking: Int
-    initBackoffDurationMinutes: Int
-    numberOfBackoffCyclesBeforeLocking: Int
+    maximumLoginFailures: Int
 }
 
-########
-# 1.    tenantId -           Write once, read only
-# 2.    enabled -            true | false
-# 3.    allowedScopeValues - ALL of the scopes that are available for the tenant. A subset of these are
-#                            available to each of the clients
-# 4.    allowUnlimitedRate - true | false. True will override any rate limit set in the rateLimits property
 
 type Tenant {
     tenantId: String!
@@ -307,12 +315,6 @@ type TenantRestrictedAuthenticationDomainRel {
     domain: String!
 }
 
-# Either client secret should be defined or usePkce should be set to true
-# if no client secret, then client auth type should be NONE
-# refreshTokenAllowed - does the external provider allow for refresh tokens? default false 
-#
-# socialLoginIcon -> social login, in case the login screen wants to display a "Sign in with Google/Facebook/Twitter + <Google/Facebook/Twitter Icon>"
-# socialLoginDisplayName -> social login, the name to display 
 type FederatedOIDCProvider {
     federatedOIDCProviderId: String!
     federatedOIDCProviderName: String!
@@ -348,13 +350,6 @@ type FederatedOIDCProviderDomainRel {
     domain: String!
 }
 
-## TODO
-## Change this to TenantRegistrationConfig
-## and add
-## 1.   requireAccessTermsAndConditions    Boolean!
-## 2.   termsAncConditionsUri              String
-## 3.   requireCaptchaOnRegistration       Boolean!
-## 4.   captchaConfig                      To be determined
 type TenantPasswordConfig {
     tenantId: String!
     passwordMinLength: Int!
@@ -367,8 +362,6 @@ type TenantPasswordConfig {
 	specialCharactersAllowed: String
     requireMfa: Boolean!
     mfaTypesRequired: String
-    allowMfa: Boolean!
-    mfaTypesAllowed: String
     maxRepeatingCharacterLength: Int
     passwordRotationPeriodDays: Int
     passwordHistoryPeriod: Int
@@ -382,19 +375,6 @@ type TenantLegacyUserMigrationConfig {
     usernameCheckUri: String!
 }
 
-# 1.    tenantId -      Parent tenant (write once, read only)
-# 2.    clientId -      GUID
-# 3.    clientSecret -  A 256-bit hex-encoded value
-# 4.    clientName
-# 5.    clientDescription
-# 6.    enabled -       true | false
-# 7.    redirectUris - List of redirect URIs for authorization
-# 8.    oidcEnabled -  Allow SSO for this client
-# 9.    pkceEnabled
-# 10.   clientType
-# 11.   userTokenTTLSeconds default is 60 minutes, configurable up to 12 hours
-# 12.   allowUserSelfRegistration default false
-# 13.   allowDelegatedAuthentication default false
 type Client {
     tenantId: String!
     clientId: String!
@@ -653,6 +633,12 @@ type AuthorizationCodeData {
     expiresAtMs: Float!
 }
 
+type AuthorizationReturnUri {
+    uri: String!
+    code: String!
+    state: String
+}
+
 type SuccessfulLoginResponse {
     mfaEnabled: Boolean!
     userId: String!
@@ -675,12 +661,21 @@ type RefreshData {
     userId: String!
     redirecturi: String!
     refreshTokenClientType: String!
-    refreshtokenclienttypeid: String
+    codeChallenge: String
+    codeChallengeMethod: String
     refreshCount: Int!
     scope: String!
 }
 
+enum FederatedOIDCAuthorizationRelType {
+    AUTHORIZATION_REL_TYPE_PORTAL_AUTH
+    AUTHORIZATION_REL_TYPE_CLIENT_AUTH
+}
+
 type FederatedOIDCAuthorizationRel {
+    federatedOIDCAuthorizationRelType: FederatedOIDCAuthorizationRelType!
+    email: String
+    userId: String
     state: String!
     codeVerifier: String
     codechallengemethod: String
@@ -688,7 +683,7 @@ type FederatedOIDCAuthorizationRel {
     initState: String!
     initRedirectUri: String!
     initTenantId: String!
-    initClientId: String!
+    initClientId: String
     initScope: String!
     initCodeChallengeMethod: String
     initCodeChallenge: String
@@ -762,65 +757,125 @@ type SchedulerLock {
     lockExpiresAtMS: Float!
 }
 
-type UserFailedLoginAttempts {
+type UserFailedLogin {
     userId: String!
-    failureAtMS: Float!
+    failureAtMs: Float!
+    nextLoginNotBefore: Float!
+    failureCount: Float!
 }
 
-enum LoginUserNameHandlerAction {
-    OIDC_REDIRECT
-    ERROR
+
+type TenantSelectorData {
+    tenantId: String!
+    tenantName: String!
+}
+
+enum AuthenticationState {
+    AUTH_WITH_FEDERATED_OIDC
+    SELECT_TENANT
+    REGISTER
+    SELECT_TENANT_THEN_REGISTER
     ENTER_PASSWORD
+    ROTATE_PASSWORD
+    CONFIGURE_TOTP
+    VALIDATE_TOTP
+    CONFIGURE_SECURITY_KEY
+    VALIDATE_SECURITY_KEY
+    REDIRECT_BACK_TO_APPLICATION
+    REDIRECT_TO_IAM_PORTAL
+    COMPLETED
+    EXPIRED
+    CANCELLED
+    ERROR
 }
 
-type OIDCRedirectActionHandlerConfig {
-    redirectUri: String!
-    state: String!
-    clientId: String!
-    codeChallenge: String
-    codeChallengeMethod: String
-    scope: String
-    responseType: String!
-    responseMode: String!
-}
-
-type ErrorActionHandler {
+type AuthenticationError {
     errorCode: String!
     errorMessage: String!
 }
 
-type LoginUserNameHandlerResponse {
-    action: LoginUserNameHandlerAction!
-    oidcRedirectActionHandlerConfig: OIDCRedirectActionHandlerConfig
-    errorActionHandler: ErrorActionHandler
+type UserAuthenticationStateResponse {
+    userAuthenticationState: UserAuthenticationState!
+    authenticationError: AuthenticationError!
+    availableTenants: [TenantSelectorData!]
+    uri: String
+    totpSecret: String
+    accessToken: String
+    tokenExpiresAtMs: Float
+    passwordConfig: TenantPasswordConfig
 }
 
-enum LoginAuthenticationHandlerAction {
-    ERROR
-    AUTHENTICATED
-    SECOND_FACTOR_INPUT
+type UserAuthenticationState {
+	userId: String!
+    authenticationSessionToken: String!
+    tenantId: String!
+	authenticationState: AuthenticationState!
+    authenticationStateOrder: Int!
+    authenticationStateStatus: String!
+    preAuthToken: String
+	expiresAtMs: Float!    
+    returnToUri: String
 }
+
+
+enum RegistrationState {
+    VALIDATE_EMAIL
+    CONFIGURE_TOTP_REQUIRED
+    CONFIGURE_TOTP_OPTIONAL
+    VALIDATE_TOTP
+    CONFIGURE_SECURITY_KEY_REQUIRED
+    CONFIGURE_SECURITY_KEY_OPTIONAL
+    VALIDATE_SECURITY_KEY
+    COMPLETED
+    REDIRECT_BACK_TO_APPLICATION
+    REDIRECT_TO_IAM_PORTAL
+    EXPIRED
+    CANCELLED
+    ERROR
+}
+
+type RegistrationError {
+    errorCode: String!
+    errorMessage: String!
+}
+
+type UserRegistrationStateResponse {
+    userRegistrationState: UserRegistrationState!
+    registrationError: RegistrationError! 
+	accessToken: String
+    tokenExpiresAtMs: Float
+    totpSecret: String
+	uri: String
+}
+
+type UserRegistrationState {
+	userId: String!
+    email: String!
+    tenantId: String!
+    registrationSessionToken: String!
+	registrationState: RegistrationState!
+    registrationStateOrder: Int!
+    registrationStateStatus: String!
+    preAuthToken: String
+	expiresAtMs: Float!
+}
+
 
 enum SecondFactorType {
-    EMAIL
-    SMS
     TOTP
     SECURITY_KEY
 }
 
-type LoginAuthenticationSuccessConfig {
-    code: String!
-    redirectUri: String!
-    responseMode: String
-    state: String
+
+enum AuthenticationErrorTypes {
+    ERROR_INVALID_USERNAME_OR_PASSWORD
+    ERROR_CONDITIONS_FOR_AUTHENTICATION_NOT_MET
+    ERROR_NO_MANAGEMENT_DOMAIN
+    ERROR_NO_MATCHING_FEDERATED_PROVIDER_FOR_TENANT
+    ERROR_EXCLUSIVE_TENANT_AND_NO_FEDERATED_OIDC_PROVIDER
+    ERROR_NO_MATCHING_USER_AND_NO_TENANT_SELF_REGISTRATION
 }
 
-type LoginAuthenticationHandlerResponse {
-    status: LoginAuthenticationHandlerAction!
-    secondFactorType: SecondFactorType
-    successConfig: LoginAuthenticationSuccessConfig
-    errorActionHandler: ErrorActionHandler
-}
 
 enum MarkForDeleteObjectType {
     TENANT
@@ -982,6 +1037,8 @@ type Fido2AuthenticationChallengeResponse {
     fido2AuthenticationChallengePasskeys: [Fido2AuthenticationChallengePasskey!]!
 }
 
+
+
 ############################################################################
 ################ INPUT TYPES AND RESPONSES FOR MUTATATIONS #################
 ############################################################################
@@ -1082,8 +1139,6 @@ input PasswordConfigInput {
 	specialCharactersAllowed: String
     requireMfa: Boolean!
     mfaTypesRequired: String
-    allowMfa: Boolean!
-    mfaTypesAllowed: String
     maxRepeatingCharacterLength: Int
     passwordRotationPeriodDays: Int
     passwordHistoryPeriod: Int
@@ -1294,20 +1349,17 @@ input AccessRuleUpdateInput {
     accessRuleDefinition: String!
 }
 
-input LoginFailurePolicyInput {
+input TenantLoginFailurePolicyInput {
     tenantId: String!
     loginFailurePolicyType: String!
-    loginfailurepolicytypeid: String
     failureThreshold: Int!
     pauseDurationMinutes: Int
-    numberOfPauseCyclesBeforeLocking: Int
-    initBackoffDurationMinutes: Int
-    numberOfBackoffCyclesBeforeLocking: Int
+    maximumLoginFailures: Int
 }
 
 input UserCreateInput {
     federatedOIDCProviderSubjectId: String
-    email: String!
+    email: String!    
     emailVerified: Boolean!
     domain: String!
     firstName: String!
@@ -1324,6 +1376,7 @@ input UserCreateInput {
     locked: Boolean!
     enabled: Boolean!
     nameOrder: String!
+    password: String!
 }
 
 input UserUpdateInput {

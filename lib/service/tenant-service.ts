@@ -1,9 +1,9 @@
-import { TenantAnonymousUserConfiguration, Contact, ObjectSearchResultItem, SearchResultType, Tenant, TenantLegacyUserMigrationConfig, TenantLookAndFeel, TenantManagementDomainRel, TenantMetaData, TenantPasswordConfig, TenantRestrictedAuthenticationDomainRel, FederatedOidcProviderTenantRel, TenantAvailableScope } from "@/graphql/generated/graphql-types";
+import { TenantAnonymousUserConfiguration, Contact, ObjectSearchResultItem, SearchResultType, Tenant, TenantLegacyUserMigrationConfig, TenantLookAndFeel, TenantManagementDomainRel, TenantMetaData, TenantPasswordConfig, TenantRestrictedAuthenticationDomainRel, FederatedOidcProviderTenantRel, TenantAvailableScope, TenantLoginFailurePolicy } from "@/graphql/generated/graphql-types";
 import { OIDCContext } from "@/graphql/graphql-context";
 import TenantDao from "@/lib/dao/tenant-dao";
 import { GraphQLError } from "graphql";
 import { randomUUID } from 'crypto'; 
-import { DEFAULT_TENANT_META_DATA, SEARCH_INDEX_OBJECT_SEARCH, TENANT_TYPE_ROOT_TENANT, TENANT_TYPES_DISPLAY } from "@/utils/consts";
+import { DEFAULT_TENANT_META_DATA, MFA_AUTH_TYPE_NONE, MFA_AUTH_TYPES, PASSWORD_HASHING_ALGORITHMS, PASSWORD_MAXIMUM_LENGTH, PASSWORD_MINIMUM_LENGTH, SEARCH_INDEX_OBJECT_SEARCH, TENANT_TYPE_ROOT_TENANT, TENANT_TYPES_DISPLAY } from "@/utils/consts";
 import { Client } from "@opensearch-project/opensearch";
 import { getOpenSearchClient } from "@/lib/data-sources/search";
 import FederatedOIDCProviderDao from "../dao/federated-oidc-provider-dao";
@@ -243,8 +243,50 @@ class TenantService {
         return tenantDao.getTenantPasswordConfig(tenantId);
     }
 
-    public async assignPasswordConfigToTenant(tenantId: string, tenantPasswordConfig: TenantPasswordConfig): Promise<TenantPasswordConfig>{
-        return tenantDao.assignPasswordConfigToTenant(tenantId, tenantPasswordConfig);
+    public async assignPasswordConfigToTenant(tenantPasswordConfig: TenantPasswordConfig): Promise<TenantPasswordConfig>{
+        if(tenantPasswordConfig.passwordMinLength < PASSWORD_MINIMUM_LENGTH){
+            throw new GraphQLError("ERROR_PASSWORD_MINIMUM_LENGTH_OUT_OF_BOUNDS");
+        }
+        if(tenantPasswordConfig.passwordMaxLength > PASSWORD_MAXIMUM_LENGTH){
+            throw new GraphQLError("ERROR_PASSWORD_MAXIMUM_LENGTH_OUT_OF_BOUNDS");
+        }
+        if(tenantPasswordConfig.requireMfa){
+            if(tenantPasswordConfig.mfaTypesRequired === null || tenantPasswordConfig.mfaTypesRequired === undefined || tenantPasswordConfig.mfaTypesRequired === ""){
+                throw new GraphQLError("ERROR_NO_MFA_TYPE_SPECIFIED_FOR_REQUIRED_MFA");
+            }
+            else{
+                const mfaTypes = tenantPasswordConfig.mfaTypesRequired.split(",");
+                let hasValidMfaTypes: boolean = true;
+                for(let i = 0; i < mfaTypes.length; i++){
+                    if(mfaTypes[i] === MFA_AUTH_TYPE_NONE){
+                        hasValidMfaTypes = false;
+                        break;
+                    }
+                    if(!MFA_AUTH_TYPES.includes(mfaTypes[i])){
+                        hasValidMfaTypes = false;
+                        break;
+                    }
+                }
+                if(hasValidMfaTypes === false){
+                    throw new GraphQLError("ERROR_INVALID_MFA_TYPE_SUPPLIED");
+                }
+            }
+        }
+        if(!PASSWORD_HASHING_ALGORITHMS.includes(tenantPasswordConfig.passwordHashingAlgorithm)){
+            throw new GraphQLError("ERROR_INVALID_HASHING_ALGORITHM_SUPPLIED");
+        }
+
+        const tenant: Tenant | null = await tenantDao.getTenantById(tenantPasswordConfig.tenantId);
+        if(tenant === null){
+            throw new GraphQLError("ERROR_UNABLE_TO_RETRIEVE_TENANT");
+        }
+        const existingConfig: TenantPasswordConfig | null = await this.getTenantPasswordConfig(tenantPasswordConfig.tenantId);
+        if(existingConfig === null){
+            return tenantDao.assignPasswordConfigToTenant(tenantPasswordConfig);    
+        }
+        else{
+            return tenantDao.updatePasswordConfig(tenantPasswordConfig);
+        }
     }
 
     public async removePasswordConfigFromTenant(tenantId: string): Promise<void>{
@@ -269,6 +311,31 @@ class TenantService {
 
     public async removeDomainFromTenantRestrictedAuthentication(tenantId: string, domain: string): Promise<void>{
         return tenantDao.removeDomainFromTenantRestrictedAuthentication(tenantId, domain);
+    }
+
+    public async getTenantLoginFailurePolicy(tenantId: string): Promise<TenantLoginFailurePolicy | null> {
+        return tenantDao.getLoginFailurePolicy(tenantId);
+    }
+
+    public async setTenantLoginFailurePolicy(loginFailurePolicy: TenantLoginFailurePolicy): Promise<TenantLoginFailurePolicy> {
+        console.log("checkpoint 1");
+        const existing: TenantLoginFailurePolicy | null = await tenantDao.getLoginFailurePolicy(loginFailurePolicy.tenantId);
+        console.log("checkpoint 2");
+        if(!existing){
+            console.log("checkpoint 3");
+            await tenantDao.createLoginFailurePolicy(loginFailurePolicy);
+            console.log("checkpoint 4");
+        }
+        else{
+            console.log("checkpoint 5");
+            await tenantDao.updateLoginFailurePolicy(loginFailurePolicy);
+            console.log("checkpoint 6");
+        }
+        return loginFailurePolicy;
+    }
+
+    public async removeTenantLoginFailurePolicy(tenantId: string): Promise<void> {
+        await tenantDao.removeLoginFailurePolicy(tenantId);
     }
 
     /*

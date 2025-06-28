@@ -1,5 +1,5 @@
 "use client";
-import React, { createContext, ReactNode, useContext } from "react";
+import React, { createContext, ReactNode, useContext, useEffect } from "react";
 import { Alert, Snackbar, Typography } from "@mui/material";
 
 export interface ClipboardCopyContextProps {
@@ -24,12 +24,14 @@ const ClipboardCopyContextProvider: React.FC<ClipboardCopyContextProps> = ({ chi
 
     const [open, setOpen] = React.useState(false);
     const [message, setMessage] = React.useState("");
-
+    const [navigatorAvailable, setNavigatorAvailable] = React.useState(false);    
 
     const copyContentToClipboard = async (val: string, message: string) => {
         try {
-            await navigator.clipboard.writeText(val);
-            setMessage(message);
+            if(navigatorAvailable){
+                await navigator.clipboard.writeText(val);
+                setMessage(message);
+            }
         }
         catch (error: any){
             setMessage(`Error copying data to the clipboard: ${error.message}`);
@@ -37,6 +39,12 @@ const ClipboardCopyContextProvider: React.FC<ClipboardCopyContextProps> = ({ chi
         setOpen(true);
     }
 
+    useEffect(() => {
+        if(typeof window !== "undefined"){
+            setNavigatorAvailable(true);
+        }
+    }, []);
+    
     const closeSnackbar = () => {
         setOpen(false);
     }

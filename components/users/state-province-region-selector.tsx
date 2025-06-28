@@ -31,7 +31,8 @@ const StateProvinceRegionSelector: React.FC<StateProvinceRegionSelectorProps> = 
         },
         onCompleted(data) {
             setStateProvinceRegion(getInitValue(data.getStateProvinceRegions));
-        }
+        },
+        skip: countryCode === null || countryCode === undefined
     });
 
     // HANDLER FUNCTIONS
@@ -54,14 +55,14 @@ const StateProvinceRegionSelector: React.FC<StateProvinceRegionSelectorProps> = 
                 <Alert severity="error" >{error.message}</Alert>
             }            
             <Autocomplete
-                disabled={isDisabled}
-                id="stateProvinceRegion"                                                
+                disabled={isDisabled}                                           
                 sx={{paddingTop: "8px"}}
                 size="small"
                 freeSolo={true}
-                renderInput={(params) => <TextField {...params} label="" />}
+                renderInput={(params) => <TextField {...params} label="" autoComplete="off" />}
                 options={
                     loading ? [] : 
+                    !data ? [] :
                     data && data.getStateProvinceRegions === null ? [] :
                     [{isoEntryCode: "", isoEntryName: ""}, ...data.getStateProvinceRegions].map(
                         (stateProvinceRegion: StateProvinceRegion) => {
@@ -83,7 +84,9 @@ const StateProvinceRegionSelector: React.FC<StateProvinceRegionSelectorProps> = 
                     else{
                         onChange(null);
                     }
-                }}                        
+                }}                  
+                autoComplete={false}
+                autoFocus={false}                      
             />             
         </React.Fragment>
     )

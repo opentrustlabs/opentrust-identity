@@ -1,5 +1,4 @@
 "use client";
-//import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import { ApolloProvider } from '@apollo/client';
@@ -16,6 +15,7 @@ import ManagementTenantFilter from "@/components/contexts/management-tenant-filt
 import { createTheme } from '@mui/material/styles';
 import { ThemeProvider } from '@mui/material/styles';
 import { ClipboardCopyContextProvider } from "@/components/contexts/clipboard-copy-context";
+import { AuthenSessionContextProvider } from "@/components/contexts/auth-session-context";
 
 
 const theme = createTheme({    
@@ -23,8 +23,7 @@ const theme = createTheme({
         MuiButton: {
             defaultProps: {
                 
-            },
-            
+            },            
             styleOverrides: {
                 root: {
                     "&:disabled": {
@@ -38,16 +37,13 @@ const theme = createTheme({
                     ],
                     color: "white",
                     backgroundColor: "#1976d2"                    
-                },
-                
+                }                
             }
-
         },
         MuiAccordion: {
             styleOverrides: {
                 heading: {
-                    backgroundColor: "#f8f8f8",
-                    
+                    backgroundColor: "#f8f8f8"
                 }                
             }
         },
@@ -103,29 +99,31 @@ export default function RootLayout({
 
     return (
         <html lang="en">
-            <body className={`${geistSans.variable} ${geistMono.variable}`}>
-                <ApolloProvider client={client}>
-                    <ResponsiveContextProvider>                        
-                        <PageTitleContextProvider>
-                            {isAuthenticationLayoutPage &&
-                                <AuthenticationLayout>{children}</AuthenticationLayout>
-                            }
-                            {!isAuthenticationLayoutPage &&
-                                <AuthContextProvider>
-                                    <ClipboardCopyContextProvider>
+            <body suppressHydrationWarning className={`${geistSans.variable} ${geistMono.variable}`}>                
+                <ResponsiveContextProvider>                        
+                    <PageTitleContextProvider>
+                        <ClipboardCopyContextProvider>
+                            <AuthenSessionContextProvider>
+                                <ApolloProvider client={client}>
+                                    <AuthContextProvider>
                                         <TenantContextProvider>
-                                            <ManagementTenantFilter>
-                                                <ThemeProvider theme={theme}>
-                                                    <ManagementLayout>{children}</ManagementLayout>
-                                                </ThemeProvider>
-                                            </ManagementTenantFilter>
+                                            {isAuthenticationLayoutPage &&                                         
+                                                <AuthenticationLayout>{children}</AuthenticationLayout>                                        
+                                            }
+                                            {!isAuthenticationLayoutPage &&                                        
+                                                <ManagementTenantFilter>
+                                                    <ThemeProvider theme={theme}>
+                                                        <ManagementLayout>{children}</ManagementLayout>
+                                                    </ThemeProvider>
+                                                </ManagementTenantFilter>                                                                            
+                                            }
                                         </TenantContextProvider>
-                                    </ClipboardCopyContextProvider>
-                                </AuthContextProvider>
-                            }
-                        </PageTitleContextProvider>
-                    </ResponsiveContextProvider>
-                </ApolloProvider>
+                                    </AuthContextProvider>
+                                </ApolloProvider>
+                            </AuthenSessionContextProvider>
+                        </ClipboardCopyContextProvider>
+                    </PageTitleContextProvider>
+                </ResponsiveContextProvider>                
             </body>
         </html>
     );

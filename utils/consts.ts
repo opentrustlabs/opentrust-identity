@@ -4,7 +4,7 @@
 //                    AUTH-TOKEN-RELATED CONSTANTS
 // 
 
-import { TenantMetaData, TenantPasswordConfig } from "@/graphql/generated/graphql-types";
+import { TenantLoginFailurePolicy, TenantMetaData, TenantPasswordConfig } from "@/graphql/generated/graphql-types";
 
 // ************************************************************************** //
 export const DEFAULT_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS = 600; // 10 minutes 
@@ -14,8 +14,11 @@ export const MIN_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS = 120; // 2 minutes
 export const DEFAULT_END_USER_TOKEN_TTL_SECONDS = 3600; // 1 hour
 export const MAX_END_USER_TOKEN_TTL_SECONDS = 43200; // 12 hours
 export const MIN_END_USER_TOKEN_TTL_SECONDS = 600; // 10 minutes
+export const DEFAULT_PORTAL_AUTH_TOKEN_TTL_HOURS=12;
 
-
+export const AUTH_TOKEN_LOCAL_STORAGE_KEY="auth-token";
+export const TOKEN_EXPIRIES_AT_MS_LOCAL_KEY="token-expires-at-ms";
+export const MANAGEMENT_TENANT_LOCAL_STORAGE_KEY="management-tenant-id";
 
 // ************************************************************************** //
 // 
@@ -62,9 +65,16 @@ export const OIDC_TOKEN_ERROR_UNAUTHORIZED_CLIENT = "unauthorized_client";
 export const OIDC_TOKEN_ERROR_UNSUPPORTED_GRANT_TYPE = "unsupported_grant_type";
 export const OIDC_TOKEN_ERROR_INVALID_SCOPE = "invalid_scope";
 
+
 export type OidcTokenErrorType = typeof OIDC_TOKEN_ERROR_INVALID_REQUEST | typeof OIDC_TOKEN_ERROR_INVALID_CLIENT |
     typeof OIDC_TOKEN_ERROR_INVALID_GRANT | typeof OIDC_TOKEN_ERROR_UNAUTHORIZED_CLIENT | typeof OIDC_TOKEN_ERROR_UNSUPPORTED_GRANT_TYPE |
     typeof OIDC_TOKEN_ERROR_INVALID_SCOPE;
+
+export const OIDC_AUTHORIZATION_ERROR_ACCESS_DENIED="access_denied";
+export const OIDC_AUTHORIZATION_ERROR_INVALID_REQUEST="invalid_request";
+export const OIDC_AUTHENTICATION_ERROR_UNSUPPORTED_RESPONSE_TYPE="unsupported_response_type";
+export const OIDC_AUTHENTICATION_ERROR_INVALID_SCOPE = "invalid_scope";
+export const OIDC_AUTHENTICATION_ERROR_UNAUTHORIZED_CLIENT="unauthorized_client"
 
 
 
@@ -337,13 +347,24 @@ export const PASSWORD_HASH_ITERATION_32K=32768
 export const PASSWORD_HASH_ITERATION_64K=65536;
 export const PASSWORD_HASH_ITERATION_128K=131072;
 export const PASSWORD_HASH_ITERATION_256K=262144;
-
+export const RANKED_DESCENDING_HASHING_ALGORITHS = [
+    PASSWORD_HASHING_ALGORITHM_SCRYPT_128K_ITERATIONS,
+    PASSWORD_HASHING_ALGORITHM_SCRYPT_64K_ITERATIONS,
+    PASSWORD_HASHING_ALGORITHM_SCRYPT_32K_ITERATIONS,
+    PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS,    
+    PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS,
+    PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS,    
+    PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS,
+    PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS,    
+    PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS,
+    PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS
+]
 
 
 // 16 byte salt (minimum recommended by NIST is 32 bits / 4 bytes)
 export const PASSWORD_SALT_LENGTH=16; 
-export const PASSWORD_MINIMUM_LENGTH=10;
-export const PASSWORD_MAXIMUM_LENGTH=64;
+export const PASSWORD_MINIMUM_LENGTH=8;
+export const PASSWORD_MAXIMUM_LENGTH=96;
 export const PASSWORD_PATTERN="[A-Za-z0-9_-!@#[]<>=?+*.,%/:;]";
 export const DEFAULT_PASSWORD_SPECIAL_CHARACTERS_ALLOWED="_-!@#[]<>=?+*.,%/:;";
 
@@ -417,26 +438,29 @@ export const TENANT_TYPES_DISPLAY = new Map<string, string>(
     ]
 );
 
-export const DEFAULT_LOGIN_FAILURE_LOCK_THRESHOLD=6;
+export const DEFAULT_LOGIN_FAILURE_LOCK_THRESHOLD=8;
+export const DEFAULT_MAXIMUM_LOGIN_FAILURES=100;
+export const DEFAULT_LOGIN_PAUSE_TIME_MINUTES=30;
+export const DEFAULT_PASSWORD_HISTORY_PERIOD=8;
 export const LOGIN_FAILURE_POLICY_LOCK_USER_ACCOUNT="LOCK_USER_ACCOUNT";
 export const LOGIN_FAILURE_POLICY_PAUSE="PAUSE";
-export const LOGIN_FAILURE_POLICY_PAUSE_THEN_LOCK="PAUSE_THEN_LOCK";
-export const LOGIN_FAILURE_POLICY_BACKOFF="BACKOFF";
-export const LOGIN_FAILURE_POLICY_BACKOFF_THEN_LOCK="BACKOFF_THEN_LOCK";
+// export const LOGIN_FAILURE_POLICY_PAUSE_THEN_LOCK="PAUSE_THEN_LOCK";
+// export const LOGIN_FAILURE_POLICY_BACKOFF="BACKOFF";
+// export const LOGIN_FAILURE_POLICY_BACKOFF_THEN_LOCK="BACKOFF_THEN_LOCK";
 export const LOGIN_FAILURE_POLICY_TYPES=[
     LOGIN_FAILURE_POLICY_LOCK_USER_ACCOUNT,
-    LOGIN_FAILURE_POLICY_PAUSE,
-    LOGIN_FAILURE_POLICY_PAUSE_THEN_LOCK,
-    LOGIN_FAILURE_POLICY_BACKOFF,
-    LOGIN_FAILURE_POLICY_BACKOFF_THEN_LOCK
+    LOGIN_FAILURE_POLICY_PAUSE
+    // LOGIN_FAILURE_POLICY_PAUSE_THEN_LOCK,
+    // LOGIN_FAILURE_POLICY_BACKOFF,
+    // LOGIN_FAILURE_POLICY_BACKOFF_THEN_LOCK
 ];
 export const LOGIN_FAILURE_POLICY_TYPE_DISPLAY = new Map<string, string>(
     [
         [LOGIN_FAILURE_POLICY_LOCK_USER_ACCOUNT, "Lock"],
-        [LOGIN_FAILURE_POLICY_PAUSE, "Pause"],
-        [LOGIN_FAILURE_POLICY_PAUSE_THEN_LOCK, "Pause then lock"],
-        [LOGIN_FAILURE_POLICY_BACKOFF, "Backoff"],
-        [LOGIN_FAILURE_POLICY_BACKOFF_THEN_LOCK, "Backoff then lock"],
+        [LOGIN_FAILURE_POLICY_PAUSE, "Pause"]
+        // [LOGIN_FAILURE_POLICY_PAUSE_THEN_LOCK, "Pause then lock"],
+        // [LOGIN_FAILURE_POLICY_BACKOFF, "Backoff"],
+        // [LOGIN_FAILURE_POLICY_BACKOFF_THEN_LOCK, "Backoff then lock"],
     ]
 )
 
@@ -475,25 +499,30 @@ export const CLIENT_TYPES_DISPLAY = new Map<string, string>(
 );
 
 export const TOKEN_TYPE_SERVICE_ACCOUNT_TOKEN="SERVICE_ACCOUNT_TOKEN";
-export const TOKEN_TYPE_END_USER_TOKEN="END_USER_TOKEN";
+export const TOKEN_TYPE_END_USER="END_USER_TOKEN";
 export const TOKEN_TYPE_ANONYMOUS_USER="ANONYMOUS_USER";
+export const TOKEN_TYPE_PROVISIONAL_USER="PROVISIONAL_USER";
+export const TOKEN_TYPE_IAM_PORTAL_USER="IAM_PORTAL_USER";
 export const TOKEN_TYPES=[
     TOKEN_TYPE_SERVICE_ACCOUNT_TOKEN,
-    TOKEN_TYPE_END_USER_TOKEN,
-    TOKEN_TYPE_ANONYMOUS_USER
+    TOKEN_TYPE_END_USER,
+    TOKEN_TYPE_ANONYMOUS_USER,
+    TOKEN_TYPE_PROVISIONAL_USER,
+    TOKEN_TYPE_IAM_PORTAL_USER
 ];
 
+export const SESSION_TOKEN_TYPE_REGISTRATION="REGISTRATION";
+export const SESSION_TOKEN_TYPE_AUTHENTICATION="AUTHENTICATION";
+
 export const MFA_AUTH_TYPE_NONE="NONE";
-export const MFA_AUTH_TYPE_SMS="SMS";
+// export const MFA_AUTH_TYPE_SMS="SMS";
 //export const MFA_AUTH_TYPE_EMAIL="EMAIL";
 export const MFA_AUTH_TYPE_TIME_BASED_OTP="TIME_BASED_OTP";
 export const MFA_AUTH_TYPE_FIDO2="FIDO2";
 export const MFA_AUTH_TYPES=[
-    MFA_AUTH_TYPE_NONE,    
-    //MFA_AUTH_TYPE_EMAIL,
+    MFA_AUTH_TYPE_NONE,   
     MFA_AUTH_TYPE_TIME_BASED_OTP,
-    MFA_AUTH_TYPE_FIDO2,
-    MFA_AUTH_TYPE_SMS,
+    MFA_AUTH_TYPE_FIDO2
 ];
 
 export const TOTP_HASH_ALGORITHM_SHA256="SHA256";
@@ -501,10 +530,8 @@ export const TOTP_HASH_ALGORITHM_SHA1="SHA1"
 
 export const MFA_AUTH_TYPE_DISPLAY: Map<string, string> = new Map([
     [MFA_AUTH_TYPE_NONE, "None"],    
-    //[MFA_AUTH_TYPE_EMAIL, "Email - Not recommended"],
     [MFA_AUTH_TYPE_TIME_BASED_OTP, "TOTP - Requires an authenticator app"],
-    [MFA_AUTH_TYPE_FIDO2, "Security Key"],
-    [MFA_AUTH_TYPE_SMS, "SMS - Not recommended"],
+    [MFA_AUTH_TYPE_FIDO2, "Security Key"]
 ]);
 
 export const NAME_ORDER_EASTERN="EASTER_NAME_ORDER";
@@ -570,6 +597,9 @@ export const SIGNING_KEY_DISPLAY = new Map<string, string>([
     [SIGNING_KEY_STATUS_REVOKED, "Revoked"]
 ]);
 
+export const STATUS_COMPLETE="COMPLETE";
+export const STATUS_INCOMPLETE="INCOMPLETE";
+export const STATUS_OMITTED="OMITTED";
 
 export const REFRESH_TOKEN_CLIENT_TYPE_PKCE="PKCE";
 export const REFRESH_TOKEN_CLIENT_TYPE_SECURE_CLIENT="SECURE_CLIENT";
@@ -650,19 +680,15 @@ export const FEDERATED_OIDC_PROVIDER_TYPES_DISPLAY = new Map<string, string>(
 
 export const SOCIAL_OIDC_PROVIDER_GOOGLE="Google";
 export const SOCIAL_OIDC_PROVIDER_FACEBOOK="Facebook";
-export const SOCIAL_OIDC_PROVIDER_TWITTER="Twitter";
 export const SOCIAL_OIDC_PROVIDER_APPLE="Apple";
-export const SOCIAL_OIDC_PROVIDER_GITHUB="GitHub";
 export const SOCIAL_OIDC_PROVIDER_LINKEDIN="LinkedIn";
 export const SOCIAL_OIDC_PROVIDER_SALESFORCE="Salesforce"
 export const SOCIAL_OIDC_PROVIDERS = [
     SOCIAL_OIDC_PROVIDER_APPLE,
     SOCIAL_OIDC_PROVIDER_FACEBOOK,
-    SOCIAL_OIDC_PROVIDER_GITHUB,
     SOCIAL_OIDC_PROVIDER_GOOGLE,
     SOCIAL_OIDC_PROVIDER_LINKEDIN,
-    SOCIAL_OIDC_PROVIDER_SALESFORCE,
-    SOCIAL_OIDC_PROVIDER_TWITTER
+    SOCIAL_OIDC_PROVIDER_SALESFORCE
 ];
 
 
@@ -677,12 +703,13 @@ export const CONTACT_TYPE_FOR_SIGNING_KEY="SIGNING_KEY_CONTACT"
 // 
 // ************************************************************************** //
 export const QUERY_PARAM_PREAUTHN_TOKEN="_tk";
-export const QUERY_PARAM_PREAUTH_TENANT_ID="_tid";
-export const QUERY_PARAM_PREAUTH_REDIRECT_URI="redirect_uri";
+export const QUERY_PARAM_TENANT_ID="_tid";
+export const QUERY_PARAM_REDIRECT_URI="redirect_uri";
 export const QUERY_PARAM_AUTHENTICATE_TO_PORTAL="_pa";
 export const QUERY_PARAM_COUNTRY_CODE="country_code";
 export const QUERY_PARAM_LANGUAGE_CODE="language_code";
 export const QUERY_PARAM_RETURN_URI="return_uri";
+export const QUERY_PARAM_USERNAME="username";
 
 
 
@@ -741,19 +768,28 @@ export const DEFAULT_TENANT_META_DATA: TenantMetaData = {
 }
 
 export const DEFAULT_TENANT_PASSWORD_CONFIGURATION: TenantPasswordConfig = {
-    allowMfa: false,
-    passwordHashingAlgorithm: PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS,
-    passwordMaxLength: 64,
-    passwordMinLength: 10,
+    passwordHashingAlgorithm: PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS,
+    passwordMaxLength: PASSWORD_MAXIMUM_LENGTH,
+    passwordMinLength: PASSWORD_MINIMUM_LENGTH,
     requireLowerCase: true,
     requireMfa: false,
     requireNumbers: true,
     requireSpecialCharacters: true,
     requireUpperCase: true,
     tenantId: "",
-    mfaTypesAllowed: "",
     mfaTypesRequired: "",
-    specialCharactersAllowed: DEFAULT_PASSWORD_SPECIAL_CHARACTERS_ALLOWED
+    specialCharactersAllowed: DEFAULT_PASSWORD_SPECIAL_CHARACTERS_ALLOWED,
+    maxRepeatingCharacterLength: 2,
+    passwordHistoryPeriod: null,
+    passwordRotationPeriodDays: null
+}
+
+export const DEFAULT_LOGIN_FAILURE_POLICY: TenantLoginFailurePolicy = {
+    failureThreshold: DEFAULT_LOGIN_FAILURE_LOCK_THRESHOLD,
+    loginFailurePolicyType: LOGIN_FAILURE_POLICY_LOCK_USER_ACCOUNT,
+    tenantId: "",
+    pauseDurationMinutes: null,
+    maximumLoginFailures: null
 }
 
 // ************************************************************************** //

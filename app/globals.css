@@ -70,3 +70,13 @@ a.undecorated {
     border-radius: 4px;
 }
 
+.social-media-login-container {
+    cursor: pointer;
+    margin-bottom: 8px;
+    border-radius: 4px;
+    box-shadow: 1px 1px 0px 0px grey;
+    justify-items: center;
+    border: solid 0.5px lightgrey;
+    padding: 12px;
+    align-items: center;
+}

@@ -474,7 +474,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                             <div>Country</div>
                                             <Autocomplete
                                                 disabled={isMarkedForDelete}
-                                                id="countryCode"                                                
+                                                id="countryCode"
                                                 sx={{paddingTop: "8px"}}
                                                 size="small"
                                                 renderInput={(params) => <TextField {...params} label="" />}

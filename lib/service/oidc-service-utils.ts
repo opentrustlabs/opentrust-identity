@@ -18,7 +18,7 @@ const oidcJwksCache = new NodeCache(
     }
 );
 
-class OIDCServiceClient {
+class OIDCServiceUtils {
 
     /**
      * 
@@ -27,20 +27,24 @@ class OIDCServiceClient {
      */
     public async getWellKnownConfig(wellKnownUri: string): Promise<WellknownConfig | null> {
         let wellknownConfig: WellknownConfig | undefined = oidcWellknowCache.get(wellKnownUri);
-        if(wellknownConfig){
+        if (wellknownConfig) {
             return Promise.resolve(wellknownConfig);
         }
-
-        const response: AxiosResponse = await axios.get<WellknownConfig>(wellKnownUri, {
-            timeout: 30000, // 30 seconds
-            responseEncoding: "utf-8",
-            responseType: "json"
-        });
-        if(response.status !== 200){
-            return Promise.resolve(null);
+        try {
+            const response: AxiosResponse = await axios.get<WellknownConfig>(wellKnownUri, {
+                timeout: 30000, // 30 seconds
+                responseEncoding: "utf-8",
+                responseType: "json"
+            });
+            if (response.status !== 200) {
+                return Promise.resolve(null);
+            }
+            wellknownConfig = response.data;
+            oidcWellknowCache.set(wellKnownUri, wellknownConfig);
         }
-        wellknownConfig = response.data;
-        oidcWellknowCache.set(wellKnownUri, wellknownConfig);
+        catch (err) {
+            console.log(err);
+        }
         return wellknownConfig !== undefined ? Promise.resolve(wellknownConfig) : Promise.resolve(null);
     }
 
@@ -71,4 +75,4 @@ class OIDCServiceClient {
 
 }
 
-export default OIDCServiceClient;
+export default OIDCServiceUtils;

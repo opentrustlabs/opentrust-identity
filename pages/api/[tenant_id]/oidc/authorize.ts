@@ -1,12 +1,12 @@
-import { Tenant, Client, FederatedOidcProvider, FederatedOidcAuthorizationRel, PreAuthenticationState } from '@/graphql/generated/graphql-types';
+import { Tenant, Client, FederatedOidcProvider, FederatedOidcAuthorizationRel, PreAuthenticationState, FederatedOidcAuthorizationRelType } from '@/graphql/generated/graphql-types';
 import AuthDao from '@/lib/dao/auth-dao';
 import ClientDao from '@/lib/dao/client-dao';
 import FederatedOIDCProviderDao from '@/lib/dao/federated-oidc-provider-dao';
 import TenantDao from '@/lib/dao/tenant-dao';
 import { DaoFactory } from '@/lib/data-sources/dao-factory';
 import { WellknownConfig } from '@/lib/models/wellknown-config';
-import OIDCServiceClient from '@/lib/service/oidc-service-client';
-import { ALL_OIDC_SUPPORTED_SCOPE_VALUES, CLIENT_TYPE_SERVICE_ACCOUNT_ONLY, FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE, OIDC_OPENID_SCOPE, QUERY_PARAM_PREAUTH_REDIRECT_URI, QUERY_PARAM_PREAUTH_TENANT_ID, QUERY_PARAM_PREAUTHN_TOKEN } from '@/utils/consts';
+import OIDCServiceUtils from '@/lib/service/oidc-service-utils';
+import { ALL_OIDC_SUPPORTED_SCOPE_VALUES, CLIENT_TYPE_SERVICE_ACCOUNT_ONLY, FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE, OIDC_OPENID_SCOPE, QUERY_PARAM_REDIRECT_URI, QUERY_PARAM_TENANT_ID, QUERY_PARAM_PREAUTHN_TOKEN } from '@/utils/consts';
 import { generateCodeVerifierAndChallenge, generateRandomToken } from '@/utils/dao-utils';
 import type { NextApiRequest, NextApiResponse } from 'next'
 
@@ -14,7 +14,7 @@ const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
 const clientDao: ClientDao = DaoFactory.getInstance().getClientDao();
 const federatedOIDCProviderDao: FederatedOIDCProviderDao = DaoFactory.getInstance().getFederatedOIDCProvicerDao();
 const authDao: AuthDao = DaoFactory.getInstance().getAuthDao();
-const oidcServiceClient: OIDCServiceClient = new OIDCServiceClient();
+const oidcServiceUtils: OIDCServiceUtils = new OIDCServiceUtils();
 
 const {
     AUTH_DOMAIN
@@ -195,7 +195,7 @@ export default async function handler(
 		// Set the state, scope, client, response type, etc and save it for later use.
         if(oidcProviders.length === 1){
             // create state, etc, and save that data with the incoming state, etc.
-            const wellKnownConfig: WellknownConfig | null = await oidcServiceClient.getWellKnownConfig(
+            const wellKnownConfig: WellknownConfig | null = await oidcServiceUtils.getWellKnownConfig(
                 oidcProviders[0].federatedOIDCProviderWellKnownUri
                 //"https://api.sigmaaldrich.com/auth/.well-known/openid-configuration"
             );
@@ -209,9 +209,10 @@ export default async function handler(
             const {verifier, challenge} = oidcProviders[0].usePkce ? generateCodeVerifierAndChallenge() : {verifier: null, challenge: null}; 
                         
             const federatedOidcAuthorizationRel: FederatedOidcAuthorizationRel = {
+                federatedOIDCAuthorizationRelType: FederatedOidcAuthorizationRelType.AuthorizationRelTypeClientAuth,
                 state: generateRandomToken(32, "hex"),
                 codeVerifier: verifier,
-                expiresAtMs: Date.now() + 5 /* minutes */ * 60 /* seconds/min  */ * 1000 /* ms/sec */,
+                expiresAtMs: Date.now() + 15 /* minutes */ * 60 /* seconds/min  */ * 1000 /* ms/sec */,
                 federatedOIDCProviderId: oidcProviders[0].federatedOIDCProviderId,
                 initClientId: clientId,
                 initRedirectUri: redirectUri,
@@ -221,12 +222,13 @@ export default async function handler(
                 initTenantId: tenantId,
                 initCodeChallenge: codeChallenge,
                 initCodeChallengeMethod: codeChallengeMethod,
-                initResponseType: responseType
+                initResponseType: responseType,
+                returnUri: ""
             }
             await authDao.saveFederatedOIDCAuthorizationRel(federatedOidcAuthorizationRel);
             
             const codeChallengeQueryParams = oidcProviders[0].usePkce ? `&code_challenge=${challenge}&code_challenge_method=S256` : "";
-            res.status(302).setHeader("location", `${wellKnownConfig.authorization_endpoint}?client_id=${oidcProviders[0].federatedOIDCProviderClientId}&state=${federatedOidcAuthorizationRel.state}&response_type=code&response_mode=query&redirect_uri=${AUTH_DOMAIN}${"/api/openid/return&scope=openid%20email%20profile%20offline_access"}${codeChallengeQueryParams}`);
+            res.status(302).setHeader("location", `${wellKnownConfig.authorization_endpoint}?client_id=${oidcProviders[0].federatedOIDCProviderClientId}&state=${federatedOidcAuthorizationRel.state}&response_type=code&response_mode=query&redirect_uri=${AUTH_DOMAIN}${"/api/federated-auth/return&scope=openid%20email%20profile%20offline_access"}${codeChallengeQueryParams}`);
 			res.end();
 			return;            
         }
@@ -236,10 +238,10 @@ export default async function handler(
 	// In the success case, create a unique key for the query parameter which maps 
 	// all of the incoming values to a single record and return it instead of the multiple 
 	// query params.
-	console.log('tenantId is: ' + tenantId);
-	console.log("scope is " + (scope as string));
-	console.log("state is: " + (state as string));
-	console.log("clientId is " + clientId);
+	// console.log('tenantId is: ' + tenantId);
+	// console.log("scope is " + (scope as string));
+	// console.log("state is: " + (state as string));
+	// console.log("clientId is " + clientId);
 
     const preAuthenticationState: PreAuthenticationState = {
         clientId: clientId,
@@ -256,7 +258,7 @@ export default async function handler(
     }
     await authDao.savePreAuthenticationState(preAuthenticationState);
 
-	res.status(302).setHeader("location", `/authorize/login?${QUERY_PARAM_PREAUTHN_TOKEN}=${preAuthenticationState.token}&${QUERY_PARAM_PREAUTH_TENANT_ID}=${tenantId}&${QUERY_PARAM_PREAUTH_REDIRECT_URI}=${redirectUri}`);
+	res.status(302).setHeader("location", `/authorize/login?${QUERY_PARAM_PREAUTHN_TOKEN}=${preAuthenticationState.token}&${QUERY_PARAM_TENANT_ID}=${tenantId}&${QUERY_PARAM_REDIRECT_URI}=${redirectUri}`);
 	res.end();
 
 }

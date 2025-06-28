@@ -21,7 +21,6 @@ export default async function handler(
         tenant_id
     } = req.query;
 
-    console.log("tenant id is: " + tenant_id);
 
     let logo = EMPTY_LOGO;
     let contentType = DEFAULT_CONTENT_TYPE;

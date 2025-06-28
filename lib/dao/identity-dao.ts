@@ -1,4 +1,4 @@
-import { AuthenticationGroup, User, AuthorizationGroup, SuccessfulLoginResponse, UserFailedLoginAttempts, UserTenantRel, UserCredential, UserMfaRel, Fido2Challenge } from "@/graphql/generated/graphql-types";
+import { AuthenticationGroup, User, AuthorizationGroup, UserFailedLogin, UserTenantRel, UserCredential, UserMfaRel, Fido2Challenge, UserRegistrationState, UserAuthenticationState } from "@/graphql/generated/graphql-types";
 
 export type UserLookupType = "id" | "email" | "phone";
 abstract class IdentityDao {
@@ -8,13 +8,13 @@ abstract class IdentityDao {
 
     abstract getUserAuthenticationGroups(userId: string): Promise<Array<AuthenticationGroup>>;
 
-    abstract loginUser(username: string, password: string): Promise<SuccessfulLoginResponse | Error>;
+    abstract getFailedLogins(userId: string): Promise<Array<UserFailedLogin>>;
 
-    abstract getLoginAttempts(userId: string): Promise<Array<UserFailedLoginAttempts>>;
+    abstract addFailedLogin(userFailedLogins: UserFailedLogin): Promise<void>;
 
-    abstract incrementLoginAttempts(userId: string): Promise<void>;
+    abstract removeFailedLogin(userId: string, failureAtMs: number): Promise<void>;
 
-    abstract resetLoginAttempts(userId: string): Promise<void>;
+    abstract resetFailedLoginAttempts(userId: string): Promise<void>;
 
     // challengeType could be email (as for registration of new users), sms, time-based-otp, or security key
     abstract validateOTP(userId: string, challenge: string, challengeId: string, challengeType: string): Promise<boolean>;
@@ -51,13 +51,13 @@ abstract class IdentityDao {
 
     abstract savePasswordResetToken(userId: string, token: string): Promise<void>;
 
-    abstract getUserByPasswordResetToken(userId: string): Promise<User | null>;
+    abstract getUserByPasswordResetToken(token: string): Promise<User | null>;
 
     abstract deletePasswordResetToken(token: string): Promise<void>;
 
     abstract saveEmailConfirmationToken(userId: string, token: string): Promise<void>;
 
-    abstract getUserByEmailConfirmationToken(userId: string): Promise<User | null>;
+    abstract getUserByEmailConfirmationToken(token: string): Promise<User | null>;
 
     abstract deleteEmailConfirmationToken(token: string): Promise<void>;
 
@@ -72,7 +72,13 @@ abstract class IdentityDao {
      */
     abstract createUser(user: User): Promise<User>;
 
+    abstract getUserCredentials(userId: string): Promise<Array<UserCredential>>;
+
+    abstract getUserCredentialForAuthentication(userId: string): Promise<UserCredential | null>;
+
     abstract addUserCredential(userCredential: UserCredential): Promise<void>;
+
+    abstract deleteUserCredential(userId: string, dateCreated?: Date): Promise<void>;
 
     abstract updateUser(user: User): Promise<User>;
 
@@ -114,6 +120,24 @@ abstract class IdentityDao {
     abstract getUserTenantRel(tenantId: string, userId: string): Promise<UserTenantRel | null>;
 
     abstract getUserTenantRelsByUserId(userId: string): Promise<Array<UserTenantRel>>;
+
+    abstract createUserAuthenticationStates(arrUserAuthenticationState: Array<UserAuthenticationState>): Promise<Array<UserAuthenticationState>>;
+
+    abstract getUserAuthenticationStates(authenticationSessionToken: string): Promise<Array<UserAuthenticationState>>;
+
+    abstract updateUserAuthenticationState(userAuthenticationState: UserAuthenticationState): Promise<UserAuthenticationState>;
+
+    abstract deleteUserAuthenticationState(userAuthenticationState: UserAuthenticationState): Promise<UserAuthenticationState>;
+
+    abstract createUserRegistrationStates(arrRegistrationState: Array<UserRegistrationState>): Promise<Array<UserRegistrationState>>;
+
+    abstract getUserRegistrationStates(registrationSessionToken: string): Promise<Array<UserRegistrationState>>;
+
+    abstract updateUserRegistrationState(userRegistrationState: UserRegistrationState): Promise<UserRegistrationState>;
+
+    abstract deleteUserRegistrationState(userRegistrationState: UserRegistrationState): Promise<UserRegistrationState>;
+
+
 
 }
 

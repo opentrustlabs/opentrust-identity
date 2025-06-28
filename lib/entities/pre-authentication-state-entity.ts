@@ -73,8 +73,8 @@ class PreAuthenticationStateEntity extends Model {
         }, 
         {
             sequelize,
-            tableName: "preauthentication_state",
-            modelName: "preauthenticationState",
+            tableName: "pre_authentication_state",
+            modelName: "preAuthenticationState",
             timestamps: false
         });
     }

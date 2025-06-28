@@ -8,6 +8,7 @@ import TenantLeftNavigation from "../left-navigation/tenant-left-navigation";
 import { ResponsiveBreakpoints, ResponsiveContext } from "../contexts/responsive-context";
 import { useSearchParams } from "next/navigation";
 import ManagementFooter from "./management-footer";
+import { PageTitleContext } from "../contexts/page-title-context";
 
 
 interface Props {
@@ -19,6 +20,8 @@ const ManagementLayout: React.FC<Props> = ({children}) => {
     // CONTEXT OBJECTS
     const tenantBean: TenantMetaDataBean  = useContext(TenantContext);
     const breakPoints: ResponsiveBreakpoints = useContext(ResponsiveContext);
+    const titleSetter = useContext(PageTitleContext);
+    titleSetter.setPageTitle("OpenTrust IAM");
 
     // QUERY PARAMS
     const params = useSearchParams();
@@ -36,7 +39,7 @@ const ManagementLayout: React.FC<Props> = ({children}) => {
             <Container
                 maxWidth={breakPoints.isGreaterThanExtraLarge ? "xl" : "xl"}
                 disableGutters={true}
-                sx={{minHeight: "95vh"}}
+                
             >
                 <Box sx={{ flexGrow: 1,  }}>
                     <Grid2 size={12} container spacing={1} sx={{}}>                
@@ -58,7 +61,7 @@ const ManagementLayout: React.FC<Props> = ({children}) => {
                         
                         <Grid2  
                             size={{xs: 12, sm: 12, md: 9, lg: 9.6, xl: 10}} 
-                            sx={{padding: breakPoints.isMedium ? "8px" : "8px 8px 0px 8px", minHeight: breakPoints.isMedium ? "86vh" : "94vh"}}
+                            sx={{padding: breakPoints.isMedium ? "8px" : "8px 8px 0px 8px", minHeight: breakPoints.isMedium ? "86vh" : "91vh"}}
                         >                            
                             <Grid2>{children}</Grid2>                            
                         </Grid2>                        

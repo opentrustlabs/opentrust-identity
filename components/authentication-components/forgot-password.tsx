@@ -3,20 +3,14 @@ import React, { Suspense, useContext, useState } from "react";
 import { Button, CircularProgress, Divider, Grid2, Paper, Stack, TextField } from "@mui/material";
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
-import Link from 'next/link';
+
 import { useRouter } from 'next/navigation';
-import { DEFAULT_TENANT_META_DATA, QUERY_PARAM_PREAUTH_REDIRECT_URI, QUERY_PARAM_PREAUTH_TENANT_ID, QUERY_PARAM_PREAUTHN_TOKEN } from "@/utils/consts";
+import { DEFAULT_TENANT_META_DATA, QUERY_PARAM_REDIRECT_URI, QUERY_PARAM_TENANT_ID, QUERY_PARAM_PREAUTHN_TOKEN } from "@/utils/consts";
 import { LOGIN_USERNAME_HANDLER_QUERY, TENANT_META_DATA_QUERY } from "@/graphql/queries/oidc-queries";
 import { useLazyQuery, useMutation, useQuery } from "@apollo/client";
-import { LoginAuthenticationHandlerAction, LoginAuthenticationHandlerResponse, LoginUserNameHandlerAction, LoginUserNameHandlerResponse } from "@/graphql/generated/graphql-types";
 import Alert from '@mui/material/Alert';
-import { LOGIN_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import { PageTitleContext } from "@/components/contexts/page-title-context";
 
-
-const MIN_USERNAME_LENGTH = 6;
-const USERNAME_COMPONENT = "USERNAME_COMPONENT";
-const PASSWORD_COMPONENT = "PASSWORD_COMPONENT";
 
 const ForgotPassword: React.FC = () => {
 
@@ -28,8 +22,8 @@ const ForgotPassword: React.FC = () => {
     // const params = useSearchParams();    
     const params = new Map<string, string>();
     const preauthToken = params?.get(QUERY_PARAM_PREAUTHN_TOKEN);
-    const tenantId = params?.get(QUERY_PARAM_PREAUTH_TENANT_ID);
-    const redirectUri = params?.get(QUERY_PARAM_PREAUTH_REDIRECT_URI);
+    const tenantId = params?.get(QUERY_PARAM_TENANT_ID);
+    const redirectUri = params?.get(QUERY_PARAM_REDIRECT_URI);
 
     // // PAGE STATE MANAGEMENT VARIABLES
     // const [username, setUsername] = useState<string | null>("");

@@ -1,12 +1,14 @@
 "use client";
 import React, { ReactNode, useContext, useEffect } from "react";
 import { useParams, useRouter } from 'next/navigation';
-import { QUERY_PARAM_AUTHENTICATE_TO_PORTAL, QUERY_PARAM_PREAUTH_TENANT_ID } from "@/utils/consts";
+import { QUERY_PARAM_AUTHENTICATE_TO_PORTAL, QUERY_PARAM_TENANT_ID } from "@/utils/consts";
 import { useQuery } from "@apollo/client";
 import { TENANT_META_DATA_QUERY } from "@/graphql/queries/oidc-queries";
 import { PortalUserProfile } from "@/graphql/generated/graphql-types";
 import { AuthContext } from "./auth-context";
 import { TenantMetaDataBean, TenantContext } from "./tenant-context";
+import { getAccessTokenExpiresAtMs, getManagementTenantAccessId, setManagementTenantAccessId } from "@/utils/client-utils";
+import DataLoading from "../layout/data-loading";
 
 
 interface LayoutProps {
@@ -53,15 +55,15 @@ const ManagementTenantFilter: React.FC<LayoutProps> = ({
     // Any redirects to the authorization screen will ALSO include any saved language and country
     // values that were saved in local storage, or defaulted to en-US
 
-    const tenantIdFromLocalStorage: string | null = localStorage.getItem("management-tenant-id");
+    const tenantIdFromLocalStorage: string | null = getManagementTenantAccessId();
     let needsRedirect = true;
-    let redirectUri: string = `/authorize/login?${QUERY_PARAM_AUTHENTICATE_TO_PORTAL}=true`;;
+    let redirectUri: string = `/authorize/login?${QUERY_PARAM_AUTHENTICATE_TO_PORTAL}=true`;
     
     // TODO
     // Add return URI in cases where the profile is null.
     if(tenantIdFromPath === null && profile === null){
         if(tenantIdFromLocalStorage){
-            redirectUri = `/authorize/login?${QUERY_PARAM_AUTHENTICATE_TO_PORTAL}=true&${QUERY_PARAM_PREAUTH_TENANT_ID}=${tenantIdFromLocalStorage}`;
+            redirectUri = `/authorize/login?${QUERY_PARAM_AUTHENTICATE_TO_PORTAL}=true&${QUERY_PARAM_TENANT_ID}=${tenantIdFromLocalStorage}`;
         }     
     }
     else if(tenantIdFromPath === null && profile !== null){
@@ -75,7 +77,7 @@ const ManagementTenantFilter: React.FC<LayoutProps> = ({
         }
     }
     else if(tenantIdFromPath !== null && profile === null){
-        redirectUri = `/authorize/login?${QUERY_PARAM_AUTHENTICATE_TO_PORTAL}=true&${QUERY_PARAM_PREAUTH_TENANT_ID}=${tenantIdFromPath}`;
+        redirectUri = `/authorize/login?${QUERY_PARAM_AUTHENTICATE_TO_PORTAL}=true&${QUERY_PARAM_TENANT_ID}=${tenantIdFromPath}`;
     }
     else if(tenantIdFromPath !== null && profile !== null){
         
@@ -86,7 +88,7 @@ const ManagementTenantFilter: React.FC<LayoutProps> = ({
             if(profile.managementAccessTenantId !== tenantIdFromPath){
                 // Need to update the local storage for next time and redirect the 
                 // user to the correct landing page for their tenant
-                localStorage.setItem("management-tenant-id", profile.managementAccessTenantId);
+                setManagementTenantAccessId(profile.managementAccessTenantId);
                 redirectUri = `/${profile.managementAccessTenantId}/`;
             }
             else{
@@ -104,10 +106,10 @@ const ManagementTenantFilter: React.FC<LayoutProps> = ({
         }
     }, [profile, tenantIdFromPath]);
 
-    const [isComplete, setIsComplete] = React.useState(false);
+    
 
     // GRAPHQL QUERIES
-    const {data, error, loading, } = useQuery(TENANT_META_DATA_QUERY, {
+    const {data, loading } = useQuery(TENANT_META_DATA_QUERY, {
         variables: {
             tenantId: tenantIdFromPath
         },
@@ -119,11 +121,9 @@ const ManagementTenantFilter: React.FC<LayoutProps> = ({
             }
             else{
                 tenantBean.setTenantMetaData(data.getTenantMetaData);
-                setIsComplete(true);
             }
         },
         onError(error) {
-            console.log("will set error message");
             router.push(`/access-error?access_error_code=00024&extended_message=${error.message}`)
             // TODO
             // Need to inspect the error message and redirect the user to the
@@ -136,8 +136,8 @@ const ManagementTenantFilter: React.FC<LayoutProps> = ({
         },
     });
 
-    if(!needsRedirect && loading) return <div></div>
-    else if(!needsRedirect && data && isComplete) return <>{children}</>    
+    if(!needsRedirect && loading) return <div><DataLoading dataLoadingSize={"xl"} color={null}  /></div>
+    else if(!needsRedirect && data) return <>{children}</>    
     else return <></>
     
 }

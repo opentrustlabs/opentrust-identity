@@ -348,6 +348,7 @@ export const FEDERATED_OIDC_PROVIDERS_QUERY = gql(`
             federatedOIDCProviderName
             federatedOIDCProviderDescription
             federatedOIDCProviderType
+            socialLoginProvider
         }
     }
 `)
@@ -455,16 +456,13 @@ export const RATE_LIMIT_BY_ID_QUERY = gql(`
 `);
 
 export const LOGIN_FAILURE_CONFIGURATION_QUERY = gql(`
-    query getLoginFailurePolicy($tenantId: String!){
-        getLoginFailurePolicy(tenantId: $tenantId) {
+    query getTenantLoginFailurePolicy($tenantId: String!){
+        getTenantLoginFailurePolicy(tenantId: $tenantId) {
             tenantId
             loginFailurePolicyType
-            loginfailurepolicytypeid
             failureThreshold
             pauseDurationMinutes
-            numberOfPauseCyclesBeforeLocking
-            initBackoffDurationMinutes
-            numberOfBackoffCyclesBeforeLocking
+            maximumLoginFailures
         }
     }
 `);
@@ -483,10 +481,9 @@ export const TENANT_PASSWORD_CONFIG_QUERY = gql(`
             specialCharactersAllowed
             requireMfa
             mfaTypesRequired
-            allowMfa
-            mfaTypesAllowed
             maxRepeatingCharacterLength
-            passwordRotationPeriodDays        
+            passwordRotationPeriodDays
+            passwordHistoryPeriod
         }
     }
 `);

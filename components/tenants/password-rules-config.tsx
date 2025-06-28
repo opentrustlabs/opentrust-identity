@@ -5,7 +5,7 @@ import React from "react";
 import DataLoading from "../layout/data-loading";
 import ErrorComponent from "../error/error-component";
 import { PasswordConfigInput, TenantPasswordConfig } from "@/graphql/generated/graphql-types";
-import { DEFAULT_PASSWORD_SPECIAL_CHARACTERS_ALLOWED, MFA_AUTH_TYPE_DISPLAY, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_NONE, MFA_AUTH_TYPE_SMS, MFA_AUTH_TYPE_TIME_BASED_OTP, MFA_AUTH_TYPES, PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS, PASSWORD_HASHING_ALGORITHMS, PASSWORD_HASHING_ALGORITHMS_DISPLAY } from "@/utils/consts";
+import { DEFAULT_TENANT_PASSWORD_CONFIGURATION, MFA_AUTH_TYPE_DISPLAY, MFA_AUTH_TYPE_NONE, MFA_AUTH_TYPES, PASSWORD_HASHING_ALGORITHMS, PASSWORD_HASHING_ALGORITHMS_DISPLAY } from "@/utils/consts";
 import Grid2 from "@mui/material/Grid2";
 import TextField from "@mui/material/TextField";
 import { Alert, Autocomplete, Checkbox, Divider, MenuItem, Select } from "@mui/material";
@@ -24,24 +24,8 @@ const PasswordRulesConfiguration: React.FC<PasswordRulesConfigurationProps> = ({
     onUpdateStart
 }) => {
 
-    let initInput: PasswordConfigInput = {
-        allowMfa: false,
-        passwordHashingAlgorithm: PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS,
-        passwordMaxLength: 64,
-        passwordMinLength: 8,
-        requireLowerCase: true,
-        requireMfa: false,
-        requireNumbers: true,
-        requireSpecialCharacters: true,
-        requireUpperCase: true,
-        tenantId: tenantId,
-        maxRepeatingCharacterLength: 2,
-        mfaTypesAllowed: "",
-        mfaTypesRequired: "",
-        passwordHistoryPeriod: 0,
-        passwordRotationPeriodDays: 0,
-        specialCharactersAllowed: DEFAULT_PASSWORD_SPECIAL_CHARACTERS_ALLOWED
-    }
+    let initInput: PasswordConfigInput = DEFAULT_TENANT_PASSWORD_CONFIGURATION;
+    initInput.tenantId = tenantId;
 
     // STATE VARIABLES
     const [markDirty, setMarkDirty] = React.useState<boolean>(false);
@@ -59,22 +43,19 @@ const PasswordRulesConfiguration: React.FC<PasswordRulesConfigurationProps> = ({
         onCompleted(data) {
             if (data && data.getTenantPasswordConfig) {
                 const config: TenantPasswordConfig = data.getTenantPasswordConfig as TenantPasswordConfig;
-                initInput.allowMfa = config.allowMfa;
                 initInput.maxRepeatingCharacterLength = config.maxRepeatingCharacterLength;
-                initInput.mfaTypesAllowed = config.mfaTypesAllowed;
                 initInput.mfaTypesRequired = config.mfaTypesRequired;
                 initInput.passwordHashingAlgorithm = config.passwordHashingAlgorithm;
                 initInput.passwordMaxLength = config.passwordMaxLength;
                 initInput.passwordMinLength = config.passwordMinLength;
-                initInput.passwordRotationPeriodDays = config.passwordRotationPeriodDays;
                 initInput.requireLowerCase = config.requireLowerCase;
                 initInput.requireMfa = config.requireMfa;
                 initInput.requireNumbers = config.requireNumbers;
                 initInput.requireSpecialCharacters = config.requireSpecialCharacters;
                 initInput.requireUpperCase = config.requireUpperCase;
                 initInput.specialCharactersAllowed = config.specialCharactersAllowed;
-                initInput.tenantId = tenantId;
                 initInput.passwordHistoryPeriod = config.passwordHistoryPeriod;
+                initInput.passwordRotationPeriodDays = config.passwordRotationPeriodDays;
             }
             setPasswordConfigInput(initInput);
             setRevertToInput(initInput)
@@ -94,6 +75,7 @@ const PasswordRulesConfiguration: React.FC<PasswordRulesConfigurationProps> = ({
             setPasswordConfigInput(revertToInput);
             setErrorMessage(error.message)
         },
+        refetchQueries: [TENANT_PASSWORD_CONFIG_QUERY]
     }
 
     )
@@ -143,7 +125,12 @@ const PasswordRulesConfiguration: React.FC<PasswordRulesConfigurationProps> = ({
                         <TextField name="passwordHistoryPeriod" id="passwordHistoryPeriod"
                             type="number"
                             value={passwordConfigInput.passwordHistoryPeriod && passwordConfigInput.passwordHistoryPeriod > 0 ? passwordConfigInput.passwordHistoryPeriod : ""}
-                            onChange={(evt) => { passwordConfigInput.passwordHistoryPeriod = parseInt(evt.target.value || "0"); setPasswordConfigInput({ ...passwordConfigInput }); setMarkDirty(true); }}
+                            onChange={(evt) => { 
+                                const period = parseInt(evt.target.value || "0");
+                                passwordConfigInput.passwordHistoryPeriod = period <= 0 ? null : period;
+                                setPasswordConfigInput({ ...passwordConfigInput }); 
+                                setMarkDirty(true); 
+                            }}
                             fullWidth={true} size="small"
                         />
                     </Grid2>
@@ -152,7 +139,12 @@ const PasswordRulesConfiguration: React.FC<PasswordRulesConfigurationProps> = ({
                         <TextField name="passwordRotationPeriodDays" id="passwordRotationPeriodDays"
                             type="number"
                             value={passwordConfigInput.passwordRotationPeriodDays && passwordConfigInput.passwordRotationPeriodDays > 0 ? passwordConfigInput.passwordRotationPeriodDays : ""}
-                            onChange={(evt) => { passwordConfigInput.passwordRotationPeriodDays = parseInt(evt.target.value || "0"); setPasswordConfigInput({ ...passwordConfigInput }); setMarkDirty(true); }}
+                            onChange={(evt) => { 
+                                const rotationPeriod = parseInt(evt.target.value || "0"); 
+                                passwordConfigInput.passwordRotationPeriodDays = rotationPeriod <= 0 ? null : rotationPeriod;
+                                setPasswordConfigInput({ ...passwordConfigInput }); 
+                                setMarkDirty(true); 
+                            }}
                             fullWidth={true} size="small"
                         />
                     </Grid2>
@@ -228,40 +220,25 @@ const PasswordRulesConfiguration: React.FC<PasswordRulesConfigurationProps> = ({
             <Divider sx={{ marginTop: "16px" }} />
             <Grid2 marginTop={"24px"} container size={12} spacing={2}>
                 <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
-                    <Grid2 container size={12}>
-                        <Grid2 alignContent={"center"} size={12}>Multi-factor Authentication</Grid2>
-                        <Grid2 marginBottom={"16px"} alignContent={"center"} size={12}>
-                            <Select
-                                name="mfa"
-                                id="mfa"
-                                required={true}
-                                size="small"
-                                fullWidth={true}
-                                value={
-                                    passwordConfigInput.allowMfa ?
-                                        "allowed" :
-                                        passwordConfigInput.requireMfa ? "required" :
-                                            "none"
-                                }
-                                onChange={(evt) => {
-                                    const v: string = evt.target.value;
-                                    passwordConfigInput.allowMfa = (v === "none" || v === "required") ? false : true;
-                                    passwordConfigInput.requireMfa = (v === "none" || v === "allowed") ? false : true;
-                                    if (v === "none") {
-                                        passwordConfigInput.mfaTypesRequired = "";
-                                        passwordConfigInput.mfaTypesAllowed = "";
-                                    }
-                                    setPasswordConfigInput({ ...passwordConfigInput });
-                                    setMarkDirty(true);
-                                }}
-                            >
-                                <MenuItem value={"none"}>None</MenuItem>
-                                <MenuItem value={"allowed"}>Allowed</MenuItem>
-                                <MenuItem value={"required"}>Required</MenuItem>
-                            </Select>
+                    <Grid2 size={12}>
+                        <Grid2 container size={12} marginBottom={"16px"}>
+                            <Grid2 alignContent={"center"} size={11}>Require Multi-factor Authentication</Grid2>
+                            <Grid2 size={1}>
+                                <Checkbox
+                                    checked={passwordConfigInput.requireMfa === true}                                
+                                    onChange={(_, checked: boolean) => {
+                                        if(checked === false){
+                                            passwordConfigInput.mfaTypesRequired = "";
+                                        }
+                                        passwordConfigInput.requireMfa = checked;
+                                        setPasswordConfigInput({ ...passwordConfigInput });
+                                        setMarkDirty(true);
+                                    }}
+                                />
+                            </Grid2>                        
                         </Grid2>
                         <Grid2 alignContent={"center"} size={12}>
-                            MFA Types Allowed/Required
+                            MFA Types Required
                         </Grid2>
                         <Grid2 alignContent={"center"} size={12}>
                             <Autocomplete
@@ -283,24 +260,19 @@ const PasswordRulesConfiguration: React.FC<PasswordRulesConfigurationProps> = ({
                                 }
                                 isOptionEqualToValue={(option, value) => option.id === value.id}
                                 value={
-                                    passwordConfigInput.mfaTypesAllowed && passwordConfigInput.mfaTypesAllowed !== "" ?
-                                        passwordConfigInput.mfaTypesAllowed.split(",").map(s => { return { id: s, label: MFA_AUTH_TYPE_DISPLAY.get(s) } }) :
                                         passwordConfigInput.mfaTypesRequired && passwordConfigInput.mfaTypesRequired !== "" ?
                                             passwordConfigInput.mfaTypesRequired.split(",").map(s => { return { id: s, label: MFA_AUTH_TYPE_DISPLAY.get(s) } }) :
                                             []
                                 }
                                 onChange={(_, value: any) => {
-                                    const val: any = value.map((s: any) => s.id).join(",");
-                                    if (passwordConfigInput.allowMfa) {
-                                        passwordConfigInput.mfaTypesAllowed = val;
-                                    }
-                                    else if (passwordConfigInput.requireMfa) {
+                                    const val: any = value.map((s: any) => s.id).join(",");                                    
+                                    if (passwordConfigInput.requireMfa) {
                                         passwordConfigInput.mfaTypesRequired = val;
                                     }
                                     setPasswordConfigInput({ ...passwordConfigInput });
                                     setMarkDirty(true);
                                 }}
-                                disabled={!(passwordConfigInput.allowMfa === true || passwordConfigInput.requireMfa === true)}
+                                disabled={!passwordConfigInput.requireMfa === true}
                             />
                         </Grid2>
 

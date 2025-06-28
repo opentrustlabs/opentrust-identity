@@ -50,6 +50,18 @@ class RefreshDataEntity extends Model {
                 primaryKey: false,
                 allowNull: false,
                 field: "scope"
+            },
+            codeChallenge: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: true,
+                field: "codechallenge"
+            },
+            codeChallengeMethod: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: true,
+                field: "codechallengemethod"
             }
         }, {
             sequelize,

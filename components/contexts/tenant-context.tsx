@@ -39,9 +39,8 @@ const TenantContextProvider: React.FC<TenantContextProps> = ({
                         return currentTenantMetaData;
                     },
                     setTenantMetaData(metaData: TenantMetaData) {
-                        console.log("tennat context will set tenant id");
                         setCurrentTenantMetaData(metaData)
-                    },
+                    }
                 }
             }
         >

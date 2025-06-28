@@ -41,14 +41,12 @@ create TABLE tenant (
 );
 CREATE INDEX tenant_tenant_type_idx ON tenant(tenanttype);
 
-create TABLE login_failure_policy (
+create TABLE tenant_login_failure_policy (
     tenantid VARCHAR(64) PRIMARY KEY,
     loginfailurepolicytype VARCHAR(128) NOT NULL,
-    failurethreshold INT,
+    failurethreshold INT NOT NULL,
+    maximumloginfailures INT,
     pausedurationminutes INT,
-    numberofpausecyclesbeforelocking INT,
-    initbackoffdurationminutes INT,
-    numberofbackoffcyclesbeforelocking INT,    
     FOREIGN KEY (tenantid) references tenant(tenantid)
 );
 
@@ -367,6 +365,8 @@ create TABLE refresh_data (
     scope VARCHAR(128) NOT NULL,
     refreshtokenclienttype VARCHAR(128) NOT NULL,
     refreshcount INT,
+    codechallenge VARCHAR(256),
+    codechallengemethod VARCHAR(32),
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid),
     FOREIGN KEY (clientid) REFERENCES client(clientid),
     FOREIGN KEY (userid) REFERENCES user(userid)
@@ -377,13 +377,16 @@ CREATE INDEX refresh_data_tenant_id_idx ON refresh_data(tenantid);
 
 create TABLE federated_oidc_authorization_rel (
     state VARCHAR(256) NOT NULL PRIMARY KEY,
+    federatedoidcauthorizationreltype VARCHAR(64) NOT NULL,
+    email VARCHAR(128),
+    userid VARCHAR(64),
     codeverifier VARCHAR(256),
     codechallengemethod VARCHAR(16),
     federatedoidcproviderid VARCHAR(64) NOT NULL,
     initstate VARCHAR(256) NOT NULL,
     initredirecturi VARCHAR(256) NOT NULL,
     inittenantid VARCHAR(64) NOT NULL,
-    initclientid VARCHAR(64) NOT NULL,
+    initclientid VARCHAR(64),
     initscope VARCHAR(128) NOT NULL,
     initcodechallengemethod VARCHAR(16),
     initcodechallenge varchar(256),
@@ -392,7 +395,8 @@ create TABLE federated_oidc_authorization_rel (
     expiresatms BIGINT NOT NULL,    
     FOREIGN KEY (inittenantid) REFERENCES tenant(tenantid),
     FOREIGN KEY (initclientid) REFERENCES client(clientid),
-    FOREIGN KEY (federatedoidcproviderid) REFERENCES federated_oidc_provider(federatedoidcproviderid)
+    FOREIGN KEY (federatedoidcproviderid) REFERENCES federated_oidc_provider(federatedoidcproviderid),
+    FOREIGN KEY (userid) REFERENCES user(userid)
 );
 
 create TABLE client_auth_history (
@@ -487,9 +491,7 @@ create TABLE tenant_password_config (
 	requirespecialcharacters BOOLEAN NOT NULL,
 	specialcharactersallowed VARCHAR(64),
     requiremfa BOOLEAN NOT NULL,
-    allowmfa BOOLEAN NOT NULL,
     mfatypesrequired VARCHAR(128),
-    mfatypesallowed VARCHAR(128),
     maxrepeatingcharacterlength INT,
     passwordrotationperioddays INT,
     passwordhistoryperiod INT,
@@ -501,9 +503,11 @@ create TABLE prohibited_passwords (
     password VARCHAR(128) NOT NULL PRIMARY KEY
 );
 
-create TABLE user_failed_login_attempts (
+create TABLE user_failed_login (
     userid VARCHAR(64) NOT NULL,
     failureatms BIGINT NOT NULL,
+    nextloginnotbefore BIGINT NOT NULL,
+    failurecount INT NOT NULL,
     PRIMARY KEY (userid, failureatms),
     FOREIGN KEY (userid) REFERENCES user(userid)
 );
@@ -583,4 +587,34 @@ create TABLE state_province_region (
     isosubsettype VARCHAR(64) NOT NULL,
     PRIMARY KEY (isocountrycode, isoentrycode), 
 	FOREIGN KEY (isocountrycode) REFERENCES country(isocountrycode)	
+);
+
+create TABLE user_authentication_state (
+    userid VARCHAR(64) NOT NULL,
+    tenantid VARCHAR(64) NOT NULL,
+    authenticationsessiontoken VARCHAR(128) NOT NULL,    
+    authenticationstate VARCHAR(64) NOT NULL,
+    authenticationstateorder INT NOT NULL,
+    authenticationstatestatus VARCHAR(32) NOT NULL,
+    preauthtoken VARCHAR(128),
+    expiresatms BIGINT NOT NULL,
+    returntouri VARCHAR(256),
+    PRIMARY KEY (userid, authenticationsessiontoken, authenticationstate),
+    FOREIGN KEY (userid) REFERENCES user(userid),
+    FOREIGN KEY (tenantid) REFERENCES tenant(tenantid) 
+);
+
+create TABLE user_registration_state (
+    userid VARCHAR(64) NOT NULL,
+    email VARCHAR(128) NOT NULL,
+    tenantid VARCHAR(64) NOT NULL,
+    registrationsessiontoken VARCHAR(128) NOT NULL,    
+    registrationstate VARCHAR(64) NOT NULL,
+    registrationstateorder INT NOT NULL,
+    registrationstatestatus VARCHAR(32) NOT NULL,
+    preauthtoken VARCHAR(128),
+    expiresatms BIGINT NOT NULL,
+    PRIMARY KEY (userid, registrationsessiontoken, registrationstate),
+    FOREIGN KEY (userid) REFERENCES user(userid),
+    FOREIGN KEY (tenantid) REFERENCES tenant(tenantid) 
 );

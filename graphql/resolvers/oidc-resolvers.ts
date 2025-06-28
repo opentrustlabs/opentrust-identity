@@ -1,6 +1,6 @@
 import ClientService from "@/lib/service/client-service";
 import TenantService from "@/lib/service/tenant-service";
-import { Resolvers, QueryResolvers, MutationResolvers, Tenant, Client, SigningKey, Scope, AuthenticationGroup, AuthorizationGroup, FederatedOidcProvider, Contact, LoginUserNameHandlerResponse, LoginUserNameHandlerAction, LoginAuthenticationHandlerResponse, LoginAuthenticationHandlerAction, SecondFactorType, PortalUserProfile, User, LoginFailurePolicy, TenantPasswordConfig, TenantLegacyUserMigrationConfig, TenantAnonymousUserConfiguration, TenantLookAndFeel, RateLimitServiceGroup, TenantRateLimitRel, RelSearchResultItem, MarkForDelete } from "@/graphql/generated/graphql-types";
+import { Resolvers, QueryResolvers, MutationResolvers, Tenant, Client, SigningKey, Scope, AuthenticationGroup, AuthorizationGroup, FederatedOidcProvider, Contact, SecondFactorType, PortalUserProfile, User, TenantLoginFailurePolicy, TenantPasswordConfig, TenantLegacyUserMigrationConfig, TenantAnonymousUserConfiguration, TenantLookAndFeel, RateLimitServiceGroup, TenantRateLimitRel, RelSearchResultItem, MarkForDelete } from "@/graphql/generated/graphql-types";
 import SigningKeysService from "@/lib/service/keys-service";
 import ScopeService from "@/lib/service/scope-service";
 import GroupService from "@/lib/service/group-service";
@@ -15,39 +15,48 @@ import { OIDCContext } from "../graphql-context";
 import ViewSecretService from "@/lib/service/view-secret-service";
 import MarkForDeleteService from "@/lib/service/mark-for-delete-service";
 import I18NService from "@/lib/service/i18n-service";
+import RegisterUserService from "@/lib/service/register-user-service";
+import AuthenticateUserService from "@/lib/service/authenticate-user-service";
+import { OIDCPrincipal } from "@/lib/models/principal";
 
 
 const resolvers: Resolvers = {
     Query: {
         me: (_, __, oidcContext) => {
-            const profile: PortalUserProfile = {
-                domain: "charter.net",
-                email: "dhayek@charter.net",
-                emailVerified: true,
-                enabled: true,
-                firstName: "David",
-                lastName: "Hayek",
-                locked: false,
-                nameOrder: NAME_ORDER_WESTERN,
-                scope: [{
-                    scopeId: "id",
-                    scopeName: "all",
-                    scopeDescription: "",
-                    scopeUse: "",
-                    markForDelete: false
-                }],
-                tenantId: "8256c1db-cd40-48d1-914f-71672b4d42fa",
-                tenantName: "First Tenant",
-                userId: "8256c1db-cd40-48d1-914f-71672b4d42fa",
-                countryCode: "US",
-                preferredLanguageCode: "en",
-                managementAccessTenantId: "ad3e45b1-3e62-4fe2-ba59-530d35ae93d5"
+            const principal: OIDCPrincipal | null = oidcContext.oidcPrincipal;
+            if(!principal){
+                return null;
             }
-            // home depot: 2a303f6d-0ebc-4590-9d12-7ebab6531d7e
-            // root tenant: ad3e45b1-3e62-4fe2-ba59-530d35ae93d5
-            // airbnb: c42c29cb-1bf7-4f6a-905e-5f74760218e2
-            // amgen: 73d00cb0-f058-43b0-8fb4-d0e48ff33ba2
-            return profile;
+            else{            
+                const profile: PortalUserProfile = {
+                    domain: principal.email,
+                    email: principal.email,
+                    emailVerified: true,
+                    enabled: true,
+                    firstName: principal.given_name,
+                    lastName: principal.family_name,
+                    locked: false,
+                    nameOrder: NAME_ORDER_WESTERN,
+                    scope: [{
+                        scopeId: "id",
+                        scopeName: "all",
+                        scopeDescription: "",
+                        scopeUse: "",
+                        markForDelete: false
+                    }],
+                    tenantId: principal.tenant_id,
+                    tenantName: principal.tenant_name,
+                    userId: principal.sub,
+                    countryCode: principal.country_code,
+                    preferredLanguageCode: principal.language_code,
+                    managementAccessTenantId: principal.tenant_id
+                }
+                // home depot: 2a303f6d-0ebc-4590-9d12-7ebab6531d7e
+                // root tenant: ad3e45b1-3e62-4fe2-ba59-530d35ae93d5
+                // airbnb: c42c29cb-1bf7-4f6a-905e-5f74760218e2
+                // amgen: 73d00cb0-f058-43b0-8fb4-d0e48ff33ba2
+                return profile;
+            }
         },
         getUserById: (_, { userId }, oidcContext) => {
             const identityService: IdentityService = new IdentityService(oidcContext);
@@ -133,29 +142,7 @@ const resolvers: Resolvers = {
         getFederatedOIDCProviderById: (_: any, { federatedOIDCProviderId }, oidcContext) => {
             const providerService: FederatedOIDCProviderService = new FederatedOIDCProviderService(oidcContext);
             return providerService.getFederatedOIDCProviderById(federatedOIDCProviderId);
-        },
-        getLoginUserNameHandler: (_: any, { username, tenantId, preauthToken }, oidcContext) => {
-            const response: LoginUserNameHandlerResponse = {
-                action: LoginUserNameHandlerAction.EnterPassword,
-                oidcRedirectActionHandlerConfig: {
-                    clientId: "12343218723894",
-                    redirectUri: "http://localhost:3000/authorize/oidc/redirect",
-                    responseMode: "query",
-                    responseType: "code",
-                    state: "928374839029817341234",
-                    codeChallenge: "",
-                    codeChallengeMethod: "",
-                    scope: "email id profile offline"
-                },
-                errorActionHandler: {
-                    errorCode: "403",
-                    errorMessage: "This is an error message. You do not have access to this client or tenant."
-                    
-                }
-            }
-            return response;
-            //(username: String!, tenantId: String, preauthToken: String): LoginUserNameHandlerResponse!
-        },
+        },        
         getRateLimitServiceGroups: (_:any, { tenantId }, oidcContext) => {
             const service: RateLimitService = new RateLimitService(oidcContext);
             return service.getRateLimitServiceGroups(tenantId || null);
@@ -221,11 +208,6 @@ const resolvers: Resolvers = {
             const service: MarkForDeleteService = new MarkForDeleteService(oidcContext);
             return service.getDeletionStatus(markForDeleteId);
         },
-        validateTOTP: async (_: any, { userId, totpValue }, oidcContext) => {
-            const service: IdentityService = new IdentityService(oidcContext);
-            const b = await service.validateTOTP(userId, totpValue); 
-            return b;
-        },
         getClientScopes: (_: any, { clientId }, oidcContext) => {
             const service: ScopeService = new ScopeService(oidcContext);
             return service.getClientScopes(clientId);
@@ -249,6 +231,10 @@ const resolvers: Resolvers = {
         getStateProvinceRegions: (_: any, { countryCode }, oidcContext) => {
             const service: I18NService = new I18NService(oidcContext);
             return service.getStateProvinceRegions(countryCode);
+        },
+        getTenantLoginFailurePolicy: (_: any, { tenantId }, oidcContext) => {
+            const service: TenantService = new TenantService(oidcContext);
+            return service.getTenantLoginFailurePolicy(tenantId);
         }
     },
     Mutation: {
@@ -650,43 +636,26 @@ const resolvers: Resolvers = {
             await providerService.deleteFederatedOIDCProvider(federatedOIDCProviderId);
             return federatedOIDCProviderId;
         },
-        login: async(_: any, { username, password }, oidcContext ) => {
-            const response: LoginAuthenticationHandlerResponse = {
-                status: LoginAuthenticationHandlerAction.Error,
-                successConfig: {
-                    code: "123412341234",
-                    redirectUri: "http://localhost:3000/not/avalid/uri",
-                    responseMode: "fragment",
-                    state: "347820198273401987324"
-                },
-                secondFactorType: SecondFactorType.Totp,
-                errorActionHandler: {
-                    errorCode: "error code",
-                    errorMessage: "Authentication failed"
-                }
+        setTenantLoginFailurePolicy: async(_: any, { tenantLoginFailurePolicyInput }, oidcContext) => {
+            const loginFailurePolicy: TenantLoginFailurePolicy = {
+                failureThreshold: tenantLoginFailurePolicyInput.failureThreshold,
+                loginFailurePolicyType: tenantLoginFailurePolicyInput.loginFailurePolicyType,
+                tenantId: tenantLoginFailurePolicyInput.tenantId,
+                pauseDurationMinutes: tenantLoginFailurePolicyInput.pauseDurationMinutes,
+                maximumLoginFailures: tenantLoginFailurePolicyInput.maximumLoginFailures
             }
-            return response;
+            const service: TenantService = new TenantService(oidcContext);
+            return service.setTenantLoginFailurePolicy(loginFailurePolicy);
+            
         },
-        updateLoginFailurePolicy: async(_: any, { loginFailurePolicyInput }, oidcContext) => {
-            const loginFailurePolicy: LoginFailurePolicy = {
-                failureThreshold: loginFailurePolicyInput.failureThreshold,
-                loginFailurePolicyType: loginFailurePolicyInput.loginFailurePolicyType,
-                tenantId: loginFailurePolicyInput.tenantId,
-                initBackoffDurationMinutes: loginFailurePolicyInput.initBackoffDurationMinutes || 0,
-                numberOfBackoffCyclesBeforeLocking: loginFailurePolicyInput.numberOfBackoffCyclesBeforeLocking || 0,
-                numberOfPauseCyclesBeforeLocking: loginFailurePolicyInput.numberOfPauseCyclesBeforeLocking || 0,
-                pauseDurationMinutes: loginFailurePolicyInput.pauseDurationMinutes || 0
-            }            
-            // TODO 
-            // Implement the DAO and Service interfaces for assigning login failure policies.
-            return loginFailurePolicy;
-        },
+        removeTenantLoginFailurePolicy: async(_: any, { tenantId }, oidcContext) => {
+            const service: TenantService = new TenantService(oidcContext);
+            await service.removeTenantLoginFailurePolicy(tenantId);
+            return tenantId;
+        },  
         setTenantPasswordConfig: async(_: any, { passwordConfigInput }, oidcContext) => {
-            //const tenantService: TenantService = new TenantService(oidcContext);
-            // TODO
-            // Implement the service and DAO classes
+            const tenantService: TenantService = new TenantService(oidcContext);            
             const tenantPasswordConfig: TenantPasswordConfig = {
-                allowMfa: passwordConfigInput.allowMfa,
                 passwordHashingAlgorithm: passwordConfigInput.passwordHashingAlgorithm,
                 passwordMaxLength: passwordConfigInput.passwordMaxLength,
                 passwordMinLength: passwordConfigInput.passwordMinLength,
@@ -697,13 +666,12 @@ const resolvers: Resolvers = {
                 requireUpperCase: passwordConfigInput.requireUpperCase,
                 tenantId: passwordConfigInput.tenantId,
                 maxRepeatingCharacterLength: passwordConfigInput.maxRepeatingCharacterLength,
-                mfaTypesAllowed: passwordConfigInput.mfaTypesAllowed,
                 mfaTypesRequired: passwordConfigInput.mfaTypesRequired,
                 passwordHistoryPeriod: passwordConfigInput.passwordHistoryPeriod,
                 passwordRotationPeriodDays: passwordConfigInput.passwordRotationPeriodDays,
                 specialCharactersAllowed: passwordConfigInput.specialCharactersAllowed
-            }
-            //await tenantService.assignPasswordConfigToTenant(passwordConfigInput.tenantId, tenantPasswordConfig);
+            };
+            await tenantService.assignPasswordConfigToTenant(tenantPasswordConfig);
             return tenantPasswordConfig;
         },
         setTenantLegacyUserMigrationConfig: async(_: any, { tenantLegacyUserMigrationConfigInput }, oidcContext) => {
@@ -931,22 +899,83 @@ const resolvers: Resolvers = {
             await service.deleteUserSession(userId, clientId, tenantId);
             return userId;
         },
-        registerFIDO2Key: async (_: any, { userId, fido2KeyRegistrationInput }, oidcContext) => {
+        createFido2RegistrationChallenge: async(_: any, {userId, sessionToken, sessionTokenType }, oidcContext) => {
             const service: IdentityService = new IdentityService(oidcContext);
-            return service.registerFIDO2Key(userId, fido2KeyRegistrationInput);
+            return service.createFido2RegistrationChallenge(userId, sessionToken || null, sessionTokenType || null);
         },
-        createFido2RegistrationChallenge: async(_: any, {userId }, oidcContext) => {
+        createFido2AuthenticationChallenge: async(_: any, { userId, sessionToken, sessionTokenType }, oidcContext) => {
             const service: IdentityService = new IdentityService(oidcContext);
-            return service.createFido2RegistrationChallenge(userId);
+            return service.createFido2AuthenticationChallenge(userId, sessionToken || null, sessionTokenType || null);
         },
-        createFido2AuthenticationChallenge: async(_: any, { userId }, oidcContext) => {
-            const service: IdentityService = new IdentityService(oidcContext);
-            return service.createFido2AuthenticationChallenge(userId);
+        createUser: async(_: any, { tenantId, userInput }, oidcContext) => {
+            const service: RegisterUserService = new RegisterUserService(oidcContext);
+            return service.createUser(userInput, tenantId);
+        },        
+        authenticateHandleUserNameInput: async(_: any, { username, tenantId, preAuthToken, returnToUri}, oidcContext) => {
+            const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);
+            return service.authenticateHandleUserNameInput(username, tenantId || null, preAuthToken || null, returnToUri || null);
         },
-        authenticateFIDO2Key: async(_: any, { userId, fido2KeyAuthenticationInput }, oidcContext) => {
-            const service: IdentityService = new IdentityService(oidcContext);
-            return service.authenticateFIDO2Key(userId, fido2KeyAuthenticationInput);
+        authenticateUser: async(_: any, { username, password, authenticationSessionToken, tenantId, preAuthToken }, oidcContext) => {
+            const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);
+            return service.authenticateUser(username, password, tenantId, authenticationSessionToken, preAuthToken || null);
+        },
+        authenticateRotatePassword: async(_: any, { userId, newPassword, authenticationSessionToken, preAuthToken}, oidcContext) => {
+            const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);
+            return service.authenticateRotatePassword(userId, newPassword, authenticationSessionToken, preAuthToken || null);
+        },
+        authenticateValidateTOTP: async(_: any, { authenticationSessionToken, totpTokenValue, userId, preAuthToken }, oidcContext) => {
+            const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);
+            return service.authenticateValidateTOTP(userId, totpTokenValue, authenticationSessionToken, preAuthToken || null);
+        },
+        authenticateConfigureTOTP: async(_: any, { userId, authenticationSessionToken, preAuthToken }, oidcContext) => {
+            const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);
+            return service.authenticateConfigureTOTP(userId, authenticationSessionToken, preAuthToken || null);
+        },
+        authenticateValidateSecurityKey: async(_: any, { userId, authenticationSessionToken, fido2KeyAuthenticationInput, preAuthToken }, oidcContext) => {
+            const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);
+            return service.authenticateValidateSecurityKey(userId, authenticationSessionToken, fido2KeyAuthenticationInput, preAuthToken || null);
+        },
+        authenticateRegisterSecurityKey: async(_: any, { userId, authenticationSessionToken, fido2KeyRegistrationInput, preAuthToken }, oidcContext) => {
+            const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);
+            return service.authenticateRegisterSecurityKey(userId, authenticationSessionToken, fido2KeyRegistrationInput, preAuthToken || null);
+        },
+        cancelAuthentication: async(_: any, { userId, authenticationSessionToken, preAuthToken}, oidcContext) => {
+            const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);
+            return service.cancelAuthentication(userId, authenticationSessionToken, preAuthToken || null);
+        },
+        authenticateWithSocialOIDCProvider: async(_: any, { federatedOIDCProviderId, preAuthToken, tenantId }, oidcContext) => {
+            const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);
+            return service.authenticateWithSocialOIDCProvider(preAuthToken || null, tenantId, federatedOIDCProviderId);
+        },
+        registerUser: async(_: any, { tenantId, userInput, preAuthToken }, oidcContext) => {
+            const service: RegisterUserService = new RegisterUserService(oidcContext);
+            return service.registerUser(userInput, tenantId, preAuthToken);
+        },
+        registerVerifyEmailAddress: async(_: any, { userId, token, registrationSessionToken, preAuthToken }, oidcContext) => {
+            const service: RegisterUserService = new RegisterUserService(oidcContext);
+            return service.registerVerifyEmailAddress(userId, token, registrationSessionToken, preAuthToken);
+        },
+        registerConfigureTOTP: async(_: any, { userId, skip, registrationSessionToken, preAuthToken }, oidcContext) => {
+            const service: RegisterUserService = new RegisterUserService(oidcContext);
+            return service.registerConfigureTOTP(userId, registrationSessionToken, preAuthToken, skip);
+        },
+        registerValidateTOTP: async(_: any, { userId, totpTokenValue, registrationSessionToken, preAuthToken }, oidcContext) => {
+            const service: RegisterUserService = new RegisterUserService(oidcContext);
+            return service.registerValidateTOTP(userId, registrationSessionToken, totpTokenValue, preAuthToken);
+        },
+        registerConfigureSecurityKey: async(_: any, { userId, registrationSessionToken, skip, fido2KeyRegistrationInput, preAuthToken }, oidcContext) => {
+            const service: RegisterUserService = new RegisterUserService(oidcContext);
+            return service.registerConfigureSecurityKey(userId, registrationSessionToken, fido2KeyRegistrationInput || null, preAuthToken || null, skip);
+        },
+        registerValidateSecurityKey: async(_: any, { userId, registrationSessionToken, fido2KeyAuthenticationInput, preAuthToken }, oidcContext) => {
+            const service: RegisterUserService = new RegisterUserService(oidcContext);
+            return service.registerValidateSecurityKey(userId, registrationSessionToken, fido2KeyAuthenticationInput, preAuthToken || null);
+        },
+        cancelRegistration: async(_: any, { userId, registrationSessionToken, preAuthToken }, oidcContext) => {
+            const service: RegisterUserService = new RegisterUserService(oidcContext);
+            return service.cancelRegistration(userId, registrationSessionToken, preAuthToken || null);
         }
+
     },
     RelSearchResultItem : {
         owningtenantname: async (item: RelSearchResultItem, _: any, oidcContext: OIDCContext) => {

@@ -9,6 +9,24 @@ class FederatedOIDCAuthorizationRelEntity extends Model {
                 primaryKey: true,
                 field: "state"
             },
+            federatedOIDCAuthorizationRelType: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: false,
+                field: "federatedoidcauthorizationreltype"
+            },
+            email: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: true,
+                field: "email"
+            },
+            userId: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: true,
+                field: "userid"
+            },
             codeVerifier: {
                 type: DataTypes.STRING,
                 primaryKey: false,
@@ -36,7 +54,7 @@ class FederatedOIDCAuthorizationRelEntity extends Model {
             initClientId: {
                 type: DataTypes.STRING,
                 primaryKey: false,
-                allowNull: false,
+                allowNull: true,
                 field: "initclientid"
             },
             initCodeChallenge: {
