@@ -6,7 +6,7 @@ import HourglassTopOutlinedIcon from '@mui/icons-material/HourglassTopOutlined';
 import Dialog from "@mui/material/Dialog";
 import { Button, DialogActions, DialogContent, Typography } from "@mui/material";
 import { useRouter } from "next/navigation";
-import { QUERY_PARAM_AUTHENTICATE_TO_PORTAL, QUERY_PARAM_TENANT_ID } from "@/utils/consts";
+import { QUERY_PARAM_AUTHENTICATE_TO_PORTAL, QUERY_PARAM_RETURN_URI, QUERY_PARAM_TENANT_ID } from "@/utils/consts";
 import { getManagementTenantAccessId } from "@/utils/client-utils";
 
 const SessionTimerCountdown: React.FC = () => {
@@ -22,10 +22,10 @@ const SessionTimerCountdown: React.FC = () => {
     const getLoginUri = (): string => {
         const tenantId = getManagementTenantAccessId();
         if(tenantId){
-            return `/authorize/login?${QUERY_PARAM_AUTHENTICATE_TO_PORTAL}=true&${QUERY_PARAM_TENANT_ID}=${tenantId}`
+            return `/authorize/login?${QUERY_PARAM_AUTHENTICATE_TO_PORTAL}=true&${QUERY_PARAM_TENANT_ID}=${tenantId}&${QUERY_PARAM_RETURN_URI}=${window.location.href}`
         }
         else{
-            return `/authorize/login?${QUERY_PARAM_AUTHENTICATE_TO_PORTAL}=true`;
+            return `/authorize/login?${QUERY_PARAM_AUTHENTICATE_TO_PORTAL}=true&${QUERY_PARAM_RETURN_URI}=${window.location.href}`;
         }
     }
 

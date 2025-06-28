@@ -3,11 +3,11 @@ import React, { useContext, useEffect, useState } from "react";
 import { Backdrop, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, Divider, Grid2, Paper, Stack, TextField, Typography } from "@mui/material";
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL, PASSWORD_MINIMUM_LENGTH, QUERY_PARAM_AUTHENTICATE_TO_PORTAL, QUERY_PARAM_PREAUTHN_TOKEN, QUERY_PARAM_REDIRECT_URI, QUERY_PARAM_TENANT_ID, SOCIAL_OIDC_PROVIDER_APPLE, SOCIAL_OIDC_PROVIDER_FACEBOOK, SOCIAL_OIDC_PROVIDER_GOOGLE, SOCIAL_OIDC_PROVIDER_LINKEDIN, SOCIAL_OIDC_PROVIDER_SALESFORCE } from "@/utils/consts";
+import { FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL, PASSWORD_MINIMUM_LENGTH, QUERY_PARAM_AUTHENTICATE_TO_PORTAL, QUERY_PARAM_PREAUTHN_TOKEN, QUERY_PARAM_REDIRECT_URI, QUERY_PARAM_RETURN_URI, QUERY_PARAM_TENANT_ID, SOCIAL_OIDC_PROVIDER_APPLE, SOCIAL_OIDC_PROVIDER_FACEBOOK, SOCIAL_OIDC_PROVIDER_GOOGLE, SOCIAL_OIDC_PROVIDER_LINKEDIN, SOCIAL_OIDC_PROVIDER_SALESFORCE } from "@/utils/consts";
 import { useMutation, useQuery } from "@apollo/client";
 import { UserAuthenticationStateResponse, TenantSelectorData, AuthenticationState, UserAuthenticationState, TenantPasswordConfig, FederatedOidcProvider } from "@/graphql/generated/graphql-types";
 import Alert from '@mui/material/Alert';
-import { AUTHENTICATE_USER, AUTHENTICATE_USERNAME_INPUT_MUTATION, CANCEL_AUTHENTICATION } from "@/graphql/mutations/oidc-mutations";
+import { AUTHENTICATE_USER, AUTHENTICATE_USERNAME_INPUT_MUTATION, AUTHENTICATE_WITH_SOCIAL_OIDC_PROVIDER, CANCEL_AUTHENTICATION } from "@/graphql/mutations/oidc-mutations";
 import { PageTitleContext } from "@/components/contexts/page-title-context";
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
 import RadioStyledCheckbox from "../input/radio-styled-checkbox";
@@ -16,7 +16,7 @@ import { AuthentiationConfigureTotp } from "./configure-totp";
 import { AuthentiationConfigureSecurityKey } from "./configure-security-key";
 import { AuthentiationValidateSecurityKey } from "./validate-security-key";
 import AuthentiationRotatePassword from "./rotate-password";
-import {  useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { AuthSessionProps, useAuthSessionContext } from "../contexts/auth-session-context";
 import { FEDERATED_OIDC_PROVIDERS_QUERY } from "@/graphql/queries/oidc-queries";
 import { ResponsiveBreakpoints, ResponsiveContext } from "../contexts/responsive-context";
@@ -37,18 +37,19 @@ const Login: React.FC = () => {
 
     // CONTEXT VARIABLES
     const titleSetter = useContext(PageTitleContext);
-    const tenantBean: TenantMetaDataBean  = useContext(TenantContext);
+    const tenantBean: TenantMetaDataBean = useContext(TenantContext);
     useEffect(() => {
         titleSetter.setPageTitle("Login");
     }, []);
     const authSessionProps: AuthSessionProps = useAuthSessionContext();
     const breakPoints: ResponsiveBreakpoints = useContext(ResponsiveContext);
-    
+
     // QUERY PARAMS
     const params = useSearchParams();
     const preAuthToken = params?.get(QUERY_PARAM_PREAUTHN_TOKEN);
     const tenantId: string | null = params?.get(QUERY_PARAM_TENANT_ID) || null;
     const redirectUri = params?.get(QUERY_PARAM_REDIRECT_URI);
+    const returnToUri = params?.get(QUERY_PARAM_RETURN_URI);
 
 
     // PAGE STATE MANAGEMENT VARIABLES
@@ -65,22 +66,23 @@ const Login: React.FC = () => {
 
     // HOOKS FROM NEXTJS OR MUI
     const router = useRouter();
-    
+
     const maxWidth = breakPoints.isSmall ? "90vw" : breakPoints.isMedium ? "80vw" : "650px";
 
     // GRAPHQL FUNCTIONS
-    const {} = useQuery(FEDERATED_OIDC_PROVIDERS_QUERY, {
+    const { } = useQuery(FEDERATED_OIDC_PROVIDERS_QUERY, {
         variables: {
             tenantId: tenantId
         },
+        ssr: false,
         skip: tenantId === null || tenantBean.getTenantMetaData().tenant.allowSocialLogin !== true,
         onCompleted(data) {
-            if(data && data.getFederatedOIDCProviders){
+            if (data && data.getFederatedOIDCProviders) {
                 let arr: Array<FederatedOidcProvider> = data.getFederatedOIDCProviders;
                 arr = arr.filter(
                     (provider: FederatedOidcProvider) => provider.federatedOIDCProviderType === FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL
                 );
-                if(arr.length > 0){
+                if (arr.length > 0) {
                     setSocialOIDCProviders(arr);
                 }
             }
@@ -112,7 +114,17 @@ const Login: React.FC = () => {
             const authnStateResponse: UserAuthenticationStateResponse = data.cancelAuthentication;
             handleUserAuthenticationResponse(authnStateResponse, null);
         },
-        onError(error){
+        onError(error) {
+            setErrorMessage(error.message);
+        }
+    });
+
+    const [authenticateWithSocialOIDCProvider] = useMutation(AUTHENTICATE_WITH_SOCIAL_OIDC_PROVIDER, {
+        onCompleted(data) {
+            const authnStateResponse: UserAuthenticationStateResponse = data.authenticateWithSocialOIDCProvider;
+            handleUserAuthenticationResponse(authnStateResponse, null);
+        },
+        onError(error) {
             setErrorMessage(error.message);
         }
     })
@@ -155,9 +167,9 @@ const Login: React.FC = () => {
                     setErrorMessage("ERROR_NO_REDIRECT_ENDPOINT_CONFIGURED");
                 }
                 else {
-                    if(authnStateResponse.userAuthenticationState.authenticationState === AuthenticationState.RedirectToIamPortal){
-                        if(authnStateResponse.accessToken){
-                            authSessionProps.setAuthSessionData({accessToken: authnStateResponse.accessToken, expiresAtMs: authnStateResponse.tokenExpiresAtMs || 0});
+                    if (authnStateResponse.userAuthenticationState.authenticationState === AuthenticationState.RedirectToIamPortal) {
+                        if (authnStateResponse.accessToken) {
+                            authSessionProps.setAuthSessionData({ accessToken: authnStateResponse.accessToken, expiresAtMs: authnStateResponse.tokenExpiresAtMs || 0 });
                         }
                     }
                     router.push(authnStateResponse.uri);
@@ -190,7 +202,8 @@ const Login: React.FC = () => {
             variables: {
                 username: username,
                 tenantId: selectedTenant,
-                preAuthToken: preAuthToken
+                preAuthToken: preAuthToken,
+                returnToUri: returnToUri
             }
         });
     }
@@ -201,7 +214,8 @@ const Login: React.FC = () => {
                     variables: {
                         email: username,
                         tenantId: selectedTenant,
-                        preAuthToken: preAuthToken
+                        preAuthToken: preAuthToken,
+                        returnToUri: returnToUri
                     }
                 });
             }
@@ -216,14 +230,14 @@ const Login: React.FC = () => {
 
 
     const handleCancelAuthentication = (userAuthenticationState: UserAuthenticationState) => {
-        console.log("authentication cancelled");        
+        console.log("authentication cancelled");
         cancelAuthentication({
             variables: {
                 userId: userAuthenticationState.userId,
                 authenticationSessionToken: userAuthenticationState.authenticationSessionToken,
                 preAuthToken: userAuthenticationState.preAuthToken
             }
-        });        
+        });
         setUsername("");
         setPassword("");
         setErrorMessage(null);
@@ -256,20 +270,20 @@ const Login: React.FC = () => {
     }
 
     const getIconForSocialProvider = (provider: FederatedOidcProvider) => {
-        if(provider.socialLoginProvider === SOCIAL_OIDC_PROVIDER_GOOGLE){
-            return <img src="/google.png" width={"25px"}/>
+        if (provider.socialLoginProvider === SOCIAL_OIDC_PROVIDER_GOOGLE) {
+            return <img src="/google.png" width={"25px"} />
         }
-        else if(provider.socialLoginProvider === SOCIAL_OIDC_PROVIDER_FACEBOOK){
-            return <img src="/facebook.png" width={"25px"}/>
+        else if (provider.socialLoginProvider === SOCIAL_OIDC_PROVIDER_FACEBOOK) {
+            return <img src="/facebook.png" width={"25px"} />
         }
-        else if(provider.socialLoginProvider === SOCIAL_OIDC_PROVIDER_LINKEDIN){
-            return <img src="/linkedin.png" width={"25px"}/>
+        else if (provider.socialLoginProvider === SOCIAL_OIDC_PROVIDER_LINKEDIN) {
+            return <img src="/linkedin.png" width={"25px"} />
         }
-        else if(provider.socialLoginProvider === SOCIAL_OIDC_PROVIDER_APPLE){
-            return <img src="/apple.png" width={"25px"}/>
+        else if (provider.socialLoginProvider === SOCIAL_OIDC_PROVIDER_APPLE) {
+            return <img src="/apple.png" width={"25px"} />
         }
-        else if(provider.socialLoginProvider === SOCIAL_OIDC_PROVIDER_SALESFORCE){
-            return <img src="/salesforce.png" width={"25px"}/>
+        else if (provider.socialLoginProvider === SOCIAL_OIDC_PROVIDER_SALESFORCE) {
+            return <img src="/salesforce.png" width={"25px"} />
         }
         else {
             return <Skeleton height={"25px"} width={"25px"} />
@@ -390,8 +404,8 @@ const Login: React.FC = () => {
                                 >
                                 </TextField>
                             </Grid2>
-                            <Grid2 size={{xs: 12}}>
-                                <Stack                                    
+                            <Grid2 size={{ xs: 12 }}>
+                                <Stack
                                     direction={"row-reverse"}
                                 >
                                     <Button
@@ -407,11 +421,11 @@ const Login: React.FC = () => {
                                         onClick={() => handleUserNameInputClick()}
                                     >Next</Button>
                                     <Button
-                                        onClick={() =>{
-                                            if(redirectUri){
+                                        onClick={() => {
+                                            if (redirectUri) {
                                                 router.push(`${redirectUri}?error=access_denied&error_description=authentication_cancelled_by_user`)
                                             }
-                                            else{
+                                            else {
                                                 setUsername("");
                                                 router.push(`/authorize/login?${QUERY_PARAM_AUTHENTICATE_TO_PORTAL}=true`);
                                             }
@@ -448,23 +462,29 @@ const Login: React.FC = () => {
                             }
                             {tenantBean.getTenantMetaData().tenant.allowSocialLogin && socialOIDCProviders.length > 0 &&
                                 <React.Fragment>
-                                    <Grid2 size={{xs: 12}}>
+                                    <Grid2 size={{ xs: 12 }}>
                                         <Divider>OR</Divider>
                                     </Grid2>
                                     <Typography width={"100%"} component="div">
                                         {socialOIDCProviders.map(
                                             (provider: FederatedOidcProvider) => (
-                                                <Grid2 
+                                                <Grid2
                                                     className="social-media-login-container"
-                                                    key={provider.federatedOIDCProviderId}                                                     
+                                                    key={provider.federatedOIDCProviderId}
                                                     onClick={() => {
-
-                                                    }}                                                     
-                                                    container spacing={0} 
-                                                    size={{xs: 12}}
+                                                        authenticateWithSocialOIDCProvider({
+                                                            variables: {
+                                                                tenantId: tenantId,
+                                                                preAuthToken: preAuthToken,
+                                                                federatedOIDCProviderId: provider.federatedOIDCProviderId
+                                                            }
+                                                        })
+                                                    }}
+                                                    container spacing={0}
+                                                    size={{ xs: 12 }}
                                                 >
                                                     <Grid2 size={breakPoints.isMedium ? 2 : 1.5}>{getIconForSocialProvider(provider)}
-                                                        
+
                                                     </Grid2>
                                                     <Grid2 size={breakPoints.isMedium ? 10 : 10.5}>Sign in with {provider.federatedOIDCProviderName}</Grid2>
                                                 </Grid2>
@@ -473,7 +493,6 @@ const Login: React.FC = () => {
                                     </Typography>
                                 </React.Fragment>
                             }
-                            
                         </React.Fragment>
                     }
                     {userAuthenticationState && userAuthenticationState.authenticationState === AuthenticationState.EnterPassword &&
@@ -522,24 +541,17 @@ const Login: React.FC = () => {
                                     </Stack>
                                 </Grid2>
                             }
-                            <Grid2 size={{ xs: 12 }}>
+                            <Grid2 size={12}>
                                 <Stack
                                     direction={"row-reverse"}
                                 >
                                     <Button
                                         disabled={password === null || password.length < PASSWORD_MINIMUM_LENGTH}
                                         variant="contained"
-                                        sx={{
-                                            height: "100%", padding: "8px 32px 8px 32px", marginLeft: "8px",
-                                            backgroundColor: tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheaderbackgroundcolor,
-                                            color: tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheadertextcolor,
-                                            fontWeight: "bold",
-                                            fontSize: "0.9em"
-                                        }}
                                         onClick={() => {
                                             setErrorMessage(null);
                                             authenticateUser({
-                                                variables: {                                                
+                                                variables: {
                                                     username: username,
                                                     password: password,
                                                     tenantId: userAuthenticationState.tenantId,
@@ -552,23 +564,16 @@ const Login: React.FC = () => {
                                     <Button
                                         disabled={false}
                                         variant="contained"
-                                        sx={{
-                                            height: "100%", padding: "8px 32px 8px 32px", marginLeft: "8px",
-                                            backgroundColor: tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheaderbackgroundcolor,
-                                            color: tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheadertextcolor,
-                                            fontWeight: "bold",
-                                            fontSize: "0.9em"
-                                        }}
                                         onClick={() => { setErrorMessage(null); setPassword(""); setUserAuthenticationState(null); }}
                                     >Back</Button>
                                     <Button
-                                        onClick={() =>{
+                                        onClick={() => {
                                             handleCancelAuthentication(userAuthenticationState);
                                         }}
+                                        variant="contained"
                                     >
                                         Cancel
                                     </Button>
-                                    
                                 </Stack>
                             </Grid2>
                         </React.Fragment>
@@ -582,7 +587,7 @@ const Login: React.FC = () => {
                             }}
                             onUpdateEnd={(userAuthenticationStateResponse, errorMessage) => {
                                 setShowMutationBackdrop(false);
-                                handleUserAuthenticationResponse(userAuthenticationStateResponse, errorMessage);                                
+                                handleUserAuthenticationResponse(userAuthenticationStateResponse, errorMessage);
                             }}
                             onUpdateStart={() => {
                                 setErrorMessage(null);
@@ -598,7 +603,7 @@ const Login: React.FC = () => {
                             }}
                             onUpdateEnd={(userAuthenticationStateResponse, errorMessage) => {
                                 setShowMutationBackdrop(false);
-                                handleUserAuthenticationResponse(userAuthenticationStateResponse, errorMessage);                                
+                                handleUserAuthenticationResponse(userAuthenticationStateResponse, errorMessage);
                             }}
                             onUpdateStart={() => {
                                 setErrorMessage(null);
@@ -614,7 +619,7 @@ const Login: React.FC = () => {
                             }}
                             onUpdateEnd={(userAuthenticationStateResponse, errorMessage) => {
                                 setShowMutationBackdrop(false);
-                                handleUserAuthenticationResponse(userAuthenticationStateResponse, errorMessage);                                
+                                handleUserAuthenticationResponse(userAuthenticationStateResponse, errorMessage);
                             }}
                             onUpdateStart={() => {
                                 setErrorMessage(null);
@@ -630,7 +635,7 @@ const Login: React.FC = () => {
                             }}
                             onUpdateEnd={(userAuthenticationStateResponse, errorMessage) => {
                                 setShowMutationBackdrop(false);
-                                handleUserAuthenticationResponse(userAuthenticationStateResponse, errorMessage);                                
+                                handleUserAuthenticationResponse(userAuthenticationStateResponse, errorMessage);
                             }}
                             onUpdateStart={() => {
                                 setErrorMessage(null);
@@ -646,7 +651,7 @@ const Login: React.FC = () => {
                             }}
                             onUpdateEnd={(userAuthenticationStateResponse, errorMessage) => {
                                 setShowMutationBackdrop(false);
-                                handleUserAuthenticationResponse(userAuthenticationStateResponse, errorMessage);                                
+                                handleUserAuthenticationResponse(userAuthenticationStateResponse, errorMessage);
                             }}
                             onUpdateStart={() => {
                                 setErrorMessage(null);

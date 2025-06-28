@@ -794,22 +794,26 @@ class IdentityService {
     }
 
 
-    protected async createFederatedOIDCRequestProperties(email: string, userId: string | null, provider: FederatedOidcProvider, tenantId: string): Promise<{hasError: boolean, errorMessage: string, authorizationEndpoint: string}> {
+    protected async createFederatedOIDCRequestProperties(email: string | null, userId: string | null, provider: FederatedOidcProvider, tenantId: string, preAuthenticationState: PreAuthenticationState | null): Promise<{hasError: boolean, errorMessage: string, authorizationEndpoint: string}> {
 
+        const state: string = generateRandomToken(32, "hex");
         const federatedOIDCAuthorizationRel: FederatedOidcAuthorizationRel = {
             federatedOIDCAuthorizationRelType: FederatedOidcAuthorizationRelType.AuthorizationRelTypePortalAuth,
             email: email,
             userId: userId,
-            expiresAtMs: 0,
-            federatedOIDCProviderId: "",
-            initRedirectUri: "",
-            initResponseMode: "",
-            initClientId: null,
-            initResponseType: "",
-            initScope: "",
-            initState: "",
-            initTenantId: "",
-            state: ""
+            expiresAtMs: Date.now() + 15 /* minutes */ * 60 /* seconds/min  */ * 1000 /* ms/sec */,
+            federatedOIDCProviderId: provider.federatedOIDCProviderId,
+            initRedirectUri: preAuthenticationState ? preAuthenticationState.redirectUri : "",
+            initResponseMode: preAuthenticationState? preAuthenticationState.responseMode : "" ,
+            initClientId: preAuthenticationState ? preAuthenticationState.clientId : null,
+            initResponseType: preAuthenticationState ? preAuthenticationState.responseMode : "",
+            initScope: preAuthenticationState ? preAuthenticationState.scope : provider.scopes.join(" "),            
+            initTenantId: tenantId,
+            initCodeChallenge: preAuthenticationState ? preAuthenticationState.codeChallenge : null,
+            initCodeChallengeMethod: preAuthenticationState ? preAuthenticationState.codeChallengeMethod : null,
+            state: state,
+            initState: preAuthenticationState && preAuthenticationState.state ? preAuthenticationState.state : state,
+            returnUri: ""
         }
         const retVal = {errorMessage: "", hasError: false, authorizationEndpoint: ""};
         
@@ -827,20 +831,8 @@ class IdentityService {
 
         // If we are supposed to use PKCE, then we need to generate the code challenge and save it too.
         const {verifier, challenge} = provider.usePkce ? generateCodeVerifierAndChallenge() : {verifier: null, challenge: null}; 
-        federatedOIDCAuthorizationRel.state = generateRandomToken(32, "hex");
         federatedOIDCAuthorizationRel.codeVerifier = verifier;
-        federatedOIDCAuthorizationRel.expiresAtMs = Date.now() + 5 /* minutes */ * 60 /* seconds/min  */ * 1000 /* ms/sec */;
-        federatedOIDCAuthorizationRel.federatedOIDCProviderId = provider.federatedOIDCProviderId;        
-        federatedOIDCAuthorizationRel.initRedirectUri = "";
-        federatedOIDCAuthorizationRel.initResponseMode = "";
-        federatedOIDCAuthorizationRel.initScope = provider.scopes.join(" ");
-        federatedOIDCAuthorizationRel.initState = federatedOIDCAuthorizationRel.state;
-        federatedOIDCAuthorizationRel.initTenantId = tenantId;
-        federatedOIDCAuthorizationRel.initCodeChallenge = "";
-        federatedOIDCAuthorizationRel.initCodeChallengeMethod = "S256";
-        federatedOIDCAuthorizationRel.initResponseType = "";
-        federatedOIDCAuthorizationRel.returnUri = "";	
-        
+        federatedOIDCAuthorizationRel.returnUri = "";        
         await authDao.saveFederatedOIDCAuthorizationRel(federatedOIDCAuthorizationRel);
 
         const scopeParameter = provider.scopes.join("%20");

@@ -671,8 +671,8 @@ export const USER_AUTHENTICATION_STATE_RESPONSE_FRAGMENT = gql(`
 
 // Authentication flows
 export const AUTHENTICATE_USERNAME_INPUT_MUTATION = gql`    
-    mutation authenticateHandleUserNameInput($username: String!, $tenantId: String, $preAuthToken: String) {
-        authenticateHandleUserNameInput(username: $username, tenantId: $tenantId, preAuthToken: $preAuthToken) {
+    mutation authenticateHandleUserNameInput($username: String!, $tenantId: String, $preAuthToken: String, $returnToUri: String) {
+        authenticateHandleUserNameInput(username: $username, tenantId: $tenantId, preAuthToken: $preAuthToken, returnToUri: $returnToUri) {
             ...UserAuthenticationStateResponseFragment
         } 
     }
@@ -750,7 +750,15 @@ export const CANCEL_AUTHENTICATION = gql`
     ${USER_AUTHENTICATION_STATE_RESPONSE_FRAGMENT}
 `;
 
+export const AUTHENTICATE_WITH_SOCIAL_OIDC_PROVIDER = gql`
+    mutation authenticateWithSocialOIDCProvider($preAuthToken: String, $tenantId: String!, $federatedOIDCProviderId: String!) {
+        authenticateWithSocialOIDCProvider(preAuthToken: $preAuthToken, tenantId: $tenantId, federatedOIDCProviderId: $federatedOIDCProviderId) {
+            ...UserAuthenticationStateResponseFragment
+        }
+    }
 
+    ${USER_AUTHENTICATION_STATE_RESPONSE_FRAGMENT}
+`;
 
 // Registration flows
 export const USER_REGISTRATION_STATE_RESPONSE_FRAGMENT = gql(`

@@ -6,7 +6,7 @@ import TenantDao from '@/lib/dao/tenant-dao';
 import { DaoFactory } from '@/lib/data-sources/dao-factory';
 import { WellknownConfig } from '@/lib/models/wellknown-config';
 import OIDCServiceUtils from '@/lib/service/oidc-service-utils';
-import { ALL_OIDC_SUPPORTED_SCOPE_VALUES, CLIENT_TYPE_SERVICE_ACCOUNT_ONLY, FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE, OIDC_OPENID_SCOPE, QUERY_PARAM_PREAUTH_REDIRECT_URI, QUERY_PARAM_PREAUTH_TENANT_ID, QUERY_PARAM_PREAUTHN_TOKEN } from '@/utils/consts';
+import { ALL_OIDC_SUPPORTED_SCOPE_VALUES, CLIENT_TYPE_SERVICE_ACCOUNT_ONLY, FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE, OIDC_OPENID_SCOPE, QUERY_PARAM_REDIRECT_URI, QUERY_PARAM_TENANT_ID, QUERY_PARAM_PREAUTHN_TOKEN } from '@/utils/consts';
 import { generateCodeVerifierAndChallenge, generateRandomToken } from '@/utils/dao-utils';
 import type { NextApiRequest, NextApiResponse } from 'next'
 
@@ -212,7 +212,7 @@ export default async function handler(
                 federatedOIDCAuthorizationRelType: FederatedOidcAuthorizationRelType.AuthorizationRelTypeClientAuth,
                 state: generateRandomToken(32, "hex"),
                 codeVerifier: verifier,
-                expiresAtMs: Date.now() + 5 /* minutes */ * 60 /* seconds/min  */ * 1000 /* ms/sec */,
+                expiresAtMs: Date.now() + 15 /* minutes */ * 60 /* seconds/min  */ * 1000 /* ms/sec */,
                 federatedOIDCProviderId: oidcProviders[0].federatedOIDCProviderId,
                 initClientId: clientId,
                 initRedirectUri: redirectUri,
@@ -258,7 +258,7 @@ export default async function handler(
     }
     await authDao.savePreAuthenticationState(preAuthenticationState);
 
-	res.status(302).setHeader("location", `/authorize/login?${QUERY_PARAM_PREAUTHN_TOKEN}=${preAuthenticationState.token}&${QUERY_PARAM_PREAUTH_TENANT_ID}=${tenantId}&${QUERY_PARAM_PREAUTH_REDIRECT_URI}=${redirectUri}`);
+	res.status(302).setHeader("location", `/authorize/login?${QUERY_PARAM_PREAUTHN_TOKEN}=${preAuthenticationState.token}&${QUERY_PARAM_TENANT_ID}=${tenantId}&${QUERY_PARAM_REDIRECT_URI}=${redirectUri}`);
 	res.end();
 
 }
