@@ -7,7 +7,7 @@ import { FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL, PASSWORD_MINIMUM_LENGTH, QUERY_PAR
 import { useMutation, useQuery } from "@apollo/client";
 import { UserAuthenticationStateResponse, TenantSelectorData, AuthenticationState, UserAuthenticationState, TenantPasswordConfig, FederatedOidcProvider } from "@/graphql/generated/graphql-types";
 import Alert from '@mui/material/Alert';
-import { AUTHENTICATE_USER, AUTHENTICATE_USERNAME_INPUT_MUTATION, AUTHENTICATE_WITH_SOCIAL_OIDC_PROVIDER, CANCEL_AUTHENTICATION } from "@/graphql/mutations/oidc-mutations";
+import { AUTHENTICATE_HANDLE_FORGOT_PASSWORD, AUTHENTICATE_USER, AUTHENTICATE_USERNAME_INPUT_MUTATION, AUTHENTICATE_WITH_SOCIAL_OIDC_PROVIDER, CANCEL_AUTHENTICATION } from "@/graphql/mutations/oidc-mutations";
 import { PageTitleContext } from "@/components/contexts/page-title-context";
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
 import RadioStyledCheckbox from "../input/radio-styled-checkbox";
@@ -21,6 +21,7 @@ import { AuthSessionProps, useAuthSessionContext } from "../contexts/auth-sessio
 import { FEDERATED_OIDC_PROVIDERS_QUERY } from "@/graphql/queries/oidc-queries";
 import { ResponsiveBreakpoints, ResponsiveContext } from "../contexts/responsive-context";
 import Skeleton from '@mui/material/Skeleton';
+import ValidatePasswordResetToken from "./validate-password-reset-token";
 
 
 const MIN_USERNAME_LENGTH = 6;
@@ -127,7 +128,17 @@ const Login: React.FC = () => {
         onError(error) {
             setErrorMessage(error.message);
         }
-    })
+    });
+
+    const [authenticateHandleForgotPassword] = useMutation(AUTHENTICATE_HANDLE_FORGOT_PASSWORD, {
+        onCompleted(data) {
+            const authnStateResponse: UserAuthenticationStateResponse = data.authenticateHandleForgotPassword;
+            handleUserAuthenticationResponse(authnStateResponse, null);
+        },
+        onError(error) {
+            setErrorMessage(error.message);
+        }
+    });
 
     // HANDLER FUNCTIONS
     const handleUserAuthenticationResponse = (authnStateResponse: UserAuthenticationStateResponse | null, errorMessage: string | null) => {
@@ -537,7 +548,21 @@ const Login: React.FC = () => {
                                     <Stack
                                         direction={"row-reverse"}
                                     >
-                                        <span><Link prefetch={false} href={`/authorize/forgot-password?${getQueryParams()}`} style={{ color: "black", fontWeight: "bold", fontSize: "0.9em" }}>Forgot password?</Link></span>
+                                        <span 
+                                            style={{fontWeight: "bold", fontSize: "0.9em", textDecoration: "underline", cursor: "pointer"}}
+                                            onClick={() => {
+                                                console.log("clickin forgot password.");
+                                                
+                                                authenticateHandleForgotPassword({
+                                                    variables: {
+                                                        authenticationSessionToken: userAuthenticationState.authenticationSessionToken,
+                                                        preAuthToken: preAuthToken
+                                                    }
+                                                });
+                                            }}
+                                        >Forgot Password?
+                                        </span>
+                                            {/* <Link prefetch={false} href={``} style={{ color: "black", fontWeight: "bold", fontSize: "0.9em" }}>Forgot password?</Link></span> */}
                                     </Stack>
                                 </Grid2>
                             }
@@ -582,6 +607,22 @@ const Login: React.FC = () => {
                         <AuthentiationRotatePassword
                             initialUserAuthenticationState={userAuthenticationState}
                             passwordConfig={passwordConfig}
+                            onAuthenticationCancelled={() => {
+                                handleCancelAuthentication(userAuthenticationState);
+                            }}
+                            onUpdateEnd={(userAuthenticationStateResponse, errorMessage) => {
+                                setShowMutationBackdrop(false);
+                                handleUserAuthenticationResponse(userAuthenticationStateResponse, errorMessage);
+                            }}
+                            onUpdateStart={() => {
+                                setErrorMessage(null);
+                                setShowMutationBackdrop(true)
+                            }}
+                        />
+                    }
+                    {userAuthenticationState && userAuthenticationState.authenticationState === AuthenticationState.ValidatePasswordResetToken &&
+                        <ValidatePasswordResetToken
+                            initialUserAuthenticationState={userAuthenticationState}
                             onAuthenticationCancelled={() => {
                                 handleCancelAuthentication(userAuthenticationState);
                             }}

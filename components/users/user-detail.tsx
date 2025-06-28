@@ -289,7 +289,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                                 <Grid2 size={2}>
                                                     <Checkbox                                                         
                                                         name="locked"
-                                                        checked={user.locked}
+                                                        checked={userInput.locked}
                                                         disabled={!user.locked || isMarkedForDelete === true}
                                                         onChange={(_, checked) => {
                                                             // TODO

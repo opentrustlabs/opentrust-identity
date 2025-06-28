@@ -125,7 +125,7 @@ class AuthenticateUserService extends IdentityService {
         return response;
     }
 
-    public async authenticateValidatePasswordResetToken(token: string, authenticationSessionToken: string, preAuthToken: string): Promise<UserAuthenticationStateResponse> {
+    public async authenticateValidatePasswordResetToken(token: string, authenticationSessionToken: string, preAuthToken: string | null): Promise<UserAuthenticationStateResponse> {
         
         const response: UserAuthenticationStateResponse = this.initUserAuthenticationStateResponse(authenticationSessionToken, "", preAuthToken);
         const arrUserAuthenticationStates: Array<UserAuthenticationState> = await this.getSortedAuthenticationStates(authenticationSessionToken);
@@ -138,7 +138,7 @@ class AuthenticateUserService extends IdentityService {
         
         const user: User | null = await identityDao.getUserByPasswordResetToken(token);
         if(user === null){
-            response.authenticationError.errorCode = "ERROR_INVALID_USER_ID";
+            response.authenticationError.errorCode = "ERROR_INVALID_RESET_TOKEN";
             return Promise.resolve(response);
         }
         if(user.markForDelete || user.enabled === false){

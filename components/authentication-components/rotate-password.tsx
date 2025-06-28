@@ -1,7 +1,7 @@
 "use client";
 import { AUTHENTICATE_ROTATE_PASSWORD } from "@/graphql/mutations/oidc-mutations";
 import { useMutation } from "@apollo/client";
-import { Grid2, Stack, TextField, Button, InputAdornment } from "@mui/material";
+import { Grid2, Stack, TextField, Button, InputAdornment, Typography } from "@mui/material";
 import React from "react";
 import { AuthenticationComponentsProps } from "./login";
 import { TenantPasswordConfig } from "@/graphql/generated/graphql-types";
@@ -45,8 +45,11 @@ const AuthentiationRotatePassword: React.FC<AuthenticationRotatePasswordProps> =
 
     return (
         <React.Fragment>
-
+            <Typography component="div">
             <Grid2 size={12} container spacing={1}>
+                <Grid2 marginBottom={"8px"} size={12} fontWeight={"bold"}>
+                    Enter your password:
+                </Grid2>
                 <Grid2 marginBottom={"8px"} size={12}>
                     <Stack spacing={1} direction={"row"}>
                         <div>Password</div>
@@ -171,6 +174,7 @@ const AuthentiationRotatePassword: React.FC<AuthenticationRotatePasswordProps> =
                     Cancel
                 </Button>
             </Stack>
+            </Typography>
         </React.Fragment>
     )
 }

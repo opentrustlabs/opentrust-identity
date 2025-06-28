@@ -5,22 +5,23 @@ import TextField from "@mui/material/TextField";
 import Stack from "@mui/material/Stack";
 import Button from "@mui/material/Button";
 import { useMutation } from "@apollo/client";
-import { REGISTER_VERIFY_EMAIL_ADDRESS } from "@/graphql/mutations/oidc-mutations";
-import { RegistrationComponentsProps } from "./register";
-import { UserRegistrationStateResponse } from "@/graphql/generated/graphql-types";
+import { AUTHENTICATE_VALIDATE_PASSWORD_RESET_TOKEN } from "@/graphql/mutations/oidc-mutations";
+import { AuthenticationComponentsProps } from "./login";
+import { UserAuthenticationStateResponse } from "@/graphql/generated/graphql-types";
 
-const ValidateEmailOnRegistration: React.FC<RegistrationComponentsProps> = ({
-    initialUserRegistrationState,
-    onRegistrationCancelled,
+
+const ValidatePasswordResetToken: React.FC<AuthenticationComponentsProps> = ({
+    initialUserAuthenticationState,
+    onAuthenticationCancelled,
     onUpdateEnd,
     onUpdateStart
 }) => {
 
     const [verificationCode, setVerificationCode] = React.useState<string>("");
 
-    const [verifyEmailRegistrationToken] = useMutation(REGISTER_VERIFY_EMAIL_ADDRESS, {
+    const [verifyPasswordResetToken] = useMutation(AUTHENTICATE_VALIDATE_PASSWORD_RESET_TOKEN, {
         onCompleted(data) {
-            const response: UserRegistrationStateResponse = data.registerVerifyEmailAddress as UserRegistrationStateResponse;
+            const response: UserAuthenticationStateResponse = data.authenticateValidatePasswordResetToken as UserAuthenticationStateResponse;
             onUpdateEnd(response, null)
         },
         onError(error) {
@@ -49,12 +50,11 @@ const ValidateEmailOnRegistration: React.FC<RegistrationComponentsProps> = ({
                 <Button
                     onClick={() => {
                         onUpdateStart();
-                        verifyEmailRegistrationToken({
-                            variables: {
-                                userId: initialUserRegistrationState.userId,
+                        verifyPasswordResetToken({
+                            variables: {                                
                                 token: verificationCode,
-                                registrationSessionToken: initialUserRegistrationState.registrationSessionToken,
-                                preAuthToken: initialUserRegistrationState.preAuthToken
+                                authenticationSessionToken: initialUserAuthenticationState.authenticationSessionToken,
+                                preAuthToken: initialUserAuthenticationState.preAuthToken
                             }
                         });
                     }}
@@ -63,7 +63,7 @@ const ValidateEmailOnRegistration: React.FC<RegistrationComponentsProps> = ({
                     Confirm
                 </Button>
                 <Button
-                    onClick={() => onRegistrationCancelled()}
+                    onClick={() => onAuthenticationCancelled()}
                 >
                     Cancel
                 </Button>
@@ -72,4 +72,4 @@ const ValidateEmailOnRegistration: React.FC<RegistrationComponentsProps> = ({
     )
 }
 
-export default ValidateEmailOnRegistration;
+export default ValidatePasswordResetToken;
