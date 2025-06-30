@@ -152,17 +152,28 @@ const TenantScopeConfiguration: React.FC<TenantScopeConfigurationProps> = ({
                                 return [];
                             }
                         }}
+                        multiSelect={true}
                         helpText="Select a Scope"
                         onCancel={() => setSelectDialogOpen(false)}
-                        onSelected={(scopeId: string) => {
+                        onSelected={(value: string | Array<string>) => {
                             setSelectDialogOpen(false); 
                             onUpdateStart();
-                            assignTenantToScopeMutation({
-                                variables: {
-                                    scopeId: scopeId,
-                                    tenantId: tenantId
-                                }
-                            });                            
+                            if(!Array.isArray(value)){
+                                assignTenantToScopeMutation({
+                                    variables: {
+                                        scopeId: value as string,
+                                        tenantId: tenantId
+                                    }
+                                }); 
+                            }
+                            else{
+                                assignTenantToScopeMutation({
+                                    variables: {
+                                        scopeId: value[0] as string,
+                                        tenantId: tenantId
+                                    }
+                                });  
+                            }                          
                         }}
                         selectorLabel="Select a scope"
                     />

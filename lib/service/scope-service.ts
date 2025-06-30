@@ -249,8 +249,7 @@ class ScopeService {
 
         if(tenant.tenantType === TENANT_TYPE_ROOT_TENANT && scope.scopeUse === SCOPE_USE_IAM_MANAGEMENT){
             throw new GraphQLError("ERROR_CANNOT_REMOVE_IAM_MANAGEMENT_SCOPE_FROM_ROOT_TENANT")
-        }
-        
+        }        
         return scopeDao.removeScopeFromTenant(tenantId, scopeId);
     }
 
