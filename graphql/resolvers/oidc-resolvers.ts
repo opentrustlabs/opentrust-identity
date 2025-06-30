@@ -435,6 +435,10 @@ const resolvers: Resolvers = {
             const rel = await scopeService.assignScopeToTenant(tenantId, scopeId, accessRuleId || null);
             return rel;
         },
+        bulkAssignScopeToTenant: async(_: any, {tenantId, bulkScopeInput}, oidcContext) => {
+            const scopeService: ScopeService = new ScopeService(oidcContext);
+            return scopeService.bulkAssignScopeToTenant(tenantId, bulkScopeInput);
+        },
         removeScopeFromTenant: async(_: any, { scopeId, tenantId }, oidcContext ) => {
             const scopeService: ScopeService = new ScopeService(oidcContext);
             await scopeService.removeScopeFromTenant(tenantId, scopeId);
@@ -444,6 +448,10 @@ const resolvers: Resolvers = {
             const scopeService: ScopeService = new ScopeService(oidcContext);
             const rel = await scopeService.assignScopeToClient(tenantId, clientId, scopeId);
             return rel;
+        },
+        bulkAssignScopeToClient: async(_: any, { clientId, tenantId, bulkScopeInput }, oidcContext) => {
+            const scopeService: ScopeService = new ScopeService(oidcContext);
+            return scopeService.bulkAssignScopeToClient(tenantId, clientId, bulkScopeInput);
         },
         removeScopeFromClient: async(_: any, { scopeId, tenantId, clientId }, oidcContext) => {
             const scopeService: ScopeService = new ScopeService(oidcContext);
@@ -455,6 +463,10 @@ const resolvers: Resolvers = {
             const rel = await scopeService.assignScopeToAuthorizationGroup(groupId, scopeId, tenantId);
             return rel;
         },
+        bulkAssignScopeToAuthorizationGroup: async(_: any, { groupId, tenantId, bulkScopeInput }, oidcContext) => {
+            const scopeService: ScopeService = new ScopeService(oidcContext);
+            return scopeService.bulkAssignScopeToAuthorizationGroup(groupId, tenantId, bulkScopeInput);
+        },
         removeScopeFromAuthorizationGroup: async(_: any, { scopeId, tenantId, groupId }, oidcContext) => {
             const scopeService: ScopeService = new ScopeService(oidcContext);
             await scopeService.removeScopeFromAuthorizationGroup(groupId, scopeId, tenantId);
@@ -464,6 +476,10 @@ const resolvers: Resolvers = {
             const scopeService: ScopeService = new ScopeService(oidcContext);
             const rel = await scopeService.assignScopeToUser(userId, tenantId, scopeId);
             return rel;
+        },
+        bulkAssignScopeToUser: async(_: any, { userId, tenantId, bulkScopeInput }, oidcContext) => {
+            const scopeService: ScopeService = new ScopeService(oidcContext);
+            return scopeService.bulkAssignScopeToUser(userId, tenantId, bulkScopeInput);
         },
         removeScopeFromUser: async(_: any, { userId, scopeId, tenantId }, oidcContext) => {
             const scopeService: ScopeService = new ScopeService(oidcContext);

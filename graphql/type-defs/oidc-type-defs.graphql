@@ -194,12 +194,16 @@ type Mutation {
     updateScope(scopeInput: ScopeUpdateInput!): Scope
     deleteScope(scopeId: String!): String
     assignScopeToTenant(tenantId: String!, scopeId: String!, accessRuleId: String): TenantAvailableScope
+    bulkAssignScopeToTenant(tenantId: String!, bulkScopeInput: [BulkScopeInput!]!): [TenantAvailableScope!]!
     removeScopeFromTenant(tenantId: String!, scopeId: String!): String
     assignScopeToClient(clientId: String!, tenantId: String!, scopeId: String!): ClientScopeRel
+    bulkAssignScopeToClient(clientId: String!, tenantId: String!, bulkScopeInput: [BulkScopeInput!]!): [ClientScopeRel!]!
     removeScopeFromClient(clientId: String!, tenantId: String!, scopeId: String!): String
     assignScopeToAuthorizationGroup(groupId: String!, scopeId: String!, tenantId: String!): AuthorizationGroupScopeRel
+    bulkAssignScopeToAuthorizationGroup(groupId: String!, tenantId: String!, bulkScopeInput: [BulkScopeInput!]!): [AuthorizationGroupScopeRel!]!
     removeScopeFromAuthorizationGroup(groupId: String!, scopeId: String!, tenantId: String!): String
     assignScopeToUser(userId: String!, tenantId: String!, scopeId: String!): UserScopeRel
+    bulkAssignScopeToUser(userId: String!, tenantId: String!, bulkScopeInput: [BulkScopeInput!]!): [UserScopeRel!]!
     removeScopeFromUser(userId: String!, tenantId: String!, scopeId: String!): String
 
     ## Scope constraint schemas
@@ -1336,6 +1340,11 @@ input ScopeAccessRuleSchemaUpdateInput {
     scopeAccessRuleSchemaId: String!
     scopeId: String!
     schema: String!
+}
+
+input BulkScopeInput {
+    scopeId: String!
+    accessRuleId: String
 }
 
 ## Access rules

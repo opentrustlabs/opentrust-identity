@@ -64,6 +64,7 @@ const Login: React.FC = () => {
     const [userAuthenticationState, setUserAuthenticationState] = React.useState<UserAuthenticationState | null>(null);
     const [passwordConfig, setPasswordConfig] = React.useState<TenantPasswordConfig | null>(null);
     const [socialOIDCProviders, setSocialOIDCProviders] = React.useState<Array<FederatedOidcProvider>>([]);
+    const [isPasswordResetFlow, setIsPasswordResetFlow] = React.useState<boolean>(false);
 
     // HOOKS FROM NEXTJS OR MUI
     const router = useRouter();
@@ -551,8 +552,7 @@ const Login: React.FC = () => {
                                         <span 
                                             style={{fontWeight: "bold", fontSize: "0.9em", textDecoration: "underline", cursor: "pointer"}}
                                             onClick={() => {
-                                                console.log("clickin forgot password.");
-                                                
+                                                setIsPasswordResetFlow(true);                                                
                                                 authenticateHandleForgotPassword({
                                                     variables: {
                                                         authenticationSessionToken: userAuthenticationState.authenticationSessionToken,
@@ -561,8 +561,7 @@ const Login: React.FC = () => {
                                                 });
                                             }}
                                         >Forgot Password?
-                                        </span>
-                                            {/* <Link prefetch={false} href={``} style={{ color: "black", fontWeight: "bold", fontSize: "0.9em" }}>Forgot password?</Link></span> */}
+                                        </span>                                            
                                     </Stack>
                                 </Grid2>
                             }
@@ -607,6 +606,7 @@ const Login: React.FC = () => {
                         <AuthentiationRotatePassword
                             initialUserAuthenticationState={userAuthenticationState}
                             passwordConfig={passwordConfig}
+                            isPasswordResetFlow={isPasswordResetFlow}
                             onAuthenticationCancelled={() => {
                                 handleCancelAuthentication(userAuthenticationState);
                             }}

@@ -14,12 +14,14 @@ import PasswordRulesDisplay from "./password-rules-display";
 
 
 export interface AuthenticationRotatePasswordProps extends AuthenticationComponentsProps {
+    isPasswordResetFlow: boolean,
     passwordConfig: TenantPasswordConfig
 }
 
 const AuthentiationRotatePassword: React.FC<AuthenticationRotatePasswordProps> = ({
     initialUserAuthenticationState,
     passwordConfig,
+    isPasswordResetFlow,
     onAuthenticationCancelled,
     onUpdateEnd,
     onUpdateStart
@@ -47,9 +49,16 @@ const AuthentiationRotatePassword: React.FC<AuthenticationRotatePasswordProps> =
         <React.Fragment>
             <Typography component="div">
             <Grid2 size={12} container spacing={1}>
-                <Grid2 marginBottom={"8px"} size={12} fontWeight={"bold"}>
-                    Enter your password:
-                </Grid2>
+                {isPasswordResetFlow &&
+                    <Grid2 marginBottom={"8px"} size={12} fontWeight={"bold"}>
+                        Enter your new password:
+                    </Grid2>
+                }
+                {!isPasswordResetFlow &&
+                    <Grid2 marginBottom={"8px"} size={12} fontWeight={"bold"}>
+                        Continued access requires your password to be updated. Enter your new password below: 
+                    </Grid2>
+                }                
                 <Grid2 marginBottom={"8px"} size={12}>
                     <Stack spacing={1} direction={"row"}>
                         <div>Password</div>

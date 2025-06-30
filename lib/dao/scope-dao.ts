@@ -22,6 +22,10 @@ abstract class ScopeDao {
     
         abstract getTenantAvailableScope(tenantId?: string, scopeId?: string): Promise<Array<TenantAvailableScope>>;
         
+        // TODO
+        // This should take a list of access rules that have previously been created and assigned to
+        // the scope itself. There should be one level of rules for the root tenant (specifically designated
+        // for the root), and rules that can be applied to any tenant
         abstract assignScopeToTenant(tenantId: string, scopeId: string, accessRuleId?: string): Promise<TenantAvailableScope>;
     
         abstract removeScopeFromTenant(tenantId: string, scopeId: string): Promise<void>;

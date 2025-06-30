@@ -292,10 +292,6 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                                         checked={userInput.locked}
                                                         disabled={!user.locked || isMarkedForDelete === true}
                                                         onChange={(_, checked) => {
-                                                            // TODO
-                                                            // Rather than update the entire user,
-                                                            // we just want to unlock the account in case it is locked.
-                                                            // There is a special function for this, just need to invoke it here.
                                                             userInput.locked = checked;
                                                             setMarkDirty(true); 
                                                             setUserInput({...userInput});
