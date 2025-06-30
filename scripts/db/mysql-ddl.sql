@@ -301,7 +301,7 @@ create TABLE client_scope_rel (
     clientid VARCHAR(64) NOT NULL,
     PRIMARY KEY (scopeid, tenantid, clientid),
     FOREIGN KEY (scopeid) REFERENCES scope(scopeid),
-    FOREIGN KEY (tenantid) REFERENCES tenant_available_scope(tenantid),
+    FOREIGN KEY (tenantid, scopeid) REFERENCES tenant_available_scope(tenantid, scopeid),
     FOREIGN KEY (clientid) REFERENCES client(clientid)
 );
 
@@ -311,7 +311,7 @@ create TABLE authorization_group_scope_rel (
     groupid VARCHAR(64) NOT NULL,
     PRIMARY KEY (scopeid, tenantid, groupid),
     FOREIGN KEY (scopeid) REFERENCES scope(scopeid),
-    FOREIGN KEY (tenantid) REFERENCES tenant_available_scope(tenantid),
+    FOREIGN KEY (tenantid, scopeid) REFERENCES tenant_available_scope(tenantid, scopeid),
     FOREIGN KEY (groupid) REFERENCES authorization_group(groupid)
 );
 
@@ -321,7 +321,7 @@ create TABLE user_scope_rel (
     scopeid VARCHAR(64) NOT NULL,
     PRIMARY KEY (userid, tenantid, scopeid),
     FOREIGN KEY (userid) REFERENCES user(userid),
-    FOREIGN KEY (tenantid) REFERENCES tenant_available_scope(tenantid),
+    FOREIGN KEY (tenantid, scopeid) REFERENCES tenant_available_scope(tenantid, scopeid),
     FOREIGN KEY (scopeid) REFERENCES scope(scopeid)
 );
 

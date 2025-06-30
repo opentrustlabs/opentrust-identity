@@ -13,7 +13,8 @@ export interface GeneralSelectorProps {
     queryVars: any,
     dataMapper: (data: any) => Array<{ id: string, label: string }>,
     onCancel: () => void,
-    onSelected: (id: string) => void,
+    multiSelect: boolean,
+    onSelected: (value: string | Array<string>) => void,
     selectorLabel: string,
     helpText: string,
     submitButtonText?: string
@@ -25,6 +26,7 @@ const GeneralSelector: React.FC<GeneralSelectorProps> = ({
     dataMapper,
     onCancel,
     onSelected,
+    multiSelect,
     selectorLabel,
     helpText,
     submitButtonText
@@ -33,6 +35,7 @@ const GeneralSelector: React.FC<GeneralSelectorProps> = ({
     const perPage: number = 10;
     // STATE VARIALBES
     const [selectedId, setSelectedId] = React.useState<string | null>(null);
+    const [selectedIds, setSelectedIds] = React.useState<Map<string, string>>(new Map());
     const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
     const [page, setPage] = React.useState(1);
     const [arr, setArr] = React.useState<Array<{ id: string, label: string }>>([]);
@@ -134,20 +137,36 @@ const GeneralSelector: React.FC<GeneralSelectorProps> = ({
                                                 {item.label}
                                             </Grid2>
                                             <Grid2 size={1}>
-                                                <Checkbox
-                                                    icon={<RadioButtonUncheckedOutlinedIcon />}
-                                                    checkedIcon={<RadioButtonCheckedIcon />}
-                                                    checked={selectedId === item.id}
-                                                    sx={{ cursor: "pointer" }}
-                                                    onClick={() => {
-                                                        if (selectedId === item.id) {
-                                                            setSelectedId(null);
-                                                        }
-                                                        else {
-                                                            setSelectedId(item.id);
-                                                        }
-                                                    }}
-                                                />
+                                                {multiSelect === false &&
+                                                    <Checkbox
+                                                        icon={<RadioButtonUncheckedOutlinedIcon />}
+                                                        checkedIcon={<RadioButtonCheckedIcon />}
+                                                        checked={selectedId === item.id}
+                                                        sx={{ cursor: "pointer" }}
+                                                        onClick={() => {
+                                                            if (selectedId === item.id) {
+                                                                setSelectedId(null);
+                                                            }
+                                                            else {
+                                                                setSelectedId(item.id);
+                                                            }
+                                                        }}
+                                                    />
+                                                }
+                                                {multiSelect === true &&
+                                                    <Checkbox
+                                                        checked={selectedIds.has(item.id)}                                                        
+                                                        onChange={(_, checked: boolean) => {
+                                                            if(checked){
+                                                                selectedIds.set(item.id, item.id);                                                                
+                                                            }
+                                                            else{
+                                                                selectedIds.delete(item.id);
+                                                            }
+                                                            setSelectedIds(new Map(selectedIds));
+                                                        }}
+                                                    />
+                                                }
                                             </Grid2>
                                             <Grid2 size={12}><Divider /></Grid2>
                                         </React.Fragment>
@@ -174,9 +193,21 @@ const GeneralSelector: React.FC<GeneralSelectorProps> = ({
             </DialogContent>
             <DialogActions>
                 <Button onClick={() => onCancel()}>Cancel</Button>
-                <Button disabled={selectedId === null} onClick={() => { selectedId !== null ? onSelected(selectedId) : setErrorMessage(helpText) }}>
-                    {submitButtonText ? submitButtonText : "Submit"}
-                </Button>
+                {multiSelect === false &&
+                    <Button disabled={selectedId === null} onClick={() => { selectedId !== null ? onSelected(selectedId) : setErrorMessage(helpText) }}>
+                        {submitButtonText ? submitButtonText : "Submit"}
+                    </Button>
+                }
+                {multiSelect === true &&
+                    <Button disabled={selectedIds.size === 0} 
+                        onClick={() => {                             
+                            selectedIds.size > 0 ? onSelected(Array.from(selectedIds.keys())) : setErrorMessage(helpText) }}
+                        >
+                        {submitButtonText ? submitButtonText : "Submit"}
+                    </Button>
+                }
+
+                
             </DialogActions>
 
         </>
