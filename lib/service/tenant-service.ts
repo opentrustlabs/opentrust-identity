@@ -111,6 +111,9 @@ class TenantService {
     }
     
     protected async validateTenantInput(tenant: Tenant): Promise<{valid: boolean, errorMessage: string}> {
+        // TODO
+        //
+        //
         // if(tenant.federatedAuthenticationConstraint === FederatedAuthenticationConstraint.Exclusive && (!tenant.federatedOIDCProviderId || "" === tenant.federatedOIDCProviderId)){
         //     return {valid: false, errorMessage: "ERROR_MISSING_EXTERNAL_OIDC_PROVIDER"};
         // }
@@ -231,10 +234,7 @@ class TenantService {
         }
     }
 
-    // public async updateTenantLookAndFeel(tenantLookAndFeel: TenantLookAndFeel): Promise<TenantLookAndFeel>{
-    //     return tenantDao.updateTenantLookAndFeel(tenantLookAndFeel);
-    // }
-
+ 
     public async deleteTenantLookAndFeel(tenantId: string): Promise<void>{
         return tenantDao.deleteTenantLookAndFeel(tenantId);
     }
@@ -318,18 +318,14 @@ class TenantService {
     }
 
     public async setTenantLoginFailurePolicy(loginFailurePolicy: TenantLoginFailurePolicy): Promise<TenantLoginFailurePolicy> {
-        console.log("checkpoint 1");
+        
         const existing: TenantLoginFailurePolicy | null = await tenantDao.getLoginFailurePolicy(loginFailurePolicy.tenantId);
-        console.log("checkpoint 2");
-        if(!existing){
-            console.log("checkpoint 3");
-            await tenantDao.createLoginFailurePolicy(loginFailurePolicy);
-            console.log("checkpoint 4");
+        
+        if(!existing){        
+            await tenantDao.createLoginFailurePolicy(loginFailurePolicy);        
         }
         else{
-            console.log("checkpoint 5");
             await tenantDao.updateLoginFailurePolicy(loginFailurePolicy);
-            console.log("checkpoint 6");
         }
         return loginFailurePolicy;
     }
@@ -337,41 +333,6 @@ class TenantService {
     public async removeTenantLoginFailurePolicy(tenantId: string): Promise<void> {
         await tenantDao.removeLoginFailurePolicy(tenantId);
     }
-
-    /*
-    public async getDomainsForTenantRestrictedAuthentication(tenantId: string): Promise<Array<TenantRestrictedAuthenticationDomainRel>> {
-        const em = connection.em.fork();
-        const entities: Array<TenantRestrictedAuthenticationDomainRelEntity> = await em.find(
-            TenantRestrictedAuthenticationDomainRelEntity, 
-            {
-                tenantId: tenantId
-            }
-        );
-        
-        return Promise.resolve(entities);
-    }
-
-    public async addDomainToTenantRestrictedAuthentication(tenantId: string, domain: string): Promise<TenantRestrictedAuthenticationDomainRel> {
-        const em = connection.em.fork();
-        const entity: TenantRestrictedAuthenticationDomainRelEntity = new TenantRestrictedAuthenticationDomainRelEntity();
-        entity.domain = domain;
-        entity.tenantId = tenantId;
-        await em.persistAndFlush(entity);
-        return Promise.resolve(entity);
-    }
-
-    public async removeDomainFromTenantRestrictedAuthentication(tenantId: string, domain: string): Promise<void> {
-        const em = connection.em.fork();
-        await em.nativeDelete(TenantRestrictedAuthenticationDomainRelEntity,
-            {
-                tenantId: tenantId,
-                domain: domain
-            }
-        );
-    }
-
-    */
-
 
 }
 
