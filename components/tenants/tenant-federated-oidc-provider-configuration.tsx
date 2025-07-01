@@ -159,15 +159,16 @@ const TenantFederatedOIDCProviderConfiguration: React.FC<TenantFederatedOIDCProv
                                 return [];
                             }
                         }}
+                        multiSelect={false}
                         helpText="Select a valid provider"
                         onCancel={() => setSelectDialogOpen(false)}
-                        onSelected={(oidcProviderId: string) => {
+                        onSelected={(oidcProviderId: string | Array<string>) => {
                             setSelectDialogOpen(false); 
                             onUpdateStart();
                             assignTenantFederatedOIDCProviderMutation({
                                 variables: {
                                     tenantId: tenantId,
-                                    federatedOIDCProviderId: oidcProviderId
+                                    federatedOIDCProviderId: oidcProviderId as string
                                 }
                             }); 
                         }}

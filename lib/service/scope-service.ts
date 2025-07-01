@@ -238,6 +238,11 @@ class ScopeService {
 
 
     public async removeScopeFromTenant(tenantId: string, scopeId: string): Promise<void> {
+        // TODO
+        // Enhance the tenant_available_scope to include a markfordelete field (boolean).
+        // There might be 1000s of relationships that need to be deleted and we do not
+        // want to lock any tables. That means that the deletion should proceed outside
+        // real-time methods.
         const tenant: Tenant | null = await tenantDao.getTenantById(tenantId);
         if(!tenant){
             throw new GraphQLError("ERROR_TENANT_DOES_NOT_EXIST");

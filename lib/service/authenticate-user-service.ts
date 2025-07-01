@@ -141,6 +141,8 @@ class AuthenticateUserService extends IdentityService {
             response.authenticationError.errorCode = "ERROR_INVALID_RESET_TOKEN";
             return Promise.resolve(response);
         }
+        // Make sure we delete the reset token before continuing...
+        await identityDao.deletePasswordResetToken(token);
         if(user.markForDelete || user.enabled === false){
             response.authenticationError.errorCode = "ERROR_USER_CANNOT_BE_AUTHENTICATED";
             return Promise.resolve(response);

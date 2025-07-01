@@ -491,7 +491,7 @@ export const BULK_TENANT_SCOPE_ASSIGN_MUTATION = gql(`
             scopeId
         }
     }
-`)
+`);
 
 export const TENANT_SCOPE_REMOVE_MUTATION = gql(`
     mutation removeScopeFromTenant($tenantId: String!, $scopeId: String!){
@@ -548,7 +548,7 @@ export const USER_SCOPE_ASSIGN_MUTATION = gql(`
     }    
 `);
 
-export const BULK_USER_ASSIGN_MUTATION = gql(`
+export const BULK_USER_SCOPE_ASSIGN_MUTATION = gql(`
     mutation bulkAssignScopeToUser($userId: String!, $tenantId: String!, $bulkScopeInput: [BulkScopeInput!]!){
         bulkAssignScopeToUser(userId: $userId, tenantId: $tenantId, bulkScopeInput: $bulkScopeInput){
             tenantId

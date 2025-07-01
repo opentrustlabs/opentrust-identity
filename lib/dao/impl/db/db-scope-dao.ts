@@ -206,15 +206,15 @@ class DBScopeDao extends ScopeDao {
 
     public async removeScopeFromTenant(tenantId: string, scopeId: string): Promise<void> {
         const sequelize: Sequelize = await DBDriver.getConnection();
-        // Need to remove all of the scope from the users, clients, and authz groups too
-        console.log("checkpoint 1")
+        
+        // Need to remove all of the scope from the users, clients, and authz groups too                
         await sequelize.models.clientScopeRel.destroy({
             where: {
                 tenantId: tenantId,
                 scopeId: scopeId
             }
         });
-console.log("checkpoint 2")
+
         await sequelize.models.authorizationGroupScopeRel.destroy({
             where: {        
                 scopeId: scopeId,
@@ -222,7 +222,6 @@ console.log("checkpoint 2")
             }
         });
 
-        console.log("checkpoint 3")
         await sequelize.models.userScopeRel.destroy({
             where: {
                 tenantId: tenantId,
@@ -230,7 +229,6 @@ console.log("checkpoint 2")
             }
         });	
 
-        console.log("checkpoint 4")
         await sequelize.models.tenantAvailableScope.destroy({
             where: {
                 tenantId: tenantId,

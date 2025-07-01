@@ -197,9 +197,10 @@ const TenantRateLimitConfiguration: React.FC<TenantRateLimitConfigurationProps> 
                         }}
                         helpText="Select a valid service group"
                         onCancel={() => setSelectDialogOpen(false)}
-                        onSelected={(serviceGroupId: string) => {
+                        multiSelect={false}
+                        onSelected={(serviceGroupId: string | Array<string>) => {
                             setSelectDialogOpen(false); 
-                            setRateLimitToAdd(serviceGroupId);
+                            setRateLimitToAdd(serviceGroupId as string);
                             setConfigureRateLimitDialogOpen(true);
                         }}
                         selectorLabel="Select a service group"

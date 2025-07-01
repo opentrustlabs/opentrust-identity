@@ -17,11 +17,11 @@ import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
 import Alert from "@mui/material/Alert";
 import DataLoading from "../layout/data-loading";
 import ErrorComponent from "../error/error-component";
-import { Scope, ScopeFilterCriteria, UserTenantRelView } from "@/graphql/generated/graphql-types";
+import { BulkScopeInput, Scope, ScopeFilterCriteria, UserTenantRelView } from "@/graphql/generated/graphql-types";
 import Link from "next/link";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
 import { SCOPE_USE_DISPLAY, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
-import { USER_SCOPE_ASSIGN_MUTATION, CLIENT_SCOPE_ASSIGN_MUTATION, AUTHORIZATION_GROUP_SCOPE_ASSIGN_MUTATION, USER_SCOPE_REMOVE_MUTATION, AUTHORIZATION_GROUP_SCOPE_REMOVE_MUTATION, CLIENT_SCOPE_REMOVE_MUTATION } from "@/graphql/mutations/oidc-mutations";
+import { USER_SCOPE_ASSIGN_MUTATION, CLIENT_SCOPE_ASSIGN_MUTATION, AUTHORIZATION_GROUP_SCOPE_ASSIGN_MUTATION, USER_SCOPE_REMOVE_MUTATION, AUTHORIZATION_GROUP_SCOPE_REMOVE_MUTATION, CLIENT_SCOPE_REMOVE_MUTATION, BULK_CLIENT_SCOPE_ASSIGN_MUTATION, BULK_AUTHORIZATION_GROUP_SCOPE_ASSIGN_MUTATION, BULK_USER_SCOPE_ASSIGN_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import Checkbox from "@mui/material/Checkbox";
 import RadioButtonUncheckedOutlinedIcon from '@mui/icons-material/RadioButtonUncheckedOutlined';
 import RadioButtonCheckedIcon from '@mui/icons-material/RadioButtonChecked';
@@ -90,9 +90,9 @@ const ScopeRelConfiguration: React.FC<ScopeRelConfigurationProps> = ({
         notifyOnNetworkStatusChange: true
     });
 
-    const assignMutationDef = scopeRelType === ScopeRelType.USER ? USER_SCOPE_ASSIGN_MUTATION : 
-                            scopeRelType === ScopeRelType.CLIENT ? CLIENT_SCOPE_ASSIGN_MUTATION :
-                            AUTHORIZATION_GROUP_SCOPE_ASSIGN_MUTATION;
+    const assignMutationDef = scopeRelType === ScopeRelType.USER ? BULK_USER_SCOPE_ASSIGN_MUTATION : 
+                            scopeRelType === ScopeRelType.CLIENT ? BULK_CLIENT_SCOPE_ASSIGN_MUTATION :
+                            BULK_AUTHORIZATION_GROUP_SCOPE_ASSIGN_MUTATION;
 
     const removeMutationDef = scopeRelType === ScopeRelType.USER ? USER_SCOPE_REMOVE_MUTATION : 
                             scopeRelType === ScopeRelType.CLIENT ? CLIENT_SCOPE_REMOVE_MUTATION :
@@ -199,14 +199,30 @@ const ScopeRelConfiguration: React.FC<ScopeRelConfigurationProps> = ({
                             }
                         }}
                         helpText="Select a Scope"
+                        multiSelect={true}
                         onCancel={() => setSelectDialogOpen(false)}
-                        onSelected={(scopeId: string) => {
+                        onSelected={(value: string | Array<string>) => {
                             setSelectDialogOpen(false);
-                            setScopeIdToAdd(scopeId)
+                            //setScopeIdToAdd(scopeId)
+                            const bulkScopeInput: Array<BulkScopeInput> = [];
+                            if(Array.isArray(value)){
+                                for(let i = 0; i < value.length; i++){
+                                    bulkScopeInput.push({
+                                        scopeId: value[i],
+                                        accessRuleId: null
+                                    });
+                                }                                
+                            } 
+                            else{
+                                bulkScopeInput.push({
+                                    scopeId: value as string,
+                                    accessRuleId: null
+                                });
+                            }  
                             onUpdateStart();                                
                             assignMutation({
                                 variables: {
-                                    scopeId: scopeId,
+                                    bulkScopeInput: bulkScopeInput,
                                     tenantId: tenantId,
                                     ...variables
                                 }
