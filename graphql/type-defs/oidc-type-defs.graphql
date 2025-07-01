@@ -398,6 +398,7 @@ type Client {
     markForDelete: Boolean!
 }
 
+
 type PortalUserProfile {
     userId: String!
     federatedOIDCProviderSubjectId: String
@@ -418,6 +419,35 @@ type PortalUserProfile {
     tenantId: String!
     tenantName: String!
     managementAccessTenantId: String
+}
+
+type UserProfileAuthorizationGroup {
+    groupId: String!
+    groupName: String!
+}
+
+type OIDCUserProfile {
+    userId: String!
+    federatedOIDCProviderSubjectId: String
+    email: String!
+    emailVerified: Boolean!
+    domain: String!
+    firstName: String!
+    lastName: String!
+    middleName: String
+    phoneNumber: String
+    address: String
+    countryCode: String
+    preferredLanguageCode: String
+    locked: Boolean!
+    enabled: Boolean!
+    nameOrder: String!
+    scope: [Scope!]!
+    tenantId: String!
+    tenantName: String!
+    clientId: String!
+    clientName: String!
+    authorizationGroups: [UserProfileAuthorizationGroup!]!
 }
 
 # 1.    domain is just the domain part of the email
