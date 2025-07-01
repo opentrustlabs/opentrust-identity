@@ -447,6 +447,7 @@ type OIDCUserProfile {
     tenantName: String!
     clientId: String!
     clientName: String!
+    expiresAtMs: Float!
     authorizationGroups: [UserProfileAuthorizationGroup!]!
 }
 
