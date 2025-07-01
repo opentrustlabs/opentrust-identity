@@ -1,5 +1,5 @@
-import { User, Tenant, Client, SigningKey, ClientAuthHistory, PortalUserProfile, AuthorizationGroup, UserScopeRel, Scope } from "@/graphql/generated/graphql-types";
-import { generateRandomToken } from "@/utils/dao-utils";
+import { User, Tenant, Client, SigningKey, ClientAuthHistory, PortalUserProfile, AuthorizationGroup, UserScopeRel, Scope, OidcUserProfile, UserProfileAuthorizationGroup } from "@/graphql/generated/graphql-types";
+import { generateRandomToken, getDomainFromEmail } from "@/utils/dao-utils";
 import ClientDao from "@/lib/dao/client-dao";
 import TenantDao from "@/lib/dao/tenant-dao";
 import IdentityDao from "@/lib/dao/identity-dao";
@@ -55,6 +55,76 @@ class JwtServiceUtils {
         checkperiod: 1800, 
     });
 
+    /**
+     * 
+     * @param jwt 
+     * @param includeScope 
+     * @param includeAuthorizationGroups 
+     * @returns 
+     */
+    public async getOIDCUserProfile(jwt: string, includeScope: boolean, includeAuthorizationGroups: boolean): Promise<OidcUserProfile | null> {
+        
+        let principal: OIDCPrincipal | null = null;
+        const p = await this.validateJwt(jwt);
+        if (p) {
+            principal = p;
+        }
+
+        if(principal === null){
+            return null;
+        }
+        else{
+            const user: User | null = await identityDao.getUserBy("id", principal.sub);
+            if(user === null){
+                return null;
+            }
+
+            const arrScopes = includeScope ? await this.getScopes(user.userId, principal.tenant_id) : [];
+            const arrAuthnGroups: Array<AuthorizationGroup> = includeAuthorizationGroups ? await authorizationGroupDao.getUserAuthorizationGroups(user.userId) : [];
+
+            const arrPortalAuthnGroups: Array<UserProfileAuthorizationGroup> = arrAuthnGroups.map(
+                (g: AuthorizationGroup) => {
+                    const portalGroup: UserProfileAuthorizationGroup = {
+                        groupId: g.groupId,
+                        groupName: g.groupName
+                    }
+                    return portalGroup;                    
+                }
+            );
+
+            const oidcUserProfile: OidcUserProfile = {
+                domain: getDomainFromEmail(principal.email),
+                email: principal.email,
+                emailVerified: true,
+                enabled: true,
+                firstName: principal.given_name,
+                lastName: principal.family_name,
+                locked: false,
+                nameOrder: user.nameOrder,
+                scope: arrScopes,
+                tenantId: principal.tenant_id,
+                tenantName: principal.tenant_name,
+                userId: principal.sub,
+                countryCode: principal.country_code,
+                preferredLanguageCode: principal.language_code,
+                clientId: principal.client_id,
+                clientName: principal.client_name,
+                authorizationGroups: arrPortalAuthnGroups,
+                address: principal.address,
+                federatedOIDCProviderSubjectId: user.federatedOIDCProviderSubjectId,
+                middleName: user.middleName,
+                phoneNumber: user.phoneNumber,
+                expiresAtMs: principal.exp * 1000             
+            }
+            return oidcUserProfile;
+        }
+    }
+
+    /**
+     * 
+     * @param jwt 
+     * @returns 
+     */
     public async getPortalUserProfile(jwt: string): Promise<PortalUserProfile | null> {
 
         if(JwtServiceUtils.PortalUserProfileCache.has(jwt)){
@@ -69,32 +139,16 @@ class JwtServiceUtils {
         }
         if(principal === null){
             return null;
-        }       
-        
+        }        
         else{
             const user: User | null = await identityDao.getUserBy("id", principal.sub);
             if(user === null){
                 return null;
             }
-            const setScopeIds: Set<string> = new Set();
-
-            const arrAuthorizationGroups: Array<AuthorizationGroup> = await authorizationGroupDao.getUserAuthorizationGroups(user.userId);
-            const arrAuthzGroupIds = arrAuthorizationGroups.map((g: AuthorizationGroup) => g.groupId);
-            for(let i = 0; i < arrAuthzGroupIds.length; i++){
-                const arrRels = await scopeDao.getAuthorizationGroupScopeRels(arrAuthzGroupIds[i]);
-                for(let j = 0; j < arrRels.length; j++){
-                    setScopeIds.add(arrRels[j].scopeId);
-                }
-            }
-
-            const userScopeRels: Array<UserScopeRel> = await scopeDao.getUserScopeRels(principal.sub, principal.tenant_id);
-            for(let i = 0; i < userScopeRels.length; i++){
-                setScopeIds.add(userScopeRels[i].scopeId)
-            }            
-            const arrScope: Array<Scope> = await scopeDao.getScope(undefined, Array.from(setScopeIds));            
-
+            const arrScope: Array<Scope> = await this.getScopes(user.userId, principal.tenant_id);
+            
             const profile: PortalUserProfile = {
-                domain: principal.email,
+                domain: getDomainFromEmail(principal.email),
                 email: principal.email,
                 emailVerified: true,
                 enabled: true,
@@ -119,6 +173,7 @@ class JwtServiceUtils {
             return profile;
         }
     }
+
 
     /**
      * 
@@ -229,20 +284,6 @@ class JwtServiceUtils {
     }
 
 
-    protected async signJwt(principal: JWTPayload): Promise<string | null> {
-        const cachedSigningKeyData: CachedSigningKeyData | null = await this.getCachedSigningKey();
-        if(!cachedSigningKeyData){
-            return Promise.resolve(null);
-        }
-        
-        const s: string = await new SignJWT(principal)
-            .setProtectedHeader({
-                alg: "RS256",
-                kid: cachedSigningKeyData.signingKey.keyId
-            })
-            .sign(cachedSigningKeyData.privateKeyObject);
-        return s;
-    }
 
     /**
      * 
@@ -448,68 +489,25 @@ class JwtServiceUtils {
         
     }
 
-    public async testJwtSign(jwtPayload: JWTPayload, pemPrivateKey: string, passphrase?: string): Promise<string> {
 
-        const privateKeyInput: PrivateKeyInput = {
-            key: pemPrivateKey,
-            encoding: "utf-8",
-            format: "pem",
-            passphrase: passphrase ? passphrase : undefined
-        };                    
-        const privateKeyObject: KeyObject = createPrivateKey(privateKeyInput);
-
-        const s: string = await new SignJWT(jwtPayload)
-        .setProtectedHeader({
-            alg: "RS256",
-            kid: "1234567890"
-        })
-        .sign(privateKeyObject);
+    /**
+     * 
+     * @param principal 
+     * @returns 
+     */
+    protected async signJwt(principal: JWTPayload): Promise<string | null> {
+        const cachedSigningKeyData: CachedSigningKeyData | null = await this.getCachedSigningKey();
+        if(!cachedSigningKeyData){
+            return Promise.resolve(null);
+        }
+        
+        const s: string = await new SignJWT(principal)
+            .setProtectedHeader({
+                alg: "RS256",
+                kid: cachedSigningKeyData.signingKey.keyId
+            })
+            .sign(cachedSigningKeyData.privateKeyObject);
         return s;
-    }
-
-    public async testJwtVerifySignatureWithPublicKey(jwt: string, pemPublicKey: string): Promise<OIDCPrincipal | null>{
-
-        const publicKeyInput: PublicKeyInput = {
-            key: pemPublicKey,
-            encoding: "utf-8",
-            format: "pem",
-
-        };
-        const publicKeyObject = createPublicKey(publicKeyInput);
-        try {
-            const p: JWTVerifyResult = await jwtVerify(jwt, publicKeyObject)
-            if(!p.payload){
-                return Promise.resolve(null);
-            }
-            else{
-                return Promise.resolve(p.payload as unknown as OIDCPrincipal);
-            }
-        }
-        catch(error){
-            console.log(error);
-            return Promise.resolve(null);
-        }
-    }
-
-    public async testJwtVerifySignatureWitCertificate(jwt: string, pemCertificate: string): Promise<OIDCPrincipal | null>{
-        const publicKeyInput: PublicKeyInput = {
-            key: pemCertificate,
-            encoding: "utf-8",
-            format: "pem"
-        };
-        const publicKeyObject = createPublicKey(publicKeyInput);
-        try {
-            const p: JWTVerifyResult = await jwtVerify(jwt, publicKeyObject)
-            if(!p.payload){
-                return Promise.resolve(null);
-            }
-            else{
-                return Promise.resolve(p.payload as unknown as OIDCPrincipal);
-            }
-        }
-        catch(error){
-            return Promise.resolve(null);
-        }
     }
 
     /**
@@ -612,10 +610,94 @@ class JwtServiceUtils {
             else{
                 return Promise.resolve(null);
             }
+        }                
+    }
+
+    
+    protected async getScopes(userId: string, tenantId: string): Promise<Array<Scope>> {
+        const setScopeIds: Set<string> = new Set();
+
+        const arrAuthorizationGroups: Array<AuthorizationGroup> = await authorizationGroupDao.getUserAuthorizationGroups(userId);
+        const arrAuthzGroupIds = arrAuthorizationGroups.map((g: AuthorizationGroup) => g.groupId);
+        for(let i = 0; i < arrAuthzGroupIds.length; i++){
+            const arrRels = await scopeDao.getAuthorizationGroupScopeRels(arrAuthzGroupIds[i]);
+            for(let j = 0; j < arrRels.length; j++){
+                setScopeIds.add(arrRels[j].scopeId);
+            }
         }
-                
+
+        const userScopeRels: Array<UserScopeRel> = await scopeDao.getUserScopeRels(userId, tenantId);
+        for(let i = 0; i < userScopeRels.length; i++){
+            setScopeIds.add(userScopeRels[i].scopeId)
+        }            
+        const arrScope: Array<Scope> = await scopeDao.getScope(undefined, Array.from(setScopeIds));  
+        return arrScope;
     }
 
 }
 
 export default JwtServiceUtils;
+
+    // public async testJwtSign(jwtPayload: JWTPayload, pemPrivateKey: string, passphrase?: string): Promise<string> {
+
+    //     const privateKeyInput: PrivateKeyInput = {
+    //         key: pemPrivateKey,
+    //         encoding: "utf-8",
+    //         format: "pem",
+    //         passphrase: passphrase ? passphrase : undefined
+    //     };                    
+    //     const privateKeyObject: KeyObject = createPrivateKey(privateKeyInput);
+
+    //     const s: string = await new SignJWT(jwtPayload)
+    //     .setProtectedHeader({
+    //         alg: "RS256",
+    //         kid: "1234567890"
+    //     })
+    //     .sign(privateKeyObject);
+    //     return s;
+    // }
+
+    // public async testJwtVerifySignatureWithPublicKey(jwt: string, pemPublicKey: string): Promise<OIDCPrincipal | null>{
+
+    //     const publicKeyInput: PublicKeyInput = {
+    //         key: pemPublicKey,
+    //         encoding: "utf-8",
+    //         format: "pem",
+
+    //     };
+    //     const publicKeyObject = createPublicKey(publicKeyInput);
+    //     try {
+    //         const p: JWTVerifyResult = await jwtVerify(jwt, publicKeyObject)
+    //         if(!p.payload){
+    //             return Promise.resolve(null);
+    //         }
+    //         else{
+    //             return Promise.resolve(p.payload as unknown as OIDCPrincipal);
+    //         }
+    //     }
+    //     catch(error){
+    //         console.log(error);
+    //         return Promise.resolve(null);
+    //     }
+    // }
+
+    // public async testJwtVerifySignatureWitCertificate(jwt: string, pemCertificate: string): Promise<OIDCPrincipal | null>{
+    //     const publicKeyInput: PublicKeyInput = {
+    //         key: pemCertificate,
+    //         encoding: "utf-8",
+    //         format: "pem"
+    //     };
+    //     const publicKeyObject = createPublicKey(publicKeyInput);
+    //     try {
+    //         const p: JWTVerifyResult = await jwtVerify(jwt, publicKeyObject)
+    //         if(!p.payload){
+    //             return Promise.resolve(null);
+    //         }
+    //         else{
+    //             return Promise.resolve(p.payload as unknown as OIDCPrincipal);
+    //         }
+    //     }
+    //     catch(error){
+    //         return Promise.resolve(null);
+    //     }
+    // }
