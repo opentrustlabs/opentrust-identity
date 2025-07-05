@@ -1,15 +1,16 @@
-import { AuthenticationGroup, AuthenticationGroupClientRel, AuthenticationGroupUserRel, Client, ObjectSearchResultItem, RelSearchResultItem, SearchResultType, Tenant, User, UserTenantRel } from "@/graphql/generated/graphql-types";
+import { AuthenticationGroup, AuthenticationGroupClientRel, AuthenticationGroupUserRel, Client, ObjectSearchResultItem, RelSearchResultItem, Scope, SearchResultType, Tenant, User, UserTenantRel } from "@/graphql/generated/graphql-types";
 import { OIDCContext } from "@/graphql/graphql-context";
 import TenantDao from "@/lib/dao/tenant-dao";
 import ClientDao from "../dao/client-dao";
 import { GraphQLError } from "graphql/error/GraphQLError";
 import { randomUUID } from 'crypto'; 
 import AuthenticationGroupDao from "../dao/authentication-group-dao";
-import { NAME_ORDER_EASTERN, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH } from "@/utils/consts";
+import { AUTHENTICATION_GROUP_CREATE_SCOPE, AUTHENTICATION_GROUP_READ_SCOPE, NAME_ORDER_EASTERN, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_READ_ALL_SCOPE } from "@/utils/consts";
 import { Client as SearchClient } from "@opensearch-project/opensearch";
 import { getOpenSearchClient } from "@/lib/data-sources/search";
 import IdentityDao from "../dao/identity-dao";
 import { DaoFactory } from "../data-sources/dao-factory";
+import { withAuthAndInputFilter, containsScope } from "@/utils/authz-utils";
 
 const searchClient: SearchClient = getOpenSearchClient();
 
@@ -27,28 +28,74 @@ class AuthenticationGroupService {
     }
 
     public async getAuthenticationGroups(tenantId?: string, clientId?: string, userId?: string): Promise<Array<AuthenticationGroup>> {
-        return authenticationGroupDao.getAuthenticationGroups(tenantId, clientId, userId);
-    }
+        containsScope(AUTHENTICATION_GROUP_READ_SCOPE, this.oidcContext.portalUserProfile?.scope || [])
+        
+        return authenticationGroupDao.getAuthenticationGroups(tenantId, clientId, userId)
+            
+    }        
 
     public async getAuthenticationGroupById(authenticationGroupId: string): Promise<AuthenticationGroup | null> {
-        return authenticationGroupDao.getAuthenticationGroupById(authenticationGroupId);
+
+        const getData = withAuthAndInputFilter(
+            authenticationGroupDao.getAuthenticationGroupById,
+            {                
+                authorize: async function (oidcContext: OIDCContext, authenticationGroupId: string): Promise<{ isAuthorized: boolean; errorMessage: string | null; result: AuthenticationGroup | null; }> {                    
+                    const result = await authenticationGroupDao.getAuthenticationGroupById(authenticationGroupId);
+                    if(result && result.tenantId !== oidcContext.portalUserProfile?.managementAccessTenantId){
+                        return {isAuthorized: false, errorMessage: "ERROR_INSUFFICIENT_PERMISSIONS_TO_READ_OBJECT", result: null};
+                    }
+                    else{
+                        return { isAuthorized: true, errorMessage: null, result: result};
+                    }                    
+                }
+            } 
+        );
+        const t = await getData(this.oidcContext, [AUTHENTICATION_GROUP_READ_SCOPE, TENANT_READ_ALL_SCOPE], authenticationGroupId);
+        return t;
+
     }
 
-    public async createAuthenticationGroup(authenticationGroup: AuthenticationGroup): Promise<AuthenticationGroup> {
-        const tenant: Tenant | null = await tenantDao.getTenantById(authenticationGroup.tenantId);
-        if (!tenant) {
-            throw new GraphQLError("ERROR_TENANT_DOES_NOT_EXIST_FOR_LOGIN_GROUP");
-        }
-        authenticationGroup.authenticationGroupId = randomUUID().toString();
+    public async createAuthenticationGroup(authenticationGroup: AuthenticationGroup): Promise<AuthenticationGroup | null> {
+        const createData = withAuthAndInputFilter(
+            authenticationGroupDao.createAuthenticationGroup,
+            {
+                preProcess: async function (_, authenticationGroup: AuthenticationGroup): Promise<[AuthenticationGroup]> {
+                    authenticationGroup.authenticationGroupId = randomUUID().toString();
+                    return Promise.resolve([authenticationGroup]);
+                    
+                },
+                authorize: async function (oidcContext: OIDCContext, authenticationGroup: AuthenticationGroup): Promise<{ isAuthorized: boolean; errorMessage: string | null; result: AuthenticationGroup | null; }> {
+                    if(oidcContext.portalUserProfile?.managementAccessTenantId !== authenticationGroup.tenantId){
+                        return {isAuthorized: false, errorMessage: "ERROR_INVALID_PERMISSIONS_FOR_TENANT", result: null};
+                    }
+                    const tenant: Tenant | null = await tenantDao.getTenantById(authenticationGroup.tenantId);
+                    if (!tenant) {
+                         return {isAuthorized: false, errorMessage: "ERROR_TENANT_DOES_NOT_EXIST", result: null};
+                    }
+                    const g = await authenticationGroupDao.createAuthenticationGroup(authenticationGroup);
+                    return {isAuthorized: true, errorMessage: null, result: g}                    
+                }
+            }                
+        );
 
-        await authenticationGroupDao.createAuthenticationGroup(authenticationGroup);
-        await this.updateSearchIndex(authenticationGroup);
-
-        return Promise.resolve(authenticationGroup);
+        const g = await createData(this.oidcContext, AUTHENTICATION_GROUP_CREATE_SCOPE, authenticationGroup);
+        if(g !== null){
+            await this.updateSearchIndex(g);
+        }        
+        return Promise.resolve(g);
     }
 
     public async updateAuthenticationGroup(authenticationGroup: AuthenticationGroup): Promise<AuthenticationGroup> {
         
+        const updateData = withAuthAndInputFilter(
+            authenticationGroupDao.updateAuthenticationGroup,
+            {
+                authorize: async function (oidcContext: OIDCContext, authenticationGroup: AuthenticationGroup): Promise<{ isAuthorized: boolean; errorMessage: string | null; result: AuthenticationGroup | null; }> {
+                    return {isAuthorized: false, errorMessage: "ERROR_TENANT_DOES_NOT_EXIST", result: null};
+                }
+            }
+        );
+
         const existingAuthenticationGroup = await authenticationGroupDao.getAuthenticationGroupById(authenticationGroup.authenticationGroupId);
         if (!existingAuthenticationGroup) {
             throw new GraphQLError("ERROR_CANNOT_FIND_LOGIN_GROUP_FOR_UPDATE");

@@ -18,7 +18,6 @@ const TenantLandingPage: React.FC = () => {
      // QUERY PARAMS
     const params = useSearchParams();
     const section = params?.get("section");
-    const searchTerm = params?.get("term");
 
     /*
         In the content section for the landing page for the tenant, we will
