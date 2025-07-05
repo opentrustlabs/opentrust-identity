@@ -3,7 +3,9 @@ import { OIDCContext } from "@/graphql/graphql-context";
 import { getOpenSearchClient } from "../data-sources/search";
 import { Client } from "@opensearch-project/opensearch";
 import { Search_Response } from "@opensearch-project/opensearch/api/index.js";
-import { ALLOWED_OBJECT_SEARCH_SORT_FIELDS, ALLOWED_SEARCH_DIRECTIONS, MAX_SEARCH_PAGE, MAX_SEARCH_PAGE_SIZE, MIN_SEARCH_PAGE_SIZE, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH } from "@/utils/consts";
+import { ALLOWED_OBJECT_SEARCH_SORT_FIELDS, ALLOWED_SEARCH_DIRECTIONS, AUTHENTICATION_GROUP_READ_SCOPE, AUTHORIZATION_GROUP_READ_SCOPE, CLIENT_READ_SCOPE, FEDERATED_OIDC_PROVIDER_READ_SCOPE, KEY_READ_SCOPE, MAX_SEARCH_PAGE, MAX_SEARCH_PAGE_SIZE, MIN_SEARCH_PAGE_SIZE, RATE_LIMIT_READ_SCOPE, SCOPE_READ_SCOPE, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE, USER_READ_SCOPE } from "@/utils/consts";
+import { containsScope } from "@/utils/authz-utils";
+import { GraphQLError } from "graphql";
 
 
 // The opensearch javascript client api documentation and boolean query documentation: 
@@ -11,6 +13,25 @@ import { ALLOWED_OBJECT_SEARCH_SORT_FIELDS, ALLOWED_SEARCH_DIRECTIONS, MAX_SEARC
 // https://opensearch.org/docs/latest/clients/javascript/index
 // https://opensearch.org/docs/latest/query-dsl/compound/bool/
 // 
+
+const MINIMUM_SCOPES_REQUIRED_FOR_SEARCH = [
+    TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE, CLIENT_READ_SCOPE, USER_READ_SCOPE, 
+    KEY_READ_SCOPE, AUTHORIZATION_GROUP_READ_SCOPE, AUTHENTICATION_GROUP_READ_SCOPE,
+    FEDERATED_OIDC_PROVIDER_READ_SCOPE, SCOPE_READ_SCOPE, RATE_LIMIT_READ_SCOPE
+]
+
+const MAP_SEARCH_RESULT_TYPE_TO_SCOPE: Map<SearchResultType, string> = new Map([
+    [SearchResultType.Tenant, TENANT_READ_SCOPE],
+    [SearchResultType.Client, CLIENT_READ_SCOPE],
+    [SearchResultType.User, USER_READ_SCOPE],
+    [SearchResultType.Key, KEY_READ_SCOPE],
+    [SearchResultType.AuthorizationGroup, AUTHORIZATION_GROUP_READ_SCOPE],
+    [SearchResultType.AuthenticationGroup, AUTHENTICATION_GROUP_READ_SCOPE],
+    [SearchResultType.OidcProvider, FEDERATED_OIDC_PROVIDER_READ_SCOPE],    
+    [SearchResultType.AccessControl, SCOPE_READ_SCOPE],
+    [SearchResultType.RateLimit, RATE_LIMIT_READ_SCOPE]
+]);
+
 
 const client: Client = getOpenSearchClient();
 
@@ -24,29 +45,129 @@ class SearchService {
 
     public async search(searchInput: SearchInput): Promise<ObjectSearchResults> {
 
-        let page: number = searchInput.page;
-        let perPage: number = searchInput.perPage;
-        let searchTerm = searchInput.term;
-
+        const searchResultsTypesToOmit: Array<SearchResultType> = [];
+        
         // Make sure all of the search parameters are set to sensible values
+        const page: number = searchInput.page;
+        const perPage: number = searchInput.perPage;        
         const sortDirection = searchInput.sortDirection && ALLOWED_SEARCH_DIRECTIONS.includes(searchInput.sortDirection) ? searchInput.sortDirection : null;
         const sortField = searchInput.sortField && ALLOWED_OBJECT_SEARCH_SORT_FIELDS.includes(searchInput.sortField) ? searchInput.sortField : null;
+
+        searchInput.sortDirection = sortDirection;
+        searchInput.sortField = sortField;
         if(page < 1 || page > MAX_SEARCH_PAGE){
-            page = 1;
+            searchInput.page = 1;
         }
         if(perPage > MAX_SEARCH_PAGE_SIZE){
-            perPage = MAX_SEARCH_PAGE_SIZE;
+            searchInput.perPage = MAX_SEARCH_PAGE_SIZE;
         }
         if(perPage < MIN_SEARCH_PAGE_SIZE){
-            perPage = MIN_SEARCH_PAGE_SIZE;
+            searchInput.perPage = MIN_SEARCH_PAGE_SIZE;
         }
 
+        if(!containsScope(MINIMUM_SCOPES_REQUIRED_FOR_SEARCH, this.oidcContext.portalUserProfile?.scope || [])){
+            throw new GraphQLError("ERROR_NO_PERMISSIONS_FOR_SEARCH");
+        }
+        // If the user specified a particular type of object to return, do they have the permission
+        // to view those types of objects
+        if( !(searchInput.resultType === undefined || searchInput.resultType === null ) ){
+            const requiredScope: string | undefined = MAP_SEARCH_RESULT_TYPE_TO_SCOPE.get(searchInput.resultType);
+            if(requiredScope === undefined){
+                throw new GraphQLError("ERROR_NO_VALID_PERMISSIONS_FOR_SEARCH");
+            }
+            else{
+                const b: boolean = containsScope([requiredScope, TENANT_READ_ALL_SCOPE], this.oidcContext.portalUserProfile?.scope || []);
+                if(!b){
+                    throw new GraphQLError("ERROR_NO_PERMISSION");
+                }
+            }
+        }
+        if(!containsScope(TENANT_READ_ALL_SCOPE, this.oidcContext.portalUserProfile?.scope || [])){            
+            // the user is doing a look ahead or other type of search which has no object type
+            // which search types do we need to remove from the list based on the user's scopes?
+            MAP_SEARCH_RESULT_TYPE_TO_SCOPE.forEach(
+                (value: string, key: SearchResultType) => {
+                    if(!containsScope(value, this.oidcContext.portalUserProfile?.scope || [])){
+                        searchResultsTypesToOmit.push(key);
+                    }
+                }
+            );  
+        }
+
+        // We have 2 scenarios to deal with.
+        // 1.   The user belongs to the root tenant, in which case they can search the main object_search index
+        // 2.   The user belongs to a non-root tenant, in which case they can only search the rel_search index
+        // 
+        // If the user needs to search the rel search index, we need to forward the search query to the
+        // rel search method, then convert the rel search results to a valid array of object search results.
+        if(this.oidcContext.portalUserProfile?.managementAccessTenantId !== this.oidcContext.rootTenant.tenantId){
+            const relSearchInput: RelSearchInput =  {
+                page: page,
+                perPage: perPage,
+                owningtenantid: this.oidcContext.portalUserProfile?.managementAccessTenantId || "",
+                parentid: this.oidcContext.portalUserProfile?.managementAccessTenantId || "",
+                term: searchInput.term,
+                sortDirection: sortDirection,
+                sortField: "childname",
+                childtype: searchInput.resultType
+            }
+            const relSearchResults: RelSearchResults = await this.relSearch(relSearchInput);
+            
+            const ids: Array<string> = relSearchResults.resultlist.map(
+                (item: RelSearchResultItem) => item.childid
+            )
+            const items = await this._getObjectSearchByIds(ids);            
+            const searchResults: ObjectSearchResults = {
+                endtime: relSearchResults.endtime,
+                page: page,
+                perpage: perPage,
+                starttime: relSearchResults.starttime,
+                took: relSearchResults.took,
+                total: relSearchResults.total,
+                resultlist: items
+            } 
+            return searchResults;
+        }
+
+        else{
+            return this._objectSearch(searchInput, searchResultsTypesToOmit);
+        }
+    }
+
+    protected async _getObjectSearchByIds(ids: Array<string>): Promise<Array<ObjectSearchResultItem>>{
+
+        let query: any = {
+            ids: {
+                values: ids
+            }
+        }
+        const searchBody: any = {
+            from: 0,
+            size: ids.length,
+            query: query            
+        }
         // Start the timer
         const start = Date.now();
 
         // Default result list is am empty array
         let items: Array<ObjectSearchResultItem> = [];
 
+        const searchResponse: Search_Response = await client.search({
+            index: SEARCH_INDEX_OBJECT_SEARCH,
+            body: searchBody
+        });
+
+        searchResponse.body.hits.hits.forEach(
+            (hit: any) => {
+                const source: any = hit._source;
+                items.push(source);
+            }
+        );
+        return items;
+
+    }
+
+    protected async _objectSearch(searchInput: SearchInput, searchResultsTypesToOmit: Array<SearchResultType>){
         // Build the BOOLEAN query, both in cases where there is a search term and where
         // there is not. We will almost always need to some kind of filters, whether for
         // object type (tenant vs client vs user vs oidc provider vs ...) or for the
@@ -57,7 +178,7 @@ class SearchService {
                 filter: []
             }
         }
-        if(!searchTerm || searchTerm.length < 3){
+        if(!searchInput.term || searchInput.term.length < 3){
             query.bool.must = {
                 match_all: {}
             }
@@ -70,7 +191,7 @@ class SearchService {
                     ["name^8", "description^4", "name_as", "description_as"]
             query.bool.must = {
                 multi_match: {
-                    query: searchTerm,
+                    query: searchInput.term,
                     fields: fields,
                     operator: "and"
                 }
@@ -93,7 +214,7 @@ class SearchService {
             query.bool.filter.push(
                 {
                     bool: {
-                        should: []
+                        should: [],
                     }
                 }
             );
@@ -106,20 +227,38 @@ class SearchService {
                             {
                                 term: { owningtenantid: f.objectValue}
                             }
-                        )
+                        );
                     }
                 }
-            )         
+            );
+        }
+        if(searchResultsTypesToOmit.length > 0){
+            query.bool.filter.push(
+                {
+                    bool: {
+                        must_not: []
+                    }
+                }
+            );
+            searchResultsTypesToOmit.forEach(
+                (t: SearchResultType) => {
+                    query.bool.filter[query.bool.filter.length - 1].bool.must_not.push(
+                        {
+                            match: { objecttype: t.valueOf() }
+                        }
+                    );
+                }
+            );
         }
         
         const sortObj: any = {};
-        if(sortDirection && sortField){
-            sortObj[`${sortField}.raw`] = { order: sortDirection};
+        if(searchInput.sortDirection && searchInput.sortField){
+            sortObj[`${searchInput.sortField}.raw`] = { order: searchInput.sortDirection};
         }
 
         const searchBody: any = {
-            from: (page - 1) * perPage,
-            size: perPage,
+            from: (searchInput.page - 1) * searchInput.perPage,
+            size: searchInput.perPage,
             query: query,
             sort: [sortObj],
             highlight: {
@@ -130,6 +269,11 @@ class SearchService {
                 }
             }
         }
+        // Start the timer
+        const start = Date.now();
+
+        // Default result list is am empty array
+        let items: Array<ObjectSearchResultItem> = [];
 
         const searchResponse: Search_Response = await client.search({
             index: SEARCH_INDEX_OBJECT_SEARCH,
@@ -158,8 +302,8 @@ class SearchService {
 
         const searchResults: ObjectSearchResults = {
             endtime: end,
-            page: page,
-            perpage: perPage,
+            page: searchInput.page,
+            perpage: searchInput.perPage,
             starttime: start,
             took: end - start,
             total: total,
