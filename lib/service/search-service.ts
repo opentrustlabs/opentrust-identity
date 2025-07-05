@@ -45,7 +45,13 @@ class SearchService {
 
     public async search(searchInput: SearchInput): Promise<ObjectSearchResults> {
 
-        const searchResultsTypesToOmit: Array<SearchResultType> = [];
+
+        const {isPermitted, errorMessage} = this.validatePermissions(searchInput.resultType || null);
+        if(!isPermitted){
+            throw new GraphQLError(errorMessage || "");
+        }
+
+        const searchResultsTypesToOmit: Array<SearchResultType> = this.getSearchTypesToOmit();
         
         // Make sure all of the search parameters are set to sensible values
         const page: number = searchInput.page;
@@ -64,36 +70,8 @@ class SearchService {
         if(perPage < MIN_SEARCH_PAGE_SIZE){
             searchInput.perPage = MIN_SEARCH_PAGE_SIZE;
         }
-
-        if(!containsScope(MINIMUM_SCOPES_REQUIRED_FOR_SEARCH, this.oidcContext.portalUserProfile?.scope || [])){
-            throw new GraphQLError("ERROR_NO_PERMISSIONS_FOR_SEARCH");
-        }
-        // If the user specified a particular type of object to return, do they have the permission
-        // to view those types of objects
-        if( !(searchInput.resultType === undefined || searchInput.resultType === null ) ){
-            const requiredScope: string | undefined = MAP_SEARCH_RESULT_TYPE_TO_SCOPE.get(searchInput.resultType);
-            if(requiredScope === undefined){
-                throw new GraphQLError("ERROR_NO_VALID_PERMISSIONS_FOR_SEARCH");
-            }
-            else{
-                const b: boolean = containsScope([requiredScope, TENANT_READ_ALL_SCOPE], this.oidcContext.portalUserProfile?.scope || []);
-                if(!b){
-                    throw new GraphQLError("ERROR_NO_PERMISSION");
-                }
-            }
-        }
-        if(!containsScope(TENANT_READ_ALL_SCOPE, this.oidcContext.portalUserProfile?.scope || [])){            
-            // the user is doing a look ahead or other type of search which has no object type
-            // which search types do we need to remove from the list based on the user's scopes?
-            MAP_SEARCH_RESULT_TYPE_TO_SCOPE.forEach(
-                (value: string, key: SearchResultType) => {
-                    if(!containsScope(value, this.oidcContext.portalUserProfile?.scope || [])){
-                        searchResultsTypesToOmit.push(key);
-                    }
-                }
-            );  
-        }
-
+        
+        
         // We have 2 scenarios to deal with.
         // 1.   The user belongs to the root tenant, in which case they can search the main object_search index
         // 2.   The user belongs to a non-root tenant, in which case they can only search the rel_search index
@@ -111,7 +89,7 @@ class SearchService {
                 sortField: "childname",
                 childtype: searchInput.resultType
             }
-            const relSearchResults: RelSearchResults = await this.relSearch(relSearchInput);
+            const relSearchResults: RelSearchResults = await this._relSearch(relSearchInput, searchResultsTypesToOmit);
             
             const ids: Array<string> = relSearchResults.resultlist.map(
                 (item: RelSearchResultItem) => item.childid
@@ -132,6 +110,80 @@ class SearchService {
         else{
             return this._objectSearch(searchInput, searchResultsTypesToOmit);
         }
+    }
+    
+
+    public async relSearch(relSearchInput: RelSearchInput): Promise<RelSearchResults> {
+
+        const {isPermitted, errorMessage} = this.validatePermissions(relSearchInput.childtype || null);
+        if(!isPermitted){
+            throw new GraphQLError(errorMessage || "");
+        }
+
+        const searchResultsTypesToOmit: Array<SearchResultType> = this.getSearchTypesToOmit();
+
+        const page: number = relSearchInput.page;
+        const perPage: number = relSearchInput.perPage;        
+
+        // Make sure all of the search parameters are set to sensible values
+        const sortDirection = relSearchInput.sortDirection && ALLOWED_SEARCH_DIRECTIONS.includes(relSearchInput.sortDirection) ? relSearchInput.sortDirection : "asc";
+        const sortField = relSearchInput.sortField && ALLOWED_OBJECT_SEARCH_SORT_FIELDS.includes(relSearchInput.sortField) ? relSearchInput.sortField : "childname";        
+        if(page < 1 || page > MAX_SEARCH_PAGE){
+            relSearchInput.page = 1;
+        }
+        if(perPage > MAX_SEARCH_PAGE_SIZE){
+            relSearchInput.perPage = MAX_SEARCH_PAGE_SIZE;
+        }
+        if(perPage < MIN_SEARCH_PAGE_SIZE){
+            relSearchInput.perPage = MIN_SEARCH_PAGE_SIZE;
+        }
+        relSearchInput.sortDirection = sortDirection;
+        relSearchInput.sortField = sortField;        
+
+        return this._relSearch(relSearchInput, searchResultsTypesToOmit);          
+
+    }
+
+    public async lookahead(term: string): Promise<Array<LookaheadResult>> {
+   
+       // For now, we'll just re-use the search function for lookahead
+        const searchInput: SearchInput = {
+            page: 1,
+            perPage: 10,
+            term: term
+        }
+        const searchResults: ObjectSearchResults = await this.search(searchInput);
+        const retVal: Array<LookaheadResult> = [];
+        if(searchResults.total > 0){
+            const map: Map<SearchResultType, Array<LookaheadItem>> = new Map();
+            searchResults.resultlist.forEach(
+                (item: ObjectSearchResultItem) => {
+                    let arr: Array<LookaheadItem> | undefined = map.get(item.objecttype);
+                    if(!arr){
+                        arr = [];
+                        map.set(item.objecttype, arr);
+                    }
+                    const lookaheadItem: LookaheadItem = {
+                        displayValue: item.name,
+                        id: item.objectid,
+                        matchingString: ""
+                    }
+                    arr.push(lookaheadItem);
+                }
+            );
+            map.forEach(
+                (arr: Array<LookaheadItem>, objectType: SearchResultType) => {
+                    const lookaheadResult: LookaheadResult = {
+                        category: objectType,
+                        resultList: arr
+                    };
+                    retVal.push(lookaheadResult);
+                }
+            )
+        }
+
+
+        return Promise.resolve(retVal);
     }
 
     protected async _getObjectSearchByIds(ids: Array<string>): Promise<Array<ObjectSearchResultItem>>{
@@ -167,7 +219,7 @@ class SearchService {
 
     }
 
-    protected async _objectSearch(searchInput: SearchInput, searchResultsTypesToOmit: Array<SearchResultType>){
+    protected async _objectSearch(searchInput: SearchInput, searchResultsTypesToOmit: Array<SearchResultType>): Promise<ObjectSearchResults>{
         // Build the BOOLEAN query, both in cases where there is a search term and where
         // there is not. We will almost always need to some kind of filters, whether for
         // object type (tenant vs client vs user vs oidc provider vs ...) or for the
@@ -313,24 +365,33 @@ class SearchService {
         return searchResults;        
     }
     
+    protected validatePermissions(resultType: SearchResultType | null): {isPermitted: boolean, errorMessage: string | null} {
 
-    public async relSearch(relSearchInput: RelSearchInput): Promise<RelSearchResults> {
-        let page: number = relSearchInput.page;
-        let perPage: number = relSearchInput.perPage;
-        let searchTerm = relSearchInput.term;
+        if(!containsScope(MINIMUM_SCOPES_REQUIRED_FOR_SEARCH, this.oidcContext.portalUserProfile?.scope || [])){
+            //throw new GraphQLError("ERROR_NO_PERMISSIONS_FOR_SEARCH");
+            return {isPermitted: false, errorMessage: "ERROR_NO_PERMISSIONS_FOR_SEARCH"};
+        }
+        // If the user specified a particular type of object to return, do they have the permission
+        // to view those types of objects
+        if( !(resultType === undefined || resultType === null ) ){
+            const requiredScope: string | undefined = MAP_SEARCH_RESULT_TYPE_TO_SCOPE.get(resultType);
+            if(requiredScope === undefined){
+                //throw new GraphQLError("ERROR_NO_VALID_PERMISSIONS_FOR_SEARCH");
+                return {isPermitted: false, errorMessage: "ERROR_NO_VALID_PERMISSIONS_FOR_SEARCH"};
+            }
+            else{
+                const b: boolean = containsScope([requiredScope, TENANT_READ_ALL_SCOPE], this.oidcContext.portalUserProfile?.scope || []);
+                if(!b){
+                    //throw new GraphQLError("ERROR_NO_PERMISSION");
+                    return {isPermitted: false, errorMessage: "ERROR_NO_PERMISSION"};
+                }
+            }
+        }
+        return {isPermitted: true, errorMessage: null}
+    }
 
-        // Make sure all of the search parameters are set to sensible values
-        const sortDirection = relSearchInput.sortDirection && ALLOWED_SEARCH_DIRECTIONS.includes(relSearchInput.sortDirection) ? relSearchInput.sortDirection : "asc";
-        const sortField = relSearchInput.sortField && ALLOWED_OBJECT_SEARCH_SORT_FIELDS.includes(relSearchInput.sortField) ? relSearchInput.sortField : "childname";        
-        if(page < 1 || page > MAX_SEARCH_PAGE){
-            page = 1;
-        }
-        if(perPage > MAX_SEARCH_PAGE_SIZE){
-            perPage = MAX_SEARCH_PAGE_SIZE;
-        }
-        if(perPage < MIN_SEARCH_PAGE_SIZE){
-            perPage = MIN_SEARCH_PAGE_SIZE;
-        }
+
+    protected async _relSearch(relSearchInput: RelSearchInput, searchResultsTypesToOmit: Array<SearchResultType>): Promise<RelSearchResults> {
 
         // Start the timer
         const start = Date.now();
@@ -345,7 +406,7 @@ class SearchService {
                 should: []
             }
         }
-        if(!searchTerm || searchTerm.length < 3){
+        if(!relSearchInput.term || relSearchInput.term.length < 3){
             query.bool.must = {
                 match_all: {}
             }
@@ -353,7 +414,7 @@ class SearchService {
         else{
             query.bool.must = {
                 multi_match: {
-                    query: searchTerm,
+                    query: relSearchInput.term,
                     fields: ["childname^8", "childname_as"]
                 }
             }
@@ -364,6 +425,9 @@ class SearchService {
                 term: {owningtenantid: relSearchInput.owningtenantid}
             });
         }
+        // If there are both child ids and a parent id, we want to perform
+        // a should query with both values with a minimum should match of 2
+        // Otherwise, just filter by the parent id
         if(relSearchInput.parentid){
             if(relSearchInput.childids){
                 query.bool.should.push({
@@ -398,13 +462,32 @@ class SearchService {
                 term: {childtype: relSearchInput.childtype}
             });
         }
+
+        if(searchResultsTypesToOmit.length > 0){
+            query.bool.filter.push(
+                {
+                    bool: {
+                        must_not: []
+                    }
+                }
+            );
+            searchResultsTypesToOmit.forEach(
+                (t: SearchResultType) => {
+                    query.bool.filter[query.bool.filter.length - 1].bool.must_not.push(
+                        {
+                            match: { objecttype: t.valueOf() }
+                        }
+                    );
+                }
+            );
+        }
         
         const sortObj: any = {};
-        sortObj[`${sortField}.raw`] = { order: sortDirection};
+        sortObj[`${relSearchInput.sortField}.raw`] = { order: relSearchInput.sortDirection};
 
         const searchBody: any = {
-            from: (page - 1) * perPage,
-            size: perPage,
+            from: (relSearchInput.page - 1) * relSearchInput.perPage,
+            size: relSearchInput.perPage,
             query: query,
             sort: [sortObj],
             highlight: {
@@ -442,61 +525,32 @@ class SearchService {
 
         const searchResults: RelSearchResults = {
             endtime: end,
-            page: page,
-            perpage: perPage,
+            page: relSearchInput.page,
+            perpage: relSearchInput.perPage,
             starttime: start,
             took: end - start,
             total: total,
             resultlist: items
         }  
 
-        return searchResults;   
+        return searchResults; 
 
     }
 
-    public async lookahead(term: string): Promise<Array<LookaheadResult>> {
-   
-       // TODO
-       // Add in filters for tenant based on the oidcContext object and whether
-       // the user has access to see all tenants or just their own.
-       // For now, we'll just re-use the search function for lookahead
-        const searchInput: SearchInput = {
-            page: 1,
-            perPage: 10,
-            term: term
-        }
-        const searchResults: ObjectSearchResults = await this.search(searchInput);
-        const retVal: Array<LookaheadResult> = [];
-        if(searchResults.total > 0){
-            const map: Map<SearchResultType, Array<LookaheadItem>> = new Map();
-            searchResults.resultlist.forEach(
-                (item: ObjectSearchResultItem) => {
-                    let arr: Array<LookaheadItem> | undefined = map.get(item.objecttype);
-                    if(!arr){
-                        arr = [];
-                        map.set(item.objecttype, arr);
+    protected getSearchTypesToOmit(): Array<SearchResultType> {
+        const searchResultsTypesToOmit: Array<SearchResultType> = [];
+        if(!containsScope(TENANT_READ_ALL_SCOPE, this.oidcContext.portalUserProfile?.scope || [])){            
+            // the user is doing a look ahead or other type of search which has no object type
+            // which search types do we need to remove from the list based on the user's scopes?
+            MAP_SEARCH_RESULT_TYPE_TO_SCOPE.forEach(
+                (value: string, key: SearchResultType) => {
+                    if(!containsScope(value, this.oidcContext.portalUserProfile?.scope || [])){
+                        searchResultsTypesToOmit.push(key);
                     }
-                    const lookaheadItem: LookaheadItem = {
-                        displayValue: item.name,
-                        id: item.objectid,
-                        matchingString: ""
-                    }
-                    arr.push(lookaheadItem);
                 }
-            );
-            map.forEach(
-                (arr: Array<LookaheadItem>, objectType: SearchResultType) => {
-                    const lookaheadResult: LookaheadResult = {
-                        category: objectType,
-                        resultList: arr
-                    };
-                    retVal.push(lookaheadResult);
-                }
-            )
+            );  
         }
-
-
-        return Promise.resolve(retVal);
+        return searchResultsTypesToOmit;
     }
 }
 
