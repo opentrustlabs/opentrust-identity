@@ -4,7 +4,7 @@ import TenantDao from "@/lib/dao/tenant-dao";
 import { GraphQLError } from "graphql/error/GraphQLError";
 import { randomUUID } from 'crypto'; 
 import GroupDao from "../dao/authorization-group-dao";
-import { NAME_ORDER_EASTERN, NAME_ORDER_WESTERN, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH } from "@/utils/consts";
+import { NAME_ORDER_EASTERN, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH } from "@/utils/consts";
 import { getOpenSearchClient } from "@/lib/data-sources/search";
 import { Client } from "@opensearch-project/opensearch";
 import { DaoFactory } from "../data-sources/dao-factory";
@@ -76,6 +76,21 @@ class GroupService {
             id: group.groupId,
             index: SEARCH_INDEX_OBJECT_SEARCH,
             body: document
+        });
+
+        const relSearch: RelSearchResultItem = {
+            childid: group.groupId,
+            childname: group.groupName,
+            childtype: SearchResultType.AuthorizationGroup,
+            owningtenantid: group.tenantId,
+            parentid: group.tenantId,
+            parenttype: SearchResultType.Tenant,
+            childdescription: group.groupDescription
+        }
+        await searchClient.index({
+            id: `${group.tenantId}::${group.groupId}`,
+            index: SEARCH_INDEX_REL_SEARCH,
+            body: relSearch
         });        
     }
 

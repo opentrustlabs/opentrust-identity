@@ -1,11 +1,11 @@
-import { Client, ObjectSearchResultItem, SearchResultType, Tenant } from "@/graphql/generated/graphql-types";
+import { Client, ObjectSearchResultItem, RelSearchResultItem, SearchResultType, Tenant } from "@/graphql/generated/graphql-types";
 import { OIDCContext } from "@/graphql/graphql-context";
 import ClientDao from "@/lib/dao/client-dao";
 import { generateRandomToken } from "@/utils/dao-utils";
 import TenantDao from "@/lib/dao/tenant-dao";
 import { GraphQLError } from "graphql/error/GraphQLError";
 import { randomUUID } from 'crypto'; 
-import { CLIENT_SECRET_ENCODING, CLIENT_TYPES_DISPLAY, SEARCH_INDEX_OBJECT_SEARCH } from "@/utils/consts";
+import { CLIENT_SECRET_ENCODING, CLIENT_TYPES_DISPLAY, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH } from "@/utils/consts";
 import { getOpenSearchClient } from "@/lib/data-sources/search";
 import { DaoFactory } from "../data-sources/dao-factory";
 import Kms from "../kms/kms";
@@ -109,6 +109,21 @@ class ClientService {
             id: client.clientId,
             index: SEARCH_INDEX_OBJECT_SEARCH,
             body: document
+        });
+
+        const relSearch: RelSearchResultItem = {
+            childid: client.clientId,
+            childname: client.clientName,
+            childtype: SearchResultType.Client,
+            owningtenantid: client.tenantId,
+            parentid: client.tenantId,
+            parenttype: SearchResultType.Tenant,
+            childdescription: client.clientDescription
+        }
+        await searchClient.index({
+            id: `${client.tenantId}::${client.clientId}`,
+            index: SEARCH_INDEX_REL_SEARCH,
+            body: relSearch
         });
         
     }

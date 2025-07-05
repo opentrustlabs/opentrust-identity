@@ -1,8 +1,8 @@
-import { ObjectSearchResultItem, SearchResultType, SigningKey, Tenant } from "@/graphql/generated/graphql-types";
+import { ObjectSearchResultItem, RelSearchResultItem, SearchResultType, SigningKey, Tenant } from "@/graphql/generated/graphql-types";
 import { GraphQLError } from "graphql/error/GraphQLError";
-import { randomUUID } from 'crypto'; 
+import { randomUUID, sign } from 'crypto'; 
 import { OIDCContext } from "@/graphql/graphql-context";
-import { KEY_TYPES, KEY_USES, PKCS8_ENCRYPTED_PRIVATE_KEY_HEADER, SEARCH_INDEX_OBJECT_SEARCH, SIGNING_KEY_STATUS_ACTIVE, SIGNING_KEY_STATUS_REVOKED } from "@/utils/consts";
+import { KEY_TYPES, KEY_USES, PKCS8_ENCRYPTED_PRIVATE_KEY_HEADER, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, SIGNING_KEY_STATUS_ACTIVE, SIGNING_KEY_STATUS_REVOKED } from "@/utils/consts";
 import { DaoFactory } from "../data-sources/dao-factory";
 import { Client } from "@opensearch-project/opensearch";
 import { getOpenSearchClient } from "../data-sources/search";
@@ -134,15 +134,23 @@ class SigningKeysService {
     
 
     public async deleteSigningKey(keyId: string): Promise<void> {
-        await signingKeysDao.deleteSigningKey(keyId);
-        await searchClient.delete({
-            id: keyId,
-            index: SEARCH_INDEX_OBJECT_SEARCH,
-            refresh: "wait_for"
-        });
+        const signingKey: SigningKey | null = await signingKeysDao.getSigningKeyById(keyId);
+        if(signingKey){
+            await signingKeysDao.deleteSigningKey(keyId);
+            await searchClient.delete({
+                id: keyId,
+                index: SEARCH_INDEX_OBJECT_SEARCH,
+                refresh: "wait_for"
+            });
+            await searchClient.delete({
+                id: `${signingKey.tenantId}::${signingKey.keyId}`,
+                index: SEARCH_INDEX_REL_SEARCH,
+                refresh: "wait_for"
+            });
+        }        
         return Promise.resolve();        
     }
-
+    
     protected async updateSearchIndex(key: SigningKey): Promise<void> {
         
         const document: ObjectSearchResultItem = {
@@ -156,13 +164,27 @@ class SigningKeysService {
             owningclientid: "",
             subtype: key.keyType,
             subtypekey: key.keyType
-        }
-        
+        }        
         await searchClient.index({
             id: key.keyId,
             index: SEARCH_INDEX_OBJECT_SEARCH,
             body: document
-        });        
+        });   
+        
+        const relSearch: RelSearchResultItem = {
+            childid: key.keyId,
+            childname: key.keyName,
+            childtype: SearchResultType.Key,
+            owningtenantid: key.tenantId,
+            parentid: key.tenantId,
+            parenttype: SearchResultType.Tenant,
+            childdescription: key.keyType
+        }
+        await searchClient.index({
+            id: `${key.tenantId}::${key.keyId}`,
+            index: SEARCH_INDEX_REL_SEARCH,
+            body: relSearch
+        });         
     }
 
 }
