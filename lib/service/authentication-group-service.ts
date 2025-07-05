@@ -126,7 +126,22 @@ class AuthenticationGroupService {
             id: authenticationGroup.authenticationGroupId,
             index: SEARCH_INDEX_OBJECT_SEARCH,
             body: document
-        });        
+        });  
+        
+        const relSearch: RelSearchResultItem = {
+            childid: authenticationGroup.authenticationGroupId,
+            childname: authenticationGroup.authenticationGroupName,
+            childtype: SearchResultType.AuthenticationGroup,
+            owningtenantid: authenticationGroup.tenantId,
+            parentid: authenticationGroup.tenantId,
+            parenttype: SearchResultType.Tenant,
+            childdescription: authenticationGroup.authenticationGroupDescription
+        }
+        await searchClient.index({
+            id: `${authenticationGroup.tenantId}::${authenticationGroup.authenticationGroupId}`,
+            index: SEARCH_INDEX_REL_SEARCH,
+            body: relSearch
+        });
     }
 
     public async deleteAuthenticationGroup(authenticationGroupId: string): Promise<void> {
