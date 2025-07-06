@@ -35,11 +35,14 @@ export function authorizeCreateObject(oidcContext: OIDCContext, allowedScope: st
     if(!b){
         return {isAuthorized: false, errorMessage: "ERROR_NO_PERMISSION"};
     }
-    if(targetTenantId){
-        if(oidcContext.portalUserProfile.managementAccessTenantId !== oidcContext.rootTenant.tenantId){
+    if(oidcContext.portalUserProfile.managementAccessTenantId !== oidcContext.rootTenant.tenantId){
+        if(targetTenantId){            
             if(oidcContext.portalUserProfile.managementAccessTenantId !== targetTenantId){
                 return {isAuthorized: false, errorMessage: "ERROR_INVALID_PERMISSION_FOR_TENANT"}
             }
+        }
+        else{
+            return {isAuthorized: false, errorMessage: "ERROR_MISSING_TENANT_ID"}
         }
     }
     return {isAuthorized: true, errorMessage: ""}
@@ -53,11 +56,14 @@ export function authorizeUpdateObject(oidcContext: OIDCContext, allowedScope: st
     if(!b){
         return {isAuthorized: false, errorMessage: "ERROR_NO_PERMISSION"};
     }
-    if(targetTenantId){
-        if(oidcContext.portalUserProfile.managementAccessTenantId !== oidcContext.rootTenant.tenantId){
+    if(oidcContext.portalUserProfile.managementAccessTenantId !== oidcContext.rootTenant.tenantId){
+        if(targetTenantId){            
             if(oidcContext.portalUserProfile.managementAccessTenantId !== targetTenantId){
                 return {isAuthorized: false, errorMessage: "ERROR_INVALID_PERMISSION_FOR_TENANT"}
             }
+        }
+        else{
+            return {isAuthorized: false, errorMessage: "ERROR_MISSING_TENANT_ID"}
         }
     }
     return {isAuthorized: true, errorMessage: ""}
@@ -71,20 +77,65 @@ export function authorizeDeleteObject(oidcContext: OIDCContext, allowedScope: st
     if(!b){
         return {isAuthorized: false, errorMessage: "ERROR_NO_PERMISSION"};
     }
-    if(targetTenantId){
-        if(oidcContext.portalUserProfile.managementAccessTenantId !== oidcContext.rootTenant.tenantId){
+    if(oidcContext.portalUserProfile.managementAccessTenantId !== oidcContext.rootTenant.tenantId){
+        if(targetTenantId){            
             if(oidcContext.portalUserProfile.managementAccessTenantId !== targetTenantId){
                 return {isAuthorized: false, errorMessage: "ERROR_INVALID_PERMISSION_FOR_TENANT"}
             }
+        }
+        else{
+            return {isAuthorized: false, errorMessage: "ERROR_MISSING_TENANT_ID"}
         }
     }
     return {isAuthorized: true, errorMessage: ""}
 }
 
+export function authorizeRead(oidcContext: OIDCContext, allowedScope: string | Array<string>, targetTenantId: string | null): {isAuthorized: boolean, errorMessage: string | null} {
+    if(!oidcContext.portalUserProfile || !oidcContext.portalUserProfile.scope){
+        return {isAuthorized: false, errorMessage: "ERROR_INVALID_OR_MISSING_SUBJECT"};
+    }
+    const b: boolean = containsScope(allowedScope, oidcContext.portalUserProfile.scope);
+    if(!b){
+        return {isAuthorized: false, errorMessage: "ERROR_NO_PERMISSION"};
+    }
+    
+    if(oidcContext.portalUserProfile.managementAccessTenantId !== oidcContext.rootTenant.tenantId){
+        if(targetTenantId){            
+            if(oidcContext.portalUserProfile.managementAccessTenantId !== targetTenantId){
+                return {isAuthorized: false, errorMessage: "ERROR_INVALID_PERMISSION_FOR_TENANT"}
+            }
+        }
+        else{
+            return {isAuthorized: false, errorMessage: "ERROR_MISSING_TENANT_ID"}
+        }
+    }
+
+    return {isAuthorized: true, errorMessage: ""}
+}
+
+export function filterResults<T>(results: Array<T>, oidcContext: OIDCContext, getTenantId: (item: T) => string){
+
+    if(oidcContext.portalUserProfile?.managementAccessTenantId === oidcContext.rootTenant.tenantId){
+        return results;
+    }
+
+    const filteredResults = results.filter(
+        (item: T) => {
+            const tenantId = getTenantId(item);
+            if(tenantId !== oidcContext.portalUserProfile?.managementAccessTenantId){
+                return false;
+            }
+            return true;
+        }
+    );
+    return filteredResults;
+
+}
+
 export function readWithInputFilterAndAuthorization<TArgs extends any[], TResult>(
     fn: (...args: TArgs) => Promise<TResult | null>,
     options: {
-        preProcess?: (oidcContext: OIDCContext, ...args: TArgs) => Promise<TArgs>;
+        preProcess?: (oidcContext: OIDCContext, ...args: TArgs) => Promise<Partial<TArgs>>; // Promise<TArgs>;
         authorize: (oidcContext: OIDCContext, ...args: TArgs) => Promise<{isAuthorized: boolean, errorMessage: string | null, result: TResult | null}>;
     }
 ){
@@ -98,7 +149,9 @@ export function readWithInputFilterAndAuthorization<TArgs extends any[], TResult
             throw new GraphQLError("ERROR_NO_PERMISSION");
         }
 
-        const finalArgs = options.preProcess ? await options.preProcess(oidcContext, ...args) : args;
+        const overrides = options.preProcess ? await options.preProcess(oidcContext, ...args) : args || {};
+        const finalArgs = args.map((arg, i) => (overrides[i] !== undefined ? overrides[i] : arg)) as TArgs;
+
         if(oidcContext.portalUserProfile.managementAccessTenantId === oidcContext.rootTenant.tenantId){            
             const result = await fn(...finalArgs);
             return result;
