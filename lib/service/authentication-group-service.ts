@@ -5,12 +5,12 @@ import ClientDao from "../dao/client-dao";
 import { GraphQLError } from "graphql/error/GraphQLError";
 import { randomUUID } from 'crypto'; 
 import AuthenticationGroupDao from "../dao/authentication-group-dao";
-import { AUTHENTICATION_GROUP_CREATE_SCOPE, AUTHENTICATION_GROUP_READ_SCOPE, NAME_ORDER_EASTERN, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_READ_ALL_SCOPE } from "@/utils/consts";
+import { AUTHENTICATION_GROUP_CLIENT_ASSIGN_SCOPE, AUTHENTICATION_GROUP_CLIENT_REMOVE_SCOPE, AUTHENTICATION_GROUP_CREATE_SCOPE, AUTHENTICATION_GROUP_DELETE_SCOPE, AUTHENTICATION_GROUP_READ_SCOPE, AUTHENTICATION_GROUP_UPDATE_SCOPE, AUTHENTICATION_GROUP_USER_ASSIGN_SCOPE, AUTHENTICATION_GROUP_USER_REMOVE_SCOPE, NAME_ORDER_EASTERN, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_READ_ALL_SCOPE } from "@/utils/consts";
 import { Client as SearchClient } from "@opensearch-project/opensearch";
 import { getOpenSearchClient } from "@/lib/data-sources/search";
 import IdentityDao from "../dao/identity-dao";
 import { DaoFactory } from "../data-sources/dao-factory";
-import { withAuthAndInputFilter, containsScope } from "@/utils/authz-utils";
+import { readWithInputFilterAndAuthorization, containsScope, authorizeCreateObject, authorizeUpdateObject, authorizeDeleteObject } from "@/utils/authz-utils";
 
 const searchClient: SearchClient = getOpenSearchClient();
 
@@ -36,7 +36,7 @@ class AuthenticationGroupService {
 
     public async getAuthenticationGroupById(authenticationGroupId: string): Promise<AuthenticationGroup | null> {
 
-        const getData = withAuthAndInputFilter(
+        const getData = readWithInputFilterAndAuthorization(
             authenticationGroupDao.getAuthenticationGroupById,
             {                
                 authorize: async function (oidcContext: OIDCContext, authenticationGroupId: string): Promise<{ isAuthorized: boolean; errorMessage: string | null; result: AuthenticationGroup | null; }> {                    
@@ -56,29 +56,19 @@ class AuthenticationGroupService {
     }
 
     public async createAuthenticationGroup(authenticationGroup: AuthenticationGroup): Promise<AuthenticationGroup | null> {
-        const createData = withAuthAndInputFilter(
-            authenticationGroupDao.createAuthenticationGroup,
-            {
-                preProcess: async function (_, authenticationGroup: AuthenticationGroup): Promise<[AuthenticationGroup]> {
-                    authenticationGroup.authenticationGroupId = randomUUID().toString();
-                    return Promise.resolve([authenticationGroup]);
-                    
-                },
-                authorize: async function (oidcContext: OIDCContext, authenticationGroup: AuthenticationGroup): Promise<{ isAuthorized: boolean; errorMessage: string | null; result: AuthenticationGroup | null; }> {
-                    if(oidcContext.portalUserProfile?.managementAccessTenantId !== authenticationGroup.tenantId){
-                        return {isAuthorized: false, errorMessage: "ERROR_INVALID_PERMISSIONS_FOR_TENANT", result: null};
-                    }
-                    const tenant: Tenant | null = await tenantDao.getTenantById(authenticationGroup.tenantId);
-                    if (!tenant) {
-                         return {isAuthorized: false, errorMessage: "ERROR_TENANT_DOES_NOT_EXIST", result: null};
-                    }
-                    const g = await authenticationGroupDao.createAuthenticationGroup(authenticationGroup);
-                    return {isAuthorized: true, errorMessage: null, result: g}                    
-                }
-            }                
-        );
 
-        const g = await createData(this.oidcContext, AUTHENTICATION_GROUP_CREATE_SCOPE, authenticationGroup);
+        const {isAuthorized, errorMessage} = authorizeCreateObject(this.oidcContext, AUTHENTICATION_GROUP_CREATE_SCOPE, authenticationGroup.tenantId);
+        if(!isAuthorized){
+            throw new GraphQLError(errorMessage || "ERROR");
+        }
+
+        const tenant: Tenant | null = await tenantDao.getTenantById(authenticationGroup.tenantId);
+        if (!tenant) {
+                throw new GraphQLError("ERROR_TENANT_DOES_NOT_EXIST");
+        }
+        authenticationGroup.authenticationGroupId = randomUUID().toString();
+        const g = await authenticationGroupDao.createAuthenticationGroup(authenticationGroup);
+
         if(g !== null){
             await this.updateSearchIndex(g);
         }        
@@ -87,19 +77,17 @@ class AuthenticationGroupService {
 
     public async updateAuthenticationGroup(authenticationGroup: AuthenticationGroup): Promise<AuthenticationGroup> {
         
-        const updateData = withAuthAndInputFilter(
-            authenticationGroupDao.updateAuthenticationGroup,
-            {
-                authorize: async function (oidcContext: OIDCContext, authenticationGroup: AuthenticationGroup): Promise<{ isAuthorized: boolean; errorMessage: string | null; result: AuthenticationGroup | null; }> {
-                    return {isAuthorized: false, errorMessage: "ERROR_TENANT_DOES_NOT_EXIST", result: null};
-                }
-            }
-        );
+        
 
         const existingAuthenticationGroup = await authenticationGroupDao.getAuthenticationGroupById(authenticationGroup.authenticationGroupId);
         if (!existingAuthenticationGroup) {
             throw new GraphQLError("ERROR_CANNOT_FIND_LOGIN_GROUP_FOR_UPDATE");
         }
+        const {isAuthorized, errorMessage} = authorizeUpdateObject(this.oidcContext, AUTHENTICATION_GROUP_UPDATE_SCOPE, existingAuthenticationGroup.tenantId);
+        if(!isAuthorized){
+            throw new GraphQLError(errorMessage || "ERROR");
+        }
+
         existingAuthenticationGroup.authenticationGroupDescription = authenticationGroup.authenticationGroupDescription;
         existingAuthenticationGroup.authenticationGroupName = authenticationGroup.authenticationGroupName;
 
@@ -147,7 +135,22 @@ class AuthenticationGroupService {
     public async deleteAuthenticationGroup(authenticationGroupId: string): Promise<void> {
         // TODO
         // Remove the search index relationships
-        return authenticationGroupDao.deleteAuthenticationGroup(authenticationGroupId);
+        const authNGroup: AuthenticationGroup | null = await authenticationGroupDao.getAuthenticationGroupById(authenticationGroupId);
+        if(authNGroup){
+            const {isAuthorized, errorMessage} = authorizeDeleteObject(this.oidcContext, AUTHENTICATION_GROUP_DELETE_SCOPE, authNGroup.tenantId);
+            if(!isAuthorized){
+                throw new GraphQLError(errorMessage || "ERROR");
+            }
+            // Need to delete 
+            //      client/authn group rel
+            //      user/authn group rel
+            //      
+            //await authenticationGroupDao.deleteAuthenticationGroup(authenticationGroupId);
+        }
+        
+        return Promise.resolve();
+
+        
     }
 
 
@@ -164,12 +167,26 @@ class AuthenticationGroupService {
         if (authenticationGroup.tenantId !== client.tenantId) {
             throw new GraphQLError("ERROR_CANNOT_ASSIGN_AUTHENTICATION_GROUP_TO_CLIENT")
         }
+
+        const {isAuthorized, errorMessage} = authorizeCreateObject(this.oidcContext, AUTHENTICATION_GROUP_CLIENT_ASSIGN_SCOPE, client.tenantId);
+        if(!isAuthorized){
+            throw new GraphQLError(errorMessage || "ERROR");
+        }
+
         const newRel = await authenticationGroupDao.assignAuthenticationGroupToClient(authenticationGroupId, clientId);        
         return Promise.resolve(newRel);
     }
 
     public async removeAuthenticationGroupFromClient(authenticationGroupId: string, clientId: string): Promise<void> {
-        return authenticationGroupDao.removeAuthenticationGroupFromClient(authenticationGroupId, clientId);
+        const authnGroup: AuthenticationGroup | null = await authenticationGroupDao.getAuthenticationGroupById(authenticationGroupId);
+        if(authnGroup){
+            const {isAuthorized, errorMessage} = authorizeDeleteObject(this.oidcContext, AUTHENTICATION_GROUP_CLIENT_REMOVE_SCOPE, authnGroup.tenantId);
+            if(!isAuthorized){
+                throw new GraphQLError(errorMessage || "ERROR");
+            }
+            authenticationGroupDao.removeAuthenticationGroupFromClient(authenticationGroupId, clientId);
+        }
+        return Promise.resolve();
     }
 
     public async assignUserToAuthenticationGroup(userId: string, authenticationGroupId: string): Promise<AuthenticationGroupUserRel> {
@@ -188,6 +205,11 @@ class AuthenticationGroupService {
         const userTenantRel: UserTenantRel | null = await identityDao.getUserTenantRel(authnGroup.tenantId, userId);
         if(!userTenantRel){
             throw new GraphQLError("ERROR_INVALID_TENANT_FOR_USER");
+        }
+
+        const {isAuthorized, errorMessage} = authorizeCreateObject(this.oidcContext, AUTHENTICATION_GROUP_USER_ASSIGN_SCOPE, userTenantRel.tenantId);
+        if(!isAuthorized){
+            throw new GraphQLError(errorMessage || "ERROR");
         }
 
         const r: AuthenticationGroupUserRel = await authenticationGroupDao.assignUserToAuthenticationGroup(userId, authenticationGroupId);
@@ -213,14 +235,21 @@ class AuthenticationGroupService {
     }
 
     public async removeUserFromAuthenticationGroup(userId: string, authenticationGroupId: string): Promise<void> {
-        await authenticationGroupDao.removeUserFromAuthenticationGroup(userId, authenticationGroupId);
+        const authnGroup: AuthenticationGroup | null = await authenticationGroupDao.getAuthenticationGroupById(authenticationGroupId);
+        if(authnGroup){
+            const {isAuthorized, errorMessage} = authorizeDeleteObject(this.oidcContext, AUTHENTICATION_GROUP_USER_REMOVE_SCOPE, authnGroup.tenantId);
+            if(!isAuthorized){
+                throw new GraphQLError(errorMessage || "ERROR");
+            }
+            await authenticationGroupDao.removeUserFromAuthenticationGroup(userId, authenticationGroupId);
 
-        await searchClient.delete({
-            id: `${authenticationGroupId}::${userId}`,
-            index: SEARCH_INDEX_REL_SEARCH,
-            refresh: "wait_for"
-        });
-
+            await searchClient.delete({
+                id: `${authenticationGroupId}::${userId}`,
+                index: SEARCH_INDEX_REL_SEARCH,
+                refresh: "wait_for"
+            });
+        }
+        
         return Promise.resolve();
     }
     

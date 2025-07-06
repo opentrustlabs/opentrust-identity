@@ -641,7 +641,6 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                                             expandIcon={<ExpandMoreIcon />}
                                                             id={"redirect-uri-configuration"}
                                                             sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center" }}
-
                                                         >
                                                             <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
                                                                 <PolicyIcon /><div style={{ marginLeft: "8px" }}>Access Control (Tenant: {rel.tenantName})</div>
