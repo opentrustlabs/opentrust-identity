@@ -1,6 +1,6 @@
 "use client";
-import { RateLimitServiceGroupCreateInput, ScopeCreateInput } from "@/graphql/generated/graphql-types";
-import {  RATE_LIMIT_SERVICE_GROUP_CREATE_MUTATION, SCOPE_CREATE_MUTATION } from "@/graphql/mutations/oidc-mutations";
+import { ScopeCreateInput } from "@/graphql/generated/graphql-types";
+import { SCOPE_CREATE_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import { useMutation } from "@apollo/client";
 import { Alert, Button, DialogActions, DialogContent, DialogTitle, Grid2, Stack, TextField, Typography } from "@mui/material";
 import React, { useContext } from "react";
@@ -89,11 +89,10 @@ const NewScopeDialog: React.FC<NewScopeDialogProps> = ({
                             </Grid2>
                             <Grid2 marginBottom={"16px"}>                                
                                 <div>Scope Description</div>
-                                <TextField name="authzGroupDescription" id="authzGroupDescription" 
+                                <TextField name="scopeDescription" id="scopeDescription" 
                                     value={scopeCreateInput.scopeDescription} 
                                     onChange={(evt) => {scopeCreateInput.scopeDescription = evt.target.value; setScopeCreateInput({...scopeCreateInput})}}
                                     fullWidth={true} size="small" multiline={true} rows={2}
-
                                 />
                             </Grid2>
                             <Grid2 marginBottom={"16px"}>                                
