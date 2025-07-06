@@ -30,7 +30,7 @@ class AuthenticationGroupService {
     public async getAuthenticationGroups(tenantId?: string, clientId?: string, userId?: string): Promise<Array<AuthenticationGroup>> {
         containsScope(AUTHENTICATION_GROUP_READ_SCOPE, this.oidcContext.portalUserProfile?.scope || [])
         
-        return authenticationGroupDao.getAuthenticationGroups(tenantId, clientId, userId)
+        return authenticationGroupDao.getAuthenticationGroups(tenantId, clientId, userId);
             
     }        
 
@@ -76,12 +76,10 @@ class AuthenticationGroupService {
     }
 
     public async updateAuthenticationGroup(authenticationGroup: AuthenticationGroup): Promise<AuthenticationGroup> {
-        
-        
 
         const existingAuthenticationGroup = await authenticationGroupDao.getAuthenticationGroupById(authenticationGroup.authenticationGroupId);
         if (!existingAuthenticationGroup) {
-            throw new GraphQLError("ERROR_CANNOT_FIND_LOGIN_GROUP_FOR_UPDATE");
+            throw new GraphQLError("ERROR_CANNOT_FIND_AUTHENTICATION_GROUP_FOR_UPDATE");
         }
         const {isAuthorized, errorMessage} = authorizeUpdateObject(this.oidcContext, AUTHENTICATION_GROUP_UPDATE_SCOPE, existingAuthenticationGroup.tenantId);
         if(!isAuthorized){
