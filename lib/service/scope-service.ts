@@ -1,4 +1,4 @@
-import { AccessRule, AuthorizationGroup, AuthorizationGroupScopeRel, BulkScopeInput, Client, ClientScopeRel, ObjectSearchResultItem, Scope, ScopeFilterCriteria, SearchResultType, Tenant, TenantAvailableScope, User, UserScopeRel, UserTenantRel } from "@/graphql/generated/graphql-types";
+import { AccessRule, AuthorizationGroup, AuthorizationGroupScopeRel, BulkScopeInput, Client, ClientScopeRel, ObjectSearchResultItem, RelSearchResultItem, Scope, ScopeFilterCriteria, SearchResultType, Tenant, TenantAvailableScope, User, UserScopeRel, UserTenantRel } from "@/graphql/generated/graphql-types";
 import { OIDCContext } from "@/graphql/graphql-context";
 import { GraphQLError } from "graphql/error/GraphQLError";
 import ScopeDao from "../dao/scope-dao";
@@ -7,7 +7,7 @@ import TenantDao from "../dao/tenant-dao";
 import ClientDao from "../dao/client-dao";
 import AccessRuleDao from "../dao/access-rule-dao";
 import { DaoFactory } from "../data-sources/dao-factory";
-import { ROOT_TENANT_EXCLUSIVE_INTERNAL_SCOPE_NAMES, SCOPE_USE_APPLICATION_MANAGEMENT, SCOPE_USE_DISPLAY, SCOPE_USE_IAM_MANAGEMENT, SEARCH_INDEX_OBJECT_SEARCH, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
+import { ROOT_TENANT_EXCLUSIVE_INTERNAL_SCOPE_NAMES, SCOPE_USE_APPLICATION_MANAGEMENT, SCOPE_USE_DISPLAY, SCOPE_USE_IAM_MANAGEMENT, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import { getOpenSearchClient } from "../data-sources/search";
 import AuthorizationGroupDao from "../dao/authorization-group-dao";
 import IdentityDao from "../dao/identity-dao";
@@ -135,47 +135,29 @@ class ScopeService {
         existingScope.scopeName = scope.scopeName;
         await scopeDao.updateScope(existingScope);
         await this.updateSearchIndex(existingScope);
+        
+        // Do not wait on the bulk update. Fire and forget...
+        this.bulkUpdateScopeRelIndex(existingScope);
+
         return Promise.resolve(existingScope);
     }
 
-    public async deleteScope(scopeId: string): Promise<void> {
-        // TODO, will need to delete various relationships to tenants and clients
-        // return scopeDao.deleteScope(scopeId);
-    }
 
-    protected async updateSearchIndex(scope: Scope): Promise<void> {
-
-        const document: ObjectSearchResultItem = {
-            name: scope.scopeName,
-            description: scope.scopeDescription,
-            objectid: scope.scopeId,
-            objecttype: SearchResultType.AccessControl,
-            owningtenantid: "",
-            email: "",
-            enabled: true,
-            owningclientid: "",
-            subtype: SCOPE_USE_DISPLAY.get(scope.scopeUse),
-            subtypekey: scope.scopeUse
-        }
-        await searchClient.index({
-            id: scope.scopeId,
-            index: SEARCH_INDEX_OBJECT_SEARCH,
-            body: document
-        });
-    }
-        
-    
     public async assignScopeToTenant(tenantId: string, scopeId: string, accessRuleId: string | null): Promise<TenantAvailableScope> {
         const tenant: Tenant | null = await tenantDao.getTenantById(tenantId);
         if(!tenant){
             throw new GraphQLError("ERROR_CANNOT_FIND_TENANT_FOR_SCOPE_ASSIGNMENT");
         }
-        const {isValid, errorMessage} = await this.validateScopeTenantInput(tenant, scopeId, accessRuleId);
+        const {isValid, errorMessage, scope} = await this.validateScopeTenantInput(tenant, scopeId, accessRuleId);
         if(!isValid){
             throw new GraphQLError(errorMessage);
         }
-
-        return scopeDao.assignScopeToTenant(tenant.tenantId, scopeId, accessRuleId || undefined);        
+        const tenantAvailableScope: TenantAvailableScope = await scopeDao.assignScopeToTenant(tenant.tenantId, scopeId, accessRuleId || undefined);
+        if(scope){
+            await this.indexTenantScopeRel(tenant, scope);
+        }
+        return tenantAvailableScope
+        
     }
 
     /**
@@ -191,16 +173,20 @@ class ScopeService {
         if(!tenant){
             throw new GraphQLError("ERROR_CANNOT_FIND_TENANT_FOR_SCOPE_ASSIGNMENT");
         }
-        const arrayTenantAvailableScope: Array<TenantAvailableScope> = []
+        const arrayTenantAvailableScope: Array<TenantAvailableScope> = [];
+        const arrayScope: Array<Scope> = [];
         let allValidScopes: boolean = true;
         let message: string = "";
 
         for(let i = 0; i < bulkScopeInput.length; i++) {
-            const {isValid, errorMessage} = await this.validateScopeTenantInput(tenant, bulkScopeInput[i].scopeId, bulkScopeInput[i].accessRuleId || null);
+            const {isValid, errorMessage, scope} = await this.validateScopeTenantInput(tenant, bulkScopeInput[i].scopeId, bulkScopeInput[i].accessRuleId || null);
             if(!isValid){
                 allValidScopes = false;
                 message = errorMessage;
                 break;
+            }
+            else if(scope){
+                arrayScope.push(scope);
             }
         }
         if(!allValidScopes){
@@ -208,33 +194,10 @@ class ScopeService {
         }
         for(let i = 0; i < bulkScopeInput.length; i++){
             const rel = await scopeDao.assignScopeToTenant(tenant.tenantId, bulkScopeInput[i].scopeId, bulkScopeInput[i].accessRuleId || undefined);
+            await this.indexTenantScopeRel(tenant, arrayScope[i]);
             arrayTenantAvailableScope.push(rel);
         }
         return arrayTenantAvailableScope;
-    }
-
-    protected async validateScopeTenantInput(tenant: Tenant, scopeId: string, accessRuleId: string | null): Promise<{isValid: boolean, errorMessage: string, scope: Scope | null}> {
-        const scope: Scope | null = await this.getScopeById(scopeId);        
-        if(!scope){
-            return {isValid: false, errorMessage: "ERROR_CANNOT_FIND_SCOPE_TO_ASSIGN_TO_TENANT", scope}
-        }
-        if(accessRuleId){
-            const accessRule: AccessRule | null = await accessRuleDao.getAccessRuleById(accessRuleId);
-            if(!accessRule){
-                return {isValid: false, errorMessage: "ERROR_CANNOT_FIND_ACCESS_RULE_ID", scope: null};
-            }
-        }
-        // Check to make sure that we are not assigning a forbidden IAM scope to a
-        // non root tenant
-        if(tenant.tenantType !== TENANT_TYPE_ROOT_TENANT && scope.scopeUse === SCOPE_USE_IAM_MANAGEMENT){
-            const rootOnlyScopeName: string | undefined = ROOT_TENANT_EXCLUSIVE_INTERNAL_SCOPE_NAMES.find(
-                (s: string) => s === scope.scopeName
-            )
-            if(rootOnlyScopeName){
-                return {isValid: false, errorMessage: "ERROR_CANNOT_ASSIGN_ROOT_TENANT_SCOPE_TO_NON_ROOT_TENANT", scope: null};
-            }
-        }
-        return {isValid: true, errorMessage: "", scope};
     }
 
 
@@ -255,8 +218,12 @@ class ScopeService {
 
         if(tenant.tenantType === TENANT_TYPE_ROOT_TENANT && scope.scopeUse === SCOPE_USE_IAM_MANAGEMENT){
             throw new GraphQLError("ERROR_CANNOT_REMOVE_IAM_MANAGEMENT_SCOPE_FROM_ROOT_TENANT")
-        }        
-        return scopeDao.removeScopeFromTenant(tenantId, scopeId);
+        }
+
+        await scopeDao.removeScopeFromTenant(tenantId, scopeId);
+        await this.removeTenantScopeRelFromIndex(tenantId, scopeId);
+
+        return Promise.resolve();
     }
 
     public async getClientScopes(clientId: string): Promise<Array<Scope>> {
@@ -522,8 +489,106 @@ class ScopeService {
         return scopeDao.removeScopeFromUser(tenantId, userId, scopeId);
     }
 
+    public async deleteScope(scopeId: string): Promise<void> {
+        // TODO, will need to delete various relationships to tenants and clients
+        // return scopeDao.deleteScope(scopeId);
+    }
 
+    protected async validateScopeTenantInput(tenant: Tenant, scopeId: string, accessRuleId: string | null): Promise<{isValid: boolean, errorMessage: string, scope: Scope | null}> {
+        const scope: Scope | null = await this.getScopeById(scopeId);        
+        if(!scope){
+            return {isValid: false, errorMessage: "ERROR_CANNOT_FIND_SCOPE_TO_ASSIGN_TO_TENANT", scope}
+        }
+        if(accessRuleId){
+            const accessRule: AccessRule | null = await accessRuleDao.getAccessRuleById(accessRuleId);
+            if(!accessRule){
+                return {isValid: false, errorMessage: "ERROR_CANNOT_FIND_ACCESS_RULE_ID", scope: null};
+            }
+        }
+        // Check to make sure that we are not assigning a forbidden IAM scope to a
+        // non root tenant
+        if(tenant.tenantType !== TENANT_TYPE_ROOT_TENANT && scope.scopeUse === SCOPE_USE_IAM_MANAGEMENT){
+            const rootOnlyScopeName: string | undefined = ROOT_TENANT_EXCLUSIVE_INTERNAL_SCOPE_NAMES.find(
+                (s: string) => s === scope.scopeName
+            )
+            if(rootOnlyScopeName){
+                return {isValid: false, errorMessage: "ERROR_CANNOT_ASSIGN_ROOT_TENANT_SCOPE_TO_NON_ROOT_TENANT", scope: null};
+            }
+        }
+        return {isValid: true, errorMessage: "", scope};
+    }
 
+    protected async updateSearchIndex(scope: Scope): Promise<void> {
+        const document: ObjectSearchResultItem = {
+            name: scope.scopeName,
+            description: scope.scopeDescription,
+            objectid: scope.scopeId,
+            objecttype: SearchResultType.AccessControl,
+            owningtenantid: "",
+            email: "",
+            enabled: true,
+            owningclientid: "",
+            subtype: SCOPE_USE_DISPLAY.get(scope.scopeUse),
+            subtypekey: scope.scopeUse
+        }
+        await searchClient.index({
+            id: scope.scopeId,
+            index: SEARCH_INDEX_OBJECT_SEARCH,
+            body: document
+        });
+    }
+        
+    protected async removeTenantScopeRelFromIndex(tenantId: string, scopeId: string): Promise<void>{        
+        searchClient.delete({
+            id: `${tenantId}::${scopeId}`,
+            index: SEARCH_INDEX_REL_SEARCH,
+        });        
+    }
+
+    protected async bulkUpdateScopeRelIndex(scope: Scope): Promise<void>{
+        searchClient.updateByQuery({
+            index: SEARCH_INDEX_REL_SEARCH,
+            body: {
+                query: {
+                    term: {
+                        childid: scope.scopeId
+                    }
+                },
+                script: {
+                    source: "ctx._source.childname = params.childname; ctx._source.childdescription = params.childdescription",
+                    lang: "painless",
+                    params: {
+                        childname: scope.scopeName,
+                        childdescription: scope.scopeDescription
+                    }
+                }
+            },
+            conflicts: "proceed",
+            requests_per_second: 25
+        });
+    }
+
+    protected async bulkRemoveScopeFromRelIndex(scopeId: string): Promise<void>{
+        // TODO
+        throw new GraphQLError("ERROR_METHOD_NOT_IMPLEMENTED");
+    }
+    
+    protected async indexTenantScopeRel(tenant: Tenant, scope: Scope): Promise<void>{
+        const document: RelSearchResultItem = {
+            childid: scope.scopeId,
+            childname: scope.scopeName,
+            childtype: SearchResultType.AccessControl,
+            owningtenantid: tenant.tenantId,
+            parentid: tenant.tenantId,
+            parenttype: SearchResultType.Tenant,
+            childdescription: scope.scopeDescription
+        }; 
+        await searchClient.index({
+            id: `${tenant.tenantId}::${scope.scopeId}`,
+            index: SEARCH_INDEX_REL_SEARCH,
+            body: document
+        });
+    }
 
 }
 

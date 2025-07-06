@@ -128,7 +128,13 @@ const SigningKeyList: React.FC<ResultListProps> = ({
                         </Grid2>
                     </Typography>
                     <Divider></Divider>
-
+                    {searchResults.total < 1 &&
+                        <Typography component={"div"} fontSize={"0.9em"}>
+                            <Grid2 margin={"8px 0px 8px 0px"} textAlign={"center"} size={12} spacing={1}>
+                                No keys to display
+                            </Grid2>
+                        </Typography>
+                    }
                     {searchResults.resultlist.map(
                         (item: ObjectSearchResultItem) => (
                             <Typography key={`${item.objectid}`} component={"div"} fontSize={"0.9em"}>
