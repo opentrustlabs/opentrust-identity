@@ -63,6 +63,7 @@ const ScopeList: React.FC<ResultListProps> = ({
                             <Grid2 size={1}></Grid2>
                         </Grid2>
                     </Typography>
+                    <Divider></Divider>
                     {searchResults.total < 1 &&
                         <Typography component={"div"} fontSize={"0.9em"}>
                             <Grid2 margin={"8px 0px 8px 0px"} textAlign={"center"} size={12} spacing={1}>

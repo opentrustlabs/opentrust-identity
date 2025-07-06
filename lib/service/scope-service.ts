@@ -173,7 +173,8 @@ class ScopeService {
         const {isValid, errorMessage} = await this.validateScopeTenantInput(tenant, scopeId, accessRuleId);
         if(!isValid){
             throw new GraphQLError(errorMessage);
-        }        
+        }
+
         return scopeDao.assignScopeToTenant(tenant.tenantId, scopeId, accessRuleId || undefined);        
     }
 
@@ -212,15 +213,15 @@ class ScopeService {
         return arrayTenantAvailableScope;
     }
 
-    protected async validateScopeTenantInput(tenant: Tenant, scopeId: string, accessRuleId: string | null): Promise<{isValid: boolean, errorMessage: string}> {
+    protected async validateScopeTenantInput(tenant: Tenant, scopeId: string, accessRuleId: string | null): Promise<{isValid: boolean, errorMessage: string, scope: Scope | null}> {
         const scope: Scope | null = await this.getScopeById(scopeId);        
         if(!scope){
-            return {isValid: false, errorMessage: "ERROR_CANNOT_FIND_SCOPE_TO_ASSIGN_TO_TENANT"}            
+            return {isValid: false, errorMessage: "ERROR_CANNOT_FIND_SCOPE_TO_ASSIGN_TO_TENANT", scope}
         }
         if(accessRuleId){
             const accessRule: AccessRule | null = await accessRuleDao.getAccessRuleById(accessRuleId);
             if(!accessRule){
-                return {isValid: false, errorMessage: "ERROR_CANNOT_FIND_ACCESS_RULE_ID"};
+                return {isValid: false, errorMessage: "ERROR_CANNOT_FIND_ACCESS_RULE_ID", scope: null};
             }
         }
         // Check to make sure that we are not assigning a forbidden IAM scope to a
@@ -230,10 +231,10 @@ class ScopeService {
                 (s: string) => s === scope.scopeName
             )
             if(rootOnlyScopeName){
-                return {isValid: false, errorMessage: "ERROR_CANNOT_ASSIGN_ROOT_TENANT_SCOPE_TO_NON_ROOT_TENANT"};
+                return {isValid: false, errorMessage: "ERROR_CANNOT_ASSIGN_ROOT_TENANT_SCOPE_TO_NON_ROOT_TENANT", scope: null};
             }
         }
-        return {isValid: true, errorMessage: ""};
+        return {isValid: true, errorMessage: "", scope};
     }
 
 

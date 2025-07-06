@@ -482,6 +482,8 @@ class SearchService {
             );
         }
         
+        console.log(JSON.stringify(query));
+
         const sortObj: any = {};
         sortObj[`${relSearchInput.sortField}.raw`] = { order: relSearchInput.sortDirection};
 
