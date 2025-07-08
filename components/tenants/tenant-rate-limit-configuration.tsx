@@ -326,7 +326,7 @@ const TenantRateLimitConfiguration: React.FC<TenantRateLimitConfigurationProps> 
                                             <Link href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/rate-limits/${rateLimitRel.servicegroupid}`}>{rateLimitRel.servicegroupname}</Link>
                                         }
                                         {tenantBean.getTenantMetaData().tenant.tenantType !== TENANT_TYPE_ROOT_TENANT &&
-                                            <>{rateLimitRel.servicegroupid}</>
+                                            <>{rateLimitRel.servicegroupname}</>
                                         }
                                     </span>
                                 </Grid2>
