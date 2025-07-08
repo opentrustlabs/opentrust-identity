@@ -1,14 +1,16 @@
-import { FederatedOidcProvider, FederatedOidcProviderDomainRel, FederatedOidcProviderTenantRel, ObjectSearchResultItem, SearchResultType, Tenant } from "@/graphql/generated/graphql-types";
+import { FederatedOidcProvider, FederatedOidcProviderDomainRel, FederatedOidcProviderTenantRel, ObjectSearchResultItem, RelSearchResultItem, SearchResultType, Tenant } from "@/graphql/generated/graphql-types";
 import { OIDCContext } from "@/graphql/graphql-context";
 
 import FederatedOIDCProviderDao from "@/lib/dao/federated-oidc-provider-dao";
 import { GraphQLError } from "graphql/error/GraphQLError";
 import { randomUUID } from 'crypto'; 
-import { FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL, FEDERATED_OIDC_PROVIDER_TYPES_DISPLAY, SEARCH_INDEX_OBJECT_SEARCH } from "@/utils/consts";
+import { FEDERATED_OIDC_PROVIDER_CREATE_SCOPE, FEDERATED_OIDC_PROVIDER_READ_SCOPE, FEDERATED_OIDC_PROVIDER_TENANT_ASSIGN_SCOPE, FEDERATED_OIDC_PROVIDER_TENANT_REMOVE_SCOPE, FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL, FEDERATED_OIDC_PROVIDER_TYPES_DISPLAY, FEDERATED_OIDC_PROVIDER_UPDATE_SCOPE, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_READ_ALL_SCOPE } from "@/utils/consts";
 import { Client } from "@opensearch-project/opensearch";
 import { getOpenSearchClient } from "@/lib/data-sources/search";
 import { DaoFactory } from "../data-sources/dao-factory";
 import Kms from "../kms/kms";
+import { authorizeCreateObject, authorizeDeleteObject, authorizeUpdateObject, readWithInputFilterAndAuthorization } from "@/utils/authz-utils";
+import { error } from "console";
 
 const searchClient: Client = getOpenSearchClient();
 const federatedOIDCProviderDao: FederatedOIDCProviderDao = DaoFactory.getInstance().getFederatedOIDCProvicerDao();
@@ -23,23 +25,73 @@ class FederatedOIDCProviderService {
         this.oidcContext = oidcContext;
     }
     
-    public async getFederatedOIDCProviders(tenantId?: string): Promise<Array<FederatedOidcProvider>>{        
-        return federatedOIDCProviderDao.getFederatedOidcProviders(tenantId);
+    public async getFederatedOIDCProviders(tenantId?: string): Promise<Array<FederatedOidcProvider>>{
+        const getData = readWithInputFilterAndAuthorization(
+            {
+                async preProcess(oidcContext: OIDCContext, ...args) {
+                    if (oidcContext.portalUserProfile?.managementAccessTenantId !== oidcContext.rootTenant.tenantId) {
+                        return [oidcContext.portalUserProfile?.managementAccessTenantId || ""];
+                    }
+                    return [args];
+                },
+                async retrieveData (_, ...args): Promise<Array<FederatedOidcProvider>> {
+                    console.log("args are: " + args);
+                    return federatedOIDCProviderDao.getFederatedOidcProviders(...args);
+                },
+                async postProcess(_, result: Array<FederatedOidcProvider> | null): Promise<{isAuthorized: boolean, errorMessage: string | null, result: Array<FederatedOidcProvider> | null}> {
+                    if(result){
+                        result.forEach(
+                            (provider: FederatedOidcProvider) => provider.federatedOIDCProviderClientSecret = ""
+                        );
+                    }
+                    return {isAuthorized: true, errorMessage: null, result: result || []};
+                }
+            }
+        );
+        const providers = await getData(this.oidcContext, [FEDERATED_OIDC_PROVIDER_READ_SCOPE, TENANT_READ_ALL_SCOPE], tenantId);
+        return providers || [];  
     }
 
     public async getFederatedOIDCProviderById(federatedOIDCProviderId: string): Promise<FederatedOidcProvider | null>{
-        const provider: FederatedOidcProvider | null = await federatedOIDCProviderDao.getFederatedOidcProviderById(federatedOIDCProviderId);
-        // make sure to unset the client secret before returning.
-        if(provider){
-            provider.federatedOIDCProviderClientSecret = "";
-        }
-        return Promise.resolve(provider);
+        const getData = readWithInputFilterAndAuthorization(
+            {
+                async retrieveData(_, federatedOIDCProviderId): Promise<FederatedOidcProvider | null> {
+                    const provider: FederatedOidcProvider | null = await federatedOIDCProviderDao.getFederatedOidcProviderById(federatedOIDCProviderId);
+                    // make sure to unset the client secret before returning.
+                    if(provider){
+                        provider.federatedOIDCProviderClientSecret = "";
+                    }
+                    return provider;
+                },
+                async postProcess(oidcContext: OIDCContext, result: FederatedOidcProvider | null): Promise<{isAuthorized: boolean, errorMessage: string | null, result: FederatedOidcProvider | null}> {
+                    if(result){
+                        if(oidcContext.portalUserProfile?.managementAccessTenantId){
+                            const arr: Array<FederatedOidcProviderTenantRel> = await federatedOIDCProviderDao.getFederatedOidcProviderTenantRels(oidcContext.portalUserProfile.managementAccessTenantId, result.federatedOIDCProviderId);
+                            if(arr.length === 0){
+                                return { isAuthorized: false, errorMessage: "ERROR_OIDC_PROVIDER_NOT_ASSIGNED_TO_TENANT", result: null}
+                            }
+                            else{
+                                return { isAuthorized: true, errorMessage: null, result: result}
+                            }
+                        }
+                    }
+                    return {isAuthorized: true, errorMessage: null, result: result}
+                },
+            }
+        );
+        const f = await getData(this.oidcContext, [FEDERATED_OIDC_PROVIDER_READ_SCOPE, TENANT_READ_ALL_SCOPE], federatedOIDCProviderId);
+        return Promise.resolve(f);
     }
 
     public async createFederatedOIDCProvider(federatedOIDCProvider: FederatedOidcProvider): Promise<FederatedOidcProvider>{
-        const { valid, errorMessage } = this.validateOIDCProviderInput(federatedOIDCProvider);
-        if(!valid){
-            throw new GraphQLError(errorMessage);
+        const { isAuthorized, errorMessage } = authorizeCreateObject(this.oidcContext, FEDERATED_OIDC_PROVIDER_CREATE_SCOPE, null);
+        if(!isAuthorized){
+            throw new GraphQLError(errorMessage || "ERROR"); 
+        }
+        
+        let inputValidation = this.validateOIDCProviderInput(federatedOIDCProvider);        
+        if(!inputValidation.valid){
+            throw new GraphQLError(inputValidation.errorMessage);
         }
         
         if(federatedOIDCProvider.federatedOIDCProviderClientSecret && federatedOIDCProvider.federatedOIDCProviderClientSecret !== ""){
@@ -76,6 +128,11 @@ class FederatedOIDCProviderService {
     
     public async updateFederatedOIDCProvider(federatedOIDCProvider: FederatedOidcProvider): Promise<FederatedOidcProvider>{    
         
+        const authorizedResult = authorizeUpdateObject(this.oidcContext, FEDERATED_OIDC_PROVIDER_UPDATE_SCOPE, null);
+        if(!authorizedResult.isAuthorized){
+            throw new GraphQLError(authorizedResult.errorMessage || "ERROR");
+        }
+
         const existingProvider: FederatedOidcProvider | null = await federatedOIDCProviderDao.getFederatedOidcProviderById(federatedOIDCProvider.federatedOIDCProviderId);
         if(!existingProvider){
             throw new GraphQLError("ERROR_NO_FEDERATED_OIDC_PROVIDER_FOUND");
@@ -106,11 +163,11 @@ class FederatedOIDCProviderService {
         const { valid, errorMessage } = this.validateOIDCProviderInput(federatedOIDCProvider);
         if(!valid){
             throw new GraphQLError(errorMessage);
-        }
-        
+        }        
 
         await federatedOIDCProviderDao.updateFederatedOidcProvider(federatedOIDCProvider);
         await this.updateSearchIndex(federatedOIDCProvider);
+        this.bulkUpdateRelSearchRecord(federatedOIDCProvider);
         return Promise.resolve(federatedOIDCProvider);
     }
 
@@ -136,8 +193,71 @@ class FederatedOIDCProviderService {
         });        
     }
 
+    protected async updateRelSearchIndex(tenantId: string, federatedOIDCProvider: FederatedOidcProvider): Promise<void>{
+        const document: RelSearchResultItem = {
+            childid: federatedOIDCProvider.federatedOIDCProviderId,
+            childname: federatedOIDCProvider.federatedOIDCProviderName,
+            childdescription: federatedOIDCProvider.federatedOIDCProviderDescription,
+            childtype: SearchResultType.OidcProvider,
+            owningtenantid: tenantId,
+            parentid: tenantId,
+            parenttype: SearchResultType.Tenant
+        };
+        await searchClient.index({
+            id: `${tenantId}::${federatedOIDCProvider.federatedOIDCProviderId}`,
+            index: SEARCH_INDEX_REL_SEARCH,
+            body: document
+        });
+    }
+
+    protected async removeRelSearchRecord(tenantId: string, federatedOidcProviderId: string): Promise<void> {
+        await searchClient.delete({
+            id: `${tenantId}::${federatedOidcProviderId}`,
+            index: SEARCH_INDEX_REL_SEARCH
+        });
+        return Promise.resolve();
+    }
+    
+    protected async bulkUpdateRelSearchRecord(federatedOIDCProvider: FederatedOidcProvider): Promise<void>{
+        searchClient.updateByQuery({
+            index: SEARCH_INDEX_REL_SEARCH,
+            body: {
+                query: {
+                    term: {
+                        childid: federatedOIDCProvider.federatedOIDCProviderId
+                    }
+                },
+                script: {
+                    source: "ctx._source.childname = params.childname; ctx._source.childdescription = params.childdescription",
+                    lang: "painless",
+                    params: {
+                        childname: federatedOIDCProvider.federatedOIDCProviderName,
+                        childdescription: federatedOIDCProvider.federatedOIDCProviderDescription
+                    }
+                }
+            },
+            conflicts: "proceed",
+            requests_per_second: 25
+        });
+    }
+
     public async getFederatedOIDCProviderTenantRels(tenantId?: string): Promise<Array<FederatedOidcProviderTenantRel>>{
-        return federatedOIDCProviderDao.getFederatedOidcProviderTenantRels(tenantId);
+        const getData = readWithInputFilterAndAuthorization(
+            {
+                async preProcess(oidcContext: OIDCContext, ...args) {
+                    if (oidcContext.portalUserProfile?.managementAccessTenantId !== oidcContext.rootTenant.tenantId) {
+                        return [oidcContext.portalUserProfile?.managementAccessTenantId || ""];
+                    }
+                    return [args];
+                },
+                async retrieveData(_, ...args): Promise<Array<FederatedOidcProviderTenantRel>> {
+                    console.log("args are: " + args);
+                    return federatedOIDCProviderDao.getFederatedOidcProviderTenantRels(...args);
+                }
+            }
+        );
+        const rels = await getData(this.oidcContext, [FEDERATED_OIDC_PROVIDER_READ_SCOPE, TENANT_READ_ALL_SCOPE], tenantId);
+        return rels || [];        
     }
 
     public async getFederatedOIDCProviderByDomain(domain: string): Promise<FederatedOidcProvider | null>{
@@ -145,6 +265,11 @@ class FederatedOIDCProviderService {
     }
 
     public async assignFederatedOIDCProviderToTenant(federatedOIDCProviderId: string, tenantId: string): Promise<FederatedOidcProviderTenantRel>{
+        const {isAuthorized, errorMessage} = authorizeCreateObject(this.oidcContext, FEDERATED_OIDC_PROVIDER_TENANT_ASSIGN_SCOPE, null);
+        if(!isAuthorized){
+            throw new GraphQLError(errorMessage || "ERROR");
+        }
+
         const provider: FederatedOidcProvider | null = await this.getFederatedOIDCProviderById(federatedOIDCProviderId);
         if(!provider){
             throw new GraphQLError("ERROR_EXTERNAL_OIDC_PROVIDER_NOT_FOUND");
@@ -153,19 +278,64 @@ class FederatedOIDCProviderService {
         if(!tenant){
             throw new GraphQLError("ERROR_TENANT_NOT_FOUND");
         }
-        return federatedOIDCProviderDao.assignFederatedOidcProviderToTenant(federatedOIDCProviderId, tenantId);
+
+        const data = await federatedOIDCProviderDao.assignFederatedOidcProviderToTenant(federatedOIDCProviderId, tenantId);
+        await this.updateRelSearchIndex(tenantId, provider);
+
+        return data;
         
     }
 
     public async removeFederatedOIDCProviderFromTenant(federatedOIDCProviderId: string, tenantId: string): Promise<FederatedOidcProviderTenantRel> {
+        const {isAuthorized, errorMessage} = authorizeDeleteObject(this.oidcContext, FEDERATED_OIDC_PROVIDER_TENANT_REMOVE_SCOPE, null);
+        if(!isAuthorized){
+            throw new GraphQLError(errorMessage || "ERROR");
+        }
+        await this.removeRelSearchRecord(tenantId, federatedOIDCProviderId);
         return federatedOIDCProviderDao.removeFederatedOidcProviderFromTenant(federatedOIDCProviderId, tenantId);
     }
 
-    public async getFederatedOIDCProviderDomainRels(federatedOIDCProviderId: string | null, domain: string | null): Promise<Array<FederatedOidcProviderDomainRel>>{
-        return federatedOIDCProviderDao.getFederatedOidcProviderDomainRels(federatedOIDCProviderId, domain);
+    public async getFederatedOIDCProviderDomainRels(federatedOIDCProviderId: string | null, domain: string | null): Promise<Array<FederatedOidcProviderDomainRel>>{        
+        const getData = readWithInputFilterAndAuthorization(
+            {
+                async retrieveData(_, federatedOIDCProviderId: string | null, domain: string | null): Promise<Array<FederatedOidcProviderDomainRel>> {                    
+                    const providers: Array<FederatedOidcProviderDomainRel> = await federatedOIDCProviderDao.getFederatedOidcProviderDomainRels(federatedOIDCProviderId, domain)
+                    return providers;
+                },
+                async postProcess(oidcContext: OIDCContext, result: Array<FederatedOidcProviderDomainRel> | null): Promise<{isAuthorized: boolean, errorMessage: string | null, result: Array<FederatedOidcProviderDomainRel>}> {
+                    if(result && result.length > 0 && oidcContext.portalUserProfile?.managementAccessTenantId){
+                        const tenantRels: Array<FederatedOidcProviderTenantRel> = await federatedOIDCProviderDao.getFederatedOidcProviderTenantRels(oidcContext.portalUserProfile.managementAccessTenantId);
+                        if(tenantRels.length > 0){                            
+                            const filteredResult = result.filter(
+                                (domainRel: FederatedOidcProviderDomainRel) => {
+                                    const tenantRel = tenantRels.find(
+                                        (r: FederatedOidcProviderTenantRel) => r.federatedOIDCProviderId === domainRel.federatedOIDCProviderId
+                                    );
+                                    return tenantRel !== undefined;
+                                }                                
+                            );
+                            return {isAuthorized: true, errorMessage: null, result: filteredResult};
+                        }
+                        else{
+                            return {isAuthorized: false, errorMessage: "ERROR_NO_PROVIDERS_ASSIGNED_TO_TENANT", result: result || []};
+                        }
+                    }
+                    else{
+                        return {isAuthorized: false, errorMessage: "ERROR_INVALID_PERMISSIONS_TO_VIEW_OIDC_PROVIDER_DOMAINS", result: []};
+                    }                    
+                }
+            }
+        );
+        const f = await getData(this.oidcContext, [FEDERATED_OIDC_PROVIDER_READ_SCOPE, TENANT_READ_ALL_SCOPE], federatedOIDCProviderId, domain);
+        return f || [];        
     }
 
     public async assignFederatedOIDCProviderToDomain(federatedOIDCProviderId: string, domain: string): Promise<FederatedOidcProviderDomainRel> {
+        const {isAuthorized, errorMessage} = authorizeCreateObject(this.oidcContext, FEDERATED_OIDC_PROVIDER_UPDATE_SCOPE, null);
+        if(!isAuthorized){
+            throw new GraphQLError(errorMessage || "ERROR");
+        }
+
         const provider: FederatedOidcProvider | null = await this.getFederatedOIDCProviderById(federatedOIDCProviderId);
         if(!provider){
             throw new GraphQLError("ERROR_EXTERNAL_OIDC_PROVIDER_NOT_FOUND");
@@ -185,6 +355,10 @@ class FederatedOIDCProviderService {
     }
 
     public async removeFederatedOIDCProviderFromDomain(federatedOIDCProviderId: string, domain: string): Promise<FederatedOidcProviderDomainRel>{
+        const {isAuthorized, errorMessage} = authorizeCreateObject(this.oidcContext, FEDERATED_OIDC_PROVIDER_UPDATE_SCOPE, null);
+        if(!isAuthorized){
+            throw new GraphQLError(errorMessage || "ERROR");
+        }
         return federatedOIDCProviderDao.removeFederatedOidcProviderFromDomain(federatedOIDCProviderId, domain);
     }
 

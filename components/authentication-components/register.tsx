@@ -27,6 +27,7 @@ import { RegistrationValidateSecurityKey } from "./validate-security-key";
 import { RegistrationConfigureSecurityKey } from "./configure-security-key";
 import PasswordRulesDisplay from "./password-rules-display";
 import { AuthSessionProps, useAuthSessionContext } from "../contexts/auth-session-context";
+import { AuthContext, AuthContextProps } from "../contexts/auth-context";
 
 
 export interface RegistrationComponentsProps {
@@ -44,6 +45,7 @@ const Register: React.FC = () => {
     const titleSetter = useContext(PageTitleContext);
     titleSetter.setPageTitle("Register");
     const authSessionProps: AuthSessionProps = useAuthSessionContext();
+    const authContextProps: AuthContextProps = useContext(AuthContext);
 
     // QUERY PARAMS
     const params = useSearchParams();    
@@ -163,6 +165,9 @@ const Register: React.FC = () => {
                         }
                     }
                     router.push(response.uri);
+                    if(response.userRegistrationState.registrationState === RegistrationState.RedirectToIamPortal){
+                        authContextProps.forceProfileRefetch();
+                    }
                 }
             }
             else {

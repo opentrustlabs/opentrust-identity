@@ -5,7 +5,7 @@ import { QUERY_PARAM_AUTHENTICATE_TO_PORTAL, QUERY_PARAM_TENANT_ID } from "@/uti
 import { useQuery } from "@apollo/client";
 import { TENANT_META_DATA_QUERY } from "@/graphql/queries/oidc-queries";
 import { PortalUserProfile } from "@/graphql/generated/graphql-types";
-import { AuthContext } from "./auth-context";
+import { AuthContext, AuthContextProps } from "./auth-context";
 import { TenantMetaDataBean, TenantContext } from "./tenant-context";
 import { getAccessTokenExpiresAtMs, getManagementTenantAccessId, setManagementTenantAccessId } from "@/utils/client-utils";
 import DataLoading from "../layout/data-loading";
@@ -19,7 +19,8 @@ const ManagementTenantFilter: React.FC<LayoutProps> = ({
   }) => {
 
     // CONTEXT OBJECTS
-    const profile: PortalUserProfile | null = useContext(AuthContext);
+    const authContextProps: AuthContextProps = useContext(AuthContext);
+    const profile: PortalUserProfile | null = authContextProps.portalUserProfile;
     const tenantBean: TenantMetaDataBean  = useContext(TenantContext);
 
     // Hooks
@@ -55,16 +56,16 @@ const ManagementTenantFilter: React.FC<LayoutProps> = ({
     // Any redirects to the authorization screen will ALSO include any saved language and country
     // values that were saved in local storage, or defaulted to en-US
 
-    const tenantIdFromLocalStorage: string | null = getManagementTenantAccessId();
+    //const tenantIdFromLocalStorage: string | null = getManagementTenantAccessId();
     let needsRedirect = true;
     let redirectUri: string = `/authorize/login?${QUERY_PARAM_AUTHENTICATE_TO_PORTAL}=true`;
     
     // TODO
     // Add return URI in cases where the profile is null.
     if(tenantIdFromPath === null && profile === null){
-        if(tenantIdFromLocalStorage){
-            redirectUri = `/authorize/login?${QUERY_PARAM_AUTHENTICATE_TO_PORTAL}=true&${QUERY_PARAM_TENANT_ID}=${tenantIdFromLocalStorage}`;
-        }     
+        //if(tenantIdFromLocalStorage){
+            redirectUri = `/authorize/login?${QUERY_PARAM_AUTHENTICATE_TO_PORTAL}=true`;
+        //}     
     }
     else if(tenantIdFromPath === null && profile !== null){
         if(profile.managementAccessTenantId !== undefined){
@@ -77,7 +78,7 @@ const ManagementTenantFilter: React.FC<LayoutProps> = ({
         }
     }
     else if(tenantIdFromPath !== null && profile === null){
-        redirectUri = `/authorize/login?${QUERY_PARAM_AUTHENTICATE_TO_PORTAL}=true&${QUERY_PARAM_TENANT_ID}=${tenantIdFromPath}`;
+        redirectUri = `/authorize/login?${QUERY_PARAM_AUTHENTICATE_TO_PORTAL}=true`;
     }
     else if(tenantIdFromPath !== null && profile !== null){
         
@@ -85,10 +86,14 @@ const ManagementTenantFilter: React.FC<LayoutProps> = ({
             redirectUri = `/access-error?access_error_code=00023`;
         }
         else{
+            console.log("checkpoint 1");
+            console.log(profile);
+            console.log(tenantIdFromPath);
             if(profile.managementAccessTenantId !== tenantIdFromPath){
                 // Need to update the local storage for next time and redirect the 
                 // user to the correct landing page for their tenant
-                setManagementTenantAccessId(profile.managementAccessTenantId);
+                // setManagementTenantAccessId(profile.managementAccessTenantId);
+                console.log("checkpoint 2");
                 redirectUri = `/${profile.managementAccessTenantId}/`;
             }
             else{

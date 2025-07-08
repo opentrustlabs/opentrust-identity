@@ -6,20 +6,33 @@ import { ME_QUERY } from "@/graphql/queries/oidc-queries";
 import DataLoading from "../layout/data-loading";
 import { useAuthSessionContext } from "./auth-session-context";
 
+
+
+const DEFAULT_PROFILE = null;
+
 export interface AuthContextProps {
+    portalUserProfile: PortalUserProfile | null,
+    forceProfileRefetch: () => void
+}
+
+export const AuthContext: Context<AuthContextProps> = React.createContext<AuthContextProps>(
+    {
+        portalUserProfile: DEFAULT_PROFILE,
+        forceProfileRefetch: () => {}
+    }
+);
+
+export interface AuthContextProviderProps {
     children: ReactNode
 }
 
-const DEFAULT_PROFILE = null;
-export const AuthContext: Context<PortalUserProfile | null> = React.createContext<PortalUserProfile | null>(DEFAULT_PROFILE);
-
-const AuthContextProvider: React.FC<AuthContextProps> = ({
+const AuthContextProvider: React.FC<AuthContextProviderProps> = ({
     children
 }) => {
     
     const sessionProps = useAuthSessionContext();
 
-    const {data, loading, previousData} = useQuery(ME_QUERY, {          
+    const {data, loading, previousData, refetch} = useQuery(ME_QUERY, {          
             pollInterval: 900000,
             fetchPolicy: "no-cache",
             notifyOnNetworkStatusChange: true,
@@ -31,25 +44,36 @@ const AuthContextProvider: React.FC<AuthContextProps> = ({
     if(loading && !previousData && !data) return (<div><DataLoading dataLoadingSize="xl" color={null}/></div>)
     if(loading && previousData) return (
         <AuthContext.Provider 
-            value={previousData.me}
+            value={{
+                portalUserProfile: previousData.me,
+                forceProfileRefetch: () => {refetch()}
+            }}
         >{children}</AuthContext.Provider>
     )
     if(!loading && previousData && sessionProps.getTokenTtlMs() < 0) return (
         <AuthContext.Provider 
-            value={previousData.me}
+            value={{
+                portalUserProfile: previousData.me,
+                forceProfileRefetch: () => {refetch()}
+            }}
         >{children}</AuthContext.Provider>
     )
     if(data) return (
         <AuthContext.Provider 
-            value={data.me}
+            value={{
+                portalUserProfile: data.me,
+                forceProfileRefetch: () => {refetch()}
+            }}
         >{children}</AuthContext.Provider>
     )
     return (
         <AuthContext.Provider 
-            value={DEFAULT_PROFILE}
+            value={{
+                portalUserProfile: DEFAULT_PROFILE,
+                forceProfileRefetch: () => {refetch()}
+            }}
         >{children}</AuthContext.Provider>
-    )
-    
+    )    
 
 }
 

@@ -11,7 +11,6 @@ import { DaoFactory } from "../data-sources/dao-factory";
 import IdentityDao from "../dao/identity-dao";
 import { authorizeCreateObject, authorizeDeleteObject, authorizeRead, authorizeUpdateObject, containsScope, filterResults, readWithInputFilterAndAuthorization } from "@/utils/authz-utils";
 import { AUTHORIZATION_GROUP_USER_ADD_MUTATION } from "@/graphql/mutations/oidc-mutations";
-import { Author } from "next/dist/lib/metadata/types/metadata-types";
 
 
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
@@ -30,9 +29,8 @@ class GroupService {
     public async getGroups(tenantId?: string): Promise<Array<AuthorizationGroup>> {
 
         const getData = readWithInputFilterAndAuthorization(
-            groupDao.getAuthorizationGroups,
             {
-                preProcess: async (oidcContext, tenantId?: string) => {
+                async preProcess(oidcContext, tenantId) {
                     if(!tenantId){
                         if(oidcContext.portalUserProfile?.managementAccessTenantId !== oidcContext.rootTenant.tenantId){
                             if(oidcContext.portalUserProfile && oidcContext.portalUserProfile.managementAccessTenantId){
@@ -48,9 +46,9 @@ class GroupService {
                     }
                     return [tenantId];
                 },
-                authorize: async function (oidcContext: OIDCContext, tenantId?: string): Promise<{ isAuthorized: boolean; errorMessage: string | null; result: Array<AuthorizationGroup>}> {                    
-                    const groups = await groupDao.getAuthorizationGroups(tenantId);
-                    return {isAuthorized: true, errorMessage: "", result: groups}                    
+                async retrieveData(oidcContext: OIDCContext, ...args): Promise<Array<AuthorizationGroup>> {
+                    const groups = await groupDao.getAuthorizationGroups(...args);
+                    return groups;
                 }
             }
         );
@@ -59,13 +57,14 @@ class GroupService {
         
     }
 
-    public async getGroupById(groupId: string): Promise<AuthorizationGroup | null> {    
-        
+    public async getGroupById(groupId: string): Promise<AuthorizationGroup | null> {            
         const getData = readWithInputFilterAndAuthorization(
-            groupDao.getAuthorizationGroupById,
             {
-                authorize: async function (oidcContext, groupId): Promise<{ isAuthorized: boolean; errorMessage: string | null; result: AuthorizationGroup | null}> {
+                async retrieveData(_, groupId): Promise<AuthorizationGroup | null> {
                     const result = await groupDao.getAuthorizationGroupById(groupId);
+                    return result;
+                },
+                async postProcess(oidcContext: OIDCContext, result: AuthorizationGroup | null) {
                     if(result && result.tenantId !== oidcContext.portalUserProfile?.managementAccessTenantId){
                         return {isAuthorized: false, errorMessage: "ERROR_INSUFFICIENT_PERMISSIONS_TO_READ_OBJECT", result: null};
                     }
@@ -75,7 +74,6 @@ class GroupService {
                 }
             }
         );
-
         const t = await getData(this.oidcContext, [AUTHORIZATION_GROUP_READ_SCOPE, TENANT_READ_ALL_SCOPE], groupId);
         return t;           
     }
