@@ -8,7 +8,7 @@ import { useMutation, useQuery } from "@apollo/client";
 import { UserAuthenticationStateResponse, TenantSelectorData, AuthenticationState, UserAuthenticationState, TenantPasswordConfig, FederatedOidcProvider } from "@/graphql/generated/graphql-types";
 import Alert from '@mui/material/Alert';
 import { AUTHENTICATE_HANDLE_FORGOT_PASSWORD, AUTHENTICATE_USER, AUTHENTICATE_USERNAME_INPUT_MUTATION, AUTHENTICATE_WITH_SOCIAL_OIDC_PROVIDER, CANCEL_AUTHENTICATION } from "@/graphql/mutations/oidc-mutations";
-import { AuthContextProps, PageTitleContext } from "@/components/contexts/page-title-context";
+import { PageTitleContext } from "@/components/contexts/page-title-context";
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
 import RadioStyledCheckbox from "../input/radio-styled-checkbox";
 import { AuthentiationValidateTotp } from "./validate-totp";
@@ -22,7 +22,7 @@ import { ResponsiveBreakpoints, ResponsiveContext } from "../contexts/responsive
 import Skeleton from '@mui/material/Skeleton';
 import ValidatePasswordResetToken from "./validate-password-reset-token";
 import { AuthSessionProps, useAuthSessionContext } from "../contexts/auth-session-context";
-import { AuthContext } from "../contexts/auth-context";
+import { AuthContext, AuthContextProps } from "../contexts/auth-context";
 
 
 const MIN_USERNAME_LENGTH = 6;
@@ -42,7 +42,7 @@ const Login: React.FC = () => {
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);    
     const authSessionProps: AuthSessionProps = useAuthSessionContext();
     const breakPoints: ResponsiveBreakpoints = useContext(ResponsiveContext);    
-    const authContextProps = useContext(AuthContext);
+    const authContextProps: AuthContextProps = useContext(AuthContext);
 
 
     useEffect(() => {

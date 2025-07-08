@@ -7,9 +7,7 @@ import { TENANT_META_DATA_QUERY } from "@/graphql/queries/oidc-queries";
 import { PortalUserProfile } from "@/graphql/generated/graphql-types";
 import { AuthContext, AuthContextProps } from "./auth-context";
 import { TenantMetaDataBean, TenantContext } from "./tenant-context";
-import { getAccessTokenExpiresAtMs, getManagementTenantAccessId, setManagementTenantAccessId } from "@/utils/client-utils";
 import DataLoading from "../layout/data-loading";
-
 
 interface LayoutProps {
     children: ReactNode
@@ -33,9 +31,8 @@ const ManagementTenantFilter: React.FC<LayoutProps> = ({
     // If tenantIdFromPath is null or undefined, then we may redirect to the login screen. 
     // But first we will check some things:
     //
-    // 1.   Have we saved a tenant id in local stored to which the user has management access?
-    // 2.   What is the user profile from the "me" call. Is there a valid user?
-    // 3.   Is there a tenant id which the user can manage and which is set in their profile?
+    // 1.   What is the user profile from the "me" call. Is there a valid user?
+    // 2.   Is there a tenant id which the user can manage and which is set in their profile?
     // 
     // Note that the query param _pa=true will be present in these authentication redirects.
     // _pa=true is a flag that indicates that the user is NOT coming from a client (which is
@@ -44,7 +41,7 @@ const ManagementTenantFilter: React.FC<LayoutProps> = ({
     // 
     // ACTIONS
     // =======
-    // 1.   If no user profile and no tenant id in local storage, then
+    // 1.   If no user profile and no tenant id in the path, then
     //      redirect to the /authorization/login?_pa=true screen.
     // 2.   If the profile is valid and the user has access to a management screen, then
     //      redirect to the landing page of the tenant, which is just /{tenant_id}/
@@ -56,7 +53,6 @@ const ManagementTenantFilter: React.FC<LayoutProps> = ({
     // Any redirects to the authorization screen will ALSO include any saved language and country
     // values that were saved in local storage, or defaulted to en-US
 
-    //const tenantIdFromLocalStorage: string | null = getManagementTenantAccessId();
     let needsRedirect = true;
     let redirectUri: string = `/authorize/login?${QUERY_PARAM_AUTHENTICATE_TO_PORTAL}=true`;
     
