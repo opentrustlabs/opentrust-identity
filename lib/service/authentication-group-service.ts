@@ -35,24 +35,23 @@ class AuthenticationGroupService {
     }        
 
     public async getAuthenticationGroupById(authenticationGroupId: string): Promise<AuthenticationGroup | null> {
-
-        const getData = readWithInputFilterAndAuthorization(
-            authenticationGroupDao.getAuthenticationGroupById,
-            {                
-                authorize: async function (oidcContext: OIDCContext, authenticationGroupId: string): Promise<{ isAuthorized: boolean; errorMessage: string | null; result: AuthenticationGroup | null; }> {                    
-                    const result = await authenticationGroupDao.getAuthenticationGroupById(authenticationGroupId);
-                    if(result && result.tenantId !== oidcContext.portalUserProfile?.managementAccessTenantId){
+        const getData = readWithInputFilterAndAuthorization<any[], AuthenticationGroup | null>(
+            {
+                retrieveData: async function(_, authenticationGroupId: string): Promise<AuthenticationGroup | null> {
+                    return authenticationGroupDao.getAuthenticationGroupById(authenticationGroupId);
+                },
+                postProcess: async function (oidcContext: OIDCContext, authenticationGroup: AuthenticationGroup | null): Promise<{ isAuthorized: boolean; errorMessage: string | null; result: AuthenticationGroup | null; }> {                                        
+                    if(authenticationGroup && authenticationGroup.tenantId !== oidcContext.portalUserProfile?.managementAccessTenantId){
                         return {isAuthorized: false, errorMessage: "ERROR_INSUFFICIENT_PERMISSIONS_TO_READ_OBJECT", result: null};
                     }
                     else{
-                        return { isAuthorized: true, errorMessage: null, result: result};
+                        return { isAuthorized: true, errorMessage: null, result: authenticationGroup};
                     }                    
                 }
             } 
         );
         const t = await getData(this.oidcContext, [AUTHENTICATION_GROUP_READ_SCOPE, TENANT_READ_ALL_SCOPE], authenticationGroupId);
         return t;
-
     }
 
     public async createAuthenticationGroup(authenticationGroup: AuthenticationGroup): Promise<AuthenticationGroup | null> {

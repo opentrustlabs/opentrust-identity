@@ -132,13 +132,24 @@ export function filterResults<T>(results: Array<T>, oidcContext: OIDCContext, ge
 
 }
 
+
+
+/**
+ * preProcess is called for users who are NOT members of the root tenant.
+ * retrieveData is called for all users
+ * postProcess is called for users who are NOT members of the root tenant.
+ * 
+ * @param fn 
+ * @param options 
+ * @returns 
+ */
 export function readWithInputFilterAndAuthorization<TArgs extends any[], TResult>(
-    fn: (...args: TArgs) => Promise<TResult | null>,
     options: {
         preProcess?: (oidcContext: OIDCContext, ...args: TArgs) => Promise<Partial<TArgs>>; // Promise<TArgs>;
-        authorize: (oidcContext: OIDCContext, ...args: TArgs) => Promise<{isAuthorized: boolean, errorMessage: string | null, result: TResult | null}>;
+        retrieveData: (oidcContext: OIDCContext, ...args: TArgs) => Promise<TResult | null>;
+        postProcess?: (oidcContext: OIDCContext, result: TResult | null) => Promise<{isAuthorized: boolean, errorMessage: string | null, result: TResult | null}>;
     }
-){
+){ 
     return async (oidcContext: OIDCContext, allowedScope: string | Array<string>, ...args: TArgs): Promise<TResult | null> => {
         if(!oidcContext.portalUserProfile){
             throw new GraphQLError("ERROR_INVALID_OR_MISSING_SUBJECT")
@@ -153,15 +164,21 @@ export function readWithInputFilterAndAuthorization<TArgs extends any[], TResult
         const finalArgs = args.map((arg, i) => (overrides[i] !== undefined ? overrides[i] : arg)) as TArgs;
 
         if(oidcContext.portalUserProfile.managementAccessTenantId === oidcContext.rootTenant.tenantId){            
-            const result = await fn(...finalArgs);
+            const result = await options.retrieveData(oidcContext, ...finalArgs);
             return result;
         }
         else{
-            const {isAuthorized, errorMessage, result } = await options.authorize(oidcContext, ...finalArgs);
-            if(!isAuthorized){
-                throw new GraphQLError(errorMessage || "");
+            let result: TResult | null = await options.retrieveData(oidcContext, ...finalArgs);
+            if(options.postProcess){
+                const postProcessResult = await options.postProcess(oidcContext, result);
+                if(!postProcessResult.isAuthorized){
+                    throw new GraphQLError(postProcessResult.errorMessage || "ERROR");
+                }
+                return postProcessResult.result;
             }
-            return result; //fn(...finalArgs);
+            else{
+                return result;
+            }            
         }
     };
 }

@@ -8,7 +8,7 @@ import { useMutation, useQuery } from "@apollo/client";
 import { UserAuthenticationStateResponse, TenantSelectorData, AuthenticationState, UserAuthenticationState, TenantPasswordConfig, FederatedOidcProvider } from "@/graphql/generated/graphql-types";
 import Alert from '@mui/material/Alert';
 import { AUTHENTICATE_HANDLE_FORGOT_PASSWORD, AUTHENTICATE_USER, AUTHENTICATE_USERNAME_INPUT_MUTATION, AUTHENTICATE_WITH_SOCIAL_OIDC_PROVIDER, CANCEL_AUTHENTICATION } from "@/graphql/mutations/oidc-mutations";
-import { PageTitleContext } from "@/components/contexts/page-title-context";
+import { AuthContextProps, PageTitleContext } from "@/components/contexts/page-title-context";
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
 import RadioStyledCheckbox from "../input/radio-styled-checkbox";
 import { AuthentiationValidateTotp } from "./validate-totp";
@@ -17,11 +17,12 @@ import { AuthentiationConfigureSecurityKey } from "./configure-security-key";
 import { AuthentiationValidateSecurityKey } from "./validate-security-key";
 import AuthentiationRotatePassword from "./rotate-password";
 import { useSearchParams } from 'next/navigation';
-import { AuthSessionProps, useAuthSessionContext } from "../contexts/auth-session-context";
 import { FEDERATED_OIDC_PROVIDERS_QUERY } from "@/graphql/queries/oidc-queries";
 import { ResponsiveBreakpoints, ResponsiveContext } from "../contexts/responsive-context";
 import Skeleton from '@mui/material/Skeleton';
 import ValidatePasswordResetToken from "./validate-password-reset-token";
+import { AuthSessionProps, useAuthSessionContext } from "../contexts/auth-session-context";
+import { AuthContext } from "../contexts/auth-context";
 
 
 const MIN_USERNAME_LENGTH = 6;
@@ -38,12 +39,15 @@ const Login: React.FC = () => {
 
     // CONTEXT VARIABLES
     const titleSetter = useContext(PageTitleContext);
-    const tenantBean: TenantMetaDataBean = useContext(TenantContext);
+    const tenantBean: TenantMetaDataBean = useContext(TenantContext);    
+    const authSessionProps: AuthSessionProps = useAuthSessionContext();
+    const breakPoints: ResponsiveBreakpoints = useContext(ResponsiveContext);    
+    const authContextProps = useContext(AuthContext);
+
+
     useEffect(() => {
         titleSetter.setPageTitle("Login");
     }, []);
-    const authSessionProps: AuthSessionProps = useAuthSessionContext();
-    const breakPoints: ResponsiveBreakpoints = useContext(ResponsiveContext);
 
     // QUERY PARAMS
     const params = useSearchParams();
@@ -185,6 +189,9 @@ const Login: React.FC = () => {
                         }
                     }
                     router.push(authnStateResponse.uri);
+                    if(authnStateResponse.userAuthenticationState.authenticationState === AuthenticationState.RedirectToIamPortal){
+                        authContextProps.forceProfileRefetch();
+                    }
                 }
             }
             else {
@@ -241,8 +248,7 @@ const Login: React.FC = () => {
     }
 
 
-    const handleCancelAuthentication = (userAuthenticationState: UserAuthenticationState) => {
-        console.log("authentication cancelled");
+    const handleCancelAuthentication = (userAuthenticationState: UserAuthenticationState) => {        
         cancelAuthentication({
             variables: {
                 userId: userAuthenticationState.userId,
