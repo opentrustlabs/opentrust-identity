@@ -256,6 +256,16 @@ class ScopeService {
     }
 
     public async getClientScopes(clientId: string): Promise<Array<Scope>> {
+        const client: Client | null = await clientDao.getClientById(clientId);
+        if(!client){
+            throw new GraphQLError("ERROR_CLIENT_DOES_NOT_EXIST");
+        }
+
+        const authResult = authorizeRead(this.oidcContext, [TENANT_READ_ALL_SCOPE, SCOPE_READ_SCOPE], client.tenantId);
+        if(!authResult.isAuthorized){
+            throw new GraphQLError(authResult.errorMessage || "ERROR");
+        }
+
         const arr: Array<ClientScopeRel> = await scopeDao.getClientScopeRels(clientId);
         if(arr.length > 0){
             const ids = arr.map((rel: ClientScopeRel) => rel.scopeId);
@@ -267,6 +277,16 @@ class ScopeService {
     }
 
     public async getAuthorizationGroupScopes(groupId: string): Promise<Array<Scope>> {
+        const authzGroup: AuthorizationGroup | null = await authorizationGroupDao.getAuthorizationGroupById(groupId);
+        if(!authzGroup){
+            throw new GraphQLError("ERROR_AUTHORIZATION_GROUP_DOES_NOT_EXIST");
+        }
+
+        const authResult = authorizeRead(this.oidcContext, [TENANT_READ_ALL_SCOPE, SCOPE_READ_SCOPE], authzGroup.tenantId);
+        if(!authResult.isAuthorized){
+            throw new GraphQLError(authResult.errorMessage || "ERROR");
+        }
+
         const arr: Array<AuthorizationGroupScopeRel> = await scopeDao.getAuthorizationGroupScopeRels(groupId);
         if(arr.length > 0){
             const ids = arr.map((rel: AuthorizationGroupScopeRel) => rel.scopeId);
@@ -278,6 +298,11 @@ class ScopeService {
     }
 
     public async getUserScopes(userId: string, tenantId: string): Promise<Array<Scope>> {
+        const authResult = authorizeRead(this.oidcContext, [TENANT_READ_ALL_SCOPE, SCOPE_READ_SCOPE], tenantId);
+        if(!authResult.isAuthorized){
+            throw new GraphQLError(authResult.errorMessage || "ERROR");
+        }
+
         const arr: Array<UserScopeRel> = await scopeDao.getUserScopeRels(userId, tenantId);
         if(arr.length > 0){
             const ids = arr.map((rel: UserScopeRel) => rel.scopeId);

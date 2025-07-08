@@ -316,7 +316,7 @@ class FederatedOIDCProviderService {
                         }
                     }
                     else{
-                        return {isAuthorized: false, errorMessage: "ERROR_INVALID_PERMISSIONS_TO_VIEW_OIDC_PROVIDER_DOMAINS", result: []};
+                        return {isAuthorized: true, errorMessage: null, result: []};
                     }                    
                 }
             }
