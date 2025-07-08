@@ -26,91 +26,46 @@ export function containsScope(allowedScope: string | Array<string>, availableSco
 }
 
 
-
+// Simple implementations of the authorization checks for CRUD operations.
+// Future expansion will include additional checks like ones that are performed
+// in the readWithInputFilterAndAuthorization() function.
 export function authorizeCreateObject(oidcContext: OIDCContext, allowedScope: string | Array<string>, targetTenantId: string | null): {isAuthorized: boolean, errorMessage: string | null} {
-    if(!oidcContext.portalUserProfile || !oidcContext.portalUserProfile.scope){
-        return {isAuthorized: false, errorMessage: "ERROR_INVALID_OR_MISSING_SUBJECT"};
-    }
-    const b: boolean = containsScope(allowedScope, oidcContext.portalUserProfile.scope);
-    if(!b){
-        return {isAuthorized: false, errorMessage: "ERROR_NO_PERMISSION"};
-    }
-    if(oidcContext.portalUserProfile.managementAccessTenantId !== oidcContext.rootTenant.tenantId){
-        if(targetTenantId){            
-            if(oidcContext.portalUserProfile.managementAccessTenantId !== targetTenantId){
-                return {isAuthorized: false, errorMessage: "ERROR_INVALID_PERMISSION_FOR_TENANT"}
-            }
-        }
-        else{
-            return {isAuthorized: false, errorMessage: "ERROR_MISSING_TENANT_ID"}
-        }
-    }
-    return {isAuthorized: true, errorMessage: ""}
+    return matchScopeAndTenant(oidcContext, allowedScope, targetTenantId);
 }
 
 export function authorizeUpdateObject(oidcContext: OIDCContext, allowedScope: string | Array<string>, targetTenantId: string | null): {isAuthorized: boolean, errorMessage: string | null} {
-    if(!oidcContext.portalUserProfile || !oidcContext.portalUserProfile.scope){
-        return {isAuthorized: false, errorMessage: "ERROR_INVALID_OR_MISSING_SUBJECT"};
-    }
-    const b: boolean = containsScope(allowedScope, oidcContext.portalUserProfile.scope);
-    if(!b){
-        return {isAuthorized: false, errorMessage: "ERROR_NO_PERMISSION"};
-    }
-    if(oidcContext.portalUserProfile.managementAccessTenantId !== oidcContext.rootTenant.tenantId){
-        if(targetTenantId){            
-            if(oidcContext.portalUserProfile.managementAccessTenantId !== targetTenantId){
-                return {isAuthorized: false, errorMessage: "ERROR_INVALID_PERMISSION_FOR_TENANT"}
-            }
-        }
-        else{
-            return {isAuthorized: false, errorMessage: "ERROR_MISSING_TENANT_ID"}
-        }
-    }
-    return {isAuthorized: true, errorMessage: ""}
+    return matchScopeAndTenant(oidcContext, allowedScope, targetTenantId);
 }
 
 export function authorizeDeleteObject(oidcContext: OIDCContext, allowedScope: string | Array<string>, targetTenantId: string | null): {isAuthorized: boolean, errorMessage: string | null} {
-    if(!oidcContext.portalUserProfile || !oidcContext.portalUserProfile.scope){
-        return {isAuthorized: false, errorMessage: "ERROR_INVALID_OR_MISSING_SUBJECT"};
-    }
-    const b: boolean = containsScope(allowedScope, oidcContext.portalUserProfile.scope);
-    if(!b){
-        return {isAuthorized: false, errorMessage: "ERROR_NO_PERMISSION"};
-    }
-    if(oidcContext.portalUserProfile.managementAccessTenantId !== oidcContext.rootTenant.tenantId){
-        if(targetTenantId){            
-            if(oidcContext.portalUserProfile.managementAccessTenantId !== targetTenantId){
-                return {isAuthorized: false, errorMessage: "ERROR_INVALID_PERMISSION_FOR_TENANT"}
-            }
-        }
-        else{
-            return {isAuthorized: false, errorMessage: "ERROR_MISSING_TENANT_ID"}
-        }
-    }
-    return {isAuthorized: true, errorMessage: ""}
+    return matchScopeAndTenant(oidcContext, allowedScope, targetTenantId);
 }
 
 export function authorizeRead(oidcContext: OIDCContext, allowedScope: string | Array<string>, targetTenantId: string | null): {isAuthorized: boolean, errorMessage: string | null} {
-    if(!oidcContext.portalUserProfile || !oidcContext.portalUserProfile.scope){
-        return {isAuthorized: false, errorMessage: "ERROR_INVALID_OR_MISSING_SUBJECT"};
+    return matchScopeAndTenant(oidcContext, allowedScope, targetTenantId);
+}
+
+export function matchScopeAndTenant(oidcContext: OIDCContext, allowedScope: string | Array<string>, targetTenantId: string | null): { isAuthorized: boolean, errorMessage: string | null } {
+    if (!oidcContext.portalUserProfile || !oidcContext.portalUserProfile.scope) {
+        return { isAuthorized: false, errorMessage: "ERROR_INVALID_OR_MISSING_SUBJECT" };
     }
     const b: boolean = containsScope(allowedScope, oidcContext.portalUserProfile.scope);
-    if(!b){
-        return {isAuthorized: false, errorMessage: "ERROR_NO_PERMISSION"};
+    if (!b) {
+        return { isAuthorized: false, errorMessage: "ERROR_NO_PERMISSION" };
     }
-    
-    if(oidcContext.portalUserProfile.managementAccessTenantId !== oidcContext.rootTenant.tenantId){
-        if(targetTenantId){            
-            if(oidcContext.portalUserProfile.managementAccessTenantId !== targetTenantId){
-                return {isAuthorized: false, errorMessage: "ERROR_INVALID_PERMISSION_FOR_TENANT"}
+
+    if (oidcContext.portalUserProfile.managementAccessTenantId !== oidcContext.rootTenant.tenantId) {
+        if (targetTenantId) {
+            if (oidcContext.portalUserProfile.managementAccessTenantId !== targetTenantId) {
+                return { isAuthorized: false, errorMessage: "ERROR_INVALID_PERMISSION_FOR_TENANT" }
             }
         }
-        else{
-            return {isAuthorized: false, errorMessage: "ERROR_MISSING_TENANT_ID"}
+        else {
+            return { isAuthorized: false, errorMessage: "ERROR_MISSING_TENANT_ID" }
         }
     }
 
-    return {isAuthorized: true, errorMessage: ""}
+    return { isAuthorized: true, errorMessage: "" }
 }
 
 export function filterResults<T>(results: Array<T>, oidcContext: OIDCContext, getTenantId: (item: T) => string){
@@ -163,12 +118,11 @@ export function readWithInputFilterAndAuthorization<TArgs extends any[], TResult
         const overrides = options.preProcess ? await options.preProcess(oidcContext, ...args) : args || {};
         const finalArgs = args.map((arg, i) => (overrides[i] !== undefined ? overrides[i] : arg)) as TArgs;
 
-        if(oidcContext.portalUserProfile.managementAccessTenantId === oidcContext.rootTenant.tenantId){            
-            const result = await options.retrieveData(oidcContext, ...finalArgs);
+        const result = await options.retrieveData(oidcContext, ...finalArgs);
+        if(oidcContext.portalUserProfile.managementAccessTenantId === oidcContext.rootTenant.tenantId){                        
             return result;
         }
         else{
-            let result: TResult | null = await options.retrieveData(oidcContext, ...finalArgs);
             if(options.postProcess){
                 const postProcessResult = await options.postProcess(oidcContext, result);
                 if(!postProcessResult.isAuthorized){

@@ -1,13 +1,11 @@
 import { Client } from "@/graphql/generated/graphql-types";
-//import TenantDao from "@/lib/dao/tenant-dao";
 import ClientDao from "@/lib/dao/client-dao";
 import { DaoFactory } from "../data-sources/dao-factory";
+import Kms from "../kms/kms";
 
-const {
-    AUTH_DOMAIN
-} = process.env;
 
-//const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
+
+const kms: Kms = DaoFactory.getInstance().getKms();
 const clientDao: ClientDao = DaoFactory.getInstance().getClientDao();
 
 class ClientAuthValidationService {
@@ -23,14 +21,20 @@ class ClientAuthValidationService {
         if(!client){
             return Promise.resolve(false);
         }
-        if(client.clientSecret !== clientSecret){
+        try{
+            const decryptedClientSecret: string | null = await kms.decrypt(client.clientSecret);
+            if(!decryptedClientSecret){
+                return Promise.resolve(false);
+            }
+            if(decryptedClientSecret !== clientSecret){
+                return Promise.resolve(false);
+            }
+            return Promise.resolve(true);
+        }
+        catch(err){
             return Promise.resolve(false);
         }
-        return Promise.resolve(true);
     }
-
-    
-
 
 }
 

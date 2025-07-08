@@ -13,6 +13,7 @@ import { CLIENT_SECRET_ENCODING, DEFAULT_END_USER_TOKEN_TTL_SECONDS, DEFAULT_SER
 import { DaoFactory } from "../data-sources/dao-factory";
 import ScopeDao from "../dao/scope-dao";
 import AuthorizationGroupDao from "../dao/authorization-group-dao";
+import Kms from "../kms/kms";
 
 const SIGNING_KEY_ARRAY_CACHE_KEY = "SIGNING_KEY_ARRAY_CACHE_KEY"
 interface CachedSigningKeyData {
@@ -28,6 +29,7 @@ const clientDao: ClientDao = DaoFactory.getInstance().getClientDao();
 const signingKeysDao: SigningKeysDao = DaoFactory.getInstance().getSigningKeysDao();
 const scopeDao: ScopeDao = DaoFactory.getInstance().getScopeDao();
 const authorizationGroupDao: AuthorizationGroupDao = DaoFactory.getInstance().getAuthorizationGroupDao();
+const kms: Kms = DaoFactory.getInstance().getKms();
 
 const {
     AUTH_DOMAIN
@@ -419,7 +421,17 @@ class JwtServiceUtils {
         }
         // even if the token itself is not signed correctly, save the history of this jti to prevent replay
         clientDao.saveClientAuthHistory({jti, clientId: payload.sub, tenantId, expiresAtSeconds: payload.exp});
-        const secretKey: KeyObject = createSecretKey(client.clientSecret, CLIENT_SECRET_ENCODING);
+        let decryptedClientSecret: string | null = null;
+        try{
+            decryptedClientSecret = await kms.decrypt(client.clientSecret);
+            if(!decryptedClientSecret){
+                return Promise.resolve(false);
+            }
+        }
+        catch(err){
+            return Promise.resolve(false);
+        }
+        const secretKey: KeyObject = createSecretKey(decryptedClientSecret, CLIENT_SECRET_ENCODING);
         
         try{
             const p: JWTVerifyResult = await jwtVerify(jwt, secretKey, {});
