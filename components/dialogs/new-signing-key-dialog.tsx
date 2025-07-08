@@ -247,11 +247,11 @@ const NewSigningKeyDialog: React.FC<NewSigningKeyDialogProps> = ({
                                     </Select>                                
                                 </Grid2>
                                 <Grid2 marginBottom={"16px"}>
-                                    <div>Private Key (in PKCS#8 format, minimum length 16 characters)</div>
+                                    <div>Private Key (in PKCS#8 format)</div>
                                     <input type="file" accept=".pem" id="privateKey" onChange={(evt) => handlePrivateKeyFileUpload(evt)} />                                
                                 </Grid2>
                                 <Grid2 marginBottom={"16px"}>
-                                    <div>Passphrase (if the private key is encrypted)</div>
+                                    <div>Passphrase (if the private key is encrypted, minimum length 16 characters)</div>
                                     <TextField
                                         required={signingKeyInput.privateKeyPkcs8 !== "" && signingKeyInput.privateKeyPkcs8.startsWith(PKCS8_ENCRYPTED_PRIVATE_KEY_HEADER) }
                                         name="keyPassphrase" 

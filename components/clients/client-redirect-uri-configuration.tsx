@@ -59,7 +59,8 @@ const ClientRedirectUriConfiguration: React.FC<ClientRedirectUriConfigurationPro
             setSelectDialogOpen(false);
         },
         onError(error) {
-            onUpdateEnd(false);            
+            onUpdateEnd(false);
+            setSelectDialogOpen(false);
             setErrorMessage(error.message);
         },
         refetchQueries: [REDIRECT_URIS_QUERY]

@@ -1,7 +1,7 @@
 "use client";
 import React, { ReactNode, useContext, useEffect } from "react";
 import { useParams, useRouter } from 'next/navigation';
-import { QUERY_PARAM_AUTHENTICATE_TO_PORTAL, QUERY_PARAM_TENANT_ID } from "@/utils/consts";
+import { QUERY_PARAM_AUTHENTICATE_TO_PORTAL } from "@/utils/consts";
 import { useQuery } from "@apollo/client";
 import { TENANT_META_DATA_QUERY } from "@/graphql/queries/oidc-queries";
 import { PortalUserProfile } from "@/graphql/generated/graphql-types";
