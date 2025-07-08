@@ -483,7 +483,9 @@ class SearchService {
         }
         
         const sortObj: any = {};
-        sortObj[`${relSearchInput.sortField}.raw`] = { order: relSearchInput.sortDirection};
+        if(relSearchInput.sortDirection && relSearchInput.sortField){
+            sortObj[`${relSearchInput.sortField}.raw`] = { order: relSearchInput.sortDirection};
+        }
 
         const searchBody: any = {
             from: (relSearchInput.page - 1) * relSearchInput.perPage,

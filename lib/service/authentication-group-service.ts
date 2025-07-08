@@ -10,7 +10,8 @@ import { Client as SearchClient } from "@opensearch-project/opensearch";
 import { getOpenSearchClient } from "@/lib/data-sources/search";
 import IdentityDao from "../dao/identity-dao";
 import { DaoFactory } from "../data-sources/dao-factory";
-import { readWithInputFilterAndAuthorization, containsScope, authorizeCreateObject, authorizeUpdateObject, authorizeDeleteObject } from "@/utils/authz-utils";
+import { readWithInputFilterAndAuthorization, containsScope, authorizeCreateObject, authorizeUpdateObject, authorizeDeleteObject, authorizeRead } from "@/utils/authz-utils";
+import { error } from "console";
 
 const searchClient: SearchClient = getOpenSearchClient();
 
@@ -28,10 +29,55 @@ class AuthenticationGroupService {
     }
 
     public async getAuthenticationGroups(tenantId?: string, clientId?: string, userId?: string): Promise<Array<AuthenticationGroup>> {
-        containsScope(AUTHENTICATION_GROUP_READ_SCOPE, this.oidcContext.portalUserProfile?.scope || [])
+        // Need to specify at least one parameter
+        if(!tenantId && !clientId && !userId){
+            return [];
+        }
         
-        return authenticationGroupDao.getAuthenticationGroups(tenantId, clientId, userId);
-            
+        if(this.oidcContext.portalUserProfile?.managementAccessTenantId === this.oidcContext.rootTenant.tenantId){
+            const {isAuthorized, errorMessage} = authorizeRead(this.oidcContext, [AUTHENTICATION_GROUP_READ_SCOPE, TENANT_READ_ALL_SCOPE], null);
+            if(!isAuthorized){
+                throw new GraphQLError(errorMessage || "ERROR");
+            }
+            return authenticationGroupDao.getAuthenticationGroups(tenantId, clientId, userId);
+        }
+        else if(tenantId){
+            const {isAuthorized, errorMessage} = authorizeRead(this.oidcContext, [AUTHENTICATION_GROUP_READ_SCOPE, TENANT_READ_ALL_SCOPE], tenantId);
+            if(!isAuthorized){
+                throw new GraphQLError(errorMessage || "ERROR");
+            }
+            return authenticationGroupDao.getAuthenticationGroups(tenantId, clientId, userId);
+        }
+        else if(clientId){
+            const client: Client | null = await clientDao.getClientById(clientId);
+            if(!client){
+                throw new GraphQLError("ERROR_INVALID_CLIENT");
+            }
+            const {isAuthorized, errorMessage} = authorizeRead(this.oidcContext, [AUTHENTICATION_GROUP_READ_SCOPE, TENANT_READ_ALL_SCOPE], client.tenantId);
+            if(!isAuthorized){
+                throw new GraphQLError(errorMessage || "ERROR");
+            }
+            return authenticationGroupDao.getAuthenticationGroups(tenantId, clientId, userId);
+        }
+        else if(userId){
+            const rels = await identityDao.getUserTenantRelsByUserId(userId);
+            // Does at least one tenant match?
+            const matchingRel = rels.find(
+                (rel: UserTenantRel) => rel.tenantId === this.oidcContext.portalUserProfile?.managementAccessTenantId
+            )
+            if(!matchingRel){
+                throw new GraphQLError("ERROR_NO_MATCHING_TENANT");
+            }
+            const {isAuthorized, errorMessage} = authorizeRead(this.oidcContext, [AUTHENTICATION_GROUP_READ_SCOPE, TENANT_READ_ALL_SCOPE], matchingRel.tenantId);
+            if(!isAuthorized){
+                throw new GraphQLError(errorMessage || "ERROR");
+            }
+            const arr: Array<AuthenticationGroup> = await authenticationGroupDao.getAuthenticationGroups(tenantId, clientId, userId);
+            return arr.filter(
+                (g: AuthenticationGroup) => g.tenantId === matchingRel.tenantId
+            );
+        }
+        return [];            
     }        
 
     public async getAuthenticationGroupById(authenticationGroupId: string): Promise<AuthenticationGroup | null> {
