@@ -10,7 +10,6 @@ import FederatedOIDCProviderEntity from "@/lib/entities/federated-oidc-provider-
 class DBFederatedOIDCProviderDao extends FederatedOIDCProviderDao {
 
     public async getFederatedOidcProviders(tenantId?: string): Promise<Array<FederatedOidcProvider>> {
-
         const sequelize: Sequelize = await DBDriver.getConnection();
         const b: Array<FederatedOidcProviderTenantRel> = tenantId ? await this.getFederatedOidcProviderTenantRels(tenantId) : [];
 

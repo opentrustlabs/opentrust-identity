@@ -152,7 +152,7 @@ export function readWithInputFilterAndAuthorization<TArgs extends any[], TResult
 ){ 
     return async (oidcContext: OIDCContext, allowedScope: string | Array<string>, ...args: TArgs): Promise<TResult | null> => {
         if(!oidcContext.portalUserProfile){
-            throw new GraphQLError("ERROR_INVALID_OR_MISSING_SUBJECT")
+            throw new GraphQLError("ERROR_INVALID_OR_MISSING_SUBJECT");
         }
 
         const b: boolean = containsScope(allowedScope, oidcContext.portalUserProfile.scope);        

@@ -32,19 +32,14 @@ class FederatedOIDCProviderService {
                     if (oidcContext.portalUserProfile?.managementAccessTenantId !== oidcContext.rootTenant.tenantId) {
                         return [oidcContext.portalUserProfile?.managementAccessTenantId || ""];
                     }
-                    return [args];
+                    return args;
                 },
                 async retrieveData (_, ...args): Promise<Array<FederatedOidcProvider>> {
-                    console.log("args are: " + args);
-                    return federatedOIDCProviderDao.getFederatedOidcProviders(...args);
-                },
-                async postProcess(_, result: Array<FederatedOidcProvider> | null): Promise<{isAuthorized: boolean, errorMessage: string | null, result: Array<FederatedOidcProvider> | null}> {
-                    if(result){
-                        result.forEach(
-                            (provider: FederatedOidcProvider) => provider.federatedOIDCProviderClientSecret = ""
-                        );
-                    }
-                    return {isAuthorized: true, errorMessage: null, result: result || []};
+                    const arr = await federatedOIDCProviderDao.getFederatedOidcProviders(...args);
+                    arr.forEach(
+                        (p: FederatedOidcProvider) => p.federatedOIDCProviderClientSecret = ""
+                    )
+                    return arr
                 }
             }
         );
