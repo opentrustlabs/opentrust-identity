@@ -2,12 +2,13 @@ import { ObjectSearchResultItem, RelSearchResultItem, SearchResultType, SigningK
 import { GraphQLError } from "graphql/error/GraphQLError";
 import { randomUUID, sign } from 'crypto'; 
 import { OIDCContext } from "@/graphql/graphql-context";
-import { KEY_TYPES, KEY_USES, PKCS8_ENCRYPTED_PRIVATE_KEY_HEADER, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, SIGNING_KEY_STATUS_ACTIVE, SIGNING_KEY_STATUS_REVOKED } from "@/utils/consts";
+import { KEY_CREATE_SCOPE, KEY_READ_SCOPE, KEY_TYPES, KEY_UPDATE_SCOPE, KEY_USES, PKCS8_ENCRYPTED_PRIVATE_KEY_HEADER, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, SIGNING_KEY_STATUS_ACTIVE, SIGNING_KEY_STATUS_REVOKED, TENANT_READ_ALL_SCOPE } from "@/utils/consts";
 import { DaoFactory } from "../data-sources/dao-factory";
 import { Client } from "@opensearch-project/opensearch";
 import { getOpenSearchClient } from "../data-sources/search";
 import Kms from "../kms/kms";
 import { X509Certificate } from "crypto";
+import { authorizeCreateObject, authorizeRead, readWithInputFilterAndAuthorization } from "@/utils/authz-utils";
 
 
 const signingKeysDao = DaoFactory.getInstance().getSigningKeysDao();
@@ -24,19 +25,42 @@ class SigningKeysService {
     }
    
     public async getSigningKeys(tenantId?: string): Promise<Array<SigningKey>> {
-        const signingKeys: Array<SigningKey> = await signingKeysDao.getSigningKeys(tenantId);
-        // Do NOT!!! return any private key or password data with this call.
-        signingKeys.forEach(
-            (k: SigningKey) => {
-                k.password = "";
-                k.privateKeyPkcs8 = "";
+
+        const getData = readWithInputFilterAndAuthorization(
+            {
+                async preProcess(oidcContext: OIDCContext, ...args) {
+                    if (oidcContext.portalUserProfile?.managementAccessTenantId !== oidcContext.rootTenant.tenantId) {
+                        return [oidcContext.portalUserProfile?.managementAccessTenantId || ""];
+                    }
+                    return args;
+                },
+                async retrieveData(_, ...args) {
+                    console.log("args is: " + args);
+                    const signingKeys: Array<SigningKey> = await signingKeysDao.getSigningKeys(...args);
+                    // Do NOT!!! return any private key or password data with this call.
+                    signingKeys.forEach(
+                        (k: SigningKey) => {
+                            k.password = "";
+                            k.privateKeyPkcs8 = "";
+                        }
+                    );
+                    return signingKeys
+                },
             }
-        )
-        return signingKeysDao.getSigningKeys(tenantId);
+        );
+
+        const signingKeys: Array<SigningKey> | null = await getData(this.oidcContext, [TENANT_READ_ALL_SCOPE, KEY_READ_SCOPE], tenantId);
+        return signingKeys || [];        
     }    
 
 
     public async createSigningKey(key: SigningKey): Promise<SigningKey> {
+
+        const authResult = authorizeCreateObject(this.oidcContext, [KEY_CREATE_SCOPE], key.tenantId);
+        if(!authResult.isAuthorized){
+            throw new GraphQLError(authResult.errorMessage || "ERROR");
+        }
+
         const tenant: Tenant | null = await tenantDao.getTenantById(key.tenantId);
         if(!tenant){
             throw new GraphQLError("ERROR_TENANT_NOT_FOUND");
@@ -102,6 +126,12 @@ class SigningKeysService {
         if(!existingKey){
             throw new GraphQLError("ERROR_SIGNING_KEY_DOES_NOT_EXIST");
         }
+
+        const authResult = authorizeCreateObject(this.oidcContext, [KEY_UPDATE_SCOPE], existingKey.tenantId);
+        if(!authResult.isAuthorized){
+            throw new GraphQLError(authResult.errorMessage || "ERROR");
+        }
+
         if(existingKey.status === SIGNING_KEY_STATUS_REVOKED){
             throw new GraphQLError("ERROR_CANNOT_UPDATE_A_REVOKED_KEY");
         }
@@ -115,20 +145,41 @@ class SigningKeysService {
     }
 
     public async getSigningKeyById(keyId: string): Promise<SigningKey | null> {
-        const signingKey: SigningKey | null = await signingKeysDao.getSigningKeyById(keyId);
-        if(signingKey){
-            // Only return the public data. Viewing either the password for an encrypted
-            // private key or a plain text private key requires special permissions.
 
-            // A non-empty password means that an encrypted private key was supplied
-            if(signingKey.password && signingKey.password !== ""){
-                signingKey.password = ""
+        const getData = readWithInputFilterAndAuthorization(
+            {
+                async retrieveData(_, __) {
+                    const signingKey: SigningKey | null = await signingKeysDao.getSigningKeyById(keyId);
+                    if(signingKey){
+                        // Only return the public data. Viewing either the password for an encrypted
+                        // private key or a plain text private key requires special permissions.
+
+                        // A non-empty password means that an encrypted private key was supplied
+                        if(signingKey.password && signingKey.password !== ""){
+                            signingKey.password = ""
+                        }
+                        // else a plain text password was supplied.
+                        else{
+                            signingKey.privateKeyPkcs8 = ""
+                        }
+                    }
+                    return signingKey;
+                },
+                async postProcess(oidcContext: OIDCContext, result: SigningKey | null) {
+                    if(result){                        
+                        if(oidcContext.portalUserProfile?.managementAccessTenantId !== result.tenantId){
+                            return {isAuthorized: false, errorMessage: "ERROR_NO_ACCESS_TO_SIGNING_KEY", result: null};
+                        }
+                        else {
+                            return {isAuthorized: true, errorMessage: null, result: result};
+                        }
+                    }
+                    return {isAuthorized: true, errorMessage: null, result: result};
+                },
             }
-            // else a plain text password was supplied.
-            else{
-                signingKey.privateKeyPkcs8 = ""
-            }
-        }
+        );
+
+        const signingKey: SigningKey | null = await getData(this.oidcContext, [TENANT_READ_ALL_SCOPE, KEY_READ_SCOPE], keyId);        
         return Promise.resolve(signingKey);        
     }
     
