@@ -439,14 +439,9 @@ const resolvers: Resolvers = {
             const scopeService: ScopeService = new ScopeService(oidcContext);
             return scopeService.bulkAssignScopeToTenant(tenantId, bulkScopeInput);
         },
-        removeScopeFromTenant: async(_: any, { scopeId, tenantId }, oidcContext ) => {
-            try{
+        removeScopeFromTenant: async(_: any, { scopeId, tenantId }, oidcContext ) => {            
             const scopeService: ScopeService = new ScopeService(oidcContext);
-            await scopeService.removeScopeFromTenant(tenantId, scopeId);
-            }
-            catch(err: any){
-                console.log(err.message);
-            }
+            await scopeService.removeScopeFromTenant(tenantId, scopeId);            
             return scopeId;
         },
         assignScopeToClient: async(_: any, { scopeId, clientId, tenantId }, oidcContext) => {

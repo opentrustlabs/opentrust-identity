@@ -7,11 +7,12 @@ import TenantDao from "../dao/tenant-dao";
 import ClientDao from "../dao/client-dao";
 import AccessRuleDao from "../dao/access-rule-dao";
 import { DaoFactory } from "../data-sources/dao-factory";
-import { ROOT_TENANT_EXCLUSIVE_INTERNAL_SCOPE_NAMES, SCOPE_USE_APPLICATION_MANAGEMENT, SCOPE_USE_DISPLAY, SCOPE_USE_IAM_MANAGEMENT, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
+import { ROOT_TENANT_EXCLUSIVE_INTERNAL_SCOPE_NAMES, SCOPE_CLIENT_ASSIGN_SCOPE, SCOPE_CLIENT_REMOVE_SCOPE, SCOPE_CREATE_SCOPE, SCOPE_DELETE_SCOPE, SCOPE_GROUP_ASSIGN_SCOPE, SCOPE_GROUP_REMOVE_SCOPE, SCOPE_READ_SCOPE, SCOPE_TENANT_ASSIGN_SCOPE, SCOPE_TENANT_REMOVE_SCOPE, SCOPE_UPDATE_SCOPE, SCOPE_USE_APPLICATION_MANAGEMENT, SCOPE_USE_DISPLAY, SCOPE_USE_IAM_MANAGEMENT, SCOPE_USER_ASSIGN_SCOPE, SCOPE_USER_REMOVE_SCOPE, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_READ_ALL_SCOPE, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import { getOpenSearchClient } from "../data-sources/search";
 import AuthorizationGroupDao from "../dao/authorization-group-dao";
 import IdentityDao from "../dao/identity-dao";
 import ScopeDetail from "@/components/scope/scope-detail";
+import { authorizeCreateObject, authorizeDeleteObject, authorizeRead, authorizeUpdateObject, containsScope } from "@/utils/authz-utils";
 
 const scopeDao: ScopeDao = DaoFactory.getInstance().getScopeDao();
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
@@ -32,21 +33,21 @@ class ScopeService {
     
     public async getScope(tenantId?: string, filterBy?: ScopeFilterCriteria): Promise<Array<Scope>> {
 
-        // TODO
-        // Set a tenantId based on the user's oidc context value and use it to query the 
-        // DB. 
-        if(!tenantId){
-            throw new GraphQLError("ERROR_EXPECTING_TENANT_ID_ARGUMENT");
+        if(!this.oidcContext.portalUserProfile || !this.oidcContext.portalUserProfile.managementAccessTenantId){
+            throw new GraphQLError("ERROR_INVALID_PROFILE");
+        }
+        const b: boolean = containsScope([TENANT_READ_ALL_SCOPE, SCOPE_READ_SCOPE], this.oidcContext.portalUserProfile.scope);
+        if(!b){
+            throw new GraphQLError("ERROR_NO_PERMISSIONS_TO_VIEW_SCOPE");
         }
 
-        let isRootTenant: boolean = false;
-        if(tenantId){
-            const tenant: Tenant | null = await tenantDao.getTenantById(tenantId);
-            if(tenant && tenant.tenantType === TENANT_TYPE_ROOT_TENANT){
-                isRootTenant = true;
-            }
-        }       
-
+        tenantId = this.oidcContext.portalUserProfile.managementAccessTenantId;
+        let isRootTenant: boolean = false;        
+        const tenant: Tenant | null = await tenantDao.getTenantById(tenantId);
+        if(tenant && tenant.tenantType === TENANT_TYPE_ROOT_TENANT){
+            isRootTenant = true;
+        }
+        
         if(isRootTenant && !filterBy){
             const arr: Array<Scope> = await scopeDao.getScope();
             return arr;
@@ -89,7 +90,13 @@ class ScopeService {
         return scopeDao.getScopeById(scopeId);
     }
 
-    public async createScope(scope: Scope): Promise<Scope> {        
+    public async createScope(scope: Scope): Promise<Scope> {
+
+        const {isAuthorized, errorMessage} = authorizeCreateObject(this.oidcContext, SCOPE_CREATE_SCOPE, null);
+        if(!isAuthorized){
+            throw new GraphQLError(errorMessage || "ERROR");
+        }
+
         // Only allow scope uses of Application Management to be
         // created. All IAM Management scope values are fixed at
         // initialization of the IAM tool
@@ -113,6 +120,11 @@ class ScopeService {
 
     public async updateScope(scope: Scope): Promise<Scope> {
         
+        const {isAuthorized, errorMessage} = authorizeUpdateObject(this.oidcContext, SCOPE_UPDATE_SCOPE, null);
+        if(!isAuthorized){
+            throw new GraphQLError(errorMessage || "ERROR");
+        }
+
         const existingScope = await this.getScopeById(scope.scopeId) 
         if(!existingScope){
             throw new GraphQLError("ERROR_SCOPE_NOT_FOUND");
@@ -144,6 +156,12 @@ class ScopeService {
 
 
     public async assignScopeToTenant(tenantId: string, scopeId: string, accessRuleId: string | null): Promise<TenantAvailableScope> {
+
+        const authResult = authorizeCreateObject(this.oidcContext, SCOPE_TENANT_ASSIGN_SCOPE, tenantId);
+        if(!authResult.isAuthorized){
+            throw new GraphQLError(authResult.errorMessage || "ERROR");
+        }
+
         const tenant: Tenant | null = await tenantDao.getTenantById(tenantId);
         if(!tenant){
             throw new GraphQLError("ERROR_CANNOT_FIND_TENANT_FOR_SCOPE_ASSIGNMENT");
@@ -169,6 +187,11 @@ class ScopeService {
      * @returns 
      */    
     public async bulkAssignScopeToTenant(tenantId: string, bulkScopeInput: Array<BulkScopeInput>): Promise<Array<TenantAvailableScope>> {
+        const authResult = authorizeCreateObject(this.oidcContext, SCOPE_TENANT_ASSIGN_SCOPE, tenantId);
+        if(!authResult.isAuthorized){
+            throw new GraphQLError(authResult.errorMessage || "ERROR");
+        }
+
         const tenant: Tenant | null = await tenantDao.getTenantById(tenantId);
         if(!tenant){
             throw new GraphQLError("ERROR_CANNOT_FIND_TENANT_FOR_SCOPE_ASSIGNMENT");
@@ -202,6 +225,12 @@ class ScopeService {
 
 
     public async removeScopeFromTenant(tenantId: string, scopeId: string): Promise<void> {
+
+        const authResult = authorizeDeleteObject(this.oidcContext, SCOPE_TENANT_REMOVE_SCOPE, tenantId);
+        if(!authResult.isAuthorized){
+            throw new GraphQLError(authResult.errorMessage || "ERROR");
+        }
+
         // TODO
         // Enhance the tenant_available_scope to include a markfordelete field (boolean).
         // There might be 1000s of relationships that need to be deleted and we do not
@@ -260,7 +289,11 @@ class ScopeService {
     }
 
     public async assignScopeToClient(tenantId: string, clientId: string, scopeId: string): Promise<ClientScopeRel> {
-        
+        const authResult = authorizeCreateObject(this.oidcContext, SCOPE_CLIENT_ASSIGN_SCOPE, tenantId);
+        if(!authResult.isAuthorized){
+            throw new GraphQLError(authResult.errorMessage || "ERROR");
+        }
+
         // Check, in order
         // 1.   Does the scope exist
         // 2.   Is the scope assigned to the tenant in the first place
@@ -291,6 +324,11 @@ class ScopeService {
     }
 
     public async bulkAssignScopeToClient(tenantId: string, clientId: string, bulkScopeInput: Array<BulkScopeInput>): Promise<Array<ClientScopeRel>> {
+        const authResult = authorizeCreateObject(this.oidcContext, SCOPE_CLIENT_ASSIGN_SCOPE, tenantId);
+        if(!authResult.isAuthorized){
+            throw new GraphQLError(authResult.errorMessage || "ERROR");
+        }
+
         const client: Client | null = await clientDao.getClientById(clientId);
         if(!client){
             throw new GraphQLError("ERROR_CLIENT_NOT_FOUND_FOR_SCOPE_ASSIGNMENT");
@@ -325,10 +363,20 @@ class ScopeService {
 
 
     public async removeScopeFromClient(tenantId: string, clientId: string, scopeId: string): Promise<void> {
+        const authResult = authorizeDeleteObject(this.oidcContext, SCOPE_CLIENT_REMOVE_SCOPE, tenantId);
+        if(!authResult.isAuthorized){
+            throw new GraphQLError(authResult.errorMessage || "ERROR");
+        }
+
         return scopeDao.removeScopeFromClient(tenantId, clientId, scopeId);
     }
 
     public async assignScopeToAuthorizationGroup(groupId: string, scopeId: string, tenantId: string): Promise<AuthorizationGroupScopeRel> {
+
+        const authResult = authorizeCreateObject(this.oidcContext, SCOPE_GROUP_ASSIGN_SCOPE, tenantId);
+        if(!authResult.isAuthorized){
+            throw new GraphQLError(authResult.errorMessage || "ERROR");
+        }
 
         // Check, in order
         // 1.   Does the scope exist
@@ -369,7 +417,11 @@ class ScopeService {
      * @returns 
      */
     public async bulkAssignScopeToAuthorizationGroup(groupId: string, tenantId: string, bulkScopeInput: Array<BulkScopeInput>): Promise<Array<AuthorizationGroupScopeRel>>{
-        
+        const authResult = authorizeCreateObject(this.oidcContext, SCOPE_GROUP_ASSIGN_SCOPE, tenantId);
+        if(!authResult.isAuthorized){
+            throw new GraphQLError(authResult.errorMessage || "ERROR");
+        }
+
         const authnGroup: AuthorizationGroup | null = await authorizationGroupDao.getAuthorizationGroupById(groupId);
         if(!authnGroup || authnGroup.markForDelete === true){
             throw new GraphQLError("ERROR_AUTHORIZATION_GROUP_NOT_FOUND_FOR_SCOPE_ASSIGNMENT");
@@ -405,11 +457,19 @@ class ScopeService {
 
 
     public async removeScopeFromAuthorizationGroup(groupId: string, scopeId: string, tenantId: string): Promise<void> {
+        const authResult = authorizeDeleteObject(this.oidcContext, SCOPE_GROUP_REMOVE_SCOPE, tenantId);
+        if(!authResult.isAuthorized){
+            throw new GraphQLError(authResult.errorMessage || "ERROR");
+        }
         return scopeDao.removeScopeFromAuthorizationGroup(tenantId, groupId, scopeId);
     }
 
     public async assignScopeToUser(userId: string, tenantId: string, scopeId: string): Promise<UserScopeRel> {
 
+        const authResult = authorizeCreateObject(this.oidcContext, SCOPE_USER_ASSIGN_SCOPE, tenantId);
+        if(!authResult.isAuthorized){
+            throw new GraphQLError(authResult.errorMessage || "ERROR");
+        }
         // Check, in order
         // 1.   Does the scope exist
         // 2.   Is the scope assigned to the tenant in the first place
@@ -450,6 +510,11 @@ class ScopeService {
      */
     public async bulkAssignScopeToUser(userId: string, tenantId: string, bulkScopeInput: Array<BulkScopeInput>): Promise<Array<UserScopeRel>>{
         
+        const authResult = authorizeCreateObject(this.oidcContext, SCOPE_USER_ASSIGN_SCOPE, tenantId);
+        if(!authResult.isAuthorized){
+            throw new GraphQLError(authResult.errorMessage || "ERROR");
+        }
+
         const user: User | null = await identityDao.getUserBy("id", userId);
         if(!user || user.markForDelete === true){
             throw new GraphQLError("ERROR_USER_NOT_FOUND_FOR_SCOPE_ASSIGNMENT");
@@ -486,12 +551,20 @@ class ScopeService {
     }
 
     public async removeScopeFromUser(userId: string, tenantId: string, scopeId: string): Promise<void> {
+        const authResult = authorizeDeleteObject(this.oidcContext, SCOPE_USER_REMOVE_SCOPE, tenantId);
+        if(!authResult.isAuthorized){
+            throw new GraphQLError(authResult.errorMessage || "ERROR");
+        }
         return scopeDao.removeScopeFromUser(tenantId, userId, scopeId);
     }
 
     public async deleteScope(scopeId: string): Promise<void> {
         // TODO, will need to delete various relationships to tenants and clients
         // return scopeDao.deleteScope(scopeId);
+        const authResult = authorizeDeleteObject(this.oidcContext, SCOPE_DELETE_SCOPE, null);
+        if(!authResult.isAuthorized){
+            throw new GraphQLError(authResult.errorMessage || "ERROR");
+        }
     }
 
     protected async validateScopeTenantInput(tenant: Tenant, scopeId: string, accessRuleId: string | null): Promise<{isValid: boolean, errorMessage: string, scope: Scope | null}> {
