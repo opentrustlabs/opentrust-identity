@@ -58,6 +58,10 @@ class IdentityService {
     // ##########################################################################     
 
     public async getUserById(userId: string): Promise<User | null> {
+        // 3 allowed conditions
+        // 1. user.read for root tenant member
+        // 2. user.read for non-root tenant member but this user belongs to the tenant
+        // 3. the user themselves
         return identityDao.getUserBy("id", userId);
     }
 
