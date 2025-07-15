@@ -5,9 +5,9 @@ import RateLimitDao from "../dao/rate-limit-dao";
 import { ObjectSearchResultItem, RateLimitServiceGroup, RelSearchResultItem, SearchResultType, Tenant, TenantRateLimitRel, TenantRateLimitRelView } from "@/graphql/generated/graphql-types";
 import TenantDao from "../dao/tenant-dao";
 import { DaoFactory } from "../data-sources/dao-factory";
-import { DEFAULT_RATE_LIMIT_PERIOD_MINUTES, MAX_RATE_LIMIT_PERIOD_MINUTES, MIN_RATE_LIMIT_PERIOD_MINUTES, RATE_LIMIT_CREATE_SCOPE, RATE_LIMIT_READ_SCOPE, RATE_LIMIT_TENANT_ASSIGN_SCOPE, RATE_LIMIT_TENANT_REMOVE_SCOPE, RATE_LIMIT_TENANT_UPDATE_SCOPE, RATE_LIMIT_UPDATE_SCOPE, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_READ_ALL_SCOPE } from "@/utils/consts";
+import { DEFAULT_RATE_LIMIT_PERIOD_MINUTES, RATE_LIMIT_CREATE_SCOPE, RATE_LIMIT_READ_SCOPE, RATE_LIMIT_TENANT_ASSIGN_SCOPE, RATE_LIMIT_TENANT_REMOVE_SCOPE, RATE_LIMIT_TENANT_UPDATE_SCOPE, RATE_LIMIT_UPDATE_SCOPE, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_READ_ALL_SCOPE } from "@/utils/consts";
 import { getOpenSearchClient } from "../data-sources/search";
-import { authorizeUpdateObject, readWithInputFilterAndAuthorization } from "@/utils/authz-utils";
+import { authorizeByScopeAndTenant, ServiceAuthorizationWrapper } from "@/utils/authz-utils";
 
 
 const rateLimitDao: RateLimitDao = DaoFactory.getInstance().getRateLimitDao();
@@ -23,7 +23,7 @@ class RateLimitService {
     }
 
     public async getRateLimitServiceGroups(tenantId: string | null): Promise<Array<RateLimitServiceGroup>> {
-        const getData = readWithInputFilterAndAuthorization(
+        const getData = ServiceAuthorizationWrapper(
             {
                 async preProcess(oidcContext, ...args) {
                     if (oidcContext.portalUserProfile?.managementAccessTenantId !== oidcContext.rootTenant.tenantId) {
@@ -31,7 +31,7 @@ class RateLimitService {
                     }
                     return args;
                 },
-                async retrieveData(_, ...args): Promise<Array<RateLimitServiceGroup> | null> {
+                async performOperation(_, ...args): Promise<Array<RateLimitServiceGroup> | null> {
                     const arr: Array<RateLimitServiceGroup> = await rateLimitDao.getRateLimitServiceGroups(args[0]);
                     return arr;                    
                 }
@@ -43,21 +43,21 @@ class RateLimitService {
     }
 
     public async getRateLimitServiceGroupById(serviceGroupId: string): Promise<RateLimitServiceGroup | null> {
-        const getData = readWithInputFilterAndAuthorization(
+        const getData = ServiceAuthorizationWrapper(
             {
-                async retrieveData(_, __): Promise<RateLimitServiceGroup | null> {
+                async performOperation(_, __): Promise<RateLimitServiceGroup | null> {
                     const result: RateLimitServiceGroup | null = await rateLimitDao.getRateLimitServiceGroupById(serviceGroupId)
                     return result;
                 },
-                async postProcess(oidcContext, result: RateLimitServiceGroup | null) {
+                async additionalConstraintCheck(oidcContext, result: RateLimitServiceGroup | null) {
                     if(result){
                         const rels = await rateLimitDao.getRateLimitTenantRel(oidcContext.portalUserProfile?.managementAccessTenantId || "", null);
-                        if(!rels){
-                            return {isAuthorized: false, errorMessage: "ERROR_NO_ASSIGNED_TENANT", result: null};
+                        if(!rels || rels.length === 0){
+                            return {isAuthorized: false, errorMessage: "ERROR_NO_ASSIGNED_TENANT"};
                         }
-                        return {isAuthorized: true, errorMessage: null, result: result};
+                        return {isAuthorized: true, errorMessage: null};
                     }
-                    return {isAuthorized: true, errorMessage: null, result}
+                    return {isAuthorized: true, errorMessage: null}
                 },
             }
         );
@@ -66,7 +66,7 @@ class RateLimitService {
     }
 
     public async createRateLimitServiceGroup(rateLimitServiceGroup: RateLimitServiceGroup): Promise<RateLimitServiceGroup> {
-        const {isAuthorized, errorMessage} = authorizeUpdateObject(this.oidcContext, RATE_LIMIT_CREATE_SCOPE, null);
+        const {isAuthorized, errorMessage} = authorizeByScopeAndTenant(this.oidcContext, RATE_LIMIT_CREATE_SCOPE, null);
         if(!isAuthorized){
             throw new GraphQLError(errorMessage || "ERROR");
         }
@@ -79,7 +79,7 @@ class RateLimitService {
 
     public async updateRateLimitServiceGroup(rateLimitServiceGroup: RateLimitServiceGroup): Promise<RateLimitServiceGroup> {
 
-        const {isAuthorized, errorMessage} = authorizeUpdateObject(this.oidcContext, RATE_LIMIT_UPDATE_SCOPE, null);
+        const {isAuthorized, errorMessage} = authorizeByScopeAndTenant(this.oidcContext, RATE_LIMIT_UPDATE_SCOPE, null);
         if(!isAuthorized){
             throw new GraphQLError(errorMessage || "ERROR");
         }
@@ -105,7 +105,7 @@ class RateLimitService {
     }
         
     public async getRateLimitTenantRel(tenantId: string | null, rateLimitServiceGroupId: string | null): Promise<Array<TenantRateLimitRel>> {
-        const getData = readWithInputFilterAndAuthorization(
+        const getData = ServiceAuthorizationWrapper(
             {
                 async preProcess(oidcContext, ...args) {
                     if (oidcContext.portalUserProfile?.managementAccessTenantId !== oidcContext.rootTenant.tenantId) {
@@ -113,7 +113,7 @@ class RateLimitService {
                     }
                     return args;
                 },
-                async retrieveData(_, ...args): Promise<Array<TenantRateLimitRel> | null> {
+                async performOperation(_, ...args): Promise<Array<TenantRateLimitRel> | null> {
                     const arr: Array<TenantRateLimitRel> = await rateLimitDao.getRateLimitTenantRel(args[0], args[1]);
                     return arr;                    
                 }
@@ -150,7 +150,7 @@ class RateLimitService {
     
     public async assignRateLimitToTenant(tenantId: string, serviceGroupId: string, allowUnlimited: boolean, limit: number, rateLimitPeriodMinutes: number): Promise<TenantRateLimitRel> {
         
-        const {isAuthorized, errorMessage} = authorizeUpdateObject(this.oidcContext, RATE_LIMIT_TENANT_ASSIGN_SCOPE, tenantId);
+        const {isAuthorized, errorMessage} = authorizeByScopeAndTenant(this.oidcContext, RATE_LIMIT_TENANT_ASSIGN_SCOPE, tenantId);
         if(!isAuthorized){
             throw new GraphQLError(errorMessage || "ERROR");
         }
@@ -189,7 +189,7 @@ class RateLimitService {
 
     public async updateRateLimitForTenant(tenantId: string, serviceGroupId: string, allowUnlimited: boolean, limit: number | null, rateLimitPeriodMinutes: number | null): Promise<TenantRateLimitRel> {
         
-        const {isAuthorized, errorMessage} = authorizeUpdateObject(this.oidcContext, RATE_LIMIT_TENANT_UPDATE_SCOPE, tenantId);
+        const {isAuthorized, errorMessage} = authorizeByScopeAndTenant(this.oidcContext, RATE_LIMIT_TENANT_UPDATE_SCOPE, tenantId);
         if(!isAuthorized){
             throw new GraphQLError(errorMessage || "ERROR");
         }
@@ -220,7 +220,7 @@ class RateLimitService {
     }
 
     public async getRateLimitTenantRelViews(rateLimitServiceGroupId: string | null, tenantId: string | null): Promise<Array<TenantRateLimitRelView>>{
-        const getData = readWithInputFilterAndAuthorization(
+        const getData = ServiceAuthorizationWrapper(
             {
                 async preProcess(oidcContext, ...args) {
                     if (oidcContext.portalUserProfile?.managementAccessTenantId !== oidcContext.rootTenant.tenantId) {
@@ -228,7 +228,7 @@ class RateLimitService {
                     }
                     return args;
                 },
-                async retrieveData(_, ...args): Promise<Array<TenantRateLimitRelView> | null> {
+                async performOperation(_, ...args): Promise<Array<TenantRateLimitRelView> | null> {
                     const arr: Array<TenantRateLimitRelView> = await rateLimitDao.getRateLimitTenantRelViews(args[0], args[1]);
                     return arr;                    
                 }
@@ -260,7 +260,7 @@ class RateLimitService {
 
 
     public async removeRateLimitFromTenant(tenantId: string, rateLimitId: string): Promise<void> {
-        const {isAuthorized, errorMessage} = authorizeUpdateObject(this.oidcContext, RATE_LIMIT_TENANT_REMOVE_SCOPE, tenantId);
+        const {isAuthorized, errorMessage} = authorizeByScopeAndTenant(this.oidcContext, RATE_LIMIT_TENANT_REMOVE_SCOPE, tenantId);
         if(!isAuthorized){
             throw new GraphQLError(errorMessage || "ERROR");
         }

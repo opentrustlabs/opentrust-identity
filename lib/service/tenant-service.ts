@@ -9,7 +9,7 @@ import { getOpenSearchClient } from "@/lib/data-sources/search";
 import FederatedOIDCProviderDao from "../dao/federated-oidc-provider-dao";
 import { DaoFactory } from "../data-sources/dao-factory";
 import ScopeDao from "../dao/scope-dao";
-import { authorizeCreateObject, authorizeDeleteObject, authorizeRead, authorizeUpdateObject } from "@/utils/authz-utils";
+import { authorizeByScopeAndTenant } from "@/utils/authz-utils";
 
 const searchClient: Client = getOpenSearchClient();
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
@@ -29,6 +29,18 @@ class TenantService {
     }
 
     public async createRootTenant(tenant: Tenant): Promise<Tenant> {
+
+        // TODO
+        // Get the root tenant first in a try/catch block. If the root
+        // tenant does not already exist, the error object should have the 
+        // message: ERROR_UNABLE_TO_FIND_A_ROOT_TENANT
+        // In that case, create a new tenant
+        // 
+        // If there is already a root tenant, then throw an error
+        //
+        // The scope should be TENANT_CREATE (derived from an RSA key pair for identity) 
+        // and the .env file should have a property called: INIT_IAM_PORTAL=true
+
         tenant.tenantId = randomUUID().toString();
         await tenantDao.createRootTenant(tenant);
         await this.updateSearchIndex(tenant);
@@ -37,7 +49,7 @@ class TenantService {
     }
 
     public async updateRootTenant(tenant: Tenant): Promise<Tenant> {
-        const authResult = authorizeUpdateObject(this.oidcContext, [TENANT_UPDATE_SCOPE], tenant.tenantId);
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_UPDATE_SCOPE], tenant.tenantId);
         if(!authResult.isAuthorized){
             throw new GraphQLError(authResult.errorMessage || "ERROR");
         }
@@ -56,7 +68,7 @@ class TenantService {
     }
         
     public async getTenants(tenantIds?: Array<string>, federatedOIDCProviderId?: string, scopeId?: string): Promise<Array<Tenant>> {
-        const authResult = authorizeRead(this.oidcContext, [TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE], this.oidcContext.portalUserProfile?.managementAccessTenantId || "");
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE], this.oidcContext.portalUserProfile?.managementAccessTenantId || "");
         if(!authResult.isAuthorized){
             throw new GraphQLError(authResult.errorMessage || "ERROR");
         }
@@ -86,7 +98,7 @@ class TenantService {
     }
 
     public async getTenantById(tenantId: string): Promise<Tenant | null> {
-        const authResult = authorizeRead(this.oidcContext, [TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE], tenantId);
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE], tenantId);
         if(!authResult.isAuthorized){
             throw new GraphQLError(authResult.errorMessage || "ERROR");
         }
@@ -96,7 +108,7 @@ class TenantService {
 
     public async createTenant(tenant: Tenant): Promise<Tenant | null> {
 
-        const authResult = authorizeCreateObject(this.oidcContext, [TENANT_CREATE_SCOPE], null);
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_CREATE_SCOPE], null);
         if(!authResult.isAuthorized){
             throw new GraphQLError(authResult.errorMessage || "ERROR");
         }
@@ -157,7 +169,7 @@ class TenantService {
     }
 
     public async updateTenant(tenant: Tenant): Promise<Tenant> {
-        const authResult = authorizeUpdateObject(this.oidcContext, [TENANT_UPDATE_SCOPE], tenant.tenantId);
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_UPDATE_SCOPE], tenant.tenantId);
         if(!authResult.isAuthorized){
             throw new GraphQLError(authResult.errorMessage || "ERROR");
         }
@@ -196,7 +208,7 @@ class TenantService {
 
 
     public async addDomainToTenantManagement(tenantId: string, domain: string): Promise<TenantManagementDomainRel | null> {
-        const authResult = authorizeUpdateObject(this.oidcContext, [TENANT_UPDATE_SCOPE], tenantId);
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_UPDATE_SCOPE], tenantId);
         if(!authResult.isAuthorized){
             throw new GraphQLError(authResult.errorMessage || "ERROR");
         }
@@ -224,7 +236,7 @@ class TenantService {
     }
 
     public async removeDomainFromTenantManagement(tenantId: string, domain: string): Promise<TenantManagementDomainRel | null> {
-        const authResult = authorizeDeleteObject(this.oidcContext, [TENANT_UPDATE_SCOPE], tenantId);
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_UPDATE_SCOPE], tenantId);
         if(!authResult.isAuthorized){
             throw new GraphQLError(authResult.errorMessage || "ERROR");
         }
@@ -237,7 +249,7 @@ class TenantService {
 
 
     public async createAnonymousUserConfiguration(tenantId: string, anonymousUserConfiguration: TenantAnonymousUserConfiguration): Promise<TenantAnonymousUserConfiguration>{
-        const authResult = authorizeUpdateObject(this.oidcContext, [TENANT_UPDATE_SCOPE], tenantId);
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_UPDATE_SCOPE], tenantId);
         if(!authResult.isAuthorized){
             throw new GraphQLError(authResult.errorMessage || "ERROR");
         }
@@ -246,7 +258,7 @@ class TenantService {
     }
 
     public async updateAnonymousUserConfiguration(anonymousUserConfiguration: TenantAnonymousUserConfiguration): Promise<TenantAnonymousUserConfiguration>{
-        const authResult = authorizeUpdateObject(this.oidcContext, [TENANT_UPDATE_SCOPE], anonymousUserConfiguration.tenantId);
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_UPDATE_SCOPE], anonymousUserConfiguration.tenantId);
         if(!authResult.isAuthorized){
             throw new GraphQLError(authResult.errorMessage || "ERROR");
         }
@@ -254,7 +266,7 @@ class TenantService {
     }
 
     public async deleteAnonymousUserConfiguration(tenantId: string): Promise<void>{
-        const authResult = authorizeUpdateObject(this.oidcContext, [TENANT_UPDATE_SCOPE], tenantId);
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_UPDATE_SCOPE], tenantId);
         if(!authResult.isAuthorized){
             throw new GraphQLError(authResult.errorMessage || "ERROR");
         }
@@ -262,7 +274,7 @@ class TenantService {
     }
 
     public async getTenantMetaData(tenantId: string): Promise<TenantMetaData | null> {
-        const authResult = authorizeRead(this.oidcContext, [TENANT_READ_SCOPE, TENANT_READ_ALL_SCOPE], tenantId);
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_READ_SCOPE, TENANT_READ_ALL_SCOPE], tenantId);
         if(!authResult.isAuthorized){
             throw new GraphQLError(authResult.errorMessage || "ERROR");
         }
@@ -280,7 +292,7 @@ class TenantService {
     }
 
     public async getTenantLookAndFeel(tenantId: string): Promise<TenantLookAndFeel | null> {
-        const authResult = authorizeRead(this.oidcContext, [TENANT_READ_SCOPE, TENANT_READ_ALL_SCOPE], tenantId);
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_READ_SCOPE, TENANT_READ_ALL_SCOPE], tenantId);
         if(!authResult.isAuthorized){
             throw new GraphQLError(authResult.errorMessage || "ERROR");
         }
@@ -289,7 +301,7 @@ class TenantService {
     }
 
     public async setTenantLookAndFeel(tenantLookAndFeel: TenantLookAndFeel): Promise<TenantLookAndFeel>{
-        const authResult = authorizeUpdateObject(this.oidcContext, [TENANT_UPDATE_SCOPE], tenantLookAndFeel.tenantid);
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_UPDATE_SCOPE], tenantLookAndFeel.tenantid);
         if(!authResult.isAuthorized){
             throw new GraphQLError(authResult.errorMessage || "ERROR");
         }
@@ -305,7 +317,7 @@ class TenantService {
 
  
     public async deleteTenantLookAndFeel(tenantId: string): Promise<void>{
-        const authResult = authorizeUpdateObject(this.oidcContext, [TENANT_UPDATE_SCOPE], tenantId);
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_UPDATE_SCOPE], tenantId);
         if(!authResult.isAuthorized){
             throw new GraphQLError(authResult.errorMessage || "ERROR");
         }
@@ -313,7 +325,7 @@ class TenantService {
     }
 
     public async getTenantPasswordConfig(tenantId: string): Promise<TenantPasswordConfig | null> {
-        const authResult = authorizeRead(this.oidcContext, [TENANT_READ_SCOPE, TENANT_READ_ALL_SCOPE], tenantId);
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_READ_SCOPE, TENANT_READ_ALL_SCOPE], tenantId);
         if(!authResult.isAuthorized){
             throw new GraphQLError(authResult.errorMessage || "ERROR");
         }
@@ -321,7 +333,7 @@ class TenantService {
     }
 
     public async assignPasswordConfigToTenant(tenantPasswordConfig: TenantPasswordConfig): Promise<TenantPasswordConfig>{
-        const authResult = authorizeUpdateObject(this.oidcContext, [TENANT_UPDATE_SCOPE], tenantPasswordConfig.tenantId);
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_UPDATE_SCOPE], tenantPasswordConfig.tenantId);
         if(!authResult.isAuthorized){
             throw new GraphQLError(authResult.errorMessage || "ERROR");
         }
@@ -372,7 +384,7 @@ class TenantService {
     }
 
     public async removePasswordConfigFromTenant(tenantId: string): Promise<void>{
-        const authResult = authorizeUpdateObject(this.oidcContext, [TENANT_UPDATE_SCOPE], tenantId);
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_UPDATE_SCOPE], tenantId);
         if(!authResult.isAuthorized){
             throw new GraphQLError(authResult.errorMessage || "ERROR");
         }
@@ -380,7 +392,7 @@ class TenantService {
     }
 
     public async getLegacyUserMigrationConfiguration(tenantId: string): Promise<TenantLegacyUserMigrationConfig | null> {
-        const authResult = authorizeRead(this.oidcContext, [TENANT_READ_SCOPE, TENANT_READ_ALL_SCOPE], tenantId);
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_READ_SCOPE, TENANT_READ_ALL_SCOPE], tenantId);
         if(!authResult.isAuthorized){
             throw new GraphQLError(authResult.errorMessage || "ERROR");
         }
@@ -388,7 +400,7 @@ class TenantService {
     }
 
     public async setTenantLegacyUserMigrationConfiguration(tenantLegacyUserMigrationConfig: TenantLegacyUserMigrationConfig): Promise<TenantLegacyUserMigrationConfig | null> {
-        const authResult = authorizeUpdateObject(this.oidcContext, [TENANT_UPDATE_SCOPE], tenantLegacyUserMigrationConfig.tenantId);
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_UPDATE_SCOPE], tenantLegacyUserMigrationConfig.tenantId);
         if(!authResult.isAuthorized){
             throw new GraphQLError(authResult.errorMessage || "ERROR");
         }
@@ -397,7 +409,7 @@ class TenantService {
     }
 
     public async getDomainsForTenantRestrictedAuthentication(tenantId: string): Promise<Array<TenantRestrictedAuthenticationDomainRel>>{
-        const authResult = authorizeRead(this.oidcContext, [TENANT_READ_SCOPE, TENANT_READ_ALL_SCOPE], tenantId);
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_READ_SCOPE, TENANT_READ_ALL_SCOPE], tenantId);
         if(!authResult.isAuthorized){
             throw new GraphQLError(authResult.errorMessage || "ERROR");
         }
@@ -405,7 +417,7 @@ class TenantService {
     }
 
     public async addDomainToTenantRestrictedAuthentication(tenantId: string, domain: string): Promise<TenantRestrictedAuthenticationDomainRel> {
-        const authResult = authorizeUpdateObject(this.oidcContext, [TENANT_UPDATE_SCOPE], tenantId);
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_UPDATE_SCOPE], tenantId);
         if(!authResult.isAuthorized){
             throw new GraphQLError(authResult.errorMessage || "ERROR");
         }
@@ -413,7 +425,7 @@ class TenantService {
     }
 
     public async removeDomainFromTenantRestrictedAuthentication(tenantId: string, domain: string): Promise<void>{
-        const authResult = authorizeUpdateObject(this.oidcContext, [TENANT_UPDATE_SCOPE], tenantId);
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_UPDATE_SCOPE], tenantId);
         if(!authResult.isAuthorized){
             throw new GraphQLError(authResult.errorMessage || "ERROR");
         }
@@ -421,7 +433,7 @@ class TenantService {
     }
 
     public async getTenantLoginFailurePolicy(tenantId: string): Promise<TenantLoginFailurePolicy | null> {
-        const authResult = authorizeRead(this.oidcContext, [TENANT_READ_SCOPE, TENANT_READ_ALL_SCOPE], tenantId);
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_READ_SCOPE, TENANT_READ_ALL_SCOPE], tenantId);
         if(!authResult.isAuthorized){
             throw new GraphQLError(authResult.errorMessage || "ERROR");
         }
@@ -429,7 +441,7 @@ class TenantService {
     }
 
     public async setTenantLoginFailurePolicy(loginFailurePolicy: TenantLoginFailurePolicy): Promise<TenantLoginFailurePolicy> {
-        const authResult = authorizeUpdateObject(this.oidcContext, [TENANT_UPDATE_SCOPE], loginFailurePolicy.tenantId);
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_UPDATE_SCOPE], loginFailurePolicy.tenantId);
         if(!authResult.isAuthorized){
             throw new GraphQLError(authResult.errorMessage || "ERROR");
         }
@@ -445,7 +457,7 @@ class TenantService {
     }
 
     public async removeTenantLoginFailurePolicy(tenantId: string): Promise<void> {
-        const authResult = authorizeUpdateObject(this.oidcContext, [TENANT_UPDATE_SCOPE], tenantId);
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_UPDATE_SCOPE], tenantId);
         if(!authResult.isAuthorized){
             throw new GraphQLError(authResult.errorMessage || "ERROR");
         }

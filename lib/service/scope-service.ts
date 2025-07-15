@@ -11,8 +11,7 @@ import { ROOT_TENANT_EXCLUSIVE_INTERNAL_SCOPE_NAMES, SCOPE_CLIENT_ASSIGN_SCOPE, 
 import { getOpenSearchClient } from "../data-sources/search";
 import AuthorizationGroupDao from "../dao/authorization-group-dao";
 import IdentityDao from "../dao/identity-dao";
-import ScopeDetail from "@/components/scope/scope-detail";
-import { authorizeCreateObject, authorizeDeleteObject, authorizeRead, authorizeUpdateObject, containsScope } from "@/utils/authz-utils";
+import { authorizeByScopeAndTenant, containsScope } from "@/utils/authz-utils";
 
 const scopeDao: ScopeDao = DaoFactory.getInstance().getScopeDao();
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
@@ -92,7 +91,7 @@ class ScopeService {
 
     public async createScope(scope: Scope): Promise<Scope> {
 
-        const {isAuthorized, errorMessage} = authorizeCreateObject(this.oidcContext, SCOPE_CREATE_SCOPE, null);
+        const {isAuthorized, errorMessage} = authorizeByScopeAndTenant(this.oidcContext, SCOPE_CREATE_SCOPE, null);
         if(!isAuthorized){
             throw new GraphQLError(errorMessage || "ERROR");
         }
@@ -120,7 +119,7 @@ class ScopeService {
 
     public async updateScope(scope: Scope): Promise<Scope> {
         
-        const {isAuthorized, errorMessage} = authorizeUpdateObject(this.oidcContext, SCOPE_UPDATE_SCOPE, null);
+        const {isAuthorized, errorMessage} = authorizeByScopeAndTenant(this.oidcContext, SCOPE_UPDATE_SCOPE, null);
         if(!isAuthorized){
             throw new GraphQLError(errorMessage || "ERROR");
         }
@@ -157,7 +156,7 @@ class ScopeService {
 
     public async assignScopeToTenant(tenantId: string, scopeId: string, accessRuleId: string | null): Promise<TenantAvailableScope> {
 
-        const authResult = authorizeCreateObject(this.oidcContext, SCOPE_TENANT_ASSIGN_SCOPE, tenantId);
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, SCOPE_TENANT_ASSIGN_SCOPE, tenantId);
         if(!authResult.isAuthorized){
             throw new GraphQLError(authResult.errorMessage || "ERROR");
         }
@@ -187,7 +186,7 @@ class ScopeService {
      * @returns 
      */    
     public async bulkAssignScopeToTenant(tenantId: string, bulkScopeInput: Array<BulkScopeInput>): Promise<Array<TenantAvailableScope>> {
-        const authResult = authorizeCreateObject(this.oidcContext, SCOPE_TENANT_ASSIGN_SCOPE, tenantId);
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, SCOPE_TENANT_ASSIGN_SCOPE, tenantId);
         if(!authResult.isAuthorized){
             throw new GraphQLError(authResult.errorMessage || "ERROR");
         }
@@ -226,7 +225,7 @@ class ScopeService {
 
     public async removeScopeFromTenant(tenantId: string, scopeId: string): Promise<void> {
 
-        const authResult = authorizeDeleteObject(this.oidcContext, SCOPE_TENANT_REMOVE_SCOPE, tenantId);
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, SCOPE_TENANT_REMOVE_SCOPE, tenantId);
         if(!authResult.isAuthorized){
             throw new GraphQLError(authResult.errorMessage || "ERROR");
         }
@@ -261,7 +260,7 @@ class ScopeService {
             throw new GraphQLError("ERROR_CLIENT_DOES_NOT_EXIST");
         }
 
-        const authResult = authorizeRead(this.oidcContext, [TENANT_READ_ALL_SCOPE, SCOPE_READ_SCOPE], client.tenantId);
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_READ_ALL_SCOPE, SCOPE_READ_SCOPE], client.tenantId);
         if(!authResult.isAuthorized){
             throw new GraphQLError(authResult.errorMessage || "ERROR");
         }
@@ -282,7 +281,7 @@ class ScopeService {
             throw new GraphQLError("ERROR_AUTHORIZATION_GROUP_DOES_NOT_EXIST");
         }
 
-        const authResult = authorizeRead(this.oidcContext, [TENANT_READ_ALL_SCOPE, SCOPE_READ_SCOPE], authzGroup.tenantId);
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_READ_ALL_SCOPE, SCOPE_READ_SCOPE], authzGroup.tenantId);
         if(!authResult.isAuthorized){
             throw new GraphQLError(authResult.errorMessage || "ERROR");
         }
@@ -298,7 +297,7 @@ class ScopeService {
     }
 
     public async getUserScopes(userId: string, tenantId: string): Promise<Array<Scope>> {
-        const authResult = authorizeRead(this.oidcContext, [TENANT_READ_ALL_SCOPE, SCOPE_READ_SCOPE], tenantId);
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_READ_ALL_SCOPE, SCOPE_READ_SCOPE], tenantId);
         if(!authResult.isAuthorized){
             throw new GraphQLError(authResult.errorMessage || "ERROR");
         }
@@ -314,7 +313,7 @@ class ScopeService {
     }
 
     public async assignScopeToClient(tenantId: string, clientId: string, scopeId: string): Promise<ClientScopeRel> {
-        const authResult = authorizeCreateObject(this.oidcContext, SCOPE_CLIENT_ASSIGN_SCOPE, tenantId);
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, SCOPE_CLIENT_ASSIGN_SCOPE, tenantId);
         if(!authResult.isAuthorized){
             throw new GraphQLError(authResult.errorMessage || "ERROR");
         }
@@ -349,7 +348,7 @@ class ScopeService {
     }
 
     public async bulkAssignScopeToClient(tenantId: string, clientId: string, bulkScopeInput: Array<BulkScopeInput>): Promise<Array<ClientScopeRel>> {
-        const authResult = authorizeCreateObject(this.oidcContext, SCOPE_CLIENT_ASSIGN_SCOPE, tenantId);
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, SCOPE_CLIENT_ASSIGN_SCOPE, tenantId);
         if(!authResult.isAuthorized){
             throw new GraphQLError(authResult.errorMessage || "ERROR");
         }
@@ -388,7 +387,7 @@ class ScopeService {
 
 
     public async removeScopeFromClient(tenantId: string, clientId: string, scopeId: string): Promise<void> {
-        const authResult = authorizeDeleteObject(this.oidcContext, SCOPE_CLIENT_REMOVE_SCOPE, tenantId);
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, SCOPE_CLIENT_REMOVE_SCOPE, tenantId);
         if(!authResult.isAuthorized){
             throw new GraphQLError(authResult.errorMessage || "ERROR");
         }
@@ -398,7 +397,7 @@ class ScopeService {
 
     public async assignScopeToAuthorizationGroup(groupId: string, scopeId: string, tenantId: string): Promise<AuthorizationGroupScopeRel> {
 
-        const authResult = authorizeCreateObject(this.oidcContext, SCOPE_GROUP_ASSIGN_SCOPE, tenantId);
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, SCOPE_GROUP_ASSIGN_SCOPE, tenantId);
         if(!authResult.isAuthorized){
             throw new GraphQLError(authResult.errorMessage || "ERROR");
         }
@@ -442,7 +441,7 @@ class ScopeService {
      * @returns 
      */
     public async bulkAssignScopeToAuthorizationGroup(groupId: string, tenantId: string, bulkScopeInput: Array<BulkScopeInput>): Promise<Array<AuthorizationGroupScopeRel>>{
-        const authResult = authorizeCreateObject(this.oidcContext, SCOPE_GROUP_ASSIGN_SCOPE, tenantId);
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, SCOPE_GROUP_ASSIGN_SCOPE, tenantId);
         if(!authResult.isAuthorized){
             throw new GraphQLError(authResult.errorMessage || "ERROR");
         }
@@ -482,7 +481,7 @@ class ScopeService {
 
 
     public async removeScopeFromAuthorizationGroup(groupId: string, scopeId: string, tenantId: string): Promise<void> {
-        const authResult = authorizeDeleteObject(this.oidcContext, SCOPE_GROUP_REMOVE_SCOPE, tenantId);
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, SCOPE_GROUP_REMOVE_SCOPE, tenantId);
         if(!authResult.isAuthorized){
             throw new GraphQLError(authResult.errorMessage || "ERROR");
         }
@@ -491,7 +490,7 @@ class ScopeService {
 
     public async assignScopeToUser(userId: string, tenantId: string, scopeId: string): Promise<UserScopeRel> {
 
-        const authResult = authorizeCreateObject(this.oidcContext, SCOPE_USER_ASSIGN_SCOPE, tenantId);
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, SCOPE_USER_ASSIGN_SCOPE, tenantId);
         if(!authResult.isAuthorized){
             throw new GraphQLError(authResult.errorMessage || "ERROR");
         }
@@ -535,7 +534,7 @@ class ScopeService {
      */
     public async bulkAssignScopeToUser(userId: string, tenantId: string, bulkScopeInput: Array<BulkScopeInput>): Promise<Array<UserScopeRel>>{
         
-        const authResult = authorizeCreateObject(this.oidcContext, SCOPE_USER_ASSIGN_SCOPE, tenantId);
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, SCOPE_USER_ASSIGN_SCOPE, tenantId);
         if(!authResult.isAuthorized){
             throw new GraphQLError(authResult.errorMessage || "ERROR");
         }
@@ -576,7 +575,7 @@ class ScopeService {
     }
 
     public async removeScopeFromUser(userId: string, tenantId: string, scopeId: string): Promise<void> {
-        const authResult = authorizeDeleteObject(this.oidcContext, SCOPE_USER_REMOVE_SCOPE, tenantId);
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, SCOPE_USER_REMOVE_SCOPE, tenantId);
         if(!authResult.isAuthorized){
             throw new GraphQLError(authResult.errorMessage || "ERROR");
         }
@@ -586,7 +585,7 @@ class ScopeService {
     public async deleteScope(scopeId: string): Promise<void> {
         // TODO, will need to delete various relationships to tenants and clients
         // return scopeDao.deleteScope(scopeId);
-        const authResult = authorizeDeleteObject(this.oidcContext, SCOPE_DELETE_SCOPE, null);
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, SCOPE_DELETE_SCOPE, null);
         if(!authResult.isAuthorized){
             throw new GraphQLError(authResult.errorMessage || "ERROR");
         }

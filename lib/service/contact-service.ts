@@ -8,7 +8,7 @@ import { randomUUID } from "crypto";
 import { CLIENT_READ_SCOPE, CLIENT_UPDATE_SCOPE, CONTACT_TYPE_FOR_CLIENT, CONTACT_TYPE_FOR_SIGNING_KEY, CONTACT_TYPE_FOR_TENANT, KEY_READ_SCOPE, KEY_UPDATE_SCOPE, TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE, TENANT_UPDATE_SCOPE } from "@/utils/consts";
 import { GraphQLError } from "graphql";
 import { DaoFactory } from "../data-sources/dao-factory";
-import { authorizeCreateObject, readWithInputFilterAndAuthorization } from "@/utils/authz-utils";
+import { authorizeByScopeAndTenant, ServiceAuthorizationWrapper } from "@/utils/authz-utils";
 
 
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
@@ -26,12 +26,12 @@ class ContactService {
     }
 
     public async getContacts(objectId: string): Promise<Array<Contact>> {
-        const getData = readWithInputFilterAndAuthorization(
+        const getData = ServiceAuthorizationWrapper(
             {
-                async retrieveData(oidcContext, ...args) {
+                async performOperation(oidcContext, ...args) {
                     return contactDao.getContacts(objectId);
                 },
-                async postProcess(oidcContext: OIDCContext, result: Array<Contact> | null): Promise<{ isAuthorized: boolean, errorMessage: string | null, result: Array<Contact> | null }> {
+                async additionalConstraintCheck(oidcContext: OIDCContext, result: Array<Contact> | null): Promise<{ isAuthorized: boolean, errorMessage: string | null, result: Array<Contact> | null }> {
                     if (result && result.length > 0) {
                         // just need the first contact in the list, since they will all by
                         // tied to the same type of object, based on the object id.
@@ -62,7 +62,7 @@ class ContactService {
                             tenantId = key.tenantId;
                             scopeRequired = KEY_READ_SCOPE;
                         }
-                        const {isAuthorized, errorMessage} = authorizeCreateObject(oidcContext, [TENANT_READ_ALL_SCOPE, scopeRequired], tenantId);
+                        const {isAuthorized, errorMessage} = authorizeByScopeAndTenant(oidcContext, [TENANT_READ_ALL_SCOPE, scopeRequired], tenantId);
                         if(!isAuthorized){
                             return {isAuthorized, errorMessage, result: null};
                         }
@@ -110,7 +110,7 @@ class ContactService {
             throw new GraphQLError("ERROR_INVALID_EMAIL");
         }
 
-        const {isAuthorized, errorMessage} = authorizeCreateObject(this.oidcContext, scopeRequired, tenantId);
+        const {isAuthorized, errorMessage} = authorizeByScopeAndTenant(this.oidcContext, scopeRequired, tenantId);
         if(!isAuthorized){
             throw new GraphQLError(errorMessage || "ERROR");
         }
@@ -145,7 +145,7 @@ class ContactService {
                 tenantId = key.tenantId;
                 scopeRequired = KEY_UPDATE_SCOPE;
             }
-            const {isAuthorized, errorMessage} = authorizeCreateObject(this.oidcContext, scopeRequired, tenantId);
+            const {isAuthorized, errorMessage} = authorizeByScopeAndTenant(this.oidcContext, scopeRequired, tenantId);
             if(!isAuthorized){
                 throw new GraphQLError(errorMessage || "ERROR");
             }

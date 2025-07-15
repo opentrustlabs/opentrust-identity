@@ -9,7 +9,7 @@ import { CLIENT_CREATE_SCOPE, CLIENT_READ_SCOPE, CLIENT_SECRET_ENCODING, CLIENT_
 import { getOpenSearchClient } from "@/lib/data-sources/search";
 import { DaoFactory } from "../data-sources/dao-factory";
 import Kms from "../kms/kms";
-import { authorizeCreateObject, authorizeRead, authorizeUpdateObject, readWithInputFilterAndAuthorization } from "@/utils/authz-utils";
+import { authorizeByScopeAndTenant, ServiceAuthorizationWrapper } from "@/utils/authz-utils";
 
 const clientDao: ClientDao = DaoFactory.getInstance().getClientDao();
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
@@ -26,20 +26,25 @@ class ClientService {
 
 
     public async getClients(tenantId?: string): Promise<Array<Client>> {
-        const getData = readWithInputFilterAndAuthorization(
+        const getData = ServiceAuthorizationWrapper(
             {
-                async preProcess(oidcContext, ...args) {
+                preProcess: async function(oidcContext, ...args) {
                     if (oidcContext.portalUserProfile?.managementAccessTenantId !== oidcContext.rootTenant.tenantId) {
                         return [oidcContext.portalUserProfile?.managementAccessTenantId || ""];
                     }
                     return [args];
                 },
-                async retrieveData(_, ...args) {
+                performOperation: async function(_, ...args) {
                     const clients: Array<Client> = await clientDao.getClients(...args);
-                    clients.forEach(
-                        (c: Client) => c.clientSecret = ""
-                    );
                     return clients;
+                },
+                postProcess: async function(_, result) {
+                    if(result){
+                        result.forEach(
+                            (c: Client) => c.clientSecret = ""
+                        );                        
+                    }
+                    return result;
                 },
             }
         );
@@ -50,21 +55,24 @@ class ClientService {
     
 
     public async getClientById(clientId: string): Promise<Client | null> {
-        const getData = readWithInputFilterAndAuthorization<any[], Client | null>(
+        const getData = ServiceAuthorizationWrapper<any[], Client | null>(
             {
-                retrieveData: async function(oidcContext, ...args): Promise<Client | null> {
-                    const client = await clientDao.getClientById(clientId);  
-                    if(client){
-                        client.clientSecret = "";
-                    } 
+                performOperation: async function(oidcContext, ...args): Promise<Client | null> {
+                    const client = await clientDao.getClientById(clientId);                       
                     return client;
                 },
-                postProcess: async function(oidcContext, result: Client | null): Promise<{ isAuthorized: boolean; errorMessage: string | null; result: Client | null}> {
+                additionalConstraintCheck: async function(oidcContext, result: Client | null): Promise<{ isAuthorized: boolean; errorMessage: string | null}> {
                     if(result && result.tenantId !== oidcContext.portalUserProfile?.managementAccessTenantId){
-                        return {isAuthorized: false, errorMessage: "ERROR_NO_ACCESS_TO_TENANT", result: null}
+                        return {isAuthorized: false, errorMessage: "ERROR_NO_ACCESS_TO_TENANT"}
                     }
-                    return {isAuthorized: true, errorMessage: null, result: result}
-                }
+                    return {isAuthorized: true, errorMessage: null}
+                },
+                postProcess: async function(_, result) {
+                    if(result){
+                        result.clientSecret = ""
+                    }
+                    return result;
+                },
             }
         );
 
@@ -80,7 +88,7 @@ class ClientService {
             });
         }
 
-        const {isAuthorized, errorMessage} = authorizeCreateObject(this.oidcContext, CLIENT_CREATE_SCOPE, client.tenantId);
+        const {isAuthorized, errorMessage} = authorizeByScopeAndTenant(this.oidcContext, CLIENT_CREATE_SCOPE, client.tenantId);
         if(!isAuthorized){
             throw new GraphQLError(errorMessage || "ERROR");
         }
@@ -108,7 +116,7 @@ class ClientService {
             throw new GraphQLError("ERROR_CLIENT_NOT_FOUND")
         }
         
-        const {isAuthorized, errorMessage} = authorizeUpdateObject(this.oidcContext, CLIENT_UPDATE_SCOPE, clientToUpdate.tenantId);
+        const {isAuthorized, errorMessage} = authorizeByScopeAndTenant(this.oidcContext, CLIENT_UPDATE_SCOPE, clientToUpdate.tenantId);
         if(!isAuthorized){
             throw new GraphQLError(errorMessage || "ERROR");
         }
@@ -180,7 +188,7 @@ class ClientService {
     public async getRedirectURIs(clientId: string): Promise<Array<string>>{
         const client: Client | null = await clientDao.getClientById(clientId);
         if(client){
-            const {isAuthorized, errorMessage} = authorizeRead(this.oidcContext, [CLIENT_READ_SCOPE, TENANT_READ_ALL_SCOPE], client.tenantId);
+            const {isAuthorized, errorMessage} = authorizeByScopeAndTenant(this.oidcContext, [CLIENT_READ_SCOPE, TENANT_READ_ALL_SCOPE], client.tenantId);
             if(!isAuthorized){
                 throw new GraphQLError(errorMessage || "ERROR");
             }
@@ -198,7 +206,7 @@ class ClientService {
             throw new GraphQLError("ERROR_OIDC_NOT_ENABLED_FOR_THIS_CLIENT");
         }
 
-        const {isAuthorized, errorMessage} = authorizeUpdateObject(this.oidcContext, CLIENT_UPDATE_SCOPE, client.tenantId);
+        const {isAuthorized, errorMessage} = authorizeByScopeAndTenant(this.oidcContext, CLIENT_UPDATE_SCOPE, client.tenantId);
         if(!isAuthorized){
             throw new GraphQLError(errorMessage || "ERROR");
         }
@@ -211,7 +219,7 @@ class ClientService {
         if(!client){
             throw new GraphQLError("ERROR_UNABLE_TO_FIND_CLIENT_BY_ID");
         }
-        const {isAuthorized, errorMessage} = authorizeUpdateObject(this.oidcContext, CLIENT_UPDATE_SCOPE, client.tenantId);
+        const {isAuthorized, errorMessage} = authorizeByScopeAndTenant(this.oidcContext, CLIENT_UPDATE_SCOPE, client.tenantId);
         if(!isAuthorized){
             throw new GraphQLError(errorMessage || "ERROR");
         }

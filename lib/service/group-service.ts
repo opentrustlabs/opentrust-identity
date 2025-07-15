@@ -9,8 +9,7 @@ import { getOpenSearchClient } from "@/lib/data-sources/search";
 import { Client } from "@opensearch-project/opensearch";
 import { DaoFactory } from "../data-sources/dao-factory";
 import IdentityDao from "../dao/identity-dao";
-import { authorizeCreateObject, authorizeDeleteObject, authorizeRead, authorizeUpdateObject, containsScope, filterResults, readWithInputFilterAndAuthorization } from "@/utils/authz-utils";
-import { AUTHORIZATION_GROUP_USER_ADD_MUTATION } from "@/graphql/mutations/oidc-mutations";
+import { authorizeByScopeAndTenant, containsScope, filterResultsByTenant, ServiceAuthorizationWrapper } from "@/utils/authz-utils";
 
 
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
@@ -28,7 +27,7 @@ class GroupService {
 
     public async getGroups(tenantId?: string): Promise<Array<AuthorizationGroup>> {
 
-        const getData = readWithInputFilterAndAuthorization(
+        const getData = ServiceAuthorizationWrapper(
             {
                 async preProcess(oidcContext, tenantId) {
                     if(!tenantId){
@@ -46,7 +45,7 @@ class GroupService {
                     }
                     return [tenantId];
                 },
-                async retrieveData(oidcContext: OIDCContext, ...args): Promise<Array<AuthorizationGroup>> {
+                async performOperation(_, ...args): Promise<Array<AuthorizationGroup>> {
                     const groups = await groupDao.getAuthorizationGroups(...args);
                     return groups;
                 }
@@ -58,15 +57,15 @@ class GroupService {
     }
 
     public async getGroupById(groupId: string): Promise<AuthorizationGroup | null> {            
-        const getData = readWithInputFilterAndAuthorization(
+        const getData = ServiceAuthorizationWrapper(
             {
-                async retrieveData(_, groupId): Promise<AuthorizationGroup | null> {
+                async performOperation(_, groupId): Promise<AuthorizationGroup | null> {
                     const result = await groupDao.getAuthorizationGroupById(groupId);
                     return result;
                 },
-                async postProcess(oidcContext: OIDCContext, result: AuthorizationGroup | null) {
+                async additionalConstraintCheck(oidcContext: OIDCContext, result: AuthorizationGroup | null) {
                     if(result && result.tenantId !== oidcContext.portalUserProfile?.managementAccessTenantId){
-                        return {isAuthorized: false, errorMessage: "ERROR_INSUFFICIENT_PERMISSIONS_TO_READ_OBJECT", result: null};
+                        return {isAuthorized: false, errorMessage: "ERROR_INSUFFICIENT_PERMISSIONS_TO_READ_AUTHORIZATION_GROUP", result: null};
                     }
                     else{
                         return { isAuthorized: true, errorMessage: null, result: result};
@@ -80,7 +79,7 @@ class GroupService {
 
     public async createGroup(group: AuthorizationGroup): Promise<AuthorizationGroup> {
 
-        const {isAuthorized, errorMessage} = authorizeCreateObject(this.oidcContext, AUTHORIZATION_GROUP_CREATE_SCOPE, group.tenantId);
+        const {isAuthorized, errorMessage} = authorizeByScopeAndTenant(this.oidcContext, AUTHORIZATION_GROUP_CREATE_SCOPE, group.tenantId);
         if(!isAuthorized){
             throw new GraphQLError(errorMessage || "ERROR");
         }
@@ -98,7 +97,7 @@ class GroupService {
 
     public async updateGroup(group: AuthorizationGroup): Promise<AuthorizationGroup> {
 
-        const {isAuthorized, errorMessage} = authorizeUpdateObject(this.oidcContext, AUTHORIZATION_GROUP_UPDATE_SCOPE, group.tenantId);
+        const {isAuthorized, errorMessage} = authorizeByScopeAndTenant(this.oidcContext, AUTHORIZATION_GROUP_UPDATE_SCOPE, group.tenantId);
         if(!isAuthorized){
             throw new GraphQLError(errorMessage || "ERROR");
         }
@@ -153,7 +152,7 @@ class GroupService {
 
     public async deleteGroup(groupId: string): Promise<void> {
 
-        const {isAuthorized, errorMessage} = authorizeDeleteObject(this.oidcContext, AUTHORIZATION_GROUP_DELETE_SCOPE, groupId);
+        const {isAuthorized, errorMessage} = authorizeByScopeAndTenant(this.oidcContext, AUTHORIZATION_GROUP_DELETE_SCOPE, groupId);
         if(!isAuthorized){
             throw new GraphQLError(errorMessage || "ERROR");
         }
@@ -180,7 +179,7 @@ class GroupService {
         }
 
         // Is the user authorized to perform the action?
-        const {isAuthorized, errorMessage} = authorizeCreateObject(this.oidcContext, AUTHORIZATION_GROUP_USER_ASSIGN_SCOPE, authzGroup.tenantId);
+        const {isAuthorized, errorMessage} = authorizeByScopeAndTenant(this.oidcContext, AUTHORIZATION_GROUP_USER_ASSIGN_SCOPE, authzGroup.tenantId);
         if(!isAuthorized){
             throw new GraphQLError(errorMessage || "ERROR");
         }
@@ -210,7 +209,7 @@ class GroupService {
     public async removeUserFromGroup(userId: string, groupId: string): Promise<void> {
         const authzGroup: AuthorizationGroup | null = await groupDao.getAuthorizationGroupById(groupId);
         if(authzGroup){
-            const {isAuthorized, errorMessage} = authorizeDeleteObject(this.oidcContext, AUTHORIZATION_GROUP_USER_REMOVE_SCOPE, groupId);
+            const {isAuthorized, errorMessage} = authorizeByScopeAndTenant(this.oidcContext, AUTHORIZATION_GROUP_USER_REMOVE_SCOPE, groupId);
             if(!isAuthorized){
                 throw new GraphQLError(errorMessage || "ERROR");
             }
@@ -230,7 +229,7 @@ class GroupService {
             throw new GraphQLError("ERROR_NO_PERMISSION");
         }
         const groups: Array<AuthorizationGroup> = await groupDao.getUserAuthorizationGroups(userId);
-        return filterResults(groups, this.oidcContext, (g: AuthorizationGroup) => g.tenantId);        
+        return filterResultsByTenant(groups, this.oidcContext, (g: AuthorizationGroup) => g.tenantId);        
     }
 }
 

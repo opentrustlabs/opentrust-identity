@@ -8,7 +8,7 @@ import { Client } from "@opensearch-project/opensearch";
 import { getOpenSearchClient } from "../data-sources/search";
 import Kms from "../kms/kms";
 import { X509Certificate } from "crypto";
-import { authorizeCreateObject, authorizeRead, readWithInputFilterAndAuthorization } from "@/utils/authz-utils";
+import { authorizeByScopeAndTenant, ServiceAuthorizationWrapper } from "@/utils/authz-utils";
 
 
 const signingKeysDao = DaoFactory.getInstance().getSigningKeysDao();
@@ -26,7 +26,7 @@ class SigningKeysService {
    
     public async getSigningKeys(tenantId?: string): Promise<Array<SigningKey>> {
 
-        const getData = readWithInputFilterAndAuthorization(
+        const getData = ServiceAuthorizationWrapper(
             {
                 async preProcess(oidcContext: OIDCContext, ...args) {
                     if (oidcContext.portalUserProfile?.managementAccessTenantId !== oidcContext.rootTenant.tenantId) {
@@ -34,17 +34,22 @@ class SigningKeysService {
                     }
                     return args;
                 },
-                async retrieveData(_, ...args) {
+                async performOperation(_, ...args) {
                     console.log("args is: " + args);
                     const signingKeys: Array<SigningKey> = await signingKeysDao.getSigningKeys(...args);
-                    // Do NOT!!! return any private key or password data with this call.
-                    signingKeys.forEach(
-                        (k: SigningKey) => {
-                            k.password = "";
-                            k.privateKeyPkcs8 = "";
-                        }
-                    );
                     return signingKeys
+                },
+                async postProcess(_, result) {
+                    // Do NOT!!! return any private key or password data with this call.
+                    if(result){
+                        result.forEach(
+                            (k: SigningKey) => {
+                                k.password = "";
+                                k.privateKeyPkcs8 = "";
+                            }
+                        );
+                    }
+                    return result;
                 },
             }
         );
@@ -56,7 +61,7 @@ class SigningKeysService {
 
     public async createSigningKey(key: SigningKey): Promise<SigningKey> {
 
-        const authResult = authorizeCreateObject(this.oidcContext, [KEY_CREATE_SCOPE], key.tenantId);
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [KEY_CREATE_SCOPE], key.tenantId);
         if(!authResult.isAuthorized){
             throw new GraphQLError(authResult.errorMessage || "ERROR");
         }
@@ -127,7 +132,7 @@ class SigningKeysService {
             throw new GraphQLError("ERROR_SIGNING_KEY_DOES_NOT_EXIST");
         }
 
-        const authResult = authorizeCreateObject(this.oidcContext, [KEY_UPDATE_SCOPE], existingKey.tenantId);
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [KEY_UPDATE_SCOPE], existingKey.tenantId);
         if(!authResult.isAuthorized){
             throw new GraphQLError(authResult.errorMessage || "ERROR");
         }
@@ -146,35 +151,38 @@ class SigningKeysService {
 
     public async getSigningKeyById(keyId: string): Promise<SigningKey | null> {
 
-        const getData = readWithInputFilterAndAuthorization(
+        const getData = ServiceAuthorizationWrapper(
             {
-                async retrieveData(_, __) {
+                async performOperation(_, __) {
                     const signingKey: SigningKey | null = await signingKeysDao.getSigningKeyById(keyId);
-                    if(signingKey){
+                    return signingKey;
+                },
+                async additionalConstraintCheck(oidcContext: OIDCContext, result: SigningKey | null) {
+                    if(result){                        
+                        if(oidcContext.portalUserProfile?.managementAccessTenantId !== result.tenantId){
+                            return {isAuthorized: false, errorMessage: "ERROR_NO_ACCESS_TO_SIGNING_KEY"};
+                        }
+                        else {
+                            return {isAuthorized: true, errorMessage: null};
+                        }
+                    }
+                    return {isAuthorized: true, errorMessage: null};
+                },
+                async postProcess(_, result) {
+                    if(result){
                         // Only return the public data. Viewing either the password for an encrypted
                         // private key or a plain text private key requires special permissions.
 
                         // A non-empty password means that an encrypted private key was supplied
-                        if(signingKey.password && signingKey.password !== ""){
-                            signingKey.password = ""
+                        if(result.password && result.password !== ""){
+                            result.password = ""
                         }
                         // else a plain text password was supplied.
                         else{
-                            signingKey.privateKeyPkcs8 = ""
+                            result.privateKeyPkcs8 = ""
                         }
                     }
-                    return signingKey;
-                },
-                async postProcess(oidcContext: OIDCContext, result: SigningKey | null) {
-                    if(result){                        
-                        if(oidcContext.portalUserProfile?.managementAccessTenantId !== result.tenantId){
-                            return {isAuthorized: false, errorMessage: "ERROR_NO_ACCESS_TO_SIGNING_KEY", result: null};
-                        }
-                        else {
-                            return {isAuthorized: true, errorMessage: null, result: result};
-                        }
-                    }
-                    return {isAuthorized: true, errorMessage: null, result: result};
+                    return result;
                 },
             }
         );

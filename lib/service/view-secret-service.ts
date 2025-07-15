@@ -5,7 +5,7 @@ import Kms from "../kms/kms";
 import ClientDao from "../dao/client-dao";
 import SigningKeysDao from "../dao/signing-keys-dao";
 import FederatedOIDCProviderDao from "../dao/federated-oidc-provider-dao";
-import { authorizeRead } from "@/utils/authz-utils";
+import { authorizeByScopeAndTenant } from "@/utils/authz-utils";
 import { CLIENT_SECRET_VIEW_SCOPE, FEDERATED_OIDC_PROVIDER_SECRET_VIEW_SCOPE, KEY_SECRET_VIEW_SCOPE } from "@/utils/consts";
 import { GraphQLError } from "graphql";
 
@@ -28,7 +28,7 @@ class ViewSecretService {
         if(objectType === SecretObjectType.ClientSecret){
             const client: Client | null = await clientDao.getClientById(objectId);
             if(client){
-                const {isAuthorized, errorMessage} = authorizeRead(this.oidcContext, CLIENT_SECRET_VIEW_SCOPE, client.tenantId);
+                const {isAuthorized, errorMessage} = authorizeByScopeAndTenant(this.oidcContext, CLIENT_SECRET_VIEW_SCOPE, client.tenantId);
                 if(!isAuthorized){
                     throw new GraphQLError(errorMessage || "ERROR");
                 }
@@ -39,7 +39,7 @@ class ViewSecretService {
         else if(objectType === SecretObjectType.PrivateKey){
             const signingKey: SigningKey | null = await signingKeysDao.getSigningKeyById(objectId);
             if(signingKey){
-                const {isAuthorized, errorMessage} = authorizeRead(this.oidcContext, KEY_SECRET_VIEW_SCOPE, signingKey.tenantId);
+                const {isAuthorized, errorMessage} = authorizeByScopeAndTenant(this.oidcContext, KEY_SECRET_VIEW_SCOPE, signingKey.tenantId);
                 if(!isAuthorized){
                     throw new GraphQLError(errorMessage || "ERROR");
                 }
@@ -49,7 +49,7 @@ class ViewSecretService {
         else if(objectType === SecretObjectType.PrivateKeyPassword){
             const signingKey: SigningKey | null = await signingKeysDao.getSigningKeyById(objectId);
             if(signingKey){
-                const {isAuthorized, errorMessage} = authorizeRead(this.oidcContext, KEY_SECRET_VIEW_SCOPE, signingKey.tenantId);
+                const {isAuthorized, errorMessage} = authorizeByScopeAndTenant(this.oidcContext, KEY_SECRET_VIEW_SCOPE, signingKey.tenantId);
                 if(!isAuthorized){
                     throw new GraphQLError(errorMessage || "ERROR");
                 }
@@ -69,13 +69,13 @@ class ViewSecretService {
                     if(!rel){
                         throw new GraphQLError("ERROR_NO_PROVIDER_ASSIGNED_TO_TENANT");
                     }
-                    const {isAuthorized, errorMessage} = authorizeRead(this.oidcContext, FEDERATED_OIDC_PROVIDER_SECRET_VIEW_SCOPE, rel.tenantId);
+                    const {isAuthorized, errorMessage} = authorizeByScopeAndTenant(this.oidcContext, FEDERATED_OIDC_PROVIDER_SECRET_VIEW_SCOPE, rel.tenantId);
                     if(!isAuthorized){
                         throw new GraphQLError(errorMessage || "ERROR");
                     }
                 }
                 else{
-                    const {isAuthorized, errorMessage} = authorizeRead(this.oidcContext, FEDERATED_OIDC_PROVIDER_SECRET_VIEW_SCOPE, null);
+                    const {isAuthorized, errorMessage} = authorizeByScopeAndTenant(this.oidcContext, FEDERATED_OIDC_PROVIDER_SECRET_VIEW_SCOPE, null);
                     if(!isAuthorized){
                         throw new GraphQLError(errorMessage || "ERROR");
                     }
