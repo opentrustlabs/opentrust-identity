@@ -86,12 +86,12 @@ class AuthenticationGroupService {
                 performOperation: async function(_, authenticationGroupId: string): Promise<AuthenticationGroup | null> {
                     return authenticationGroupDao.getAuthenticationGroupById(authenticationGroupId);
                 },
-                additionalConstraintCheck: async function (oidcContext: OIDCContext, authenticationGroup: AuthenticationGroup | null): Promise<{ isAuthorized: boolean; errorMessage: string | null; result: AuthenticationGroup | null; }> {                                        
+                additionalConstraintCheck: async function (oidcContext: OIDCContext, authenticationGroup: AuthenticationGroup | null): Promise<{ isAuthorized: boolean, errorMessage: string | null}> {
                     if(authenticationGroup && authenticationGroup.tenantId !== oidcContext.portalUserProfile?.managementAccessTenantId){
-                        return {isAuthorized: false, errorMessage: "ERROR_INSUFFICIENT_PERMISSIONS_TO_READ_OBJECT", result: null};
+                        return {isAuthorized: false, errorMessage: "ERROR_INSUFFICIENT_PERMISSIONS_TO_READ_OBJECT"};
                     }
                     else{
-                        return { isAuthorized: true, errorMessage: null, result: authenticationGroup};
+                        return { isAuthorized: true, errorMessage: null};
                     }                    
                 }
             } 

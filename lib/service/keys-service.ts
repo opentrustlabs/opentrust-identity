@@ -2,7 +2,7 @@ import { ObjectSearchResultItem, RelSearchResultItem, SearchResultType, SigningK
 import { GraphQLError } from "graphql/error/GraphQLError";
 import { randomUUID, sign } from 'crypto'; 
 import { OIDCContext } from "@/graphql/graphql-context";
-import { KEY_CREATE_SCOPE, KEY_READ_SCOPE, KEY_TYPES, KEY_UPDATE_SCOPE, KEY_USES, PKCS8_ENCRYPTED_PRIVATE_KEY_HEADER, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, SIGNING_KEY_STATUS_ACTIVE, SIGNING_KEY_STATUS_REVOKED, TENANT_READ_ALL_SCOPE } from "@/utils/consts";
+import { KEY_CREATE_SCOPE, KEY_DELETE_SCOPE, KEY_READ_SCOPE, KEY_TYPES, KEY_UPDATE_SCOPE, KEY_USES, PKCS8_ENCRYPTED_PRIVATE_KEY_HEADER, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, SIGNING_KEY_STATUS_ACTIVE, SIGNING_KEY_STATUS_REVOKED, TENANT_READ_ALL_SCOPE } from "@/utils/consts";
 import { DaoFactory } from "../data-sources/dao-factory";
 import { Client } from "@opensearch-project/opensearch";
 import { getOpenSearchClient } from "../data-sources/search";
@@ -195,6 +195,11 @@ class SigningKeysService {
     public async deleteSigningKey(keyId: string): Promise<void> {
         const signingKey: SigningKey | null = await signingKeysDao.getSigningKeyById(keyId);
         if(signingKey){
+            const authResult = authorizeByScopeAndTenant(this.oidcContext, [KEY_DELETE_SCOPE], signingKey.tenantId);
+            if(!authResult.isAuthorized){
+                throw new GraphQLError(authResult.errorMessage || "ERROR");
+            }
+
             await signingKeysDao.deleteSigningKey(keyId);
             await searchClient.delete({
                 id: keyId,

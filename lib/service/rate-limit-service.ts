@@ -5,7 +5,7 @@ import RateLimitDao from "../dao/rate-limit-dao";
 import { ObjectSearchResultItem, RateLimitServiceGroup, RelSearchResultItem, SearchResultType, Tenant, TenantRateLimitRel, TenantRateLimitRelView } from "@/graphql/generated/graphql-types";
 import TenantDao from "../dao/tenant-dao";
 import { DaoFactory } from "../data-sources/dao-factory";
-import { DEFAULT_RATE_LIMIT_PERIOD_MINUTES, RATE_LIMIT_CREATE_SCOPE, RATE_LIMIT_READ_SCOPE, RATE_LIMIT_TENANT_ASSIGN_SCOPE, RATE_LIMIT_TENANT_REMOVE_SCOPE, RATE_LIMIT_TENANT_UPDATE_SCOPE, RATE_LIMIT_UPDATE_SCOPE, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_READ_ALL_SCOPE } from "@/utils/consts";
+import { DEFAULT_RATE_LIMIT_PERIOD_MINUTES, RATE_LIMIT_CREATE_SCOPE, RATE_LIMIT_DELETE_SCOPE, RATE_LIMIT_READ_SCOPE, RATE_LIMIT_TENANT_ASSIGN_SCOPE, RATE_LIMIT_TENANT_REMOVE_SCOPE, RATE_LIMIT_TENANT_UPDATE_SCOPE, RATE_LIMIT_UPDATE_SCOPE, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_READ_ALL_SCOPE } from "@/utils/consts";
 import { getOpenSearchClient } from "../data-sources/search";
 import { authorizeByScopeAndTenant, ServiceAuthorizationWrapper } from "@/utils/authz-utils";
 
@@ -96,7 +96,10 @@ class RateLimitService {
     }
 
     public async deleteRateLimitServiceGroup(serviceGroupId: string): Promise<void>{
-
+        const {isAuthorized, errorMessage} = authorizeByScopeAndTenant(this.oidcContext, RATE_LIMIT_DELETE_SCOPE, null);
+        if(!isAuthorized){
+            throw new GraphQLError(errorMessage || "ERROR");
+        }
 
         // TODO
         // DELETE all of the relations to various tenants to which this has

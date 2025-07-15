@@ -96,16 +96,16 @@ class GroupService {
     }
 
     public async updateGroup(group: AuthorizationGroup): Promise<AuthorizationGroup> {
-
-        const {isAuthorized, errorMessage} = authorizeByScopeAndTenant(this.oidcContext, AUTHORIZATION_GROUP_UPDATE_SCOPE, group.tenantId);
-        if(!isAuthorized){
-            throw new GraphQLError(errorMessage || "ERROR");
-        }
-
+        
         const existingGroup: AuthorizationGroup | null = await groupDao.getAuthorizationGroupById(group.groupId);
         if(!existingGroup){
             throw new GraphQLError("ERROR_GROUP_NOT_FOUND");
         }
+        const {isAuthorized, errorMessage} = authorizeByScopeAndTenant(this.oidcContext, AUTHORIZATION_GROUP_UPDATE_SCOPE, existingGroup.tenantId);
+        if(!isAuthorized){
+            throw new GraphQLError(errorMessage || "ERROR");
+        }
+
         existingGroup.groupName = group.groupName;
         existingGroup.default = group.default;
         existingGroup.groupDescription = group.groupDescription;
@@ -151,10 +151,14 @@ class GroupService {
     }
 
     public async deleteGroup(groupId: string): Promise<void> {
-
-        const {isAuthorized, errorMessage} = authorizeByScopeAndTenant(this.oidcContext, AUTHORIZATION_GROUP_DELETE_SCOPE, groupId);
-        if(!isAuthorized){
-            throw new GraphQLError(errorMessage || "ERROR");
+        const group: AuthorizationGroup | null = await groupDao.getAuthorizationGroupById(groupId);
+        if(group){
+            const {isAuthorized, errorMessage} = authorizeByScopeAndTenant(this.oidcContext, AUTHORIZATION_GROUP_DELETE_SCOPE, group.tenantId);
+            if(!isAuthorized){
+                throw new GraphQLError(errorMessage || "ERROR");
+            }
+            // TODO
+            // DELETE THE SCOPE/GROUP and USER/GROUP relationships
         }
 
         throw new Error("Method not implemented.");
@@ -209,7 +213,7 @@ class GroupService {
     public async removeUserFromGroup(userId: string, groupId: string): Promise<void> {
         const authzGroup: AuthorizationGroup | null = await groupDao.getAuthorizationGroupById(groupId);
         if(authzGroup){
-            const {isAuthorized, errorMessage} = authorizeByScopeAndTenant(this.oidcContext, AUTHORIZATION_GROUP_USER_REMOVE_SCOPE, groupId);
+            const {isAuthorized, errorMessage} = authorizeByScopeAndTenant(this.oidcContext, AUTHORIZATION_GROUP_USER_REMOVE_SCOPE, authzGroup.tenantId);
             if(!isAuthorized){
                 throw new GraphQLError(errorMessage || "ERROR");
             }
@@ -225,11 +229,25 @@ class GroupService {
     }
 
     public async getUserAuthorizationGroups(userId: string): Promise<Array<AuthorizationGroup>> {
-        if(!containsScope([AUTHORIZATION_GROUP_READ_SCOPE, TENANT_READ_ALL_SCOPE], this.oidcContext.portalUserProfile?.scope || [])){
-            throw new GraphQLError("ERROR_NO_PERMISSION");
-        }
-        const groups: Array<AuthorizationGroup> = await groupDao.getUserAuthorizationGroups(userId);
-        return filterResultsByTenant(groups, this.oidcContext, (g: AuthorizationGroup) => g.tenantId);        
+
+        const getData = ServiceAuthorizationWrapper(
+            {
+                performOperation: async function (_, __): Promise<Array<AuthorizationGroup>>  {
+                    const groups: Array<AuthorizationGroup> = await groupDao.getUserAuthorizationGroups(userId);
+                    return groups;
+                }, 
+                postProcess: async function(oidcContext: OIDCContext, result: Array<AuthorizationGroup> | null) {
+                    if(result && oidcContext.portalUserProfile?.managementAccessTenantId !== oidcContext.rootTenant.tenantId){
+                        return filterResultsByTenant(result, oidcContext, (g: AuthorizationGroup) => g.tenantId);   
+                    }
+                    else {
+                        return result;
+                    }                    
+                },
+            }
+        );
+        const groups = await getData(this.oidcContext, [AUTHORIZATION_GROUP_READ_SCOPE, TENANT_READ_ALL_SCOPE], userId);
+        return groups || [];
     }
 }
 

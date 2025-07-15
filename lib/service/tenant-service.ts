@@ -9,7 +9,7 @@ import { getOpenSearchClient } from "@/lib/data-sources/search";
 import FederatedOIDCProviderDao from "../dao/federated-oidc-provider-dao";
 import { DaoFactory } from "../data-sources/dao-factory";
 import ScopeDao from "../dao/scope-dao";
-import { authorizeByScopeAndTenant } from "@/utils/authz-utils";
+import { authorizeByScopeAndTenant, ServiceAuthorizationWrapper } from "@/utils/authz-utils";
 
 const searchClient: Client = getOpenSearchClient();
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
@@ -91,8 +91,7 @@ class TenantService {
             tenantFilterIds = tenantFilterIds?.filter(
                 (id: string) => id === this.oidcContext.portalUserProfile?.managementAccessTenantId
             );
-        }
-        const tenants: Array<Tenant> = await tenantDao.getTenants(tenantFilterIds);
+        }        
 
         return tenantDao.getTenants(tenantFilterIds);    
     }
@@ -244,7 +243,21 @@ class TenantService {
     }
 
     public async getDomainTenantManagementRels(tenantId?: string, domain?: string): Promise<Array<TenantManagementDomainRel>>{
-        return tenantDao.getDomainTenantManagementRels(tenantId, domain);
+        const getData = ServiceAuthorizationWrapper(
+            {
+                preProcess: async function(oidcContext: OIDCContext, ...args) {
+                    if (oidcContext.portalUserProfile?.managementAccessTenantId !== oidcContext.rootTenant.tenantId) {
+                        return [oidcContext.portalUserProfile?.managementAccessTenantId || "", args[1]];
+                    }
+                    return args;
+                },
+                performOperation: async function(_, ...args) {                    
+                    return tenantDao.getDomainTenantManagementRels(...args);
+                },
+            }
+        );
+        const rels = await getData(this.oidcContext, [TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE], tenantId, domain);
+        return rels || [];
     }
 
 

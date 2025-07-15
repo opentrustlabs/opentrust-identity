@@ -11,7 +11,7 @@ import { ROOT_TENANT_EXCLUSIVE_INTERNAL_SCOPE_NAMES, SCOPE_CLIENT_ASSIGN_SCOPE, 
 import { getOpenSearchClient } from "../data-sources/search";
 import AuthorizationGroupDao from "../dao/authorization-group-dao";
 import IdentityDao from "../dao/identity-dao";
-import { authorizeByScopeAndTenant, containsScope } from "@/utils/authz-utils";
+import { authorizeByScopeAndTenant, containsScope, ServiceAuthorizationWrapper } from "@/utils/authz-utils";
 
 const scopeDao: ScopeDao = DaoFactory.getInstance().getScopeDao();
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
@@ -86,6 +86,11 @@ class ScopeService {
     }
 
     public async getScopeById(scopeId: string): Promise<Scope | null> {
+        // Only members of the root tenant are allowed to view scope details
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_READ_ALL_SCOPE, SCOPE_READ_SCOPE], null);
+        if(!authResult.isAuthorized){
+            throw new GraphQLError(authResult.errorMessage || "ERROR");
+        }        
         return scopeDao.getScopeById(scopeId);
     }
 

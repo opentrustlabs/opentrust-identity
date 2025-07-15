@@ -507,7 +507,7 @@ export const MARK_FOR_DELETE_MUTATION = gql(`
             objectId
             submittedBy
             submittedDate
-            completedData
+            completedDate
         }
     }  
 `);

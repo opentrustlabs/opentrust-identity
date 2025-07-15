@@ -13,7 +13,7 @@ import AuthorizationGroupDao from "../dao/authorization-group-dao";
 import SigningKeysDao from "../dao/signing-keys-dao";
 import { GraphQLError } from "graphql/error";
 import { randomUUID } from 'crypto'; 
-import { AUTHENTICATION_GROUP_DELETE_SCOPE, AUTHORIZATION_GROUP_DELETE_SCOPE, CLIENT_DELETE_SCOPE, FEDERATED_OIDC_PROVIDER_DELETE_SCOPE, KEY_DELETE_SCOPE, RATE_LIMIT_DELETE_SCOPE, SCOPE_DELETE_SCOPE, SCOPE_USE_IAM_MANAGEMENT, TENANT_DELETE_SCOPE, USER_DELETE_SCOPE } from "@/utils/consts";
+import { AUTHENTICATION_GROUP_DELETE_SCOPE, AUTHORIZATION_GROUP_DELETE_SCOPE, CLIENT_DELETE_SCOPE, FEDERATED_OIDC_PROVIDER_DELETE_SCOPE, KEY_DELETE_SCOPE, RATE_LIMIT_DELETE_SCOPE, SCOPE_DELETE_SCOPE, SCOPE_USE_IAM_MANAGEMENT, TENANT_DELETE_SCOPE, TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE, USER_DELETE_SCOPE } from "@/utils/consts";
 import { authorizeByScopeAndTenant, WithAuthorizationByScopeAndTenant } from "@/utils/authz-utils";
 import client from "@/components/apollo-client/apollo-client";
 
@@ -204,10 +204,18 @@ class MarkForDeleteService {
     }
 
     public async getMarkForDeleteById(markForDeleteId: string): Promise<MarkForDelete | null> {
+        const {isAuthorized, errorMessage} = authorizeByScopeAndTenant(this.oidcContext, [TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE], null);
+        if(!isAuthorized){
+            throw new GraphQLError(errorMessage || "ERROR");
+        }
         return markForDeleteDao.getMarkForDeleteById(markForDeleteId);
     }
 
     public async getDeletionStatus(markForDeleteId: string): Promise<Array<DeletionStatus>> {
+        const {isAuthorized, errorMessage} = authorizeByScopeAndTenant(this.oidcContext, [TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE], null);
+        if(!isAuthorized){
+            throw new GraphQLError(errorMessage || "ERROR");
+        }
         return markForDeleteDao.getDeletionStatus(markForDeleteId);
     }    
 

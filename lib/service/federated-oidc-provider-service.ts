@@ -4,7 +4,7 @@ import { OIDCContext } from "@/graphql/graphql-context";
 import FederatedOIDCProviderDao from "@/lib/dao/federated-oidc-provider-dao";
 import { GraphQLError } from "graphql/error/GraphQLError";
 import { randomUUID } from 'crypto'; 
-import { FEDERATED_OIDC_PROVIDER_CREATE_SCOPE, FEDERATED_OIDC_PROVIDER_READ_SCOPE, FEDERATED_OIDC_PROVIDER_TENANT_ASSIGN_SCOPE, FEDERATED_OIDC_PROVIDER_TENANT_REMOVE_SCOPE, FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL, FEDERATED_OIDC_PROVIDER_TYPES_DISPLAY, FEDERATED_OIDC_PROVIDER_UPDATE_SCOPE, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_READ_ALL_SCOPE } from "@/utils/consts";
+import { FEDERATED_OIDC_PROVIDER_CREATE_SCOPE, FEDERATED_OIDC_PROVIDER_DELETE_SCOPE, FEDERATED_OIDC_PROVIDER_READ_SCOPE, FEDERATED_OIDC_PROVIDER_TENANT_ASSIGN_SCOPE, FEDERATED_OIDC_PROVIDER_TENANT_REMOVE_SCOPE, FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL, FEDERATED_OIDC_PROVIDER_TYPES_DISPLAY, FEDERATED_OIDC_PROVIDER_UPDATE_SCOPE, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_READ_ALL_SCOPE } from "@/utils/consts";
 import { Client } from "@opensearch-project/opensearch";
 import { getOpenSearchClient } from "@/lib/data-sources/search";
 import { DaoFactory } from "../data-sources/dao-factory";
@@ -261,10 +261,6 @@ class FederatedOIDCProviderService {
         return rels || [];        
     }
 
-    public async getFederatedOIDCProviderByDomain(domain: string): Promise<FederatedOidcProvider | null>{
-        return federatedOIDCProviderDao.getFederatedOidcProviderByDomain(domain);
-    }
-
     public async assignFederatedOIDCProviderToTenant(federatedOIDCProviderId: string, tenantId: string): Promise<FederatedOidcProviderTenantRel>{
         const {isAuthorized, errorMessage} = authorizeByScopeAndTenant(this.oidcContext, FEDERATED_OIDC_PROVIDER_TENANT_ASSIGN_SCOPE, null);
         if(!isAuthorized){
@@ -341,7 +337,7 @@ class FederatedOIDCProviderService {
         if(!provider){
             throw new GraphQLError("ERROR_EXTERNAL_OIDC_PROVIDER_NOT_FOUND");
         }
-        const existingDomainRel: FederatedOidcProvider | null = await this.getFederatedOIDCProviderByDomain(domain);
+        const existingDomainRel: FederatedOidcProvider | null = await federatedOIDCProviderDao.getFederatedOidcProviderByDomain(domain);
         if(existingDomainRel && existingDomainRel.federatedOIDCProviderId !== federatedOIDCProviderId){
             throw new GraphQLError("ERROR_DOMAIN_IS_ALREADY_ASSIGNED_TO_AN_EXTERNAL_OIDC_PROVIDER");
         }
@@ -364,6 +360,10 @@ class FederatedOIDCProviderService {
     }
 
     public async deleteFederatedOIDCProvider(federatedOIDCProviderId: string): Promise<void>{
+        const {isAuthorized, errorMessage} = authorizeByScopeAndTenant(this.oidcContext, FEDERATED_OIDC_PROVIDER_DELETE_SCOPE, null);
+        if(!isAuthorized){
+            throw new GraphQLError(errorMessage || "ERROR");
+        }
         return Promise.resolve()
     }
 }

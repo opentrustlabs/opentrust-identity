@@ -933,7 +933,7 @@ type MarkForDelete {
     objectId: String!
     submittedBy: String!
     submittedDate: Float!
-    completedData: Float
+    completedDate: Float
 }
 
 type DeletionStatus {
