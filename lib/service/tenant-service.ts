@@ -3,12 +3,13 @@ import { OIDCContext } from "@/graphql/graphql-context";
 import TenantDao from "@/lib/dao/tenant-dao";
 import { GraphQLError } from "graphql";
 import { randomUUID } from 'crypto'; 
-import { DEFAULT_TENANT_META_DATA, MFA_AUTH_TYPE_NONE, MFA_AUTH_TYPES, PASSWORD_HASHING_ALGORITHMS, PASSWORD_MAXIMUM_LENGTH, PASSWORD_MINIMUM_LENGTH, SEARCH_INDEX_OBJECT_SEARCH, TENANT_TYPE_ROOT_TENANT, TENANT_TYPES_DISPLAY } from "@/utils/consts";
+import { DEFAULT_TENANT_META_DATA, MFA_AUTH_TYPE_NONE, MFA_AUTH_TYPES, PASSWORD_HASHING_ALGORITHMS, PASSWORD_MAXIMUM_LENGTH, PASSWORD_MINIMUM_LENGTH, SEARCH_INDEX_OBJECT_SEARCH, TENANT_CREATE_SCOPE, TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE, TENANT_TYPE_ROOT_TENANT, TENANT_TYPES_DISPLAY, TENANT_UPDATE_SCOPE } from "@/utils/consts";
 import { Client } from "@opensearch-project/opensearch";
 import { getOpenSearchClient } from "@/lib/data-sources/search";
 import FederatedOIDCProviderDao from "../dao/federated-oidc-provider-dao";
 import { DaoFactory } from "../data-sources/dao-factory";
 import ScopeDao from "../dao/scope-dao";
+import { authorizeByScopeAndTenant, ServiceAuthorizationWrapper } from "@/utils/authz-utils";
 
 const searchClient: Client = getOpenSearchClient();
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
@@ -28,6 +29,18 @@ class TenantService {
     }
 
     public async createRootTenant(tenant: Tenant): Promise<Tenant> {
+
+        // TODO
+        // Get the root tenant first in a try/catch block. If the root
+        // tenant does not already exist, the error object should have the 
+        // message: ERROR_UNABLE_TO_FIND_A_ROOT_TENANT
+        // In that case, create a new tenant
+        // 
+        // If there is already a root tenant, then throw an error
+        //
+        // The scope should be TENANT_CREATE (derived from an RSA key pair for identity) 
+        // and the .env file should have a property called: INIT_IAM_PORTAL=true
+
         tenant.tenantId = randomUUID().toString();
         await tenantDao.createRootTenant(tenant);
         await this.updateSearchIndex(tenant);
@@ -36,6 +49,11 @@ class TenantService {
     }
 
     public async updateRootTenant(tenant: Tenant): Promise<Tenant> {
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_UPDATE_SCOPE], tenant.tenantId);
+        if(!authResult.isAuthorized){
+            throw new GraphQLError(authResult.errorMessage || "ERROR");
+        }
+
         const {valid, errorMessage} = await this.validateTenantInput(tenant);        
         if(!valid){
             throw new GraphQLError(errorMessage);
@@ -50,6 +68,10 @@ class TenantService {
     }
         
     public async getTenants(tenantIds?: Array<string>, federatedOIDCProviderId?: string, scopeId?: string): Promise<Array<Tenant>> {
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE], this.oidcContext.portalUserProfile?.managementAccessTenantId || "");
+        if(!authResult.isAuthorized){
+            throw new GraphQLError(authResult.errorMessage || "ERROR");
+        }
 
         let tenantFilterIds: Array<string> | undefined = undefined;
 
@@ -64,14 +86,32 @@ class TenantService {
             const s: Array<TenantAvailableScope> = await scopeDao.getTenantAvailableScope(undefined, scopeId);
             tenantFilterIds = s.map((e: TenantAvailableScope) => e.tenantId);
         }
+
+        if(this.oidcContext.portalUserProfile?.managementAccessTenantId !== this.oidcContext.rootTenant.tenantId){
+            tenantFilterIds = tenantFilterIds?.filter(
+                (id: string) => id === this.oidcContext.portalUserProfile?.managementAccessTenantId
+            );
+        }        
+
         return tenantDao.getTenants(tenantFilterIds);    
     }
 
     public async getTenantById(tenantId: string): Promise<Tenant | null> {
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE], tenantId);
+        if(!authResult.isAuthorized){
+            throw new GraphQLError(authResult.errorMessage || "ERROR");
+        }
+
         return tenantDao.getTenantById(tenantId);
     }
 
     public async createTenant(tenant: Tenant): Promise<Tenant | null> {
+
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_CREATE_SCOPE], null);
+        if(!authResult.isAuthorized){
+            throw new GraphQLError(authResult.errorMessage || "ERROR");
+        }
+
         const {valid, errorMessage} = await this.validateTenantInput(tenant);
         if(!valid){
             throw new GraphQLError(errorMessage);
@@ -111,6 +151,9 @@ class TenantService {
     }
     
     protected async validateTenantInput(tenant: Tenant): Promise<{valid: boolean, errorMessage: string}> {
+        // TODO
+        //
+        //
         // if(tenant.federatedAuthenticationConstraint === FederatedAuthenticationConstraint.Exclusive && (!tenant.federatedOIDCProviderId || "" === tenant.federatedOIDCProviderId)){
         //     return {valid: false, errorMessage: "ERROR_MISSING_EXTERNAL_OIDC_PROVIDER"};
         // }
@@ -125,6 +168,11 @@ class TenantService {
     }
 
     public async updateTenant(tenant: Tenant): Promise<Tenant> {
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_UPDATE_SCOPE], tenant.tenantId);
+        if(!authResult.isAuthorized){
+            throw new GraphQLError(authResult.errorMessage || "ERROR");
+        }
+
         const {valid, errorMessage} = await this.validateTenantInput(tenant);
         if(!valid){
             throw new GraphQLError(errorMessage);
@@ -159,6 +207,11 @@ class TenantService {
 
 
     public async addDomainToTenantManagement(tenantId: string, domain: string): Promise<TenantManagementDomainRel | null> {
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_UPDATE_SCOPE], tenantId);
+        if(!authResult.isAuthorized){
+            throw new GraphQLError(authResult.errorMessage || "ERROR");
+        }
+
         const tenant: Tenant | null = await this.getTenantById(tenantId);
         if(!tenant){
             throw new GraphQLError("ERROR_TENANT_DOES_NOT_EXIST");
@@ -182,27 +235,62 @@ class TenantService {
     }
 
     public async removeDomainFromTenantManagement(tenantId: string, domain: string): Promise<TenantManagementDomainRel | null> {
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_UPDATE_SCOPE], tenantId);
+        if(!authResult.isAuthorized){
+            throw new GraphQLError(authResult.errorMessage || "ERROR");
+        }
         return tenantDao.removeDomainFromTenantManagement(tenantId, domain);
     }
 
     public async getDomainTenantManagementRels(tenantId?: string, domain?: string): Promise<Array<TenantManagementDomainRel>>{
-        return tenantDao.getDomainTenantManagementRels(tenantId, domain);
+        const getData = ServiceAuthorizationWrapper(
+            {
+                preProcess: async function(oidcContext: OIDCContext, ...args) {
+                    if (oidcContext.portalUserProfile?.managementAccessTenantId !== oidcContext.rootTenant.tenantId) {
+                        return [oidcContext.portalUserProfile?.managementAccessTenantId || "", args[1]];
+                    }
+                    return args;
+                },
+                performOperation: async function(_, ...args) {                    
+                    return tenantDao.getDomainTenantManagementRels(...args);
+                },
+            }
+        );
+        const rels = await getData(this.oidcContext, [TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE], tenantId, domain);
+        return rels || [];
     }
 
 
     public async createAnonymousUserConfiguration(tenantId: string, anonymousUserConfiguration: TenantAnonymousUserConfiguration): Promise<TenantAnonymousUserConfiguration>{
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_UPDATE_SCOPE], tenantId);
+        if(!authResult.isAuthorized){
+            throw new GraphQLError(authResult.errorMessage || "ERROR");
+        }
+        
         return tenantDao.createAnonymousUserConfiguration(tenantId, anonymousUserConfiguration);
     }
 
     public async updateAnonymousUserConfiguration(anonymousUserConfiguration: TenantAnonymousUserConfiguration): Promise<TenantAnonymousUserConfiguration>{
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_UPDATE_SCOPE], anonymousUserConfiguration.tenantId);
+        if(!authResult.isAuthorized){
+            throw new GraphQLError(authResult.errorMessage || "ERROR");
+        }
         return tenantDao.updateAnonymousUserConfiguration(anonymousUserConfiguration);
     }
 
     public async deleteAnonymousUserConfiguration(tenantId: string): Promise<void>{
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_UPDATE_SCOPE], tenantId);
+        if(!authResult.isAuthorized){
+            throw new GraphQLError(authResult.errorMessage || "ERROR");
+        }
         return tenantDao.deleteAnonymousUserConfiguration(tenantId);
     }
 
     public async getTenantMetaData(tenantId: string): Promise<TenantMetaData | null> {
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_READ_SCOPE, TENANT_READ_ALL_SCOPE], tenantId);
+        if(!authResult.isAuthorized){
+            throw new GraphQLError(authResult.errorMessage || "ERROR");
+        }
         const tenant: Tenant | null = await this.getTenantById(tenantId);
         if(!tenant){
             throw new GraphQLError("ERROR_TENANT_DOES_NOT_EXIST");
@@ -217,11 +305,20 @@ class TenantService {
     }
 
     public async getTenantLookAndFeel(tenantId: string): Promise<TenantLookAndFeel | null> {
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_READ_SCOPE, TENANT_READ_ALL_SCOPE], tenantId);
+        if(!authResult.isAuthorized){
+            throw new GraphQLError(authResult.errorMessage || "ERROR");
+        }
         const tenantLookAndFeel: TenantLookAndFeel | null = await tenantDao.getTenantLookAndFeel(tenantId);
         return Promise.resolve(tenantLookAndFeel);
     }
 
     public async setTenantLookAndFeel(tenantLookAndFeel: TenantLookAndFeel): Promise<TenantLookAndFeel>{
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_UPDATE_SCOPE], tenantLookAndFeel.tenantid);
+        if(!authResult.isAuthorized){
+            throw new GraphQLError(authResult.errorMessage || "ERROR");
+        }
+
         const existing: TenantLookAndFeel | null = await this.getTenantLookAndFeel(tenantLookAndFeel.tenantid);
         if(!existing){
             return tenantDao.createTenantLookAndFeel(tenantLookAndFeel);
@@ -231,19 +328,29 @@ class TenantService {
         }
     }
 
-    // public async updateTenantLookAndFeel(tenantLookAndFeel: TenantLookAndFeel): Promise<TenantLookAndFeel>{
-    //     return tenantDao.updateTenantLookAndFeel(tenantLookAndFeel);
-    // }
-
+ 
     public async deleteTenantLookAndFeel(tenantId: string): Promise<void>{
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_UPDATE_SCOPE], tenantId);
+        if(!authResult.isAuthorized){
+            throw new GraphQLError(authResult.errorMessage || "ERROR");
+        }
         return tenantDao.deleteTenantLookAndFeel(tenantId);
     }
 
     public async getTenantPasswordConfig(tenantId: string): Promise<TenantPasswordConfig | null> {
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_READ_SCOPE, TENANT_READ_ALL_SCOPE], tenantId);
+        if(!authResult.isAuthorized){
+            throw new GraphQLError(authResult.errorMessage || "ERROR");
+        }
         return tenantDao.getTenantPasswordConfig(tenantId);
     }
 
     public async assignPasswordConfigToTenant(tenantPasswordConfig: TenantPasswordConfig): Promise<TenantPasswordConfig>{
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_UPDATE_SCOPE], tenantPasswordConfig.tenantId);
+        if(!authResult.isAuthorized){
+            throw new GraphQLError(authResult.errorMessage || "ERROR");
+        }
+
         if(tenantPasswordConfig.passwordMinLength < PASSWORD_MINIMUM_LENGTH){
             throw new GraphQLError("ERROR_PASSWORD_MINIMUM_LENGTH_OUT_OF_BOUNDS");
         }
@@ -290,88 +397,85 @@ class TenantService {
     }
 
     public async removePasswordConfigFromTenant(tenantId: string): Promise<void>{
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_UPDATE_SCOPE], tenantId);
+        if(!authResult.isAuthorized){
+            throw new GraphQLError(authResult.errorMessage || "ERROR");
+        }
         return tenantDao.removePasswordConfigFromTenant(tenantId);
     }
 
     public async getLegacyUserMigrationConfiguration(tenantId: string): Promise<TenantLegacyUserMigrationConfig | null> {
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_READ_SCOPE, TENANT_READ_ALL_SCOPE], tenantId);
+        if(!authResult.isAuthorized){
+            throw new GraphQLError(authResult.errorMessage || "ERROR");
+        }
         return tenantDao.getLegacyUserMigrationConfiguration(tenantId);
     }
 
     public async setTenantLegacyUserMigrationConfiguration(tenantLegacyUserMigrationConfig: TenantLegacyUserMigrationConfig): Promise<TenantLegacyUserMigrationConfig | null> {
-        return tenantDao.setTenantLegacyUserMigrationConfiguration(tenantLegacyUserMigrationConfig)
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_UPDATE_SCOPE], tenantLegacyUserMigrationConfig.tenantId);
+        if(!authResult.isAuthorized){
+            throw new GraphQLError(authResult.errorMessage || "ERROR");
+        }
+
+        return tenantDao.setTenantLegacyUserMigrationConfiguration(tenantLegacyUserMigrationConfig);
     }
 
     public async getDomainsForTenantRestrictedAuthentication(tenantId: string): Promise<Array<TenantRestrictedAuthenticationDomainRel>>{
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_READ_SCOPE, TENANT_READ_ALL_SCOPE], tenantId);
+        if(!authResult.isAuthorized){
+            throw new GraphQLError(authResult.errorMessage || "ERROR");
+        }
         return tenantDao.getDomainsForTenantRestrictedAuthentication(tenantId);
     }
 
     public async addDomainToTenantRestrictedAuthentication(tenantId: string, domain: string): Promise<TenantRestrictedAuthenticationDomainRel> {
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_UPDATE_SCOPE], tenantId);
+        if(!authResult.isAuthorized){
+            throw new GraphQLError(authResult.errorMessage || "ERROR");
+        }
         return tenantDao.addDomainToTenantRestrictedAuthentication(tenantId, domain);
     }
 
     public async removeDomainFromTenantRestrictedAuthentication(tenantId: string, domain: string): Promise<void>{
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_UPDATE_SCOPE], tenantId);
+        if(!authResult.isAuthorized){
+            throw new GraphQLError(authResult.errorMessage || "ERROR");
+        }
         return tenantDao.removeDomainFromTenantRestrictedAuthentication(tenantId, domain);
     }
 
     public async getTenantLoginFailurePolicy(tenantId: string): Promise<TenantLoginFailurePolicy | null> {
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_READ_SCOPE, TENANT_READ_ALL_SCOPE], tenantId);
+        if(!authResult.isAuthorized){
+            throw new GraphQLError(authResult.errorMessage || "ERROR");
+        }
         return tenantDao.getLoginFailurePolicy(tenantId);
     }
 
     public async setTenantLoginFailurePolicy(loginFailurePolicy: TenantLoginFailurePolicy): Promise<TenantLoginFailurePolicy> {
-        console.log("checkpoint 1");
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_UPDATE_SCOPE], loginFailurePolicy.tenantId);
+        if(!authResult.isAuthorized){
+            throw new GraphQLError(authResult.errorMessage || "ERROR");
+        }
         const existing: TenantLoginFailurePolicy | null = await tenantDao.getLoginFailurePolicy(loginFailurePolicy.tenantId);
-        console.log("checkpoint 2");
-        if(!existing){
-            console.log("checkpoint 3");
-            await tenantDao.createLoginFailurePolicy(loginFailurePolicy);
-            console.log("checkpoint 4");
+        
+        if(!existing){        
+            await tenantDao.createLoginFailurePolicy(loginFailurePolicy);        
         }
         else{
-            console.log("checkpoint 5");
             await tenantDao.updateLoginFailurePolicy(loginFailurePolicy);
-            console.log("checkpoint 6");
         }
         return loginFailurePolicy;
     }
 
     public async removeTenantLoginFailurePolicy(tenantId: string): Promise<void> {
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_UPDATE_SCOPE], tenantId);
+        if(!authResult.isAuthorized){
+            throw new GraphQLError(authResult.errorMessage || "ERROR");
+        }
         await tenantDao.removeLoginFailurePolicy(tenantId);
     }
-
-    /*
-    public async getDomainsForTenantRestrictedAuthentication(tenantId: string): Promise<Array<TenantRestrictedAuthenticationDomainRel>> {
-        const em = connection.em.fork();
-        const entities: Array<TenantRestrictedAuthenticationDomainRelEntity> = await em.find(
-            TenantRestrictedAuthenticationDomainRelEntity, 
-            {
-                tenantId: tenantId
-            }
-        );
-        
-        return Promise.resolve(entities);
-    }
-
-    public async addDomainToTenantRestrictedAuthentication(tenantId: string, domain: string): Promise<TenantRestrictedAuthenticationDomainRel> {
-        const em = connection.em.fork();
-        const entity: TenantRestrictedAuthenticationDomainRelEntity = new TenantRestrictedAuthenticationDomainRelEntity();
-        entity.domain = domain;
-        entity.tenantId = tenantId;
-        await em.persistAndFlush(entity);
-        return Promise.resolve(entity);
-    }
-
-    public async removeDomainFromTenantRestrictedAuthentication(tenantId: string, domain: string): Promise<void> {
-        const em = connection.em.fork();
-        await em.nativeDelete(TenantRestrictedAuthenticationDomainRelEntity,
-            {
-                tenantId: tenantId,
-                domain: domain
-            }
-        );
-    }
-
-    */
-
 
 }
 

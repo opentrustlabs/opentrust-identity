@@ -1,5 +1,5 @@
 "use client";
-import { TENANT_SCOPE_ASSIGN_MUTATION, TENANT_SCOPE_REMOVE_MUTATION } from "@/graphql/mutations/oidc-mutations";
+import { BULK_TENANT_SCOPE_ASSIGN_MUTATION, TENANT_SCOPE_ASSIGN_MUTATION, TENANT_SCOPE_REMOVE_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import { SCOPE_QUERY } from "@/graphql/queries/oidc-queries";
 import { useMutation, useQuery } from "@apollo/client";
 import React, { useContext } from "react";
@@ -9,7 +9,7 @@ import Typography from "@mui/material/Typography";
 import Grid2 from "@mui/material/Grid2";
 import AddBoxIcon from '@mui/icons-material/AddBox';
 import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
-import { Scope, ScopeFilterCriteria } from "@/graphql/generated/graphql-types";
+import { BulkScopeInput, Scope, ScopeFilterCriteria } from "@/graphql/generated/graphql-types";
 import { SCOPE_USE_DISPLAY, SCOPE_USE_IAM_MANAGEMENT, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import Divider from "@mui/material/Divider";
 import { Alert, Button, Dialog, DialogActions, DialogContent, TablePagination } from "@mui/material";
@@ -55,7 +55,19 @@ const TenantScopeConfiguration: React.FC<TenantScopeConfigurationProps> = ({
         nextFetchPolicy: "no-cache"
     });
 
-    const [assignTenantToScopeMutation] = useMutation(TENANT_SCOPE_ASSIGN_MUTATION, {
+    // const [assignTenantToScopeMutation] = useMutation(TENANT_SCOPE_ASSIGN_MUTATION, {
+    //     onCompleted() {
+    //         onUpdateEnd(true);
+    //         setErrorMessage(null);
+    //     },
+    //     onError(error) {
+    //         setErrorMessage(error.message);
+    //     },
+    //     refetchQueries: [SCOPE_QUERY]
+    // });
+
+
+    const [bulkAssignTenantToScopeMutation] = useMutation(BULK_TENANT_SCOPE_ASSIGN_MUTATION, {
         onCompleted() {
             onUpdateEnd(true);
             setErrorMessage(null);
@@ -152,17 +164,33 @@ const TenantScopeConfiguration: React.FC<TenantScopeConfigurationProps> = ({
                                 return [];
                             }
                         }}
+                        multiSelect={true}
                         helpText="Select a Scope"
                         onCancel={() => setSelectDialogOpen(false)}
-                        onSelected={(scopeId: string) => {
+                        onSelected={(value: string | Array<string>) => {
                             setSelectDialogOpen(false); 
                             onUpdateStart();
-                            assignTenantToScopeMutation({
+                            const bulkScopeInput: Array<BulkScopeInput> = [];
+                            if(Array.isArray(value)){
+                                for(let i = 0; i < value.length; i++){
+                                    bulkScopeInput.push({
+                                        scopeId: value[i],
+                                        accessRuleId: null
+                                    });
+                                }                                
+                            } 
+                            else{
+                                bulkScopeInput.push({
+                                    scopeId: value as string,
+                                    accessRuleId: null
+                                });
+                            }  
+                            bulkAssignTenantToScopeMutation({
                                 variables: {
-                                    scopeId: scopeId,
+                                    bulkScopeInput: bulkScopeInput,
                                     tenantId: tenantId
                                 }
-                            });                            
+                            });                       
                         }}
                         selectorLabel="Select a scope"
                     />

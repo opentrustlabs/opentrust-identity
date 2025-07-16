@@ -1,12 +1,12 @@
 import ClientService from "@/lib/service/client-service";
 import TenantService from "@/lib/service/tenant-service";
-import { Resolvers, QueryResolvers, MutationResolvers, Tenant, Client, SigningKey, Scope, AuthenticationGroup, AuthorizationGroup, FederatedOidcProvider, Contact, SecondFactorType, PortalUserProfile, User, TenantLoginFailurePolicy, TenantPasswordConfig, TenantLegacyUserMigrationConfig, TenantAnonymousUserConfiguration, TenantLookAndFeel, RateLimitServiceGroup, TenantRateLimitRel, RelSearchResultItem, MarkForDelete } from "@/graphql/generated/graphql-types";
+import { Resolvers, QueryResolvers, MutationResolvers, Tenant, Client, SigningKey, Scope, AuthenticationGroup, AuthorizationGroup, FederatedOidcProvider, Contact, User, TenantLoginFailurePolicy, TenantPasswordConfig, TenantLegacyUserMigrationConfig, TenantAnonymousUserConfiguration, TenantLookAndFeel, RateLimitServiceGroup, TenantRateLimitRel, RelSearchResultItem, MarkForDelete } from "@/graphql/generated/graphql-types";
 import SigningKeysService from "@/lib/service/keys-service";
 import ScopeService from "@/lib/service/scope-service";
 import GroupService from "@/lib/service/group-service";
 import AuthenticationGroupService from "@/lib/service/authentication-group-service";
 import FederatedOIDCProviderService from "@/lib/service/federated-oidc-provider-service";
-import { DEFAULT_RATE_LIMIT_PERIOD_MINUTES, NAME_ORDER_WESTERN, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_POST, SCOPE_USE_APPLICATION_MANAGEMENT, SIGNING_KEY_STATUS_ACTIVE, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
+import { DEFAULT_RATE_LIMIT_PERIOD_MINUTES, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_POST, SCOPE_USE_APPLICATION_MANAGEMENT, SIGNING_KEY_STATUS_ACTIVE, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import SearchService from "@/lib/service/search-service";
 import ContactService from "@/lib/service/contact-service";
 import IdentityService from "@/lib/service/identity-service";
@@ -17,46 +17,12 @@ import MarkForDeleteService from "@/lib/service/mark-for-delete-service";
 import I18NService from "@/lib/service/i18n-service";
 import RegisterUserService from "@/lib/service/register-user-service";
 import AuthenticateUserService from "@/lib/service/authenticate-user-service";
-import { OIDCPrincipal } from "@/lib/models/principal";
 
 
 const resolvers: Resolvers = {
     Query: {
-        me: (_, __, oidcContext) => {
-            const principal: OIDCPrincipal | null = oidcContext.oidcPrincipal;
-            if(!principal){
-                return null;
-            }
-            else{            
-                const profile: PortalUserProfile = {
-                    domain: principal.email,
-                    email: principal.email,
-                    emailVerified: true,
-                    enabled: true,
-                    firstName: principal.given_name,
-                    lastName: principal.family_name,
-                    locked: false,
-                    nameOrder: NAME_ORDER_WESTERN,
-                    scope: [{
-                        scopeId: "id",
-                        scopeName: "all",
-                        scopeDescription: "",
-                        scopeUse: "",
-                        markForDelete: false
-                    }],
-                    tenantId: principal.tenant_id,
-                    tenantName: principal.tenant_name,
-                    userId: principal.sub,
-                    countryCode: principal.country_code,
-                    preferredLanguageCode: principal.language_code,
-                    managementAccessTenantId: principal.tenant_id
-                }
-                // home depot: 2a303f6d-0ebc-4590-9d12-7ebab6531d7e
-                // root tenant: ad3e45b1-3e62-4fe2-ba59-530d35ae93d5
-                // airbnb: c42c29cb-1bf7-4f6a-905e-5f74760218e2
-                // amgen: 73d00cb0-f058-43b0-8fb4-d0e48ff33ba2
-                return profile;
-            }
+        me: (_, __, oidcContext) => {            
+            return oidcContext.portalUserProfile;
         },
         getUserById: (_, { userId }, oidcContext) => {
             const identityService: IdentityService = new IdentityService(oidcContext);
@@ -469,15 +435,23 @@ const resolvers: Resolvers = {
             const rel = await scopeService.assignScopeToTenant(tenantId, scopeId, accessRuleId || null);
             return rel;
         },
-        removeScopeFromTenant: async(_: any, { scopeId, tenantId }, oidcContext ) => {
+        bulkAssignScopeToTenant: async(_: any, {tenantId, bulkScopeInput}, oidcContext) => {
             const scopeService: ScopeService = new ScopeService(oidcContext);
-            await scopeService.removeScopeFromTenant(tenantId, scopeId);
+            return scopeService.bulkAssignScopeToTenant(tenantId, bulkScopeInput);
+        },
+        removeScopeFromTenant: async(_: any, { scopeId, tenantId }, oidcContext ) => {            
+            const scopeService: ScopeService = new ScopeService(oidcContext);
+            await scopeService.removeScopeFromTenant(tenantId, scopeId);            
             return scopeId;
         },
         assignScopeToClient: async(_: any, { scopeId, clientId, tenantId }, oidcContext) => {
             const scopeService: ScopeService = new ScopeService(oidcContext);
             const rel = await scopeService.assignScopeToClient(tenantId, clientId, scopeId);
             return rel;
+        },
+        bulkAssignScopeToClient: async(_: any, { clientId, tenantId, bulkScopeInput }, oidcContext) => {
+            const scopeService: ScopeService = new ScopeService(oidcContext);
+            return scopeService.bulkAssignScopeToClient(tenantId, clientId, bulkScopeInput);
         },
         removeScopeFromClient: async(_: any, { scopeId, tenantId, clientId }, oidcContext) => {
             const scopeService: ScopeService = new ScopeService(oidcContext);
@@ -489,6 +463,10 @@ const resolvers: Resolvers = {
             const rel = await scopeService.assignScopeToAuthorizationGroup(groupId, scopeId, tenantId);
             return rel;
         },
+        bulkAssignScopeToAuthorizationGroup: async(_: any, { groupId, tenantId, bulkScopeInput }, oidcContext) => {
+            const scopeService: ScopeService = new ScopeService(oidcContext);
+            return scopeService.bulkAssignScopeToAuthorizationGroup(groupId, tenantId, bulkScopeInput);
+        },
         removeScopeFromAuthorizationGroup: async(_: any, { scopeId, tenantId, groupId }, oidcContext) => {
             const scopeService: ScopeService = new ScopeService(oidcContext);
             await scopeService.removeScopeFromAuthorizationGroup(groupId, scopeId, tenantId);
@@ -498,6 +476,10 @@ const resolvers: Resolvers = {
             const scopeService: ScopeService = new ScopeService(oidcContext);
             const rel = await scopeService.assignScopeToUser(userId, tenantId, scopeId);
             return rel;
+        },
+        bulkAssignScopeToUser: async(_: any, { userId, tenantId, bulkScopeInput }, oidcContext) => {
+            const scopeService: ScopeService = new ScopeService(oidcContext);
+            return scopeService.bulkAssignScopeToUser(userId, tenantId, bulkScopeInput);
         },
         removeScopeFromUser: async(_: any, { userId, scopeId, tenantId }, oidcContext) => {
             const scopeService: ScopeService = new ScopeService(oidcContext);
@@ -919,6 +901,10 @@ const resolvers: Resolvers = {
             const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);
             return service.authenticateUser(username, password, tenantId, authenticationSessionToken, preAuthToken || null);
         },
+        authenticateHandleForgotPassword: async(_: any, { authenticationSessionToken, preAuthToken }, oidcContext) => {
+            const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);
+            return service.authenticateHandleForgotPassword(authenticationSessionToken, preAuthToken || null);
+        },
         authenticateRotatePassword: async(_: any, { userId, newPassword, authenticationSessionToken, preAuthToken}, oidcContext) => {
             const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);
             return service.authenticateRotatePassword(userId, newPassword, authenticationSessionToken, preAuthToken || null);
@@ -938,6 +924,10 @@ const resolvers: Resolvers = {
         authenticateRegisterSecurityKey: async(_: any, { userId, authenticationSessionToken, fido2KeyRegistrationInput, preAuthToken }, oidcContext) => {
             const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);
             return service.authenticateRegisterSecurityKey(userId, authenticationSessionToken, fido2KeyRegistrationInput, preAuthToken || null);
+        },
+        authenticateValidatePasswordResetToken: async(_: any, { token, authenticationSessionToken, preAuthToken }, oidcContext) => {
+            const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);
+            return service.authenticateValidatePasswordResetToken(token, authenticationSessionToken, preAuthToken || null);
         },
         cancelAuthentication: async(_: any, { userId, authenticationSessionToken, preAuthToken}, oidcContext) => {
             const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);

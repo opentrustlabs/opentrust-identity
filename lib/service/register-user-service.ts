@@ -626,10 +626,18 @@ class RegisterUserService extends IdentityService {
         if(!user){
             response.registrationError.errorCode = "ERROR_NO_USER_FOUND_FOR_REGISTRATION_COMPLETION";
             response.userRegistrationState.registrationState = RegistrationState.Error;
+            return;
         }
         else{
             user.enabled = true;
+            const tenant: Tenant | null = await tenantDao.getTenantById(userRegistrationState.tenantId);
+            if(tenant === null){
+                response.registrationError.errorCode = "ERROR_INVALID_TENANT_FOR_REGISTRATION_COMPLETION";
+                response.userRegistrationState.registrationState = RegistrationState.Error;
+                return;                
+            }
             await identityDao.updateUser(user);
+            await this.updateObjectSearchIndex(tenant, user, USER_TENANT_REL_TYPE_PRIMARY);
 
             if(userRegistrationState.registrationState === RegistrationState.RedirectBackToApplication){
                 try{
@@ -646,25 +654,18 @@ class RegisterUserService extends IdentityService {
             }
             else if(userRegistrationState.registrationState === RegistrationState.RedirectToIamPortal){
                 try{
-                    const tenant: Tenant | null = await tenantDao.getTenantById(userRegistrationState.tenantId);
-                    if(tenant === null){
-                        response.registrationError.errorCode = "ERROR_INVALID_TENANT_FOR_REGISTRATION_COMPLETION";
+                    const accessToken: string | null = await jwtServiceUtils.signIAMPortalUserJwt(user, tenant, this.getPortalAuthenTokenTTLSeconds(), TOKEN_TYPE_IAM_PORTAL_USER);
+                    if(accessToken === null){
+                        response.registrationError.errorCode = "ERROR_GENERATING_ACCESS_TOKEN_REGISTRATION_COMPLETION";
                         response.userRegistrationState.registrationState = RegistrationState.Error;
                     }
                     else{
-                        const accessToken: string | null = await jwtServiceUtils.signIAMPortalUserJwt(user, tenant, this.getPortalAuthenTokenTTLSeconds(), TOKEN_TYPE_IAM_PORTAL_USER);
-                        if(accessToken === null){
-                            response.registrationError.errorCode = "ERROR_GENERATING_ACCESS_TOKEN_REGISTRATION_COMPLETION";
-                            response.userRegistrationState.registrationState = RegistrationState.Error;
-                        }
-                        else{
-                            response.userRegistrationState = userRegistrationState;
-                            response.uri = `/${userRegistrationState.tenantId}`;
-                            response.accessToken = accessToken;
-                            response.tokenExpiresAtMs = Date.now() + (this.getPortalAuthenTokenTTLSeconds() * 1000);
-                            userRegistrationState.registrationStateStatus = STATUS_COMPLETE;
-                            await identityDao.updateUserRegistrationState(userRegistrationState);
-                        }
+                        response.userRegistrationState = userRegistrationState;
+                        response.uri = `/${userRegistrationState.tenantId}`;
+                        response.accessToken = accessToken;
+                        response.tokenExpiresAtMs = Date.now() + (this.getPortalAuthenTokenTTLSeconds() * 1000);
+                        userRegistrationState.registrationStateStatus = STATUS_COMPLETE;
+                        await identityDao.updateUserRegistrationState(userRegistrationState);
                     }
                 }
                 catch(err: any){

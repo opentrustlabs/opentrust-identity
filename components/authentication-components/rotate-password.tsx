@@ -1,7 +1,7 @@
 "use client";
 import { AUTHENTICATE_ROTATE_PASSWORD } from "@/graphql/mutations/oidc-mutations";
 import { useMutation } from "@apollo/client";
-import { Grid2, Stack, TextField, Button, InputAdornment } from "@mui/material";
+import { Grid2, Stack, TextField, Button, InputAdornment, Typography } from "@mui/material";
 import React from "react";
 import { AuthenticationComponentsProps } from "./login";
 import { TenantPasswordConfig } from "@/graphql/generated/graphql-types";
@@ -14,12 +14,14 @@ import PasswordRulesDisplay from "./password-rules-display";
 
 
 export interface AuthenticationRotatePasswordProps extends AuthenticationComponentsProps {
+    isPasswordResetFlow: boolean,
     passwordConfig: TenantPasswordConfig
 }
 
 const AuthentiationRotatePassword: React.FC<AuthenticationRotatePasswordProps> = ({
     initialUserAuthenticationState,
     passwordConfig,
+    isPasswordResetFlow,
     onAuthenticationCancelled,
     onUpdateEnd,
     onUpdateStart
@@ -45,8 +47,18 @@ const AuthentiationRotatePassword: React.FC<AuthenticationRotatePasswordProps> =
 
     return (
         <React.Fragment>
-
+            <Typography component="div">
             <Grid2 size={12} container spacing={1}>
+                {isPasswordResetFlow &&
+                    <Grid2 marginBottom={"8px"} size={12} fontWeight={"bold"}>
+                        Enter your new password:
+                    </Grid2>
+                }
+                {!isPasswordResetFlow &&
+                    <Grid2 marginBottom={"8px"} size={12} fontWeight={"bold"}>
+                        Continued access requires your password to be updated. Enter your new password below: 
+                    </Grid2>
+                }                
                 <Grid2 marginBottom={"8px"} size={12}>
                     <Stack spacing={1} direction={"row"}>
                         <div>Password</div>
@@ -171,6 +183,7 @@ const AuthentiationRotatePassword: React.FC<AuthenticationRotatePasswordProps> =
                     Cancel
                 </Button>
             </Stack>
+            </Typography>
         </React.Fragment>
     )
 }

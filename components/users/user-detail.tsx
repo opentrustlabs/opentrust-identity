@@ -240,7 +240,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                         <Grid2 marginBottom={"8px"}>
                                             <div>First Name</div>
                                             <TextField name="firstName" id="firstName" 
-                                                disabled={isMarkedForDelete}
+                                                disabled={isMarkedForDelete || userInput.federatedOIDCProviderSubjectId !== ""}
                                                 value={userInput.firstName}
                                                 onChange={(evt) => {userInput.firstName = evt.target.value; setMarkDirty(true); setUserInput({...userInput})}}
                                                 fullWidth={true} size="small" 
@@ -249,7 +249,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                         <Grid2 marginBottom={"8px"}>
                                             <div>Last Name</div>
                                             <TextField name="lastName" id="lastName" 
-                                                disabled={isMarkedForDelete}
+                                                disabled={isMarkedForDelete || userInput.federatedOIDCProviderSubjectId !== ""}
                                                 value={userInput.lastName} 
                                                 onChange={(evt) => {userInput.lastName = evt.target.value; setMarkDirty(true); setUserInput({...userInput}); }}
                                                 fullWidth={true} size="small" 
@@ -275,7 +275,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                                 <Grid2 alignContent={"center"} size={10}>Email verified</Grid2>
                                                 <Grid2 size={2}>
                                                     <Checkbox 
-                                                        disabled={isMarkedForDelete}
+                                                        disabled={isMarkedForDelete|| userInput.federatedOIDCProviderSubjectId !== ""}
                                                         name="emailVerified"
                                                         checked={userInput.emailVerified}
                                                         onChange={(_, checked) => {
@@ -289,13 +289,9 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                                 <Grid2 size={2}>
                                                     <Checkbox                                                         
                                                         name="locked"
-                                                        checked={user.locked}
+                                                        checked={userInput.locked}
                                                         disabled={!user.locked || isMarkedForDelete === true}
                                                         onChange={(_, checked) => {
-                                                            // TODO
-                                                            // Rather than update the entire user,
-                                                            // we just want to unlock the account in case it is locked.
-                                                            // There is a special function for this, just need to invoke it here.
                                                             userInput.locked = checked;
                                                             setMarkDirty(true); 
                                                             setUserInput({...userInput});
@@ -309,7 +305,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Middle Name</div>
                                             <TextField name="middleName" id="middleName" 
-                                                disabled={isMarkedForDelete}
+                                                disabled={isMarkedForDelete|| userInput.federatedOIDCProviderSubjectId !== ""}
                                                 value={userInput.middleName} 
                                                 onChange={(evt) => {userInput.middleName = evt.target.value; setMarkDirty(true); setUserInput({...userInput}); }}
                                                 fullWidth={true} size="small" 
@@ -334,7 +330,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Name Order</div>
                                             <Select 
-                                                disabled={isMarkedForDelete}
+                                                disabled={isMarkedForDelete || userInput.federatedOIDCProviderSubjectId !== ""}
                                                 name="nameOrder"
                                                 value={userInput.nameOrder}
                                                 onChange={(evt) => {
@@ -353,7 +349,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Email</div>
                                             <TextField name="email" id="email" 
-                                                disabled={isMarkedForDelete}
+                                                disabled={isMarkedForDelete || userInput.federatedOIDCProviderSubjectId !== ""}
                                                 value={userInput.email} 
                                                 onChange={(evt) => {userInput.email = evt.target.value; setMarkDirty(true); setUserInput({...userInput}); }}
                                                 fullWidth={true} size="small" 
@@ -362,7 +358,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Phone Number</div>
                                             <TextField name="phoneNumber" id="phoneNumber" 
-                                                disabled={isMarkedForDelete}
+                                                disabled={isMarkedForDelete || userInput.federatedOIDCProviderSubjectId !== ""}
                                                 value={userInput.phoneNumber} 
                                                 onChange={(evt) => {userInput.phoneNumber = evt.target.value; setMarkDirty(true); setUserInput({...userInput}); }}
                                                 fullWidth={true} size="small" 
@@ -645,7 +641,6 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                                             expandIcon={<ExpandMoreIcon />}
                                                             id={"redirect-uri-configuration"}
                                                             sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center" }}
-
                                                         >
                                                             <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
                                                                 <PolicyIcon /><div style={{ marginLeft: "8px" }}>Access Control (Tenant: {rel.tenantName})</div>

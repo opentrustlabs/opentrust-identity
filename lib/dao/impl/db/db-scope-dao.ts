@@ -38,7 +38,6 @@ class DBScopeDao extends ScopeDao {
         );
     }
     public async assignScopeToAuthorizationGroup(tenantId: string, authorizationGroupId: string, scopeId: string): Promise<AuthorizationGroupScopeRel> {
-        // scopeDao.assignScopeToAuthorizationGroup(tenantId, groupId, scopeId);
         const sequelize: Sequelize = await DBDriver.getConnection();
         const authorizationGroupScopeRel: AuthorizationGroupScopeRel = {
             groupId: authorizationGroupId,
@@ -57,7 +56,7 @@ class DBScopeDao extends ScopeDao {
                 scopeId: scopeId,
                 tenantId: tenantId
             }
-        })
+        });
         return Promise.resolve();
     }
 
@@ -207,6 +206,29 @@ class DBScopeDao extends ScopeDao {
 
     public async removeScopeFromTenant(tenantId: string, scopeId: string): Promise<void> {
         const sequelize: Sequelize = await DBDriver.getConnection();
+        
+        // Need to remove all of the scope from the users, clients, and authz groups too                
+        await sequelize.models.clientScopeRel.destroy({
+            where: {
+                tenantId: tenantId,
+                scopeId: scopeId
+            }
+        });
+
+        await sequelize.models.authorizationGroupScopeRel.destroy({
+            where: {        
+                scopeId: scopeId,
+                tenantId: tenantId
+            }
+        });
+
+        await sequelize.models.userScopeRel.destroy({
+            where: {
+                tenantId: tenantId,
+                scopeId: scopeId
+            }
+        });	
+
         await sequelize.models.tenantAvailableScope.destroy({
             where: {
                 tenantId: tenantId,

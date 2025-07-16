@@ -144,13 +144,15 @@ type Mutation {
 
     ## Authentication Flows
     logout(userId: String): String
-    authenticateHandleUserNameInput(username: String!, tenantId: String, preAuthToken: String, returnToUri: String): UserAuthenticationStateResponse!
+    authenticateHandleUserNameInput(username: String!, tenantId: String, preAuthToken: String, returnToUri: String): UserAuthenticationStateResponse!    
     authenticateUser(username: String!, password: String!, tenantId: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
+    authenticateHandleForgotPassword(authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
     authenticateRotatePassword(userId: String!, newPassword: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
     authenticateConfigureTOTP(userId: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
     authenticateValidateTOTP(userId: String!, totpTokenValue: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
     authenticateRegisterSecurityKey(userId: String!, fido2KeyRegistrationInput: Fido2KeyRegistrationInput!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
     authenticateValidateSecurityKey(userId: String!, fido2KeyAuthenticationInput: Fido2KeyAuthenticationInput!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
+    authenticateValidatePasswordResetToken(token: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
     cancelAuthentication(userId: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
 
     ## Social OIDC Authentication Flow
@@ -192,12 +194,16 @@ type Mutation {
     updateScope(scopeInput: ScopeUpdateInput!): Scope
     deleteScope(scopeId: String!): String
     assignScopeToTenant(tenantId: String!, scopeId: String!, accessRuleId: String): TenantAvailableScope
+    bulkAssignScopeToTenant(tenantId: String!, bulkScopeInput: [BulkScopeInput!]!): [TenantAvailableScope!]!
     removeScopeFromTenant(tenantId: String!, scopeId: String!): String
     assignScopeToClient(clientId: String!, tenantId: String!, scopeId: String!): ClientScopeRel
+    bulkAssignScopeToClient(clientId: String!, tenantId: String!, bulkScopeInput: [BulkScopeInput!]!): [ClientScopeRel!]!
     removeScopeFromClient(clientId: String!, tenantId: String!, scopeId: String!): String
     assignScopeToAuthorizationGroup(groupId: String!, scopeId: String!, tenantId: String!): AuthorizationGroupScopeRel
+    bulkAssignScopeToAuthorizationGroup(groupId: String!, tenantId: String!, bulkScopeInput: [BulkScopeInput!]!): [AuthorizationGroupScopeRel!]!
     removeScopeFromAuthorizationGroup(groupId: String!, scopeId: String!, tenantId: String!): String
     assignScopeToUser(userId: String!, tenantId: String!, scopeId: String!): UserScopeRel
+    bulkAssignScopeToUser(userId: String!, tenantId: String!, bulkScopeInput: [BulkScopeInput!]!): [UserScopeRel!]!
     removeScopeFromUser(userId: String!, tenantId: String!, scopeId: String!): String
 
     ## Scope constraint schemas
@@ -392,6 +398,7 @@ type Client {
     markForDelete: Boolean!
 }
 
+
 type PortalUserProfile {
     userId: String!
     federatedOIDCProviderSubjectId: String
@@ -412,6 +419,36 @@ type PortalUserProfile {
     tenantId: String!
     tenantName: String!
     managementAccessTenantId: String
+}
+
+type UserProfileAuthorizationGroup {
+    groupId: String!
+    groupName: String!
+}
+
+type OIDCUserProfile {
+    userId: String!
+    federatedOIDCProviderSubjectId: String
+    email: String!
+    emailVerified: Boolean!
+    domain: String!
+    firstName: String!
+    lastName: String!
+    middleName: String
+    phoneNumber: String
+    address: String
+    countryCode: String
+    preferredLanguageCode: String
+    locked: Boolean!
+    enabled: Boolean!
+    nameOrder: String!
+    scope: [Scope!]!
+    tenantId: String!
+    tenantName: String!
+    clientId: String!
+    clientName: String!
+    expiresAtMs: Float!
+    authorizationGroups: [UserProfileAuthorizationGroup!]!
 }
 
 # 1.    domain is just the domain part of the email
@@ -777,6 +814,7 @@ enum AuthenticationState {
     SELECT_TENANT_THEN_REGISTER
     ENTER_PASSWORD
     ROTATE_PASSWORD
+    VALIDATE_PASSWORD_RESET_TOKEN
     CONFIGURE_TOTP
     VALIDATE_TOTP
     CONFIGURE_SECURITY_KEY
@@ -895,7 +933,7 @@ type MarkForDelete {
     objectId: String!
     submittedBy: String!
     submittedDate: Float!
-    completedData: Float
+    completedDate: Float
 }
 
 type DeletionStatus {
@@ -1333,6 +1371,11 @@ input ScopeAccessRuleSchemaUpdateInput {
     scopeAccessRuleSchemaId: String!
     scopeId: String!
     schema: String!
+}
+
+input BulkScopeInput {
+    scopeId: String!
+    accessRuleId: String
 }
 
 ## Access rules

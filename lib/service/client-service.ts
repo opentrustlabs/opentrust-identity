@@ -1,14 +1,15 @@
-import { Client, ObjectSearchResultItem, SearchResultType, Tenant } from "@/graphql/generated/graphql-types";
+import { Client, ObjectSearchResultItem, RelSearchResultItem, SearchResultType, Tenant } from "@/graphql/generated/graphql-types";
 import { OIDCContext } from "@/graphql/graphql-context";
 import ClientDao from "@/lib/dao/client-dao";
 import { generateRandomToken } from "@/utils/dao-utils";
 import TenantDao from "@/lib/dao/tenant-dao";
 import { GraphQLError } from "graphql/error/GraphQLError";
 import { randomUUID } from 'crypto'; 
-import { CLIENT_SECRET_ENCODING, CLIENT_TYPES_DISPLAY, SEARCH_INDEX_OBJECT_SEARCH } from "@/utils/consts";
+import { CLIENT_CREATE_SCOPE, CLIENT_READ_SCOPE, CLIENT_SECRET_ENCODING, CLIENT_TYPES_DISPLAY, CLIENT_UPDATE_SCOPE, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_READ_ALL_SCOPE } from "@/utils/consts";
 import { getOpenSearchClient } from "@/lib/data-sources/search";
 import { DaoFactory } from "../data-sources/dao-factory";
 import Kms from "../kms/kms";
+import { authorizeByScopeAndTenant, ServiceAuthorizationWrapper } from "@/utils/authz-utils";
 
 const clientDao: ClientDao = DaoFactory.getInstance().getClientDao();
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
@@ -25,21 +26,58 @@ class ClientService {
 
 
     public async getClients(tenantId?: string): Promise<Array<Client>> {
-        return (await clientDao.getClients(tenantId)).map(
-            (client: Client) => {
-                client.clientSecret = "";
-                return client;
+        const getData = ServiceAuthorizationWrapper(
+            {
+                preProcess: async function(oidcContext, ...args) {
+                    if (oidcContext.portalUserProfile?.managementAccessTenantId !== oidcContext.rootTenant.tenantId) {
+                        return [oidcContext.portalUserProfile?.managementAccessTenantId || ""];
+                    }
+                    return [args];
+                },
+                performOperation: async function(_, ...args) {
+                    const clients: Array<Client> = await clientDao.getClients(...args);
+                    return clients;
+                },
+                postProcess: async function(_, result) {
+                    if(result){
+                        result.forEach(
+                            (c: Client) => c.clientSecret = ""
+                        );                        
+                    }
+                    return result;
+                },
             }
         );
+
+        const clients = await getData(this.oidcContext, [CLIENT_READ_SCOPE, TENANT_READ_ALL_SCOPE], tenantId);
+        return clients || [];
     }
     
 
     public async getClientById(clientId: string): Promise<Client | null> {
-        const client = await clientDao.getClientById(clientId);  
-        if(client){
-            client.clientSecret = "";
-        }
-        return client === undefined ? Promise.resolve(null) : Promise.resolve(client);
+        const getData = ServiceAuthorizationWrapper<any[], Client | null>(
+            {
+                performOperation: async function(oidcContext, ...args): Promise<Client | null> {
+                    const client = await clientDao.getClientById(clientId);                       
+                    return client;
+                },
+                additionalConstraintCheck: async function(oidcContext, result: Client | null): Promise<{ isAuthorized: boolean; errorMessage: string | null}> {
+                    if(result && result.tenantId !== oidcContext.portalUserProfile?.managementAccessTenantId){
+                        return {isAuthorized: false, errorMessage: "ERROR_NO_ACCESS_TO_TENANT"}
+                    }
+                    return {isAuthorized: true, errorMessage: null}
+                },
+                postProcess: async function(_, result) {
+                    if(result){
+                        result.clientSecret = ""
+                    }
+                    return result;
+                },
+            }
+        );
+
+        const client = getData(this.oidcContext, [CLIENT_READ_SCOPE, TENANT_READ_ALL_SCOPE], clientId);
+        return client === null ? Promise.resolve(null) : Promise.resolve(client);
     }
 
     public async createClient(client: Client): Promise<Client> {
@@ -47,8 +85,14 @@ class ClientService {
         if(!tenant){
             throw new GraphQLError("ERROR_TENANT_NOT_FOUND", {
 
-            })
+            });
         }
+
+        const {isAuthorized, errorMessage} = authorizeByScopeAndTenant(this.oidcContext, CLIENT_CREATE_SCOPE, client.tenantId);
+        if(!isAuthorized){
+            throw new GraphQLError(errorMessage || "ERROR");
+        }
+
         client.clientId = randomUUID().toString();
         const clientSecret = generateRandomToken(32, CLIENT_SECRET_ENCODING);
         const encryptedClientSecret = await kms.encrypt(clientSecret);
@@ -71,6 +115,12 @@ class ClientService {
         if(!clientToUpdate){
             throw new GraphQLError("ERROR_CLIENT_NOT_FOUND")
         }
+        
+        const {isAuthorized, errorMessage} = authorizeByScopeAndTenant(this.oidcContext, CLIENT_UPDATE_SCOPE, clientToUpdate.tenantId);
+        if(!isAuthorized){
+            throw new GraphQLError(errorMessage || "ERROR");
+        }
+
         // tenantId is a write-only-read-only property, no updates regardless of what the client has sent
         // same for client secret
         clientToUpdate.clientDescription = client.clientDescription;
@@ -110,6 +160,21 @@ class ClientService {
             index: SEARCH_INDEX_OBJECT_SEARCH,
             body: document
         });
+
+        const relSearch: RelSearchResultItem = {
+            childid: client.clientId,
+            childname: client.clientName,
+            childtype: SearchResultType.Client,
+            owningtenantid: client.tenantId,
+            parentid: client.tenantId,
+            parenttype: SearchResultType.Tenant,
+            childdescription: client.clientDescription
+        }
+        await searchClient.index({
+            id: `${client.tenantId}::${client.clientId}`,
+            index: SEARCH_INDEX_REL_SEARCH,
+            body: relSearch
+        });
         
     }
 
@@ -121,7 +186,15 @@ class ClientService {
     }
 
     public async getRedirectURIs(clientId: string): Promise<Array<string>>{
-        return clientDao.getRedirectURIs(clientId);
+        const client: Client | null = await clientDao.getClientById(clientId);
+        if(client){
+            const {isAuthorized, errorMessage} = authorizeByScopeAndTenant(this.oidcContext, [CLIENT_READ_SCOPE, TENANT_READ_ALL_SCOPE], client.tenantId);
+            if(!isAuthorized){
+                throw new GraphQLError(errorMessage || "ERROR");
+            }
+            return clientDao.getRedirectURIs(clientId);
+        }
+        return [];        
     }
 
     public async addRedirectURI(clientId: string, uri: string): Promise<string>{
@@ -132,10 +205,24 @@ class ClientService {
         if(client.oidcEnabled === false){
             throw new GraphQLError("ERROR_OIDC_NOT_ENABLED_FOR_THIS_CLIENT");
         }
+
+        const {isAuthorized, errorMessage} = authorizeByScopeAndTenant(this.oidcContext, CLIENT_UPDATE_SCOPE, client.tenantId);
+        if(!isAuthorized){
+            throw new GraphQLError(errorMessage || "ERROR");
+        }
+
         return clientDao.addRedirectURI(clientId, uri);
     }
 
     public async removeRedirectURI(clientId: string, uri: string): Promise<void>{
+        const client: Client | null = await this.getClientById(clientId);
+        if(!client){
+            throw new GraphQLError("ERROR_UNABLE_TO_FIND_CLIENT_BY_ID");
+        }
+        const {isAuthorized, errorMessage} = authorizeByScopeAndTenant(this.oidcContext, CLIENT_UPDATE_SCOPE, client.tenantId);
+        if(!isAuthorized){
+            throw new GraphQLError(errorMessage || "ERROR");
+        }
         return clientDao.removeRedirectURI(clientId, uri);
     }
     

@@ -18,6 +18,16 @@ class DBContactDao extends ContactDao {
         return Promise.resolve(arr as any as Array<Contact>);
     }
 
+    public async getContactById(contactId: string): Promise<Contact | null>{
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        const entity: ContactEntity | null = await sequelize.models.contact.findOne({
+            where: {
+                contactid: contactId
+            }
+        });
+        return entity ? entity.dataValues : null;
+    }
+
     public async addContact(contact: Contact): Promise<Contact> {
         const sequelize: Sequelize = await DBDriver.getConnection();
         const entity = await sequelize.models.contact.create(contact);

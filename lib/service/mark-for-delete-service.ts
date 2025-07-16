@@ -13,7 +13,9 @@ import AuthorizationGroupDao from "../dao/authorization-group-dao";
 import SigningKeysDao from "../dao/signing-keys-dao";
 import { GraphQLError } from "graphql/error";
 import { randomUUID } from 'crypto'; 
-import { SCOPE_USE_IAM_MANAGEMENT } from "@/utils/consts";
+import { AUTHENTICATION_GROUP_DELETE_SCOPE, AUTHORIZATION_GROUP_DELETE_SCOPE, CLIENT_DELETE_SCOPE, FEDERATED_OIDC_PROVIDER_DELETE_SCOPE, KEY_DELETE_SCOPE, RATE_LIMIT_DELETE_SCOPE, SCOPE_DELETE_SCOPE, SCOPE_USE_IAM_MANAGEMENT, TENANT_DELETE_SCOPE, TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE, USER_DELETE_SCOPE } from "@/utils/consts";
+import { authorizeByScopeAndTenant, WithAuthorizationByScopeAndTenant } from "@/utils/authz-utils";
+import client from "@/components/apollo-client/apollo-client";
 
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
 const markForDeleteDao: MarkForDeleteDao = DaoFactory.getInstance().getMarkForDeleteDao();
@@ -36,67 +38,112 @@ class MarkForDeleteService {
 
     public async markForDelete(markForDelete: MarkForDelete): Promise<MarkForDelete> {
         let object: any | null = null;
+        let requiredScope: string | null = null;
+        
 
         if(markForDelete.objectType === MarkForDeleteObjectType.Client){
             object = await clientDao.getClientById(markForDelete.objectId);
+            requiredScope = CLIENT_DELETE_SCOPE;
         }
         else if(markForDelete.objectType === MarkForDeleteObjectType.Tenant){
             object = await tenantDao.getTenantById(markForDelete.objectId);
+            requiredScope = TENANT_DELETE_SCOPE;
         }
         else if(markForDelete.objectType === MarkForDeleteObjectType.User){
             object = await identityDao.getUserBy("id", markForDelete.objectId);
+            requiredScope = USER_DELETE_SCOPE;
         }
         else if(markForDelete.objectType === MarkForDeleteObjectType.FederatedOidcProvider){
             object = await oidcProviderDao.getFederatedOidcProviderById(markForDelete.objectId);
+            requiredScope = FEDERATED_OIDC_PROVIDER_DELETE_SCOPE;
         }
         else if(markForDelete.objectType === MarkForDeleteObjectType.Scope){
             object = await scopeDao.getScopeById(markForDelete.objectId);
+            requiredScope = SCOPE_DELETE_SCOPE;
         }
         else if(markForDelete.objectType === MarkForDeleteObjectType.RateLimitServiceGroup){
             object = await rateLimitDao.getRateLimitServiceGroupById(markForDelete.objectId);
+            requiredScope = RATE_LIMIT_DELETE_SCOPE;
         }
         else if(markForDelete.objectType === MarkForDeleteObjectType.AuthenticationGroup){
             object = await authnGroupDao.getAuthenticationGroupById(markForDelete.objectId);
+            requiredScope = AUTHENTICATION_GROUP_DELETE_SCOPE;
         }
         else if(markForDelete.objectType === MarkForDeleteObjectType.AuthorizationGroup){
             object = await authzGroupDao.getAuthorizationGroupById(markForDelete.objectId);
+            requiredScope = AUTHORIZATION_GROUP_DELETE_SCOPE;
         }
         else if(markForDelete.objectType === MarkForDeleteObjectType.SigningKey){
             object = await signingKeysDao.getSigningKeyById(markForDelete.objectId);
+            requiredScope = KEY_DELETE_SCOPE;
         }
         if(object === null){
             throw new GraphQLError("ERROR_UNABLE_TO_FIND_OBJECT_FOR_DELETION");
+        }
+        if(requiredScope === null){
+            throw new GraphQLError("ERROR_INSUFFICIENT_SCOPE_FOR_OPERATION");
         }
 
         // Now update the individual records with the mark for delete flag before 
         // submitting the mark for delete record.
         if(markForDelete.objectType === MarkForDeleteObjectType.Tenant){
             const t: Tenant = object as Tenant;
-            t.markForDelete = true;
-            t.enabled = false;
-            await tenantDao.updateTenant(t);
+            
+            const u = WithAuthorizationByScopeAndTenant({
+                async performOperation() {
+                    t.markForDelete = true;
+                    t.enabled = false;                    
+                    await tenantDao.updateTenant(t);
+                },
+            });
+            await u(this.oidcContext, requiredScope, null);
         }
         if(markForDelete.objectType === MarkForDeleteObjectType.Client){
             const c: Client = object as Client;
-            c.markForDelete = true;
-            c.enabled = false;
-            await clientDao.updateClient(c);
+
+            const u = WithAuthorizationByScopeAndTenant({
+                async performOperation() {
+                    c.markForDelete = true;
+                    c.enabled = false;                   
+                    await clientDao.updateClient(c);
+                },
+            });
+            await u(this.oidcContext, requiredScope, c.tenantId);            
         }        
         if(markForDelete.objectType === MarkForDeleteObjectType.User){
-            const u: User = object as User;
-            u.markForDelete = true;
-            u.enabled = false;
-            await identityDao.updateUser(u);
+            const user: User = object as User;
+
+            const u = WithAuthorizationByScopeAndTenant({
+                async performOperation() {
+                    user.markForDelete = true;
+                    user.enabled = false;                  
+                    await identityDao.updateUser(user);
+                },
+            });
+            await u(this.oidcContext, requiredScope, null);  
+            
         }
         if(markForDelete.objectType === MarkForDeleteObjectType.AuthorizationGroup){
-            const a: AuthorizationGroup = object as AuthorizationGroup;
-            a.markForDelete = true;
-            await authzGroupDao.updateAuthorizationGroup(a);
+            const a: AuthorizationGroup = object as AuthorizationGroup; 
+
+            const u = WithAuthorizationByScopeAndTenant({
+                async performOperation() {
+                    a.markForDelete = true;
+                    await authzGroupDao.updateAuthorizationGroup(a);
+                },
+            });
+            await u(this.oidcContext, requiredScope, a.tenantId);            
         }
         if(markForDelete.objectType === MarkForDeleteObjectType.AuthenticationGroup){
             const a: AuthenticationGroup = object as AuthenticationGroup;
-            a.markForDelete = true;
-            await authnGroupDao.updateAuthenticationGroup(a);
+
+            const u = WithAuthorizationByScopeAndTenant({
+                async performOperation() {
+                    a.markForDelete = true;
+                    await authnGroupDao.updateAuthenticationGroup(a);
+                },
+            });
+            await u(this.oidcContext, requiredScope, a.tenantId);            
         }
         if(markForDelete.objectType === MarkForDeleteObjectType.Scope){
             const s: Scope = object as Scope;
@@ -104,42 +151,73 @@ class MarkForDeleteService {
             // only those scope values defined for application management.
             if(s.scopeUse === SCOPE_USE_IAM_MANAGEMENT){
                 throw new GraphQLError("ERROR_UNABLE_TO_DELETE_IAM_MANAGEMENT_SCOPE");
-            }        
-            s.markForDelete = true;
-            await scopeDao.updateScope(s);
+            }
+            const u = WithAuthorizationByScopeAndTenant({
+                async performOperation() {
+                    s.markForDelete = true;
+                    await scopeDao.updateScope(s);
+                },
+            });
+            await u(this.oidcContext, requiredScope, null);
         }
         if(markForDelete.objectType === MarkForDeleteObjectType.FederatedOidcProvider){
             const f: FederatedOidcProvider = object as FederatedOidcProvider;
-            f.markForDelete = true;
-            await oidcProviderDao.updateFederatedOidcProvider(f);
+
+            const u = WithAuthorizationByScopeAndTenant({
+                async performOperation() {
+                    f.markForDelete = true;
+                    await oidcProviderDao.updateFederatedOidcProvider(f);
+                },
+            });
+            await u(this.oidcContext, requiredScope, null);
         }
         if(markForDelete.objectType === MarkForDeleteObjectType.RateLimitServiceGroup){
             const r: RateLimitServiceGroup = object as RateLimitServiceGroup;
-            r.markForDelete = true;
-            await rateLimitDao.updateRateLimitServiceGroup(r);
+            
+            const u = WithAuthorizationByScopeAndTenant({
+                async performOperation() {
+                    r.markForDelete = true;
+                    await rateLimitDao.updateRateLimitServiceGroup(r);
+                },
+            });
+            await u(this.oidcContext, requiredScope, null);
         }
         if(markForDelete.objectType === MarkForDeleteObjectType.SigningKey){
             const k: SigningKey = object as SigningKey;
-            k.markForDelete = true;
-            await signingKeysDao.updateSigningKey(k);
+
+            const u = WithAuthorizationByScopeAndTenant({
+                async performOperation() {
+                    k.markForDelete = true;
+                    await signingKeysDao.updateSigningKey(k);
+                },
+            });
+            await u(this.oidcContext, requiredScope, k.tenantId);
         }
         
+
         markForDelete.markForDeleteId = randomUUID().toString();
         markForDelete.submittedDate = Date.now();
 
-        // markForDelete.submittedBy = this.oidcContext.oidcPrincipal.sub
-        markForDelete.submittedBy = "anonymous";
+        markForDelete.submittedBy = this.oidcContext.portalUserProfile?.userId || "";
         await markForDeleteDao.markForDelete(markForDelete);
         return Promise.resolve(markForDelete);
     }
 
     public async getMarkForDeleteById(markForDeleteId: string): Promise<MarkForDelete | null> {
+        const {isAuthorized, errorMessage} = authorizeByScopeAndTenant(this.oidcContext, [TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE], null);
+        if(!isAuthorized){
+            throw new GraphQLError(errorMessage || "ERROR");
+        }
         return markForDeleteDao.getMarkForDeleteById(markForDeleteId);
     }
 
     public async getDeletionStatus(markForDeleteId: string): Promise<Array<DeletionStatus>> {
+        const {isAuthorized, errorMessage} = authorizeByScopeAndTenant(this.oidcContext, [TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE], null);
+        if(!isAuthorized){
+            throw new GraphQLError(errorMessage || "ERROR");
+        }
         return markForDeleteDao.getDeletionStatus(markForDeleteId);
-    }
+    }    
 
 }
 

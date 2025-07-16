@@ -18,7 +18,6 @@ const TenantLandingPage: React.FC = () => {
      // QUERY PARAMS
     const params = useSearchParams();
     const section = params?.get("section");
-    const searchTerm = params?.get("term");
 
     /*
         In the content section for the landing page for the tenant, we will
@@ -97,7 +96,7 @@ const TenantLandingPage: React.FC = () => {
                     resultType={SearchResultType.AuthenticationGroup}
                     page={1} 
                     perPage={20}
-                    breadCrumbText="Authorization Groups"
+                    breadCrumbText="Authentication Groups"
                     sortDirection={"asc"}
                     sortField={"name"}
                 />

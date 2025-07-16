@@ -55,6 +55,105 @@ class AuthenticateUserService extends IdentityService {
         }        
     }
 
+    public async authenticateHandleForgotPassword(authenticationSessionToken: string, preAuthToken: string | null): Promise<UserAuthenticationStateResponse> {
+        // Outline of the logic
+        // There must be an existing authentication session (that is, the user has selected a tenant and gone to the next page where they have tried to enter
+        // their password and have likely failed). 
+        // 1.   Is the user on the correct stage of authentication? (that is, entering their password)
+        // 2.   Does the user exist and is the user enabled? (Note that the user might be locked due to too many failed logins)
+        // 3.      
+
+        const response: UserAuthenticationStateResponse = this.initUserAuthenticationStateResponse(authenticationSessionToken, "", preAuthToken);
+        const arrUserAuthenticationStates: Array<UserAuthenticationState> = await this.getSortedAuthenticationStates(authenticationSessionToken);
+        const index: number = await this.validateAuthenticationStep(arrUserAuthenticationStates, response, AuthenticationState.EnterPassword);
+        if(index < 0){
+            response.authenticationError.errorCode = "ERROR_INVALID_AUTHENTICATION_STATE";
+            return Promise.resolve(response);
+        }
+        const user: User | null = await identityDao.getUserBy("id", arrUserAuthenticationStates[0].userId);
+        if(user === null){
+            response.authenticationError.errorCode = "ERROR_INVALID_USER_ID";
+            return Promise.resolve(response);
+        }
+        if(user.markForDelete || user.enabled === false){
+            response.authenticationError.errorCode = "ERROR_USER_CANNOT_BE_AUTHENTICATED";
+            return Promise.resolve(response);
+        }
+
+        // Need to delete the earlier authentication records and replace them
+        // with a new set.
+        // The first element will be the validation of the reset token sent to their email
+        const newArrayAuthenticationState: Array<AuthenticationState> = [];
+        newArrayAuthenticationState.push(AuthenticationState.ValidatePasswordResetToken);
+        // Now grab all of the remaining steps except for the very last one and add
+        // them
+        for(let i = 1; i < arrUserAuthenticationStates.length - 1; i++){
+            newArrayAuthenticationState.push(arrUserAuthenticationStates[i].authenticationState);
+        }
+        // Now we need to add the actual password reset action
+        newArrayAuthenticationState.push(AuthenticationState.RotatePassword);
+        // Finally, put the last one on the list
+        newArrayAuthenticationState.push(arrUserAuthenticationStates[arrUserAuthenticationStates.length - 1].authenticationState);
+        
+        const token: string = generateRandomToken(8, "hex").toUpperCase();        
+        // TODO
+        // Send email to the user with the token value.
+        await identityDao.savePasswordResetToken(arrUserAuthenticationStates[0].userId, token);
+
+        for(let i = 0; i < arrUserAuthenticationStates.length; i++){
+            await identityDao.deleteUserAuthenticationState(arrUserAuthenticationStates[i]);
+        }
+
+        const arr: Array<UserAuthenticationState> = [];
+        const expiresAt: number = Date.now() + (60 * 30 * 1000);
+        for(let i = 0; i < newArrayAuthenticationState.length; i++){
+            arr.push({
+                authenticationSessionToken: authenticationSessionToken,
+                authenticationState: newArrayAuthenticationState[i],
+                authenticationStateOrder: i + 1,
+                authenticationStateStatus: STATUS_INCOMPLETE,
+                expiresAtMs: expiresAt,
+                tenantId: arrUserAuthenticationStates[0].tenantId,
+                userId: arrUserAuthenticationStates[0].userId,
+                preAuthToken: arrUserAuthenticationStates[0].preAuthToken,
+                returnToUri: arrUserAuthenticationStates[0].returnToUri,
+
+            });
+        }
+        await identityDao.createUserAuthenticationStates(arr);
+        response.userAuthenticationState = arr[0];
+        return response;
+    }
+
+    public async authenticateValidatePasswordResetToken(token: string, authenticationSessionToken: string, preAuthToken: string | null): Promise<UserAuthenticationStateResponse> {
+        
+        const response: UserAuthenticationStateResponse = this.initUserAuthenticationStateResponse(authenticationSessionToken, "", preAuthToken);
+        const arrUserAuthenticationStates: Array<UserAuthenticationState> = await this.getSortedAuthenticationStates(authenticationSessionToken);
+        
+        const index: number = await this.validateAuthenticationStep(arrUserAuthenticationStates, response, AuthenticationState.ValidatePasswordResetToken);
+        if(index < 0){
+            response.authenticationError.errorCode = "ERROR_INVALID_AUTHENTICATION_STATE";
+            return Promise.resolve(response);
+        }
+        
+        const user: User | null = await identityDao.getUserByPasswordResetToken(token);
+        if(user === null){
+            response.authenticationError.errorCode = "ERROR_INVALID_RESET_TOKEN";
+            return Promise.resolve(response);
+        }
+        // Make sure we delete the reset token before continuing...
+        await identityDao.deletePasswordResetToken(token);
+        if(user.markForDelete || user.enabled === false){
+            response.authenticationError.errorCode = "ERROR_USER_CANNOT_BE_AUTHENTICATED";
+            return Promise.resolve(response);
+        }
+        arrUserAuthenticationStates[index].authenticationStateStatus = STATUS_COMPLETE;
+        await identityDao.updateUserAuthenticationState(arrUserAuthenticationStates[index]);
+        response.userAuthenticationState = arrUserAuthenticationStates[index + 1];
+        return response;
+
+    }
+
 
     /**
      * 
@@ -207,9 +306,7 @@ class AuthenticateUserService extends IdentityService {
             }
             
         }
-
-        return response;
-           
+        return response;           
     }
 
     protected async authenticatePortalUserNameHandler(email: string, tenantId: string | null, returnToUri: string | null): Promise<UserAuthenticationStateResponse> {
@@ -1016,6 +1113,11 @@ class AuthenticateUserService extends IdentityService {
      * @param response 
      */
     protected async handleAuthenticationCompletion(user: User, userAuthenticationState: UserAuthenticationState, response: UserAuthenticationStateResponse): Promise<void> {
+        // If the user was locked from a previous failed login attempt, then unlock the user
+        if(user.locked){
+            user.locked = false;
+            await identityDao.updateUser(user);
+        }
         if(userAuthenticationState.authenticationState === AuthenticationState.RedirectBackToApplication){
             try {
                 const authorizationCode: AuthorizationReturnUri = await this.generateAuthorizationCode(userAuthenticationState.userId, userAuthenticationState.preAuthToken || "");
@@ -1048,7 +1150,6 @@ class AuthenticateUserService extends IdentityService {
                         response.uri = userAuthenticationState.returnToUri ? userAuthenticationState.returnToUri : `/${userAuthenticationState.tenantId}`;
                         response.accessToken = accessToken;
                         response.tokenExpiresAtMs = Date.now() + (this.getPortalAuthenTokenTTLSeconds() * 1000);
-                        //response.tokenExpiresAtMs = Date.now() + (60000);
                         userAuthenticationState.authenticationStateStatus = STATUS_COMPLETE;
                         await identityDao.updateUserAuthenticationState(userAuthenticationState);
                     }

@@ -7,7 +7,7 @@ import { FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL, PASSWORD_MINIMUM_LENGTH, QUERY_PAR
 import { useMutation, useQuery } from "@apollo/client";
 import { UserAuthenticationStateResponse, TenantSelectorData, AuthenticationState, UserAuthenticationState, TenantPasswordConfig, FederatedOidcProvider } from "@/graphql/generated/graphql-types";
 import Alert from '@mui/material/Alert';
-import { AUTHENTICATE_USER, AUTHENTICATE_USERNAME_INPUT_MUTATION, AUTHENTICATE_WITH_SOCIAL_OIDC_PROVIDER, CANCEL_AUTHENTICATION } from "@/graphql/mutations/oidc-mutations";
+import { AUTHENTICATE_HANDLE_FORGOT_PASSWORD, AUTHENTICATE_USER, AUTHENTICATE_USERNAME_INPUT_MUTATION, AUTHENTICATE_WITH_SOCIAL_OIDC_PROVIDER, CANCEL_AUTHENTICATION } from "@/graphql/mutations/oidc-mutations";
 import { PageTitleContext } from "@/components/contexts/page-title-context";
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
 import RadioStyledCheckbox from "../input/radio-styled-checkbox";
@@ -17,10 +17,12 @@ import { AuthentiationConfigureSecurityKey } from "./configure-security-key";
 import { AuthentiationValidateSecurityKey } from "./validate-security-key";
 import AuthentiationRotatePassword from "./rotate-password";
 import { useSearchParams } from 'next/navigation';
-import { AuthSessionProps, useAuthSessionContext } from "../contexts/auth-session-context";
 import { FEDERATED_OIDC_PROVIDERS_QUERY } from "@/graphql/queries/oidc-queries";
 import { ResponsiveBreakpoints, ResponsiveContext } from "../contexts/responsive-context";
 import Skeleton from '@mui/material/Skeleton';
+import ValidatePasswordResetToken from "./validate-password-reset-token";
+import { AuthSessionProps, useAuthSessionContext } from "../contexts/auth-session-context";
+import { AuthContext, AuthContextProps } from "../contexts/auth-context";
 
 
 const MIN_USERNAME_LENGTH = 6;
@@ -37,12 +39,15 @@ const Login: React.FC = () => {
 
     // CONTEXT VARIABLES
     const titleSetter = useContext(PageTitleContext);
-    const tenantBean: TenantMetaDataBean = useContext(TenantContext);
+    const tenantBean: TenantMetaDataBean = useContext(TenantContext);    
+    const authSessionProps: AuthSessionProps = useAuthSessionContext();
+    const breakPoints: ResponsiveBreakpoints = useContext(ResponsiveContext);    
+    const authContextProps: AuthContextProps = useContext(AuthContext);
+
+
     useEffect(() => {
         titleSetter.setPageTitle("Login");
     }, []);
-    const authSessionProps: AuthSessionProps = useAuthSessionContext();
-    const breakPoints: ResponsiveBreakpoints = useContext(ResponsiveContext);
 
     // QUERY PARAMS
     const params = useSearchParams();
@@ -63,6 +68,7 @@ const Login: React.FC = () => {
     const [userAuthenticationState, setUserAuthenticationState] = React.useState<UserAuthenticationState | null>(null);
     const [passwordConfig, setPasswordConfig] = React.useState<TenantPasswordConfig | null>(null);
     const [socialOIDCProviders, setSocialOIDCProviders] = React.useState<Array<FederatedOidcProvider>>([]);
+    const [isPasswordResetFlow, setIsPasswordResetFlow] = React.useState<boolean>(false);
 
     // HOOKS FROM NEXTJS OR MUI
     const router = useRouter();
@@ -127,7 +133,17 @@ const Login: React.FC = () => {
         onError(error) {
             setErrorMessage(error.message);
         }
-    })
+    });
+
+    const [authenticateHandleForgotPassword] = useMutation(AUTHENTICATE_HANDLE_FORGOT_PASSWORD, {
+        onCompleted(data) {
+            const authnStateResponse: UserAuthenticationStateResponse = data.authenticateHandleForgotPassword;
+            handleUserAuthenticationResponse(authnStateResponse, null);
+        },
+        onError(error) {
+            setErrorMessage(error.message);
+        }
+    });
 
     // HANDLER FUNCTIONS
     const handleUserAuthenticationResponse = (authnStateResponse: UserAuthenticationStateResponse | null, errorMessage: string | null) => {
@@ -173,6 +189,9 @@ const Login: React.FC = () => {
                         }
                     }
                     router.push(authnStateResponse.uri);
+                    if(authnStateResponse.userAuthenticationState.authenticationState === AuthenticationState.RedirectToIamPortal){
+                        authContextProps.forceProfileRefetch();
+                    }
                 }
             }
             else {
@@ -229,8 +248,7 @@ const Login: React.FC = () => {
     }
 
 
-    const handleCancelAuthentication = (userAuthenticationState: UserAuthenticationState) => {
-        console.log("authentication cancelled");
+    const handleCancelAuthentication = (userAuthenticationState: UserAuthenticationState) => {        
         cancelAuthentication({
             variables: {
                 userId: userAuthenticationState.userId,
@@ -537,7 +555,19 @@ const Login: React.FC = () => {
                                     <Stack
                                         direction={"row-reverse"}
                                     >
-                                        <span><Link prefetch={false} href={`/authorize/forgot-password?${getQueryParams()}`} style={{ color: "black", fontWeight: "bold", fontSize: "0.9em" }}>Forgot password?</Link></span>
+                                        <span 
+                                            style={{fontWeight: "bold", fontSize: "0.9em", textDecoration: "underline", cursor: "pointer"}}
+                                            onClick={() => {
+                                                setIsPasswordResetFlow(true);                                                
+                                                authenticateHandleForgotPassword({
+                                                    variables: {
+                                                        authenticationSessionToken: userAuthenticationState.authenticationSessionToken,
+                                                        preAuthToken: preAuthToken
+                                                    }
+                                                });
+                                            }}
+                                        >Forgot Password?
+                                        </span>                                            
                                     </Stack>
                                 </Grid2>
                             }
@@ -582,6 +612,23 @@ const Login: React.FC = () => {
                         <AuthentiationRotatePassword
                             initialUserAuthenticationState={userAuthenticationState}
                             passwordConfig={passwordConfig}
+                            isPasswordResetFlow={isPasswordResetFlow}
+                            onAuthenticationCancelled={() => {
+                                handleCancelAuthentication(userAuthenticationState);
+                            }}
+                            onUpdateEnd={(userAuthenticationStateResponse, errorMessage) => {
+                                setShowMutationBackdrop(false);
+                                handleUserAuthenticationResponse(userAuthenticationStateResponse, errorMessage);
+                            }}
+                            onUpdateStart={() => {
+                                setErrorMessage(null);
+                                setShowMutationBackdrop(true)
+                            }}
+                        />
+                    }
+                    {userAuthenticationState && userAuthenticationState.authenticationState === AuthenticationState.ValidatePasswordResetToken &&
+                        <ValidatePasswordResetToken
+                            initialUserAuthenticationState={userAuthenticationState}
                             onAuthenticationCancelled={() => {
                                 handleCancelAuthentication(userAuthenticationState);
                             }}

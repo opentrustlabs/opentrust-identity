@@ -484,6 +484,15 @@ export const TENANT_SCOPE_ASSIGN_MUTATION = gql(`
     }
 `);
 
+export const BULK_TENANT_SCOPE_ASSIGN_MUTATION = gql(`
+    mutation bulkAssignScopeToTenant($tenantId: String!, $bulkScopeInput: [BulkScopeInput!]!) {
+        bulkAssignScopeToTenant(tenantId: $tenantId, bulkScopeInput: $bulkScopeInput) {
+            tenantId
+            scopeId
+        }
+    }
+`);
+
 export const TENANT_SCOPE_REMOVE_MUTATION = gql(`
     mutation removeScopeFromTenant($tenantId: String!, $scopeId: String!){
         removeScopeFromTenant(tenantId: $tenantId, scopeId: $scopeId)
@@ -498,7 +507,7 @@ export const MARK_FOR_DELETE_MUTATION = gql(`
             objectId
             submittedBy
             submittedDate
-            completedData
+            completedDate
         }
     }  
 `);
@@ -509,6 +518,16 @@ export const CLIENT_SCOPE_ASSIGN_MUTATION = gql(`
             tenantId
             clientId
             scopeId            
+        }
+    }
+`);
+
+export const BULK_CLIENT_SCOPE_ASSIGN_MUTATION = gql(`
+    mutation bulkAssignScopeToClient($clientId: String!, $tenantId: String!, $bulkScopeInput: [BulkScopeInput!]!) {
+        bulkAssignScopeToClient(clientId: $clientId, tenantId: $tenantId, bulkScopeInput: $bulkScopeInput) {
+            tenantId
+            clientId
+            scopeId
         }
     }
 `);
@@ -529,6 +548,16 @@ export const USER_SCOPE_ASSIGN_MUTATION = gql(`
     }    
 `);
 
+export const BULK_USER_SCOPE_ASSIGN_MUTATION = gql(`
+    mutation bulkAssignScopeToUser($userId: String!, $tenantId: String!, $bulkScopeInput: [BulkScopeInput!]!){
+        bulkAssignScopeToUser(userId: $userId, tenantId: $tenantId, bulkScopeInput: $bulkScopeInput){
+            tenantId
+            userId
+            scopeId  
+        }
+    }
+`);
+
 export const USER_SCOPE_REMOVE_MUTATION = gql(`
     mutation removeScopeFromUser($userId: String!, $tenantId: String!, $scopeId: String!){
         removeScopeFromUser(userId: $userId, tenantId: $tenantId, scopeId: $scopeId)
@@ -543,6 +572,16 @@ export const AUTHORIZATION_GROUP_SCOPE_ASSIGN_MUTATION = gql(`
             scopeId            
         }
     }  
+`);
+
+export const BULK_AUTHORIZATION_GROUP_SCOPE_ASSIGN_MUTATION = gql(`
+     mutation bulkAssignScopeToAuthorizationGroup($groupId: String!, $tenantId: String!, $bulkScopeInput: [BulkScopeInput!]!) {
+        bulkAssignScopeToAuthorizationGroup(groupId: $groupId, tenantId: $tenantId, bulkScopeInput: $bulkScopeInput) {
+            tenantId
+            groupId
+            scopeId     
+        }
+     }
 `);
 
 export const AUTHORIZATION_GROUP_SCOPE_REMOVE_MUTATION = gql(`
@@ -690,6 +729,16 @@ export const AUTHENTICATE_USER = gql`
     ${USER_AUTHENTICATION_STATE_RESPONSE_FRAGMENT}
 `;
 
+export const AUTHENTICATE_HANDLE_FORGOT_PASSWORD = gql`
+    mutation authenticateHandleForgotPassword($authenticationSessionToken: String!, $preAuthToken: String) {
+        authenticateHandleForgotPassword(authenticationSessionToken: $authenticationSessionToken, preAuthToken: $preAuthToken){
+            ...UserAuthenticationStateResponseFragment
+        }
+    }
+
+    ${USER_AUTHENTICATION_STATE_RESPONSE_FRAGMENT}
+`;
+
 export const AUTHENTICATE_ROTATE_PASSWORD = gql`
     mutation authenticateRotatePassword($userId: String!, $newPassword: String!, $authenticationSessionToken: String!, $preAuthToken: String){
         authenticateRotatePassword(userId: $userId, newPassword: $newPassword, authenticationSessionToken: $authenticationSessionToken, preAuthToken: $preAuthToken) {
@@ -733,6 +782,16 @@ export const AUTHENTICATE_VALIDATE_SECURITY_KEY = gql`
 export const AUTHENTICATE_REGISTER_SECURITY_KEY = gql`
     mutation authenticateRegisterSecurityKey($userId: String!, $fido2KeyRegistrationInput: Fido2KeyRegistrationInput!, $authenticationSessionToken: String!, $preAuthToken: String) {
         authenticateRegisterSecurityKey(userId: $userId, fido2KeyRegistrationInput: $fido2KeyRegistrationInput, authenticationSessionToken: $authenticationSessionToken, preAuthToken: $preAuthToken) {
+            ...UserAuthenticationStateResponseFragment
+        }
+    }
+
+    ${USER_AUTHENTICATION_STATE_RESPONSE_FRAGMENT}
+`;
+
+export const AUTHENTICATE_VALIDATE_PASSWORD_RESET_TOKEN = gql`
+    mutation authenticateValidatePasswordResetToken($token: String!, $authenticationSessionToken: String!, $preAuthToken: String){
+        authenticateValidatePasswordResetToken(token: $token, authenticationSessionToken: $authenticationSessionToken, preAuthToken: $preAuthToken) {
             ...UserAuthenticationStateResponseFragment
         }
     }
