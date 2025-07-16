@@ -82,9 +82,9 @@ const ManagementTenantFilter: React.FC<LayoutProps> = ({
 
         else{            
             if(profile.managementAccessTenantId !== tenantIdFromPath){
-                const additionalPath = window.location.pathname.replace(`/${tenantIdFromPath}`, "");
-                const currentQueryParams = window.location.search;
-                redirectUri = `/${profile.managementAccessTenantId}${additionalPath}${currentQueryParams}`;
+                // const additionalPath = window.location.pathname.replace(`/${tenantIdFromPath}`, "");
+                // const currentQueryParams = window.location.search;
+                redirectUri = `/${profile.managementAccessTenantId}`; //${additionalPath}${currentQueryParams}`;
             }
             else{
                 // Need to check to see if the user has any permissions within the tenant
