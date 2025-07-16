@@ -5,7 +5,7 @@ import { Client, Fido2AuthenticationChallengeResponse, Fido2Challenge, Fido2Regi
 import { DaoFactory } from "../data-sources/dao-factory";
 import TenantDao from "../dao/tenant-dao";
 import { GraphQLError } from "graphql/error";
-import { DEFAULT_PORTAL_AUTH_TOKEN_TTL_HOURS, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, NAME_ORDER_WESTERN, PASSWORD_HASH_ITERATION_128K, PASSWORD_HASH_ITERATION_256K, PASSWORD_HASH_ITERATION_32K, PASSWORD_HASH_ITERATION_64K, PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_32K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_64K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, SESSION_TOKEN_TYPE_AUTHENTICATION, SESSION_TOKEN_TYPE_REGISTRATION, TOTP_HASH_ALGORITHM_SHA1, USER_TENANT_REL_TYPE_GUEST, USER_TENANT_REL_TYPE_PRIMARY } from "@/utils/consts";
+import { DEFAULT_PORTAL_AUTH_TOKEN_TTL_HOURS, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, NAME_ORDER_WESTERN, PASSWORD_HASH_ITERATION_128K, PASSWORD_HASH_ITERATION_256K, PASSWORD_HASH_ITERATION_32K, PASSWORD_HASH_ITERATION_64K, PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_32K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_64K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, SESSION_TOKEN_TYPE_AUTHENTICATION, SESSION_TOKEN_TYPE_REGISTRATION, TENANT_READ_ALL_SCOPE, TENANT_USER_ASSIGN_SCOPE, TENANT_USER_REMOVE_SCOPE, TOTP_HASH_ALGORITHM_SHA1, USER_READ_SCOPE, USER_SESSION_DELETE_SCOPE, USER_SESSION_READ_SCOPE, USER_TENANT_REL_TYPE_GUEST, USER_TENANT_REL_TYPE_PRIMARY, USER_UPDATE_SCOPE } from "@/utils/consts";
 import { sha256HashPassword, pbkdf2HashPassword, bcryptHashPassword, generateSalt, scryptHashPassword, generateRandomToken, generateCodeVerifierAndChallenge, bcryptValidatePassword } from "@/utils/dao-utils";
 import { Client as OpenSearchClient } from "@opensearch-project/opensearch";
 import { getOpenSearchClient } from "../data-sources/search";
@@ -17,6 +17,7 @@ import { VerifiedRegistrationResponse, verifyRegistrationResponse, verifyAuthent
 import { validatePasswordFormat } from "@/utils/password-utils";
 import OIDCServiceUtils from "./oidc-service-utils";
 import { WellknownConfig } from "../models/wellknown-config";
+import { authorizeByScopeAndTenant, ServiceAuthorizationWrapper } from "@/utils/authz-utils";
 
 
 const identityDao: IdentityDao = DaoFactory.getInstance().getIdentityDao();
@@ -62,11 +63,39 @@ class IdentityService {
         // 1. user.read for root tenant member
         // 2. user.read for non-root tenant member but this user belongs to the tenant
         // 3. the user themselves
-        return identityDao.getUserBy("id", userId);
+        const getData = ServiceAuthorizationWrapper(
+            {
+                performOperation: async function(_, __) {
+                    return identityDao.getUserBy("id", userId);
+                },
+                additionalConstraintCheck: async function(oidcContext: OIDCContext, result: User | null) {
+                    if(userId === oidcContext.portalUserProfile?.userId){
+                        return {isAuthorized: true, errorMessage: null}
+                    }
+                    const userTenantRels: Array<UserTenantRel> = await identityDao.getUserTenantRelsByUserId(userId);
+                    const rel = userTenantRels.find(
+                        (r: UserTenantRel) => r.tenantId === oidcContext.portalUserProfile?.managementAccessTenantId
+                    );
+                    if(!rel){
+                        return {isAuthorized: false, errorMessage: "ERROR_USER_TENANT_REL_DOES_NOT_EXIST"}
+                    }
+                    return {isAuthorized: true, errorMessage: null};
+                }
+            }
+        );
+        const user = await getData(this.oidcContext, [USER_READ_SCOPE, TENANT_READ_ALL_SCOPE], userId);
+        return user;
     }
 
     
     public async updateUser(user: User): Promise<User> {
+
+        if(user.userId !== this.oidcContext.portalUserProfile?.userId){
+            const authResult = authorizeByScopeAndTenant(this.oidcContext, [USER_UPDATE_SCOPE], null);
+            if(!authResult.isAuthorized){
+                throw new GraphQLError(authResult.errorMessage || "ERROR");
+            }
+        }
 
         const existingUser: User | null = await identityDao.getUserBy("id", user.userId);
         if (existingUser !== null) {
@@ -90,7 +119,6 @@ class IdentityService {
                 throw new GraphQLError("ERROR_PROFILE_IS_CONTROLLED_BY_EXTERNAL_OIDC_PROVIDER");
             }
             
-
             // Unlocking the user is done via a separate process, which may require
             // additional auditing.
             //
@@ -135,6 +163,12 @@ class IdentityService {
     }
 
     public async getUserSessions(userId: string): Promise<Array<UserSession>> {
+
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [USER_SESSION_READ_SCOPE], null);
+        if(!authResult.isAuthorized){
+            throw new GraphQLError(authResult.errorMessage || "ERROR");
+        }
+
         const arr: Array<RefreshData> = await authDao.getRefreshDataByUserId(userId);
 
         const retArr: Array<UserSession> = [];
@@ -155,27 +189,55 @@ class IdentityService {
     }
 
     public async deleteUserSession(userId: string, clientId: string, tenantId: string): Promise<void>{
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [USER_SESSION_DELETE_SCOPE], null);
+        if(!authResult.isAuthorized){
+            throw new GraphQLError(authResult.errorMessage || "ERROR");
+        }
+
         await authDao.deleteRefreshData(userId, tenantId, clientId);
         return Promise.resolve();
     }
 
     public async getUserTenantRels(userId: string): Promise<Array<UserTenantRelView>> {
-        const rels: Array<UserTenantRel> = await identityDao.getUserTenantRelsByUserId(userId);
-        const retVal: Array<UserTenantRelView> = [];
-        for(let i = 0; i < rels.length; i++){
-            const tenant: Tenant | null = await tenantDao.getTenantById(rels[i].tenantId);
-            const tenantName = tenant ? tenant.tenantName : "";
-            retVal.push({
-                userId: userId,
-                tenantId: rels[i].tenantId,
-                relType: rels[i].relType,
-                tenantName: tenantName
-            });
-        }
-        return retVal;
+
+        const getData = ServiceAuthorizationWrapper(
+            {
+                performOperation: async function(_, __): Promise<Array<UserTenantRelView> | null> {
+                    const rels: Array<UserTenantRel> = await identityDao.getUserTenantRelsByUserId(userId);
+                    const retVal: Array<UserTenantRelView> = [];
+                    for(let i = 0; i < rels.length; i++){
+                        const tenant: Tenant | null = await tenantDao.getTenantById(rels[i].tenantId);
+                        const tenantName = tenant ? tenant.tenantName : "";
+                        retVal.push({
+                            userId: userId,
+                            tenantId: rels[i].tenantId,
+                            relType: rels[i].relType,
+                            tenantName: tenantName
+                        });
+                    }
+                    return retVal;
+                },
+                postProcess: async function(oidcContext: OIDCContext, result: Array<UserTenantRelView> | null) {
+                    if(result && oidcContext.portalUserProfile?.managementAccessTenantId !== oidcContext.rootTenant.tenantId){
+                        return result.filter(
+                            (r: UserTenantRelView) => r.tenantId === oidcContext.portalUserProfile?.managementAccessTenantId
+                        );
+                    }
+                    return result;                    
+                }
+            }
+        );
+
+        const retVal = await getData(this.oidcContext, [TENANT_READ_ALL_SCOPE, USER_READ_SCOPE], userId);
+        return retVal || [];
     }
 
     public async assignUserToTenant(tenantId: string, userId: string, relType: string): Promise<UserTenantRel> {
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_USER_ASSIGN_SCOPE], null);
+        if(!authResult.isAuthorized){
+            throw new GraphQLError(authResult.errorMessage || "ERROR");
+        }
+
         let userTenantRel: UserTenantRel = {
             enabled: false,
             relType: relType,
@@ -258,6 +320,11 @@ class IdentityService {
     }
 
     public async removeUserFromTenant(tenantId: string, userId: string): Promise<void> {
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_USER_REMOVE_SCOPE], tenantId);
+        if(!authResult.isAuthorized){
+            throw new GraphQLError(authResult.errorMessage || "ERROR");
+        }
+
         // Cannot remove a primary relationship
         const rel: UserTenantRel | null = await identityDao.getUserTenantRel(tenantId, userId);
         if(rel){
@@ -492,27 +559,69 @@ class IdentityService {
     }
 
     public async getUserMFARels(userId: string): Promise<Array<UserMfaRel>> {
-        const arr: Array<UserMfaRel> = await identityDao.getUserMFARels(userId);
 
-        // clear out any sensitive information before returning to the client.
-        arr.forEach(
-            (rel: UserMfaRel) => {
-                rel.totpSecret = "";
-                rel.fido2PublicKeyAlgorithm = 0;
-                rel.fido2CredentialId = "";
-                rel.fido2PublicKey = "";
-                rel.fido2Transports = "";
-                rel.fido2KeySupportsCounters = false;
+        const getData = ServiceAuthorizationWrapper(
+            {
+                performOperation: async function(_, __): Promise<Array<UserMfaRel> | null> {
+                    const arr: Array<UserMfaRel> = await identityDao.getUserMFARels(userId);
+                    return arr;
+                },
+                additionalConstraintCheck: async function(oidcContext, result: Array<UserMfaRel> | null) {
+                    if(userId !== oidcContext.portalUserProfile?.userId){
+                        const userTenantRels = await identityDao.getUserTenantRelsByUserId(userId);
+                        const rel = userTenantRels.find(
+                            (r: UserTenantRel) => r.tenantId === oidcContext.portalUserProfile?.managementAccessTenantId
+                        );
+                        if(!rel){
+                            return {isAuthorized: false, errorMessage: "ERROR_USER_TENANT_REL_DOES_NOT_EXIST"}
+                        }
+                        return {isAuthorized: true, errorMessage: null};
+                    }
+                    else{
+                        return {isAuthorized: true, errorMessage: null};
+                    }
+                },
+                postProcess: async function(_, result) {
+                     // clear out any sensitive information before returning to the client.
+                    if(result){
+                        result.forEach(
+                            (rel: UserMfaRel) => {
+                                rel.totpSecret = "";
+                                rel.fido2PublicKeyAlgorithm = 0;
+                                rel.fido2CredentialId = "";
+                                rel.fido2PublicKey = "";
+                                rel.fido2Transports = "";
+                                rel.fido2KeySupportsCounters = false;
+                            }
+                        );
+                    }
+                    return result; 
+                }
             }
         );
-        return arr;       
+
+        const mfas = await getData(this.oidcContext, [TENANT_READ_ALL_SCOPE, USER_READ_SCOPE], userId);
+        return mfas || [];             
     }
 
     public async deleteTOTP(userId: string): Promise<void> {
+        if(userId !== this.oidcContext.portalUserProfile?.userId){
+            const authResult = authorizeByScopeAndTenant(this.oidcContext, [USER_UPDATE_SCOPE], null);
+            if(!authResult.isAuthorized){
+                throw new GraphQLError(authResult.errorMessage || "ERROR");
+            }
+        }
+
         return identityDao.deleteTOTP(userId);
     }
 
     public async deleteFIDOKey(userId: string): Promise<void> {
+        if(userId !== this.oidcContext.portalUserProfile?.userId){
+            const authResult = authorizeByScopeAndTenant(this.oidcContext, [USER_UPDATE_SCOPE], null);
+            if(!authResult.isAuthorized){
+                throw new GraphQLError(authResult.errorMessage || "ERROR");
+            }
+        }
         await identityDao.deleteFido2Count(userId);
         return identityDao.deleteFIDOKey(userId);
     }
