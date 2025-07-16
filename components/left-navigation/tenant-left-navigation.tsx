@@ -18,13 +18,17 @@ import { LookaheadItem, LookaheadResult, SearchResultType, TenantMetaData } from
 import AddBoxIcon from '@mui/icons-material/AddBox';
 import VerifiedIcon from '@mui/icons-material/Verified';
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
-import { TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
+import { AUTHENTICATION_GROUP_CREATE_SCOPE, AUTHENTICATION_GROUP_READ_SCOPE, AUTHORIZATION_GROUP_CREATE_SCOPE, AUTHORIZATION_GROUP_READ_SCOPE, CLIENT_CREATE_SCOPE, CLIENT_READ_SCOPE, FEDERATED_OIDC_PROVIDER_CREATE_SCOPE, FEDERATED_OIDC_PROVIDER_READ_SCOPE, KEY_CREATE_SCOPE, KEY_READ_SCOPE, RATE_LIMIT_CREATE_SCOPE, RATE_LIMIT_READ_SCOPE, SCOPE_CREATE_SCOPE, SCOPE_READ_SCOPE, TENANT_CREATE_SCOPE, TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE, TENANT_TYPE_ROOT_TENANT, USER_READ_SCOPE } from "@/utils/consts";
 import CreateNewDialog from "../dialogs/create-new-dialog";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@apollo/client";
 import { LOOKAHEAD_SEARCH_QUERY } from "@/graphql/queries/oidc-queries";
 import SearchResultIconRenderer, { displaySearchCategory, getUriSection } from "../search/search-result-icon-renderer";
+import { AuthContext, AuthContextProps } from "@/components/contexts/auth-context";
+import { PortalUserProfile } from "@/graphql/generated/graphql-types";
+import { containsScope } from "@/utils/authz-utils";
+
 
 interface NavigationProps {
     section: string | null,
@@ -37,6 +41,8 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
     // CONTEXT
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
     const router = useRouter();
+    const authContextProps: AuthContextProps = useContext(AuthContext);
+    const profile: PortalUserProfile | null = authContextProps.portalUserProfile;
 
     // STATE VARIABLES
     const [searchTerm, setSearchTerm] = React.useState<string>("");
@@ -182,56 +188,72 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
                                         fullWidth={true}
                                     />
                             }}
-                            options={lookaheadOptions}
+                            options={lookaheadOptions}                            
                         />                        
                     </Stack>
 
                     <Stack spacing={0} padding={"8px"} color={"#616161"} fontSize={"0.9em"} fontWeight={"bolder"} marginTop={"8px"} >
                         <Divider />
-                        {tenantMetaData.tenant.tenantType === TENANT_TYPE_ROOT_TENANT &&
+                        {tenantMetaData.tenant.tenantType === TENANT_TYPE_ROOT_TENANT && containsScope([TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE], profile?.scope || []) &&
                             <div  className="left-navigation">
                                 <SettingsApplicationsIcon sx={{marginRight: "8px"}} />
                                 <Link className="undecorated" href={`/${tenantMetaData.tenant.tenantId}?section=tenants`} >Tenants</Link>                        
                             </div>                
                         }      
-                        {tenantMetaData.tenant.tenantType !== TENANT_TYPE_ROOT_TENANT &&
+                        {tenantMetaData.tenant.tenantType !== TENANT_TYPE_ROOT_TENANT && containsScope([TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE], profile?.scope || []) &&
                             <div className="left-navigation">
                                 <SettingsApplicationsIcon sx={{marginRight: "8px"}} />
                                 <Link className="undecorated" href={`/${tenantMetaData.tenant.tenantId}?section=tenants`} >My Tenant</Link>                        
                             </div>                
-                        }           
-                        <div className="left-navigation" >
-                            <SettingsSystemDaydreamIcon sx={{marginRight: "8px"}}/>
-                            <Link className="undecorated" href={`/${tenantMetaData.tenant.tenantId}?section=clients`} >Clients</Link>
-                        </div>
-                        <div className="left-navigation" >
-                            <PersonIcon sx={{marginRight: "8px"}} />
-                            <Link className="undecorated" href={`/${tenantMetaData.tenant.tenantId}?section=users`} >Users</Link>
-                        </div>
-                        <div className="left-navigation" >
-                            <PeopleIcon sx={{marginRight: "8px"}} />
-                            <Link className="undecorated" href={`/${tenantMetaData.tenant.tenantId}?section=authorization-groups`} >Authorization Groups</Link>
-                        </div>
-                        <div className="left-navigation" >
-                            <GroupIcon sx={{marginRight: "8px"}} />
-                            <Link className="undecorated" href={`/${tenantMetaData.tenant.tenantId}?section=authentication-groups`} >Authentication Groups</Link>
-                        </div>
-                        <div className="left-navigation" >
-                            <PolicyIcon sx={{marginRight: "8px"}} />
-                            <Link className="undecorated" href={`/${tenantMetaData.tenant.tenantId}?section=scope-access-control`} >Scope/Access Control</Link>
-                        </div>
-                        <div className="left-navigation" >
-                            <AutoAwesomeMosaicIcon sx={{marginRight: "8px"}} />
-                            <Link className="undecorated" href={`/${tenantMetaData.tenant.tenantId}?section=oidc-providers`} >OIDC Providers</Link>
-                        </div>
-                        <div className="left-navigation">
-                            <SpeedIcon sx={{marginRight: "8px"}} />
-                            <Link className="undecorated" href={`/${tenantMetaData.tenant.tenantId}?section=rate-limits`} >Rate Limits</Link>
-                        </div>
-                        <div className="left-navigation">
-                            <KeyIcon sx={{marginRight: "8px"}} />
-                            <Link className="undecorated" href={`/${tenantMetaData.tenant.tenantId}?section=signing-keys`} >Keys</Link>
-                        </div>
+                        }
+                        {containsScope([TENANT_READ_ALL_SCOPE, CLIENT_READ_SCOPE], profile?.scope || []) &&
+                            <div className="left-navigation" >
+                                <SettingsSystemDaydreamIcon sx={{marginRight: "8px"}}/>
+                                <Link className="undecorated" href={`/${tenantMetaData.tenant.tenantId}?section=clients`} >Clients</Link>
+                            </div>
+                        }                        
+                        {containsScope([TENANT_READ_ALL_SCOPE, USER_READ_SCOPE], profile?.scope || []) &&
+                            <div className="left-navigation" >
+                                <PersonIcon sx={{marginRight: "8px"}} />
+                                <Link className="undecorated" href={`/${tenantMetaData.tenant.tenantId}?section=users`} >Users</Link>
+                            </div>
+                        }
+                        {containsScope([TENANT_READ_ALL_SCOPE, AUTHORIZATION_GROUP_READ_SCOPE], profile?.scope || []) &&
+                            <div className="left-navigation" >
+                                <PeopleIcon sx={{marginRight: "8px"}} />
+                                <Link className="undecorated" href={`/${tenantMetaData.tenant.tenantId}?section=authorization-groups`} >Authorization Groups</Link>
+                            </div>
+                        }
+                        {containsScope([TENANT_READ_ALL_SCOPE, AUTHENTICATION_GROUP_READ_SCOPE], profile?.scope || []) &&
+                            <div className="left-navigation" >
+                                <GroupIcon sx={{marginRight: "8px"}} />
+                                <Link className="undecorated" href={`/${tenantMetaData.tenant.tenantId}?section=authentication-groups`} >Authentication Groups</Link>
+                            </div>
+                        }
+                        {containsScope([TENANT_READ_ALL_SCOPE, SCOPE_READ_SCOPE], profile?.scope || []) &&
+                            <div className="left-navigation" >
+                                <PolicyIcon sx={{marginRight: "8px"}} />
+                                <Link className="undecorated" href={`/${tenantMetaData.tenant.tenantId}?section=scope-access-control`} >Scope/Access Control</Link>
+                            </div>
+                        }
+                        {containsScope([TENANT_READ_ALL_SCOPE, FEDERATED_OIDC_PROVIDER_READ_SCOPE], profile?.scope || []) &&
+                            <div className="left-navigation" >
+                                <AutoAwesomeMosaicIcon sx={{marginRight: "8px"}} />
+                                <Link className="undecorated" href={`/${tenantMetaData.tenant.tenantId}?section=oidc-providers`} >OIDC Providers</Link>
+                            </div>
+                        }
+                        {containsScope([TENANT_READ_ALL_SCOPE, RATE_LIMIT_READ_SCOPE], profile?.scope || []) &&
+                            <div className="left-navigation">
+                                <SpeedIcon sx={{marginRight: "8px"}} />
+                                <Link className="undecorated" href={`/${tenantMetaData.tenant.tenantId}?section=rate-limits`} >Rate Limits</Link>
+                            </div>
+                        }
+                        {containsScope([TENANT_READ_ALL_SCOPE, KEY_READ_SCOPE], profile?.scope || []) &&
+                            <div className="left-navigation">
+                                <KeyIcon sx={{marginRight: "8px"}} />
+                                <Link className="undecorated" href={`/${tenantMetaData.tenant.tenantId}?section=signing-keys`} >Keys</Link>
+                            </div>
+                        }
                         {tenantMetaData.tenant.tenantType === TENANT_TYPE_ROOT_TENANT &&
                             <>                                
                                 <div className="left-navigation" >
@@ -241,10 +263,12 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
                             </>                        
                         }                        
                         <Divider />
-                        <div className="left-navigation" onClick={() => setOpenCreateNewDialog(true)}  style={{marginTop: "8px", cursor: "pointer"}}>
-                            <AddBoxIcon sx={{marginRight: "8px"}} />
-                            <div>Create New...</div>
-                        </div>
+                        {containsScope([TENANT_CREATE_SCOPE, CLIENT_CREATE_SCOPE, AUTHORIZATION_GROUP_CREATE_SCOPE, AUTHENTICATION_GROUP_CREATE_SCOPE, SCOPE_CREATE_SCOPE, FEDERATED_OIDC_PROVIDER_CREATE_SCOPE, RATE_LIMIT_CREATE_SCOPE, KEY_CREATE_SCOPE], profile?.scope || []) &&
+                            <div className="left-navigation" onClick={() => setOpenCreateNewDialog(true)}  style={{marginTop: "8px", cursor: "pointer"}}>
+                                <AddBoxIcon sx={{marginRight: "8px"}} />
+                                <div>Create New...</div>
+                            </div>
+                        }                        
                     </Stack>
                 </>
             }
@@ -342,50 +366,66 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
                     </Grid2>
                     <Drawer open={drawerOpen} onClose={toggleDrawer(false)}>
                         <Stack spacing={2} padding={"8px"} fontSize={"0.85em"} fontWeight={"bolder"} marginTop={"8px"} >
-                            {tenantMetaData.tenant.tenantType === TENANT_TYPE_ROOT_TENANT &&
+                            {tenantMetaData.tenant.tenantType === TENANT_TYPE_ROOT_TENANT && containsScope([TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE], profile?.scope || []) &&
                                 <div style={{display: "inline-flex", alignItems: "center"}}>                
                                     <SettingsApplicationsIcon sx={{marginRight: "8px"}} />
                                     <Link className="undecorated" href={`/${tenantMetaData.tenant.tenantId}?section=tenants`} onClick={() => setDrawerOpen(false)} >Tenants</Link>                
                                 </div>
                             }
-                            {tenantMetaData.tenant.tenantType !== TENANT_TYPE_ROOT_TENANT &&
+                            {tenantMetaData.tenant.tenantType !== TENANT_TYPE_ROOT_TENANT && containsScope([TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE], profile?.scope || []) &&
                                 <div style={{display: "inline-flex", alignItems: "center"}}>
                                     <SettingsApplicationsIcon sx={{marginRight: "8px"}} />
                                     <Link className="undecorated" href={`/${tenantMetaData.tenant.tenantId}?section=tenants`} >My Tenant</Link>                        
                                 </div>                
-                            }   
-                            <div style={{display: "inline-flex", alignItems: "center"}}>
-                                <SettingsSystemDaydreamIcon sx={{marginRight: "8px"}}/>
-                                <Link className="undecorated" href={`/${tenantMetaData.tenant.tenantId}?section=clients`} onClick={() => setDrawerOpen(false)}>Clients</Link>
-                            </div>
-                            <div style={{display: "inline-flex", alignItems: "center"}}>
-                                <PersonIcon sx={{marginRight: "8px"}} />
-                                <Link className="undecorated" href={`/${tenantMetaData.tenant.tenantId}?section=users`} onClick={() => setDrawerOpen(false)}>Users</Link>
-                            </div>
-                            <div style={{display: "inline-flex", alignItems: "center"}}>
-                                <PeopleIcon sx={{marginRight: "8px"}} />
-                                <Link className="undecorated" href={`/${tenantMetaData.tenant.tenantId}?section=authorization-groups`} onClick={() => setDrawerOpen(false)}>Authorization Groups</Link>
-                            </div>
-                            <div style={{display: "inline-flex", alignItems: "center"}}>
-                                <GroupIcon sx={{marginRight: "8px"}} />
-                                <Link className="undecorated" href={`/${tenantMetaData.tenant.tenantId}?section=authentication-groups`} onClick={() => setDrawerOpen(false)}>Authentication Groups</Link>
-                            </div>
-                            <div style={{display: "inline-flex", alignItems: "center"}}>
-                                <SettingsIcon sx={{marginRight: "8px"}} />
-                                <Link className="undecorated" href={`/${tenantMetaData.tenant.tenantId}?section=scope-access-control`} onClick={() => setDrawerOpen(false)}>Scope/Access Control</Link>
-                            </div>
-                            <div style={{display: "inline-flex", alignItems: "center"}}>
-                                <AutoAwesomeMosaicIcon sx={{marginRight: "8px"}} />
-                                <Link className="undecorated" href={`/${tenantMetaData.tenant.tenantId}?section=oidc-providers`} onClick={() => setDrawerOpen(false)}>OIDC Providers</Link>
-                            </div>
-                            <div style={{display: "inline-flex", alignItems: "center"}}>
-                                <SpeedIcon sx={{marginRight: "8px"}} />
-                                <Link className="undecorated" href={`/${tenantMetaData.tenant.tenantId}?section=rate-limits`} onClick={() => setDrawerOpen(false)}>Rate Limits</Link>
-                            </div>
-                            <div style={{display: "inline-flex", alignItems: "center"}}> 
-                                <KeyIcon sx={{marginRight: "8px"}} />
-                                <Link className="undecorated" href={`/${tenantMetaData.tenant.tenantId}?section=signing-keys`} onClick={() => setDrawerOpen(false)}>Keys</Link>
-                            </div>
+                            }
+                            {containsScope([TENANT_READ_ALL_SCOPE, CLIENT_READ_SCOPE], profile?.scope || []) &&   
+                                <div style={{display: "inline-flex", alignItems: "center"}}>
+                                    <SettingsSystemDaydreamIcon sx={{marginRight: "8px"}}/>
+                                    <Link className="undecorated" href={`/${tenantMetaData.tenant.tenantId}?section=clients`} onClick={() => setDrawerOpen(false)}>Clients</Link>
+                                </div>
+                            }
+                            {containsScope([TENANT_READ_ALL_SCOPE, USER_READ_SCOPE], profile?.scope || []) &&
+                                <div style={{display: "inline-flex", alignItems: "center"}}>
+                                    <PersonIcon sx={{marginRight: "8px"}} />
+                                    <Link className="undecorated" href={`/${tenantMetaData.tenant.tenantId}?section=users`} onClick={() => setDrawerOpen(false)}>Users</Link>
+                                </div>
+                            }
+                            {containsScope([TENANT_READ_ALL_SCOPE, AUTHORIZATION_GROUP_READ_SCOPE], profile?.scope || []) &&
+                                <div style={{display: "inline-flex", alignItems: "center"}}>
+                                    <PeopleIcon sx={{marginRight: "8px"}} />
+                                    <Link className="undecorated" href={`/${tenantMetaData.tenant.tenantId}?section=authorization-groups`} onClick={() => setDrawerOpen(false)}>Authorization Groups</Link>
+                                </div>
+                            }
+                            {containsScope([TENANT_READ_ALL_SCOPE, AUTHENTICATION_GROUP_READ_SCOPE], profile?.scope || []) &&
+                                <div style={{display: "inline-flex", alignItems: "center"}}>
+                                    <GroupIcon sx={{marginRight: "8px"}} />
+                                    <Link className="undecorated" href={`/${tenantMetaData.tenant.tenantId}?section=authentication-groups`} onClick={() => setDrawerOpen(false)}>Authentication Groups</Link>
+                                </div>
+                            }
+                            {containsScope([TENANT_READ_ALL_SCOPE, SCOPE_READ_SCOPE], profile?.scope || []) &&
+                                <div style={{display: "inline-flex", alignItems: "center"}}>
+                                    <SettingsIcon sx={{marginRight: "8px"}} />
+                                    <Link className="undecorated" href={`/${tenantMetaData.tenant.tenantId}?section=scope-access-control`} onClick={() => setDrawerOpen(false)}>Scope/Access Control</Link>
+                                </div>
+                            }
+                            {containsScope([TENANT_READ_ALL_SCOPE, FEDERATED_OIDC_PROVIDER_READ_SCOPE], profile?.scope || []) &&
+                                <div style={{display: "inline-flex", alignItems: "center"}}>
+                                    <AutoAwesomeMosaicIcon sx={{marginRight: "8px"}} />
+                                    <Link className="undecorated" href={`/${tenantMetaData.tenant.tenantId}?section=oidc-providers`} onClick={() => setDrawerOpen(false)}>OIDC Providers</Link>
+                                </div>
+                            }
+                            {containsScope([TENANT_READ_ALL_SCOPE, RATE_LIMIT_READ_SCOPE], profile?.scope || []) &&
+                                <div style={{display: "inline-flex", alignItems: "center"}}>
+                                    <SpeedIcon sx={{marginRight: "8px"}} />
+                                    <Link className="undecorated" href={`/${tenantMetaData.tenant.tenantId}?section=rate-limits`} onClick={() => setDrawerOpen(false)}>Rate Limits</Link>
+                                </div>
+                            }
+                            {containsScope([TENANT_READ_ALL_SCOPE, KEY_READ_SCOPE], profile?.scope || []) &&
+                                <div style={{display: "inline-flex", alignItems: "center"}}> 
+                                    <KeyIcon sx={{marginRight: "8px"}} />
+                                    <Link className="undecorated" href={`/${tenantMetaData.tenant.tenantId}?section=signing-keys`} onClick={() => setDrawerOpen(false)}>Keys</Link>
+                                </div>
+                            }
                             {tenantMetaData.tenant.tenantType === TENANT_TYPE_ROOT_TENANT &&
                                 <>                                
                                     <div style={{display: "inline-flex", alignItems: "center"}}>
@@ -395,10 +435,12 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
                                 </>                        
                             }  
                             <Divider />
-                            <div onClick={() => {setOpenCreateNewDialog(true); setDrawerOpen(false)}} style={{display: "inline-flex", alignItems: "center", cursor: "pointer"}}>
-                                <AddBoxIcon sx={{marginRight: "8px"}} />
-                                <div>Create New...</div>
-                            </div>
+                            {containsScope([TENANT_CREATE_SCOPE, CLIENT_CREATE_SCOPE, AUTHORIZATION_GROUP_CREATE_SCOPE, AUTHENTICATION_GROUP_CREATE_SCOPE, SCOPE_CREATE_SCOPE, FEDERATED_OIDC_PROVIDER_CREATE_SCOPE, RATE_LIMIT_CREATE_SCOPE, KEY_CREATE_SCOPE], profile?.scope || []) &&
+                                <div onClick={() => {setOpenCreateNewDialog(true); setDrawerOpen(false)}} style={{display: "inline-flex", alignItems: "center", cursor: "pointer"}}>
+                                    <AddBoxIcon sx={{marginRight: "8px"}} />
+                                    <div>Create New...</div>
+                                </div>
+                            }
                         </Stack>
                     </Drawer>
                 </>            

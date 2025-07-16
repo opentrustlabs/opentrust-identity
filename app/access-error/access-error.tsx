@@ -13,7 +13,6 @@ const AccessError: React.FC = () => {
 
     // QUERY PARAMS
     const params = useSearchParams();
-    //const params = new Map<string, string>();
     const errorCode = params?.get("access_error_code") as string;
     const extendedMessage = params?.get("extended_message") as string;
 
@@ -43,13 +42,5 @@ const AccessError: React.FC = () => {
     )
 }
 export const dynamic = 'force-dynamic';
-
-const Wrapper: React.FC = () => {
-    return (
-        <Suspense>
-            <AccessError />
-        </Suspense>
-    )
-}
 
 export default AccessError;

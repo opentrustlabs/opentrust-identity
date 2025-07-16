@@ -1,6 +1,6 @@
 "use client";
 import React, { useContext } from "react";
-import { Accordion, AccordionDetails, AccordionSummary, Alert, Backdrop, Button, Checkbox, CircularProgress, Fade, MenuItem, Paper, Select, Snackbar, Stack, TextField } from "@mui/material";
+import { Accordion, AccordionDetails, AccordionSummary, Alert, Backdrop, Checkbox, CircularProgress, MenuItem, Paper, Select, Snackbar, TextField } from "@mui/material";
 import Grid2 from "@mui/material/Grid2";
 import Typography from "@mui/material/Typography";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
@@ -11,7 +11,6 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import SyncIcon from '@mui/icons-material/Sync';
 import GroupIcon from '@mui/icons-material/Group';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
-// import AutoDeleteOutlinedIcon from '@mui/icons-material/AutoDeleteOutlined';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import TenantHighlight from "../tenants/tenant-highlight";
 import ContactConfiguration from "../contacts/contact-configuration";
@@ -445,7 +444,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                     onUpdateStart={() => {
                                         setShowMutationBackdrop(true);
                                     }}
-                                    readOnly={!isMarkedForDelete}
+                                    readOnly={isMarkedForDelete}
                                 />
                             </Paper>
                         </Grid2>

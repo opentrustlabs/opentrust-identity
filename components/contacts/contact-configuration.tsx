@@ -194,7 +194,7 @@ const ContactConfiguration: React.FC<ContactConfigurationProps> = ({
                                 {contact.email}
                             </Grid2>
                             <Grid2 size={1.2}>
-                                {readOnly === true &&
+                                {readOnly !== true &&
                                     <RemoveCircleOutlineIcon sx={{cursor: "pointer"}} onClick={() => {setContactToRemove(contact); setRemoveDialogOpen(true); }} />
                                 }
                             </Grid2>                            
@@ -205,7 +205,7 @@ const ContactConfiguration: React.FC<ContactConfigurationProps> = ({
             <Divider />
             <Grid2 padding={"8px"} container size={12} spacing={0}>                
                 <Grid2 size={1}>
-                    {readOnly === true &&
+                    {readOnly !== true &&
                         <AddBoxIcon onClick={() => setAddDialogOpen(true)} sx={{cursor: "pointer"}}/>
                     }
                 </Grid2>
