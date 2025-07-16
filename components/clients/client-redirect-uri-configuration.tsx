@@ -24,14 +24,16 @@ export interface ClientRedirectUriConfigurationProps {
     clientId: string,
     oidcEnabled: boolean,
     onUpdateStart: () => void,
-    onUpdateEnd: (success: boolean) => void
+    onUpdateEnd: (success: boolean) => void,
+    readOnly: boolean
 }
 
 const ClientRedirectUriConfiguration: React.FC<ClientRedirectUriConfigurationProps> = ({
     clientId,
     oidcEnabled,
     onUpdateEnd,
-    onUpdateStart
+    onUpdateStart,
+    readOnly
 }) => {
 
     // STATE VARIABLES
@@ -184,18 +186,21 @@ const ClientRedirectUriConfiguration: React.FC<ClientRedirectUriConfigurationPro
             }
             {oidcEnabled &&
                 <React.Fragment>
-                    <Grid2 marginBottom={"16px"} marginTop={"16px"} spacing={2} container size={12}>
-                        <Grid2 size={12} display={"inline-flex"} alignItems="center" alignContent={"center"}>
-                            <AddBoxIcon
-                                sx={{cursor: "pointer"}}
-                                onClick={() => setSelectDialogOpen(true)}
-                            />
-                            <div style={{marginLeft: "8px", fontWeight: "bold"}}>Add Redirect URI</div>
-                        </Grid2>
-                        
-                    </Grid2>
-                    <Divider />
-                    
+                    {!readOnly &&
+                        <React.Fragment>
+                            <Grid2 marginBottom={"16px"} marginTop={"16px"} spacing={2} container size={12}>
+                                <Grid2 size={12} display={"inline-flex"} alignItems="center" alignContent={"center"}>
+                                    <AddBoxIcon
+                                        sx={{cursor: "pointer"}}
+                                        onClick={() => setSelectDialogOpen(true)}
+                                    />
+                                    <div style={{marginLeft: "8px", fontWeight: "bold"}}>Add Redirect URI</div>
+                                </Grid2>
+                                
+                            </Grid2>
+                            <Divider />
+                        </React.Fragment>
+                    }
                     {data.getRedirectURIs.length === 0 &&
                         <Grid2 marginTop={"16px"}  spacing={2} container size={12} textAlign={"center"} >    
                             <Grid2 margin={"8px 0px 8px 0px"} textAlign={"center"} size={12} spacing={1}>
@@ -213,10 +218,12 @@ const ClientRedirectUriConfiguration: React.FC<ClientRedirectUriConfigurationPro
                                             {uri}                                    
                                         </Grid2>
                                         <Grid2 size={1}>
-                                            <RemoveCircleOutlineIcon
-                                                sx={{cursor: "pointer"}}
-                                                onClick={() => {setUriToRemove(uri); setShowRemoveConfirmationDialog(true);}}
-                                            />
+                                            {!readOnly &&
+                                                <RemoveCircleOutlineIcon
+                                                    sx={{cursor: "pointer"}}
+                                                    onClick={() => {setUriToRemove(uri); setShowRemoveConfirmationDialog(true);}}
+                                                />
+                                            }
                                         </Grid2>                                
                                     </React.Fragment>
                                 )

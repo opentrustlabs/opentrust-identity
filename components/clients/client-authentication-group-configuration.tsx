@@ -15,14 +15,13 @@ import Typography from "@mui/material/Typography";
 import Alert from "@mui/material/Alert";
 import AddBoxIcon from '@mui/icons-material/AddBox';
 import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
-import DialogTitle from "@mui/material/DialogTitle";
-import { TextField } from "@mui/material";
-import { AuthenticationGroup } from "@/graphql/generated/graphql-types";
+import { AuthenticationGroup, PortalUserProfile } from "@/graphql/generated/graphql-types";
 import GeneralSelector from "../dialogs/general-selector";
-import client from "../apollo-client/apollo-client";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
 import Link from "next/link";
-
+import { AuthContext, AuthContextProps } from "../contexts/auth-context";
+import { containsScope } from "@/utils/authz-utils";
+import { AUTHENTICATION_GROUP_CLIENT_ASSIGN_SCOPE, AUTHENTICATION_GROUP_CLIENT_REMOVE_SCOPE } from "@/utils/consts";
 
 
 export interface ClientAuthenticationGroupConfigurationProps {
@@ -41,6 +40,8 @@ const ClientAuthenticationGroupConfiguration: React.FC<ClientAuthenticationGroup
 
     // CONTEXT VARIABLES
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
+    const authContextProps: AuthContextProps = useContext(AuthContext);
+    const profile: PortalUserProfile | null = authContextProps.portalUserProfile;
 
     
     // STATE VARIABLES
@@ -49,6 +50,8 @@ const ClientAuthenticationGroupConfiguration: React.FC<ClientAuthenticationGroup
     const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
     const [selectDialogOpen, setSelectDialogOpen] = React.useState(false);
     const [showRemoveConfirmationDialog, setShowRemoveConfirmationDialog] = React.useState(false);
+    const [canAddRel] = React.useState<boolean>(containsScope(AUTHENTICATION_GROUP_CLIENT_ASSIGN_SCOPE, profile?.scope || []));
+    const [canRemoveRel] = React.useState<boolean>(containsScope(AUTHENTICATION_GROUP_CLIENT_REMOVE_SCOPE, profile?.scope || []));
 
 
     // GRAPHQL FUNCTIONS
@@ -167,16 +170,21 @@ const ClientAuthenticationGroupConfiguration: React.FC<ClientAuthenticationGroup
                     />
                 </Dialog>
             }
-            <Grid2 marginBottom={"16px"} marginTop={"16px"} spacing={2} container size={12}>
-                <Grid2 size={12} display={"inline-flex"} alignItems="center" alignContent={"center"}>
-                    <AddBoxIcon
-                        sx={{cursor: "pointer"}}
-                        onClick={() => setSelectDialogOpen(true)}
-                    />
-                    <div style={{marginLeft: "8px", fontWeight: "bold"}}>Add Authentication Group</div>
-                </Grid2>                
-            </Grid2>            
-            <Divider />
+            {canAddRel &&
+                <React.Fragment>
+                    <Grid2 marginBottom={"16px"} marginTop={"16px"} spacing={2} container size={12}>
+                        <Grid2 size={12} display={"inline-flex"} alignItems="center" alignContent={"center"}>
+                            <AddBoxIcon
+                                sx={{cursor: "pointer"}}
+                                onClick={() => setSelectDialogOpen(true)}
+                            />
+                            <div style={{marginLeft: "8px", fontWeight: "bold"}}>Add Authentication Group</div>
+                        </Grid2>                
+                    </Grid2>            
+                    <Divider />
+                </React.Fragment>
+            }
+
             <Grid2 marginTop={"16px"} marginBottom={"8px"} spacing={1} container size={12} fontWeight={"bold"}>
                 <Grid2 size={11}>Group name</Grid2>
                 <Grid2 size={1}></Grid2>
@@ -199,11 +207,13 @@ const ClientAuthenticationGroupConfiguration: React.FC<ClientAuthenticationGroup
                                         {group.authenticationGroupName} 
                                     </Link>                                   
                                 </Grid2>
-                                <Grid2 size={1}>
-                                    <RemoveCircleOutlineIcon
-                                        sx={{cursor: "pointer"}}
-                                        onClick={() => {setGroupToRemove(group); setShowRemoveConfirmationDialog(true);}}
-                                    />
+                                <Grid2 minHeight={"26px"} size={1}>
+                                    {canRemoveRel &&
+                                        <RemoveCircleOutlineIcon
+                                            sx={{cursor: "pointer"}}
+                                            onClick={() => {setGroupToRemove(group); setShowRemoveConfirmationDialog(true);}}
+                                        />
+                                    }
                                 </Grid2>                                
                             </React.Fragment>
                         )
