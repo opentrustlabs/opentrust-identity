@@ -221,7 +221,7 @@ const FederatedOIDCProviderDetail: React.FC<FederatedOIDCProviderDetailProps> = 
                                             <Grid2 marginBottom={"16px"}>
                                                 <div>Social Provider (Requires an account with the provider)</div>
                                                 <Autocomplete
-                                                    disabled={isMarkedForDelete}
+                                                    disabled={disableInputs}
                                                     id="socialLoginProvider"
                                                     size="small"
                                                     options={SOCIAL_OIDC_PROVIDERS}

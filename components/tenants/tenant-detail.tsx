@@ -560,105 +560,109 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                 </Accordion>
                             }
                         </Grid2>
-
-                        <Grid2 size={12}>
-                            {!isMarkedForDelete && tenantBean.getTenantMetaData().tenant.tenantType === TENANT_TYPE_ROOT_TENANT &&
-                                <Accordion >
-                                    <AccordionSummary
-                                        expandIcon={<ExpandMoreIcon />}
-                                        id={"federated-oidc-providers"}
-                                        sx={{ fontWeight: "bold" }}
-                                    >
-                                        <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
-                                            <AutoAwesomeMosaicIcon /><div style={{marginLeft: "8px"}}>Federated OIDC Providers</div>
-                                        </div>
-                                        
-                                    </AccordionSummary>
-                                    <AccordionDetails>
-                                        <TenantFederatedOIDCProviderConfiguration
-                                            tenantId={tenant.tenantId}
-                                            onUpdateEnd={(success: boolean) => {
-                                                setShowMutationBackdrop(false);
-                                                if(success){
-                                                    setShowMutationSnackbar(true);
-                                                }
-                                            }}
-                                            onUpdateStart={() => {
-                                                setShowMutationBackdrop(true);                                            
-                                            }}
-                                            allowSocialLogin={tenant.allowSocialLogin}
-                                        />                                    
-                                    </AccordionDetails>
-                                </Accordion>
-                            }
-                        </Grid2>
+                        {tenantBean.getTenantMetaData().tenant.tenantType === TENANT_TYPE_ROOT_TENANT &&
+                            <Grid2 size={12}>
+                                {!isMarkedForDelete && 
+                                    <Accordion >
+                                        <AccordionSummary
+                                            expandIcon={<ExpandMoreIcon />}
+                                            id={"federated-oidc-providers"}
+                                            sx={{ fontWeight: "bold" }}
+                                        >
+                                            <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
+                                                <AutoAwesomeMosaicIcon /><div style={{marginLeft: "8px"}}>Federated OIDC Providers</div>
+                                            </div>
+                                            
+                                        </AccordionSummary>
+                                        <AccordionDetails>
+                                            <TenantFederatedOIDCProviderConfiguration
+                                                tenantId={tenant.tenantId}
+                                                onUpdateEnd={(success: boolean) => {
+                                                    setShowMutationBackdrop(false);
+                                                    if(success){
+                                                        setShowMutationSnackbar(true);
+                                                    }
+                                                }}
+                                                onUpdateStart={() => {
+                                                    setShowMutationBackdrop(true);                                            
+                                                }}
+                                                allowSocialLogin={tenant.allowSocialLogin}
+                                            />                                    
+                                        </AccordionDetails>
+                                    </Accordion>
+                                }
+                            </Grid2>
+                        }
                         
-                        <Grid2 size={12} >
-                            {!isMarkedForDelete && tenantBean.getTenantMetaData().tenant.tenantType === TENANT_TYPE_ROOT_TENANT &&
-                                <Accordion >
-                                    <AccordionSummary
-                                        expandIcon={<ExpandMoreIcon />}
-                                        id={"redirect-uri-configuration"}
-                                        sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center" }}
+                        {tenantBean.getTenantMetaData().tenant.tenantType === TENANT_TYPE_ROOT_TENANT &&
+                            <Grid2 size={12} >
+                                {!isMarkedForDelete && 
+                                    <Accordion >
+                                        <AccordionSummary
+                                            expandIcon={<ExpandMoreIcon />}
+                                            id={"redirect-uri-configuration"}
+                                            sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center" }}
 
-                                    >
-                                        <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-                                            <PolicyIcon /><div style={{ marginLeft: "8px" }}>Access Control</div>
-                                        </div>
-                                    </AccordionSummary>
-                                    <AccordionDetails>
-                                        <TenantScopeConfiguration 
-                                            tenantId={tenant.tenantId}
-                                            tenantType={tenant.tenantType}
-                                            onUpdateEnd={(success: boolean) => {
-                                                setShowMutationBackdrop(false);
-                                                if(success){
-                                                    setShowMutationSnackbar(true);
-                                                }
-                                            }}
-                                            onUpdateStart={() => {
-                                                setShowMutationBackdrop(true);                                            
-                                            }}
-                                        />
+                                        >
+                                            <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+                                                <PolicyIcon /><div style={{ marginLeft: "8px" }}>Access Control</div>
+                                            </div>
+                                        </AccordionSummary>
+                                        <AccordionDetails>
+                                            <TenantScopeConfiguration 
+                                                tenantId={tenant.tenantId}
+                                                tenantType={tenant.tenantType}
+                                                onUpdateEnd={(success: boolean) => {
+                                                    setShowMutationBackdrop(false);
+                                                    if(success){
+                                                        setShowMutationSnackbar(true);
+                                                    }
+                                                }}
+                                                onUpdateStart={() => {
+                                                    setShowMutationBackdrop(true);                                            
+                                                }}
+                                            />
 
-                                    </AccordionDetails>
-                                </Accordion>
-                            }
-                        </Grid2>
+                                        </AccordionDetails>
+                                    </Accordion>
+                                }
+                            </Grid2>
+                        }
+                        {tenantBean.getTenantMetaData().tenant.tenantType === TENANT_TYPE_ROOT_TENANT &&
+                            <Grid2 size={12} >
+                                {!isMarkedForDelete && 
+                                    <Accordion >
+                                        <AccordionSummary
+                                            expandIcon={<ExpandMoreIcon />}
+                                            id={"redirect-uri-configuration"}
+                                            sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center" }}
 
-                        <Grid2 size={12} >
-                            {!isMarkedForDelete && tenantBean.getTenantMetaData().tenant.tenantType === TENANT_TYPE_ROOT_TENANT &&
-                                <Accordion >
-                                    <AccordionSummary
-                                        expandIcon={<ExpandMoreIcon />}
-                                        id={"redirect-uri-configuration"}
-                                        sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center" }}
-
-                                    >
-                                        <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-                                            <SpeedIcon /><div style={{ marginLeft: "8px" }}>Rate Limits</div>
-                                        </div>
-                                    </AccordionSummary>
-                                    <AccordionDetails>
-                                        <TenantRateLimitConfiguration 
-                                            tenantId={tenant.tenantId}
-                                            rateLimitSummaryHandler={(totalUsed: number) => {
-                                                setTotalRateUsed(totalUsed);
-                                            }}
-                                            onUpdateEnd={(success: boolean) => {
-                                                setShowMutationBackdrop(false);
-                                                if(success){
-                                                    setShowMutationSnackbar(true);
-                                                }
-                                            }}
-                                            onUpdateStart={() => {
-                                                setShowMutationBackdrop(true);                                            
-                                            }}
-                                        />
-                                    </AccordionDetails>
-                                </Accordion>
-                            }
-                        </Grid2>
+                                        >
+                                            <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+                                                <SpeedIcon /><div style={{ marginLeft: "8px" }}>Rate Limits</div>
+                                            </div>
+                                        </AccordionSummary>
+                                        <AccordionDetails>
+                                            <TenantRateLimitConfiguration 
+                                                tenantId={tenant.tenantId}
+                                                rateLimitSummaryHandler={(totalUsed: number) => {
+                                                    setTotalRateUsed(totalUsed);
+                                                }}
+                                                onUpdateEnd={(success: boolean) => {
+                                                    setShowMutationBackdrop(false);
+                                                    if(success){
+                                                        setShowMutationSnackbar(true);
+                                                    }
+                                                }}
+                                                onUpdateStart={() => {
+                                                    setShowMutationBackdrop(true);                                            
+                                                }}
+                                            />
+                                        </AccordionDetails>
+                                    </Accordion>
+                                }
+                            </Grid2>
+                        }
 
                         <Grid2 size={12}>
                             {!isMarkedForDelete &&
