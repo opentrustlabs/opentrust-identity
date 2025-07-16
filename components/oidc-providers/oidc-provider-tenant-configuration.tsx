@@ -9,13 +9,16 @@ import Grid2 from "@mui/material/Grid2";
 import Alert from "@mui/material/Alert";
 import { ASSIGN_FEDERATED_OIDC_PROVIDER_TO_TENANT_MUTATION, REMOVE_FEDERATED_OIDC_PROVIDER_FROM_TENANT_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import Dialog from "@mui/material/Dialog";
-import { Button, DialogActions, DialogContent, Divider, TablePagination, TextField } from "@mui/material";
+import { Button, DialogActions, DialogContent, Divider, TablePagination } from "@mui/material";
 import AddBoxIcon from '@mui/icons-material/AddBox';
 import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
-import { Tenant } from "@/graphql/generated/graphql-types";
+import { Tenant, PortalUserProfile } from "@/graphql/generated/graphql-types";
 import Link from "next/link";
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
 import TenantSelector from "../dialogs/tenant-selector";
+import { AuthContext, AuthContextProps } from "../contexts/auth-context";
+import { containsScope } from "@/utils/authz-utils";
+import { FEDERATED_OIDC_PROVIDER_TENANT_ASSIGN_SCOPE, FEDERATED_OIDC_PROVIDER_TENANT_REMOVE_SCOPE } from "@/utils/consts";
 
 export interface FederatedOIDCProviderTenantConfigurationProps {
     federatedOIDCProviderId: string,
@@ -31,6 +34,8 @@ const FederatedOIDCProviderTenantConfiguration: React.FC<FederatedOIDCProviderTe
 
     // CONTEXT VARIABLES
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
+    const authContextProps: AuthContextProps = useContext(AuthContext);
+    const profile: PortalUserProfile | null = authContextProps.portalUserProfile;
 
     // STATE VARIABLES
     const [tenantToAdd, setTenantToAdd] = React.useState<string | null>(null);
@@ -39,6 +44,8 @@ const FederatedOIDCProviderTenantConfiguration: React.FC<FederatedOIDCProviderTe
     const [showAddDialog, setShowAddDialog] = React.useState<boolean>(false);
     const [showRemoveDialog, setShowRemoveDialog] = React.useState<boolean>(false);
     const [page, setPage] = React.useState<number>(1);
+    const [canAddRel] = React.useState<boolean>(containsScope(FEDERATED_OIDC_PROVIDER_TENANT_ASSIGN_SCOPE, profile?.scope || []));
+    const [canRemoveRel] = React.useState<boolean>(containsScope(FEDERATED_OIDC_PROVIDER_TENANT_REMOVE_SCOPE, profile?.scope || []));
 
 
     // GRAPHQL FUNCTIONS
@@ -163,15 +170,17 @@ const FederatedOIDCProviderTenantConfiguration: React.FC<FederatedOIDCProviderTe
                     />
                 </Dialog>
             }
-            <Grid2 marginBottom={"24px"} marginTop={"16px"} spacing={2} container size={12}>
-                <Grid2 size={12} display={"inline-flex"} alignItems="center" alignContent={"center"}>
-                    <AddBoxIcon
-                        sx={{cursor: "pointer"}}
-                        onClick={() => setShowAddDialog(true)}
-                    />
-                    <div style={{marginLeft: "8px", fontWeight: "bold"}}>Add Tenant</div>
-                </Grid2>                
-            </Grid2>
+            {canAddRel &&
+                <Grid2 marginBottom={"24px"} marginTop={"16px"} spacing={2} container size={12}>
+                    <Grid2 size={12} display={"inline-flex"} alignItems="center" alignContent={"center"}>
+                        <AddBoxIcon
+                            sx={{cursor: "pointer"}}
+                            onClick={() => setShowAddDialog(true)}
+                        />
+                        <div style={{marginLeft: "8px", fontWeight: "bold"}}>Add Tenant</div>
+                    </Grid2>                
+                </Grid2>
+            }
             <Grid2 marginBottom={"8px"} marginTop={"16px"} spacing={1} container size={12} fontWeight={"bold"}>
                 <Grid2 size={11} >Tenant Name</Grid2>                        
                 <Grid2 size={1}></Grid2>
@@ -193,11 +202,13 @@ const FederatedOIDCProviderTenantConfiguration: React.FC<FederatedOIDCProviderTe
                                 <Grid2 size={11}>
                                     <Link href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/tenants/${tenant.tenantId}`}>{tenant.tenantName}</Link>
                                 </Grid2>
-                                <Grid2 size={1}>
-                                    <RemoveCircleOutlineIcon
-                                        sx={{cursor: "pointer"}}
-                                        onClick={() => {setTenantToRemove(tenant); setShowRemoveDialog(true);}}
-                                    />
+                                <Grid2 minHeight={"26px"} size={1}>
+                                    {canRemoveRel &&
+                                        <RemoveCircleOutlineIcon
+                                            sx={{cursor: "pointer"}}
+                                            onClick={() => {setTenantToRemove(tenant); setShowRemoveDialog(true);}}
+                                        />
+                                    }
                                 </Grid2>                                
                             </React.Fragment>
                         )

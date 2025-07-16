@@ -5,7 +5,7 @@ import Grid2 from "@mui/material/Grid2";
 import Typography from "@mui/material/Typography";
 import BreadcrumbComponent from "../breadcrumbs/breadcrumbs";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
-import { DEFAULT_RATE_LIMIT_PERIOD_MINUTES, FEDERATED_AUTHN_CONSTRAINT_DISPLAY, FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE, FEDERATED_AUTHN_CONSTRAINT_NOT_ALLOWED, FEDERATED_AUTHN_CONSTRAINT_PERMISSIVE, TENANT_TYPE_IDENTITY_MANAGEMENT, TENANT_TYPE_IDENTITY_MANAGEMENT_AND_SERVICES, TENANT_TYPE_ROOT_TENANT, TENANT_TYPE_SERVICES, TENANT_TYPES_DISPLAY, TENANT_UPDATE_SCOPE } from "@/utils/consts";
+import { DEFAULT_RATE_LIMIT_PERIOD_MINUTES, FEDERATED_AUTHN_CONSTRAINT_DISPLAY, FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE, FEDERATED_AUTHN_CONSTRAINT_NOT_ALLOWED, FEDERATED_AUTHN_CONSTRAINT_PERMISSIVE, TENANT_DELETE_SCOPE, TENANT_TYPE_IDENTITY_MANAGEMENT, TENANT_TYPE_IDENTITY_MANAGEMENT_AND_SERVICES, TENANT_TYPE_ROOT_TENANT, TENANT_TYPE_SERVICES, TENANT_TYPES_DISPLAY, TENANT_UPDATE_SCOPE } from "@/utils/consts";
 import { MarkForDeleteObjectType, Tenant, TenantUpdateInput } from "@/graphql/generated/graphql-types";
 import { useMutation, useQuery } from "@apollo/client";
 import { TENANT_DETAIL_QUERY } from "@/graphql/queries/oidc-queries";
@@ -109,6 +109,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
     const [totalRateUsed, setTotalRateUsed] = React.useState<number | null>(null);
     const [isMarkedForDelete, setIsMarkedForDelete] = React.useState<boolean>(tenant.markForDelete);
     const [disableInputs] = React.useState<boolean>(tenant.markForDelete || !containsScope(TENANT_UPDATE_SCOPE, profile?.scope || []));
+    const [canDeleteTenant] = React.useState<boolean>(containsScope(TENANT_DELETE_SCOPE, profile?.scope || []));
 
     // GRAPHQL FUNCTIONS
     const [tenantUpdateMutation] = useMutation(TENANT_UPDATE_MUTATION, {
@@ -161,12 +162,12 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                                
                         <Grid2 className="detail-page-subheader" alignItems={"center"} sx={{ backgroundColor: "#1976d2", color: "white", padding: "8px", borderRadius: "2px" }} container size={12}>
                             <Grid2 size={11}>Overview</Grid2>
-                            {tenantBean.getTenantMetaData().tenant.tenantType === TENANT_TYPE_ROOT_TENANT &&
+                            {tenant.tenantType === TENANT_TYPE_ROOT_TENANT &&
                                 <Grid2 size={1}></Grid2>
                             }
-                            {tenantBean.getTenantMetaData().tenant.tenantType !== TENANT_TYPE_ROOT_TENANT &&
+                            {tenant.tenantType !== TENANT_TYPE_ROOT_TENANT &&
                                 <Grid2 size={1} display={"flex"} >
-                                    {isMarkedForDelete !== true && 
+                                    {isMarkedForDelete !== true && canDeleteTenant &&
                                         <SubmitMarkForDelete 
                                             objectId={tenant.tenantId}
                                             objectType={MarkForDeleteObjectType.Tenant}

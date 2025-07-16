@@ -1,9 +1,9 @@
 "use client";
-import { MarkForDeleteObjectType, SecretObjectType, SigningKey, SigningKeyUpdateInput } from "@/graphql/generated/graphql-types";
+import { MarkForDeleteObjectType, SecretObjectType, SigningKey, SigningKeyUpdateInput, PortalUserProfile } from "@/graphql/generated/graphql-types";
 import Typography from "@mui/material/Typography";
 import React, { useContext } from "react";
 import { DetailPageContainer, DetailPageMainContentContainer, DetailPageRightNavContainer } from "../layout/detail-page-container";
-import { KEY_USE_DISPLAY, PKCS8_ENCRYPTED_PRIVATE_KEY_HEADER, SIGNING_KEY_STATUS_ACTIVE, SIGNING_KEY_STATUS_REVOKED, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
+import { KEY_DELETE_SCOPE, KEY_SECRET_VIEW_SCOPE, KEY_UPDATE_SCOPE, KEY_USE_DISPLAY, PKCS8_ENCRYPTED_PRIVATE_KEY_HEADER, SIGNING_KEY_STATUS_ACTIVE, SIGNING_KEY_STATUS_REVOKED, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import { Alert, Backdrop, Button, CircularProgress, Dialog, DialogActions, DialogContent, Grid2, MenuItem, Paper, Select, Snackbar, Stack, TextField } from "@mui/material";
 import BreadcrumbComponent from "../breadcrumbs/breadcrumbs";
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
@@ -21,6 +21,8 @@ import SecretViewerDialog from "../dialogs/secret-viewer-dialog";
 import DetailSectionActionHandler from "../layout/detail-section-action-handler";
 import SubmitMarkForDelete from "../deletion/submit-mark-for-delete";
 import MarkForDeleteAlert from "../deletion/mark-for-delete-alert";
+import { AuthContext, AuthContextProps } from "../contexts/auth-context";
+import { containsScope } from "@/utils/authz-utils";
 
 export interface SigningKeyDetailProps {
     signingKey: SigningKey
@@ -31,6 +33,8 @@ const SigningKeyDetail: React.FC<SigningKeyDetailProps> = ({ signingKey }) => {
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
     const breakPoints: ResponsiveBreakpoints = useContext(ResponsiveContext);
     const { copyContentToClipboard } = useClipboardCopyContext();
+    const authContextProps: AuthContextProps = useContext(AuthContext);
+    const profile: PortalUserProfile | null = authContextProps.portalUserProfile;
 
     // STATE VARIABLES
     const [showMutationBackdrop, setShowMutationBackdrop] = React.useState<boolean>(false);
@@ -47,6 +51,10 @@ const SigningKeyDetail: React.FC<SigningKeyDetailProps> = ({ signingKey }) => {
     const [showRevokeConfirmationDialog, setShowRevokeConfirmationDialog] = React.useState<boolean>(false);
     const [secretDialogOpen, setSecretDialogOpen] = React.useState<boolean>(false);
     const [isMarkedForDelete, setIsMarkedForDelete] = React.useState<boolean>(signingKey.markForDelete);
+    const [disableInputs] = React.useState<boolean>(signingKey.markForDelete || !containsScope(KEY_UPDATE_SCOPE, profile?.scope || []));
+    const [canViewSecret] = React.useState<boolean>(containsScope(KEY_SECRET_VIEW_SCOPE, profile?.scope || []));
+    const [canDeleteKey] = React.useState<boolean>(containsScope(KEY_DELETE_SCOPE, profile?.scope || []));
+
 
     // GRAPHQL FUNCTIONS
 
@@ -131,7 +139,7 @@ const SigningKeyDetail: React.FC<SigningKeyDetailProps> = ({ signingKey }) => {
                         <Grid2 className="detail-page-subheader" alignItems={"center"} sx={{ backgroundColor: "#1976d2", color: "white", padding: "8px", borderRadius: "2px" }} container size={12}>
                             <Grid2 size={11}>Overview</Grid2>
                             <Grid2 size={1} display={"flex"} >
-                                {isMarkedForDelete !== true && 
+                                {isMarkedForDelete !== true && canDeleteKey &&
                                     <SubmitMarkForDelete 
                                         objectId={signingKey.keyId}
                                         objectType={MarkForDeleteObjectType.SigningKey}
@@ -168,12 +176,11 @@ const SigningKeyDetail: React.FC<SigningKeyDetailProps> = ({ signingKey }) => {
                                     <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Key Name / Alias</div>
-                                            <TextField 
-                                                
+                                            <TextField                                                 
                                                 name="keyName" id="keyName" 
                                                 value={keyUpdateInput.keyName} 
                                                 onChange={(evt) => {keyUpdateInput.keyName = evt.target.value; setKeyUpdateInput({...keyUpdateInput}); setMarkDirty(true)}}
-                                                disabled={keyUpdateInput.status === SIGNING_KEY_STATUS_REVOKED || isMarkedForDelete === true}
+                                                disabled={keyUpdateInput.status === SIGNING_KEY_STATUS_REVOKED || disableInputs === true}
                                                 fullWidth={true} size="small" 
                                             />
                                         </Grid2>
@@ -188,7 +195,7 @@ const SigningKeyDetail: React.FC<SigningKeyDetailProps> = ({ signingKey }) => {
                                             }
                                             {signingKey.status !== SIGNING_KEY_STATUS_REVOKED &&
                                                 <Select
-                                                    disabled={isMarkedForDelete}
+                                                    disabled={disableInputs}
                                                     size="small"
                                                     fullWidth={true}
                                                     value={keyUpdateInput.status}
@@ -250,15 +257,6 @@ const SigningKeyDetail: React.FC<SigningKeyDetailProps> = ({ signingKey }) => {
                             </Paper>
                         </Grid2>
                         <Grid2 size={12}>
-                            {/* 
-                                TODO Display logic based on the value of the private key. Is it encrypted? Then show the key and
-                                hide the password. Show an "eye" icon for the password, which the user can click if they have
-                                permissions to see it.
-
-                                If not encrypted, then show an "eye" icon which will allow the user to view the private based
-                                on their permissions and which will require a service call.
-
-                            */}
                             {signingKey.privateKeyPkcs8.startsWith(PKCS8_ENCRYPTED_PRIVATE_KEY_HEADER) &&
                                 <Paper sx={{ padding: "8px", marginBottom: "16px"}}  elevation={1}>
                                     <Grid2 container size={12} spacing={2}>                                    
@@ -281,17 +279,14 @@ const SigningKeyDetail: React.FC<SigningKeyDetailProps> = ({ signingKey }) => {
                                             Private Key
                                         </Grid2>
                                         <Grid2 size={{xs: 9, sm: 9, md: 10, lg: 10, xl: 10}}>
-                                            <VisibilityOutlinedIcon 
-                                                sx={{cursor: "pointer"}}
-                                                onClick={() => {
-                                                    // TODO
-                                                    // Only show this button if the user has access to view the password
-                                                    // based on their scope.
-                                                    // Show a dialog confirming that the user will be audited when they
-                                                    // view a password and an email will be sent to the admin group.
-                                                    setSecretDialogOpen(true);
-                                                }}
-                                            />
+                                            {canViewSecret &&
+                                                <VisibilityOutlinedIcon 
+                                                    sx={{cursor: "pointer"}}
+                                                    onClick={() => {
+                                                        setSecretDialogOpen(true);
+                                                    }}
+                                                />
+                                            }
                                         </Grid2>
                                     </Grid2>                                    
                                 </Paper>
@@ -303,17 +298,14 @@ const SigningKeyDetail: React.FC<SigningKeyDetailProps> = ({ signingKey }) => {
                                             Password
                                         </Grid2>
                                         <Grid2 size={{xs: 9, sm: 9, md: 10, lg: 10, xl: 10}}>
-                                            <VisibilityOutlinedIcon 
-                                                sx={{cursor: "pointer"}}
-                                                onClick={() => {
-                                                    // TODO
-                                                    // Only show this button if the user has access to view the password
-                                                    // based on their scope.
-                                                    // Show a dialog confirming that the user will be audited when they
-                                                    // view a password and an email will be sent to the admin group.
-                                                    setSecretDialogOpen(true);
-                                                }}
-                                            />                                            
+                                            {canViewSecret &&
+                                                <VisibilityOutlinedIcon 
+                                                    sx={{cursor: "pointer"}}
+                                                    onClick={() => {
+                                                        setSecretDialogOpen(true);
+                                                    }}
+                                                />
+                                            }
                                         </Grid2>
                                     </Grid2>
                                 </Paper>

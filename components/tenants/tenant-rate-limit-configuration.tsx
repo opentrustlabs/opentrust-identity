@@ -1,6 +1,6 @@
 "use client";
-import { PortalUserProfile, RateLimitServiceGroup, TenantRateLimitRel, TenantRateLimitRelView } from "@/graphql/generated/graphql-types";
-import {  RATE_LIMITS_QUERY, TENANT_RATE_LIMIT_REL_QUERY, TENANT_RATE_LIMIT_REL_VIEW_QUERY } from "@/graphql/queries/oidc-queries";
+import { PortalUserProfile, RateLimitServiceGroup, TenantRateLimitRelView } from "@/graphql/generated/graphql-types";
+import {  RATE_LIMITS_QUERY, TENANT_RATE_LIMIT_REL_VIEW_QUERY } from "@/graphql/queries/oidc-queries";
 import { RATE_LIMIT_TENANT_ASSIGN_SCOPE, RATE_LIMIT_TENANT_REMOVE_SCOPE, RATE_LIMIT_TENANT_UPDATE_SCOPE, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import { useMutation, useQuery } from "@apollo/client";
 import { Typography, Grid2, Alert, Dialog, DialogContent, DialogActions, Button, Divider, TablePagination } from "@mui/material";

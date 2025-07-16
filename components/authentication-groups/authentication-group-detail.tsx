@@ -1,6 +1,6 @@
 "use client";
 import { AuthenticationGroup, AuthenticationGroupUpdateInput, MarkForDeleteObjectType, SearchResultType, PortalUserProfile } from "@/graphql/generated/graphql-types";
-import { AUTHENTICATION_GROUP_UPDATE_SCOPE, AUTHENTICATION_GROUP_USER_ASSIGN_SCOPE, AUTHENTICATION_GROUP_USER_REMOVE_SCOPE, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
+import { AUTHENTICATION_GROUP_DELETE_SCOPE, AUTHENTICATION_GROUP_UPDATE_SCOPE, AUTHENTICATION_GROUP_USER_ASSIGN_SCOPE, AUTHENTICATION_GROUP_USER_REMOVE_SCOPE, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import { Typography, Grid2, Paper, TextField, Checkbox, Accordion, AccordionSummary, AccordionDetails, Backdrop, CircularProgress, Snackbar, Alert } from "@mui/material";
 import React, { useContext } from "react";
 import BreadcrumbComponent from "../breadcrumbs/breadcrumbs";
@@ -53,6 +53,7 @@ const AuthenticationGroupDetail: React.FC<AuthenticationGroupDetailProps> = ({ a
     const [disableInputs] = React.useState<boolean>(authenticationGroup.markForDelete || !containsScope(AUTHENTICATION_GROUP_UPDATE_SCOPE, profile?.scope || []));
     const [canAddUserToAuthnGroup] = React.useState<boolean>(containsScope(AUTHENTICATION_GROUP_USER_ASSIGN_SCOPE, profile?.scope || []));
     const [canRemoveUserFromAuthnGroup] = React.useState<boolean>(containsScope(AUTHENTICATION_GROUP_USER_REMOVE_SCOPE, profile?.scope || []));
+    const [canDeleteAuthnGroup] = React.useState<boolean>(containsScope(AUTHENTICATION_GROUP_DELETE_SCOPE, profile?.scope || []));
 
     // GRAPHQL FUNCTIONS
     const [updateAuthnGroupMutation] = useMutation(AUTHENTICATION_GROUP_UPDATE_MUTATION, {
@@ -128,7 +129,7 @@ const AuthenticationGroupDetail: React.FC<AuthenticationGroupDetailProps> = ({ a
                         <Grid2 className="detail-page-subheader" alignItems={"center"} sx={{ backgroundColor: "#1976d2", color: "white", padding: "8px", borderRadius: "2px" }} container size={12}>
                             <Grid2 size={11}>Overview</Grid2>
                             <Grid2 size={1} display={"flex"} >
-                                {isMarkedForDelete !== true && 
+                                {isMarkedForDelete !== true && canDeleteAuthnGroup &&
                                     <SubmitMarkForDelete 
                                         objectId={authenticationGroup.authenticationGroupId}
                                         objectType={MarkForDeleteObjectType.AuthenticationGroup}

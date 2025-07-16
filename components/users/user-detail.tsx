@@ -3,7 +3,7 @@ import { MarkForDeleteObjectType, StateProvinceRegion, User, UserMfaRel, UserTen
 import React, { useContext } from "react";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
 import Typography from "@mui/material/Typography";
-import { MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, NAME_ORDER_DISPLAY, NAME_ORDER_EASTERN, NAME_ORDER_WESTERN, TENANT_TYPE_ROOT_TENANT, USER_TENANT_REL_TYPE_PRIMARY, USER_UPDATE_SCOPE } from "@/utils/consts";
+import { MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, NAME_ORDER_DISPLAY, NAME_ORDER_EASTERN, NAME_ORDER_WESTERN, TENANT_TYPE_ROOT_TENANT, USER_DELETE_SCOPE, USER_TENANT_REL_TYPE_PRIMARY, USER_UPDATE_SCOPE } from "@/utils/consts";
 import BreadcrumbComponent from "../breadcrumbs/breadcrumbs";
 import { DetailPageContainer, DetailPageMainContentContainer, DetailPageRightNavContainer } from "../layout/detail-page-container";
 import Grid2 from "@mui/material/Grid2";
@@ -84,6 +84,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
     const [showMFADeletionConfirmationDialog, setShowMFADeletionConfirmationDialog] = React.useState<boolean>(false);
     const [mfaTypeToDelete, setMfaTypeToDelete] = React.useState<string | null>(null);
     const [disableInputs] = React.useState<boolean>(user.markForDelete || !containsScope(USER_UPDATE_SCOPE, profile?.scope|| []));
+    const [canDeleteUser] = React.useState<boolean>(containsScope(USER_DELETE_SCOPE, profile?.scope || []));
 
     // GRAPHQL FUNCTIONS
     const {data, loading, error} = useQuery(USER_MFA_REL_QUERY, {
@@ -207,7 +208,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
                         <Grid2 className="detail-page-subheader" alignItems={"center"} sx={{ backgroundColor: "#1976d2", color: "white", padding: "8px", borderRadius: "2px" }} container size={12}>
                             <Grid2 size={11}>Overview</Grid2>
                             <Grid2 size={1} display={"flex"} >
-                                {isMarkedForDelete !== true && 
+                                {isMarkedForDelete !== true && canDeleteUser &&
                                     <SubmitMarkForDelete 
                                         objectId={user.userId}
                                         objectType={MarkForDeleteObjectType.User}

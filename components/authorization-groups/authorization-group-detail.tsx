@@ -5,7 +5,7 @@ import Grid2 from "@mui/material/Grid2";
 import Typography from "@mui/material/Typography";
 import { AuthorizationGroup, AuthorizationGroupUpdateInput, MarkForDeleteObjectType, SearchResultType, PortalUserProfile } from "@/graphql/generated/graphql-types";
 import BreadcrumbComponent from "../breadcrumbs/breadcrumbs";
-import { AUTHORIZATION_GROUP_UPDATE_SCOPE, AUTHORIZATION_GROUP_USER_ASSIGN_SCOPE, AUTHORIZATION_GROUP_USER_REMOVE_SCOPE, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
+import { AUTHORIZATION_GROUP_DELETE_SCOPE, AUTHORIZATION_GROUP_UPDATE_SCOPE, AUTHORIZATION_GROUP_USER_ASSIGN_SCOPE, AUTHORIZATION_GROUP_USER_REMOVE_SCOPE, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -56,6 +56,7 @@ const AuthorizationGroupDetail: React.FC<AuthorizationGroupDetailProps> = ({ aut
     const [disableInputs] = React.useState<boolean>(authorizationGroup.markForDelete || !containsScope(AUTHORIZATION_GROUP_UPDATE_SCOPE, profile?.scope || []));
     const [canAddUserToAuthzGroup] = React.useState<boolean>(containsScope(AUTHORIZATION_GROUP_USER_ASSIGN_SCOPE, profile?.scope || []));
     const [canRemoveUserFromAuthzGroup] = React.useState<boolean>(containsScope(AUTHORIZATION_GROUP_USER_REMOVE_SCOPE, profile?.scope || []));
+    const [canDeleteAuthzGroup] = React.useState<boolean>(containsScope(AUTHORIZATION_GROUP_DELETE_SCOPE, profile?.scope || []));
 
     // GRAPHQL FUNCTIONS
     const [updateAuthzGroupMutation] = useMutation(AUTHORIZATION_GROUP_UPDATE_MUTATION, {
@@ -128,7 +129,7 @@ const AuthorizationGroupDetail: React.FC<AuthorizationGroupDetailProps> = ({ aut
                         <Grid2 className="detail-page-subheader" alignItems={"center"} sx={{ backgroundColor: "#1976d2", color: "white", padding: "8px", borderRadius: "2px" }} container size={12}>
                             <Grid2 size={11}>Overview</Grid2>
                             <Grid2 size={1} display={"flex"} >
-                                {isMarkedForDelete !== true && 
+                                {isMarkedForDelete !== true && canDeleteAuthzGroup &&
                                     <SubmitMarkForDelete 
                                         objectId={authorizationGroup.groupId}
                                         objectType={MarkForDeleteObjectType.AuthorizationGroup}

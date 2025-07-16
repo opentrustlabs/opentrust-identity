@@ -5,7 +5,7 @@ import Grid2 from "@mui/material/Grid2";
 import Typography from "@mui/material/Typography";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
 import BreadcrumbComponent from "../breadcrumbs/breadcrumbs";
-import { CLIENT_SECRET_VIEW_SCOPE, CLIENT_TYPE_SERVICE_ACCOUNT_AND_USER_DELEGATED_PERMISSIONS, CLIENT_TYPE_SERVICE_ACCOUNT_ONLY, CLIENT_TYPE_USER_DELEGATED_PERMISSIONS_ONLY, CLIENT_TYPES_DISPLAY, CLIENT_UPDATE_SCOPE, DEFAULT_BACKGROUND_COLOR, DEFAULT_END_USER_TOKEN_TTL_SECONDS, DEFAULT_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS, MAX_END_USER_TOKEN_TTL_SECONDS, MAX_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS, MIN_END_USER_TOKEN_TTL_SECONDS, MIN_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
+import { CLIENT_DELETE_SCOPE, CLIENT_SECRET_VIEW_SCOPE, CLIENT_TYPE_SERVICE_ACCOUNT_AND_USER_DELEGATED_PERMISSIONS, CLIENT_TYPE_SERVICE_ACCOUNT_ONLY, CLIENT_TYPE_USER_DELEGATED_PERMISSIONS_ONLY, CLIENT_TYPES_DISPLAY, CLIENT_UPDATE_SCOPE, DEFAULT_BACKGROUND_COLOR, DEFAULT_END_USER_TOKEN_TTL_SECONDS, DEFAULT_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS, MAX_END_USER_TOKEN_TTL_SECONDS, MAX_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS, MIN_END_USER_TOKEN_TTL_SECONDS, MIN_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import { Client, ClientUpdateInput, MarkForDeleteObjectType, SecretObjectType, PortalUserProfile } from "@/graphql/generated/graphql-types";
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import SyncIcon from '@mui/icons-material/Sync';
@@ -65,6 +65,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
     const [isMarkedForDelete, setIsMarkedForDelete] = React.useState<boolean>(client.markForDelete);
     const [disableInputs] = React.useState<boolean>(client.markForDelete || !containsScope(CLIENT_UPDATE_SCOPE, profile?.scope || []));
     const [canViewClientSecret] = React.useState<boolean>(containsScope(CLIENT_SECRET_VIEW_SCOPE, profile?.scope || []));
+    const [canDeleteClient] = React.useState<boolean>(containsScope(CLIENT_DELETE_SCOPE, profile?.scope || []));
 
     // GRAPHQLQL FUNCTIONS
     const [clientUpdateMutation] = useMutation(CLIENT_UPDATE_MUTATION, {
@@ -111,7 +112,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                         <Grid2 className="detail-page-subheader" alignItems={"center"} sx={{ backgroundColor: "#1976d2", color: "white", padding: "8px", borderRadius: "2px" }} container size={12}>
                             <Grid2 size={11}>Overview</Grid2>
                             <Grid2 size={1} display={"flex"} >
-                                {isMarkedForDelete !== true &&
+                                {isMarkedForDelete !== true && canDeleteClient &&
                                     <SubmitMarkForDelete
                                         objectId={client.clientId}
                                         objectType={MarkForDeleteObjectType.Client}
