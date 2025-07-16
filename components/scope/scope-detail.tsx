@@ -2,7 +2,7 @@
 import { MarkForDeleteObjectType, Scope, ScopeUpdateInput } from "@/graphql/generated/graphql-types";
 import React, { useContext } from "react";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
-import { SCOPE_USE_DISPLAY, SCOPE_USE_IAM_MANAGEMENT, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
+import { ROOT_TENANT_EXCLUSIVE_INTERNAL_SCOPE_NAMES, SCOPE_USE_DISPLAY, SCOPE_USE_IAM_MANAGEMENT, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import Typography from "@mui/material/Typography";
 import BreadcrumbComponent from "../breadcrumbs/breadcrumbs";
 import { DetailPageContainer, DetailPageMainContentContainer, DetailPageRightNavContainer } from "../layout/detail-page-container";
@@ -82,9 +82,7 @@ const ScopeDetail: React.FC<ScopeDetailProps> = ({ scope }) => {
     arrBreadcrumbs.push({
         linkText: scope.scopeName,
         href: null
-    })
-
-
+    });
 
     return (
         <Typography component={"div"} >
@@ -128,6 +126,11 @@ const ScopeDetail: React.FC<ScopeDetailProps> = ({ scope }) => {
                             }
                             <Paper sx={{ padding: "8px" }} elevation={1}>
                                 <Grid2 container size={12} spacing={2}>
+                                    {ROOT_TENANT_EXCLUSIVE_INTERNAL_SCOPE_NAMES.includes(scope.scopeName) &&
+                                        <Grid2 size={12} marginBottom={"8px"}>
+                                            <Alert severity="info">This scope is exclusive to the Root Tenant and cannot be added to any other tenant and cannot be edited.</Alert>                                            
+                                        </Grid2>
+                                    }
                                     <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Name</div>
@@ -185,7 +188,7 @@ const ScopeDetail: React.FC<ScopeDetailProps> = ({ scope }) => {
                                         <Grid2 marginBottom={"8px"}>
                                             <div>Scope Use</div>
                                             <TextField disabled={true} name="scopeUse" id="scopeUse" value={SCOPE_USE_DISPLAY.get(scope.scopeUse)} fullWidth={true} size="small" />
-                                        </Grid2>
+                                        </Grid2>                                        
                                     </Grid2>
                                 </Grid2>
                                 <DetailSectionActionHandler

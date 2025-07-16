@@ -19,13 +19,16 @@ const AccessError: React.FC = () => {
 
     let errorMessage = DEFAULT_ERROR_MESSAGE;
     switch (errorCode) {
-        case"00023" : {
+        case "00023" : {
             errorMessage = "You do not have access to view or manage this tenant.";
             break;
         }
-        case"00024" : {
+        case "00024" : {
             errorMessage = "There was an error retrieving the tenant information.";            
             break;
+        }
+        case "00025" : {
+            errorMessage = "Your account has not been configured with any permissions to access the IAM portal."
         }
     }
 

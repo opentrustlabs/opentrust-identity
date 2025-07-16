@@ -1,13 +1,14 @@
 "use client";
 import React, { ReactNode, useContext, useEffect } from "react";
 import { useParams, useRouter } from 'next/navigation';
-import { QUERY_PARAM_AUTHENTICATE_TO_PORTAL } from "@/utils/consts";
+import { QUERY_PARAM_AUTHENTICATE_TO_PORTAL, TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE } from "@/utils/consts";
 import { useQuery } from "@apollo/client";
 import { TENANT_META_DATA_QUERY } from "@/graphql/queries/oidc-queries";
 import { PortalUserProfile } from "@/graphql/generated/graphql-types";
 import { AuthContext, AuthContextProps } from "./auth-context";
 import { TenantMetaDataBean, TenantContext } from "./tenant-context";
 import DataLoading from "../layout/data-loading";
+import { containsScope } from "@/utils/authz-utils";
 
 interface LayoutProps {
     children: ReactNode
@@ -56,12 +57,9 @@ const ManagementTenantFilter: React.FC<LayoutProps> = ({
     let needsRedirect = true;
     let redirectUri: string = `/authorize/login?${QUERY_PARAM_AUTHENTICATE_TO_PORTAL}=true`;
     
-    // TODO
-    // Add return URI in cases where the profile is null.
+
     if(tenantIdFromPath === null && profile === null){
-        //if(tenantIdFromLocalStorage){
-            redirectUri = `/authorize/login?${QUERY_PARAM_AUTHENTICATE_TO_PORTAL}=true`;
-        //}     
+        redirectUri = `/authorize/login?${QUERY_PARAM_AUTHENTICATE_TO_PORTAL}=true`;
     }
     else if(tenantIdFromPath === null && profile !== null){
         if(profile.managementAccessTenantId !== undefined){
@@ -81,22 +79,25 @@ const ManagementTenantFilter: React.FC<LayoutProps> = ({
         if(!profile.managementAccessTenantId){
             redirectUri = `/access-error?access_error_code=00023`;
         }
-        else{
-            console.log("checkpoint 1");
-            console.log(profile);
-            console.log(tenantIdFromPath);
+
+        else{            
             if(profile.managementAccessTenantId !== tenantIdFromPath){
-                // Need to update the local storage for next time and redirect the 
-                // user to the correct landing page for their tenant
-                // setManagementTenantAccessId(profile.managementAccessTenantId);
-                console.log("checkpoint 2");
-                redirectUri = `/${profile.managementAccessTenantId}/`;
+                const additionalPath = window.location.pathname.replace(`/${tenantIdFromPath}`, "");
+                const currentQueryParams = window.location.search;
+                redirectUri = `/${profile.managementAccessTenantId}${additionalPath}${currentQueryParams}`;
             }
             else{
-                needsRedirect = false;
-            }
-            // No need to do anything else, since the user is on a valid page for managing
-            // their tenant.
+                // Need to check to see if the user has any permissions within the tenant
+                // They need to have, at a minimum tenant.all.read or tenant.read scope
+                if(profile.scope.length === 0 || !containsScope([TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE], profile.scope)){
+                    redirectUri = `/access-error?access_error_code=00025`;
+                }
+                else{
+                    // No need to do anything else, since the user is on a valid page for managing
+                    // their tenant.
+                    needsRedirect = false;
+                }
+            }            
         }
     }
 
