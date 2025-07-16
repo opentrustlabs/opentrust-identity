@@ -79,7 +79,7 @@ const resolvers: Resolvers = {
         },
         getScope: (_: any, { tenantId, filterBy }, oidcContext) => {
             const scopeService: ScopeService = new ScopeService(oidcContext);
-            return scopeService.getScope(tenantId || undefined, filterBy || undefined);
+            return scopeService.getScope(tenantId, filterBy);
         },
         getScopeById: (_: any, { scopeId }, oidcContext) => {
             const scopeService: ScopeService = new ScopeService(oidcContext);
@@ -441,7 +441,7 @@ const resolvers: Resolvers = {
         },
         removeScopeFromTenant: async(_: any, { scopeId, tenantId }, oidcContext ) => {            
             const scopeService: ScopeService = new ScopeService(oidcContext);
-            await scopeService.removeScopeFromTenant(tenantId, scopeId);            
+            await scopeService.removeScopeFromTenant(tenantId, scopeId);
             return scopeId;
         },
         assignScopeToClient: async(_: any, { scopeId, clientId, tenantId }, oidcContext) => {

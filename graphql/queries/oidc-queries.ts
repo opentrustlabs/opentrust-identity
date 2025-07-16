@@ -413,7 +413,7 @@ export const SIGNING_KEY_DETAIL_QUERY = gql(`
 `);
 
 export const SCOPE_QUERY = gql(`
-    query getScope($tenantId: String, $filterBy: ScopeFilterCriteria) {
+    query getScope($tenantId: String!, $filterBy: ScopeFilterCriteria!) {
         getScope(tenantId: $tenantId, filterBy: $filterBy){
             scopeId
             scopeName

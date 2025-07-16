@@ -55,18 +55,6 @@ const TenantScopeConfiguration: React.FC<TenantScopeConfigurationProps> = ({
         nextFetchPolicy: "no-cache"
     });
 
-    // const [assignTenantToScopeMutation] = useMutation(TENANT_SCOPE_ASSIGN_MUTATION, {
-    //     onCompleted() {
-    //         onUpdateEnd(true);
-    //         setErrorMessage(null);
-    //     },
-    //     onError(error) {
-    //         setErrorMessage(error.message);
-    //     },
-    //     refetchQueries: [SCOPE_QUERY]
-    // });
-
-
     const [bulkAssignTenantToScopeMutation] = useMutation(BULK_TENANT_SCOPE_ASSIGN_MUTATION, {
         onCompleted() {
             onUpdateEnd(true);

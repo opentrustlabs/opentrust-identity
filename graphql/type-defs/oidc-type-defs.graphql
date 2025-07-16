@@ -47,7 +47,7 @@ type Query {
     getRateLimitTenantRelViews(rateLimitServiceGroupId: String, tenantId: String): [TenantRateLimitRelView!]!
 
     ## Scope
-    getScope(tenantId: String, filterBy: ScopeFilterCriteria): [Scope!]!
+    getScope(tenantId: String!, filterBy: ScopeFilterCriteria!): [Scope!]!
     getScopeById(scopeId: String!): Scope
     getClientScopes(clientId: String!): [Scope!]!
     getAuthorizationGroupScopes(groupId: String!): [Scope!]!

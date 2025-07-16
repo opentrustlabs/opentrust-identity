@@ -206,7 +206,7 @@ class DBScopeDao extends ScopeDao {
 
     public async removeScopeFromTenant(tenantId: string, scopeId: string): Promise<void> {
         const sequelize: Sequelize = await DBDriver.getConnection();
-        
+
         // Need to remove all of the scope from the users, clients, and authz groups too                
         await sequelize.models.clientScopeRel.destroy({
             where: {
