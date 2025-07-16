@@ -9,13 +9,15 @@ import Typography from "@mui/material/Typography";
 import Grid2 from "@mui/material/Grid2";
 import AddBoxIcon from '@mui/icons-material/AddBox';
 import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
-import { FederatedOidcProvider } from "@/graphql/generated/graphql-types";
-import { FEDERATED_OIDC_PROVIDER_TYPE_ENTERPRISE, FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
+import { FederatedOidcProvider, PortalUserProfile } from "@/graphql/generated/graphql-types";
+import { FEDERATED_OIDC_PROVIDER_TENANT_ASSIGN_SCOPE, FEDERATED_OIDC_PROVIDER_TENANT_REMOVE_SCOPE, FEDERATED_OIDC_PROVIDER_TYPE_ENTERPRISE, FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import Divider from "@mui/material/Divider";
 import { Alert, Button, Dialog, DialogActions, DialogContent, TablePagination } from "@mui/material";
 import Link from "next/link";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
 import GeneralSelector from "../dialogs/general-selector";
+import { AuthContext, AuthContextProps } from "../contexts/auth-context";
+import { containsScope } from "@/utils/authz-utils";
 
 export interface TenantFederatedOIDCProviderConfigurationProps {
     tenantId: string,
@@ -34,6 +36,8 @@ const TenantFederatedOIDCProviderConfiguration: React.FC<TenantFederatedOIDCProv
 
     // CONTEXT VARIABLES
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
+    const authContextProps: AuthContextProps = useContext(AuthContext);
+    const profile: PortalUserProfile | null = authContextProps.portalUserProfile;
 
     // STATE VARIABLES
     const [selectedOIDCProviderToRemove, setSelectedOIDCProviderToRemove] = React.useState<{id: string, name: string} | null>(null);
@@ -41,6 +45,8 @@ const TenantFederatedOIDCProviderConfiguration: React.FC<TenantFederatedOIDCProv
     const [selectDialogOpen, setSelectDialogOpen] = React.useState(false);
     const [showRemoveConfirmationDialog, setShowRemoveConfirmationDialog] = React.useState(false);
     const [page, setPage] = React.useState<number>(1);
+    const [canAddRel] = React.useState<boolean>(containsScope(FEDERATED_OIDC_PROVIDER_TENANT_ASSIGN_SCOPE, profile?.scope || []));
+    const [canRemoveRel] = React.useState<boolean>(containsScope(FEDERATED_OIDC_PROVIDER_TENANT_REMOVE_SCOPE, profile?.scope || []));
 
 
     // GRAPHQL FUNCTIONS
@@ -176,16 +182,21 @@ const TenantFederatedOIDCProviderConfiguration: React.FC<TenantFederatedOIDCProv
                     />
                 </Dialog>
             }
-            <Grid2 marginBottom={"16px"} marginTop={"16px"} spacing={2} container size={12}>
-                <Grid2 size={12} display={"inline-flex"} alignItems="center" alignContent={"center"}>
-                    <AddBoxIcon
-                        sx={{cursor: "pointer"}}
-                        onClick={() => setSelectDialogOpen(true)}
-                    />
-                    <div style={{marginLeft: "8px", fontWeight: "bold"}}>Add OIDC Provider</div>
-                </Grid2>                
-            </Grid2>
-            <Divider />
+            {canAddRel &&
+                <React.Fragment>
+                    <Grid2 marginBottom={"16px"} marginTop={"16px"} spacing={2} container size={12}>                    
+                            <Grid2 size={12} display={"inline-flex"} alignItems="center" alignContent={"center"}>                        
+                                <AddBoxIcon
+                                    sx={{cursor: "pointer"}}
+                                    onClick={() => setSelectDialogOpen(true)}
+                                />
+                                <div style={{marginLeft: "8px", fontWeight: "bold"}}>Add OIDC Provider</div>                        
+                            </Grid2>
+                        
+                    </Grid2>
+                    <Divider />
+                </React.Fragment>
+            }
             <Grid2 marginBottom={"16px"} marginTop={"16px"} spacing={1} container size={12} fontWeight={"bold"}>
                 <Grid2 size={8}>Provider Name</Grid2>
                 <Grid2 size={3}>Type</Grid2>
@@ -220,11 +231,13 @@ const TenantFederatedOIDCProviderConfiguration: React.FC<TenantFederatedOIDCProv
                                         "Social"                                    
                                     }
                                 </Grid2>
-                                <Grid2 size={1}>
-                                    <RemoveCircleOutlineIcon
-                                        sx={{cursor: "pointer"}}
-                                        onClick={() => {setSelectedOIDCProviderToRemove({id:provider.federatedOIDCProviderId, name: provider.federatedOIDCProviderName}); setShowRemoveConfirmationDialog(true);}}
-                                    />
+                                <Grid2 minHeight={"26px"} size={1}>
+                                    {canRemoveRel &&
+                                        <RemoveCircleOutlineIcon
+                                            sx={{cursor: "pointer"}}
+                                            onClick={() => {setSelectedOIDCProviderToRemove({id:provider.federatedOIDCProviderId, name: provider.federatedOIDCProviderName}); setShowRemoveConfirmationDialog(true);}}
+                                        />
+                                    }
                                 </Grid2>
                                 <Grid2 size={12}><Divider /></Grid2>
                             </React.Fragment>

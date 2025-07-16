@@ -1,8 +1,8 @@
 "use client";
-import { MarkForDeleteObjectType, RateLimitServiceGroup, RateLimitServiceGroupUpdateInput } from "@/graphql/generated/graphql-types";
+import { MarkForDeleteObjectType, RateLimitServiceGroup, RateLimitServiceGroupUpdateInput, PortalUserProfile } from "@/graphql/generated/graphql-types";
 import React, { useContext } from "react";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
-import { TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
+import { RATE_LIMIT_DELETE_SCOPE, RATE_LIMIT_UPDATE_SCOPE, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import Typography from "@mui/material/Typography";
 import BreadcrumbComponent from "../breadcrumbs/breadcrumbs";
 import { DetailPageContainer, DetailPageMainContentContainer, DetailPageRightNavContainer } from "../layout/detail-page-container";
@@ -10,9 +10,7 @@ import Grid2 from "@mui/material/Grid2";
 import Backdrop from "@mui/material/Backdrop";
 import Snackbar from "@mui/material/Snackbar";
 import CircularProgress from "@mui/material/CircularProgress";
-import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
-import Button from "@mui/material/Button";
 import Paper from "@mui/material/Paper";
 import Alert from "@mui/material/Alert";
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
@@ -29,6 +27,8 @@ import { RATE_LIMIT_SERVICE_GROUP_UPDATE_MUTATION } from "@/graphql/mutations/oi
 import { RATE_LIMIT_BY_ID_QUERY } from "@/graphql/queries/oidc-queries";
 import SubmitMarkForDelete from "../deletion/submit-mark-for-delete";
 import MarkForDeleteAlert from "../deletion/mark-for-delete-alert";
+import { AuthContext, AuthContextProps } from "../contexts/auth-context";
+import { containsScope } from "@/utils/authz-utils";
 
 export interface RateLimitDetailProps {
     rateLimitDetail: RateLimitServiceGroup
@@ -41,6 +41,8 @@ const RateLimitDetail: React.FC<RateLimitDetailProps> = ({
     // CONTEXT VARIABLES
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
     const { copyContentToClipboard } = useClipboardCopyContext();
+    const authContextProps: AuthContextProps = useContext(AuthContext);
+    const profile: PortalUserProfile | null = authContextProps.portalUserProfile;
 
     // STATE VARIABLES
     const initInput: RateLimitServiceGroupUpdateInput = {
@@ -55,6 +57,8 @@ const RateLimitDetail: React.FC<RateLimitDetailProps> = ({
     const [showMutationBackdrop, setShowMutationBackdrop] = React.useState<boolean>(false);
     const [showMutationSnackbar, setShowMutationSnackbar] = React.useState<boolean>(false);
     const [isMarkedForDelete, setIsMarkedForDelete] = React.useState<boolean>(rateLimitDetail.markForDelete);
+    const [disableInputs] = React.useState<boolean>(rateLimitDetail.markForDelete || !containsScope(RATE_LIMIT_UPDATE_SCOPE, profile?.scope || []));
+    const [canDeleteRateLimit] = React.useState<boolean>(containsScope(RATE_LIMIT_DELETE_SCOPE, profile?.scope || []));
 
 
     // GRAPHQL FUNCTIONS
@@ -97,7 +101,7 @@ const RateLimitDetail: React.FC<RateLimitDetailProps> = ({
                         <Grid2 className="detail-page-subheader" alignItems={"center"} sx={{ backgroundColor: "#1976d2", color: "white", padding: "8px", borderRadius: "2px" }} container size={12}>
                             <Grid2 size={11}>Overview</Grid2>
                             <Grid2 size={1} display={"flex"} >
-                                {isMarkedForDelete !== true && 
+                                {isMarkedForDelete !== true && canDeleteRateLimit &&
                                     <SubmitMarkForDelete 
                                         objectId={rateLimitDetail.servicegroupid}
                                         objectType={MarkForDeleteObjectType.RateLimitServiceGroup}
@@ -136,7 +140,7 @@ const RateLimitDetail: React.FC<RateLimitDetailProps> = ({
                                     <Grid2 marginBottom={"16px"}>
                                         <div>Service Group Name</div>
                                         <TextField
-                                            disabled={isMarkedForDelete}
+                                            disabled={disableInputs}
                                             required name="serviceGroupName" id="serviceGroupName"
                                             onChange={(evt) => { serviceGroupInput.servicegroupname = evt?.target.value; setServiceGroupInput({ ...serviceGroupInput }); setMarkDirty(true); }}
                                             value={serviceGroupInput.servicegroupname}
@@ -164,7 +168,7 @@ const RateLimitDetail: React.FC<RateLimitDetailProps> = ({
                                     <Grid2 marginBottom={"16px"}>
                                         <div>Service Group Description</div>
                                         <TextField
-                                            disabled={isMarkedForDelete}
+                                            disabled={disableInputs}
                                             name="serviceGroupDescription" id="serviceGroupDescription"
                                             value={serviceGroupInput.servicegroupdescription}
                                             fullWidth={true}

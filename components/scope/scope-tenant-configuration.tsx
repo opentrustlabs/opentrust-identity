@@ -1,6 +1,6 @@
 "use client";
 import React, { useContext } from "react";
-import { Tenant } from "@/graphql/generated/graphql-types";
+import { Tenant, PortalUserProfile } from "@/graphql/generated/graphql-types";
 import { TENANT_SCOPE_ASSIGN_MUTATION, TENANT_SCOPE_REMOVE_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import { TENANTS_QUERY } from "@/graphql/queries/oidc-queries";
 import { useMutation, useQuery } from "@apollo/client";
@@ -17,10 +17,11 @@ import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
 import { InputAdornment, TablePagination, TextField } from "@mui/material";
 import TenantSelector from "../dialogs/tenant-selector";
-import { SCOPE_USE_IAM_MANAGEMENT, TENANT_TYPE_ROOT_TENANT, TENANT_TYPES_DISPLAY } from "@/utils/consts";
-
+import { SCOPE_TENANT_ASSIGN_SCOPE, SCOPE_TENANT_REMOVE_SCOPE, SCOPE_USE_IAM_MANAGEMENT, TENANT_TYPE_ROOT_TENANT, TENANT_TYPES_DISPLAY } from "@/utils/consts";
 import Link from "next/link";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
+import { AuthContext, AuthContextProps } from "../contexts/auth-context";
+import { containsScope } from "@/utils/authz-utils";
 
 
 export interface ScopeTenantConfigurationProps {
@@ -39,6 +40,8 @@ const ScopeTenantConfiguration: React.FC<ScopeTenantConfigurationProps> = ({
 
     // CONTEXT VARIABLES    
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
+    const authContextProps: AuthContextProps = useContext(AuthContext);
+    const profile: PortalUserProfile | null = authContextProps.portalUserProfile;
 
     // STATE VARIABLES
     const [page, setPage] = React.useState<number>(1);
@@ -49,6 +52,8 @@ const ScopeTenantConfiguration: React.FC<ScopeTenantConfigurationProps> = ({
     const [arr, setArr] = React.useState<Array<Tenant>>([]);
     const [filteredArr, setFilteredArr] = React.useState<Array<Tenant>>([]);
     const [filterTerm, setFilterTerm] = React.useState<string>("");
+    const [canAddRel] = React.useState(containsScope(SCOPE_TENANT_ASSIGN_SCOPE, profile?.scope || []));
+    const [canRemoveRel] = React.useState(containsScope(SCOPE_TENANT_REMOVE_SCOPE, profile?.scope || []));
 
 
     // GRAPHQL FUNCTIONS
@@ -187,16 +192,17 @@ const ScopeTenantConfiguration: React.FC<ScopeTenantConfigurationProps> = ({
                     </DialogActions>
                 </Dialog>
             }
-
-            <Grid2 marginBottom={"32px"} marginTop={"16px"} spacing={2} container size={12}>
-                <Grid2 size={12} display={"inline-flex"} alignItems="center" alignContent={"center"}>
-                    <AddBoxIcon
-                        sx={{ cursor: "pointer" }}
-                        onClick={() => setSelectDialogOpen(true)}
-                    />
-                    <div style={{ marginLeft: "8px", fontWeight: "bold" }}>Add Tenant</div>
+            {canAddRel &&
+                <Grid2 marginBottom={"32px"} marginTop={"16px"} spacing={2} container size={12}>
+                    <Grid2 size={12} display={"inline-flex"} alignItems="center" alignContent={"center"}>
+                        <AddBoxIcon
+                            sx={{ cursor: "pointer" }}
+                            onClick={() => setSelectDialogOpen(true)}
+                        />
+                        <div style={{ marginLeft: "8px", fontWeight: "bold" }}>Add Tenant</div>
+                    </Grid2>
                 </Grid2>
-            </Grid2>
+            }
             <Grid2 marginBottom={"32px"} marginTop={"16px"} spacing={2} container size={12}>
                 <Grid2 size={12} display={"inline-flex"} alignItems="center" alignContent={"center"}>
                     <TextField
@@ -274,15 +280,15 @@ const ScopeTenantConfiguration: React.FC<ScopeTenantConfigurationProps> = ({
                                     <Grid2 size={5}>
                                         {TENANT_TYPES_DISPLAY.get(item.tenantType)}
                                     </Grid2>
-                                    <Grid2 size={1}>
-                                        { !(item.tenantType === TENANT_TYPE_ROOT_TENANT && scopeUse === SCOPE_USE_IAM_MANAGEMENT) && 
-                                        <RemoveCircleOutlineIcon
-                                            sx={{ cursor: "pointer" }}
-                                            onClick={() => {
-                                                setTenantToRemove(item);
-                                                setShowRemoveDialog(true);
-                                            }}
-                                        />
+                                    <Grid2 minHeight={"26px"} size={1}>
+                                        {canRemoveRel && !(item.tenantType === TENANT_TYPE_ROOT_TENANT && scopeUse === SCOPE_USE_IAM_MANAGEMENT) && 
+                                            <RemoveCircleOutlineIcon
+                                                sx={{ cursor: "pointer" }}
+                                                onClick={() => {
+                                                    setTenantToRemove(item);
+                                                    setShowRemoveDialog(true);
+                                                }}
+                                            />
                                         }
                                     </Grid2>
                                     <Grid2 size={12}><Divider /></Grid2>

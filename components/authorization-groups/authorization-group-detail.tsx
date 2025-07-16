@@ -1,11 +1,11 @@
 "use client";
 import React, { useContext } from "react";
-import { Accordion, AccordionDetails, AccordionSummary, Button, Checkbox, Paper, Stack, TextField, Alert, Backdrop, CircularProgress, Snackbar } from "@mui/material";
+import { Accordion, AccordionDetails, AccordionSummary, Checkbox, Paper, TextField, Alert, Backdrop, CircularProgress, Snackbar } from "@mui/material";
 import Grid2 from "@mui/material/Grid2";
 import Typography from "@mui/material/Typography";
-import { AuthorizationGroup, AuthorizationGroupUpdateInput, MarkForDeleteObjectType, SearchResultType } from "@/graphql/generated/graphql-types";
+import { AuthorizationGroup, AuthorizationGroupUpdateInput, MarkForDeleteObjectType, SearchResultType, PortalUserProfile } from "@/graphql/generated/graphql-types";
 import BreadcrumbComponent from "../breadcrumbs/breadcrumbs";
-import { TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
+import { AUTHORIZATION_GROUP_DELETE_SCOPE, AUTHORIZATION_GROUP_UPDATE_SCOPE, AUTHORIZATION_GROUP_USER_ASSIGN_SCOPE, AUTHORIZATION_GROUP_USER_REMOVE_SCOPE, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -22,6 +22,8 @@ import DetailSectionActionHandler from "../layout/detail-section-action-handler"
 import SubmitMarkForDelete from "../deletion/submit-mark-for-delete";
 import MarkForDeleteAlert from "../deletion/mark-for-delete-alert";
 import ScopeRelConfiguration, { ScopeRelType } from "../scope/scope-rel-configuration";
+import { AuthContext, AuthContextProps } from "../contexts/auth-context";
+import { containsScope } from "@/utils/authz-utils";
 
 export interface AuthorizationGroupDetailProps {
     authorizationGroup: AuthorizationGroup
@@ -32,6 +34,8 @@ const AuthorizationGroupDetail: React.FC<AuthorizationGroupDetailProps> = ({ aut
     // CONTEXT VARIABLES
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
     const { copyContentToClipboard } = useClipboardCopyContext();
+    const authContextProps: AuthContextProps = useContext(AuthContext);
+    const profile: PortalUserProfile | null = authContextProps.portalUserProfile;
 
     const initInput: AuthorizationGroupUpdateInput = {
         allowForAnonymousUsers: authorizationGroup.allowForAnonymousUsers,
@@ -49,6 +53,10 @@ const AuthorizationGroupDetail: React.FC<AuthorizationGroupDetailProps> = ({ aut
     const [showMutationSnackbar, setShowMutationSnackbar] = React.useState<boolean>(false);
     const [renderKey, setRenderKey] = React.useState<string>(Date.now().toString());
     const [isMarkedForDelete, setIsMarkedForDelete] = React.useState<boolean>(authorizationGroup.markForDelete);
+    const [disableInputs] = React.useState<boolean>(authorizationGroup.markForDelete || !containsScope(AUTHORIZATION_GROUP_UPDATE_SCOPE, profile?.scope || []));
+    const [canAddUserToAuthzGroup] = React.useState<boolean>(containsScope(AUTHORIZATION_GROUP_USER_ASSIGN_SCOPE, profile?.scope || []));
+    const [canRemoveUserFromAuthzGroup] = React.useState<boolean>(containsScope(AUTHORIZATION_GROUP_USER_REMOVE_SCOPE, profile?.scope || []));
+    const [canDeleteAuthzGroup] = React.useState<boolean>(containsScope(AUTHORIZATION_GROUP_DELETE_SCOPE, profile?.scope || []));
 
     // GRAPHQL FUNCTIONS
     const [updateAuthzGroupMutation] = useMutation(AUTHORIZATION_GROUP_UPDATE_MUTATION, {
@@ -121,7 +129,7 @@ const AuthorizationGroupDetail: React.FC<AuthorizationGroupDetailProps> = ({ aut
                         <Grid2 className="detail-page-subheader" alignItems={"center"} sx={{ backgroundColor: "#1976d2", color: "white", padding: "8px", borderRadius: "2px" }} container size={12}>
                             <Grid2 size={11}>Overview</Grid2>
                             <Grid2 size={1} display={"flex"} >
-                                {isMarkedForDelete !== true && 
+                                {isMarkedForDelete !== true && canDeleteAuthzGroup &&
                                     <SubmitMarkForDelete 
                                         objectId={authorizationGroup.groupId}
                                         objectType={MarkForDeleteObjectType.AuthorizationGroup}
@@ -158,7 +166,7 @@ const AuthorizationGroupDetail: React.FC<AuthorizationGroupDetailProps> = ({ aut
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Group Name</div>
                                             <TextField name="authzGroupName" id="authzGroupName" 
-                                                disabled={isMarkedForDelete}
+                                                disabled={disableInputs}
                                                 value={authzGroupInput.groupName} 
                                                 onChange={(evt) => {authzGroupInput.groupName = evt.target.value; setAuthzGroupInput({...authzGroupInput}); setMarkDirty(true)}}
                                                 fullWidth={true} size="small" />
@@ -166,7 +174,7 @@ const AuthorizationGroupDetail: React.FC<AuthorizationGroupDetailProps> = ({ aut
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Group Description</div>
                                             <TextField name="authzGroupDescription" id="authzGroupDescription" 
-                                                disabled={isMarkedForDelete}
+                                                disabled={disableInputs}
                                                 multiline={true}
                                                 rows={2}
                                                 value={authzGroupInput.groupDescription} 
@@ -196,7 +204,7 @@ const AuthorizationGroupDetail: React.FC<AuthorizationGroupDetailProps> = ({ aut
                                             <Grid2 alignContent={"center"} size={10}>Default</Grid2>
                                             <Grid2 size={2}>
                                                 <Checkbox
-                                                    disabled={isMarkedForDelete}
+                                                    disabled={disableInputs}
                                                     name="default" 
                                                     checked={authzGroupInput.default}
                                                     onChange={(_, checked) => {
@@ -211,7 +219,7 @@ const AuthorizationGroupDetail: React.FC<AuthorizationGroupDetailProps> = ({ aut
                                             <Grid2 alignContent={"center"} size={10}>Allow for anonymous users</Grid2>
                                             <Grid2 size={2}>
                                                 <Checkbox 
-                                                    disabled={isMarkedForDelete}
+                                                    disabled={disableInputs}
                                                     name="allowForAnonymous"
                                                     checked={authzGroupInput.allowForAnonymousUsers}
                                                     onChange={(_, checked) => {
@@ -243,7 +251,7 @@ const AuthorizationGroupDetail: React.FC<AuthorizationGroupDetailProps> = ({ aut
                                 <Accordion defaultExpanded={true}  >
                                     <AccordionSummary
                                         expandIcon={<ExpandMoreIcon />}
-                                        id={"redirect-uri-configuration"}
+                                        id={"authorization-group-user-configuration"}
                                         sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center" }}
 
                                     >
@@ -270,8 +278,8 @@ const AuthorizationGroupDetail: React.FC<AuthorizationGroupDetailProps> = ({ aut
                                         {!authzGroupInput.default && 
                                             <RelationshipConfigurationComponent                                            
                                                 addObjectText="Add user to authorization group"
-                                                canAdd={true}
-                                                canDelete={true}
+                                                canAdd={canAddUserToAuthzGroup}
+                                                canDelete={canRemoveUserFromAuthzGroup}
                                                 confirmRemovalText="Confirm removal of user"
                                                 filterObjectsText="Filter users"
                                                 noObjectsFoundText="No users found"

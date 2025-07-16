@@ -30,7 +30,7 @@ class ScopeService {
     }
 
     
-    public async getScope(tenantId?: string, filterBy?: ScopeFilterCriteria): Promise<Array<Scope>> {
+    public async getScope(tenantId: string, filterBy: ScopeFilterCriteria): Promise<Array<Scope>> {
 
         if(!this.oidcContext.portalUserProfile || !this.oidcContext.portalUserProfile.managementAccessTenantId){
             throw new GraphQLError("ERROR_INVALID_PROFILE");
@@ -39,14 +39,15 @@ class ScopeService {
         if(!b){
             throw new GraphQLError("ERROR_NO_PERMISSIONS_TO_VIEW_SCOPE");
         }
-
-        tenantId = this.oidcContext.portalUserProfile.managementAccessTenantId;
-        let isRootTenant: boolean = false;        
-        const tenant: Tenant | null = await tenantDao.getTenantById(tenantId);
-        if(tenant && tenant.tenantType === TENANT_TYPE_ROOT_TENANT){
-            isRootTenant = true;
+        if(this.oidcContext.portalUserProfile.managementAccessTenantId !== this.oidcContext.rootTenant.tenantId){
+            if(this.oidcContext.portalUserProfile.managementAccessTenantId !== tenantId){
+                throw new GraphQLError("ERROR_NO_PERMISSION_TO_VIEW_TENANT_SCOPE");
+            }
         }
+
         
+        let isRootTenant: boolean = tenantId === this.oidcContext.rootTenant.tenantId;        
+                
         if(isRootTenant && !filterBy){
             const arr: Array<Scope> = await scopeDao.getScope();
             return arr;
@@ -641,10 +642,16 @@ class ScopeService {
     }
         
     protected async removeTenantScopeRelFromIndex(tenantId: string, scopeId: string): Promise<void>{        
-        searchClient.delete({
-            id: `${tenantId}::${scopeId}`,
-            index: SEARCH_INDEX_REL_SEARCH,
-        });        
+        try{
+            await searchClient.delete({
+                id: `${tenantId}::${scopeId}`,
+                index: SEARCH_INDEX_REL_SEARCH,
+            });         
+        }       
+        catch(err){
+            // TODO
+            // Log any errors
+        }
     }
 
     protected async bulkUpdateScopeRelIndex(scope: Scope): Promise<void>{

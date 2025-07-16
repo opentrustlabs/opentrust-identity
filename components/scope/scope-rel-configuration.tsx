@@ -17,16 +17,13 @@ import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
 import Alert from "@mui/material/Alert";
 import DataLoading from "../layout/data-loading";
 import ErrorComponent from "../error/error-component";
-import { BulkScopeInput, Scope, ScopeFilterCriteria, UserTenantRelView } from "@/graphql/generated/graphql-types";
+import { BulkScopeInput, PortalUserProfile, Scope, ScopeFilterCriteria } from "@/graphql/generated/graphql-types";
 import Link from "next/link";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
-import { SCOPE_USE_DISPLAY, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
-import { USER_SCOPE_ASSIGN_MUTATION, CLIENT_SCOPE_ASSIGN_MUTATION, AUTHORIZATION_GROUP_SCOPE_ASSIGN_MUTATION, USER_SCOPE_REMOVE_MUTATION, AUTHORIZATION_GROUP_SCOPE_REMOVE_MUTATION, CLIENT_SCOPE_REMOVE_MUTATION, BULK_CLIENT_SCOPE_ASSIGN_MUTATION, BULK_AUTHORIZATION_GROUP_SCOPE_ASSIGN_MUTATION, BULK_USER_SCOPE_ASSIGN_MUTATION } from "@/graphql/mutations/oidc-mutations";
-import Checkbox from "@mui/material/Checkbox";
-import RadioButtonUncheckedOutlinedIcon from '@mui/icons-material/RadioButtonUncheckedOutlined';
-import RadioButtonCheckedIcon from '@mui/icons-material/RadioButtonChecked';
-import DialogTitle from "@mui/material/DialogTitle";
-
+import { SCOPE_CLIENT_ASSIGN_SCOPE, SCOPE_CLIENT_REMOVE_SCOPE, SCOPE_GROUP_ASSIGN_SCOPE, SCOPE_GROUP_REMOVE_SCOPE, SCOPE_USE_DISPLAY, SCOPE_USER_ASSIGN_SCOPE, SCOPE_USER_REMOVE_SCOPE, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
+import { USER_SCOPE_REMOVE_MUTATION, AUTHORIZATION_GROUP_SCOPE_REMOVE_MUTATION, CLIENT_SCOPE_REMOVE_MUTATION, BULK_CLIENT_SCOPE_ASSIGN_MUTATION, BULK_AUTHORIZATION_GROUP_SCOPE_ASSIGN_MUTATION, BULK_USER_SCOPE_ASSIGN_MUTATION } from "@/graphql/mutations/oidc-mutations";
+import { AuthContext, AuthContextProps } from "../contexts/auth-context";
+import { containsScope } from "@/utils/authz-utils";
 
 export enum ScopeRelType {
     USER,
@@ -53,15 +50,27 @@ const ScopeRelConfiguration: React.FC<ScopeRelConfigurationProps> = ({
     // CONTEXT VARIABLES
     const responseBreakPoints: ResponsiveBreakpoints = useContext(ResponsiveContext);
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
+    const authContextProps: AuthContextProps = useContext(AuthContext);
+    const profile: PortalUserProfile | null = authContextProps.portalUserProfile;
 
     // STATE VARIABLES
+    const requiredAssignScope = scopeRelType === ScopeRelType.USER ? SCOPE_USER_ASSIGN_SCOPE :
+                                scopeRelType === ScopeRelType.CLIENT ? SCOPE_CLIENT_ASSIGN_SCOPE :
+                                SCOPE_GROUP_ASSIGN_SCOPE;
+    
+    const requiredRemoveScope = scopeRelType === ScopeRelType.USER ? SCOPE_USER_REMOVE_SCOPE :
+                                scopeRelType === ScopeRelType.CLIENT ? SCOPE_CLIENT_REMOVE_SCOPE :
+                                SCOPE_GROUP_REMOVE_SCOPE;
+
     const [page, setPage] = React.useState<number>(1);
     const [showRemoveConfirmationDialog, setShowRemoveConfirmationDialog] = React.useState(false);
     const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
     const [selectDialogOpen, setSelectDialogOpen] = React.useState(false);    
     const [scopeToRemove, setScopeToRemove] = React.useState<null | Scope>(null);
-    const [scopeIdToAdd, setScopeIdToAdd] = React.useState<string | null>(null);    
+    // const [scopeIdToAdd, setScopeIdToAdd] = React.useState<string | null>(null);
     const [arrScope, setArrScope] = React.useState<Array<Scope>>([]);
+    const [canAddRel] = React.useState<boolean>(containsScope(requiredAssignScope, profile?.scope || []));
+    const [canRemoveRel] = React.useState<boolean>(containsScope(requiredRemoveScope, profile?.scope || []));
 
     // GRAAPHQL FUNCTIONS
     const query = scopeRelType === ScopeRelType.USER ? GET_USER_SCOPE_QUERY : 
@@ -96,11 +105,12 @@ const ScopeRelConfiguration: React.FC<ScopeRelConfigurationProps> = ({
 
     const removeMutationDef = scopeRelType === ScopeRelType.USER ? USER_SCOPE_REMOVE_MUTATION : 
                             scopeRelType === ScopeRelType.CLIENT ? CLIENT_SCOPE_REMOVE_MUTATION :
-                            AUTHORIZATION_GROUP_SCOPE_REMOVE_MUTATION;                            
+                            AUTHORIZATION_GROUP_SCOPE_REMOVE_MUTATION;
+
 
     const [assignMutation] = useMutation(assignMutationDef, {
         onCompleted() {
-            setScopeIdToAdd(null);            
+            // setScopeIdToAdd(null);            
             onUpdateEnd(true);
             refetch();
         },
@@ -112,7 +122,7 @@ const ScopeRelConfiguration: React.FC<ScopeRelConfigurationProps> = ({
 
     const [removeMutation] = useMutation(removeMutationDef, {
         onCompleted() {
-            setScopeIdToAdd(null);            
+            // setScopeIdToAdd(null);            
             onUpdateEnd(true);
             refetch();
         },
@@ -232,17 +242,19 @@ const ScopeRelConfiguration: React.FC<ScopeRelConfigurationProps> = ({
                     />
                 </Dialog>
             } 
-            <Grid2 marginBottom={"32px"} marginTop={"16px"} spacing={2} container size={12}>
-                <Grid2 size={12} display={"inline-flex"} alignItems="center" alignContent={"center"}>
-                    <AddBoxIcon
-                        sx={{cursor: "pointer"}}
-                        onClick={() => {
-                            setSelectDialogOpen(true);
-                        }}
-                    />
-                    <div style={{marginLeft: "8px", fontWeight: "bold"}}>Add Scope</div>
-                </Grid2>                
-            </Grid2>
+            {canAddRel &&
+                <Grid2 marginBottom={"32px"} marginTop={"16px"} spacing={2} container size={12}>
+                    <Grid2 size={12} display={"inline-flex"} alignItems="center" alignContent={"center"}>
+                        <AddBoxIcon
+                            sx={{cursor: "pointer"}}
+                            onClick={() => {
+                                setSelectDialogOpen(true);
+                            }}
+                        />
+                        <div style={{marginLeft: "8px", fontWeight: "bold"}}>Add Scope</div>
+                    </Grid2>                
+                </Grid2>
+            }
             
             <Grid2 marginBottom={"8px"} marginTop={"16px"} spacing={1} container size={12} fontWeight={"bold"}>
                 <Grid2 size={responseBreakPoints.isMedium ? 11 : 3}>Name</Grid2>
@@ -292,7 +304,8 @@ const ScopeRelConfiguration: React.FC<ScopeRelConfigurationProps> = ({
                                     </Grid2>
                                 }
                                 
-                                <Grid2 size={1}>
+                                <Grid2 minHeight={"26px"} size={1}>
+                                    {canRemoveRel &&
                                         <RemoveCircleOutlineIcon
                                             sx={{cursor: "pointer"}}
                                             onClick={() => {
@@ -300,7 +313,7 @@ const ScopeRelConfiguration: React.FC<ScopeRelConfigurationProps> = ({
                                                 setShowRemoveConfirmationDialog(true);
                                             }}
                                         />
-                                                                
+                                    }                                                                
                                 </Grid2>
                                 <Grid2 size={12}><Divider /></Grid2>
                             </React.Fragment>

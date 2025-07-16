@@ -1,9 +1,9 @@
 "use client";
-import { MarkForDeleteObjectType, StateProvinceRegion, User, UserMfaRel, UserTenantRelView, UserUpdateInput } from "@/graphql/generated/graphql-types";
+import { MarkForDeleteObjectType, StateProvinceRegion, User, UserMfaRel, UserTenantRelView, UserUpdateInput, PortalUserProfile } from "@/graphql/generated/graphql-types";
 import React, { useContext } from "react";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
 import Typography from "@mui/material/Typography";
-import { MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, NAME_ORDER_DISPLAY, NAME_ORDER_EASTERN, NAME_ORDER_WESTERN, TENANT_TYPE_ROOT_TENANT, USER_TENANT_REL_TYPE_PRIMARY } from "@/utils/consts";
+import { MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, NAME_ORDER_DISPLAY, NAME_ORDER_EASTERN, NAME_ORDER_WESTERN, TENANT_TYPE_ROOT_TENANT, USER_DELETE_SCOPE, USER_TENANT_REL_TYPE_PRIMARY, USER_UPDATE_SCOPE } from "@/utils/consts";
 import BreadcrumbComponent from "../breadcrumbs/breadcrumbs";
 import { DetailPageContainer, DetailPageMainContentContainer, DetailPageRightNavContainer } from "../layout/detail-page-container";
 import Grid2 from "@mui/material/Grid2";
@@ -34,6 +34,8 @@ import MarkForDeleteAlert from "../deletion/mark-for-delete-alert";
 import ScopeRelConfiguration, { ScopeRelType } from "../scope/scope-rel-configuration";
 import UserSessionDetails from "./user-session-details";
 import StateProvinceRegionSelector from "./state-province-region-selector";
+import { AuthContext, AuthContextProps } from "@/components/contexts/auth-context";
+import { containsScope } from "@/utils/authz-utils";
 
 export interface UserDetailProps {
     user: User;
@@ -46,6 +48,8 @@ const UserDetail: React.FC<UserDetailProps> = ({
     // CONTEXT VARIABLES
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
     const { copyContentToClipboard } = useClipboardCopyContext();
+    const authContextProps: AuthContextProps = useContext(AuthContext);
+    const profile: PortalUserProfile | null = authContextProps.portalUserProfile;
 
     const initInput: UserUpdateInput = {
         domain: user.domain,
@@ -79,6 +83,8 @@ const UserDetail: React.FC<UserDetailProps> = ({
     const [primaryTenantId, setPrimaryTenantId] = React.useState<string | null>(null);
     const [showMFADeletionConfirmationDialog, setShowMFADeletionConfirmationDialog] = React.useState<boolean>(false);
     const [mfaTypeToDelete, setMfaTypeToDelete] = React.useState<string | null>(null);
+    const [disableInputs] = React.useState<boolean>(user.markForDelete || !containsScope(USER_UPDATE_SCOPE, profile?.scope|| []));
+    const [canDeleteUser] = React.useState<boolean>(containsScope(USER_DELETE_SCOPE, profile?.scope || []));
 
     // GRAPHQL FUNCTIONS
     const {data, loading, error} = useQuery(USER_MFA_REL_QUERY, {
@@ -202,7 +208,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
                         <Grid2 className="detail-page-subheader" alignItems={"center"} sx={{ backgroundColor: "#1976d2", color: "white", padding: "8px", borderRadius: "2px" }} container size={12}>
                             <Grid2 size={11}>Overview</Grid2>
                             <Grid2 size={1} display={"flex"} >
-                                {isMarkedForDelete !== true && 
+                                {isMarkedForDelete !== true && canDeleteUser &&
                                     <SubmitMarkForDelete 
                                         objectId={user.userId}
                                         objectType={MarkForDeleteObjectType.User}
@@ -234,13 +240,12 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                 />
                             }	
                             <Paper sx={{ padding: "8px" }} elevation={1}>                            
-                                <Grid2 container size={12} spacing={2}>  
-                                    
+                                <Grid2 container size={12} spacing={2}>                                    
                                     <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
                                         <Grid2 marginBottom={"8px"}>
                                             <div>First Name</div>
                                             <TextField name="firstName" id="firstName" 
-                                                disabled={isMarkedForDelete || userInput.federatedOIDCProviderSubjectId !== ""}
+                                                disabled={disableInputs || userInput.federatedOIDCProviderSubjectId !== ""}
                                                 value={userInput.firstName}
                                                 onChange={(evt) => {userInput.firstName = evt.target.value; setMarkDirty(true); setUserInput({...userInput})}}
                                                 fullWidth={true} size="small" 
@@ -249,7 +254,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                         <Grid2 marginBottom={"8px"}>
                                             <div>Last Name</div>
                                             <TextField name="lastName" id="lastName" 
-                                                disabled={isMarkedForDelete || userInput.federatedOIDCProviderSubjectId !== ""}
+                                                disabled={disableInputs || userInput.federatedOIDCProviderSubjectId !== ""}
                                                 value={userInput.lastName} 
                                                 onChange={(evt) => {userInput.lastName = evt.target.value; setMarkDirty(true); setUserInput({...userInput}); }}
                                                 fullWidth={true} size="small" 
@@ -262,7 +267,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                                 <Grid2 alignContent={"center"} size={10}>Enabled</Grid2>
                                                 <Grid2 size={2}>
                                                     <Checkbox 
-                                                        disabled={isMarkedForDelete}
+                                                        disabled={disableInputs}
                                                         name="enabled"
                                                         checked={userInput.enabled}
                                                         onChange={(_, checked) => {
@@ -275,7 +280,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                                 <Grid2 alignContent={"center"} size={10}>Email verified</Grid2>
                                                 <Grid2 size={2}>
                                                     <Checkbox 
-                                                        disabled={isMarkedForDelete|| userInput.federatedOIDCProviderSubjectId !== ""}
+                                                        disabled={disableInputs || userInput.federatedOIDCProviderSubjectId !== ""}
                                                         name="emailVerified"
                                                         checked={userInput.emailVerified}
                                                         onChange={(_, checked) => {
@@ -290,7 +295,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                                     <Checkbox                                                         
                                                         name="locked"
                                                         checked={userInput.locked}
-                                                        disabled={!user.locked || isMarkedForDelete === true}
+                                                        disabled={!user.locked || disableInputs === true}
                                                         onChange={(_, checked) => {
                                                             userInput.locked = checked;
                                                             setMarkDirty(true); 
@@ -305,7 +310,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Middle Name</div>
                                             <TextField name="middleName" id="middleName" 
-                                                disabled={isMarkedForDelete|| userInput.federatedOIDCProviderSubjectId !== ""}
+                                                disabled={disableInputs || userInput.federatedOIDCProviderSubjectId !== ""}
                                                 value={userInput.middleName} 
                                                 onChange={(evt) => {userInput.middleName = evt.target.value; setMarkDirty(true); setUserInput({...userInput}); }}
                                                 fullWidth={true} size="small" 
@@ -330,7 +335,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Name Order</div>
                                             <Select 
-                                                disabled={isMarkedForDelete || userInput.federatedOIDCProviderSubjectId !== ""}
+                                                disabled={disableInputs || userInput.federatedOIDCProviderSubjectId !== ""}
                                                 name="nameOrder"
                                                 value={userInput.nameOrder}
                                                 onChange={(evt) => {
@@ -349,7 +354,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Email</div>
                                             <TextField name="email" id="email" 
-                                                disabled={isMarkedForDelete || userInput.federatedOIDCProviderSubjectId !== ""}
+                                                disabled={disableInputs || userInput.federatedOIDCProviderSubjectId !== ""}
                                                 value={userInput.email} 
                                                 onChange={(evt) => {userInput.email = evt.target.value; setMarkDirty(true); setUserInput({...userInput}); }}
                                                 fullWidth={true} size="small" 
@@ -358,7 +363,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Phone Number</div>
                                             <TextField name="phoneNumber" id="phoneNumber" 
-                                                disabled={isMarkedForDelete || userInput.federatedOIDCProviderSubjectId !== ""}
+                                                disabled={disableInputs || userInput.federatedOIDCProviderSubjectId !== ""}
                                                 value={userInput.phoneNumber} 
                                                 onChange={(evt) => {userInput.phoneNumber = evt.target.value; setMarkDirty(true); setUserInput({...userInput}); }}
                                                 fullWidth={true} size="small" 
@@ -367,7 +372,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Preferred Language</div>
                                             <Autocomplete
-                                                disabled={isMarkedForDelete}
+                                                disabled={disableInputs}
                                                 id="defaultLanguage"                                                
                                                 sx={{paddingTop: "8px"}}
                                                 size="small"
@@ -422,13 +427,15 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                                                     }
                                                                 </Grid2>
                                                                 <Grid2 size={1}>
-                                                                    <DeleteForeverOutlinedIcon 
-                                                                        sx={{cursor: "pointer"}}
-                                                                        onClick={() => {
-                                                                            setMfaTypeToDelete(rel.mfaType)
-                                                                            setShowMFADeletionConfirmationDialog(true);
-                                                                        }}
-                                                                    />
+                                                                    {!disableInputs &&
+                                                                        <DeleteForeverOutlinedIcon 
+                                                                            sx={{cursor: "pointer"}}
+                                                                            onClick={() => {
+                                                                                setMfaTypeToDelete(rel.mfaType)
+                                                                                setShowMFADeletionConfirmationDialog(true);
+                                                                            }}
+                                                                        />
+                                                                    }
                                                                 </Grid2>
                                                             </Grid2>
                                                         )
@@ -442,7 +449,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Address</div>
                                             <TextField name="address" id="address" 
-                                                disabled={isMarkedForDelete}
+                                                disabled={disableInputs}
                                                 value={userInput.address} fullWidth={true} size="small" 
                                                 onChange={(evt) => {userInput.address = evt.target.value; setUserInput({...userInput}); setMarkDirty(true);}}
                                             />
@@ -450,7 +457,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                         <Grid2 marginBottom={"16px"}>
                                             <div>(Optional) Apartment, suite, unit, building, floor</div>
                                             <TextField name="addressline1" id="addressline1" 
-                                                disabled={isMarkedForDelete}
+                                                disabled={disableInputs}
                                                 value={userInput.addressLine1} 
                                                 onChange={(evt) => {userInput.addressLine1 = evt.target.value; setUserInput({...userInput}); setMarkDirty(true);}}
                                                 fullWidth={true} size="small" 
@@ -459,7 +466,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                         <Grid2 marginBottom={"16px"}>
                                             <div>City</div>
                                             <TextField name="city" id="city" 
-                                                disabled={isMarkedForDelete}
+                                                disabled={disableInputs}
                                                 value={userInput.city} 
                                                 onChange={(evt) => {userInput.city = evt.target.value; setUserInput({...userInput}); setMarkDirty(true);}}
                                                 fullWidth={true} size="small" 
@@ -469,7 +476,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                         <Grid2 size={12} marginBottom={"16px"}>
                                             <div>Country</div>
                                             <Autocomplete
-                                                disabled={isMarkedForDelete}
+                                                disabled={disableInputs}
                                                 id="countryCode"
                                                 sx={{paddingTop: "8px"}}
                                                 size="small"
@@ -494,7 +501,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                             <StateProvinceRegionSelector
                                                 countryCode={userInput.countryCode || undefined}
                                                 initValue={userInput.stateRegionProvince || undefined}
-                                                isDisabled={isMarkedForDelete}
+                                                isDisabled={disableInputs}
                                                 onChange={(stateProvinceRegion: StateProvinceRegion | null) => {                                                    
                                                     userInput.stateRegionProvince = stateProvinceRegion ? stateProvinceRegion.isoEntryCode : "";
                                                     setUserInput({...userInput});
@@ -505,7 +512,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Postal Code</div>
                                             <TextField name="postalCode" id="postalCode" 
-                                                disabled={isMarkedForDelete}
+                                                disabled={disableInputs}
                                                 value={userInput.postalCode} 
                                                 fullWidth={true} size="small" 
                                                 onChange={(evt) => {userInput.postalCode = evt.target.value; setUserInput({...userInput}); setMarkDirty(true);}}
@@ -532,7 +539,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                 <Accordion defaultExpanded={true}  >
                                     <AccordionSummary
                                         expandIcon={<ExpandMoreIcon />}
-                                        id={"login-failure-configuration"}
+                                        id={"authorization-group-configuration"}
                                         sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center"}}
 
                                     >
@@ -562,7 +569,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                 <Accordion defaultExpanded={false}  >
                                     <AccordionSummary
                                         expandIcon={<ExpandMoreIcon />}
-                                        id={"login-failure-configuration"}
+                                        id={"authentication-group-configuration"}
                                         sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center"}}
 
                                     >
@@ -593,7 +600,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                 <Accordion defaultExpanded={false}  >
                                     <AccordionSummary
                                         expandIcon={<ExpandMoreIcon />}
-                                        id={"login-failure-configuration"}
+                                        id={"tenant-membership-configuration"}
                                         sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center"}}
 
                                     >
@@ -639,7 +646,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                                     <Accordion >
                                                         <AccordionSummary
                                                             expandIcon={<ExpandMoreIcon />}
-                                                            id={"redirect-uri-configuration"}
+                                                            id={`access-control-configuration-${rel.tenantId}`}
                                                             sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center" }}
                                                         >
                                                             <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
@@ -675,7 +682,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                 <Accordion defaultExpanded={false}  >
                                     <AccordionSummary
                                         expandIcon={<ExpandMoreIcon />}
-                                        id={"login-failure-configuration"}
+                                        id={"user-session-configuration"}
                                         sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center"}}
 
                                     >

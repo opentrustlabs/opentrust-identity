@@ -1,14 +1,14 @@
 "use client";
 import React, { useContext } from "react";
-import { Accordion, AccordionDetails, AccordionSummary, Alert, Backdrop, Checkbox, CircularProgress, MenuItem, Paper, Select, Snackbar, Stack, TextField } from "@mui/material";
+import { Accordion, AccordionDetails, AccordionSummary, Alert, Backdrop, Checkbox, CircularProgress, FormControl, MenuItem, Paper, Select, Snackbar, Stack, TextField } from "@mui/material";
 import Grid2 from "@mui/material/Grid2";
 import Typography from "@mui/material/Typography";
 import BreadcrumbComponent from "../breadcrumbs/breadcrumbs";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
-import { DEFAULT_RATE_LIMIT_PERIOD_MINUTES, FEDERATED_AUTHN_CONSTRAINT_DISPLAY, FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE, FEDERATED_AUTHN_CONSTRAINT_NOT_ALLOWED, FEDERATED_AUTHN_CONSTRAINT_PERMISSIVE, TENANT_TYPE_IDENTITY_MANAGEMENT, TENANT_TYPE_IDENTITY_MANAGEMENT_AND_SERVICES, TENANT_TYPE_ROOT_TENANT, TENANT_TYPE_SERVICES, TENANT_TYPES_DISPLAY } from "@/utils/consts";
+import { DEFAULT_RATE_LIMIT_PERIOD_MINUTES, FEDERATED_AUTHN_CONSTRAINT_DISPLAY, FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE, FEDERATED_AUTHN_CONSTRAINT_NOT_ALLOWED, FEDERATED_AUTHN_CONSTRAINT_PERMISSIVE, TENANT_DELETE_SCOPE, TENANT_TYPE_IDENTITY_MANAGEMENT, TENANT_TYPE_IDENTITY_MANAGEMENT_AND_SERVICES, TENANT_TYPE_ROOT_TENANT, TENANT_TYPE_SERVICES, TENANT_TYPES_DISPLAY, TENANT_UPDATE_SCOPE } from "@/utils/consts";
 import { MarkForDeleteObjectType, Tenant, TenantUpdateInput } from "@/graphql/generated/graphql-types";
 import { useMutation, useQuery } from "@apollo/client";
-import { TENANT_DETAIL_QUERY, TENANT_RATE_LIMIT_REL_QUERY } from "@/graphql/queries/oidc-queries";
+import { TENANT_DETAIL_QUERY } from "@/graphql/queries/oidc-queries";
 import DataLoading from "../layout/data-loading";
 import ErrorComponent from "../error/error-component";
 import PasswordIcon from '@mui/icons-material/Password';
@@ -37,6 +37,10 @@ import TenantScopeConfiguration from "./tenant-scope-configuration";
 import TenantRateLimitConfiguration from "./tenant-rate-limit-configuration";
 import SubmitMarkForDelete from "../deletion/submit-mark-for-delete";
 import MarkForDeleteAlert from "../deletion/mark-for-delete-alert";
+import { AuthContext, AuthContextProps } from "@/components/contexts/auth-context";
+import { PortalUserProfile } from "@/graphql/generated/graphql-types";
+import { containsScope } from "@/utils/authz-utils";
+
 
 export interface TenantDetailProps {
     tenantId: string
@@ -71,6 +75,12 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
     tenant
 }) => {
 
+    // CONTEXT VARIABLES
+    const tenantBean: TenantMetaDataBean = useContext(TenantContext);
+    const { copyContentToClipboard } = useClipboardCopyContext();
+    const authContextProps: AuthContextProps = useContext(AuthContext);
+    const profile: PortalUserProfile | null = authContextProps.portalUserProfile;
+
     const initInput: TenantUpdateInput = {
         allowAnonymousUsers: tenant.allowAnonymousUsers,
         allowForgotPassword: tenant.allowForgotPassword,
@@ -98,6 +108,8 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
     const [showMutationSnackbar, setShowMutationSnackbar] = React.useState<boolean>(false);
     const [totalRateUsed, setTotalRateUsed] = React.useState<number | null>(null);
     const [isMarkedForDelete, setIsMarkedForDelete] = React.useState<boolean>(tenant.markForDelete);
+    const [disableInputs] = React.useState<boolean>(tenant.markForDelete || !containsScope(TENANT_UPDATE_SCOPE, profile?.scope || []));
+    const [canDeleteTenant] = React.useState<boolean>(containsScope(TENANT_DELETE_SCOPE, profile?.scope || []));
 
     // GRAPHQL FUNCTIONS
     const [tenantUpdateMutation] = useMutation(TENANT_UPDATE_MUTATION, {
@@ -119,11 +131,6 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
     );
 
 
-    // CONTEXT VARIABLES
-    const tenantBean: TenantMetaDataBean = useContext(TenantContext);
-    const { copyContentToClipboard } = useClipboardCopyContext();
-
-
     // HANDLER FUNCTIONS
     const performUpdate = () => {
         setShowMutationBackdrop(true);
@@ -142,6 +149,8 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
         href: null
     });
 
+    
+
     return (
 
         <Typography component={"div"}>
@@ -153,12 +162,12 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                                
                         <Grid2 className="detail-page-subheader" alignItems={"center"} sx={{ backgroundColor: "#1976d2", color: "white", padding: "8px", borderRadius: "2px" }} container size={12}>
                             <Grid2 size={11}>Overview</Grid2>
-                            {tenantBean.getTenantMetaData().tenant.tenantType === TENANT_TYPE_ROOT_TENANT &&
+                            {tenant.tenantType === TENANT_TYPE_ROOT_TENANT &&
                                 <Grid2 size={1}></Grid2>
                             }
-                            {tenantBean.getTenantMetaData().tenant.tenantType !== TENANT_TYPE_ROOT_TENANT &&
+                            {tenant.tenantType !== TENANT_TYPE_ROOT_TENANT &&
                                 <Grid2 size={1} display={"flex"} >
-                                    {isMarkedForDelete !== true && 
+                                    {isMarkedForDelete !== true && canDeleteTenant &&
                                         <SubmitMarkForDelete 
                                             objectId={tenant.tenantId}
                                             objectType={MarkForDeleteObjectType.Tenant}
@@ -197,19 +206,19 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                     message={"This tenant has been marked for deletion. No changes to the tenant are permitted."}
                                 />
                             }
-                            <Paper sx={{ padding: "8px" }} elevation={1}>
+                            <Paper sx={{ padding: "8px" }} elevation={1}>                                
                                 <Grid2 container size={12} spacing={2}>
                                     <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Tenant Name</div>
                                             <TextField
-                                                disabled={isMarkedForDelete}
+                                                disabled={disableInputs}
                                                 name="tenantName" id="tenantName" onChange={(evt) => { tenantInput.tenantName = evt?.target.value; setTenantInput({ ...tenantInput }); setOverviewDirty(true); }} value={tenantInput.tenantName} fullWidth={true} size="small" />
                                         </Grid2>
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Tenant Descripton</div>
                                             <TextField  
-                                                disabled={isMarkedForDelete}
+                                                disabled={disableInputs}
                                                 name="tenantDescription" id="tenantDescription" 
                                                 value={tenantInput.tenantDescription} fullWidth={true} size="small" multiline={true} rows={2} 
                                                 onChange={(evt) => { tenantInput.tenantDescription = evt?.target.value; setTenantInput({ ...tenantInput }); setOverviewDirty(true); }}
@@ -222,7 +231,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                             }
                                             {tenant.tenantType !== TENANT_TYPE_ROOT_TENANT &&
                                                 <Select
-                                                    disabled={isMarkedForDelete}
+                                                    disabled={disableInputs}
                                                     size="small"
                                                     fullWidth={true}
                                                     value={tenantInput.tenantType}
@@ -254,7 +263,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Federated OIDC Provider Constraint</div>
                                             <Select
-                                                disabled={isMarkedForDelete}
+                                                disabled={disableInputs}
                                                 required={true}
                                                 size="small"
                                                 fullWidth={true}
@@ -275,7 +284,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                                 }
                                             </div>
                                             <TextField name="defaultRateLimit" id="defaultRateLimit" 
-                                                disabled={tenantInput.allowUnlimitedRate === true || isMarkedForDelete === true}
+                                                disabled={tenantInput.allowUnlimitedRate === true || disableInputs === true}
                                                 onChange={(evt) => {
                                                     const n = parseInt(evt.target.value); 
                                                     if(n){
@@ -308,7 +317,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                             <Grid2 alignContent={"center"} size={10}>Enabled</Grid2>
                                             <Grid2 size={2}>
                                                 <Checkbox 
-                                                    disabled={isMarkedForDelete}
+                                                    disabled={disableInputs}
                                                     checked={tenantInput.enabled}
                                                     onChange={(_, checked: boolean) => {tenantInput.enabled = checked; setTenantInput({...tenantInput}); setOverviewDirty(true);}}
                                                 />
@@ -316,7 +325,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                             <Grid2 alignContent={"center"} size={10}>Allow unlimited rate</Grid2>
                                             <Grid2 size={2}>
                                                 <Checkbox 
-                                                    disabled={isMarkedForDelete}
+                                                    disabled={disableInputs}
                                                     checked={tenantInput.allowUnlimitedRate === true}
                                                     onChange={(_, checked: boolean) => {
                                                         tenantInput.allowUnlimitedRate = checked;                                                         
@@ -335,7 +344,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                             <Grid2 alignContent={"center"} size={10}>Allow user self-registration</Grid2>
                                             <Grid2 size={2}>
                                                 <Checkbox 
-                                                    disabled={isMarkedForDelete}
+                                                    disabled={disableInputs}
                                                     checked={tenantInput.allowUserSelfRegistration === true}
                                                     onChange={(_, checked: boolean) => {tenantInput.allowUserSelfRegistration = checked; setTenantInput({...tenantInput}); setOverviewDirty(true);}}
                                                 />
@@ -343,7 +352,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                             <Grid2 alignContent={"center"} size={10}>Allow anonymous users</Grid2>
                                             <Grid2 size={2}>
                                                 <Checkbox 
-                                                    disabled={isMarkedForDelete}
+                                                    disabled={disableInputs}
                                                     checked={tenantInput.allowAnonymousUsers === true}
                                                     onChange={(_, checked: boolean) => {tenantInput.allowAnonymousUsers = checked; setTenantInput({...tenantInput}); setOverviewDirty(true);}}
                                                 />
@@ -351,7 +360,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                             <Grid2 alignContent={"center"} size={10}>Allow social login</Grid2>
                                             <Grid2 size={2}>
                                                 <Checkbox 
-                                                    disabled={isMarkedForDelete}
+                                                    disabled={disableInputs}
                                                     checked={tenantInput.allowSocialLogin === true}
                                                     onChange={(_, checked: boolean) => {tenantInput.allowSocialLogin = checked; setTenantInput({...tenantInput}); setOverviewDirty(true);}}
                                                 />
@@ -359,7 +368,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                             <Grid2 alignContent={"center"} size={10}>Verify email on registration</Grid2>
                                             <Grid2 size={2}>
                                                 <Checkbox 
-                                                    disabled={isMarkedForDelete}
+                                                    disabled={disableInputs}
                                                     checked={tenantInput.verifyEmailOnSelfRegistration === true}
                                                     onChange={(_, checked: boolean) => {tenantInput.verifyEmailOnSelfRegistration = checked; setTenantInput({...tenantInput}); setOverviewDirty(true);}}
                                                 />
@@ -367,7 +376,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                             <Grid2 alignContent={"center"} size={10}>Migrate legacy users</Grid2>
                                             <Grid2 size={2}>
                                                 <Checkbox 
-                                                    disabled={isMarkedForDelete}
+                                                    disabled={disableInputs}
                                                     checked={tenantInput.migrateLegacyUsers === true}
                                                     onChange={(_, checked: boolean) => {tenantInput.migrateLegacyUsers = checked; setTenantInput({...tenantInput}); setOverviewDirty(true);}}
                                                 />
@@ -375,7 +384,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                             <Grid2 alignContent={"center"} size={10}>Allow login by phone number</Grid2>
                                             <Grid2 size={2}>
                                                 <Checkbox 
-                                                    disabled={isMarkedForDelete}
+                                                    disabled={disableInputs}
                                                     checked={tenantInput.allowLoginByPhoneNumber === true}
                                                     onChange={(_, checked: boolean) => {tenantInput.allowLoginByPhoneNumber = checked; setTenantInput({...tenantInput}); setOverviewDirty(true);}}
                                                 />
@@ -383,7 +392,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                             <Grid2 alignContent={"center"} size={10}>Allow password recovery</Grid2>
                                             <Grid2 size={2}>
                                                 <Checkbox 
-                                                    disabled={isMarkedForDelete}
+                                                    disabled={disableInputs}
                                                     checked={tenantInput.allowForgotPassword === true}
                                                     onChange={(_, checked: boolean) => {tenantInput.allowForgotPassword = checked; setTenantInput({...tenantInput}); setOverviewDirty(true);}}
                                                 />
@@ -391,12 +400,12 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                             <Grid2 alignContent={"center"} size={10}>Require CAPTCHA on Registration</Grid2>
                                             <Grid2 size={2}>
                                                 <Checkbox 
-                                                    disabled={isMarkedForDelete}
+                                                    disabled={disableInputs}
                                                 />
                                             </Grid2>
                                         </Grid2>
                                     </Grid2>                                    
-                                </Grid2>
+                                </Grid2>                                
                                 <DetailSectionActionHandler
                                     onDiscardClickedHandler={() => {
                                         setTenantInput(initInput); 
@@ -407,7 +416,9 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                     }}
                                     markDirty={overviewDirty}
                                     disableSubmit={
-                                        tenantInput.allowUnlimitedRate === false && 
+                                        disableInputs || 
+                                        (
+                                            tenantInput.allowUnlimitedRate === false && 
                                             (
                                                 tenantInput.defaultRateLimit === undefined || 
                                                 tenantInput.defaultRateLimit === null || 
@@ -415,6 +426,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                                 totalRateUsed === null ||
                                                 tenantInput.defaultRateLimit < totalRateUsed
                                             )
+                                        )
                                     }
                                 />
                             </Paper>
@@ -445,6 +457,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                             onUpdateStart={() => {
                                                 setShowMutationBackdrop(true);                                            
                                             }}
+                                            readOnly={disableInputs}
                                         />
                                     </AccordionDetails>
                                 </Accordion>
@@ -475,6 +488,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                             onUpdateStart={() => {
                                                 setShowMutationBackdrop(true);                                            
                                             }}
+                                            readOnly={disableInputs}
                                         />
                                     </AccordionDetails>
                                 </Accordion>
@@ -507,6 +521,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                             onUpdateStart={() => {
                                                 setShowMutationBackdrop(true);                                            
                                             }}
+                                            readOnly={disableInputs}
                                         />
                                     </AccordionDetails>
                                 </Accordion>
@@ -539,110 +554,115 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                             onUpdateStart={() => {
                                                 setShowMutationBackdrop(true);                                            
                                             }}
+                                            readOnly={disableInputs}
                                         />
                                     </AccordionDetails>
                                 </Accordion>
                             }
                         </Grid2>
-
-                        <Grid2 size={12}>
-                            {!isMarkedForDelete &&
-                                <Accordion >
-                                    <AccordionSummary
-                                        expandIcon={<ExpandMoreIcon />}
-                                        id={"federated-oidc-providers"}
-                                        sx={{ fontWeight: "bold" }}
-                                    >
-                                        <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
-                                            <AutoAwesomeMosaicIcon /><div style={{marginLeft: "8px"}}>Federated OIDC Providers</div>
-                                        </div>
-                                        
-                                    </AccordionSummary>
-                                    <AccordionDetails>
-                                        <TenantFederatedOIDCProviderConfiguration
-                                            tenantId={tenant.tenantId}
-                                            onUpdateEnd={(success: boolean) => {
-                                                setShowMutationBackdrop(false);
-                                                if(success){
-                                                    setShowMutationSnackbar(true);
-                                                }
-                                            }}
-                                            onUpdateStart={() => {
-                                                setShowMutationBackdrop(true);                                            
-                                            }}
-                                            allowSocialLogin={tenant.allowSocialLogin}
-                                        />                                    
-                                    </AccordionDetails>
-                                </Accordion>
-                            }
-                        </Grid2>
+                        {tenantBean.getTenantMetaData().tenant.tenantType === TENANT_TYPE_ROOT_TENANT &&
+                            <Grid2 size={12}>
+                                {!isMarkedForDelete && 
+                                    <Accordion >
+                                        <AccordionSummary
+                                            expandIcon={<ExpandMoreIcon />}
+                                            id={"federated-oidc-providers"}
+                                            sx={{ fontWeight: "bold" }}
+                                        >
+                                            <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
+                                                <AutoAwesomeMosaicIcon /><div style={{marginLeft: "8px"}}>Federated OIDC Providers</div>
+                                            </div>
+                                            
+                                        </AccordionSummary>
+                                        <AccordionDetails>
+                                            <TenantFederatedOIDCProviderConfiguration
+                                                tenantId={tenant.tenantId}
+                                                onUpdateEnd={(success: boolean) => {
+                                                    setShowMutationBackdrop(false);
+                                                    if(success){
+                                                        setShowMutationSnackbar(true);
+                                                    }
+                                                }}
+                                                onUpdateStart={() => {
+                                                    setShowMutationBackdrop(true);                                            
+                                                }}
+                                                allowSocialLogin={tenant.allowSocialLogin}
+                                            />                                    
+                                        </AccordionDetails>
+                                    </Accordion>
+                                }
+                            </Grid2>
+                        }
                         
-                        <Grid2 size={12} >
-                            {!isMarkedForDelete &&
-                                <Accordion >
-                                    <AccordionSummary
-                                        expandIcon={<ExpandMoreIcon />}
-                                        id={"redirect-uri-configuration"}
-                                        sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center" }}
+                        {tenantBean.getTenantMetaData().tenant.tenantType === TENANT_TYPE_ROOT_TENANT &&
+                            <Grid2 size={12} >
+                                {!isMarkedForDelete && 
+                                    <Accordion >
+                                        <AccordionSummary
+                                            expandIcon={<ExpandMoreIcon />}
+                                            id={"redirect-uri-configuration"}
+                                            sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center" }}
 
-                                    >
-                                        <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-                                            <PolicyIcon /><div style={{ marginLeft: "8px" }}>Access Control</div>
-                                        </div>
-                                    </AccordionSummary>
-                                    <AccordionDetails>
-                                        <TenantScopeConfiguration 
-                                            tenantId={tenant.tenantId}
-                                            tenantType={tenant.tenantType}
-                                            onUpdateEnd={(success: boolean) => {
-                                                setShowMutationBackdrop(false);
-                                                if(success){
-                                                    setShowMutationSnackbar(true);
-                                                }
-                                            }}
-                                            onUpdateStart={() => {
-                                                setShowMutationBackdrop(true);                                            
-                                            }}
-                                        />
+                                        >
+                                            <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+                                                <PolicyIcon /><div style={{ marginLeft: "8px" }}>Access Control</div>
+                                            </div>
+                                        </AccordionSummary>
+                                        <AccordionDetails>
+                                            <TenantScopeConfiguration 
+                                                tenantId={tenant.tenantId}
+                                                tenantType={tenant.tenantType}
+                                                onUpdateEnd={(success: boolean) => {
+                                                    setShowMutationBackdrop(false);
+                                                    if(success){
+                                                        setShowMutationSnackbar(true);
+                                                    }
+                                                }}
+                                                onUpdateStart={() => {
+                                                    setShowMutationBackdrop(true);                                            
+                                                }}
+                                            />
 
-                                    </AccordionDetails>
-                                </Accordion>
-                            }
-                        </Grid2>
+                                        </AccordionDetails>
+                                    </Accordion>
+                                }
+                            </Grid2>
+                        }
+                        {tenantBean.getTenantMetaData().tenant.tenantType === TENANT_TYPE_ROOT_TENANT &&
+                            <Grid2 size={12} >
+                                {!isMarkedForDelete && 
+                                    <Accordion >
+                                        <AccordionSummary
+                                            expandIcon={<ExpandMoreIcon />}
+                                            id={"redirect-uri-configuration"}
+                                            sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center" }}
 
-                        <Grid2 size={12} >
-                            {!isMarkedForDelete &&
-                                <Accordion >
-                                    <AccordionSummary
-                                        expandIcon={<ExpandMoreIcon />}
-                                        id={"redirect-uri-configuration"}
-                                        sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center" }}
-
-                                    >
-                                        <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-                                            <SpeedIcon /><div style={{ marginLeft: "8px" }}>Rate Limits</div>
-                                        </div>
-                                    </AccordionSummary>
-                                    <AccordionDetails>
-                                        <TenantRateLimitConfiguration 
-                                            tenantId={tenant.tenantId}
-                                            rateLimitSummaryHandler={(totalUsed: number) => {
-                                                setTotalRateUsed(totalUsed);
-                                            }}
-                                            onUpdateEnd={(success: boolean) => {
-                                                setShowMutationBackdrop(false);
-                                                if(success){
-                                                    setShowMutationSnackbar(true);
-                                                }
-                                            }}
-                                            onUpdateStart={() => {
-                                                setShowMutationBackdrop(true);                                            
-                                            }}
-                                        />
-                                    </AccordionDetails>
-                                </Accordion>
-                            }
-                        </Grid2>
+                                        >
+                                            <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+                                                <SpeedIcon /><div style={{ marginLeft: "8px" }}>Rate Limits</div>
+                                            </div>
+                                        </AccordionSummary>
+                                        <AccordionDetails>
+                                            <TenantRateLimitConfiguration 
+                                                tenantId={tenant.tenantId}
+                                                rateLimitSummaryHandler={(totalUsed: number) => {
+                                                    setTotalRateUsed(totalUsed);
+                                                }}
+                                                onUpdateEnd={(success: boolean) => {
+                                                    setShowMutationBackdrop(false);
+                                                    if(success){
+                                                        setShowMutationSnackbar(true);
+                                                    }
+                                                }}
+                                                onUpdateStart={() => {
+                                                    setShowMutationBackdrop(true);                                            
+                                                }}
+                                            />
+                                        </AccordionDetails>
+                                    </Accordion>
+                                }
+                            </Grid2>
+                        }
 
                         <Grid2 size={12}>
                             {!isMarkedForDelete &&
@@ -669,6 +689,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                             onUpdateStart={() => {
                                                 setShowMutationBackdrop(true);                                            
                                             }}
+                                            readOnly={disableInputs}
                                         />                                    
                                     </AccordionDetails>
                                 </Accordion>
@@ -694,7 +715,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                     onUpdateStart={() => {
                                         setShowMutationBackdrop(true);                                            
                                     }}
-                                    readOnly={!isMarkedForDelete}
+                                    readOnly={isMarkedForDelete || !containsScope(TENANT_UPDATE_SCOPE, profile?.scope || [])}
                                 />
                             </Paper>
                         </Grid2>
@@ -714,6 +735,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                         onUpdateStart={() => {
                                             setShowMutationBackdrop(true);                                            
                                         }}
+                                        readOnly={isMarkedForDelete || !containsScope(TENANT_UPDATE_SCOPE, profile?.scope || [])}
                                     />
                                 </Paper>
                             }
@@ -734,6 +756,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                         onUpdateStart={() => {
                                             setShowMutationBackdrop(true);                                            
                                         }}
+                                        readOnly={isMarkedForDelete || !containsScope(TENANT_UPDATE_SCOPE, profile?.scope || [])}
                                     />
                                 </Paper>
                             }

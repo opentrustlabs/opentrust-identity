@@ -4,8 +4,6 @@ import { useSearchParams } from 'next/navigation';
 import { TenantContext, TenantMetaDataBean } from "@/components/contexts/tenant-context";
 import { TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import TenantDetail from "@/components/tenants/tenant-detail";
-import SigningKeyList from "@/components/signing-keys/signing-key-list";
-import ScopeList from "@/components/scope/scope-list";
 import SearchResultListLayout from "@/components/layout/search-result-list-layout";
 import { SearchResultType } from "@/graphql/generated/graphql-types";
 

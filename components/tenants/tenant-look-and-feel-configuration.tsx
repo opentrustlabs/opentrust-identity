@@ -20,14 +20,16 @@ import DetailSectionActionHandler from "../layout/detail-section-action-handler"
 
 export interface TenantLookAndFeelProps {
     tenantId: string,
-    onUpdateStart: () => void;
-    onUpdateEnd: (success: boolean) => void;
+    onUpdateStart: () => void,
+    onUpdateEnd: (success: boolean) => void,
+    readOnly: boolean
 }
 
 const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
     tenantId,
     onUpdateEnd,
-    onUpdateStart
+    onUpdateStart,
+    readOnly
 }) => {
 
     let initInput: TenantLookAndFeelInput = {
@@ -198,14 +200,17 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
                     <div>Background Color</div>
                     <Grid2  container spacing={2} size={12}>
                         <Grid2  size={11}>
-                            <TextField name="backgroundColor" id="backgroundColor"                        
+                            <TextField name="backgroundColor" id="backgroundColor"
+                                disabled={readOnly}
                                 value={tenantLookAndFeelInput.authenticationheaderbackgroundcolor || ""}
                                 onChange={(evt) => { tenantLookAndFeelInput.authenticationheaderbackgroundcolor = evt.target.value; setTenantLookAndFeelInput({ ...tenantLookAndFeelInput }); setMarkDirty(true); }}
                                 fullWidth={true} size="small"
                             />
                         </Grid2>
                         <Grid2 size={1}>
-                            <ColorizeIcon onClick={() => setBackgroundColorPickerOpen(true)} sx={{cursor: "pointer"}} />
+                            {!readOnly &&
+                                <ColorizeIcon onClick={() => setBackgroundColorPickerOpen(true)} sx={{cursor: "pointer"}} />
+                            }
                         </Grid2>
                     </Grid2>
                 </Grid2>
@@ -213,24 +218,27 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
                     <div>Text Color</div>
                     <Grid2 container spacing={2} size={12}>
                         <Grid2 size={11}>
-                            <TextField name="textColor" id="textColor"                        
+                            <TextField name="textColor" id="textColor"
+                                disabled={readOnly}
                                 value={tenantLookAndFeelInput.authenticationheadertextcolor || ""}
                                 onChange={(evt) => { tenantLookAndFeelInput.authenticationheadertextcolor = evt.target.value; setTenantLookAndFeelInput({ ...tenantLookAndFeelInput }); setMarkDirty(true); }}
                                 fullWidth={true} size="small"
                             />
                         </Grid2>
                         <Grid2 size={1}>
-                            <ColorizeIcon 
-                                sx={{cursor: "pointer"}} 
-                                onClick={() => {setTextColorPickerOpen(true)}}
-                            
-                            />
+                            {!readOnly &&
+                                <ColorizeIcon 
+                                    sx={{cursor: "pointer"}} 
+                                    onClick={() => {setTextColorPickerOpen(true)}}                                
+                                />
+                            }
                         </Grid2>
                     </Grid2>
                 </Grid2>
                 <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
                     <div>Header Text</div>                    
-                    <TextField name="headerText" id="headerText"                        
+                    <TextField name="headerText" id="headerText"
+                        disabled={readOnly}
                         value={tenantLookAndFeelInput.authenticationheadertext || ""}
                         onChange={(evt) => { tenantLookAndFeelInput.authenticationheadertext = evt.target.value; setTenantLookAndFeelInput({ ...tenantLookAndFeelInput }); setMarkDirty(true); }}
                         fullWidth={true} size="small"
@@ -238,18 +246,22 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
                 </Grid2>
                 
                 <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >    
-                    <Grid2 container size={12}>
-                        <Grid2 size={11}>Logo (svg)</Grid2>
-                        <Grid2 size={1}>
-                            <DeleteForeverOutlinedIcon 
-                                sx={{cursor: "pointer"}}
-                                onClick={() => {tenantLookAndFeelInput.authenticationlogo = ""; setTenantLookAndFeelInput({ ...tenantLookAndFeelInput }); setMarkDirty(true); }}
-                            />
-                        </Grid2>
-                    </Grid2>
-                    <Grid2 size={12} paddingTop={"8px"}>
-                        <input type="file" accept="image/svg+xml, .svg" id="logoFile" onChange={(evt) => handleTemporaryFileUpload(evt)} />                            
-                    </Grid2>
+                    {!readOnly &&
+                        <React.Fragment>
+                            <Grid2 container size={12}>
+                                <Grid2 size={11}>Logo (svg)</Grid2>
+                                <Grid2 size={1}>
+                                    <DeleteForeverOutlinedIcon 
+                                        sx={{cursor: "pointer"}}
+                                        onClick={() => {tenantLookAndFeelInput.authenticationlogo = ""; setTenantLookAndFeelInput({ ...tenantLookAndFeelInput }); setMarkDirty(true); }}
+                                    />
+                                </Grid2>
+                            </Grid2>
+                            <Grid2 size={12} paddingTop={"8px"}>
+                                <input type="file" accept="image/svg+xml, .svg" id="logoFile" onChange={(evt) => handleTemporaryFileUpload(evt)} />                            
+                            </Grid2>
+                        </React.Fragment>
+                    }
                 </Grid2>
             </Grid2>
             <DetailSectionActionHandler

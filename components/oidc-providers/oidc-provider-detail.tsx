@@ -1,9 +1,9 @@
 "use client";
-import { FederatedOidcProvider, FederatedOidcProviderUpdateInput, MarkForDeleteObjectType, SecretObjectType } from "@/graphql/generated/graphql-types";
+import { FederatedOidcProvider, FederatedOidcProviderUpdateInput, MarkForDeleteObjectType, SecretObjectType, PortalUserProfile } from "@/graphql/generated/graphql-types";
 import Typography from "@mui/material/Typography";
 import React, { useContext } from "react";
 import BreadcrumbComponent from "../breadcrumbs/breadcrumbs";
-import { FEDERATED_OIDC_PROVIDER_TYPE_ENTERPRISE, FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL, FEDERATED_OIDC_PROVIDER_TYPES_DISPLAY, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_BASIC, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_JWT, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_POST, OIDC_CLIENT_AUTH_TYPE_DISPLAY, OIDC_CLIENT_AUTH_TYPE_NONE, OIDC_EMAIL_SCOPE, OIDC_OFFLINE_ACCESS_SCOPE, OIDC_OPENID_SCOPE, OIDC_PROFILE_SCOPE, SOCIAL_OIDC_PROVIDERS, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
+import { FEDERATED_OIDC_PROVIDER_DELETE_SCOPE, FEDERATED_OIDC_PROVIDER_SECRET_VIEW_SCOPE, FEDERATED_OIDC_PROVIDER_TYPE_ENTERPRISE, FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL, FEDERATED_OIDC_PROVIDER_TYPES_DISPLAY, FEDERATED_OIDC_PROVIDER_UPDATE_SCOPE, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_BASIC, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_JWT, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_POST, OIDC_CLIENT_AUTH_TYPE_DISPLAY, OIDC_CLIENT_AUTH_TYPE_NONE, OIDC_EMAIL_SCOPE, OIDC_OFFLINE_ACCESS_SCOPE, OIDC_OPENID_SCOPE, OIDC_PROFILE_SCOPE, SOCIAL_OIDC_PROVIDERS, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
 import { DetailPageContainer, DetailPageMainContentContainer, DetailPageRightNavContainer } from "../layout/detail-page-container";
 import Grid2 from "@mui/material/Grid2";
@@ -29,6 +29,8 @@ import SecretViewerDialog from "../dialogs/secret-viewer-dialog";
 import DetailSectionActionHandler from "../layout/detail-section-action-handler";
 import SubmitMarkForDelete from "../deletion/submit-mark-for-delete";
 import MarkForDeleteAlert from "../deletion/mark-for-delete-alert";
+import { AuthContext, AuthContextProps } from "../contexts/auth-context";
+import { containsScope } from "@/utils/authz-utils";
 
 export interface FederatedOIDCProviderDetailProps {
     federatedOIDCProvider: FederatedOidcProvider
@@ -39,6 +41,8 @@ const FederatedOIDCProviderDetail: React.FC<FederatedOIDCProviderDetailProps> = 
     // CONTEXT VARIABLES
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
     const { copyContentToClipboard } = useClipboardCopyContext();
+    const authContextProps: AuthContextProps = useContext(AuthContext);
+    const profile: PortalUserProfile | null = authContextProps.portalUserProfile;
 
     // STATE VARIABLES
     let initInput: FederatedOidcProviderUpdateInput = {
@@ -63,6 +67,9 @@ const FederatedOIDCProviderDetail: React.FC<FederatedOIDCProviderDetailProps> = 
     const [changeClientSecret, setChangeClientSecret] = React.useState<boolean>(false);
     const [secretDialogOpen, setSecretDialogOpen] = React.useState<boolean>(false);
     const [isMarkedForDelete, setIsMarkedForDelete] = React.useState<boolean>(federatedOIDCProvider.markForDelete);
+    const [disableInputs] = React.useState<boolean>(federatedOIDCProvider.markForDelete || !containsScope(FEDERATED_OIDC_PROVIDER_UPDATE_SCOPE, profile?.scope || []));
+    const [canViewSecret] = React.useState<boolean>(containsScope(FEDERATED_OIDC_PROVIDER_SECRET_VIEW_SCOPE, profile?.scope || []));
+    const [canDeleteProvider] = React.useState<boolean>(containsScope(FEDERATED_OIDC_PROVIDER_DELETE_SCOPE, profile?.scope || []));
     
     // GRAPHQL FUNCTIONS
     const [oidcProviderUpdateMutation] = useMutation(FEDERATED_OIDC_PROVIDER_UPDATE_MUTATION, {
@@ -115,7 +122,7 @@ const FederatedOIDCProviderDetail: React.FC<FederatedOIDCProviderDetailProps> = 
                         <Grid2 className="detail-page-subheader" alignItems={"center"} sx={{ backgroundColor: "#1976d2", color: "white", padding: "8px", borderRadius: "2px" }} container size={12}>
                             <Grid2 size={11}>Overview</Grid2>
                             <Grid2 size={1} display={"flex"} >
-                                {isMarkedForDelete !== true && 
+                                {isMarkedForDelete !== true && canDeleteProvider &&
                                     <SubmitMarkForDelete 
                                         objectId={federatedOIDCProvider.federatedOIDCProviderId}
                                         objectType={MarkForDeleteObjectType.FederatedOidcProvider}
@@ -153,7 +160,7 @@ const FederatedOIDCProviderDetail: React.FC<FederatedOIDCProviderDetailProps> = 
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Provider Name</div>
                                             <TextField
-                                                disabled={isMarkedForDelete}
+                                                disabled={disableInputs}
                                                 required name="providerName" id="providerName"
                                                 onChange={(evt) => { oidcProviderInput.federatedOIDCProviderName = evt?.target.value; setOIDCProviderInput({ ...oidcProviderInput }); setMarkDirty(true); }}
                                                 value={oidcProviderInput.federatedOIDCProviderName}
@@ -163,7 +170,7 @@ const FederatedOIDCProviderDetail: React.FC<FederatedOIDCProviderDetailProps> = 
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Provider Description</div>
                                             <TextField
-                                                disabled={isMarkedForDelete}
+                                                disabled={disableInputs}
                                                 name="providerDescription" id="providerDescription"
                                                 value={oidcProviderInput.federatedOIDCProviderDescription}
                                                 fullWidth={true}
@@ -214,7 +221,7 @@ const FederatedOIDCProviderDetail: React.FC<FederatedOIDCProviderDetailProps> = 
                                             <Grid2 marginBottom={"16px"}>
                                                 <div>Social Provider (Requires an account with the provider)</div>
                                                 <Autocomplete
-                                                    disabled={isMarkedForDelete}
+                                                    disabled={disableInputs}
                                                     id="socialLoginProvider"
                                                     size="small"
                                                     options={SOCIAL_OIDC_PROVIDERS}
@@ -232,7 +239,7 @@ const FederatedOIDCProviderDetail: React.FC<FederatedOIDCProviderDetailProps> = 
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Provider Client ID</div>
                                             <TextField name="clientId" id="clientId"
-                                                disabled={isMarkedForDelete}
+                                                disabled={disableInputs}
                                                 value={oidcProviderInput.federatedOIDCProviderClientId || ""}
                                                 onChange={(evt) => { oidcProviderInput.federatedOIDCProviderClientId = evt.target.value; setOIDCProviderInput({ ...oidcProviderInput }); setMarkDirty(true); }}
                                                 fullWidth={true} size="small" />
@@ -243,7 +250,7 @@ const FederatedOIDCProviderDetail: React.FC<FederatedOIDCProviderDetailProps> = 
                                                 {changeClientSecret === true &&
                                                     <Grid2 size={12}>
                                                         <TextField type="password" name="clientSecret" id="clientSecret"
-                                                            disabled={isMarkedForDelete}
+                                                            disabled={disableInputs}
                                                             value={oidcProviderInput.federatedOIDCProviderClientSecret}
                                                             onChange={(evt) => { 
                                                                 oidcProviderInput.federatedOIDCProviderClientSecret = evt.target.value; 
@@ -277,7 +284,7 @@ const FederatedOIDCProviderDetail: React.FC<FederatedOIDCProviderDetailProps> = 
                                                         </Grid2>
                                                         
                                                         <Grid2 size={1}>
-                                                            {!isMarkedForDelete &&
+                                                            {!disableInputs &&
                                                                 <EditOutlinedIcon
                                                                     sx={{cursor: "pointer"}}
                                                                     onClick={() => {
@@ -287,15 +294,15 @@ const FederatedOIDCProviderDetail: React.FC<FederatedOIDCProviderDetailProps> = 
                                                             }
                                                         </Grid2>
                                                         <Grid2 size={1}>
-                                                            <VisibilityOutlinedIcon 
-                                                                sx={{cursor: "pointer"}}
-                                                                onClick={() => setSecretDialogOpen(true)}
-                                                            />
+                                                            {canViewSecret &&
+                                                                <VisibilityOutlinedIcon 
+                                                                    sx={{cursor: "pointer"}}
+                                                                    onClick={() => setSecretDialogOpen(true)}
+                                                                />
+                                                            }
                                                         </Grid2>
-                                                    </>
-                                                        
-                                                }                                                
-                                                
+                                                    </> 
+                                                }
                                             </Grid2>
                                         </Grid2>
                                     </Grid2>
@@ -303,7 +310,7 @@ const FederatedOIDCProviderDetail: React.FC<FederatedOIDCProviderDetailProps> = 
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Well Known URI</div>
                                             <TextField name="providerWellKnownUri" id="providerWellKnownUri"
-                                                disabled={isMarkedForDelete}
+                                                disabled={disableInputs}
                                                 value={oidcProviderInput.federatedOIDCProviderWellKnownUri}
                                                 onChange={(evt) => { oidcProviderInput.federatedOIDCProviderWellKnownUri = evt.target.value; setOIDCProviderInput({ ...oidcProviderInput }); setMarkDirty(true); }}
                                                 fullWidth={true} size="small" />
@@ -311,7 +318,7 @@ const FederatedOIDCProviderDetail: React.FC<FederatedOIDCProviderDetailProps> = 
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Authentication Type</div>
                                             <Select
-                                                disabled={isMarkedForDelete}
+                                                disabled={disableInputs}
                                                 size="small"
                                                 fullWidth={true}
                                                 value={oidcProviderInput.clientAuthType}
@@ -327,7 +334,7 @@ const FederatedOIDCProviderDetail: React.FC<FederatedOIDCProviderDetailProps> = 
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Scope</div>
                                             <Autocomplete
-                                                disabled={isMarkedForDelete}
+                                                disabled={disableInputs}
                                                 id="scopes"
                                                 multiple={true}
                                                 size="small"
@@ -360,7 +367,7 @@ const FederatedOIDCProviderDetail: React.FC<FederatedOIDCProviderDetailProps> = 
                                                 <Grid2 alignContent={"center"} size={10}>Use PKCE</Grid2>
                                                 <Grid2 size={2}>
                                                     <Checkbox
-                                                        disabled={isMarkedForDelete}
+                                                        disabled={disableInputs}
                                                         checked={oidcProviderInput.usePkce}
                                                         onChange={(_, checked: boolean) => {
                                                             oidcProviderInput.usePkce = checked;
@@ -375,7 +382,7 @@ const FederatedOIDCProviderDetail: React.FC<FederatedOIDCProviderDetailProps> = 
                                                 <Grid2 alignContent={"center"} size={10}>Refresh Token Allowed</Grid2>
                                                 <Grid2 size={2}>
                                                     <Checkbox
-                                                        disabled={isMarkedForDelete}
+                                                        disabled={disableInputs}
                                                         id="refreshTokensAllowed"
                                                         checked={oidcProviderInput.refreshTokenAllowed}
                                                         onChange={(_, checked: boolean) => {
@@ -429,6 +436,7 @@ const FederatedOIDCProviderDetail: React.FC<FederatedOIDCProviderDetailProps> = 
                                             onUpdateStart={() =>{
                                                 setShowMutationBackdrop(true);
                                             }}
+                                            readOnly={disableInputs}
                                         />
                                     </AccordionDetails>
                                 </Accordion>
@@ -460,8 +468,7 @@ const FederatedOIDCProviderDetail: React.FC<FederatedOIDCProviderDetailProps> = 
                                             onUpdateStart={() =>{
                                                 setShowMutationBackdrop(true);
                                             }}
-                                        />
-                                        
+                                        />                                        
                                     </AccordionDetails>
                                 </Accordion>
                             }

@@ -17,10 +17,17 @@ class DBFederatedOIDCProviderDao extends FederatedOIDCProviderDao {
              await sequelize.models.federatedOidcProvider.findAll({
                 where: {
                     federatedOIDCProviderId: {[Op.in] : b.map(e => e.federatedOIDCProviderId)}
-                }
+                },
+                order: [
+                    ["federatedOIDCProviderName", "ASC"]
+                ]
              }) 
              :
-             await sequelize.models.federatedOidcProvider.findAll();
+             await sequelize.models.federatedOidcProvider.findAll({
+                order: [
+                    ["federatedOIDCProviderName", "ASC"]
+                ]
+             });
              ;
        
         const providers: Array<FederatedOidcProvider> = t.map(

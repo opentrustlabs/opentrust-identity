@@ -21,13 +21,15 @@ import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
 export interface FederatedOIDCProviderDomainConfigurationProps {
     federatedOIDCProviderId: string,
     onUpdateStart: () => void,
-    onUpdateEnd: (success: boolean) => void
+    onUpdateEnd: (success: boolean) => void,
+    readOnly: boolean
 }
 
 const FederatedOIDCProviderDomainConfiguration: React.FC<FederatedOIDCProviderDomainConfigurationProps> = ({
     federatedOIDCProviderId,
     onUpdateEnd,
-    onUpdateStart
+    onUpdateStart,
+    readOnly
 }) => {
 
     // CONTEXT VARIABLES
@@ -228,17 +230,21 @@ const FederatedOIDCProviderDomainConfiguration: React.FC<FederatedOIDCProviderDo
                     </DialogActions>
                 </Dialog>
             }
-            <Grid2 marginBottom={"16px"} marginTop={"16px"} spacing={2} container size={12}>
-                <Grid2 size={12} display={"inline-flex"} alignItems="center" alignContent={"center"}>
-                    <AddBoxIcon
-                        sx={{cursor: "pointer"}}
-                        onClick={() => setShowAddDialog(true)}
-                    />
-                    <div style={{marginLeft: "8px", fontWeight: "bold"}}>Add Domain</div>
-                </Grid2>
-                
-            </Grid2>
-            <Divider />
+            {!readOnly &&
+                <React.Fragment>
+                    <Grid2 marginBottom={"16px"} marginTop={"16px"} spacing={2} container size={12}>
+                        <Grid2 size={12} display={"inline-flex"} alignItems="center" alignContent={"center"}>
+                            <AddBoxIcon
+                                sx={{cursor: "pointer"}}
+                                onClick={() => setShowAddDialog(true)}
+                            />
+                            <div style={{marginLeft: "8px", fontWeight: "bold"}}>Add Domain</div>
+                        </Grid2>
+                        
+                    </Grid2>
+                    <Divider />
+                </React.Fragment>
+            }
             {data.getFederatedOIDCProviderDomainRels.length === 0 &&
                 <Grid2 marginTop={"16px"}  spacing={2} container size={12} textAlign={"center"} >    
                     <Grid2 margin={"8px 0px 8px 0px"} textAlign={"center"} size={12} spacing={1}>
@@ -255,21 +261,21 @@ const FederatedOIDCProviderDomainConfiguration: React.FC<FederatedOIDCProviderDo
                                 <Grid2 size={11}>
                                     {domainRel.domain}                                    
                                 </Grid2>
-                                <Grid2 size={1}>
-                                    <RemoveCircleOutlineIcon
-                                        sx={{cursor: "pointer"}}
-                                        onClick={() => {setDomainToRemove(domainRel.domain); setShowRemoveDialog(true);}}
-                                    />
+                                <Grid2 minHeight={"26px"} size={1}>
+                                    {!readOnly &&
+                                        <RemoveCircleOutlineIcon
+                                            sx={{cursor: "pointer"}}
+                                            onClick={() => {setDomainToRemove(domainRel.domain); setShowRemoveDialog(true);}}
+                                        />
+                                    }
                                 </Grid2>                                
                             </React.Fragment>
                         )
                     )}
                 </Grid2>
-            }   
-
+            }
         </Typography>
     )
-
 }
 
 export default FederatedOIDCProviderDomainConfiguration;

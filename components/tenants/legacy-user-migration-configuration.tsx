@@ -16,15 +16,17 @@ import Typography from "@mui/material/Typography";
 export interface LegacyUserMigrationConfigurationProps {
     tenantId: string,
     allowLegacyUserMigration: boolean,
-    onUpdateStart: () => void;
-    onUpdateEnd: (success: boolean) => void;
+    onUpdateStart: () => void,
+    onUpdateEnd: (success: boolean) => void,
+    readOnly: boolean
 }
 
 const LegacyUserMigrationConfiguration: React.FC<LegacyUserMigrationConfigurationProps> = ({
     tenantId,
     allowLegacyUserMigration,
     onUpdateEnd,
-    onUpdateStart
+    onUpdateStart,
+    readOnly
 }) => {
 
     let initInput: TenantLegacyUserMigrationConfigInput = {
@@ -96,7 +98,7 @@ const LegacyUserMigrationConfiguration: React.FC<LegacyUserMigrationConfiguratio
                         <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
                             <div>Authentication URI</div>
                             <TextField name="authenticationUri" id="authenticationUri"
-                                disabled={allowLegacyUserMigration !== true}
+                                disabled={readOnly || allowLegacyUserMigration !== true}
                                 value={allowLegacyUserMigration ? tenantLegacyUserMigrationConfigInput.authenticationUri : ""}
                                 onChange={(evt) => { tenantLegacyUserMigrationConfigInput.authenticationUri = evt.target.value; setTenantLegacyUserMigrationConfigInput({ ...tenantLegacyUserMigrationConfigInput }); setMarkDirty(true); }}
                                 fullWidth={true} size="small"
@@ -105,7 +107,7 @@ const LegacyUserMigrationConfiguration: React.FC<LegacyUserMigrationConfiguratio
                         <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
                             <div>User Profile URI</div>
                             <TextField name="userProfileUri" id="userProfileUri"
-                                disabled={allowLegacyUserMigration !== true}
+                                disabled={readOnly || allowLegacyUserMigration !== true}
                                 value={allowLegacyUserMigration ? tenantLegacyUserMigrationConfigInput.userProfileUri : ""}
                                 onChange={(evt) => { tenantLegacyUserMigrationConfigInput.userProfileUri = evt.target.value; setTenantLegacyUserMigrationConfigInput({ ...tenantLegacyUserMigrationConfigInput }); setMarkDirty(true); }}
                                 fullWidth={true} size="small"
@@ -114,7 +116,7 @@ const LegacyUserMigrationConfiguration: React.FC<LegacyUserMigrationConfiguratio
                         <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
                             <div>User Name-Check URI</div>
                             <TextField name="namecheckUri" id="namecheckUri"
-                                disabled={allowLegacyUserMigration !== true}
+                                disabled={readOnly || allowLegacyUserMigration !== true}
                                 value={allowLegacyUserMigration ? tenantLegacyUserMigrationConfigInput.usernameCheckUri : ""}
                                 onChange={(evt) => { tenantLegacyUserMigrationConfigInput.usernameCheckUri = evt.target.value; setTenantLegacyUserMigrationConfigInput({ ...tenantLegacyUserMigrationConfigInput }); setMarkDirty(true); }}
                                 fullWidth={true} size="small"

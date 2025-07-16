@@ -124,15 +124,17 @@ const RelationshipConfigurationComponent: React.FC<RelationshipConfigurationComp
 
     return (
         <Typography component="div">
-            <Grid2 marginBottom={"16px"} marginTop={"16px"} spacing={2} container size={12}>
-                <Grid2 size={12} display={"inline-flex"} alignItems="center" alignContent={"center"}>
-                    <AddBoxIcon
-                        sx={{ cursor: "pointer" }}
-                        onClick={() => setShowAddDialog(true)}
-                    />
-                    <div style={{ marginLeft: "8px", fontWeight: "bold" }}>{addObjectText}</div>                    
+            {canAdd &&
+                <Grid2 marginBottom={"16px"} marginTop={"16px"} spacing={2} container size={12}>
+                    <Grid2 size={12} display={"inline-flex"} alignItems="center" alignContent={"center"}>
+                        <AddBoxIcon
+                            sx={{ cursor: "pointer" }}
+                            onClick={() => setShowAddDialog(true)}
+                        />
+                        <div style={{ marginLeft: "8px", fontWeight: "bold" }}>{addObjectText}</div>                    
+                    </Grid2>
                 </Grid2>
-            </Grid2>
+            }
             <Stack spacing={1} justifyContent={"space-between"} direction={"row"} fontWeight={"bold"} margin={"24px 0px 24px 0px"}>
                 <div style={{ display: "inline-flex", alignItems: "center" }}>
                     <TextField
@@ -269,6 +271,7 @@ const RelationshipConfigurationComponent: React.FC<RelationshipConfigurationComp
                         setShowRemoveDialog(true);
                     }}
                     nameFormatter={relSearchInput.childtype === SearchResultType.User ? usernameFormatter : undefined}
+                    canDelete={canDelete}
                 />
             }
             {data &&
@@ -280,6 +283,7 @@ const RelationshipConfigurationComponent: React.FC<RelationshipConfigurationComp
                         setShowRemoveDialog(true);
                     }}
                     nameFormatter={relSearchInput.childtype === SearchResultType.User ? usernameFormatter : undefined}
+                    canDelete={canDelete}
                 />
             }
             {loading && previousData &&
@@ -526,13 +530,15 @@ interface RelListProps {
     relSearchResults: RelSearchResults,
     noObjectsFoundText: string,
     removeRelAction: (id: string) => void,
-    nameFormatter?: (name: string) => string
+    nameFormatter?: (name: string) => string,
+    canDelete: boolean
 }
 const RelList: React.FC<RelListProps> = ({
     relSearchResults,
     noObjectsFoundText,
     removeRelAction,
-    nameFormatter
+    nameFormatter,
+    canDelete
 }) => {
 
     return (
@@ -552,11 +558,13 @@ const RelList: React.FC<RelListProps> = ({
                                     <Grid2 size={11}>
                                         { nameFormatter ? nameFormatter(item.childname) : item.childname}
                                     </Grid2>
-                                    <Grid2 size={1}>
-                                        <RemoveCircleOutlineIcon
-                                            sx={{ cursor: "pointer" }}
-                                            onClick={() => removeRelAction(item.childid)}
-                                        />
+                                    <Grid2 minHeight={"26px"} size={1}>
+                                        {canDelete &&
+                                            <RemoveCircleOutlineIcon
+                                                sx={{ cursor: "pointer" }}
+                                                onClick={() => removeRelAction(item.childid)}
+                                            />
+                                        }
                                     </Grid2>
                                     <Grid2 size={12}><Divider /></Grid2>
                                 </React.Fragment>

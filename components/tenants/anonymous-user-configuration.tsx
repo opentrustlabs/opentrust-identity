@@ -19,15 +19,17 @@ import DetailSectionActionHandler from "../layout/detail-section-action-handler"
 export interface AnonymousUserConfigurationProps {
     tenant: Tenant,
     allowAnonymousUsers: boolean,
-    onUpdateStart: () => void;
-    onUpdateEnd: (success: boolean) => void;
+    onUpdateStart: () => void,
+    onUpdateEnd: (success: boolean) => void,
+    readOnly: boolean
 }
 
 const AnonymousUserConfiguration: React.FC<AnonymousUserConfigurationProps> = ({
     tenant,
     allowAnonymousUsers,
     onUpdateEnd,
-    onUpdateStart
+    onUpdateStart,
+    readOnly
 }) => {
 
     let initInput: TenantAnonymousUserConfigInput = {
@@ -101,7 +103,7 @@ const AnonymousUserConfiguration: React.FC<AnonymousUserConfigurationProps> = ({
                             <div>Default Country</div>
                             <Autocomplete
                                 id="defaultCountry"
-                                disabled={allowAnonymousUsers !== true}
+                                disabled={readOnly || allowAnonymousUsers !== true}
                                 sx={{ paddingTop: "8px" }}
                                 size="small"
                                 renderInput={(params) => <TextField {...params} label="" />}
@@ -124,7 +126,7 @@ const AnonymousUserConfiguration: React.FC<AnonymousUserConfigurationProps> = ({
                             <div>Default Language</div>
                             <Autocomplete
                                 id="defaultLanguage"
-                                disabled={allowAnonymousUsers !== true}
+                                disabled={readOnly || allowAnonymousUsers !== true}
                                 sx={{ paddingTop: "8px" }}
                                 size="small"
                                 renderInput={(params) => <TextField {...params} label="" />}
@@ -147,7 +149,7 @@ const AnonymousUserConfiguration: React.FC<AnonymousUserConfigurationProps> = ({
                             <div>Token Time-To-Live (in seconds)</div>
                             <TextField name="tokenTTLSeconds" id="tokenTTLSeconds"
                                 type="number"
-                                disabled={allowAnonymousUsers !== true}
+                                disabled={readOnly || allowAnonymousUsers !== true}
                                 value={allowAnonymousUsers !== true ? "" : tenantAnonymousUserConfigInput.tokenttlseconds > 0 ? tenantAnonymousUserConfigInput.tokenttlseconds : ""}
                                 onChange={(evt) => { tenantAnonymousUserConfigInput.tokenttlseconds = parseInt(evt.target.value || "0"); setTenantAnonymousUserConfigInput({ ...tenantAnonymousUserConfigInput }); setMarkDirty(true); }}
                                 fullWidth={true} size="small"

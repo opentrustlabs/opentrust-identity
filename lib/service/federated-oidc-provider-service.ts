@@ -1,6 +1,5 @@
 import { FederatedOidcProvider, FederatedOidcProviderDomainRel, FederatedOidcProviderTenantRel, ObjectSearchResultItem, RelSearchResultItem, SearchResultType, Tenant } from "@/graphql/generated/graphql-types";
 import { OIDCContext } from "@/graphql/graphql-context";
-
 import FederatedOIDCProviderDao from "@/lib/dao/federated-oidc-provider-dao";
 import { GraphQLError } from "graphql/error/GraphQLError";
 import { randomUUID } from 'crypto'; 
@@ -10,7 +9,7 @@ import { getOpenSearchClient } from "@/lib/data-sources/search";
 import { DaoFactory } from "../data-sources/dao-factory";
 import Kms from "../kms/kms";
 import { authorizeByScopeAndTenant, ServiceAuthorizationWrapper } from "@/utils/authz-utils";
-import { error } from "console";
+
 
 const searchClient: Client = getOpenSearchClient();
 const federatedOIDCProviderDao: FederatedOIDCProviderDao = DaoFactory.getInstance().getFederatedOIDCProvicerDao();
@@ -213,10 +212,16 @@ class FederatedOIDCProviderService {
     }
 
     protected async removeRelSearchRecord(tenantId: string, federatedOidcProviderId: string): Promise<void> {
-        await searchClient.delete({
-            id: `${tenantId}::${federatedOidcProviderId}`,
-            index: SEARCH_INDEX_REL_SEARCH
-        });
+        try{
+            await searchClient.delete({
+                id: `${tenantId}::${federatedOidcProviderId}`,
+                index: SEARCH_INDEX_REL_SEARCH
+            });
+        }
+        catch(err){
+            // TODO
+            // Handle errors deleting search record.
+        }
         return Promise.resolve();
     }
     
@@ -288,8 +293,9 @@ class FederatedOIDCProviderService {
         if(!isAuthorized){
             throw new GraphQLError(errorMessage || "ERROR");
         }
+        const rel: FederatedOidcProviderTenantRel = await federatedOIDCProviderDao.removeFederatedOidcProviderFromTenant(federatedOIDCProviderId, tenantId)
         await this.removeRelSearchRecord(tenantId, federatedOIDCProviderId);
-        return federatedOIDCProviderDao.removeFederatedOidcProviderFromTenant(federatedOIDCProviderId, tenantId);
+        return rel;
     }
 
     public async getFederatedOIDCProviderDomainRels(federatedOIDCProviderId: string | null, domain: string | null): Promise<Array<FederatedOidcProviderDomainRel>> {

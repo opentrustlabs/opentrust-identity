@@ -1,17 +1,16 @@
 "use client";
 import React, { useContext } from "react";
-import { Accordion, AccordionDetails, AccordionSummary, Alert, Backdrop, Button, Checkbox, CircularProgress, Fade, MenuItem, Paper, Select, Snackbar, Stack, TextField } from "@mui/material";
+import { Accordion, AccordionDetails, AccordionSummary, Alert, Backdrop, Checkbox, CircularProgress, MenuItem, Paper, Select, Snackbar, TextField } from "@mui/material";
 import Grid2 from "@mui/material/Grid2";
 import Typography from "@mui/material/Typography";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
 import BreadcrumbComponent from "../breadcrumbs/breadcrumbs";
-import { CLIENT_TYPE_SERVICE_ACCOUNT_AND_USER_DELEGATED_PERMISSIONS, CLIENT_TYPE_SERVICE_ACCOUNT_ONLY, CLIENT_TYPE_USER_DELEGATED_PERMISSIONS_ONLY, CLIENT_TYPES_DISPLAY, DEFAULT_BACKGROUND_COLOR, DEFAULT_END_USER_TOKEN_TTL_SECONDS, DEFAULT_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS, MAX_END_USER_TOKEN_TTL_SECONDS, MAX_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS, MIN_END_USER_TOKEN_TTL_SECONDS, MIN_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
-import { Client, ClientUpdateInput, MarkForDeleteObjectType, SecretObjectType } from "@/graphql/generated/graphql-types";
+import { CLIENT_DELETE_SCOPE, CLIENT_SECRET_VIEW_SCOPE, CLIENT_TYPE_SERVICE_ACCOUNT_AND_USER_DELEGATED_PERMISSIONS, CLIENT_TYPE_SERVICE_ACCOUNT_ONLY, CLIENT_TYPE_USER_DELEGATED_PERMISSIONS_ONLY, CLIENT_TYPES_DISPLAY, CLIENT_UPDATE_SCOPE, DEFAULT_BACKGROUND_COLOR, DEFAULT_END_USER_TOKEN_TTL_SECONDS, DEFAULT_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS, MAX_END_USER_TOKEN_TTL_SECONDS, MAX_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS, MIN_END_USER_TOKEN_TTL_SECONDS, MIN_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
+import { Client, ClientUpdateInput, MarkForDeleteObjectType, SecretObjectType, PortalUserProfile } from "@/graphql/generated/graphql-types";
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import SyncIcon from '@mui/icons-material/Sync';
 import GroupIcon from '@mui/icons-material/Group';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
-// import AutoDeleteOutlinedIcon from '@mui/icons-material/AutoDeleteOutlined';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import TenantHighlight from "../tenants/tenant-highlight";
 import ContactConfiguration from "../contacts/contact-configuration";
@@ -27,6 +26,8 @@ import MarkForDeleteAlert from "../deletion/mark-for-delete-alert";
 import SubmitMarkForDelete from "../deletion/submit-mark-for-delete";
 import PolicyIcon from '@mui/icons-material/Policy';
 import ScopeRelConfiguration, { ScopeRelType } from "../scope/scope-rel-configuration";
+import { AuthContext, AuthContextProps } from "@/components/contexts/auth-context";
+import { containsScope } from "@/utils/authz-utils";
 
 export interface ClientDetailProps {
     client: Client
@@ -36,6 +37,8 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
     // CONTEXT OBJECTS
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
     const { copyContentToClipboard } = useClipboardCopyContext();
+    const authContextProps: AuthContextProps = useContext(AuthContext);
+    const profile: PortalUserProfile | null = authContextProps.portalUserProfile;
 
 
     // STATE VARIABLES
@@ -60,6 +63,9 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
     const [showMutationSnackbar, setShowMutationSnackbar] = React.useState<boolean>(false);
     const [secretDialogOpen, setSecretDialogOpen] = React.useState<boolean>(false);
     const [isMarkedForDelete, setIsMarkedForDelete] = React.useState<boolean>(client.markForDelete);
+    const [disableInputs] = React.useState<boolean>(client.markForDelete || !containsScope(CLIENT_UPDATE_SCOPE, profile?.scope || []));
+    const [canViewClientSecret] = React.useState<boolean>(containsScope(CLIENT_SECRET_VIEW_SCOPE, profile?.scope || []));
+    const [canDeleteClient] = React.useState<boolean>(containsScope(CLIENT_DELETE_SCOPE, profile?.scope || []));
 
     // GRAPHQLQL FUNCTIONS
     const [clientUpdateMutation] = useMutation(CLIENT_UPDATE_MUTATION, {
@@ -106,7 +112,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                         <Grid2 className="detail-page-subheader" alignItems={"center"} sx={{ backgroundColor: "#1976d2", color: "white", padding: "8px", borderRadius: "2px" }} container size={12}>
                             <Grid2 size={11}>Overview</Grid2>
                             <Grid2 size={1} display={"flex"} >
-                                {isMarkedForDelete !== true &&
+                                {isMarkedForDelete !== true && canDeleteClient &&
                                     <SubmitMarkForDelete
                                         objectId={client.clientId}
                                         objectType={MarkForDeleteObjectType.Client}
@@ -143,7 +149,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Client Name</div>
                                             <TextField
-                                                disabled={isMarkedForDelete}
+                                                disabled={disableInputs}
                                                 name="clientName" id="clientName" value={clientUpdateInput.clientName} fullWidth={true} size="small"
                                                 onChange={(evt) => { clientUpdateInput.clientName = evt.target.value;  setClientUpdateInput({ ...clientUpdateInput }); setMarkDirty(true); }}
                                             />
@@ -151,7 +157,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Client Descripton</div>
                                             <TextField
-                                                disabled={isMarkedForDelete}
+                                                disabled={disableInputs}
                                                 name="clientDescription" id="clientDescription" value={clientUpdateInput.clientDescription} fullWidth={true} size="small" multiline={true} rows={2}
                                                 onChange={(evt) => { clientUpdateInput.clientDescription = evt.target.value; setClientUpdateInput({ ...clientUpdateInput }); setMarkDirty(true); }}
                                             />
@@ -159,7 +165,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Client Type</div>
                                             <Select
-                                                disabled={isMarkedForDelete}
+                                                disabled={disableInputs}
                                                 size="small"
                                                 fullWidth={true}
                                                 value={clientUpdateInput.clientType}
@@ -187,34 +193,30 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                                 </Grid2>
                                             </Grid2>
                                         </Grid2>
-                                        <Grid2 marginBottom={"16px"}>
-                                            <div style={{ textDecoration: "underline" }}>Client Secret</div>
-                                            <Grid2 marginTop={"8px"} container display={"inline-flex"} size={12}>
-                                                <Grid2 size={10}>
-                                                    <span>*******************************************</span>
-                                                </Grid2>
-                                                <Grid2 size={1}></Grid2>
-                                                <Grid2 size={1}>
-                                                    {/* 
-                                                        TODO:
-                                                        1.  Only show for those users enabled to see the secret - i.e. and admin
-                                                        2.  onclick hander to retrieve the client secret. this handler should first
-                                                            show a dialog indicating the the viewing of the secret will be logged
-                                                    */}
-                                                    <VisibilityOutlinedIcon
-                                                        sx={{ cursor: "pointer" }}
-                                                        onClick={() => setSecretDialogOpen(true)}
-                                                    />
+                                        {canViewClientSecret &&
+                                            <Grid2 marginBottom={"16px"}>
+                                                <div style={{ textDecoration: "underline" }}>Client Secret</div>
+                                                <Grid2 marginTop={"8px"} container display={"inline-flex"} size={12}>
+                                                    <Grid2 size={10}>
+                                                        <span>*******************************************</span>
+                                                    </Grid2>
+                                                    <Grid2 size={1}></Grid2>
+                                                    <Grid2 size={1}>                                                    
+                                                        <VisibilityOutlinedIcon
+                                                            sx={{ cursor: "pointer" }}
+                                                            onClick={() => setSecretDialogOpen(true)}
+                                                        />
+                                                    </Grid2>
                                                 </Grid2>
                                             </Grid2>
-                                        </Grid2>
+                                        }
                                     </Grid2>
                                     <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
                                         <Grid2 borderLeft={"dotted 1px lightgrey"} paddingLeft={"8px"} container size={12}>
                                             <Grid2 alignContent={"center"} size={10}>Enabled</Grid2>
                                             <Grid2 size={2}>
                                                 <Checkbox
-                                                    disabled={isMarkedForDelete}
+                                                    disabled={disableInputs}
                                                     checked={clientUpdateInput.enabled}
                                                     onChange={(_, checked: boolean) => { clientUpdateInput.enabled = checked; setClientUpdateInput({ ...clientUpdateInput }); setMarkDirty(true); }}
                                                 />
@@ -223,7 +225,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                             <Grid2 alignContent={"center"} size={10}>OIDC (SSO) Enabled</Grid2>
                                             <Grid2 size={2}>
                                                 <Checkbox
-                                                    disabled={isMarkedForDelete}
+                                                    disabled={disableInputs}
                                                     checked={clientUpdateInput.oidcEnabled}
                                                     onChange={(_, checked: boolean) => {
                                                         clientUpdateInput.oidcEnabled = checked;
@@ -243,7 +245,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                                 <Checkbox
 
                                                     checked={clientUpdateInput.pkceEnabled}
-                                                    disabled={clientUpdateInput.oidcEnabled === false || isMarkedForDelete}
+                                                    disabled={clientUpdateInput.oidcEnabled === false || disableInputs}
                                                     onChange={(_, checked: boolean) => {
                                                         clientUpdateInput.pkceEnabled = checked;
                                                         setClientUpdateInput({ ...clientUpdateInput });
@@ -255,7 +257,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                             <Grid2 marginTop={"16px"} alignContent={"center"} size={12}>User Token TTL (Seconds) - Max: {MAX_END_USER_TOKEN_TTL_SECONDS}, Min: {MIN_END_USER_TOKEN_TTL_SECONDS}</Grid2>
                                             <Grid2 marginBottom={"16px"} alignContent={"center"} size={12}>
                                                 <TextField type="number" name="userTokenTTL" id="userTokenTTL"
-                                                    disabled={isMarkedForDelete}
+                                                    disabled={disableInputs}
                                                     value={
                                                         clientUpdateInput.userTokenTTLSeconds || ""
                                                     }
@@ -278,7 +280,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                             <Grid2 alignContent={"center"} size={12}>Client Token TTL (Seconds) - Max: {MAX_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS}, Min: {MIN_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS}</Grid2>
                                             <Grid2 marginBottom={"16px"} alignContent={"center"} size={12}>
                                                 <TextField type="number" name="clientTokenTTLSeconds" id="clientTokenTTLSeconds"
-                                                    disabled={isMarkedForDelete}
+                                                    disabled={disableInputs}
                                                     value={
                                                         clientUpdateInput.clientTokenTTLSeconds || ""
                                                     }
@@ -301,7 +303,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                             <Grid2 alignContent={"center"} size={12}>Max Refresh Token Count</Grid2>
                                             <Grid2 marginBottom={"16px"} alignContent={"center"} size={12}>
                                                 <TextField type="number" name="maxRefreshTokenCount" id="maxRefreshTokenCount"
-                                                    disabled={isMarkedForDelete}
+                                                    disabled={disableInputs}
                                                     value={
                                                         clientUpdateInput.maxRefreshTokenCount || ""
                                                     }
@@ -357,6 +359,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                                     setShowMutationSnackbar(true);
                                                 }
                                             }}
+                                            readOnly={disableInputs}
                                         />
                                     </AccordionDetails>
                                 </Accordion>
@@ -445,7 +448,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                     onUpdateStart={() => {
                                         setShowMutationBackdrop(true);
                                     }}
-                                    readOnly={!isMarkedForDelete}
+                                    readOnly={isMarkedForDelete}
                                 />
                             </Paper>
                         </Grid2>

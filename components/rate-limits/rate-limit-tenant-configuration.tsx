@@ -1,8 +1,8 @@
 "use client";
 import React, { useContext } from "react";
-import { TenantRateLimitRel, TenantRateLimitRelView } from "@/graphql/generated/graphql-types";
+import { TenantRateLimitRelView, PortalUserProfile } from "@/graphql/generated/graphql-types";
 import { TENANT_RATE_LIMIT_ASSIGN_MUTATION, TENANT_RATE_LIMIT_REMOVE_MUTATION, TENANT_RATE_LIMIT_UPDATE_MUTATION } from "@/graphql/mutations/oidc-mutations";
-import { TENANT_DETAIL_QUERY, TENANT_RATE_LIMIT_REL_QUERY, TENANT_RATE_LIMIT_REL_VIEW_QUERY } from "@/graphql/queries/oidc-queries";
+import { TENANT_RATE_LIMIT_REL_VIEW_QUERY } from "@/graphql/queries/oidc-queries";
 import { useMutation, useQuery } from "@apollo/client";
 import Alert from "@mui/material/Alert";
 import Button from "@mui/material/Button";
@@ -23,6 +23,9 @@ import TenantSelector from "../dialogs/tenant-selector";
 import Link from "next/link";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
 import TenatRateLimitConfigurationDialog from "../dialogs/tenant-rate-limit-configuration-dialog";
+import { AuthContext, AuthContextProps } from "../contexts/auth-context";
+import { containsScope } from "@/utils/authz-utils";
+import { RATE_LIMIT_TENANT_ASSIGN_SCOPE, RATE_LIMIT_TENANT_REMOVE_SCOPE, RATE_LIMIT_TENANT_UPDATE_SCOPE } from "@/utils/consts";
 
 
 export interface RateLimitTenantRelConfigurationProps {
@@ -40,6 +43,8 @@ const RateLimitTenantRelConfiguration: React.FC<RateLimitTenantRelConfigurationP
     // CONTEXT VARIABLES
     const breakPoints: ResponsiveBreakpoints = useContext(ResponsiveContext);
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
+    const authContextProps: AuthContextProps = useContext(AuthContext);
+    const profile: PortalUserProfile | null = authContextProps.portalUserProfile;
 
     // STATE VARIABLES
     
@@ -55,6 +60,9 @@ const RateLimitTenantRelConfiguration: React.FC<RateLimitTenantRelConfigurationP
     const [arr, setArr] = React.useState<Array<TenantRateLimitRelView>>([]);
     const [filteredArr, setFilteredArr] = React.useState<Array<TenantRateLimitRelView>>([]);
     const [filterTerm, setFilterTerm] = React.useState<string>("");
+    const [canAddRel] = React.useState<boolean>(containsScope(RATE_LIMIT_TENANT_ASSIGN_SCOPE, profile?.scope || []));
+    const [canRemoveRel] = React.useState<boolean>(containsScope(RATE_LIMIT_TENANT_REMOVE_SCOPE, profile?.scope || []));
+    const [canUpdateRel] = React.useState<boolean>(containsScope(RATE_LIMIT_TENANT_UPDATE_SCOPE, profile?.scope || []));
     
 
     // GRAPHQL FUNCTIONS
@@ -261,15 +269,17 @@ const RateLimitTenantRelConfiguration: React.FC<RateLimitTenantRelConfigurationP
                     </DialogActions>
                 </Dialog>
             }
-            <Grid2 marginBottom={"32px"} marginTop={"16px"} spacing={2} container size={12}>
-                <Grid2 size={12} display={"inline-flex"} alignItems="center" alignContent={"center"}>
-                    <AddBoxIcon
-                        sx={{ cursor: "pointer" }}
-                        onClick={() => setSelectDialogOpen(true)}
-                    />
-                    <div style={{ marginLeft: "8px", fontWeight: "bold" }}>Add Tenant</div>
+            {canAddRel &&
+                <Grid2 marginBottom={"32px"} marginTop={"16px"} spacing={2} container size={12}>
+                    <Grid2 size={12} display={"inline-flex"} alignItems="center" alignContent={"center"}>
+                        <AddBoxIcon
+                            sx={{ cursor: "pointer" }}
+                            onClick={() => setSelectDialogOpen(true)}
+                        />
+                        <div style={{ marginLeft: "8px", fontWeight: "bold" }}>Add Tenant</div>
+                    </Grid2>
                 </Grid2>
-            </Grid2>
+            }
             <Grid2 marginBottom={"32px"} marginTop={"16px"} spacing={2} container size={12}>
                 <Grid2 size={12} display={"inline-flex"} alignItems="center" alignContent={"center"}>
                     <TextField
@@ -305,7 +315,7 @@ const RateLimitTenantRelConfiguration: React.FC<RateLimitTenantRelConfigurationP
             {!breakPoints.isMedium &&
                 <>
                     <Grid2 marginTop={"16px"} marginBottom={"8px"} spacing={1} container size={12} fontWeight={"bold"}>
-                        <Grid2 size={1} ></Grid2>
+                        <Grid2 size={canUpdateRel ? 1 : 0} ></Grid2>
                         <Grid2 size={4} >Tenant Name</Grid2>
                         <Grid2 size={2} >Unlimited</Grid2>
                         <Grid2 size={2} >Limit</Grid2>
@@ -318,7 +328,7 @@ const RateLimitTenantRelConfiguration: React.FC<RateLimitTenantRelConfigurationP
             {breakPoints.isMedium &&
                 <>
                     <Grid2 marginTop={"16px"} spacing={1} container size={12}>
-                        <Grid2 size={2} ></Grid2>
+                        <Grid2 size={canUpdateRel ? 2 : 0} ></Grid2>
                         <Grid2 size={9} >Tenant Name</Grid2>
                         <Grid2 size={1}></Grid2>
                     </Grid2>
@@ -354,14 +364,16 @@ const RateLimitTenantRelConfiguration: React.FC<RateLimitTenantRelConfigurationP
                                 {filteredArr.map(
                                     (item: TenantRateLimitRelView) => (
                                         <React.Fragment key={`${item.tenantId}`}>
-                                            <Grid2 size={1}>
-                                                <EditOutlinedIcon
-                                                    sx={{ cursor: "pointer" }}
-                                                    onClick={() => {
-                                                        setTenantRateLimitRelToEdit(item);
-                                                        setShowTenantEditDialogOpen(true);
-                                                    }}
-                                                />
+                                            <Grid2 size={canUpdateRel ? 1 : 0}>
+                                                {canUpdateRel &&
+                                                    <EditOutlinedIcon
+                                                        sx={{ cursor: "pointer" }}
+                                                        onClick={() => {
+                                                            setTenantRateLimitRelToEdit(item);
+                                                            setShowTenantEditDialogOpen(true);
+                                                        }}
+                                                    />
+                                                }
                                             </Grid2>
                                             <Grid2 size={4}>
                                                 <span style={{ textDecoration: "underline" }}>
@@ -383,14 +395,16 @@ const RateLimitTenantRelConfiguration: React.FC<RateLimitTenantRelConfigurationP
                                             <Grid2 size={2}>
                                                 {item.rateLimitPeriodMinutes}
                                             </Grid2>
-                                            <Grid2 size={1}>
-                                                <RemoveCircleOutlineIcon
-                                                    sx={{ cursor: "pointer" }}
-                                                    onClick={() => {
-                                                        setTenantToRemove({ id: item.tenantId, name: item.tenantName || "" });
-                                                        setShowRemoveConfirmationDialog(true);
-                                                    }}
-                                                />
+                                            <Grid2 minHeight={"26px"} size={1}>
+                                                {canRemoveRel &&
+                                                    <RemoveCircleOutlineIcon
+                                                        sx={{ cursor: "pointer" }}
+                                                        onClick={() => {
+                                                            setTenantToRemove({ id: item.tenantId, name: item.tenantName || "" });
+                                                            setShowRemoveConfirmationDialog(true);
+                                                        }}
+                                                    />
+                                                }
                                             </Grid2>
                                             <Grid2 size={12}><Divider /></Grid2>
                                         </React.Fragment>
@@ -405,14 +419,16 @@ const RateLimitTenantRelConfiguration: React.FC<RateLimitTenantRelConfigurationP
                                 {filteredArr.map(
                                     (item: TenantRateLimitRelView) => (
                                         <React.Fragment key={`${item.tenantId}`}>
-                                            <Grid2 size={2}>
-                                                <EditOutlinedIcon
-                                                    sx={{ cursor: "pointer" }}
-                                                    onClick={() => {
-                                                        setTenantRateLimitRelToEdit(item);
-                                                        setShowTenantEditDialogOpen(true);
-                                                    }}
-                                                />
+                                            <Grid2 size={canUpdateRel ? 2 : 0}>
+                                                {canUpdateRel &&
+                                                    <EditOutlinedIcon
+                                                        sx={{ cursor: "pointer" }}
+                                                        onClick={() => {
+                                                            setTenantRateLimitRelToEdit(item);
+                                                            setShowTenantEditDialogOpen(true);
+                                                        }}
+                                                    />
+                                                }
                                             </Grid2>
                                             <Grid2 size={9}>
                                                 <span style={{ textDecoration: "underline" }}>
@@ -423,14 +439,16 @@ const RateLimitTenantRelConfiguration: React.FC<RateLimitTenantRelConfigurationP
                                                     </Link>
                                                 </span>
                                             </Grid2>
-                                            <Grid2 size={1}>
-                                                <RemoveCircleOutlineIcon
-                                                    sx={{ cursor: "pointer" }}
-                                                    onClick={() => {
-                                                        setTenantToRemove({ id: item.tenantId, name: item.tenantName || "" });
-                                                        setShowRemoveConfirmationDialog(true);
-                                                    }}
-                                                />
+                                            <Grid2 minHeight={"26px"} size={1}>
+                                                {canRemoveRel &&
+                                                    <RemoveCircleOutlineIcon
+                                                        sx={{ cursor: "pointer" }}
+                                                        onClick={() => {
+                                                            setTenantToRemove({ id: item.tenantId, name: item.tenantName || "" });
+                                                            setShowRemoveConfirmationDialog(true);
+                                                        }}
+                                                    />
+                                                }
                                             </Grid2>
                                             <Grid2 size={12}><Divider /></Grid2>
                                         </React.Fragment>

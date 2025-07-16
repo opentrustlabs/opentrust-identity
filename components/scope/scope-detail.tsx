@@ -1,8 +1,8 @@
 "use client";
-import { MarkForDeleteObjectType, Scope, ScopeUpdateInput } from "@/graphql/generated/graphql-types";
+import { MarkForDeleteObjectType, PortalUserProfile, Scope, ScopeUpdateInput } from "@/graphql/generated/graphql-types";
 import React, { useContext } from "react";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
-import { SCOPE_USE_DISPLAY, SCOPE_USE_IAM_MANAGEMENT, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
+import { ROOT_TENANT_EXCLUSIVE_INTERNAL_SCOPE_NAMES, SCOPE_DELETE_SCOPE, SCOPE_UPDATE_SCOPE, SCOPE_USE_DISPLAY, SCOPE_USE_IAM_MANAGEMENT, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import Typography from "@mui/material/Typography";
 import BreadcrumbComponent from "../breadcrumbs/breadcrumbs";
 import { DetailPageContainer, DetailPageMainContentContainer, DetailPageRightNavContainer } from "../layout/detail-page-container";
@@ -27,6 +27,8 @@ import { SCOPE_DETAIL_QUERY } from "@/graphql/queries/oidc-queries";
 import ScopeTenantConfiguration from "./scope-tenant-configuration";
 import SubmitMarkForDelete from "../deletion/submit-mark-for-delete";
 import MarkForDeleteAlert from "../deletion/mark-for-delete-alert";
+import { AuthContext, AuthContextProps } from "../contexts/auth-context";
+import { containsScope } from "@/utils/authz-utils";
 
 export interface ScopeDetailProps {
     scope: Scope
@@ -37,6 +39,8 @@ const ScopeDetail: React.FC<ScopeDetailProps> = ({ scope }) => {
     // CONTEXT VARIABLES
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
     const { copyContentToClipboard } = useClipboardCopyContext();
+    const authContextProps: AuthContextProps = useContext(AuthContext);
+    const profile: PortalUserProfile | null = authContextProps.portalUserProfile;
 
     const initInput: ScopeUpdateInput = {
         scopeDescription: scope.scopeDescription,
@@ -51,6 +55,8 @@ const ScopeDetail: React.FC<ScopeDetailProps> = ({ scope }) => {
     const [showMutationSnackbar, setShowMutationSnackbar] = React.useState<boolean>(false);
     const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
     const [isMarkedForDelete, setIsMarkedForDelete] = React.useState<boolean>(scope.markForDelete);
+    const [disableInputs] = React.useState<boolean>(scope.markForDelete || !containsScope(SCOPE_UPDATE_SCOPE, profile?.scope || []));
+    const [canDeleteScope] = React.useState<boolean>(containsScope(SCOPE_DELETE_SCOPE, profile?.scope || []));
 
 
     // GRAPHQL FUNCTIONS
@@ -82,9 +88,7 @@ const ScopeDetail: React.FC<ScopeDetailProps> = ({ scope }) => {
     arrBreadcrumbs.push({
         linkText: scope.scopeName,
         href: null
-    })
-
-
+    });
 
     return (
         <Typography component={"div"} >
@@ -95,7 +99,7 @@ const ScopeDetail: React.FC<ScopeDetailProps> = ({ scope }) => {
                         <Grid2 className="detail-page-subheader" alignItems={"center"} sx={{ backgroundColor: "#1976d2", color: "white", padding: "8px", borderRadius: "2px" }} container size={12}>
                             <Grid2 size={11}>Overview</Grid2>
                             <Grid2 size={1} display={"flex"} >
-                                {isMarkedForDelete !== true && scope.scopeUse !== SCOPE_USE_IAM_MANAGEMENT &&
+                                {isMarkedForDelete !== true && scope.scopeUse !== SCOPE_USE_IAM_MANAGEMENT && canDeleteScope &&
                                     <SubmitMarkForDelete 
                                         objectId={scope.scopeId}
                                         objectType={MarkForDeleteObjectType.Scope}
@@ -128,11 +132,16 @@ const ScopeDetail: React.FC<ScopeDetailProps> = ({ scope }) => {
                             }
                             <Paper sx={{ padding: "8px" }} elevation={1}>
                                 <Grid2 container size={12} spacing={2}>
+                                    {ROOT_TENANT_EXCLUSIVE_INTERNAL_SCOPE_NAMES.includes(scope.scopeName) &&
+                                        <Grid2 size={12} marginBottom={"8px"}>
+                                            <Alert severity="info">This scope is exclusive to the Root Tenant and cannot be added to any other tenant and cannot be edited.</Alert>                                            
+                                        </Grid2>
+                                    }
                                     <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Name</div>
                                             <TextField 
-                                                disabled={scope.scopeUse === SCOPE_USE_IAM_MANAGEMENT || isMarkedForDelete === true} 
+                                                disabled={scope.scopeUse === SCOPE_USE_IAM_MANAGEMENT || disableInputs === true} 
                                                 name="scopeName" 
                                                 id="scopeName" 
                                                 value={scopeUpdateInput.scopeName} 
@@ -149,7 +158,7 @@ const ScopeDetail: React.FC<ScopeDetailProps> = ({ scope }) => {
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Description</div>
                                             <TextField
-                                                disabled={scope.scopeUse === SCOPE_USE_IAM_MANAGEMENT || isMarkedForDelete === true}
+                                                disabled={scope.scopeUse === SCOPE_USE_IAM_MANAGEMENT || disableInputs === true}
                                                 name="scopeDescription"
                                                 id="scopeDescription"
                                                 value={scopeUpdateInput.scopeDescription}
@@ -185,7 +194,7 @@ const ScopeDetail: React.FC<ScopeDetailProps> = ({ scope }) => {
                                         <Grid2 marginBottom={"8px"}>
                                             <div>Scope Use</div>
                                             <TextField disabled={true} name="scopeUse" id="scopeUse" value={SCOPE_USE_DISPLAY.get(scope.scopeUse)} fullWidth={true} size="small" />
-                                        </Grid2>
+                                        </Grid2>                                        
                                     </Grid2>
                                 </Grid2>
                                 <DetailSectionActionHandler
@@ -260,7 +269,7 @@ const ScopeDetail: React.FC<ScopeDetailProps> = ({ scope }) => {
                                 <Accordion defaultExpanded={true}  >
                                     <AccordionSummary
                                         expandIcon={<ExpandMoreIcon />}
-                                        id={"login-failure-configuration"}
+                                        id={"scope-tenant-configuration"}
                                         sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center"}}
 
                                     >
