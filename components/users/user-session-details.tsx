@@ -2,16 +2,19 @@
 import { USER_SESSION_DELETE_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import { USER_SESSIONS_QUERY } from "@/graphql/queries/oidc-queries";
 import { useMutation, useQuery } from "@apollo/client";
-import React from "react";
+import React, { useContext } from "react";
 import ErrorComponent from "../error/error-component";
 import DataLoading from "../layout/data-loading";
 import Typography from "@mui/material/Typography";
 import Grid2 from "@mui/material/Grid2";
 import Alert from "@mui/material/Alert";
-import { UserSession } from "@/graphql/generated/graphql-types";
+import { UserSession, PortalUserProfile } from "@/graphql/generated/graphql-types";
 import DeleteForeverOutlinedIcon from '@mui/icons-material/DeleteForeverOutlined';
 import Dialog from "@mui/material/Dialog";
-import { Button, DialogActions, DialogContent, Divider } from "@mui/material";
+import { Button, DialogActions, DialogContent, Divider, Portal } from "@mui/material";
+import { AuthContext, AuthContextProps } from "../contexts/auth-context";
+import { containsScope } from "@/utils/authz-utils";
+import { USER_SESSION_DELETE_SCOPE } from "@/utils/consts";
 
 
 export interface UserSessionDetailsProps {
@@ -26,10 +29,16 @@ const UserSessionDetails: React.FC<UserSessionDetailsProps> = ({
     onUpdateStart
 }) => {
 
+    // CONTEXT VARIABLES    
+    const authContextProps: AuthContextProps = useContext(AuthContext);
+    const profile: PortalUserProfile | null = authContextProps.portalUserProfile;
+
     // STATE VARIABLES
     const [sessionToDelete, setSessionToDelete] = React.useState<null | {clientId: string, tenantId: string}>(null);
     const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
     const [showDeleteConfirmationDialog, setShowDeleteConfirmationDialog] = React.useState<boolean>(false);
+    const [canRemoveSession] = React.useState<boolean>(containsScope(USER_SESSION_DELETE_SCOPE, profile?.scope || []));
+
     // GRAPHQL FUNCTIONS
     const {data, loading, error} = useQuery(USER_SESSIONS_QUERY, {
         variables: {
@@ -116,17 +125,19 @@ const UserSessionDetails: React.FC<UserSessionDetailsProps> = ({
                                 <Grid2 container size={12} spacing={1} margin={"8px 0px"}>
                                     <Grid2 size={6}>{session.tenantName}</Grid2>
                                     <Grid2 size={5}>{session.clientName}</Grid2>
-                                    <Grid2 size={1}>
-                                        <DeleteForeverOutlinedIcon
-                                            sx={{cursor: "pointer"}}
-                                            onClick={() => {
-                                                setSessionToDelete({
-                                                    tenantId: session.tenantId,
-                                                    clientId: session.clientId
-                                                });
-                                                setShowDeleteConfirmationDialog(true);
-                                            }}
-                                        />
+                                    <Grid2 minHeight={"26px"} size={1}>
+                                        {canRemoveSession &&
+                                            <DeleteForeverOutlinedIcon
+                                                sx={{cursor: "pointer"}}
+                                                onClick={() => {
+                                                    setSessionToDelete({
+                                                        tenantId: session.tenantId,
+                                                        clientId: session.clientId
+                                                    });
+                                                    setShowDeleteConfirmationDialog(true);
+                                                }}
+                                            />
+                                        }
                                     </Grid2>                                
                                 </Grid2>
                                 <Divider />
