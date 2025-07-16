@@ -1,7 +1,7 @@
 "use client";
-import { AuthenticationGroup, AuthenticationGroupUpdateInput, MarkForDeleteObjectType, SearchResultType } from "@/graphql/generated/graphql-types";
-import { TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
-import { Typography, Grid2, Paper, TextField, Checkbox, Stack, Button, Accordion, AccordionSummary, AccordionDetails, Backdrop, CircularProgress, Snackbar, Alert } from "@mui/material";
+import { AuthenticationGroup, AuthenticationGroupUpdateInput, MarkForDeleteObjectType, SearchResultType, PortalUserProfile } from "@/graphql/generated/graphql-types";
+import { AUTHENTICATION_GROUP_UPDATE_SCOPE, AUTHENTICATION_GROUP_USER_ASSIGN_SCOPE, AUTHENTICATION_GROUP_USER_REMOVE_SCOPE, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
+import { Typography, Grid2, Paper, TextField, Checkbox, Accordion, AccordionSummary, AccordionDetails, Backdrop, CircularProgress, Snackbar, Alert } from "@mui/material";
 import React, { useContext } from "react";
 import BreadcrumbComponent from "../breadcrumbs/breadcrumbs";
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
@@ -18,6 +18,8 @@ import { useClipboardCopyContext } from "../contexts/clipboard-copy-context";
 import DetailSectionActionHandler from "../layout/detail-section-action-handler";
 import SubmitMarkForDelete from "../deletion/submit-mark-for-delete";
 import MarkForDeleteAlert from "../deletion/mark-for-delete-alert";
+import { AuthContext, AuthContextProps } from "../contexts/auth-context";
+import { containsScope } from "@/utils/authz-utils";
 
 
 export interface AuthenticationGroupDetailProps {
@@ -29,6 +31,8 @@ const AuthenticationGroupDetail: React.FC<AuthenticationGroupDetailProps> = ({ a
     // CONTEXT VARIABLES
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
     const { copyContentToClipboard } = useClipboardCopyContext();
+    const authContextProps: AuthContextProps = useContext(AuthContext);
+    const profile: PortalUserProfile | null = authContextProps.portalUserProfile;
 
     const initInput: AuthenticationGroupUpdateInput = {
         authenticationGroupId: authenticationGroup.authenticationGroupId,
@@ -46,6 +50,9 @@ const AuthenticationGroupDetail: React.FC<AuthenticationGroupDetailProps> = ({ a
     const [showMutationSnackbar, setShowMutationSnackbar] = React.useState<boolean>(false);
     const [renderKey, setRenderKey] = React.useState<string>(Date.now().toString());
     const [isMarkedForDelete, setIsMarkedForDelete] = React.useState<boolean>(authenticationGroup.markForDelete);
+    const [disableInputs] = React.useState<boolean>(authenticationGroup.markForDelete || !containsScope(AUTHENTICATION_GROUP_UPDATE_SCOPE, profile?.scope || []));
+    const [canAddUserToAuthnGroup] = React.useState<boolean>(containsScope(AUTHENTICATION_GROUP_USER_ASSIGN_SCOPE, profile?.scope || []));
+    const [canRemoveUserFromAuthnGroup] = React.useState<boolean>(containsScope(AUTHENTICATION_GROUP_USER_REMOVE_SCOPE, profile?.scope || []));
 
     // GRAPHQL FUNCTIONS
     const [updateAuthnGroupMutation] = useMutation(AUTHENTICATION_GROUP_UPDATE_MUTATION, {
@@ -158,7 +165,7 @@ const AuthenticationGroupDetail: React.FC<AuthenticationGroupDetailProps> = ({ a
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Group Name</div>
                                             <TextField name="authnGroupName" id="authnGroupName" 
-                                                disabled={isMarkedForDelete}
+                                                disabled={disableInputs}
                                                 value={authnGroupInput.authenticationGroupName} 
                                                 onChange={(evt) => {authnGroupInput.authenticationGroupName = evt.target.value; setMarkDirty(true); setAuthnGroupInput({...authnGroupInput})}}                                            
                                                 fullWidth={true} size="small" 
@@ -167,7 +174,7 @@ const AuthenticationGroupDetail: React.FC<AuthenticationGroupDetailProps> = ({ a
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Group Description</div>
                                             <TextField  
-                                                disabled={isMarkedForDelete}
+                                                disabled={disableInputs}
                                                 name="authnGroupDescription" id="authnGroupDescription" 
                                                 value={authnGroupInput.authenticationGroupDescription} fullWidth={true} size="small" multiline={true} rows={2}
                                                 onChange={(evt) => {authnGroupInput.authenticationGroupDescription = evt.target.value; setMarkDirty(true); setAuthnGroupInput({...authnGroupInput})}}
@@ -195,7 +202,7 @@ const AuthenticationGroupDetail: React.FC<AuthenticationGroupDetailProps> = ({ a
                                             <Grid2 alignContent={"center"} size={10}>Default</Grid2>
                                             <Grid2 size={2}>
                                                 <Checkbox 
-                                                    disabled={isMarkedForDelete}
+                                                    disabled={disableInputs}
                                                     name="defaultGroup"
                                                     checked={authnGroupInput.defaultGroup}
                                                     onChange={(_, checked) => {
@@ -254,8 +261,8 @@ const AuthenticationGroupDetail: React.FC<AuthenticationGroupDetailProps> = ({ a
                                         {!authnGroupInput.defaultGroup && 
                                             <RelationshipConfigurationComponent                                            
                                                 addObjectText="Add user to authentication group"
-                                                canAdd={true}
-                                                canDelete={true}
+                                                canAdd={canAddUserToAuthnGroup}
+                                                canDelete={canRemoveUserFromAuthnGroup}
                                                 confirmRemovalText="Confirm removal of user"
                                                 filterObjectsText="Filter users"
                                                 noObjectsFoundText="No users found"
