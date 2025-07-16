@@ -14,14 +14,16 @@ import DetailSectionActionHandler from "../layout/detail-section-action-handler"
 
 export interface PasswordRulesConfigurationProps {
     tenantId: string,
-    onUpdateStart: () => void;
-    onUpdateEnd: (success: boolean) => void;
+    onUpdateStart: () => void,
+    onUpdateEnd: (success: boolean) => void,
+    readOnly: boolean
 }
 
 const PasswordRulesConfiguration: React.FC<PasswordRulesConfigurationProps> = ({
     tenantId,
     onUpdateEnd,
-    onUpdateStart
+    onUpdateStart,
+    readOnly
 }) => {
 
     let initInput: PasswordConfigInput = DEFAULT_TENANT_PASSWORD_CONFIGURATION;
@@ -96,6 +98,7 @@ const PasswordRulesConfiguration: React.FC<PasswordRulesConfigurationProps> = ({
                     <Grid2 marginBottom={"16px"}>
                         <div>Password Minimum Length</div>
                         <TextField name="passwordMinLength" id="passwordMinLength"
+                            disabled={readOnly}
                             type="number"
                             value={passwordConfigInput.passwordMinLength > 0 ? passwordConfigInput.passwordMinLength : ""}
                             onChange={(evt) => { passwordConfigInput.passwordMinLength = parseInt(evt.target.value || "0"); setPasswordConfigInput({ ...passwordConfigInput }); setMarkDirty(true); }}
@@ -105,6 +108,7 @@ const PasswordRulesConfiguration: React.FC<PasswordRulesConfigurationProps> = ({
                     <Grid2 marginBottom={"16px"} >
                         <div>Password Maximum Length</div>
                         <TextField name="passwordMaxLength" id="passwordMaxLength"
+                            disabled={readOnly}
                             type="number"
                             value={passwordConfigInput.passwordMaxLength > 0 ? passwordConfigInput.passwordMaxLength : ""}
                             onChange={(evt) => { passwordConfigInput.passwordMaxLength = parseInt(evt.target.value || "0"); setPasswordConfigInput({ ...passwordConfigInput }); setMarkDirty(true); }}
@@ -114,6 +118,7 @@ const PasswordRulesConfiguration: React.FC<PasswordRulesConfigurationProps> = ({
                     <Grid2 marginBottom={"16px"} >
                         <div>Maximum Consecutive Length Of Identical Characters</div>
                         <TextField name="maxConsecutiveRepeatingChars" id="maxConsecutiveRepeatingChars"
+                            disabled={readOnly}
                             type="number"
                             value={passwordConfigInput.maxRepeatingCharacterLength && passwordConfigInput.maxRepeatingCharacterLength > 0 ? passwordConfigInput.maxRepeatingCharacterLength : ""}
                             onChange={(evt) => { passwordConfigInput.maxRepeatingCharacterLength = parseInt(evt.target.value || "0"); setPasswordConfigInput({ ...passwordConfigInput }); setMarkDirty(true); }}
@@ -123,6 +128,7 @@ const PasswordRulesConfiguration: React.FC<PasswordRulesConfigurationProps> = ({
                     <Grid2 marginBottom={"16px"} >
                         <div>Password History Period</div>
                         <TextField name="passwordHistoryPeriod" id="passwordHistoryPeriod"
+                            disabled={readOnly}
                             type="number"
                             value={passwordConfigInput.passwordHistoryPeriod && passwordConfigInput.passwordHistoryPeriod > 0 ? passwordConfigInput.passwordHistoryPeriod : ""}
                             onChange={(evt) => { 
@@ -137,6 +143,7 @@ const PasswordRulesConfiguration: React.FC<PasswordRulesConfigurationProps> = ({
                     <Grid2 marginBottom={"16px"} >
                         <div>Change Password Period (days)</div>
                         <TextField name="passwordRotationPeriodDays" id="passwordRotationPeriodDays"
+                            disabled={readOnly}
                             type="number"
                             value={passwordConfigInput.passwordRotationPeriodDays && passwordConfigInput.passwordRotationPeriodDays > 0 ? passwordConfigInput.passwordRotationPeriodDays : ""}
                             onChange={(evt) => { 
@@ -151,6 +158,7 @@ const PasswordRulesConfiguration: React.FC<PasswordRulesConfigurationProps> = ({
                     <Grid2 marginBottom={"16px"} >
                         <div>Password Hashing Algorithm</div>
                         <Select
+                            disabled={readOnly}
                             required={true}
                             size="small"
                             fullWidth={true}
@@ -173,6 +181,7 @@ const PasswordRulesConfiguration: React.FC<PasswordRulesConfigurationProps> = ({
                         </Grid2>
                         <Grid2 size={2}>
                             <Checkbox
+                                disabled={readOnly}
                                 checked={passwordConfigInput.requireUpperCase === true}
                                 onChange={(_, checked: boolean) => { passwordConfigInput.requireUpperCase = checked; setPasswordConfigInput({ ...passwordConfigInput }); setMarkDirty(true); }}
                             />
@@ -183,6 +192,7 @@ const PasswordRulesConfiguration: React.FC<PasswordRulesConfigurationProps> = ({
                         </Grid2>
                         <Grid2 size={2}>
                             <Checkbox
+                                disabled={readOnly}
                                 checked={passwordConfigInput.requireLowerCase === true}
                                 onChange={(_, checked: boolean) => { passwordConfigInput.requireLowerCase = checked; setPasswordConfigInput({ ...passwordConfigInput }); setMarkDirty(true); }}
                             />
@@ -193,6 +203,7 @@ const PasswordRulesConfiguration: React.FC<PasswordRulesConfigurationProps> = ({
                         </Grid2>
                         <Grid2 size={2}>
                             <Checkbox
+                                disabled={readOnly}
                                 checked={passwordConfigInput.requireNumbers === true}
                                 onChange={(_, checked: boolean) => { passwordConfigInput.requireNumbers = checked; setPasswordConfigInput({ ...passwordConfigInput }); setMarkDirty(true); }}
                             />
@@ -202,6 +213,7 @@ const PasswordRulesConfiguration: React.FC<PasswordRulesConfigurationProps> = ({
                         </Grid2>
                         <Grid2 size={2}>
                             <Checkbox
+                                disabled={readOnly}
                                 checked={passwordConfigInput.requireSpecialCharacters === true}
                                 onChange={(_, checked: boolean) => { passwordConfigInput.requireSpecialCharacters = checked; setPasswordConfigInput({ ...passwordConfigInput }); setMarkDirty(true); }}
                             />
@@ -209,6 +221,7 @@ const PasswordRulesConfiguration: React.FC<PasswordRulesConfigurationProps> = ({
                         <Grid2 marginTop={"8px"} alignContent={"center"} size={10}>
                             <div>Special Characters Allowed</div>
                             <TextField name="specialCharactersAllowed" id="specialCharactersAllowed"
+                                disabled={readOnly}
                                 value={passwordConfigInput.specialCharactersAllowed}
                                 onChange={(evt) => { passwordConfigInput.specialCharactersAllowed = evt.target.value; setPasswordConfigInput({ ...passwordConfigInput }); setMarkDirty(true); }}
                                 fullWidth={true} size="small"
@@ -225,6 +238,7 @@ const PasswordRulesConfiguration: React.FC<PasswordRulesConfigurationProps> = ({
                             <Grid2 alignContent={"center"} size={11}>Require Multi-factor Authentication</Grid2>
                             <Grid2 size={1}>
                                 <Checkbox
+                                    disabled={readOnly}
                                     checked={passwordConfigInput.requireMfa === true}                                
                                     onChange={(_, checked: boolean) => {
                                         if(checked === false){
@@ -242,6 +256,7 @@ const PasswordRulesConfiguration: React.FC<PasswordRulesConfigurationProps> = ({
                         </Grid2>
                         <Grid2 alignContent={"center"} size={12}>
                             <Autocomplete
+                                
                                 id="mfaTypes"
                                 multiple={true}
                                 size="small"
@@ -272,7 +287,7 @@ const PasswordRulesConfiguration: React.FC<PasswordRulesConfigurationProps> = ({
                                     setPasswordConfigInput({ ...passwordConfigInput });
                                     setMarkDirty(true);
                                 }}
-                                disabled={!passwordConfigInput.requireMfa === true}
+                                disabled={readOnly || !passwordConfigInput.requireMfa === true}
                             />
                         </Grid2>
 

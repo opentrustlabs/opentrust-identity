@@ -1,6 +1,6 @@
 "use client";
 import React, { useContext } from "react";
-import { Accordion, AccordionDetails, AccordionSummary, Alert, Backdrop, Checkbox, CircularProgress, MenuItem, Paper, Select, Snackbar, Stack, TextField } from "@mui/material";
+import { Accordion, AccordionDetails, AccordionSummary, Alert, Backdrop, Checkbox, CircularProgress, FormControl, MenuItem, Paper, Select, Snackbar, Stack, TextField } from "@mui/material";
 import Grid2 from "@mui/material/Grid2";
 import Typography from "@mui/material/Typography";
 import BreadcrumbComponent from "../breadcrumbs/breadcrumbs";
@@ -108,6 +108,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
     const [showMutationSnackbar, setShowMutationSnackbar] = React.useState<boolean>(false);
     const [totalRateUsed, setTotalRateUsed] = React.useState<number | null>(null);
     const [isMarkedForDelete, setIsMarkedForDelete] = React.useState<boolean>(tenant.markForDelete);
+    const [disableInputs] = React.useState<boolean>(tenant.markForDelete || !containsScope(TENANT_UPDATE_SCOPE, profile?.scope || []));
 
     // GRAPHQL FUNCTIONS
     const [tenantUpdateMutation] = useMutation(TENANT_UPDATE_MUTATION, {
@@ -146,6 +147,8 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
         linkText: tenantInput.tenantName,
         href: null
     });
+
+    
 
     return (
 
@@ -202,19 +205,19 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                     message={"This tenant has been marked for deletion. No changes to the tenant are permitted."}
                                 />
                             }
-                            <Paper sx={{ padding: "8px" }} elevation={1}>
+                            <Paper sx={{ padding: "8px" }} elevation={1}>                                
                                 <Grid2 container size={12} spacing={2}>
                                     <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Tenant Name</div>
                                             <TextField
-                                                disabled={isMarkedForDelete}
+                                                disabled={disableInputs}
                                                 name="tenantName" id="tenantName" onChange={(evt) => { tenantInput.tenantName = evt?.target.value; setTenantInput({ ...tenantInput }); setOverviewDirty(true); }} value={tenantInput.tenantName} fullWidth={true} size="small" />
                                         </Grid2>
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Tenant Descripton</div>
                                             <TextField  
-                                                disabled={isMarkedForDelete}
+                                                disabled={disableInputs}
                                                 name="tenantDescription" id="tenantDescription" 
                                                 value={tenantInput.tenantDescription} fullWidth={true} size="small" multiline={true} rows={2} 
                                                 onChange={(evt) => { tenantInput.tenantDescription = evt?.target.value; setTenantInput({ ...tenantInput }); setOverviewDirty(true); }}
@@ -227,7 +230,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                             }
                                             {tenant.tenantType !== TENANT_TYPE_ROOT_TENANT &&
                                                 <Select
-                                                    disabled={isMarkedForDelete}
+                                                    disabled={disableInputs}
                                                     size="small"
                                                     fullWidth={true}
                                                     value={tenantInput.tenantType}
@@ -259,7 +262,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Federated OIDC Provider Constraint</div>
                                             <Select
-                                                disabled={isMarkedForDelete}
+                                                disabled={disableInputs}
                                                 required={true}
                                                 size="small"
                                                 fullWidth={true}
@@ -280,7 +283,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                                 }
                                             </div>
                                             <TextField name="defaultRateLimit" id="defaultRateLimit" 
-                                                disabled={tenantInput.allowUnlimitedRate === true || isMarkedForDelete === true}
+                                                disabled={tenantInput.allowUnlimitedRate === true || disableInputs === true}
                                                 onChange={(evt) => {
                                                     const n = parseInt(evt.target.value); 
                                                     if(n){
@@ -313,7 +316,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                             <Grid2 alignContent={"center"} size={10}>Enabled</Grid2>
                                             <Grid2 size={2}>
                                                 <Checkbox 
-                                                    disabled={isMarkedForDelete}
+                                                    disabled={disableInputs}
                                                     checked={tenantInput.enabled}
                                                     onChange={(_, checked: boolean) => {tenantInput.enabled = checked; setTenantInput({...tenantInput}); setOverviewDirty(true);}}
                                                 />
@@ -321,7 +324,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                             <Grid2 alignContent={"center"} size={10}>Allow unlimited rate</Grid2>
                                             <Grid2 size={2}>
                                                 <Checkbox 
-                                                    disabled={isMarkedForDelete}
+                                                    disabled={disableInputs}
                                                     checked={tenantInput.allowUnlimitedRate === true}
                                                     onChange={(_, checked: boolean) => {
                                                         tenantInput.allowUnlimitedRate = checked;                                                         
@@ -340,7 +343,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                             <Grid2 alignContent={"center"} size={10}>Allow user self-registration</Grid2>
                                             <Grid2 size={2}>
                                                 <Checkbox 
-                                                    disabled={isMarkedForDelete}
+                                                    disabled={disableInputs}
                                                     checked={tenantInput.allowUserSelfRegistration === true}
                                                     onChange={(_, checked: boolean) => {tenantInput.allowUserSelfRegistration = checked; setTenantInput({...tenantInput}); setOverviewDirty(true);}}
                                                 />
@@ -348,7 +351,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                             <Grid2 alignContent={"center"} size={10}>Allow anonymous users</Grid2>
                                             <Grid2 size={2}>
                                                 <Checkbox 
-                                                    disabled={isMarkedForDelete}
+                                                    disabled={disableInputs}
                                                     checked={tenantInput.allowAnonymousUsers === true}
                                                     onChange={(_, checked: boolean) => {tenantInput.allowAnonymousUsers = checked; setTenantInput({...tenantInput}); setOverviewDirty(true);}}
                                                 />
@@ -356,7 +359,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                             <Grid2 alignContent={"center"} size={10}>Allow social login</Grid2>
                                             <Grid2 size={2}>
                                                 <Checkbox 
-                                                    disabled={isMarkedForDelete}
+                                                    disabled={disableInputs}
                                                     checked={tenantInput.allowSocialLogin === true}
                                                     onChange={(_, checked: boolean) => {tenantInput.allowSocialLogin = checked; setTenantInput({...tenantInput}); setOverviewDirty(true);}}
                                                 />
@@ -364,7 +367,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                             <Grid2 alignContent={"center"} size={10}>Verify email on registration</Grid2>
                                             <Grid2 size={2}>
                                                 <Checkbox 
-                                                    disabled={isMarkedForDelete}
+                                                    disabled={disableInputs}
                                                     checked={tenantInput.verifyEmailOnSelfRegistration === true}
                                                     onChange={(_, checked: boolean) => {tenantInput.verifyEmailOnSelfRegistration = checked; setTenantInput({...tenantInput}); setOverviewDirty(true);}}
                                                 />
@@ -372,7 +375,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                             <Grid2 alignContent={"center"} size={10}>Migrate legacy users</Grid2>
                                             <Grid2 size={2}>
                                                 <Checkbox 
-                                                    disabled={isMarkedForDelete}
+                                                    disabled={disableInputs}
                                                     checked={tenantInput.migrateLegacyUsers === true}
                                                     onChange={(_, checked: boolean) => {tenantInput.migrateLegacyUsers = checked; setTenantInput({...tenantInput}); setOverviewDirty(true);}}
                                                 />
@@ -380,7 +383,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                             <Grid2 alignContent={"center"} size={10}>Allow login by phone number</Grid2>
                                             <Grid2 size={2}>
                                                 <Checkbox 
-                                                    disabled={isMarkedForDelete}
+                                                    disabled={disableInputs}
                                                     checked={tenantInput.allowLoginByPhoneNumber === true}
                                                     onChange={(_, checked: boolean) => {tenantInput.allowLoginByPhoneNumber = checked; setTenantInput({...tenantInput}); setOverviewDirty(true);}}
                                                 />
@@ -388,7 +391,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                             <Grid2 alignContent={"center"} size={10}>Allow password recovery</Grid2>
                                             <Grid2 size={2}>
                                                 <Checkbox 
-                                                    disabled={isMarkedForDelete}
+                                                    disabled={disableInputs}
                                                     checked={tenantInput.allowForgotPassword === true}
                                                     onChange={(_, checked: boolean) => {tenantInput.allowForgotPassword = checked; setTenantInput({...tenantInput}); setOverviewDirty(true);}}
                                                 />
@@ -396,12 +399,12 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                             <Grid2 alignContent={"center"} size={10}>Require CAPTCHA on Registration</Grid2>
                                             <Grid2 size={2}>
                                                 <Checkbox 
-                                                    disabled={isMarkedForDelete}
+                                                    disabled={disableInputs}
                                                 />
                                             </Grid2>
                                         </Grid2>
                                     </Grid2>                                    
-                                </Grid2>
+                                </Grid2>                                
                                 <DetailSectionActionHandler
                                     onDiscardClickedHandler={() => {
                                         setTenantInput(initInput); 
@@ -412,7 +415,9 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                     }}
                                     markDirty={overviewDirty}
                                     disableSubmit={
-                                        tenantInput.allowUnlimitedRate === false && 
+                                        disableInputs || 
+                                        (
+                                            tenantInput.allowUnlimitedRate === false && 
                                             (
                                                 tenantInput.defaultRateLimit === undefined || 
                                                 tenantInput.defaultRateLimit === null || 
@@ -420,6 +425,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                                 totalRateUsed === null ||
                                                 tenantInput.defaultRateLimit < totalRateUsed
                                             )
+                                        )
                                     }
                                 />
                             </Paper>
@@ -450,6 +456,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                             onUpdateStart={() => {
                                                 setShowMutationBackdrop(true);                                            
                                             }}
+                                            readOnly={disableInputs}
                                         />
                                     </AccordionDetails>
                                 </Accordion>
@@ -480,6 +487,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                             onUpdateStart={() => {
                                                 setShowMutationBackdrop(true);                                            
                                             }}
+                                            readOnly={disableInputs}
                                         />
                                     </AccordionDetails>
                                 </Accordion>
@@ -512,6 +520,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                             onUpdateStart={() => {
                                                 setShowMutationBackdrop(true);                                            
                                             }}
+                                            readOnly={disableInputs}
                                         />
                                     </AccordionDetails>
                                 </Accordion>
@@ -544,6 +553,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                             onUpdateStart={() => {
                                                 setShowMutationBackdrop(true);                                            
                                             }}
+                                            readOnly={disableInputs}
                                         />
                                     </AccordionDetails>
                                 </Accordion>
@@ -674,6 +684,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                             onUpdateStart={() => {
                                                 setShowMutationBackdrop(true);                                            
                                             }}
+                                            readOnly={disableInputs}
                                         />                                    
                                     </AccordionDetails>
                                 </Accordion>

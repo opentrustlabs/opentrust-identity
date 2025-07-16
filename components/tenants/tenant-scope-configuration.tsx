@@ -1,5 +1,5 @@
 "use client";
-import { BULK_TENANT_SCOPE_ASSIGN_MUTATION, TENANT_SCOPE_ASSIGN_MUTATION, TENANT_SCOPE_REMOVE_MUTATION } from "@/graphql/mutations/oidc-mutations";
+import { BULK_TENANT_SCOPE_ASSIGN_MUTATION, TENANT_SCOPE_REMOVE_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import { SCOPE_QUERY } from "@/graphql/queries/oidc-queries";
 import { useMutation, useQuery } from "@apollo/client";
 import React, { useContext } from "react";
@@ -9,14 +9,16 @@ import Typography from "@mui/material/Typography";
 import Grid2 from "@mui/material/Grid2";
 import AddBoxIcon from '@mui/icons-material/AddBox';
 import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
-import { BulkScopeInput, Scope, ScopeFilterCriteria } from "@/graphql/generated/graphql-types";
-import { SCOPE_USE_DISPLAY, SCOPE_USE_IAM_MANAGEMENT, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
+import { BulkScopeInput, PortalUserProfile, Scope, ScopeFilterCriteria } from "@/graphql/generated/graphql-types";
+import { SCOPE_TENANT_ASSIGN_SCOPE, SCOPE_TENANT_REMOVE_SCOPE, SCOPE_USE_DISPLAY, SCOPE_USE_IAM_MANAGEMENT, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import Divider from "@mui/material/Divider";
 import { Alert, Button, Dialog, DialogActions, DialogContent, TablePagination } from "@mui/material";
 import Link from "next/link";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
 import GeneralSelector from "../dialogs/general-selector";
 import { ResponsiveBreakpoints, ResponsiveContext } from "../contexts/responsive-context";
+import { AuthContext, AuthContextProps } from "../contexts/auth-context";
+import { containsScope } from "@/utils/authz-utils";
 
 export interface TenantScopeConfigurationProps {
     tenantId: string,
@@ -36,6 +38,8 @@ const TenantScopeConfiguration: React.FC<TenantScopeConfigurationProps> = ({
     // CONTEXT VARIABLES
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
     const responseBreakPoints: ResponsiveBreakpoints = useContext(ResponsiveContext);
+    const authContextProps: AuthContextProps = useContext(AuthContext);
+    const profile: PortalUserProfile | null = authContextProps.portalUserProfile;
 
     // STATE VARIABLES
     const [selectedScopeToRemove, setSelectedScopeToRemove] = React.useState<{id: string, name: string} | null>(null);
@@ -43,6 +47,8 @@ const TenantScopeConfiguration: React.FC<TenantScopeConfigurationProps> = ({
     const [selectDialogOpen, setSelectDialogOpen] = React.useState(false);
     const [showRemoveConfirmationDialog, setShowRemoveConfirmationDialog] = React.useState(false);
     const [page, setPage] = React.useState<number>(1);
+    const [canAddRel] = React.useState<boolean>(containsScope(SCOPE_TENANT_ASSIGN_SCOPE, profile?.scope || []));
+    const [canRemoveRel] = React.useState<boolean>(containsScope(SCOPE_TENANT_REMOVE_SCOPE, profile?.scope || []));
 
 
     // GRAPHQL 
@@ -184,16 +190,20 @@ const TenantScopeConfiguration: React.FC<TenantScopeConfigurationProps> = ({
                     />
                 </Dialog>
             }
-            <Grid2 marginBottom={"16px"} marginTop={"16px"} spacing={2} container size={12}>
-                <Grid2 size={12} display={"inline-flex"} alignItems="center" alignContent={"center"}>
-                    <AddBoxIcon
-                        sx={{cursor: "pointer"}}
-                        onClick={() => setSelectDialogOpen(true)}
-                    />
-                    <div style={{marginLeft: "8px", fontWeight: "bold"}}>Add Scope</div>
-                </Grid2>                
-            </Grid2>
-            <Divider />
+            {canAddRel &&
+                <React.Fragment>
+                    <Grid2 marginBottom={"16px"} marginTop={"16px"} spacing={2} container size={12}>
+                        <Grid2 size={12} display={"inline-flex"} alignItems="center" alignContent={"center"}>
+                            <AddBoxIcon
+                                sx={{cursor: "pointer"}}
+                                onClick={() => setSelectDialogOpen(true)}
+                            />
+                            <div style={{marginLeft: "8px", fontWeight: "bold"}}>Add Scope</div>
+                        </Grid2>                
+                    </Grid2>
+                    <Divider />
+                </React.Fragment>
+            }
             <Grid2 marginBottom={"16px"} marginTop={"16px"} spacing={1} container size={12} fontWeight={"bold"}>
                 <Grid2 size={responseBreakPoints.isMedium ? 11 : 3}>Name</Grid2>
                 {!responseBreakPoints.isMedium &&
@@ -242,8 +252,8 @@ const TenantScopeConfiguration: React.FC<TenantScopeConfigurationProps> = ({
                                     </Grid2>
                                 }
                                 
-                                <Grid2 size={1}>
-                                    { !(tenantType === TENANT_TYPE_ROOT_TENANT && scope.scopeUse === SCOPE_USE_IAM_MANAGEMENT) &&
+                                <Grid2 minHeight={"26px"} size={1}>
+                                    {canRemoveRel && !(tenantType === TENANT_TYPE_ROOT_TENANT && scope.scopeUse === SCOPE_USE_IAM_MANAGEMENT) &&
                                         <RemoveCircleOutlineIcon
                                             sx={{cursor: "pointer"}}
                                             onClick={() => {setSelectedScopeToRemove({id: scope.scopeId, name: scope.scopeName}); setShowRemoveConfirmationDialog(true);}}
