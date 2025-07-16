@@ -14,14 +14,16 @@ import { TenantManagementDomainRel } from "@/graphql/generated/graphql-types";
 
 export interface TenantManagementDomainConfigurationProps {
     tenantId: string,
-    onUpdateStart: () => void;
-    onUpdateEnd: (success: boolean) => void;
+    onUpdateStart: () => void,
+    onUpdateEnd: (success: boolean) => void,
+    readOnly: boolean
 }
 
 const TenantManagementDomainConfiguration: React.FC<TenantManagementDomainConfigurationProps> = ({
     tenantId,
     onUpdateEnd,
-    onUpdateStart
+    onUpdateStart,
+    readOnly
 }) => {
 
 
@@ -123,8 +125,12 @@ const TenantManagementDomainConfiguration: React.FC<TenantManagementDomainConfig
                 {data.getDomainsForTenantManagement.map(
                     (rel: TenantManagementDomainRel, idx: number) => (
                         <Grid2 container key={rel.domain} size={12}>
-                            <Grid2 size={10.8}>{rel.domain}</Grid2>
-                            <Grid2 size={1.2}><RemoveCircleOutlineIcon sx={{ cursor: "pointer" }} onClick={() => { setSelectedDomainToDelete(rel.domain); setDeleteDialogOpen(true); }} /></Grid2>
+                            <Grid2 size={10.8}>{rel.domain}</Grid2>                            
+                            <Grid2 size={1.2}>
+                                {readOnly !== true &&
+                                    <RemoveCircleOutlineIcon sx={{ cursor: "pointer" }} onClick={() => { setSelectedDomainToDelete(rel.domain); setDeleteDialogOpen(true); }} />
+                                }
+                            </Grid2>
                         </Grid2>
                     )
                 )}
@@ -132,7 +138,9 @@ const TenantManagementDomainConfiguration: React.FC<TenantManagementDomainConfig
             <Divider />
             <Grid2 padding={"8px"} container size={12} spacing={0}>
                 <Grid2 size={1}>
-                    <AddBoxIcon onClick={() => setAddDialogOpen(true)} sx={{ cursor: "pointer" }} />
+                    {readOnly !== true &&
+                        <AddBoxIcon onClick={() => setAddDialogOpen(true)} sx={{ cursor: "pointer" }} />
+                    }
                 </Grid2>
                 <Grid2 size={11}></Grid2>
 

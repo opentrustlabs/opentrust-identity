@@ -365,7 +365,7 @@ const SigningKeyDetail: React.FC<SigningKeyDetailProps> = ({ signingKey }) => {
                             onUpdateStart={() =>{
                                 setShowMutationBackdrop(true);
                             }}
-                            readOnly={!isMarkedForDelete}
+                            readOnly={isMarkedForDelete}
                         />                        
                     </Paper>
                 </DetailPageRightNavContainer>

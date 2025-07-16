@@ -5,10 +5,10 @@ import Grid2 from "@mui/material/Grid2";
 import Typography from "@mui/material/Typography";
 import BreadcrumbComponent from "../breadcrumbs/breadcrumbs";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
-import { DEFAULT_RATE_LIMIT_PERIOD_MINUTES, FEDERATED_AUTHN_CONSTRAINT_DISPLAY, FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE, FEDERATED_AUTHN_CONSTRAINT_NOT_ALLOWED, FEDERATED_AUTHN_CONSTRAINT_PERMISSIVE, TENANT_TYPE_IDENTITY_MANAGEMENT, TENANT_TYPE_IDENTITY_MANAGEMENT_AND_SERVICES, TENANT_TYPE_ROOT_TENANT, TENANT_TYPE_SERVICES, TENANT_TYPES_DISPLAY } from "@/utils/consts";
+import { DEFAULT_RATE_LIMIT_PERIOD_MINUTES, FEDERATED_AUTHN_CONSTRAINT_DISPLAY, FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE, FEDERATED_AUTHN_CONSTRAINT_NOT_ALLOWED, FEDERATED_AUTHN_CONSTRAINT_PERMISSIVE, TENANT_TYPE_IDENTITY_MANAGEMENT, TENANT_TYPE_IDENTITY_MANAGEMENT_AND_SERVICES, TENANT_TYPE_ROOT_TENANT, TENANT_TYPE_SERVICES, TENANT_TYPES_DISPLAY, TENANT_UPDATE_SCOPE } from "@/utils/consts";
 import { MarkForDeleteObjectType, Tenant, TenantUpdateInput } from "@/graphql/generated/graphql-types";
 import { useMutation, useQuery } from "@apollo/client";
-import { TENANT_DETAIL_QUERY, TENANT_RATE_LIMIT_REL_QUERY } from "@/graphql/queries/oidc-queries";
+import { TENANT_DETAIL_QUERY } from "@/graphql/queries/oidc-queries";
 import DataLoading from "../layout/data-loading";
 import ErrorComponent from "../error/error-component";
 import PasswordIcon from '@mui/icons-material/Password';
@@ -37,6 +37,10 @@ import TenantScopeConfiguration from "./tenant-scope-configuration";
 import TenantRateLimitConfiguration from "./tenant-rate-limit-configuration";
 import SubmitMarkForDelete from "../deletion/submit-mark-for-delete";
 import MarkForDeleteAlert from "../deletion/mark-for-delete-alert";
+import { AuthContext, AuthContextProps } from "@/components/contexts/auth-context";
+import { PortalUserProfile } from "@/graphql/generated/graphql-types";
+import { containsScope } from "@/utils/authz-utils";
+
 
 export interface TenantDetailProps {
     tenantId: string
@@ -70,6 +74,12 @@ interface InnerComponentProps {
 const InnerComponent: React.FC<InnerComponentProps> = ({
     tenant
 }) => {
+
+    // CONTEXT VARIABLES
+    const tenantBean: TenantMetaDataBean = useContext(TenantContext);
+    const { copyContentToClipboard } = useClipboardCopyContext();
+    const authContextProps: AuthContextProps = useContext(AuthContext);
+    const profile: PortalUserProfile | null = authContextProps.portalUserProfile;
 
     const initInput: TenantUpdateInput = {
         allowAnonymousUsers: tenant.allowAnonymousUsers,
@@ -117,11 +127,6 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
             refetchQueries: [{query: TENANT_DETAIL_QUERY, variables: {tenantId: tenant.tenantId}}]
         }
     );
-
-
-    // CONTEXT VARIABLES
-    const tenantBean: TenantMetaDataBean = useContext(TenantContext);
-    const { copyContentToClipboard } = useClipboardCopyContext();
 
 
     // HANDLER FUNCTIONS
@@ -546,7 +551,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                         </Grid2>
 
                         <Grid2 size={12}>
-                            {!isMarkedForDelete &&
+                            {!isMarkedForDelete && tenantBean.getTenantMetaData().tenant.tenantType === TENANT_TYPE_ROOT_TENANT &&
                                 <Accordion >
                                     <AccordionSummary
                                         expandIcon={<ExpandMoreIcon />}
@@ -578,7 +583,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                         </Grid2>
                         
                         <Grid2 size={12} >
-                            {!isMarkedForDelete &&
+                            {!isMarkedForDelete && tenantBean.getTenantMetaData().tenant.tenantType === TENANT_TYPE_ROOT_TENANT &&
                                 <Accordion >
                                     <AccordionSummary
                                         expandIcon={<ExpandMoreIcon />}
@@ -611,7 +616,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                         </Grid2>
 
                         <Grid2 size={12} >
-                            {!isMarkedForDelete &&
+                            {!isMarkedForDelete && tenantBean.getTenantMetaData().tenant.tenantType === TENANT_TYPE_ROOT_TENANT &&
                                 <Accordion >
                                     <AccordionSummary
                                         expandIcon={<ExpandMoreIcon />}
@@ -694,7 +699,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                     onUpdateStart={() => {
                                         setShowMutationBackdrop(true);                                            
                                     }}
-                                    readOnly={!isMarkedForDelete}
+                                    readOnly={isMarkedForDelete || !containsScope(TENANT_UPDATE_SCOPE, profile?.scope || [])}
                                 />
                             </Paper>
                         </Grid2>
@@ -714,6 +719,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                         onUpdateStart={() => {
                                             setShowMutationBackdrop(true);                                            
                                         }}
+                                        readOnly={isMarkedForDelete || !containsScope(TENANT_UPDATE_SCOPE, profile?.scope || [])}
                                     />
                                 </Paper>
                             }
@@ -734,6 +740,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                         onUpdateStart={() => {
                                             setShowMutationBackdrop(true);                                            
                                         }}
+                                        readOnly={isMarkedForDelete || !containsScope(TENANT_UPDATE_SCOPE, profile?.scope || [])}
                                     />
                                 </Paper>
                             }

@@ -1,5 +1,5 @@
 "use client";
-import { Backdrop, CircularProgress, Dialog, Snackbar } from "@mui/material";
+import { Backdrop, CircularProgress, Dialog } from "@mui/material";
 import React, { useContext } from "react";
 import { ResponsiveBreakpoints } from "../contexts/responsive-context";
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
@@ -14,6 +14,8 @@ import NewAuthenticationGroupDialog from "./new-authentication-group-dialog";
 import NewAuthorizationGroupDialog from "./new-authorization-group-dialog";
 import NewRateLimitDialog from "./new-rate-limit-dialog";
 import NewScopeDialog from "./new-scope-dialog";
+
+
 
 export interface CreateNewSelectorProps {
     open: boolean,
@@ -32,7 +34,7 @@ const CreateNewDialog: React.FC<CreateNewSelectorProps> = ({
 
     // CONTEXTS
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
-
+        
     // STATE
     const [createNewType, setCreateNewType] = React.useState<string | null>(null);
     const [selectedTenant, setSelectedTenant] = React.useState<string | null>(
@@ -66,7 +68,7 @@ const CreateNewDialog: React.FC<CreateNewSelectorProps> = ({
                 {createNewType !== null && requiresParentTenant(createNewType) && selectedTenant === null &&
                     <TenantSelector onSelected={setSelectedTenant} onCancel={onCancel} />
                 }
-                {createNewType === "tenant" &&
+                {createNewType === "tenant" && 
                     <NewTenantDialog
                         onCancel={onCancel}
                         onClose={onClose}
