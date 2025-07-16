@@ -14,19 +14,22 @@ import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
 import AddBoxIcon from '@mui/icons-material/AddBox';
 import DoneOutlinedIcon from '@mui/icons-material/DoneOutlined';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
-import { AuthorizationGroup, ObjectSearchResultItem, ObjectSearchResults, SearchFilterInputObjectType, SearchResultType, UserTenantRelView } from "@/graphql/generated/graphql-types";
-import { Alert, Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, InputAdornment, Pagination, TablePagination, TextField } from "@mui/material";
+import { AuthorizationGroup, ObjectSearchResultItem, ObjectSearchResults, SearchFilterInputObjectType, SearchResultType, UserTenantRelView, PortalUserProfile } from "@/graphql/generated/graphql-types";
+import { Alert, Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, InputAdornment, TablePagination, TextField } from "@mui/material";
 import { AUTHORIZATION_GROUP_USER_ADD_MUTATION, AUTHORIZATION_GROUP_USER_REMOVE_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import TenantQuickInfo from "../tenants/tenant-quick-info";
 import Link from "next/link";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
+import { AuthContext, AuthContextProps } from "../contexts/auth-context";
+import { containsScope } from "@/utils/authz-utils";
+import { AUTHORIZATION_GROUP_USER_ASSIGN_SCOPE, AUTHORIZATION_GROUP_USER_REMOVE_SCOPE } from "@/utils/consts";
 
 
 
 export interface UserAuthorizationGroupConfigurationProps {
     userId: string
-    onUpdateStart: () => void;
-    onUpdateEnd: (success: boolean) => void;
+    onUpdateStart: () => void,
+    onUpdateEnd: (success: boolean) => void
 }
 
 const UserAuthorizationGroupConfiguration: React.FC<UserAuthorizationGroupConfigurationProps> = ({
@@ -37,6 +40,8 @@ const UserAuthorizationGroupConfiguration: React.FC<UserAuthorizationGroupConfig
 
     // CONTEXT VARIABLES
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
+    const authContextProps: AuthContextProps = useContext(AuthContext);
+    const profile: PortalUserProfile | null = authContextProps.portalUserProfile;
 
     // STATE VARIABLES
     const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
@@ -46,7 +51,8 @@ const UserAuthorizationGroupConfiguration: React.FC<UserAuthorizationGroupConfig
     const [groupToRemove, setGroupToRemove] = React.useState<string | null>(null);
     const [showTenantInfo, setShowTenantInfo] = React.useState<boolean>(false);
     const [tenantIdToShow, setTenantIdToShow] = React.useState<string | null>(null);
-
+    const [canAddRel] = React.useState<boolean>(containsScope(AUTHORIZATION_GROUP_USER_ASSIGN_SCOPE, profile?.scope || []));
+    const [canRemoveRel] = React.useState<boolean>(containsScope(AUTHORIZATION_GROUP_USER_REMOVE_SCOPE, profile?.scope || []));
 
     // GRAPHQL FUNCTIONS
     const {data, loading, error} = useQuery(USER_AUTHORIZATION_GROUP_QUERY, {
@@ -186,16 +192,18 @@ const UserAuthorizationGroupConfiguration: React.FC<UserAuthorizationGroupConfig
                     <Grid2 marginBottom={"24px"} marginTop={"16px"} spacing={2} container size={12}>
                         <Alert severity="error" onClose={() => setErrorMessage(null)}>{errorMessage}</Alert>
                     </Grid2>
-                }                
-                <Grid2 marginBottom={"24px"} marginTop={"16px"} spacing={2} container size={12}>
-                    <Grid2 size={12} display={"inline-flex"} alignItems="center" alignContent={"center"}>
-                        <AddBoxIcon
-                            sx={{cursor: "pointer"}}
-                            onClick={() => setShowAddDialog(true)}
-                        />
-                        <div style={{marginLeft: "8px", fontWeight: "bold"}}>Assign User To Authorization Group</div>
-                    </Grid2>                    
-                </Grid2>
+                }
+                {canAddRel &&                
+                    <Grid2 marginBottom={"24px"} marginTop={"16px"} spacing={2} container size={12}>
+                        <Grid2 size={12} display={"inline-flex"} alignItems="center" alignContent={"center"}>
+                            <AddBoxIcon
+                                sx={{cursor: "pointer"}}
+                                onClick={() => setShowAddDialog(true)}
+                            />
+                            <div style={{marginLeft: "8px", fontWeight: "bold"}}>Assign User To Authorization Group</div>
+                        </Grid2>                    
+                    </Grid2>
+                }
                 <Grid2 container size={12} spacing={1} marginTop={"16px"} marginBottom={"16px"} >
                     <Grid2 size={9}>Group Name</Grid2>
                     {/** TODO display tenants only when in the ROOT tenant. All other types of users can only
@@ -237,7 +245,8 @@ const UserAuthorizationGroupConfiguration: React.FC<UserAuthorizationGroupConfig
                                     }}
                                 />
                             </Grid2>
-                            <Grid2 size={1}>                                
+                            <Grid2 minHeight={"26px"} size={1}>
+                                {canRemoveRel &&
                                     <RemoveCircleOutlineIcon 
                                         onClick={() => {
                                             setGroupToRemove(authzGroup.groupId);
@@ -245,7 +254,7 @@ const UserAuthorizationGroupConfiguration: React.FC<UserAuthorizationGroupConfig
                                         }}
                                         sx={{cursor: "pointer"}}
                                     />
-                                
+                                }                                
                             </Grid2>
                         </Grid2>
                     </Typography>                                                

@@ -10,13 +10,14 @@ import Divider from "@mui/material/Divider";
 import GradeIcon from '@mui/icons-material/Grade';
 import StarOutlineOutlinedIcon from '@mui/icons-material/StarOutlineOutlined';
 import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
-import { UserTenantRelView } from "@/graphql/generated/graphql-types";
-import { DEFAULT_BACKGROUND_COLOR, USER_TENANT_REL_TYPE_GUEST, USER_TENANT_REL_TYPE_PRIMARY, USER_TENANT_REL_TYPES_DISPLAY } from "@/utils/consts";
-
+import { UserTenantRelView, PortalUserProfile } from "@/graphql/generated/graphql-types";
+import { DEFAULT_BACKGROUND_COLOR, TENANT_USER_REMOVE_SCOPE, USER_TENANT_REL_TYPE_GUEST, USER_TENANT_REL_TYPE_PRIMARY, USER_TENANT_REL_TYPES_DISPLAY } from "@/utils/consts";
 import { Alert, Tooltip } from "@mui/material";
 import { USER_TENANT_REL_REMOVE_MUTATION, USER_TENANT_REL_UPDATE_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
 import Link from "next/link";
+import { AuthContext, AuthContextProps } from "../contexts/auth-context";
+import { containsScope } from "@/utils/authz-utils";
 
 
 export interface UserTenantConfigurationProps {
@@ -36,10 +37,12 @@ const UserTenantConfiguration: React.FC<UserTenantConfigurationProps> = ({
 
     // CONTEXT VARIABLES
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
+    const authContextProps: AuthContextProps = useContext(AuthContext);
+    const profile: PortalUserProfile | null = authContextProps.portalUserProfile;
 
     // STATE VARIABLES
     const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
-
+    const [canRemoveRel] = React.useState<boolean>(containsScope(TENANT_USER_REMOVE_SCOPE, profile?.scope || []));
 
     // GRAPHQL FUNCTIONS
     const {data, loading, error} = useQuery(USER_TENANT_RELS_QUERY, {
@@ -146,8 +149,8 @@ const UserTenantConfiguration: React.FC<UserTenantConfigurationProps> = ({
                                 </Grid2>
                             }
                             <Grid2 size={3}>{USER_TENANT_REL_TYPES_DISPLAY.get(userTenantRelView.relType)}</Grid2>
-                            <Grid2 size={1}>
-                                {userTenantRelView.relType === USER_TENANT_REL_TYPE_GUEST &&
+                            <Grid2 minHeight={"26px"} size={1}>
+                                {userTenantRelView.relType === USER_TENANT_REL_TYPE_GUEST && canRemoveRel &&
                                     <RemoveCircleOutlineIcon 
                                         onClick={() => {
                                             onUpdateStart();

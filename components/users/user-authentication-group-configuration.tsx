@@ -1,5 +1,5 @@
 "use client";
-import { AUTHENTICATION_GROUPS_QUERY, SEARCH_QUERY, TENANT_DETAIL_QUERY, USER_TENANT_RELS_QUERY } from "@/graphql/queries/oidc-queries";
+import { AUTHENTICATION_GROUPS_QUERY, SEARCH_QUERY, USER_TENANT_RELS_QUERY } from "@/graphql/queries/oidc-queries";
 import { useMutation, useQuery } from "@apollo/client";
 import React, { useContext } from "react";
 import DataLoading from "../layout/data-loading";
@@ -14,12 +14,15 @@ import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
 import AddBoxIcon from '@mui/icons-material/AddBox';
 import DoneOutlinedIcon from '@mui/icons-material/DoneOutlined';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
-import { AuthenticationGroup, ObjectSearchResultItem, ObjectSearchResults, SearchFilterInputObjectType, SearchResultType, UserTenantRelView } from "@/graphql/generated/graphql-types";
+import { AuthenticationGroup, ObjectSearchResultItem, ObjectSearchResults, SearchFilterInputObjectType, SearchResultType, UserTenantRelView, PortalUserProfile } from "@/graphql/generated/graphql-types";
 import { Alert, Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, InputAdornment, TablePagination, TextField } from "@mui/material";
 import { AUTHENTICATION_GROUP_USER_ADD_MUTATION, AUTHENTICATION_GROUP_USER_REMOVE_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import TenantQuickInfo from "../tenants/tenant-quick-info";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
 import Link from "next/link";
+import { AuthContext, AuthContextProps } from "../contexts/auth-context";
+import { containsScope } from "@/utils/authz-utils";
+import { AUTHENTICATION_GROUP_USER_ASSIGN_SCOPE, AUTHENTICATION_GROUP_USER_REMOVE_SCOPE, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 
 
 
@@ -38,6 +41,8 @@ const UserAuthenticationGroupConfiguration: React.FC<UserAuthenticationGroupConf
 
     // CONTEXT VARIABLES
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
+    const authContextProps: AuthContextProps = useContext(AuthContext);
+    const profile: PortalUserProfile | null = authContextProps.portalUserProfile;
 
 
     // STATE VARIABLES
@@ -48,6 +53,8 @@ const UserAuthenticationGroupConfiguration: React.FC<UserAuthenticationGroupConf
     const [groupToRemove, setGroupToRemove] = React.useState<string | null>(null);
     const [showTenantInfo, setShowTenantInfo] = React.useState<boolean>(false);
     const [tenantIdToShow, setTenantIdToShow] = React.useState<string | null>(null);
+    const [canAddRel] = React.useState<boolean>(containsScope(AUTHENTICATION_GROUP_USER_ASSIGN_SCOPE, profile?.scope || []));
+    const [canRemoveRel] = React.useState<boolean>(containsScope(AUTHENTICATION_GROUP_USER_REMOVE_SCOPE, profile?.scope || []));
 
 
     // GRAPHQL FUNCTIONS
@@ -188,22 +195,21 @@ const UserAuthenticationGroupConfiguration: React.FC<UserAuthenticationGroupConf
                     <Grid2 marginBottom={"24px"} marginTop={"16px"} spacing={2} container size={12}>
                         <Alert severity="error" onClose={() => setErrorMessage(null)}>{errorMessage}</Alert>
                     </Grid2>
-                }                
-                <Grid2 marginBottom={"24px"} marginTop={"16px"} spacing={2} container size={12}>
-                    <Grid2 size={12} display={"inline-flex"} alignItems="center" alignContent={"center"}>
-                        <AddBoxIcon
-                            sx={{cursor: "pointer"}}
-                            onClick={() => setShowAddDialog(true)}
-                        />
-                        <div style={{marginLeft: "8px", fontWeight: "bold"}}>Assign User To Authentication Group</div>
-                    </Grid2>                    
-                </Grid2>
+                }
+                {canAddRel &&
+                    <Grid2 marginBottom={"24px"} marginTop={"16px"} spacing={2} container size={12}>
+                        <Grid2 size={12} display={"inline-flex"} alignItems="center" alignContent={"center"}>
+                            <AddBoxIcon
+                                sx={{cursor: "pointer"}}
+                                onClick={() => setShowAddDialog(true)}
+                            />
+                            <div style={{marginLeft: "8px", fontWeight: "bold"}}>Assign User To Authentication Group</div>
+                        </Grid2>                    
+                    </Grid2>
+                }
                 <Grid2 container size={12} spacing={1} marginTop={"16px"} marginBottom={"16px"} >
                     <Grid2 size={9}>Group Name</Grid2>
-                    {/** TODO display tenants only when in the ROOT tenant. All other types of users can only
-                     * see users in their own tenant, and so no need to show which tenant.
-                     */}
-                    <Grid2 size={2}>Tenant</Grid2>
+                    <Grid2 size={tenantBean.getTenantMetaData().tenant.tenantType === TENANT_TYPE_ROOT_TENANT ?  2: 0}>Tenant</Grid2>
                     <Grid2 size={1}></Grid2>                                                                                        
                 </Grid2>
                 <Divider />
@@ -225,20 +231,22 @@ const UserAuthenticationGroupConfiguration: React.FC<UserAuthenticationGroupConf
                             <Grid2 size={9}>
                                 <Link href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/authentication-groups/${authnGroup.authenticationGroupId}`} target="_blank">
                                     {authnGroup.authenticationGroupName}
-                                </Link>
-                                    
+                                </Link>                                    
                             </Grid2>
                             
-                            <Grid2 size={2}>
-                                <InfoOutlinedIcon
-                                    sx={{cursor: "pointer"}}
-                                    onClick={() => {
-                                        setTenantIdToShow(authnGroup.tenantId);
-                                        setShowTenantInfo(true);
-                                    }}
-                                />
+                            <Grid2 size={tenantBean.getTenantMetaData().tenant.tenantType === TENANT_TYPE_ROOT_TENANT ?  2: 0}>
+                                {tenantBean.getTenantMetaData().tenant.tenantType === TENANT_TYPE_ROOT_TENANT &&
+                                    <InfoOutlinedIcon
+                                        sx={{cursor: "pointer"}}
+                                        onClick={() => {
+                                            setTenantIdToShow(authnGroup.tenantId);
+                                            setShowTenantInfo(true);
+                                        }}
+                                    />
+                                }
                             </Grid2>
-                            <Grid2 size={1}>                                
+                            <Grid2 minHeight={"26px"} size={1}>
+                                {canRemoveRel &&
                                     <RemoveCircleOutlineIcon 
                                         onClick={() => {
                                             setGroupToRemove(authnGroup.authenticationGroupId);
@@ -246,7 +254,7 @@ const UserAuthenticationGroupConfiguration: React.FC<UserAuthenticationGroupConf
                                         }}
                                         sx={{cursor: "pointer"}}
                                     />
-                                
+                                }                                
                             </Grid2>
                         </Grid2>
                     </Typography>                                                
