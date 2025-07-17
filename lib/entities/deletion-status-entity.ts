@@ -34,5 +34,4 @@ export class DeletionStatusEntity extends Model {
             timestamps: false
         })
     }
-
 }

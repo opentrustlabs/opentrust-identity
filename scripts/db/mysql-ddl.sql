@@ -564,6 +564,7 @@ create TABLE mark_for_delete (
 	objecttype VARCHAR(128) NOT NULL,
 	submittedby VARCHAR(128) NOT NULL,
 	submitteddate BIGINT NOT NULL,
+    starteddate BIGINT,
 	completeddate BIGINT
 );
 
