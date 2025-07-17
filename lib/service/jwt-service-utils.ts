@@ -536,11 +536,16 @@ class JwtServiceUtils {
             if(!key){
                 return Promise.resolve(null);
             }
+            let passphrase: string | undefined = undefined;
+            if(key.password){
+                passphrase = await kms.decrypt(key.password) || undefined;
+
+            } 
             const privateKeyInput: PrivateKeyInput = {
                 key: key.privateKeyPkcs8,
                 encoding: "utf-8",
                 format: "pem",
-                passphrase: key.password || undefined
+                passphrase: passphrase
             };                    
             const privateKeyObject: KeyObject = createPrivateKey(privateKeyInput);
 

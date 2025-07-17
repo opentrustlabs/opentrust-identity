@@ -870,3 +870,11 @@ export const IMAGE_MINE_TYPES_DISPLAY: Map<string, string> = new Map([
 export const MAX_RATE_LIMIT_PERIOD_MINUTES=1440;
 export const MIN_RATE_LIMIT_PERIOD_MINUTES=1;
 export const DEFAULT_RATE_LIMIT_PERIOD_MINUTES=15;
+
+
+// ************************************************************************** //
+// 
+//                  SCHEDULER CONSTANTS
+// 
+// ************************************************************************** //
+export const CREATE_NEW_SIGNING_KEY_LOCK_NAME="CREATE_NEW_SIGNING_KEY";
