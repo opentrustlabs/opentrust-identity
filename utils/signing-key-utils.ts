@@ -2,7 +2,7 @@ import { generateKeyPairSync, KeyObject, PrivateKeyInput, createPrivateKey } fro
 import { pki } from "node-forge";
 import { generateRandomToken } from "./dao-utils";
 
-export function createJwtSigningKey(rootTenantName: string, expiresAt: Date): {passphrase: string, privateKey: string, certificate: string} {
+export function createJwtSigningKey(commonName: string, organizationName: string, expiresAt: Date): {passphrase: string, privateKey: string, certificate: string} {
 
     // **************************************************************************** //
     //     NOTES ON GENERATING A KEY PAIR, CSR, AND SIGNED CERTIFICATE              //
@@ -53,7 +53,6 @@ export function createJwtSigningKey(rootTenantName: string, expiresAt: Date): {p
 
     // console.log(decryptedPrivateKey);
 
-    const keyVersion = generateRandomToken(8, "hex").toUpperCase();
     // 4.   Use the forge library to generate a csr for our self-signed certificate
     //      and then sign it.
     let csr: pki.CertificateSigningRequest = pki.createCertificationRequest();
@@ -63,11 +62,11 @@ export function createJwtSigningKey(rootTenantName: string, expiresAt: Date): {p
     csr.setSubject([
         {
             shortName: "CN",
-            value: `${rootTenantName} JWT Signing Key V-${keyVersion}`,
+            value: commonName,
         },
         {
             shortName: "O",
-            value: rootTenantName
+            value: organizationName
         }
     ]);
     csr.sign(pki.privateKeyFromPem(decryptedPrivateKey));

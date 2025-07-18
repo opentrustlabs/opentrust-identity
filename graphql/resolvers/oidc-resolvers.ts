@@ -370,7 +370,8 @@ const resolvers: Resolvers = {
                 keyTypeId: "",
                 publicKey: keyInput.publicKey,
                 statusId: "",
-                markForDelete: false
+                markForDelete: false,
+                createdAtMs: Date.now()
             };
             await keysService.createSigningKey(key);
             return key;
@@ -391,7 +392,8 @@ const resolvers: Resolvers = {
                 keyTypeId: "",
                 publicKey: "",
                 statusId: "",
-                markForDelete: false
+                markForDelete: false,
+                createdAtMs: 0
             };
             const updatedKey = await keysService.updateSigningKey(key);
             return updatedKey;

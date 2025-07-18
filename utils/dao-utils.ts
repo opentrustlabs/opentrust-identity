@@ -1,6 +1,6 @@
 import { readFileSync, existsSync } from "node:fs";
 import { randomBytes, hash, createHash, pbkdf2Sync, scryptSync } from "node:crypto";
-// import bcrypt from "bcrypt";
+import bcrypt from "bcrypt";
 
 
 /**
@@ -95,7 +95,7 @@ export function sha256HashPassword(password: string, salt: string, iterations: n
  * @returns 
  */
 export function bcryptHashPassword(password: string, rounds: number): string {
-    const hashedPassword = password; // bcrypt.hashSync(password, rounds);
+    const hashedPassword = bcrypt.hashSync(password, rounds);
     return hashedPassword;
 }
 
@@ -106,7 +106,7 @@ export function bcryptHashPassword(password: string, rounds: number): string {
  * @returns 
  */
 export function bcryptValidatePassword(password: string, hash: string): boolean {
-    return true; //bcrypt.compareSync(password, hash);
+    return bcrypt.compareSync(password, hash);
 }
 
 /**

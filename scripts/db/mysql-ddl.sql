@@ -221,7 +221,8 @@ create TABLE signing_key (
     password VARCHAR(128),
     certificate BLOB,
     publickey BLOB,
-    expiresatms BIGINT,
+    createdat BIGINT NOT NULL,
+    expiresatms BIGINT NOT NULL,
     status VARCHAR(64),
     markfordelete BOOLEAN NOT NULL,
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid)
