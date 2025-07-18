@@ -546,6 +546,7 @@ type SigningKey {
     certificate: String
     publicKey: String
     expiresAtMs: Float!
+    createdAtMs: Float!
     status: String!
     statusId: String
     markForDelete: Boolean!
