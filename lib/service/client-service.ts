@@ -87,6 +87,9 @@ class ClientService {
 
             });
         }
+        if(tenant.enabled === false || tenant.markForDelete === true){
+            throw new GraphQLError("ERROR_TENANT_IS_DISABLED_OR_MARKED_FOR_DELETE");
+        }
 
         const {isAuthorized, errorMessage} = authorizeByScopeAndTenant(this.oidcContext, CLIENT_CREATE_SCOPE, client.tenantId);
         if(!isAuthorized){

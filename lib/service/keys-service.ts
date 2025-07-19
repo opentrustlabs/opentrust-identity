@@ -70,6 +70,9 @@ class SigningKeysService {
         if(!tenant){
             throw new GraphQLError("ERROR_TENANT_NOT_FOUND");
         }
+        if(tenant.enabled === false || tenant.markForDelete === true){
+            throw new GraphQLError("ERROR_TENANT_IS_DISABLED_OR_MARKED_FOR_DELETE");
+        }
 
         if(!key.keyName || key.keyName === ""){
             throw new GraphQLError("ERROR_MISSING_KEY_NAME_OR_ALIAS");

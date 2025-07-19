@@ -88,6 +88,10 @@ class GroupService {
         if(!tenant){
             throw new GraphQLError("ERROR_TENANT_NOT_FOUND_FOR_GROUP_CREATION");
         }
+        if(tenant.enabled === false || tenant.markForDelete === true){
+            throw new GraphQLError("ERROR_TENANT_IS_DISABLED_OR_MARKED_FOR_DELETE");
+        }
+        
         group.groupId = randomUUID().toString();
 
         await groupDao.createAuthorizationGroup(group);
