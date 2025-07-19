@@ -3,41 +3,96 @@ import SchedulerDao from "@/lib/dao/scheduler-dao";
 import SigningKeysDao from "@/lib/dao/signing-keys-dao";
 import TenantDao from "@/lib/dao/tenant-dao";
 import { DaoFactory } from "@/lib/data-sources/dao-factory";
-import Kms from "@/lib/kms/kms";
-import { CREATE_NEW_SIGNING_KEY_LOCK_NAME, KEY_TYPE_RSA, KEY_USE_DIGITAL_SIGNING, SIGNING_KEY_STATUS_ACTIVE, SIGNING_KEY_STATUS_REVOKED } from "@/utils/consts";
+import { CREATE_NEW_SIGNING_KEY_LOCK_NAME, DELETE_EXPIRED_DATA_LOCK_NAME, KEY_TYPE_RSA, KEY_USE_DIGITAL_SIGNING, SIGNING_KEY_STATUS_ACTIVE, SIGNING_KEY_STATUS_REVOKED } from "@/utils/consts";
 import { randomUUID } from 'crypto'; 
 import { createJwtSigningKey } from "@/utils/signing-key-utils";
 import { generateRandomToken } from "@/utils/dao-utils";
+import { CronJob } from "cron";
+import IdentityDao from "../dao/identity-dao";
+import AuthDao from "../dao/auth-dao";
+import ClientDao from "../dao/client-dao";
 
 
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
 const signingKeysDao: SigningKeysDao = DaoFactory.getInstance().getSigningKeysDao();
 const schedulerDao: SchedulerDao = DaoFactory.getInstance().getSchedulerDao();
-const kms: Kms = DaoFactory.getInstance().getKms();
+const identityDao: IdentityDao = DaoFactory.getInstance().getIdentityDao();
+const clientDao: ClientDao = DaoFactory.getInstance().getClientDao();
+const authDao: AuthDao = DaoFactory.getInstance().getAuthDao();
+
 
 // TODO
 // Add cron scheduler from https://github.com/kelektiv/node-cron
 // Schedule:
-// 1.   Key creation every 3 months
+// 1.   Key creation every  month
 // 2.   Expired data every 15 minutes (for those tables that have an expiration data timestamp)
+// 3.   Mark for delete records every 15 minutes
 
-export function initJwtSigningKeysScheduler(){
-    setInterval(() => 
-        {
-            console.log("Runtime is: " + process.env.NEXT_RUNTIME);
-            console.log(new Date().toISOString());
-            if(process.env.NEXT_RUNTIME === "nodejs"){
-                createNewJwtSigningKey();
-            }
-        }, 
-        10000
-    ) ;
+export function initSchedulers(){
+
+    // every 15 minutes at 0, 15, 30, and 45 minutes past the hour
+    const deleteUpExpiredRecordsJob = new CronJob(
+        "0,15,30,45 * * * *",
+        () => deleteExpiredRecords(),
+        null
+    );
+    deleteUpExpiredRecordsJob.start();
+
+    // at 00:00 on the first day of the month for every month
+    const newSigningKeyJob = new CronJob(
+        "0 0 1 1-12 *",
+        () => createNewJwtSigningKey(),
+        null
+    );
+    newSigningKeyJob.start();
+
+    const removeMarkedForDelete = new CronJob(
+        "0,15,30,45 * * * *",
+        () => console.log("will remove marked for delete jobs"),
+        null
+    )
+    removeMarkedForDelete.start();
+
 }
+
+
+
+async function deleteExpiredRecords() {
+    console.log("will delete expired records");
+    const schedulerLock: SchedulerLock = {
+        lockExpiresAtMS: Date.now() + (1000 * 1800),
+        lockInstanceId: randomUUID().toString(),
+        lockName: DELETE_EXPIRED_DATA_LOCK_NAME,
+        lockStartTimeMS: Date.now()
+    };
+
+    await schedulerDao.createSchedulerLock(schedulerLock);
+    const arr: Array<SchedulerLock> = await schedulerDao.getSchedulerLocksByName(DELETE_EXPIRED_DATA_LOCK_NAME);
+    if(arr.length === 0){
+        return;
+    }
+    try{
+        if(arr[0].lockInstanceId === schedulerLock.lockInstanceId){
+            await clientDao.deleteExpiredData();
+            await identityDao.deleteExpiredData();
+            await authDao.deleteExpiredData();
+            await schedulerDao.deleteExpiredData();
+        }
+    }
+    catch(err){
+        // TODO 
+        // LOG error
+    }
+    await schedulerDao.deleteSchedulerLock(schedulerLock.lockInstanceId);
+}
+
+
 
 async function createNewJwtSigningKey(){
     
     const tenant: Tenant = await tenantDao.getRootTenant();
-        const schedulerLock: SchedulerLock = {
+
+    const schedulerLock: SchedulerLock = {
         lockExpiresAtMS: Date.now() + (1000 * 1800),
         lockInstanceId: randomUUID().toString(),
         lockName: CREATE_NEW_SIGNING_KEY_LOCK_NAME,

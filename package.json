@@ -28,6 +28,7 @@
     "axios": "^1.7.9",
     "bcrypt": "^5.1.1",
     "bottleneck": "^2.19.5",
+    "cron": "^4.3.2",
     "dayjs": "^1.11.13",
     "graphql": "^16.9.0",
     "graphql-tag": "^2.12.6",

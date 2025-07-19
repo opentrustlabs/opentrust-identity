@@ -55,6 +55,17 @@ class DBSchedulerDao extends SchedulerDao {
         });
         return Promise.resolve();
     }
+
+    public async deleteExpiredData(): Promise<void> {
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.schedulerLock.destroy({
+            where: {
+                lockExpiresAtMS: {
+                    [Op.lt]: Date.now()
+                }
+            }
+        });
+    }
     
 }
 

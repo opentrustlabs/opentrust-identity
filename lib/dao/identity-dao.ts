@@ -137,7 +137,7 @@ abstract class IdentityDao {
 
     abstract deleteUserRegistrationState(userRegistrationState: UserRegistrationState): Promise<UserRegistrationState>;
 
-
+    abstract deleteExpiredData(): Promise<void>;
 
 }
 

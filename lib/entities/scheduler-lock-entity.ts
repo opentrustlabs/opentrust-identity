@@ -24,7 +24,7 @@ export class SchedulerLockEntity extends Model {
                 type: DataTypes.BIGINT,
                 primaryKey: false,
                 allowNull: false,
-                field: "lockexpiresat"
+                field: "lockexpiresatms"
             }
         }, {
             sequelize,

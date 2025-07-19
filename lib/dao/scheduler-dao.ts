@@ -13,6 +13,8 @@ abstract class SchedulerDao {
 
     abstract deleteSchedulerLock(lockInstanceId: string): Promise<void>;
 
+    abstract deleteExpiredData(): Promise<void>;
+
 }
 
 export default SchedulerDao;

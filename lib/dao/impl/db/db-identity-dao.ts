@@ -5,8 +5,7 @@ import AuthorizationGroupEntity from "@/lib/entities/authorization-group-entity"
 import AuthenticationGroupEntity from "@/lib/entities/authentication-group-entity";
 import UserEntity from "@/lib/entities/user-entity";
 import UserCredentialEntity from "@/lib/entities/user-credential-entity";
-import { MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, PASSWORD_HASH_ITERATION_128K, PASSWORD_HASH_ITERATION_256K, PASSWORD_HASH_ITERATION_32K, PASSWORD_HASH_ITERATION_64K, PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_32K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_64K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS, SEARCH_INDEX_OBJECT_SEARCH, VERIFICATION_TOKEN_TYPE_PASSWORD_RESET, VERIFICATION_TOKEN_TYPE_VALIDATE_EMAIL } from "@/utils/consts";
-import { bcryptValidatePassword, generateRandomToken, pbkdf2HashPassword, scryptHashPassword, sha256HashPassword } from "@/utils/dao-utils";
+import { MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, VERIFICATION_TOKEN_TYPE_PASSWORD_RESET, VERIFICATION_TOKEN_TYPE_VALIDATE_EMAIL } from "@/utils/consts";
 import UserMfaRelEntity from "@/lib/entities/user-mfa-rel-entity";
 import UserTenantRelEntity from "@/lib/entities/user-tenant-rel-entity";
 import DBDriver from "@/lib/data-sources/sequelize-db";
@@ -340,7 +339,7 @@ class DBIdentityDao extends IdentityDao {
             where: {
                 token: token
             }
-        })
+        });
         return Promise.resolve();
     }
 
@@ -609,6 +608,42 @@ class DBIdentityDao extends IdentityDao {
             }
         });
         return userRegistrationState;
+    }
+
+    public async deleteExpiredData(): Promise<void> {
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.userRegistrationState.destroy({
+            where: {
+                expiresAtMs: {
+                    [Op.lt]: Date.now()
+                }
+            }
+        });
+
+        await sequelize.models.userAuthenticationState.destroy({
+            where: {
+                expiresAtMs: {
+                    [Op.lt]: Date.now()
+                }
+            }
+        });
+
+        await sequelize.models.userFido2Challenge.destroy({
+            where: {
+                expiresAtMs: {
+                    [Op.lt]: Date.now()
+                }
+            }
+        });
+
+        await sequelize.models.userVerificationToken.destroy({
+            where: {
+                expiresAtMS: {
+                    [Op.lt]: Date.now()
+                }
+            }
+        });
+
     }
 
 }
