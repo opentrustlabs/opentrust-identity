@@ -1,6 +1,6 @@
 import { MarkForDelete, DeletionStatus } from "@/graphql/generated/graphql-types";
 import MarkForDeleteDao from "../../mark-for-delete-dao";
-import { Sequelize } from "sequelize";
+import { Op, Sequelize } from "sequelize";
 import DBDriver from "@/lib/data-sources/sequelize-db";
 import { MarkForDeleteEntity } from "@/lib/entities/mark-for-delete-entity";
 
@@ -49,6 +49,18 @@ class DBMarkForDeleteDao extends MarkForDeleteDao {
             }
         });
         return Promise.resolve(arr as any as Array<DeletionStatus>);
+    }
+
+    public async deleteCompletedRecords(): Promise<void> {
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.markForDelete.destroy({
+            where: {
+                completedDate: {
+                    [Op.not]: null
+                }
+            }
+        });
+        return Promise.resolve();
     }
 
     public async startStep(markForDeleteId: string, step: string): Promise<void> {

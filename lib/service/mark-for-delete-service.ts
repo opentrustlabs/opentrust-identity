@@ -197,8 +197,8 @@ class MarkForDeleteService {
 
         markForDelete.markForDeleteId = randomUUID().toString();
         markForDelete.submittedDate = Date.now();
-
-        markForDelete.submittedBy = this.oidcContext.portalUserProfile?.userId || "";
+        
+        markForDelete.submittedBy = this.oidcContext.portalUserProfile?.firstName || "" + " " + this.oidcContext.portalUserProfile?.lastName || "" +  " - " + this.oidcContext.portalUserProfile?.userId || "";
         await markForDeleteDao.markForDelete(markForDelete);
         return Promise.resolve(markForDelete);
     }
