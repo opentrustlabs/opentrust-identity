@@ -24,6 +24,8 @@ abstract class ClientDao {
         abstract saveClientAuthHistory(clientAuthHistory: ClientAuthHistory): Promise<void>;
 
         abstract deleteClientAuthHistory(jti: string): Promise<void>;
+
+        abstract deleteExpiredData(): Promise<void>;
         
 }
 

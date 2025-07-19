@@ -878,3 +878,4 @@ export const DEFAULT_RATE_LIMIT_PERIOD_MINUTES=15;
 // 
 // ************************************************************************** //
 export const CREATE_NEW_SIGNING_KEY_LOCK_NAME="CREATE_NEW_SIGNING_KEY";
+export const DELETE_EXPIRED_DATA_LOCK_NAME="DELETE_EXPIRED_DATA";

@@ -756,10 +756,8 @@ type ChangeEvent {
     changeEventClass: String!
     changeEventClassId: String
     changeTimestamp: Float!
-    changedById: String!
+    changedBy: String!
     data: String!
-    signature: String!
-	keyId: String!
 }
 
 type TenantLookAndFeel {

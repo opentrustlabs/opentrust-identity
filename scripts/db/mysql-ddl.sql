@@ -418,13 +418,9 @@ create TABLE change_event (
     changeeventclass VARCHAR(128) NOT NULL,
 	changeeventclassid VARCHAR(64),
     changetimestamp BIGINT NOT NULL,
-    changedbyid VARCHAR(64) NOT NULL,
-    data BLOB NOT NULL,
-	signature BLOB NOT NULL,
-	keyid VARCHAR(64) NOT NULL,
-    PRIMARY KEY (changeeventid, objectid), 
-	FOREIGN KEY (changedbyid) REFERENCES user(userid),
-	FOREIGN KEY (keyid) REFERENCES signing_key(keyid)
+    changedby VARCHAR(128) NOT NULL,
+    data BLOB NOT NULL,	
+    PRIMARY KEY (changeeventid, objectid)	
 );
 CREATE INDEX change_event_objectid_idx ON change_event(objectid);
 CREATE INDEX change_event_objecttype_idx ON change_event(objecttype);
@@ -477,7 +473,7 @@ create TABLE scheduler_lock (
     lockname VARCHAR(128) NOT NULL,
     lockinstanceid VARCHAR(128) NOT NULL,
     lockstarttimems BIGINT NOT NULL,
-    lockexpiresat BIGINT NOT NULL,
+    lockexpiresatms BIGINT NOT NULL,
     PRIMARY KEY (lockname, lockinstanceid)
 );
 
