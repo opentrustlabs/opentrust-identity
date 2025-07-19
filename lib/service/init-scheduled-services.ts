@@ -45,7 +45,7 @@ export function initSchedulers(){
     newSigningKeyJob.start();
 
     const removeMarkedForDelete = new CronJob(
-        "0,5,10,15,20,25,30,35,45,50,55 * * * *",
+        "0,5,10,15,20,25,30,35,40,45,50,55 * * * *",
         () => {
             console.log("will remove marked for delete jobs");
             const service: DeletionService = new DeletionService();
