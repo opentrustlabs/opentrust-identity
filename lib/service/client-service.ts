@@ -178,13 +178,6 @@ class ClientService {
         
     }
 
-    public async deleteClient(clientId: string): Promise<void> {
-        // delete all LoginGroupClientRel
-        // ClientTenantScopeRel
-        // delete client
-        throw new Error("Method not implemented.");
-    }
-
     public async getRedirectURIs(clientId: string): Promise<Array<string>>{
         const client: Client | null = await clientDao.getClientById(clientId);
         if(client){

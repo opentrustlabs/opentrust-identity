@@ -302,11 +302,6 @@ const resolvers: Resolvers = {
             //await tenantService.assignContactsToTenant(tenant.tenantId, contacts);            
             return updatedTenant;
         },
-        deleteTenant: async (_: any, { tenantId }, oidcContext) => {
-            const tenantService: TenantService = new TenantService(oidcContext);
-            await tenantService.deleteTenant(tenantId);
-            return tenantId;
-        },
         createClient: async (_: any, { clientInput }, oidcContext) => {
             const clientService: ClientService = new ClientService(oidcContext);
             let client: Client = {
@@ -348,11 +343,6 @@ const resolvers: Resolvers = {
             }
             await clientService.updateClient(client);
             return client;
-        },
-        deleteClient: async(_: any, { clientId }, oidcContext) => {
-            const clientService: ClientService = new ClientService(oidcContext);
-            await clientService.deleteClient(clientId);
-            return clientId;
         },
         createSigningKey: async(_: any, { keyInput }, oidcContext) => {
             const keysService: SigningKeysService = new SigningKeysService(oidcContext);
@@ -426,11 +416,6 @@ const resolvers: Resolvers = {
             };
             await scopeService.updateScope(scope);
             return scope;
-        },
-        deleteScope: async(_: any, { scopeId }, oidcContext) => {
-            const scopeService: ScopeService = new ScopeService(oidcContext);
-            await scopeService.deleteScope(scopeId);
-            return scopeId;
         },
         assignScopeToTenant: async(_: any, { scopeId, tenantId, accessRuleId }, oidcContext) => {
             const scopeService: ScopeService = new ScopeService(oidcContext);
@@ -515,11 +500,6 @@ const resolvers: Resolvers = {
             await authenticationGroupService.updateAuthenticationGroup(authenticationGroup);
             return authenticationGroup;
         },
-        deleteAuthenticationGroup: async(_: any, { authenticationGroupId }, oidcContext) => {
-            const authenticationGroupService: AuthenticationGroupService = new AuthenticationGroupService(oidcContext);
-            await authenticationGroupService.deleteAuthenticationGroup(authenticationGroupId);
-            return authenticationGroupId;
-        },
         assignAuthenticationGroupToClient: async(_: any, { authenticationGroupId, clientId }, oidcContext) => {
             const authenticationGroupService: AuthenticationGroupService = new AuthenticationGroupService(oidcContext);
             const res = await authenticationGroupService.assignAuthenticationGroupToClient(authenticationGroupId, clientId);
@@ -557,11 +537,6 @@ const resolvers: Resolvers = {
             };
             await groupService.updateGroup(group);
             return group;
-        },
-        deleteAuthorizationGroup: async(_: any, { groupId }, oidcContext ) => {
-            const groupService: GroupService = new GroupService(oidcContext);
-            await groupService.deleteGroup(groupId);
-            return groupId;
         },
         addUserToAuthorizationGroup: async(_: any, { groupId, userId }, oidcContext) => {
             const groupService: GroupService = new GroupService(oidcContext);
@@ -614,11 +589,6 @@ const resolvers: Resolvers = {
             const providerService: FederatedOIDCProviderService = new FederatedOIDCProviderService(oidcContext);
             await providerService.updateFederatedOIDCProvider(oidcProvider);
             return oidcProvider;
-        },
-        deleteFederatedOIDCProvider: async(_: any, { federatedOIDCProviderId }, oidcContext) => {
-            const providerService: FederatedOIDCProviderService = new FederatedOIDCProviderService(oidcContext);
-            await providerService.deleteFederatedOIDCProvider(federatedOIDCProviderId);
-            return federatedOIDCProviderId;
         },
         setTenantLoginFailurePolicy: async(_: any, { tenantLoginFailurePolicyInput }, oidcContext) => {
             const loginFailurePolicy: TenantLoginFailurePolicy = {
@@ -828,11 +798,6 @@ const resolvers: Resolvers = {
                 markForDelete: false
             });
             return r;
-        },
-        deleteRateLimitServiceGroup: async(_: any, { serviceGroupId }, oidcContext) => {
-            const service: RateLimitService = new RateLimitService(oidcContext);
-            await service.deleteRateLimitServiceGroup(serviceGroupId);
-            return serviceGroupId
         },
         assignRateLimitToTenant: async(_: any, { tenantId, serviceGroupId, allowUnlimited, limit, rateLimitPeriodMinutes }, oidcContext) => {
             const service: RateLimitService = new RateLimitService(oidcContext);

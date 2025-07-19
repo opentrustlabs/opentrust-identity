@@ -387,7 +387,7 @@ class RegisterUserService extends IdentityService {
             response.userRegistrationState = nextRegistrationState;
                         
             if(nextRegistrationState.registrationState === RegistrationState.RedirectBackToApplication || nextRegistrationState.registrationState === RegistrationState.RedirectToIamPortal){
-                await this.handleRegistrationCompletion(nextRegistrationState, response);
+                await this.handleRegistrationCompletion(nextRegistrationState, arrUserRegistrationState, response);
             }
         }
         else {
@@ -448,7 +448,7 @@ class RegisterUserService extends IdentityService {
         response.userRegistrationState = nextRegistrationState;
 
         if(nextRegistrationState.registrationState === RegistrationState.RedirectBackToApplication || nextRegistrationState.registrationState === RegistrationState.RedirectToIamPortal){
-            await this.handleRegistrationCompletion(nextRegistrationState, response);
+            await this.handleRegistrationCompletion(nextRegistrationState, arrUserRegistrationState, response);
         }
 
         return Promise.resolve(response);
@@ -495,7 +495,7 @@ class RegisterUserService extends IdentityService {
             response.userRegistrationState = nextRegistrationState;
 
             if(nextRegistrationState.registrationState === RegistrationState.RedirectBackToApplication || nextRegistrationState.registrationState === RegistrationState.RedirectToIamPortal){
-                await this.handleRegistrationCompletion(nextRegistrationState, response);
+                await this.handleRegistrationCompletion(nextRegistrationState, arrUserRegistrationState, response);
             }
         }
         else{
@@ -556,7 +556,7 @@ class RegisterUserService extends IdentityService {
                 response.userRegistrationState = nextRegistrationState;
 
                 if(nextRegistrationState.registrationState === RegistrationState.RedirectBackToApplication || nextRegistrationState.registrationState === RegistrationState.RedirectToIamPortal){
-                    await this.handleRegistrationCompletion(nextRegistrationState, response);
+                    await this.handleRegistrationCompletion(nextRegistrationState, arrUserRegistrationState, response);
                 }
             }
         }
@@ -620,7 +620,7 @@ class RegisterUserService extends IdentityService {
      * @param userRegistrationState 
      * @param response 
      */
-    protected async handleRegistrationCompletion(userRegistrationState: UserRegistrationState, response: UserRegistrationStateResponse): Promise<void> {
+    protected async handleRegistrationCompletion(userRegistrationState: UserRegistrationState, arrUserRegistrationState: Array<UserRegistrationState>, response: UserRegistrationStateResponse): Promise<void> {
         
         const user: User | null = await identityDao.getUserBy("id", userRegistrationState.userId);
         if(!user){
@@ -645,7 +645,11 @@ class RegisterUserService extends IdentityService {
                     response.userRegistrationState = userRegistrationState;
                     response.uri = authorizationCode.uri;
                     userRegistrationState.registrationStateStatus = STATUS_COMPLETE;
-                    await identityDao.updateUserRegistrationState(userRegistrationState);
+                    // await identityDao.updateUserRegistrationState(userRegistrationState);
+                    // At this point, we can delete all of the states tied to the registration
+                    for(let i = 0; i < arrUserRegistrationState.length; i++){
+                        await identityDao.deleteUserRegistrationState(arrUserRegistrationState[i]);
+                    }
                 }
                 catch(err: any){
                     response.registrationError.errorCode = err.message;
@@ -665,7 +669,11 @@ class RegisterUserService extends IdentityService {
                         response.accessToken = accessToken;
                         response.tokenExpiresAtMs = Date.now() + (this.getPortalAuthenTokenTTLSeconds() * 1000);
                         userRegistrationState.registrationStateStatus = STATUS_COMPLETE;
-                        await identityDao.updateUserRegistrationState(userRegistrationState);
+                        //await identityDao.updateUserRegistrationState(userRegistrationState);
+                        // At this point, we can delete all of the states tied to the registration
+                        for(let i = 0; i < arrUserRegistrationState.length; i++){
+                            await identityDao.deleteUserRegistrationState(arrUserRegistrationState[i]);
+                        }
                     }
                 }
                 catch(err: any){

@@ -22,6 +22,25 @@ class DBMarkForDeleteDao extends MarkForDeleteDao {
         return Promise.resolve(null);
     }
 
+    public async updateMarkForDelete(deleteInput: MarkForDelete): Promise<MarkForDelete>{
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.markForDelete.update(deleteInput, {
+            where: {
+                markForDeleteId: deleteInput.markForDeleteId
+            }
+        });
+        return deleteInput;
+    }
+    
+    public async getLatestMarkForDeleteRecords(limit: number): Promise<Array<MarkForDelete>>{
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        const arr: Array<MarkForDeleteEntity> | null = await sequelize.models.markForDelete.findAll({
+            limit: limit,
+            order: ["submittedDate"]
+        });
+        return arr.map( (e) => e.dataValues);
+    }
+
     public async getDeletionStatus(markForDeleteId: string): Promise<Array<DeletionStatus>> {
         const sequelize: Sequelize = await DBDriver.getConnection();
         const arr = await sequelize.models.deletionStatus.findAll({

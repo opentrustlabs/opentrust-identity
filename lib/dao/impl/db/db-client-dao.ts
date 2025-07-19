@@ -51,7 +51,58 @@ class DBClientDao extends ClientDao {
 
 
     public async deleteClient(clientId: string): Promise<void> {
-        throw new Error("Method not implemented.");
+        console.log("will try to delete all client data");
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.clientRedirectUriRel.destroy({
+            where: {
+                clientId: clientId
+            }
+        });
+        await sequelize.models.authenticationGroupClientRel.destroy({
+            where: {
+                clientId: clientId
+            }
+        });
+        await sequelize.models.clientScopeRel.destroy({
+            where: {
+                clientId: clientId
+            }
+        });
+        await sequelize.models.preAuthenticationState.destroy({
+            where: {
+                clientId: clientId
+            }
+        });
+        await sequelize.models.authorizationCodeData.destroy({
+            where: {
+                clientId: clientId
+            }
+        });
+        await sequelize.models.refreshData.destroy({
+            where: {
+                clientId: clientId
+            }
+        });
+        await sequelize.models.federatedOidcAuthorizationRel.destroy({
+            where: {
+                clientId: clientId
+            }
+        });
+        await sequelize.models.clientAuthHistory.destroy({
+            where: {
+                clientId: clientId
+            }
+        });
+        await sequelize.models.contact.destroy({
+            where: {
+                objectid: clientId
+            }
+        });
+        await sequelize.models.client.destroy({
+            where: {
+                clientId: clientId
+            }
+        });        
     }
 
 

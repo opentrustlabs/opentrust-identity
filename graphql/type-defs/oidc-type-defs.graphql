@@ -106,7 +106,7 @@ type Mutation {
     
     createTenant(tenantInput: TenantCreateInput!): Tenant
     updateTenant(tenantInput: TenantUpdateInput!): Tenant
-    deleteTenant(tenantId: String!): String
+    # deleteTenant(tenantId: String!): String
     addDomainToTenantManagement(tenantId: String!, domain: String!): TenantManagementDomainRel
     removeDomainFromTenantManagement(tenantId: String!, domain: String!): String
     addDomainToTenantRestrictedAuthentication(tenantId: String!, domain: String!): TenantRestrictedAuthenticationDomainRel
@@ -126,7 +126,7 @@ type Mutation {
     createClient(clientInput: ClientCreateInput!): Client
     updateClient(clientInput: ClientUpdateInput!): Client
     ## Just returns the ID after deletion is complete
-    deleteClient(clientId: String!): String
+    # deleteClient(clientId: String!): String
     addRedirectURI(clientId: String!, uri: String!): String
     removeRedirectURI(clientId: String!, uri: String!): String
     assignAuthenticationGroupToClient(authenticationGroupId: String!, clientId: String!): AuthenticationGroupClientRel
@@ -184,7 +184,7 @@ type Mutation {
     ## RateLimit
     createRateLimitServiceGroup(rateLimitServiceGroupInput: RateLimitServiceGroupCreateInput!): RateLimitServiceGroup
     updateRateLimitServiceGroup(rateLimitServiceGroupInput: RateLimitServiceGroupUpdateInput!): RateLimitServiceGroup
-    deleteRateLimitServiceGroup(serviceGroupId: String!): String
+    # deleteRateLimitServiceGroup(serviceGroupId: String!): String
     assignRateLimitToTenant(tenantId: String!, serviceGroupId: String!, allowUnlimited: Boolean, limit: Int, rateLimitPeriodMinutes: Int): TenantRateLimitRel
     updateRateLimitForTenant(tenantId: String!, serviceGroupId: String!, allowUnlimited: Boolean, limit: Int, rateLimitPeriodMinutes: Int): TenantRateLimitRel
     removeRateLimitFromTenant(tenantId: String!, serviceGroupId: String!): String
@@ -192,7 +192,7 @@ type Mutation {
     ## Scope
     createScope(scopeInput: ScopeCreateInput!): Scope
     updateScope(scopeInput: ScopeUpdateInput!): Scope
-    deleteScope(scopeId: String!): String
+    # deleteScope(scopeId: String!): String
     assignScopeToTenant(tenantId: String!, scopeId: String!, accessRuleId: String): TenantAvailableScope
     bulkAssignScopeToTenant(tenantId: String!, bulkScopeInput: [BulkScopeInput!]!): [TenantAvailableScope!]!
     removeScopeFromTenant(tenantId: String!, scopeId: String!): String
@@ -219,14 +219,14 @@ type Mutation {
     ## AuthenticationGroups
     createAuthenticationGroup(authenticationGroupInput: AuthenticationGroupCreateInput!): AuthenticationGroup
     updateAuthenticationGroup(authenticationGroupInput: AuthenticationGroupUpdateInput!): AuthenticationGroup
-    deleteAuthenticationGroup(authenticationGroupId: String!): String!
+    # deleteAuthenticationGroup(authenticationGroupId: String!): String!
     addUserToAuthenticationGroup(authenticationGroupId: String!, userId: String!): AuthenticationGroupUserRel
     removeUserFromAuthenticationGroup(authenticationGroupId: String!, userId: String!): String
     
     ## Groups
     createAuthorizationGroup(groupInput: AuthorizationGroupCreateInput!): AuthorizationGroup
     updateAuthorizationGroup(groupInput: AuthorizationGroupUpdateInput!): AuthorizationGroup
-    deleteAuthorizationGroup(groupId: String!): String!
+    # deleteAuthorizationGroup(groupId: String!): String!
     addUserToAuthorizationGroup(userId: String!, groupId: String!): AuthorizationGroupUserRel
     removeUserFromAuthorizationGroup(userId: String!, groupId: String!): String
 
@@ -237,7 +237,7 @@ type Mutation {
     removeFederatedOIDCProviderFromTenant(federatedOIDCProviderId: String!, tenantId: String!): FederatedOIDCProviderTenantRel!
     assignFederatedOIDCProviderToDomain(federatedOIDCProviderId: String!, domain: String!): FederatedOIDCProviderDomainRel!
     removeFederatedOIDCProviderFromDomain(federatedOIDCProviderId: String!, domain: String!): FederatedOIDCProviderDomainRel!
-    deleteFederatedOIDCProvider(federatedOIDCProviderId: String!): String!
+    # deleteFederatedOIDCProvider(federatedOIDCProviderId: String!): String!
 
     ## Scheduler locks
     deleteSchedulerLock(instanceId: String!): String!
