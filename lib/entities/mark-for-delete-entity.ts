@@ -43,7 +43,7 @@ export class MarkForDeleteEntity extends Model {
                 type: DataTypes.BIGINT,
                 primaryKey: false,
                 allowNull: true,
-                field: "completedate"
+                field: "completeddate"
             }
         }, {
             sequelize,

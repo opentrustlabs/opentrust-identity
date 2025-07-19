@@ -8,7 +8,7 @@ import SigningKeysDao from "../dao/signing-keys-dao";
 import TenantDao from "../dao/tenant-dao";
 import { DaoFactory } from "../data-sources/dao-factory";
 import { randomUUID } from 'crypto'; 
-import { MARK_FOR_DELETE_LOCK_NAME_PREFIX, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH } from "@/utils/consts";
+import { DELETE_EXPIRED_DATA_LOCK_NAME, MARK_FOR_DELETE_LOCK_NAME_PREFIX, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH } from "@/utils/consts";
 import { getOpenSearchClient } from "../data-sources/search";
 import AuthenticationGroupDao from "../dao/authentication-group-dao";
 import AuthorizationGroupDao from "../dao/authorization-group-dao";
@@ -32,13 +32,41 @@ interface CompletionCallback {
 
 class DeletionService {
 
-    public async run(): Promise<void> {
-        console.log("will delete marked-for-delete records");
+    public async deleteExpiredRecords() {
+        const schedulerLock: SchedulerLock = {
+            lockExpiresAtMS: Date.now() + (1000 * 1800),
+            lockInstanceId: randomUUID().toString(),
+            lockName: DELETE_EXPIRED_DATA_LOCK_NAME,
+            lockStartTimeMS: Date.now()
+        };
+
+        await schedulerDao.createSchedulerLock(schedulerLock);
+        const arr: Array<SchedulerLock> = await schedulerDao.getSchedulerLocksByName(DELETE_EXPIRED_DATA_LOCK_NAME);
+        if(arr.length === 0){
+            return;
+        }
+        try{
+            if(arr[0].lockInstanceId === schedulerLock.lockInstanceId){
+                await clientDao.deleteExpiredData();
+                await identityDao.deleteExpiredData();
+                await authDao.deleteExpiredData();
+                await schedulerDao.deleteExpiredData();
+                await markForDeleteDao.deleteCompletedRecords();
+            }
+        }
+        catch(err){
+            // TODO 
+            // LOG error
+        }
+        await schedulerDao.deleteSchedulerLock(schedulerLock.lockInstanceId);
+    }
+
+    public async deleteMarkForDeleteRecords(): Promise<void> {
         const arrMarkForDelete: Array<MarkForDelete> = await markForDeleteDao.getLatestMarkForDeleteRecords(20);
         // Find the first record that does not have a start date value and try to get a lock
         // on it. 
         const m: MarkForDelete | undefined = arrMarkForDelete.find(
-            (d: MarkForDelete) => d.startedData === null || d.startedData === undefined
+            (d: MarkForDelete) => d.startedDate === null || d.startedDate === undefined
         );
         if(!m){
             return;
@@ -59,12 +87,14 @@ class DeletionService {
         }
         try{
             if(arr[0].lockInstanceId === schedulerLock.lockInstanceId){
-                m.startedData = Date.now()
+                m.startedDate = Date.now();
                 await markForDeleteDao.updateMarkForDelete(m);
 
                 const onFinishedCallback: CompletionCallback = {
                     onFinished: function (): void {
-                        schedulerDao.deleteSchedulerLock(schedulerLock.lockInstanceId)
+                        m.completedDate = Date.now();
+                        markForDeleteDao.updateMarkForDelete(m);
+                        schedulerDao.deleteSchedulerLock(schedulerLock.lockInstanceId);
                     }
                 };
                 switch (m.objectType) {
@@ -106,29 +136,48 @@ class DeletionService {
             // Log error
             await schedulerDao.deleteSchedulerLock(schedulerLock.lockInstanceId);
         }
-        //await schedulerDao.deleteSchedulerLock(schedulerLock.lockInstanceId);
-
     }
 
     protected async deleteAuthenticationGroup(authenticationGroupId: string, callback: CompletionCallback): Promise<void> {
-        await authenticationGroupDao.deleteAuthenticationGroup(authenticationGroupId);
-        await this.deleteObjectSearchRecord(authenticationGroupId);
-        this.deleteRelSearchRecords(authenticationGroupId);
-        callback.onFinished();
+        try{
+            await authenticationGroupDao.deleteAuthenticationGroup(authenticationGroupId);
+            await this.deleteObjectSearchRecord(authenticationGroupId);
+            this.deleteRelSearchRecords(authenticationGroupId);
+            callback.onFinished();
+        }
+        catch (err) {
+            // TODO
+            // Log error
+            console.log(JSON.stringify(err));
+        }
     }
 
     protected async deleteAuthorizationGroup(groupId: string, callback: CompletionCallback): Promise<void> {
-        await authorizationGroupDao.deleteAuthorizationGroup(groupId);
-        await this.deleteObjectSearchRecord(groupId);
-        this.deleteRelSearchRecords(groupId);
-        callback.onFinished();
+        try{
+            await authorizationGroupDao.deleteAuthorizationGroup(groupId);
+            await this.deleteObjectSearchRecord(groupId);
+            this.deleteRelSearchRecords(groupId);
+            callback.onFinished();
+        }
+        catch (err) {
+            // TODO
+            // Log error
+            console.log(JSON.stringify(err));
+        }
     }
 
     protected async deleteClient(clientId: string, callback: CompletionCallback): Promise<void> {
-        await clientDao.deleteClient(clientId);
-        await this.deleteObjectSearchRecord(clientId);
-        this.deleteRelSearchRecords(clientId);
-        callback.onFinished();
+        try {
+            await clientDao.deleteClient(clientId);
+            await this.deleteObjectSearchRecord(clientId);
+            this.deleteRelSearchRecords(clientId);
+            callback.onFinished();
+        }
+        catch (err) {
+            // TODO
+            // Log error
+            console.log(JSON.stringify(err));
+        }
     }
 
     protected async deleteFederatedOidcProvider(providerId: string, callback: CompletionCallback): Promise<void> {
@@ -156,11 +205,17 @@ class DeletionService {
     }
 
     protected async deleteObjectSearchRecord(id: string): Promise<void> {
-        await searchClient.delete({
-            id: id,
-            index: SEARCH_INDEX_OBJECT_SEARCH
-        })
-
+        try {
+            await searchClient.delete({
+                id: id,
+                index: SEARCH_INDEX_OBJECT_SEARCH
+            });
+        }
+        catch (err) {
+            // TODO
+            // Log error
+            console.log(JSON.stringify(err));
+        }
     }
 
     /**
@@ -170,27 +225,36 @@ class DeletionService {
      * @param id 
      */
     protected async deleteRelSearchRecords(id: string): Promise<void> {
-        let query: any = {
+        const query: any = {
             bool: {
                 should: []
             }
         }
         query.bool.should.push({
-            term: {parentid: id}
+            term: { parentid: id }
         });
         query.bool.should.push({
-            term: {childid: id}
-        });       
-        
-        searchClient.deleteByQuery({
-            index: SEARCH_INDEX_REL_SEARCH,
-            body: query,
-            requests_per_second: 100,
-            conflicts: "proceed",
-            wait_for_completion: false,
-            scroll: "240m"
-        });         
+            term: { childid: id }
+        });
 
+        const searchBody: any = {
+            query: query
+        }
+        try {
+            searchClient.deleteByQuery({
+                index: SEARCH_INDEX_REL_SEARCH,
+                body: searchBody,
+                requests_per_second: 100,
+                conflicts: "proceed",
+                wait_for_completion: false,
+                scroll: "240m"
+            });
+        }
+        catch (err) {
+            // TODO
+            // Log error
+            console.log(JSON.stringify(err));
+        }
     }
 }
 

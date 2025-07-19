@@ -3,22 +3,17 @@ import SchedulerDao from "@/lib/dao/scheduler-dao";
 import SigningKeysDao from "@/lib/dao/signing-keys-dao";
 import TenantDao from "@/lib/dao/tenant-dao";
 import { DaoFactory } from "@/lib/data-sources/dao-factory";
-import { CREATE_NEW_SIGNING_KEY_LOCK_NAME, DELETE_EXPIRED_DATA_LOCK_NAME, KEY_TYPE_RSA, KEY_USE_DIGITAL_SIGNING, SIGNING_KEY_STATUS_ACTIVE, SIGNING_KEY_STATUS_REVOKED } from "@/utils/consts";
+import { CREATE_NEW_SIGNING_KEY_LOCK_NAME, KEY_TYPE_RSA, KEY_USE_DIGITAL_SIGNING, SIGNING_KEY_STATUS_ACTIVE, SIGNING_KEY_STATUS_REVOKED } from "@/utils/consts";
 import { randomUUID } from 'crypto'; 
 import { createJwtSigningKey } from "@/utils/signing-key-utils";
 import { generateRandomToken } from "@/utils/dao-utils";
 import { CronJob } from "cron";
-import IdentityDao from "../dao/identity-dao";
-import AuthDao from "../dao/auth-dao";
-import ClientDao from "../dao/client-dao";
+import DeletionService from "./deletion-service";
 
 
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
 const signingKeysDao: SigningKeysDao = DaoFactory.getInstance().getSigningKeysDao();
 const schedulerDao: SchedulerDao = DaoFactory.getInstance().getSchedulerDao();
-const identityDao: IdentityDao = DaoFactory.getInstance().getIdentityDao();
-const clientDao: ClientDao = DaoFactory.getInstance().getClientDao();
-const authDao: AuthDao = DaoFactory.getInstance().getAuthDao();
 
 
 // TODO
@@ -31,12 +26,15 @@ const authDao: AuthDao = DaoFactory.getInstance().getAuthDao();
 export function initSchedulers(){
 
     // every 15 minutes at 0, 15, 30, and 45 minutes past the hour
-    const deleteUpExpiredRecordsJob = new CronJob(
+    const deleteExpiredRecordsJob = new CronJob(
         "0,15,30,45 * * * *",
-        () => deleteExpiredRecords(),
+        () => {            
+            const service: DeletionService = new DeletionService();
+            service.deleteExpiredRecords()
+        },
         null
     );
-    deleteUpExpiredRecordsJob.start();
+    deleteExpiredRecordsJob.start();
 
     // at 00:00 on the first day of the month for every month
     const newSigningKeyJob = new CronJob(
@@ -47,45 +45,17 @@ export function initSchedulers(){
     newSigningKeyJob.start();
 
     const removeMarkedForDelete = new CronJob(
-        "0,15,30,45 * * * *",
-        () => console.log("will remove marked for delete jobs"),
+        "0,5,10,15,20,25,30,35,45,50,55 * * * *",
+        () => {
+            console.log("will remove marked for delete jobs");
+            const service: DeletionService = new DeletionService();
+            service.deleteMarkForDeleteRecords();
+        },
         null
     )
     removeMarkedForDelete.start();
 
 }
-
-
-
-async function deleteExpiredRecords() {
-    console.log("will delete expired records");
-    const schedulerLock: SchedulerLock = {
-        lockExpiresAtMS: Date.now() + (1000 * 1800),
-        lockInstanceId: randomUUID().toString(),
-        lockName: DELETE_EXPIRED_DATA_LOCK_NAME,
-        lockStartTimeMS: Date.now()
-    };
-
-    await schedulerDao.createSchedulerLock(schedulerLock);
-    const arr: Array<SchedulerLock> = await schedulerDao.getSchedulerLocksByName(DELETE_EXPIRED_DATA_LOCK_NAME);
-    if(arr.length === 0){
-        return;
-    }
-    try{
-        if(arr[0].lockInstanceId === schedulerLock.lockInstanceId){
-            await clientDao.deleteExpiredData();
-            await identityDao.deleteExpiredData();
-            await authDao.deleteExpiredData();
-            await schedulerDao.deleteExpiredData();
-        }
-    }
-    catch(err){
-        // TODO 
-        // LOG error
-    }
-    await schedulerDao.deleteSchedulerLock(schedulerLock.lockInstanceId);
-}
-
 
 
 async function createNewJwtSigningKey(){
@@ -149,9 +119,9 @@ async function createKey(tenant: Tenant){
     const keyName = `${tenant.tenantName} JWT Signing Key V-${keyVersion}`;
 
     const signingKeyData = createJwtSigningKey(keyName, tenant.tenantName, expiresAtDate);
-    console.log(signingKeyData.passphrase);
-    console.log(signingKeyData.privateKey);
-    console.log(signingKeyData.certificate);
+    // console.log(signingKeyData.passphrase);
+    // console.log(signingKeyData.privateKey);
+    // console.log(signingKeyData.certificate);
     const key: SigningKey = {
         expiresAtMs: expiresAtDate.getTime(),
         keyId: randomUUID().toString(),
@@ -166,7 +136,7 @@ async function createKey(tenant: Tenant){
         certificate: signingKeyData.certificate,
         createdAtMs: Date.now()
     };
-    //await signingKeysDao.createSigningKey(key);            
+    await signingKeysDao.createSigningKey(key);
 }
 
 

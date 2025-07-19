@@ -9,7 +9,7 @@ import JwtServiceUtils from "@/lib/service/jwt-service-utils";
 import { OIDCContext } from "@/graphql/graphql-context";
 import { DaoFactory } from "@/lib/data-sources/dao-factory";
 import TenantDao from "@/lib/dao/tenant-dao";
-import { initSchedulers } from "@/lib/service/init-service";
+import { initSchedulers } from "@/lib/service/init-scheduled-services";
 
 
 declare global {
