@@ -15,19 +15,11 @@ const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
 const signingKeysDao: SigningKeysDao = DaoFactory.getInstance().getSigningKeysDao();
 const schedulerDao: SchedulerDao = DaoFactory.getInstance().getSchedulerDao();
 
-
-// TODO
-// Add cron scheduler from https://github.com/kelektiv/node-cron
-// Schedule:
-// 1.   Key creation every  month
-// 2.   Expired data every 15 minutes (for those tables that have an expiration data timestamp)
-// 3.   Mark for delete records every 15 minutes
-
 export function initSchedulers(){
 
     // every 15 minutes at 0, 15, 30, and 45 minutes past the hour
     const deleteExpiredRecordsJob = new CronJob(
-        "0,15,30,45 * * * *",
+        "0,5,10,15,20,25,30,35,40,45,50,55 * * * *",
         () => {            
             const service: DeletionService = new DeletionService();
             service.deleteExpiredRecords()
@@ -44,16 +36,15 @@ export function initSchedulers(){
     );
     newSigningKeyJob.start();
 
-    const removeMarkedForDelete = new CronJob(
+    const removeMarkedForDeleteRecordsJob = new CronJob(
         "0,5,10,15,20,25,30,35,40,45,50,55 * * * *",
         () => {
-            console.log("will remove marked for delete jobs");
             const service: DeletionService = new DeletionService();
             service.deleteMarkForDeleteRecords();
         },
         null
     )
-    removeMarkedForDelete.start();
+    removeMarkedForDeleteRecordsJob.start();
 
 }
 
