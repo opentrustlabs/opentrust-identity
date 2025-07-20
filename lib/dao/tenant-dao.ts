@@ -72,6 +72,10 @@ abstract class TenantDao {
 
     abstract removeDomainFromTenantRestrictedAuthentication(tenantId: string, domain: string): Promise<void>;
 
+    abstract removeAllUsersFromTenant(tenantId: string): Promise<void>;
+
+    abstract removeAllAuthStateFromTenant(tenantId: string): Promise<void>;
+
 }
 
 export default TenantDao;
