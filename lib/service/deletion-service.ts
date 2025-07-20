@@ -1,4 +1,4 @@
-import { MarkForDelete, MarkForDeleteObjectType, SchedulerLock } from "@/graphql/generated/graphql-types";
+import { AuthenticationGroup, AuthorizationGroup, Client, Contact, MarkForDelete, MarkForDeleteObjectType, SchedulerLock, TenantAvailableScope, TenantManagementDomainRel } from "@/graphql/generated/graphql-types";
 import AuthDao from "../dao/auth-dao";
 import ClientDao from "../dao/client-dao";
 import IdentityDao from "../dao/identity-dao";
@@ -15,6 +15,7 @@ import AuthorizationGroupDao from "../dao/authorization-group-dao";
 import FederatedOIDCProviderDao from "../dao/federated-oidc-provider-dao";
 import ScopeDao from "../dao/scope-dao";
 import RateLimitDao from "../dao/rate-limit-dao";
+import ContactDao from "../dao/contact-dao";
 
 
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
@@ -29,6 +30,7 @@ const authenticationGroupDao: AuthenticationGroupDao = DaoFactory.getInstance().
 const authorizationGroupDao: AuthorizationGroupDao = DaoFactory.getInstance().getAuthorizationGroupDao();
 const scopeDao: ScopeDao = DaoFactory.getInstance().getScopeDao();
 const rateLimitDao: RateLimitDao = DaoFactory.getInstance().getRateLimitDao();
+const contactDao: ContactDao = DaoFactory.getInstance().getContactDao();
 const searchClient = getOpenSearchClient();
 
 interface CompletionCallback {
@@ -129,9 +131,9 @@ class DeletionService {
                     case MarkForDeleteObjectType.User:
                         this.deleteUser(m.objectId, onFinishedCallback);
                         break;
-                    // case MarkForDeleteObjectType.Tenant:
-                    //     this.deleteTenant(m.objectId, onFinishedCallback);
-                    //     break;
+                    case MarkForDeleteObjectType.Tenant:
+                        this.deleteTenant(m.objectId, onFinishedCallback);
+                        break;
                     default:
                         break;
                 }
@@ -258,7 +260,75 @@ class DeletionService {
     }
 
     protected async deleteTenant(tenantId: string, callback: CompletionCallback): Promise<void> {
+        const noOpCompletionCallback: CompletionCallback = {
+            onFinished() {
+                // NO OP
+            }
+        }
+        try{
+            const clients: Array<Client> = await clientDao.getClients(tenantId);
+            for(let i = 0; i < clients.length; i++){
+                await this.deleteClient(clients[i].clientId, noOpCompletionCallback);
+            }
 
+            const authenticationGroups: Array<AuthenticationGroup> = await authenticationGroupDao.getAuthenticationGroups(tenantId);
+            for(let i = 0; i < authenticationGroups.length; i++){
+                await this.deleteAuthenticationGroup(authenticationGroups[i].authenticationGroupId, noOpCompletionCallback);
+            }
+
+            const authorizationGroups: Array<AuthorizationGroup> = await authorizationGroupDao.getAuthorizationGroups(tenantId);
+            for(let i = 0; i < authorizationGroups.length; i++){
+                await this.deleteAuthorizationGroup(authorizationGroups[i].groupId, noOpCompletionCallback);
+            }
+
+            const arrTenantAvailableScope: Array<TenantAvailableScope> = await scopeDao.getTenantAvailableScope(tenantId);
+            for(let i = 0; i < arrTenantAvailableScope.length; i++){
+                await scopeDao.removeScopeFromTenant(tenantId, arrTenantAvailableScope[i].scopeId);
+            }
+
+            const rateLimitRels = await rateLimitDao.getRateLimitTenantRel(tenantId, null);
+            for(let i = 0; i < rateLimitRels.length; i++){
+                await rateLimitDao.removeRateLimitFromTenant(tenantId, rateLimitRels[i].servicegroupid);
+            }
+
+            const arrTenantManagementDomainRel: Array<TenantManagementDomainRel> = await tenantDao.getDomainTenantManagementRels(tenantId);
+            for(let i = 0; i < arrTenantManagementDomainRel.length; i ++){
+                await tenantDao.removeDomainFromTenantManagement(tenantId, arrTenantManagementDomainRel[i].domain);
+            }
+
+            const arrTenantRestrictedAuthnDomains = await tenantDao.getDomainsForTenantRestrictedAuthentication(tenantId);
+            for(let i = 0; i < arrTenantRestrictedAuthnDomains.length; i++){
+                await tenantDao.removeDomainFromTenantRestrictedAuthentication(tenantId, arrTenantRestrictedAuthnDomains[i].domain);
+            }
+
+            const arrOidcProviderTenantRels = await federatedOidcProviderDao.getFederatedOidcProviderTenantRels(tenantId);
+            for(let i = 0; i < arrOidcProviderTenantRels.length; i++){
+                await federatedOidcProviderDao.removeFederatedOidcProviderFromTenant(arrOidcProviderTenantRels[i].federatedOIDCProviderId, tenantId);
+            }
+
+            const arrContacts: Array<Contact> = await contactDao.getContacts(tenantId);
+            for(let i = 0; i < arrContacts.length; i++){
+                await contactDao.removeContact(arrContacts[i].contactid);
+            }
+            
+            await tenantDao.removePasswordConfigFromTenant(tenantId);
+            await tenantDao.removeLegacyUserMigrationConfiguration(tenantId);
+            await tenantDao.removeLoginFailurePolicy(tenantId);
+            await tenantDao.deleteAnonymousUserConfiguration(tenantId);
+            await tenantDao.deleteTenantLookAndFeel(tenantId);
+            await tenantDao.removeAllAuthStateFromTenant(tenantId);
+            await tenantDao.removeAllUsersFromTenant(tenantId);
+
+            await this.deleteObjectSearchRecord(tenantId);
+            this.deleteRelSearchRecords(tenantId);
+            callback.onFinished();
+
+        }
+        catch(err){
+            // TODO
+            // Log error
+            console.log(JSON.stringify(err));
+        }
     }
 
     protected async deleteObjectSearchRecord(id: string): Promise<void> {
