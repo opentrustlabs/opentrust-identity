@@ -388,11 +388,6 @@ const resolvers: Resolvers = {
             const updatedKey = await keysService.updateSigningKey(key);
             return updatedKey;
         },
-        deleteSigningKey: async(_: any, { keyId }, oidcContext) => {
-            const keysService: SigningKeysService = new SigningKeysService(oidcContext);
-            await keysService.deleteSigningKey(keyId);
-            return keyId;
-        },
         createScope: async(_: any, { scopeInput }, oidcContext) => {
             const scopeService: ScopeService = new ScopeService(oidcContext);
             const scope: Scope = {

@@ -99,18 +99,7 @@ class DBTenantDao extends TenantDao {
 
     public async deleteTenant(tenantId: string): Promise<void> {        
         const sequelize: Sequelize = await DBDriver.getConnection();
-        const tenantEntity: TenantEntity | null = await sequelize.models.tenant.findOne({
-            where: {
-                tenantId: tenantId
-            }
-        });
-
-        if(tenantEntity){
-            tenantEntity.set({
-                markForDelete: true
-            });
-            await tenantEntity.save();            
-        }
+        
     }
 
     

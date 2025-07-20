@@ -63,6 +63,30 @@ class DBMarkForDeleteDao extends MarkForDeleteDao {
         return Promise.resolve();
     }
 
+    /**
+     * Any job which has started but not completed within 24 hours can be considered 
+     * "stalled" (or "failed") and should be restarted on the next round of delete
+     * operations by setting the started date back to null.
+     */
+    public async resetStalledJobs(): Promise<void> {
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        const stalledJobs: Array<MarkForDeleteEntity> = await sequelize.models.markForDelete.findAll({
+            where: {
+                completedDate: null,
+                startedDate: {
+                    [Op.ne]: null,
+                    [Op.lt]: Date.now() - (24 * 60 * 60 * 1000)
+                }
+            },
+            limit: 200
+        });
+        for(let i = 0; i < stalledJobs.length; i++){
+            stalledJobs[i].setDataValue("startedDate", null);
+            stalledJobs[i].save()
+        }
+        return Promise.resolve();
+    }
+
     public async startStep(markForDeleteId: string, step: string): Promise<void> {
         throw new Error("Method not implemented.");
     }

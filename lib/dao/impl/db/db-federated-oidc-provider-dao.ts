@@ -188,8 +188,37 @@ class DBFederatedOIDCProviderDao extends FederatedOIDCProviderDao {
         });
     }
 
+    /**
+     * 
+     * @param federatedOIDCProviderId 
+     */
     public async deleteFederatedOidcProvider(federatedOIDCProviderId: string): Promise<void> {
-        throw new Error("Method not implemented.");
+        const sequelize: Sequelize = await DBDriver.getConnection();
+
+        await sequelize.models.federatedOidcAuthorizationRel.destroy({
+            where: {
+                federatedOIDCProviderId: federatedOIDCProviderId
+            }
+        });
+
+        await sequelize.models.federatedOidcProviderTenantRel.destroy({
+            where: {
+                federatedOIDCProviderId: federatedOIDCProviderId
+            }
+        });
+
+        await sequelize.models.federatedOidcProviderDomainRel.destroy({
+            where: {
+                federatedOIDCProviderId: federatedOIDCProviderId
+            }
+        });
+        
+        await sequelize.models.federatedOidcProvider.destroy({
+            where: {
+                federatedOIDCProviderId
+            }
+        });
+
     }
 
     protected providerEntityToModel(entity: FederatedOIDCProviderEntity): FederatedOidcProvider {

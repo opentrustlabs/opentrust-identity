@@ -109,7 +109,20 @@ class DBRateLimitDao extends RateLimitDao {
     }
 
     public async deleteRateLimitServiceGroup(serviceGroupId: string): Promise<void> {
-        throw new Error("Method not implemented.");
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.tenantRateLimitRel.destroy({
+            where: {
+                servicegroupid: serviceGroupId
+            }
+        });
+
+        await sequelize.models.rateLimitServiceGroup.destroy({
+            where: {
+                servicegroupid: serviceGroupId
+            }
+        });
+
+        return Promise.resolve();
     }
 
 

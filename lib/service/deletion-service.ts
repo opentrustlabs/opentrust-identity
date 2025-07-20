@@ -12,6 +12,9 @@ import { DELETE_EXPIRED_DATA_LOCK_NAME, MARK_FOR_DELETE_LOCK_NAME_PREFIX, SEARCH
 import { getOpenSearchClient } from "../data-sources/search";
 import AuthenticationGroupDao from "../dao/authentication-group-dao";
 import AuthorizationGroupDao from "../dao/authorization-group-dao";
+import FederatedOIDCProviderDao from "../dao/federated-oidc-provider-dao";
+import ScopeDao from "../dao/scope-dao";
+import RateLimitDao from "../dao/rate-limit-dao";
 
 
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
@@ -19,10 +22,13 @@ const signingKeysDao: SigningKeysDao = DaoFactory.getInstance().getSigningKeysDa
 const schedulerDao: SchedulerDao = DaoFactory.getInstance().getSchedulerDao();
 const identityDao: IdentityDao = DaoFactory.getInstance().getIdentityDao();
 const clientDao: ClientDao = DaoFactory.getInstance().getClientDao();
+const federatedOidcProviderDao: FederatedOIDCProviderDao = DaoFactory.getInstance().getFederatedOIDCProvicerDao();
 const authDao: AuthDao = DaoFactory.getInstance().getAuthDao();
 const markForDeleteDao: MarkForDeleteDao = DaoFactory.getInstance().getMarkForDeleteDao();
 const authenticationGroupDao: AuthenticationGroupDao = DaoFactory.getInstance().getAuthenticationGroupDao();
 const authorizationGroupDao: AuthorizationGroupDao = DaoFactory.getInstance().getAuthorizationGroupDao();
+const scopeDao: ScopeDao = DaoFactory.getInstance().getScopeDao();
+const rateLimitDao: RateLimitDao = DaoFactory.getInstance().getRateLimitDao();
 const searchClient = getOpenSearchClient();
 
 interface CompletionCallback {
@@ -52,6 +58,7 @@ class DeletionService {
                 await authDao.deleteExpiredData();
                 await schedulerDao.deleteExpiredData();
                 await markForDeleteDao.deleteCompletedRecords();
+                await markForDeleteDao.resetStalledJobs();
             }
         }
         catch(err){
@@ -104,24 +111,24 @@ class DeletionService {
                     case MarkForDeleteObjectType.AuthenticationGroup:
                         this.deleteAuthenticationGroup(m.objectId, onFinishedCallback);
                         break;
-                    // case MarkForDeleteObjectType.FederatedOidcProvider:
-                    //     this.deleteFederatedOidcProvider(m.objectId, onFinishedCallback);
-                    //     break;
+                    case MarkForDeleteObjectType.FederatedOidcProvider:
+                        this.deleteFederatedOidcProvider(m.objectId, onFinishedCallback);
+                        break;
                     case MarkForDeleteObjectType.AuthorizationGroup:
                         this.deleteAuthorizationGroup(m.objectId, onFinishedCallback);
                         break;
-                    // case MarkForDeleteObjectType.RateLimitServiceGroup:
-                    //     this.deleteRateLimitServiceGroup(m.objectId, onFinishedCallback);
-                    //     break;
-                    // case MarkForDeleteObjectType.Scope:
-                    //     this.deleteScope(m.objectId, onFinishedCallback);
-                    //     break;
-                    // case MarkForDeleteObjectType.SigningKey:
-                    //     this.deleteSigningKey(m.objectId, onFinishedCallback);
-                    //     break;
-                    // case MarkForDeleteObjectType.User:
-                    //     this.deleteUser(m.objectId, onFinishedCallback);
-                    //     break;
+                    case MarkForDeleteObjectType.RateLimitServiceGroup:
+                        this.deleteRateLimitServiceGroup(m.objectId, onFinishedCallback);
+                        break;
+                    case MarkForDeleteObjectType.Scope:
+                        this.deleteScope(m.objectId, onFinishedCallback);
+                        break;
+                    case MarkForDeleteObjectType.SigningKey:
+                        this.deleteSigningKey(m.objectId, onFinishedCallback);
+                        break;
+                    case MarkForDeleteObjectType.User:
+                        this.deleteUser(m.objectId, onFinishedCallback);
+                        break;
                     // case MarkForDeleteObjectType.Tenant:
                     //     this.deleteTenant(m.objectId, onFinishedCallback);
                     //     break;
@@ -181,23 +188,73 @@ class DeletionService {
     }
 
     protected async deleteFederatedOidcProvider(providerId: string, callback: CompletionCallback): Promise<void> {
-
+        try {
+            await federatedOidcProviderDao.deleteFederatedOidcProvider(providerId);
+            await this.deleteObjectSearchRecord(providerId);
+            this.deleteRelSearchRecords(providerId);
+            callback.onFinished();
+        }
+        catch (err) {
+            // TODO
+            // Log error
+            console.log(JSON.stringify(err));
+        }
     }
 
     protected async deleteRateLimitServiceGroup(serviceGroupId: string, callback: CompletionCallback): Promise<void> {
-
+        try {
+            await rateLimitDao.deleteRateLimitServiceGroup(serviceGroupId);
+            await this.deleteObjectSearchRecord(serviceGroupId);
+            this.deleteRelSearchRecords(serviceGroupId);
+            callback.onFinished();
+        }
+        catch (err) {
+            // TODO
+            // Log error
+            console.log(JSON.stringify(err));
+        }
     }
 
     protected async deleteScope(scopeId: string, callback: CompletionCallback): Promise<void> {
-
+        try {
+            await scopeDao.deleteScope(scopeId);
+            await this.deleteObjectSearchRecord(scopeId);
+            this.deleteRelSearchRecords(scopeId);
+            callback.onFinished();
+        }
+        catch (err) {
+            // TODO
+            // Log error
+            console.log(JSON.stringify(err));
+        }
     }
 
     protected async deleteSigningKey(keyId: string, callback: CompletionCallback): Promise<void> {
-
+        try {
+            await signingKeysDao.deleteSigningKey(keyId);
+            await this.deleteObjectSearchRecord(keyId);
+            this.deleteRelSearchRecords(keyId);
+            callback.onFinished();
+        }
+        catch (err) {
+            // TODO
+            // Log error
+            console.log(JSON.stringify(err));
+        }
     }
 
     protected async deleteUser(userId: string, callback: CompletionCallback): Promise<void> {
-
+        try {
+            await identityDao.deleteUser(userId);
+            await this.deleteObjectSearchRecord(userId);
+            this.deleteRelSearchRecords(userId);
+            callback.onFinished();
+        }
+        catch (err) {
+            // TODO
+            // Log error
+            console.log(JSON.stringify(err));
+        }
     }
 
     protected async deleteTenant(tenantId: string, callback: CompletionCallback): Promise<void> {

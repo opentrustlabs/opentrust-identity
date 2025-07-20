@@ -76,14 +76,6 @@ create TABLE federated_oidc_provider_tenant_rel (
     FOREIGN KEY (federatedoidcproviderid) REFERENCES federated_oidc_provider(federatedoidcproviderid)
 );
 
-create TABLE social_oidc_provider_tenant_rel (
-    federatedoidcproviderid VARCHAR(64) NOT NULL,
-    tenantid VARCHAR(64) NOT NULL,
-    PRIMARY KEY (federatedoidcproviderid, tenantid),
-    FOREIGN KEY (tenantid) REFERENCES tenant(tenantid),
-    FOREIGN KEY (federatedoidcproviderid) REFERENCES federated_oidc_provider(federatedoidcproviderid)
-);
-
 create TABLE federated_oidc_provider_domain_rel (
     federatedoidcproviderid VARCHAR(64) NOT NULL,
     domain VARCHAR(128) NOT NULL UNIQUE,

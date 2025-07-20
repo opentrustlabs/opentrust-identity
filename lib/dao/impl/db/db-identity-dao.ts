@@ -456,6 +456,95 @@ class DBIdentityDao extends IdentityDao {
 
     public async deleteUser(userId: string): Promise<void> {
         const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.userTenantRel.destroy({
+            where: {
+                userId: userId
+            }
+        });
+        await sequelize.models.authenticationGroupUserRel.destroy({
+            where: {
+                userId: userId
+            }
+        });
+
+        await sequelize.models.authorizationGroupUserRel.destroy({
+            where: {
+                userId: userId
+            }
+        });
+
+        await sequelize.models.userCredential.destroy({
+            where: {
+                userId: userId
+            }
+        });
+
+        await sequelize.models.userScopeRel.destroy({
+            where: {
+                userId: userId
+            }
+        });
+
+        await sequelize.models.authorizationCodeData.destroy({
+            where: {
+                userId: userId
+            }
+        });
+
+        await sequelize.models.refreshData.destroy({
+            where: {
+                userId: userId
+            }
+        });
+
+        await sequelize.models.federatedOidcAuthorizationRel.destroy({
+            where: {
+                userId: userId
+            }
+        });
+
+        await sequelize.models.userFailedLogin.destroy({
+            where: {
+                userId: userId
+            }
+        });
+
+        await sequelize.models.userVerificationToken.destroy({
+            where: {
+                userId: userId
+            }
+        });
+
+        await sequelize.models.userMfaRel.destroy({
+            where: {
+                userId: userId
+            }
+        });
+
+        await sequelize.models.userFido2CountrerRel.destroy({
+            where: {
+                userId: userId
+            }
+        });
+
+        await sequelize.models.userFido2Challenge.destroy({
+            where: {
+                userId: userId
+            }
+        });
+
+        await sequelize.models.userAuthenticationState.destroy({
+            where: {
+                userId: userId
+            }
+        });
+
+        await sequelize.models.userRegistrationState.destroy({
+            where: {
+                userId: userId
+            }
+        });
+
         await sequelize.models.user.destroy({
             where: {
                 userId: userId
