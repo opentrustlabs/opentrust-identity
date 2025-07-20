@@ -318,6 +318,7 @@ class DeletionService {
             await tenantDao.deleteTenantLookAndFeel(tenantId);
             await tenantDao.removeAllAuthStateFromTenant(tenantId);
             await tenantDao.removeAllUsersFromTenant(tenantId);
+            await tenantDao.deleteTenant(tenantId);
 
             await this.deleteObjectSearchRecord(tenantId);
             this.deleteRelSearchRecords(tenantId);
