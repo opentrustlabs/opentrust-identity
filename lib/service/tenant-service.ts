@@ -212,7 +212,7 @@ class TenantService {
             throw new GraphQLError(authResult.errorMessage || "ERROR");
         }
 
-        const tenant: Tenant | null = await this.getTenantById(tenantId);
+        const tenant: Tenant | null = await tenantDao.getTenantById(tenantId);
         if(!tenant){
             throw new GraphQLError("ERROR_TENANT_DOES_NOT_EXIST");
         }
@@ -287,15 +287,12 @@ class TenantService {
     }
 
     public async getTenantMetaData(tenantId: string): Promise<TenantMetaData | null> {
-        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_READ_SCOPE, TENANT_READ_ALL_SCOPE], tenantId);
-        if(!authResult.isAuthorized){
-            throw new GraphQLError(authResult.errorMessage || "ERROR");
-        }
-        const tenant: Tenant | null = await this.getTenantById(tenantId);
+        const tenant: Tenant | null = await tenantDao.getTenantById(tenantId);
         if(!tenant){
             throw new GraphQLError("ERROR_TENANT_DOES_NOT_EXIST");
         }
-        const tenantLookAndFeel: TenantLookAndFeel | null = await this.getTenantLookAndFeel(tenantId);
+        
+        const tenantLookAndFeel: TenantLookAndFeel | null = await tenantDao.getTenantLookAndFeel(tenantId);        
         return Promise.resolve(
             {
                 tenant: tenant,
@@ -319,7 +316,7 @@ class TenantService {
             throw new GraphQLError(authResult.errorMessage || "ERROR");
         }
 
-        const existing: TenantLookAndFeel | null = await this.getTenantLookAndFeel(tenantLookAndFeel.tenantid);
+        const existing: TenantLookAndFeel | null = await tenantDao.getTenantLookAndFeel(tenantLookAndFeel.tenantid);
         if(!existing){
             return tenantDao.createTenantLookAndFeel(tenantLookAndFeel);
         }
@@ -337,11 +334,7 @@ class TenantService {
         return tenantDao.deleteTenantLookAndFeel(tenantId);
     }
 
-    public async getTenantPasswordConfig(tenantId: string): Promise<TenantPasswordConfig | null> {
-        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_READ_SCOPE, TENANT_READ_ALL_SCOPE], tenantId);
-        if(!authResult.isAuthorized){
-            throw new GraphQLError(authResult.errorMessage || "ERROR");
-        }
+    public async getTenantPasswordConfig(tenantId: string): Promise<TenantPasswordConfig | null> {        
         return tenantDao.getTenantPasswordConfig(tenantId);
     }
 
@@ -387,7 +380,7 @@ class TenantService {
         if(tenant === null){
             throw new GraphQLError("ERROR_UNABLE_TO_RETRIEVE_TENANT");
         }
-        const existingConfig: TenantPasswordConfig | null = await this.getTenantPasswordConfig(tenantPasswordConfig.tenantId);
+        const existingConfig: TenantPasswordConfig | null = await tenantDao.getTenantPasswordConfig(tenantPasswordConfig.tenantId);
         if(existingConfig === null){
             return tenantDao.assignPasswordConfigToTenant(tenantPasswordConfig);    
         }
