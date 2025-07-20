@@ -1,4 +1,4 @@
-import { AuthenticationGroup, AuthorizationGroup, Client, Contact, MarkForDelete, MarkForDeleteObjectType, SchedulerLock, TenantAvailableScope, TenantManagementDomainRel } from "@/graphql/generated/graphql-types";
+import { AuthenticationGroup, AuthorizationGroup, Client, Contact, MarkForDelete, MarkForDeleteObjectType, SchedulerLock, SigningKey, TenantAvailableScope, TenantManagementDomainRel } from "@/graphql/generated/graphql-types";
 import AuthDao from "../dao/auth-dao";
 import ClientDao from "../dao/client-dao";
 import IdentityDao from "../dao/identity-dao";
@@ -309,6 +309,11 @@ class DeletionService {
             const arrContacts: Array<Contact> = await contactDao.getContacts(tenantId);
             for(let i = 0; i < arrContacts.length; i++){
                 await contactDao.removeContact(arrContacts[i].contactid);
+            }
+
+            const arrSigningKeys: Array<SigningKey> = await signingKeysDao.getSigningKeys(tenantId);
+            for(let i = 0; i < arrSigningKeys.length; i++){
+                await signingKeysDao.deleteSigningKey(arrSigningKeys[i].keyId);
             }
             
             await tenantDao.removePasswordConfigFromTenant(tenantId);

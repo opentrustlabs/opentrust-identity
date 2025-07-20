@@ -633,7 +633,26 @@ const UserDetail: React.FC<UserDetailProps> = ({
                         {!isMarkedForDelete &&
                             <React.Fragment>
                                 {userTenantRels && userTenantRels.length === 0 &&
-                                    <div>This user does not belong to any tenants and so no scope can be assigned to this user</div>
+                                    <Grid2 size={12}>
+                                        <Accordion >
+                                            <AccordionSummary
+                                                expandIcon={<ExpandMoreIcon />}
+                                                id={`access-control-configuration`}
+                                                sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center" }}
+                                            >
+                                                <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+                                                    <PolicyIcon /><div style={{ marginLeft: "8px" }}>Access Control</div>
+                                                </div>
+                                            </AccordionSummary>
+                                            <AccordionDetails>
+                                                <Typography>
+                                                    <Grid2  display={"flex"} justifyContent={"center"}>
+                                                        <div>This user does not belong to any tenants and so no scope can be assigned to this user</div>
+                                                    </Grid2>
+                                                </Typography>
+                                            </AccordionDetails>
+                                        </Accordion>
+                                    </Grid2>
                                 }
                                 {!userTenantRels &&
                                     <div></div>
