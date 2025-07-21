@@ -1,4 +1,4 @@
-import { Tenant, TenantManagementDomainRel, TenantAnonymousUserConfiguration, TenantLookAndFeel, TenantPasswordConfig, TenantLoginFailurePolicy, TenantLegacyUserMigrationConfig, TenantRestrictedAuthenticationDomainRel, UserTenantRel } from "@/graphql/generated/graphql-types";
+import { Tenant, TenantManagementDomainRel, TenantAnonymousUserConfiguration, TenantLookAndFeel, TenantPasswordConfig, TenantLoginFailurePolicy, TenantLegacyUserMigrationConfig, TenantRestrictedAuthenticationDomainRel, UserTenantRel, CaptchaConfig } from "@/graphql/generated/graphql-types";
 import TenantDao from "../../tenant-dao";
 import { TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import { GraphQLError } from "graphql";
@@ -13,6 +13,7 @@ import { Op, Sequelize } from "sequelize";
 import { TenantEntity } from "@/lib/entities/tenant-entity";
 import TenantLoginFailurePolicyEntity from "@/lib/entities/tenant-login-failure-policy-entity";
 import UserTenantRelEntity from "@/lib/entities/user-tenant-rel-entity";
+import CaptchaConfigEntity from "@/lib/entities/captcha-config-entity";
 
 class DBTenantDao extends TenantDao {
 
@@ -470,6 +471,17 @@ class DBTenantDao extends TenantDao {
         });
 
         return Promise.resolve();
+    }
+
+    public async getCaptchaConfig(): Promise<CaptchaConfig | null>{
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        const arr: Array<CaptchaConfigEntity> | null = await sequelize.models.captchaConfig.findAll();
+        if(arr.length === 0){
+            return null;
+        }
+        else{
+            return arr[0].dataValues;
+        }
     }
 
 }

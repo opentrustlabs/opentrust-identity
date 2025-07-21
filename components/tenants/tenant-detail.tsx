@@ -8,7 +8,7 @@ import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
 import { DEFAULT_RATE_LIMIT_PERIOD_MINUTES, FEDERATED_AUTHN_CONSTRAINT_DISPLAY, FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE, FEDERATED_AUTHN_CONSTRAINT_NOT_ALLOWED, FEDERATED_AUTHN_CONSTRAINT_PERMISSIVE, TENANT_DELETE_SCOPE, TENANT_TYPE_IDENTITY_MANAGEMENT, TENANT_TYPE_IDENTITY_MANAGEMENT_AND_SERVICES, TENANT_TYPE_ROOT_TENANT, TENANT_TYPE_SERVICES, TENANT_TYPES_DISPLAY, TENANT_UPDATE_SCOPE } from "@/utils/consts";
 import { MarkForDeleteObjectType, Tenant, TenantUpdateInput } from "@/graphql/generated/graphql-types";
 import { useMutation, useQuery } from "@apollo/client";
-import { TENANT_DETAIL_QUERY } from "@/graphql/queries/oidc-queries";
+import { CAPTCHA_CONFIG_QUERY, TENANT_DETAIL_QUERY } from "@/graphql/queries/oidc-queries";
 import DataLoading from "../layout/data-loading";
 import ErrorComponent from "../error/error-component";
 import PasswordIcon from '@mui/icons-material/Password';
@@ -97,7 +97,11 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
         verifyEmailOnSelfRegistration: tenant.verifyEmailOnSelfRegistration,
         tenantDescription: tenant.tenantDescription,
         defaultRateLimit: tenant.defaultRateLimit,
-        defaultRateLimitPeriodMinutes: tenant.defaultRateLimitPeriodMinutes
+        defaultRateLimitPeriodMinutes: tenant.defaultRateLimitPeriodMinutes,
+        allowBackupEmail: tenant.allowBackupEmail,
+        registrationRequireCaptcha: tenant.registrationRequireCaptcha,
+        registrationRequireTermsAndConditions: tenant.registrationRequireTermsAndConditions,
+        termsAndConditionsUri: tenant.termsAndConditionsUri
     }
 
     // STATE VARIABLES
@@ -110,8 +114,17 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
     const [isMarkedForDelete, setIsMarkedForDelete] = React.useState<boolean>(tenant.markForDelete);
     const [disableInputs] = React.useState<boolean>(tenant.markForDelete || !containsScope(TENANT_UPDATE_SCOPE, profile?.scope || []));
     const [canDeleteTenant] = React.useState<boolean>(containsScope(TENANT_DELETE_SCOPE, profile?.scope || []));
+    const [captchaConfigExists, setCaptchaConfigExists] = React.useState<boolean>(false);
 
     // GRAPHQL FUNCTIONS
+    const {} = useQuery(CAPTCHA_CONFIG_QUERY, {
+        onCompleted(data) {
+            if(data && data.getCaptchaConfig !== null){
+                setCaptchaConfigExists(true);
+            }
+        }
+    });
+
     const [tenantUpdateMutation] = useMutation(TENANT_UPDATE_MUTATION, {
             variables: {
                 tenantInput: tenantInput
@@ -400,9 +413,54 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                             <Grid2 alignContent={"center"} size={10}>Require CAPTCHA on Registration</Grid2>
                                             <Grid2 size={2}>
                                                 <Checkbox 
-                                                    disabled={disableInputs}
+                                                    disabled={disableInputs || captchaConfigExists === false}
+                                                    checked={tenantInput.registrationRequireCaptcha === true}
+                                                    onChange={(_, checked: boolean) => {
+                                                        tenantInput.registrationRequireCaptcha = checked;
+                                                        setTenantInput({...tenantInput});
+                                                        setOverviewDirty(true);
+                                                    }}
                                                 />
                                             </Grid2>
+                                            <Grid2 alignContent={"center"} size={10}>Allow backup email</Grid2>
+                                            <Grid2 size={2}>
+                                                <Checkbox 
+                                                    disabled={disableInputs || tenantInput.federatedAuthenticationConstraint === FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE}
+                                                    checked={tenantInput.allowBackupEmail === true}
+                                                    onChange={(_, checked: boolean) => {
+                                                        tenantInput.allowBackupEmail = checked;
+                                                        setTenantInput({...tenantInput});
+                                                        setOverviewDirty(true);
+                                                    }}
+                                                />
+                                            </Grid2>
+                                            <Grid2 alignContent={"center"} size={10}>Require Terms And Conditions On Registration</Grid2>
+                                            <Grid2 size={2}>
+                                                <Checkbox 
+                                                    disabled={disableInputs}
+                                                    checked={tenantInput.registrationRequireTermsAndConditions === true}
+                                                    onChange={(_, checked: boolean) => {
+                                                        tenantInput.registrationRequireTermsAndConditions = checked;
+                                                        setTenantInput({...tenantInput});
+                                                        setOverviewDirty(true);
+                                                    }}
+                                                />
+                                            </Grid2>
+                                            {tenantInput.registrationRequireTermsAndConditions === true &&
+                                                <Grid2 size={12} marginTop={"8px"} marginBottom={"16px"}>
+                                                    <div>Terms And Conditions URI</div>
+                                                    <TextField name="termsAndConditionsUri" id="termsAndConditionsUri" 
+                                                        disabled={disableInputs === true}
+                                                        onChange={(evt) => {                                                            
+                                                            tenantInput.termsAndConditionsUri = evt.target.value;                                                                                                                     
+                                                            setTenantInput({...tenantInput}); 
+                                                            setOverviewDirty(true); 
+                                                        }}
+                                                        value={tenantInput.termsAndConditionsUri || ""} fullWidth={true} size="small" 
+                                                    />
+                                                </Grid2>
+                                            }
+
                                         </Grid2>
                                     </Grid2>                                    
                                 </Grid2>                                
@@ -426,7 +484,8 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                                 totalRateUsed === null ||
                                                 tenantInput.defaultRateLimit < totalRateUsed
                                             )
-                                        )
+                                        ) ||
+                                        (tenantInput.registrationRequireTermsAndConditions && (tenantInput.termsAndConditionsUri === "" || tenantInput.termsAndConditionsUri === null))
                                     }
                                 />
                             </Paper>

@@ -96,6 +96,9 @@ type Query {
     ## i18n
     getStateProvinceRegions(countryCode: String!): [StateProvinceRegion!]!
 
+    ## Captcha
+    getCaptchaConfig: CaptchaConfig
+
 
 }
 
@@ -238,7 +241,11 @@ type Mutation {
     removeContact(contactId: String!): String!
 
     ## Mark for deletion
-    markForDelete(markForDeleteInput: MarkForDeleteInput!): MarkForDelete    
+    markForDelete(markForDeleteInput: MarkForDeleteInput!): MarkForDelete
+
+    ## Captcha
+    setCaptchaConfig(captchaConfigInput: CaptchaConfigInput!): CaptchaConfig!
+    removeCaptchaConfig: String!
 
 }
 
@@ -283,6 +290,10 @@ type Tenant {
     allowForgotPassword: Boolean!
     defaultRateLimit: Int
     defaultRateLimitPeriodMinutes: Int
+    allowBackupEmail: Boolean!
+    registrationRequireTermsAndConditions: Boolean!
+    termsAndConditionsUri: String
+    registrationRequireCaptcha: Boolean!
 }
 
 type TenantSupportedClaimRel {
@@ -336,9 +347,13 @@ type FederatedOIDCProviderTenantRel {
     tenantId: String!
 }
 
-type SocialOIDCProviderTenantRel {
-    federatedOIDCProviderId: String!
-    tenantId: String!
+type CaptchaConfig {
+    alias: String!
+    projectId: String
+    siteKey: String!
+    apiKey: String!
+    minScopeThreshold: Float
+    useCaptchaV3: Boolean!
 }
 
 # domain is the primary key (unique) in this relationship.
@@ -1197,6 +1212,10 @@ input TenantCreateInput {
     allowForgotPassword: Boolean!
     defaultRateLimit: Int
     defaultRateLimitPeriodMinutes: Int
+    allowBackupEmail: Boolean!
+    registrationRequireTermsAndConditions: Boolean!
+    termsAndConditionsUri: String
+    registrationRequireCaptcha: Boolean!
 }
 
 input TenantUpdateInput {
@@ -1216,6 +1235,10 @@ input TenantUpdateInput {
     allowForgotPassword: Boolean!
     defaultRateLimit: Int
     defaultRateLimitPeriodMinutes: Int
+    allowBackupEmail: Boolean!
+    registrationRequireTermsAndConditions: Boolean!
+    termsAndConditionsUri: String
+    registrationRequireCaptcha: Boolean!
 }
 
 input TenantLegacyUserMigrationConfigInput {
@@ -1470,4 +1493,13 @@ input Fido2KeyAuthenticationInput {
     type: String!
     authenticationAttachment: String!
     response: AuthenticatorAuthenticationResponseInput!
+}
+
+input CaptchaConfigInput {
+    alias: String!
+    projectId: String
+    siteKey: String!
+    apiKey: String!
+    minScopeThreshold: Float
+    useCaptchaV3: Boolean!
 }

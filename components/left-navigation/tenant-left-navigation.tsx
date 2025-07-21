@@ -18,7 +18,7 @@ import { LookaheadItem, LookaheadResult, SearchResultType, TenantMetaData } from
 import AddBoxIcon from '@mui/icons-material/AddBox';
 import VerifiedIcon from '@mui/icons-material/Verified';
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
-import { AUTHENTICATION_GROUP_CREATE_SCOPE, AUTHENTICATION_GROUP_READ_SCOPE, AUTHORIZATION_GROUP_CREATE_SCOPE, AUTHORIZATION_GROUP_READ_SCOPE, CLIENT_CREATE_SCOPE, CLIENT_READ_SCOPE, FEDERATED_OIDC_PROVIDER_CREATE_SCOPE, FEDERATED_OIDC_PROVIDER_READ_SCOPE, KEY_CREATE_SCOPE, KEY_READ_SCOPE, RATE_LIMIT_CREATE_SCOPE, RATE_LIMIT_READ_SCOPE, SCOPE_CREATE_SCOPE, SCOPE_READ_SCOPE, TENANT_CREATE_SCOPE, TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE, TENANT_TYPE_ROOT_TENANT, USER_READ_SCOPE } from "@/utils/consts";
+import { AUTHENTICATION_GROUP_CREATE_SCOPE, AUTHENTICATION_GROUP_READ_SCOPE, AUTHORIZATION_GROUP_CREATE_SCOPE, AUTHORIZATION_GROUP_READ_SCOPE, CAPTCHA_CONFIG_SCOPE, CLIENT_CREATE_SCOPE, CLIENT_READ_SCOPE, FEDERATED_OIDC_PROVIDER_CREATE_SCOPE, FEDERATED_OIDC_PROVIDER_READ_SCOPE, KEY_CREATE_SCOPE, KEY_READ_SCOPE, RATE_LIMIT_CREATE_SCOPE, RATE_LIMIT_READ_SCOPE, SCOPE_CREATE_SCOPE, SCOPE_READ_SCOPE, TENANT_CREATE_SCOPE, TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE, TENANT_TYPE_ROOT_TENANT, USER_READ_SCOPE } from "@/utils/consts";
 import CreateNewDialog from "../dialogs/create-new-dialog";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
 import { useRouter } from "next/navigation";
@@ -254,16 +254,17 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
                                 <Link className="undecorated" href={`/${tenantMetaData.tenant.tenantId}?section=signing-keys`} >Keys</Link>
                             </div>
                         }
-                        {tenantMetaData.tenant.tenantType === TENANT_TYPE_ROOT_TENANT &&
-                            <>                                
-                                <div className="left-navigation" >
+                        {tenantMetaData.tenant.tenantType === TENANT_TYPE_ROOT_TENANT && containsScope(CAPTCHA_CONFIG_SCOPE, profile?.scope) &&
+                            <div style={{marginTop: "8px", marginBottom: "8px"}}>
+                                <Divider />                             
+                                <div style={{marginTop: "8px", width: "100%"}} className="left-navigation" >
                                     <VerifiedIcon sx={{marginRight: "8px"}} />
                                     <Link className="undecorated" href={`/${tenantMetaData.tenant.tenantId}/catpcha-config`}>Captcha</Link>
                                 </div>                            
-                            </>                        
+                            </div>
                         }                        
                         <Divider />
-                        {containsScope([TENANT_CREATE_SCOPE, CLIENT_CREATE_SCOPE, AUTHORIZATION_GROUP_CREATE_SCOPE, AUTHENTICATION_GROUP_CREATE_SCOPE, SCOPE_CREATE_SCOPE, FEDERATED_OIDC_PROVIDER_CREATE_SCOPE, RATE_LIMIT_CREATE_SCOPE, KEY_CREATE_SCOPE], profile?.scope || []) &&
+                        {containsScope([TENANT_CREATE_SCOPE, CLIENT_CREATE_SCOPE, AUTHORIZATION_GROUP_CREATE_SCOPE, AUTHENTICATION_GROUP_CREATE_SCOPE, SCOPE_CREATE_SCOPE, FEDERATED_OIDC_PROVIDER_CREATE_SCOPE, RATE_LIMIT_CREATE_SCOPE, KEY_CREATE_SCOPE], profile?.scope) &&
                             <div className="left-navigation" onClick={() => setOpenCreateNewDialog(true)}  style={{marginTop: "8px", cursor: "pointer"}}>
                                 <AddBoxIcon sx={{marginRight: "8px"}} />
                                 <div>Create New...</div>
@@ -426,13 +427,14 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
                                     <Link className="undecorated" href={`/${tenantMetaData.tenant.tenantId}?section=signing-keys`} onClick={() => setDrawerOpen(false)}>Keys</Link>
                                 </div>
                             }
-                            {tenantMetaData.tenant.tenantType === TENANT_TYPE_ROOT_TENANT &&
-                                <>                                
-                                    <div style={{display: "inline-flex", alignItems: "center"}}>
+                            {tenantMetaData.tenant.tenantType === TENANT_TYPE_ROOT_TENANT && containsScope(CAPTCHA_CONFIG_SCOPE, profile?.scope) &&                            
+                                <div style={{marginTop: "16px"}}>
+                                    <Divider />
+                                    <div style={{display: "inline-flex", alignItems: "center", marginTop: "16px"}}>
                                         <VerifiedIcon sx={{marginRight: "8px"}} />
                                         <Link className="undecorated" href={`/${tenantMetaData.tenant.tenantId}/catpcha-config`}>Captcha</Link>
                                     </div>                            
-                                </>                        
+                                </div>                      
                             }  
                             <Divider />
                             {containsScope([TENANT_CREATE_SCOPE, CLIENT_CREATE_SCOPE, AUTHORIZATION_GROUP_CREATE_SCOPE, AUTHENTICATION_GROUP_CREATE_SCOPE, SCOPE_CREATE_SCOPE, FEDERATED_OIDC_PROVIDER_CREATE_SCOPE, RATE_LIMIT_CREATE_SCOPE, KEY_CREATE_SCOPE], profile?.scope || []) &&
