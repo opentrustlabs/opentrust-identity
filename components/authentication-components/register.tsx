@@ -1,6 +1,6 @@
 "use client";
 import React, { Suspense, useContext, useEffect, useState } from "react";
-import { Autocomplete, Backdrop, Button, CircularProgress, Grid2, InputAdornment, MenuItem, Paper, Select, Snackbar, Stack, TextField, Typography } from "@mui/material";
+import { Autocomplete, Backdrop, Button, Checkbox, CircularProgress, Grid2, InputAdornment, MenuItem, Paper, Select, Snackbar, Stack, TextField, Typography } from "@mui/material";
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -28,6 +28,7 @@ import { RegistrationConfigureSecurityKey } from "./configure-security-key";
 import PasswordRulesDisplay from "./password-rules-display";
 import { AuthSessionProps, useAuthSessionContext } from "../contexts/auth-session-context";
 import { AuthContext, AuthContextProps } from "../contexts/auth-context";
+import Link from "next/link";
 
 
 export interface RegistrationComponentsProps {
@@ -75,7 +76,8 @@ const Register: React.FC = () => {
         postalCode: "",
         preferredLanguageCode: "",
         stateRegionProvince: "",
-        password: ""
+        password: "",
+        termsAndConditionsAccepted: false
     };
 
     const [userInput, setUserInput] = React.useState<UserCreateInput>(initInput);
@@ -88,6 +90,7 @@ const Register: React.FC = () => {
     const [showPasswordRules, setShowPasswordRules] = React.useState<boolean>(false);
     const [showMutationBackdrop, setShowMutationBackdrop] = React.useState<boolean>(false);
     const [userRegistrationState, setUserRegistrationState] = React.useState<UserRegistrationState | null>(null);
+    const [userClickedTermsAndConditionsLink, setUserClickedTermsAndConditionsLink] = React.useState<boolean>(false);
 
     // HOOKS FROM NEXTJS OR MUI
     const router = useRouter();
@@ -213,6 +216,7 @@ const Register: React.FC = () => {
         if(!repeatPassword || repeatPassword.length < 8 || repeatPassword !== userInput.password){
             bRetVal = false;
         }
+        
         return bRetVal;
     }
 
@@ -231,6 +235,9 @@ const Register: React.FC = () => {
             bRetVal = false;
         }
         if(!userInput.postalCode || userInput.postalCode.length < 3){
+            bRetVal = false;
+        }
+        if(tenantBean.getTenantMetaData().tenant.registrationRequireTermsAndConditions && !userInput.termsAndConditionsAccepted){
             bRetVal = false;
         }
         return bRetVal;
@@ -568,6 +575,24 @@ const Register: React.FC = () => {
                                                 onChange={(evt) => { userInput.postalCode = evt.target.value; setUserInput({ ...userInput }); }}
                                             />
                                         </Grid2>
+                                        {tenantBean.getTenantMetaData().tenant.registrationRequireTermsAndConditions &&
+                                            <Grid2 container marginBottom={"8px"} size={12}>
+                                                <Grid2 size={11}>
+                                                    <span>I agree to accept the </span>
+                                                    <Link onClick={() => setUserClickedTermsAndConditionsLink(true)} href={tenantBean.getTenantMetaData().tenant.termsAndConditionsUri || ""} target="_blank">Terms and Conditions</Link>
+                                                </Grid2>
+                                                <Grid2 size={1}>
+                                                    <Checkbox
+                                                        disabled={userClickedTermsAndConditionsLink === false}
+                                                        checked={userInput.termsAndConditionsAccepted === true}
+                                                        onChange={(_, checked: boolean) => {
+                                                            userInput.termsAndConditionsAccepted = checked;
+                                                            setUserInput({ ...userInput });
+                                                        }}
+                                                    />
+                                                </Grid2>
+                                            </Grid2>
+                                        }
                                     </Grid2>
                                     <Stack 
                                         width={"100%"}

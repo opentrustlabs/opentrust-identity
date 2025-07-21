@@ -241,7 +241,8 @@ class DBIdentityDao extends IdentityDao {
     public async getFailedLogins(userId: string): Promise<Array<UserFailedLogin>> {
         const sequelize: Sequelize = await DBDriver.getConnection();
         const entities = await sequelize.models.userFailedLogin.findAll({
-            where: {userId: userId}
+            where: {userId: userId},
+            order: ["failureAtMs"]
         });
 
         if(!entities){

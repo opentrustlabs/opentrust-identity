@@ -1028,6 +1028,105 @@ class AuthenticateUserService extends IdentityService {
         return response;
     }   
 
+    /**
+     * 
+     * @param user 
+     * @param tenantId 
+     * @param authenticationToken 
+     * @returns 
+     */
+    protected async validateAuthenticationAttempt(user: User, tenantId: string, authenticationToken: string | Fido2KeyAuthenticationInput, userAuthenticationState: UserAuthenticationState): Promise<{isValid: boolean, errorMessage: string}>{
+
+        if(user.locked === true){
+            return {isValid: false, errorMessage: "ERROR_USER_IS_LOCKED"};
+        }
+        const userFailedLoginAttempts: Array<UserFailedLogin> = await identityDao.getFailedLogins(user.userId);
+        let loginFailurePolicy: TenantLoginFailurePolicy | null = await tenantDao.getLoginFailurePolicy(tenantId);
+        if(loginFailurePolicy === null){
+            loginFailurePolicy = DEFAULT_LOGIN_FAILURE_POLICY;
+        }
+
+        // We will check to see if the user can authenticate based on the number of failures they have previously
+        // and if we have a failure policy type of pause and the next login time allowed is at some point in the past.
+        if(userFailedLoginAttempts.length > 0 && loginFailurePolicy.loginFailurePolicyType === LOGIN_FAILURE_POLICY_PAUSE){
+            if(userFailedLoginAttempts[length - 1].nextLoginNotBefore > Date.now()){
+                return {isValid: false, errorMessage: "ERROR_AUTHENTICTION_IS_PAUSED_FOR_USER"}
+            }
+        }
+
+        let valid: boolean = false;
+        let errorMessage: string = "";
+        if(userAuthenticationState.authenticationState === AuthenticationState.EnterPassword){
+            const userCredential: UserCredential | null = await identityDao.getUserCredentialForAuthentication(user.userId);
+            if(!userCredential){
+                return {isValid: false, errorMessage: "ERROR_UNABLE_TO_FIND_CREDENTIALS_FOR_USER"};
+            }
+            valid = this.validateUserCredentials(userCredential, authenticationToken as string);
+            errorMessage = "ERROR_INVALID_CREDENTIALS";
+        }
+        else if(userAuthenticationState.authenticationState === AuthenticationState.ValidateTotp){
+            const valid: boolean = await this.validateTOTP(user.userId, authenticationToken as string);
+            errorMessage = "ERROR_TOTP_TOKEN_INVALID";
+        }
+        else if(userAuthenticationState.authenticationState === AuthenticationState.ValidateSecurityKey){
+            valid = await this.authenticateFIDO2Key(user.userId, authenticationToken as Fido2KeyAuthenticationInput);
+            errorMessage = "ERROR_INVALID_SECURITY_KEY_INPUT";
+        }
+
+        if(!valid){
+
+            // 1.   Do we need to lock the user
+            // 2.   If not, do we need to pause the login attempts for any length of time?
+            const nowMs = Date.now();
+            const failureCount: number = userFailedLoginAttempts.length === 0 ? 1 : userFailedLoginAttempts[userFailedLoginAttempts.length - 1].failureCount + 1;
+            let nextLoginTime = nowMs;
+            let lockUser: boolean = false;
+
+            if(loginFailurePolicy.loginFailurePolicyType === LOGIN_FAILURE_POLICY_LOCK_USER_ACCOUNT){
+                if(failureCount >= loginFailurePolicy.failureThreshold){
+                    nextLoginTime = Number.MAX_SAFE_INTEGER;
+                    lockUser = true;
+                }
+            }
+            else if(loginFailurePolicy.loginFailurePolicyType === LOGIN_FAILURE_POLICY_PAUSE){
+                // Have we surpassed the globally maximum allowed login failures (globally, either by tenant configuration or by system default)?
+                const maximumLoginFailures: number = loginFailurePolicy.maximumLoginFailures ? loginFailurePolicy.maximumLoginFailures : DEFAULT_MAXIMUM_LOGIN_FAILURES;
+                if(failureCount >= maximumLoginFailures){
+                    nextLoginTime = Number.MAX_SAFE_INTEGER;
+                    lockUser = true;
+                }
+                else{
+                    const failureThreshold = loginFailurePolicy.failureThreshold;
+                    // Are we just at the threshold for another pause? For example, the threshold is 8 consecutive
+                    // failed logins before a pause at we are at the 8th or 16th or 24th or ... failure, 
+                    if(failureCount % failureThreshold === 0){
+                        const pauseDurationInMinutes: number = loginFailurePolicy.pauseDurationMinutes ? loginFailurePolicy.pauseDurationMinutes : DEFAULT_LOGIN_PAUSE_TIME_MINUTES;
+                        nextLoginTime = nowMs + (pauseDurationInMinutes * 60 * 1000);
+                    }
+                }
+            }
+
+            await identityDao.addFailedLogin({
+                failureAtMs: nowMs,
+                failureCount: failureCount,
+                nextLoginNotBefore: nextLoginTime,
+                userId: user.userId
+            });
+
+            if(lockUser){
+                user.locked = true;
+                await identityDao.updateUser(user);
+            }
+            // We can safely delete the previous failed attempts
+            if(userFailedLoginAttempts.length > 0){
+                for(let i = 0; i < userFailedLoginAttempts.length; i++){
+                    identityDao.removeFailedLogin(userFailedLoginAttempts[i].userId, userFailedLoginAttempts[i].failureAtMs);
+                }
+            }
+            return {isValid: false, errorMessage: errorMessage};
+        }
+        return {isValid: true, errorMessage: errorMessage};
+    }
 
     /**
      * 

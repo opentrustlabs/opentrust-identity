@@ -160,6 +160,11 @@ class RegisterUserService extends IdentityService {
         if (isRegistration && tenant.allowUserSelfRegistration === false) {
             throw new GraphQLError("ERROR_TENANT_DOES_NOT_ALLOW_USER_SELF_REGISTRATION");
         }
+        if(isRegistration){
+            if(tenant.registrationRequireTermsAndConditions && !userCreateInput.termsAndConditionsAccepted){
+                throw new GraphQLError("ERROR_TERMS_AND_CONDITIONS_NOT_ACCEPTED");
+            }
+        }
 
         const existingUser: User | null = await identityDao.getUserBy("email", userCreateInput.email);
         if (existingUser) {
@@ -212,7 +217,8 @@ class RegisterUserService extends IdentityService {
             phoneNumber: userCreateInput.phoneNumber,
             preferredLanguageCode: userCreateInput.preferredLanguageCode,
             federatedOIDCProviderSubjectId: userCreateInput.federatedOIDCProviderSubjectId,
-            markForDelete: false
+            markForDelete: false,
+            termsAndConditionsAccepted: userCreateInput.termsAndConditionsAccepted
         }
 
         await identityDao.createUser(user);

@@ -770,7 +770,8 @@ const resolvers: Resolvers = {
                 postalCode: userInput.postalCode,
                 preferredLanguageCode: userInput.preferredLanguageCode,
                 stateRegionProvince: userInput.stateRegionProvince,
-                markForDelete: false
+                markForDelete: false,
+                termsAndConditionsAccepted: userInput.termsAndConditionsAccepted
             }
             await service.updateUser(user);
             return user;

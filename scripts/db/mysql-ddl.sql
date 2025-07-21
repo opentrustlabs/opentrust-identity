@@ -133,6 +133,7 @@ create TABLE user (
     enabled BOOLEAN NOT NULL,
     nameorder VARCHAR(64) NOT NULL,
     markfordelete BOOLEAN NOT NULL,
+    termsandconditionsaccepted BOOLEAN NOT NULL
 );
 
 CREATE INDEX user_email_idx on user(email);

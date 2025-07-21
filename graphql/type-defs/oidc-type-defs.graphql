@@ -479,6 +479,7 @@ type User {
     enabled: Boolean!
     nameOrder: String!
     markForDelete: Boolean!
+    termsAndConditionsAccepted: Boolean!
 }
 
 type UserTenantRel {
@@ -1434,6 +1435,7 @@ input UserCreateInput {
     enabled: Boolean!
     nameOrder: String!
     password: String!
+    termsAndConditionsAccepted: Boolean!
 }
 
 input UserUpdateInput {
@@ -1456,6 +1458,7 @@ input UserUpdateInput {
     locked: Boolean!
     enabled: Boolean!
     nameOrder: String!
+    termsAndConditionsAccepted: Boolean!
 }
 
 input MarkForDeleteInput {
