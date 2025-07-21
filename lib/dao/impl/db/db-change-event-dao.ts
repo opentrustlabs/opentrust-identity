@@ -24,12 +24,10 @@ class DBChangeEventDao extends ChangeEventDao {
                     changeEventId: entity.getDataValue("changeEventId"),
                     changeEventType: entity.getDataValue("changeEventType"),
                     changeTimestamp: entity.getDataValue("changeTimestamp"),
-                    changedById: entity.getDataValue("changedById"),
+                    changedBy: entity.getDataValue("changedBy"),
                     data: Buffer.from(entity.getDataValue("data")).toString("utf-8"),
-                    keyId: entity.getDataValue("keyId"),
                     objectid: entity.getDataValue("objectid"),
-                    objecttype: entity.getDataValue("objecttype"),
-                    signature: Buffer.from(entity.getDataValue("signature")).toString("utf-8")
+                    objecttype: entity.getDataValue("objecttype")
                 }
                 return model;
             }

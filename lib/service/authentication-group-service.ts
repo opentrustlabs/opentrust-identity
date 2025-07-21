@@ -111,6 +111,10 @@ class AuthenticationGroupService {
         if (!tenant) {
                 throw new GraphQLError("ERROR_TENANT_DOES_NOT_EXIST");
         }
+        if(tenant.enabled === false || tenant.markForDelete === true){
+            throw new GraphQLError("ERROR_TENANT_IS_DISABLED_OR_MARKED_FOR_DELETE");
+        }
+        
         authenticationGroup.authenticationGroupId = randomUUID().toString();
         const g = await authenticationGroupDao.createAuthenticationGroup(authenticationGroup);
 

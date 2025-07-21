@@ -30,6 +30,8 @@ abstract class AuthDao {
 
     abstract deleteFederatedOIDCAuthorizationRel(state: string): Promise<void>;
 
+    abstract deleteExpiredData(): Promise<void>;
+
 }
 
 export default AuthDao;

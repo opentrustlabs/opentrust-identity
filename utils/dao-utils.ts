@@ -1,8 +1,6 @@
 import { readFileSync, existsSync } from "node:fs";
 import { randomBytes, hash, createHash, pbkdf2Sync, scryptSync } from "node:crypto";
 import bcrypt from "bcrypt";
-import { Scope } from "@/graphql/generated/graphql-types";
-
 
 
 /**

@@ -9,6 +9,27 @@ import JwtServiceUtils from "@/lib/service/jwt-service-utils";
 import { OIDCContext } from "@/graphql/graphql-context";
 import { DaoFactory } from "@/lib/data-sources/dao-factory";
 import TenantDao from "@/lib/dao/tenant-dao";
+import { initSchedulers } from "@/lib/service/init-scheduled-services";
+
+
+declare global {
+    var schedulerInitialized: boolean | undefined;
+}
+
+/**
+ * Why is this funciton call here an not in the instrumentation.ts file at the root of 
+ * the project? Good question. It was not possible to properly instantiate database
+ * connections or use any of the crypto libraries, even when the NEXT_RUNTIME value
+ * was set to "nodejs". There are a number of questions/complaints to the Vercel team
+ * about why it was not working correctly for a number of common initialization 
+ * scenarios. At this point in the code, the server should be correctly up-and-running,
+ * and since this is a common point of entry for almost anything that the app needs
+ * to do, it was the next-best place to put the initialization code.
+ */
+if(!global.schedulerInitialized){
+    initSchedulers();
+    global.schedulerInitialized = true;
+}
 
 const jwtServiceUtils: JwtServiceUtils = new JwtServiceUtils();
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();

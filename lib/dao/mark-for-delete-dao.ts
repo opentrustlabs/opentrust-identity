@@ -7,6 +7,14 @@ abstract class MarkForDeleteDao {
 
     abstract getMarkForDeleteById(markForDeleteId: string): Promise<MarkForDelete | null>;
 
+    abstract updateMarkForDelete(deleteInput: MarkForDelete): Promise<MarkForDelete>;
+
+    abstract deleteCompletedRecords(): Promise<void>;
+
+    abstract resetStalledJobs(): Promise<void>;
+
+    abstract getLatestMarkForDeleteRecords(limit: number): Promise<Array<MarkForDelete>>;
+
     abstract getDeletionStatus(markForDeleteId: string): Promise<Array<DeletionStatus>>;
 
     abstract startStep(markForDeleteId: string, step: string): Promise<void>;

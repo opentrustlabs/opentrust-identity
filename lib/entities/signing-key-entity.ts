@@ -57,6 +57,12 @@ class SigningKeyEntity extends Model {
                 allowNull: false,
                 field: "expiresatms"
             },
+            createdAtMs: {
+                type: DataTypes.NUMBER,
+                primaryKey: false,
+                allowNull: false,
+                field: "createdatms"
+            },
             status: {
                 type: DataTypes.STRING,
                 primaryKey: false,

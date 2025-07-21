@@ -28,6 +28,8 @@ import MarkForDeleteDao from "../dao/mark-for-delete-dao";
 import DBMarkForDeleteDao from "../dao/impl/db/db-mark-for-delete-dao";
 import I18NDao from "../dao/i18n-dao";
 import DBI18NDao from "../dao/impl/db/db-i18n-dao";
+import SchedulerDao from "../dao/scheduler-dao";
+import DBSchedulerDao from "../dao/impl/db/db-scheduler-dao";
 
 const daoStrategy = process.env.DAO_STRATEGY;
 const ksmStrategy = process.env.KMS_STRATEGY;
@@ -50,6 +52,7 @@ class DaoFactory {
     protected markForDeleteDao: MarkForDeleteDao;
     protected i18nDao: I18NDao;
     protected kms: Kms;
+    protected schedulerDao: SchedulerDao;
 
     private constructor() {
         // NO-OP
@@ -60,6 +63,19 @@ class DaoFactory {
             DaoFactory.instance = new DaoFactory();
         }
         return DaoFactory.instance;
+    }
+
+    public getSchedulerDao(): SchedulerDao {
+        if(DaoFactory.instance.schedulerDao){
+            return DaoFactory.instance.schedulerDao;
+        }
+        if(daoStrategy === "rdb"){
+            DaoFactory.instance.schedulerDao = new DBSchedulerDao();
+            return DaoFactory.instance.schedulerDao;
+        }
+        else{
+            throw new Error("ERROR_DAO_STRATEGY_NOT_DEFINED");
+        }
     }
 
     public getKms(): Kms {

@@ -50,29 +50,17 @@ class ChangeEventEntity extends Model {
                 allowNull: false,
                 field: "changetimestamp"
             },
-            changedById: {
+            changedBy: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "changedbyid"
+                field: "changedby"
             },
             data: {
                 type: DataTypes.BLOB,
                 primaryKey: false,
                 allowNull: false,
                 field: "data"
-            },
-            keyId: {
-                type: DataTypes.NUMBER,
-                primaryKey: false,
-                allowNull: false,
-                field: "keyid"
-            },
-            signature: {
-                type: DataTypes.BLOB,
-                primaryKey: false,
-                allowNull: false,
-                field: "signature"
             }
         }, 
 		{

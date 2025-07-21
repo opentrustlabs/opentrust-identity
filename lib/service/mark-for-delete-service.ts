@@ -13,7 +13,7 @@ import AuthorizationGroupDao from "../dao/authorization-group-dao";
 import SigningKeysDao from "../dao/signing-keys-dao";
 import { GraphQLError } from "graphql/error";
 import { randomUUID } from 'crypto'; 
-import { AUTHENTICATION_GROUP_DELETE_SCOPE, AUTHORIZATION_GROUP_DELETE_SCOPE, CLIENT_DELETE_SCOPE, FEDERATED_OIDC_PROVIDER_DELETE_SCOPE, KEY_DELETE_SCOPE, RATE_LIMIT_DELETE_SCOPE, SCOPE_DELETE_SCOPE, SCOPE_USE_IAM_MANAGEMENT, TENANT_DELETE_SCOPE, TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE, USER_DELETE_SCOPE } from "@/utils/consts";
+import { AUTHENTICATION_GROUP_DELETE_SCOPE, AUTHORIZATION_GROUP_DELETE_SCOPE, CLIENT_DELETE_SCOPE, FEDERATED_OIDC_PROVIDER_DELETE_SCOPE, KEY_DELETE_SCOPE, RATE_LIMIT_DELETE_SCOPE, SCOPE_DELETE_SCOPE, SCOPE_USE_IAM_MANAGEMENT, TENANT_DELETE_SCOPE, TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE, TENANT_TYPE_ROOT_TENANT, USER_DELETE_SCOPE } from "@/utils/consts";
 import { authorizeByScopeAndTenant, WithAuthorizationByScopeAndTenant } from "@/utils/authz-utils";
 import client from "@/components/apollo-client/apollo-client";
 
@@ -88,6 +88,9 @@ class MarkForDeleteService {
         // submitting the mark for delete record.
         if(markForDelete.objectType === MarkForDeleteObjectType.Tenant){
             const t: Tenant = object as Tenant;
+            if(t.tenantType === TENANT_TYPE_ROOT_TENANT){
+                throw new GraphQLError("ERROR_UNABLE_TO_DELETE_THE_ROOT_TENANT");
+            }
             
             const u = WithAuthorizationByScopeAndTenant({
                 async performOperation() {
@@ -197,8 +200,8 @@ class MarkForDeleteService {
 
         markForDelete.markForDeleteId = randomUUID().toString();
         markForDelete.submittedDate = Date.now();
-
-        markForDelete.submittedBy = this.oidcContext.portalUserProfile?.userId || "";
+        
+        markForDelete.submittedBy = this.oidcContext.portalUserProfile?.firstName || "" + " " + this.oidcContext.portalUserProfile?.lastName || "" +  " - " + this.oidcContext.portalUserProfile?.userId || "";
         await markForDeleteDao.markForDelete(markForDelete);
         return Promise.resolve(markForDelete);
     }

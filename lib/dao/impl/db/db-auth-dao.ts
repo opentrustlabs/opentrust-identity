@@ -4,7 +4,7 @@ import PreAuthenticationStateEntity from "@/lib/entities/pre-authentication-stat
 import AuthorizationCodeDataEntity from "@/lib/entities/authorization-code-data-entity";
 import RefreshDataEntity from "@/lib/entities/refresh-data-entity";
 import FederatedOIDCAuthorizationRelEntity from "@/lib/entities/federated-oidc-authorization-rel-entity";
-import { Sequelize } from "sequelize";
+import { Op, Sequelize } from "sequelize";
 import DBDriver from "@/lib/data-sources/sequelize-db";
 
 class DBAuthDao extends AuthDao {
@@ -137,6 +137,32 @@ class DBAuthDao extends AuthDao {
             }
         });
         return Promise.resolve();
+    }
+
+    public async deleteExpiredData(): Promise<void>{
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.federatedOidcAuthorizationRel.destroy({
+            where: {
+                expiresAtMs: {
+                    [Op.lt]: Date.now()
+                }
+            }
+        });
+        await sequelize.models.preAuthenticationState.destroy({
+            where: {
+                expiresAtMs: {
+                    [Op.lt]: Date.now()
+                }
+            } 
+        });
+        await sequelize.models.authorizationCodeData.destroy({
+            where: {
+                expiresAtMs: {
+                    [Op.lt]: Date.now()
+                }
+            }
+        }); 
+
     }
 
 }

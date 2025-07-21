@@ -87,6 +87,9 @@ class ClientService {
 
             });
         }
+        if(tenant.enabled === false || tenant.markForDelete === true){
+            throw new GraphQLError("ERROR_TENANT_IS_DISABLED_OR_MARKED_FOR_DELETE");
+        }
 
         const {isAuthorized, errorMessage} = authorizeByScopeAndTenant(this.oidcContext, CLIENT_CREATE_SCOPE, client.tenantId);
         if(!isAuthorized){
@@ -176,13 +179,6 @@ class ClientService {
             body: relSearch
         });
         
-    }
-
-    public async deleteClient(clientId: string): Promise<void> {
-        // delete all LoginGroupClientRel
-        // ClientTenantScopeRel
-        // delete client
-        throw new Error("Method not implemented.");
     }
 
     public async getRedirectURIs(clientId: string): Promise<Array<string>>{

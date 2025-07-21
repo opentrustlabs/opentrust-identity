@@ -1,6 +1,6 @@
 import { ObjectSearchResultItem, RelSearchResultItem, SearchResultType, SigningKey, Tenant } from "@/graphql/generated/graphql-types";
 import { GraphQLError } from "graphql/error/GraphQLError";
-import { randomUUID, sign } from 'crypto'; 
+import { randomUUID } from 'crypto'; 
 import { OIDCContext } from "@/graphql/graphql-context";
 import { KEY_CREATE_SCOPE, KEY_DELETE_SCOPE, KEY_READ_SCOPE, KEY_TYPES, KEY_UPDATE_SCOPE, KEY_USES, PKCS8_ENCRYPTED_PRIVATE_KEY_HEADER, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, SIGNING_KEY_STATUS_ACTIVE, SIGNING_KEY_STATUS_REVOKED, TENANT_READ_ALL_SCOPE } from "@/utils/consts";
 import { DaoFactory } from "../data-sources/dao-factory";
@@ -69,6 +69,9 @@ class SigningKeysService {
         const tenant: Tenant | null = await tenantDao.getTenantById(key.tenantId);
         if(!tenant){
             throw new GraphQLError("ERROR_TENANT_NOT_FOUND");
+        }
+        if(tenant.enabled === false || tenant.markForDelete === true){
+            throw new GraphQLError("ERROR_TENANT_IS_DISABLED_OR_MARKED_FOR_DELETE");
         }
 
         if(!key.keyName || key.keyName === ""){

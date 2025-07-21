@@ -1,4 +1,4 @@
-import { Tenant, TenantManagementDomainRel, TenantAnonymousUserConfiguration, TenantLookAndFeel, TenantPasswordConfig, TenantLoginFailurePolicy, TenantLegacyUserMigrationConfig, TenantRestrictedAuthenticationDomainRel } from "@/graphql/generated/graphql-types";
+import { Tenant, TenantManagementDomainRel, TenantAnonymousUserConfiguration, TenantLookAndFeel, TenantPasswordConfig, TenantLoginFailurePolicy, TenantLegacyUserMigrationConfig, TenantRestrictedAuthenticationDomainRel, UserTenantRel } from "@/graphql/generated/graphql-types";
 import TenantDao from "../../tenant-dao";
 import { TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import { GraphQLError } from "graphql";
@@ -12,6 +12,7 @@ import DBDriver from "@/lib/data-sources/sequelize-db";
 import { Op, Sequelize } from "sequelize";
 import { TenantEntity } from "@/lib/entities/tenant-entity";
 import TenantLoginFailurePolicyEntity from "@/lib/entities/tenant-login-failure-policy-entity";
+import UserTenantRelEntity from "@/lib/entities/user-tenant-rel-entity";
 
 class DBTenantDao extends TenantDao {
 
@@ -99,18 +100,13 @@ class DBTenantDao extends TenantDao {
 
     public async deleteTenant(tenantId: string): Promise<void> {        
         const sequelize: Sequelize = await DBDriver.getConnection();
-        const tenantEntity: TenantEntity | null = await sequelize.models.tenant.findOne({
+        await sequelize.models.tenant.destroy({
             where: {
                 tenantId: tenantId
             }
         });
 
-        if(tenantEntity){
-            tenantEntity.set({
-                markForDelete: true
-            });
-            await tenantEntity.save();            
-        }
+        return Promise.resolve();        
     }
 
     
@@ -398,6 +394,82 @@ class DBTenantDao extends TenantDao {
         const sequelize: Sequelize = await DBDriver.getConnection();
         await sequelize.models.tenantLegacyUserMigrationConfig.create(tenantLegacyUserMigrationConfig);
         return tenantLegacyUserMigrationConfig;
+    }
+
+    public async removeAllUsersFromTenant(tenantId: string): Promise<void>{
+        const sequelize: Sequelize = await DBDriver.getConnection();
+
+        // To delete the authnGroup/user rel records, retrieve 1000 at a time and delete by composite ids        
+        let hasMoreRecords = true;
+        while(hasMoreRecords){
+            const arr: Array<UserTenantRelEntity> = await sequelize.models.userTenantRel.findAll({
+                where: {
+                    tenantId: tenantId
+                },
+                limit: 1000
+            });
+            if(arr.length === 0){
+                hasMoreRecords = false;
+                break;
+            }
+            
+            // sequelize does not support deletion in bulk using composite keys, so must do this manually...
+            const tuples = arr
+                .map(
+                    (v: UserTenantRelEntity) => `(${sequelize.escape(v.getDataValue("tenantId"))}, ${sequelize.escape(v.getDataValue("userId"))})`
+                )
+                .join(", ");
+            const sql = `DELETE FROM user_tenant_rel WHERE (tenantid, userid) IN (${tuples})`;
+            await sequelize.query(sql);
+        }
+    }
+
+    public async removeAllAuthStateFromTenant(tenantId: string): Promise<void>{
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        
+        await sequelize.models.preAuthenticationState.destroy({
+            where: {
+                tenantId: tenantId
+            } 
+        });
+
+        await sequelize.models.authorizationCodeData.destroy({
+            where: {
+                tenantId: tenantId
+            }
+        });
+
+        await sequelize.models.refreshData.destroy({
+            where: {
+                tenantId: tenantId
+            }
+        });
+
+        await sequelize.models.federatedOidcAuthorizationRel.destroy({
+            where: {
+                initTenantId: tenantId
+            }
+        });
+
+        await sequelize.models.clientAuthHistory.destroy({
+            where: {
+                tenantId: tenantId
+            }
+        });
+
+        await sequelize.models.userAuthenticationState.destroy({
+            where: {
+
+            }
+        });
+
+        await sequelize.models.userRegistrationState.destroy({
+            where: {
+                tenantId: tenantId
+            }
+        });
+
+        return Promise.resolve();
     }
 
 }

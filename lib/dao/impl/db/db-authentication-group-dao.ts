@@ -103,11 +103,42 @@ class DBAuthenticationGroupDao extends AuthenticationGroupDao {
     }
 
     public async deleteAuthenticationGroup(authenticationGroupId: string): Promise<void> {
+        const sequelize: Sequelize = await DBDriver.getConnection();
         
-        // TODO
-        // DELETE ALL OF THE RELATIONSHIP VALUES
-
-        return Promise.resolve();
+        await sequelize.models.authenticationGroupClientRel.destroy({
+            where: {
+                authenticationGroupId: authenticationGroupId
+            }
+        });
+        
+        // To delete the authnGroup/user rel records, retrieve 1000 at a time and delete by composite ids        
+        let hasMoreRecords = true;
+        while(hasMoreRecords){
+            const arr: Array<AuthenticationGroupUserRelEntity> = await sequelize.models.authenticationGroupUserRel.findAll({
+                where: {
+                    authenticationGroupId: authenticationGroupId
+                },
+                limit: 1000
+            });
+            if(arr.length === 0){
+                hasMoreRecords = false;
+                break;
+            }
+            // sequelize does not support deletion in bulk using composite keys, so must do this manually...
+            const tuples = arr
+                .map(
+                    (v: AuthenticationGroupUserRelEntity) => `(${sequelize.escape(v.getDataValue("authenticationGroupId"))}, ${sequelize.escape(v.getDataValue("userId"))})`
+                )
+                .join(", ");
+            const sql = `DELETE FROM authentication_group_user_rel WHERE (authenticationgroupid, userid) IN (${tuples})`;
+            await sequelize.query(sql);
+        }
+        
+        await sequelize.models.authenticationGroup.destroy({
+            where: {
+                authenticationGroupId: authenticationGroupId
+            }
+        });        
     }
 
     public async assignAuthenticationGroupToClient(authenticationGroupId: string, clientId: string): Promise<AuthenticationGroupClientRel> {

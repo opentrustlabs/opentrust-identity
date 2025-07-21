@@ -4,7 +4,7 @@ import ClientAuthHistoryEntity from "@/lib/entities/client-auth-history-entity";
 import ClientEntity from "@/lib/entities/client-entity";
 import ClientRedirectUriRelEntity from "@/lib/entities/client-redirect-uri-rel-entity";
 import DBDriver from "@/lib/data-sources/sequelize-db";
-import { Sequelize } from "sequelize";
+import { Op, Sequelize } from "sequelize";
 
 class DBClientDao extends ClientDao {
 
@@ -51,7 +51,68 @@ class DBClientDao extends ClientDao {
 
 
     public async deleteClient(clientId: string): Promise<void> {
-        throw new Error("Method not implemented.");
+        
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        
+        await sequelize.models.clientRedirectUriRel.destroy({
+            where: {
+                clientId: clientId
+            }
+        });
+        
+        await sequelize.models.authenticationGroupClientRel.destroy({
+            where: {
+                clientId: clientId
+            }
+        });
+        
+        await sequelize.models.clientScopeRel.destroy({
+            where: {
+                clientId: clientId
+            }
+        });
+        
+        await sequelize.models.preAuthenticationState.destroy({
+            where: {
+                clientId: clientId
+            }
+        });
+        
+        await sequelize.models.authorizationCodeData.destroy({
+            where: {
+                clientId: clientId
+            }
+        });
+        
+        await sequelize.models.refreshData.destroy({
+            where: {
+                clientId: clientId
+            }
+        });
+        
+        await sequelize.models.federatedOidcAuthorizationRel.destroy({
+            where: {
+                initClientId: clientId
+            }
+        });
+        
+        await sequelize.models.clientAuthHistory.destroy({
+            where: {
+                clientId: clientId
+            }
+        });
+        
+        await sequelize.models.contact.destroy({
+            where: {
+                objectid: clientId
+            }
+        });
+
+        await sequelize.models.client.destroy({
+            where: {
+                clientId: clientId
+            }
+        });        
     }
 
 
@@ -79,6 +140,17 @@ class DBClientDao extends ClientDao {
             }
         });
         return Promise.resolve();
+    }
+
+    public async deleteExpiredData(): Promise<void>{
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.clientAuthHistory.destroy({
+            where: {
+                expiresAtSeconds: {
+                    [Op.lt]: Date.now() / 1000
+                }
+            }
+        });
     }
 
     public async getRedirectURIs(clientId: string): Promise<Array<string>>{

@@ -649,7 +649,7 @@ class AuthenticateUserService extends IdentityService {
         }
                 
         if(nextUserAuthenticationState.authenticationState === AuthenticationState.RedirectBackToApplication || nextUserAuthenticationState.authenticationState === AuthenticationState.RedirectToIamPortal){
-            await this.handleAuthenticationCompletion(user, nextUserAuthenticationState, response);
+            await this.handleAuthenticationCompletion(user, nextUserAuthenticationState, arrUserAuthenticationStates, response);
         }
         else{
             response.userAuthenticationState = nextUserAuthenticationState;
@@ -718,7 +718,7 @@ class AuthenticateUserService extends IdentityService {
         
         const nextUserAuthenticationState = arrUserAuthenticationStates[index + 1];
         if(nextUserAuthenticationState.authenticationState === AuthenticationState.RedirectBackToApplication || nextUserAuthenticationState.authenticationState === AuthenticationState.RedirectToIamPortal){
-            await this.handleAuthenticationCompletion(user, nextUserAuthenticationState, response);
+            await this.handleAuthenticationCompletion(user, nextUserAuthenticationState, arrUserAuthenticationStates, response);
         }
         else{
             response.userAuthenticationState = nextUserAuthenticationState;
@@ -859,7 +859,7 @@ class AuthenticateUserService extends IdentityService {
             response.passwordConfig = passwordConfig;
         }
         if(nextUserAuthenticationState.authenticationState === AuthenticationState.RedirectBackToApplication || nextUserAuthenticationState.authenticationState === AuthenticationState.RedirectToIamPortal){
-            await this.handleAuthenticationCompletion(user, nextUserAuthenticationState, response);
+            await this.handleAuthenticationCompletion(user, nextUserAuthenticationState, arrUserAuthenticationStates, response);
         }
         else{
             response.userAuthenticationState = nextUserAuthenticationState;
@@ -933,7 +933,7 @@ class AuthenticateUserService extends IdentityService {
             response.passwordConfig = passwordConfig;
         }
         if(nextUserAuthenticationState.authenticationState === AuthenticationState.RedirectBackToApplication || nextUserAuthenticationState.authenticationState === AuthenticationState.RedirectToIamPortal){
-            await this.handleAuthenticationCompletion(user, nextUserAuthenticationState, response);
+            await this.handleAuthenticationCompletion(user, nextUserAuthenticationState, arrUserAuthenticationStates, response);
         }
         else{
             response.userAuthenticationState = nextUserAuthenticationState;
@@ -1112,7 +1112,7 @@ class AuthenticateUserService extends IdentityService {
      * @param userAuthenticationState 
      * @param response 
      */
-    protected async handleAuthenticationCompletion(user: User, userAuthenticationState: UserAuthenticationState, response: UserAuthenticationStateResponse): Promise<void> {
+    protected async handleAuthenticationCompletion(user: User, userAuthenticationState: UserAuthenticationState, arrUserAuthenticationStates: Array<UserAuthenticationState>, response: UserAuthenticationStateResponse): Promise<void> {
         // If the user was locked from a previous failed login attempt, then unlock the user
         if(user.locked){
             user.locked = false;
@@ -1124,8 +1124,11 @@ class AuthenticateUserService extends IdentityService {
                 response.userAuthenticationState = userAuthenticationState;
                 response.uri = authorizationCode.uri;
                 userAuthenticationState.authenticationStateStatus = STATUS_COMPLETE;
-                await identityDao.updateUserAuthenticationState(userAuthenticationState);
-
+                //await identityDao.updateUserAuthenticationState(userAuthenticationState);
+                // If all is successful, we can delete all of the state records tied to this authentication attempt
+                for(let i = 0; i < arrUserAuthenticationStates.length; i++){
+                    await identityDao.deleteUserAuthenticationState(arrUserAuthenticationStates[i]);
+                }
             }
             catch(err: any){
                 response.authenticationError.errorCode = err.message;
@@ -1151,7 +1154,11 @@ class AuthenticateUserService extends IdentityService {
                         response.accessToken = accessToken;
                         response.tokenExpiresAtMs = Date.now() + (this.getPortalAuthenTokenTTLSeconds() * 1000);
                         userAuthenticationState.authenticationStateStatus = STATUS_COMPLETE;
-                        await identityDao.updateUserAuthenticationState(userAuthenticationState);
+                        //await identityDao.updateUserAuthenticationState(userAuthenticationState);
+                        // If all is successful, we can delete all of the state records tied to this authentication attempt
+                        for(let i = 0; i < arrUserAuthenticationStates.length; i++){
+                            await identityDao.deleteUserAuthenticationState(arrUserAuthenticationStates[i]);
+                        }
                     }
                 }
             }

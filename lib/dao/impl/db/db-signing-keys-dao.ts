@@ -51,7 +51,8 @@ class DBSigningKeysDao extends SigningKeysDao {
             certificate: Buffer.from(entity.getDataValue("certificate") || "").toString("utf-8"),
             password: entity.getDataValue("password"),
             publicKey: Buffer.from(entity.getDataValue("publicKey") || "").toString("utf-8"),
-            markForDelete: entity.getDataValue("markForDelete")
+            markForDelete: entity.getDataValue("markForDelete"),
+            createdAtMs: entity.getDataValue("createdAtMs")
         }
         
         return key;
@@ -89,6 +90,12 @@ class DBSigningKeysDao extends SigningKeysDao {
 
     public async deleteSigningKey(keyId: string): Promise<void> {
         const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.contact.destroy({
+            where: {
+                objectid: keyId
+            }
+        });
+
         await sequelize.models.signingKey.destroy({
             where: {
                 keyId: keyId

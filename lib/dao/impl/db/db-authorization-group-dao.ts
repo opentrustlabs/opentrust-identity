@@ -52,9 +52,43 @@ class DBAuthorizationGroupDao extends AuthorizationGroupDao {
     }
 
     public async deleteAuthorizationGroup(groupId: string): Promise<void> {
+        const sequelize: Sequelize = await DBDriver.getConnection();
+
+        await sequelize.models.authorizationGroupScopeRel.destroy({
+            where: {
+                groupId: groupId
+            }
+        });
+
+        // To delete the authnGroup/user rel records, retrieve 1000 at a time and delete by composite ids        
+        let hasMoreRecords = true;
+        while(hasMoreRecords){
+            const arr: Array<AuthorizationGroupUserRelEntity> = await sequelize.models.authorizationGroupUserRel.findAll({
+                where: {
+                    groupId: groupId
+                },
+                limit: 1000
+            });
+            if(arr.length === 0){
+                hasMoreRecords = false;
+                break;
+            }
+            
+            // sequelize does not support deletion in bulk using composite keys, so must do this manually...
+            const tuples = arr
+                .map(
+                    (v: AuthorizationGroupUserRelEntity) => `(${sequelize.escape(v.getDataValue("groupId"))}, ${sequelize.escape(v.getDataValue("userId"))})`
+                )
+                .join(", ");
+            const sql = `DELETE FROM authorization_group_user_rel WHERE (groupid, userid) IN (${tuples})`;
+            await sequelize.query(sql);
+        }
         
-        // TODO
-        // DELETE THE RELATIONSHIPS AND THE SEARCH INDEX RECORDS
+        await sequelize.models.authorizationGroup.destroy({
+            where: {
+                groupId: groupId
+            }
+        });
     }
 
     

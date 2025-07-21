@@ -536,11 +536,16 @@ class JwtServiceUtils {
             if(!key){
                 return Promise.resolve(null);
             }
+            let passphrase: string | undefined = undefined;
+            if(key.password){
+                passphrase = await kms.decrypt(key.password) || undefined;
+
+            } 
             const privateKeyInput: PrivateKeyInput = {
                 key: key.privateKeyPkcs8,
                 encoding: "utf-8",
                 format: "pem",
-                passphrase: key.password || undefined
+                passphrase: passphrase
             };                    
             const privateKeyObject: KeyObject = createPrivateKey(privateKeyInput);
 
@@ -583,31 +588,35 @@ class JwtServiceUtils {
                 (k: SigningKey) => k.expiresAtMs > now
             );
             
-            let cachedArray = signingKeys.map(
-                (key: SigningKey) => {
-                    const privateKeyInput: PrivateKeyInput = {
-                        key: key.privateKeyPkcs8,
-                        encoding: "utf-8",
-                        format: "pem",
-                        passphrase: key.password || undefined
-                    };                    
-                    const privateKeyObject: KeyObject = createPrivateKey(privateKeyInput);
-
-                    const publicKeyInput: PublicKeyInput = {
-                        key: key.certificate ? key.certificate : key.publicKey ? key.publicKey : "",
-                        encoding: "utf-8",
-                        format: "pem"
-                    };
-                    const publicKeyObject = createPublicKey(publicKeyInput);
-
-                    const cachedData: CachedSigningKeyData = {
-                        signingKey: key,
-                        privateKeyObject: privateKeyObject,
-                        publicKeyObject: publicKeyObject
-                    };
-                    return cachedData;
+            let cachedArray: Array<CachedSigningKeyData> = [];
+            for(let i = 0; i < signingKeys.length; i++){
+                let key: SigningKey = signingKeys[i];
+                let passphrase: string | undefined = undefined;
+                if(key.password){
+                    passphrase = await kms.decrypt(key.password) || undefined;
                 }
-            );
+                const privateKeyInput: PrivateKeyInput = {
+                    key: key.privateKeyPkcs8,
+                    encoding: "utf-8",
+                    format: "pem",
+                    passphrase: passphrase
+                };                    
+                const privateKeyObject: KeyObject = createPrivateKey(privateKeyInput);
+
+                const publicKeyInput: PublicKeyInput = {
+                    key: key.certificate ? key.certificate : key.publicKey ? key.publicKey : "",
+                    encoding: "utf-8",
+                    format: "pem"
+                };
+                const publicKeyObject = createPublicKey(publicKeyInput);
+
+                const cachedData: CachedSigningKeyData = {
+                    signingKey: key,
+                    privateKeyObject: privateKeyObject,
+                    publicKeyObject: publicKeyObject
+                };
+                cachedArray.push(cachedData);                
+            }
             // sort in descending order of expiration so we always use the newest keys for signing
             cachedArray = cachedArray.sort(
                 (a: CachedSigningKeyData, b: CachedSigningKeyData) => {

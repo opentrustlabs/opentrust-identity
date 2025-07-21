@@ -169,9 +169,17 @@ class DBScopeDao extends ScopeDao {
     }
 
     public async deleteScope(scopeId: string): Promise<void> {
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        const arr: Array<TenantAvailableScope> = await this.getTenantScopeRel(undefined, scopeId);
+        for(let i = 0; i < arr.length; i++){
+            await this.removeScopeFromTenant(arr[i].tenantId, scopeId);
+        }
+        await sequelize.models.scope.destroy({
+            where: {
+                scopeId: scopeId
+            }
+        });
         
-        // TODO
-        // REMOVE OTHER RELATINSHIPS
         return Promise.resolve();
     }
 

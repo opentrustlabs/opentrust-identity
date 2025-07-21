@@ -76,14 +76,6 @@ create TABLE federated_oidc_provider_tenant_rel (
     FOREIGN KEY (federatedoidcproviderid) REFERENCES federated_oidc_provider(federatedoidcproviderid)
 );
 
-create TABLE social_oidc_provider_tenant_rel (
-    federatedoidcproviderid VARCHAR(64) NOT NULL,
-    tenantid VARCHAR(64) NOT NULL,
-    PRIMARY KEY (federatedoidcproviderid, tenantid),
-    FOREIGN KEY (tenantid) REFERENCES tenant(tenantid),
-    FOREIGN KEY (federatedoidcproviderid) REFERENCES federated_oidc_provider(federatedoidcproviderid)
-);
-
 create TABLE federated_oidc_provider_domain_rel (
     federatedoidcproviderid VARCHAR(64) NOT NULL,
     domain VARCHAR(128) NOT NULL UNIQUE,
@@ -221,7 +213,8 @@ create TABLE signing_key (
     password VARCHAR(128),
     certificate BLOB,
     publickey BLOB,
-    expiresatms BIGINT,
+    createdat BIGINT NOT NULL,
+    expiresatms BIGINT NOT NULL,
     status VARCHAR(64),
     markfordelete BOOLEAN NOT NULL,
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid)
@@ -417,13 +410,9 @@ create TABLE change_event (
     changeeventclass VARCHAR(128) NOT NULL,
 	changeeventclassid VARCHAR(64),
     changetimestamp BIGINT NOT NULL,
-    changedbyid VARCHAR(64) NOT NULL,
-    data BLOB NOT NULL,
-	signature BLOB NOT NULL,
-	keyid VARCHAR(64) NOT NULL,
-    PRIMARY KEY (changeeventid, objectid), 
-	FOREIGN KEY (changedbyid) REFERENCES user(userid),
-	FOREIGN KEY (keyid) REFERENCES signing_key(keyid)
+    changedby VARCHAR(128) NOT NULL,
+    data BLOB NOT NULL,	
+    PRIMARY KEY (changeeventid, objectid)	
 );
 CREATE INDEX change_event_objectid_idx ON change_event(objectid);
 CREATE INDEX change_event_objecttype_idx ON change_event(objecttype);
@@ -476,7 +465,7 @@ create TABLE scheduler_lock (
     lockname VARCHAR(128) NOT NULL,
     lockinstanceid VARCHAR(128) NOT NULL,
     lockstarttimems BIGINT NOT NULL,
-    lockexpiresat BIGINT NOT NULL,
+    lockexpiresatms BIGINT NOT NULL,
     PRIMARY KEY (lockname, lockinstanceid)
 );
 
@@ -564,6 +553,7 @@ create TABLE mark_for_delete (
 	objecttype VARCHAR(128) NOT NULL,
 	submittedby VARCHAR(128) NOT NULL,
 	submitteddate BIGINT NOT NULL,
+    starteddate BIGINT,
 	completeddate BIGINT
 );
 

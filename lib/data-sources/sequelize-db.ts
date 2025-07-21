@@ -47,6 +47,7 @@ import UserAuthenticationStateEntity from "../entities/user-authentication-state
 import UserRegistrationStateEntity from "../entities/user-registration-state-entity";
 import TenantLoginFailurePolicyEntity from "../entities/tenant-login-failure-policy-entity";
 import UserFailedLoginEntity from "../entities/user-failed-login-entity";
+import SchedulerLockEntity from "../entities/scheduler-lock-entity";
 
 
 const {
@@ -168,6 +169,7 @@ class DBDriver {
             UserAuthenticationStateEntity.initModel(global.sequelize);
             UserRegistrationStateEntity.initModel(global.sequelize);
             TenantLoginFailurePolicyEntity.initModel(global.sequelize);
+            SchedulerLockEntity.initModel(global.sequelize);
         } 
 
         return global.sequelize;
