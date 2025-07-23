@@ -362,6 +362,7 @@ class IdentityService {
         // and save both the salt value and the iteration value as part of the hashed password,
         // so we do NOT need to pass both those pieces of information to the validation
         // function.
+
         let valid: boolean = false;
         if(
             userCredential.hashingAlgorithm === PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS ||
@@ -921,11 +922,8 @@ class IdentityService {
             console.log(error);
             await identityDao.deleteFIDO2Challenge(userId);
             throw new GraphQLError("ERROR_CANNOT_VALIDATE_AUTHENTICATION_KEY");
-        }
-
-        
+        }        
     }
-
 
     protected async createFederatedOIDCRequestProperties(email: string | null, userId: string | null, provider: FederatedOidcProvider, tenantId: string, preAuthenticationState: PreAuthenticationState | null): Promise<{hasError: boolean, errorMessage: string, authorizationEndpoint: string}> {
 

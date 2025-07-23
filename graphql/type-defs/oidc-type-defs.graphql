@@ -140,10 +140,10 @@ type Mutation {
     removeUserFromTenant(tenantId: String!, userId: String!): String
     deleteUserSession(userId: String!, clientId: String!, tenantId: String!): String
     rotatePassword(userId: String!, oldPassword: String!, newPassword: String!): Boolean
+    unlockUser(userId: String): Boolean
     
 
     ## Authentication Flows
-    logout(userId: String): String
     authenticateHandleUserNameInput(username: String!, tenantId: String, preAuthToken: String, returnToUri: String): UserAuthenticationStateResponse!    
     authenticateUser(username: String!, password: String!, tenantId: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
     authenticateHandleForgotPassword(authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
@@ -154,6 +154,7 @@ type Mutation {
     authenticateValidateSecurityKey(userId: String!, fido2KeyAuthenticationInput: Fido2KeyAuthenticationInput!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
     authenticateValidatePasswordResetToken(token: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
     cancelAuthentication(userId: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
+
 
     ## Social OIDC Authentication Flow
     authenticateWithSocialOIDCProvider(preAuthToken: String, tenantId: String!, federatedOIDCProviderId: String!): UserAuthenticationStateResponse!
@@ -710,6 +711,7 @@ type RefreshData {
     codeChallengeMethod: String
     refreshCount: Int!
     scope: String!
+    expiresAtMs: Float!
 }
 
 enum FederatedOIDCAuthorizationRelType {
@@ -831,6 +833,7 @@ enum AuthenticationState {
     EXPIRED
     CANCELLED
     ERROR
+    ACCEPT_TERMS_AND_CONDITIONS
 }
 
 type AuthenticationError {

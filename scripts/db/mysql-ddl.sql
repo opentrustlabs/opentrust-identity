@@ -373,6 +373,7 @@ create TABLE refresh_data (
     refreshcount INT,
     codechallenge VARCHAR(256),
     codechallengemethod VARCHAR(32),
+    expiresatms BIGINT NOT NULL,
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid),
     FOREIGN KEY (clientid) REFERENCES client(clientid),
     FOREIGN KEY (userid) REFERENCES user(userid)
