@@ -132,8 +132,7 @@ create TABLE user (
     locked BOOLEAN,
     enabled BOOLEAN NOT NULL,
     nameorder VARCHAR(64) NOT NULL,
-    markfordelete BOOLEAN NOT NULL,
-    termsandconditionsaccepted BOOLEAN NOT NULL
+    markfordelete BOOLEAN NOT NULL
 );
 
 CREATE INDEX user_email_idx on user(email);
@@ -155,6 +154,15 @@ create TABLE user_tenant_rel (
     userid VARCHAR(64) NOT NULL,
     tenantid VARCHAR(64) NOT NULL,
     enabled BOOLEAN NOT NULL,
+    PRIMARY KEY (userid, tenantid),
+    FOREIGN KEY (userid) REFERENCES user(userid),
+    FOREIGN KEY (tenantid) REFERENCES tenant(tenantid)
+);
+
+create TABLE user_terms_and_conditions_accepted (
+    userid VARCHAR(64) NOT NULL,
+    tenantid VARCHAR(64) NOT NULL,
+    acceptedatms BIGINT NOT NULL,
     PRIMARY KEY (userid, tenantid),
     FOREIGN KEY (userid) REFERENCES user(userid),
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid)

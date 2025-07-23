@@ -1,6 +1,6 @@
 import { OIDCContext } from "@/graphql/graphql-context";
 import IdentityDao from "../dao/identity-dao";
-import { Fido2KeyRegistrationInput, Tenant, TenantPasswordConfig, TotpResponse, User, UserCreateInput, UserCredential, Fido2KeyAuthenticationInput, TenantRestrictedAuthenticationDomainRel, PreAuthenticationState, AuthorizationReturnUri, UserRegistrationStateResponse, UserRegistrationState, RegistrationState } from "@/graphql/generated/graphql-types";
+import { Fido2KeyRegistrationInput, Tenant, TenantPasswordConfig, TotpResponse, User, UserCreateInput, UserCredential, Fido2KeyAuthenticationInput, TenantRestrictedAuthenticationDomainRel, PreAuthenticationState, AuthorizationReturnUri, UserRegistrationStateResponse, UserRegistrationState, RegistrationState, UserTermsAndConditionsAccepted } from "@/graphql/generated/graphql-types";
 import { DaoFactory } from "../data-sources/dao-factory";
 import TenantDao from "../dao/tenant-dao";
 import { GraphQLError } from "graphql/error";
@@ -217,12 +217,19 @@ class RegisterUserService extends IdentityService {
             phoneNumber: userCreateInput.phoneNumber,
             preferredLanguageCode: userCreateInput.preferredLanguageCode,
             federatedOIDCProviderSubjectId: userCreateInput.federatedOIDCProviderSubjectId,
-            markForDelete: false,
-            termsAndConditionsAccepted: userCreateInput.termsAndConditionsAccepted
+            markForDelete: false
         }
 
         await identityDao.createUser(user);
         await identityDao.assignUserToTenant(tenant.tenantId, user.userId, "PRIMARY");
+        if(isRegistration && userCreateInput.termsAndConditionsAccepted){
+            const userTermsAndConditionsAccepted: UserTermsAndConditionsAccepted = {
+                acceptedAtMs: Date.now(),
+                tenantId: tenant.tenantId,
+                userId: user.userId
+            };
+            await identityDao.addUserTermsAndConditionsAccepted(userTermsAndConditionsAccepted);
+        }
         const userCredential: UserCredential = this.generateUserCredential(user.userId, userCreateInput.password, tenantPasswordConfig.passwordHashingAlgorithm);
         await identityDao.addUserCredential(userCredential);
 

@@ -122,13 +122,7 @@ class UserEntity extends Model {
                 primaryKey: false,
                 allowNull: false,
                 field: "markfordelete"
-            },
-            termsAndConditionsAccepted: {
-                type: DataTypes.BOOLEAN,
-                primaryKey: false,
-                allowNull: false,
-                field: "termsandconditionsaccepted"
-            },
+            }
         }, 
 		{
             sequelize,

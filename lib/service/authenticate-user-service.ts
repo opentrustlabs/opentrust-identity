@@ -1,6 +1,6 @@
 import { OIDCContext } from "@/graphql/graphql-context";
 import IdentityDao from "../dao/identity-dao";
-import { Tenant, TenantPasswordConfig, User, UserCredential, UserMfaRel, TenantManagementDomainRel, FederatedOidcProvider, FederatedOidcProviderTenantRel, PreAuthenticationState, AuthorizationReturnUri, UserAuthenticationStateResponse, AuthenticationState, AuthenticationErrorTypes, UserAuthenticationState, UserFailedLogin, TenantLoginFailurePolicy, Fido2KeyAuthenticationInput, Fido2KeyRegistrationInput, TotpResponse } from "@/graphql/generated/graphql-types";
+import { Tenant, TenantPasswordConfig, User, UserCredential, UserMfaRel, TenantManagementDomainRel, FederatedOidcProvider, FederatedOidcProviderTenantRel, PreAuthenticationState, AuthorizationReturnUri, UserAuthenticationStateResponse, AuthenticationState, AuthenticationErrorTypes, UserAuthenticationState, UserFailedLogin, TenantLoginFailurePolicy, Fido2KeyAuthenticationInput, Fido2KeyRegistrationInput, TotpResponse, UserTermsAndConditionsAccepted } from "@/graphql/generated/graphql-types";
 import { DaoFactory } from "../data-sources/dao-factory";
 import TenantDao from "../dao/tenant-dao";
 import { GraphQLError } from "graphql/error";
@@ -150,6 +150,53 @@ class AuthenticateUserService extends IdentityService {
         arrUserAuthenticationStates[index].authenticationStateStatus = STATUS_COMPLETE;
         await identityDao.updateUserAuthenticationState(arrUserAuthenticationStates[index]);
         response.userAuthenticationState = arrUserAuthenticationStates[index + 1];
+        return response;
+
+    }
+
+    public async authenticateAcceptTermsAndConditions(accepted: boolean, authenticationSessionToken: string, preAuthToken: string | null): Promise<UserAuthenticationStateResponse> {
+        
+        const response: UserAuthenticationStateResponse = this.initUserAuthenticationStateResponse(authenticationSessionToken, "", preAuthToken);
+        if(accepted === false){
+            response.authenticationError.errorCode = "ERROR_REQUIRED_TERMS_AND_CONDITIONS_NOT_ACCEPTED";
+            response.userAuthenticationState.authenticationState = AuthenticationState.Error;
+            return response;
+        }
+        const arrUserAuthenticationStates: Array<UserAuthenticationState> = await this.getSortedAuthenticationStates(authenticationSessionToken);
+        
+        const index: number = await this.validateAuthenticationStep(arrUserAuthenticationStates, response, AuthenticationState.AcceptTermsAndConditions);
+        if(index < 0){
+            response.authenticationError.errorCode = "ERROR_INVALID_AUTHENTICATION_STATE";
+            return Promise.resolve(response);
+        }
+        const user: User | null = await identityDao.getUserBy("id", arrUserAuthenticationStates[index].userId);
+        if(user === null){
+            response.authenticationError.errorCode = "ERROR_INVALID_USER_ID";
+            response.userAuthenticationState.authenticationState = AuthenticationState.Error;
+            return response;
+        }
+
+        const userTermsAndConditionsAccepted: UserTermsAndConditionsAccepted = {
+            acceptedAtMs: Date.now(),
+            tenantId: arrUserAuthenticationStates[index].tenantId,
+            userId: arrUserAuthenticationStates[index].userId
+        }
+        await identityDao.addUserTermsAndConditionsAccepted(userTermsAndConditionsAccepted);
+
+        arrUserAuthenticationStates[index].authenticationStateStatus = STATUS_COMPLETE;
+        await identityDao.updateUserAuthenticationState(arrUserAuthenticationStates[index]);
+
+        const nextUserAuthenticationState = arrUserAuthenticationStates[index + 1];
+        if(nextUserAuthenticationState.authenticationState === AuthenticationState.RotatePassword){
+            const passwordConfig = await this.determineTenantPasswordConfig(nextUserAuthenticationState.userId, nextUserAuthenticationState.tenantId);
+            response.passwordConfig = passwordConfig;
+        }
+        if(nextUserAuthenticationState.authenticationState === AuthenticationState.RedirectBackToApplication || nextUserAuthenticationState.authenticationState === AuthenticationState.RedirectToIamPortal){
+            await this.handleAuthenticationCompletion(user, nextUserAuthenticationState, arrUserAuthenticationStates, response);
+        }
+        else{
+            response.userAuthenticationState = nextUserAuthenticationState;
+        }
         return response;
 
     }
@@ -455,8 +502,7 @@ class AuthenticateUserService extends IdentityService {
                 )
             )
             if(tenantsThatAllowPasswordLogin.length === 1){
-                const stateOrder: Array<AuthenticationState> = [];
-                stateOrder.push(AuthenticationState.EnterPassword);
+
                 const passwordConfig: TenantPasswordConfig | null = await tenantDao.getTenantPasswordConfig(tenantsThatAllowPasswordLogin[0].tenantId);
                 const userCredential: UserCredential | null = await identityDao.getUserCredentialForAuthentication(user.userId);
                 if(!userCredential){
@@ -474,6 +520,14 @@ class AuthenticateUserService extends IdentityService {
                 const userMfaRelSecurityKey : UserMfaRel | undefined = arrUserMfaConfig.find(
                     (v: UserMfaRel) => v.mfaType === MFA_AUTH_TYPE_FIDO2
                 );
+                const userTermsAndConditionsAccepted: UserTermsAndConditionsAccepted | null = 
+                        await identityDao.getUserTermsAndConditionsAccepted(user.userId, tenantsThatAllowPasswordLogin[0].tenantId);
+                
+                
+                // Create the authentication states in order of completion
+                const stateOrder: Array<AuthenticationState> = [];
+                stateOrder.push(AuthenticationState.EnterPassword);
+
                 // If the user has configured totp, always use it first
                 if(userMfaRelTotp){
                     stateOrder.push(AuthenticationState.ValidateTotp);
@@ -493,6 +547,10 @@ class AuthenticateUserService extends IdentityService {
                 if(requiredMfaTypes.includes(MFA_AUTH_TYPE_FIDO2) && !userMfaRelSecurityKey){
                     stateOrder.push(AuthenticationState.ConfigureSecurityKey);
                     stateOrder.push(AuthenticationState.ValidateSecurityKey);
+                }
+                // Did the user accept the terms and conditions for this tenant, if required?
+                if(userTermsAndConditionsAccepted === null && tenantsThatAllowPasswordLogin[0].registrationRequireTermsAndConditions === true){
+                    stateOrder.push(AuthenticationState.AcceptTermsAndConditions);
                 }
                 // Finally, once all the user verification steps have been completed, do we need
                 // to rotate the password before we send the user back to the 3rd party app?                

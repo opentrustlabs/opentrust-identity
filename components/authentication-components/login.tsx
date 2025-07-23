@@ -23,6 +23,7 @@ import Skeleton from '@mui/material/Skeleton';
 import ValidatePasswordResetToken from "./validate-password-reset-token";
 import { AuthSessionProps, useAuthSessionContext } from "../contexts/auth-session-context";
 import { AuthContext, AuthContextProps } from "../contexts/auth-context";
+import AuthentiationAcceptTermsAndConditions from "./accept-terms-and-conditions";
 
 
 const MIN_USERNAME_LENGTH = 6;
@@ -39,7 +40,7 @@ const Login: React.FC = () => {
 
     // CONTEXT VARIABLES
     const titleSetter = useContext(PageTitleContext);
-    const tenantBean: TenantMetaDataBean = useContext(TenantContext);    
+    const tenantBean: TenantMetaDataBean = useContext(TenantContext);
     const authSessionProps: AuthSessionProps = useAuthSessionContext();
     const breakPoints: ResponsiveBreakpoints = useContext(ResponsiveContext);    
     const authContextProps: AuthContextProps = useContext(AuthContext);
@@ -692,6 +693,22 @@ const Login: React.FC = () => {
                     }
                     {userAuthenticationState && userAuthenticationState.authenticationState === AuthenticationState.ValidateSecurityKey &&
                         <AuthentiationValidateSecurityKey
+                            initialUserAuthenticationState={userAuthenticationState}
+                            onAuthenticationCancelled={() => {
+                                handleCancelAuthentication(userAuthenticationState);
+                            }}
+                            onUpdateEnd={(userAuthenticationStateResponse, errorMessage) => {
+                                setShowMutationBackdrop(false);
+                                handleUserAuthenticationResponse(userAuthenticationStateResponse, errorMessage);
+                            }}
+                            onUpdateStart={() => {
+                                setErrorMessage(null);
+                                setShowMutationBackdrop(true);
+                            }}
+                        />
+                    }
+                    {userAuthenticationState && userAuthenticationState.authenticationState === AuthenticationState.AcceptTermsAndConditions &&
+                        <AuthentiationAcceptTermsAndConditions
                             initialUserAuthenticationState={userAuthenticationState}
                             onAuthenticationCancelled={() => {
                                 handleCancelAuthentication(userAuthenticationState);

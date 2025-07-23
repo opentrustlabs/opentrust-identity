@@ -140,7 +140,7 @@ type Mutation {
     removeUserFromTenant(tenantId: String!, userId: String!): String
     deleteUserSession(userId: String!, clientId: String!, tenantId: String!): String
     rotatePassword(userId: String!, oldPassword: String!, newPassword: String!): Boolean
-    unlockUser(userId: String): Boolean
+    unlockUser(userId: String!): Boolean
     
 
     ## Authentication Flows
@@ -153,6 +153,7 @@ type Mutation {
     authenticateRegisterSecurityKey(userId: String!, fido2KeyRegistrationInput: Fido2KeyRegistrationInput!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
     authenticateValidateSecurityKey(userId: String!, fido2KeyAuthenticationInput: Fido2KeyAuthenticationInput!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
     authenticateValidatePasswordResetToken(token: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
+    authenticateAcceptTermsAndConditions(accepted: Boolean!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
     cancelAuthentication(userId: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
 
 
@@ -480,7 +481,12 @@ type User {
     enabled: Boolean!
     nameOrder: String!
     markForDelete: Boolean!
-    termsAndConditionsAccepted: Boolean!
+}
+
+type UserTermsAndConditionsAccepted {
+    userId: String!
+    tenantId: String!
+    acceptedAtMs: Float!
 }
 
 type UserTenantRel {
