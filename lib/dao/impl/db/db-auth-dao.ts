@@ -162,6 +162,13 @@ class DBAuthDao extends AuthDao {
                 }
             }
         }); 
+        await sequelize.models.refreshData.destroy({
+            where: {
+                expiresAtMs: {
+                    [Op.lt]: Date.now()
+                }
+            }
+        });
 
     }
 

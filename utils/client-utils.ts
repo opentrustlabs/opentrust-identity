@@ -1,5 +1,5 @@
 "use client";
-import { AUTH_TOKEN_LOCAL_STORAGE_KEY, MANAGEMENT_TENANT_LOCAL_STORAGE_KEY, TOKEN_EXPIRIES_AT_MS_LOCAL_KEY } from "./consts";
+import { AUTH_TOKEN_LOCAL_STORAGE_KEY, TOKEN_EXPIRIES_AT_MS_LOCAL_KEY } from "./consts";
 import { COUNTRY_CODES, CountryCodeDef, LANGUAGE_CODES, LanguageCodeDef } from "./i18n";
 
 

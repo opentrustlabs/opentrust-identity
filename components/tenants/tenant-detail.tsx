@@ -445,22 +445,19 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                                         setOverviewDirty(true);
                                                     }}
                                                 />
+                                            </Grid2>                                            
+                                            <Grid2 size={12} marginTop={"8px"} marginBottom={"16px"}>
+                                                <div>Terms And Conditions URI</div>
+                                                <TextField name="termsAndConditionsUri" id="termsAndConditionsUri" 
+                                                    disabled={disableInputs === true}
+                                                    onChange={(evt) => {                                                            
+                                                        tenantInput.termsAndConditionsUri = evt.target.value;                                                                                                                     
+                                                        setTenantInput({...tenantInput}); 
+                                                        setOverviewDirty(true); 
+                                                    }}
+                                                    value={tenantInput.termsAndConditionsUri || ""} fullWidth={true} size="small" 
+                                                />
                                             </Grid2>
-                                            {tenantInput.registrationRequireTermsAndConditions === true &&
-                                                <Grid2 size={12} marginTop={"8px"} marginBottom={"16px"}>
-                                                    <div>Terms And Conditions URI</div>
-                                                    <TextField name="termsAndConditionsUri" id="termsAndConditionsUri" 
-                                                        disabled={disableInputs === true}
-                                                        onChange={(evt) => {                                                            
-                                                            tenantInput.termsAndConditionsUri = evt.target.value;                                                                                                                     
-                                                            setTenantInput({...tenantInput}); 
-                                                            setOverviewDirty(true); 
-                                                        }}
-                                                        value={tenantInput.termsAndConditionsUri || ""} fullWidth={true} size="small" 
-                                                    />
-                                                </Grid2>
-                                            }
-
                                         </Grid2>
                                     </Grid2>                                    
                                 </Grid2>                                

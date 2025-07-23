@@ -593,6 +593,14 @@ const Register: React.FC = () => {
                                                 </Grid2>
                                             </Grid2>
                                         }
+                                        {tenantBean.getTenantMetaData().tenant.registrationRequireTermsAndConditions === false && tenantBean.getTenantMetaData().tenant.termsAndConditionsUri &&
+                                            <Grid2 container marginBottom={"8px"} size={12}>
+                                                <Grid2 size={12}>
+                                                    <span>This site uses the following </span>
+                                                    <Link onClick={() => setUserClickedTermsAndConditionsLink(true)} href={tenantBean.getTenantMetaData().tenant.termsAndConditionsUri || ""} target="_blank">Terms and Conditions</Link>
+                                                </Grid2>                                                
+                                            </Grid2>
+                                        }
                                     </Grid2>
                                     <Stack 
                                         width={"100%"}

@@ -906,9 +906,9 @@ const resolvers: Resolvers = {
             const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);
             return service.authenticateValidatePasswordResetToken(token, authenticationSessionToken, preAuthToken || null);
         },
-        cancelAuthentication: async(_: any, { userId, authenticationSessionToken, preAuthToken}, oidcContext) => {
+        cancelAuthentication: async(_: any, { authenticationSessionToken, preAuthToken}, oidcContext) => {
             const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);
-            return service.cancelAuthentication(userId, authenticationSessionToken, preAuthToken || null);
+            return service.cancelAuthentication(authenticationSessionToken, preAuthToken || null);
         },
         authenticateWithSocialOIDCProvider: async(_: any, { federatedOIDCProviderId, preAuthToken, tenantId }, oidcContext) => {
             const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);

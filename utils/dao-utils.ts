@@ -2,6 +2,9 @@ import { readFileSync, existsSync } from "node:fs";
 import { randomBytes, hash, createHash, pbkdf2Sync, scryptSync } from "node:crypto";
 import bcrypt from "bcrypt";
 
+export function base64Decode(s: string): string {
+    return Buffer.from(s, "base64").toString("utf-8");
+}
 
 /**
  * 

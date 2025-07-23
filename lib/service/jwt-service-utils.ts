@@ -496,9 +496,7 @@ class JwtServiceUtils {
         }
         catch(error){
             return Promise.resolve(null);
-        }
-
-        
+        }        
     }
 
 
