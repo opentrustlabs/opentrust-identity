@@ -186,7 +186,7 @@ class AuthenticateUserService extends IdentityService {
         arrUserAuthenticationStates[index].authenticationStateStatus = STATUS_COMPLETE;
         await identityDao.updateUserAuthenticationState(arrUserAuthenticationStates[index]);
 
-        const nextUserAuthenticationState = arrUserAuthenticationStates[index + 1];
+        const nextUserAuthenticationState = arrUserAuthenticationStates[index + 1];        
         if(nextUserAuthenticationState.authenticationState === AuthenticationState.RotatePassword){
             const passwordConfig = await this.determineTenantPasswordConfig(nextUserAuthenticationState.userId, nextUserAuthenticationState.tenantId);
             response.passwordConfig = passwordConfig;
