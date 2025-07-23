@@ -770,8 +770,7 @@ const resolvers: Resolvers = {
                 postalCode: userInput.postalCode,
                 preferredLanguageCode: userInput.preferredLanguageCode,
                 stateRegionProvince: userInput.stateRegionProvince,
-                markForDelete: false,
-                termsAndConditionsAccepted: userInput.termsAndConditionsAccepted
+                markForDelete: false
             }
             await service.updateUser(user);
             return user;
@@ -914,6 +913,10 @@ const resolvers: Resolvers = {
             const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);
             return service.authenticateWithSocialOIDCProvider(preAuthToken || null, tenantId, federatedOIDCProviderId);
         },
+        authenticateAcceptTermsAndConditions: async(_: any, {accepted, authenticationSessionToken, preAuthToken }, oidcContext) => {
+            const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);
+            return service.authenticateAcceptTermsAndConditions(accepted, authenticationSessionToken, preAuthToken || null);
+        },
         registerUser: async(_: any, { tenantId, userInput, preAuthToken }, oidcContext) => {
             const service: RegisterUserService = new RegisterUserService(oidcContext);
             return service.registerUser(userInput, tenantId, preAuthToken);
@@ -941,6 +944,11 @@ const resolvers: Resolvers = {
         cancelRegistration: async(_: any, { userId, registrationSessionToken, preAuthToken }, oidcContext) => {
             const service: RegisterUserService = new RegisterUserService(oidcContext);
             return service.cancelRegistration(userId, registrationSessionToken, preAuthToken || null);
+        },
+        unlockUser: async(_: any, { userId }, oidcContext) => {
+            const service: IdentityService = new IdentityService(oidcContext);
+            await service.unlockUser(userId);
+            return true;
         }
 
     },

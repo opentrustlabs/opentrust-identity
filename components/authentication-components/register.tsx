@@ -29,6 +29,7 @@ import PasswordRulesDisplay from "./password-rules-display";
 import { AuthSessionProps, useAuthSessionContext } from "../contexts/auth-session-context";
 import { AuthContext, AuthContextProps } from "../contexts/auth-context";
 import Link from "next/link";
+import { MuiTelInput } from 'mui-tel-input'
 
 
 export interface RegistrationComponentsProps {
@@ -434,9 +435,9 @@ const Register: React.FC = () => {
                                         </Grid2>
                                         <Grid2 marginBottom={"8px"} size={12}>
                                             <div>Phone Number</div>
-                                            <TextField name="phoneNumber" id="phoneNumber"
-                                                value={userInput.phoneNumber}
-                                                onChange={(evt) => { userInput.phoneNumber = evt.target.value; setUserInput({ ...userInput }); }}
+                                            <MuiTelInput
+                                                value={userInput.phoneNumber || ""}
+                                                onChange={(newValue) => { userInput.phoneNumber = newValue; setUserInput({ ...userInput }); }}
                                                 fullWidth={true} size="small"
                                             />
                                         </Grid2>

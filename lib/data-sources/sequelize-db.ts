@@ -49,6 +49,7 @@ import TenantLoginFailurePolicyEntity from "../entities/tenant-login-failure-pol
 import UserFailedLoginEntity from "../entities/user-failed-login-entity";
 import SchedulerLockEntity from "../entities/scheduler-lock-entity";
 import CaptchaConfigEntity from "../entities/captcha-config-entity";
+import UserTermsAndConditionsAcceptedEntity from "../entities/user-terms-and-conditions-accepted-entity";
 
 
 const {
@@ -172,6 +173,7 @@ class DBDriver {
             TenantLoginFailurePolicyEntity.initModel(global.sequelize);
             SchedulerLockEntity.initModel(global.sequelize);
             CaptchaConfigEntity.initModel(global.sequelize);
+            UserTermsAndConditionsAcceptedEntity.initModel(global.sequelize);
         } 
 
         return global.sequelize;
