@@ -327,12 +327,20 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
                                     includeInputInList
                                     filterSelectedOptions
                                     onChange={(evt, value, reason) => {
+                                        console.log(evt.type);
+                                        console.log(reason);
+                                        console.log(value)
+                                        console.log("value is emtpty string: " + (value === ""));
                                         if(reason === "clear"){
                                             setLookaheadOptions([]);
                                             // Note that closing the search box is ONLY for the mobile view
                                             // because there does not seem to be another way to (elegantly)
-                                            // indicate a "close" action
-                                            setMobileSearchOpen(false);
+                                            // indicate a "close" action. Do this action when the user click
+                                            // on the close "X" button, but not when the user removes the
+                                            // search term.
+                                            if(evt.type === "click"){
+                                                setMobileSearchOpen(false);
+                                            }
                                         }
                                     }}
                                     fullWidth={true}
