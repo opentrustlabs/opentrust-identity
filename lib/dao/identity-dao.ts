@@ -133,6 +133,8 @@ abstract class IdentityDao {
 
     abstract getUserRegistrationStates(registrationSessionToken: string): Promise<Array<UserRegistrationState>>;
 
+    abstract getUserRegistrationStatesByEmail(email: string): Promise<Array<UserRegistrationState>>;
+
     abstract updateUserRegistrationState(userRegistrationState: UserRegistrationState): Promise<UserRegistrationState>;
 
     abstract deleteUserRegistrationState(userRegistrationState: UserRegistrationState): Promise<UserRegistrationState>;

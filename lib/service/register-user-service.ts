@@ -1,6 +1,6 @@
 import { OIDCContext } from "@/graphql/graphql-context";
 import IdentityDao from "../dao/identity-dao";
-import { Fido2KeyRegistrationInput, Tenant, TenantPasswordConfig, TotpResponse, User, UserCreateInput, UserCredential, Fido2KeyAuthenticationInput, TenantRestrictedAuthenticationDomainRel, PreAuthenticationState, AuthorizationReturnUri, UserRegistrationStateResponse, UserRegistrationState, RegistrationState, UserTermsAndConditionsAccepted } from "@/graphql/generated/graphql-types";
+import { Fido2KeyRegistrationInput, Tenant, TenantPasswordConfig, TotpResponse, User, UserCreateInput, UserCredential, Fido2KeyAuthenticationInput, TenantRestrictedAuthenticationDomainRel, PreAuthenticationState, AuthorizationReturnUri, UserRegistrationStateResponse, UserRegistrationState, RegistrationState, UserTermsAndConditionsAccepted, TenantLegacyUserMigrationConfig } from "@/graphql/generated/graphql-types";
 import { DaoFactory } from "../data-sources/dao-factory";
 import TenantDao from "../dao/tenant-dao";
 import { GraphQLError } from "graphql/error";
@@ -12,9 +12,11 @@ import { getOpenSearchClient } from "../data-sources/search";
 import AuthDao from "../dao/auth-dao";
 import JwtServiceUtils from "./jwt-service-utils";
 import IdentityService from "./identity-service";
+import OIDCServiceUtils from "./oidc-service-utils";
+
 
 const jwtServiceUtils: JwtServiceUtils = new JwtServiceUtils();
-
+const oidcServiceUtils: OIDCServiceUtils = new OIDCServiceUtils();
 const identityDao: IdentityDao = DaoFactory.getInstance().getIdentityDao();
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
 const searchClient: OpenSearchClient = getOpenSearchClient();
@@ -47,12 +49,26 @@ class RegisterUserService extends IdentityService {
          */    
     public async registerUser(userCreateInput: UserCreateInput, tenantId: string, preAuthToken: string | null | undefined): Promise<UserRegistrationStateResponse>{
             
-        // TODO
         // Need to check to see if there is an active registration session happening with the
         // user, based on their email. If so, then return error if the session has not expired.
         // Otherwise, delete the old registration session, any user and relationships that were
         // created, and continue.
+        const existingRegistrationStates = await identityDao.getUserRegistrationStatesByEmail(userCreateInput.email);
+        if(existingRegistrationStates.length > 0){
+            if(existingRegistrationStates[0].expiresAtMs > Date.now()){
+                throw new GraphQLError("ERROR_REGISTRATION_FOR_USER_ALREADY_IN_PROGRESS");
+            }
+            else{
+                for(let i = 0; i < existingRegistrationStates.length; i++){
+                    await identityDao.deleteUserRegistrationState(existingRegistrationStates[i]);
+                }
+                await this.deleteRegisteredUser(existingRegistrationStates[0].tenantId, existingRegistrationStates[0].userId);
+            }
+        }
         
+        // TODO
+        // Refactor the _createUser to return a RegistrationState value or null, and an isCreated and an errorMessage
+        // rather than throw exceptions.
         const {user, tenant, tenantPasswordConfig} = await this._createUser(userCreateInput, tenantId, true);
 
         const registrationSessionToken: string = generateRandomToken(20, "hex");
@@ -66,6 +82,7 @@ class RegisterUserService extends IdentityService {
             // send it to the user. No need to do that here.
             stateOrder.push(RegistrationState.ValidateEmail);
         }
+
         
         if(tenantPasswordConfig.requireMfa === true){
             const mfas = tenantPasswordConfig.mfaTypesRequired?.split(",") || [];            
@@ -169,6 +186,23 @@ class RegisterUserService extends IdentityService {
         const existingUser: User | null = await identityDao.getUserBy("email", userCreateInput.email);
         if (existingUser) {
             throw new GraphQLError("ERROR_USER_WITH_EMAIL_ALREADY_EXISTS");
+        }
+
+        // Need to check to see if the tenant allows for migration of users from another
+        // system. If so, then if we do not find the user's email in the local data store
+        // we need to look to the legacy system as well. Of course, the admin of the
+        // IAM tool may not have configured any URLs for migration, so we need to be careful
+        // here too. If allow-migration is true, but there is no legacy config, or the URLs are
+        // null, then proceed as normal.
+        let tenantLegacyUserMigrationConfig: TenantLegacyUserMigrationConfig | null = null;
+        if(tenant.migrateLegacyUsers === true){
+            tenantLegacyUserMigrationConfig = await tenantDao.getLegacyUserMigrationConfiguration(tenant.tenantId);
+            if(tenantLegacyUserMigrationConfig && tenantLegacyUserMigrationConfig.usernameCheckUri && tenantLegacyUserMigrationConfig.authenticationUri && tenantLegacyUserMigrationConfig.userProfileUri){
+                const userExistsInLegacySystem: boolean = await oidcServiceUtils.legacyUsernameCheck(`${tenantLegacyUserMigrationConfig.usernameCheckUri}?email=${userCreateInput.email}`);
+                if(userExistsInLegacySystem){
+                    throw new GraphQLError("ERROR_USER_ALREADY_EXISTS_IN_LEGACY_SYSTEM");
+                }
+            }
         }
 
         const tenantPasswordConfig: TenantPasswordConfig = await tenantDao.getTenantPasswordConfig(tenantId) || DEFAULT_TENANT_PASSWORD_CONFIGURATION;
@@ -719,3 +753,4 @@ class RegisterUserService extends IdentityService {
 }
 
 export default RegisterUserService;
+

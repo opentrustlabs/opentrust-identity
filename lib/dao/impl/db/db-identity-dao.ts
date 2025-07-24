@@ -677,6 +677,16 @@ class DBIdentityDao extends IdentityDao {
         return arr.map((entity: UserRegistrationStateEntity) => entity.dataValues);
     }
 
+    public async getUserRegistrationStatesByEmail(email: string): Promise<Array<UserRegistrationState>>{
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        const arr: Array<UserRegistrationStateEntity> = await sequelize.models.userRegistrationState.findAll({
+            where: {
+                email: email
+            }
+        });
+        return arr.map((entity: UserRegistrationStateEntity) => entity.dataValues);
+    }
+
     public async updateUserRegistrationState(userRegistrationState: UserRegistrationState): Promise<UserRegistrationState> {
         const sequelize: Sequelize = await DBDriver.getConnection();
         await sequelize.models.userRegistrationState.update(userRegistrationState, {

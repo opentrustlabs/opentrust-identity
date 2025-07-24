@@ -1,6 +1,6 @@
 import { OIDCContext } from "@/graphql/graphql-context";
 import IdentityDao from "../dao/identity-dao";
-import { Tenant, TenantPasswordConfig, User, UserCredential, UserMfaRel, TenantManagementDomainRel, FederatedOidcProvider, FederatedOidcProviderTenantRel, PreAuthenticationState, AuthorizationReturnUri, UserAuthenticationStateResponse, AuthenticationState, AuthenticationErrorTypes, UserAuthenticationState, UserFailedLogin, TenantLoginFailurePolicy, Fido2KeyAuthenticationInput, Fido2KeyRegistrationInput, TotpResponse, UserTermsAndConditionsAccepted } from "@/graphql/generated/graphql-types";
+import { Tenant, TenantPasswordConfig, User, UserCredential, UserMfaRel, TenantManagementDomainRel, FederatedOidcProvider, FederatedOidcProviderTenantRel, PreAuthenticationState, AuthorizationReturnUri, UserAuthenticationStateResponse, AuthenticationState, AuthenticationErrorTypes, UserAuthenticationState, UserFailedLogin, TenantLoginFailurePolicy, Fido2KeyAuthenticationInput, Fido2KeyRegistrationInput, TotpResponse, UserTermsAndConditionsAccepted, TenantLegacyUserMigrationConfig } from "@/graphql/generated/graphql-types";
 import { DaoFactory } from "../data-sources/dao-factory";
 import TenantDao from "../dao/tenant-dao";
 import { GraphQLError } from "graphql/error";
@@ -10,8 +10,10 @@ import AuthDao from "../dao/auth-dao";
 import FederatedOIDCProviderDao from "../dao/federated-oidc-provider-dao";
 import JwtServiceUtils from "./jwt-service-utils";
 import IdentityService from "./identity-service";
+import OIDCServiceUtils from "./oidc-service-utils";
 
 const jwtServiceUtils: JwtServiceUtils = new JwtServiceUtils();
+const oidcServiceUtils: OIDCServiceUtils = new OIDCServiceUtils();
 const identityDao: IdentityDao = DaoFactory.getInstance().getIdentityDao();
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
 const authDao: AuthDao = DaoFactory.getInstance().getAuthDao();
@@ -244,10 +246,23 @@ class AuthenticateUserService extends IdentityService {
             }
         }
         
-        const user: User | null = await identityDao.getUserBy("email", email.toLowerCase()); 
+        const user: User | null = await identityDao.getUserBy("email", email.toLowerCase());
 
-        // If user does not exist, there is no provider, and the tenant does not allow self-registration
-        if(user === null && federatedOidcProvider === null && tenant.allowUserSelfRegistration === false){
+        // Need to check if there is a legacy system configured, and if so, is the user 
+        // in that system?
+        let userExistsInLegacySystem: boolean = false;
+        if(user === null){
+            let tenantLegacyUserMigrationConfig: TenantLegacyUserMigrationConfig | null = null;
+            if(tenant.migrateLegacyUsers === true){
+                tenantLegacyUserMigrationConfig = await tenantDao.getLegacyUserMigrationConfiguration(tenant.tenantId);
+                if(tenantLegacyUserMigrationConfig && tenantLegacyUserMigrationConfig.usernameCheckUri && tenantLegacyUserMigrationConfig.authenticationUri && tenantLegacyUserMigrationConfig.userProfileUri){
+                    userExistsInLegacySystem = await oidcServiceUtils.legacyUsernameCheck(`${tenantLegacyUserMigrationConfig.usernameCheckUri}?email=${email.toLowerCase()}`);                    
+                }
+            }
+        }
+
+        // If user does not exist (either in the local data store or in a legacy system), there is no provider, and the tenant does not allow self-registration
+        if(user === null && !userExistsInLegacySystem && federatedOidcProvider === null && tenant.allowUserSelfRegistration === false){
             response.authenticationError.errorCode = "ERROR_USER_REGISTRATION_IS_NOT_PERMITTED_FOR_THIS_TENANT";
             return response;
         }
@@ -262,6 +277,7 @@ class AuthenticateUserService extends IdentityService {
         //
         // At this point we know that the tenant exists and allows either a external OIDC provider
         // or allows the user to login with a username/password or allows the user to register
+        // or there is a legacy user that needs to be migrated.
 
         response.userAuthenticationState.tenantId = preAuthenticationState.tenantId;
         // 1.   There is a provider, and regardless of whether the user exists, send the the user to the provider
