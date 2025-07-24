@@ -1,6 +1,31 @@
 import axios, { AxiosResponse } from "axios";
 import { Jwks, WellknownConfig } from "@/lib/models/wellknown-config";
 import NodeCache from "node-cache";
+import { LegacyUserAuthenticationPayload, LegacyUserAuthenticationResponse, LegacyUserProfile } from "../models/principal";
+
+// TODO
+// Need to consider the following properties on the axios requests:
+//   httpsAgent?: any;
+//   proxy?: AxiosProxyConfig | false;
+//
+// and make these configurable in the .env file
+// Examples:
+//
+// import { Agent } from "https";
+// import axios, { AxiosProxyConfig, AxiosResponse } from "axios";
+// 
+//      agent: Agent = new Agent({
+//         key: "",
+//         cert: "",
+//         passphrase: "",
+//         rejectUnauthorized: true,
+//         ca: ""
+//     });
+//
+//      proxy: AxiosProxyConfig = {
+//         host: "",
+//         port: 0
+//     }
 
 const oidcWellknowCache = new NodeCache(
     {
@@ -20,6 +45,7 @@ const oidcJwksCache = new NodeCache(
 
 class OIDCServiceUtils {
 
+    
     /**
      * 
      * @param wellKnownUri 
@@ -69,6 +95,78 @@ class OIDCServiceUtils {
         keys = response.data;
         oidcJwksCache.set(jwksUri, keys);
         return keys !== undefined ? Promise.resolve(keys) : Promise.resolve(null);
+    }
+
+    /**
+     * Performs a HEAD request with the give URI (which should look like: http(s)://domain/path?email=)
+     * and returns true if the service responded with 200, else false
+     * @param uri 
+     * @returns 
+     */
+    public async legacyUsernameCheck(uri: string): Promise<boolean> {
+        const response: AxiosResponse = await axios.head<Jwks>(uri, {
+            timeout: 30000,
+            responseEncoding: "utf-8"
+        });
+        return response.status === 200;
+    }
+
+    /**
+     * Authenticates the user against the legacy auth system. Success returns an
+     * access token which will be used to query the user profile. See #legacyUserProfile()
+     * 
+     * @param uri 
+     * @param email 
+     * @param password 
+     * @returns 
+     */
+    public async legacyUserAuthentication(uri: string, email: string, password: string): Promise<LegacyUserAuthenticationResponse | null>{
+
+        const payload: LegacyUserAuthenticationPayload = {
+            email: email,
+            password: password
+        }
+
+        const response: AxiosResponse = await axios.post(uri, payload, {
+            timeout: 30000,
+            responseEncoding: "utf-8",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            responseType: "json"
+        });
+
+        if(response.status === 200){
+            return response.data as LegacyUserAuthenticationResponse;
+        }
+        else{
+            return null;
+        }
+    }
+
+    /**
+     * Invokes a GET request on the legacy user profile URI with the access token obtained
+     * in the #legacyUserAuthentication() call
+     * @param uri 
+     * @param authToken 
+     * @returns 
+     */
+    public async legacyUserProfile(uri: string, authToken: string): Promise<LegacyUserProfile | null>{
+
+        const response: AxiosResponse = await axios.get(uri, {
+            headers: {
+                "Authorization": `Bearer ${authToken}`
+            },
+            timeout: 30000,
+            responseType: "json"
+        });
+
+        if(response.status === 200){
+            return response.data as LegacyUserProfile;
+        }
+        else{
+            return null;
+        }
     }
 
     

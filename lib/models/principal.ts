@@ -27,3 +27,30 @@ export interface OIDCPrincipal {
     client_type: string
     token_type: string
 }
+
+export interface LegacyUserProfile {
+    email: string
+    emailVerified: boolean,
+    firstName: string
+    lastName: string
+    middleName: string | null
+    phoneNumber: string | null
+    address: string,
+    addressLine1: string,
+    city: string,
+    postalCode: string,
+    stateRegionProvince: string,
+    countryCode: string
+    preferredLanguageCode: string,    
+    nameOrder: string
+}
+
+export interface LegacyUserAuthenticationPayload {
+    email: string,
+    password: string
+}
+
+export interface LegacyUserAuthenticationResponse {
+    accessToken: string
+}
+
