@@ -42,9 +42,8 @@ const ManagementLayout: React.FC<Props> = ({children}) => {
                 profile={profile}
             />             
             <Container
-                maxWidth={breakPoints.isGreaterThanExtraLarge ? "xl" : "xl"}
-                disableGutters={true}
-                
+                maxWidth={"xl"}
+                disableGutters={true}                
             >
                 <Box sx={{ flexGrow: 1,  }}>
                     <Grid2 size={12} container spacing={1} sx={{}}>                
