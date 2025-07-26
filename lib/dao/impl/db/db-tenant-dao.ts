@@ -299,7 +299,7 @@ class DBTenantDao extends TenantDao {
             }
         });
 
-        return entity ? Promise.resolve(entity as any as TenantLegacyUserMigrationConfig) : Promise.resolve(null);
+        return entity ? Promise.resolve(entity.dataValues as any as TenantLegacyUserMigrationConfig) : Promise.resolve(null);
     }
 
     

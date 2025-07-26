@@ -913,6 +913,10 @@ const resolvers: Resolvers = {
             const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);
             return service.authenticateWithSocialOIDCProvider(preAuthToken || null, tenantId, federatedOIDCProviderId);
         },
+        authenticateUserAndMigrate: async(_: any, { authenticationSessionToken, password, tenantId, username, preAuthToken }, oidcContext) => {
+            const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);
+            return service.authenticateUserAndMigrate(username, password, tenantId, authenticationSessionToken, preAuthToken || null);
+        },
         authenticateAcceptTermsAndConditions: async(_: any, {accepted, authenticationSessionToken, preAuthToken }, oidcContext) => {
             const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);
             return service.authenticateAcceptTermsAndConditions(accepted, authenticationSessionToken, preAuthToken || null);
