@@ -381,7 +381,7 @@ class DBTenantDao extends TenantDao {
         return Promise.resolve();
     }
 
-    public async setTenantLegacyUserMigrationConfiguration(tenantLegacyUserMigrationConfig: TenantLegacyUserMigrationConfig): Promise<TenantLegacyUserMigrationConfig | null> {
+    public async updateTenantLegacyUserMigrationConfiguration(tenantLegacyUserMigrationConfig: TenantLegacyUserMigrationConfig): Promise<TenantLegacyUserMigrationConfig | null> {
         const sequelize: Sequelize = await DBDriver.getConnection();
         await sequelize.models.tenantLegacyUserMigrationConfig.update(tenantLegacyUserMigrationConfig, {
             where: {

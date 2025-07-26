@@ -7,7 +7,7 @@ import { FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL, PASSWORD_MINIMUM_LENGTH, QUERY_PAR
 import { useMutation, useQuery } from "@apollo/client";
 import { UserAuthenticationStateResponse, TenantSelectorData, AuthenticationState, UserAuthenticationState, TenantPasswordConfig, FederatedOidcProvider } from "@/graphql/generated/graphql-types";
 import Alert from '@mui/material/Alert';
-import { AUTHENTICATE_HANDLE_FORGOT_PASSWORD, AUTHENTICATE_USER, AUTHENTICATE_USERNAME_INPUT_MUTATION, AUTHENTICATE_WITH_SOCIAL_OIDC_PROVIDER, CANCEL_AUTHENTICATION } from "@/graphql/mutations/oidc-mutations";
+import { AUTHENTICATE_HANDLE_FORGOT_PASSWORD, AUTHENTICATE_USER, AUTHENTICATE_USER_AND_MIGRATE, AUTHENTICATE_USERNAME_INPUT_MUTATION, AUTHENTICATE_WITH_SOCIAL_OIDC_PROVIDER, CANCEL_AUTHENTICATION } from "@/graphql/mutations/oidc-mutations";
 import { PageTitleContext } from "@/components/contexts/page-title-context";
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
 import RadioStyledCheckbox from "../input/radio-styled-checkbox";
@@ -115,6 +115,16 @@ const Login: React.FC = () => {
             setErrorMessage(error.message);
         }
     });
+
+    const [authenticateUserAndMigrate] = useMutation(AUTHENTICATE_USER_AND_MIGRATE, {
+        onCompleted(data) {
+            const authnStateResponse: UserAuthenticationStateResponse = data.authenticateUserAndMigrate;
+            handleUserAuthenticationResponse(authnStateResponse, null);
+        },
+        onError(error) {
+            setErrorMessage(error.message);
+        }
+    })
 
     const [cancelAuthentication] = useMutation(CANCEL_AUTHENTICATION, {
         onCompleted(data) {
@@ -513,7 +523,7 @@ const Login: React.FC = () => {
                                 </React.Fragment>
                             }
                         </React.Fragment>
-                    }
+                    }                    
                     {userAuthenticationState && userAuthenticationState.authenticationState === AuthenticationState.EnterPassword &&
                         <React.Fragment>
                             <Grid2 size={{ xs: 12 }}>
@@ -582,6 +592,61 @@ const Login: React.FC = () => {
                                         onClick={() => {
                                             setErrorMessage(null);
                                             authenticateUser({
+                                                variables: {
+                                                    username: username,
+                                                    password: password,
+                                                    tenantId: userAuthenticationState.tenantId,
+                                                    authenticationSessionToken: userAuthenticationState.authenticationSessionToken,
+                                                    preAuthToken: userAuthenticationState.preAuthToken
+                                                }
+                                            });
+                                        }}
+                                    >Login</Button>
+                                    <Button
+                                        disabled={false}
+                                        variant="contained"
+                                        onClick={() => { setErrorMessage(null); setPassword(""); setUserAuthenticationState(null); }}
+                                    >Back</Button>
+                                    <Button
+                                        onClick={() => {
+                                            handleCancelAuthentication(userAuthenticationState);
+                                        }}
+                                        variant="contained"
+                                    >
+                                        Cancel
+                                    </Button>
+                                </Stack>
+                            </Grid2>
+                        </React.Fragment>
+                    }
+                    {userAuthenticationState && userAuthenticationState.authenticationState === AuthenticationState.EnterPasswordAndMigrateUser &&
+                        <React.Fragment>
+                            <Grid2 size={{ xs: 12 }}>
+                                <div style={{ marginBottom: "16px", fontWeight: "bold", fontSize: "1.2em" }}>Sign In</div>
+                                <TextField
+                                    type="password"
+                                    id="password"
+                                    required={true}
+                                    autoFocus={true}
+                                    label={"Password"}
+                                    name="password"
+                                    fullWidth
+                                    onChange={(evt) => setPassword(evt.target.value)}
+                                    onKeyDown={enterKeyLoginHandler}
+                                    value={password}                                    
+                                >
+                                </TextField>
+                            </Grid2>
+                            <Grid2 size={12}>
+                                <Stack
+                                    direction={"row-reverse"}
+                                >
+                                    <Button
+                                        disabled={password === null || password.length < PASSWORD_MINIMUM_LENGTH}
+                                        variant="contained"
+                                        onClick={() => {
+                                            setErrorMessage(null);
+                                            authenticateUserAndMigrate({
                                                 variables: {
                                                     username: username,
                                                     password: password,

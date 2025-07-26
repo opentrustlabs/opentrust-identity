@@ -8,6 +8,7 @@ import Logout from '@mui/icons-material/Logout';
 import { AuthSessionProps, useAuthSessionContext } from "../contexts/auth-session-context";
 import { useRouter } from "next/navigation";
 import { QUERY_PARAM_AUTHENTICATE_TO_PORTAL } from "@/utils/consts";
+import Link from "next/link";
 
 export interface ManagementHeaderProps {
     tenantMetaData: TenantMetaData,
@@ -126,10 +127,13 @@ const ManagementHeader: React.FC<ManagementHeaderProps> = ({
                         transformOrigin={{ horizontal: 'right', vertical: 'top' }}
                         anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
                     >
-                        {/* <MenuItem onClick={handleClose}>
-                            <Avatar /> Profile
+                        <MenuItem onClick={handleClose}>
+                            <Avatar /> 
+                            <Link className="undecorated" href={`/${tenantMetaData.tenant.tenantId}/users/${profile?.userId}`}>Profile</Link>
                         </MenuItem>
-                        <Divider></Divider> */}
+
+                        <Divider></Divider>
+                        
                         <MenuItem onClick={() => {
                             handleClose();
                             authSessionProps.deleteAuthSessionData();
