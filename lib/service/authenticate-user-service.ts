@@ -385,7 +385,24 @@ class AuthenticateUserService extends IdentityService {
             // In case we need to migrate the user from a legacy system, we can just
             // create a placeholder userid now which will be used to fill in the 
             // data later after they successfully authenticate in the next step.
-            const userId = user ? user.userId : randomUUID().toString();
+            
+            // First, create a temporary user with ID for completion after the user enters their password
+            const userId: string = user ? user.userId : randomUUID().toString();
+            if(user === null && migrateUser){
+                const u: User = {
+                    domain: domain,
+                    email: email.toLowerCase(),
+                    emailVerified: false,
+                    enabled: false,
+                    firstName: "",
+                    lastName: "",
+                    locked: true,
+                    markForDelete: true,                        
+                    nameOrder: "",
+                    userId: userId
+                }
+                await identityDao.createUser(u);
+            }
 
             for(let i = 0; i < stateOrder.length; i++){
                 const uas: UserAuthenticationState = {
@@ -549,7 +566,8 @@ class AuthenticateUserService extends IdentityService {
                 response.uri = `/authorize/register?${QUERY_PARAM_TENANT_ID}=${tenantsThatAllowSelfRegistration[0].tenantId}&username=${email.toLowerCase()}`;
             }            
             return response;
-        }        
+        }
+        
         
         // 3.   The user can select which tenant to log into with username/password (plus
         //      one or more MFA types). In this case, if the tenant list contains exactly 1
@@ -643,8 +661,25 @@ class AuthenticateUserService extends IdentityService {
                 // In case we need to migrate the user from a legacy system, we can just
                 // create a placeholder userid now which will be used to fill in the 
                 // data later after they successfully authenticate in the next step.
-                const userId: string = user ? user.userId : randomUUID().toString();
 
+                // First, create a temporary user with ID for completion after the user enters their password
+                const userId: string = user ? user.userId : randomUUID().toString();
+                if(user === null && migrateUser){
+                    const u: User = {
+                        domain: domain,
+                        email: email.toLowerCase(),
+                        emailVerified: false,
+                        enabled: false,
+                        firstName: "",
+                        lastName: "",
+                        locked: true,
+                        markForDelete: true,                        
+                        nameOrder: "",
+                        userId: userId
+                    }
+                    await identityDao.createUser(u);
+                }
+                
                 for(let i = 0; i < stateOrder.length; i++){
                     const uas: UserAuthenticationState = {
                         authenticationSessionToken: authenticationSessionToken,
@@ -737,6 +772,14 @@ class AuthenticateUserService extends IdentityService {
             response.userAuthenticationState.authenticationState = AuthenticationState.Error;
             return Promise.resolve(response);
         }
+
+        const user: User | null = await identityDao.getUserBy("id", arrUserAuthenticationStates[index].userId);
+        if(user === null){
+            response.authenticationError.errorCode = "ERROR_USER_NOT_FOUND";
+            response.userAuthenticationState.authenticationState = AuthenticationState.Error;
+            return Promise.resolve(response);
+        }
+
         const legacyUserMigrationConfiguration: TenantLegacyUserMigrationConfig | null = await tenantDao.getLegacyUserMigrationConfiguration(arrUserAuthenticationStates[index].tenantId);
         if(!legacyUserMigrationConfiguration || !legacyUserMigrationConfiguration.authenticationUri || !legacyUserMigrationConfiguration.userProfileUri){
             response.authenticationError.errorCode = "ERROR_NO_LEGACY_USER_MIGRATION_CONFIGURATION_FOUND";
@@ -758,33 +801,28 @@ class AuthenticateUserService extends IdentityService {
             return Promise.resolve(response);
         }
 
-        const domain: string = getDomainFromEmail(username);
-        const user: User = {
-            domain: domain,
-            email: username,
-            emailVerified: legacyProfile.emailVerified,
-            enabled: true,
-            firstName: legacyProfile.firstName,
-            lastName: legacyProfile.lastName,
-            locked: false,
-            nameOrder: legacyProfile.nameOrder,
-            userId: arrUserAuthenticationStates[index].userId,
-            address: legacyProfile.address,
-            addressLine1: legacyProfile.addressLine1,
-            city: legacyProfile.city,
-            postalCode: legacyProfile.postalCode,
-            stateRegionProvince: legacyProfile.stateRegionProvince,
-            countryCode: legacyProfile.countryCode,
-            middleName: legacyProfile.middleName,
-            phoneNumber: legacyProfile.phoneNumber,
-            preferredLanguageCode: legacyProfile.preferredLanguageCode,
-            federatedOIDCProviderSubjectId: "",
-            markForDelete: false
-        }
+        user.address = legacyProfile.address;
+        user.emailVerified = legacyProfile.emailVerified;
+        user.enabled = true;
+        user.firstName = legacyProfile.firstName;
+        user.lastName = legacyProfile.lastName,
+        user.locked = false,
+        user.nameOrder = legacyProfile.nameOrder,
+        user.address = legacyProfile.address,
+        user.addressLine1 = legacyProfile.addressLine1,
+        user.city = legacyProfile.city,
+        user.postalCode = legacyProfile.postalCode,
+        user.stateRegionProvince = legacyProfile.stateRegionProvince,
+        user.countryCode = legacyProfile.countryCode,
+        user.middleName = legacyProfile.middleName,
+        user.phoneNumber = legacyProfile.phoneNumber,
+        user.preferredLanguageCode = legacyProfile.preferredLanguageCode,
+        user.federatedOIDCProviderSubjectId = "",
+        user.markForDelete = false;     
         
         const tenantPasswordConfig: TenantPasswordConfig = await tenantDao.getTenantPasswordConfig(arrUserAuthenticationStates[index].tenantId) || DEFAULT_TENANT_PASSWORD_CONFIGURATION;
 
-        await identityDao.createUser(user);
+        await identityDao.updateUser(user);
         await identityDao.assignUserToTenant(arrUserAuthenticationStates[index].tenantId, user.userId, "PRIMARY");
         
         const userCredential: UserCredential = this.generateUserCredential(user.userId, password, tenantPasswordConfig.passwordHashingAlgorithm);
@@ -792,6 +830,9 @@ class AuthenticateUserService extends IdentityService {
         
         await this.updateObjectSearchIndex(tenant, user, "PRIMARY");
         await this.updateRelSearchIndex(tenant.tenantId, tenant.tenantId, user, USER_TENANT_REL_TYPE_PRIMARY);
+        
+        arrUserAuthenticationStates[index].authenticationStateStatus = STATUS_COMPLETE;
+        await identityDao.updateUserAuthenticationState(arrUserAuthenticationStates[index]);
         
         const nextUserAuthenticationState: UserAuthenticationState = arrUserAuthenticationStates[index + 1];
         if(nextUserAuthenticationState.authenticationState === AuthenticationState.RotatePassword){
