@@ -146,6 +146,7 @@ type Mutation {
     ## Authentication Flows
     authenticateHandleUserNameInput(username: String!, tenantId: String, preAuthToken: String, returnToUri: String): UserAuthenticationStateResponse!    
     authenticateUser(username: String!, password: String!, tenantId: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
+    authenticateUserAndMigrate(username: String!, password: String!, tenantId: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
     authenticateHandleForgotPassword(authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
     authenticateRotatePassword(userId: String!, newPassword: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
     authenticateConfigureTOTP(userId: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
@@ -840,6 +841,7 @@ enum AuthenticationState {
     CANCELLED
     ERROR
     ACCEPT_TERMS_AND_CONDITIONS
+    ENTER_PASSWORD_AND_MIGRATE_USER
 }
 
 type AuthenticationError {

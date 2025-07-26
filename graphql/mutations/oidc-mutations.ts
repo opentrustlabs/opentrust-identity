@@ -829,6 +829,16 @@ export const AUTHENTICATE_ACCEPT_TERMS_AND_CONDITIONS = gql`
     ${USER_AUTHENTICATION_STATE_RESPONSE_FRAGMENT}
 `;
 
+export const AUTHENTICATE_USER_AND_MIGRATE = gql`
+    mutation authenticateUserAndMigrate($username: String!, $password: String!, $tenantId: String!, $authenticationSessionToken: String!, $preAuthToken: String) {
+        authenticateUserAndMigrate(username: $username, password: $password, tenantId: $tenantId, authenticationSessionToken: $authenticationSessionToken, preAuthToken: $preAuthToken) {
+            ...UserAuthenticationStateResponseFragment
+        }
+    }
+
+     ${USER_AUTHENTICATION_STATE_RESPONSE_FRAGMENT}
+`;
+
 // Registration flows
 export const USER_REGISTRATION_STATE_RESPONSE_FRAGMENT = gql(`
     fragment UserRegistrationStateResponseFragment on UserRegistrationStateResponse {

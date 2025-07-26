@@ -410,8 +410,13 @@ class TenantService {
         if(!authResult.isAuthorized){
             throw new GraphQLError(authResult.errorMessage || "ERROR");
         }
-
-        return tenantDao.setTenantLegacyUserMigrationConfiguration(tenantLegacyUserMigrationConfig);
+        const existing: TenantLegacyUserMigrationConfig | null = await tenantDao.getLegacyUserMigrationConfiguration(tenantLegacyUserMigrationConfig.tenantId);
+        if(existing){
+            return tenantDao.updateTenantLegacyUserMigrationConfiguration(tenantLegacyUserMigrationConfig)
+        }
+        else{
+            return tenantDao.createTenantLegacyUserMigrationConfiguration(tenantLegacyUserMigrationConfig);
+        }
     }
 
     public async getDomainsForTenantRestrictedAuthentication(tenantId: string): Promise<Array<TenantRestrictedAuthenticationDomainRel>>{

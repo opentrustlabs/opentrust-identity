@@ -104,7 +104,7 @@ class OIDCServiceUtils {
      * @returns 
      */
     public async legacyUsernameCheck(uri: string): Promise<boolean> {
-        const response: AxiosResponse = await axios.head<Jwks>(uri, {
+        const response: AxiosResponse = await axios.head(uri, {
             timeout: 30000,
             responseEncoding: "utf-8"
         });
