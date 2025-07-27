@@ -42,9 +42,8 @@ const ClientResultList: React.FC<ResultListProps> = ({
             {c.isMedium &&
                 <>
                     <Typography component={"div"} fontWeight={"bold"} fontSize={"0.9em"}>
-                        <Grid2 container size={12} spacing={1} marginBottom={"16px"} >
-                            <Grid2 size={1}></Grid2>
-                            <Grid2 size={8}>Client Name</Grid2>
+                        <Grid2 container size={12} spacing={1} marginBottom={"16px"} >                            
+                            <Grid2 size={9}>Client Name</Grid2>
                             <Grid2 size={2}>Enabled</Grid2>
                             <Grid2 size={1}></Grid2>
                         </Grid2>
