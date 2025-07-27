@@ -98,68 +98,69 @@ class IdentityService {
         }
 
         const existingUser: User | null = await identityDao.getUserBy("id", user.userId);
-        if (existingUser !== null) {
-            if(existingUser.markForDelete === true){
-                throw new GraphQLError("ERROR_USER_IS_MARKED_FOR_DELETE_AND_CANNOT_BE_UPDATED");
-            }
+        if(existingUser === null){
+            throw new GraphQLError("ERROR_USER_DOES_NOT_EXIST");
+        }
+        
+        if(existingUser.markForDelete === true){
+            throw new GraphQLError("ERROR_USER_IS_MARKED_FOR_DELETE_AND_CANNOT_BE_UPDATED");
+        }
 
-            // If this user has a domain that is managed via a federated OIDC provider,
-            // then none of the user's properties can be updated because they come from
-            // the federaed OIDC provider. The only changes allowed are to enable/disable
-            // the user.
-            const userHasFederatedOIDCProvider = user.federatedOIDCProviderSubjectId !== null && user.federatedOIDCProviderSubjectId !== "" ? true : false;
-            if(userHasFederatedOIDCProvider && (
-                    user.email !== existingUser.email ||
-                    user.firstName !== existingUser.firstName ||
-                    user.lastName !== existingUser.lastName ||
-                    user.middleName !== existingUser.middleName ||
-                    user.phoneNumber !== existingUser.phoneNumber
-                )
-            ){
-                throw new GraphQLError("ERROR_PROFILE_IS_CONTROLLED_BY_EXTERNAL_OIDC_PROVIDER");
-            }
-            
-            // Unlocking the user is done via a separate process, which may require
-            // additional auditing.
-            //
-            // Did the email change and if so, what parts of the email have changed?
-            // 1    domains 
-            // 2    just the name
-            // 3    both
-            // In case of change.
-            // 1    verify the email does not already exist
-            // 2    unset the verified email flag
-            // 3    send an email to verify the new address
-            if (user.email !== existingUser.email) {
-                const userByEmail: User | null = await identityDao.getUserBy("email", user.email);
-                if (userByEmail) {
-                    throw new GraphQLError("ERROR_ATTEMPTING_TO_CHANGE_EMAIL_FAILED");
-                }
-                else {
-                    const domain: string = user.email.substring(
-                        user.email.indexOf("@") + 1
-                    )
-                    user.domain = domain;
-                    user.emailVerified = false;
-                }
-            }
-
-            await identityDao.updateUser(user);
-
-            // Only update the search index if anything has changed
-            if (
+        // If this user has a domain that is managed via a federated OIDC provider,
+        // then none of the user's properties can be updated because they come from
+        // the federaed OIDC provider. The only changes allowed are to enable/disable
+        // the user.
+        const userHasFederatedOIDCProvider = existingUser.federatedOIDCProviderSubjectId !== null && existingUser.federatedOIDCProviderSubjectId !== "" ? true : false;
+        if(userHasFederatedOIDCProvider && (
                 user.email !== existingUser.email ||
                 user.firstName !== existingUser.firstName ||
                 user.lastName !== existingUser.lastName ||
-                user.enabled !== existingUser.enabled
-            ) {
-                await this.updateSearchIndexUserDocument(user);                
+                user.middleName !== existingUser.middleName ||
+                user.phoneNumber !== existingUser.phoneNumber
+            )
+        ){
+            throw new GraphQLError("ERROR_PROFILE_IS_CONTROLLED_BY_EXTERNAL_OIDC_PROVIDER");
+        }
+        
+        // Unlocking the user is done via a separate process, which may require
+        // additional auditing.
+        //
+        // Did the email change and if so, what parts of the email have changed?
+        // 1    domains 
+        // 2    just the name
+        // 3    both
+        // In case of change.
+        // 1    verify the email does not already exist
+        // 2    unset the verified email flag
+        // 3    send an email to verify the new address
+        if (user.email !== existingUser.email) {
+            const userByEmail: User | null = await identityDao.getUserBy("email", user.email);
+            if (userByEmail) {
+                throw new GraphQLError("ERROR_ATTEMPTING_TO_CHANGE_EMAIL_FAILED");
             }
-            return user;
+            else {
+                const domain: string = user.email.substring(
+                    user.email.indexOf("@") + 1
+                )
+                user.domain = domain;
+                user.emailVerified = false;
+            }
         }
-        else {
-            throw new GraphQLError("ERROR_USER_DOES_NOT_EXIST");
+
+        await identityDao.updateUser(user);
+
+        // Only update the search index if anything has changed
+        if (
+            user.email !== existingUser.email ||
+            user.firstName !== existingUser.firstName ||
+            user.lastName !== existingUser.lastName ||
+            user.enabled !== existingUser.enabled
+        ) {
+            await this.updateSearchIndexUserDocument(user);                
         }
+        return user;
+        
+        
     }
 
     public async getUserSessions(userId: string): Promise<Array<UserSession>> {

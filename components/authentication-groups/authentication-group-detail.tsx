@@ -183,7 +183,7 @@ const AuthenticationGroupDetail: React.FC<AuthenticationGroupDetailProps> = ({ a
                                         </Grid2>
                                         <Grid2 marginBottom={"16px"}>
                                             <div style={{textDecoration: "underline"}}>Object ID</div>
-                                            <Grid2 marginTop={"8px"} container display={"inline-flex"} size={12}>
+                                            <Grid2 marginTop={"8px"} container size={12}>
                                                 <Grid2  size={11}>
                                                     {authenticationGroup.authenticationGroupId}
                                                 </Grid2>
@@ -200,8 +200,8 @@ const AuthenticationGroupDetail: React.FC<AuthenticationGroupDetailProps> = ({ a
                                     </Grid2>
                                     <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
                                         <Grid2 container size={12} marginBottom={"16px"}>
-                                            <Grid2 alignContent={"center"} size={10}>Default</Grid2>
-                                            <Grid2 size={2}>
+                                            <Grid2 alignContent={"center"} size={11}>Default</Grid2>
+                                            <Grid2 size={1}>
                                                 <Checkbox 
                                                     disabled={disableInputs}
                                                     name="defaultGroup"

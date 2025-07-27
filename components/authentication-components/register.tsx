@@ -29,7 +29,7 @@ import PasswordRulesDisplay from "./password-rules-display";
 import { AuthSessionProps, useAuthSessionContext } from "../contexts/auth-session-context";
 import { AuthContext, AuthContextProps } from "../contexts/auth-context";
 import Link from "next/link";
-import { MuiTelInput } from 'mui-tel-input'
+import { MuiTelInput } from "mui-tel-input";
 
 
 export interface RegistrationComponentsProps {

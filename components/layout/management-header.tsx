@@ -85,7 +85,7 @@ const ManagementHeader: React.FC<ManagementHeaderProps> = ({
                             aria-haspopup="true"
                             aria-expanded={open ? 'true' : undefined}
                         >
-                            <Avatar sx={{ width: 35, height: 35, fontWeight: "bold", backgroundColor: "white", color: "#1976d2" }}>
+                            <Avatar sx={{ fontWeight: "bold", backgroundColor: "white", color: "#1976d2" }}>
                                 {profile ? profile.firstName.toUpperCase().charAt(0) + profile.lastName.toUpperCase().charAt(0) : "X"}
                             </Avatar>
                         </IconButton>

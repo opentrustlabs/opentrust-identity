@@ -1469,7 +1469,6 @@ input UserUpdateInput {
     locked: Boolean!
     enabled: Boolean!
     nameOrder: String!
-    termsAndConditionsAccepted: Boolean!
 }
 
 input MarkForDeleteInput {
