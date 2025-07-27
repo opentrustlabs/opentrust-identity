@@ -103,6 +103,30 @@ export class TenantEntity extends Model {
                 primaryKey: false,
                 allowNull: true,
                 field: "defaultratelimitperiodminutes"
+            },
+            allowBackupEmail: {
+                type: DataTypes.BOOLEAN,
+                primaryKey: false,
+                allowNull: false,
+                field: "allowbackupemail"
+            },
+            registrationRequireCaptcha: {
+                type: DataTypes.BOOLEAN,
+                primaryKey: false,
+                allowNull: false,
+                field: "registrationrequirecaptcha"
+            },
+            registrationRequireTermsAndConditions: {
+                type: DataTypes.BOOLEAN,
+                primaryKey: false,
+                allowNull: false,
+                field: "registrationrequiretermsandconditions"
+            },
+            termsAndConditionsUri: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: true,
+                field: "termsandconditionsuri"
             }
         }, {
             sequelize,

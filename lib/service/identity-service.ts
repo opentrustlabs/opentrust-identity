@@ -5,7 +5,7 @@ import { Client, Fido2AuthenticationChallengeResponse, Fido2Challenge, Fido2Regi
 import { DaoFactory } from "../data-sources/dao-factory";
 import TenantDao from "../dao/tenant-dao";
 import { GraphQLError } from "graphql/error";
-import { DEFAULT_PORTAL_AUTH_TOKEN_TTL_HOURS, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, NAME_ORDER_WESTERN, PASSWORD_HASH_ITERATION_128K, PASSWORD_HASH_ITERATION_256K, PASSWORD_HASH_ITERATION_32K, PASSWORD_HASH_ITERATION_64K, PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_32K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_64K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, SESSION_TOKEN_TYPE_AUTHENTICATION, SESSION_TOKEN_TYPE_REGISTRATION, TENANT_READ_ALL_SCOPE, TENANT_USER_ASSIGN_SCOPE, TENANT_USER_REMOVE_SCOPE, TOTP_HASH_ALGORITHM_SHA1, USER_READ_SCOPE, USER_SESSION_DELETE_SCOPE, USER_SESSION_READ_SCOPE, USER_TENANT_REL_TYPE_GUEST, USER_TENANT_REL_TYPE_PRIMARY, USER_UPDATE_SCOPE } from "@/utils/consts";
+import { DEFAULT_PORTAL_AUTH_TOKEN_TTL_HOURS, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, NAME_ORDER_WESTERN, PASSWORD_HASH_ITERATION_128K, PASSWORD_HASH_ITERATION_256K, PASSWORD_HASH_ITERATION_32K, PASSWORD_HASH_ITERATION_64K, PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_32K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_64K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, SESSION_TOKEN_TYPE_AUTHENTICATION, SESSION_TOKEN_TYPE_REGISTRATION, TENANT_READ_ALL_SCOPE, TENANT_USER_ASSIGN_SCOPE, TENANT_USER_REMOVE_SCOPE, TOTP_HASH_ALGORITHM_SHA1, USER_READ_SCOPE, USER_SESSION_DELETE_SCOPE, USER_SESSION_READ_SCOPE, USER_TENANT_REL_TYPE_GUEST, USER_TENANT_REL_TYPE_PRIMARY, USER_UNLOCK_SCOPE, USER_UPDATE_SCOPE } from "@/utils/consts";
 import { sha256HashPassword, pbkdf2HashPassword, bcryptHashPassword, generateSalt, scryptHashPassword, generateRandomToken, generateCodeVerifierAndChallenge, bcryptValidatePassword } from "@/utils/dao-utils";
 import { Client as OpenSearchClient } from "@opensearch-project/opensearch";
 import { getOpenSearchClient } from "../data-sources/search";
@@ -98,68 +98,69 @@ class IdentityService {
         }
 
         const existingUser: User | null = await identityDao.getUserBy("id", user.userId);
-        if (existingUser !== null) {
-            if(existingUser.markForDelete === true){
-                throw new GraphQLError("ERROR_USER_IS_MARKED_FOR_DELETE_AND_CANNOT_BE_UPDATED");
-            }
+        if(existingUser === null){
+            throw new GraphQLError("ERROR_USER_DOES_NOT_EXIST");
+        }
+        
+        if(existingUser.markForDelete === true){
+            throw new GraphQLError("ERROR_USER_IS_MARKED_FOR_DELETE_AND_CANNOT_BE_UPDATED");
+        }
 
-            // If this user has a domain that is managed via a federated OIDC provider,
-            // then none of the user's properties can be updated because they come from
-            // the federaed OIDC provider. The only changes allowed are to enable/disable
-            // the user.
-            const userHasFederatedOIDCProvider = user.federatedOIDCProviderSubjectId !== null && user.federatedOIDCProviderSubjectId !== "" ? true : false;
-            if(userHasFederatedOIDCProvider && (
-                    user.email !== existingUser.email ||
-                    user.firstName !== existingUser.firstName ||
-                    user.lastName !== existingUser.lastName ||
-                    user.middleName !== existingUser.middleName ||
-                    user.phoneNumber !== existingUser.phoneNumber
-                )
-            ){
-                throw new GraphQLError("ERROR_PROFILE_IS_CONTROLLED_BY_EXTERNAL_OIDC_PROVIDER");
-            }
-            
-            // Unlocking the user is done via a separate process, which may require
-            // additional auditing.
-            //
-            // Did the email change and if so, what parts of the email have changed?
-            // 1    domains 
-            // 2    just the name
-            // 3    both
-            // In case of change.
-            // 1    verify the email does not already exist
-            // 2    unset the verified email flag
-            // 3    send an email to verify the new address
-            if (user.email !== existingUser.email) {
-                const userByEmail: User | null = await identityDao.getUserBy("email", user.email);
-                if (userByEmail) {
-                    throw new GraphQLError("ERROR_ATTEMPTING_TO_CHANGE_EMAIL_FAILED");
-                }
-                else {
-                    const domain: string = user.email.substring(
-                        user.email.indexOf("@") + 1
-                    )
-                    user.domain = domain;
-                    user.emailVerified = false;
-                }
-            }
-
-            await identityDao.updateUser(user);
-
-            // Only update the search index if anything has changed
-            if (
+        // If this user has a domain that is managed via a federated OIDC provider,
+        // then none of the user's properties can be updated because they come from
+        // the federaed OIDC provider. The only changes allowed are to enable/disable
+        // the user.
+        const userHasFederatedOIDCProvider = existingUser.federatedOIDCProviderSubjectId !== null && existingUser.federatedOIDCProviderSubjectId !== "" ? true : false;
+        if(userHasFederatedOIDCProvider && (
                 user.email !== existingUser.email ||
                 user.firstName !== existingUser.firstName ||
                 user.lastName !== existingUser.lastName ||
-                user.enabled !== existingUser.enabled
-            ) {
-                await this.updateSearchIndexUserDocument(user);                
+                user.middleName !== existingUser.middleName ||
+                user.phoneNumber !== existingUser.phoneNumber
+            )
+        ){
+            throw new GraphQLError("ERROR_PROFILE_IS_CONTROLLED_BY_EXTERNAL_OIDC_PROVIDER");
+        }
+        
+        // Unlocking the user is done via a separate process, which may require
+        // additional auditing.
+        //
+        // Did the email change and if so, what parts of the email have changed?
+        // 1    domains 
+        // 2    just the name
+        // 3    both
+        // In case of change.
+        // 1    verify the email does not already exist
+        // 2    unset the verified email flag
+        // 3    send an email to verify the new address
+        if (user.email !== existingUser.email) {
+            const userByEmail: User | null = await identityDao.getUserBy("email", user.email);
+            if (userByEmail) {
+                throw new GraphQLError("ERROR_ATTEMPTING_TO_CHANGE_EMAIL_FAILED");
             }
-            return user;
+            else {
+                const domain: string = user.email.substring(
+                    user.email.indexOf("@") + 1
+                )
+                user.domain = domain;
+                user.emailVerified = false;
+            }
         }
-        else {
-            throw new GraphQLError("ERROR_USER_DOES_NOT_EXIST");
+
+        await identityDao.updateUser(user);
+
+        // Only update the search index if anything has changed
+        if (
+            user.email !== existingUser.email ||
+            user.firstName !== existingUser.firstName ||
+            user.lastName !== existingUser.lastName ||
+            user.enabled !== existingUser.enabled
+        ) {
+            await this.updateSearchIndexUserDocument(user);                
         }
+        return user;
+        
+        
     }
 
     public async getUserSessions(userId: string): Promise<Array<UserSession>> {
@@ -336,7 +337,23 @@ class IdentityService {
             }
         }        
         return Promise.resolve();
-    }    
+    }  
+    
+    public async unlockUser(userId: string): Promise<void>{
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [USER_UNLOCK_SCOPE], null);
+        if(!authResult.isAuthorized){
+            throw new GraphQLError(authResult.errorMessage || "ERROR");
+        }
+        const user: User | null = await identityDao.getUserBy("id", userId);
+        if(user){
+            user.locked = false;
+            await identityDao.updateUser(user);
+        }
+        else{
+            throw new GraphQLError("ERROR_USER_DOES_NOT_EXIST");
+        }
+        return Promise.resolve();
+    }
 
     // ##########################################################################
     // 
@@ -362,6 +379,7 @@ class IdentityService {
         // and save both the salt value and the iteration value as part of the hashed password,
         // so we do NOT need to pass both those pieces of information to the validation
         // function.
+
         let valid: boolean = false;
         if(
             userCredential.hashingAlgorithm === PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS ||
@@ -921,11 +939,8 @@ class IdentityService {
             console.log(error);
             await identityDao.deleteFIDO2Challenge(userId);
             throw new GraphQLError("ERROR_CANNOT_VALIDATE_AUTHENTICATION_KEY");
-        }
-
-        
+        }        
     }
-
 
     protected async createFederatedOIDCRequestProperties(email: string | null, userId: string | null, provider: FederatedOidcProvider, tenantId: string, preAuthenticationState: PreAuthenticationState | null): Promise<{hasError: boolean, errorMessage: string, authorizationEndpoint: string}> {
 

@@ -57,7 +57,11 @@ export const TENANT_META_DATA_QUERY = gql(`
                 tenanttypeid
                 migrateLegacyUsers
                 allowLoginByPhoneNumber
-                allowForgotPassword            
+                allowForgotPassword
+                allowBackupEmail
+                registrationRequireCaptcha
+                registrationRequireTermsAndConditions
+                termsAndConditionsUri
             }
         }
     }
@@ -160,7 +164,11 @@ export const TENANT_DETAIL_QUERY = gql(`
             allowLoginByPhoneNumber
             allowForgotPassword
             defaultRateLimit
-            defaultRateLimitPeriodMinutes   
+            defaultRateLimitPeriodMinutes
+            allowBackupEmail
+            registrationRequireCaptcha
+            registrationRequireTermsAndConditions
+            termsAndConditionsUri
         }        
     }
 `);
@@ -673,4 +681,17 @@ export const STATE_PROVINCE_REGIONS_QUERY = gql(`
             isoSubsetType
         }
     }   
+`);
+
+export const CAPTCHA_CONFIG_QUERY = gql(`
+    query getCaptchaConfig {
+        getCaptchaConfig {
+            alias
+            projectId
+            siteKey
+            apiKey
+            minScopeThreshold
+            useCaptchaV3
+        }
+    }
 `);

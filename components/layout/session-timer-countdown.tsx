@@ -43,7 +43,7 @@ const SessionTimerCountdown: React.FC = () => {
                         Login
                     </Button>
                 </DialogActions>
-            </Dialog>
+            </Dialog>            
             {minutes < 15 && minutes >= 10 &&
                 <HourglassTopOutlinedIcon />
             }

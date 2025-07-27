@@ -6,13 +6,11 @@ import { OIDCErrorResponseBody } from '@/lib/models/error';
 import ClientAuthValidationService from '@/lib/service/client-auth-validation-service';
 import { CLIENT_TYPE_SERVICE_ACCOUNT_ONLY, CLIENT_TYPE_USER_DELEGATED_PERMISSIONS_ONLY, GRANT_TYPE_AUTHORIZATION_CODE, GRANT_TYPE_CLIENT_CREDENTIALS, GRANT_TYPE_REFRESH_TOKEN, GRANT_TYPES_SUPPORTED, OIDC_TOKEN_ERROR_INVALID_CLIENT, OIDC_TOKEN_ERROR_INVALID_GRANT, OIDC_TOKEN_ERROR_INVALID_REQUEST, OIDC_TOKEN_ERROR_UNAUTHORIZED_CLIENT, OidcTokenErrorType, REFRESH_TOKEN_CLIENT_TYPE_PKCE, REFRESH_TOKEN_CLIENT_TYPE_SECURE_CLIENT } from '@/utils/consts';
 import { generateHash } from '@/utils/dao-utils';
-import type { NextApiRequest, NextApiResponse } from 'next'
+import type { NextApiRequest, NextApiResponse } from 'next';
 import { randomUUID } from 'crypto'; 
 import JwtService from '@/lib/service/jwt-service-utils';
 import { OIDCTokenResponse } from '@/lib/models/token-response';
 import { DaoFactory } from '@/lib/data-sources/dao-factory';
-import { validate } from 'graphql';
-import RefreshDataEntity from '@/lib/entities/refresh-data-entity';
 
 
 // TODO 
@@ -269,7 +267,8 @@ async function handleAuthorizationCodeGrant(tokenData: TokenData, res: NextApiRe
             scope: authorizationCodeData.scope,
             redirecturi: authorizationCodeData.redirectUri,
             codeChallenge: authorizationCodeData.codeChallenge ? authorizationCodeData.codeChallenge : null,
-            codeChallengeMethod: authorizationCodeData.codeChallengeMethod ? authorizationCodeData.codeChallengeMethod : null
+            codeChallengeMethod: authorizationCodeData.codeChallengeMethod ? authorizationCodeData.codeChallengeMethod : null,
+            expiresAtMs: Date.now() + (7 * 24 * 60 * 60 * 1000) // Allow 7 days before token automatically expires. TODO -> make this configurable in the client
         }
         await authDao.saveRefreshData(refreshData);
     };
@@ -346,6 +345,17 @@ async function handleRefreshTokenGrant(tokenData: TokenData, res: NextApiRespons
             error: OIDC_TOKEN_ERROR_INVALID_REQUEST,
             error_code: "0000723",
             error_description: "ERROR_TOKEN_REQUEST_FAILED_WITH_INVALID_REFRESH_TOKEN",
+            error_uri: "",
+            timestamp: Date.now(),
+            trace_id: tokenData.traceId
+        }
+        return res.status(400).json(error);
+    }
+    if(refreshTokenData.expiresAtMs < Date.now()){
+        const error: OIDCErrorResponseBody = {
+            error: OIDC_TOKEN_ERROR_INVALID_REQUEST,
+            error_code: "0000738",
+            error_description: "ERROR_TOKEN_REQUEST_FAILED_WITH_EXPIRED_REFRESH_TOKEN",
             error_uri: "",
             timestamp: Date.now(),
             trace_id: tokenData.traceId
@@ -485,7 +495,8 @@ async function handleRefreshTokenGrant(tokenData: TokenData, res: NextApiRespons
             scope: refreshTokenData.scope,
             redirecturi: refreshTokenData.redirecturi,
             codeChallenge: refreshTokenData.codeChallenge,
-            codeChallengeMethod: refreshTokenData.codeChallengeMethod
+            codeChallengeMethod: refreshTokenData.codeChallengeMethod,
+            expiresAtMs: Date.now() + (7 * 24 * 60 * 60 * 1000) // Allow 7 days before token automatically expires. TODO -> make this configurable in the client
         }
         await authDao.saveRefreshData(newRefreshData);
     };

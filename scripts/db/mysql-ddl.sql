@@ -37,7 +37,11 @@ create TABLE tenant (
     allowloginbyphonenumber BOOLEAN NOT NULL,
     allowforgotpassword BOOLEAN NOT NULL,
     defaultratelimit INT,
-    defaultratelimitperiodminutes INT
+    defaultratelimitperiodminutes INT,
+    allowbackupemail BOOLEAN NOT NULL,
+    registrationrequiretermsandconditions BOOLEAN NOT NULL,
+    termsandconditionsuri VARCHAR(256),
+    registrationrequirecaptcha BOOLEAN NOT NULL
 );
 CREATE INDEX tenant_tenant_type_idx ON tenant(tenanttype);
 
@@ -128,7 +132,7 @@ create TABLE user (
     locked BOOLEAN,
     enabled BOOLEAN NOT NULL,
     nameorder VARCHAR(64) NOT NULL,
-    markfordelete BOOLEAN NOT NULL,
+    markfordelete BOOLEAN NOT NULL
 );
 
 CREATE INDEX user_email_idx on user(email);
@@ -137,11 +141,28 @@ CREATE INDEX user_first_name_idx on user(firstname);
 CREATE INDEX user_last_name_idx on user(lastname);
 CREATE INDEX user_phone_number_idx on user(phonenumber);
 
+create TABLE user_email_backup (
+    userid VARCHAR(64) NOT NULL,
+    email VARCHAR(128) UNIQUE NOT NULL,
+    emailverified BOOLEAN NOT NULL,
+    PRIMARY KEY (userid),
+    FOREIGN KEY (userid) REFERENCES user(userid)
+);
+CREATE INDEX user_email_backup_email_idx on user_email_backup(email);
 
 create TABLE user_tenant_rel (
     userid VARCHAR(64) NOT NULL,
     tenantid VARCHAR(64) NOT NULL,
     enabled BOOLEAN NOT NULL,
+    PRIMARY KEY (userid, tenantid),
+    FOREIGN KEY (userid) REFERENCES user(userid),
+    FOREIGN KEY (tenantid) REFERENCES tenant(tenantid)
+);
+
+create TABLE user_terms_and_conditions_accepted (
+    userid VARCHAR(64) NOT NULL,
+    tenantid VARCHAR(64) NOT NULL,
+    acceptedatms BIGINT NOT NULL,
     PRIMARY KEY (userid, tenantid),
     FOREIGN KEY (userid) REFERENCES user(userid),
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid)
@@ -360,6 +381,7 @@ create TABLE refresh_data (
     refreshcount INT,
     codechallenge VARCHAR(256),
     codechallengemethod VARCHAR(32),
+    expiresatms BIGINT NOT NULL,
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid),
     FOREIGN KEY (clientid) REFERENCES client(clientid),
     FOREIGN KEY (userid) REFERENCES user(userid)
@@ -607,4 +629,13 @@ create TABLE user_registration_state (
     PRIMARY KEY (userid, registrationsessiontoken, registrationstate),
     FOREIGN KEY (userid) REFERENCES user(userid),
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid) 
+);
+
+create TABLE captcha_config (
+    alias VARCHAR(256) PRIMARY KEY,
+    projectid VARCHAR(128),
+    sitekey VARCHAR(256) NOT NULL,
+    googleapikey VARCHAR(256) NOT NULL,
+    minscorethreshold FLOAT,
+    userecaptchav3 BOOLEAN NOT NULL
 );

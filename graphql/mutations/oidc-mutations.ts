@@ -289,6 +289,16 @@ export const SIGNING_KEY_CREATE_MUTATION = gql(`
     }
 `);
 
+export const AUTO_GENERATE_SIGNING_KEY_CREATE_MUTATION = gql(`
+    mutation autoCreateSigningKey($keyInput: AutoCreateSigningKeyInput!){
+        autoCreateSigningKey(keyInput: $keyInput) {
+            keyId
+            tenantId
+            keyName
+        }
+    }
+`);
+
 export const SIGNING_KEY_UPDATE_MUTATION = gql(`
     mutation updateSigningKey($keyInput: SigningKeyUpdateInput!) {
         updateSigningKey(keyInput: $keyInput) {
@@ -817,6 +827,26 @@ export const AUTHENTICATE_WITH_SOCIAL_OIDC_PROVIDER = gql`
     }
 
     ${USER_AUTHENTICATION_STATE_RESPONSE_FRAGMENT}
+`;
+
+export const AUTHENTICATE_ACCEPT_TERMS_AND_CONDITIONS = gql`
+    mutation authenticateAcceptTermsAndConditions($accepted: Boolean!, $authenticationSessionToken: String!, $preAuthToken: String) {
+        authenticateAcceptTermsAndConditions(accepted: $accepted, authenticationSessionToken: $authenticationSessionToken, preAuthToken: $preAuthToken) {
+            ...UserAuthenticationStateResponseFragment
+        }
+    }
+
+    ${USER_AUTHENTICATION_STATE_RESPONSE_FRAGMENT}
+`;
+
+export const AUTHENTICATE_USER_AND_MIGRATE = gql`
+    mutation authenticateUserAndMigrate($username: String!, $password: String!, $tenantId: String!, $authenticationSessionToken: String!, $preAuthToken: String) {
+        authenticateUserAndMigrate(username: $username, password: $password, tenantId: $tenantId, authenticationSessionToken: $authenticationSessionToken, preAuthToken: $preAuthToken) {
+            ...UserAuthenticationStateResponseFragment
+        }
+    }
+
+     ${USER_AUTHENTICATION_STATE_RESPONSE_FRAGMENT}
 `;
 
 // Registration flows

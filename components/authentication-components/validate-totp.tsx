@@ -54,8 +54,7 @@ const AuthentiationValidateTotp: React.FC<AuthenticationComponentsProps> = ({
                     <TextField name="passcode" id="passcode"
                         value={passcode}
                         onChange={(evt) => setPasscode(evt.target.value)}
-                        fullWidth={true}
-                        size="small"                        
+                        fullWidth={true}                   
                         required={true}
                         autoFocus={true}
                         label={"One-time-passcode"}
@@ -123,7 +122,6 @@ const RegistrationValidateTotp: React.FC<RegistrationComponentsProps> = ({
                         value={passcode}
                         onChange={(evt) => setPasscode(evt.target.value)}
                         fullWidth={true}
-                        size="small"
                         required={true}
                         autoFocus={true}
                         label={"One-time-passcode"}

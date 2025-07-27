@@ -201,6 +201,10 @@ const resolvers: Resolvers = {
         getTenantLoginFailurePolicy: (_: any, { tenantId }, oidcContext) => {
             const service: TenantService = new TenantService(oidcContext);
             return service.getTenantLoginFailurePolicy(tenantId);
+        },
+        getCaptchaConfig: (_: any, {}, oidcContext) => {
+            const service: TenantService = new TenantService(oidcContext);
+            return service.getCaptchaConfig();
         }
     },
     Mutation: {
@@ -221,7 +225,11 @@ const resolvers: Resolvers = {
                 allowAnonymousUsers: false,
                 migrateLegacyUsers: false,
                 allowLoginByPhoneNumber: false,
-                allowForgotPassword: false
+                allowForgotPassword: false,
+                allowBackupEmail: false,
+                registrationRequireCaptcha: false,
+                registrationRequireTermsAndConditions: false,
+                termsAndConditionsUri: tenantInput.termsAndConditionsUri
             };
             await tenantService.createRootTenant(tenant);          
             return tenant;
@@ -243,11 +251,13 @@ const resolvers: Resolvers = {
                 allowAnonymousUsers: false,
                 migrateLegacyUsers: false,
                 allowLoginByPhoneNumber: false,
-                allowForgotPassword: false
+                allowForgotPassword: false,
+                allowBackupEmail: false,
+                registrationRequireCaptcha: tenantInput.registrationRequireCaptcha,
+                registrationRequireTermsAndConditions: tenantInput.registrationRequireTermsAndConditions,
+                termsAndConditionsUri: tenantInput.termsAndConditionsUri
             }
-            await tenantService.updateRootTenant(tenant);
-            //const contacts: Array<Contact> = tenantInput.contactInput.map((i: ContactInput) => { return {email: i.email, name: i.name, objectid: tenant.tenantId, objecttype:""}});
-            //await tenantService.assignContactsToTenant(tenant.tenantId, contacts);            
+            await tenantService.updateRootTenant(tenant);        
             return tenant;
         },
         createTenant: async (_: any, { tenantInput }, oidcContext) => {
@@ -269,11 +279,13 @@ const resolvers: Resolvers = {
                 allowLoginByPhoneNumber: tenantInput.allowLoginByPhoneNumber,
                 allowForgotPassword: tenantInput.allowForgotPassword,
                 defaultRateLimit: tenantInput.defaultRateLimit,
-                defaultRateLimitPeriodMinutes: tenantInput.allowUnlimitedRate ? null: DEFAULT_RATE_LIMIT_PERIOD_MINUTES
+                defaultRateLimitPeriodMinutes: tenantInput.allowUnlimitedRate ? null: DEFAULT_RATE_LIMIT_PERIOD_MINUTES,
+                allowBackupEmail: tenantInput.allowBackupEmail,
+                registrationRequireCaptcha: tenantInput.registrationRequireCaptcha,
+                registrationRequireTermsAndConditions: tenantInput.registrationRequireTermsAndConditions,
+                termsAndConditionsUri: tenantInput.termsAndConditionsUri
             }
-            await tenantService.createTenant(tenant);
-            //const contacts: Array<Contact> = tenantInput.contactInput.map((i: ContactInput) => { return {email: i.email, name: i.name, objectid: tenant.tenantId, objecttype:""}});
-            //await tenantService.assignContactsToTenant(tenant.tenantId, contacts);            
+            await tenantService.createTenant(tenant);         
             return tenant; 
         },
         updateTenant: async (_: any, { tenantInput }, oidcContext) => {
@@ -295,11 +307,13 @@ const resolvers: Resolvers = {
                 allowLoginByPhoneNumber: tenantInput.allowLoginByPhoneNumber,
                 allowForgotPassword: tenantInput.allowForgotPassword,
                 defaultRateLimit: tenantInput.allowUnlimitedRate ? null : tenantInput.defaultRateLimit,
-                defaultRateLimitPeriodMinutes: tenantInput.allowUnlimitedRate ? null: DEFAULT_RATE_LIMIT_PERIOD_MINUTES
+                defaultRateLimitPeriodMinutes: tenantInput.allowUnlimitedRate ? null: DEFAULT_RATE_LIMIT_PERIOD_MINUTES,
+                allowBackupEmail: tenantInput.allowBackupEmail,
+                registrationRequireCaptcha: tenantInput.registrationRequireCaptcha,
+                registrationRequireTermsAndConditions: tenantInput.registrationRequireTermsAndConditions,
+                termsAndConditionsUri: tenantInput.termsAndConditionsUri
             }
-            const updatedTenant: Tenant = await tenantService.updateTenant(tenant);
-            //const contacts: Array<Contact> = tenantInput.contactInput.map((i: ContactInput) => { return {email: i.email, name: i.name, objectid: tenant.tenantId, objecttype:""}});
-            //await tenantService.assignContactsToTenant(tenant.tenantId, contacts);            
+            const updatedTenant: Tenant = await tenantService.updateTenant(tenant);          
             return updatedTenant;
         },
         createClient: async (_: any, { clientInput }, oidcContext) => {
@@ -364,6 +378,11 @@ const resolvers: Resolvers = {
                 createdAtMs: Date.now()
             };
             await keysService.createSigningKey(key);
+            return key;
+        },
+        autoCreateSigningKey: async(_: any, { keyInput }, oidcContext) => {
+            const keysService: SigningKeysService = new SigningKeysService(oidcContext);
+            const key: SigningKey = await keysService.autoCreateSigningKey(keyInput);
             return key;
         },
         updateSigningKey: async(_: any, { keyInput }, oidcContext) => {
@@ -891,13 +910,21 @@ const resolvers: Resolvers = {
             const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);
             return service.authenticateValidatePasswordResetToken(token, authenticationSessionToken, preAuthToken || null);
         },
-        cancelAuthentication: async(_: any, { userId, authenticationSessionToken, preAuthToken}, oidcContext) => {
+        cancelAuthentication: async(_: any, { authenticationSessionToken, preAuthToken}, oidcContext) => {
             const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);
-            return service.cancelAuthentication(userId, authenticationSessionToken, preAuthToken || null);
+            return service.cancelAuthentication(authenticationSessionToken, preAuthToken || null);
         },
         authenticateWithSocialOIDCProvider: async(_: any, { federatedOIDCProviderId, preAuthToken, tenantId }, oidcContext) => {
             const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);
             return service.authenticateWithSocialOIDCProvider(preAuthToken || null, tenantId, federatedOIDCProviderId);
+        },
+        authenticateUserAndMigrate: async(_: any, { authenticationSessionToken, password, tenantId, username, preAuthToken }, oidcContext) => {
+            const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);
+            return service.authenticateUserAndMigrate(username, password, tenantId, authenticationSessionToken, preAuthToken || null);
+        },
+        authenticateAcceptTermsAndConditions: async(_: any, {accepted, authenticationSessionToken, preAuthToken }, oidcContext) => {
+            const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);
+            return service.authenticateAcceptTermsAndConditions(accepted, authenticationSessionToken, preAuthToken || null);
         },
         registerUser: async(_: any, { tenantId, userInput, preAuthToken }, oidcContext) => {
             const service: RegisterUserService = new RegisterUserService(oidcContext);
@@ -926,6 +953,11 @@ const resolvers: Resolvers = {
         cancelRegistration: async(_: any, { userId, registrationSessionToken, preAuthToken }, oidcContext) => {
             const service: RegisterUserService = new RegisterUserService(oidcContext);
             return service.cancelRegistration(userId, registrationSessionToken, preAuthToken || null);
+        },
+        unlockUser: async(_: any, { userId }, oidcContext) => {
+            const service: IdentityService = new IdentityService(oidcContext);
+            await service.unlockUser(userId);
+            return true;
         }
 
     },

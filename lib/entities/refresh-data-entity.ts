@@ -62,6 +62,12 @@ class RefreshDataEntity extends Model {
                 primaryKey: false,
                 allowNull: true,
                 field: "codechallengemethod"
+            },
+            expiresAtMs: {
+                type: DataTypes.BIGINT,
+                primaryKey: false,
+                allowNull: false,
+                field: "expiresatms"
             }
         }, {
             sequelize,

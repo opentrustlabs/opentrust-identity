@@ -1,21 +1,27 @@
 import { OIDCContext } from "@/graphql/graphql-context";
 import IdentityDao from "../dao/identity-dao";
-import { Tenant, TenantPasswordConfig, User, UserCredential, UserMfaRel, TenantManagementDomainRel, FederatedOidcProvider, FederatedOidcProviderTenantRel, PreAuthenticationState, AuthorizationReturnUri, UserAuthenticationStateResponse, AuthenticationState, AuthenticationErrorTypes, UserAuthenticationState, UserFailedLogin, TenantLoginFailurePolicy, Fido2KeyAuthenticationInput, Fido2KeyRegistrationInput, TotpResponse } from "@/graphql/generated/graphql-types";
+import { Tenant, TenantPasswordConfig, User, UserCredential, UserMfaRel, TenantManagementDomainRel, FederatedOidcProvider, FederatedOidcProviderTenantRel, PreAuthenticationState, AuthorizationReturnUri, UserAuthenticationStateResponse, AuthenticationState, AuthenticationErrorTypes, UserAuthenticationState, UserFailedLogin, TenantLoginFailurePolicy, Fido2KeyAuthenticationInput, Fido2KeyRegistrationInput, TotpResponse, UserTermsAndConditionsAccepted, TenantLegacyUserMigrationConfig, TenantRestrictedAuthenticationDomainRel, AuthenticationGroup } from "@/graphql/generated/graphql-types";
 import { DaoFactory } from "../data-sources/dao-factory";
 import TenantDao from "../dao/tenant-dao";
 import { GraphQLError } from "graphql/error";
-import { DEFAULT_LOGIN_FAILURE_POLICY, DEFAULT_LOGIN_PAUSE_TIME_MINUTES, DEFAULT_MAXIMUM_LOGIN_FAILURES, DEFAULT_PASSWORD_HISTORY_PERIOD, DEFAULT_TENANT_PASSWORD_CONFIGURATION, FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE, FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL, LOGIN_FAILURE_POLICY_LOCK_USER_ACCOUNT, LOGIN_FAILURE_POLICY_PAUSE, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, OIDC_AUTHORIZATION_ERROR_ACCESS_DENIED, QUERY_PARAM_AUTHENTICATE_TO_PORTAL, QUERY_PARAM_TENANT_ID, RANKED_DESCENDING_HASHING_ALGORITHS, STATUS_COMPLETE, STATUS_INCOMPLETE, TOKEN_TYPE_IAM_PORTAL_USER, USER_TENANT_REL_TYPE_PRIMARY } from "@/utils/consts";
+import { DEFAULT_LOGIN_FAILURE_POLICY, DEFAULT_LOGIN_PAUSE_TIME_MINUTES, DEFAULT_MAXIMUM_LOGIN_FAILURES, DEFAULT_PASSWORD_HISTORY_PERIOD, DEFAULT_TENANT_PASSWORD_CONFIGURATION, FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE, FEDERATED_AUTHN_CONSTRAINT_PERMISSIVE, FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL, LOGIN_FAILURE_POLICY_LOCK_USER_ACCOUNT, LOGIN_FAILURE_POLICY_PAUSE, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, OIDC_AUTHORIZATION_ERROR_ACCESS_DENIED, QUERY_PARAM_AUTHENTICATE_TO_PORTAL, QUERY_PARAM_TENANT_ID, RANKED_DESCENDING_HASHING_ALGORITHS, STATUS_COMPLETE, STATUS_INCOMPLETE, TOKEN_TYPE_IAM_PORTAL_USER, USER_TENANT_REL_TYPE_PRIMARY } from "@/utils/consts";
 import { generateRandomToken, getDomainFromEmail } from "@/utils/dao-utils";
 import AuthDao from "../dao/auth-dao";
 import FederatedOIDCProviderDao from "../dao/federated-oidc-provider-dao";
 import JwtServiceUtils from "./jwt-service-utils";
 import IdentityService from "./identity-service";
+import OIDCServiceUtils from "./oidc-service-utils";
+import { randomUUID } from "node:crypto";
+import { LegacyUserAuthenticationResponse, LegacyUserProfile } from "../models/principal";
+import AuthenticationGroupDao from "../dao/authentication-group-dao";
 
 const jwtServiceUtils: JwtServiceUtils = new JwtServiceUtils();
+const oidcServiceUtils: OIDCServiceUtils = new OIDCServiceUtils();
 const identityDao: IdentityDao = DaoFactory.getInstance().getIdentityDao();
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
 const authDao: AuthDao = DaoFactory.getInstance().getAuthDao();
 const federatedOIDCProviderDao: FederatedOIDCProviderDao = DaoFactory.getInstance().getFederatedOIDCProvicerDao();
+const authenticationGroupDao: AuthenticationGroupDao = DaoFactory.getInstance().getAuthenticationGroupDao();
 
 class AuthenticateUserService extends IdentityService {
 
@@ -154,6 +160,53 @@ class AuthenticateUserService extends IdentityService {
 
     }
 
+    public async authenticateAcceptTermsAndConditions(accepted: boolean, authenticationSessionToken: string, preAuthToken: string | null): Promise<UserAuthenticationStateResponse> {
+        
+        const response: UserAuthenticationStateResponse = this.initUserAuthenticationStateResponse(authenticationSessionToken, "", preAuthToken);
+        if(accepted === false){
+            response.authenticationError.errorCode = "ERROR_REQUIRED_TERMS_AND_CONDITIONS_NOT_ACCEPTED";
+            response.userAuthenticationState.authenticationState = AuthenticationState.Error;
+            return response;
+        }
+        const arrUserAuthenticationStates: Array<UserAuthenticationState> = await this.getSortedAuthenticationStates(authenticationSessionToken);
+        
+        const index: number = await this.validateAuthenticationStep(arrUserAuthenticationStates, response, AuthenticationState.AcceptTermsAndConditions);
+        if(index < 0){
+            response.authenticationError.errorCode = "ERROR_INVALID_AUTHENTICATION_STATE";
+            return Promise.resolve(response);
+        }
+        const user: User | null = await identityDao.getUserBy("id", arrUserAuthenticationStates[index].userId);
+        if(user === null){
+            response.authenticationError.errorCode = "ERROR_INVALID_USER_ID";
+            response.userAuthenticationState.authenticationState = AuthenticationState.Error;
+            return response;
+        }
+
+        const userTermsAndConditionsAccepted: UserTermsAndConditionsAccepted = {
+            acceptedAtMs: Date.now(),
+            tenantId: arrUserAuthenticationStates[index].tenantId,
+            userId: arrUserAuthenticationStates[index].userId
+        }
+        await identityDao.addUserTermsAndConditionsAccepted(userTermsAndConditionsAccepted);
+
+        arrUserAuthenticationStates[index].authenticationStateStatus = STATUS_COMPLETE;
+        await identityDao.updateUserAuthenticationState(arrUserAuthenticationStates[index]);
+
+        const nextUserAuthenticationState = arrUserAuthenticationStates[index + 1];        
+        if(nextUserAuthenticationState.authenticationState === AuthenticationState.RotatePassword){
+            const passwordConfig = await this.determineTenantPasswordConfig(nextUserAuthenticationState.userId, nextUserAuthenticationState.tenantId);
+            response.passwordConfig = passwordConfig;
+        }
+        if(nextUserAuthenticationState.authenticationState === AuthenticationState.RedirectBackToApplication || nextUserAuthenticationState.authenticationState === AuthenticationState.RedirectToIamPortal){
+            await this.handleAuthenticationCompletion(user, nextUserAuthenticationState, arrUserAuthenticationStates, response);
+        }
+        else{
+            response.userAuthenticationState = nextUserAuthenticationState;
+        }
+        return response;
+
+    }
+
 
     /**
      * 
@@ -165,60 +218,111 @@ class AuthenticateUserService extends IdentityService {
         const response: UserAuthenticationStateResponse = this.initUserAuthenticationStateResponse("", "", preAuthToken);
 
         const preAuthenticationState: PreAuthenticationState | null = await authDao.getPreAuthenticationState(preAuthToken);
+        
+        // 1.   Error. No preauthentication data is found, so no way to check the tenant, client, user, etc.
         if(!preAuthenticationState){
             response.authenticationError.errorCode = "ERROR_INVALID_PRE_AUTH_TOKEN";
             return response;
         }
         const domain: string = getDomainFromEmail(email);
         const tenant: Tenant | null = await tenantDao.getTenantById(preAuthenticationState.tenantId);
+
+        // 2.   Error. No tenant found
         if(tenant === null){
             response.authenticationError.errorCode = "ERROR_INVALID_TENANT_FOR_PRE_AUTH_TOKEN";
             return response;
         }
         const federatedOidcProvider: FederatedOidcProvider | null = await federatedOIDCProviderDao.getFederatedOidcProviderByDomain(domain);
-        let providerTenantRels: Array<FederatedOidcProviderTenantRel> = [];
-        if(federatedOidcProvider !== null){            
-            providerTenantRels = await federatedOIDCProviderDao.getFederatedOidcProviderTenantRels(preAuthenticationState.tenantId, federatedOidcProvider.federatedOIDCProviderId);
-            
-            // If there is a federated provider for the domain and is not attached to the tenant, then error
-            const r: FederatedOidcProviderTenantRel | undefined = providerTenantRels.find(
-                (v: FederatedOidcProviderTenantRel) => v.tenantId === tenant.tenantId
-            )
-            if(!r){
-                response.authenticationError.errorCode = "ERROR_DOMAIN_IS_NOT_PERMITTED_ACCESS_TO_THIS_TENANT";
-                return response;
-            }
-        }
-        else{
-            // There is no federated provider, and the tenant exclusively uses federated OIDC provider for authentication
-            if(tenant.federatedAuthenticationConstraint === FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE){
-                response.authenticationError.errorCode = "ERROR_USER_REGISTRATION_IS_NOT_PERMITTED_FOR_THIS_TENANT";
-                return response;
-            }
-        }
         
-        const user: User | null = await identityDao.getUserBy("email", email.toLowerCase()); 
-
-        // If user does not exist, there is no provider, and the tenant does not allow self-registration
-        if(user === null && federatedOidcProvider === null && tenant.allowUserSelfRegistration === false){
+        // 3.   Error. There is no federated provider, and the tenant exclusively uses federated OIDC provider for authentication
+        if(federatedOidcProvider === null && tenant.federatedAuthenticationConstraint === FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE){
             response.authenticationError.errorCode = "ERROR_USER_REGISTRATION_IS_NOT_PERMITTED_FOR_THIS_TENANT";
             return response;
         }
-        // If the user exists but is not in a state where they can be authenticated.
+
+        // 4.   Error. If the tenant only allows certain domain to authenticate users, and this user is not
+        //      among them.
+        const arrRestrictedDomains: Array<TenantRestrictedAuthenticationDomainRel> = await tenantDao.getDomainsForTenantRestrictedAuthentication(tenant.tenantId);
+        if(arrRestrictedDomains.length > 0){
+            const belongsToRestrictedDomain = arrRestrictedDomains.find(
+                (d: TenantRestrictedAuthenticationDomainRel) => d.domain === domain
+            );
+            if(!belongsToRestrictedDomain){
+                response.authenticationError.errorCode = "ERROR_USER_AUTHENTICATION_IS_NOT_PERMITTED_FOR_THIS_TENANT";
+                return response;
+            }
+        }
+
+        const user: User | null = await identityDao.getUserBy("email", email.toLowerCase());
+        // 5.   Error. If the user exists but is not in a state where they can be authenticated.
         if(user && (user.enabled === false || user.locked === true || user.markForDelete === true)){
             response.authenticationError.errorCode = "ERROR_USER_ACCOUNT_STATUS_NOT_VALID_FOR_AUTHENTICATION";
             return response;
         }
         
+        
+        // 6.   Possible Error. If the user exists, but does not belong to a suitable authentication group.
+        // 
+        //      Mitigating circumstances: If the user is null and the tenant allows for self registration or migration
+        //      then register or migrate the user completely, including any MFA types that are required.
+        //      At the end of registration or authentication throw an error saying the user has no access if there
+        //      is no default authn group.
+        if(user !== null){            
+            let hasDefaultAuthnGroup: boolean = false;            
+            const clientAuthnGroups: Array<AuthenticationGroup> = await authenticationGroupDao.getAuthenticationGroups(undefined, preAuthenticationState.clientId, undefined);
+            for(let i = 0; i < clientAuthnGroups.length; i++){
+                if(clientAuthnGroups[i].defaultGroup === true){
+                    hasDefaultAuthnGroup = true;
+                    break;
+                }
+            }
+            if(!hasDefaultAuthnGroup){
+                const userAuthnGroups: Array<AuthenticationGroup> = await authenticationGroupDao.getAuthenticationGroups(undefined, undefined, user.userId);
+                const matchingGroup = userAuthnGroups.find(
+                    (userAuthnGroup: AuthenticationGroup) => {
+                        const a = clientAuthnGroups.find(
+                            (clientAuthnGroup: AuthenticationGroup) => userAuthnGroup.authenticationGroupId === clientAuthnGroup.authenticationGroupId
+                        );
+                        return a;
+                    }
+                );
+                if(matchingGroup === undefined){
+                    response.authenticationError.errorCode = "ERROR_USER_DOES_NOT_BELONG_TO_VALID_AUTHENTICATION_GROUP_FOR_CLIENT";
+                    return response;
+                }
+            }
+        }
 
-        // Success cases
-        //
-        // At this point we know that the tenant exists and allows either a external OIDC provider
-        // or allows the user to login with a username/password or allows the user to register
 
+        // 7.   Error. If user does not exist (either in the local data store or in a legacy system), there is no provider, 
+        //      and the tenant does not allow self-registration
+        //      Need to check if there is a legacy system configured, and if so, is the user 
+        //      in that system?
+        let canMigrateUser: boolean = false;
+        if(user === null){
+            let tenantLegacyUserMigrationConfig: TenantLegacyUserMigrationConfig | null = null;
+            if(tenant.migrateLegacyUsers === true){
+                tenantLegacyUserMigrationConfig = await tenantDao.getLegacyUserMigrationConfiguration(tenant.tenantId);
+                if(tenantLegacyUserMigrationConfig && tenantLegacyUserMigrationConfig.usernameCheckUri && tenantLegacyUserMigrationConfig.authenticationUri && tenantLegacyUserMigrationConfig.userProfileUri){
+                    const userExistsInLegacySystem = await oidcServiceUtils.legacyUsernameCheck(`${tenantLegacyUserMigrationConfig.usernameCheckUri}?email=${email.toLowerCase()}`);
+                    if(userExistsInLegacySystem){
+                        canMigrateUser = true;
+                    }
+                }
+            }
+        }
+        if(user === null && !canMigrateUser && federatedOidcProvider === null && tenant.allowUserSelfRegistration === false){
+            response.authenticationError.errorCode = "ERROR_USER_REGISTRATION_IS_NOT_PERMITTED_FOR_THIS_TENANT";
+            return response;
+        }
+        
+        // At this point we know that the tenant exists and allows either a external OIDC provider,
+        // or allows the user to login with a username/password, or allows the user to register
+        // or there is a legacy user that needs to be migrated.
         response.userAuthenticationState.tenantId = preAuthenticationState.tenantId;
-        // 1.   There is a provider, and regardless of whether the user exists, send the the user to the provider
-        //      for authentication.
+        
+        // 8.   Success. There is a provider, and regardless of whether the user exists, send the the user to the provider
+        //      for authentication. The user will be created automatically through this process (if successful)
         if(federatedOidcProvider !== null){
             response.userAuthenticationState.authenticationState = AuthenticationState.AuthWithFederatedOidc;
             const {hasError, errorMessage, authorizationEndpoint} = await this.createFederatedOIDCRequestProperties(email.toLowerCase(), user ? user.userId : null, federatedOidcProvider, tenant.tenantId, preAuthenticationState);
@@ -227,177 +331,243 @@ class AuthenticateUserService extends IdentityService {
             }
             response.uri = authorizationEndpoint;
         }
-        // 2.   There is no provider, so we either need to register the user if they do not exist, or
-        //      authenticate with username/password + other MFA types.
+
+        // 9.   There is no provider, so we either need to register the user if they do not exist, or
+        //      authenticate with username/password + other MFA types, or migrate from legacy system
         else {
-            if(user === null){
+            if(user === null && !canMigrateUser){                
                 response.userAuthenticationState.authenticationState = AuthenticationState.Register;                
                 response.uri = `/authorize/register?${QUERY_PARAM_TENANT_ID}=${preAuthenticationState.tenantId}&username=${email.toLowerCase()}`;
                 return response;
+                
             }
-            const userCredential: UserCredential | null = await identityDao.getUserCredentialForAuthentication(user.userId);
-            if(!userCredential){
-                response.authenticationError.errorCode = "ERROR_NO_CREDENTIALS_FOUND_FOR_USER";
-                return response;
+            let userCredential: UserCredential | null = null;
+            if(user !== null){
+                userCredential = await identityDao.getUserCredentialForAuthentication(user.userId);
+                if(!userCredential){
+                    response.authenticationError.errorCode = "ERROR_NO_CREDENTIALS_FOUND_FOR_USER";
+                    return response;
+                }
+            }
+            const stateOrder: Array<AuthenticationState> = [];
+            if(user !== null){
+                stateOrder.push(AuthenticationState.EnterPassword);
             }
             else{
-                const stateOrder: Array<AuthenticationState> = [];
-                stateOrder.push(AuthenticationState.EnterPassword);
-                const passwordConfig: TenantPasswordConfig | null = await tenantDao.getTenantPasswordConfig(preAuthenticationState.tenantId);
-                
-                let requiredMfaTypes: Array<string> = [];
-                if(passwordConfig && passwordConfig.requireMfa){
-                    requiredMfaTypes = passwordConfig.mfaTypesRequired?.split(",") || [];
-                }
-                
-                const arrUserMfaConfig: Array<UserMfaRel> = await identityDao.getUserMFARels(user.userId);
-                const userMfaRelTotp: UserMfaRel | undefined = arrUserMfaConfig.find(
-                    (v: UserMfaRel) => v.mfaType === MFA_AUTH_TYPE_TIME_BASED_OTP
-                );
-                const userMfaRelSecurityKey : UserMfaRel | undefined = arrUserMfaConfig.find(
-                    (v: UserMfaRel) => v.mfaType === MFA_AUTH_TYPE_FIDO2
-                );
-                // If the user has configured totp, always use it first
-                if(userMfaRelTotp){
-                    stateOrder.push(AuthenticationState.ValidateTotp);
-                }
-                // Otherwise, if the tenant requires it and the user does not have totp, then
-                // require the user to configure totp and validate it
-                if(requiredMfaTypes.includes(MFA_AUTH_TYPE_TIME_BASED_OTP) && !userMfaRelTotp){
-                    stateOrder.push(AuthenticationState.ConfigureTotp);
-                    stateOrder.push(AuthenticationState.ValidateTotp);
-                }
-                // If the user has configured a security key, always use it after totp (if that exists);
-                if(userMfaRelSecurityKey){
-                    stateOrder.push(AuthenticationState.ValidateSecurityKey);
-                }
-                // Otherwise, if the tenant requires it and the user does not have a security key configured, then
-                // require the user to configure a security key and validate it
-                if(requiredMfaTypes.includes(MFA_AUTH_TYPE_FIDO2) && !userMfaRelSecurityKey){
-                    stateOrder.push(AuthenticationState.ConfigureSecurityKey);
-                    stateOrder.push(AuthenticationState.ValidateSecurityKey);
-                }
-                // Finally, once all the user verification steps have been completed, do we need
-                // to rotate the password before we send the user back to the 3rd party app?
-                if(passwordConfig && this.requirePasswordRotation(userCredential, passwordConfig)){
-                    stateOrder.push(AuthenticationState.RotatePassword);
-                }
-                stateOrder.push(AuthenticationState.RedirectBackToApplication);
-
-                const arrUserAuthenticationStates: Array<UserAuthenticationState> = [];
-                const authenticationSessionToken: string = generateRandomToken(20, "hex");
-                // authentication completion will expire after 30 minutes. 
-                const expiresAt: number = Date.now() + (60 * 30 * 1000);
-
-                for(let i = 0; i < stateOrder.length; i++){
-                    const uas: UserAuthenticationState = {
-                        authenticationSessionToken: authenticationSessionToken,
-                        authenticationState: stateOrder[i],
-                        authenticationStateOrder: i + 1,
-                        authenticationStateStatus: STATUS_INCOMPLETE,
-                        expiresAtMs: expiresAt,
-                        tenantId: preAuthenticationState.tenantId,
-                        userId: user.userId
-                    }
-                    arrUserAuthenticationStates.push(uas);
-                }
-                await identityDao.createUserAuthenticationStates(arrUserAuthenticationStates);
-                response.userAuthenticationState = arrUserAuthenticationStates[0];
+                stateOrder.push(AuthenticationState.EnterPasswordAndMigrateUser);
+            }
+            const passwordConfig: TenantPasswordConfig = await tenantDao.getTenantPasswordConfig(preAuthenticationState.tenantId) || DEFAULT_TENANT_PASSWORD_CONFIGURATION;
+            
+            let requiredMfaTypes: Array<string> = [];
+            if(passwordConfig && passwordConfig.requireMfa){
+                requiredMfaTypes = passwordConfig.mfaTypesRequired?.split(",") || [];
             }
             
+            let arrUserMfaConfig: Array<UserMfaRel> = [];
+            if(user){
+                arrUserMfaConfig = await identityDao.getUserMFARels(user.userId);
+            }
+            const userMfaRelTotp: UserMfaRel | undefined = arrUserMfaConfig.find(
+                (v: UserMfaRel) => v.mfaType === MFA_AUTH_TYPE_TIME_BASED_OTP
+            );
+            const userMfaRelSecurityKey : UserMfaRel | undefined = arrUserMfaConfig.find(
+                (v: UserMfaRel) => v.mfaType === MFA_AUTH_TYPE_FIDO2
+            );
+            // If the user has configured totp, always use it first
+            if(userMfaRelTotp){
+                stateOrder.push(AuthenticationState.ValidateTotp);
+            }
+            // Otherwise, if the tenant requires it and the user does not have totp, then
+            // require the user to configure totp and validate it
+            if(requiredMfaTypes.includes(MFA_AUTH_TYPE_TIME_BASED_OTP) && !userMfaRelTotp){
+                stateOrder.push(AuthenticationState.ConfigureTotp);
+                stateOrder.push(AuthenticationState.ValidateTotp);
+            }
+            // If the user has configured a security key, always use it after totp (if that exists);
+            if(userMfaRelSecurityKey){
+                stateOrder.push(AuthenticationState.ValidateSecurityKey);
+            }
+            // Otherwise, if the tenant requires it and the user does not have a security key configured, then
+            // require the user to configure a security key and validate it
+            if(requiredMfaTypes.includes(MFA_AUTH_TYPE_FIDO2) && !userMfaRelSecurityKey){
+                stateOrder.push(AuthenticationState.ConfigureSecurityKey);
+                stateOrder.push(AuthenticationState.ValidateSecurityKey);
+            }
+            // Finally, once all the user verification steps have been completed, do we need
+            // to rotate the password before we send the user back to the 3rd party app?            
+            if(!canMigrateUser && userCredential && this.requirePasswordRotation(userCredential, passwordConfig)){
+                stateOrder.push(AuthenticationState.RotatePassword);
+            }
+            stateOrder.push(AuthenticationState.RedirectBackToApplication);
+
+            const arrUserAuthenticationStates: Array<UserAuthenticationState> = [];
+            const authenticationSessionToken: string = generateRandomToken(20, "hex");
+            // authentication completion will expire after 60 minutes. 
+            const expiresAt: number = Date.now() + (60 * 60 * 1000);
+            
+            // In case we need to migrate the user from a legacy system, we can just
+            // create a placeholder userid now which will be used to fill in the 
+            // data later after they successfully authenticate in the next step.
+            const userId: string = user ? user.userId : randomUUID().toString();
+            if(user === null && canMigrateUser){
+                const u: User = {
+                    domain: domain,
+                    email: email.toLowerCase(),
+                    emailVerified: false,
+                    enabled: false,
+                    firstName: "",
+                    lastName: "",
+                    locked: true,
+                    markForDelete: true,                        
+                    nameOrder: "",
+                    userId: userId
+                }
+                await identityDao.createUser(u);
+            }
+
+            for(let i = 0; i < stateOrder.length; i++){
+                const uas: UserAuthenticationState = {
+                    authenticationSessionToken: authenticationSessionToken,
+                    authenticationState: stateOrder[i],
+                    authenticationStateOrder: i + 1,
+                    authenticationStateStatus: STATUS_INCOMPLETE,
+                    expiresAtMs: expiresAt,
+                    tenantId: preAuthenticationState.tenantId,
+                    userId: userId
+                }
+                arrUserAuthenticationStates.push(uas);
+            }
+            await identityDao.createUserAuthenticationStates(arrUserAuthenticationStates);
+            response.userAuthenticationState = arrUserAuthenticationStates[0];
         }
         return response;           
     }
 
+    /**
+     * 
+     * @param email 
+     * @param tenantId 
+     * @param returnToUri 
+     * @returns 
+     */
     protected async authenticatePortalUserNameHandler(email: string, tenantId: string | null, returnToUri: string | null): Promise<UserAuthenticationStateResponse> {
         const response: UserAuthenticationStateResponse = this.initUserAuthenticationStateResponse("", tenantId || "", null);
                 
         const domain: string = getDomainFromEmail(email);
-        const tenant: Tenant | null = tenantId ? await tenantDao.getTenantById(tenantId) : null;
         const federatedOidcProvider: FederatedOidcProvider | null = await federatedOIDCProviderDao.getFederatedOidcProviderByDomain(domain);
-        let providerTenantRels: Array<FederatedOidcProviderTenantRel> = [];
-        if(federatedOidcProvider !== null){
-            providerTenantRels = await federatedOIDCProviderDao.getFederatedOidcProviderTenantRels(tenantId || undefined, federatedOidcProvider.federatedOIDCProviderId);            
-        }
         const managementDomains: Array<TenantManagementDomainRel> = await tenantDao.getDomainTenantManagementRels(tenantId || undefined, domain);
         
         // 1.   Error condition #1: No domains for management of a tenant
         if(!managementDomains || managementDomains.length === 0){
             response.authenticationError.errorCode = AuthenticationErrorTypes.ErrorNoManagementDomain;
             return response;
-        }
-        const d = managementDomains.find(
-            (v: TenantManagementDomainRel) => v.domain === domain
-        );
-        if(!d){
-            response.authenticationError.errorCode = AuthenticationErrorTypes.ErrorNoManagementDomain;
-            return response;
-        }
-        
-        // Obtain the basic information for deciding on error conditions or the next steps
+        }        
+
         const user: User | null = await identityDao.getUserBy("email", email);
-
-        const tenants: Array<Tenant> = tenant ? 
-                                        await tenantDao.getTenants([tenant.tenantId]) :
-                                        await tenantDao.getTenants(managementDomains.map( (d: TenantManagementDomainRel) => d.tenantId));
-        const tenantsThatAllowSelfRegistration = tenants.filter(
-            (t: Tenant) => t.allowUserSelfRegistration === true
-        );
-
-        // 2.   Error condition #2: No user, no federated IdP, and no tenants that allow self-registration        
-        if(user === null && federatedOidcProvider === null && tenantsThatAllowSelfRegistration.length === 0){
-            response.authenticationError.errorCode = AuthenticationErrorTypes.ErrorNoMatchingUserAndNoTenantSelfRegistration;
-            return response;
-        }
         
-        // 4.   Error condition #4. The user is disabled, marked for delete, or locked
+        // 2.   Error condition #2. The user is disabled, marked for delete, or locked
         if(user && (user.enabled === false || user.locked === true || user.markForDelete === true)){
             response.authenticationError.errorCode = "ERROR_USER_ACCOUNT_STATUS_NOT_VALID_FOR_AUTHENTICATION";
             return response;
         }
 
-        // Find all of the providers attached to any of the tenants
-        const tenantsThatAreAttachedToProviders = tenants.filter(
-            (t: Tenant) => {
-                const rel = providerTenantRels.find(
-                    (f: FederatedOidcProviderTenantRel) => f.tenantId === t.tenantId
-                )
-                return rel !== undefined;
-            }
+        const tenants: Array<Tenant> = tenantId ? 
+                                        await tenantDao.getTenants([tenantId]) :
+                                        await tenantDao.getTenants(managementDomains.map( (d: TenantManagementDomainRel) => d.tenantId));
+        
+        const tenantsThatAllowSelfRegistration = tenants.filter(
+            (t: Tenant) => t.allowUserSelfRegistration === true
         );
-
-        // 3.   Error condition #3: No user, there IS a federated IdP, but the IdP is not attached
-        //      to any of the tenants that the domain can manage
-        if(user === null && federatedOidcProvider !== null && tenantsThatAreAttachedToProviders.length === 0){            
-            response.authenticationError.errorCode = AuthenticationErrorTypes.ErrorNoMatchingFederatedProviderForTenant;
-            return response;
-        }
 
         const tenantsThatAllowPasswordLogin: Array<Tenant> = tenants.filter(
             (t: Tenant) => t.federatedAuthenticationConstraint !== FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE
         );
-        //  4.   Error condition # 3: User exists, there is NO IdP for the user, and none of the tenants allows
-        //       username/password authentication
-        if(user !== null && federatedOidcProvider === null && tenantsThatAllowPasswordLogin.length === 0){
+
+        const tenantsThatAllowFederatedOIDCLogin: Array<Tenant> = tenants.filter(
+            (t: Tenant) => t.federatedAuthenticationConstraint === FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE || t.federatedAuthenticationConstraint === FEDERATED_AUTHN_CONSTRAINT_PERMISSIVE
+        )
+
+        //  3.   Error condition #3: There is NO external IdP for the user, and none of the tenants allows
+        //       username/password authentication or allows self-registration. This is regardless if the user exists.
+        if(federatedOidcProvider === null && tenantsThatAllowPasswordLogin.length === 0 && tenantsThatAllowSelfRegistration.length === 0){
             response.authenticationError.errorCode = AuthenticationErrorTypes.ErrorExclusiveTenantAndNoFederatedOidcProvider;
             return response;
         }
 
-        //  5.   Error condition #5: User exists, there is an IdP for the user, but the IdP is not attached
-        //       to any tenant that has the user's domain for management
-        if(user !== null && federatedOidcProvider !== null && tenantsThatAreAttachedToProviders.length === 0){            
+        // 4.   If there is an external IdP for the user, but none of the tenants allows it.
+        if(federatedOidcProvider !== null && tenantsThatAllowFederatedOIDCLogin.length === 0){
             response.authenticationError.errorCode = AuthenticationErrorTypes.ErrorNoMatchingFederatedProviderForTenant;
             return response;
         }
         
+        // 5.   Success case #1: The user can do SSO and thereby "autoregister" event if they do not exist currently in the system
+        if(federatedOidcProvider !== null){
+            response.availableTenants = [];
+            tenantsThatAllowFederatedOIDCLogin.forEach(
+                (t: Tenant) => response.availableTenants?.push(
+                    {
+                        tenantId: t.tenantId, 
+                        tenantName: t.tenantName
+                    }                    
+                )
+            );  
+            response.userAuthenticationState.authenticationState = tenantsThatAllowFederatedOIDCLogin.length === 1 ? AuthenticationState.AuthWithFederatedOidc : AuthenticationState.SelectTenant;
+            if(tenantsThatAllowFederatedOIDCLogin.length === 1){
+                const {hasError, errorMessage, authorizationEndpoint} = await this.createFederatedOIDCRequestProperties(email, user ? user.userId : null, federatedOidcProvider, tenants[0].tenantId, null);
+                if(hasError){
+                    throw new GraphQLError(errorMessage);
+                }
+                response.uri = authorizationEndpoint;
+            }
+            return response;
+        }
+        
+        // Need to check if there is a legacy system configured, and if so, is the user 
+        // in that system?
+        // At this point we know that there is NOT a federated oidc provider, so the user
+        // MUST login with a username/password, which they can do by either registering
+        // or being migrated from a legacy IdP. If the user is null, we will prefer to migrate from an existing        
+        // legacy IdP if one exists, followed by registration if allowed. 
+        let canMigrateUser: boolean = false;
+        const migrationFriendlyTenants: Array<Tenant> = [];
+        if(user === null){
+            const checkedTenantIds: Array<string> = tenantsThatAllowPasswordLogin.map((t: Tenant) => t.tenantId);
+            for(let i = 0; i < tenantsThatAllowPasswordLogin.length; i++){
+                const tenantLegacyUserMigrationConfig: TenantLegacyUserMigrationConfig | null = await tenantDao.getLegacyUserMigrationConfiguration(tenantsThatAllowPasswordLogin[i].tenantId);
+                if(tenantLegacyUserMigrationConfig && tenantLegacyUserMigrationConfig.usernameCheckUri && tenantLegacyUserMigrationConfig.authenticationUri && tenantLegacyUserMigrationConfig.userProfileUri){
+                    const userExistsInLegacySystem = await oidcServiceUtils.legacyUsernameCheck(`${tenantLegacyUserMigrationConfig.usernameCheckUri}?email=${email.toLowerCase()}`);
+                    if(userExistsInLegacySystem){
+                        migrationFriendlyTenants.push(tenantsThatAllowPasswordLogin[i]);
+                    }
+                }
+            }
+            
+            for(let i = 0; i < tenantsThatAllowSelfRegistration.length; i++){
+                if(checkedTenantIds.includes(tenantsThatAllowSelfRegistration[i].tenantId)){
+                    continue;
+                }
+                const tenantLegacyUserMigrationConfig: TenantLegacyUserMigrationConfig | null = await tenantDao.getLegacyUserMigrationConfiguration(tenantsThatAllowSelfRegistration[i].tenantId);
+                if(tenantLegacyUserMigrationConfig && tenantLegacyUserMigrationConfig.usernameCheckUri && tenantLegacyUserMigrationConfig.authenticationUri && tenantLegacyUserMigrationConfig.userProfileUri){
+                    const userExistsInLegacySystem = await oidcServiceUtils.legacyUsernameCheck(`${tenantLegacyUserMigrationConfig.usernameCheckUri}?email=${email.toLowerCase()}`);
+                    if(userExistsInLegacySystem){
+                        migrationFriendlyTenants.push(tenantsThatAllowPasswordLogin[i]);
+                    }
+                }
+            }
+        }
+        
+        // 6.   Error condition: There is no user, the cannot be migrated from a legacy system, and none of
+        //      the tenants allows for self-registration
+        canMigrateUser = migrationFriendlyTenants.length > 0;
+        if(user === null && !canMigrateUser && tenantsThatAllowSelfRegistration.length === 0){
+            response.authenticationError.errorCode = AuthenticationErrorTypes.ErrorNoMatchingUserAndNoTenantSelfRegistration;
+            return response;
+        }
 
-        // SUCCESS SCENARIOS 
-        // 1.   The user can select the tenant and register. In this scenario, there is no
+        // 7.   The user can select the tenant and register. In this scenario, there is no
         //      need to create database entries for the user authentication state. Instead
         //      there will be entries created for the user registration state later.    
-        if(user === null && federatedOidcProvider === null && tenantsThatAllowSelfRegistration.length > 0){
-            
-            response.userAuthenticationState.authenticationState = tenantsThatAllowSelfRegistration.length === 1 ? AuthenticationState.Register : AuthenticationState.SelectTenantThenRegister;            
+        if(user === null && !canMigrateUser && tenantsThatAllowSelfRegistration.length > 0){
             response.availableTenants = [];
             tenantsThatAllowSelfRegistration.forEach(
                 (t: Tenant) => response.availableTenants?.push(
@@ -405,75 +575,69 @@ class AuthenticateUserService extends IdentityService {
                         tenantId: t.tenantId, 
                         tenantName: t.tenantName
                     }                    
-                ));
+                )
+            ); 
+            response.userAuthenticationState.authenticationState = tenantsThatAllowSelfRegistration.length === 1 ? AuthenticationState.Register : AuthenticationState.SelectTenantThenRegister;            
             if(tenantsThatAllowSelfRegistration.length === 1){
                 response.uri = `/authorize/register?${QUERY_PARAM_TENANT_ID}=${tenantsThatAllowSelfRegistration[0].tenantId}&username=${email.toLowerCase()}`;
-            }
+            }            
             return response;
         }
-                
-        // 2.   The user can select the tenant by which they want to do SSO and thereby "autoregister"
-        //      or just "autoregister" if there is exactly one tenant
-        if(federatedOidcProvider !== null && tenantsThatAreAttachedToProviders.length > 0){            
-            // Otherwise, set the tenant information and then decide what the next steps are.
-            
-            response.availableTenants = [];
-                tenantsThatAreAttachedToProviders.forEach(
-                (t: Tenant) => response.availableTenants?.push(
-                    {
-                        tenantId: t.tenantId, 
-                        tenantName: t.tenantName
-                    }                    
-                ));
-            if(tenantsThatAreAttachedToProviders.length === 1){
-                response.userAuthenticationState.authenticationState = AuthenticationState.AuthWithFederatedOidc;
-                
-                const {hasError, errorMessage, authorizationEndpoint} = await this.createFederatedOIDCRequestProperties(email, user ? user.userId : null, federatedOidcProvider, tenantsThatAreAttachedToProviders[0].tenantId, null);
-                if(hasError){
-                    throw new GraphQLError(errorMessage);
-                }
-                response.uri = authorizationEndpoint;
-                return response;
-            }            
-            else {
-                response.userAuthenticationState.authenticationState = AuthenticationState.SelectTenant;                
-            }
-            return response;            
-        }
         
-        // 3.   The user can select which tenant to log into with username/password (plus
+        
+        // 8.   The user can select which tenant to log into with username/password (plus
         //      one or more MFA types). In this case, if the tenant list contains exactly 1
         //      tenant, then we need to create the authentication state values in the database
         //      to track the authentication process.
-        if(user !== null && federatedOidcProvider === null && tenantsThatAllowPasswordLogin.length > 0){
+        const tenantsToProcess: Array<Tenant> = canMigrateUser ? migrationFriendlyTenants : tenantsThatAllowPasswordLogin;
+        if(tenantsToProcess.length > 0){
             response.availableTenants = [];
-            tenantsThatAllowPasswordLogin.forEach(
+            tenantsToProcess.forEach(
                 (t: Tenant) => response.availableTenants?.push(
                     {
                         tenantId: t.tenantId, tenantName: t.tenantName
                     }
                 )
             )
-            if(tenantsThatAllowPasswordLogin.length === 1){
-                const stateOrder: Array<AuthenticationState> = [];
-                stateOrder.push(AuthenticationState.EnterPassword);
-                const passwordConfig: TenantPasswordConfig | null = await tenantDao.getTenantPasswordConfig(tenantsThatAllowPasswordLogin[0].tenantId);
-                const userCredential: UserCredential | null = await identityDao.getUserCredentialForAuthentication(user.userId);
-                if(!userCredential){
-                    response.authenticationError.errorCode = "ERROR_NO_CREDENTIALS_FOUND_FOR_USER";
-                    return response;
+            if(tenantsToProcess.length === 1){
+                const passwordConfig: TenantPasswordConfig = await tenantDao.getTenantPasswordConfig(tenantsToProcess[0].tenantId) || DEFAULT_TENANT_PASSWORD_CONFIGURATION;                
+                let userCredential: UserCredential | null = null;
+                if(user !== null){
+                    userCredential = await identityDao.getUserCredentialForAuthentication(user.userId);
+                    if(!userCredential){
+                        response.authenticationError.errorCode = "ERROR_NO_CREDENTIALS_FOUND_FOR_USER";
+                        return response;
+                    }
                 }
                 let requiredMfaTypes: Array<string> = [];
                 if(passwordConfig && passwordConfig.requireMfa){
                     requiredMfaTypes = passwordConfig.mfaTypesRequired?.split(",") || [];
                 }
-                const arrUserMfaConfig: Array<UserMfaRel> = await identityDao.getUserMFARels(user.userId);
+                let arrUserMfaConfig: Array<UserMfaRel> = [];
+                if(user){
+                    arrUserMfaConfig = await identityDao.getUserMFARels(user.userId);
+                }
                 const userMfaRelTotp: UserMfaRel | undefined = arrUserMfaConfig.find(
                     (v: UserMfaRel) => v.mfaType === MFA_AUTH_TYPE_TIME_BASED_OTP
                 );
                 const userMfaRelSecurityKey : UserMfaRel | undefined = arrUserMfaConfig.find(
                     (v: UserMfaRel) => v.mfaType === MFA_AUTH_TYPE_FIDO2
                 );
+
+                let userTermsAndConditionsAccepted: UserTermsAndConditionsAccepted | null = null;
+                if(user){
+                    userTermsAndConditionsAccepted = await identityDao.getUserTermsAndConditionsAccepted(user.userId, tenantsToProcess[0].tenantId);
+                }                
+                
+                // Create the authentication states in order of completion
+                const stateOrder: Array<AuthenticationState> = [];
+                if(user){
+                    stateOrder.push(AuthenticationState.EnterPassword);
+                }
+                else{
+                    stateOrder.push(AuthenticationState.EnterPasswordAndMigrateUser);
+                }
+
                 // If the user has configured totp, always use it first
                 if(userMfaRelTotp){
                     stateOrder.push(AuthenticationState.ValidateTotp);
@@ -494,18 +658,44 @@ class AuthenticateUserService extends IdentityService {
                     stateOrder.push(AuthenticationState.ConfigureSecurityKey);
                     stateOrder.push(AuthenticationState.ValidateSecurityKey);
                 }
+                // Did the user accept the terms and conditions for this tenant, if required?
+                if(userTermsAndConditionsAccepted === null && tenantsToProcess[0].registrationRequireTermsAndConditions === true){
+                    stateOrder.push(AuthenticationState.AcceptTermsAndConditions);
+                }
                 // Finally, once all the user verification steps have been completed, do we need
                 // to rotate the password before we send the user back to the 3rd party app?                
-                if(passwordConfig && this.requirePasswordRotation(userCredential, passwordConfig)){
+                if(userCredential &&  this.requirePasswordRotation(userCredential, passwordConfig)){
                     stateOrder.push(AuthenticationState.RotatePassword);
                 }
                 stateOrder.push(AuthenticationState.RedirectToIamPortal);
 
                 const arrUserAuthenticationStates: Array<UserAuthenticationState> = [];
                 const authenticationSessionToken: string = generateRandomToken(20, "hex");
-                // authentication completion will expire after 30 minutes. 
-                const expiresAt: number = Date.now() + (60 * 30 * 1000);
+                // authentication completion will expire after 60 minutes. 
+                const expiresAt: number = Date.now() + (60 * 60 * 1000);
 
+                // In case we need to migrate the user from a legacy system, we can just
+                // create a placeholder userid now which will be used to fill in the 
+                // data later after they successfully authenticate in the next step.
+
+                // First, create a temporary user with ID for completion after the user enters their password
+                const userId: string = user ? user.userId : randomUUID().toString();
+                if(user === null && canMigrateUser){
+                    const u: User = {
+                        domain: domain,
+                        email: email.toLowerCase(),
+                        emailVerified: false,
+                        enabled: false,
+                        firstName: "",
+                        lastName: "",
+                        locked: true,
+                        markForDelete: true,                        
+                        nameOrder: "",
+                        userId: userId
+                    }
+                    await identityDao.createUser(u);
+                }
+                
                 for(let i = 0; i < stateOrder.length; i++){
                     const uas: UserAuthenticationState = {
                         authenticationSessionToken: authenticationSessionToken,
@@ -513,8 +703,8 @@ class AuthenticateUserService extends IdentityService {
                         authenticationStateOrder: i + 1,
                         authenticationStateStatus: STATUS_INCOMPLETE,
                         expiresAtMs: expiresAt,
-                        tenantId: tenantsThatAllowPasswordLogin[0].tenantId,
-                        userId: user.userId,
+                        tenantId: tenantsToProcess[0].tenantId,
+                        userId: userId,
                         returnToUri: returnToUri
                     }
                     arrUserAuthenticationStates.push(uas);
@@ -529,6 +719,7 @@ class AuthenticateUserService extends IdentityService {
             return response;
         }
         
+        // 9.   Final error conditions: There is no mechanism for authenticating or registering the user.
         response.authenticationError.errorCode = AuthenticationErrorTypes.ErrorConditionsForAuthenticationNotMet;
         return response;
     }
@@ -557,88 +748,13 @@ class AuthenticateUserService extends IdentityService {
         }
         if(user.enabled === false || user.markForDelete === true || user.locked === true){
             throw new GraphQLError("ERROR_AUTHENTICATION_DISLABLED_FOR_USER");
-        }
-        
+        }        
 
-        const userFailedLoginAttempts: Array<UserFailedLogin> = await identityDao.getFailedLogins(user.userId);
-        let loginFailurePolicy: TenantLoginFailurePolicy | null = await tenantDao.getLoginFailurePolicy(arrUserAuthenticationStates[index].tenantId);
-        if(loginFailurePolicy === null){
-            loginFailurePolicy = DEFAULT_LOGIN_FAILURE_POLICY;
-        }
-
-        // We will check to see if the user can authenticate based on the number of failures they have previously
-        // and if we have a failure policy type of pause and the next login time allowed is at some point in the past.
-        if(userFailedLoginAttempts.length > 0 && loginFailurePolicy.loginFailurePolicyType === LOGIN_FAILURE_POLICY_PAUSE){
-            if(userFailedLoginAttempts[length - 1].nextLoginNotBefore > Date.now()){
-                throw new GraphQLError("ERROR_AUTHENTICTION_IS_PAUSED_FOR_USER");
-            }
-        }
-
-        const userCredential: UserCredential | null = await identityDao.getUserCredentialForAuthentication(user.userId);
-        if(!userCredential){
-            throw new GraphQLError("ERROR_UNABLE_TO_FIND_CREDENTIALS_FOR_USER");
-        }
-
-        const valid: boolean = this.validateUserCredentials(userCredential, password);
-        if(!valid){
-
-            // 1.   Do we need to lock the user
-            // 2.   If not, do we need to pause the login attempts for any length of time?
-            const nowMs = Date.now();
-            const failureCount: number = userFailedLoginAttempts.length === 0 ? 1 : userFailedLoginAttempts[userFailedLoginAttempts.length - 1].failureCount + 1;
-            let nextLoginTime = nowMs;
-            let lockUser: boolean = false;
-
-            if(loginFailurePolicy.loginFailurePolicyType === LOGIN_FAILURE_POLICY_LOCK_USER_ACCOUNT){
-                if(failureCount >= loginFailurePolicy.failureThreshold){
-                    nextLoginTime = Number.MAX_SAFE_INTEGER;
-                    lockUser = true;
-                }
-            }
-            else if(loginFailurePolicy.loginFailurePolicyType === LOGIN_FAILURE_POLICY_PAUSE){
-                // Have we surpassed the globally maximum allowed login failures (globally, either by tenant configuration or by system default)?
-                const maximumLoginFailures: number = loginFailurePolicy.maximumLoginFailures ? loginFailurePolicy.maximumLoginFailures : DEFAULT_MAXIMUM_LOGIN_FAILURES;
-                if(failureCount >= maximumLoginFailures){
-                    nextLoginTime = Number.MAX_SAFE_INTEGER;
-                    lockUser = true;
-                }
-                else{
-                    const failureThreshold = loginFailurePolicy.failureThreshold;
-                    // Are we just at the threshold for another pause? For example, the threshold is 8 consecutive
-                    // failed logins before a pause at we are at the 8th or 16th or 24th or ... failure, 
-                    if(failureCount % failureThreshold === 0){
-                        const pauseDurationInMinutes: number = loginFailurePolicy.pauseDurationMinutes ? loginFailurePolicy.pauseDurationMinutes : DEFAULT_LOGIN_PAUSE_TIME_MINUTES;
-                        nextLoginTime = nowMs + (pauseDurationInMinutes * 60 * 1000);
-                    }
-                }
-            }
-
-            await identityDao.addFailedLogin({
-                failureAtMs: nowMs,
-                failureCount: failureCount,
-                nextLoginNotBefore: nextLoginTime,
-                userId: user.userId
-            });
-
-            if(lockUser){
-                user.locked = true;
-                await identityDao.updateUser(user);
-            }
-            // We can safely delete the previous failed attempts
-            if(userFailedLoginAttempts.length > 0){
-                for(let i = 0; i < userFailedLoginAttempts.length; i++){
-                    identityDao.removeFailedLogin(userFailedLoginAttempts[i].userId, userFailedLoginAttempts[i].failureAtMs);
-                }
-            }
-            
-            response.authenticationError.errorCode = "ERROR_INVALID_CREDENTIALS";
+        const validationResult = await this.validateAuthenticationAttempt(user, arrUserAuthenticationStates[index].tenantId, password, arrUserAuthenticationStates[index]);
+        if(!validationResult.isValid){            
+            response.authenticationError.errorCode = validationResult.errorMessage;
             return Promise.resolve(response);
         }
-
-
-        // Otherwise the password is valid and we should remove the failed login attempts
-        // and update the existing authentication state and return the new state.
-        identityDao.resetFailedLoginAttempts(user.userId);
 
         arrUserAuthenticationStates[index].authenticationStateStatus = STATUS_COMPLETE;
         await identityDao.updateUserAuthenticationState(arrUserAuthenticationStates[index]);
@@ -657,6 +773,96 @@ class AuthenticateUserService extends IdentityService {
         
         return Promise.resolve(response);
 
+    }
+
+    public async authenticateUserAndMigrate(username: string, password: string, tenantId: string, authenticationSessionToken: string, preAuthToken: string | null): Promise<UserAuthenticationStateResponse> {
+        const response: UserAuthenticationStateResponse = this.initUserAuthenticationStateResponse(authenticationSessionToken, tenantId, preAuthToken);
+
+        const arrUserAuthenticationStates: Array<UserAuthenticationState> = await this.getSortedAuthenticationStates(authenticationSessionToken);
+        const index: number = await this.validateAuthenticationStep(arrUserAuthenticationStates, response, AuthenticationState.EnterPasswordAndMigrateUser);
+        if(index < 0){
+            return Promise.resolve(response);
+        }
+        const tenant: Tenant | null = await tenantDao.getTenantById(arrUserAuthenticationStates[index].tenantId);
+        if(tenant === null){
+            response.authenticationError.errorCode = "ERROR_TENANT_NOT_FOUND";
+            response.userAuthenticationState.authenticationState = AuthenticationState.Error;
+            return Promise.resolve(response);
+        }
+
+        const user: User | null = await identityDao.getUserBy("id", arrUserAuthenticationStates[index].userId);
+        if(user === null){
+            response.authenticationError.errorCode = "ERROR_USER_NOT_FOUND";
+            response.userAuthenticationState.authenticationState = AuthenticationState.Error;
+            return Promise.resolve(response);
+        }
+
+        const legacyUserMigrationConfiguration: TenantLegacyUserMigrationConfig | null = await tenantDao.getLegacyUserMigrationConfiguration(arrUserAuthenticationStates[index].tenantId);
+        if(!legacyUserMigrationConfiguration || !legacyUserMigrationConfiguration.authenticationUri || !legacyUserMigrationConfiguration.userProfileUri){
+            response.authenticationError.errorCode = "ERROR_NO_LEGACY_USER_MIGRATION_CONFIGURATION_FOUND";
+            response.userAuthenticationState.authenticationState = AuthenticationState.Error;
+            return Promise.resolve(response);
+        }
+
+        const authnResponse: LegacyUserAuthenticationResponse | null = await oidcServiceUtils.legacyUserAuthentication(legacyUserMigrationConfiguration.authenticationUri, username, password);
+        if(authnResponse === null || !authnResponse.accessToken){
+            response.authenticationError.errorCode = "ERROR_INVALID_CREDENTIALS_FOR_USER_MIGRATION";
+            response.userAuthenticationState.authenticationState = AuthenticationState.Error;
+            return Promise.resolve(response);
+        }
+
+        const legacyProfile: LegacyUserProfile | null = await oidcServiceUtils.legacyUserProfile(legacyUserMigrationConfiguration.userProfileUri, authnResponse.accessToken);
+        if(legacyProfile === null){
+            response.authenticationError.errorCode = "ERROR_NO_LEGACY_USER_PROFILE_FOUND";
+            response.userAuthenticationState.authenticationState = AuthenticationState.Error;
+            return Promise.resolve(response);
+        }
+
+        user.address = legacyProfile.address;
+        user.emailVerified = legacyProfile.emailVerified;
+        user.enabled = true;
+        user.firstName = legacyProfile.firstName;
+        user.lastName = legacyProfile.lastName,
+        user.locked = false,
+        user.nameOrder = legacyProfile.nameOrder,
+        user.address = legacyProfile.address,
+        user.addressLine1 = legacyProfile.addressLine1,
+        user.city = legacyProfile.city,
+        user.postalCode = legacyProfile.postalCode,
+        user.stateRegionProvince = legacyProfile.stateRegionProvince,
+        user.countryCode = legacyProfile.countryCode,
+        user.middleName = legacyProfile.middleName,
+        user.phoneNumber = legacyProfile.phoneNumber,
+        user.preferredLanguageCode = legacyProfile.preferredLanguageCode,
+        user.federatedOIDCProviderSubjectId = "",
+        user.markForDelete = false;
+        
+        const tenantPasswordConfig: TenantPasswordConfig = await tenantDao.getTenantPasswordConfig(arrUserAuthenticationStates[index].tenantId) || DEFAULT_TENANT_PASSWORD_CONFIGURATION;
+
+        await identityDao.updateUser(user);
+        await identityDao.assignUserToTenant(arrUserAuthenticationStates[index].tenantId, user.userId, "PRIMARY");
+        
+        const userCredential: UserCredential = this.generateUserCredential(user.userId, password, tenantPasswordConfig.passwordHashingAlgorithm);
+        await identityDao.addUserCredential(userCredential);
+        
+        await this.updateObjectSearchIndex(tenant, user, "PRIMARY");
+        await this.updateRelSearchIndex(tenant.tenantId, tenant.tenantId, user, USER_TENANT_REL_TYPE_PRIMARY);
+        
+        arrUserAuthenticationStates[index].authenticationStateStatus = STATUS_COMPLETE;
+        await identityDao.updateUserAuthenticationState(arrUserAuthenticationStates[index]);
+
+        const nextUserAuthenticationState: UserAuthenticationState = arrUserAuthenticationStates[index + 1];
+        if(nextUserAuthenticationState.authenticationState === AuthenticationState.RotatePassword){
+            const passwordConfig = await this.determineTenantPasswordConfig(nextUserAuthenticationState.userId, nextUserAuthenticationState.tenantId);
+            response.passwordConfig = passwordConfig;
+        }                
+        if(nextUserAuthenticationState.authenticationState === AuthenticationState.RedirectBackToApplication || nextUserAuthenticationState.authenticationState === AuthenticationState.RedirectToIamPortal){
+            await this.handleAuthenticationCompletion(user, nextUserAuthenticationState, arrUserAuthenticationStates, response);
+        }
+        else{
+            response.userAuthenticationState = nextUserAuthenticationState;
+        }
+        return response;
     }
 
 
@@ -842,9 +1048,9 @@ class AuthenticateUserService extends IdentityService {
             return response;
         }
 
-        const isTokenValid: boolean = await this.validateTOTP(userId, totpTokenValue);
-        if(!isTokenValid){
-            response.authenticationError.errorCode = "ERROR_INVALID_TOTP_TOKEN";
+        const validationResult = await this.validateAuthenticationAttempt(user, arrUserAuthenticationStates[index].tenantId, totpTokenValue, arrUserAuthenticationStates[index]);        
+        if(!validationResult.isValid){
+            response.authenticationError.errorCode = validationResult.errorMessage;
             response.userAuthenticationState.authenticationState = AuthenticationState.Error;
             return response;
         }
@@ -911,16 +1117,16 @@ class AuthenticateUserService extends IdentityService {
             response.userAuthenticationState.authenticationState = AuthenticationState.Error;
             return response;
         }
-        let isValid: boolean = false;
+        let validationResult = null;
         try{
-            isValid = await this.authenticateFIDO2Key(userId, fido2KeyAuthenticationInput);
+            validationResult = await this.validateAuthenticationAttempt(user, arrUserAuthenticationStates[index].tenantId, fido2KeyAuthenticationInput, arrUserAuthenticationStates[index])
         }
         catch(err: any){
             response.authenticationError.errorCode = err.message
             return response;
         }
-        if(!isValid){
-            response.authenticationError.errorCode = "ERROR_INVALID_SECURITY_KEY_INPUT";
+        if(!validationResult.isValid){
+            response.authenticationError.errorCode = validationResult.errorMessage;
             return response;
         }
         // Update the authentication state values;
@@ -1006,7 +1212,7 @@ class AuthenticateUserService extends IdentityService {
         return response;
     }
 
-    public async cancelAuthentication(userId: string, authenticationSessionToken: string, preAuthToken: string | null): Promise<UserAuthenticationStateResponse> {
+    public async cancelAuthentication(authenticationSessionToken: string, preAuthToken: string | null): Promise<UserAuthenticationStateResponse> {
         const response: UserAuthenticationStateResponse = this.initUserAuthenticationStateResponse(authenticationSessionToken, "", preAuthToken);
         const arrUserAuthenticationState = await identityDao.getUserAuthenticationStates(authenticationSessionToken);
         for(let i = 0; i < arrUserAuthenticationState.length; i++){
@@ -1028,6 +1234,108 @@ class AuthenticateUserService extends IdentityService {
         return response;
     }   
 
+    /**
+     * 
+     * @param user 
+     * @param tenantId 
+     * @param authenticationToken 
+     * @returns 
+     */
+    protected async validateAuthenticationAttempt(user: User, tenantId: string, authenticationToken: string | Fido2KeyAuthenticationInput, userAuthenticationState: UserAuthenticationState): Promise<{isValid: boolean, errorMessage: string}>{
+
+        if(user.locked === true){
+            return {isValid: false, errorMessage: "ERROR_USER_IS_LOCKED"};
+        }
+        const userFailedLoginAttempts: Array<UserFailedLogin> = await identityDao.getFailedLogins(user.userId);
+        let loginFailurePolicy: TenantLoginFailurePolicy | null = await tenantDao.getLoginFailurePolicy(tenantId);
+        if(loginFailurePolicy === null){
+            loginFailurePolicy = DEFAULT_LOGIN_FAILURE_POLICY;
+        }
+
+        // We will check to see if the user can authenticate based on the number of failures they have previously
+        // and if we have a failure policy type of pause and the next login time allowed is at some point in the past.
+        if(userFailedLoginAttempts.length > 0 && loginFailurePolicy.loginFailurePolicyType === LOGIN_FAILURE_POLICY_PAUSE){
+            if(userFailedLoginAttempts[length - 1].nextLoginNotBefore > Date.now()){
+                return {isValid: false, errorMessage: "ERROR_AUTHENTICTION_IS_PAUSED_FOR_USER"}
+            }
+        }
+
+        let valid: boolean = false;
+        let errorMessage: string = "";
+        if(userAuthenticationState.authenticationState === AuthenticationState.EnterPassword){
+            const userCredential: UserCredential | null = await identityDao.getUserCredentialForAuthentication(user.userId);
+            if(!userCredential){
+                return {isValid: false, errorMessage: "ERROR_UNABLE_TO_FIND_CREDENTIALS_FOR_USER"};
+            }
+            valid = this.validateUserCredentials(userCredential, authenticationToken as string);
+            errorMessage = "ERROR_INVALID_CREDENTIALS";
+        }
+        else if(userAuthenticationState.authenticationState === AuthenticationState.ValidateTotp){
+            valid = await this.validateTOTP(user.userId, authenticationToken as string);
+            errorMessage = "ERROR_TOTP_TOKEN_INVALID";
+        }
+        else if(userAuthenticationState.authenticationState === AuthenticationState.ValidateSecurityKey){
+            valid = await this.authenticateFIDO2Key(user.userId, authenticationToken as Fido2KeyAuthenticationInput);
+            errorMessage = "ERROR_INVALID_SECURITY_KEY_INPUT";
+        }
+
+        if(!valid){
+
+            // 1.   Do we need to lock the user
+            // 2.   If not, do we need to pause the login attempts for any length of time?
+            const nowMs = Date.now();
+            const failureCount: number = userFailedLoginAttempts.length === 0 ? 1 : userFailedLoginAttempts[userFailedLoginAttempts.length - 1].failureCount + 1;
+            let nextLoginTime = nowMs;
+            let lockUser: boolean = false;
+
+            if(loginFailurePolicy.loginFailurePolicyType === LOGIN_FAILURE_POLICY_LOCK_USER_ACCOUNT){
+                if(failureCount >= loginFailurePolicy.failureThreshold){
+                    nextLoginTime = Number.MAX_SAFE_INTEGER;
+                    lockUser = true;
+                }
+            }
+            else if(loginFailurePolicy.loginFailurePolicyType === LOGIN_FAILURE_POLICY_PAUSE){
+                // Have we surpassed the globally maximum allowed login failures (globally, either by tenant configuration or by system default)?
+                const maximumLoginFailures: number = loginFailurePolicy.maximumLoginFailures ? loginFailurePolicy.maximumLoginFailures : DEFAULT_MAXIMUM_LOGIN_FAILURES;
+                if(failureCount >= maximumLoginFailures){
+                    nextLoginTime = Number.MAX_SAFE_INTEGER;
+                    lockUser = true;
+                }
+                else{
+                    const failureThreshold = loginFailurePolicy.failureThreshold;
+                    // Are we just at the threshold for another pause? For example, the threshold is 8 consecutive
+                    // failed logins before a pause at we are at the 8th or 16th or 24th or ... failure, 
+                    if(failureCount % failureThreshold === 0){
+                        const pauseDurationInMinutes: number = loginFailurePolicy.pauseDurationMinutes ? loginFailurePolicy.pauseDurationMinutes : DEFAULT_LOGIN_PAUSE_TIME_MINUTES;
+                        nextLoginTime = nowMs + (pauseDurationInMinutes * 60 * 1000);
+                    }
+                }
+            }
+
+            await identityDao.addFailedLogin({
+                failureAtMs: nowMs,
+                failureCount: failureCount,
+                nextLoginNotBefore: nextLoginTime,
+                userId: user.userId
+            });
+
+            if(lockUser){
+                user.locked = true;
+                await identityDao.updateUser(user);
+            }
+            // We can safely delete the previous failed attempts
+            if(userFailedLoginAttempts.length > 0){
+                for(let i = 0; i < userFailedLoginAttempts.length; i++){
+                    identityDao.removeFailedLogin(userFailedLoginAttempts[i].userId, userFailedLoginAttempts[i].failureAtMs);
+                }
+            }
+            return {isValid: false, errorMessage: errorMessage};
+        }
+        // Otherwise the password is valid and we should remove the failed login attempts
+        identityDao.resetFailedLoginAttempts(user.userId);
+
+        return {isValid: true, errorMessage: errorMessage};
+    }
 
     /**
      * 
@@ -1191,3 +1499,4 @@ class AuthenticateUserService extends IdentityService {
 }
 
 export default AuthenticateUserService
+

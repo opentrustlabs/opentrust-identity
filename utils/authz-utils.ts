@@ -3,22 +3,24 @@ import { OIDCContext } from "@/graphql/graphql-context";
 import { GraphQLError } from "graphql/error/GraphQLError";
 
 
-export function containsScope(allowedScope: string | Array<string>, availableScopes: Array<Scope>): boolean {
+export function containsScope(allowedScope: string | Array<string>, availableScopes: Array<Scope> | undefined | null): boolean {
     let hasScope: boolean = false;
-    if (!Array.isArray(allowedScope)) {
-        const scope: Scope | undefined = availableScopes.find(
-            (s: Scope) => s.scopeName === allowedScope
-        )
-        hasScope = scope !== undefined;
-    }
-    else {
-        for (let i = 0; i < allowedScope.length; i++) {
+    if(availableScopes){
+        if (!Array.isArray(allowedScope)) {
             const scope: Scope | undefined = availableScopes.find(
-                (s: Scope) => s.scopeName === allowedScope[i]
+                (s: Scope) => s.scopeName === allowedScope
             )
-            if(scope !== undefined){
-                hasScope = true;
-                break;
+            hasScope = scope !== undefined;
+        }
+        else {
+            for (let i = 0; i < allowedScope.length; i++) {
+                const scope: Scope | undefined = availableScopes.find(
+                    (s: Scope) => s.scopeName === allowedScope[i]
+                )
+                if(scope !== undefined){
+                    hasScope = true;
+                    break;
+                }
             }
         }
     }

@@ -96,6 +96,9 @@ type Query {
     ## i18n
     getStateProvinceRegions(countryCode: String!): [StateProvinceRegion!]!
 
+    ## Captcha
+    getCaptchaConfig: CaptchaConfig
+
 
 }
 
@@ -137,12 +140,13 @@ type Mutation {
     removeUserFromTenant(tenantId: String!, userId: String!): String
     deleteUserSession(userId: String!, clientId: String!, tenantId: String!): String
     rotatePassword(userId: String!, oldPassword: String!, newPassword: String!): Boolean
+    unlockUser(userId: String!): Boolean
     
 
     ## Authentication Flows
-    logout(userId: String): String
     authenticateHandleUserNameInput(username: String!, tenantId: String, preAuthToken: String, returnToUri: String): UserAuthenticationStateResponse!    
     authenticateUser(username: String!, password: String!, tenantId: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
+    authenticateUserAndMigrate(username: String!, password: String!, tenantId: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
     authenticateHandleForgotPassword(authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
     authenticateRotatePassword(userId: String!, newPassword: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
     authenticateConfigureTOTP(userId: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
@@ -150,7 +154,9 @@ type Mutation {
     authenticateRegisterSecurityKey(userId: String!, fido2KeyRegistrationInput: Fido2KeyRegistrationInput!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
     authenticateValidateSecurityKey(userId: String!, fido2KeyAuthenticationInput: Fido2KeyAuthenticationInput!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
     authenticateValidatePasswordResetToken(token: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
+    authenticateAcceptTermsAndConditions(accepted: Boolean!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
     cancelAuthentication(userId: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
+
 
     ## Social OIDC Authentication Flow
     authenticateWithSocialOIDCProvider(preAuthToken: String, tenantId: String!, federatedOIDCProviderId: String!): UserAuthenticationStateResponse!
@@ -174,6 +180,7 @@ type Mutation {
 
     
     ## Keys
+    autoCreateSigningKey(keyInput: AutoCreateSigningKeyInput!): SigningKey!
     createSigningKey(keyInput: SigningKeyCreateInput!): SigningKey!
     updateSigningKey(keyInput: SigningKeyUpdateInput!): SigningKey!
 
@@ -238,7 +245,11 @@ type Mutation {
     removeContact(contactId: String!): String!
 
     ## Mark for deletion
-    markForDelete(markForDeleteInput: MarkForDeleteInput!): MarkForDelete    
+    markForDelete(markForDeleteInput: MarkForDeleteInput!): MarkForDelete
+
+    ## Captcha
+    setCaptchaConfig(captchaConfigInput: CaptchaConfigInput!): CaptchaConfig!
+    removeCaptchaConfig: String!
 
 }
 
@@ -283,6 +294,10 @@ type Tenant {
     allowForgotPassword: Boolean!
     defaultRateLimit: Int
     defaultRateLimitPeriodMinutes: Int
+    allowBackupEmail: Boolean!
+    registrationRequireTermsAndConditions: Boolean!
+    termsAndConditionsUri: String
+    registrationRequireCaptcha: Boolean!
 }
 
 type TenantSupportedClaimRel {
@@ -336,9 +351,13 @@ type FederatedOIDCProviderTenantRel {
     tenantId: String!
 }
 
-type SocialOIDCProviderTenantRel {
-    federatedOIDCProviderId: String!
-    tenantId: String!
+type CaptchaConfig {
+    alias: String!
+    projectId: String
+    siteKey: String!
+    apiKey: String!
+    minScopeThreshold: Float
+    useCaptchaV3: Boolean!
 }
 
 # domain is the primary key (unique) in this relationship.
@@ -464,6 +483,12 @@ type User {
     enabled: Boolean!
     nameOrder: String!
     markForDelete: Boolean!
+}
+
+type UserTermsAndConditionsAccepted {
+    userId: String!
+    tenantId: String!
+    acceptedAtMs: Float!
 }
 
 type UserTenantRel {
@@ -694,6 +719,7 @@ type RefreshData {
     codeChallengeMethod: String
     refreshCount: Int!
     scope: String!
+    expiresAtMs: Float!
 }
 
 enum FederatedOIDCAuthorizationRelType {
@@ -815,6 +841,8 @@ enum AuthenticationState {
     EXPIRED
     CANCELLED
     ERROR
+    ACCEPT_TERMS_AND_CONDITIONS
+    ENTER_PASSWORD_AND_MIGRATE_USER
 }
 
 type AuthenticationError {
@@ -1197,6 +1225,10 @@ input TenantCreateInput {
     allowForgotPassword: Boolean!
     defaultRateLimit: Int
     defaultRateLimitPeriodMinutes: Int
+    allowBackupEmail: Boolean!
+    registrationRequireTermsAndConditions: Boolean!
+    termsAndConditionsUri: String
+    registrationRequireCaptcha: Boolean!
 }
 
 input TenantUpdateInput {
@@ -1216,6 +1248,10 @@ input TenantUpdateInput {
     allowForgotPassword: Boolean!
     defaultRateLimit: Int
     defaultRateLimitPeriodMinutes: Int
+    allowBackupEmail: Boolean!
+    registrationRequireTermsAndConditions: Boolean!
+    termsAndConditionsUri: String
+    registrationRequireCaptcha: Boolean!
 }
 
 input TenantLegacyUserMigrationConfigInput {
@@ -1286,6 +1322,18 @@ input SigningKeyCreateInput {
     certificate: String
     publicKey: String
     expiresAtMs: Float
+}
+
+input AutoCreateSigningKeyInput {
+    tenantId: String!
+    keyType: String!
+    keyTypeId: String
+    keyName: String!
+    keyUse: String!
+    password: String
+    commonName: String!
+    organizationName: String!
+    expiresAtMs: Float!
 }
 
 input SigningKeyUpdateInput {
@@ -1411,6 +1459,7 @@ input UserCreateInput {
     enabled: Boolean!
     nameOrder: String!
     password: String!
+    termsAndConditionsAccepted: Boolean!
 }
 
 input UserUpdateInput {
@@ -1470,4 +1519,13 @@ input Fido2KeyAuthenticationInput {
     type: String!
     authenticationAttachment: String!
     response: AuthenticatorAuthenticationResponseInput!
+}
+
+input CaptchaConfigInput {
+    alias: String!
+    projectId: String
+    siteKey: String!
+    apiKey: String!
+    minScopeThreshold: Float
+    useCaptchaV3: Boolean!
 }

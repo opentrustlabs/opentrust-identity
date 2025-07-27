@@ -28,9 +28,18 @@ const AuthSessionContext = createContext<AuthSessionProps>({
 
 const AuthenSessionContextProvider: React.FC<AuthSessionContextProps> = ({children}) => {
 
+    
+    // STATE VARIABLES
     const [ttl, setTtl] = React.useState<number>(0);
 
+    // HANDLER FUNCTIONS
     const scheduleTtlRefresh = () => {
+        // Create the initial value when the page loads
+        const expMs = getAccessTokenExpiresAtMs();
+        const now = Date.now();
+        setTtl(expMs ? expMs - now : 0);
+
+        // Then set the interval timer
         const delay = 60000;
         setInterval(
             () => {
