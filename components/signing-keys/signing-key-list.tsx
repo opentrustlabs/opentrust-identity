@@ -48,9 +48,8 @@ const SigningKeyList: React.FC<ResultListProps> = ({
             {c.isMedium &&
                 <>
                     <Typography component={"div"} fontWeight={"bold"} fontSize={"0.9em"}>
-                        <Grid2 container size={12} spacing={1} marginBottom={"16px"} >
-                            <Grid2 size={1}></Grid2>
-                            <Grid2 size={7}>Key Name</Grid2>
+                        <Grid2 container size={12} spacing={1} marginBottom={"16px"} >                            
+                            <Grid2 size={8}>Key Name</Grid2>
                             <Grid2 size={3}>Key Type</Grid2>                                
                             <Grid2 size={1}></Grid2>
                         </Grid2>
@@ -67,9 +66,8 @@ const SigningKeyList: React.FC<ResultListProps> = ({
                         (item: ObjectSearchResultItem) => (
                             <Typography key={`${item.objectid}`} component={"div"} fontSize={"0.9em"}>
                                 <Divider></Divider>
-                                <Grid2 margin={"8px 0px 8px 0px"} container size={12} spacing={1}>
-                                    <Grid2 size={1}><DeleteForeverOutlinedIcon /></Grid2>
-                                    <Grid2 size={7}><Link style={{ color: "", fontWeight: "bold", textDecoration: "underline" }} href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/signing-keys/${item.objectid}`}>{item.name}</Link></Grid2>
+                                <Grid2 margin={"8px 0px 8px 0px"} container size={12} spacing={1}>                                    
+                                    <Grid2 size={8}><Link style={{ color: "", fontWeight: "bold", textDecoration: "underline" }} href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/signing-keys/${item.objectid}`}>{item.name}</Link></Grid2>
                                     <Grid2 size={3}>{item.subtype}</Grid2>
                                     <Grid2 size={1}>
                                         {mapViewExpanded.has(item.objectid) &&
@@ -95,7 +93,7 @@ const SigningKeyList: React.FC<ResultListProps> = ({
                                             <Grid2 size={12}>{item.enabled === true ? "ACTIVE" : "REVOKED"}</Grid2>
 
                                             <Grid2 sx={{ textDecoration: "underline" }} size={12}>Key Use</Grid2>
-                                            <Grid2 size={12}>{item.description}</Grid2>
+                                            <Grid2 size={12}>{KEY_USE_DISPLAY.get(item.description || "")}</Grid2>
 
 
                                             <Grid2 sx={{ textDecoration: "underline" }} size={12}>Object ID</Grid2>

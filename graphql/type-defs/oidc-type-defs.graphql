@@ -180,6 +180,7 @@ type Mutation {
 
     
     ## Keys
+    autoCreateSigningKey(keyInput: AutoCreateSigningKeyInput!): SigningKey!
     createSigningKey(keyInput: SigningKeyCreateInput!): SigningKey!
     updateSigningKey(keyInput: SigningKeyUpdateInput!): SigningKey!
 
@@ -1321,6 +1322,18 @@ input SigningKeyCreateInput {
     certificate: String
     publicKey: String
     expiresAtMs: Float
+}
+
+input AutoCreateSigningKeyInput {
+    tenantId: String!
+    keyType: String!
+    keyTypeId: String
+    keyName: String!
+    keyUse: String!
+    password: String
+    commonName: String!
+    organizationName: String!
+    expiresAtMs: Float!
 }
 
 input SigningKeyUpdateInput {

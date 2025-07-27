@@ -1,6 +1,6 @@
 "use client";
-import React, { Suspense, useContext, useEffect, useState } from "react";
-import { Autocomplete, Backdrop, Button, Checkbox, CircularProgress, Grid2, InputAdornment, MenuItem, Paper, Select, Snackbar, Stack, TextField, Typography } from "@mui/material";
+import React, { Suspense, useContext, useState } from "react";
+import { Autocomplete, Backdrop, Button, Checkbox, CircularProgress, Grid2, InputAdornment, MenuItem, Paper, Select, Stack, TextField, Typography } from "@mui/material";
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useRouter, useSearchParams } from 'next/navigation';

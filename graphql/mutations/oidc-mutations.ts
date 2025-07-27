@@ -289,6 +289,16 @@ export const SIGNING_KEY_CREATE_MUTATION = gql(`
     }
 `);
 
+export const AUTO_GENERATE_SIGNING_KEY_CREATE_MUTATION = gql(`
+    mutation autoCreateSigningKey($keyInput: AutoCreateSigningKeyInput!){
+        autoCreateSigningKey(keyInput: $keyInput) {
+            keyId
+            tenantId
+            keyName
+        }
+    }
+`);
+
 export const SIGNING_KEY_UPDATE_MUTATION = gql(`
     mutation updateSigningKey($keyInput: SigningKeyUpdateInput!) {
         updateSigningKey(keyInput: $keyInput) {

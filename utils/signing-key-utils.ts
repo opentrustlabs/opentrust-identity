@@ -2,7 +2,9 @@ import { generateKeyPairSync, KeyObject, PrivateKeyInput, createPrivateKey } fro
 import { pki } from "node-forge";
 import { generateRandomToken } from "./dao-utils";
 
-export function createJwtSigningKey(commonName: string, organizationName: string, expiresAt: Date): {passphrase: string, privateKey: string, certificate: string} {
+
+
+export function createSigningKey(commonName: string, organizationName: string, expiresAt: Date, providedPassphrase?: string): {passphrase: string, privateKey: string, certificate: string} {
 
     // **************************************************************************** //
     //     NOTES ON GENERATING A KEY PAIR, CSR, AND SIGNED CERTIFICATE              //
@@ -11,11 +13,12 @@ export function createJwtSigningKey(commonName: string, organizationName: string
     // 1.   Use a passphrase if possible. This should be a random value
     //      which will eventually need to be encrypted and stored along
     //      with the key data
-    const passphrase = generateRandomToken(20, "hex"); //"thisisthepassphraseforencryptingtheprivatekey";
+    const passphrase = providedPassphrase ? providedPassphrase : generateRandomToken(20, "hex"); 
 
 
     // 2.   Use the built-in functions in NodeJS to generate an RSA key pair.
-    //      We may have to increase the modulus to 3072
+    //      Once NIST deprecates 2048 key length by 2030 we will have to increase 
+    //      the modulus to 3072. We will also need to support post-quantum encryption.
     const { publicKey, privateKey } = generateKeyPairSync(
         "rsa",
         {

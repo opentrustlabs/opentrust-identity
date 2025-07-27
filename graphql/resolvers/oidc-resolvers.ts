@@ -380,6 +380,11 @@ const resolvers: Resolvers = {
             await keysService.createSigningKey(key);
             return key;
         },
+        autoCreateSigningKey: async(_: any, { keyInput }, oidcContext) => {
+            const keysService: SigningKeysService = new SigningKeysService(oidcContext);
+            const key: SigningKey = await keysService.autoCreateSigningKey(keyInput);
+            return key;
+        },
         updateSigningKey: async(_: any, { keyInput }, oidcContext) => {
             const keysService: SigningKeysService = new SigningKeysService(oidcContext);
             const key: SigningKey = {
