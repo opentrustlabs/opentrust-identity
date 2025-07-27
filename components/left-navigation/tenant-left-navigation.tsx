@@ -1,6 +1,6 @@
 "use client";
 import React, { useContext, useEffect } from "react";
-import { Autocomplete, Divider, Drawer, Grid2, Paper, Popper, Stack, TextField } from "@mui/material";
+import { Autocomplete, Divider, Drawer, Grid2, InputAdornment, Paper, Popper, Stack, TextField } from "@mui/material";
 import Link from "next/link";
 import MenuIcon from '@mui/icons-material/Menu';
 import GroupIcon from '@mui/icons-material/Group';
@@ -13,12 +13,14 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import PolicyIcon from '@mui/icons-material/Policy';
 import AutoAwesomeMosaicIcon from '@mui/icons-material/AutoAwesomeMosaic';
 import SpeedIcon from '@mui/icons-material/Speed';
+import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined';
 import { ResponsiveBreakpoints } from "@/components/contexts/responsive-context";
 import { LookaheadItem, LookaheadResult, SearchResultType, TenantMetaData } from "@/graphql/generated/graphql-types";
 import AddBoxIcon from '@mui/icons-material/AddBox';
 import VerifiedIcon from '@mui/icons-material/Verified';
+import Logout from '@mui/icons-material/Logout';
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
-import { AUTHENTICATION_GROUP_CREATE_SCOPE, AUTHENTICATION_GROUP_READ_SCOPE, AUTHORIZATION_GROUP_CREATE_SCOPE, AUTHORIZATION_GROUP_READ_SCOPE, CLIENT_CREATE_SCOPE, CLIENT_READ_SCOPE, FEDERATED_OIDC_PROVIDER_CREATE_SCOPE, FEDERATED_OIDC_PROVIDER_READ_SCOPE, KEY_CREATE_SCOPE, KEY_READ_SCOPE, RATE_LIMIT_CREATE_SCOPE, RATE_LIMIT_READ_SCOPE, SCOPE_CREATE_SCOPE, SCOPE_READ_SCOPE, TENANT_CREATE_SCOPE, TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE, TENANT_TYPE_ROOT_TENANT, USER_READ_SCOPE } from "@/utils/consts";
+import { AUTHENTICATION_GROUP_CREATE_SCOPE, AUTHENTICATION_GROUP_READ_SCOPE, AUTHORIZATION_GROUP_CREATE_SCOPE, AUTHORIZATION_GROUP_READ_SCOPE, CAPTCHA_CONFIG_SCOPE, CLIENT_CREATE_SCOPE, CLIENT_READ_SCOPE, FEDERATED_OIDC_PROVIDER_CREATE_SCOPE, FEDERATED_OIDC_PROVIDER_READ_SCOPE, KEY_CREATE_SCOPE, KEY_READ_SCOPE, QUERY_PARAM_AUTHENTICATE_TO_PORTAL, RATE_LIMIT_CREATE_SCOPE, RATE_LIMIT_READ_SCOPE, SCOPE_CREATE_SCOPE, SCOPE_READ_SCOPE, TENANT_CREATE_SCOPE, TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE, TENANT_TYPE_ROOT_TENANT, USER_READ_SCOPE } from "@/utils/consts";
 import CreateNewDialog from "../dialogs/create-new-dialog";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
 import { useRouter } from "next/navigation";
@@ -28,6 +30,7 @@ import SearchResultIconRenderer, { displaySearchCategory, getUriSection } from "
 import { AuthContext, AuthContextProps } from "@/components/contexts/auth-context";
 import { PortalUserProfile } from "@/graphql/generated/graphql-types";
 import { containsScope } from "@/utils/authz-utils";
+import { AuthSessionProps, useAuthSessionContext } from "../contexts/auth-session-context";
 
 
 interface NavigationProps {
@@ -43,6 +46,8 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
     const router = useRouter();
     const authContextProps: AuthContextProps = useContext(AuthContext);
     const profile: PortalUserProfile | null = authContextProps.portalUserProfile;
+    const authSessionProps: AuthSessionProps = useAuthSessionContext();
+    
 
     // STATE VARIABLES
     const [searchTerm, setSearchTerm] = React.useState<string>("");
@@ -50,7 +55,7 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
     const [drawerOpen, setDrawerOpen] = React.useState(false);
     const [openCreateNewDialog, setOpenCreateNewDialog] = React.useState<boolean>(false);
     const [lookaheadOptions, setLookaheadOptions] = React.useState<Array<{category: SearchResultType, displayCategory: string, id: string, displayValue: string}>>([]);
-
+    const [mobileSearchOpen, setMobileSearchOpen] = React.useState<boolean>(false);
 
     // GRAPHQL FUNCTIONS
     const {} = useQuery(LOOKAHEAD_SEARCH_QUERY, {
@@ -254,16 +259,17 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
                                 <Link className="undecorated" href={`/${tenantMetaData.tenant.tenantId}?section=signing-keys`} >Keys</Link>
                             </div>
                         }
-                        {tenantMetaData.tenant.tenantType === TENANT_TYPE_ROOT_TENANT &&
-                            <>                                
-                                <div className="left-navigation" >
+                        {tenantMetaData.tenant.tenantType === TENANT_TYPE_ROOT_TENANT && containsScope(CAPTCHA_CONFIG_SCOPE, profile?.scope) &&
+                            <div style={{marginTop: "8px", marginBottom: "8px"}}>
+                                <Divider />                             
+                                <div style={{marginTop: "8px", width: "100%"}} className="left-navigation" >
                                     <VerifiedIcon sx={{marginRight: "8px"}} />
                                     <Link className="undecorated" href={`/${tenantMetaData.tenant.tenantId}/catpcha-config`}>Captcha</Link>
                                 </div>                            
-                            </>                        
+                            </div>
                         }                        
                         <Divider />
-                        {containsScope([TENANT_CREATE_SCOPE, CLIENT_CREATE_SCOPE, AUTHORIZATION_GROUP_CREATE_SCOPE, AUTHENTICATION_GROUP_CREATE_SCOPE, SCOPE_CREATE_SCOPE, FEDERATED_OIDC_PROVIDER_CREATE_SCOPE, RATE_LIMIT_CREATE_SCOPE, KEY_CREATE_SCOPE], profile?.scope || []) &&
+                        {containsScope([TENANT_CREATE_SCOPE, CLIENT_CREATE_SCOPE, AUTHORIZATION_GROUP_CREATE_SCOPE, AUTHENTICATION_GROUP_CREATE_SCOPE, SCOPE_CREATE_SCOPE, FEDERATED_OIDC_PROVIDER_CREATE_SCOPE, RATE_LIMIT_CREATE_SCOPE, KEY_CREATE_SCOPE], profile?.scope) &&
                             <div className="left-navigation" onClick={() => setOpenCreateNewDialog(true)}  style={{marginTop: "8px", cursor: "pointer"}}>
                                 <AddBoxIcon sx={{marginRight: "8px"}} />
                                 <div>Create New...</div>
@@ -278,91 +284,113 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
                         container 
                         size={12}
                         color={"white"} 
-                        padding={"4px"}
+                        padding={"8px"}
                         spacing={2}
                         alignItems={"center"}
                         sx={{boxShadow: "0px 0px 1vh 0px grey", backgroundColor: "#1976d2", backgroundImage: "linear-gradient(#34111194, #1976d2)",}}
 
                     >
-                        <Grid2 size={1}>
-                            <MenuIcon 
-                                sx={{cursor: "pointer"}}
-                                onClick={showMenuItems}
-                            />    
-                        </Grid2>
-                        <Grid2 size={breakPoints.isSmall ? 5 : 4}>
-                            OpenTrust Identity
-                        </Grid2>
-                        <Grid2  size={breakPoints.isSmall? 6: 7} >
-                        {/* 
-                            // TODO
-                            //  Need to refactor this look and feel. Change the autocomplete textbox to a single
-                            // search icon, and when you click it, the full text box takes over the top of the
-                            // screen. 
-                        */}
-                            <Autocomplete                                
-                                freeSolo={true}
-                                value={searchTerm}
-                                filterOptions={(x) => x}
-                                size="small"
-                                id="searchinput"
-                                onKeyDown={handleKeyPressSearch}
-                                onInputChange={(evt, newInputValue, reason: string) => {                                    
-                                    setSearchTerm(newInputValue);
-                                }}
-                                groupBy={(option) => option.displayCategory}
-                                includeInputInList
-                                filterSelectedOptions
-                                onChange={(evt, value, reason) => {
-                                    if(reason === "clear"){
-                                        setLookaheadOptions([]);
-                                    }
-                                }}
-                                fullWidth={true}
-                                autoComplete={true}
-                                forcePopupIcon={false}
-                                slots={{ popper: Popper, paper: Paper }}                                
-                                renderOption={(props, option) => {
-                                    const { key, ...optionProps } = props;
-                                    return (
-                                        <li {...optionProps} key={option.id}>
-                                            <Grid2  alignItems={"center"} size={12} container spacing={0} >
-                                                <Grid2 sx={{ display: 'flex', width: 35 }}><SearchResultIconRenderer objectType={option.category}/></Grid2>
-                                                <Grid2 sx={{ width: 'calc(100% - 35px)', wordWrap: 'break-word' }}>
-                                                    <Link className="undecorated" href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/${getUriSection(option.category)}/${option.id}`}>{option.displayValue}</Link>
-                                                </Grid2>
-                                            </Grid2>
-                                        </li>
-                                        
-                                    )
-                                }}
-                                popupIcon={ <CloseOutlinedIcon /> }                                
-                                getOptionLabel={(option) => typeof option === "string" ? option : option.displayValue}
-                                slotProps={{                                    
-                                    paper: {
-                                        sx: {
-                                            width: 350                                            
+                        {mobileSearchOpen === false &&
+                            <React.Fragment>
+                                <Grid2 size={1}>
+                                    <MenuIcon 
+                                        sx={{cursor: "pointer"}}
+                                        onClick={showMenuItems}
+                                    />    
+                                </Grid2>
+                                <Grid2 size={10}>
+                                    OpenTrust Identity
+                                </Grid2>
+                                <Grid2 size={1} >
+                                    <SearchOutlinedIcon
+                                        sx={{cursor: "pointer"}}
+                                        onClick={() => {
+                                            setMobileSearchOpen(true);
+                                        }}
+                                    />
+                                </Grid2>
+                            </React.Fragment>
+                        }
+                        {mobileSearchOpen === true &&                        
+                            <Grid2  size={12} >                            
+                                <Autocomplete                                
+                                    freeSolo={true}
+                                    value={searchTerm}
+                                    filterOptions={(x) => x}
+                                    size="small"
+                                    id="searchinput"
+                                    onKeyDown={handleKeyPressSearch}
+                                    onInputChange={(evt, newInputValue, reason: string) => {                                    
+                                        setSearchTerm(newInputValue);
+                                    }}
+                                    groupBy={(option) => option.displayCategory}
+                                    includeInputInList
+                                    filterSelectedOptions
+                                    onChange={(evt, value, reason) => {
+                                        console.log(evt.type);
+                                        console.log(reason);
+                                        console.log(value)
+                                        console.log("value is emtpty string: " + (value === ""));
+                                        if(reason === "clear"){
+                                            setLookaheadOptions([]);
+                                            // Note that closing the search box is ONLY for the mobile view
+                                            // because there does not seem to be another way to (elegantly)
+                                            // indicate a "close" action. Do this action when the user click
+                                            // on the close "X" button, but not when the user removes the
+                                            // search term.
+                                            if(evt.type === "click"){
+                                                setMobileSearchOpen(false);
+                                            }
                                         }
-                                    }
-                                }}                                 
-                                renderInput={(params) => {
-                                    return <TextField 
-                                            {...params} 
-                                            size="small" 
-                                            multiline={false} 
-                                            label="" 
-                                            fullWidth={true} 
-                                            sx={{
-                                                '& .MuiInputBase-root': {
-                                                    backgroundColor: 'white', // <-- This controls the whole textbox "container"
-                                                    borderRadius: '4px',      // <-- You can also fix the radius here
-                                                  }
-                                            }}
-                                        />
-                                }}
-                                options={lookaheadOptions}
-                            />  
-                        </Grid2>
+                                    }}
+                                    fullWidth={true}
+                                    autoComplete={true}
+                                    forcePopupIcon={false}
+                                    slots={{ popper: Popper, paper: Paper }}                                
+                                    renderOption={(props, option) => {
+                                        const { key, ...optionProps } = props;
+                                        return (
+                                            <li {...optionProps} key={option.id}>
+                                                <Grid2  alignItems={"center"} size={12} container spacing={0} >
+                                                    <Grid2 sx={{ display: 'flex', width: 35 }}><SearchResultIconRenderer objectType={option.category}/></Grid2>
+                                                    <Grid2 sx={{ width: 'calc(100% - 35px)', wordWrap: 'break-word' }}>
+                                                        <Link className="undecorated" href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/${getUriSection(option.category)}/${option.id}`}>{option.displayValue}</Link>
+                                                    </Grid2>
+                                                </Grid2>
+                                            </li>
+                                            
+                                        )
+                                    }}
+                                    onClose={() => setMobileSearchOpen(false)}
+                                    popupIcon={ <CloseOutlinedIcon /> }
+                                    getOptionLabel={(option) => typeof option === "string" ? option : option.displayValue}
+                                    slotProps={{
+                                        paper: {
+                                            sx: {
+                                                width: 350                                            
+                                            }
+                                        }
+                                    }}
+                                    
+                                    renderInput={(params) => {
+                                        return <TextField 
+                                                {...params} 
+                                                size="small" 
+                                                multiline={false} 
+                                                label="" 
+                                                fullWidth={true} 
+                                                sx={{
+                                                    '& .MuiInputBase-root': {
+                                                        backgroundColor: 'white', // <-- This controls the whole textbox "container"
+                                                        borderRadius: '4px',      // <-- You can also fix the radius here
+                                                    }
+                                                }}
+                                            />
+                                    }}
+                                    options={lookaheadOptions}
+                                />  
+                            </Grid2>
+                        }
                     </Grid2>
                     <Drawer open={drawerOpen} onClose={toggleDrawer(false)}>
                         <Stack spacing={2} padding={"8px"} fontSize={"0.85em"} fontWeight={"bolder"} marginTop={"8px"} >
@@ -426,21 +454,40 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
                                     <Link className="undecorated" href={`/${tenantMetaData.tenant.tenantId}?section=signing-keys`} onClick={() => setDrawerOpen(false)}>Keys</Link>
                                 </div>
                             }
-                            {tenantMetaData.tenant.tenantType === TENANT_TYPE_ROOT_TENANT &&
-                                <>                                
-                                    <div style={{display: "inline-flex", alignItems: "center"}}>
+                            {tenantMetaData.tenant.tenantType === TENANT_TYPE_ROOT_TENANT && containsScope(CAPTCHA_CONFIG_SCOPE, profile?.scope) &&                            
+                                <div style={{marginTop: "16px"}}>
+                                    <Divider />
+                                    <div style={{display: "inline-flex", alignItems: "center", marginTop: "16px"}}>
                                         <VerifiedIcon sx={{marginRight: "8px"}} />
                                         <Link className="undecorated" href={`/${tenantMetaData.tenant.tenantId}/catpcha-config`}>Captcha</Link>
                                     </div>                            
-                                </>                        
+                                </div>                      
                             }  
                             <Divider />
                             {containsScope([TENANT_CREATE_SCOPE, CLIENT_CREATE_SCOPE, AUTHORIZATION_GROUP_CREATE_SCOPE, AUTHENTICATION_GROUP_CREATE_SCOPE, SCOPE_CREATE_SCOPE, FEDERATED_OIDC_PROVIDER_CREATE_SCOPE, RATE_LIMIT_CREATE_SCOPE, KEY_CREATE_SCOPE], profile?.scope || []) &&
-                                <div onClick={() => {setOpenCreateNewDialog(true); setDrawerOpen(false)}} style={{display: "inline-flex", alignItems: "center", cursor: "pointer"}}>
-                                    <AddBoxIcon sx={{marginRight: "8px"}} />
+                                <React.Fragment>
+                                    <div onClick={() => {setOpenCreateNewDialog(true); setDrawerOpen(false)}} style={{display: "inline-flex", alignItems: "center", cursor: "pointer"}}>
+                                        <AddBoxIcon sx={{marginRight: "8px"}} />
                                     <div>Create New...</div>
-                                </div>
+                                    </div>
+                                    <Divider />
+                                </React.Fragment>
                             }
+                            <div style={{marginTop: "16px"}}>
+                                <div 
+                                    onClick={() => {
+                                        setDrawerOpen(false);
+                                        authSessionProps.deleteAuthSessionData();
+                                        router.push(`/authorize/login?${QUERY_PARAM_AUTHENTICATE_TO_PORTAL}=true`);  
+                                    }}
+                                    style={{display: "inline-flex", alignItems: "center", cursor: "pointer"}}
+                                >
+                                    <Logout sx={{marginRight: "8px"}} />
+                                    <span>Logout</span>
+                                </div>
+                            </div>
+
+
                         </Stack>
                     </Drawer>
                 </>            

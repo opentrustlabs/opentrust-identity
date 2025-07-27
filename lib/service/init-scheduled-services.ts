@@ -5,7 +5,7 @@ import TenantDao from "@/lib/dao/tenant-dao";
 import { DaoFactory } from "@/lib/data-sources/dao-factory";
 import { CREATE_NEW_SIGNING_KEY_LOCK_NAME, KEY_TYPE_RSA, KEY_USE_DIGITAL_SIGNING, SIGNING_KEY_STATUS_ACTIVE, SIGNING_KEY_STATUS_REVOKED } from "@/utils/consts";
 import { randomUUID } from 'crypto'; 
-import { createJwtSigningKey } from "@/utils/signing-key-utils";
+import { createSigningKey } from "@/utils/signing-key-utils";
 import { generateRandomToken } from "@/utils/dao-utils";
 import { CronJob } from "cron";
 import DeletionService from "./deletion-service";
@@ -109,7 +109,7 @@ async function createKey(tenant: Tenant){
     const keyVersion = generateRandomToken(8, "hex").toUpperCase();
     const keyName = `${tenant.tenantName} JWT Signing Key V-${keyVersion}`;
 
-    const signingKeyData = createJwtSigningKey(keyName, tenant.tenantName, expiresAtDate);
+    const signingKeyData = createSigningKey(keyName, tenant.tenantName, expiresAtDate);
     // console.log(signingKeyData.passphrase);
     // console.log(signingKeyData.privateKey);
     // console.log(signingKeyData.certificate);

@@ -1,4 +1,4 @@
-import { TenantAnonymousUserConfiguration, TenantLoginFailurePolicy, Tenant, TenantLegacyUserMigrationConfig, TenantLookAndFeel, TenantManagementDomainRel, TenantPasswordConfig, TenantRestrictedAuthenticationDomainRel } from "@/graphql/generated/graphql-types";
+import { TenantAnonymousUserConfiguration, TenantLoginFailurePolicy, Tenant, TenantLegacyUserMigrationConfig, TenantLookAndFeel, TenantManagementDomainRel, TenantPasswordConfig, TenantRestrictedAuthenticationDomainRel, CaptchaConfig } from "@/graphql/generated/graphql-types";
 
 
 abstract class TenantDao {
@@ -62,7 +62,7 @@ abstract class TenantDao {
 
     abstract createTenantLegacyUserMigrationConfiguration(tenantLegacyUserMigrationConfig: TenantLegacyUserMigrationConfig): Promise<TenantLegacyUserMigrationConfig | null>;
 
-    abstract setTenantLegacyUserMigrationConfiguration(tenantLegacyUserMigrationConfig: TenantLegacyUserMigrationConfig): Promise<TenantLegacyUserMigrationConfig | null>;
+    abstract updateTenantLegacyUserMigrationConfiguration(tenantLegacyUserMigrationConfig: TenantLegacyUserMigrationConfig): Promise<TenantLegacyUserMigrationConfig | null>;
 
     abstract removeLegacyUserMigrationConfiguration(tenantId: string): Promise<void>;
 
@@ -75,6 +75,8 @@ abstract class TenantDao {
     abstract removeAllUsersFromTenant(tenantId: string): Promise<void>;
 
     abstract removeAllAuthStateFromTenant(tenantId: string): Promise<void>;
+
+    abstract getCaptchaConfig(): Promise<CaptchaConfig | null>;
 
 }
 

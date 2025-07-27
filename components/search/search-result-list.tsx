@@ -8,7 +8,6 @@ import UnfoldMoreOutlinedIcon from '@mui/icons-material/UnfoldMoreOutlined';
 import UnfoldLessOutlinedIcon from '@mui/icons-material/UnfoldLessOutlined';
 import Link from "next/link";
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import DeleteForeverOutlinedIcon from '@mui/icons-material/DeleteForeverOutlined';
 import { ResultListProps } from "../layout/search-result-list-layout";
 import SearchResultIconRenderer, { getUriSection } from "./search-result-icon-renderer";
 import { useClipboardCopyContext } from "../contexts/clipboard-copy-context";
@@ -65,7 +64,7 @@ const SearchResultList: React.FC<ResultListProps> = ({
                             <Typography key={`${item.objectid}`} component={"div"} fontSize={"0.9em"}>
                                 <Divider></Divider>
                                 <Grid2 margin={"8px 0px 8px 0px"} container size={12} spacing={1}>
-                                    <Grid2 size={1}><DeleteForeverOutlinedIcon /></Grid2>
+                                    <Grid2 size={1}><SearchResultIconRenderer objectType={item.objecttype} /></Grid2>
                                     <Grid2 size={8}><Link style={{ color: "", fontWeight: "bold", textDecoration: "underline" }} href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/${getUriSection(item.objecttype)}/${item.objectid}`}>{item.name}</Link></Grid2>
                                     <Grid2 size={2}>{item.subtype}</Grid2>
                                     <Grid2 size={1}>

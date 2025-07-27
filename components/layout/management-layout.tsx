@@ -9,6 +9,8 @@ import { ResponsiveBreakpoints, ResponsiveContext } from "../contexts/responsive
 import { useSearchParams } from "next/navigation";
 import ManagementFooter from "./management-footer";
 import { PageTitleContext } from "../contexts/page-title-context";
+import { AuthContext, AuthContextProps } from "../contexts/auth-context";
+import { PortalUserProfile } from "@/graphql/generated/graphql-types";
 
 
 interface Props {
@@ -20,6 +22,8 @@ const ManagementLayout: React.FC<Props> = ({children}) => {
     // CONTEXT OBJECTS
     const tenantBean: TenantMetaDataBean  = useContext(TenantContext);
     const breakPoints: ResponsiveBreakpoints = useContext(ResponsiveContext);
+    const authContextProps: AuthContextProps = useContext(AuthContext);
+    const profile: PortalUserProfile | null = authContextProps.portalUserProfile;
     const titleSetter = useContext(PageTitleContext);
     titleSetter.setPageTitle("OpenTrust IAM");
 
@@ -35,11 +39,11 @@ const ManagementLayout: React.FC<Props> = ({children}) => {
                 tenantMetaData={
                     tenantBean.getTenantMetaData()
                 }
+                profile={profile}
             />             
             <Container
-                maxWidth={breakPoints.isGreaterThanExtraLarge ? "xl" : "xl"}
-                disableGutters={true}
-                
+                maxWidth={"xl"}
+                disableGutters={true}                
             >
                 <Box sx={{ flexGrow: 1,  }}>
                     <Grid2 size={12} container spacing={1} sx={{}}>                

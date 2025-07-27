@@ -36,6 +36,7 @@ import UserSessionDetails from "./user-session-details";
 import StateProvinceRegionSelector from "./state-province-region-selector";
 import { AuthContext, AuthContextProps } from "@/components/contexts/auth-context";
 import { containsScope } from "@/utils/authz-utils";
+import { MuiTelInput } from "mui-tel-input";
 
 export interface UserDetailProps {
     user: User;
@@ -68,7 +69,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
         postalCode: user.postalCode || "",
         countryCode: user.countryCode,
         federatedOIDCProviderSubjectId: user.federatedOIDCProviderSubjectId,
-        middleName: user.middleName,
+        middleName: user.middleName || "",
         phoneNumber: user.phoneNumber,
         preferredLanguageCode: user.preferredLanguageCode
     }
@@ -80,7 +81,6 @@ const UserDetail: React.FC<UserDetailProps> = ({
     const [showMutationSnackbar, setShowMutationSnackbar] = React.useState<boolean>(false);
     const [isMarkedForDelete, setIsMarkedForDelete] = React.useState<boolean>(user.markForDelete);
     const [userTenantRels, setUserTenantRels] = React.useState<Array<UserTenantRelView> | undefined>(undefined);
-    const [primaryTenantId, setPrimaryTenantId] = React.useState<string | null>(null);
     const [showMFADeletionConfirmationDialog, setShowMFADeletionConfirmationDialog] = React.useState<boolean>(false);
     const [mfaTypeToDelete, setMfaTypeToDelete] = React.useState<string | null>(null);
     const [disableInputs] = React.useState<boolean>(user.markForDelete || !containsScope(USER_UPDATE_SCOPE, profile?.scope|| []));
@@ -362,12 +362,24 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                         </Grid2>
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Phone Number</div>
-                                            <TextField name="phoneNumber" id="phoneNumber" 
+                                            <MuiTelInput
+                                                name="phoneNumber" 
+                                                id="phoneNumber" 
+                                                value={userInput.phoneNumber || ""}
+                                                onChange={(newValue) => { 
+                                                    userInput.phoneNumber = newValue;
+                                                    setMarkDirty(true); 
+                                                    setUserInput({ ...userInput }); 
+                                                }}
+                                                fullWidth={true} 
+                                                size="small"
+                                            />
+                                            {/* <TextField name="phoneNumber" id="phoneNumber" 
                                                 disabled={disableInputs || userInput.federatedOIDCProviderSubjectId !== ""}
                                                 value={userInput.phoneNumber} 
                                                 onChange={(evt) => {userInput.phoneNumber = evt.target.value; setMarkDirty(true); setUserInput({...userInput}); }}
                                                 fullWidth={true} size="small" 
-                                            />
+                                            /> */}
                                         </Grid2>
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Preferred Language</div>
@@ -612,7 +624,6 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                         <UserTenantConfiguration
                                             onLoadCompleted={(tenants: Array<UserTenantRelView>) => {
                                                 setUserTenantRels(tenants);
-                                                setPrimaryTenantId(getPrimaryTenantId(tenants));
                                             }}
                                             userId={user.userId}
                                             onUpdateEnd={(success: boolean) => {

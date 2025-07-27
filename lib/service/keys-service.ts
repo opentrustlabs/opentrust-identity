@@ -1,14 +1,15 @@
-import { ObjectSearchResultItem, RelSearchResultItem, SearchResultType, SigningKey, Tenant } from "@/graphql/generated/graphql-types";
+import { AutoCreateSigningKeyInput, ObjectSearchResultItem, RelSearchResultItem, SearchResultType, SigningKey, Tenant } from "@/graphql/generated/graphql-types";
 import { GraphQLError } from "graphql/error/GraphQLError";
 import { randomUUID } from 'crypto'; 
 import { OIDCContext } from "@/graphql/graphql-context";
-import { KEY_CREATE_SCOPE, KEY_DELETE_SCOPE, KEY_READ_SCOPE, KEY_TYPES, KEY_UPDATE_SCOPE, KEY_USES, PKCS8_ENCRYPTED_PRIVATE_KEY_HEADER, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, SIGNING_KEY_STATUS_ACTIVE, SIGNING_KEY_STATUS_REVOKED, TENANT_READ_ALL_SCOPE } from "@/utils/consts";
+import { KEY_CREATE_SCOPE, KEY_DELETE_SCOPE, KEY_READ_SCOPE, KEY_TYPE_RSA, KEY_TYPES, KEY_UPDATE_SCOPE, KEY_USES, MIN_PRIVATE_KEY_PASSWORD_LENGTH, PKCS8_ENCRYPTED_PRIVATE_KEY_HEADER, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, SIGNING_KEY_STATUS_ACTIVE, SIGNING_KEY_STATUS_REVOKED, TENANT_READ_ALL_SCOPE } from "@/utils/consts";
 import { DaoFactory } from "../data-sources/dao-factory";
 import { Client } from "@opensearch-project/opensearch";
 import { getOpenSearchClient } from "../data-sources/search";
 import Kms from "../kms/kms";
 import { X509Certificate } from "crypto";
 import { authorizeByScopeAndTenant, ServiceAuthorizationWrapper } from "@/utils/authz-utils";
+import { createSigningKey } from "@/utils/signing-key-utils";
 
 
 const signingKeysDao = DaoFactory.getInstance().getSigningKeysDao();
@@ -86,6 +87,10 @@ class SigningKeysService {
         if(key.password === "" && key.privateKeyPkcs8.startsWith(PKCS8_ENCRYPTED_PRIVATE_KEY_HEADER)){
             throw new GraphQLError("ERROR_ENCRYPTED_PRIVATE_KEY_REQUIRES_PASSPHRASE");
         }
+        if(key.password && key.password !== "" && key.password.length < MIN_PRIVATE_KEY_PASSWORD_LENGTH){
+            throw new GraphQLError("ERROR_INVALID_PASSPHRASE_LENGTH_FOR_PRIVATE_KEY");
+        }
+
         if(key.keyType === "" || !KEY_TYPES.includes(key.keyType)){
             throw new GraphQLError("ERROR_MISSING_OR_INVALID_KEY_TYPE");
         }
@@ -119,11 +124,78 @@ class SigningKeysService {
         }
         
         key.keyId = randomUUID().toString();
+        key.status === SIGNING_KEY_STATUS_ACTIVE
 
         await signingKeysDao.createSigningKey(key);
         await this.updateSearchIndex(key);
         return Promise.resolve(key);        
     } 
+
+    public async autoCreateSigningKey(keyInput: AutoCreateSigningKeyInput): Promise<SigningKey> {
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [KEY_CREATE_SCOPE], keyInput.tenantId);
+        if(!authResult.isAuthorized){
+            throw new GraphQLError(authResult.errorMessage || "ERROR");
+        }
+
+        const tenant: Tenant | null = await tenantDao.getTenantById(keyInput.tenantId);
+        if(!tenant){
+            throw new GraphQLError("ERROR_TENANT_NOT_FOUND");
+        }
+        if(tenant.enabled === false || tenant.markForDelete === true){
+            throw new GraphQLError("ERROR_TENANT_IS_DISABLED_OR_MARKED_FOR_DELETE");
+        }
+        if(!keyInput.keyName || keyInput.keyName === ""){
+            throw new GraphQLError("ERROR_MISSING_KEY_NAME_OR_ALIAS");
+        }
+        if(keyInput.keyType === "" || keyInput.keyType !== KEY_TYPE_RSA){
+            throw new GraphQLError("ERROR_MISSING_OR_INVALID_KEY_TYPE");
+        }
+        if(keyInput.keyUse === "" || !KEY_USES.includes(keyInput.keyUse)){
+            throw new GraphQLError("ERROR_MISSING_OR_INVALID_KEY_USE");
+        }
+        if(!keyInput.commonName || keyInput.commonName === ""){
+            throw new GraphQLError("ERROR_MISSING_COMMON_NAME");
+        }
+        if(!keyInput.organizationName || keyInput.organizationName === ""){
+            throw new GraphQLError("ERROR_MISSING_ORGANIZATION_NAME");
+        }
+        const now: number = new Date().getTime();                                                    
+        const diff: number = keyInput.expiresAtMs - now;
+        // if negative or greater than a year, then reject
+        if(diff < 0 || diff > 31557600000){
+            throw new GraphQLError("ERROR_INVALID_EXPIRATION_FOR_CERTIFICATE");    
+        }
+        if(keyInput.password && keyInput.password !== "" && keyInput.password.length < MIN_PRIVATE_KEY_PASSWORD_LENGTH){
+            throw new GraphQLError("ERROR_INVALID_PASSPHRASE_LENGTH_FOR_PRIVATE_KEY");
+        }
+        
+        const expiresAtDate = new Date(keyInput.expiresAtMs);        
+        const inputPassword: string | undefined = !keyInput.password || keyInput.password === "" ? undefined : keyInput.password;
+        const {passphrase, privateKey, certificate} = createSigningKey(keyInput.commonName, keyInput.organizationName, expiresAtDate, inputPassword);
+        
+        const encrypted: string | null = await kms.encrypt(passphrase);
+        if(encrypted === null){
+            throw new GraphQLError("ERROR_UNABLE_TO_ENCRYPT_PRIVATE_KEY_INFORMATION");
+        }
+
+        const key: SigningKey = {
+            createdAtMs: now,
+            expiresAtMs: keyInput.expiresAtMs,
+            keyId: randomUUID().toString(),
+            keyName: keyInput.keyName,
+            keyType: keyInput.keyType,
+            keyUse: keyInput.keyUse,
+            markForDelete: false,
+            privateKeyPkcs8: privateKey,
+            status: SIGNING_KEY_STATUS_ACTIVE,
+            tenantId: keyInput.tenantId,
+            certificate: certificate,
+            password: encrypted
+        }
+        await signingKeysDao.createSigningKey(key);
+        await this.updateSearchIndex(key);
+        return Promise.resolve(key); 
+    }
 
     public async updateSigningKey(key: SigningKey): Promise<SigningKey> {
         

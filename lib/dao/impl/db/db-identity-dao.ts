@@ -1,4 +1,4 @@
-import { User, AuthenticationGroup, AuthorizationGroup, UserTenantRel, UserCredential, UserMfaRel, Fido2Challenge, UserAuthenticationState, UserRegistrationState, UserFailedLogin } from "@/graphql/generated/graphql-types";
+import { User, AuthenticationGroup, AuthorizationGroup, UserTenantRel, UserCredential, UserMfaRel, Fido2Challenge, UserAuthenticationState, UserRegistrationState, UserFailedLogin, UserTermsAndConditionsAccepted } from "@/graphql/generated/graphql-types";
 import IdentityDao, { UserLookupType } from "../../identity-dao";
 import UserAuthorizationGroupRelEntity from "@/lib/entities/authorization-group-user-rel-entity";
 import AuthorizationGroupEntity from "@/lib/entities/authorization-group-entity";
@@ -14,6 +14,7 @@ import UserFido2ChallengeEntity from "@/lib/entities/user-fido2-challenge-entity
 import UserFido2CounterRelEntity from "@/lib/entities/user-fido2-counter-rel-entity";
 import UserAuthenticationStateEntity from "@/lib/entities/user-authentication-state-entity";
 import UserRegistrationStateEntity from "@/lib/entities/user-registration-state-entity";
+import UserTermsAndConditionsAcceptedEntity from "@/lib/entities/user-terms-and-conditions-accepted-entity";
 
 class DBIdentityDao extends IdentityDao {
 
@@ -241,7 +242,8 @@ class DBIdentityDao extends IdentityDao {
     public async getFailedLogins(userId: string): Promise<Array<UserFailedLogin>> {
         const sequelize: Sequelize = await DBDriver.getConnection();
         const entities = await sequelize.models.userFailedLogin.findAll({
-            where: {userId: userId}
+            where: {userId: userId},
+            order: ["failureAtMs"]
         });
 
         if(!entities){
@@ -675,6 +677,16 @@ class DBIdentityDao extends IdentityDao {
         return arr.map((entity: UserRegistrationStateEntity) => entity.dataValues);
     }
 
+    public async getUserRegistrationStatesByEmail(email: string): Promise<Array<UserRegistrationState>>{
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        const arr: Array<UserRegistrationStateEntity> = await sequelize.models.userRegistrationState.findAll({
+            where: {
+                email: email
+            }
+        });
+        return arr.map((entity: UserRegistrationStateEntity) => entity.dataValues);
+    }
+
     public async updateUserRegistrationState(userRegistrationState: UserRegistrationState): Promise<UserRegistrationState> {
         const sequelize: Sequelize = await DBDriver.getConnection();
         await sequelize.models.userRegistrationState.update(userRegistrationState, {
@@ -697,6 +709,34 @@ class DBIdentityDao extends IdentityDao {
             }
         });
         return userRegistrationState;
+    }
+
+    public async addUserTermsAndConditionsAccepted(userTermsAndConditionsAccepted: UserTermsAndConditionsAccepted): Promise<UserTermsAndConditionsAccepted>{
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.userTermsAndConditionsAccepted.create(userTermsAndConditionsAccepted);
+        return Promise.resolve(userTermsAndConditionsAccepted);
+    }
+    
+    public async getUserTermsAndConditionsAccepted(userId: string, tenantId: string): Promise<UserTermsAndConditionsAccepted | null>{
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        const entity: UserTermsAndConditionsAcceptedEntity | null = await sequelize.models.userTermsAndConditionsAccepted.findOne({
+            where: {
+                userId: userId,
+                tenantId: tenantId
+            }
+        });
+        return entity ? entity.dataValues : null;
+    }
+    
+    public async deleteUserTermsAndConditionsAccepted(userId: string, tenantId: string): Promise<void>{
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.userTermsAndConditionsAccepted.destroy({
+            where: {
+                userId: userId,
+                tenantId: tenantId
+            }
+        });
+        return Promise.resolve();
     }
 
     public async deleteExpiredData(): Promise<void> {

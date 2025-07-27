@@ -443,7 +443,7 @@ const FederatedOIDCProviderDetail: React.FC<FederatedOIDCProviderDetailProps> = 
                             }
                         </Grid2>
                         
-                        <Grid2 size={12} marginBottom={"16px"}>
+                        {/* <Grid2 size={12} marginBottom={"16px"}>
                             {!isMarkedForDelete &&
                                 <Accordion defaultExpanded={false}  >
                                     <AccordionSummary
@@ -472,7 +472,7 @@ const FederatedOIDCProviderDetail: React.FC<FederatedOIDCProviderDetailProps> = 
                                     </AccordionDetails>
                                 </Accordion>
                             }
-                        </Grid2>
+                        </Grid2> */}
                     </Grid2>
                 </DetailPageMainContentContainer>
             </DetailPageContainer>
