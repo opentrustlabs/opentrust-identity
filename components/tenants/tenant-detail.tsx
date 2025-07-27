@@ -19,7 +19,7 @@ import PolicyIcon from '@mui/icons-material/Policy';
 import SpeedIcon from '@mui/icons-material/Speed';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import DisplaySettingsIcon from '@mui/icons-material/DisplaySettings';
-import AutoAwesomeMosaicIcon from '@mui/icons-material/AutoAwesomeMosaic';
+// import AutoAwesomeMosaicIcon from '@mui/icons-material/AutoAwesomeMosaic';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { TENANT_UPDATE_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import LoginFailureConfiguration from "./login-failure-configuration";
@@ -29,7 +29,7 @@ import AnonymousUserConfiguration from "./anonymous-user-configuration";
 import TenantLookAndFeelConfiguration from "./tenant-look-and-feel-configuration";
 import TenantManagementDomainConfiguration from "./tenant-management-domain-configuration";
 import TenantAuthenticationDomainConfiguration from "./tenant-authentication-domain-configuration";
-import TenantFederatedOIDCProviderConfiguration from "./tenant-federated-oidc-provider-configuration";
+// import TenantFederatedOIDCProviderConfiguration from "./tenant-federated-oidc-provider-configuration";
 import ContactConfiguration from "../contacts/contact-configuration";
 import { useClipboardCopyContext } from "../contexts/clipboard-copy-context";
 import DetailSectionActionHandler from "../layout/detail-section-action-handler";
@@ -115,6 +115,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
     const [disableInputs] = React.useState<boolean>(tenant.markForDelete || !containsScope(TENANT_UPDATE_SCOPE, profile?.scope || []));
     const [canDeleteTenant] = React.useState<boolean>(containsScope(TENANT_DELETE_SCOPE, profile?.scope || []));
     const [captchaConfigExists, setCaptchaConfigExists] = React.useState<boolean>(false);
+
 
     // GRAPHQL FUNCTIONS
     const {} = useQuery(CAPTCHA_CONFIG_QUERY, {
@@ -281,7 +282,25 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                                 size="small"
                                                 fullWidth={true}
                                                 value={tenantInput.federatedAuthenticationConstraint}
-                                                onChange={(evt) => { tenantInput.federatedAuthenticationConstraint = evt.target.value; setTenantInput({ ...tenantInput }); setOverviewDirty(true);}}
+                                                onChange={(evt) => { 
+                                                    tenantInput.federatedAuthenticationConstraint = evt.target.value; 
+                                                    // If the tenant should ONLY use external IdPs for login, remove
+                                                    // self-registration, anonymous user, verify email on registration,
+                                                    // migrate legacy users, login by phone, allow password recovery, require captcha, allow
+                                                    // backup-email.
+                                                    if(evt.target.value = FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE){
+                                                        tenantInput.allowUserSelfRegistration = false;
+                                                        tenantInput.allowBackupEmail = false;
+                                                        tenantInput.allowAnonymousUsers = false;
+                                                        tenantInput.allowForgotPassword = false;
+                                                        tenantInput.registrationRequireCaptcha = false;
+                                                        tenantInput.allowLoginByPhoneNumber = false;
+                                                        tenantInput.verifyEmailOnSelfRegistration = false;
+                                                        tenantInput.migrateLegacyUsers = false;
+                                                    }                                                    
+                                                    setTenantInput({ ...tenantInput }); 
+                                                    setOverviewDirty(true);
+                                                }}
                                             >
                                                 <MenuItem value={""}>Select...</MenuItem>
                                                 <MenuItem value={FEDERATED_AUTHN_CONSTRAINT_NOT_ALLOWED}>{FEDERATED_AUTHN_CONSTRAINT_DISPLAY.get(FEDERATED_AUTHN_CONSTRAINT_NOT_ALLOWED)}</MenuItem>
@@ -357,7 +376,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                             <Grid2 alignContent={"center"} size={10}>Allow user self-registration</Grid2>
                                             <Grid2 size={2}>
                                                 <Checkbox 
-                                                    disabled={disableInputs}
+                                                    disabled={disableInputs || tenantInput.federatedAuthenticationConstraint === FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE}
                                                     checked={tenantInput.allowUserSelfRegistration === true}
                                                     onChange={(_, checked: boolean) => {tenantInput.allowUserSelfRegistration = checked; setTenantInput({...tenantInput}); setOverviewDirty(true);}}
                                                 />
@@ -365,7 +384,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                             <Grid2 alignContent={"center"} size={10}>Allow anonymous users</Grid2>
                                             <Grid2 size={2}>
                                                 <Checkbox 
-                                                    disabled={disableInputs}
+                                                    disabled={disableInputs || tenantInput.federatedAuthenticationConstraint === FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE}
                                                     checked={tenantInput.allowAnonymousUsers === true}
                                                     onChange={(_, checked: boolean) => {tenantInput.allowAnonymousUsers = checked; setTenantInput({...tenantInput}); setOverviewDirty(true);}}
                                                 />
@@ -381,7 +400,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                             <Grid2 alignContent={"center"} size={10}>Verify email on registration</Grid2>
                                             <Grid2 size={2}>
                                                 <Checkbox 
-                                                    disabled={disableInputs}
+                                                    disabled={disableInputs || tenantInput.federatedAuthenticationConstraint === FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE}
                                                     checked={tenantInput.verifyEmailOnSelfRegistration === true}
                                                     onChange={(_, checked: boolean) => {tenantInput.verifyEmailOnSelfRegistration = checked; setTenantInput({...tenantInput}); setOverviewDirty(true);}}
                                                 />
@@ -389,7 +408,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                             <Grid2 alignContent={"center"} size={10}>Migrate legacy users</Grid2>
                                             <Grid2 size={2}>
                                                 <Checkbox 
-                                                    disabled={disableInputs}
+                                                    disabled={disableInputs || tenantInput.federatedAuthenticationConstraint === FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE}
                                                     checked={tenantInput.migrateLegacyUsers === true}
                                                     onChange={(_, checked: boolean) => {tenantInput.migrateLegacyUsers = checked; setTenantInput({...tenantInput}); setOverviewDirty(true);}}
                                                 />
@@ -397,7 +416,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                             <Grid2 alignContent={"center"} size={10}>Allow login by phone number</Grid2>
                                             <Grid2 size={2}>
                                                 <Checkbox 
-                                                    disabled={disableInputs}
+                                                    disabled={disableInputs || tenantInput.federatedAuthenticationConstraint === FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE}
                                                     checked={tenantInput.allowLoginByPhoneNumber === true}
                                                     onChange={(_, checked: boolean) => {tenantInput.allowLoginByPhoneNumber = checked; setTenantInput({...tenantInput}); setOverviewDirty(true);}}
                                                 />
@@ -405,7 +424,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                             <Grid2 alignContent={"center"} size={10}>Allow password recovery</Grid2>
                                             <Grid2 size={2}>
                                                 <Checkbox 
-                                                    disabled={disableInputs}
+                                                    disabled={disableInputs || tenantInput.federatedAuthenticationConstraint === FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE}
                                                     checked={tenantInput.allowForgotPassword === true}
                                                     onChange={(_, checked: boolean) => {tenantInput.allowForgotPassword = checked; setTenantInput({...tenantInput}); setOverviewDirty(true);}}
                                                 />
@@ -413,7 +432,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                             <Grid2 alignContent={"center"} size={10}>Require CAPTCHA on Registration</Grid2>
                                             <Grid2 size={2}>
                                                 <Checkbox 
-                                                    disabled={disableInputs || captchaConfigExists === false}
+                                                    disabled={disableInputs || captchaConfigExists === false || tenantInput.federatedAuthenticationConstraint === FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE}
                                                     checked={tenantInput.registrationRequireCaptcha === true}
                                                     onChange={(_, checked: boolean) => {
                                                         tenantInput.registrationRequireCaptcha = checked;
@@ -434,7 +453,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                                     }}
                                                 />
                                             </Grid2>
-                                            <Grid2 alignContent={"center"} size={10}>Require Terms And Conditions On Registration</Grid2>
+                                            <Grid2 alignContent={"center"} size={10}>Require Terms And Conditions Acceptance</Grid2>
                                             <Grid2 size={2}>
                                                 <Checkbox 
                                                     disabled={disableInputs}
@@ -616,7 +635,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                 </Accordion>
                             }
                         </Grid2>
-                        {tenantBean.getTenantMetaData().tenant.tenantType === TENANT_TYPE_ROOT_TENANT &&
+                        {/* {tenantBean.getTenantMetaData().tenant.tenantType === TENANT_TYPE_ROOT_TENANT &&
                             <Grid2 size={12}>
                                 {!isMarkedForDelete && 
                                     <Accordion >
@@ -648,7 +667,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                     </Accordion>
                                 }
                             </Grid2>
-                        }
+                        } */}
                         
                         {tenantBean.getTenantMetaData().tenant.tenantType === TENANT_TYPE_ROOT_TENANT &&
                             <Grid2 size={12} >

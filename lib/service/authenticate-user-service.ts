@@ -1,6 +1,6 @@
 import { OIDCContext } from "@/graphql/graphql-context";
 import IdentityDao from "../dao/identity-dao";
-import { Tenant, TenantPasswordConfig, User, UserCredential, UserMfaRel, TenantManagementDomainRel, FederatedOidcProvider, FederatedOidcProviderTenantRel, PreAuthenticationState, AuthorizationReturnUri, UserAuthenticationStateResponse, AuthenticationState, AuthenticationErrorTypes, UserAuthenticationState, UserFailedLogin, TenantLoginFailurePolicy, Fido2KeyAuthenticationInput, Fido2KeyRegistrationInput, TotpResponse, UserTermsAndConditionsAccepted, TenantLegacyUserMigrationConfig, TenantRestrictedAuthenticationDomainRel } from "@/graphql/generated/graphql-types";
+import { Tenant, TenantPasswordConfig, User, UserCredential, UserMfaRel, TenantManagementDomainRel, FederatedOidcProvider, FederatedOidcProviderTenantRel, PreAuthenticationState, AuthorizationReturnUri, UserAuthenticationStateResponse, AuthenticationState, AuthenticationErrorTypes, UserAuthenticationState, UserFailedLogin, TenantLoginFailurePolicy, Fido2KeyAuthenticationInput, Fido2KeyRegistrationInput, TotpResponse, UserTermsAndConditionsAccepted, TenantLegacyUserMigrationConfig, TenantRestrictedAuthenticationDomainRel, AuthenticationGroup } from "@/graphql/generated/graphql-types";
 import { DaoFactory } from "../data-sources/dao-factory";
 import TenantDao from "../dao/tenant-dao";
 import { GraphQLError } from "graphql/error";
@@ -13,6 +13,7 @@ import IdentityService from "./identity-service";
 import OIDCServiceUtils from "./oidc-service-utils";
 import { randomUUID } from "node:crypto";
 import { LegacyUserAuthenticationResponse, LegacyUserProfile } from "../models/principal";
+import AuthenticationGroupDao from "../dao/authentication-group-dao";
 
 const jwtServiceUtils: JwtServiceUtils = new JwtServiceUtils();
 const oidcServiceUtils: OIDCServiceUtils = new OIDCServiceUtils();
@@ -20,6 +21,7 @@ const identityDao: IdentityDao = DaoFactory.getInstance().getIdentityDao();
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
 const authDao: AuthDao = DaoFactory.getInstance().getAuthDao();
 const federatedOIDCProviderDao: FederatedOIDCProviderDao = DaoFactory.getInstance().getFederatedOIDCProvicerDao();
+const authenticationGroupDao: AuthenticationGroupDao = DaoFactory.getInstance().getAuthenticationGroupDao();
 
 class AuthenticateUserService extends IdentityService {
 
@@ -216,24 +218,30 @@ class AuthenticateUserService extends IdentityService {
         const response: UserAuthenticationStateResponse = this.initUserAuthenticationStateResponse("", "", preAuthToken);
 
         const preAuthenticationState: PreAuthenticationState | null = await authDao.getPreAuthenticationState(preAuthToken);
+        
+        // 1.   Error. No preauthentication data is found, so no way to check the tenant, client, user, etc.
         if(!preAuthenticationState){
             response.authenticationError.errorCode = "ERROR_INVALID_PRE_AUTH_TOKEN";
             return response;
         }
         const domain: string = getDomainFromEmail(email);
         const tenant: Tenant | null = await tenantDao.getTenantById(preAuthenticationState.tenantId);
+
+        // 2.   Error. No tenant found
         if(tenant === null){
             response.authenticationError.errorCode = "ERROR_INVALID_TENANT_FOR_PRE_AUTH_TOKEN";
             return response;
         }
         const federatedOidcProvider: FederatedOidcProvider | null = await federatedOIDCProviderDao.getFederatedOidcProviderByDomain(domain);
         
-        // There is no federated provider, and the tenant exclusively uses federated OIDC provider for authentication
+        // 3.   Error. There is no federated provider, and the tenant exclusively uses federated OIDC provider for authentication
         if(federatedOidcProvider === null && tenant.federatedAuthenticationConstraint === FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE){
             response.authenticationError.errorCode = "ERROR_USER_REGISTRATION_IS_NOT_PERMITTED_FOR_THIS_TENANT";
             return response;
         }
 
+        // 4.   Error. If the tenant only allows certain domain to authenticate users, and this user is not
+        //      among them.
         const arrRestrictedDomains: Array<TenantRestrictedAuthenticationDomainRel> = await tenantDao.getDomainsForTenantRestrictedAuthentication(tenant.tenantId);
         if(arrRestrictedDomains.length > 0){
             const belongsToRestrictedDomain = arrRestrictedDomains.find(
@@ -246,61 +254,75 @@ class AuthenticateUserService extends IdentityService {
         }
 
         const user: User | null = await identityDao.getUserBy("email", email.toLowerCase());
-
-        // TODO. Check to see if the user belongs to an authentication group configured for this client.
-        // 1.   if the user exists, use the preauth token to get the current state of the auth attempt.
-        // 2.   get the client id and then retrieve all of the authentication groups for the client.
-        // 3.   if any of the authn groups is marked as default, then allow to continue.
-        // 4.   otherwise, need to check to see if the user belongs to any of the authn groups
-        // 5.   if not, then error. otherwise continue.
-        //
-        // 6.   If the user does not exist, but the tenant allows for self registration or migration
-        //      then migrate the user completely, including any MFA types that are required.
-        // 7.   At the end of registration, throw an error saying the user has no access. This
-        //      is not very nice to do...
-
-        // Need to check if there is a legacy system configured, and if so, is the user 
-        // in that system?
-        let migrateUser: boolean = false;
-        console.log("checkpoint 1");
-        if(user === null){
-            console.log("checkpoint 2");
-            let tenantLegacyUserMigrationConfig: TenantLegacyUserMigrationConfig | null = null;
-            if(tenant.migrateLegacyUsers === true){
-                console.log("checkpoint 3");
-                tenantLegacyUserMigrationConfig = await tenantDao.getLegacyUserMigrationConfiguration(tenant.tenantId);
-                console.log("checkpoint 4");
-                if(tenantLegacyUserMigrationConfig && tenantLegacyUserMigrationConfig.usernameCheckUri && tenantLegacyUserMigrationConfig.authenticationUri && tenantLegacyUserMigrationConfig.userProfileUri){
-                    console.log("checkpoint 5");
-                    const userExistsInLegacySystem = await oidcServiceUtils.legacyUsernameCheck(`${tenantLegacyUserMigrationConfig.usernameCheckUri}?email=${email.toLowerCase()}`);
-                    console.log("checkpoint 6");
-                    if(userExistsInLegacySystem){
-                        console.log("checkpoint 7");
-                        migrateUser = true;
-                    }
-                }
-            }
-        }
-
-        // If user does not exist (either in the local data store or in a legacy system), there is no provider, and the tenant does not allow self-registration
-        if(user === null && !migrateUser && federatedOidcProvider === null && tenant.allowUserSelfRegistration === false){
-            response.authenticationError.errorCode = "ERROR_USER_REGISTRATION_IS_NOT_PERMITTED_FOR_THIS_TENANT";
-            return response;
-        }
-        // If the user exists but is not in a state where they can be authenticated.
+        // 5.   Error. If the user exists but is not in a state where they can be authenticated.
         if(user && (user.enabled === false || user.locked === true || user.markForDelete === true)){
             response.authenticationError.errorCode = "ERROR_USER_ACCOUNT_STATUS_NOT_VALID_FOR_AUTHENTICATION";
             return response;
         }
         
-        // Success cases
-        //
-        // At this point we know that the tenant exists and allows either a external OIDC provider
-        // or allows the user to login with a username/password or allows the user to register
+        
+        // 6.   Possible Error. If the user exists, but does not belong to a suitable authentication group.
+        // 
+        //      Mitigating circumstances: If the user is null and the tenant allows for self registration or migration
+        //      then register or migrate the user completely, including any MFA types that are required.
+        //      At the end of registration or authentication throw an error saying the user has no access if there
+        //      is no default authn group.
+        if(user !== null){            
+            let hasDefaultAuthnGroup: boolean = false;            
+            const clientAuthnGroups: Array<AuthenticationGroup> = await authenticationGroupDao.getAuthenticationGroups(undefined, preAuthenticationState.clientId, undefined);
+            for(let i = 0; i < clientAuthnGroups.length; i++){
+                if(clientAuthnGroups[i].defaultGroup === true){
+                    hasDefaultAuthnGroup = true;
+                    break;
+                }
+            }
+            if(!hasDefaultAuthnGroup){
+                const userAuthnGroups: Array<AuthenticationGroup> = await authenticationGroupDao.getAuthenticationGroups(undefined, undefined, user.userId);
+                const matchingGroup = userAuthnGroups.find(
+                    (userAuthnGroup: AuthenticationGroup) => {
+                        const a = clientAuthnGroups.find(
+                            (clientAuthnGroup: AuthenticationGroup) => userAuthnGroup.authenticationGroupId === clientAuthnGroup.authenticationGroupId
+                        );
+                        return a;
+                    }
+                );
+                if(matchingGroup === undefined){
+                    response.authenticationError.errorCode = "ERROR_USER_DOES_NOT_BELONG_TO_VALID_AUTHENTICATION_GROUP_FOR_CLIENT";
+                    return response;
+                }
+            }
+        }
+
+
+        // 7.   Error. If user does not exist (either in the local data store or in a legacy system), there is no provider, 
+        //      and the tenant does not allow self-registration
+        //      Need to check if there is a legacy system configured, and if so, is the user 
+        //      in that system?
+        let canMigrateUser: boolean = false;
+        if(user === null){
+            let tenantLegacyUserMigrationConfig: TenantLegacyUserMigrationConfig | null = null;
+            if(tenant.migrateLegacyUsers === true){
+                tenantLegacyUserMigrationConfig = await tenantDao.getLegacyUserMigrationConfiguration(tenant.tenantId);
+                if(tenantLegacyUserMigrationConfig && tenantLegacyUserMigrationConfig.usernameCheckUri && tenantLegacyUserMigrationConfig.authenticationUri && tenantLegacyUserMigrationConfig.userProfileUri){
+                    const userExistsInLegacySystem = await oidcServiceUtils.legacyUsernameCheck(`${tenantLegacyUserMigrationConfig.usernameCheckUri}?email=${email.toLowerCase()}`);
+                    if(userExistsInLegacySystem){
+                        canMigrateUser = true;
+                    }
+                }
+            }
+        }
+        if(user === null && !canMigrateUser && federatedOidcProvider === null && tenant.allowUserSelfRegistration === false){
+            response.authenticationError.errorCode = "ERROR_USER_REGISTRATION_IS_NOT_PERMITTED_FOR_THIS_TENANT";
+            return response;
+        }
+        
+        // At this point we know that the tenant exists and allows either a external OIDC provider,
+        // or allows the user to login with a username/password, or allows the user to register
         // or there is a legacy user that needs to be migrated.
         response.userAuthenticationState.tenantId = preAuthenticationState.tenantId;
-        // 1.   There is a provider, and regardless of whether the user exists, send the the user to the provider
-        //      for authentication.
+        
+        // 8.   Success. There is a provider, and regardless of whether the user exists, send the the user to the provider
+        //      for authentication. The user will be created automatically through this process (if successful)
         if(federatedOidcProvider !== null){
             response.userAuthenticationState.authenticationState = AuthenticationState.AuthWithFederatedOidc;
             const {hasError, errorMessage, authorizationEndpoint} = await this.createFederatedOIDCRequestProperties(email.toLowerCase(), user ? user.userId : null, federatedOidcProvider, tenant.tenantId, preAuthenticationState);
@@ -309,10 +331,11 @@ class AuthenticateUserService extends IdentityService {
             }
             response.uri = authorizationEndpoint;
         }
-        // 2.   There is no provider, so we either need to register the user if they do not exist, or
-        //      authenticate with username/password + other MFA types or migrate from legacy system
+
+        // 9.   There is no provider, so we either need to register the user if they do not exist, or
+        //      authenticate with username/password + other MFA types, or migrate from legacy system
         else {
-            if(user === null && !migrateUser){                
+            if(user === null && !canMigrateUser){                
                 response.userAuthenticationState.authenticationState = AuthenticationState.Register;                
                 response.uri = `/authorize/register?${QUERY_PARAM_TENANT_ID}=${preAuthenticationState.tenantId}&username=${email.toLowerCase()}`;
                 return response;
@@ -327,7 +350,7 @@ class AuthenticateUserService extends IdentityService {
                 }
             }
             const stateOrder: Array<AuthenticationState> = [];
-            if(!migrateUser){
+            if(user !== null){
                 stateOrder.push(AuthenticationState.EnterPassword);
             }
             else{
@@ -372,7 +395,7 @@ class AuthenticateUserService extends IdentityService {
             }
             // Finally, once all the user verification steps have been completed, do we need
             // to rotate the password before we send the user back to the 3rd party app?            
-            if(!migrateUser && userCredential && this.requirePasswordRotation(userCredential, passwordConfig)){
+            if(!canMigrateUser && userCredential && this.requirePasswordRotation(userCredential, passwordConfig)){
                 stateOrder.push(AuthenticationState.RotatePassword);
             }
             stateOrder.push(AuthenticationState.RedirectBackToApplication);
@@ -385,10 +408,8 @@ class AuthenticateUserService extends IdentityService {
             // In case we need to migrate the user from a legacy system, we can just
             // create a placeholder userid now which will be used to fill in the 
             // data later after they successfully authenticate in the next step.
-            
-            // First, create a temporary user with ID for completion after the user enters their password
             const userId: string = user ? user.userId : randomUUID().toString();
-            if(user === null && migrateUser){
+            if(user === null && canMigrateUser){
                 const u: User = {
                     domain: domain,
                     email: email.toLowerCase(),
@@ -466,19 +487,20 @@ class AuthenticateUserService extends IdentityService {
             (t: Tenant) => t.federatedAuthenticationConstraint === FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE || t.federatedAuthenticationConstraint === FEDERATED_AUTHN_CONSTRAINT_PERMISSIVE
         )
 
-        //  3.   Error condition #3: There is NO IdP for the user, and none of the tenants allows
-        //       username/password authentication. This is regardless if the user exists.
-        if(federatedOidcProvider === null && tenantsThatAllowPasswordLogin.length === 0){
+        //  3.   Error condition #3: There is NO external IdP for the user, and none of the tenants allows
+        //       username/password authentication or allows self-registration. This is regardless if the user exists.
+        if(federatedOidcProvider === null && tenantsThatAllowPasswordLogin.length === 0 && tenantsThatAllowSelfRegistration.length === 0){
             response.authenticationError.errorCode = AuthenticationErrorTypes.ErrorExclusiveTenantAndNoFederatedOidcProvider;
             return response;
         }
 
+        // 4.   If there is an external IdP for the user, but none of the tenants allows it.
         if(federatedOidcProvider !== null && tenantsThatAllowFederatedOIDCLogin.length === 0){
             response.authenticationError.errorCode = AuthenticationErrorTypes.ErrorNoMatchingFederatedProviderForTenant;
             return response;
         }
         
-        // 2.   Success case #2: The user can do SSO and thereby "autoregister" event if they do not exist currently in the system
+        // 5.   Success case #1: The user can do SSO and thereby "autoregister" event if they do not exist currently in the system
         if(federatedOidcProvider !== null){
             response.availableTenants = [];
             tenantsThatAllowFederatedOIDCLogin.forEach(
@@ -506,20 +528,15 @@ class AuthenticateUserService extends IdentityService {
         // MUST login with a username/password, which they can do by either registering
         // or being migrated from a legacy IdP. If the user is null, we will prefer to migrate from an existing        
         // legacy IdP if one exists, followed by registration if allowed. 
-        let migrateUser: boolean = false;
+        let canMigrateUser: boolean = false;
         const migrationFriendlyTenants: Array<Tenant> = [];
         if(user === null){
-            console.log("checkpoint 1");
             const checkedTenantIds: Array<string> = tenantsThatAllowPasswordLogin.map((t: Tenant) => t.tenantId);
             for(let i = 0; i < tenantsThatAllowPasswordLogin.length; i++){
-                console.log("checkpoint 2");
                 const tenantLegacyUserMigrationConfig: TenantLegacyUserMigrationConfig | null = await tenantDao.getLegacyUserMigrationConfiguration(tenantsThatAllowPasswordLogin[i].tenantId);
-                console.log(tenantLegacyUserMigrationConfig);
                 if(tenantLegacyUserMigrationConfig && tenantLegacyUserMigrationConfig.usernameCheckUri && tenantLegacyUserMigrationConfig.authenticationUri && tenantLegacyUserMigrationConfig.userProfileUri){
-                    console.log("checkpoint 5");
                     const userExistsInLegacySystem = await oidcServiceUtils.legacyUsernameCheck(`${tenantLegacyUserMigrationConfig.usernameCheckUri}?email=${email.toLowerCase()}`);
                     if(userExistsInLegacySystem){
-                        console.log("checkpoint 6");
                         migrationFriendlyTenants.push(tenantsThatAllowPasswordLogin[i]);
                     }
                 }
@@ -529,29 +546,28 @@ class AuthenticateUserService extends IdentityService {
                 if(checkedTenantIds.includes(tenantsThatAllowSelfRegistration[i].tenantId)){
                     continue;
                 }
-                console.log("checkpoint 7");
                 const tenantLegacyUserMigrationConfig: TenantLegacyUserMigrationConfig | null = await tenantDao.getLegacyUserMigrationConfiguration(tenantsThatAllowSelfRegistration[i].tenantId);
                 if(tenantLegacyUserMigrationConfig && tenantLegacyUserMigrationConfig.usernameCheckUri && tenantLegacyUserMigrationConfig.authenticationUri && tenantLegacyUserMigrationConfig.userProfileUri){
-                    console.log("checkpoint 8");
                     const userExistsInLegacySystem = await oidcServiceUtils.legacyUsernameCheck(`${tenantLegacyUserMigrationConfig.usernameCheckUri}?email=${email.toLowerCase()}`);
                     if(userExistsInLegacySystem){
-                        console.log("checkpoint 9");
                         migrationFriendlyTenants.push(tenantsThatAllowPasswordLogin[i]);
                     }
                 }
             }
         }
         
-        migrateUser = migrationFriendlyTenants.length > 0;
-        if(user === null && !migrateUser && tenantsThatAllowSelfRegistration.length === 0){
+        // 6.   Error condition: There is no user, the cannot be migrated from a legacy system, and none of
+        //      the tenants allows for self-registration
+        canMigrateUser = migrationFriendlyTenants.length > 0;
+        if(user === null && !canMigrateUser && tenantsThatAllowSelfRegistration.length === 0){
             response.authenticationError.errorCode = AuthenticationErrorTypes.ErrorNoMatchingUserAndNoTenantSelfRegistration;
             return response;
         }
 
-        // 2.   The user can select the tenant and register. In this scenario, there is no
+        // 7.   The user can select the tenant and register. In this scenario, there is no
         //      need to create database entries for the user authentication state. Instead
         //      there will be entries created for the user registration state later.    
-        if(user === null && !migrateUser && tenantsThatAllowSelfRegistration.length > 0){
+        if(user === null && !canMigrateUser && tenantsThatAllowSelfRegistration.length > 0){
             response.availableTenants = [];
             tenantsThatAllowSelfRegistration.forEach(
                 (t: Tenant) => response.availableTenants?.push(
@@ -569,11 +585,11 @@ class AuthenticateUserService extends IdentityService {
         }
         
         
-        // 3.   The user can select which tenant to log into with username/password (plus
+        // 8.   The user can select which tenant to log into with username/password (plus
         //      one or more MFA types). In this case, if the tenant list contains exactly 1
         //      tenant, then we need to create the authentication state values in the database
         //      to track the authentication process.
-        const tenantsToProcess: Array<Tenant> = migrateUser ? migrationFriendlyTenants : tenantsThatAllowPasswordLogin;
+        const tenantsToProcess: Array<Tenant> = canMigrateUser ? migrationFriendlyTenants : tenantsThatAllowPasswordLogin;
         if(tenantsToProcess.length > 0){
             response.availableTenants = [];
             tenantsToProcess.forEach(
@@ -664,7 +680,7 @@ class AuthenticateUserService extends IdentityService {
 
                 // First, create a temporary user with ID for completion after the user enters their password
                 const userId: string = user ? user.userId : randomUUID().toString();
-                if(user === null && migrateUser){
+                if(user === null && canMigrateUser){
                     const u: User = {
                         domain: domain,
                         email: email.toLowerCase(),
@@ -703,6 +719,7 @@ class AuthenticateUserService extends IdentityService {
             return response;
         }
         
+        // 9.   Final error conditions: There is no mechanism for authenticating or registering the user.
         response.authenticationError.errorCode = AuthenticationErrorTypes.ErrorConditionsForAuthenticationNotMet;
         return response;
     }
@@ -818,7 +835,7 @@ class AuthenticateUserService extends IdentityService {
         user.phoneNumber = legacyProfile.phoneNumber,
         user.preferredLanguageCode = legacyProfile.preferredLanguageCode,
         user.federatedOIDCProviderSubjectId = "",
-        user.markForDelete = false;     
+        user.markForDelete = false;
         
         const tenantPasswordConfig: TenantPasswordConfig = await tenantDao.getTenantPasswordConfig(arrUserAuthenticationStates[index].tenantId) || DEFAULT_TENANT_PASSWORD_CONFIGURATION;
 
@@ -833,7 +850,7 @@ class AuthenticateUserService extends IdentityService {
         
         arrUserAuthenticationStates[index].authenticationStateStatus = STATUS_COMPLETE;
         await identityDao.updateUserAuthenticationState(arrUserAuthenticationStates[index]);
-        
+
         const nextUserAuthenticationState: UserAuthenticationState = arrUserAuthenticationStates[index + 1];
         if(nextUserAuthenticationState.authenticationState === AuthenticationState.RotatePassword){
             const passwordConfig = await this.determineTenantPasswordConfig(nextUserAuthenticationState.userId, nextUserAuthenticationState.tenantId);
