@@ -12,6 +12,8 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
     systemSettings
 }) => {
 
+    const categoriesMidpoint = Math.floor(systemSettings.systemCategories.length / 2);
+
     return (
         <Typography component={"div"}>
             <DetailPageContainer>
@@ -21,10 +23,10 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
                             <Grid2 size={12}>System Settings</Grid2>
                         </Grid2>
                     </Grid2>
-                    <Grid2 container size={12} spacing={2}>
-                        <Grid2 marginTop={"8px"} size={{sm: 12, md: 6}}>
-                            <Paper sx={{ padding: "8px" }} elevation={1}>
-                                <Grid2 container size={12} spacing={1}>
+                    <Grid2 container spacing={1} >
+                        <Grid2 marginTop={"8px"} size={{ sm: 12, md: 6 }}>
+                            <Paper sx={{ padding: "8px", marginTop: "16px" }} elevation={2}>
+                                <Grid2 alignItems={"stretch"} container size={12} spacing={1}>
                                     <Grid2 size={11}>
                                         Software version:
                                     </Grid2>
@@ -36,7 +38,7 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
                                     </Grid2>
                                     <Grid2 size={1}>
                                         <Checkbox
-                                            sx={{height: "25px", width: "25px"}}
+                                            sx={{ height: "25px", width: "25px" }}
                                             value={systemSettings.allowBackupEmail}
                                         />
                                     </Grid2>
@@ -44,12 +46,12 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
                                         Allow duress passwords:
                                     </Grid2>
                                     <Grid2 size={1}>
-                                        <Checkbox 
-                                            sx={{height: "25px", width: "25px"}}
+                                        <Checkbox
+                                            sx={{ height: "25px", width: "25px" }}
                                             value={systemSettings.allowDuressPassword}
                                         />
                                     </Grid2>
-                                    <Stack 
+                                    <Stack
                                         marginTop={"8px"}
                                         width={"100%"}
                                         direction={"row-reverse"}
@@ -58,32 +60,52 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
                                     </Stack>
                                 </Grid2>
                             </Paper>
-                        </Grid2>
-                        {systemSettings.systemCategories.map(
-                            (systemCategory: SystemCategory) => (
-                                <Grid2 marginTop={"8px"}  size={{sm: 12, md: 6}} width={"100%"} key={systemCategory.categoryName}>
-                                    <Paper sx={{padding: "8px"}} elevation={1}>
-                                        <Grid2 sx={{textDecoration: "underline"}} size={12} fontWeight={"bold"}>
+                            {systemSettings.systemCategories.slice(0, categoriesMidpoint).map(
+                                (systemCategory: SystemCategory) => (
+                                    <Paper sx={{ padding: "8px", marginTop: "16px" }} elevation={2} key={systemCategory.categoryName}>
+                                        <Grid2 sx={{ textDecoration: "underline" }} size={12} fontWeight={"bold"}>
                                             {systemCategory.categoryName}
                                         </Grid2>
                                         {systemCategory.categoryEntries.map(
                                             (categoryEntry: CategoryEntry) => (
-                                                <Grid2 size={12} paddingTop={"4px"}container key={categoryEntry.categoryKey}>
+                                                <Grid2 size={12} paddingTop={"4px"} container key={categoryEntry.categoryKey}>
                                                     <Grid2 size={6}>
                                                         {categoryEntry.categoryKey}
                                                     </Grid2>
                                                     <Grid2 size={6}>
-                                                        {categoryEntry.categoryValue}                                                        
+                                                        {categoryEntry.categoryValue}
                                                     </Grid2>
                                                 </Grid2>
                                             )
                                         )}
                                     </Paper>
-                                </Grid2>
-                            )
-                        )}
-
-
+                                )
+                            )}
+                        </Grid2>
+                    
+                        <Grid2 marginTop={"8px"} size={{ sm: 6, md: 6 }}>
+                            {systemSettings.systemCategories.slice(categoriesMidpoint).map(
+                                (systemCategory: SystemCategory) => (                                
+                                    <Paper sx={{ padding: "8px", marginTop: "16px"}} elevation={2} key={systemCategory.categoryName}>
+                                        <Grid2 sx={{ textDecoration: "underline" }} size={12} fontWeight={"bold"}>
+                                            {systemCategory.categoryName}
+                                        </Grid2>
+                                        {systemCategory.categoryEntries.map(
+                                            (categoryEntry: CategoryEntry) => (
+                                                <Grid2 size={12} paddingTop={"4px"} container key={categoryEntry.categoryKey}>
+                                                    <Grid2 size={6}>
+                                                        {categoryEntry.categoryKey}
+                                                    </Grid2>
+                                                    <Grid2 size={6}>
+                                                        {categoryEntry.categoryValue}
+                                                    </Grid2>
+                                                </Grid2>
+                                            )
+                                        )}
+                                    </Paper>
+                                )
+                            )}
+                        </Grid2>
                     </Grid2>
                 </DetailPageMainContentContainer>
             </DetailPageContainer>
