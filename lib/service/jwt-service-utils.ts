@@ -9,7 +9,7 @@ import SigningKeysDao from "../dao/signing-keys-dao";
 import { OIDCPrincipal } from "../models/principal";
 import { randomUUID, createPrivateKey, PrivateKeyInput, KeyObject, createSecretKey, createPublicKey, PublicKeyInput } from "node:crypto"; 
 import NodeCache from "node-cache";
-import { CLIENT_SECRET_ENCODING, DEFAULT_END_USER_TOKEN_TTL_SECONDS, DEFAULT_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS, NAME_ORDER_WESTERN, TOKEN_TYPE_END_USER, TOKEN_TYPE_SERVICE_ACCOUNT_TOKEN } from "@/utils/consts";
+import { CLIENT_SECRET_ENCODING, DEFAULT_END_USER_TOKEN_TTL_SECONDS, DEFAULT_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS, KEY_USE_JWT_SIGNING, NAME_ORDER_WESTERN, TOKEN_TYPE_END_USER, TOKEN_TYPE_SERVICE_ACCOUNT_TOKEN } from "@/utils/consts";
 import { DaoFactory } from "../data-sources/dao-factory";
 import ScopeDao from "../dao/scope-dao";
 import AuthorizationGroupDao from "../dao/authorization-group-dao";
@@ -165,12 +165,8 @@ class JwtServiceUtils {
                 countryCode: principal.country_code,
                 preferredLanguageCode: principal.language_code,
                 managementAccessTenantId: principal.tenant_id
-            }
+            }            
             
-            // home depot: 2a303f6d-0ebc-4590-9d12-7ebab6531d7e
-            // root tenant: ad3e45b1-3e62-4fe2-ba59-530d35ae93d5
-            // airbnb: c42c29cb-1bf7-4f6a-905e-5f74760218e2
-            // amgen: 73d00cb0-f058-43b0-8fb4-d0e48ff33ba2
             JwtServiceUtils.PortalUserProfileCache.set(jwt, profile);
             return profile;
         }
@@ -479,7 +475,7 @@ class JwtServiceUtils {
             return Promise.resolve(null);
         }
 
-        const cachedSigningKeyData: CachedSigningKeyData | null = await this.getCachedSigningKeyById(keyId);
+        const cachedSigningKeyData: CachedSigningKeyData | null = await this.getCachedSigningKey(keyId);
         if(!cachedSigningKeyData){
             return Promise.resolve(null);
         }
@@ -507,6 +503,7 @@ class JwtServiceUtils {
      */
     protected async signJwt(principal: JWTPayload): Promise<string | null> {
         const cachedSigningKeyData: CachedSigningKeyData | null = await this.getCachedSigningKey();
+        
         if(!cachedSigningKeyData){
             return Promise.resolve(null);
         }
@@ -520,74 +517,48 @@ class JwtServiceUtils {
         return s;
     }
 
+ 
     /**
-     * 
-     * @param keyId 
-     * @returns 
+     * Optional argument of key id. If signing a jwt, omit the key id argument and
+     * this will return the first element in the list. 
+     * @returns CachedSigningKeyData or null
      */
-    protected async getCachedSigningKeyById(keyId: string): Promise<CachedSigningKeyData | null>{
-        if(JwtServiceUtils.SigningKeyCache.has(keyId)){
-            return Promise.resolve(JwtServiceUtils.SigningKeyCache.get(keyId) as CachedSigningKeyData);
-        }
-        else{
-            const key: SigningKey | null = await signingKeysDao.getSigningKeyById(keyId);
-            if(!key){
-                return Promise.resolve(null);
-            }
-            let passphrase: string | undefined = undefined;
-            if(key.password){
-                passphrase = await kms.decrypt(key.password) || undefined;
+    protected async getCachedSigningKey(keyId?: string): Promise<CachedSigningKeyData | null> {
 
-            } 
-            const privateKeyInput: PrivateKeyInput = {
-                key: key.privateKeyPkcs8,
-                encoding: "utf-8",
-                format: "pem",
-                passphrase: passphrase
-            };                    
-            const privateKeyObject: KeyObject = createPrivateKey(privateKeyInput);
-
-            const publicKeyInput: PublicKeyInput = {
-                key: key.certificate ? key.certificate : key.publicKey ? key.publicKey : "",
-                encoding: "utf-8",
-                format: "pem"
-            };
-            const publicKeyObject = createPublicKey(publicKeyInput);
-
-            const cachedData: CachedSigningKeyData = {
-                signingKey: key,
-                privateKeyObject: privateKeyObject,
-                publicKeyObject: publicKeyObject
-            };
-            JwtServiceUtils.SigningKeyCache.set(keyId, cachedData);
-            return Promise.resolve(cachedData);
-        }
-    }
-
-    /**
-     * 
-     * @returns 
-     */
-    protected async getCachedSigningKey(): Promise<CachedSigningKeyData | null> {
-        
+        let cachedSigningKey: CachedSigningKeyData | null = null;
         if(JwtServiceUtils.SigningKeyCache.has(SIGNING_KEY_ARRAY_CACHE_KEY)){
             const a: Array<CachedSigningKeyData> = JwtServiceUtils.SigningKeyCache.get(SIGNING_KEY_ARRAY_CACHE_KEY) as Array<CachedSigningKeyData>;
             if(a.length > 0){
-                return Promise.resolve(a[0]);
+                if(keyId){
+                    if(JwtServiceUtils.SigningKeyCache.has(keyId)){
+                        cachedSigningKey = JwtServiceUtils.SigningKeyCache.get(keyId) as CachedSigningKeyData;
+                    }
+                }
+                else{
+                    cachedSigningKey = a[0];
+                }
             }
-            return Promise.resolve(null);
         }
         else{
             const rootTenant: Tenant = await tenantDao.getRootTenant();
             let signingKeys: Array<SigningKey> = await signingKeysDao.getSigningKeys(rootTenant.tenantId) || [];
             
+            
             const now = Date.now();
-            signingKeys = signingKeys.filter(
-                (k: SigningKey) => k.expiresAtMs > now
+
+            // Filter out any keys that have expired and are not used for JWT signing and sort by expiration date descending.
+            signingKeys = signingKeys
+            .filter(
+                (k: SigningKey) => k.expiresAtMs > now && k.keyUse === KEY_USE_JWT_SIGNING
+            )
+            .sort(
+                (key1, key2) => key2.expiresAtMs - key1.expiresAtMs
             );
+            
             
             let cachedArray: Array<CachedSigningKeyData> = [];
             for(let i = 0; i < signingKeys.length; i++){
+
                 let key: SigningKey = signingKeys[i];
                 let passphrase: string | undefined = undefined;
                 if(key.password){
@@ -613,23 +584,25 @@ class JwtServiceUtils {
                     privateKeyObject: privateKeyObject,
                     publicKeyObject: publicKeyObject
                 };
-                cachedArray.push(cachedData);                
+                // Append to the list, and also set the key individually for lookup by the
+                // key id
+                cachedArray.push(cachedData);
+                JwtServiceUtils.SigningKeyCache.set(key.keyId, cachedData);
             }
-            // sort in descending order of expiration so we always use the newest keys for signing
-            cachedArray = cachedArray.sort(
-                (a: CachedSigningKeyData, b: CachedSigningKeyData) => {
-                    return b.signingKey.expiresAtMs - a.signingKey.expiresAtMs;
-                }
-            );
-
+            
             JwtServiceUtils.SigningKeyCache.set(SIGNING_KEY_ARRAY_CACHE_KEY, cachedArray);
             if(cachedArray.length > 0){
-                return Promise.resolve(cachedArray[0]);
+                if(keyId){
+                    if(JwtServiceUtils.SigningKeyCache.has(keyId)){
+                        cachedSigningKey = JwtServiceUtils.SigningKeyCache.get(keyId) as CachedSigningKeyData;
+                    }
+                }
+                else{
+                    cachedSigningKey = cachedArray[0];
+                }
             }
-            else{
-                return Promise.resolve(null);
-            }
-        }                
+        }
+        return Promise.resolve(cachedSigningKey);
     }
 
     
