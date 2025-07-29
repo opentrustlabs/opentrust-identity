@@ -541,11 +541,9 @@ class JwtServiceUtils {
         }
         else{
             const rootTenant: Tenant = await tenantDao.getRootTenant();
-            let signingKeys: Array<SigningKey> = await signingKeysDao.getSigningKeys(rootTenant.tenantId) || [];
-            
-            
+            let signingKeys: Array<SigningKey> = await signingKeysDao.getSigningKeys(rootTenant.tenantId) || [];            
             const now = Date.now();
-
+            
             // Filter out any keys that have expired and are not used for JWT signing and sort by expiration date descending.
             signingKeys = signingKeys
             .filter(
@@ -553,8 +551,7 @@ class JwtServiceUtils {
             )
             .sort(
                 (key1, key2) => key2.expiresAtMs - key1.expiresAtMs
-            );
-            
+            );            
             
             let cachedArray: Array<CachedSigningKeyData> = [];
             for(let i = 0; i < signingKeys.length; i++){
