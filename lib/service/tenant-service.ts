@@ -1,20 +1,24 @@
-import { TenantAnonymousUserConfiguration, Contact, ObjectSearchResultItem, SearchResultType, Tenant, TenantLegacyUserMigrationConfig, TenantLookAndFeel, TenantManagementDomainRel, TenantMetaData, TenantPasswordConfig, TenantRestrictedAuthenticationDomainRel, FederatedOidcProviderTenantRel, TenantAvailableScope, TenantLoginFailurePolicy, CaptchaConfig, SystemSettings } from "@/graphql/generated/graphql-types";
+import { TenantAnonymousUserConfiguration, Contact, ObjectSearchResultItem, SearchResultType, Tenant, TenantLegacyUserMigrationConfig, TenantLookAndFeel, TenantManagementDomainRel, TenantMetaData, TenantPasswordConfig, TenantRestrictedAuthenticationDomainRel, FederatedOidcProviderTenantRel, TenantAvailableScope, TenantLoginFailurePolicy, CaptchaConfig, SystemSettings, SystemSettingsUpdateInput, JobData } from "@/graphql/generated/graphql-types";
 import { OIDCContext } from "@/graphql/graphql-context";
 import TenantDao from "@/lib/dao/tenant-dao";
 import { GraphQLError } from "graphql";
 import { randomUUID } from 'crypto'; 
-import { CAPTCHA_CONFIG_SCOPE, DEFAULT_TENANT_META_DATA, MFA_AUTH_TYPE_NONE, MFA_AUTH_TYPES, PASSWORD_HASHING_ALGORITHMS, PASSWORD_MAXIMUM_LENGTH, PASSWORD_MINIMUM_LENGTH, SEARCH_INDEX_OBJECT_SEARCH, SYSTEM_SETTINGS_READ_SCOPE, TENANT_CREATE_SCOPE, TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE, TENANT_TYPE_ROOT_TENANT, TENANT_TYPES_DISPLAY, TENANT_UPDATE_SCOPE } from "@/utils/consts";
+import { CAPTCHA_CONFIG_SCOPE, DEFAULT_TENANT_META_DATA, JOBS_READ_SCOPE, MFA_AUTH_TYPE_NONE, MFA_AUTH_TYPES, PASSWORD_HASHING_ALGORITHMS, PASSWORD_MAXIMUM_LENGTH, PASSWORD_MINIMUM_LENGTH, SEARCH_INDEX_OBJECT_SEARCH, SYSTEM_SETTINGS_READ_SCOPE, SYSTEM_SETTINGS_UPDATE_SCOPE, TENANT_CREATE_SCOPE, TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE, TENANT_TYPE_ROOT_TENANT, TENANT_TYPES_DISPLAY, TENANT_UPDATE_SCOPE } from "@/utils/consts";
 import { Client } from "@opensearch-project/opensearch";
 import { getOpenSearchClient } from "@/lib/data-sources/search";
 import FederatedOIDCProviderDao from "../dao/federated-oidc-provider-dao";
 import { DaoFactory } from "../data-sources/dao-factory";
 import ScopeDao from "../dao/scope-dao";
 import { authorizeByScopeAndTenant, containsScope, ServiceAuthorizationWrapper } from "@/utils/authz-utils";
+import MarkForDeleteDao from "../dao/mark-for-delete-dao";
+import SchedulerDao from "../dao/scheduler-dao";
 
 const searchClient: Client = getOpenSearchClient();
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
 const federatedOIDCProviderDao: FederatedOIDCProviderDao = DaoFactory.getInstance().getFederatedOIDCProvicerDao();
 const scopeDao: ScopeDao = DaoFactory.getInstance().getScopeDao();
+const markForDeleteDao: MarkForDeleteDao = DaoFactory.getInstance().getMarkForDeleteDao();
+const schedulerDao: SchedulerDao = DaoFactory.getInstance().getSchedulerDao();
 
 class TenantService {
 
@@ -508,6 +512,32 @@ class TenantService {
             throw new GraphQLError(authResult.errorMessage || "ERROR");
         }
         return tenantDao.getSystemSettings();
+    }
+
+    public async updateSystemSettings(systemSettingsUpdateInput: SystemSettingsUpdateInput): Promise<SystemSettings> {
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [SYSTEM_SETTINGS_UPDATE_SCOPE], null);
+        if(!authResult.isAuthorized){
+            throw new GraphQLError(authResult.errorMessage || "ERROR");
+        }
+        await tenantDao.updateSystemSettings(systemSettingsUpdateInput);
+        return tenantDao.getSystemSettings();
+    }
+
+    public async getJobData(): Promise<JobData>{
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [JOBS_READ_SCOPE], null);
+        if(!authResult.isAuthorized){
+            throw new GraphQLError(authResult.errorMessage || "ERROR");
+        }
+
+        const m = await markForDeleteDao.getLatestMarkForDeleteRecords(500);
+        const s = await schedulerDao.getSchedulerLocks(500);
+
+        const jobData: JobData = {
+            markForDeleteItems: m,
+            schedulerLocks: s
+        };
+        
+        return jobData;
     }
 
 }

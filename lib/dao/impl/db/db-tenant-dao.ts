@@ -1,4 +1,4 @@
-import { Tenant, TenantManagementDomainRel, TenantAnonymousUserConfiguration, TenantLookAndFeel, TenantPasswordConfig, TenantLoginFailurePolicy, TenantLegacyUserMigrationConfig, TenantRestrictedAuthenticationDomainRel, UserTenantRel, CaptchaConfig, SystemSettings, SystemSettingsUpdateInput, SystemCategory } from "@/graphql/generated/graphql-types";
+import { Tenant, TenantManagementDomainRel, TenantAnonymousUserConfiguration, TenantLookAndFeel, TenantPasswordConfig, TenantLoginFailurePolicy, TenantLegacyUserMigrationConfig, TenantRestrictedAuthenticationDomainRel, UserTenantRel, CaptchaConfig, SystemSettings, SystemSettingsUpdateInput, SystemCategory, JobData } from "@/graphql/generated/graphql-types";
 import TenantDao from "../../tenant-dao";
 import { OPENTRUST_IDENTITY_VERSION, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import { GraphQLError } from "graphql";
@@ -489,7 +489,7 @@ class DBTenantDao extends TenantDao {
     public async getSystemSettings(): Promise<SystemSettings> {
         const sequelize: Sequelize = await DBDriver.getConnection();
         
-        let systemSettings: SystemSettings = {
+        const systemSettings: SystemSettings = {
             allowBackupEmail: false,
             allowDuressPassword: false,
             softwareVersion: OPENTRUST_IDENTITY_VERSION,
@@ -649,16 +649,20 @@ class DBTenantDao extends TenantDao {
             })
         }
         else{
-
+            const entity: SystemSettingsEntity = arr[0];
+            entity.setDataValue("allowBackupEmail", input.allowBackupEmail);
+            entity.setDataValue("allowDuressPassword", input.allowDuressPassword)
+            await entity.save();
         }
         return {
-            softwareVersion: "1.0.0",
+            softwareVersion: OPENTRUST_IDENTITY_VERSION,
             allowDuressPassword: input.allowDuressPassword,
             allowBackupEmail: input.allowBackupEmail,
             systemCategories: []
         }
 
     }
+
 
 }
 

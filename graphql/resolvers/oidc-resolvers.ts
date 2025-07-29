@@ -209,6 +209,10 @@ const resolvers: Resolvers = {
         getSystemSettings: (_: any, {}, oidcContext) => {
             const service: TenantService = new TenantService(oidcContext);
             return service.getSystemSettings();
+        },
+        getRunningJobs: (_: any, {}, oidcContext) => {
+            const service: TenantService = new TenantService(oidcContext);
+            return service.getJobData();
         }
     },
     Mutation: {
@@ -958,6 +962,10 @@ const resolvers: Resolvers = {
             const service: IdentityService = new IdentityService(oidcContext);
             await service.unlockUser(userId);
             return true;
+        },
+        updateSystemSettings: async(_: any, { systemSettingsUpdateInput }, oidcContext) => {
+            const service: TenantService = new TenantService(oidcContext);
+            return service.updateSystemSettings(systemSettingsUpdateInput);
         }
 
     },

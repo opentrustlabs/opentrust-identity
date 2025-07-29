@@ -943,3 +943,13 @@ export const CANCEL_REGISTRATION = gql`
 
     ${USER_REGISTRATION_STATE_RESPONSE_FRAGMENT}
 `;
+
+export const UPDATE_SYSTEM_SETTINGS_MUTATION = gql(`
+    mutation updateSystemSettings($systemSettingsUpdateInput: SystemSettingsUpdateInput!){
+        updateSystemSettings(systemSettingsUpdateInput: $systemSettingsUpdateInput) {
+            softwareVersion
+            allowBackupEmail
+            allowDuressPassword
+        }
+    }
+`);

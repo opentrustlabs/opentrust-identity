@@ -6,6 +6,16 @@ import SchedulerLockEntity from "@/lib/entities/scheduler-lock-entity";
 
 class DBSchedulerDao extends SchedulerDao {
 
+    public async getSchedulerLocks(limit: number): Promise<Array<SchedulerLock>>{
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        const arr: Array<SchedulerLockEntity> = await sequelize.models.schedulerLock.findAll({            
+            order: ["lockStartTimeMS"],
+            limit: limit,
+            raw: true
+        });
+        return arr as any as Array<SchedulerLock>;
+    }
+
     public async getSchedulerLocksByName(lockName: string): Promise<Array<SchedulerLock>> {
         const sequelize: Sequelize = await DBDriver.getConnection();
         const arr: Array<SchedulerLockEntity> = await sequelize.models.schedulerLock.findAll({
