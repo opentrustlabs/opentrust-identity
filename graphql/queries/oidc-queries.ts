@@ -58,10 +58,13 @@ export const TENANT_META_DATA_QUERY = gql(`
                 migrateLegacyUsers
                 allowLoginByPhoneNumber
                 allowForgotPassword
-                allowBackupEmail
                 registrationRequireCaptcha
                 registrationRequireTermsAndConditions
                 termsAndConditionsUri
+            }
+            systemSettings {
+                allowDuressPassword
+                allowBackupEmail
             }
         }
     }
@@ -165,7 +168,6 @@ export const TENANT_DETAIL_QUERY = gql(`
             allowForgotPassword
             defaultRateLimit
             defaultRateLimitPeriodMinutes
-            allowBackupEmail
             registrationRequireCaptcha
             registrationRequireTermsAndConditions
             termsAndConditionsUri
@@ -694,4 +696,21 @@ export const CAPTCHA_CONFIG_QUERY = gql(`
             useCaptchaV3
         }
     }
+`);
+
+export const SYSTEM_SETTINGS_QUERY = gql(`
+    query getSystemSettings {
+        getSystemSettings {
+            softwareVersion
+            allowBackupEmail
+            allowDuressPassword
+            systemCategories {
+                categoryName
+                categoryEntries {
+                    categoryKey
+                    categoryValue
+                }
+            }
+        }
+    }    
 `);

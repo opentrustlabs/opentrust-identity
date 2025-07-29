@@ -6,6 +6,8 @@
 
 import { TenantLoginFailurePolicy, TenantMetaData, TenantPasswordConfig } from "@/graphql/generated/graphql-types";
 
+export const OPENTRUST_IDENTITY_VERSION="1.0.0";
+
 // ************************************************************************** //
 export const DEFAULT_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS = 600; // 10 minutes 
 export const MAX_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS = 1200; // 20 minutes
@@ -183,8 +185,10 @@ export const FEDERATED_OIDC_PROVIDER_TENANT_REMOVE_SCOPE="federatedoidcprovider.
 // or the passcode for the private key (if encrypted)
 export const FEDERATED_OIDC_PROVIDER_SECRET_VIEW_SCOPE="federatedoidcprovider.secret.view";
 export const CAPTCHA_CONFIG_SCOPE="captcha.config";
-export const SYSTEM_SETTINGS_UPDATE_SCOPE="system.update";
-export const SYSTEM_SETTINGS_READ_SCOPE="system.read";
+export const SYSTEM_SETTINGS_UPDATE_SCOPE="system.settings.update";
+export const SYSTEM_SETTINGS_READ_SCOPE="system.settings.read";
+export const JOBS_READ_SCOPE="jobs.read";
+export const JOBS_UPDATE_SCOPE="jobs.update";
 
 export const SCOPE_USE_IAM_MANAGEMENT="IAM_MANAGEMENT";
 export const SCOPE_USE_APPLICATION_MANAGEMENT="APPLICATION_MANAGEMENT";
@@ -232,7 +236,7 @@ export const ALL_INTERNAL_SCOPE_NAMES = [
     // Captcha
     CAPTCHA_CONFIG_SCOPE,
     // System
-    SYSTEM_SETTINGS_UPDATE_SCOPE, SYSTEM_SETTINGS_READ_SCOPE
+    SYSTEM_SETTINGS_UPDATE_SCOPE, SYSTEM_SETTINGS_READ_SCOPE, JOBS_READ_SCOPE, JOBS_UPDATE_SCOPE
 ];
 
 
@@ -257,7 +261,7 @@ export const ROOT_TENANT_EXCLUSIVE_INTERNAL_SCOPE_NAMES = [
     // Captcha
     CAPTCHA_CONFIG_SCOPE,
     // System
-    SYSTEM_SETTINGS_UPDATE_SCOPE, SYSTEM_SETTINGS_READ_SCOPE
+    SYSTEM_SETTINGS_UPDATE_SCOPE, SYSTEM_SETTINGS_READ_SCOPE, JOBS_READ_SCOPE, JOBS_UPDATE_SCOPE
 ];
 
 // These are the scope values which can be used WITHIN a non-root tenant. So actions such as 
@@ -769,7 +773,6 @@ export const DEFAULT_TENANT_META_DATA: TenantMetaData = {
         tenantType: "",
         tenanttypeid: undefined,
         verifyEmailOnSelfRegistration: true,
-        allowBackupEmail: false,
         registrationRequireCaptcha: false,
         registrationRequireTermsAndConditions: false,
         termsAndConditionsUri: ""
@@ -785,6 +788,12 @@ export const DEFAULT_TENANT_META_DATA: TenantMetaData = {
         authenticationlogo: null,
         authenticationheadertext: "",
         footerlinks: []
+    },
+    systemSettings: {
+        allowBackupEmail: false,
+        allowDuressPassword: false,
+        softwareVersion: OPENTRUST_IDENTITY_VERSION,
+        systemCategories: []
     }
 }
 

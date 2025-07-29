@@ -98,7 +98,6 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
         tenantDescription: tenant.tenantDescription,
         defaultRateLimit: tenant.defaultRateLimit,
         defaultRateLimitPeriodMinutes: tenant.defaultRateLimitPeriodMinutes,
-        allowBackupEmail: tenant.allowBackupEmail,
         registrationRequireCaptcha: tenant.registrationRequireCaptcha,
         registrationRequireTermsAndConditions: tenant.registrationRequireTermsAndConditions,
         termsAndConditionsUri: tenant.termsAndConditionsUri
@@ -290,7 +289,6 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                                     // backup-email.
                                                     if(evt.target.value = FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE){
                                                         tenantInput.allowUserSelfRegistration = false;
-                                                        tenantInput.allowBackupEmail = false;
                                                         tenantInput.allowAnonymousUsers = false;
                                                         tenantInput.allowForgotPassword = false;
                                                         tenantInput.registrationRequireCaptcha = false;
@@ -440,19 +438,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                                         setOverviewDirty(true);
                                                     }}
                                                 />
-                                            </Grid2>
-                                            <Grid2 alignContent={"center"} size={10}>Allow backup email</Grid2>
-                                            <Grid2 size={2}>
-                                                <Checkbox 
-                                                    disabled={disableInputs || tenantInput.federatedAuthenticationConstraint === FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE}
-                                                    checked={tenantInput.allowBackupEmail === true}
-                                                    onChange={(_, checked: boolean) => {
-                                                        tenantInput.allowBackupEmail = checked;
-                                                        setTenantInput({...tenantInput});
-                                                        setOverviewDirty(true);
-                                                    }}
-                                                />
-                                            </Grid2>
+                                            </Grid2>                                            
                                             <Grid2 alignContent={"center"} size={10}>Require Terms And Conditions Acceptance</Grid2>
                                             <Grid2 size={2}>
                                                 <Checkbox 

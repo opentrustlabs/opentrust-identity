@@ -38,7 +38,6 @@ create TABLE tenant (
     allowforgotpassword BOOLEAN NOT NULL,
     defaultratelimit INT,
     defaultratelimitperiodminutes INT,
-    allowbackupemail BOOLEAN NOT NULL,
     registrationrequiretermsandconditions BOOLEAN NOT NULL,
     termsandconditionsuri VARCHAR(256),
     registrationrequirecaptcha BOOLEAN NOT NULL
@@ -638,4 +637,20 @@ create TABLE captcha_config (
     googleapikey VARCHAR(256) NOT NULL,
     minscorethreshold FLOAT,
     userecaptchav3 BOOLEAN NOT NULL
+);
+
+create TABLE system_settings (
+    systemid VARCHAR(64) PRIMARY KEY,
+    allowbackupemail BOOLEAN NOT NULL,
+    allowduresspassword BOOLEAN NOT NULL
+);
+
+create TABLE user_duress_credential (
+    userid VARCHAR(64) NOT NULL,
+    salt varchar(256) NOT NULL,
+    hashedpassword VARCHAR(256) NOT NULL,
+    hashingalgorithm VARCHAR(128) NOT NULL,
+    datecreated TIMESTAMP NOT NULL,
+    PRIMARY KEY (userid),
+    FOREIGN KEY (userid) REFERENCES user(userid)
 );

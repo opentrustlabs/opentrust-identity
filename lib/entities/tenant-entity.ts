@@ -104,12 +104,6 @@ export class TenantEntity extends Model {
                 allowNull: true,
                 field: "defaultratelimitperiodminutes"
             },
-            allowBackupEmail: {
-                type: DataTypes.BOOLEAN,
-                primaryKey: false,
-                allowNull: false,
-                field: "allowbackupemail"
-            },
             registrationRequireCaptcha: {
                 type: DataTypes.BOOLEAN,
                 primaryKey: false,

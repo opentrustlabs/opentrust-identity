@@ -547,6 +547,18 @@ class DBIdentityDao extends IdentityDao {
             }
         });
 
+        await sequelize.models.userDuressCredential.destroy({
+            where: {
+                userId: userId
+            }
+        });
+
+        await sequelize.models.userEmailBack.destroy({
+            where: {
+                userId: userId
+            }
+        });
+
         await sequelize.models.user.destroy({
             where: {
                 userId: userId
