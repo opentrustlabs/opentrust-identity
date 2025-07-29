@@ -3,7 +3,7 @@ import SchedulerDao from "@/lib/dao/scheduler-dao";
 import SigningKeysDao from "@/lib/dao/signing-keys-dao";
 import TenantDao from "@/lib/dao/tenant-dao";
 import { DaoFactory } from "@/lib/data-sources/dao-factory";
-import { CREATE_NEW_SIGNING_KEY_LOCK_NAME, KEY_TYPE_RSA, KEY_USE_DIGITAL_SIGNING, SIGNING_KEY_STATUS_ACTIVE, SIGNING_KEY_STATUS_REVOKED } from "@/utils/consts";
+import { CREATE_NEW_SIGNING_KEY_LOCK_NAME, KEY_TYPE_RSA, KEY_USE_DIGITAL_SIGNING, KEY_USE_JWT_SIGNING, SIGNING_KEY_STATUS_ACTIVE, SIGNING_KEY_STATUS_REVOKED } from "@/utils/consts";
 import { randomUUID } from 'crypto'; 
 import { createSigningKey } from "@/utils/signing-key-utils";
 import { generateRandomToken } from "@/utils/dao-utils";
@@ -69,24 +69,33 @@ async function createNewJwtSigningKey(){
         if(arr[0].lockInstanceId === schedulerLock.lockInstanceId){
 
             let keysArray: Array<SigningKey> = await signingKeysDao.getSigningKeys(tenant.tenantId);
-            if(keysArray.length === 0){
-                await createKey(tenant);
-            }
-
-            keysArray = keysArray.sort(
+            // Filter out the non-jwt signing keys and sort by expires date descending
+            keysArray = keysArray
+            .filter(
+                (k: SigningKey) => k.keyType === KEY_USE_JWT_SIGNING
+            )
+            .sort(
                 (key1, key2) => key2.expiresAtMs - key1.expiresAtMs
             );
 
+            let shouldCreateKey: boolean = false;
+            if(keysArray.length === 0){
+                shouldCreateKey = true;
+            }
             // If the newest key is inactive, then create a new one
-            if(keysArray[0].status === SIGNING_KEY_STATUS_REVOKED){
-                await createKey(tenant);
+            else if(keysArray[0].status === SIGNING_KEY_STATUS_REVOKED){
+                shouldCreateKey = true;
             }
             // If the newest key was not created within the last 90 days, then create a new one
-            if( (Date.now() - keysArray[0].createdAtMs) > (90 * 24 * 60 * 60 * 1000)){
-                await createKey(tenant);
+            else if( (Date.now() - keysArray[0].createdAtMs) > (90 * 24 * 60 * 60 * 1000)){
+                shouldCreateKey = true;
             }
             // If the newest key will expire in less than 31 days
-            if( (keysArray[0].expiresAtMs - Date.now()) <= (31 * 24 * 60 * 60 * 1000) ){
+            else if( (keysArray[0].expiresAtMs - Date.now()) <= (31 * 24 * 60 * 60 * 1000) ){
+                shouldCreateKey = true;
+            }
+
+            if(shouldCreateKey){
                 await createKey(tenant);
             }
         }
@@ -110,15 +119,13 @@ async function createKey(tenant: Tenant){
     const keyName = `${tenant.tenantName} JWT Signing Key V-${keyVersion}`;
 
     const signingKeyData = createSigningKey(keyName, tenant.tenantName, expiresAtDate);
-    // console.log(signingKeyData.passphrase);
-    // console.log(signingKeyData.privateKey);
-    // console.log(signingKeyData.certificate);
+    
     const key: SigningKey = {
         expiresAtMs: expiresAtDate.getTime(),
         keyId: randomUUID().toString(),
         keyName: keyName,
         keyType: KEY_TYPE_RSA,
-        keyUse: KEY_USE_DIGITAL_SIGNING,
+        keyUse: KEY_USE_JWT_SIGNING,
         markForDelete: false,
         privateKeyPkcs8: signingKeyData.privateKey,
         status: SIGNING_KEY_STATUS_ACTIVE,
