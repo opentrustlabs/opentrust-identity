@@ -714,3 +714,25 @@ export const SYSTEM_SETTINGS_QUERY = gql(`
         }
     }    
 `);
+
+export const RUNNING_JOBS_QUERY = gql(`
+    query getRunningJobs {
+        getRunningJobs {
+            markForDeleteItems {
+                markForDeleteId
+                objectType
+                objectId
+                submittedBy
+                submittedDate
+                startedDate
+                completedDate
+            }
+            schedulerLocks {
+                lockName
+                lockInstanceId
+                lockStartTimeMS
+                lockExpiresAtMS
+            }
+        }
+    }
+`);

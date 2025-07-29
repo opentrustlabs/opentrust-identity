@@ -101,6 +101,7 @@ type Query {
 
     ## System settings
     getSystemSettings: SystemSettings!
+    getRunningJobs: JobData!
 
 
 }
@@ -255,7 +256,7 @@ type Mutation {
     removeCaptchaConfig: String!
 
     ## System settings
-    updateSystemSettings(systemSettingsUpdateInput: SystemSettingsUpdateInput): SystemSettings!
+    updateSystemSettings(systemSettingsUpdateInput: SystemSettingsUpdateInput!): SystemSettings!
 
 }
 
@@ -1119,6 +1120,11 @@ type SystemSettings {
     allowBackupEmail: Boolean!
     allowDuressPassword: Boolean!
     systemCategories: [SystemCategory!]!
+}
+
+type JobData {
+    markForDeleteItems: [MarkForDelete!]!
+    schedulerLocks: [SchedulerLock!]!
 }
 
 

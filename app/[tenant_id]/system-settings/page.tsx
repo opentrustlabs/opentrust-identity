@@ -32,9 +32,6 @@ const SystemSettingsDetailPage: React.FC = () => {
     return (
         <SystemSettingsDetail systemSettings={data.getSystemSettings} />
     )
-
-
-
 }
 
 export default SystemSettingsDetailPage;
