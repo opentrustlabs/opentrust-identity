@@ -99,6 +99,10 @@ type Query {
     ## Captcha
     getCaptchaConfig: CaptchaConfig
 
+    ## System settings
+    getSystemSettings: SystemSettings!
+    getRunningJobs: JobData!
+
 
 }
 
@@ -168,6 +172,9 @@ type Mutation {
     registerValidateTOTP(userId: String!, registrationSessionToken: String!, totpTokenValue: String!, preAuthToken: String): UserRegistrationStateResponse!
     registerConfigureSecurityKey(userId: String!, registrationSessionToken: String!, fido2KeyRegistrationInput: Fido2KeyRegistrationInput, preAuthToken: String, skip: Boolean!): UserRegistrationStateResponse!
     registerValidateSecurityKey(userId: String!, registrationSessionToken: String!, fido2KeyAuthenticationInput: Fido2KeyAuthenticationInput!, preAuthToken: String): UserRegistrationStateResponse!
+    registerAddBackupEmail(userId: String!, registrationSessionToken: String!, preAuthToken: String, skip: Boolean!): UserRegistrationStateResponse!
+    registerVerifyBackupEmail(userId: String!, token: String!, registrationSessionToken: String!, preAuthToken: String): UserRegistrationStateResponse!
+    registerAddDuressPassword(userId: String!, password: String, skip: Boolean!, registrationSessionToken: String!, preAuthToken: String): UserRegistrationStateResponse!
     cancelRegistration(userId: String!, registrationSessionToken: String!, preAuthToken: String): UserRegistrationStateResponse!
 
     ## MFA Utilities
@@ -251,6 +258,9 @@ type Mutation {
     setCaptchaConfig(captchaConfigInput: CaptchaConfigInput!): CaptchaConfig!
     removeCaptchaConfig: String!
 
+    ## System settings
+    updateSystemSettings(systemSettingsUpdateInput: SystemSettingsUpdateInput!): SystemSettings!
+
 }
 
 enum ScopeFilterCriteria {
@@ -294,7 +304,6 @@ type Tenant {
     allowForgotPassword: Boolean!
     defaultRateLimit: Int
     defaultRateLimitPeriodMinutes: Int
-    allowBackupEmail: Boolean!
     registrationRequireTermsAndConditions: Boolean!
     termsAndConditionsUri: String
     registrationRequireCaptcha: Boolean!
@@ -801,6 +810,7 @@ type FooterLink {
 type TenantMetaData {
     tenantLookAndFeel: TenantLookAndFeel
     tenant: Tenant!
+    systemSettings: SystemSettings!
 }
 
 type SchedulerLock {
@@ -1094,6 +1104,31 @@ type Fido2AuthenticationChallengeResponse {
     fido2AuthenticationChallengePasskeys: [Fido2AuthenticationChallengePasskey!]!
 }
 
+############################################################################
+############ SYSTEM SETTINGS TYPES AND RESPONSES FOR MUTATATIONS ###########
+############################################################################
+
+type CategoryEntry {
+    categoryKey: String!
+    categoryValue: String!
+}
+type SystemCategory {
+    categoryName: String!
+    categoryEntries: [CategoryEntry!]!
+
+}
+
+type SystemSettings {
+    softwareVersion: String!
+    allowBackupEmail: Boolean!
+    allowDuressPassword: Boolean!
+    systemCategories: [SystemCategory!]!
+}
+
+type JobData {
+    markForDeleteItems: [MarkForDelete!]!
+    schedulerLocks: [SchedulerLock!]!
+}
 
 
 ############################################################################
@@ -1225,7 +1260,6 @@ input TenantCreateInput {
     allowForgotPassword: Boolean!
     defaultRateLimit: Int
     defaultRateLimitPeriodMinutes: Int
-    allowBackupEmail: Boolean!
     registrationRequireTermsAndConditions: Boolean!
     termsAndConditionsUri: String
     registrationRequireCaptcha: Boolean!
@@ -1248,7 +1282,6 @@ input TenantUpdateInput {
     allowForgotPassword: Boolean!
     defaultRateLimit: Int
     defaultRateLimitPeriodMinutes: Int
-    allowBackupEmail: Boolean!
     registrationRequireTermsAndConditions: Boolean!
     termsAndConditionsUri: String
     registrationRequireCaptcha: Boolean!
@@ -1528,4 +1561,9 @@ input CaptchaConfigInput {
     apiKey: String!
     minScopeThreshold: Float
     useCaptchaV3: Boolean!
+}
+
+input SystemSettingsUpdateInput {
+    allowBackupEmail: Boolean!
+    allowDuressPassword: Boolean!
 }

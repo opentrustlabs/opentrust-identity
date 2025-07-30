@@ -1,6 +1,6 @@
-import { Tenant, TenantManagementDomainRel, TenantAnonymousUserConfiguration, TenantLookAndFeel, TenantPasswordConfig, TenantLoginFailurePolicy, TenantLegacyUserMigrationConfig, TenantRestrictedAuthenticationDomainRel, UserTenantRel, CaptchaConfig } from "@/graphql/generated/graphql-types";
+import { Tenant, TenantManagementDomainRel, TenantAnonymousUserConfiguration, TenantLookAndFeel, TenantPasswordConfig, TenantLoginFailurePolicy, TenantLegacyUserMigrationConfig, TenantRestrictedAuthenticationDomainRel, UserTenantRel, CaptchaConfig, SystemSettings, SystemSettingsUpdateInput, SystemCategory, JobData } from "@/graphql/generated/graphql-types";
 import TenantDao from "../../tenant-dao";
-import { TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
+import { OPENTRUST_IDENTITY_VERSION, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import { GraphQLError } from "graphql";
 import TenantManagementDomainRelEntity from "@/lib/entities/tenant-management-domain-rel-entity";
 import TenantAnonymousUserConfigurationEntity from "@/lib/entities/tenant-anonymous-user-configuration-entity";
@@ -14,6 +14,8 @@ import { TenantEntity } from "@/lib/entities/tenant-entity";
 import TenantLoginFailurePolicyEntity from "@/lib/entities/tenant-login-failure-policy-entity";
 import UserTenantRelEntity from "@/lib/entities/user-tenant-rel-entity";
 import CaptchaConfigEntity from "@/lib/entities/captcha-config-entity";
+import SystemSettingsEntity from "@/lib/entities/system-settings-entity";
+import { randomUUID } from "node:crypto";
 
 class DBTenantDao extends TenantDao {
 
@@ -483,6 +485,184 @@ class DBTenantDao extends TenantDao {
             return arr[0].dataValues;
         }
     }
+
+    public async getSystemSettings(): Promise<SystemSettings> {
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        
+        const systemSettings: SystemSettings = {
+            allowBackupEmail: false,
+            allowDuressPassword: false,
+            softwareVersion: OPENTRUST_IDENTITY_VERSION,
+            systemCategories: []
+        }
+        const arr: Array<SystemSettingsEntity> = await sequelize.models.systemSettings.findAll();
+        if(arr.length > 0){
+            const first: SystemSettings = arr[0].dataValues;
+            systemSettings.allowBackupEmail = first.allowBackupEmail;
+            systemSettings.allowDuressPassword = first.allowDuressPassword;
+        }
+        // DB Settings
+        const dbCategory: SystemCategory = {
+            categoryEntries: [],
+            categoryName: "Database Settings"
+        }
+        const {DAO_STRATEGY} = process.env;
+        if(DAO_STRATEGY === "rdb"){
+            const {DB_HOST, DB_NAME, DB_PORT, DB_MIN_POOL_SIZE, DB_MAX_POOL_SIZE, DB_ENABLE_QUERY_LOGGING, RDB_DIALECT} = process.env;
+            dbCategory.categoryEntries.push({
+                categoryKey: "Database dialect",
+                categoryValue: RDB_DIALECT || ""
+            });
+            dbCategory.categoryEntries.push({
+                categoryKey: "Database Host",
+                categoryValue: DB_HOST || ""
+            });
+            dbCategory.categoryEntries.push({
+                categoryKey: "Database Name",
+                categoryValue: DB_NAME || ""
+            });
+            dbCategory.categoryEntries.push({
+                categoryKey: "Database Port",
+                categoryValue: DB_PORT || ""
+            });
+            dbCategory.categoryEntries.push({
+                categoryKey: "Min Pool Size",
+                categoryValue: DB_MIN_POOL_SIZE || ""
+            });
+            dbCategory.categoryEntries.push({
+                categoryKey: "Max Pool Size",
+                categoryValue: DB_MAX_POOL_SIZE || ""
+            });
+            dbCategory.categoryEntries.push({
+                categoryKey: "Enable Query Logging",
+                categoryValue: DB_ENABLE_QUERY_LOGGING || ""
+            });
+        }
+        systemSettings.systemCategories.push(dbCategory);
+
+
+        // KMS Settings
+        const kmsCategory: SystemCategory = {
+            categoryEntries: [],
+            categoryName: "Key Management Settings"
+        }
+        const {KMS_STRATEGY, FS_BASED_DATA_DIR} = process.env;
+        if(KMS_STRATEGY === "filesystem"){
+            kmsCategory.categoryEntries.push({
+                categoryKey: "KMS Provider",
+                categoryValue: "Filesystem"
+            });
+            kmsCategory.categoryEntries.push({
+                categoryKey: "Keys data directory",
+                categoryValue: FS_BASED_DATA_DIR || ""
+            });
+        }
+        systemSettings.systemCategories.push(kmsCategory);
+
+        // MFA settings
+        const mfaSettings: SystemCategory = {
+            categoryEntries: [],
+            categoryName: "MFA Settings"
+        }
+        const {MFA_ISSUER, MFA_ORIGIN, MFA_ID} = process.env;
+        mfaSettings.categoryEntries.push({
+            categoryKey: "MFA Issuer",
+            categoryValue: MFA_ISSUER || ""
+        });
+        mfaSettings.categoryEntries.push({
+            categoryKey: "MFA Origin",
+            categoryValue: MFA_ORIGIN || ""
+        });
+        mfaSettings.categoryEntries.push({
+            categoryKey: "MFA ID",
+            categoryValue: MFA_ID || ""
+        });
+        systemSettings.systemCategories.push(mfaSettings);
+
+        // Search settings
+        const searchSettings: SystemCategory = {
+            categoryEntries: [],
+            categoryName: "Search Engine Settings"
+        }
+        const {OPENSEARCH_HOST, OPENSEARCH_PORT, TRUST_STORE_PATH} = process.env;
+        searchSettings.categoryEntries.push({
+            categoryKey: "Opensearch Host",
+            categoryValue: OPENSEARCH_HOST || ""
+        });
+        searchSettings.categoryEntries.push({
+            categoryKey: "Opensearch Port",
+            categoryValue: OPENSEARCH_PORT || ""
+        });
+        searchSettings.categoryEntries.push({
+            categoryKey: "Opensearch Truststore Path",
+            categoryValue: TRUST_STORE_PATH || ""
+        });
+        systemSettings.systemCategories.push(searchSettings);
+
+        // Trust store settings
+        const trustStoreSettings: SystemCategory = {
+            categoryEntries: [],
+            categoryName: "Trust Store Settings"
+        }
+        const {PKI_IDENTITY_PRIVATE_KEY_PATH, PKI_IDENTITY_CERTIFICATE_PATH, PKI_IDENTITY_CA_TRUST_STORE_PATH} = process.env;
+        trustStoreSettings.categoryEntries.push({
+            categoryKey: "Private Key Path",
+            categoryValue: PKI_IDENTITY_PRIVATE_KEY_PATH || "NA"
+        });
+        trustStoreSettings.categoryEntries.push({
+            categoryKey: "Certificate Path",
+            categoryValue: PKI_IDENTITY_CERTIFICATE_PATH || "NA"
+        });
+        trustStoreSettings.categoryEntries.push({
+            categoryKey: "CA Trust Store Path",
+            categoryValue: PKI_IDENTITY_CA_TRUST_STORE_PATH || "NA"
+        });
+        systemSettings.systemCategories.push(trustStoreSettings);
+
+        // Auth domain settings 
+        const authDomainCategory: SystemCategory = {
+            categoryEntries: [],
+            categoryName: "Portal Authorization Settings"
+        }
+        const {PORTAL_AUTH_TOKEN_TTL_HOURS, AUTH_DOMAIN} = process.env;
+        authDomainCategory.categoryEntries.push({
+            categoryKey: "Authorization Domain",
+            categoryValue: AUTH_DOMAIN || ""
+        });
+        authDomainCategory.categoryEntries.push({
+            categoryKey: "Token TTL in Hours",
+            categoryValue: PORTAL_AUTH_TOKEN_TTL_HOURS || ""
+        });
+        systemSettings.systemCategories.push(authDomainCategory);
+        return systemSettings;
+
+    }
+    
+    public async updateSystemSettings(input: SystemSettingsUpdateInput): Promise<SystemSettings> {
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        const arr: Array<SystemSettingsEntity> = await sequelize.models.systemSettings.findAll();
+        if(arr.length === 0){
+            await sequelize.models.systemSettings.create({
+                systemId: randomUUID().toString(),
+                allowDuressPassword: input.allowDuressPassword,
+                allowBackupEmail: input.allowBackupEmail
+            })
+        }
+        else{
+            const entity: SystemSettingsEntity = arr[0];
+            entity.setDataValue("allowBackupEmail", input.allowBackupEmail);
+            entity.setDataValue("allowDuressPassword", input.allowDuressPassword)
+            await entity.save();
+        }
+        return {
+            softwareVersion: OPENTRUST_IDENTITY_VERSION,
+            allowDuressPassword: input.allowDuressPassword,
+            allowBackupEmail: input.allowBackupEmail,
+            systemCategories: []
+        }
+
+    }
+
 
 }
 

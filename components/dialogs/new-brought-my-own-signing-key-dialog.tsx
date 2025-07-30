@@ -1,7 +1,7 @@
 "use client";
 import { SigningKeyCreateInput } from "@/graphql/generated/graphql-types";
 import { SIGNING_KEY_CREATE_MUTATION } from "@/graphql/mutations/oidc-mutations";
-import { CERTIFICATE_HEADER, KEY_TYPE_EC, KEY_TYPE_RSA, KEY_USE_CERTIFICATE_SIGNING, KEY_USE_DIGITAL_SIGNING, KEY_USE_DISPLAY, KEY_USE_ENCRYPTION, KEY_USE_KEY_AGREEMENT, MIN_PRIVATE_KEY_PASSWORD_LENGTH, PKCS8_ENCRYPTED_PRIVATE_KEY_HEADER, PKCS8_PRIVATE_KEY_HEADER, PKCS8_PUBLIC_KEY_HEADER } from "@/utils/consts";
+import { CERTIFICATE_HEADER, KEY_TYPE_EC, KEY_TYPE_RSA, KEY_USE_CERTIFICATE_SIGNING, KEY_USE_DIGITAL_SIGNING, KEY_USE_DISPLAY, KEY_USE_ENCRYPTION, KEY_USE_JWT_SIGNING, KEY_USE_KEY_AGREEMENT, MIN_PRIVATE_KEY_PASSWORD_LENGTH, PKCS8_ENCRYPTED_PRIVATE_KEY_HEADER, PKCS8_PRIVATE_KEY_HEADER, PKCS8_PUBLIC_KEY_HEADER, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import { useMutation } from "@apollo/client";
 import { Alert, Button, DialogActions, DialogContent, Grid2, MenuItem, Select, Stack, TextField, Typography } from "@mui/material";
 import React, { useContext } from "react";
@@ -233,6 +233,9 @@ const NewBroughtMyOwnSigningKeyDialog: React.FC<NewSigningKeyDialogProps> = ({
                                         }}
                                     >
                                         <MenuItem value={""}>Select Key Use</MenuItem>
+                                        {tenantId === tenantBean.getTenantMetaData().tenant.tenantId && tenantBean.getTenantMetaData().tenant.tenantType === TENANT_TYPE_ROOT_TENANT &&
+                                            <MenuItem value={KEY_USE_JWT_SIGNING} >{KEY_USE_DISPLAY.get(KEY_USE_JWT_SIGNING)}</MenuItem>
+                                        }                                        
                                         <MenuItem value={KEY_USE_DIGITAL_SIGNING} >{KEY_USE_DISPLAY.get(KEY_USE_DIGITAL_SIGNING)}</MenuItem>
                                         <MenuItem value={KEY_USE_ENCRYPTION} >{KEY_USE_DISPLAY.get(KEY_USE_ENCRYPTION)}</MenuItem>
                                         <MenuItem value={KEY_USE_KEY_AGREEMENT} >{KEY_USE_DISPLAY.get(KEY_USE_KEY_AGREEMENT)}</MenuItem>
