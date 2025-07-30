@@ -205,6 +205,14 @@ const resolvers: Resolvers = {
         getCaptchaConfig: (_: any, {}, oidcContext) => {
             const service: TenantService = new TenantService(oidcContext);
             return service.getCaptchaConfig();
+        },
+        getSystemSettings: (_: any, {}, oidcContext) => {
+            const service: TenantService = new TenantService(oidcContext);
+            return service.getSystemSettings();
+        },
+        getRunningJobs: (_: any, {}, oidcContext) => {
+            const service: TenantService = new TenantService(oidcContext);
+            return service.getJobData();
         }
     },
     Mutation: {
@@ -226,7 +234,6 @@ const resolvers: Resolvers = {
                 migrateLegacyUsers: false,
                 allowLoginByPhoneNumber: false,
                 allowForgotPassword: false,
-                allowBackupEmail: false,
                 registrationRequireCaptcha: false,
                 registrationRequireTermsAndConditions: false,
                 termsAndConditionsUri: tenantInput.termsAndConditionsUri
@@ -252,7 +259,6 @@ const resolvers: Resolvers = {
                 migrateLegacyUsers: false,
                 allowLoginByPhoneNumber: false,
                 allowForgotPassword: false,
-                allowBackupEmail: false,
                 registrationRequireCaptcha: tenantInput.registrationRequireCaptcha,
                 registrationRequireTermsAndConditions: tenantInput.registrationRequireTermsAndConditions,
                 termsAndConditionsUri: tenantInput.termsAndConditionsUri
@@ -280,7 +286,6 @@ const resolvers: Resolvers = {
                 allowForgotPassword: tenantInput.allowForgotPassword,
                 defaultRateLimit: tenantInput.defaultRateLimit,
                 defaultRateLimitPeriodMinutes: tenantInput.allowUnlimitedRate ? null: DEFAULT_RATE_LIMIT_PERIOD_MINUTES,
-                allowBackupEmail: tenantInput.allowBackupEmail,
                 registrationRequireCaptcha: tenantInput.registrationRequireCaptcha,
                 registrationRequireTermsAndConditions: tenantInput.registrationRequireTermsAndConditions,
                 termsAndConditionsUri: tenantInput.termsAndConditionsUri
@@ -308,7 +313,6 @@ const resolvers: Resolvers = {
                 allowForgotPassword: tenantInput.allowForgotPassword,
                 defaultRateLimit: tenantInput.allowUnlimitedRate ? null : tenantInput.defaultRateLimit,
                 defaultRateLimitPeriodMinutes: tenantInput.allowUnlimitedRate ? null: DEFAULT_RATE_LIMIT_PERIOD_MINUTES,
-                allowBackupEmail: tenantInput.allowBackupEmail,
                 registrationRequireCaptcha: tenantInput.registrationRequireCaptcha,
                 registrationRequireTermsAndConditions: tenantInput.registrationRequireTermsAndConditions,
                 termsAndConditionsUri: tenantInput.termsAndConditionsUri
@@ -958,6 +962,10 @@ const resolvers: Resolvers = {
             const service: IdentityService = new IdentityService(oidcContext);
             await service.unlockUser(userId);
             return true;
+        },
+        updateSystemSettings: async(_: any, { systemSettingsUpdateInput }, oidcContext) => {
+            const service: TenantService = new TenantService(oidcContext);
+            return service.updateSystemSettings(systemSettingsUpdateInput);
         }
 
     },

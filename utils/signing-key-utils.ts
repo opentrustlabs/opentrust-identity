@@ -1,5 +1,5 @@
 import { generateKeyPairSync, KeyObject, PrivateKeyInput, createPrivateKey } from "node:crypto";
-import { pki } from "node-forge";
+import { md, pki } from "node-forge";
 import { generateRandomToken } from "./dao-utils";
 
 
@@ -72,7 +72,8 @@ export function createSigningKey(commonName: string, organizationName: string, e
             value: organizationName
         }
     ]);
-    csr.sign(pki.privateKeyFromPem(decryptedPrivateKey));
+    
+    csr.sign(pki.privateKeyFromPem(decryptedPrivateKey), md.sha256.create());
 
     // console.log(pki.certificationRequestToPem(csr));
 
@@ -88,11 +89,11 @@ export function createSigningKey(commonName: string, organizationName: string, e
     // Since this is a self signed cert, the subject and issuer are the same.
     cert.setSubject(csr.subject.attributes);
     cert.setIssuer(csr.subject.attributes);
-
+    
     // Make sure that the certificate contains the public key, then
     // finally sign the certificate and convert it to its PEM format.
     cert.publicKey = pki.publicKeyFromPem(publicKey);
-    cert.sign(pki.privateKeyFromPem(decryptedPrivateKey));
+    cert.sign(pki.privateKeyFromPem(decryptedPrivateKey), md.sha256.create());
     const pemCert = pki.certificateToPem(cert);
 
     // console.log(pemCert);

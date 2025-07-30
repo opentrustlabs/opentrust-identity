@@ -1064,6 +1064,7 @@ class AuthenticateUserService extends IdentityService {
             const passwordConfig = await this.determineTenantPasswordConfig(nextUserAuthenticationState.userId, nextUserAuthenticationState.tenantId);
             response.passwordConfig = passwordConfig;
         }
+
         if(nextUserAuthenticationState.authenticationState === AuthenticationState.RedirectBackToApplication || nextUserAuthenticationState.authenticationState === AuthenticationState.RedirectToIamPortal){
             await this.handleAuthenticationCompletion(user, nextUserAuthenticationState, arrUserAuthenticationStates, response);
         }

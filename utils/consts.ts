@@ -6,6 +6,8 @@
 
 import { TenantLoginFailurePolicy, TenantMetaData, TenantPasswordConfig } from "@/graphql/generated/graphql-types";
 
+export const OPENTRUST_IDENTITY_VERSION="1.0.0";
+
 // ************************************************************************** //
 export const DEFAULT_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS = 600; // 10 minutes 
 export const MAX_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS = 1200; // 20 minutes
@@ -183,6 +185,10 @@ export const FEDERATED_OIDC_PROVIDER_TENANT_REMOVE_SCOPE="federatedoidcprovider.
 // or the passcode for the private key (if encrypted)
 export const FEDERATED_OIDC_PROVIDER_SECRET_VIEW_SCOPE="federatedoidcprovider.secret.view";
 export const CAPTCHA_CONFIG_SCOPE="captcha.config";
+export const SYSTEM_SETTINGS_UPDATE_SCOPE="system.settings.update";
+export const SYSTEM_SETTINGS_READ_SCOPE="system.settings.read";
+export const JOBS_READ_SCOPE="jobs.read";
+export const JOBS_UPDATE_SCOPE="jobs.update";
 
 export const SCOPE_USE_IAM_MANAGEMENT="IAM_MANAGEMENT";
 export const SCOPE_USE_APPLICATION_MANAGEMENT="APPLICATION_MANAGEMENT";
@@ -228,7 +234,9 @@ export const ALL_INTERNAL_SCOPE_NAMES = [
     // External OIDC providers
     FEDERATED_OIDC_PROVIDER_CREATE_SCOPE, FEDERATED_OIDC_PROVIDER_UPDATE_SCOPE, FEDERATED_OIDC_PROVIDER_DELETE_SCOPE, FEDERATED_OIDC_PROVIDER_READ_SCOPE, FEDERATED_OIDC_PROVIDER_TENANT_ASSIGN_SCOPE, FEDERATED_OIDC_PROVIDER_TENANT_REMOVE_SCOPE, FEDERATED_OIDC_PROVIDER_SECRET_VIEW_SCOPE,
     // Captcha
-    CAPTCHA_CONFIG_SCOPE
+    CAPTCHA_CONFIG_SCOPE,
+    // System
+    SYSTEM_SETTINGS_UPDATE_SCOPE, SYSTEM_SETTINGS_READ_SCOPE, JOBS_READ_SCOPE, JOBS_UPDATE_SCOPE
 ];
 
 
@@ -251,7 +259,9 @@ export const ROOT_TENANT_EXCLUSIVE_INTERNAL_SCOPE_NAMES = [
     // External OIDC providers
     FEDERATED_OIDC_PROVIDER_CREATE_SCOPE, FEDERATED_OIDC_PROVIDER_UPDATE_SCOPE, FEDERATED_OIDC_PROVIDER_DELETE_SCOPE, FEDERATED_OIDC_PROVIDER_TENANT_ASSIGN_SCOPE, FEDERATED_OIDC_PROVIDER_TENANT_REMOVE_SCOPE, FEDERATED_OIDC_PROVIDER_SECRET_VIEW_SCOPE,
     // Captcha
-    CAPTCHA_CONFIG_SCOPE
+    CAPTCHA_CONFIG_SCOPE,
+    // System
+    SYSTEM_SETTINGS_UPDATE_SCOPE, SYSTEM_SETTINGS_READ_SCOPE, JOBS_READ_SCOPE, JOBS_UPDATE_SCOPE
 ];
 
 // These are the scope values which can be used WITHIN a non-root tenant. So actions such as 
@@ -571,17 +581,20 @@ export const KEY_TYPES=[
     KEY_TYPE_EC
 ];
 
+export const KEY_USE_JWT_SIGNING="KEY_USE_JWT_SIGNING";
 export const KEY_USE_DIGITAL_SIGNING="KEY_USE_DIGITAL_SIGNING";
 export const KEY_USE_ENCRYPTION="KEY_USE_ENCRYPTION";
 export const KEY_USE_KEY_AGREEMENT="KEY_USE_KEY_AGREEMENT";
 export const KEY_USE_CERTIFICATE_SIGNING="KEY_USE_CERTIFICATE_SIGNING";
 export const KEY_USES=[
+    KEY_USE_JWT_SIGNING,
     KEY_USE_DIGITAL_SIGNING,
     KEY_USE_ENCRYPTION,
     KEY_USE_KEY_AGREEMENT,
     KEY_USE_CERTIFICATE_SIGNING
 ];
 export const KEY_USE_DISPLAY = new Map<string, string>([
+    [KEY_USE_JWT_SIGNING, "JWT Signing"],
     [KEY_USE_DIGITAL_SIGNING, "Digital Signing"],
     [KEY_USE_ENCRYPTION, "Encryption"],
     [KEY_USE_KEY_AGREEMENT, "Key Agreement"],
@@ -760,7 +773,6 @@ export const DEFAULT_TENANT_META_DATA: TenantMetaData = {
         tenantType: "",
         tenanttypeid: undefined,
         verifyEmailOnSelfRegistration: true,
-        allowBackupEmail: false,
         registrationRequireCaptcha: false,
         registrationRequireTermsAndConditions: false,
         termsAndConditionsUri: ""
@@ -776,6 +788,12 @@ export const DEFAULT_TENANT_META_DATA: TenantMetaData = {
         authenticationlogo: null,
         authenticationheadertext: "",
         footerlinks: []
+    },
+    systemSettings: {
+        allowBackupEmail: false,
+        allowDuressPassword: false,
+        softwareVersion: OPENTRUST_IDENTITY_VERSION,
+        systemCategories: []
     }
 }
 

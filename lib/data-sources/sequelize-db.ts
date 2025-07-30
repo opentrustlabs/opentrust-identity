@@ -50,6 +50,9 @@ import UserFailedLoginEntity from "../entities/user-failed-login-entity";
 import SchedulerLockEntity from "../entities/scheduler-lock-entity";
 import CaptchaConfigEntity from "../entities/captcha-config-entity";
 import UserTermsAndConditionsAcceptedEntity from "../entities/user-terms-and-conditions-accepted-entity";
+import UserDuressCredentialEntity from "../entities/user-duress-credential";
+import UserEmailBackupEntity from "../entities/user-email-backup-entity";
+import SystemSettingsEntity from "../entities/system-settings-entity";
 
 
 const {
@@ -174,6 +177,9 @@ class DBDriver {
             SchedulerLockEntity.initModel(global.sequelize);
             CaptchaConfigEntity.initModel(global.sequelize);
             UserTermsAndConditionsAcceptedEntity.initModel(global.sequelize);
+            UserDuressCredentialEntity.initModel(global.sequelize);
+            SystemSettingsEntity.initModel(global.sequelize);
+            UserEmailBackupEntity.initModel(global.sequelize);
         } 
 
         return global.sequelize;

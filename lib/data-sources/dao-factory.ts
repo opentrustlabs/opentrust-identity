@@ -30,6 +30,7 @@ import I18NDao from "../dao/i18n-dao";
 import DBI18NDao from "../dao/impl/db/db-i18n-dao";
 import SchedulerDao from "../dao/scheduler-dao";
 import DBSchedulerDao from "../dao/impl/db/db-scheduler-dao";
+import NoOpKms from "../kms/no-op-kms";
 
 const daoStrategy = process.env.DAO_STRATEGY;
 const ksmStrategy = process.env.KMS_STRATEGY;
