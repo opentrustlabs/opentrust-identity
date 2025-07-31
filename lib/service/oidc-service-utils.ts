@@ -3,7 +3,6 @@ import { Jwks, WellknownConfig } from "@/lib/models/wellknown-config";
 import NodeCache from "node-cache";
 import { LegacyUserAuthenticationPayload, LegacyUserAuthenticationResponse, LegacyUserProfile } from "../models/principal";
 import { SecurityEvent } from "../models/security-event";
-import { timeout } from "cron";
 
 
 // TODO

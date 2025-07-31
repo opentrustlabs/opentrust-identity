@@ -172,7 +172,7 @@ type Mutation {
     registerValidateTOTP(userId: String!, registrationSessionToken: String!, totpTokenValue: String!, preAuthToken: String): UserRegistrationStateResponse!
     registerConfigureSecurityKey(userId: String!, registrationSessionToken: String!, fido2KeyRegistrationInput: Fido2KeyRegistrationInput, preAuthToken: String, skip: Boolean!): UserRegistrationStateResponse!
     registerValidateSecurityKey(userId: String!, registrationSessionToken: String!, fido2KeyAuthenticationInput: Fido2KeyAuthenticationInput!, preAuthToken: String): UserRegistrationStateResponse!
-    registerAddBackupEmail(userId: String!, backupEmail: String!, registrationSessionToken: String!, preAuthToken: String, skip: Boolean!): UserRegistrationStateResponse!
+    registerAddBackupEmail(userId: String!, backupEmail: String, registrationSessionToken: String!, preAuthToken: String, skip: Boolean!): UserRegistrationStateResponse!
     registerVerifyBackupEmail(userId: String!, token: String!, registrationSessionToken: String!, preAuthToken: String): UserRegistrationStateResponse!
     registerAddDuressPassword(userId: String!, password: String, skip: Boolean!, registrationSessionToken: String!, preAuthToken: String): UserRegistrationStateResponse!
     cancelRegistration(userId: String!, registrationSessionToken: String!, preAuthToken: String): UserRegistrationStateResponse!

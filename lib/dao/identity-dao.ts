@@ -155,6 +155,12 @@ abstract class IdentityDao {
 
     abstract deleteBackupEmail(userId: string): Promise<void>;
 
+    abstract addUserDuressCredential(userCredential: UserCredential): Promise<void>;
+
+    abstract getUserDuressCredential(userId: string): Promise<UserCredential | null>;
+
+    abstract deleteUserDuressCredential(userId: string): Promise<void>;
+    
 }
 
 export default IdentityDao;

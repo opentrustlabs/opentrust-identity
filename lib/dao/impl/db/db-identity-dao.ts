@@ -16,6 +16,7 @@ import UserAuthenticationStateEntity from "@/lib/entities/user-authentication-st
 import UserRegistrationStateEntity from "@/lib/entities/user-registration-state-entity";
 import UserTermsAndConditionsAcceptedEntity from "@/lib/entities/user-terms-and-conditions-accepted-entity";
 import UserEmailBackupEntity from "@/lib/entities/user-email-backup-entity";
+import UserDuressCredentialEntity from "@/lib/entities/user-duress-credential";
 
 class DBIdentityDao extends IdentityDao {
 
@@ -854,6 +855,32 @@ class DBIdentityDao extends IdentityDao {
                 userId: userId
             }
         });
+    }
+
+    public async addUserDuressCredential(userCredential: UserCredential): Promise<void>{
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.userDuressCredential.create(userCredential);
+        return Promise.resolve();
+    }
+
+    public async getUserDuressCredential(userId: string): Promise<UserCredential | null> {
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        const entity: UserDuressCredentialEntity | null = await sequelize.models.userDuressCredential.findOne({
+            where: {
+                userId: userId
+            }
+        });
+        return entity ? entity.dataValues : null;
+    }
+
+    public async deleteUserDuressCredential(userId: string): Promise<void> {
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.userDuressCredential.destroy({
+            where: {
+                userId: userId
+            }
+        });
+        return Promise.resolve();
     }
 
 }

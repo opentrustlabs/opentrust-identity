@@ -670,9 +670,7 @@ const resolvers: Resolvers = {
             //await tenantService.setTenantAnonymousUserConfig(anonymousUserConfig);
             return anonymousUserConfig;
         },
-        setTenantLookAndFeel: async(_: any, { tenantLookAndFeelInput }, oidcContext) => {
-            // TODO
-            // Implement the service and dao functions.
+        setTenantLookAndFeel: async(_: any, { tenantLookAndFeelInput }, oidcContext) => {            
             const tenantService: TenantService = new TenantService(oidcContext);
             const tenantLookAndFeel: TenantLookAndFeel = {
                 tenantid: tenantLookAndFeelInput.tenantid,
@@ -953,6 +951,18 @@ const resolvers: Resolvers = {
         registerValidateSecurityKey: async(_: any, { userId, registrationSessionToken, fido2KeyAuthenticationInput, preAuthToken }, oidcContext) => {
             const service: RegisterUserService = new RegisterUserService(oidcContext);
             return service.registerValidateSecurityKey(userId, registrationSessionToken, fido2KeyAuthenticationInput, preAuthToken || null);
+        },
+        registerAddBackupEmail: async(_: any, { userId, registrationSessionToken, backupEmail, skip, preAuthToken }, oidcContext) => {
+            const service: RegisterUserService = new RegisterUserService(oidcContext);
+            return service.registerAddBackupEmail(userId, backupEmail || null, registrationSessionToken, preAuthToken || null, skip);
+        },
+        registerVerifyBackupEmail: async(_: any, { userId, token, registrationSessionToken, preAuthToken}, oidcContext) => {
+            const service: RegisterUserService = new RegisterUserService(oidcContext);
+            return service.registerVerifyBackupEmail(userId, token, registrationSessionToken, preAuthToken || null);
+        },
+        registerAddDuressPassword: async(_: any, { userId, password, skip, registrationSessionToken, preAuthToken }, oidcContext) => {
+            const service: RegisterUserService = new RegisterUserService(oidcContext);
+            return service.registerAddDuressPassword(userId, password || null, skip, registrationSessionToken, preAuthToken || null);
         },
         cancelRegistration: async(_: any, { userId, registrationSessionToken, preAuthToken }, oidcContext) => {
             const service: RegisterUserService = new RegisterUserService(oidcContext);

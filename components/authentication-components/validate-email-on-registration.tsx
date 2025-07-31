@@ -5,15 +5,21 @@ import TextField from "@mui/material/TextField";
 import Stack from "@mui/material/Stack";
 import Button from "@mui/material/Button";
 import { useMutation } from "@apollo/client";
-import { REGISTER_VERIFY_EMAIL_ADDRESS } from "@/graphql/mutations/oidc-mutations";
+import { REGISTER_VERIFY_BACKUP_EMAIL_ADDRESS, REGISTER_VERIFY_EMAIL_ADDRESS } from "@/graphql/mutations/oidc-mutations";
 import { RegistrationComponentsProps } from "./register";
 import { UserRegistrationStateResponse } from "@/graphql/generated/graphql-types";
 
-const ValidateEmailOnRegistration: React.FC<RegistrationComponentsProps> = ({
+export interface ValidateEmailOnRegistrationProps extends RegistrationComponentsProps {
+    isBackupEmail: boolean
+}
+
+const ValidateEmailOnRegistration: React.FC<ValidateEmailOnRegistrationProps> = ({
     initialUserRegistrationState,
     onRegistrationCancelled,
     onUpdateEnd,
-    onUpdateStart
+    onUpdateStart,
+    isBackupEmail
+    
 }) => {
 
     const [verificationCode, setVerificationCode] = React.useState<string>("");
@@ -28,6 +34,16 @@ const ValidateEmailOnRegistration: React.FC<RegistrationComponentsProps> = ({
         },
     });
     
+    const [verifyBackupEmailRegistrationToken] = useMutation(REGISTER_VERIFY_BACKUP_EMAIL_ADDRESS, {
+        onCompleted(data) {
+            const response: UserRegistrationStateResponse = data.registerVerifyBackupEmail as UserRegistrationStateResponse;
+            onUpdateEnd(response, null)
+        },
+        onError(error) {
+            onUpdateEnd(null, error.message);
+        },
+    });
+
     return (
         <React.Fragment>            
             <Grid2 size={12} container spacing={1}>
@@ -49,14 +65,26 @@ const ValidateEmailOnRegistration: React.FC<RegistrationComponentsProps> = ({
                 <Button
                     onClick={() => {
                         onUpdateStart();
-                        verifyEmailRegistrationToken({
-                            variables: {
-                                userId: initialUserRegistrationState.userId,
-                                token: verificationCode,
-                                registrationSessionToken: initialUserRegistrationState.registrationSessionToken,
-                                preAuthToken: initialUserRegistrationState.preAuthToken
-                            }
-                        });
+                        if(!isBackupEmail){
+                            verifyEmailRegistrationToken({
+                                variables: {
+                                    userId: initialUserRegistrationState.userId,
+                                    token: verificationCode,
+                                    registrationSessionToken: initialUserRegistrationState.registrationSessionToken,
+                                    preAuthToken: initialUserRegistrationState.preAuthToken
+                                }
+                            });
+                        }
+                        else{
+                            verifyBackupEmailRegistrationToken({
+                                variables: {
+                                    userId: initialUserRegistrationState.userId,
+                                    token: verificationCode,
+                                    registrationSessionToken: initialUserRegistrationState.registrationSessionToken,
+                                    preAuthToken: initialUserRegistrationState.preAuthToken
+                                }
+                            });
+                        }
                     }}
                     disabled={verificationCode === null || verificationCode === ""}
                 >
