@@ -1,6 +1,6 @@
 import { OIDCContext } from "@/graphql/graphql-context";
 import IdentityDao from "../dao/identity-dao";
-import { Fido2KeyRegistrationInput, Tenant, TenantPasswordConfig, TotpResponse, User, UserCreateInput, UserCredential, Fido2KeyAuthenticationInput, TenantRestrictedAuthenticationDomainRel, PreAuthenticationState, AuthorizationReturnUri, UserRegistrationStateResponse, UserRegistrationState, RegistrationState, UserTermsAndConditionsAccepted, TenantLegacyUserMigrationConfig } from "@/graphql/generated/graphql-types";
+import { Fido2KeyRegistrationInput, Tenant, TenantPasswordConfig, TotpResponse, User, UserCreateInput, UserCredential, Fido2KeyAuthenticationInput, TenantRestrictedAuthenticationDomainRel, PreAuthenticationState, AuthorizationReturnUri, UserRegistrationStateResponse, UserRegistrationState, RegistrationState, UserTermsAndConditionsAccepted, TenantLegacyUserMigrationConfig, SystemSettings } from "@/graphql/generated/graphql-types";
 import { DaoFactory } from "../data-sources/dao-factory";
 import TenantDao from "../dao/tenant-dao";
 import { GraphQLError } from "graphql/error";
@@ -110,6 +110,17 @@ class RegisterUserService extends IdentityService {
             stateOrder.push(RegistrationState.ValidateTotp);
             stateOrder.push(RegistrationState.ConfigureSecurityKeyOptional);
             stateOrder.push(RegistrationState.ValidateSecurityKey);
+        }
+
+        const systemSettings: SystemSettings = await tenantDao.getSystemSettings();
+        if(systemSettings.allowBackupEmail){
+            stateOrder.push(RegistrationState.AddBackupEmailOptional);
+            if(tenant.verifyEmailOnSelfRegistration === true){
+                stateOrder.push(RegistrationState.ValidateBackupEmail);
+            }
+        }
+        if(systemSettings.allowDuressPassword){
+            stateOrder.push(RegistrationState.AddDuressPasswordOptional);
         }
 
         // Is the user coming from a 3rd party client and needs to be redirected
@@ -279,8 +290,7 @@ class RegisterUserService extends IdentityService {
         return Promise.resolve({ user: user, tenant: tenant, tenantPasswordConfig: tenantPasswordConfig });
     }
 
-   
-    
+       
     /**
      * returns the index of the 
      * @param arrUserRegistrationState 
@@ -389,6 +399,139 @@ class RegisterUserService extends IdentityService {
         const nextRegistrationState = arrUserRegistrationState[index + 1];
         response.userRegistrationState = nextRegistrationState;
         return Promise.resolve(response);        
+    }
+
+    public async registerVerifyBackupEmail(userId: string, token: string, registrationSessionToken: string, preAuthToken: string | null): Promise<UserRegistrationStateResponse>{
+        const response: UserRegistrationStateResponse = {
+            userRegistrationState: {
+                email: "",
+                expiresAtMs: 0,
+                preAuthToken: preAuthToken,
+                registrationSessionToken: "",
+                registrationState: RegistrationState.ValidateEmail,
+                registrationStateOrder: 0,
+                registrationStateStatus: STATUS_INCOMPLETE,
+                tenantId: "",
+                userId: userId
+            },
+            registrationError: {
+                errorCode: "",
+                errorMessage: ""
+            },
+            accessToken: null,
+            totpSecret: null,
+            uri: null
+        };
+
+        const arrUserRegistrationState: Array<UserRegistrationState> = await this.getSortedRegistartionStates(registrationSessionToken);
+        const index: number = await this.validateRegistrationStep(arrUserRegistrationState, response, RegistrationState.ValidateEmail);
+        if(index < 0){
+            return Promise.resolve(response);
+        }        
+
+        const user: User | null = await identityDao.getUserByEmailConfirmationToken(token);
+        if(user === null){
+            await identityDao.deleteEmailConfirmationToken(token);
+            response.userRegistrationState.registrationState = RegistrationState.Error;
+            response.registrationError.errorCode = "ERROR_NO_USER_FOUND_FOR_TOKEN";
+            return Promise.resolve(response);
+        }
+               
+        if(user.userId !== userId){
+            response.userRegistrationState.registrationState = RegistrationState.Error;
+            response.registrationError.errorCode = "ERROR_INVALID_USER_FOUND_FOR_TOKEN"
+            return Promise.resolve(response);
+        }
+
+        // For the one-time token, need to delete it in success case and        
+        await identityDao.deleteEmailConfirmationToken(token);
+        const email: string | null = await identityDao.getUserBackupEmail(userId);
+        if(!email){
+            response.userRegistrationState.registrationState = RegistrationState.Error;
+            response.registrationError.errorCode = "ERROR_NO_BACKUP_EMAIL_FOUND";
+            return Promise.resolve(response);
+        }
+        
+        await identityDao.updateBackupEmail(userId, email, true);
+        arrUserRegistrationState[index].registrationStateStatus = STATUS_COMPLETE;
+        await identityDao.updateUserRegistrationState(arrUserRegistrationState[0]);
+        const nextRegistrationState = arrUserRegistrationState[index + 1];
+        response.userRegistrationState = nextRegistrationState;
+
+        if(nextRegistrationState.registrationState === RegistrationState.RedirectBackToApplication || nextRegistrationState.registrationState === RegistrationState.RedirectToIamPortal){
+            await this.handleRegistrationCompletion(nextRegistrationState, arrUserRegistrationState, response);
+        }
+
+        return Promise.resolve(response);  
+    }
+
+    public async registerAddBackupEmail(userId: string, backupEmail: string, registrationSessionToken: string, preAuthToken: string | null, skip: boolean): Promise<UserRegistrationStateResponse>{
+        const arrUserRegistrationState: Array<UserRegistrationState> = await this.getSortedRegistartionStates(registrationSessionToken);
+        const response: UserRegistrationStateResponse = {
+            userRegistrationState: {
+                email: "",
+                expiresAtMs: 0,
+                preAuthToken: preAuthToken,
+                registrationSessionToken: "",
+                registrationState: skip ? RegistrationState.ConfigureSecurityKeyOptional : RegistrationState.ConfigureSecurityKeyRequired,
+                registrationStateOrder: 0,
+                registrationStateStatus: STATUS_INCOMPLETE,
+                tenantId: "",
+                userId: userId
+            },
+            registrationError: {
+                errorCode: "",
+                errorMessage: ""
+            },
+            accessToken: null,
+            totpSecret: null,
+            uri: null
+        };
+        
+        const index = await this.validateRegistrationStep(arrUserRegistrationState, response, RegistrationState.AddBackupEmailOptional);
+        if(index < 0){
+            return response;
+        }
+                
+        if(skip === true){
+            // We can mark this as complete. We need to check to see if the next step is 
+            // to validate the backup email. If so, then we can mark it as complete too. 
+            arrUserRegistrationState[index].registrationStateStatus = STATUS_COMPLETE;
+            await identityDao.updateUserRegistrationState(arrUserRegistrationState[index]);
+            
+            let nextRegistrationState: UserRegistrationState = arrUserRegistrationState[index + 1];
+            if(nextRegistrationState.registrationState === RegistrationState.ValidateBackupEmail){
+                nextRegistrationState.registrationStateStatus = STATUS_COMPLETE;
+                await identityDao.updateUserRegistrationState(nextRegistrationState);
+                nextRegistrationState = arrUserRegistrationState[index + 2];
+            }            
+            response.userRegistrationState = nextRegistrationState;
+                        
+            if(nextRegistrationState.registrationState === RegistrationState.RedirectBackToApplication || nextRegistrationState.registrationState === RegistrationState.RedirectToIamPortal){
+                await this.handleRegistrationCompletion(nextRegistrationState, arrUserRegistrationState, response);
+            }
+        }
+        else{
+            const userByEmail: User | null = await identityDao.getUserBy("email", backupEmail);
+            if(userByEmail){
+                response.registrationError.errorCode = "ERROR_EMAIL_ALREADY_IN_USE";
+            }
+            else {
+                await identityDao.addBackupEmail(arrUserRegistrationState[index].userId, backupEmail, false);
+                const nextRegistrationState: UserRegistrationState = arrUserRegistrationState[index + 1];
+                if(nextRegistrationState.registrationState === RegistrationState.ValidateBackupEmail){
+                    const token: string = generateRandomToken(8, "hex").toUpperCase();
+                    await identityDao.saveEmailConfirmationToken(userId, token);
+                }
+                response.userRegistrationState = nextRegistrationState;
+                        
+                if(nextRegistrationState.registrationState === RegistrationState.RedirectBackToApplication || nextRegistrationState.registrationState === RegistrationState.RedirectToIamPortal){
+                    await this.handleRegistrationCompletion(nextRegistrationState, arrUserRegistrationState, response);
+                }
+
+            }
+        }
+        return Promise.resolve(response);
     }
 
     public async registerConfigureTOTP(userId: string, registrationSessionToken: string, preAuthToken: string | null | undefined, skip: boolean): Promise<UserRegistrationStateResponse> {

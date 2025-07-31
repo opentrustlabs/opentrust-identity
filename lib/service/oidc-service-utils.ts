@@ -2,6 +2,9 @@ import axios, { AxiosResponse } from "axios";
 import { Jwks, WellknownConfig } from "@/lib/models/wellknown-config";
 import NodeCache from "node-cache";
 import { LegacyUserAuthenticationPayload, LegacyUserAuthenticationResponse, LegacyUserProfile } from "../models/principal";
+import { SecurityEvent } from "../models/security-event";
+import { timeout } from "cron";
+
 
 // TODO
 // Need to consider the following properties on the axios requests:
@@ -169,7 +172,22 @@ class OIDCServiceUtils {
         }
     }
 
-    
+    public async invokeSecurityEventCallback(uri: string, securityEvent: SecurityEvent, authToken: string){
+        // Fire asynchronously, but if there is an error, log the error.
+        axios.post(uri, securityEvent, {
+            headers: {
+                "Authorization": `Bearer ${authToken}`,
+                "Content-Type": "application/json"
+            },
+            timeout: 30000
+        }).catch(
+            (error) => {
+                // TODO
+                // Log the error
+                console.log(error);
+            }
+        )
+    }
 
 }
 

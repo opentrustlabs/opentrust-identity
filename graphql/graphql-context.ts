@@ -4,5 +4,7 @@ export interface OIDCContext {
     authToken: string,
     portalUserProfile: PortalUserProfile | null,
     rootTenant: Tenant,
-    requestCache: Map<string, any>
+    requestCache: Map<string, any>,
+    ipAddress: string,
+    geoLocation: string
 }

@@ -905,4 +905,13 @@ export const DEFAULT_RATE_LIMIT_PERIOD_MINUTES=15;
 // ************************************************************************** //
 export const CREATE_NEW_SIGNING_KEY_LOCK_NAME="CREATE_NEW_SIGNING_KEY";
 export const DELETE_EXPIRED_DATA_LOCK_NAME="DELETE_EXPIRED_DATA";
-export const MARK_FOR_DELETE_LOCK_NAME_PREFIX="DELETE_MARK_FOR_DELETE"
+export const MARK_FOR_DELETE_LOCK_NAME_PREFIX="DELETE_MARK_FOR_DELETE";
+
+
+// ************************************************************************** //
+// 
+//                  CUSTOM HTTP HEADERS
+// 
+// ************************************************************************** //
+export const HTTP_HEADER_X_IP_ADDRESS="x-ip-address";
+export const HTTP_HEADER_X_GEO_LOCATION="x-geo-location";

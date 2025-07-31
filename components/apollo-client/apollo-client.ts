@@ -10,6 +10,8 @@ const authLink = setContext( (operation: GraphQLRequest, prevContext: DefaultCon
             return {
                 headers: {
                     ...prevContext.headers,
+                    "x-ip-address": "172.0.0.1",
+                    "x-geo-location": "city: Chesterfield, countryCode: US, lat: 38.6631 N, lon: 90.5771 W",
                     "x-opentrust-oidc-graphql-operation-name": operation.operationName
                 }
             }
@@ -18,6 +20,8 @@ const authLink = setContext( (operation: GraphQLRequest, prevContext: DefaultCon
             return {
                 headers: {
                     ...prevContext.headers,
+                    "x-ip-address": "172.0.0.1",
+                    "x-geo-location": "city: Chesterfield, countryCode: US, lat: 38.6631 N, lon: 90.5771 W",
                     "x-opentrust-oidc-graphql-operation-name": operation.operationName,
                     "Authorization": `Bearer ${accessToken}`
                 }
