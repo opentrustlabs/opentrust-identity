@@ -172,7 +172,7 @@ type Mutation {
     registerValidateTOTP(userId: String!, registrationSessionToken: String!, totpTokenValue: String!, preAuthToken: String): UserRegistrationStateResponse!
     registerConfigureSecurityKey(userId: String!, registrationSessionToken: String!, fido2KeyRegistrationInput: Fido2KeyRegistrationInput, preAuthToken: String, skip: Boolean!): UserRegistrationStateResponse!
     registerValidateSecurityKey(userId: String!, registrationSessionToken: String!, fido2KeyAuthenticationInput: Fido2KeyAuthenticationInput!, preAuthToken: String): UserRegistrationStateResponse!
-    registerAddBackupEmail(userId: String!, registrationSessionToken: String!, preAuthToken: String, skip: Boolean!): UserRegistrationStateResponse!
+    registerAddBackupEmail(userId: String!, backupEmail: String!, registrationSessionToken: String!, preAuthToken: String, skip: Boolean!): UserRegistrationStateResponse!
     registerVerifyBackupEmail(userId: String!, token: String!, registrationSessionToken: String!, preAuthToken: String): UserRegistrationStateResponse!
     registerAddDuressPassword(userId: String!, password: String, skip: Boolean!, registrationSessionToken: String!, preAuthToken: String): UserRegistrationStateResponse!
     cancelRegistration(userId: String!, registrationSessionToken: String!, preAuthToken: String): UserRegistrationStateResponse!
@@ -853,6 +853,8 @@ enum AuthenticationState {
     ERROR
     ACCEPT_TERMS_AND_CONDITIONS
     ENTER_PASSWORD_AND_MIGRATE_USER
+    POST_AUTHN_STATE_SEND_SECURITY_EVENT_SUCCESS_LOGON
+    POST_AUTHN_STATE_SEND_SECURITY_EVENT_DURESS_LOGON
 }
 
 type AuthenticationError {
@@ -898,6 +900,9 @@ enum RegistrationState {
     EXPIRED
     CANCELLED
     ERROR
+    ADD_BACKUP_EMAIL_OPTIONAL
+    VALIDATE_BACKUP_EMAIL
+    ADD_DURESS_PASSWORD_OPTIONAL
 }
 
 type RegistrationError {

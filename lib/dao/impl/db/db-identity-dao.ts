@@ -15,6 +15,7 @@ import UserFido2CounterRelEntity from "@/lib/entities/user-fido2-counter-rel-ent
 import UserAuthenticationStateEntity from "@/lib/entities/user-authentication-state-entity";
 import UserRegistrationStateEntity from "@/lib/entities/user-registration-state-entity";
 import UserTermsAndConditionsAcceptedEntity from "@/lib/entities/user-terms-and-conditions-accepted-entity";
+import UserEmailBackupEntity from "@/lib/entities/user-email-backup-entity";
 
 class DBIdentityDao extends IdentityDao {
 
@@ -292,9 +293,26 @@ class DBIdentityDao extends IdentityDao {
         else if(userLookupType === "phone"){
             where.phoneNumber = value;
         }
-        const u: UserEntity | null = await sequelize.models.user.findOne({
+        let u: UserEntity | null = await sequelize.models.user.findOne({
             where: where
         });
+
+        // For email lookups, we can try the backup email table too
+        if(u === null && userLookupType === "email"){
+            const entity: UserEmailBackupEntity | null = await sequelize.models.userEmailBackup.findOne({
+                where: {
+                    email: value
+                }
+            });
+            if(entity){
+                const userId = entity.getDataValue("userId");
+                u = await sequelize.models.user.findOne({
+                    where: {
+                        userId: userId
+                    }
+                });
+            }
+        }
 
         return u ? Promise.resolve(u.dataValues as User) : Promise.resolve(null);
     }
@@ -553,7 +571,7 @@ class DBIdentityDao extends IdentityDao {
             }
         });
 
-        await sequelize.models.userEmailBack.destroy({
+        await sequelize.models.userEmailBackup.destroy({
             where: {
                 userId: userId
             }
@@ -785,6 +803,57 @@ class DBIdentityDao extends IdentityDao {
             }
         });
 
+    }
+
+    public async getUserBackupEmail(userId: string): Promise<string | null>{
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        const entity: UserEmailBackupEntity | null = await sequelize.models.userEmailBack.findOne({
+            where: {
+                userId: userId
+            }
+        });
+        if(entity){
+            return entity.getDataValue("email");
+        }
+        else{
+            return null;
+        }
+    }
+
+    public async addBackupEmail(userId: string, email: string, emailVerified: boolean): Promise<void>{
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.userEmailBackup.create({
+            userId: userId,
+            email: email,
+            emailVerified: emailVerified
+        });
+        return Promise.resolve();
+    }
+
+    public async updateBackupEmail(userId: string, email: string, emailVerified: boolean): Promise<void>{
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.userEmailBackup.update(
+            {
+                userId: userId,
+                email: email,
+                emailVerified: emailVerified
+            },
+            {
+                where: {
+                    userId: userId
+                }
+            }
+        );
+        return Promise.resolve();
+    }
+
+    public async deleteBackupEmail(userId: string): Promise<void>{
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.userEmailBackup.destroy({
+            where: {
+                userId: userId
+            }
+        });
     }
 
 }

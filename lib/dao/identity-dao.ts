@@ -147,6 +147,14 @@ abstract class IdentityDao {
 
     abstract deleteUserTermsAndConditionsAccepted(userId: string, tenantId: string): Promise<void>;
 
+    abstract getUserBackupEmail(userId: string): Promise<string | null>;
+
+    abstract addBackupEmail(userId: string, email: string, emailVerified: boolean): Promise<void>;
+
+    abstract updateBackupEmail(userId: string, email: string, emailVerified: boolean): Promise<void>;
+
+    abstract deleteBackupEmail(userId: string): Promise<void>;
+
 }
 
 export default IdentityDao;
