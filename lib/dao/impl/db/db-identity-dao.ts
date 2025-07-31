@@ -482,6 +482,12 @@ class DBIdentityDao extends IdentityDao {
                 userId: userId
             }
         });
+
+        await sequelize.models.userTermsAndConditionsAccepted.destroy({
+            where: {
+                userId: userId
+            }
+        });
         await sequelize.models.authenticationGroupUserRel.destroy({
             where: {
                 userId: userId
@@ -808,7 +814,7 @@ class DBIdentityDao extends IdentityDao {
 
     public async getUserBackupEmail(userId: string): Promise<string | null>{
         const sequelize: Sequelize = await DBDriver.getConnection();
-        const entity: UserEmailBackupEntity | null = await sequelize.models.userEmailBack.findOne({
+        const entity: UserEmailBackupEntity | null = await sequelize.models.userEmailBackup.findOne({
             where: {
                 userId: userId
             }
