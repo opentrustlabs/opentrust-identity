@@ -645,10 +645,13 @@ const Register: React.FC = () => {
                                             }}
                                         >Cancel</Button>
                                     </Stack>
-                                </React.Fragment>
-                                
+                                </React.Fragment>                                
                             }
-                            {userRegistrationState && userRegistrationState.registrationState === RegistrationState.ValidateEmail &&
+                            {userRegistrationState && 
+                                (
+                                    userRegistrationState.registrationState === RegistrationState.ValidateEmail || 
+                                    userRegistrationState.registrationState === RegistrationState.ValidateBackupEmail
+                                ) &&
                                 <ValidateEmailOnRegistration 
                                     initialUserRegistrationState={userRegistrationState}
                                     onRegistrationCancelled={() => {
@@ -661,9 +664,16 @@ const Register: React.FC = () => {
                                     onUpdateEnd={(userRegistrationStateResponse: UserRegistrationStateResponse | null, errorMessage: string | null) => {
                                         setShowMutationBackdrop(false);
                                         handleUserRegistrationStateResponse(userRegistrationStateResponse, errorMessage);
-                                    }}                               
+                                    }}
+                                    isBackupEmail={userRegistrationState.registrationState === RegistrationState.ValidateBackupEmail}
                                 />
                                 
+                            }
+                            {userRegistrationState && userRegistrationState.registrationState === RegistrationState.AddBackupEmailOptional &&
+                                <div></div>
+                            }
+                            {userRegistrationState && userRegistrationState.registrationState === RegistrationState.AddDuressPasswordOptional &&
+                                <div></div>
                             }
                             {userRegistrationState && 
                                 (

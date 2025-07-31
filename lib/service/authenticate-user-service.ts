@@ -23,6 +23,10 @@ const authDao: AuthDao = DaoFactory.getInstance().getAuthDao();
 const federatedOIDCProviderDao: FederatedOIDCProviderDao = DaoFactory.getInstance().getFederatedOIDCProvicerDao();
 const authenticationGroupDao: AuthenticationGroupDao = DaoFactory.getInstance().getAuthenticationGroupDao();
 
+const {
+    SECURITY_EVENT_CALLBACK_URI
+} = process.env;
+
 class AuthenticateUserService extends IdentityService {
 
     constructor(oidcContext: OIDCContext) {
@@ -400,6 +404,13 @@ class AuthenticateUserService extends IdentityService {
             }
             stateOrder.push(AuthenticationState.RedirectBackToApplication);
 
+            // Finally, send a security event message to a web hook if configured. This may be modfied
+            // in the during authentication if a user enters a duress password (if allowed).
+            // This should ALWAYS be the last entry and should never be exposed to any client.
+            if(SECURITY_EVENT_CALLBACK_URI){
+                stateOrder.push(AuthenticationState.PostAuthnStateSendSecurityEventSuccessLogon);
+            }
+
             const arrUserAuthenticationStates: Array<UserAuthenticationState> = [];
             const authenticationSessionToken: string = generateRandomToken(20, "hex");
             // authentication completion will expire after 60 minutes. 
@@ -669,6 +680,13 @@ class AuthenticateUserService extends IdentityService {
                 }
                 stateOrder.push(AuthenticationState.RedirectToIamPortal);
 
+                // Finally, send a security event message to a web hook if configured. This may be modfied
+                // in the during authentication if a user enters a duress password (if allowed).
+                // This should ALWAYS be the last entry and should never be exposed to any client.
+                if(SECURITY_EVENT_CALLBACK_URI){
+                    stateOrder.push(AuthenticationState.PostAuthnStateSendSecurityEventSuccessLogon);
+                }
+
                 const arrUserAuthenticationStates: Array<UserAuthenticationState> = [];
                 const authenticationSessionToken: string = generateRandomToken(20, "hex");
                 // authentication completion will expire after 60 minutes. 
@@ -754,6 +772,18 @@ class AuthenticateUserService extends IdentityService {
         if(!validationResult.isValid){            
             response.authenticationError.errorCode = validationResult.errorMessage;
             return Promise.resolve(response);
+        }
+        // If this is a duress logon, and if the last entry in the list of authn states is to send a successful logon message, 
+        // delete the old record, update the record and insert it.
+        if(validationResult.isDuress){
+
+            if(arrUserAuthenticationStates[arrUserAuthenticationStates.length - 1].authenticationState === AuthenticationState.PostAuthnStateSendSecurityEventSuccessLogon){
+                
+                await identityDao.deleteUserAuthenticationState(arrUserAuthenticationStates[arrUserAuthenticationStates.length - 1]);
+                arrUserAuthenticationStates[arrUserAuthenticationStates.length - 1].authenticationState = AuthenticationState.PostAuthnStateSendSecurityEventDuressLogon;
+                await identityDao.createUserAuthenticationStates([arrUserAuthenticationStates[arrUserAuthenticationStates.length - 1]]);
+                
+            }
         }
 
         arrUserAuthenticationStates[index].authenticationStateStatus = STATUS_COMPLETE;
@@ -887,6 +917,7 @@ class AuthenticateUserService extends IdentityService {
             response.authenticationError.errorCode = "ERROR_NO_CREDENTIALS_FOUND_FOR_USER";
             return response;
         }
+        
 
         // Need to validate the password format and find the hashing algorithm for the new password
         const tenantPasswordConfig: TenantPasswordConfig = await this.determineTenantPasswordConfig(userId, arrUserAuthenticationStates[0].tenantId);
@@ -910,6 +941,16 @@ class AuthenticateUserService extends IdentityService {
                 }
             }
             if(passwordHasBeenUsed){
+                response.userAuthenticationState.authenticationState = AuthenticationState.Error;
+                response.authenticationError.errorCode = "ERROR_PASSWORD_HAS_BEEN_PREVIOUSLY_USED_WITHIN_THE_PASSWORD_HISTORY_PERIOD";
+                return response;
+            }
+        }
+        // If the user configured a duress password, then we need to check this as well.
+        const duressUserCredential: UserCredential | null = await identityDao.getUserDuressCredential(userId);
+        if(duressUserCredential){
+            const b: boolean = this.validateUserCredentials(duressUserCredential, newPassword);
+            if(b){
                 response.userAuthenticationState.authenticationState = AuthenticationState.Error;
                 response.authenticationError.errorCode = "ERROR_PASSWORD_HAS_BEEN_PREVIOUSLY_USED_WITHIN_THE_PASSWORD_HISTORY_PERIOD";
                 return response;
@@ -1242,10 +1283,10 @@ class AuthenticateUserService extends IdentityService {
      * @param authenticationToken 
      * @returns 
      */
-    protected async validateAuthenticationAttempt(user: User, tenantId: string, authenticationToken: string | Fido2KeyAuthenticationInput, userAuthenticationState: UserAuthenticationState): Promise<{isValid: boolean, errorMessage: string}>{
+    protected async validateAuthenticationAttempt(user: User, tenantId: string, authenticationToken: string | Fido2KeyAuthenticationInput, userAuthenticationState: UserAuthenticationState): Promise<{isValid: boolean, errorMessage: string, isDuress: boolean}>{
 
         if(user.locked === true){
-            return {isValid: false, errorMessage: "ERROR_USER_IS_LOCKED"};
+            return {isValid: false, errorMessage: "ERROR_USER_IS_LOCKED", isDuress: false};
         }
         const userFailedLoginAttempts: Array<UserFailedLogin> = await identityDao.getFailedLogins(user.userId);
         let loginFailurePolicy: TenantLoginFailurePolicy | null = await tenantDao.getLoginFailurePolicy(tenantId);
@@ -1257,19 +1298,31 @@ class AuthenticateUserService extends IdentityService {
         // and if we have a failure policy type of pause and the next login time allowed is at some point in the past.
         if(userFailedLoginAttempts.length > 0 && loginFailurePolicy.loginFailurePolicyType === LOGIN_FAILURE_POLICY_PAUSE){
             if(userFailedLoginAttempts[length - 1].nextLoginNotBefore > Date.now()){
-                return {isValid: false, errorMessage: "ERROR_AUTHENTICTION_IS_PAUSED_FOR_USER"}
+                return {isValid: false, errorMessage: "ERROR_AUTHENTICTION_IS_PAUSED_FOR_USER", isDuress: false}
             }
         }
 
         let valid: boolean = false;
         let errorMessage: string = "";
+        let isDuress: boolean = false;
         if(userAuthenticationState.authenticationState === AuthenticationState.EnterPassword){
             const userCredential: UserCredential | null = await identityDao.getUserCredentialForAuthentication(user.userId);
             if(!userCredential){
-                return {isValid: false, errorMessage: "ERROR_UNABLE_TO_FIND_CREDENTIALS_FOR_USER"};
+                return {isValid: false, errorMessage: "ERROR_UNABLE_TO_FIND_CREDENTIALS_FOR_USER", isDuress: false};
             }
             valid = this.validateUserCredentials(userCredential, authenticationToken as string);
             errorMessage = "ERROR_INVALID_CREDENTIALS";
+            // Need to check a duress password in this case.
+            if(!valid){
+                const userDuressCredential: UserCredential | null = await identityDao.getUserDuressCredential(user.userId);
+                if(userDuressCredential){
+                    valid = this.validateUserCredentials(userDuressCredential, authenticationToken as string);
+                    if(valid){
+                        isDuress = true;
+                        errorMessage = "";
+                    }
+                }
+            }            
         }
         else if(userAuthenticationState.authenticationState === AuthenticationState.ValidateTotp){
             valid = await this.validateTOTP(user.userId, authenticationToken as string);
@@ -1330,12 +1383,12 @@ class AuthenticateUserService extends IdentityService {
                     identityDao.removeFailedLogin(userFailedLoginAttempts[i].userId, userFailedLoginAttempts[i].failureAtMs);
                 }
             }
-            return {isValid: false, errorMessage: errorMessage};
+            return {isValid: false, errorMessage: errorMessage, isDuress: isDuress};
         }
         // Otherwise the password is valid and we should remove the failed login attempts
         identityDao.resetFailedLoginAttempts(user.userId);
 
-        return {isValid: true, errorMessage: errorMessage};
+        return {isValid: true, errorMessage: errorMessage, isDuress: isDuress};
     }
 
     /**
