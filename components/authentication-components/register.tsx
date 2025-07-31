@@ -11,7 +11,7 @@ import { RegistrationState, StateProvinceRegion, TenantPasswordConfig, UserCreat
 import Alert from '@mui/material/Alert';
 import { PageTitleContext } from "@/components/contexts/page-title-context";
 import { COUNTRY_CODES, CountryCodeDef, LANGUAGE_CODES, LanguageCodeDef } from "@/utils/i18n";
-import { getDefaultCountryCodeDef, getDefaultLanguageCodeDef, setAccessTokenOnLocalStorage } from "@/utils/client-utils";
+import { getDefaultCountryCodeDef, getDefaultLanguageCodeDef } from "@/utils/client-utils";
 import StateProvinceRegionSelector from "../users/state-province-region-selector";
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import VisibilityOffOutlinedIcon from '@mui/icons-material/VisibilityOffOutlined';
@@ -30,6 +30,8 @@ import { AuthSessionProps, useAuthSessionContext } from "../contexts/auth-sessio
 import { AuthContext, AuthContextProps } from "../contexts/auth-context";
 import Link from "next/link";
 import { MuiTelInput } from "mui-tel-input";
+import BackupEmailConfiguration from "./back-up-email";
+import DuressPasswordConfiguration from "./duress-password";
 
 
 export interface RegistrationComponentsProps {
@@ -666,14 +668,40 @@ const Register: React.FC = () => {
                                         handleUserRegistrationStateResponse(userRegistrationStateResponse, errorMessage);
                                     }}
                                     isBackupEmail={userRegistrationState.registrationState === RegistrationState.ValidateBackupEmail}
-                                />
-                                
+                                />                                
                             }
                             {userRegistrationState && userRegistrationState.registrationState === RegistrationState.AddBackupEmailOptional &&
-                                <div></div>
+                                <BackupEmailConfiguration
+                                    initialUserRegistrationState={userRegistrationState}
+                                    onRegistrationCancelled={() => {
+                                        handleCancelRegistration(userRegistrationState);
+                                    }} 
+                                    onUpdateStart={() => {
+                                        setErrorMessage(null);
+                                        setShowMutationBackdrop(true)
+                                    }}
+                                    onUpdateEnd={(userRegistrationStateResponse: UserRegistrationStateResponse | null, errorMessage: string | null) => {
+                                        setShowMutationBackdrop(false);
+                                        handleUserRegistrationStateResponse(userRegistrationStateResponse, errorMessage);
+                                    }}
+                                />
                             }
                             {userRegistrationState && userRegistrationState.registrationState === RegistrationState.AddDuressPasswordOptional &&
-                                <div></div>
+                                <DuressPasswordConfiguration
+                                    initialUserRegistrationState={userRegistrationState}
+                                    onRegistrationCancelled={() => {
+                                        handleCancelRegistration(userRegistrationState);
+                                    }} 
+                                    onUpdateStart={() => {
+                                        setErrorMessage(null);
+                                        setShowMutationBackdrop(true)
+                                    }}
+                                    onUpdateEnd={(userRegistrationStateResponse: UserRegistrationStateResponse | null, errorMessage: string | null) => {
+                                        setShowMutationBackdrop(false);
+                                        handleUserRegistrationStateResponse(userRegistrationStateResponse, errorMessage);
+                                    }}
+                                    tenantPasswordConfig={passwordConfig}
+                                />
                             }
                             {userRegistrationState && 
                                 (

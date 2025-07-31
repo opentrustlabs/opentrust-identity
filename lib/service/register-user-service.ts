@@ -465,7 +465,7 @@ class RegisterUserService extends IdentityService {
         
         await identityDao.updateBackupEmail(userId, email, true);
         arrUserRegistrationState[index].registrationStateStatus = STATUS_COMPLETE;
-        await identityDao.updateUserRegistrationState(arrUserRegistrationState[0]);
+        await identityDao.updateUserRegistrationState(arrUserRegistrationState[index]);
         const nextRegistrationState = arrUserRegistrationState[index + 1];
         response.userRegistrationState = nextRegistrationState;
 
@@ -978,6 +978,7 @@ class RegisterUserService extends IdentityService {
         await identityDao.deleteUserCredential(userId);
         await identityDao.deleteBackupEmail(userId);
         await identityDao.deleteUserDuressCredential(userId);
+        await identityDao.deleteUserTermsAndConditionsAccepted(userId, tenantId);
         await searchClient.delete({
             id: `${tenantId}::${userId}`,
             index: SEARCH_INDEX_REL_SEARCH,
