@@ -1,14 +1,14 @@
-import { SchedulerLock, SigningKey, Tenant } from "@/graphql/generated/graphql-types";
+import { AutoCreateSigningKeyInput, SchedulerLock, SigningKey, Tenant } from "@/graphql/generated/graphql-types";
 import SchedulerDao from "@/lib/dao/scheduler-dao";
 import SigningKeysDao from "@/lib/dao/signing-keys-dao";
 import TenantDao from "@/lib/dao/tenant-dao";
 import { DaoFactory } from "@/lib/data-sources/dao-factory";
-import { CREATE_NEW_SIGNING_KEY_LOCK_NAME, KEY_TYPE_RSA, KEY_USE_DIGITAL_SIGNING, KEY_USE_JWT_SIGNING, SIGNING_KEY_STATUS_ACTIVE, SIGNING_KEY_STATUS_REVOKED } from "@/utils/consts";
+import { CREATE_NEW_SIGNING_KEY_LOCK_NAME, KEY_TYPE_RSA, KEY_USE_JWT_SIGNING, SIGNING_KEY_STATUS_REVOKED } from "@/utils/consts";
 import { randomUUID } from 'crypto'; 
-import { createSigningKey } from "@/utils/signing-key-utils";
 import { generateRandomToken } from "@/utils/dao-utils";
 import { CronJob } from "cron";
 import DeletionService from "./deletion-service";
+import SigningKeysService from "./keys-service";
 
 
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
@@ -110,31 +110,31 @@ async function createNewJwtSigningKey(){
 
 async function createKey(tenant: Tenant){
 
-    // Set for expiration after 120 days
-    const expiresAtDate = new Date();
-    // 1000 ms/second * 60 seconds/min * 60 min/hr * 24 hr/day * 120 days
-    expiresAtDate.setTime(expiresAtDate.getTime() + (120 * 24 * 60 * 60 * 1000) );
-    
     const keyVersion = generateRandomToken(8, "hex").toUpperCase();
     const keyName = `${tenant.tenantName} JWT Signing Key V-${keyVersion}`;
 
-    const signingKeyData = createSigningKey(keyName, tenant.tenantName, expiresAtDate);
-    
-    const key: SigningKey = {
-        expiresAtMs: expiresAtDate.getTime(),
-        keyId: randomUUID().toString(),
+    // Set for expiration after 120 days
+    const keyInput: AutoCreateSigningKeyInput = {
+        commonName: keyName,
+        expiresAtMs: Date.now() + (120 * 24 * 60 * 60 * 1000), // 1000 ms/second * 60 seconds/min * 60 min/hr * 24 hr/day * 120 days
         keyName: keyName,
         keyType: KEY_TYPE_RSA,
         keyUse: KEY_USE_JWT_SIGNING,
-        markForDelete: false,
-        privateKeyPkcs8: signingKeyData.privateKey,
-        status: SIGNING_KEY_STATUS_ACTIVE,
-        tenantId: tenant.tenantId,
-        password: signingKeyData.passphrase,
-        certificate: signingKeyData.certificate,
-        createdAtMs: Date.now()
+        organizationName: tenant.tenantName,
+        tenantId: tenant.tenantId
     };
-    await signingKeysDao.createSigningKey(key);
+
+    const keyService: SigningKeysService = new SigningKeysService({
+        authToken: "",
+        geoLocation: "",
+        ipAddress: "",
+        portalUserProfile: null,
+        requestCache: new Map(),
+        rootTenant: tenant
+    });
+    
+    await keyService.uncheckedAutoCreateSigningKey(keyInput);    
+    
 }
 
 

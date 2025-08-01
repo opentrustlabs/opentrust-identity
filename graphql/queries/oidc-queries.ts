@@ -704,6 +704,8 @@ export const SYSTEM_SETTINGS_QUERY = gql(`
             softwareVersion
             allowBackupEmail
             allowDuressPassword
+            rootClientId
+            enablePortalAsLegacyIdp
             systemCategories {
                 categoryName
                 categoryEntries {

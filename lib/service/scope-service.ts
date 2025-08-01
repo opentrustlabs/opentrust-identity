@@ -7,7 +7,7 @@ import TenantDao from "../dao/tenant-dao";
 import ClientDao from "../dao/client-dao";
 import AccessRuleDao from "../dao/access-rule-dao";
 import { DaoFactory } from "../data-sources/dao-factory";
-import { ROOT_TENANT_EXCLUSIVE_INTERNAL_SCOPE_NAMES, SCOPE_CLIENT_ASSIGN_SCOPE, SCOPE_CLIENT_REMOVE_SCOPE, SCOPE_CREATE_SCOPE, SCOPE_DELETE_SCOPE, SCOPE_GROUP_ASSIGN_SCOPE, SCOPE_GROUP_REMOVE_SCOPE, SCOPE_READ_SCOPE, SCOPE_TENANT_ASSIGN_SCOPE, SCOPE_TENANT_REMOVE_SCOPE, SCOPE_UPDATE_SCOPE, SCOPE_USE_APPLICATION_MANAGEMENT, SCOPE_USE_DISPLAY, SCOPE_USE_IAM_MANAGEMENT, SCOPE_USER_ASSIGN_SCOPE, SCOPE_USER_REMOVE_SCOPE, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_READ_ALL_SCOPE, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
+import { ROOT_TENANT_EXCLUSIVE_INTERNAL_SCOPE_NAMES, SCOPE_CLIENT_ASSIGN_SCOPE, SCOPE_CLIENT_REMOVE_SCOPE, SCOPE_CREATE_SCOPE, SCOPE_DELETE_SCOPE, SCOPE_GROUP_ASSIGN_SCOPE, SCOPE_GROUP_REMOVE_SCOPE, SCOPE_READ_SCOPE, SCOPE_TENANT_ASSIGN_SCOPE, SCOPE_TENANT_REMOVE_SCOPE, SCOPE_UPDATE_SCOPE, SCOPE_USE_APPLICATION_MANAGEMENT, SCOPE_USE_DISPLAY, SCOPE_USE_IAM_MANAGEMENT, SCOPE_USER_ASSIGN_SCOPE, SCOPE_USER_REMOVE_SCOPE, SCOPE_USES, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_READ_ALL_SCOPE, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import { getOpenSearchClient } from "../data-sources/search";
 import AuthorizationGroupDao from "../dao/authorization-group-dao";
 import IdentityDao from "../dao/identity-dao";
@@ -105,11 +105,14 @@ class ScopeService {
         // Only allow scope uses of Application Management to be
         // created. All IAM Management scope values are fixed at
         // initialization of the IAM tool
-        if(scope.scopeUse !== SCOPE_USE_APPLICATION_MANAGEMENT){
-            throw new GraphQLError("ERROR_INVALID_SCOPE_USAGE_FOR_CREATION")
+        // if(scope.scopeUse !== SCOPE_USE_APPLICATION_MANAGEMENT){
+        //     throw new GraphQLError("ERROR_INVALID_SCOPE_USAGE_FOR_CREATION")
+        // }
+        if(!SCOPE_USES.includes(scope.scopeUse)){
+            throw new GraphQLError("ERROR_INVALID_SCOPE_USAGE_FOR_CREATION");
         }
         if(scope.scopeName === null || scope.scopeName === "" || scope.scopeDescription === null || scope.scopeDescription === ""){
-            throw new GraphQLError("ERROR_SCOPE_NAME_AND_DESCRIPTION_MUST_BE_POPULATED")
+            throw new GraphQLError("ERROR_SCOPE_NAME_AND_DESCRIPTION_MUST_BE_POPULATED");
         }
         // Scope name values must be globally unique
         const scopeByName: Scope | null = await scopeDao.getScopeByScopeName(scope.scopeName);

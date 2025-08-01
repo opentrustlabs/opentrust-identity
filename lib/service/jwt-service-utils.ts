@@ -555,8 +555,8 @@ class JwtServiceUtils {
             
             let cachedArray: Array<CachedSigningKeyData> = [];
             for(let i = 0; i < signingKeys.length; i++){
-
                 let key: SigningKey = signingKeys[i];
+                
                 let passphrase: string | undefined = undefined;
                 if(key.password){
                     passphrase = await kms.decrypt(key.password) || undefined;

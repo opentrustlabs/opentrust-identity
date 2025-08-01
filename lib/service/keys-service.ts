@@ -131,12 +131,7 @@ class SigningKeysService {
         return Promise.resolve(key);        
     } 
 
-    public async autoCreateSigningKey(keyInput: AutoCreateSigningKeyInput): Promise<SigningKey> {
-        const authResult = authorizeByScopeAndTenant(this.oidcContext, [KEY_CREATE_SCOPE], keyInput.tenantId);
-        if(!authResult.isAuthorized){
-            throw new GraphQLError(authResult.errorMessage || "ERROR");
-        }
-
+    public async uncheckedAutoCreateSigningKey(keyInput: AutoCreateSigningKeyInput): Promise<SigningKey> {
         const tenant: Tenant | null = await tenantDao.getTenantById(keyInput.tenantId);
         if(!tenant){
             throw new GraphQLError("ERROR_TENANT_NOT_FOUND");
@@ -195,6 +190,14 @@ class SigningKeysService {
         await signingKeysDao.createSigningKey(key);
         await this.updateSearchIndex(key);
         return Promise.resolve(key); 
+    }
+    
+    public async autoCreateSigningKey(keyInput: AutoCreateSigningKeyInput): Promise<SigningKey> {
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [KEY_CREATE_SCOPE], keyInput.tenantId);
+        if(!authResult.isAuthorized){
+            throw new GraphQLError(authResult.errorMessage || "ERROR");
+        }
+        return this.uncheckedAutoCreateSigningKey(keyInput);        
     }
 
     public async updateSigningKey(key: SigningKey): Promise<SigningKey> {

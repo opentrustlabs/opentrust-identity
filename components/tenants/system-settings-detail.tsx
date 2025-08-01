@@ -1,6 +1,6 @@
 "use client";
 import { CategoryEntry, PortalUserProfile, SystemCategory, SystemSettings, SystemSettingsUpdateInput } from "@/graphql/generated/graphql-types";
-import { Alert, Backdrop, Button, Checkbox, CircularProgress, Grid2, Paper, Snackbar, Stack, Typography } from "@mui/material";
+import { Alert, Backdrop, Button, Checkbox, CircularProgress, Grid2, Paper, Snackbar, Stack, TextField, Typography } from "@mui/material";
 import React, { useContext } from "react";
 import { DetailPageContainer, DetailPageMainContentContainer } from "../layout/detail-page-container";
 import { AuthContext, AuthContextProps } from "../contexts/auth-context";
@@ -28,7 +28,9 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
     // STATE VARIABLES    
     const initInput: SystemSettingsUpdateInput = {
         allowBackupEmail: systemSettings.allowBackupEmail,
-        allowDuressPassword: systemSettings.allowDuressPassword
+        allowDuressPassword: systemSettings.allowDuressPassword,
+        rootClientId: systemSettings.rootClientId,
+        enablePortalAsLegacyIdp: systemSettings.enablePortalAsLegacyIdp
     }
     const [systemSettingsUpdateInput, setSystemSettingsUpdateInput] = React.useState<SystemSettingsUpdateInput>(initInput);
     const [markDirty, setMarkDirty] = React.useState<boolean>(false);
@@ -43,7 +45,9 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
             setMarkDirty(false);
             setSystemSettingsUpdateInput({
                 allowBackupEmail: data.updateSystemSettings.allowBackupEmail,
-                allowDuressPassword: data.updateSystemSettings.allowDuressPassword
+                allowDuressPassword: data.updateSystemSettings.allowDuressPassword,
+                rootClientId: data.updateSystemSettings.rootClientId,
+                enablePortalAsLegacyIdp: data.updateSystemSettings.enablePortalAsLegacyIdp
             });
             setShowMutationSnackbar(true);
         },
@@ -111,6 +115,44 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
                                                 setSystemSettingsUpdateInput({...systemSettingsUpdateInput});                                                
                                             }}
                                         />
+                                    </Grid2>
+                                    <Grid2 size={11}>
+                                        Enable Portal as Legacy IdP (Note, if enabled, some IdP features will not be available):
+                                    </Grid2>
+                                    <Grid2 size={1}>
+                                        <Checkbox
+                                            sx={{ height: "25px", width: "25px" }}
+                                            value={systemSettingsUpdateInput.enablePortalAsLegacyIdp}
+                                            checked={systemSettingsUpdateInput.enablePortalAsLegacyIdp}
+                                            disabled={!containsScope(SYSTEM_SETTINGS_UPDATE_SCOPE, profile?.scope)}
+                                            onChange={(_, checked: boolean) => {                                                
+                                                systemSettingsUpdateInput.enablePortalAsLegacyIdp = checked;
+                                                setMarkDirty(true);
+                                                setSystemSettingsUpdateInput({...systemSettingsUpdateInput});                                                
+                                            }}
+                                        />
+                                    </Grid2>
+                                    <Grid2 size={12}>
+                                        Root Client ID:
+                                    </Grid2>
+                                    <Grid2 size={12}>
+                                        <TextField
+                                            size="small"
+                                            fullWidth={true}
+                                            value={systemSettingsUpdateInput.rootClientId}
+                                            disabled={true}
+                                        />
+                                        {/* <Checkbox
+                                            sx={{ height: "25px", width: "25px" }}
+                                            value={systemSettingsUpdateInput.enablePortalAsLegacyIdp}
+                                            checked={systemSettingsUpdateInput.enablePortalAsLegacyIdp}
+                                            disabled={!containsScope(SYSTEM_SETTINGS_UPDATE_SCOPE, profile?.scope)}
+                                            onChange={(_, checked: boolean) => {                                                
+                                                systemSettingsUpdateInput.enablePortalAsLegacyIdp = checked;
+                                                setMarkDirty(true);
+                                                setSystemSettingsUpdateInput({...systemSettingsUpdateInput});                                                
+                                            }}
+                                        /> */}
                                     </Grid2>
                                     {containsScope(SYSTEM_SETTINGS_UPDATE_SCOPE, profile?.scope) &&
                                         <Grid2 size={12}>

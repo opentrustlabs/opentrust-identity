@@ -555,6 +555,7 @@ class IdentityService {
         if(!secret){
             throw new GraphQLError("ERROR_UNABLE_TO_DETERMINE_TOPT_SECRET");
         }
+
         // Microsoft authentication only support SHA1 as a hashing algorithm (at the momemt)
         const totp = new OTPAuth.TOTP({
             issuer: MFA_ISSUER || "Open Trust",
@@ -565,14 +566,14 @@ class IdentityService {
             secret: secret
         });
 
-        let delta = totp.validate({
+        const delta = totp.validate({
             token: totpValue,
             window: 1
         });
-
-        if(delta === null){
+        if(delta === null){            
             return false;
         }
+        
         return true;
     }
 

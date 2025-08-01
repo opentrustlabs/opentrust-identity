@@ -1127,6 +1127,8 @@ type SystemSettings {
     softwareVersion: String!
     allowBackupEmail: Boolean!
     allowDuressPassword: Boolean!
+    rootClientId: String!
+    enablePortalAsLegacyIdp: Boolean!
     systemCategories: [SystemCategory!]!
 }
 
@@ -1396,6 +1398,7 @@ input RateLimitServiceGroupUpdateInput {
 input ScopeCreateInput {
     scopeName: String!
     scopeDescription: String!
+    scopeUse: String!
     scopeAccessRuleSchemaId: String
 }
 
@@ -1571,4 +1574,6 @@ input CaptchaConfigInput {
 input SystemSettingsUpdateInput {
     allowBackupEmail: Boolean!
     allowDuressPassword: Boolean!
+    rootClientId: String!
+    enablePortalAsLegacyIdp: Boolean!
 }

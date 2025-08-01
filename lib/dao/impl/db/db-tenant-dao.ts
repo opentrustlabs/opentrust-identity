@@ -492,6 +492,8 @@ class DBTenantDao extends TenantDao {
         const systemSettings: SystemSettings = {
             allowBackupEmail: false,
             allowDuressPassword: false,
+            rootClientId: "",
+            enablePortalAsLegacyIdp: false,
             softwareVersion: OPENTRUST_IDENTITY_VERSION,
             systemCategories: []
         }
@@ -500,6 +502,8 @@ class DBTenantDao extends TenantDao {
             const first: SystemSettings = arr[0].dataValues;
             systemSettings.allowBackupEmail = first.allowBackupEmail;
             systemSettings.allowDuressPassword = first.allowDuressPassword;
+            systemSettings.rootClientId = first.rootClientId,
+            systemSettings.enablePortalAsLegacyIdp = first.enablePortalAsLegacyIdp
         }
         // DB Settings
         const dbCategory: SystemCategory = {
@@ -624,7 +628,7 @@ class DBTenantDao extends TenantDao {
             categoryEntries: [],
             categoryName: "Portal Authorization Settings"
         }
-        const {PORTAL_AUTH_TOKEN_TTL_HOURS, AUTH_DOMAIN} = process.env;
+        const {PORTAL_AUTH_TOKEN_TTL_HOURS, AUTH_DOMAIN, SECURITY_EVENT_CALLBACK_URI} = process.env;
         authDomainCategory.categoryEntries.push({
             categoryKey: "Authorization Domain",
             categoryValue: AUTH_DOMAIN || ""
@@ -632,6 +636,10 @@ class DBTenantDao extends TenantDao {
         authDomainCategory.categoryEntries.push({
             categoryKey: "Token TTL in Hours",
             categoryValue: PORTAL_AUTH_TOKEN_TTL_HOURS || ""
+        });
+        authDomainCategory.categoryEntries.push({
+            categoryKey: "Security Event Webhook URI",
+            categoryValue: SECURITY_EVENT_CALLBACK_URI || ""
         });
         systemSettings.systemCategories.push(authDomainCategory);
         return systemSettings;
@@ -645,19 +653,25 @@ class DBTenantDao extends TenantDao {
             await sequelize.models.systemSettings.create({
                 systemId: randomUUID().toString(),
                 allowDuressPassword: input.allowDuressPassword,
-                allowBackupEmail: input.allowBackupEmail
+                allowBackupEmail: input.allowBackupEmail,
+                rootClientId: input.rootClientId,
+                enablePortalAsLegacyIdp: input.enablePortalAsLegacyIdp
             })
         }
         else{
             const entity: SystemSettingsEntity = arr[0];
             entity.setDataValue("allowBackupEmail", input.allowBackupEmail);
-            entity.setDataValue("allowDuressPassword", input.allowDuressPassword)
+            entity.setDataValue("allowDuressPassword", input.allowDuressPassword);
+            entity.setDataValue("rootClientId", input.rootClientId);
+            entity.setDataValue("enablePortalAsLegacyIdp", input.enablePortalAsLegacyIdp);
             await entity.save();
         }
         return {
             softwareVersion: OPENTRUST_IDENTITY_VERSION,
             allowDuressPassword: input.allowDuressPassword,
             allowBackupEmail: input.allowBackupEmail,
+            rootClientId: "",
+            enablePortalAsLegacyIdp: false,
             systemCategories: []
         }
 

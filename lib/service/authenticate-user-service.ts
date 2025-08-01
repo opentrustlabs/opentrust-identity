@@ -14,6 +14,7 @@ import OIDCServiceUtils from "./oidc-service-utils";
 import { randomUUID } from "node:crypto";
 import { LegacyUserAuthenticationResponse, LegacyUserProfile } from "../models/principal";
 import AuthenticationGroupDao from "../dao/authentication-group-dao";
+import { SecurityEvent } from "../models/security-event";
 
 const jwtServiceUtils: JwtServiceUtils = new JwtServiceUtils();
 const oidcServiceUtils: OIDCServiceUtils = new OIDCServiceUtils();
@@ -782,7 +783,7 @@ class AuthenticateUserService extends IdentityService {
                 await identityDao.deleteUserAuthenticationState(arrUserAuthenticationStates[arrUserAuthenticationStates.length - 1]);
                 arrUserAuthenticationStates[arrUserAuthenticationStates.length - 1].authenticationState = AuthenticationState.PostAuthnStateSendSecurityEventDuressLogon;
                 await identityDao.createUserAuthenticationStates([arrUserAuthenticationStates[arrUserAuthenticationStates.length - 1]]);
-                
+
             }
         }
 
@@ -1385,9 +1386,10 @@ class AuthenticateUserService extends IdentityService {
             }
             return {isValid: false, errorMessage: errorMessage, isDuress: isDuress};
         }
+        
         // Otherwise the password is valid and we should remove the failed login attempts
         identityDao.resetFailedLoginAttempts(user.userId);
-
+        
         return {isValid: true, errorMessage: errorMessage, isDuress: isDuress};
     }
 
@@ -1504,7 +1506,7 @@ class AuthenticateUserService extends IdentityService {
                     response.authenticationError.errorCode = "ERROR_INVALID_TENANT_FOR_AUTHENTICATION_COMPLETION";
                     response.userAuthenticationState.authenticationState = AuthenticationState.Error;
                 }
-                else{
+                else{                    
                     const accessToken: string | null = await jwtServiceUtils.signIAMPortalUserJwt(user, tenant, this.getPortalAuthenTokenTTLSeconds(), TOKEN_TYPE_IAM_PORTAL_USER);
                     if(accessToken === null){
                         response.authenticationError.errorCode = "ERROR_GENERATING_ACCESS_TOKEN_AUTHENTICATION_COMPLETION";
@@ -1516,6 +1518,29 @@ class AuthenticateUserService extends IdentityService {
                         response.accessToken = accessToken;
                         response.tokenExpiresAtMs = Date.now() + (this.getPortalAuthenTokenTTLSeconds() * 1000);
                         userAuthenticationState.authenticationStateStatus = STATUS_COMPLETE;
+
+                        // If the last step in authentication is to send a security event:
+                        if(
+                            arrUserAuthenticationStates[arrUserAuthenticationStates.length - 1].authenticationState === AuthenticationState.PostAuthnStateSendSecurityEventSuccessLogon ||
+                            arrUserAuthenticationStates[arrUserAuthenticationStates.length - 1].authenticationState === AuthenticationState.PostAuthnStateSendSecurityEventDuressLogon
+                        ){
+                            const securityEvent: SecurityEvent = {
+                                securityEventType: "account_locked",
+                                userId: user.userId,
+                                email: user.email,
+                                phoneNumber: user.phoneNumber || null,
+                                address: user.address || null,
+                                city: user.city || null,
+                                stateRegionProvince: user.stateRegionProvince || null,
+                                countryCode: user.countryCode || null,
+                                postalCode: user.postalCode || null,
+                                jti: accessToken,
+                                ipAddress: this.oidcContext.ipAddress,
+                                geoLocation: this.oidcContext.geoLocation,
+                                deviceFingerprint: null
+                            }
+                        }
+                        
                         //await identityDao.updateUserAuthenticationState(userAuthenticationState);
                         // If all is successful, we can delete all of the state records tied to this authentication attempt
                         for(let i = 0; i < arrUserAuthenticationStates.length; i++){

@@ -189,6 +189,12 @@ export const SYSTEM_SETTINGS_UPDATE_SCOPE="system.settings.update";
 export const SYSTEM_SETTINGS_READ_SCOPE="system.settings.read";
 export const JOBS_READ_SCOPE="jobs.read";
 export const JOBS_UPDATE_SCOPE="jobs.update";
+// Scopes specific to communicating with certain external services
+// such as the security event web hook or the legacy user migration
+// services, if they exist. These should ONLY be made available to 
+// CLIENTS in the root tenant.
+export const LEGACY_USER_MIGRATION_SCOPE="legacy.user.migrate";
+export const SECURITY_EVENT_WRITE_SCOPE="security.event.write";
 
 export const SCOPE_USE_IAM_MANAGEMENT="IAM_MANAGEMENT";
 export const SCOPE_USE_APPLICATION_MANAGEMENT="APPLICATION_MANAGEMENT";
@@ -236,7 +242,8 @@ export const ALL_INTERNAL_SCOPE_NAMES = [
     // Captcha
     CAPTCHA_CONFIG_SCOPE,
     // System
-    SYSTEM_SETTINGS_UPDATE_SCOPE, SYSTEM_SETTINGS_READ_SCOPE, JOBS_READ_SCOPE, JOBS_UPDATE_SCOPE
+    SYSTEM_SETTINGS_UPDATE_SCOPE, SYSTEM_SETTINGS_READ_SCOPE, JOBS_READ_SCOPE, JOBS_UPDATE_SCOPE,
+    LEGACY_USER_MIGRATION_SCOPE, SECURITY_EVENT_WRITE_SCOPE
 ];
 
 
@@ -261,7 +268,8 @@ export const ROOT_TENANT_EXCLUSIVE_INTERNAL_SCOPE_NAMES = [
     // Captcha
     CAPTCHA_CONFIG_SCOPE,
     // System
-    SYSTEM_SETTINGS_UPDATE_SCOPE, SYSTEM_SETTINGS_READ_SCOPE, JOBS_READ_SCOPE, JOBS_UPDATE_SCOPE
+    SYSTEM_SETTINGS_UPDATE_SCOPE, SYSTEM_SETTINGS_READ_SCOPE, JOBS_READ_SCOPE, JOBS_UPDATE_SCOPE,
+    LEGACY_USER_MIGRATION_SCOPE, SECURITY_EVENT_WRITE_SCOPE
 ];
 
 // These are the scope values which can be used WITHIN a non-root tenant. So actions such as 
@@ -500,6 +508,7 @@ export const OIDC_CLIENT_AUTH_TYPE_DISPLAY: Map<string, string> = new Map([
     [OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_JWT, "Client Secret JWT"],
     [OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_BASIC, "Client Secret Basic"]
 ]);
+
 
 export const CLIENT_TYPE_SERVICE_ACCOUNT_ONLY="SERVICE_ACCOUNT_ONLY";
 export const CLIENT_TYPE_SERVICE_ACCOUNT_AND_USER_DELEGATED_PERMISSIONS="SERVICE_ACCOUNT_AND_USER_DELEGATED_PERMISSIONS";
@@ -792,6 +801,8 @@ export const DEFAULT_TENANT_META_DATA: TenantMetaData = {
     systemSettings: {
         allowBackupEmail: false,
         allowDuressPassword: false,
+        rootClientId: "",
+        enablePortalAsLegacyIdp: false,
         softwareVersion: OPENTRUST_IDENTITY_VERSION,
         systemCategories: []
     }

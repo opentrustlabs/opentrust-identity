@@ -19,6 +19,18 @@ class SystemSettingsEntity extends Model {
                 primaryKey: false,
                 allowNull: false,
                 field: "allowduresspassword"
+            },
+            rootClientId: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: false,
+                field: "rootclientid"
+            },
+            enablePortalAsLegacyIdp: {
+                type: DataTypes.BOOLEAN,
+                primaryKey: false,
+                allowNull: false,
+                field: "enableportalaslegacyidp"
             }
         }, 
         {
