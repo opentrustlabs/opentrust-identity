@@ -23,7 +23,6 @@ export default async function handler(
 	res: NextApiResponse
 ) {
 
-    console.log("method is: " + req.method);
     if(req.method === "POST"){
         const event: SecurityEvent = req.body as SecurityEvent;
         console.log(JSON.stringify(event));
