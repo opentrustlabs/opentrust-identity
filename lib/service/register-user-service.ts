@@ -211,9 +211,10 @@ class RegisterUserService extends IdentityService {
         if(tenant.migrateLegacyUsers === true){
             tenantLegacyUserMigrationConfig = await tenantDao.getLegacyUserMigrationConfiguration(tenant.tenantId);
             if(tenantLegacyUserMigrationConfig && tenantLegacyUserMigrationConfig.usernameCheckUri && tenantLegacyUserMigrationConfig.authenticationUri && tenantLegacyUserMigrationConfig.userProfileUri){
-                const userExistsInLegacySystem: boolean = await oidcServiceUtils.legacyUsernameCheck(`${tenantLegacyUserMigrationConfig.usernameCheckUri}?email=${userCreateInput.email}`);
+                const authToken = await jwtServiceUtils.getAuthTokenForOutboundCalls();
+                const userExistsInLegacySystem: boolean = await oidcServiceUtils.legacyUsernameCheck(tenantLegacyUserMigrationConfig.usernameCheckUri, userCreateInput.email.toLowerCase(), authToken || "");
                 if(userExistsInLegacySystem){
-                    throw new GraphQLError("ERROR_USER_ALREADY_EXISTS_IN_LEGACY_SYSTEM");
+                    throw new GraphQLError("ERROR_USER_ALREADY_EXISTS");
                 }
             }
         }

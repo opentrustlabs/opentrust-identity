@@ -1,4 +1,4 @@
-import { User, Tenant, Client, SigningKey, ClientAuthHistory, PortalUserProfile, AuthorizationGroup, UserScopeRel, Scope, OidcUserProfile, UserProfileAuthorizationGroup, SystemSettings } from "@/graphql/generated/graphql-types";
+import { User, Tenant, Client, SigningKey, ClientAuthHistory, PortalUserProfile, AuthorizationGroup, UserScopeRel, Scope, OidcUserProfile, UserProfileAuthorizationGroup, SystemSettings, ClientScopeRel } from "@/graphql/generated/graphql-types";
 import { generateRandomToken, getDomainFromEmail } from "@/utils/dao-utils";
 import ClientDao from "@/lib/dao/client-dao";
 import TenantDao from "@/lib/dao/tenant-dao";
@@ -81,6 +81,8 @@ class JwtServiceUtils {
                 return null;
             }
 
+            // TODO
+            // Refactor, since these both do the same queries.
             const arrScopes = includeScope ? await this.getScopes(user.userId, principal.tenant_id) : [];
             const arrAuthzGroups: Array<AuthorizationGroup> = includeAuthorizationGroups ? await authorizationGroupDao.getUserAuthorizationGroups(user.userId) : [];
 
@@ -616,7 +618,15 @@ class JwtServiceUtils {
         return Promise.resolve(cachedSigningKey);
     }
 
-    
+    public async getClientScopes(clientId: string): Promise<Array<Scope>> {
+        const arrRels: Array<ClientScopeRel> = await scopeDao.getClientScopeRels(clientId);
+        const scopeIds: Array<string> = arrRels.map(
+            (r: ClientScopeRel) => r.scopeId
+        );
+        const arrScope: Array<Scope> = await scopeDao.getScope(undefined, Array.from(scopeIds));  
+        return arrScope;
+        
+    }
     protected async getScopes(userId: string, tenantId: string): Promise<Array<Scope>> {
         const setScopeIds: Set<string> = new Set();
 
