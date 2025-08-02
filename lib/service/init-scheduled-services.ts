@@ -130,7 +130,8 @@ async function createKey(tenant: Tenant){
         ipAddress: "",
         portalUserProfile: null,
         requestCache: new Map(),
-        rootTenant: tenant
+        rootTenant: tenant,
+        deviceFingerPrint: null
     });
     
     await keyService.uncheckedAutoCreateSigningKey(keyInput);    

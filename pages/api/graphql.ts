@@ -85,7 +85,8 @@ async function getOIDCContext(req: NextApiRequest): Promise<OIDCContext> {
         rootTenant: rootTenant,
         requestCache: new Map(),
         ipAddress: ipAddress,
-        geoLocation: geoLocation
+        geoLocation: geoLocation,
+        deviceFingerPrint: null
     }
     return context;
 }

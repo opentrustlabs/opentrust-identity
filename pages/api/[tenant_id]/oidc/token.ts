@@ -242,9 +242,9 @@ async function handleAuthorizationCodeGrant(tokenData: TokenData, res: NextApiRe
         }
     }
     
-    const oidcTokenResponse: OIDCTokenResponse | null = await jwtService.signUserJwt(authorizationCodeData.userId, authorizationCodeData.clientId, authorizationCodeData.tenantId, authorizationCodeData.scope);
-    
-    if(!oidcTokenResponse){
+    const response = await jwtService.signUserJwt(authorizationCodeData.userId, authorizationCodeData.clientId, authorizationCodeData.tenantId);    
+    //const oidcTokenResponse: OIDCTokenResponse | null = await jwtService.signUserJwt(authorizationCodeData.userId, authorizationCodeData.clientId, authorizationCodeData.tenantId);    
+    if(!response){
         const error: OIDCErrorResponseBody = {
             error: OIDC_TOKEN_ERROR_UNAUTHORIZED_CLIENT,
             error_code: "0000721",
@@ -256,11 +256,11 @@ async function handleAuthorizationCodeGrant(tokenData: TokenData, res: NextApiRe
         return res.status(400).json(error);
     }
 
-    if(oidcTokenResponse.refresh_token){
+    if(response.oidcTokenResponse.refresh_token){
         const refreshData: RefreshData = {
             clientId: authorizationCodeData.clientId,
             refreshCount: 1,
-            refreshToken: generateHash(oidcTokenResponse.refresh_token),
+            refreshToken: generateHash(response.oidcTokenResponse.refresh_token),
             refreshTokenClientType: authorizationCodeData.codeChallenge ? REFRESH_TOKEN_CLIENT_TYPE_PKCE : REFRESH_TOKEN_CLIENT_TYPE_SECURE_CLIENT,
             tenantId: authorizationCodeData.tenantId,
             userId: authorizationCodeData.userId,
@@ -273,7 +273,7 @@ async function handleAuthorizationCodeGrant(tokenData: TokenData, res: NextApiRe
         await authDao.saveRefreshData(refreshData);
     };
 
-    return res.status(200).json(oidcTokenResponse);
+    return res.status(200).json(response.oidcTokenResponse);
     
 }
 
@@ -472,8 +472,9 @@ async function handleRefreshTokenGrant(tokenData: TokenData, res: NextApiRespons
     // This will rotate the refresh token. So we need to remove the old
     // one (based on its hash value) and save the new one (also based on
     // its hash value).
-    const oidcTokenResponse: OIDCTokenResponse | null = await jwtService.signUserJwt(refreshTokenData.userId, refreshTokenData.clientId, refreshTokenData.tenantId, refreshTokenData.scope);
-    if(!oidcTokenResponse){
+    const response = await jwtService.signUserJwt(refreshTokenData.userId, refreshTokenData.clientId, refreshTokenData.tenantId);
+    // const oidcTokenResponse: OIDCTokenResponse | null = await jwtService.signUserJwt(refreshTokenData.userId, refreshTokenData.clientId, refreshTokenData.tenantId);
+    if(!response){
         const error: OIDCErrorResponseBody = {
             error: OIDC_TOKEN_ERROR_INVALID_REQUEST,
             error_code: "0000731",
@@ -484,11 +485,11 @@ async function handleRefreshTokenGrant(tokenData: TokenData, res: NextApiRespons
         }
         return res.status(400).json(error);
     }
-    if(oidcTokenResponse.refresh_token){
+    if(response.oidcTokenResponse.refresh_token){
         const newRefreshData: RefreshData = {
             clientId: refreshTokenData.clientId,
             refreshCount: refreshTokenData.refreshCount + 1,
-            refreshToken: generateHash(oidcTokenResponse.refresh_token),
+            refreshToken: generateHash(response.oidcTokenResponse.refresh_token),
             refreshTokenClientType: refreshTokenData.refreshTokenClientType,
             tenantId: refreshTokenData.tenantId,
             userId: refreshTokenData.userId,
@@ -502,7 +503,7 @@ async function handleRefreshTokenGrant(tokenData: TokenData, res: NextApiRespons
     };
     await authDao.deleteRefreshDataByRefreshToken(hashedRefreshToken);
     
-    return res.status(200).json(oidcTokenResponse);
+    return res.status(200).json(response.oidcTokenResponse);
 
 }
 async function handleClientCredentialsGrant(tokenData: TokenData, res: NextApiResponse){
@@ -574,8 +575,9 @@ async function handleClientCredentialsGrant(tokenData: TokenData, res: NextApiRe
         return res.status(400).json(error);
     }
     
-    const oidcTokenResponse: OIDCTokenResponse | null = await jwtService.signClientJwt(client, tenant);
-    if(!oidcTokenResponse){
+    const response = await jwtService.signClientJwt(client, tenant);
+    //const oidcTokenResponse: OIDCTokenResponse | null = await jwtService.signClientJwt(client, tenant);
+    if(!response){
         const error: OIDCErrorResponseBody = {
             error: OIDC_TOKEN_ERROR_INVALID_CLIENT,
             error_code: "0000737",
@@ -587,6 +589,6 @@ async function handleClientCredentialsGrant(tokenData: TokenData, res: NextApiRe
         return res.status(400).json(error);
     }
 
-    return res.status(200).json(oidcTokenResponse);
+    return res.status(200).json(response.oidcTokenResponse);
 
 }

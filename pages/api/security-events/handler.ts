@@ -23,8 +23,16 @@ export default async function handler(
 	res: NextApiResponse
 ) {
 
-    const event: SecurityEvent = req.body as SecurityEvent;
-    console.log(JSON.stringify(event));
-    return res.status(200).end();
-
+    console.log("method is: " + req.method);
+    if(req.method === "POST"){
+        const event: SecurityEvent = req.body as SecurityEvent;
+        console.log(JSON.stringify(event));
+    }
+    res.status(200).end();
 }
+
+export const config = {
+    api: {
+      bodyParser: true,
+    },
+  };

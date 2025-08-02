@@ -943,17 +943,20 @@ class RegisterUserService extends IdentityService {
             }
             else if(userRegistrationState.registrationState === RegistrationState.RedirectToIamPortal){
                 try{
-                    const accessToken: string | null = await jwtServiceUtils.signIAMPortalUserJwt(user, tenant, this.getPortalAuthenTokenTTLSeconds(), TOKEN_TYPE_IAM_PORTAL_USER);
-                    if(accessToken === null){
+                    const jwtSigningResponse = await jwtServiceUtils.signIAMPortalUserJwt(user, tenant, this.getPortalAuthenTokenTTLSeconds(), TOKEN_TYPE_IAM_PORTAL_USER);
+                    if(!jwtSigningResponse || jwtSigningResponse.accessToken === null){
                         response.registrationError.errorCode = "ERROR_GENERATING_ACCESS_TOKEN_REGISTRATION_COMPLETION";
                         response.userRegistrationState.registrationState = RegistrationState.Error;
                     }
                     else{
                         response.userRegistrationState = userRegistrationState;
                         response.uri = `/${userRegistrationState.tenantId}`;
-                        response.accessToken = accessToken;
+                        response.accessToken = jwtSigningResponse.accessToken;
                         response.tokenExpiresAtMs = Date.now() + (this.getPortalAuthenTokenTTLSeconds() * 1000);
                         userRegistrationState.registrationStateStatus = STATUS_COMPLETE;
+
+                        const authToken = await jwtServiceUtils.getAuthTokenForOutboundCalls();
+                        oidcServiceUtils.fireSecurityEvent("user_registered", this.oidcContext, user, jwtSigningResponse.principal.jti || null, authToken);
                         //await identityDao.updateUserRegistrationState(userRegistrationState);
                         // At this point, we can delete all of the states tied to the registration
                         for(let i = 0; i < arrUserRegistrationState.length; i++){
