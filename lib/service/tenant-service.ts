@@ -22,9 +22,6 @@ const scopeDao: ScopeDao = DaoFactory.getInstance().getScopeDao();
 const markForDeleteDao: MarkForDeleteDao = DaoFactory.getInstance().getMarkForDeleteDao();
 const schedulerDao: SchedulerDao = DaoFactory.getInstance().getSchedulerDao();
 
-const {
-    SECURITY_EVENT_CALLBACK_URI
-} = process.env;
 
 class TenantService {
 
@@ -525,12 +522,7 @@ class TenantService {
         if(!authResult.isAuthorized){
             throw new GraphQLError(authResult.errorMessage || "ERROR");
         }
-
-        // We cannot add duress passwords unless there is a registered callback URI for
-        // handling security events (which include duress password use, locked accounts, etc.)
-        if(!SECURITY_EVENT_CALLBACK_URI){
-            systemSettingsUpdateInput.allowDuressPassword = false;
-        }
+        
         const existingSystemSettings = await tenantDao.getSystemSettings();
         if(existingSystemSettings.rootClientId !== systemSettingsUpdateInput.rootClientId){
             const client: Client | null = await clientDao.getClientById(systemSettingsUpdateInput.rootClientId);
