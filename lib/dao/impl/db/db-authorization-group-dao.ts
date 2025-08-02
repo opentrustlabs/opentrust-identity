@@ -15,13 +15,24 @@ class DBAuthorizationGroupDao extends AuthorizationGroupDao {
                     tenantId: tenantId
                 }
             });
-            return entities.map(e => e.dataValues);// as any as Array<AuthorizationGroup>;
+            return entities.map(e => e.dataValues);
         }
         else{
-            const entities: Array<AuthorizationGroupEntity> = await sequelize.models.authorizationGroup.findAll();// as any as Array<AuthorizationGroup>;
+            const entities: Array<AuthorizationGroupEntity> = await sequelize.models.authorizationGroup.findAll();
             return entities.map(e => e.dataValues);
         }
     }  
+
+    public async getDefaultAuthorizationGroups(tenantId: string): Promise<Array<AuthorizationGroup>>{
+         const sequelize: Sequelize = await DBDriver.getConnection();         
+        const entities: Array<AuthorizationGroupEntity> = await sequelize.models.authorizationGroup.findAll({
+            where: {
+                tenantId: tenantId,
+                default: true
+            }
+        });
+        return entities.map(e => e.dataValues);        
+    }
 
     public async getAuthorizationGroupById(groupId: string): Promise<AuthorizationGroup | null> {
         const sequelize: Sequelize = await DBDriver.getConnection(); 

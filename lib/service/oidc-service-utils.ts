@@ -2,8 +2,18 @@ import axios, { AxiosResponse } from "axios";
 import { Jwks, WellknownConfig } from "@/lib/models/wellknown-config";
 import NodeCache from "node-cache";
 import { LegacyUserAuthenticationPayload, LegacyUserAuthenticationResponse, LegacyUserProfile } from "../models/principal";
-import { SecurityEvent } from "../models/security-event";
+import { SecurityEvent, SecurityEventType } from "../models/security-event";
+import { OIDCContext } from "@/graphql/graphql-context";
+import { User } from "@/graphql/generated/graphql-types";
+import { DaoFactory } from "../data-sources/dao-factory";
+import TenantDao from "../dao/tenant-dao";
 
+
+const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
+
+const {
+    SECURITY_EVENT_CALLBACK_URI
+} = process.env;
 
 // TODO
 // Need to consider the following properties on the axios requests:
@@ -171,21 +181,48 @@ class OIDCServiceUtils {
         }
     }
 
-    public async invokeSecurityEventCallback(uri: string, securityEvent: SecurityEvent, authToken: string){
+    public async fireSecurityEvent(securityEventType: SecurityEventType, oidcContext: OIDCContext, user: User, jti: string | null, authToken: string | null){
+        const securityEvent: SecurityEvent = {
+            securityEventType: securityEventType,
+            userId: user.userId,
+            email: user.email,
+            phoneNumber: user.phoneNumber || null,
+            address: user.address || null,
+            city: user.city || null,
+            stateRegionProvince: user.stateRegionProvince || null,
+            countryCode: user.countryCode || null,
+            postalCode: user.postalCode || null,
+            jti: jti,
+            ipAddress: oidcContext.ipAddress,
+            geoLocation: oidcContext.geoLocation,
+            deviceFingerprint: oidcContext.deviceFingerPrint    
+        };
+        this.invokeSecurityEventCallback(securityEvent, authToken);        
+    }
+
+    public async invokeSecurityEventCallback(securityEvent: SecurityEvent, authToken: string | null){
         // Fire asynchronously, but if there is an error, log the error.
-        axios.post(uri, securityEvent, {
-            headers: {
-                "Authorization": `Bearer ${authToken}`,
-                "Content-Type": "application/json"
-            },
-            timeout: 30000
-        }).catch(
-            (error) => {
-                // TODO
-                // Log the error
-                console.log(error);
-            }
-        )
+        if(SECURITY_EVENT_CALLBACK_URI){
+            axios.post(SECURITY_EVENT_CALLBACK_URI, securityEvent, {
+                headers: {
+                    "Authorization": authToken ? `Bearer ${authToken}` : "",
+                    "Content-Type": "application/json"
+                },
+                timeout: 30000
+            }).catch(
+                (error) => {
+                    // TODO
+                    // Log the error
+                    console.log(error);
+                }
+            )
+        }
+        else{
+            // TODO
+            // Log the inability to send a security event
+            console.log("ERROR_NO_WEB_HOOK_DEFINED");
+        }
+        
     }
 
 }

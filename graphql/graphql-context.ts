@@ -5,6 +5,7 @@ export interface OIDCContext {
     portalUserProfile: PortalUserProfile | null,
     rootTenant: Tenant,
     requestCache: Map<string, any>,
-    ipAddress: string,
-    geoLocation: string
+    ipAddress: string | null,
+    geoLocation: string | null,
+    deviceFingerPrint: string | null // Not implemented yet. For future enhancements...
 }

@@ -6,6 +6,8 @@ abstract class AuthenticationGroupDao {
         /////////////////   AUTHENTICATION GROUPS   ///////////////////////
         abstract getAuthenticationGroups(tenantId?: string, clientId?: string, userId?: string): Promise<Array<AuthenticationGroup>>;
 
+        abstract getDefaultAuthenticationGroups(tenantId: string): Promise<Array<AuthenticationGroup>>;
+
         abstract getAuthenticationGroupById(authenticationGroupId: string): Promise<AuthenticationGroup | null>;
     
         abstract createAuthenticationGroup(authenticationGroup: AuthenticationGroup): Promise<AuthenticationGroup>;

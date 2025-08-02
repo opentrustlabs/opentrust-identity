@@ -14,7 +14,7 @@ import OIDCServiceUtils from "./oidc-service-utils";
 import { randomUUID } from "node:crypto";
 import { LegacyUserAuthenticationResponse, LegacyUserProfile } from "../models/principal";
 import AuthenticationGroupDao from "../dao/authentication-group-dao";
-import { SecurityEvent } from "../models/security-event";
+import { SecurityEvent, SecurityEventType } from "../models/security-event";
 
 const jwtServiceUtils: JwtServiceUtils = new JwtServiceUtils();
 const oidcServiceUtils: OIDCServiceUtils = new OIDCServiceUtils();
@@ -1377,6 +1377,8 @@ class AuthenticateUserService extends IdentityService {
             if(lockUser){
                 user.locked = true;
                 await identityDao.updateUser(user);
+                const authToken = await jwtServiceUtils.getAuthTokenForOutboundCalls();
+                oidcServiceUtils.fireSecurityEvent("account_locked", this.oidcContext, user, null, authToken);
             }
             // We can safely delete the previous failed attempts
             if(userFailedLoginAttempts.length > 0){
@@ -1506,39 +1508,32 @@ class AuthenticateUserService extends IdentityService {
                     response.authenticationError.errorCode = "ERROR_INVALID_TENANT_FOR_AUTHENTICATION_COMPLETION";
                     response.userAuthenticationState.authenticationState = AuthenticationState.Error;
                 }
-                else{                    
-                    const accessToken: string | null = await jwtServiceUtils.signIAMPortalUserJwt(user, tenant, this.getPortalAuthenTokenTTLSeconds(), TOKEN_TYPE_IAM_PORTAL_USER);
-                    if(accessToken === null){
+                else{  
+                    const jwtSigningResponse = await jwtServiceUtils.signIAMPortalUserJwt(user, tenant, this.getPortalAuthenTokenTTLSeconds(), TOKEN_TYPE_IAM_PORTAL_USER);
+                    //const accessToken: string | null = await jwtServiceUtils.signIAMPortalUserJwt(user, tenant, this.getPortalAuthenTokenTTLSeconds(), TOKEN_TYPE_IAM_PORTAL_USER);
+                    if(!jwtSigningResponse || jwtSigningResponse.accessToken === null){
                         response.authenticationError.errorCode = "ERROR_GENERATING_ACCESS_TOKEN_AUTHENTICATION_COMPLETION";
                         response.userAuthenticationState.authenticationState = AuthenticationState.Error;
                     }
                     else{
                         response.userAuthenticationState = userAuthenticationState;
                         response.uri = userAuthenticationState.returnToUri ? userAuthenticationState.returnToUri : `/${userAuthenticationState.tenantId}`;
-                        response.accessToken = accessToken;
+                        response.accessToken = jwtSigningResponse.accessToken;
                         response.tokenExpiresAtMs = Date.now() + (this.getPortalAuthenTokenTTLSeconds() * 1000);
                         userAuthenticationState.authenticationStateStatus = STATUS_COMPLETE;
 
                         // If the last step in authentication is to send a security event:
+                        const finalUserAuthenticationState = arrUserAuthenticationStates[arrUserAuthenticationStates.length - 1];
                         if(
-                            arrUserAuthenticationStates[arrUserAuthenticationStates.length - 1].authenticationState === AuthenticationState.PostAuthnStateSendSecurityEventSuccessLogon ||
-                            arrUserAuthenticationStates[arrUserAuthenticationStates.length - 1].authenticationState === AuthenticationState.PostAuthnStateSendSecurityEventDuressLogon
+                            finalUserAuthenticationState.authenticationState === AuthenticationState.PostAuthnStateSendSecurityEventSuccessLogon ||
+                            finalUserAuthenticationState.authenticationState === AuthenticationState.PostAuthnStateSendSecurityEventDuressLogon
                         ){
-                            const securityEvent: SecurityEvent = {
-                                securityEventType: "account_locked",
-                                userId: user.userId,
-                                email: user.email,
-                                phoneNumber: user.phoneNumber || null,
-                                address: user.address || null,
-                                city: user.city || null,
-                                stateRegionProvince: user.stateRegionProvince || null,
-                                countryCode: user.countryCode || null,
-                                postalCode: user.postalCode || null,
-                                jti: accessToken,
-                                ipAddress: this.oidcContext.ipAddress,
-                                geoLocation: this.oidcContext.geoLocation,
-                                deviceFingerprint: null
-                            }
+                            finalUserAuthenticationState.authenticationStateStatus = STATUS_COMPLETE;
+                            const securityEventType: SecurityEventType = 
+                                finalUserAuthenticationState.authenticationState === AuthenticationState.PostAuthnStateSendSecurityEventSuccessLogon
+                                    ? "successful_authentication" : "duress_authentication";
+                            const authToken = await jwtServiceUtils.getAuthTokenForOutboundCalls();
+                            oidcServiceUtils.fireSecurityEvent(securityEventType, this.oidcContext, user, jwtSigningResponse.principal.jti || null, authToken);
                         }
                         
                         //await identityDao.updateUserAuthenticationState(userAuthenticationState);
