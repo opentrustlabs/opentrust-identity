@@ -1,4 +1,4 @@
-import { AuthenticationGroup, AuthorizationGroup, Client, DeletionStatus, FederatedOidcProvider, MarkForDelete, MarkForDeleteObjectType, RateLimitServiceGroup, Scope, SigningKey, Tenant, User } from "@/graphql/generated/graphql-types";
+import { AuthenticationGroup, AuthorizationGroup, Client, DeletionStatus, FederatedOidcProvider, MarkForDelete, MarkForDeleteObjectType, RateLimitServiceGroup, Scope, SigningKey, SystemSettings, Tenant, User } from "@/graphql/generated/graphql-types";
 import { OIDCContext } from "@/graphql/graphql-context";
 import { DaoFactory } from "../data-sources/dao-factory";
 import TenantDao from "../dao/tenant-dao";
@@ -103,7 +103,14 @@ class MarkForDeleteService {
         }
         if(markForDelete.objectType === MarkForDeleteObjectType.Client){
             const c: Client = object as Client;
+            const systemSettings: SystemSettings = await tenantDao.getSystemSettings();
 
+            // We cannot delete a client that is used for outbound communication as a representative
+            // of the root tenant.
+            if(c.clientId === systemSettings.rootClientId){
+                throw new GraphQLError("ERROR_CANNOT_DELETE_CLIENT_ASSIGNED_TO_ROOT_TENANT_FOR_OUTBOUND_SERVICE_CALLS");
+            }
+            
             const u = WithAuthorizationByScopeAndTenant({
                 async performOperation() {
                     c.markForDelete = true;

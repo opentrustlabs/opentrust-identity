@@ -115,11 +115,15 @@ class OIDCServiceUtils {
      * @param uri 
      * @returns 
      */
-    public async legacyUsernameCheck(uri: string): Promise<boolean> {
-        const response: AxiosResponse = await axios.head(uri, {
+    public async legacyUsernameCheck(uri: string, email: string, authToken: string): Promise<boolean> {
+        const response: AxiosResponse = await axios.head(`${uri}?email=${email}`, {
             timeout: 30000,
-            responseEncoding: "utf-8"
+            responseEncoding: "utf-8",
+            headers: {                
+                "Authorization": `Bearer ${authToken}`
+            }
         });
+
         return response.status === 200;
     }
 
@@ -132,7 +136,7 @@ class OIDCServiceUtils {
      * @param password 
      * @returns 
      */
-    public async legacyUserAuthentication(uri: string, email: string, password: string): Promise<LegacyUserAuthenticationResponse | null>{
+    public async legacyUserAuthentication(uri: string, email: string, password: string, authToken: string): Promise<boolean>{
 
         const payload: LegacyUserAuthenticationPayload = {
             email: email,
@@ -143,16 +147,17 @@ class OIDCServiceUtils {
             timeout: 30000,
             responseEncoding: "utf-8",
             headers: {
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${authToken}`
             },
             responseType: "json"
         });
 
         if(response.status === 200){
-            return response.data as LegacyUserAuthenticationResponse;
+            return true;
         }
         else{
-            return null;
+            return false;
         }
     }
 
@@ -163,9 +168,9 @@ class OIDCServiceUtils {
      * @param authToken 
      * @returns 
      */
-    public async legacyUserProfile(uri: string, authToken: string): Promise<LegacyUserProfile | null>{
+    public async legacyUserProfile(uri: string, email: string, authToken: string): Promise<LegacyUserProfile | null>{
 
-        const response: AxiosResponse = await axios.get(uri, {
+        const response: AxiosResponse = await axios.get(`${uri}?email=${email}`, {
             headers: {
                 "Authorization": `Bearer ${authToken}`
             },

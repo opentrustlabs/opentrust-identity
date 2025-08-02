@@ -309,7 +309,8 @@ class AuthenticateUserService extends IdentityService {
             if(tenant.migrateLegacyUsers === true){
                 tenantLegacyUserMigrationConfig = await tenantDao.getLegacyUserMigrationConfiguration(tenant.tenantId);
                 if(tenantLegacyUserMigrationConfig && tenantLegacyUserMigrationConfig.usernameCheckUri && tenantLegacyUserMigrationConfig.authenticationUri && tenantLegacyUserMigrationConfig.userProfileUri){
-                    const userExistsInLegacySystem = await oidcServiceUtils.legacyUsernameCheck(`${tenantLegacyUserMigrationConfig.usernameCheckUri}?email=${email.toLowerCase()}`);
+                    const authToken = await jwtServiceUtils.getAuthTokenForOutboundCalls();
+                    const userExistsInLegacySystem = await oidcServiceUtils.legacyUsernameCheck(tenantLegacyUserMigrationConfig.usernameCheckUri, email.toLowerCase(), authToken || "");
                     if(userExistsInLegacySystem){
                         canMigrateUser = true;
                     }
@@ -547,7 +548,8 @@ class AuthenticateUserService extends IdentityService {
             for(let i = 0; i < tenantsThatAllowPasswordLogin.length; i++){
                 const tenantLegacyUserMigrationConfig: TenantLegacyUserMigrationConfig | null = await tenantDao.getLegacyUserMigrationConfiguration(tenantsThatAllowPasswordLogin[i].tenantId);
                 if(tenantLegacyUserMigrationConfig && tenantLegacyUserMigrationConfig.usernameCheckUri && tenantLegacyUserMigrationConfig.authenticationUri && tenantLegacyUserMigrationConfig.userProfileUri){
-                    const userExistsInLegacySystem = await oidcServiceUtils.legacyUsernameCheck(`${tenantLegacyUserMigrationConfig.usernameCheckUri}?email=${email.toLowerCase()}`);
+                    const authToken = await jwtServiceUtils.getAuthTokenForOutboundCalls();
+                    const userExistsInLegacySystem = await oidcServiceUtils.legacyUsernameCheck(tenantLegacyUserMigrationConfig.usernameCheckUri, email.toLowerCase(), authToken || "");
                     if(userExistsInLegacySystem){
                         migrationFriendlyTenants.push(tenantsThatAllowPasswordLogin[i]);
                     }
@@ -560,7 +562,8 @@ class AuthenticateUserService extends IdentityService {
                 }
                 const tenantLegacyUserMigrationConfig: TenantLegacyUserMigrationConfig | null = await tenantDao.getLegacyUserMigrationConfiguration(tenantsThatAllowSelfRegistration[i].tenantId);
                 if(tenantLegacyUserMigrationConfig && tenantLegacyUserMigrationConfig.usernameCheckUri && tenantLegacyUserMigrationConfig.authenticationUri && tenantLegacyUserMigrationConfig.userProfileUri){
-                    const userExistsInLegacySystem = await oidcServiceUtils.legacyUsernameCheck(`${tenantLegacyUserMigrationConfig.usernameCheckUri}?email=${email.toLowerCase()}`);
+                    const authToken = await jwtServiceUtils.getAuthTokenForOutboundCalls();
+                    const userExistsInLegacySystem = await oidcServiceUtils.legacyUsernameCheck(tenantLegacyUserMigrationConfig.usernameCheckUri, email.toLowerCase(), authToken || "");
                     if(userExistsInLegacySystem){
                         migrationFriendlyTenants.push(tenantsThatAllowPasswordLogin[i]);
                     }
@@ -835,14 +838,15 @@ class AuthenticateUserService extends IdentityService {
             return Promise.resolve(response);
         }
 
-        const authnResponse: LegacyUserAuthenticationResponse | null = await oidcServiceUtils.legacyUserAuthentication(legacyUserMigrationConfiguration.authenticationUri, username, password);
-        if(authnResponse === null || !authnResponse.accessToken){
+        const authToken = await jwtServiceUtils.getAuthTokenForOutboundCalls();
+        const authnResponse: boolean = await oidcServiceUtils.legacyUserAuthentication(legacyUserMigrationConfiguration.authenticationUri, username, password, authToken || "");
+        if(authnResponse === false){
             response.authenticationError.errorCode = "ERROR_INVALID_CREDENTIALS_FOR_USER_MIGRATION";
             response.userAuthenticationState.authenticationState = AuthenticationState.Error;
             return Promise.resolve(response);
         }
 
-        const legacyProfile: LegacyUserProfile | null = await oidcServiceUtils.legacyUserProfile(legacyUserMigrationConfiguration.userProfileUri, authnResponse.accessToken);
+        const legacyProfile: LegacyUserProfile | null = await oidcServiceUtils.legacyUserProfile(legacyUserMigrationConfiguration.userProfileUri, username, authToken || "");
         if(legacyProfile === null){
             response.authenticationError.errorCode = "ERROR_NO_LEGACY_USER_PROFILE_FOUND";
             response.userAuthenticationState.authenticationState = AuthenticationState.Error;
