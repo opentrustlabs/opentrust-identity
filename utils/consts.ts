@@ -53,10 +53,11 @@ export const GRANT_TYPE_REFRESH_TOKEN = "refresh_token";
 export const GRANT_TYPE_CLIENT_CREDENTIALS = "client_credentials";
 // For future development work, support device code auth grants. Will need a /code endpoint for this
 export const GRANT_TYPE_DEVICE_CODE = "urn:ietf:params:oauth:grant-type:device_code";
-export const GRANT_TYPES_SUPPORTED: Array<string> = [
+export const GRANT_TYPES_SUPPORTED: Array<string> = [    
     GRANT_TYPE_AUTHORIZATION_CODE,
     GRANT_TYPE_REFRESH_TOKEN,
-    GRANT_TYPE_CLIENT_CREDENTIALS
+    GRANT_TYPE_CLIENT_CREDENTIALS,
+    GRANT_TYPE_DEVICE_CODE
 ];
 export const CLIENT_ASSERTION_TYPE_JWT_BEARER = "urn:ietf:params:oauth:client-assertion-type:jwt-bearer";
 // Standard token error codes
@@ -66,17 +67,22 @@ export const OIDC_TOKEN_ERROR_INVALID_GRANT = "invalid_grant";
 export const OIDC_TOKEN_ERROR_UNAUTHORIZED_CLIENT = "unauthorized_client";
 export const OIDC_TOKEN_ERROR_UNSUPPORTED_GRANT_TYPE = "unsupported_grant_type";
 export const OIDC_TOKEN_ERROR_INVALID_SCOPE = "invalid_scope";
+export const OIDC_TOKEN_ERROR_AUTHORIZATION_PENDING="authorization_pending";
+export const OIDC_TOKEN_ERROR_AUTHORIZATION_DECLINED="authorization_declined";
+export const OIDC_TOKEN_ERROR_BAD_VERIFICATION_CODE="bad_verification_code";
+export const OIDC_TOKEN_ERROR_EXPIRED_TOKEN="expired_token"
 
 
 export type OidcTokenErrorType = typeof OIDC_TOKEN_ERROR_INVALID_REQUEST | typeof OIDC_TOKEN_ERROR_INVALID_CLIENT |
     typeof OIDC_TOKEN_ERROR_INVALID_GRANT | typeof OIDC_TOKEN_ERROR_UNAUTHORIZED_CLIENT | typeof OIDC_TOKEN_ERROR_UNSUPPORTED_GRANT_TYPE |
-    typeof OIDC_TOKEN_ERROR_INVALID_SCOPE;
+    typeof OIDC_TOKEN_ERROR_INVALID_SCOPE | typeof OIDC_TOKEN_ERROR_AUTHORIZATION_PENDING | typeof OIDC_TOKEN_ERROR_AUTHORIZATION_DECLINED
+    | typeof OIDC_TOKEN_ERROR_BAD_VERIFICATION_CODE | typeof OIDC_TOKEN_ERROR_EXPIRED_TOKEN;
 
 export const OIDC_AUTHORIZATION_ERROR_ACCESS_DENIED="access_denied";
 export const OIDC_AUTHORIZATION_ERROR_INVALID_REQUEST="invalid_request";
-export const OIDC_AUTHENTICATION_ERROR_UNSUPPORTED_RESPONSE_TYPE="unsupported_response_type";
-export const OIDC_AUTHENTICATION_ERROR_INVALID_SCOPE = "invalid_scope";
-export const OIDC_AUTHENTICATION_ERROR_UNAUTHORIZED_CLIENT="unauthorized_client"
+export const OIDC_AUTHORIZATION_ERROR_UNSUPPORTED_RESPONSE_TYPE="unsupported_response_type";
+export const OIDC_AUTHORIZATION_ERROR_INVALID_SCOPE = "invalid_scope";
+export const OIDC_AUTHORIZATION_ERROR_UNAUTHORIZED_CLIENT="unauthorized_client";
 
 
 
@@ -513,17 +519,20 @@ export const OIDC_CLIENT_AUTH_TYPE_DISPLAY: Map<string, string> = new Map([
 export const CLIENT_TYPE_SERVICE_ACCOUNT_ONLY="SERVICE_ACCOUNT_ONLY";
 export const CLIENT_TYPE_SERVICE_ACCOUNT_AND_USER_DELEGATED_PERMISSIONS="SERVICE_ACCOUNT_AND_USER_DELEGATED_PERMISSIONS";
 export const CLIENT_TYPE_USER_DELEGATED_PERMISSIONS_ONLY="USER_DELEGATED_PERMISSIONS_ONLY";
+export const CLIENT_TYPE_DEVICE="CLIENT_TYPE_DEVICE"
 export const CLIENT_TYPES=[
     CLIENT_TYPE_SERVICE_ACCOUNT_ONLY,
     CLIENT_TYPE_SERVICE_ACCOUNT_AND_USER_DELEGATED_PERMISSIONS,
-    CLIENT_TYPE_USER_DELEGATED_PERMISSIONS_ONLY
+    CLIENT_TYPE_USER_DELEGATED_PERMISSIONS_ONLY,
+    CLIENT_TYPE_DEVICE
 ];
 
 export const CLIENT_TYPES_DISPLAY = new Map<string, string>(
     [ 
         [CLIENT_TYPE_SERVICE_ACCOUNT_ONLY, "Service Account Only"],
         [CLIENT_TYPE_SERVICE_ACCOUNT_AND_USER_DELEGATED_PERMISSIONS, "Service Account and User Delegated Permissions"],
-        [CLIENT_TYPE_USER_DELEGATED_PERMISSIONS_ONLY, "User Delegated Permissions Only"]
+        [CLIENT_TYPE_USER_DELEGATED_PERMISSIONS_ONLY, "User Delegated Permissions Only"],
+        [CLIENT_TYPE_DEVICE, "Device"]
     ]
 );
 
@@ -633,9 +642,11 @@ export const STATUS_OMITTED="OMITTED";
 
 export const REFRESH_TOKEN_CLIENT_TYPE_PKCE="PKCE";
 export const REFRESH_TOKEN_CLIENT_TYPE_SECURE_CLIENT="SECURE_CLIENT";
+export const REFRESH_TOKEN_CLIENT_TYPE_DEVICE="DEVICE";
 export const REFRESH_TOKEN_CLIENT_TYPES=[
     REFRESH_TOKEN_CLIENT_TYPE_PKCE,
-    REFRESH_TOKEN_CLIENT_TYPE_SECURE_CLIENT
+    REFRESH_TOKEN_CLIENT_TYPE_SECURE_CLIENT,
+    REFRESH_TOKEN_CLIENT_TYPE_DEVICE
 ];
 
 export const CHANGE_EVENT_TYPE_CREATE="CREATE";
@@ -747,11 +758,8 @@ export const AUTHENTICATION_LAYOUT_PAGES = [
     "/authorize/login",
     "/authorize/forgot-password",
     "/authorize/register",
-    "/authorize/verify-registration",
-    "/authorize/security-key",
-    "/authorize/totp",
     "/access-error",
-    "/totp"
+    "/device"
     
 ]
 
