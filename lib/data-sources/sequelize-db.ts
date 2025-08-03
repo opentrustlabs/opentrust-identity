@@ -53,6 +53,7 @@ import UserTermsAndConditionsAcceptedEntity from "../entities/user-terms-and-con
 import UserDuressCredentialEntity from "../entities/user-duress-credential";
 import UserEmailBackupEntity from "../entities/user-email-backup-entity";
 import SystemSettingsEntity from "../entities/system-settings-entity";
+import AuthorizationDeviceCodeDataEntity from "../entities/authorization-device-code-data-entity";
 
 
 const {
@@ -180,6 +181,7 @@ class DBDriver {
             UserDuressCredentialEntity.initModel(global.sequelize);
             SystemSettingsEntity.initModel(global.sequelize);
             UserEmailBackupEntity.initModel(global.sequelize);
+            AuthorizationDeviceCodeDataEntity.initModel(global.sequelize);
         } 
 
         return global.sequelize;

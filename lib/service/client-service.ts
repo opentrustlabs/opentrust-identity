@@ -5,7 +5,7 @@ import { generateRandomToken } from "@/utils/dao-utils";
 import TenantDao from "@/lib/dao/tenant-dao";
 import { GraphQLError } from "graphql/error/GraphQLError";
 import { randomUUID } from 'crypto'; 
-import { CLIENT_CREATE_SCOPE, CLIENT_READ_SCOPE, CLIENT_SECRET_ENCODING, CLIENT_TYPES_DISPLAY, CLIENT_UPDATE_SCOPE, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_READ_ALL_SCOPE } from "@/utils/consts";
+import { CLIENT_CREATE_SCOPE, CLIENT_READ_SCOPE, CLIENT_SECRET_ENCODING, CLIENT_TYPES, CLIENT_TYPES_DISPLAY, CLIENT_UPDATE_SCOPE, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_READ_ALL_SCOPE } from "@/utils/consts";
 import { getOpenSearchClient } from "@/lib/data-sources/search";
 import { DaoFactory } from "../data-sources/dao-factory";
 import Kms from "../kms/kms";
@@ -96,6 +96,10 @@ class ClientService {
             throw new GraphQLError(errorMessage || "ERROR");
         }
 
+        if(!CLIENT_TYPES.includes(client.clientType)){
+            throw new GraphQLError("ERROR_INVALID_CLIENT_TYPE");
+        }
+
         client.clientId = randomUUID().toString();
         const clientSecret = generateRandomToken(32, CLIENT_SECRET_ENCODING);
         const encryptedClientSecret = await kms.encrypt(clientSecret);
@@ -124,6 +128,10 @@ class ClientService {
             throw new GraphQLError(errorMessage || "ERROR");
         }
 
+        if(!CLIENT_TYPES.includes(client.clientType)){
+            throw new GraphQLError("ERROR_INVALID_CLIENT_TYPE");
+        }
+        
         // tenantId is a write-only-read-only property, no updates regardless of what the client has sent
         // same for client secret
         clientToUpdate.clientDescription = client.clientDescription;

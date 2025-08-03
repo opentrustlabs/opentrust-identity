@@ -696,6 +696,23 @@ type AuthorizationCodeData {
     expiresAtMs: Float!
 }
 
+enum DeviceCodeAuthorizationStatus {
+    PENDING
+    CANCELLED
+    APPROVED
+}
+
+type AuthorizationDeviceCodeData {
+    clientId: String!
+    tenantId: String!
+    scope: String!
+    deviceCode: String!
+    userCode: String!
+    expiresAtMs: Float!
+    authorizationStatus: DeviceCodeAuthorizationStatus!
+    userId: String
+}
+
 type AuthorizationReturnUri {
     uri: String!
     code: String!
