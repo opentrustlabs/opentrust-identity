@@ -272,10 +272,18 @@ class JwtServiceUtils {
             return Promise.resolve(null);
         }
         
+        let generateRefreshToken: boolean = false;
+        if(client.maxRefreshTokenCount === undefined || client.maxRefreshTokenCount === null){
+            generateRefreshToken = true;
+        }
+        else if(client.maxRefreshTokenCount > 0){
+            generateRefreshToken = true;
+        }
+
         const oidcTokenResponse: OIDCTokenResponse = {
             access_token: s,
             token_type: "Bearer",
-            refresh_token: client.maxRefreshTokenCount && client.maxRefreshTokenCount > 0 ? generateRandomToken(32) : null,
+            refresh_token: generateRefreshToken ? generateRandomToken(32) : null,
             expires_in: client.userTokenTTLSeconds ? ( now / 1000 ) + client.userTokenTTLSeconds : ( now / 1000 ) + DEFAULT_END_USER_TOKEN_TTL_SECONDS,
             id_token: s
         }

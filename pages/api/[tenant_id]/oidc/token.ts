@@ -483,8 +483,7 @@ async function handleRefreshTokenGrant(tokenData: TokenData, res: NextApiRespons
     // This will rotate the refresh token. So we need to remove the old
     // one (based on its hash value) and save the new one (also based on
     // its hash value).
-    const response = await jwtService.signUserJwt(refreshTokenData.userId, refreshTokenData.clientId, refreshTokenData.tenantId);
-    // const oidcTokenResponse: OIDCTokenResponse | null = await jwtService.signUserJwt(refreshTokenData.userId, refreshTokenData.clientId, refreshTokenData.tenantId);
+    const response = await jwtService.signUserJwt(refreshTokenData.userId, refreshTokenData.clientId, refreshTokenData.tenantId);    
     if(!response){
         const error: OIDCErrorResponseBody = {
             error: OIDC_TOKEN_ERROR_INVALID_REQUEST,
@@ -686,6 +685,9 @@ async function handleDeviceCodeGrant(tokenData: TokenData, res: NextApiResponse)
         return res.status(400).json(error);
     }
     else if(deviceCodeData.authorizationStatus === DeviceCodeAuthorizationStatus.Approved){
+        // Delete the device code data, regardless of whether any errors occur afterwards.
+        await authDao.deleteAuthorizationDeviceCodeData(deviceCodeData.deviceCodeId);
+        
         if(!deviceCodeData.userId){
             const error: OIDCErrorResponseBody = {
                 error: OIDC_TOKEN_ERROR_INVALID_REQUEST,

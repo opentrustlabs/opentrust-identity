@@ -312,9 +312,13 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                                         if (!Number.isNaN(evt.target.value)) {
                                                             const v: number = parseInt(evt.target.value);
                                                             clientUpdateInput.maxRefreshTokenCount = v;
-                                                            setClientUpdateInput({ ...clientUpdateInput });
-                                                            setMarkDirty(true);
                                                         }
+                                                        else{
+                                                            clientUpdateInput.maxRefreshTokenCount = null;
+                                                        }
+                                                        setClientUpdateInput({ ...clientUpdateInput });
+                                                        setMarkDirty(true);
+                                                        
                                                     }}
                                                     fullWidth={true} size="small" />
                                             </Grid2>
