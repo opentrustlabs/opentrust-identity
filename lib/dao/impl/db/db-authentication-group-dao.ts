@@ -65,6 +65,22 @@ class DBAuthenticationGroupDao extends AuthenticationGroupDao {
         }
     }
 
+    public async getDefaultAuthenticationGroups(tenantId: string): Promise<Array<AuthenticationGroup>>{
+        const sequelize: Sequelize = await DBDriver.getConnection();         
+        const authnGroups: Array<AuthenticationGroupEntity> = await sequelize.models.authenticationGroup.findAll(
+            {
+                where: {
+                    tenantId: tenantId,
+                    default: true
+                },
+                order: [
+                    ["authenticationGroupName", "ASC"]
+                ]
+            }                
+        );
+        return authnGroups.map(e => e.dataValues);        
+    }
+
     protected async getAuthenticationGroupClientRels(clientId: string): Promise<Array<AuthenticationGroupClientRelEntity>> {
         const sequelize: Sequelize = await DBDriver.getConnection();    
         const results: Array<AuthenticationGroupClientRelEntity> = await sequelize.models.authenticationGroupClientRel.findAll({

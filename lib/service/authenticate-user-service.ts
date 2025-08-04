@@ -1,19 +1,21 @@
 import { OIDCContext } from "@/graphql/graphql-context";
 import IdentityDao from "../dao/identity-dao";
-import { Tenant, TenantPasswordConfig, User, UserCredential, UserMfaRel, TenantManagementDomainRel, FederatedOidcProvider, FederatedOidcProviderTenantRel, PreAuthenticationState, AuthorizationReturnUri, UserAuthenticationStateResponse, AuthenticationState, AuthenticationErrorTypes, UserAuthenticationState, UserFailedLogin, TenantLoginFailurePolicy, Fido2KeyAuthenticationInput, Fido2KeyRegistrationInput, TotpResponse, UserTermsAndConditionsAccepted, TenantLegacyUserMigrationConfig, TenantRestrictedAuthenticationDomainRel, AuthenticationGroup } from "@/graphql/generated/graphql-types";
+import { Tenant, TenantPasswordConfig, User, UserCredential, UserMfaRel, TenantManagementDomainRel, FederatedOidcProvider, FederatedOidcProviderTenantRel, PreAuthenticationState, AuthorizationReturnUri, UserAuthenticationStateResponse, AuthenticationState, AuthenticationErrorTypes, UserAuthenticationState, UserFailedLogin, TenantLoginFailurePolicy, Fido2KeyAuthenticationInput, Fido2KeyRegistrationInput, TotpResponse, UserTermsAndConditionsAccepted, TenantLegacyUserMigrationConfig, TenantRestrictedAuthenticationDomainRel, AuthenticationGroup, AuthorizationDeviceCodeData, DeviceCodeAuthorizationStatus } from "@/graphql/generated/graphql-types";
 import { DaoFactory } from "../data-sources/dao-factory";
 import TenantDao from "../dao/tenant-dao";
 import { GraphQLError } from "graphql/error";
-import { DEFAULT_LOGIN_FAILURE_POLICY, DEFAULT_LOGIN_PAUSE_TIME_MINUTES, DEFAULT_MAXIMUM_LOGIN_FAILURES, DEFAULT_PASSWORD_HISTORY_PERIOD, DEFAULT_TENANT_PASSWORD_CONFIGURATION, FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE, FEDERATED_AUTHN_CONSTRAINT_PERMISSIVE, FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL, LOGIN_FAILURE_POLICY_LOCK_USER_ACCOUNT, LOGIN_FAILURE_POLICY_PAUSE, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, OIDC_AUTHORIZATION_ERROR_ACCESS_DENIED, QUERY_PARAM_AUTHENTICATE_TO_PORTAL, QUERY_PARAM_TENANT_ID, RANKED_DESCENDING_HASHING_ALGORITHS, STATUS_COMPLETE, STATUS_INCOMPLETE, TOKEN_TYPE_IAM_PORTAL_USER, USER_TENANT_REL_TYPE_PRIMARY } from "@/utils/consts";
-import { generateRandomToken, getDomainFromEmail } from "@/utils/dao-utils";
+import { DEFAULT_LOGIN_FAILURE_POLICY, DEFAULT_LOGIN_PAUSE_TIME_MINUTES, DEFAULT_MAXIMUM_LOGIN_FAILURES, DEFAULT_PASSWORD_HISTORY_PERIOD, DEFAULT_TENANT_PASSWORD_CONFIGURATION, FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE, FEDERATED_AUTHN_CONSTRAINT_PERMISSIVE, FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL, LOGIN_FAILURE_POLICY_LOCK_USER_ACCOUNT, LOGIN_FAILURE_POLICY_PAUSE, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, OIDC_AUTHORIZATION_ERROR_ACCESS_DENIED, QUERY_PARAM_AUTHENTICATE_TO_PORTAL, QUERY_PARAM_DEVICE_CODE_ID, QUERY_PARAM_TENANT_ID, RANKED_DESCENDING_HASHING_ALGORITHS, STATUS_COMPLETE, STATUS_INCOMPLETE, TOKEN_TYPE_IAM_PORTAL_USER, USER_TENANT_REL_TYPE_PRIMARY } from "@/utils/consts";
+import { generateHash, generateRandomToken, getDomainFromEmail } from "@/utils/dao-utils";
 import AuthDao from "../dao/auth-dao";
 import FederatedOIDCProviderDao from "../dao/federated-oidc-provider-dao";
 import JwtServiceUtils from "./jwt-service-utils";
 import IdentityService from "./identity-service";
 import OIDCServiceUtils from "./oidc-service-utils";
 import { randomUUID } from "node:crypto";
-import { LegacyUserAuthenticationResponse, LegacyUserProfile } from "../models/principal";
+import { LegacyUserProfile } from "../models/principal";
 import AuthenticationGroupDao from "../dao/authentication-group-dao";
+import { SecurityEventType } from "../models/security-event";
+
 
 const jwtServiceUtils: JwtServiceUtils = new JwtServiceUtils();
 const oidcServiceUtils: OIDCServiceUtils = new OIDCServiceUtils();
@@ -22,6 +24,10 @@ const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
 const authDao: AuthDao = DaoFactory.getInstance().getAuthDao();
 const federatedOIDCProviderDao: FederatedOIDCProviderDao = DaoFactory.getInstance().getFederatedOIDCProvicerDao();
 const authenticationGroupDao: AuthenticationGroupDao = DaoFactory.getInstance().getAuthenticationGroupDao();
+
+const {
+    SECURITY_EVENT_CALLBACK_URI
+} = process.env;
 
 class AuthenticateUserService extends IdentityService {
 
@@ -48,11 +54,11 @@ class AuthenticateUserService extends IdentityService {
      * @param tenantId 
      * @returns 
      */
-    public async authenticateHandleUserNameInput(email: string, tenantId: string | null, preAuthToken: string | null, returnToUri: string | null): Promise<UserAuthenticationStateResponse> {        
+    public async authenticateHandleUserNameInput(email: string, tenantId: string | null, preAuthToken: string | null, returnToUri: string | null, deviceCodeId: string | null): Promise<UserAuthenticationStateResponse> {        
 
         // 1.   If the user is coming from a 3rd party site for authentication
-        if(preAuthToken){
-            return this.authenticateExternalUserNameHandler(email, preAuthToken);
+        if(preAuthToken || deviceCodeId){
+            return this.authenticateExternalUserNameHandler(email, preAuthToken, deviceCodeId);
         }
         // Otherwise they are trying to log directly into the IAM portal itself.
         else{
@@ -207,6 +213,42 @@ class AuthenticateUserService extends IdentityService {
 
     }
 
+    public async authenticateHandleUserCodeInput(userCode: string): Promise<UserAuthenticationStateResponse> {
+        
+        const response: UserAuthenticationStateResponse = this.initUserAuthenticationStateResponse("", "", "");
+        const hashedUserCode = generateHash(userCode);
+        const deviceCodeData: AuthorizationDeviceCodeData | null = await authDao.getAuthorizationDeviceCodeData(hashedUserCode, "usercode");
+        if(deviceCodeData === null){
+            response.userAuthenticationState.authenticationState = AuthenticationState.Error;
+            response.authenticationError.errorCode = "ERROR_INVALID_USER_CODE_FOR_DEVICE_CODE_NOT_FOUND";
+            return response;
+        }
+        if(deviceCodeData.expiresAtMs < Date.now()){
+            response.userAuthenticationState.authenticationState = AuthenticationState.Error;
+            response.authenticationError.errorCode = "ERROR_DEVICE_CODE_HAS_EXPIRED";
+            return response;
+        }
+        if(deviceCodeData.authorizationStatus === DeviceCodeAuthorizationStatus.Cancelled || deviceCodeData.authorizationStatus === DeviceCodeAuthorizationStatus.Approved){
+            response.userAuthenticationState.authenticationState = AuthenticationState.Error;
+            response.authenticationError.errorCode = "ERROR_DEVICE_CODE_HAS_BEEN_FINALIZED";
+            return response;
+        }
+        // Note that we cannot save the authentiation states until we know who the user is. 
+        // But we DO KNOW who the tenant is. So we just return the next authn state, which will be to
+        // enter the user name, along with any other data that is useful.
+        const nextAuthenticationState: UserAuthenticationState = {
+            authenticationSessionToken: "",
+            authenticationState: AuthenticationState.EnterEmail,
+            authenticationStateOrder: 0,
+            authenticationStateStatus: STATUS_INCOMPLETE,
+            expiresAtMs: 0,
+            tenantId: deviceCodeData.tenantId,
+            userId: "",
+            deviceCodeId: deviceCodeData.deviceCodeId
+        }
+        response.userAuthenticationState = nextAuthenticationState;
+        return response;
+    }
 
     /**
      * 
@@ -214,18 +256,27 @@ class AuthenticateUserService extends IdentityService {
      * @param preAuthToken 
      * @returns 
      */
-    protected async authenticateExternalUserNameHandler(email: string, preAuthToken: string): Promise<UserAuthenticationStateResponse> {
+    protected async authenticateExternalUserNameHandler(email: string, preAuthToken: string | null, deviceCodeId: string | null): Promise<UserAuthenticationStateResponse> {
         const response: UserAuthenticationStateResponse = this.initUserAuthenticationStateResponse("", "", preAuthToken);
 
-        const preAuthenticationState: PreAuthenticationState | null = await authDao.getPreAuthenticationState(preAuthToken);
+        let preAuthenticationState: PreAuthenticationState | null = null;
+        if(preAuthToken){
+            preAuthenticationState = await authDao.getPreAuthenticationState(preAuthToken);
+        }
+        let deviceCodeData: AuthorizationDeviceCodeData | null = null;
+        if(deviceCodeId){
+            deviceCodeData = await authDao.getAuthorizationDeviceCodeData(deviceCodeId, "devicecodeid");
+        }
         
-        // 1.   Error. No preauthentication data is found, so no way to check the tenant, client, user, etc.
-        if(!preAuthenticationState){
-            response.authenticationError.errorCode = "ERROR_INVALID_PRE_AUTH_TOKEN";
+        // 1.   Error. No preauthentication data or device code data is found, so no way to check the tenant, client, user, etc.
+        if(preAuthenticationState === null && deviceCodeData === null){
+            response.authenticationError.errorCode = "ERROR_INVALID_PRE_AUTH_TOKEN_OR_DEVICE_CODE";
             return response;
         }
+        
         const domain: string = getDomainFromEmail(email);
-        const tenant: Tenant | null = await tenantDao.getTenantById(preAuthenticationState.tenantId);
+        const tenantId = preAuthenticationState? preAuthenticationState.tenantId : deviceCodeData ? deviceCodeData.tenantId : ""; 
+        const tenant: Tenant | null = await tenantDao.getTenantById(tenantId);
 
         // 2.   Error. No tenant found
         if(tenant === null){
@@ -268,8 +319,9 @@ class AuthenticateUserService extends IdentityService {
         //      At the end of registration or authentication throw an error saying the user has no access if there
         //      is no default authn group.
         if(user !== null){            
-            let hasDefaultAuthnGroup: boolean = false;            
-            const clientAuthnGroups: Array<AuthenticationGroup> = await authenticationGroupDao.getAuthenticationGroups(undefined, preAuthenticationState.clientId, undefined);
+            let hasDefaultAuthnGroup: boolean = false;
+            const clientId = preAuthenticationState ? preAuthenticationState.clientId : deviceCodeData ? deviceCodeData.clientId : "";
+            const clientAuthnGroups: Array<AuthenticationGroup> = await authenticationGroupDao.getAuthenticationGroups(undefined, clientId, undefined);
             for(let i = 0; i < clientAuthnGroups.length; i++){
                 if(clientAuthnGroups[i].defaultGroup === true){
                     hasDefaultAuthnGroup = true;
@@ -304,7 +356,8 @@ class AuthenticateUserService extends IdentityService {
             if(tenant.migrateLegacyUsers === true){
                 tenantLegacyUserMigrationConfig = await tenantDao.getLegacyUserMigrationConfiguration(tenant.tenantId);
                 if(tenantLegacyUserMigrationConfig && tenantLegacyUserMigrationConfig.usernameCheckUri && tenantLegacyUserMigrationConfig.authenticationUri && tenantLegacyUserMigrationConfig.userProfileUri){
-                    const userExistsInLegacySystem = await oidcServiceUtils.legacyUsernameCheck(`${tenantLegacyUserMigrationConfig.usernameCheckUri}?email=${email.toLowerCase()}`);
+                    const authToken = await jwtServiceUtils.getAuthTokenForOutboundCalls();
+                    const userExistsInLegacySystem = await oidcServiceUtils.legacyUsernameCheck(tenantLegacyUserMigrationConfig.usernameCheckUri, email.toLowerCase(), authToken || "");
                     if(userExistsInLegacySystem){
                         canMigrateUser = true;
                     }
@@ -319,7 +372,7 @@ class AuthenticateUserService extends IdentityService {
         // At this point we know that the tenant exists and allows either a external OIDC provider,
         // or allows the user to login with a username/password, or allows the user to register
         // or there is a legacy user that needs to be migrated.
-        response.userAuthenticationState.tenantId = preAuthenticationState.tenantId;
+        response.userAuthenticationState.tenantId = tenantId;
         
         // 8.   Success. There is a provider, and regardless of whether the user exists, send the the user to the provider
         //      for authentication. The user will be created automatically through this process (if successful)
@@ -337,7 +390,10 @@ class AuthenticateUserService extends IdentityService {
         else {
             if(user === null && !canMigrateUser){                
                 response.userAuthenticationState.authenticationState = AuthenticationState.Register;                
-                response.uri = `/authorize/register?${QUERY_PARAM_TENANT_ID}=${preAuthenticationState.tenantId}&username=${email.toLowerCase()}`;
+                response.uri = `/authorize/register?${QUERY_PARAM_TENANT_ID}=${tenantId}&username=${email.toLowerCase()}`;
+                if(deviceCodeId && deviceCodeData){
+                    response.uri = response.uri + `&${QUERY_PARAM_DEVICE_CODE_ID}=${deviceCodeId}`
+                }
                 return response;
                 
             }
@@ -356,7 +412,7 @@ class AuthenticateUserService extends IdentityService {
             else{
                 stateOrder.push(AuthenticationState.EnterPasswordAndMigrateUser);
             }
-            const passwordConfig: TenantPasswordConfig = await tenantDao.getTenantPasswordConfig(preAuthenticationState.tenantId) || DEFAULT_TENANT_PASSWORD_CONFIGURATION;
+            const passwordConfig: TenantPasswordConfig = await tenantDao.getTenantPasswordConfig(tenantId) || DEFAULT_TENANT_PASSWORD_CONFIGURATION;
             
             let requiredMfaTypes: Array<string> = [];
             if(passwordConfig && passwordConfig.requireMfa){
@@ -398,7 +454,24 @@ class AuthenticateUserService extends IdentityService {
             if(!canMigrateUser && userCredential && this.requirePasswordRotation(userCredential, passwordConfig)){
                 stateOrder.push(AuthenticationState.RotatePassword);
             }
-            stateOrder.push(AuthenticationState.RedirectBackToApplication);
+            if(preAuthToken){
+                stateOrder.push(AuthenticationState.RedirectBackToApplication);
+            }
+            else if(deviceCodeId){
+                stateOrder.push(AuthenticationState.RedirectToIamPortal);
+            }
+
+            // Finally, send a security event message to a web hook if configured. This may be modfied
+            // in the during authentication if a user enters a duress password (if allowed).
+            // This should ALWAYS be the last entry and should never be exposed to any client.
+            if(SECURITY_EVENT_CALLBACK_URI){
+                if(preAuthToken){
+                    stateOrder.push(AuthenticationState.PostAuthnStateSendSecurityEventSuccessLogon);
+                }
+                else if(deviceCodeId){
+                    stateOrder.push(AuthenticationState.PostAuthnStateSendSecurityEventDeviceRegistered);
+                }
+            }
 
             const arrUserAuthenticationStates: Array<UserAuthenticationState> = [];
             const authenticationSessionToken: string = generateRandomToken(20, "hex");
@@ -432,8 +505,9 @@ class AuthenticateUserService extends IdentityService {
                     authenticationStateOrder: i + 1,
                     authenticationStateStatus: STATUS_INCOMPLETE,
                     expiresAtMs: expiresAt,
-                    tenantId: preAuthenticationState.tenantId,
-                    userId: userId
+                    tenantId: tenantId,
+                    userId: userId,
+                    deviceCodeId: deviceCodeId
                 }
                 arrUserAuthenticationStates.push(uas);
             }
@@ -535,7 +609,8 @@ class AuthenticateUserService extends IdentityService {
             for(let i = 0; i < tenantsThatAllowPasswordLogin.length; i++){
                 const tenantLegacyUserMigrationConfig: TenantLegacyUserMigrationConfig | null = await tenantDao.getLegacyUserMigrationConfiguration(tenantsThatAllowPasswordLogin[i].tenantId);
                 if(tenantLegacyUserMigrationConfig && tenantLegacyUserMigrationConfig.usernameCheckUri && tenantLegacyUserMigrationConfig.authenticationUri && tenantLegacyUserMigrationConfig.userProfileUri){
-                    const userExistsInLegacySystem = await oidcServiceUtils.legacyUsernameCheck(`${tenantLegacyUserMigrationConfig.usernameCheckUri}?email=${email.toLowerCase()}`);
+                    const authToken = await jwtServiceUtils.getAuthTokenForOutboundCalls();
+                    const userExistsInLegacySystem = await oidcServiceUtils.legacyUsernameCheck(tenantLegacyUserMigrationConfig.usernameCheckUri, email.toLowerCase(), authToken || "");
                     if(userExistsInLegacySystem){
                         migrationFriendlyTenants.push(tenantsThatAllowPasswordLogin[i]);
                     }
@@ -548,7 +623,8 @@ class AuthenticateUserService extends IdentityService {
                 }
                 const tenantLegacyUserMigrationConfig: TenantLegacyUserMigrationConfig | null = await tenantDao.getLegacyUserMigrationConfiguration(tenantsThatAllowSelfRegistration[i].tenantId);
                 if(tenantLegacyUserMigrationConfig && tenantLegacyUserMigrationConfig.usernameCheckUri && tenantLegacyUserMigrationConfig.authenticationUri && tenantLegacyUserMigrationConfig.userProfileUri){
-                    const userExistsInLegacySystem = await oidcServiceUtils.legacyUsernameCheck(`${tenantLegacyUserMigrationConfig.usernameCheckUri}?email=${email.toLowerCase()}`);
+                    const authToken = await jwtServiceUtils.getAuthTokenForOutboundCalls();
+                    const userExistsInLegacySystem = await oidcServiceUtils.legacyUsernameCheck(tenantLegacyUserMigrationConfig.usernameCheckUri, email.toLowerCase(), authToken || "");
                     if(userExistsInLegacySystem){
                         migrationFriendlyTenants.push(tenantsThatAllowPasswordLogin[i]);
                     }
@@ -579,7 +655,7 @@ class AuthenticateUserService extends IdentityService {
             ); 
             response.userAuthenticationState.authenticationState = tenantsThatAllowSelfRegistration.length === 1 ? AuthenticationState.Register : AuthenticationState.SelectTenantThenRegister;            
             if(tenantsThatAllowSelfRegistration.length === 1){
-                response.uri = `/authorize/register?${QUERY_PARAM_TENANT_ID}=${tenantsThatAllowSelfRegistration[0].tenantId}&username=${email.toLowerCase()}`;
+                response.uri = `/authorize/register?${QUERY_PARAM_TENANT_ID}=${tenantsThatAllowSelfRegistration[0].tenantId}&username=${email.toLowerCase()}`;                
             }            
             return response;
         }
@@ -669,6 +745,13 @@ class AuthenticateUserService extends IdentityService {
                 }
                 stateOrder.push(AuthenticationState.RedirectToIamPortal);
 
+                // Finally, send a security event message to a web hook if configured. This may be modfied
+                // in the during authentication if a user enters a duress password (if allowed).
+                // This should ALWAYS be the last entry and should never be exposed to any client.
+                if(SECURITY_EVENT_CALLBACK_URI){
+                    stateOrder.push(AuthenticationState.PostAuthnStateSendSecurityEventSuccessLogon);
+                }
+
                 const arrUserAuthenticationStates: Array<UserAuthenticationState> = [];
                 const authenticationSessionToken: string = generateRandomToken(20, "hex");
                 // authentication completion will expire after 60 minutes. 
@@ -755,6 +838,19 @@ class AuthenticateUserService extends IdentityService {
             response.authenticationError.errorCode = validationResult.errorMessage;
             return Promise.resolve(response);
         }
+        // If this is a duress logon, and if the last entry in the list of authn states is to send a successful logon message, 
+        // delete the old record, update the record and insert it.
+        if(validationResult.isDuress){
+            const finalUserAuthenticationState = arrUserAuthenticationStates[arrUserAuthenticationStates.length - 1];
+            if(
+                finalUserAuthenticationState.authenticationState === AuthenticationState.PostAuthnStateSendSecurityEventSuccessLogon ||
+                finalUserAuthenticationState.authenticationState === AuthenticationState.PostAuthnStateSendSecurityEventDeviceRegistered
+            ){
+                await identityDao.deleteUserAuthenticationState(arrUserAuthenticationStates[arrUserAuthenticationStates.length - 1]);
+                arrUserAuthenticationStates[arrUserAuthenticationStates.length - 1].authenticationState = AuthenticationState.PostAuthnStateSendSecurityEventDuressLogon;
+                await identityDao.createUserAuthenticationStates([arrUserAuthenticationStates[arrUserAuthenticationStates.length - 1]]);
+            }
+        }
 
         arrUserAuthenticationStates[index].authenticationStateStatus = STATUS_COMPLETE;
         await identityDao.updateUserAuthenticationState(arrUserAuthenticationStates[index]);
@@ -804,14 +900,15 @@ class AuthenticateUserService extends IdentityService {
             return Promise.resolve(response);
         }
 
-        const authnResponse: LegacyUserAuthenticationResponse | null = await oidcServiceUtils.legacyUserAuthentication(legacyUserMigrationConfiguration.authenticationUri, username, password);
-        if(authnResponse === null || !authnResponse.accessToken){
+        const authToken = await jwtServiceUtils.getAuthTokenForOutboundCalls();
+        const authnResponse: boolean = await oidcServiceUtils.legacyUserAuthentication(legacyUserMigrationConfiguration.authenticationUri, username, password, authToken || "");
+        if(authnResponse === false){
             response.authenticationError.errorCode = "ERROR_INVALID_CREDENTIALS_FOR_USER_MIGRATION";
             response.userAuthenticationState.authenticationState = AuthenticationState.Error;
             return Promise.resolve(response);
         }
 
-        const legacyProfile: LegacyUserProfile | null = await oidcServiceUtils.legacyUserProfile(legacyUserMigrationConfiguration.userProfileUri, authnResponse.accessToken);
+        const legacyProfile: LegacyUserProfile | null = await oidcServiceUtils.legacyUserProfile(legacyUserMigrationConfiguration.userProfileUri, username, authToken || "");
         if(legacyProfile === null){
             response.authenticationError.errorCode = "ERROR_NO_LEGACY_USER_PROFILE_FOUND";
             response.userAuthenticationState.authenticationState = AuthenticationState.Error;
@@ -887,6 +984,7 @@ class AuthenticateUserService extends IdentityService {
             response.authenticationError.errorCode = "ERROR_NO_CREDENTIALS_FOUND_FOR_USER";
             return response;
         }
+        
 
         // Need to validate the password format and find the hashing algorithm for the new password
         const tenantPasswordConfig: TenantPasswordConfig = await this.determineTenantPasswordConfig(userId, arrUserAuthenticationStates[0].tenantId);
@@ -910,6 +1008,16 @@ class AuthenticateUserService extends IdentityService {
                 }
             }
             if(passwordHasBeenUsed){
+                response.userAuthenticationState.authenticationState = AuthenticationState.Error;
+                response.authenticationError.errorCode = "ERROR_PASSWORD_HAS_BEEN_PREVIOUSLY_USED_WITHIN_THE_PASSWORD_HISTORY_PERIOD";
+                return response;
+            }
+        }
+        // If the user configured a duress password, then we need to check this as well.
+        const duressUserCredential: UserCredential | null = await identityDao.getUserDuressCredential(userId);
+        if(duressUserCredential){
+            const b: boolean = this.validateUserCredentials(duressUserCredential, newPassword);
+            if(b){
                 response.userAuthenticationState.authenticationState = AuthenticationState.Error;
                 response.authenticationError.errorCode = "ERROR_PASSWORD_HAS_BEEN_PREVIOUSLY_USED_WITHIN_THE_PASSWORD_HISTORY_PERIOD";
                 return response;
@@ -995,36 +1103,6 @@ class AuthenticateUserService extends IdentityService {
         return tenantPasswordConfig; 
     }
 
-    /**
-     * Credit to Google's AI overview
-     * @param str1 
-     * @param str2 
-     * @returns 
-     */
-    protected findCharacterIntersection(str1: string, str2: string): string {
-        const chars1 = str1.split("");
-        const chars2 = str2.split("");
-      
-        const intersection = chars1.filter(char => chars2.includes(char));
-      
-        // Remove duplicates if necessary (filter might produce duplicates if a character appears multiple times in str1)
-        return Array.from(new Set(intersection)).join("");
-    }
-
-    protected determinePreferredHashAlgorithm(hashalgorithm1: string, hashalgorithm2: string): string {
-        let retVal = hashalgorithm1;
-        // prefer scrypt over bcrypt over pbkdf2 over sha256
-        const index1 = RANKED_DESCENDING_HASHING_ALGORITHS.indexOf(hashalgorithm1);
-        const index2 = RANKED_DESCENDING_HASHING_ALGORITHS.indexOf(hashalgorithm2);
-        // Should never happen...
-        if(index1 === -1 && index2 === -1){
-            retVal = DEFAULT_TENANT_PASSWORD_CONFIGURATION.passwordHashingAlgorithm
-        }
-        else{
-            retVal = index1 < index2 ? RANKED_DESCENDING_HASHING_ALGORITHS[index1] : RANKED_DESCENDING_HASHING_ALGORITHS[index2];
-        }
-        return retVal;
-    }
 
     /**
      * 
@@ -1216,6 +1294,18 @@ class AuthenticateUserService extends IdentityService {
     public async cancelAuthentication(authenticationSessionToken: string, preAuthToken: string | null): Promise<UserAuthenticationStateResponse> {
         const response: UserAuthenticationStateResponse = this.initUserAuthenticationStateResponse(authenticationSessionToken, "", preAuthToken);
         const arrUserAuthenticationState = await identityDao.getUserAuthenticationStates(authenticationSessionToken);
+        // If this is a device registration, need to set it to the cancelled state;
+        let deviceCodeId: string | null = null;
+        if(arrUserAuthenticationState.length > 0){
+            deviceCodeId= arrUserAuthenticationState[0].deviceCodeId || null;
+            if(deviceCodeId){
+                const deviceCodeData: AuthorizationDeviceCodeData | null = await authDao.getAuthorizationDeviceCodeData(deviceCodeId, "devicecodeid");
+                if(deviceCodeData){
+                    deviceCodeData.authorizationStatus = DeviceCodeAuthorizationStatus.Cancelled;
+                    await authDao.updateAuthorizationDeviceCodeData(deviceCodeData);
+                }
+            }
+        }
         for(let i = 0; i < arrUserAuthenticationState.length; i++){
             identityDao.deleteUserAuthenticationState(arrUserAuthenticationState[i]);
         }
@@ -1230,10 +1320,46 @@ class AuthenticateUserService extends IdentityService {
         }
         else{
             response.userAuthenticationState.authenticationState = AuthenticationState.RedirectToIamPortal;
-            response.uri = `/authorize/login?${QUERY_PARAM_AUTHENTICATE_TO_PORTAL}=true`;
+            if(deviceCodeId){
+                response.uri = `/access-error?access_error_code=00075`;
+            }
+            else{
+               response.uri = `/authorize/login?${QUERY_PARAM_AUTHENTICATE_TO_PORTAL}=true`;
+            }
         }
         return response;
     }   
+
+        /**
+     * Credit to Google's AI overview
+     * @param str1 
+     * @param str2 
+     * @returns 
+     */
+    protected findCharacterIntersection(str1: string, str2: string): string {
+        const chars1 = str1.split("");
+        const chars2 = str2.split("");
+      
+        const intersection = chars1.filter(char => chars2.includes(char));
+      
+        // Remove duplicates if necessary (filter might produce duplicates if a character appears multiple times in str1)
+        return Array.from(new Set(intersection)).join("");
+    }
+
+    protected determinePreferredHashAlgorithm(hashalgorithm1: string, hashalgorithm2: string): string {
+        let retVal = hashalgorithm1;
+        // prefer scrypt over bcrypt over pbkdf2 over sha256
+        const index1 = RANKED_DESCENDING_HASHING_ALGORITHS.indexOf(hashalgorithm1);
+        const index2 = RANKED_DESCENDING_HASHING_ALGORITHS.indexOf(hashalgorithm2);
+        // Should never happen...
+        if(index1 === -1 && index2 === -1){
+            retVal = DEFAULT_TENANT_PASSWORD_CONFIGURATION.passwordHashingAlgorithm
+        }
+        else{
+            retVal = index1 < index2 ? RANKED_DESCENDING_HASHING_ALGORITHS[index1] : RANKED_DESCENDING_HASHING_ALGORITHS[index2];
+        }
+        return retVal;
+    }
 
     /**
      * 
@@ -1242,10 +1368,10 @@ class AuthenticateUserService extends IdentityService {
      * @param authenticationToken 
      * @returns 
      */
-    protected async validateAuthenticationAttempt(user: User, tenantId: string, authenticationToken: string | Fido2KeyAuthenticationInput, userAuthenticationState: UserAuthenticationState): Promise<{isValid: boolean, errorMessage: string}>{
+    protected async validateAuthenticationAttempt(user: User, tenantId: string, authenticationToken: string | Fido2KeyAuthenticationInput, userAuthenticationState: UserAuthenticationState): Promise<{isValid: boolean, errorMessage: string, isDuress: boolean}>{
 
         if(user.locked === true){
-            return {isValid: false, errorMessage: "ERROR_USER_IS_LOCKED"};
+            return {isValid: false, errorMessage: "ERROR_USER_IS_LOCKED", isDuress: false};
         }
         const userFailedLoginAttempts: Array<UserFailedLogin> = await identityDao.getFailedLogins(user.userId);
         let loginFailurePolicy: TenantLoginFailurePolicy | null = await tenantDao.getLoginFailurePolicy(tenantId);
@@ -1257,19 +1383,31 @@ class AuthenticateUserService extends IdentityService {
         // and if we have a failure policy type of pause and the next login time allowed is at some point in the past.
         if(userFailedLoginAttempts.length > 0 && loginFailurePolicy.loginFailurePolicyType === LOGIN_FAILURE_POLICY_PAUSE){
             if(userFailedLoginAttempts[length - 1].nextLoginNotBefore > Date.now()){
-                return {isValid: false, errorMessage: "ERROR_AUTHENTICTION_IS_PAUSED_FOR_USER"}
+                return {isValid: false, errorMessage: "ERROR_AUTHENTICTION_IS_PAUSED_FOR_USER", isDuress: false}
             }
         }
 
         let valid: boolean = false;
         let errorMessage: string = "";
+        let isDuress: boolean = false;
         if(userAuthenticationState.authenticationState === AuthenticationState.EnterPassword){
             const userCredential: UserCredential | null = await identityDao.getUserCredentialForAuthentication(user.userId);
             if(!userCredential){
-                return {isValid: false, errorMessage: "ERROR_UNABLE_TO_FIND_CREDENTIALS_FOR_USER"};
+                return {isValid: false, errorMessage: "ERROR_UNABLE_TO_FIND_CREDENTIALS_FOR_USER", isDuress: false};
             }
             valid = this.validateUserCredentials(userCredential, authenticationToken as string);
             errorMessage = "ERROR_INVALID_CREDENTIALS";
+            // Need to check a duress password in this case.
+            if(!valid){
+                const userDuressCredential: UserCredential | null = await identityDao.getUserDuressCredential(user.userId);
+                if(userDuressCredential){
+                    valid = this.validateUserCredentials(userDuressCredential, authenticationToken as string);
+                    if(valid){
+                        isDuress = true;
+                        errorMessage = "";
+                    }
+                }
+            }            
         }
         else if(userAuthenticationState.authenticationState === AuthenticationState.ValidateTotp){
             valid = await this.validateTOTP(user.userId, authenticationToken as string);
@@ -1323,6 +1461,8 @@ class AuthenticateUserService extends IdentityService {
             if(lockUser){
                 user.locked = true;
                 await identityDao.updateUser(user);
+                const authToken = await jwtServiceUtils.getAuthTokenForOutboundCalls();
+                oidcServiceUtils.fireSecurityEvent("account_locked", this.oidcContext, user, null, authToken);
             }
             // We can safely delete the previous failed attempts
             if(userFailedLoginAttempts.length > 0){
@@ -1330,12 +1470,13 @@ class AuthenticateUserService extends IdentityService {
                     identityDao.removeFailedLogin(userFailedLoginAttempts[i].userId, userFailedLoginAttempts[i].failureAtMs);
                 }
             }
-            return {isValid: false, errorMessage: errorMessage};
+            return {isValid: false, errorMessage: errorMessage, isDuress: isDuress};
         }
+        
         // Otherwise the password is valid and we should remove the failed login attempts
         identityDao.resetFailedLoginAttempts(user.userId);
-
-        return {isValid: true, errorMessage: errorMessage};
+        
+        return {isValid: true, errorMessage: errorMessage, isDuress: isDuress};
     }
 
     /**
@@ -1427,17 +1568,20 @@ class AuthenticateUserService extends IdentityService {
             user.locked = false;
             await identityDao.updateUser(user);
         }
+        if(userAuthenticationState.deviceCodeId){
+            const deviceCodeData: AuthorizationDeviceCodeData | null = await authDao.getAuthorizationDeviceCodeData(userAuthenticationState.deviceCodeId, "devicecodeid");
+            if(deviceCodeData){
+                deviceCodeData.authorizationStatus = DeviceCodeAuthorizationStatus.Approved;
+                deviceCodeData.userId = user.userId;
+                await authDao.updateAuthorizationDeviceCodeData(deviceCodeData);
+            }
+        }
         if(userAuthenticationState.authenticationState === AuthenticationState.RedirectBackToApplication){
             try {
                 const authorizationCode: AuthorizationReturnUri = await this.generateAuthorizationCode(userAuthenticationState.userId, userAuthenticationState.preAuthToken || "");
                 response.userAuthenticationState = userAuthenticationState;
                 response.uri = authorizationCode.uri;
-                userAuthenticationState.authenticationStateStatus = STATUS_COMPLETE;
-                //await identityDao.updateUserAuthenticationState(userAuthenticationState);
-                // If all is successful, we can delete all of the state records tied to this authentication attempt
-                for(let i = 0; i < arrUserAuthenticationStates.length; i++){
-                    await identityDao.deleteUserAuthenticationState(arrUserAuthenticationStates[i]);
-                }
+                userAuthenticationState.authenticationStateStatus = STATUS_COMPLETE;                
             }
             catch(err: any){
                 response.authenticationError.errorCode = err.message;
@@ -1452,28 +1596,54 @@ class AuthenticateUserService extends IdentityService {
                     response.userAuthenticationState.authenticationState = AuthenticationState.Error;
                 }
                 else{
-                    const accessToken: string | null = await jwtServiceUtils.signIAMPortalUserJwt(user, tenant, this.getPortalAuthenTokenTTLSeconds(), TOKEN_TYPE_IAM_PORTAL_USER);
-                    if(accessToken === null){
-                        response.authenticationError.errorCode = "ERROR_GENERATING_ACCESS_TOKEN_AUTHENTICATION_COMPLETION";
-                        response.userAuthenticationState.authenticationState = AuthenticationState.Error;
+                    let jti: string | null = null;
+                    if(userAuthenticationState.deviceCodeId){
+                        response.userAuthenticationState = userAuthenticationState;
+                        response.uri = "/device/registered";
                     }
                     else{
-                        response.userAuthenticationState = userAuthenticationState;
-                        response.uri = userAuthenticationState.returnToUri ? userAuthenticationState.returnToUri : `/${userAuthenticationState.tenantId}`;
-                        response.accessToken = accessToken;
-                        response.tokenExpiresAtMs = Date.now() + (this.getPortalAuthenTokenTTLSeconds() * 1000);
-                        userAuthenticationState.authenticationStateStatus = STATUS_COMPLETE;
-                        //await identityDao.updateUserAuthenticationState(userAuthenticationState);
-                        // If all is successful, we can delete all of the state records tied to this authentication attempt
-                        for(let i = 0; i < arrUserAuthenticationStates.length; i++){
-                            await identityDao.deleteUserAuthenticationState(arrUserAuthenticationStates[i]);
+                        const jwtSigningResponse = await jwtServiceUtils.signIAMPortalUserJwt(user, tenant, this.getPortalAuthenTokenTTLSeconds(), TOKEN_TYPE_IAM_PORTAL_USER);                        
+                        if(!jwtSigningResponse || jwtSigningResponse.accessToken === null){
+                            response.authenticationError.errorCode = "ERROR_GENERATING_ACCESS_TOKEN_AUTHENTICATION_COMPLETION";
+                            response.userAuthenticationState.authenticationState = AuthenticationState.Error;
                         }
+                        else {
+                            response.userAuthenticationState = userAuthenticationState;
+                            response.uri = userAuthenticationState.returnToUri ? userAuthenticationState.returnToUri : `/${userAuthenticationState.tenantId}`;
+                            response.accessToken = jwtSigningResponse.accessToken;
+                            response.tokenExpiresAtMs = Date.now() + (this.getPortalAuthenTokenTTLSeconds() * 1000);
+                            userAuthenticationState.authenticationStateStatus = STATUS_COMPLETE;
+                            jti = jwtSigningResponse.principal.jti || null;
+                        }
+                    }
+                    // If the last step in authentication is to send a security event:
+                    const finalUserAuthenticationState = arrUserAuthenticationStates[arrUserAuthenticationStates.length - 1];
+                    if(
+                        finalUserAuthenticationState.authenticationState === AuthenticationState.PostAuthnStateSendSecurityEventSuccessLogon ||
+                        finalUserAuthenticationState.authenticationState === AuthenticationState.PostAuthnStateSendSecurityEventDuressLogon ||
+                        finalUserAuthenticationState.authenticationState === AuthenticationState.PostAuthnStateSendSecurityEventDeviceRegistered
+                    ){
+                        finalUserAuthenticationState.authenticationStateStatus = STATUS_COMPLETE;
+                        const securityEventType: SecurityEventType = 
+                            finalUserAuthenticationState.authenticationState === AuthenticationState.PostAuthnStateSendSecurityEventSuccessLogon
+                                ? "successful_authentication" : 
+                                finalUserAuthenticationState.authenticationState === AuthenticationState.PostAuthnStateSendSecurityEventDuressLogon ? 
+                                "duress_authentication" :
+                                "device_registered"
+                        const authToken = await jwtServiceUtils.getAuthTokenForOutboundCalls();
+                        oidcServiceUtils.fireSecurityEvent(securityEventType, this.oidcContext, user, jti, authToken);
                     }
                 }
             }
             catch(err: any){
                 response.authenticationError.errorCode = err.message;
                 response.userAuthenticationState.authenticationState = AuthenticationState.Error;
+            }
+        }
+        // If all is successful, we can delete all of the state records tied to this authentication attempt
+        if(response.userAuthenticationState.authenticationState !== AuthenticationState.Error){
+            for(let i = 0; i < arrUserAuthenticationStates.length; i++){
+                await identityDao.deleteUserAuthenticationState(arrUserAuthenticationStates[i]);
             }
         }
     }    

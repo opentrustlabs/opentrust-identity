@@ -5,7 +5,7 @@ import Grid2 from "@mui/material/Grid2";
 import Typography from "@mui/material/Typography";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
 import BreadcrumbComponent from "../breadcrumbs/breadcrumbs";
-import { CLIENT_DELETE_SCOPE, CLIENT_SECRET_VIEW_SCOPE, CLIENT_TYPE_SERVICE_ACCOUNT_AND_USER_DELEGATED_PERMISSIONS, CLIENT_TYPE_SERVICE_ACCOUNT_ONLY, CLIENT_TYPE_USER_DELEGATED_PERMISSIONS_ONLY, CLIENT_TYPES_DISPLAY, CLIENT_UPDATE_SCOPE, DEFAULT_BACKGROUND_COLOR, DEFAULT_END_USER_TOKEN_TTL_SECONDS, DEFAULT_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS, MAX_END_USER_TOKEN_TTL_SECONDS, MAX_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS, MIN_END_USER_TOKEN_TTL_SECONDS, MIN_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
+import { CLIENT_DELETE_SCOPE, CLIENT_SECRET_VIEW_SCOPE, CLIENT_TYPE_DEVICE, CLIENT_TYPE_SERVICE_ACCOUNT_AND_USER_DELEGATED_PERMISSIONS, CLIENT_TYPE_SERVICE_ACCOUNT_ONLY, CLIENT_TYPE_USER_DELEGATED_PERMISSIONS_ONLY, CLIENT_TYPES_DISPLAY, CLIENT_UPDATE_SCOPE, DEFAULT_BACKGROUND_COLOR, DEFAULT_END_USER_TOKEN_TTL_SECONDS, DEFAULT_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS, MAX_END_USER_TOKEN_TTL_SECONDS, MAX_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS, MIN_END_USER_TOKEN_TTL_SECONDS, MIN_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import { Client, ClientUpdateInput, MarkForDeleteObjectType, SecretObjectType, PortalUserProfile } from "@/graphql/generated/graphql-types";
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import SyncIcon from '@mui/icons-material/Sync';
@@ -174,7 +174,8 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                             >
                                                 <MenuItem value={CLIENT_TYPE_SERVICE_ACCOUNT_ONLY} >{CLIENT_TYPES_DISPLAY.get(CLIENT_TYPE_SERVICE_ACCOUNT_ONLY)}</MenuItem>
                                                 <MenuItem value={CLIENT_TYPE_SERVICE_ACCOUNT_AND_USER_DELEGATED_PERMISSIONS} >{CLIENT_TYPES_DISPLAY.get(CLIENT_TYPE_SERVICE_ACCOUNT_AND_USER_DELEGATED_PERMISSIONS)}</MenuItem>
-                                                <MenuItem value={CLIENT_TYPE_USER_DELEGATED_PERMISSIONS_ONLY} >{CLIENT_TYPES_DISPLAY.get(CLIENT_TYPE_USER_DELEGATED_PERMISSIONS_ONLY)}</MenuItem>
+                                                <MenuItem value={CLIENT_TYPE_USER_DELEGATED_PERMISSIONS_ONLY} >{CLIENT_TYPES_DISPLAY.get(CLIENT_TYPE_USER_DELEGATED_PERMISSIONS_ONLY)}</MenuItem>                                                
+                                                <MenuItem value={CLIENT_TYPE_DEVICE} >{CLIENT_TYPES_DISPLAY.get(CLIENT_TYPE_DEVICE)}</MenuItem>
                                             </Select>
                                         </Grid2>
                                         <Grid2 marginBottom={"16px"}>
@@ -311,9 +312,13 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                                         if (!Number.isNaN(evt.target.value)) {
                                                             const v: number = parseInt(evt.target.value);
                                                             clientUpdateInput.maxRefreshTokenCount = v;
-                                                            setClientUpdateInput({ ...clientUpdateInput });
-                                                            setMarkDirty(true);
                                                         }
+                                                        else{
+                                                            clientUpdateInput.maxRefreshTokenCount = null;
+                                                        }
+                                                        setClientUpdateInput({ ...clientUpdateInput });
+                                                        setMarkDirty(true);
+                                                        
                                                     }}
                                                     fullWidth={true} size="small" />
                                             </Grid2>

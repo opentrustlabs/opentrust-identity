@@ -685,6 +685,7 @@ export const USER_AUTHENTICATION_STATE_RESPONSE_FRAGMENT = gql(`
             authenticationStateStatus
             preAuthToken
             expiresAtMs
+            deviceCodeId
         }
         authenticationError {
             errorCode
@@ -720,8 +721,8 @@ export const USER_AUTHENTICATION_STATE_RESPONSE_FRAGMENT = gql(`
 
 // Authentication flows
 export const AUTHENTICATE_USERNAME_INPUT_MUTATION = gql`    
-    mutation authenticateHandleUserNameInput($username: String!, $tenantId: String, $preAuthToken: String, $returnToUri: String) {
-        authenticateHandleUserNameInput(username: $username, tenantId: $tenantId, preAuthToken: $preAuthToken, returnToUri: $returnToUri) {
+    mutation authenticateHandleUserNameInput($username: String!, $tenantId: String, $preAuthToken: String, $returnToUri: String, $deviceCodeId: String) {
+        authenticateHandleUserNameInput(username: $username, tenantId: $tenantId, preAuthToken: $preAuthToken, returnToUri: $returnToUri, deviceCodeId: $deviceCodeId) {
             ...UserAuthenticationStateResponseFragment
         } 
     }
@@ -849,6 +850,16 @@ export const AUTHENTICATE_USER_AND_MIGRATE = gql`
      ${USER_AUTHENTICATION_STATE_RESPONSE_FRAGMENT}
 `;
 
+export const AUTHENTICATE_HANDLE_USER_CODE_INPUT = gql`
+    mutation authenticateHandleUserCodeInput($userCode: String!) {
+        authenticateHandleUserCodeInput(userCode: $userCode) {
+            ...UserAuthenticationStateResponseFragment
+        }
+    }
+
+     ${USER_AUTHENTICATION_STATE_RESPONSE_FRAGMENT}
+`;
+
 // Registration flows
 export const USER_REGISTRATION_STATE_RESPONSE_FRAGMENT = gql(`
     fragment UserRegistrationStateResponseFragment on UserRegistrationStateResponse {
@@ -862,6 +873,7 @@ export const USER_REGISTRATION_STATE_RESPONSE_FRAGMENT = gql(`
             registrationStateStatus
             preAuthToken
             expiresAtMs
+            deviceCodeId
         }
         registrationError {
             errorCode
@@ -874,6 +886,16 @@ export const USER_REGISTRATION_STATE_RESPONSE_FRAGMENT = gql(`
     }
 `);
 
+// export const REGISTER_USER_MUTATION = gql`
+//     mutation registerUser($tenantId: String!, $userInput: UserCreateInput!, $preAuthToken: String, $deviceCode: String) {
+//         registerUser(tenantId: $tenantId, userInput: $userInput, preAuthToken: $preAuthToken, deviceCode: $deviceCode) {
+//             ...UserRegistrationStateResponseFragment
+//         }
+//     }
+
+//     ${USER_REGISTRATION_STATE_RESPONSE_FRAGMENT}
+// `;
+
 export const REGISTER_USER_MUTATION = gql`
     mutation registerUser($tenantId: String!, $userInput: UserCreateInput!, $preAuthToken: String) {
         registerUser(tenantId: $tenantId, userInput: $userInput, preAuthToken: $preAuthToken) {
@@ -884,9 +906,39 @@ export const REGISTER_USER_MUTATION = gql`
     ${USER_REGISTRATION_STATE_RESPONSE_FRAGMENT}
 `;
 
+export const REGISTER_ADD_BACKUP_EMAIL_MUTATION = gql`
+    mutation registerAddBackupEmail($userId: String!, $backupEmail: String, $registrationSessionToken: String!, $preAuthToken: String, $skip: Boolean!) {
+        registerAddBackupEmail(userId: $userId, backupEmail: $backupEmail, registrationSessionToken: $registrationSessionToken, preAuthToken: $preAuthToken, skip: $skip){
+            ...UserRegistrationStateResponseFragment
+        }
+    }
+
+    ${USER_REGISTRATION_STATE_RESPONSE_FRAGMENT}
+`;
+
 export const REGISTER_VERIFY_EMAIL_ADDRESS = gql`
     mutation registerVerifyEmailAddress($userId: String!, $token: String!, $registrationSessionToken: String!, $preAuthToken: String) {
         registerVerifyEmailAddress(userId: $userId, token: $token, registrationSessionToken: $registrationSessionToken, preAuthToken: $preAuthToken) {
+            ...UserRegistrationStateResponseFragment
+        }
+    }
+
+    ${USER_REGISTRATION_STATE_RESPONSE_FRAGMENT}
+`;
+
+export const REGISTER_VERIFY_BACKUP_EMAIL_ADDRESS = gql`
+    mutation registerVerifyBackupEmail($userId: String!, $token: String!, $registrationSessionToken: String!, $preAuthToken: String) {
+        registerVerifyBackupEmail(userId: $userId, token: $token, registrationSessionToken: $registrationSessionToken, preAuthToken: $preAuthToken) {
+            ...UserRegistrationStateResponseFragment
+        }
+    }
+
+    ${USER_REGISTRATION_STATE_RESPONSE_FRAGMENT}
+`;
+
+export const REGISTER_ADD_DURESS_PASSWORD = gql`
+    mutation registerAddDuressPassword($userId: String!, $password: String, $skip: Boolean!, $registrationSessionToken: String!, $preAuthToken: String) {
+        registerAddDuressPassword(userId: $userId, password: $password, skip: $skip, registrationSessionToken: $registrationSessionToken, preAuthToken: $preAuthToken){
             ...UserRegistrationStateResponseFragment
         }
     }
@@ -935,8 +987,8 @@ export const REGISTER_VALIDATE_SECURITY_KEY = gql`
 `;
 
 export const CANCEL_REGISTRATION = gql`
-    mutation cancelRegistration($userId: String!, $registrationSessionToken: String!, $preAuthToken: String) {
-        cancelRegistration(userId: $userId, registrationSessionToken: $registrationSessionToken, preAuthToken: $preAuthToken){
+    mutation cancelRegistration($userId: String!, $registrationSessionToken: String!, $preAuthToken: String, $deviceCodeId: String) {
+        cancelRegistration(userId: $userId, registrationSessionToken: $registrationSessionToken, preAuthToken: $preAuthToken, deviceCodeId: $deviceCodeId){
             ...UserRegistrationStateResponseFragment
         }
     }
@@ -950,6 +1002,8 @@ export const UPDATE_SYSTEM_SETTINGS_MUTATION = gql(`
             softwareVersion
             allowBackupEmail
             allowDuressPassword
+            rootClientId
+            enablePortalAsLegacyIdp
         }
     }
 `);

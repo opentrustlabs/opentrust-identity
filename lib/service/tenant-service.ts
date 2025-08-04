@@ -1,10 +1,9 @@
-import { TenantAnonymousUserConfiguration, Contact, ObjectSearchResultItem, SearchResultType, Tenant, TenantLegacyUserMigrationConfig, TenantLookAndFeel, TenantManagementDomainRel, TenantMetaData, TenantPasswordConfig, TenantRestrictedAuthenticationDomainRel, FederatedOidcProviderTenantRel, TenantAvailableScope, TenantLoginFailurePolicy, CaptchaConfig, SystemSettings, SystemSettingsUpdateInput, JobData } from "@/graphql/generated/graphql-types";
+import { TenantAnonymousUserConfiguration, ObjectSearchResultItem, SearchResultType, Tenant, TenantLegacyUserMigrationConfig, TenantLookAndFeel, TenantManagementDomainRel, TenantMetaData, TenantPasswordConfig, TenantRestrictedAuthenticationDomainRel, FederatedOidcProviderTenantRel, TenantAvailableScope, TenantLoginFailurePolicy, CaptchaConfig, SystemSettings, SystemSettingsUpdateInput, JobData, Client } from "@/graphql/generated/graphql-types";
 import { OIDCContext } from "@/graphql/graphql-context";
 import TenantDao from "@/lib/dao/tenant-dao";
 import { GraphQLError } from "graphql";
 import { randomUUID } from 'crypto'; 
 import { CAPTCHA_CONFIG_SCOPE, DEFAULT_TENANT_META_DATA, JOBS_READ_SCOPE, MFA_AUTH_TYPE_NONE, MFA_AUTH_TYPES, PASSWORD_HASHING_ALGORITHMS, PASSWORD_MAXIMUM_LENGTH, PASSWORD_MINIMUM_LENGTH, SEARCH_INDEX_OBJECT_SEARCH, SYSTEM_SETTINGS_READ_SCOPE, SYSTEM_SETTINGS_UPDATE_SCOPE, TENANT_CREATE_SCOPE, TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE, TENANT_TYPE_ROOT_TENANT, TENANT_TYPES_DISPLAY, TENANT_UPDATE_SCOPE } from "@/utils/consts";
-import { Client } from "@opensearch-project/opensearch";
 import { getOpenSearchClient } from "@/lib/data-sources/search";
 import FederatedOIDCProviderDao from "../dao/federated-oidc-provider-dao";
 import { DaoFactory } from "../data-sources/dao-factory";
@@ -12,13 +11,16 @@ import ScopeDao from "../dao/scope-dao";
 import { authorizeByScopeAndTenant, containsScope, ServiceAuthorizationWrapper } from "@/utils/authz-utils";
 import MarkForDeleteDao from "../dao/mark-for-delete-dao";
 import SchedulerDao from "../dao/scheduler-dao";
+import ClientDao from "../dao/client-dao";
 
-const searchClient: Client = getOpenSearchClient();
+const searchClient = getOpenSearchClient();
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
+const clientDao: ClientDao = DaoFactory.getInstance().getClientDao();
 const federatedOIDCProviderDao: FederatedOIDCProviderDao = DaoFactory.getInstance().getFederatedOIDCProvicerDao();
 const scopeDao: ScopeDao = DaoFactory.getInstance().getScopeDao();
 const markForDeleteDao: MarkForDeleteDao = DaoFactory.getInstance().getMarkForDeleteDao();
 const schedulerDao: SchedulerDao = DaoFactory.getInstance().getSchedulerDao();
+
 
 class TenantService {
 
@@ -519,6 +521,19 @@ class TenantService {
         if(!authResult.isAuthorized){
             throw new GraphQLError(authResult.errorMessage || "ERROR");
         }
+        
+        const existingSystemSettings = await tenantDao.getSystemSettings();
+        if(existingSystemSettings.rootClientId !== systemSettingsUpdateInput.rootClientId){
+            const client: Client | null = await clientDao.getClientById(systemSettingsUpdateInput.rootClientId);
+            if(client === null){
+                throw new GraphQLError("ERROR_INVALID_ROOT_CLIENT");
+            }
+            const rootTenant: Tenant = await tenantDao.getRootTenant();
+            if(client.tenantId !== rootTenant.tenantId){
+                throw new GraphQLError("ERROR_CLIENT_DOES_NOT_BELONG_TO_THE_ROOT_TENANT");
+            }
+        }
+
         await tenantDao.updateSystemSettings(systemSettingsUpdateInput);
         return tenantDao.getSystemSettings();
     }

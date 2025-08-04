@@ -54,6 +54,12 @@ class UserRegistrationStateEntity extends Model {
                 primaryKey: false,
                 allowNull: false,
                 field: "expiresatms"
+            },
+            deviceCodeId: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: true,
+                field: "devicecodeid"
             }
         }, 
         {

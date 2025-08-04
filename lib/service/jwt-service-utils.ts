@@ -1,4 +1,4 @@
-import { User, Tenant, Client, SigningKey, ClientAuthHistory, PortalUserProfile, AuthorizationGroup, UserScopeRel, Scope, OidcUserProfile, UserProfileAuthorizationGroup } from "@/graphql/generated/graphql-types";
+import { User, Tenant, Client, SigningKey, ClientAuthHistory, PortalUserProfile, AuthorizationGroup, UserScopeRel, Scope, OidcUserProfile, UserProfileAuthorizationGroup, SystemSettings, ClientScopeRel } from "@/graphql/generated/graphql-types";
 import { generateRandomToken, getDomainFromEmail } from "@/utils/dao-utils";
 import ClientDao from "@/lib/dao/client-dao";
 import TenantDao from "@/lib/dao/tenant-dao";
@@ -81,10 +81,12 @@ class JwtServiceUtils {
                 return null;
             }
 
+            // TODO
+            // Refactor, since these both do the same queries.
             const arrScopes = includeScope ? await this.getScopes(user.userId, principal.tenant_id) : [];
-            const arrAuthnGroups: Array<AuthorizationGroup> = includeAuthorizationGroups ? await authorizationGroupDao.getUserAuthorizationGroups(user.userId) : [];
+            const arrAuthzGroups: Array<AuthorizationGroup> = includeAuthorizationGroups ? await authorizationGroupDao.getUserAuthorizationGroups(user.userId) : [];
 
-            const arrPortalAuthnGroups: Array<UserProfileAuthorizationGroup> = arrAuthnGroups.map(
+            const arrPortalAuthnGroups: Array<UserProfileAuthorizationGroup> = arrAuthzGroups.map(
                 (g: AuthorizationGroup) => {
                     const portalGroup: UserProfileAuthorizationGroup = {
                         groupId: g.groupId,
@@ -180,7 +182,7 @@ class JwtServiceUtils {
      * @param ttlInSeconds 
      * @returns 
      */
-    public async signIAMPortalUserJwt(user: User, tenant: Tenant, ttlInSeconds: number, tokenType: string): Promise<string | null> {
+    public async signIAMPortalUserJwt(user: User, tenant: Tenant, ttlInSeconds: number, tokenType: string): Promise<{accessToken: string | null, principal: JWTPayload} | null> {
         const now = Date.now();
         const principal: JWTPayload = {
             sub: user.userId,
@@ -202,7 +204,7 @@ class JwtServiceUtils {
             email: user.email,
             country_code: user.countryCode,
             language_code: user.preferredLanguageCode,
-            jwt_id: randomUUID().toString(),
+            jti: randomUUID().toString(),
             tenant_id: tenant.tenantId,
             tenant_name: tenant.tenantName,
             client_id: "",
@@ -211,7 +213,7 @@ class JwtServiceUtils {
             token_type: tokenType
         };
         const s: string | null = await this.signJwt(principal);
-        return Promise.resolve(s);
+        return Promise.resolve({accessToken: s, principal: principal});
     }
 
     /**
@@ -221,7 +223,7 @@ class JwtServiceUtils {
      * @param tenantId 
      * @param scope 
      */
-    public async signUserJwt(userId: string, clientId: string, tenantId: string, scope: string): Promise<OIDCTokenResponse | null>{
+    public async signUserJwt(userId: string, clientId: string, tenantId: string): Promise<{oidcTokenResponse: OIDCTokenResponse, principal: JWTPayload} | null>{
         const user: User | null = await identityDao.getUserBy("id", userId);
         if(!user){
             return Promise.resolve(null);
@@ -256,7 +258,7 @@ class JwtServiceUtils {
             email: user.email,
             country_code: user.countryCode,
             language_code: user.preferredLanguageCode,
-            jwt_id: randomUUID().toString(),
+            jti: randomUUID().toString(),
             tenant_id: tenantId,
             tenant_name: tenant.tenantName,
             client_id: clientId,
@@ -270,25 +272,47 @@ class JwtServiceUtils {
             return Promise.resolve(null);
         }
         
+        let generateRefreshToken: boolean = false;
+        if(client.maxRefreshTokenCount === undefined || client.maxRefreshTokenCount === null){
+            generateRefreshToken = true;
+        }
+        else if(client.maxRefreshTokenCount > 0){
+            generateRefreshToken = true;
+        }
+
         const oidcTokenResponse: OIDCTokenResponse = {
             access_token: s,
             token_type: "Bearer",
-            refresh_token: client.maxRefreshTokenCount && client.maxRefreshTokenCount > 0 ? generateRandomToken(32) : null,
+            refresh_token: generateRefreshToken ? generateRandomToken(32) : null,
             expires_in: client.userTokenTTLSeconds ? ( now / 1000 ) + client.userTokenTTLSeconds : ( now / 1000 ) + DEFAULT_END_USER_TOKEN_TTL_SECONDS,
             id_token: s
         }
         
-        return Promise.resolve(oidcTokenResponse);
+        return Promise.resolve({oidcTokenResponse: oidcTokenResponse, principal: principal});
     }
 
-
+    public async getAuthTokenForOutboundCalls(): Promise<string | null>{
+        const systemSettings: SystemSettings = await tenantDao.getSystemSettings();
+        let authToken: string | null = null;
+        if(systemSettings.rootClientId){
+            const client: Client | null = await clientDao.getClientById(systemSettings.rootClientId);
+            if(client !== null){
+                const tenant: Tenant = await tenantDao.getRootTenant();
+                const tokenResponse = await this.signClientJwt(client, tenant);
+                if(tokenResponse && tokenResponse.oidcTokenResponse){
+                    authToken = tokenResponse.oidcTokenResponse.access_token;
+                }
+            }
+        }
+        return authToken;
+    }
 
     /**
      * 
      * @param clientId  
      * @param tenantId 
      */
-    public async signClientJwt(client: Client, tenant: Tenant): Promise<OIDCTokenResponse | null>{
+    public async signClientJwt(client: Client, tenant: Tenant): Promise<{oidcTokenResponse: OIDCTokenResponse, principal: JWTPayload} | null>{
 
         const now = Date.now();
         const principal: JWTPayload = {
@@ -311,7 +335,7 @@ class JwtServiceUtils {
             email: "",
             country_code: "",
             language_code: "",
-            jwt_id: randomUUID().toString(),
+            jti: randomUUID().toString(),
             tenant_id: tenant.tenantId,
             tenant_name: tenant.tenantName,
             client_id: client.clientId,
@@ -333,7 +357,7 @@ class JwtServiceUtils {
             id_token: s
         }
         
-        return Promise.resolve(oidcTokenResponse);
+        return Promise.resolve({oidcTokenResponse: oidcTokenResponse, principal: principal});
     }
 
 
@@ -555,8 +579,8 @@ class JwtServiceUtils {
             
             let cachedArray: Array<CachedSigningKeyData> = [];
             for(let i = 0; i < signingKeys.length; i++){
-
                 let key: SigningKey = signingKeys[i];
+                
                 let passphrase: string | undefined = undefined;
                 if(key.password){
                     passphrase = await kms.decrypt(key.password) || undefined;
@@ -602,11 +626,23 @@ class JwtServiceUtils {
         return Promise.resolve(cachedSigningKey);
     }
 
-    
+    public async getClientScopes(clientId: string): Promise<Array<Scope>> {
+        const arrRels: Array<ClientScopeRel> = await scopeDao.getClientScopeRels(clientId);
+        const scopeIds: Array<string> = arrRels.map(
+            (r: ClientScopeRel) => r.scopeId
+        );
+        const arrScope: Array<Scope> = await scopeDao.getScope(undefined, Array.from(scopeIds));  
+        return arrScope;
+        
+    }
     protected async getScopes(userId: string, tenantId: string): Promise<Array<Scope>> {
         const setScopeIds: Set<string> = new Set();
 
+        const defaultAuthzGroups: Array<AuthorizationGroup> = await authorizationGroupDao.getDefaultAuthorizationGroups(tenantId);
+        
         const arrAuthorizationGroups: Array<AuthorizationGroup> = await authorizationGroupDao.getUserAuthorizationGroups(userId);
+        arrAuthorizationGroups.push(...defaultAuthzGroups);
+
         const arrAuthzGroupIds = arrAuthorizationGroups.map((g: AuthorizationGroup) => g.groupId);
         for(let i = 0; i < arrAuthzGroupIds.length; i++){
             const arrRels = await scopeDao.getAuthorizationGroupScopeRels(arrAuthzGroupIds[i]);

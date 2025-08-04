@@ -1,11 +1,12 @@
-import { PreAuthenticationState, AuthorizationCodeData, RefreshData, FederatedOidcAuthorizationRel } from "@/graphql/generated/graphql-types";
-import AuthDao from "../../auth-dao";
+import { PreAuthenticationState, AuthorizationCodeData, RefreshData, FederatedOidcAuthorizationRel, AuthorizationDeviceCodeData } from "@/graphql/generated/graphql-types";
+import AuthDao, { AuthorizationCodeType } from "../../auth-dao";
 import PreAuthenticationStateEntity from "@/lib/entities/pre-authentication-state-entity";
 import AuthorizationCodeDataEntity from "@/lib/entities/authorization-code-data-entity";
 import RefreshDataEntity from "@/lib/entities/refresh-data-entity";
 import FederatedOIDCAuthorizationRelEntity from "@/lib/entities/federated-oidc-authorization-rel-entity";
 import { Op, Sequelize } from "sequelize";
 import DBDriver from "@/lib/data-sources/sequelize-db";
+import AuthorizationDeviceCodeDataEntity from "@/lib/entities/authorization-device-code-data-entity";
 
 class DBAuthDao extends AuthDao {
 
@@ -110,6 +111,51 @@ class DBAuthDao extends AuthDao {
         return Promise.resolve();
     }
 
+    public async saveAuthorizationDeviceCodeData(authoriationDeviceCodeData: AuthorizationDeviceCodeData): Promise<AuthorizationDeviceCodeData>{
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.authorizationDeviceCodeData.create(authoriationDeviceCodeData);
+        return authoriationDeviceCodeData;
+    }
+
+    public async updateAuthorizationDeviceCodeData(authoriationDeviceCodeData: AuthorizationDeviceCodeData): Promise<AuthorizationDeviceCodeData>{
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.authorizationDeviceCodeData.update(authoriationDeviceCodeData, {
+            where: {
+                deviceCodeId: authoriationDeviceCodeData.deviceCodeId
+            }
+        });
+        return authoriationDeviceCodeData;
+    }
+    
+    public async getAuthorizationDeviceCodeData(code: string, authorizationCodeType: AuthorizationCodeType): Promise<AuthorizationDeviceCodeData | null>{
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        const whereParams: any = {};
+
+        if(authorizationCodeType === "devicecode"){
+            whereParams.deviceCode = code;
+        }
+        else if(authorizationCodeType === "usercode"){
+            whereParams.userCode = code;
+        }
+        else{
+            whereParams.deviceCodeId = code;
+        }
+        const entity: AuthorizationDeviceCodeDataEntity | null = await sequelize.models.authorizationDeviceCodeData.findOne({
+            where: whereParams
+        });
+        return entity ? entity.dataValues : null;
+
+    }
+    
+    public async deleteAuthorizationDeviceCodeData(deviceCodeId: string): Promise<void>{
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.authorizationDeviceCodeData.destroy({
+            where: {
+                deviceCodeId: deviceCodeId
+            }
+        })
+    }
+
     
     public async saveFederatedOIDCAuthorizationRel(federatedOIDCAuthorizationRel: FederatedOidcAuthorizationRel): Promise<FederatedOidcAuthorizationRel> {
         const sequelize: Sequelize = await DBDriver.getConnection();
@@ -169,6 +215,13 @@ class DBAuthDao extends AuthDao {
                 }
             }
         });
+        await sequelize.models.authorizationDeviceCodeData.destroy({
+            where: {
+                expiresAtMs: {
+                    [Op.lt]: Date.now()
+                }
+            }
+        })
 
     }
 

@@ -148,7 +148,8 @@ type Mutation {
     
 
     ## Authentication Flows
-    authenticateHandleUserNameInput(username: String!, tenantId: String, preAuthToken: String, returnToUri: String): UserAuthenticationStateResponse!    
+    authenticateHandleUserCodeInput(userCode: String!): UserAuthenticationStateResponse!
+    authenticateHandleUserNameInput(username: String!, tenantId: String, preAuthToken: String, returnToUri: String, deviceCodeId: String): UserAuthenticationStateResponse!    
     authenticateUser(username: String!, password: String!, tenantId: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
     authenticateUserAndMigrate(username: String!, password: String!, tenantId: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
     authenticateHandleForgotPassword(authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
@@ -166,16 +167,16 @@ type Mutation {
     authenticateWithSocialOIDCProvider(preAuthToken: String, tenantId: String!, federatedOIDCProviderId: String!): UserAuthenticationStateResponse!
 
     ## Registration Flows
-    registerUser(tenantId: String!, userInput: UserCreateInput!, preAuthToken: String): UserRegistrationStateResponse!
+    registerUser(tenantId: String!, userInput: UserCreateInput!, preAuthToken: String, deviceCodeId: String): UserRegistrationStateResponse!
     registerVerifyEmailAddress(userId: String!, token: String!, registrationSessionToken: String!, preAuthToken: String): UserRegistrationStateResponse!
     registerConfigureTOTP(userId: String!, registrationSessionToken: String!, preAuthToken: String, skip: Boolean!): UserRegistrationStateResponse!
     registerValidateTOTP(userId: String!, registrationSessionToken: String!, totpTokenValue: String!, preAuthToken: String): UserRegistrationStateResponse!
     registerConfigureSecurityKey(userId: String!, registrationSessionToken: String!, fido2KeyRegistrationInput: Fido2KeyRegistrationInput, preAuthToken: String, skip: Boolean!): UserRegistrationStateResponse!
     registerValidateSecurityKey(userId: String!, registrationSessionToken: String!, fido2KeyAuthenticationInput: Fido2KeyAuthenticationInput!, preAuthToken: String): UserRegistrationStateResponse!
-    registerAddBackupEmail(userId: String!, registrationSessionToken: String!, preAuthToken: String, skip: Boolean!): UserRegistrationStateResponse!
+    registerAddBackupEmail(userId: String!, backupEmail: String, registrationSessionToken: String!, preAuthToken: String, skip: Boolean!): UserRegistrationStateResponse!
     registerVerifyBackupEmail(userId: String!, token: String!, registrationSessionToken: String!, preAuthToken: String): UserRegistrationStateResponse!
     registerAddDuressPassword(userId: String!, password: String, skip: Boolean!, registrationSessionToken: String!, preAuthToken: String): UserRegistrationStateResponse!
-    cancelRegistration(userId: String!, registrationSessionToken: String!, preAuthToken: String): UserRegistrationStateResponse!
+    cancelRegistration(userId: String!, registrationSessionToken: String!, preAuthToken: String, deviceCodeId: String): UserRegistrationStateResponse!
 
     ## MFA Utilities
     generateTOTP(userId: String!): TOTPResponse!
@@ -696,6 +697,24 @@ type AuthorizationCodeData {
     expiresAtMs: Float!
 }
 
+enum DeviceCodeAuthorizationStatus {
+    PENDING
+    CANCELLED
+    APPROVED
+}
+
+type AuthorizationDeviceCodeData {
+    deviceCodeId: String!
+    deviceCode: String!
+    userCode: String!
+    clientId: String!
+    tenantId: String!
+    scope: String!    
+    expiresAtMs: Float!
+    authorizationStatus: DeviceCodeAuthorizationStatus!
+    userId: String
+}
+
 type AuthorizationReturnUri {
     uri: String!
     code: String!
@@ -853,6 +872,11 @@ enum AuthenticationState {
     ERROR
     ACCEPT_TERMS_AND_CONDITIONS
     ENTER_PASSWORD_AND_MIGRATE_USER
+    POST_AUTHN_STATE_SEND_SECURITY_EVENT_SUCCESS_LOGON
+    POST_AUTHN_STATE_SEND_SECURITY_EVENT_DURESS_LOGON
+    POST_AUTHN_STATE_SEND_SECURITY_EVENT_DEVICE_REGISTERED
+    ENTER_EMAIL
+    ENTER_USER_CODE
 }
 
 type AuthenticationError {
@@ -881,6 +905,7 @@ type UserAuthenticationState {
     preAuthToken: String
 	expiresAtMs: Float!    
     returnToUri: String
+    deviceCodeId: String
 }
 
 
@@ -898,6 +923,10 @@ enum RegistrationState {
     EXPIRED
     CANCELLED
     ERROR
+    ADD_BACKUP_EMAIL_OPTIONAL
+    VALIDATE_BACKUP_EMAIL
+    ADD_DURESS_PASSWORD_OPTIONAL
+    UNREGISTERED
 }
 
 type RegistrationError {
@@ -924,6 +953,7 @@ type UserRegistrationState {
     registrationStateStatus: String!
     preAuthToken: String
 	expiresAtMs: Float!
+    deviceCodeId: String
 }
 
 
@@ -1122,6 +1152,8 @@ type SystemSettings {
     softwareVersion: String!
     allowBackupEmail: Boolean!
     allowDuressPassword: Boolean!
+    rootClientId: String!
+    enablePortalAsLegacyIdp: Boolean!
     systemCategories: [SystemCategory!]!
 }
 
@@ -1391,6 +1423,7 @@ input RateLimitServiceGroupUpdateInput {
 input ScopeCreateInput {
     scopeName: String!
     scopeDescription: String!
+    scopeUse: String!
     scopeAccessRuleSchemaId: String
 }
 
@@ -1566,4 +1599,6 @@ input CaptchaConfigInput {
 input SystemSettingsUpdateInput {
     allowBackupEmail: Boolean!
     allowDuressPassword: Boolean!
+    rootClientId: String!
+    enablePortalAsLegacyIdp: Boolean!
 }

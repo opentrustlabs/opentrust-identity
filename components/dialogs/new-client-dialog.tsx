@@ -1,7 +1,7 @@
 "use client";
 import { Client, ClientCreateInput } from "@/graphql/generated/graphql-types";
 import { CLIENT_CREATE_MUTATION } from "@/graphql/mutations/oidc-mutations";
-import { CLIENT_TYPE_SERVICE_ACCOUNT_AND_USER_DELEGATED_PERMISSIONS, CLIENT_TYPE_SERVICE_ACCOUNT_ONLY, CLIENT_TYPE_USER_DELEGATED_PERMISSIONS_ONLY, CLIENT_TYPES_DISPLAY, DEFAULT_END_USER_TOKEN_TTL_SECONDS, DEFAULT_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS, FEDERATED_AUTHN_CONSTRAINT_DISPLAY, FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE, FEDERATED_AUTHN_CONSTRAINT_NOT_ALLOWED, FEDERATED_AUTHN_CONSTRAINT_PERMISSIVE, TENANT_TYPE_IDENTITY_MANAGEMENT, TENANT_TYPE_IDENTITY_MANAGEMENT_AND_SERVICES, TENANT_TYPE_ROOT_TENANT, TENANT_TYPE_SERVICES, TENANT_TYPES_DISPLAY } from "@/utils/consts";
+import { CLIENT_TYPE_DEVICE, CLIENT_TYPE_SERVICE_ACCOUNT_AND_USER_DELEGATED_PERMISSIONS, CLIENT_TYPE_SERVICE_ACCOUNT_ONLY, CLIENT_TYPE_USER_DELEGATED_PERMISSIONS_ONLY, CLIENT_TYPES_DISPLAY, DEFAULT_END_USER_TOKEN_TTL_SECONDS, DEFAULT_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS, FEDERATED_AUTHN_CONSTRAINT_DISPLAY, FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE, FEDERATED_AUTHN_CONSTRAINT_NOT_ALLOWED, FEDERATED_AUTHN_CONSTRAINT_PERMISSIVE, TENANT_TYPE_IDENTITY_MANAGEMENT, TENANT_TYPE_IDENTITY_MANAGEMENT_AND_SERVICES, TENANT_TYPE_ROOT_TENANT, TENANT_TYPE_SERVICES, TENANT_TYPES_DISPLAY } from "@/utils/consts";
 import { useMutation } from "@apollo/client";
 import { Alert, Button, DialogActions, DialogContent, DialogTitle, Grid2, MenuItem, Select, Stack, TextField, Typography } from "@mui/material";
 import React, { useContext } from "react";
@@ -35,7 +35,7 @@ const NewClientDialog: React.FC<NewClientDialogProps> = ({
         clientDescription: "",
         clientTokenTTLSeconds: DEFAULT_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS,
         enabled: true,
-        maxRefreshTokenCount: 0,
+        maxRefreshTokenCount: null,
         oidcEnabled: true,
         pkceEnabled: false,
         userTokenTTLSeconds: DEFAULT_END_USER_TOKEN_TTL_SECONDS
@@ -157,6 +157,7 @@ const NewClientDialog: React.FC<NewClientDialogProps> = ({
                                         <MenuItem value={CLIENT_TYPE_SERVICE_ACCOUNT_ONLY} >{CLIENT_TYPES_DISPLAY.get(CLIENT_TYPE_SERVICE_ACCOUNT_ONLY)}</MenuItem>
                                         <MenuItem value={CLIENT_TYPE_SERVICE_ACCOUNT_AND_USER_DELEGATED_PERMISSIONS} >{CLIENT_TYPES_DISPLAY.get(CLIENT_TYPE_SERVICE_ACCOUNT_AND_USER_DELEGATED_PERMISSIONS)}</MenuItem>
                                         <MenuItem value={CLIENT_TYPE_USER_DELEGATED_PERMISSIONS_ONLY} >{CLIENT_TYPES_DISPLAY.get(CLIENT_TYPE_USER_DELEGATED_PERMISSIONS_ONLY)}</MenuItem>
+                                        <MenuItem value={CLIENT_TYPE_DEVICE} >{CLIENT_TYPES_DISPLAY.get(CLIENT_TYPE_DEVICE)}</MenuItem>
                                     </Select>
                                 </Grid2>
                                 <Grid2 marginBottom={"16px"}>

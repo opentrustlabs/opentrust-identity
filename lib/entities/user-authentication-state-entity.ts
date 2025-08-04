@@ -54,6 +54,12 @@ class UserAuthenticationStateEntity extends Model {
                 primaryKey: false,
                 allowNull: true,
                 field: "returntouri"
+            },
+            deviceCodeId: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: true,
+                field: "devicecodeid"
             }
         }, 
         {

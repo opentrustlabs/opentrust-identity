@@ -4,14 +4,14 @@ import { Autocomplete, Backdrop, Button, Checkbox, CircularProgress, Grid2, Inpu
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { DEFAULT_TENANT_PASSWORD_CONFIGURATION, NAME_ORDER_DISPLAY, NAME_ORDER_EASTERN, NAME_ORDER_WESTERN, NAME_ORDERS, QUERY_PARAM_AUTHENTICATE_TO_PORTAL, QUERY_PARAM_REDIRECT_URI, QUERY_PARAM_TENANT_ID, QUERY_PARAM_PREAUTHN_TOKEN, QUERY_PARAM_USERNAME } from "@/utils/consts";
+import { DEFAULT_TENANT_PASSWORD_CONFIGURATION, NAME_ORDER_DISPLAY, NAME_ORDER_EASTERN, NAME_ORDER_WESTERN, NAME_ORDERS, QUERY_PARAM_AUTHENTICATE_TO_PORTAL, QUERY_PARAM_REDIRECT_URI, QUERY_PARAM_TENANT_ID, QUERY_PARAM_PREAUTHN_TOKEN, QUERY_PARAM_USERNAME, DEFAULT_TENANT_META_DATA, QUERY_PARAM_DEVICE_CODE_ID } from "@/utils/consts";
 import {  TENANT_PASSWORD_CONFIG_QUERY } from "@/graphql/queries/oidc-queries";
 import { useMutation, useQuery } from "@apollo/client";
 import { RegistrationState, StateProvinceRegion, TenantPasswordConfig, UserCreateInput, UserRegistrationState, UserRegistrationStateResponse } from "@/graphql/generated/graphql-types";
 import Alert from '@mui/material/Alert';
 import { PageTitleContext } from "@/components/contexts/page-title-context";
 import { COUNTRY_CODES, CountryCodeDef, LANGUAGE_CODES, LanguageCodeDef } from "@/utils/i18n";
-import { getDefaultCountryCodeDef, getDefaultLanguageCodeDef, setAccessTokenOnLocalStorage } from "@/utils/client-utils";
+import { getDefaultCountryCodeDef, getDefaultLanguageCodeDef } from "@/utils/client-utils";
 import StateProvinceRegionSelector from "../users/state-province-region-selector";
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import VisibilityOffOutlinedIcon from '@mui/icons-material/VisibilityOffOutlined';
@@ -30,6 +30,8 @@ import { AuthSessionProps, useAuthSessionContext } from "../contexts/auth-sessio
 import { AuthContext, AuthContextProps } from "../contexts/auth-context";
 import Link from "next/link";
 import { MuiTelInput } from "mui-tel-input";
+import BackupEmailConfiguration from "./back-up-email";
+import DuressPasswordConfiguration from "./duress-password";
 
 
 export interface RegistrationComponentsProps {
@@ -52,6 +54,7 @@ const Register: React.FC = () => {
     // QUERY PARAMS
     const params = useSearchParams();    
     const preAuthToken: string | null | undefined = params?.get(QUERY_PARAM_PREAUTHN_TOKEN);
+    const deviceCodeId: string | null | undefined = params?.get(QUERY_PARAM_DEVICE_CODE_ID);
     const tenantId = params?.get(QUERY_PARAM_TENANT_ID);
     const username = params?.get(QUERY_PARAM_USERNAME);
     const redirectUri = params?.get(QUERY_PARAM_REDIRECT_URI);
@@ -81,6 +84,19 @@ const Register: React.FC = () => {
         termsAndConditionsAccepted: false
     };
 
+    const initUserRegistrationState: UserRegistrationState = {
+        email: "",
+        expiresAtMs: 0,
+        registrationSessionToken: "",
+        registrationState: RegistrationState.Unregistered,
+        registrationStateOrder: 0,
+        registrationStateStatus: "",
+        tenantId: tenantId || "",
+        userId: "",
+        deviceCodeId: deviceCodeId,
+        preAuthToken: preAuthToken
+    }
+
     const [userInput, setUserInput] = React.useState<UserCreateInput>(initInput);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);    
     const [registrationPage, setRegistrationPage] = React.useState<number>(1);
@@ -90,7 +106,7 @@ const Register: React.FC = () => {
     const [passwordConfig, setPasswordConfig] = React.useState<TenantPasswordConfig>(DEFAULT_TENANT_PASSWORD_CONFIGURATION);
     const [showPasswordRules, setShowPasswordRules] = React.useState<boolean>(false);
     const [showMutationBackdrop, setShowMutationBackdrop] = React.useState<boolean>(false);
-    const [userRegistrationState, setUserRegistrationState] = React.useState<UserRegistrationState | null>(null);
+    const [userRegistrationState, setUserRegistrationState] = React.useState<UserRegistrationState>(initUserRegistrationState);
     const [userClickedTermsAndConditionsLink, setUserClickedTermsAndConditionsLink] = React.useState<boolean>(false);
 
     // HOOKS FROM NEXTJS OR MUI
@@ -180,20 +196,31 @@ const Register: React.FC = () => {
         }
     }
 
-    const handleCancelRegistration = (userRegistrationState: UserRegistrationState) => {
-        console.log("registration cancelled");        
-        cancelRegistration({
+    const handleCancelRegistration = async () => {
+        console.log("registration cancelled");
+        tenantBean.setTenantMetaData(DEFAULT_TENANT_META_DATA);
+        
+        await cancelRegistration({
             variables: {
                 userId: userRegistrationState.userId,
                 registrationSessionToken: userRegistrationState.registrationSessionToken,
-                preAuthToken: userRegistrationState.preAuthToken
+                preAuthToken: userRegistrationState.preAuthToken,
+                deviceCodeId: deviceCodeId
             }
         });
         setUserInput(initInput);
         setErrorMessage(null);
         setRegistrationPage(1);
         setPasswordConfig(DEFAULT_TENANT_PASSWORD_CONFIGURATION);
-        setUserRegistrationState(null);
+        
+        // else{
+        //     if(!redirectUri){
+        //         router.push(`/authorize/login?${QUERY_PARAM_AUTHENTICATE_TO_PORTAL}=true`);
+        //     }
+        //     else{
+        //         router.push(`${redirectUri}?error=access_denied&error_description=authentication_cancelled_by_user`)
+        //     }
+        // }       
     }
 
 
@@ -279,7 +306,7 @@ const Register: React.FC = () => {
                             <Grid2 size={{ xs: 12 }}>
                                 <div style={{ marginBottom: "16px", fontWeight: "bold", fontSize: "1.0em" }}>Register</div>
                             </Grid2>
-                            {userRegistrationState === null && registrationPage === 1 &&
+                            {userRegistrationState.registrationState === RegistrationState.Unregistered && registrationPage === 1 &&
                                 <React.Fragment>
                                     <Grid2 size={12} container spacing={1}>
                                         <Grid2 marginBottom={"8px"} size={12}>
@@ -460,18 +487,13 @@ const Register: React.FC = () => {
                                         </Button>
                                         <Button 
                                             onClick={() => {
-                                                if(!redirectUri){
-                                                    router.push(`/authorize/login?${QUERY_PARAM_AUTHENTICATE_TO_PORTAL}=true`);
-                                                }
-                                                else{
-                                                    router.push(`${redirectUri}?error=access_denied&error_description=authentication_cancelled_by_user`)
-                                                }
+                                                handleCancelRegistration();
                                             }}
                                         >Cancel</Button>
                                     </Stack>
                                 </React.Fragment>
                             }
-                            {userRegistrationState === null && registrationPage === 2 &&
+                            {userRegistrationState.registrationState === RegistrationState.Unregistered && registrationPage === 2 &&
                                 <React.Fragment>
                                     <Grid2 size={12} container spacing={1}>
                                         <Grid2 marginBottom={"8px"} size={12}>
@@ -616,7 +638,8 @@ const Register: React.FC = () => {
                                                     variables: {
                                                         tenantId: tenantId,
                                                         userInput: userInput,
-                                                        preAuthToken: preAuthToken
+                                                        preAuthToken: preAuthToken,
+                                                        deviceCodeId: deviceCodeId
                                                     }
                                                 });
                                             }}
@@ -635,24 +658,21 @@ const Register: React.FC = () => {
                                         </Button>
                                         <Button 
                                             onClick={() => {
-                                                console.log("registration cancelled");
-                                                if(!redirectUri){
-                                                    router.push(`/authorize/login?${QUERY_PARAM_AUTHENTICATE_TO_PORTAL}=true`);
-                                                }
-                                                else{
-                                                    router.push(`${redirectUri}?error=access_denied&error_description=authentication_cancelled_by_user`)
-                                                }
+                                                handleCancelRegistration();
                                             }}
                                         >Cancel</Button>
                                     </Stack>
-                                </React.Fragment>
-                                
+                                </React.Fragment>                                
                             }
-                            {userRegistrationState && userRegistrationState.registrationState === RegistrationState.ValidateEmail &&
+                            {
+                                (
+                                    userRegistrationState.registrationState === RegistrationState.ValidateEmail || 
+                                    userRegistrationState.registrationState === RegistrationState.ValidateBackupEmail
+                                ) &&
                                 <ValidateEmailOnRegistration 
                                     initialUserRegistrationState={userRegistrationState}
                                     onRegistrationCancelled={() => {
-                                        handleCancelRegistration(userRegistrationState);
+                                        handleCancelRegistration();
                                     }} 
                                     onUpdateStart={() => {
                                         setErrorMessage(null);
@@ -661,11 +681,44 @@ const Register: React.FC = () => {
                                     onUpdateEnd={(userRegistrationStateResponse: UserRegistrationStateResponse | null, errorMessage: string | null) => {
                                         setShowMutationBackdrop(false);
                                         handleUserRegistrationStateResponse(userRegistrationStateResponse, errorMessage);
-                                    }}                               
-                                />
-                                
+                                    }}
+                                    isBackupEmail={userRegistrationState.registrationState === RegistrationState.ValidateBackupEmail}
+                                />                                
                             }
-                            {userRegistrationState && 
+                            {userRegistrationState.registrationState === RegistrationState.AddBackupEmailOptional &&
+                                <BackupEmailConfiguration
+                                    initialUserRegistrationState={userRegistrationState}
+                                    onRegistrationCancelled={() => {
+                                        handleCancelRegistration();
+                                    }} 
+                                    onUpdateStart={() => {
+                                        setErrorMessage(null);
+                                        setShowMutationBackdrop(true)
+                                    }}
+                                    onUpdateEnd={(userRegistrationStateResponse: UserRegistrationStateResponse | null, errorMessage: string | null) => {
+                                        setShowMutationBackdrop(false);
+                                        handleUserRegistrationStateResponse(userRegistrationStateResponse, errorMessage);
+                                    }}
+                                />
+                            }
+                            {userRegistrationState.registrationState === RegistrationState.AddDuressPasswordOptional &&
+                                <DuressPasswordConfiguration
+                                    initialUserRegistrationState={userRegistrationState}
+                                    onRegistrationCancelled={() => {
+                                        handleCancelRegistration();
+                                    }} 
+                                    onUpdateStart={() => {
+                                        setErrorMessage(null);
+                                        setShowMutationBackdrop(true)
+                                    }}
+                                    onUpdateEnd={(userRegistrationStateResponse: UserRegistrationStateResponse | null, errorMessage: string | null) => {
+                                        setShowMutationBackdrop(false);
+                                        handleUserRegistrationStateResponse(userRegistrationStateResponse, errorMessage);
+                                    }}
+                                    tenantPasswordConfig={passwordConfig}
+                                />
+                            }
+                            {
                                 (
                                     userRegistrationState.registrationState === RegistrationState.ConfigureTotpOptional ||
                                     userRegistrationState.registrationState === RegistrationState.ConfigureTotpRequired
@@ -673,7 +726,7 @@ const Register: React.FC = () => {
                                 <RegistrationConfigureTotp
                                     initialUserRegistrationState={userRegistrationState}
                                     onRegistrationCancelled={() => {
-                                        handleCancelRegistration(userRegistrationState);
+                                        handleCancelRegistration();
                                     }} 
                                     onUpdateStart={() => {
                                         setErrorMessage(null);
@@ -685,11 +738,11 @@ const Register: React.FC = () => {
                                     }} 
                                 />
                             }
-                            {userRegistrationState && userRegistrationState.registrationState === RegistrationState.ValidateTotp &&
+                            {userRegistrationState.registrationState === RegistrationState.ValidateTotp &&
                                 <RegistrationValidateTotp
                                     initialUserRegistrationState={userRegistrationState}
                                     onRegistrationCancelled={() => {
-                                        handleCancelRegistration(userRegistrationState);
+                                        handleCancelRegistration();
                                     }} 
                                     onUpdateStart={() => {
                                         setErrorMessage(null);
@@ -701,7 +754,7 @@ const Register: React.FC = () => {
                                     }} 
                                 />                            
                             }
-                            {userRegistrationState && 
+                            {
                                 (
                                     userRegistrationState.registrationState === RegistrationState.ConfigureSecurityKeyOptional ||
                                     userRegistrationState.registrationState === RegistrationState.ConfigureSecurityKeyRequired
@@ -709,7 +762,7 @@ const Register: React.FC = () => {
                                 <RegistrationConfigureSecurityKey
                                     initialUserRegistrationState={userRegistrationState}
                                     onRegistrationCancelled={() => {
-                                        handleCancelRegistration(userRegistrationState);
+                                        handleCancelRegistration();
                                     }}
                                     onUpdateStart={() => {
                                         setErrorMessage(null);
@@ -721,11 +774,11 @@ const Register: React.FC = () => {
                                     }} 
                                 />
                             }
-                            {userRegistrationState && userRegistrationState.registrationState === RegistrationState.ValidateSecurityKey &&
+                            {userRegistrationState.registrationState === RegistrationState.ValidateSecurityKey &&
                                 <RegistrationValidateSecurityKey
                                     initialUserRegistrationState={userRegistrationState}
                                     onRegistrationCancelled={() => {
-                                        handleCancelRegistration(userRegistrationState);
+                                        handleCancelRegistration();
                                     }} 
                                     onUpdateStart={() => {
                                         setErrorMessage(null);

@@ -417,7 +417,7 @@ const resolvers: Resolvers = {
                 scopeId: "",
                 scopeName: scopeInput.scopeName,
                 scopeDescription: scopeInput.scopeDescription,
-                scopeUse: SCOPE_USE_APPLICATION_MANAGEMENT,
+                scopeUse: scopeInput.scopeUse, //SCOPE_USE_APPLICATION_MANAGEMENT,
                 markForDelete: false
             };
             await scopeService.createScope(scope);
@@ -670,9 +670,7 @@ const resolvers: Resolvers = {
             //await tenantService.setTenantAnonymousUserConfig(anonymousUserConfig);
             return anonymousUserConfig;
         },
-        setTenantLookAndFeel: async(_: any, { tenantLookAndFeelInput }, oidcContext) => {
-            // TODO
-            // Implement the service and dao functions.
+        setTenantLookAndFeel: async(_: any, { tenantLookAndFeelInput }, oidcContext) => {            
             const tenantService: TenantService = new TenantService(oidcContext);
             const tenantLookAndFeel: TenantLookAndFeel = {
                 tenantid: tenantLookAndFeelInput.tenantid,
@@ -878,9 +876,9 @@ const resolvers: Resolvers = {
             const service: RegisterUserService = new RegisterUserService(oidcContext);
             return service.createUser(userInput, tenantId);
         },        
-        authenticateHandleUserNameInput: async(_: any, { username, tenantId, preAuthToken, returnToUri}, oidcContext) => {
+        authenticateHandleUserNameInput: async(_: any, { username, tenantId, preAuthToken, returnToUri, deviceCodeId}, oidcContext) => {
             const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);
-            return service.authenticateHandleUserNameInput(username, tenantId || null, preAuthToken || null, returnToUri || null);
+            return service.authenticateHandleUserNameInput(username, tenantId || null, preAuthToken || null, returnToUri || null, deviceCodeId || null);
         },
         authenticateUser: async(_: any, { username, password, authenticationSessionToken, tenantId, preAuthToken }, oidcContext) => {
             const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);
@@ -930,9 +928,13 @@ const resolvers: Resolvers = {
             const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);
             return service.authenticateAcceptTermsAndConditions(accepted, authenticationSessionToken, preAuthToken || null);
         },
-        registerUser: async(_: any, { tenantId, userInput, preAuthToken }, oidcContext) => {
+        authenticateHandleUserCodeInput: async(_: any, { userCode }, oidcContext) => {
+            const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);
+            return service.authenticateHandleUserCodeInput(userCode);
+        },
+        registerUser: async(_: any, { tenantId, userInput, preAuthToken, deviceCodeId }, oidcContext) => {
             const service: RegisterUserService = new RegisterUserService(oidcContext);
-            return service.registerUser(userInput, tenantId, preAuthToken);
+            return service.registerUser(userInput, tenantId, preAuthToken || null, deviceCodeId || null);
         },
         registerVerifyEmailAddress: async(_: any, { userId, token, registrationSessionToken, preAuthToken }, oidcContext) => {
             const service: RegisterUserService = new RegisterUserService(oidcContext);
@@ -954,9 +956,21 @@ const resolvers: Resolvers = {
             const service: RegisterUserService = new RegisterUserService(oidcContext);
             return service.registerValidateSecurityKey(userId, registrationSessionToken, fido2KeyAuthenticationInput, preAuthToken || null);
         },
-        cancelRegistration: async(_: any, { userId, registrationSessionToken, preAuthToken }, oidcContext) => {
+        registerAddBackupEmail: async(_: any, { userId, registrationSessionToken, backupEmail, skip, preAuthToken }, oidcContext) => {
             const service: RegisterUserService = new RegisterUserService(oidcContext);
-            return service.cancelRegistration(userId, registrationSessionToken, preAuthToken || null);
+            return service.registerAddBackupEmail(userId, backupEmail || null, registrationSessionToken, preAuthToken || null, skip);
+        },
+        registerVerifyBackupEmail: async(_: any, { userId, token, registrationSessionToken, preAuthToken}, oidcContext) => {
+            const service: RegisterUserService = new RegisterUserService(oidcContext);
+            return service.registerVerifyBackupEmail(userId, token, registrationSessionToken, preAuthToken || null);
+        },
+        registerAddDuressPassword: async(_: any, { userId, password, skip, registrationSessionToken, preAuthToken }, oidcContext) => {
+            const service: RegisterUserService = new RegisterUserService(oidcContext);
+            return service.registerAddDuressPassword(userId, password || null, skip, registrationSessionToken, preAuthToken || null);
+        },
+        cancelRegistration: async(_: any, { userId, registrationSessionToken, preAuthToken, deviceCodeId }, oidcContext) => {
+            const service: RegisterUserService = new RegisterUserService(oidcContext);
+            return service.cancelRegistration(userId, registrationSessionToken, preAuthToken || null, deviceCodeId || null);
         },
         unlockUser: async(_: any, { userId }, oidcContext) => {
             const service: IdentityService = new IdentityService(oidcContext);

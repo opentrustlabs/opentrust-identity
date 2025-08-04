@@ -1,10 +1,10 @@
-import { Tenant, Client, AuthorizationCodeData, RefreshData } from '@/graphql/generated/graphql-types';
+import { Tenant, Client, AuthorizationCodeData, RefreshData, AuthorizationDeviceCodeData, DeviceCodeAuthorizationStatus } from '@/graphql/generated/graphql-types';
 import AuthDao from '@/lib/dao/auth-dao';
 import ClientDao from '@/lib/dao/client-dao';
 import TenantDao from '@/lib/dao/tenant-dao';
 import { OIDCErrorResponseBody } from '@/lib/models/error';
 import ClientAuthValidationService from '@/lib/service/client-auth-validation-service';
-import { CLIENT_TYPE_SERVICE_ACCOUNT_ONLY, CLIENT_TYPE_USER_DELEGATED_PERMISSIONS_ONLY, GRANT_TYPE_AUTHORIZATION_CODE, GRANT_TYPE_CLIENT_CREDENTIALS, GRANT_TYPE_REFRESH_TOKEN, GRANT_TYPES_SUPPORTED, OIDC_TOKEN_ERROR_INVALID_CLIENT, OIDC_TOKEN_ERROR_INVALID_GRANT, OIDC_TOKEN_ERROR_INVALID_REQUEST, OIDC_TOKEN_ERROR_UNAUTHORIZED_CLIENT, OidcTokenErrorType, REFRESH_TOKEN_CLIENT_TYPE_PKCE, REFRESH_TOKEN_CLIENT_TYPE_SECURE_CLIENT } from '@/utils/consts';
+import { CLIENT_TYPE_SERVICE_ACCOUNT_ONLY, CLIENT_TYPE_USER_DELEGATED_PERMISSIONS_ONLY, GRANT_TYPE_AUTHORIZATION_CODE, GRANT_TYPE_CLIENT_CREDENTIALS, GRANT_TYPE_DEVICE_CODE, GRANT_TYPE_REFRESH_TOKEN, GRANT_TYPES_SUPPORTED, OIDC_TOKEN_ERROR_AUTHORIZATION_DECLINED, OIDC_TOKEN_ERROR_AUTHORIZATION_PENDING, OIDC_TOKEN_ERROR_BAD_VERIFICATION_CODE, OIDC_TOKEN_ERROR_EXPIRED_TOKEN, OIDC_TOKEN_ERROR_INVALID_CLIENT, OIDC_TOKEN_ERROR_INVALID_GRANT, OIDC_TOKEN_ERROR_INVALID_REQUEST, OIDC_TOKEN_ERROR_UNAUTHORIZED_CLIENT, OidcTokenErrorType, REFRESH_TOKEN_CLIENT_TYPE_DEVICE, REFRESH_TOKEN_CLIENT_TYPE_PKCE, REFRESH_TOKEN_CLIENT_TYPE_SECURE_CLIENT } from '@/utils/consts';
 import { generateHash } from '@/utils/dao-utils';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { randomUUID } from 'crypto'; 
@@ -38,6 +38,7 @@ interface TokenData {
     clientSecret: string | null,
     clientAssertion: string | null,
     clientAssertionType: string | null,
+    deviceCode: string | null,
     traceId: string
 }
 
@@ -46,7 +47,7 @@ export default async function handler(
 	res: NextApiResponse
 ) {
 
-    let traceId: string = req.headers["x-trace-id"] ? req.headers["x-trace-id"] as string : randomUUID.toString();
+    let traceId: string = req.headers["x-trace-id"] ? req.headers["x-trace-id"] as string : randomUUID().toString();
     const contentType: string | undefined = req.headers['content-type'];
     const method: string | undefined = req.method;
     if(!method || ! (method.toUpperCase() === "POST")){
@@ -88,7 +89,8 @@ export default async function handler(
         refresh_token,
         client_secret,
         client_assertion,
-        client_assertion_type
+        client_assertion_type,
+        device_code
     } = req.body;
 
     const tenantId = tenant_id as string;
@@ -102,6 +104,7 @@ export default async function handler(
     const oidcCode = code ? code as string : "";
     const clientAssertion = client_assertion ? client_assertion as string : null;
     const clientAssertionType = client_assertion_type ? client_assertion_type as string : null;
+    const deviceCode = device_code ? device_code as string : null;
 
     if(!clientId || clientId === ""){
         const error: OIDCErrorResponseBody = {
@@ -143,6 +146,7 @@ export default async function handler(
         refreshToken,
         scope: oidcScope,
         clientAssertionType,
+        deviceCode: deviceCode,
         traceId
     }
 
@@ -155,8 +159,9 @@ export default async function handler(
     else if(grantType === GRANT_TYPE_CLIENT_CREDENTIALS){
         return handleClientCredentialsGrant(tokenData, res)
     }
-
-    //return res.status(200).json({message: "everything ok here"});
+    else if(grantType === GRANT_TYPE_DEVICE_CODE){
+        return handleDeviceCodeGrant(tokenData, res);
+    }
 
 }
 
@@ -178,22 +183,23 @@ async function handleAuthorizationCodeGrant(tokenData: TokenData, res: NextApiRe
     // Delete the authorization code immediately so that it cannot be reused. No need to wait.
     authDao.deleteAuthorizationCodeData(tokenData.code || "");
 
-    if(authorizationCodeData.tenantId !== tokenData.tenantId){
-
+    if(
+        authorizationCodeData.tenantId !== tokenData.tenantId ||
+        authorizationCodeData.clientId !== tokenData.clientId ||
+        authorizationCodeData.redirectUri !== tokenData.redirectUri ||
+        authorizationCodeData.expiresAtMs < Date.now() ||
+        authorizationCodeData.scope !== tokenData.scope
+    ){
+        const error: OIDCErrorResponseBody = {
+            error: OIDC_TOKEN_ERROR_UNAUTHORIZED_CLIENT,
+            error_code: "0000721",
+            error_description: "ERROR_TOKEN_REQUEST_FAILED_WITH_INVALID_CLIENT",
+            error_uri: "",
+            timestamp: Date.now(),
+            trace_id: tokenData.traceId
+        }
+        return res.status(400).json(error);
     }
-    if(authorizationCodeData.clientId !== tokenData.clientId){
-
-    }
-    if(authorizationCodeData.redirectUri !== tokenData.redirectUri){
-
-    }
-    if(authorizationCodeData.expiresAtMs < Date.now()){
-
-    }
-    if(authorizationCodeData.scope !== tokenData.scope){
-
-    }
-
 
     // Validate the code challenge if it exists or validate the
     // client authentication using either client secret or signed jwt
@@ -242,9 +248,9 @@ async function handleAuthorizationCodeGrant(tokenData: TokenData, res: NextApiRe
         }
     }
     
-    const oidcTokenResponse: OIDCTokenResponse | null = await jwtService.signUserJwt(authorizationCodeData.userId, authorizationCodeData.clientId, authorizationCodeData.tenantId, authorizationCodeData.scope);
-    
-    if(!oidcTokenResponse){
+    const response = await jwtService.signUserJwt(authorizationCodeData.userId, authorizationCodeData.clientId, authorizationCodeData.tenantId);    
+    //const oidcTokenResponse: OIDCTokenResponse | null = await jwtService.signUserJwt(authorizationCodeData.userId, authorizationCodeData.clientId, authorizationCodeData.tenantId);    
+    if(!response){
         const error: OIDCErrorResponseBody = {
             error: OIDC_TOKEN_ERROR_UNAUTHORIZED_CLIENT,
             error_code: "0000721",
@@ -256,11 +262,11 @@ async function handleAuthorizationCodeGrant(tokenData: TokenData, res: NextApiRe
         return res.status(400).json(error);
     }
 
-    if(oidcTokenResponse.refresh_token){
+    if(response.oidcTokenResponse.refresh_token){
         const refreshData: RefreshData = {
             clientId: authorizationCodeData.clientId,
             refreshCount: 1,
-            refreshToken: generateHash(oidcTokenResponse.refresh_token),
+            refreshToken: generateHash(response.oidcTokenResponse.refresh_token),
             refreshTokenClientType: authorizationCodeData.codeChallenge ? REFRESH_TOKEN_CLIENT_TYPE_PKCE : REFRESH_TOKEN_CLIENT_TYPE_SECURE_CLIENT,
             tenantId: authorizationCodeData.tenantId,
             userId: authorizationCodeData.userId,
@@ -268,12 +274,12 @@ async function handleAuthorizationCodeGrant(tokenData: TokenData, res: NextApiRe
             redirecturi: authorizationCodeData.redirectUri,
             codeChallenge: authorizationCodeData.codeChallenge ? authorizationCodeData.codeChallenge : null,
             codeChallengeMethod: authorizationCodeData.codeChallengeMethod ? authorizationCodeData.codeChallengeMethod : null,
-            expiresAtMs: Date.now() + (7 * 24 * 60 * 60 * 1000) // Allow 7 days before token automatically expires. TODO -> make this configurable in the client
+            expiresAtMs: Date.now() + (14 * 24 * 60 * 60 * 1000) // Allow 14 days before token automatically expires. TODO -> make this configurable in the client
         }
         await authDao.saveRefreshData(refreshData);
     };
 
-    return res.status(200).json(oidcTokenResponse);
+    return res.status(200).json(response.oidcTokenResponse);
     
 }
 
@@ -409,8 +415,8 @@ async function handleRefreshTokenGrant(tokenData: TokenData, res: NextApiRespons
         return res.status(400).json(error);
     }
     
-    // Validate the client credentials if this is not a PKCE enabled refresh token
-    if(refreshTokenData.refreshTokenClientType !== REFRESH_TOKEN_CLIENT_TYPE_PKCE){
+    // Validate the client credentials if this is not a PKCE enabled refresh token or DEVICE token
+    if(refreshTokenData.refreshTokenClientType === REFRESH_TOKEN_CLIENT_TYPE_SECURE_CLIENT){
         if(tokenData.clientAssertion === null && tokenData.clientSecret === null){
             const error: OIDCErrorResponseBody = {
                 error: OIDC_TOKEN_ERROR_INVALID_REQUEST,
@@ -451,6 +457,11 @@ async function handleRefreshTokenGrant(tokenData: TokenData, res: NextApiRespons
         }
     }
 
+    // else this is a DEVICE client type and cannot send credentials or verifiers and so we cannot
+    // do anything more to verify it.
+
+
+
     // Finally, have we maxed out the number of refresh tokens that can be issued?
     if(client.maxRefreshTokenCount && refreshTokenData.refreshCount > client.maxRefreshTokenCount){
 
@@ -472,8 +483,8 @@ async function handleRefreshTokenGrant(tokenData: TokenData, res: NextApiRespons
     // This will rotate the refresh token. So we need to remove the old
     // one (based on its hash value) and save the new one (also based on
     // its hash value).
-    const oidcTokenResponse: OIDCTokenResponse | null = await jwtService.signUserJwt(refreshTokenData.userId, refreshTokenData.clientId, refreshTokenData.tenantId, refreshTokenData.scope);
-    if(!oidcTokenResponse){
+    const response = await jwtService.signUserJwt(refreshTokenData.userId, refreshTokenData.clientId, refreshTokenData.tenantId);    
+    if(!response){
         const error: OIDCErrorResponseBody = {
             error: OIDC_TOKEN_ERROR_INVALID_REQUEST,
             error_code: "0000731",
@@ -484,11 +495,11 @@ async function handleRefreshTokenGrant(tokenData: TokenData, res: NextApiRespons
         }
         return res.status(400).json(error);
     }
-    if(oidcTokenResponse.refresh_token){
+    if(response.oidcTokenResponse.refresh_token){
         const newRefreshData: RefreshData = {
             clientId: refreshTokenData.clientId,
             refreshCount: refreshTokenData.refreshCount + 1,
-            refreshToken: generateHash(oidcTokenResponse.refresh_token),
+            refreshToken: generateHash(response.oidcTokenResponse.refresh_token),
             refreshTokenClientType: refreshTokenData.refreshTokenClientType,
             tenantId: refreshTokenData.tenantId,
             userId: refreshTokenData.userId,
@@ -496,15 +507,22 @@ async function handleRefreshTokenGrant(tokenData: TokenData, res: NextApiRespons
             redirecturi: refreshTokenData.redirecturi,
             codeChallenge: refreshTokenData.codeChallenge,
             codeChallengeMethod: refreshTokenData.codeChallengeMethod,
-            expiresAtMs: Date.now() + (7 * 24 * 60 * 60 * 1000) // Allow 7 days before token automatically expires. TODO -> make this configurable in the client
+            expiresAtMs: Date.now() + (14 * 24 * 60 * 60 * 1000) // Allow 14 days before token automatically expires. TODO -> make this configurable in the client
         }
         await authDao.saveRefreshData(newRefreshData);
     };
     await authDao.deleteRefreshDataByRefreshToken(hashedRefreshToken);
     
-    return res.status(200).json(oidcTokenResponse);
+    return res.status(200).json(response.oidcTokenResponse);
 
 }
+
+/**
+ * 
+ * @param tokenData 
+ * @param res 
+ * @returns 
+ */
 async function handleClientCredentialsGrant(tokenData: TokenData, res: NextApiResponse){
 
     const tenant: Tenant | null = await tenantDao.getTenantById(tokenData.tenantId);
@@ -574,8 +592,9 @@ async function handleClientCredentialsGrant(tokenData: TokenData, res: NextApiRe
         return res.status(400).json(error);
     }
     
-    const oidcTokenResponse: OIDCTokenResponse | null = await jwtService.signClientJwt(client, tenant);
-    if(!oidcTokenResponse){
+    const response = await jwtService.signClientJwt(client, tenant);
+    //const oidcTokenResponse: OIDCTokenResponse | null = await jwtService.signClientJwt(client, tenant);
+    if(!response){
         const error: OIDCErrorResponseBody = {
             error: OIDC_TOKEN_ERROR_INVALID_CLIENT,
             error_code: "0000737",
@@ -587,6 +606,142 @@ async function handleClientCredentialsGrant(tokenData: TokenData, res: NextApiRe
         return res.status(400).json(error);
     }
 
-    return res.status(200).json(oidcTokenResponse);
+    return res.status(200).json(response.oidcTokenResponse);
 
+}
+
+async function handleDeviceCodeGrant(tokenData: TokenData, res: NextApiResponse) {
+
+    if(!tokenData.deviceCode){
+        const error: OIDCErrorResponseBody = {
+            error: OIDC_TOKEN_ERROR_UNAUTHORIZED_CLIENT,
+            error_code: "0000721",
+            error_description: "ERROR_TOKEN_REQUEST_FAILED_WITH_INVALID_CODE",
+            error_uri: "",
+            timestamp: Date.now(),
+            trace_id: tokenData.traceId
+        }
+        return res.status(400).json(error);
+    }
+
+    const hashedDeviceCode = generateHash(tokenData.deviceCode);
+    const deviceCodeData: AuthorizationDeviceCodeData | null = await authDao.getAuthorizationDeviceCodeData(hashedDeviceCode, "devicecode");
+    if(deviceCodeData === null){
+        const error: OIDCErrorResponseBody = {
+            error: OIDC_TOKEN_ERROR_BAD_VERIFICATION_CODE,
+            error_code: "0000721",
+            error_description: "ERROR_TOKEN_REQUEST_FAILED_WITH_INVALID_CODE",
+            error_uri: "",
+            timestamp: Date.now(),
+            trace_id: tokenData.traceId
+        }
+        return res.status(400).json(error);
+    }
+
+    if(tokenData.clientId !== deviceCodeData.clientId || tokenData.tenantId !== deviceCodeData.tenantId){
+        const error: OIDCErrorResponseBody = {
+            error: OIDC_TOKEN_ERROR_UNAUTHORIZED_CLIENT,
+            error_code: "0000721",
+            error_description: "ERROR_TOKEN_REQUEST_FAILED_WITH_INVALID_CODE",
+            error_uri: "",
+            timestamp: Date.now(),
+            trace_id: tokenData.traceId
+        }
+        return res.status(400).json(error);
+    }
+
+    if(deviceCodeData.expiresAtMs < Date.now()){
+        const error: OIDCErrorResponseBody = {
+            error: OIDC_TOKEN_ERROR_EXPIRED_TOKEN,
+            error_code: "0000721",
+            error_description: "ERROR_TOKEN_REQUEST_FAILED_WITH_EXPIRED_TOKEN",
+            error_uri: "",
+            timestamp: Date.now(),
+            trace_id: tokenData.traceId
+        }
+        return res.status(400).json(error);
+    }
+
+    if(deviceCodeData.authorizationStatus === DeviceCodeAuthorizationStatus.Pending){
+        const error: OIDCErrorResponseBody = {
+            error: OIDC_TOKEN_ERROR_AUTHORIZATION_PENDING,
+            error_code: "0000721",
+            error_description: "",
+            error_uri: "",
+            timestamp: Date.now(),
+            trace_id: tokenData.traceId
+        }
+        return res.status(400).json(error);
+    }
+    else if(deviceCodeData.authorizationStatus === DeviceCodeAuthorizationStatus.Cancelled){
+        const error: OIDCErrorResponseBody = {
+            error: OIDC_TOKEN_ERROR_AUTHORIZATION_DECLINED,
+            error_code: "0000721",
+            error_description: "ERROR_TOKEN_REQUEST_FAILED_WITH_INVALID_CODE",
+            error_uri: "",
+            timestamp: Date.now(),
+            trace_id: tokenData.traceId
+        }
+        return res.status(400).json(error);
+    }
+    else if(deviceCodeData.authorizationStatus === DeviceCodeAuthorizationStatus.Approved){
+        // Delete the device code data, regardless of whether any errors occur afterwards.
+        await authDao.deleteAuthorizationDeviceCodeData(deviceCodeData.deviceCodeId);
+        
+        if(!deviceCodeData.userId){
+            const error: OIDCErrorResponseBody = {
+                error: OIDC_TOKEN_ERROR_INVALID_REQUEST,
+                error_code: "0000721",
+                error_description: "ERROR_TOKEN_REQUEST_FAILED_WITH_INVALID_USER",
+                error_uri: "",
+                timestamp: Date.now(),
+                trace_id: tokenData.traceId
+            }
+            return res.status(400).json(error);
+        }
+
+        const response = await jwtService.signUserJwt(deviceCodeData.userId, deviceCodeData.clientId, deviceCodeData.tenantId);    
+        if(!response){
+            const error: OIDCErrorResponseBody = {
+                error: OIDC_TOKEN_ERROR_UNAUTHORIZED_CLIENT,
+                error_code: "0000721",
+                error_description: "ERROR_TOKEN_REQUEST_FAILED_WITH_INVALID_USER",
+                error_uri: "",
+                timestamp: Date.now(),
+                trace_id: tokenData.traceId
+            }
+            return res.status(400).json(error);
+        }
+
+        if(response.oidcTokenResponse.refresh_token){
+            const refreshData: RefreshData = {
+                clientId: deviceCodeData.clientId,
+                refreshCount: 1,
+                refreshToken: generateHash(response.oidcTokenResponse.refresh_token),
+                refreshTokenClientType: REFRESH_TOKEN_CLIENT_TYPE_DEVICE,
+                tenantId: deviceCodeData.tenantId,
+                userId: deviceCodeData.userId || "",
+                scope: deviceCodeData.scope,
+                redirecturi: "",
+                codeChallenge: null,
+                codeChallengeMethod: null,
+                expiresAtMs: Date.now() + (14 * 24 * 60 * 60 * 1000) // Allow 14 days before token automatically expires. TODO -> make this configurable in the client
+            }
+            await authDao.deleteAuthorizationDeviceCodeData(deviceCodeData.deviceCodeId);
+            await authDao.saveRefreshData(refreshData);
+        };
+
+        return res.status(200).json(response.oidcTokenResponse);
+    }
+    else{        
+        const error: OIDCErrorResponseBody = {
+            error: OIDC_TOKEN_ERROR_UNAUTHORIZED_CLIENT,
+            error_code: "0000721",
+            error_description: "ERROR_TOKEN_REQUEST_FAILED_WITH_INVALID_CLIENT",
+            error_uri: "",
+            timestamp: Date.now(),
+            trace_id: tokenData.traceId
+        }
+        return res.status(400).json(error);        
+    }
 }

@@ -10,6 +10,7 @@ import { OIDCContext } from "@/graphql/graphql-context";
 import { DaoFactory } from "@/lib/data-sources/dao-factory";
 import TenantDao from "@/lib/dao/tenant-dao";
 import { initSchedulers } from "@/lib/service/init-scheduled-services";
+import { HTTP_HEADER_X_GEO_LOCATION, HTTP_HEADER_X_IP_ADDRESS } from "@/utils/consts";
 
 
 declare global {
@@ -73,13 +74,19 @@ async function getOIDCContext(req: NextApiRequest): Promise<OIDCContext> {
         }
     }
 
+    const ipAddress: string = req.headers[HTTP_HEADER_X_IP_ADDRESS] as string || "";
+    const geoLocation: string = req.headers[HTTP_HEADER_X_GEO_LOCATION] as string || ""
+
     const rootTenant: Tenant = await tenantDao.getRootTenant();
 
     const context: OIDCContext = {
         authToken: jwt || "",
         portalUserProfile: portalUserProfile,
         rootTenant: rootTenant,
-        requestCache: new Map()
+        requestCache: new Map(),
+        ipAddress: ipAddress,
+        geoLocation: geoLocation,
+        deviceFingerPrint: null
     }
     return context;
 }

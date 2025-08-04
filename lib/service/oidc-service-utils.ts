@@ -2,6 +2,18 @@ import axios, { AxiosResponse } from "axios";
 import { Jwks, WellknownConfig } from "@/lib/models/wellknown-config";
 import NodeCache from "node-cache";
 import { LegacyUserAuthenticationPayload, LegacyUserAuthenticationResponse, LegacyUserProfile } from "../models/principal";
+import { SecurityEvent, SecurityEventType } from "../models/security-event";
+import { OIDCContext } from "@/graphql/graphql-context";
+import { User } from "@/graphql/generated/graphql-types";
+import { DaoFactory } from "../data-sources/dao-factory";
+import TenantDao from "../dao/tenant-dao";
+
+
+const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
+
+const {
+    SECURITY_EVENT_CALLBACK_URI
+} = process.env;
 
 // TODO
 // Need to consider the following properties on the axios requests:
@@ -103,11 +115,15 @@ class OIDCServiceUtils {
      * @param uri 
      * @returns 
      */
-    public async legacyUsernameCheck(uri: string): Promise<boolean> {
-        const response: AxiosResponse = await axios.head(uri, {
+    public async legacyUsernameCheck(uri: string, email: string, authToken: string): Promise<boolean> {
+        const response: AxiosResponse = await axios.head(`${uri}?email=${email}`, {
             timeout: 30000,
-            responseEncoding: "utf-8"
+            responseEncoding: "utf-8",
+            headers: {                
+                "Authorization": `Bearer ${authToken}`
+            }
         });
+
         return response.status === 200;
     }
 
@@ -120,7 +136,7 @@ class OIDCServiceUtils {
      * @param password 
      * @returns 
      */
-    public async legacyUserAuthentication(uri: string, email: string, password: string): Promise<LegacyUserAuthenticationResponse | null>{
+    public async legacyUserAuthentication(uri: string, email: string, password: string, authToken: string): Promise<boolean>{
 
         const payload: LegacyUserAuthenticationPayload = {
             email: email,
@@ -131,16 +147,17 @@ class OIDCServiceUtils {
             timeout: 30000,
             responseEncoding: "utf-8",
             headers: {
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${authToken}`
             },
             responseType: "json"
         });
 
         if(response.status === 200){
-            return response.data as LegacyUserAuthenticationResponse;
+            return true;
         }
         else{
-            return null;
+            return false;
         }
     }
 
@@ -151,9 +168,9 @@ class OIDCServiceUtils {
      * @param authToken 
      * @returns 
      */
-    public async legacyUserProfile(uri: string, authToken: string): Promise<LegacyUserProfile | null>{
+    public async legacyUserProfile(uri: string, email: string, authToken: string): Promise<LegacyUserProfile | null>{
 
-        const response: AxiosResponse = await axios.get(uri, {
+        const response: AxiosResponse = await axios.get(`${uri}?email=${email}`, {
             headers: {
                 "Authorization": `Bearer ${authToken}`
             },
@@ -169,7 +186,49 @@ class OIDCServiceUtils {
         }
     }
 
-    
+    public async fireSecurityEvent(securityEventType: SecurityEventType, oidcContext: OIDCContext, user: User, jti: string | null, authToken: string | null){
+        const securityEvent: SecurityEvent = {
+            securityEventType: securityEventType,
+            userId: user.userId,
+            email: user.email,
+            phoneNumber: user.phoneNumber || null,
+            address: user.address || null,
+            city: user.city || null,
+            stateRegionProvince: user.stateRegionProvince || null,
+            countryCode: user.countryCode || null,
+            postalCode: user.postalCode || null,
+            jti: jti,
+            ipAddress: oidcContext.ipAddress,
+            geoLocation: oidcContext.geoLocation,
+            deviceFingerprint: oidcContext.deviceFingerPrint    
+        };
+        this.invokeSecurityEventCallback(securityEvent, authToken);        
+    }
+
+    public async invokeSecurityEventCallback(securityEvent: SecurityEvent, authToken: string | null){
+        // Fire asynchronously, but if there is an error, log the error.
+        if(SECURITY_EVENT_CALLBACK_URI){
+            axios.post(SECURITY_EVENT_CALLBACK_URI, securityEvent, {
+                headers: {
+                    "Authorization": authToken ? `Bearer ${authToken}` : "",
+                    "Content-Type": "application/json"
+                },
+                timeout: 30000
+            }).catch(
+                (error) => {
+                    // TODO
+                    // Log the error
+                    console.log(error);
+                }
+            )
+        }
+        else{
+            // TODO
+            // Log the inability to send a security event
+            console.log("ERROR_NO_WEB_HOOK_DEFINED");
+        }
+        
+    }
 
 }
 
