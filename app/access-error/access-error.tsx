@@ -2,7 +2,7 @@
 import { ResponsiveBreakpoints, ResponsiveContext } from "@/components/contexts/responsive-context";
 import Alert from "@mui/material/Alert";
 import { useSearchParams } from "next/navigation";
-import React, { Suspense, useContext } from "react";
+import React, { useContext } from "react";
 
 const DEFAULT_ERROR_MESSAGE = "The resource which you have requested is not available to your account."
 
@@ -28,6 +28,9 @@ const AccessError: React.FC = () => {
         }
         case "00025" : {
             errorMessage = "Your account has not been configured with any permissions to access the IAM portal."
+        }
+        case "00075": {
+            errorMessage = "Device registration has been cancelled."
         }
     }
 

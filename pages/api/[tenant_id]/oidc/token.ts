@@ -47,7 +47,7 @@ export default async function handler(
 	res: NextApiResponse
 ) {
 
-    let traceId: string = req.headers["x-trace-id"] ? req.headers["x-trace-id"] as string : randomUUID.toString();
+    let traceId: string = req.headers["x-trace-id"] ? req.headers["x-trace-id"] as string : randomUUID().toString();
     const contentType: string | undefined = req.headers['content-type'];
     const method: string | undefined = req.method;
     if(!method || ! (method.toUpperCase() === "POST")){
@@ -667,7 +667,7 @@ async function handleDeviceCodeGrant(tokenData: TokenData, res: NextApiResponse)
         const error: OIDCErrorResponseBody = {
             error: OIDC_TOKEN_ERROR_AUTHORIZATION_PENDING,
             error_code: "0000721",
-            error_description: "ERROR_TOKEN_REQUEST_FAILED_WITH_INVALID_CODE",
+            error_description: "",
             error_uri: "",
             timestamp: Date.now(),
             trace_id: tokenData.traceId
@@ -725,7 +725,7 @@ async function handleDeviceCodeGrant(tokenData: TokenData, res: NextApiResponse)
                 codeChallengeMethod: null,
                 expiresAtMs: Date.now() + (14 * 24 * 60 * 60 * 1000) // Allow 14 days before token automatically expires. TODO -> make this configurable in the client
             }
-            await authDao.deleteAuthorizationDeviceCodeData(hashedDeviceCode);
+            await authDao.deleteAuthorizationDeviceCodeData(deviceCodeData.deviceCodeId);
             await authDao.saveRefreshData(refreshData);
         };
 

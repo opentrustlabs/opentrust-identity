@@ -116,6 +116,16 @@ class DBAuthDao extends AuthDao {
         await sequelize.models.authorizationDeviceCodeData.create(authoriationDeviceCodeData);
         return authoriationDeviceCodeData;
     }
+
+    public async updateAuthorizationDeviceCodeData(authoriationDeviceCodeData: AuthorizationDeviceCodeData): Promise<AuthorizationDeviceCodeData>{
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.authorizationDeviceCodeData.update(authoriationDeviceCodeData, {
+            where: {
+                deviceCodeId: authoriationDeviceCodeData.deviceCodeId
+            }
+        });
+        return authoriationDeviceCodeData;
+    }
     
     public async getAuthorizationDeviceCodeData(code: string, authorizationCodeType: AuthorizationCodeType): Promise<AuthorizationDeviceCodeData | null>{
         const sequelize: Sequelize = await DBDriver.getConnection();
@@ -124,8 +134,11 @@ class DBAuthDao extends AuthDao {
         if(authorizationCodeType === "devicecode"){
             whereParams.deviceCode = code;
         }
-        else{
+        else if(authorizationCodeType === "usercode"){
             whereParams.userCode = code;
+        }
+        else{
+            whereParams.deviceCodeId = code;
         }
         const entity: AuthorizationDeviceCodeDataEntity | null = await sequelize.models.authorizationDeviceCodeData.findOne({
             where: whereParams
@@ -134,11 +147,11 @@ class DBAuthDao extends AuthDao {
 
     }
     
-    public async deleteAuthorizationDeviceCodeData(deviceCode: string): Promise<void>{
+    public async deleteAuthorizationDeviceCodeData(deviceCodeId: string): Promise<void>{
         const sequelize: Sequelize = await DBDriver.getConnection();
         await sequelize.models.authorizationDeviceCodeData.destroy({
             where: {
-                deviceCode: deviceCode
+                deviceCodeId: deviceCodeId
             }
         })
     }

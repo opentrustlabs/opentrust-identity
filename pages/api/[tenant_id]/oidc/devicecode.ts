@@ -93,6 +93,7 @@ export default async function handler(
     const userCode = generateRandomToken(4, "hex").toUpperCase();
 
     const deviceCodeData: AuthorizationDeviceCodeData = {
+        deviceCodeId: randomUUID().toString(),
         clientId: clientId,
         deviceCode: generateHash(deviceCode),
         expiresAtMs: Date.now() + (60 * 60 * 1000),

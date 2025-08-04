@@ -375,17 +375,19 @@ enum DeviceCodeAuthorizationStatusTypes {
 }
 
 create TABLE authorization_device_code_data (
-    devicecode VARCHAR(128) NOT NULL PRIMARY KEY,
-    usercode VARCHAR(32) NOT NULL,
+    devicecodeid VARCHAR(64) NOT NULL PRIMARY KEY,
+    devicecode VARCHAR(128) NOT NULL,    
+    usercode VARCHAR(128) NOT NULL,
     tenantid VARCHAR(64) NOT NULL,
     clientid VARCHAR(64) NOT NULL,
     scope VARCHAR(128) NOT NULL,
     expiresatms BIGINT NOT NULL,
     authorizationstatus VARCHAR(64) NOT NULL,
-    userid VARCHAR(64),
+    userid VARCHAR(64),    
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid),
     FOREIGN KEY (clientid) REFERENCES client(clientid)
 );
+CREATE INDEX authorization_device_code_data_devicecode_idx ON authorization_device_code_data(devicecode);
 CREATE INDEX authorization_device_code_data_usercode_idx ON authorization_device_code_data(usercode);
 
 
@@ -630,6 +632,7 @@ create TABLE user_authentication_state (
     preauthtoken VARCHAR(128),
     expiresatms BIGINT NOT NULL,
     returntouri VARCHAR(256),
+    devicecodeid VARCHAR(64),
     PRIMARY KEY (userid, authenticationsessiontoken, authenticationstate),
     FOREIGN KEY (userid) REFERENCES user(userid),
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid) 
@@ -645,6 +648,7 @@ create TABLE user_registration_state (
     registrationstatestatus VARCHAR(32) NOT NULL,
     preauthtoken VARCHAR(128),
     expiresatms BIGINT NOT NULL,
+    devicecodeid VARCHAR(64),
     PRIMARY KEY (userid, registrationsessiontoken, registrationstate),
     FOREIGN KEY (userid) REFERENCES user(userid),
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid) 

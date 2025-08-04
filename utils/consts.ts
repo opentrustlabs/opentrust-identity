@@ -751,6 +751,7 @@ export const QUERY_PARAM_COUNTRY_CODE="country_code";
 export const QUERY_PARAM_LANGUAGE_CODE="language_code";
 export const QUERY_PARAM_RETURN_URI="return_uri";
 export const QUERY_PARAM_USERNAME="username";
+export const QUERY_PARAM_DEVICE_CODE_ID="devicecodeid";
 
 
 
@@ -759,8 +760,8 @@ export const AUTHENTICATION_LAYOUT_PAGES = [
     "/authorize/forgot-password",
     "/authorize/register",
     "/access-error",
-    "/device"
-    
+    "/device",
+    "/device/registered"
 ]
 
 
