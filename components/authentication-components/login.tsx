@@ -3,7 +3,7 @@ import React, { useContext, useEffect, useState } from "react";
 import { Backdrop, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, Divider, Grid2, Paper, Stack, TextField, Typography } from "@mui/material";
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL, PASSWORD_MINIMUM_LENGTH, QUERY_PARAM_AUTHENTICATE_TO_PORTAL, QUERY_PARAM_PREAUTHN_TOKEN, QUERY_PARAM_REDIRECT_URI, QUERY_PARAM_RETURN_URI, QUERY_PARAM_TENANT_ID, SOCIAL_OIDC_PROVIDER_APPLE, SOCIAL_OIDC_PROVIDER_FACEBOOK, SOCIAL_OIDC_PROVIDER_GOOGLE, SOCIAL_OIDC_PROVIDER_LINKEDIN, SOCIAL_OIDC_PROVIDER_SALESFORCE } from "@/utils/consts";
+import { DEFAULT_TENANT_META_DATA, FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL, PASSWORD_MINIMUM_LENGTH, QUERY_PARAM_AUTHENTICATE_TO_PORTAL, QUERY_PARAM_PREAUTHN_TOKEN, QUERY_PARAM_REDIRECT_URI, QUERY_PARAM_RETURN_URI, QUERY_PARAM_TENANT_ID, SOCIAL_OIDC_PROVIDER_APPLE, SOCIAL_OIDC_PROVIDER_FACEBOOK, SOCIAL_OIDC_PROVIDER_GOOGLE, SOCIAL_OIDC_PROVIDER_LINKEDIN, SOCIAL_OIDC_PROVIDER_SALESFORCE } from "@/utils/consts";
 import { useMutation, useQuery } from "@apollo/client";
 import { UserAuthenticationStateResponse, TenantSelectorData, AuthenticationState, UserAuthenticationState, TenantPasswordConfig, FederatedOidcProvider } from "@/graphql/generated/graphql-types";
 import Alert from '@mui/material/Alert';
@@ -24,6 +24,8 @@ import ValidatePasswordResetToken from "./validate-password-reset-token";
 import { AuthSessionProps, useAuthSessionContext } from "../contexts/auth-session-context";
 import { AuthContext, AuthContextProps } from "../contexts/auth-context";
 import AuthentiationAcceptTermsAndConditions from "./accept-terms-and-conditions";
+import DeviceCode from "./user-code";
+import UserCodeInput from "./user-code";
 
 
 const MIN_USERNAME_LENGTH = 6;
@@ -35,7 +37,14 @@ export interface AuthenticationComponentsProps {
     onUpdateEnd: (userAuthenticationStateResponse: UserAuthenticationStateResponse | null, errorMessage: string | null) => void
 }
 
-const Login: React.FC = () => {
+
+export interface LoginProps {
+    initialUserAuthenticationState?: UserAuthenticationState
+}
+
+const Login: React.FC<LoginProps>= ({
+    initialUserAuthenticationState
+}) => {
 
 
     // CONTEXT VARIABLES
@@ -47,7 +56,7 @@ const Login: React.FC = () => {
 
 
     useEffect(() => {
-        titleSetter.setPageTitle("Login");
+        titleSetter.setPageTitle("");
     }, []);
 
     // QUERY PARAMS
@@ -59,6 +68,18 @@ const Login: React.FC = () => {
 
 
     // PAGE STATE MANAGEMENT VARIABLES
+    const authnState: UserAuthenticationState = initialUserAuthenticationState ? initialUserAuthenticationState : {
+        authenticationSessionToken: "",
+        authenticationState: AuthenticationState.EnterEmail,
+        authenticationStateOrder: 0,
+        authenticationStateStatus: "",
+        expiresAtMs: 0,
+        tenantId: "",
+        userId: "",
+        preAuthToken: "",
+        returnToUri: ""
+    };
+
     const [username, setUsername] = useState<string | null>("");
     const [password, setPassword] = useState<string | null>("");
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -66,7 +87,7 @@ const Login: React.FC = () => {
     const [showMutationBackdrop, setShowMutationBackdrop] = React.useState<boolean>(false);
     const [tenantsToSelect, setTenantsToSelect] = useState<Array<TenantSelectorData>>([]);
     const [selectedTenant, setSelectedTenant] = useState<string | null>(tenantId);
-    const [userAuthenticationState, setUserAuthenticationState] = React.useState<UserAuthenticationState | null>(null);
+    const [userAuthenticationState, setUserAuthenticationState] = React.useState<UserAuthenticationState>(authnState);
     const [passwordConfig, setPasswordConfig] = React.useState<TenantPasswordConfig | null>(null);
     const [socialOIDCProviders, setSocialOIDCProviders] = React.useState<Array<FederatedOidcProvider>>([]);
     const [isPasswordResetFlow, setIsPasswordResetFlow] = React.useState<boolean>(false);
@@ -210,6 +231,11 @@ const Login: React.FC = () => {
                 if (authnStateResponse.passwordConfig) {
                     setPasswordConfig(authnStateResponse.passwordConfig);
                 }
+                if(authnStateResponse.userAuthenticationState.authenticationState === AuthenticationState.EnterEmail){                    
+                    if(authnStateResponse.userAuthenticationState.tenantId.length > 0 && authnStateResponse && selectedTenant === null){
+                        setSelectedTenant(authnStateResponse.userAuthenticationState.tenantId);
+                    }
+                }
                 if (
                     authnStateResponse.userAuthenticationState.authenticationState === AuthenticationState.SelectTenant ||
                     authnStateResponse.userAuthenticationState.authenticationState === AuthenticationState.SelectTenantThenRegister
@@ -227,27 +253,23 @@ const Login: React.FC = () => {
     }
 
 
-    const handleUserNameInputClick = () => {
+    const handleUserNameInput = () => {
+        console.log("will handle login");
+        console.log("device Code Id Is: " + userAuthenticationState.deviceCodeId);
         portalLoginEmailHandler({
             variables: {
                 username: username,
                 tenantId: selectedTenant,
                 preAuthToken: preAuthToken,
-                returnToUri: returnToUri
+                returnToUri: returnToUri,
+                deviceCodeId: userAuthenticationState.deviceCodeId
             }
         });
     }
     const handleEnterButtonPress = (evt: React.KeyboardEvent) => {
         if (evt.key.valueOf().toLowerCase() === "enter") {
             if (username && username.length > MIN_USERNAME_LENGTH) {
-                portalLoginEmailHandler({
-                    variables: {
-                        email: username,
-                        tenantId: selectedTenant,
-                        preAuthToken: preAuthToken,
-                        returnToUri: returnToUri
-                    }
-                });
+                handleUserNameInput();
             }
         }
         // Remove the error message if the user makes any changes to the user name
@@ -272,7 +294,8 @@ const Login: React.FC = () => {
         setErrorMessage(null);
         setTenantsToSelect([]);
         setSelectedTenant(tenantId);
-        setUserAuthenticationState(null);
+        setUserAuthenticationState({...authnState});
+        tenantBean.setTenantMetaData(DEFAULT_TENANT_META_DATA);
     }
 
     const enterKeyLoginHandler = (evt: React.KeyboardEvent) => {
@@ -372,7 +395,7 @@ const Login: React.FC = () => {
                                 <Button
                                     onClick={() => {
                                         setShowTenantSelector(false);
-                                        handleUserNameInputClick();
+                                        handleUserNameInput();
                                     }}
                                     disabled={selectedTenant === null}
                                 >
@@ -396,7 +419,23 @@ const Login: React.FC = () => {
                             </Stack>
                         </Grid2>
                     }
-                    {userAuthenticationState === null &&
+                    {userAuthenticationState.authenticationState === AuthenticationState.EnterUserCode &&
+                        <UserCodeInput
+                            initialUserAuthenticationState={userAuthenticationState}
+                            onAuthenticationCancelled={() => {
+                                handleCancelAuthentication(userAuthenticationState);
+                            }}
+                            onUpdateEnd={(userAuthenticationStateResponse, errorMessage) => {
+                                setShowMutationBackdrop(false);
+                                handleUserAuthenticationResponse(userAuthenticationStateResponse, errorMessage);
+                            }}
+                            onUpdateStart={() => {
+                                setErrorMessage(null);
+                                setShowMutationBackdrop(true)
+                            }}
+                        />
+                    }
+                    {userAuthenticationState.authenticationState === AuthenticationState.EnterEmail &&
                         <React.Fragment>
                             <Grid2 size={{ xs: 12 }}>
                                 <div style={{ marginBottom: "16px", fontWeight: "bold", fontSize: "1.2em" }}>Sign In</div>
@@ -410,26 +449,7 @@ const Login: React.FC = () => {
                                     onChange={(evt) => setUsername(evt.target.value)}
                                     onKeyDown={handleEnterButtonPress}
                                     value={username}
-                                    sx={{
-                                        "& .MuiOutlinedInput-root": {
-                                            "&.Mui-focused fieldset": {
-                                                borderColor:
-                                                    (tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheaderbackgroundcolor === "white" ||
-                                                        tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheaderbackgroundcolor === "FFF" ||
-                                                        tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheaderbackgroundcolor === "fff") ?
-                                                        "lightgray" :
-                                                        tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheaderbackgroundcolor
-
-                                            }
-                                        },
-                                        "& .MuiFormLabel-root": {
-                                            "&.MuiInputLabel-root": {
-                                                "&.Mui-focused": {
-                                                    color: "black"
-                                                }
-                                            }
-                                        }
-                                    }}
+                                    
                                 >
                                 </TextField>
                             </Grid2>
@@ -439,15 +459,8 @@ const Login: React.FC = () => {
                                 >
                                     <Button
                                         disabled={username === null || username.length < MIN_USERNAME_LENGTH || (!tenantBean.getTenantMetaData().tenant.allowLoginByPhoneNumber && username.indexOf("@") < 1)}
-                                        variant="contained"
-                                        sx={{
-                                            height: "100%", padding: "8px 32px 8px 32px", marginLeft: "8px",
-                                            backgroundColor: tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheaderbackgroundcolor,
-                                            color: tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheadertextcolor,
-                                            fontWeight: "bold",
-                                            fontSize: "0.9em"
-                                        }}
-                                        onClick={() => handleUserNameInputClick()}
+                                        variant="contained"                                        
+                                        onClick={() => handleUserNameInput()}
                                     >Next</Button>
                                     <Button
                                         onClick={() => {
@@ -474,14 +487,7 @@ const Login: React.FC = () => {
                                         <Link prefetch={false} href={`/authorize/register?${getQueryParams()}`}>
                                             <Button
                                                 disabled={false}
-                                                variant="contained"
-                                                sx={{
-                                                    height: "100%", padding: "8px 32px 8px 32px", marginLeft: "8px",
-                                                    backgroundColor: tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheaderbackgroundcolor,
-                                                    color: tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheadertextcolor,
-                                                    fontWeight: "bold",
-                                                    fontSize: "0.9em"
-                                                }}
+                                                variant="contained"                                                
                                             >Register</Button>
                                         </Link>
 
@@ -524,7 +530,7 @@ const Login: React.FC = () => {
                             }
                         </React.Fragment>
                     }                    
-                    {userAuthenticationState && userAuthenticationState.authenticationState === AuthenticationState.EnterPassword &&
+                    {userAuthenticationState.authenticationState === AuthenticationState.EnterPassword &&
                         <React.Fragment>
                             <Grid2 size={{ xs: 12 }}>
                                 <div style={{ marginBottom: "16px", fontWeight: "bold", fontSize: "1.2em" }}>Sign In</div>
@@ -605,7 +611,11 @@ const Login: React.FC = () => {
                                     <Button
                                         disabled={false}
                                         variant="contained"
-                                        onClick={() => { setErrorMessage(null); setPassword(""); setUserAuthenticationState(null); }}
+                                        onClick={() => { 
+                                            setErrorMessage(null); 
+                                            setPassword(""); 
+                                            setUserAuthenticationState({...authnState});
+                                        }}
                                     >Back</Button>
                                     <Button
                                         onClick={() => {
@@ -619,7 +629,7 @@ const Login: React.FC = () => {
                             </Grid2>
                         </React.Fragment>
                     }
-                    {userAuthenticationState && userAuthenticationState.authenticationState === AuthenticationState.EnterPasswordAndMigrateUser &&
+                    {userAuthenticationState.authenticationState === AuthenticationState.EnterPasswordAndMigrateUser &&
                         <React.Fragment>
                             <Grid2 size={{ xs: 12 }}>
                                 <div style={{ marginBottom: "16px", fontWeight: "bold", fontSize: "1.2em" }}>Sign In</div>
@@ -660,7 +670,11 @@ const Login: React.FC = () => {
                                     <Button
                                         disabled={false}
                                         variant="contained"
-                                        onClick={() => { setErrorMessage(null); setPassword(""); setUserAuthenticationState(null); }}
+                                        onClick={() => { 
+                                            setErrorMessage(null); 
+                                            setPassword(""); 
+                                            setUserAuthenticationState({...authnState});
+                                        }}
                                     >Back</Button>
                                     <Button
                                         onClick={() => {
@@ -674,7 +688,7 @@ const Login: React.FC = () => {
                             </Grid2>
                         </React.Fragment>
                     }
-                    {userAuthenticationState && userAuthenticationState.authenticationState === AuthenticationState.RotatePassword && passwordConfig !== null &&
+                    {userAuthenticationState.authenticationState === AuthenticationState.RotatePassword && passwordConfig !== null &&
                         <AuthentiationRotatePassword
                             initialUserAuthenticationState={userAuthenticationState}
                             passwordConfig={passwordConfig}
@@ -692,7 +706,7 @@ const Login: React.FC = () => {
                             }}
                         />
                     }
-                    {userAuthenticationState && userAuthenticationState.authenticationState === AuthenticationState.ValidatePasswordResetToken &&
+                    {userAuthenticationState.authenticationState === AuthenticationState.ValidatePasswordResetToken &&
                         <ValidatePasswordResetToken
                             initialUserAuthenticationState={userAuthenticationState}
                             onAuthenticationCancelled={() => {
@@ -708,7 +722,7 @@ const Login: React.FC = () => {
                             }}
                         />
                     }
-                    {userAuthenticationState && userAuthenticationState.authenticationState === AuthenticationState.ConfigureTotp &&
+                    {userAuthenticationState.authenticationState === AuthenticationState.ConfigureTotp &&
                         <AuthentiationConfigureTotp
                             initialUserAuthenticationState={userAuthenticationState}
                             onAuthenticationCancelled={() => {
@@ -724,7 +738,7 @@ const Login: React.FC = () => {
                             }}
                         />
                     }
-                    {userAuthenticationState && userAuthenticationState.authenticationState === AuthenticationState.ValidateTotp &&
+                    {userAuthenticationState.authenticationState === AuthenticationState.ValidateTotp &&
                         <AuthentiationValidateTotp
                             initialUserAuthenticationState={userAuthenticationState}
                             onAuthenticationCancelled={() => {
@@ -740,7 +754,7 @@ const Login: React.FC = () => {
                             }}
                         />
                     }
-                    {userAuthenticationState && userAuthenticationState.authenticationState === AuthenticationState.ConfigureSecurityKey &&
+                    {userAuthenticationState.authenticationState === AuthenticationState.ConfigureSecurityKey &&
                         <AuthentiationConfigureSecurityKey
                             initialUserAuthenticationState={userAuthenticationState}
                             onAuthenticationCancelled={() => {
@@ -756,7 +770,7 @@ const Login: React.FC = () => {
                             }}
                         />
                     }
-                    {userAuthenticationState && userAuthenticationState.authenticationState === AuthenticationState.ValidateSecurityKey &&
+                    {userAuthenticationState.authenticationState === AuthenticationState.ValidateSecurityKey &&
                         <AuthentiationValidateSecurityKey
                             initialUserAuthenticationState={userAuthenticationState}
                             onAuthenticationCancelled={() => {
@@ -772,7 +786,7 @@ const Login: React.FC = () => {
                             }}
                         />
                     }
-                    {userAuthenticationState && userAuthenticationState.authenticationState === AuthenticationState.AcceptTermsAndConditions &&
+                    {userAuthenticationState.authenticationState === AuthenticationState.AcceptTermsAndConditions &&
                         <AuthentiationAcceptTermsAndConditions
                             initialUserAuthenticationState={userAuthenticationState}
                             onAuthenticationCancelled={() => {

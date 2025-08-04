@@ -1,6 +1,6 @@
 import { OIDCContext } from "@/graphql/graphql-context";
 import IdentityDao from "../dao/identity-dao";
-import { Fido2KeyRegistrationInput, Tenant, TenantPasswordConfig, TotpResponse, User, UserCreateInput, UserCredential, Fido2KeyAuthenticationInput, TenantRestrictedAuthenticationDomainRel, PreAuthenticationState, AuthorizationReturnUri, UserRegistrationStateResponse, UserRegistrationState, RegistrationState, UserTermsAndConditionsAccepted, TenantLegacyUserMigrationConfig, SystemSettings, FederatedOidcProvider } from "@/graphql/generated/graphql-types";
+import { Fido2KeyRegistrationInput, Tenant, TenantPasswordConfig, TotpResponse, User, UserCreateInput, UserCredential, Fido2KeyAuthenticationInput, TenantRestrictedAuthenticationDomainRel, PreAuthenticationState, AuthorizationReturnUri, UserRegistrationStateResponse, UserRegistrationState, RegistrationState, UserTermsAndConditionsAccepted, TenantLegacyUserMigrationConfig, SystemSettings, FederatedOidcProvider, AuthorizationDeviceCodeData, DeviceCodeAuthorizationStatus } from "@/graphql/generated/graphql-types";
 import { DaoFactory } from "../data-sources/dao-factory";
 import TenantDao from "../dao/tenant-dao";
 import { GraphQLError } from "graphql/error";
@@ -49,7 +49,7 @@ class RegisterUserService extends IdentityService {
          * @param preAuthToken 
          * @returns 
          */    
-    public async registerUser(userCreateInput: UserCreateInput, tenantId: string, preAuthToken: string | null | undefined): Promise<UserRegistrationStateResponse>{
+    public async registerUser(userCreateInput: UserCreateInput, tenantId: string, preAuthToken: string | null, deviceCodeId: string | null): Promise<UserRegistrationStateResponse>{
             
         // Need to check to see if there is an active registration session happening with the
         // user, based on their email. If so, then return error if the session has not expired.
@@ -143,7 +143,8 @@ class RegisterUserService extends IdentityService {
                 registrationStateOrder: i + 1,
                 registrationStateStatus: STATUS_INCOMPLETE,
                 userId: user.userId,
-                preAuthToken: preAuthToken
+                preAuthToken: preAuthToken,
+                deviceCodeId: deviceCodeId
             });
         }
 
@@ -855,7 +856,7 @@ class RegisterUserService extends IdentityService {
     }
 
 
-    public async cancelRegistration(userId: string, registrationSessionToken: string, preAuthToken: string | null): Promise<UserRegistrationStateResponse> {
+    public async cancelRegistration(userId: string, registrationSessionToken: string, preAuthToken: string | null, deviceCodeId: string | null): Promise<UserRegistrationStateResponse> {
         const response: UserRegistrationStateResponse = {
             userRegistrationState: {
                 email: "",
@@ -866,7 +867,8 @@ class RegisterUserService extends IdentityService {
                 registrationStateOrder: 0,
                 registrationStateStatus: STATUS_COMPLETE,
                 tenantId: "",
-                userId: userId
+                userId: userId,
+                deviceCodeId: ""
             },
             registrationError: {
                 errorCode: "",
@@ -875,16 +877,28 @@ class RegisterUserService extends IdentityService {
         };
         const arrUserRegistrationState: Array<UserRegistrationState> = await this.getSortedRegistartionStates(registrationSessionToken);
         let tenantId: string | null = null;
+        let uId: string | null = null;
         if(arrUserRegistrationState.length > 0){
             tenantId = arrUserRegistrationState[0].tenantId;
+            uId = arrUserRegistrationState[0].userId
         }
+
         for(let i = 0; i < arrUserRegistrationState.length; i++){
             await identityDao.deleteUserRegistrationState(arrUserRegistrationState[i]);
         }
-        if(tenantId){
-            await this.deleteRegisteredUser(tenantId, userId);
+        if(tenantId && uId){
+            await this.deleteRegisteredUser(tenantId, uId);
         }
-        response.userRegistrationState.registrationStateStatus = STATUS_COMPLETE
+        response.userRegistrationState.registrationStateStatus = STATUS_COMPLETE;
+
+        // If this is a device registration, need to set it to the cancelled state;
+        if(deviceCodeId){
+            const deviceCodeData: AuthorizationDeviceCodeData | null = await authDao.getAuthorizationDeviceCodeData(deviceCodeId, "devicecodeid");
+            if(deviceCodeData){
+                deviceCodeData.authorizationStatus = DeviceCodeAuthorizationStatus.Cancelled;
+                await authDao.updateAuthorizationDeviceCodeData(deviceCodeData);
+            }
+        }
         if(preAuthToken){            
             const preAuthenticationState: PreAuthenticationState | null = await authDao.getPreAuthenticationState(preAuthToken);
             if(preAuthenticationState){
@@ -896,7 +910,12 @@ class RegisterUserService extends IdentityService {
         }
         else {
             response.userRegistrationState.registrationState = RegistrationState.RedirectToIamPortal;
-            response.uri = `/authorize/login?${QUERY_PARAM_AUTHENTICATE_TO_PORTAL}=true`;
+            if(deviceCodeId){
+                response.uri = `/access-error?access_error_code=00075`;
+            }
+            else{
+                response.uri = `/authorize/login?${QUERY_PARAM_AUTHENTICATE_TO_PORTAL}=true`;
+            }
         }
         return Promise.resolve(response);
     }    
@@ -914,36 +933,46 @@ class RegisterUserService extends IdentityService {
             response.userRegistrationState.registrationState = RegistrationState.Error;
             return;
         }
-        else{
-            user.enabled = true;
-            const tenant: Tenant | null = await tenantDao.getTenantById(userRegistrationState.tenantId);
-            if(tenant === null){
-                response.registrationError.errorCode = "ERROR_INVALID_TENANT_FOR_REGISTRATION_COMPLETION";
+        
+        user.enabled = true;
+        const tenant: Tenant | null = await tenantDao.getTenantById(userRegistrationState.tenantId);
+        if(tenant === null){
+            response.registrationError.errorCode = "ERROR_INVALID_TENANT_FOR_REGISTRATION_COMPLETION";
+            response.userRegistrationState.registrationState = RegistrationState.Error;
+            return;                
+        }
+        await identityDao.updateUser(user);
+        await this.updateObjectSearchIndex(tenant, user, USER_TENANT_REL_TYPE_PRIMARY);
+        if(userRegistrationState.deviceCodeId){
+            const deviceCodeData: AuthorizationDeviceCodeData | null = await authDao.getAuthorizationDeviceCodeData(userRegistrationState.deviceCodeId, "devicecodeid");
+            if(deviceCodeData){
+                deviceCodeData.authorizationStatus = DeviceCodeAuthorizationStatus.Approved;
+                await authDao.updateAuthorizationDeviceCodeData(deviceCodeData);
+            }
+        }
+        
+        if(userRegistrationState.registrationState === RegistrationState.RedirectBackToApplication){
+            try{
+                const authorizationCode: AuthorizationReturnUri = await this.generateAuthorizationCode(userRegistrationState.userId, userRegistrationState.preAuthToken || "");
+                response.userRegistrationState = userRegistrationState;
+                response.uri = authorizationCode.uri;
+                userRegistrationState.registrationStateStatus = STATUS_COMPLETE;        
+            }
+            catch(err: any){
+                response.registrationError.errorCode = err.message;
                 response.userRegistrationState.registrationState = RegistrationState.Error;
-                return;                
             }
-            await identityDao.updateUser(user);
-            await this.updateObjectSearchIndex(tenant, user, USER_TENANT_REL_TYPE_PRIMARY);
-
-            if(userRegistrationState.registrationState === RegistrationState.RedirectBackToApplication){
-                try{
-                    const authorizationCode: AuthorizationReturnUri = await this.generateAuthorizationCode(userRegistrationState.userId, userRegistrationState.preAuthToken || "");
-                    response.userRegistrationState = userRegistrationState;
-                    response.uri = authorizationCode.uri;
+        }
+        else if(userRegistrationState.registrationState === RegistrationState.RedirectToIamPortal){
+            try{
+                if(userRegistrationState.deviceCodeId){
                     userRegistrationState.registrationStateStatus = STATUS_COMPLETE;
-                    // await identityDao.updateUserRegistrationState(userRegistrationState);
-                    // At this point, we can delete all of the states tied to the registration
-                    for(let i = 0; i < arrUserRegistrationState.length; i++){
-                        await identityDao.deleteUserRegistrationState(arrUserRegistrationState[i]);
-                    }
+                    response.userRegistrationState = userRegistrationState;
+                    response.uri = "/device/registered";
+                    const authToken = await jwtServiceUtils.getAuthTokenForOutboundCalls();
+                    oidcServiceUtils.fireSecurityEvent("device_registered", this.oidcContext, user, null, authToken);
                 }
-                catch(err: any){
-                    response.registrationError.errorCode = err.message;
-                    response.userRegistrationState.registrationState = RegistrationState.Error;
-                }
-            }
-            else if(userRegistrationState.registrationState === RegistrationState.RedirectToIamPortal){
-                try{
+                else{
                     const jwtSigningResponse = await jwtServiceUtils.signIAMPortalUserJwt(user, tenant, this.getPortalAuthenTokenTTLSeconds(), TOKEN_TYPE_IAM_PORTAL_USER);
                     if(!jwtSigningResponse || jwtSigningResponse.accessToken === null){
                         response.registrationError.errorCode = "ERROR_GENERATING_ACCESS_TOKEN_REGISTRATION_COMPLETION";
@@ -957,20 +986,22 @@ class RegisterUserService extends IdentityService {
                         userRegistrationState.registrationStateStatus = STATUS_COMPLETE;
 
                         const authToken = await jwtServiceUtils.getAuthTokenForOutboundCalls();
-                        oidcServiceUtils.fireSecurityEvent("user_registered", this.oidcContext, user, jwtSigningResponse.principal.jti || null, authToken);
-                        //await identityDao.updateUserRegistrationState(userRegistrationState);
-                        // At this point, we can delete all of the states tied to the registration
-                        for(let i = 0; i < arrUserRegistrationState.length; i++){
-                            await identityDao.deleteUserRegistrationState(arrUserRegistrationState[i]);
-                        }
+                        oidcServiceUtils.fireSecurityEvent("user_registered", this.oidcContext, user, jwtSigningResponse.principal.jti || null, authToken);                        
                     }
                 }
-                catch(err: any){
-                    response.registrationError.errorCode = err.message;
-                    response.userRegistrationState.registrationState = RegistrationState.Error;
-                }
+            }
+            catch(err: any){
+                response.registrationError.errorCode = err.message;
+                response.userRegistrationState.registrationState = RegistrationState.Error;
             }
         }
+        // If no errors, then delete all the of the registration states.
+        if(response.userRegistrationState.registrationState !== RegistrationState.Error){            
+            for(let i = 0; i < arrUserRegistrationState.length; i++){
+                await identityDao.deleteUserRegistrationState(arrUserRegistrationState[i]);
+            }
+        }
+        
     }
 
     protected async deleteRegisteredUser(tenantId: string, userId: string): Promise<void> {

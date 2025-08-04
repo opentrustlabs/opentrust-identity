@@ -18,8 +18,7 @@ import PriorityHighOutlinedIcon from '@mui/icons-material/PriorityHighOutlined';
 const AuthentiationConfigureTotp: React.FC<AuthenticationComponentsProps> = ({
     initialUserAuthenticationState,
     onAuthenticationCancelled,
-    onUpdateEnd,
-    onUpdateStart
+    onUpdateEnd
 }) => {
 
 

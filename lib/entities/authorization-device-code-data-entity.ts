@@ -4,15 +4,22 @@ class AuthorizationDeviceCodeDataEntity extends Model {
     
     static initModel(sequelize: Sequelize): typeof AuthorizationDeviceCodeDataEntity {
         return AuthorizationDeviceCodeDataEntity.init({
-            deviceCode: {
+            deviceCodeId: {
                 type: DataTypes.STRING,
                 primaryKey: true,
+                allowNull: false,
+                field: "devicecodeid"
+            },
+            deviceCode: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: false,
                 field: "devicecode"
             },            
             userCode: {
                 type: DataTypes.STRING,
                 primaryKey: false,
-                allowNull: true,
+                allowNull: false,
                 field: "usercode"
             },
             clientId: {

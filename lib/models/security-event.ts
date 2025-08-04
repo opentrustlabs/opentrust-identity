@@ -14,7 +14,9 @@
  */
 
 
-export type SecurityEventType = "user_registered" | "account_locked" | "duress_authentication" | "successful_authentication" | "reset_password" | "backup_email_authentication" | "logout";
+export type SecurityEventType = "user_registered" | "account_locked" | "duress_authentication" | 
+                                "successful_authentication" | "reset_password" | "backup_email_authentication" | 
+                                "logout" | "device_registered";
 
 export interface SecurityEvent {
     securityEventType: SecurityEventType,

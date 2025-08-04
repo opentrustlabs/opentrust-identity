@@ -1,6 +1,6 @@
 import { AuthorizationCodeData, AuthorizationDeviceCodeData, FederatedOidcAuthorizationRel, PreAuthenticationState, RefreshData } from "@/graphql/generated/graphql-types";
 
-export type AuthorizationCodeType = "usercode" | "devicecode";
+export type AuthorizationCodeType = "devicecodeid" | "usercode" | "devicecode";
 abstract class AuthDao {
 
     abstract savePreAuthenticationState(preAuthenticationState: PreAuthenticationState): Promise<PreAuthenticationState>;
@@ -27,9 +27,11 @@ abstract class AuthDao {
 
     abstract saveAuthorizationDeviceCodeData(authoriationDeviceCodeData: AuthorizationDeviceCodeData): Promise<AuthorizationDeviceCodeData>;
 
+    abstract updateAuthorizationDeviceCodeData(authoriationDeviceCodeData: AuthorizationDeviceCodeData): Promise<AuthorizationDeviceCodeData>;
+
     abstract getAuthorizationDeviceCodeData(code: string, authorizationCodeType: AuthorizationCodeType): Promise<AuthorizationDeviceCodeData | null>;
 
-    abstract deleteAuthorizationDeviceCodeData(deviceCode: string): Promise<void>;
+    abstract deleteAuthorizationDeviceCodeData(deviceCodeId: string): Promise<void>;
 
     abstract saveFederatedOIDCAuthorizationRel(federatedOIDCAuthorizationRel: FederatedOidcAuthorizationRel): Promise<FederatedOidcAuthorizationRel>;
 
