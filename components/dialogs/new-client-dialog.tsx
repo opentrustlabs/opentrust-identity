@@ -35,7 +35,7 @@ const NewClientDialog: React.FC<NewClientDialogProps> = ({
         clientDescription: "",
         clientTokenTTLSeconds: DEFAULT_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS,
         enabled: true,
-        maxRefreshTokenCount: 0,
+        maxRefreshTokenCount: null,
         oidcEnabled: true,
         pkceEnabled: false,
         userTokenTTLSeconds: DEFAULT_END_USER_TOKEN_TTL_SECONDS

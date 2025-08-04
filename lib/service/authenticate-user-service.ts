@@ -1572,6 +1572,7 @@ class AuthenticateUserService extends IdentityService {
             const deviceCodeData: AuthorizationDeviceCodeData | null = await authDao.getAuthorizationDeviceCodeData(userAuthenticationState.deviceCodeId, "devicecodeid");
             if(deviceCodeData){
                 deviceCodeData.authorizationStatus = DeviceCodeAuthorizationStatus.Approved;
+                deviceCodeData.userId = user.userId;
                 await authDao.updateAuthorizationDeviceCodeData(deviceCodeData);
             }
         }
