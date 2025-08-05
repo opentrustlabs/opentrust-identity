@@ -17,6 +17,7 @@ import MarkForDeleteService from "@/lib/service/mark-for-delete-service";
 import I18NService from "@/lib/service/i18n-service";
 import RegisterUserService from "@/lib/service/register-user-service";
 import AuthenticateUserService from "@/lib/service/authenticate-user-service";
+import SecretShareService from "@/lib/service/secret-share-service";
 
 
 const resolvers: Resolvers = {
@@ -980,8 +981,15 @@ const resolvers: Resolvers = {
         updateSystemSettings: async(_: any, { systemSettingsUpdateInput }, oidcContext) => {
             const service: TenantService = new TenantService(oidcContext);
             return service.updateSystemSettings(systemSettingsUpdateInput);
+        },
+        generateSecretShareLink: async(_: any, { email, objectId, secretShareObjectType}, oidcContext) => {
+            const service: SecretShareService = new SecretShareService(oidcContext);
+            return service.generateSecretShareLink(objectId, secretShareObjectType, email);
+        },
+        enterSecretValue: async(_: any, { secretValue, otp }, oidcContext) => {
+            const service: SecretShareService = new SecretShareService(oidcContext);
+            return service.enterSecretValue(otp, secretValue);
         }
-
     },
     RelSearchResultItem : {
         owningtenantname: async (item: RelSearchResultItem, _: any, oidcContext: OIDCContext) => {

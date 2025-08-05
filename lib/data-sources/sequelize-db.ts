@@ -54,6 +54,7 @@ import UserDuressCredentialEntity from "../entities/user-duress-credential";
 import UserEmailBackupEntity from "../entities/user-email-backup-entity";
 import SystemSettingsEntity from "../entities/system-settings-entity";
 import AuthorizationDeviceCodeDataEntity from "../entities/authorization-device-code-data-entity";
+import SecretShareEntity from "../entities/secret-share-entity";
 
 
 const {
@@ -182,6 +183,7 @@ class DBDriver {
             SystemSettingsEntity.initModel(global.sequelize);
             UserEmailBackupEntity.initModel(global.sequelize);
             AuthorizationDeviceCodeDataEntity.initModel(global.sequelize);
+            SecretShareEntity.initModel(global.sequelize);
         } 
 
         return global.sequelize;

@@ -52,12 +52,11 @@ const Register: React.FC = () => {
     const authContextProps: AuthContextProps = useContext(AuthContext);
 
     // QUERY PARAMS
-    const params = useSearchParams();    
+    const params = useSearchParams();
     const preAuthToken: string | null | undefined = params?.get(QUERY_PARAM_PREAUTHN_TOKEN);
     const deviceCodeId: string | null | undefined = params?.get(QUERY_PARAM_DEVICE_CODE_ID);
     const tenantId = params?.get(QUERY_PARAM_TENANT_ID);
     const username = params?.get(QUERY_PARAM_USERNAME);
-    const redirectUri = params?.get(QUERY_PARAM_REDIRECT_URI);
     
     
     // PAGE STATE MANAGEMENT VARIABLES    

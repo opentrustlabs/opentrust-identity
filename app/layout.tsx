@@ -6,7 +6,7 @@ import client from "@/components/apollo-client/apollo-client";
 import { usePathname } from 'next/navigation'
 import AuthenticationLayout from "@/components/layout/authentication-layout";
 import ManagementLayout from "@/components/layout/management-layout";
-import { AUTHENTICATION_LAYOUT_PAGES } from "@/utils/consts";
+import { AUTHORIZATION_LAYOUT_PAGES } from "@/utils/consts";
 import PageTitleContextProvider from "@/components/contexts/page-title-context";
 import AuthContextProvider from "@/components/contexts/auth-context";
 import ResponsiveContextProvider from "@/components/contexts/responsive-context";
@@ -95,7 +95,7 @@ export default function RootLayout({
 
 
     const pathName = usePathname();
-    const isAuthenticationLayoutPage: boolean = AUTHENTICATION_LAYOUT_PAGES.includes(pathName || "");
+    const isAuthenticationLayoutPage: boolean = AUTHORIZATION_LAYOUT_PAGES.includes(pathName || "");
 
     return (
         <html lang="en">

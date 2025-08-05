@@ -678,3 +678,12 @@ create TABLE user_duress_credential (
     PRIMARY KEY (userid),
     FOREIGN KEY (userid) REFERENCES user(userid)
 );
+
+create TABLE secret_share (
+    secretshareid VARCHAR(64) NOT NULL PRIMARY KEY,
+    objectid VARCHAR(64) NOT NULL,
+    objectype VARCHAR(64) NOT NULL,
+    otp VARCHAR(128) NOT NULL,
+    expiresatms BIGINT
+);
+CREATE INDEX secret_share_otp_idx ON secret_share(otp);

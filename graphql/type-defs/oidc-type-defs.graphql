@@ -262,6 +262,10 @@ type Mutation {
     ## System settings
     updateSystemSettings(systemSettingsUpdateInput: SystemSettingsUpdateInput!): SystemSettings!
 
+    ## Secret sharing and entry
+    generateSecretShareLink(objectId: String!, secretShareObjectType: SecretShareObjectType!, email: String!): Boolean!
+    enterSecretValue(otp: String!, secretValue: String!): Boolean!
+
 }
 
 enum ScopeFilterCriteria {
@@ -1160,6 +1164,23 @@ type SystemSettings {
 type JobData {
     markForDeleteItems: [MarkForDelete!]!
     schedulerLocks: [SchedulerLock!]!
+}
+
+
+############################################################################
+############## SECRET ENTRY TYPES AND RESPONSES FOR MUTATATIONS ############
+############################################################################
+
+enum SecretShareObjectType {
+    OIDC_PROVIDER
+}
+
+type SecretShare {
+    secretShareId: String!
+    objectId: String!
+    secretShareObjectType: SecretShareObjectType!
+    otp: String!
+    expiresAtMs: Float!
 }
 
 

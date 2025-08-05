@@ -101,7 +101,7 @@ class ClientService {
         }
 
         client.clientId = randomUUID().toString();
-        const clientSecret = generateRandomToken(32, CLIENT_SECRET_ENCODING);
+        const clientSecret = generateRandomToken(24, "hex");
         const encryptedClientSecret = await kms.encrypt(clientSecret);
         if(encryptedClientSecret === null){
             throw new GraphQLError("ERROR_UNABLE_TO_ENCRYPT_CLIENT_SECRET");

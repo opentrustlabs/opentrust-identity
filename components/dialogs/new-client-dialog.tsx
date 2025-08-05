@@ -113,7 +113,7 @@ const NewClientDialog: React.FC<NewClientDialogProps> = ({
                                 </Grid2>
                             </Grid2>
                             <Grid2 size={12} marginBottom={"8px"}>
-                                <div style={{ textDecoration: "underline" }}>Client Secret (Base64 Encoded)</div>
+                                <div style={{ textDecoration: "underline" }}>Client Secret</div>
                             </Grid2>
                             <Grid2 container display={"inline-flex"} size={12}>
                                 <Grid2 size={11}>

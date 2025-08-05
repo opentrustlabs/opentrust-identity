@@ -237,7 +237,7 @@ const NewOIDCProviderDialog: React.FC<NewOIDCProviderDialogProps> = ({
                                 </Select>
                             </Grid2>
                             <Grid2 marginBottom={"8px"}>
-                                <div>Provider Client Secret (Not required if using PCKE)</div>
+                                <div>Provider Client Secret(Not required if using PCKE)</div>
                                 <TextField type="password" name="clientSecret" id="clientSecret"
                                     value={oidcProviderInput.federatedOIDCProviderClientSecret}
                                     onChange={(evt) => { oidcProviderInput.federatedOIDCProviderClientSecret = evt.target.value; setOIDCProviderInput({ ...oidcProviderInput }); }}

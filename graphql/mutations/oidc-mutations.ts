@@ -1007,3 +1007,15 @@ export const UPDATE_SYSTEM_SETTINGS_MUTATION = gql(`
         }
     }
 `);
+
+export const GENERATE_SECRET_SHARE_LINK_MUTATION = gql(`
+    mutation generateSecretShareLink($objectId: String!, $secretShareObjectType: SecretShareObjectType!, $email: String!){
+        generateSecretShareLink(objectId: $objectId, secretShareObjectType: $secretShareObjectType, email: $email)
+    }
+`);
+
+export const ENTER_SECRET_VALUE_MUTATION = gql(`
+    mutation enterSecretValue($otp: String!, $secretValue: String!) {
+        enterSecretValue(otp: $otp, secretValue: $secretValue)
+    }
+`);

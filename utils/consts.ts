@@ -201,6 +201,11 @@ export const JOBS_UPDATE_SCOPE="jobs.update";
 // CLIENTS in the root tenant.
 export const LEGACY_USER_MIGRATION_SCOPE="legacy.user.migrate";
 export const SECURITY_EVENT_WRITE_SCOPE="security.event.write";
+// Allows a user to defer to somebody else to enter a secret
+// value for an object. This may mean sending that person
+// an email with a time-limited otp.
+export const SECRET_ENTRY_DEFER_SCOPE="secret.entry.defer";
+
 
 export const SCOPE_USE_IAM_MANAGEMENT="IAM_MANAGEMENT";
 export const SCOPE_USE_APPLICATION_MANAGEMENT="APPLICATION_MANAGEMENT";
@@ -249,7 +254,9 @@ export const ALL_INTERNAL_SCOPE_NAMES = [
     CAPTCHA_CONFIG_SCOPE,
     // System
     SYSTEM_SETTINGS_UPDATE_SCOPE, SYSTEM_SETTINGS_READ_SCOPE, JOBS_READ_SCOPE, JOBS_UPDATE_SCOPE,
-    LEGACY_USER_MIGRATION_SCOPE, SECURITY_EVENT_WRITE_SCOPE
+    LEGACY_USER_MIGRATION_SCOPE, SECURITY_EVENT_WRITE_SCOPE,
+    // Secret entry
+    SECRET_ENTRY_DEFER_SCOPE
 ];
 
 
@@ -275,7 +282,9 @@ export const ROOT_TENANT_EXCLUSIVE_INTERNAL_SCOPE_NAMES = [
     CAPTCHA_CONFIG_SCOPE,
     // System
     SYSTEM_SETTINGS_UPDATE_SCOPE, SYSTEM_SETTINGS_READ_SCOPE, JOBS_READ_SCOPE, JOBS_UPDATE_SCOPE,
-    LEGACY_USER_MIGRATION_SCOPE, SECURITY_EVENT_WRITE_SCOPE
+    LEGACY_USER_MIGRATION_SCOPE, SECURITY_EVENT_WRITE_SCOPE,
+    // Secret entry
+    SECRET_ENTRY_DEFER_SCOPE
 ];
 
 // These are the scope values which can be used WITHIN a non-root tenant. So actions such as 
@@ -752,16 +761,19 @@ export const QUERY_PARAM_LANGUAGE_CODE="language_code";
 export const QUERY_PARAM_RETURN_URI="return_uri";
 export const QUERY_PARAM_USERNAME="username";
 export const QUERY_PARAM_DEVICE_CODE_ID="devicecodeid";
+export const QUERY_PARAM_SECRET_ENTRY_OTP="_seotp";
 
 
 
-export const AUTHENTICATION_LAYOUT_PAGES = [
+export const AUTHORIZATION_LAYOUT_PAGES = [
     "/authorize/login",
     "/authorize/forgot-password",
     "/authorize/register",
     "/access-error",
     "/device",
-    "/device/registered"
+    "/device/registered",
+    "/my-profile",
+    "/secret-entry"
 ]
 
 
