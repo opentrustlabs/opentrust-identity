@@ -20,6 +20,7 @@ const FederatedOIDCProviderDetailPage: React.FC = () => {
             variables: {
                 federatedOIDCProviderId: federatedOIDCProviderId
             },
+            fetchPolicy: "no-cache"
         }
     )
 
