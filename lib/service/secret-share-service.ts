@@ -7,7 +7,7 @@ import { GraphQLError } from "graphql";
 import { generateHash, generateRandomToken } from "@/utils/dao-utils";
 import { OIDCContext } from "@/graphql/graphql-context";
 import { authorizeByScopeAndTenant } from "@/utils/authz-utils";
-import { QUERY_PARAM_SECRET_ENTRY_OTP, SECRET_ENTRY_DEFER_SCOPE } from "@/utils/consts";
+import { QUERY_PARAM_SECRET_ENTRY_OTP, SECRET_ENTRY_DELEGATE_SCOPE } from "@/utils/consts";
 import Kms from "../kms/kms";
 
 
@@ -29,9 +29,13 @@ class SecretShareService {
 
     public async generateSecretShareLink(objectId: string, secretShareObjectType: SecretShareObjectType, email: string): Promise<boolean> {
 
-        const authResult = authorizeByScopeAndTenant(this.oidcContext, [SECRET_ENTRY_DEFER_SCOPE], null);
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [SECRET_ENTRY_DELEGATE_SCOPE], null);
         if(!authResult.isAuthorized){
             throw new GraphQLError(authResult.errorMessage || "ERROR");
+        }
+
+        if(email.length < 6 || email.indexOf("@") < 1){
+            throw new GraphQLError("ERROR_INVALID_EMAIL");
         }
         
         // We only support oidc providers at the moment. Need to make sure it exists and is enabled.

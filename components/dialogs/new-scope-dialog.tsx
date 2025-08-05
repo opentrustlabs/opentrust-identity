@@ -99,6 +99,7 @@ const NewScopeDialog: React.FC<NewScopeDialogProps> = ({
                             <Grid2 marginBottom={"16px"}>                                
                                 <div>Scope Use</div>
                                 <Select
+                                    fullWidth={true}
                                     value={scopeCreateInput.scopeUse}
                                     name="scopeUse" id="scopeUse"
                                     onChange={(evt) => {

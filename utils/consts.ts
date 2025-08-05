@@ -204,7 +204,7 @@ export const SECURITY_EVENT_WRITE_SCOPE="security.event.write";
 // Allows a user to defer to somebody else to enter a secret
 // value for an object. This may mean sending that person
 // an email with a time-limited otp.
-export const SECRET_ENTRY_DEFER_SCOPE="secret.entry.defer";
+export const SECRET_ENTRY_DELEGATE_SCOPE="secret.entry.delegate";
 
 
 export const SCOPE_USE_IAM_MANAGEMENT="IAM_MANAGEMENT";
@@ -256,7 +256,7 @@ export const ALL_INTERNAL_SCOPE_NAMES = [
     SYSTEM_SETTINGS_UPDATE_SCOPE, SYSTEM_SETTINGS_READ_SCOPE, JOBS_READ_SCOPE, JOBS_UPDATE_SCOPE,
     LEGACY_USER_MIGRATION_SCOPE, SECURITY_EVENT_WRITE_SCOPE,
     // Secret entry
-    SECRET_ENTRY_DEFER_SCOPE
+    SECRET_ENTRY_DELEGATE_SCOPE
 ];
 
 
@@ -284,7 +284,7 @@ export const ROOT_TENANT_EXCLUSIVE_INTERNAL_SCOPE_NAMES = [
     SYSTEM_SETTINGS_UPDATE_SCOPE, SYSTEM_SETTINGS_READ_SCOPE, JOBS_READ_SCOPE, JOBS_UPDATE_SCOPE,
     LEGACY_USER_MIGRATION_SCOPE, SECURITY_EVENT_WRITE_SCOPE,
     // Secret entry
-    SECRET_ENTRY_DEFER_SCOPE
+    SECRET_ENTRY_DELEGATE_SCOPE
 ];
 
 // These are the scope values which can be used WITHIN a non-root tenant. So actions such as 

@@ -82,9 +82,6 @@ const NewOIDCProviderDialog: React.FC<NewOIDCProviderDialogProps> = ({
         if (!oidcProviderInput.federatedOIDCProviderClientId || oidcProviderInput.federatedOIDCProviderClientId === "") {
             return false;
         }
-        if (oidcProviderInput.usePkce === false && (!oidcProviderInput.federatedOIDCProviderClientSecret || oidcProviderInput.federatedOIDCProviderClientSecret === "")) {
-            return false;
-        }
         if (oidcProviderInput.usePkce === false && (!oidcProviderInput.clientAuthType || oidcProviderInput.federatedOIDCProviderClientSecret === OIDC_CLIENT_AUTH_TYPE_NONE)) {
             return false;
         }
@@ -237,7 +234,7 @@ const NewOIDCProviderDialog: React.FC<NewOIDCProviderDialogProps> = ({
                                 </Select>
                             </Grid2>
                             <Grid2 marginBottom={"8px"}>
-                                <div>Provider Client Secret(Not required if using PCKE)</div>
+                                <div>Provider Client Secret (Not required if using PCKE or you want IdP owner to enter the secret)</div>
                                 <TextField type="password" name="clientSecret" id="clientSecret"
                                     value={oidcProviderInput.federatedOIDCProviderClientSecret}
                                     onChange={(evt) => { oidcProviderInput.federatedOIDCProviderClientSecret = evt.target.value; setOIDCProviderInput({ ...oidcProviderInput }); }}
