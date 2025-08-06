@@ -295,6 +295,7 @@ const Login: React.FC<LoginProps>= ({
         setTenantsToSelect([]);
         setSelectedTenant(tenantId);
         setUserAuthenticationState({...authnState});
+        authSessionProps.deleteAuthSessionData();
         tenantBean.setTenantMetaData(DEFAULT_TENANT_META_DATA);
     }
 
@@ -464,13 +465,7 @@ const Login: React.FC<LoginProps>= ({
                                     >Next</Button>
                                     <Button
                                         onClick={() => {
-                                            if (redirectUri) {
-                                                router.push(`${redirectUri}?error=access_denied&error_description=authentication_cancelled_by_user`)
-                                            }
-                                            else {
-                                                setUsername("");
-                                                router.push(`/authorize/login?${QUERY_PARAM_AUTHENTICATE_TO_PORTAL}=true`);
-                                            }
+                                            handleCancelAuthentication(userAuthenticationState);
                                         }}
                                     >
                                         Cancel

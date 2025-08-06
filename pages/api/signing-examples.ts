@@ -2,12 +2,12 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { writeFileSync, createWriteStream, WriteStream } from "node:fs";
 import { generateKeyPairSync, createPublicKey, KeyObject, PrivateKeyInput, createPrivateKey } from "node:crypto";
 import { pem, sha256, hmac, pki } from "node-forge";
-import { OIDCPrincipal } from '@/lib/models/principal';
+import { JWTPrincipal } from '@/lib/models/principal';
 import JwtService from '@/lib/service/jwt-service-utils';
 import { JWTPayload,  } from 'jose';
 import { bcryptHashPassword, bcryptValidatePassword, generateRandomToken, getFileContents, pbkdf2HashPassword, scryptHashPassword, sha256HashPassword } from '@/utils/dao-utils';
 import FSBasedKms from '@/lib/kms/fs-based-kms';
-import { CLIENT_TYPE_SERVICE_ACCOUNT_AND_USER_DELEGATED_PERMISSIONS, PASSWORD_HASH_ITERATION_64K, TOKEN_TYPE_END_USER } from '@/utils/consts';
+import { CLIENT_TYPE_SERVICE_ACCOUNT_AND_USER_DELEGATED_PERMISSIONS, PASSWORD_HASH_ITERATION_64K, PRINCIPAL_TYPE_END_USER } from '@/utils/consts';
 
 // const jwtService: JwtService = new JwtService();
 

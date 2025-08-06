@@ -2,9 +2,9 @@ import { Scope, SystemSettings, User } from '@/graphql/generated/graphql-types';
 import IdentityDao from '@/lib/dao/identity-dao';
 import TenantDao from '@/lib/dao/tenant-dao';
 import { DaoFactory } from '@/lib/data-sources/dao-factory';
-import { OIDCPrincipal, LegacyUserAuthenticationPayload } from '@/lib/models/principal';
+import { JWTPrincipal } from '@/lib/models/principal';
 import JwtServiceUtils from '@/lib/service/jwt-service-utils';
-import { TOKEN_TYPE_SERVICE_ACCOUNT_TOKEN, LEGACY_USER_MIGRATION_SCOPE } from '@/utils/consts';
+import { PRINCIPAL_TYPE_SERVICE_ACCOUNT_TOKEN, LEGACY_USER_MIGRATION_SCOPE } from '@/utils/consts';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 
@@ -14,8 +14,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 // tool.
 //
 // Note also that these endpoints should NOT be on a server that is publicly available.
-// Future enhancements will be a authorization header with a signed JWT from the
-// relying service with a scope of "legacy.user.migration"
+
 
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
 const identityDao: IdentityDao = DaoFactory.getInstance().getIdentityDao();
@@ -45,8 +44,8 @@ export default async function handler(
     }
 
     const bearerToken = authToken.replace(/Bearer\s+/, "");
-    const p: OIDCPrincipal | null = await jwtServiceUtils.validateJwt(bearerToken);
-    if (p === null || p.token_type !== TOKEN_TYPE_SERVICE_ACCOUNT_TOKEN) {
+    const p: JWTPrincipal | null = await jwtServiceUtils.validateJwt(bearerToken);
+    if (p === null || p.principal_type !== PRINCIPAL_TYPE_SERVICE_ACCOUNT_TOKEN) {
         res.status(403);
         return;
     }

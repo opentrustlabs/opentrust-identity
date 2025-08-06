@@ -1,15 +1,11 @@
 import axios, { AxiosResponse } from "axios";
 import { Jwks, WellknownConfig } from "@/lib/models/wellknown-config";
 import NodeCache from "node-cache";
-import { LegacyUserAuthenticationPayload, LegacyUserAuthenticationResponse, LegacyUserProfile } from "../models/principal";
+import { LegacyUserAuthenticationPayload, LegacyUserProfile } from "../models/principal";
 import { SecurityEvent, SecurityEventType } from "../models/security-event";
 import { OIDCContext } from "@/graphql/graphql-context";
 import { User } from "@/graphql/generated/graphql-types";
-import { DaoFactory } from "../data-sources/dao-factory";
-import TenantDao from "../dao/tenant-dao";
 
-
-const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
 
 const {
     SECURITY_EVENT_CALLBACK_URI
