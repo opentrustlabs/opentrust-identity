@@ -1,4 +1,4 @@
-import { User, AuthenticationGroup, AuthorizationGroup, UserTenantRel, UserCredential, UserMfaRel, Fido2Challenge, UserAuthenticationState, UserRegistrationState, UserFailedLogin, UserTermsAndConditionsAccepted } from "@/graphql/generated/graphql-types";
+import { User, AuthenticationGroup, AuthorizationGroup, UserTenantRel, UserCredential, UserMfaRel, Fido2Challenge, UserAuthenticationState, UserRegistrationState, UserFailedLogin, UserTermsAndConditionsAccepted, UserBackupEmail } from "@/graphql/generated/graphql-types";
 import IdentityDao, { UserLookupType } from "../../identity-dao";
 import UserAuthorizationGroupRelEntity from "@/lib/entities/authorization-group-user-rel-entity";
 import AuthorizationGroupEntity from "@/lib/entities/authorization-group-entity";
@@ -812,19 +812,14 @@ class DBIdentityDao extends IdentityDao {
 
     }
 
-    public async getUserBackupEmail(userId: string): Promise<string | null>{
+    public async getUserBackupEmail(userId: string): Promise<UserBackupEmail | null>{
         const sequelize: Sequelize = await DBDriver.getConnection();
         const entity: UserEmailBackupEntity | null = await sequelize.models.userEmailBackup.findOne({
             where: {
                 userId: userId
             }
         });
-        if(entity){
-            return entity.getDataValue("email");
-        }
-        else{
-            return null;
-        }
+        return entity ? entity.dataValues : null;
     }
 
     public async addBackupEmail(userId: string, email: string, emailVerified: boolean): Promise<void>{

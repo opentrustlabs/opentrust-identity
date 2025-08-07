@@ -1,4 +1,4 @@
-import { AuthenticationGroup, User, AuthorizationGroup, UserFailedLogin, UserTenantRel, UserCredential, UserMfaRel, Fido2Challenge, UserRegistrationState, UserAuthenticationState, UserTermsAndConditionsAccepted } from "@/graphql/generated/graphql-types";
+import { AuthenticationGroup, User, AuthorizationGroup, UserFailedLogin, UserTenantRel, UserCredential, UserMfaRel, Fido2Challenge, UserRegistrationState, UserAuthenticationState, UserTermsAndConditionsAccepted, UserBackupEmail } from "@/graphql/generated/graphql-types";
 
 export type UserLookupType = "id" | "email" | "phone";
 abstract class IdentityDao {
@@ -147,7 +147,7 @@ abstract class IdentityDao {
 
     abstract deleteUserTermsAndConditionsAccepted(userId: string, tenantId: string): Promise<void>;
 
-    abstract getUserBackupEmail(userId: string): Promise<string | null>;
+    abstract getUserBackupEmail(userId: string): Promise<UserBackupEmail | null>;
 
     abstract addBackupEmail(userId: string, email: string, emailVerified: boolean): Promise<void>;
 
