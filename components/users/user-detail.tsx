@@ -138,7 +138,6 @@ const UserDetail: React.FC<UserDetailProps> = ({
             setErrorMessage(error.message);
         },
         refetchQueries: [USER_DETAIL_QUERY]
-
     });
 
     // HANDLER FUNCTIONS
@@ -374,12 +373,6 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                                 fullWidth={true} 
                                                 size="small"
                                             />
-                                            {/* <TextField name="phoneNumber" id="phoneNumber" 
-                                                disabled={disableInputs || userInput.federatedOIDCProviderSubjectId !== ""}
-                                                value={userInput.phoneNumber} 
-                                                onChange={(evt) => {userInput.phoneNumber = evt.target.value; setMarkDirty(true); setUserInput({...userInput}); }}
-                                                fullWidth={true} size="small" 
-                                            /> */}
                                         </Grid2>
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Preferred Language</div>

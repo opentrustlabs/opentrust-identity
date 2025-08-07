@@ -51,7 +51,7 @@ const Login: React.FC<LoginProps>= ({
     const titleSetter = useContext(PageTitleContext);
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
     const authSessionProps: AuthSessionProps = useAuthSessionContext();
-    const breakPoints: ResponsiveBreakpoints = useContext(ResponsiveContext);    
+    const breakPoints: ResponsiveBreakpoints = useContext(ResponsiveContext);
     const authContextProps: AuthContextProps = useContext(AuthContext);
 
 
