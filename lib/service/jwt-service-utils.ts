@@ -235,7 +235,7 @@ class JwtServiceUtils {
      * @returns 
      */
     public async getPortalUserProfile(jwt: string): Promise<PortalUserProfile | null> {
-
+        
         if(JwtServiceUtils.PortalUserProfileCache.has(jwt)){
             return JwtServiceUtils.PortalUserProfileCache.get(jwt) as PortalUserProfile;
         }
@@ -283,7 +283,7 @@ class JwtServiceUtils {
             user = await identityDao.getUserBy("id", principal.sub);
             if(user === null){
                 return null;
-            }
+            }            
             const arrScope: Array<Scope> = principal.principal_type === PRINCIPAL_TYPE_IAM_PORTAL_USER ? await this.getScopes(user.userId, principal.tenant_id) : [];
             profile = {
                 domain: getDomainFromEmail(principal.email),
@@ -312,8 +312,7 @@ class JwtServiceUtils {
                 postalCode: user.postalCode,
                 stateRegionProvince: user.stateRegionProvince
             }
-        }    
-        
+        } 
         JwtServiceUtils.PortalUserProfileCache.set(jwt, profile);
         return profile;
         
