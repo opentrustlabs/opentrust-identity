@@ -32,6 +32,7 @@ type Query {
     getUserTenantRels(userId: String!): [UserTenantRelView!]!
     getUserMFARels(userId: String!): [UserMFARel!]!
     getUserSessions(userId: String!): [UserSession!]!
+    getUserBackupEmail(userId: String!): UserBackupEmail
 
     ## For tenant management and access
     me: PortalUserProfile
@@ -151,8 +152,8 @@ type Mutation {
     authenticateHandleUserCodeInput(userCode: String!): UserAuthenticationStateResponse!
     authenticateHandleUserNameInput(username: String!, tenantId: String, preAuthToken: String, returnToUri: String, deviceCodeId: String): UserAuthenticationStateResponse!    
     authenticateUser(username: String!, password: String!, tenantId: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
-    authenticateUserAndMigrate(username: String!, password: String!, tenantId: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
-    authenticateHandleForgotPassword(authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
+    authenticateUserAndMigrate(username: String!, password: String!, tenantId: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!    
+    authenticateHandleForgotPassword(authenticationSessionToken: String!, preAuthToken: String, useBackupEmail: Boolean!): UserAuthenticationStateResponse!
     authenticateRotatePassword(userId: String!, newPassword: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
     authenticateConfigureTOTP(userId: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
     authenticateValidateTOTP(userId: String!, totpTokenValue: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
@@ -475,6 +476,12 @@ type User {
     enabled: Boolean!
     nameOrder: String!
     markForDelete: Boolean!
+}
+
+type UserBackupEmail {
+    userId: String!
+    email: String! 
+    emailVerified: Boolean!
 }
 
 type UserTermsAndConditionsAccepted {

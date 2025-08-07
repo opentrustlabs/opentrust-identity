@@ -1,6 +1,6 @@
 import { OIDCContext } from "@/graphql/graphql-context";
 import IdentityDao from "../dao/identity-dao";
-import { Fido2KeyRegistrationInput, Tenant, TenantPasswordConfig, TotpResponse, User, UserCreateInput, UserCredential, Fido2KeyAuthenticationInput, TenantRestrictedAuthenticationDomainRel, PreAuthenticationState, AuthorizationReturnUri, UserRegistrationStateResponse, UserRegistrationState, RegistrationState, UserTermsAndConditionsAccepted, TenantLegacyUserMigrationConfig, SystemSettings, FederatedOidcProvider, AuthorizationDeviceCodeData, DeviceCodeAuthorizationStatus } from "@/graphql/generated/graphql-types";
+import { Fido2KeyRegistrationInput, Tenant, TenantPasswordConfig, TotpResponse, User, UserCreateInput, UserCredential, Fido2KeyAuthenticationInput, TenantRestrictedAuthenticationDomainRel, PreAuthenticationState, AuthorizationReturnUri, UserRegistrationStateResponse, UserRegistrationState, RegistrationState, UserTermsAndConditionsAccepted, TenantLegacyUserMigrationConfig, SystemSettings, FederatedOidcProvider, AuthorizationDeviceCodeData, DeviceCodeAuthorizationStatus, UserBackupEmail } from "@/graphql/generated/graphql-types";
 import { DaoFactory } from "../data-sources/dao-factory";
 import TenantDao from "../dao/tenant-dao";
 import { GraphQLError } from "graphql/error";
@@ -458,14 +458,14 @@ class RegisterUserService extends IdentityService {
 
         // For the one-time token, need to delete it in success case and        
         await identityDao.deleteEmailConfirmationToken(token);
-        const email: string | null = await identityDao.getUserBackupEmail(userId);
-        if(!email){
+        const userBackupEmail: UserBackupEmail | null = await identityDao.getUserBackupEmail(userId);
+        if(!userBackupEmail){
             response.userRegistrationState.registrationState = RegistrationState.Error;
             response.registrationError.errorCode = "ERROR_NO_BACKUP_EMAIL_FOUND";
             return Promise.resolve(response);
         }
         
-        await identityDao.updateBackupEmail(userId, email, true);
+        await identityDao.updateBackupEmail(userId, userBackupEmail.email, true);
         arrUserRegistrationState[index].registrationStateStatus = STATUS_COMPLETE;
         await identityDao.updateUserRegistrationState(arrUserRegistrationState[index]);
         const nextRegistrationState = arrUserRegistrationState[index + 1];

@@ -885,9 +885,9 @@ const resolvers: Resolvers = {
             const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);
             return service.authenticateUser(username, password, tenantId, authenticationSessionToken, preAuthToken || null);
         },
-        authenticateHandleForgotPassword: async(_: any, { authenticationSessionToken, preAuthToken }, oidcContext) => {
+        authenticateHandleForgotPassword: async(_: any, { authenticationSessionToken, preAuthToken, useBackupEmail }, oidcContext) => {
             const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);
-            return service.authenticateHandleForgotPassword(authenticationSessionToken, preAuthToken || null);
+            return service.authenticateHandleForgotPassword(authenticationSessionToken, preAuthToken || null, useBackupEmail);
         },
         authenticateRotatePassword: async(_: any, { userId, newPassword, authenticationSessionToken, preAuthToken}, oidcContext) => {
             const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);

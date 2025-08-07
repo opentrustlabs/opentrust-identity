@@ -1,24 +1,25 @@
 "use client";
 import { PortalUserProfile, StateProvinceRegion, UserMfaRel, UserUpdateInput } from "@/graphql/generated/graphql-types";
 import React, { useContext } from "react";
-import { AuthContextProps, AuthContext } from "../contexts/auth-context";
 import { useClipboardCopyContext } from "../contexts/clipboard-copy-context";
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
-import ErrorComponent from "../error/error-component";
-import { AuthSessionProps, useAuthSessionContext } from "../contexts/auth-session-context";
 import { ME_QUERY, TENANT_META_DATA_QUERY, USER_MFA_REL_QUERY } from "@/graphql/queries/oidc-queries";
 import { useMutation, useQuery } from "@apollo/client";
-import { Alert, Autocomplete, Checkbox, Grid2, MenuItem, Paper, Select, Stack, TextField, Typography } from "@mui/material";
+import { Alert, Autocomplete, Backdrop, Button, Checkbox, CircularProgress, Dialog, DialogActions, DialogContent, Grid2, MenuItem, Paper, Select, Snackbar, Stack, TextField, Typography } from "@mui/material";
 import { ResponsiveBreakpoints, ResponsiveContext } from "../contexts/responsive-context";
 import { getDefaultLanguageCodeDef, getDefaultCountryCodeDef } from "@/utils/client-utils";
-import { NAME_ORDER_EASTERN, NAME_ORDER_DISPLAY, NAME_ORDER_WESTERN, MFA_AUTH_TYPE_TIME_BASED_OTP, MFA_AUTH_TYPE_FIDO2 } from "@/utils/consts";
+import { NAME_ORDER_EASTERN, NAME_ORDER_DISPLAY, NAME_ORDER_WESTERN, MFA_AUTH_TYPE_TIME_BASED_OTP, MFA_AUTH_TYPE_FIDO2, QUERY_PARAM_RETURN_URI } from "@/utils/consts";
 import { LANGUAGE_CODES, LanguageCodeDef, COUNTRY_CODES, CountryCodeDef } from "@/utils/i18n";
 import { MuiTelInput } from "mui-tel-input";
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import KeyboardReturnOutlinedIcon from '@mui/icons-material/KeyboardReturnOutlined';
 import DetailSectionActionHandler from "../layout/detail-section-action-handler";
 import StateProvinceRegionSelector from "../users/state-province-region-selector";
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import DeleteForeverOutlinedIcon from '@mui/icons-material/DeleteForeverOutlined';
-import { USER_UPDATE_MUTATION } from "@/graphql/mutations/oidc-mutations";
+import { FIDO_KEY_DELETION_MUTATION, TOPT_DELETION_MUTATION, USER_UPDATE_MUTATION } from "@/graphql/mutations/oidc-mutations";
+import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 
 
 const MyProfile: React.FC = () => {
@@ -27,9 +28,8 @@ const MyProfile: React.FC = () => {
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
     const breakPoints: ResponsiveBreakpoints = useContext(ResponsiveContext);
     const { copyContentToClipboard } = useClipboardCopyContext();
-    //const authSessionProps: AuthSessionProps = useAuthSessionContext();
-    //const authContextProps: AuthContextProps = useContext(AuthContext);
-    //const profile: PortalUserProfile | null = authContextProps.portalUserProfile;
+    const params = useSearchParams();
+    const returnUri = params?.get(QUERY_PARAM_RETURN_URI);
 
     const maxWidth = breakPoints.isSmall ? "90vw" : breakPoints.isMedium ? "80vw" : "650px";
 
@@ -56,6 +56,7 @@ const MyProfile: React.FC = () => {
     }
     // STATE VARIABLES
     const [userInput, setUserInput] = React.useState<UserUpdateInput>(initInput);
+    const [revertToInput, setRevertToInput] = React.useState<UserUpdateInput>(initInput);
     const [markDirty, setMarkDirty] = React.useState<boolean>(false);
     const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
     const [showMutationBackdrop, setShowMutationBackdrop] = React.useState<boolean>(false);
@@ -71,7 +72,6 @@ const MyProfile: React.FC = () => {
             if (data && data.me && data.me.userId) {
                 setUserId(data.me.userId);
                 setUserTenantId(data.me.tenantId);
-                //setUserTenantId("2a303f6d-0ebc-4590-9d12-7ebab6531d7e");
                 const userProfile: PortalUserProfile = data.me;
                 initInput.domain = userProfile.domain;
                 initInput.email = userProfile.email;
@@ -88,14 +88,15 @@ const MyProfile: React.FC = () => {
                 initInput.stateRegionProvince = userProfile.stateRegionProvince;
                 initInput.postalCode = userProfile.postalCode;
                 initInput.countryCode = userProfile.countryCode;
-                initInput.federatedOIDCProviderSubjectId = "287389487928374"; //userProfile.federatedOIDCProviderSubjectId;
+                initInput.federatedOIDCProviderSubjectId = userProfile.federatedOIDCProviderSubjectId;
                 initInput.middleName = userProfile.middleName;
                 initInput.phoneNumber = userProfile.phoneNumber
                 initInput.preferredLanguageCode = userProfile.preferredLanguageCode;
                 setUserInput({...initInput});
+                setRevertToInput({...initInput});
                 if(initInput.federatedOIDCProviderSubjectId && initInput.federatedOIDCProviderSubjectId !== ""){
                     setDisableInputs(true);
-                }                
+                }
             }
             else{
                 setErrorMessage("ERROR_PROFILE_NOT_FOUND");
@@ -143,15 +144,88 @@ const MyProfile: React.FC = () => {
         }
     });
 
+    const [deleteTOTPMutation] = useMutation(TOPT_DELETION_MUTATION, {
+        variables: {
+            userId: userId
+        },
+        onCompleted() {
+            setShowMutationBackdrop(false);
+            setShowMutationSnackbar(true);
+        },
+        onError(error) {
+            setShowMutationBackdrop(false);
+            setErrorMessage(error.message)
+        },
+        refetchQueries: [USER_MFA_REL_QUERY]
+    });
+
+    const [deleteFIDOKeyMutation] = useMutation(FIDO_KEY_DELETION_MUTATION, {
+        variables: {
+            userId: userId
+        },
+        onCompleted() {
+            setShowMutationBackdrop(false);
+            setShowMutationSnackbar(true);
+        },
+        onError(error) {
+            setShowMutationBackdrop(false);
+            setErrorMessage(error.message)
+        },
+        refetchQueries: [USER_MFA_REL_QUERY]
+    });
+
 
     return (
         <Typography component={"div"} >
+            {returnUri &&
+                <Link 
+                    href={returnUri}
+                >
+                    <Grid2 margin={"16px 0px"} alignContent={"center"} display={"flex"} direction={"row"} size={12}>                        
+                        <Grid2> 
+                            <KeyboardReturnOutlinedIcon />
+                        </Grid2>
+                        <Grid2 marginLeft={"8px"}>
+                            <span>Back</span>
+                        </Grid2>                        
+                    </Grid2>
+                </Link>
+            }
 
             <Paper
                 elevation={4}
                 sx={{ margin: "16px 0px", padding: 2, height: "100%", maxWidth: maxWidth, width: maxWidth }}
             >
-
+                {showMFADeletionConfirmationDialog &&
+                    <Dialog
+                        open={showMFADeletionConfirmationDialog}
+                        onClose={() => setShowMFADeletionConfirmationDialog(false)}
+                        maxWidth="sm"
+                        fullWidth={true}
+                    >
+                        <DialogContent>
+                            <Typography>
+                                Confirm deletion of MFA
+                            </Typography>
+                        </DialogContent>
+                        <DialogActions>
+                            <Button onClick={() => setShowMFADeletionConfirmationDialog(false)}>Cancel</Button>
+                            <Button onClick={() => {
+                                if(mfaTypeToDelete === MFA_AUTH_TYPE_TIME_BASED_OTP){
+                                    setShowMutationBackdrop(true);
+                                    deleteTOTPMutation();
+                                    setShowMFADeletionConfirmationDialog(false);
+                                }
+                                else if(mfaTypeToDelete === MFA_AUTH_TYPE_FIDO2){
+                                    setShowMutationBackdrop(true);
+                                    deleteFIDOKeyMutation();
+                                    setShowMFADeletionConfirmationDialog(false);
+                                }
+                            }}>Submit</Button>
+                        </DialogActions>
+                        
+                    </Dialog>
+                }
                 <Grid2 spacing={3} container size={{ xs: 12 }}>
                     {errorMessage !== null &&
                         <Grid2 size={{ xs: 12 }} textAlign={"center"}>
@@ -285,13 +359,25 @@ const MyProfile: React.FC = () => {
                                         </Select>
                                     </Grid2>
                                     <Grid2 marginBottom={"16px"}>
-                                        <div>Email</div>
-                                        <TextField name="email" id="email"
-                                            disabled={disableInputs}
-                                            value={userInput.email}
-                                            onChange={(evt) => { userInput.email = evt.target.value; setMarkDirty(true); setUserInput({ ...userInput }); }}
-                                            fullWidth={true} size="small"
-                                        />
+                                        <div>Email</div>                                        
+                                        <Grid2 alignItems={"center"} display={"flex"} container spacing={1} size={12}>
+                                            <Grid2 size={11}>
+                                                <TextField name="email" id="email"
+                                                    disabled={true}
+                                                    value={userInput.email}
+                                                    onChange={(evt) => { userInput.email = evt.target.value; setMarkDirty(true); setUserInput({ ...userInput }); }}
+                                                    fullWidth={true} size="small"
+                                                />
+                                                </Grid2>
+                                            <Grid2 size={1}>
+                                                <EditOutlinedIcon 
+                                                    sx={{cursor: "pointer"}}
+                                                    onClick={() => {
+                                                        // edit email dialog...
+                                                    }}
+                                                />
+                                            </Grid2>
+                                        </Grid2>
                                     </Grid2>
                                     <Grid2 marginBottom={"16px"}>
                                         <div>Phone Number</div>
@@ -463,7 +549,7 @@ const MyProfile: React.FC = () => {
                                 <DetailSectionActionHandler
                                     onDiscardClickedHandler={() => {
                                         setMarkDirty(false);
-                                        setUserInput({...initInput});
+                                        setUserInput({...revertToInput});
                                     }}
                                     onUpdateClickedHandler={() => {
                                         setShowMutationBackdrop(true);
@@ -474,12 +560,27 @@ const MyProfile: React.FC = () => {
                             </Stack>
                         </React.Fragment>
                     }
-
                 </Grid2>
-
-
-
             </Paper>
+            <Backdrop
+                sx={{ color: '#fff'}}
+                open={showMutationBackdrop}
+                onClick={() => setShowMutationBackdrop(false)}
+            >
+                <CircularProgress color="info" />
+            </Backdrop>
+            <Snackbar
+                open={showMutationSnackbar}
+                autoHideDuration={4000}
+                onClose={() => setShowMutationSnackbar(false)}                
+                anchorOrigin={{horizontal: "center", vertical: "top"}}
+            >
+                <Alert sx={{fontSize: "1em"}}
+                    onClose={() => setShowMutationSnackbar(false)}
+                >
+                    Profile Updated
+                </Alert>
+            </Snackbar>	 
         </Typography>
     )
 }
