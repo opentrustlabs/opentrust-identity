@@ -741,8 +741,8 @@ export const AUTHENTICATE_USER = gql`
 `;
 
 export const AUTHENTICATE_HANDLE_FORGOT_PASSWORD = gql`
-    mutation authenticateHandleForgotPassword($authenticationSessionToken: String!, $preAuthToken: String, $useBackupEmail: Boolean!) {
-        authenticateHandleForgotPassword(authenticationSessionToken: $authenticationSessionToken, preAuthToken: $preAuthToken, useBackupEmail: $useBackupEmail){
+    mutation authenticateHandleForgotPassword($authenticationSessionToken: String!, $preAuthToken: String, $useRecoveryEmail: Boolean!) {
+        authenticateHandleForgotPassword(authenticationSessionToken: $authenticationSessionToken, preAuthToken: $preAuthToken, useRecoveryEmail: $useRecoveryEmail){
             ...UserAuthenticationStateResponseFragment
         }
     }
@@ -906,9 +906,9 @@ export const REGISTER_USER_MUTATION = gql`
     ${USER_REGISTRATION_STATE_RESPONSE_FRAGMENT}
 `;
 
-export const REGISTER_ADD_BACKUP_EMAIL_MUTATION = gql`
-    mutation registerAddBackupEmail($userId: String!, $backupEmail: String, $registrationSessionToken: String!, $preAuthToken: String, $skip: Boolean!) {
-        registerAddBackupEmail(userId: $userId, backupEmail: $backupEmail, registrationSessionToken: $registrationSessionToken, preAuthToken: $preAuthToken, skip: $skip){
+export const REGISTER_ADD_RECOVERY_EMAIL_MUTATION = gql`
+    mutation registerAddRecoveryEmail($userId: String!, $recoveryEmail: String, $registrationSessionToken: String!, $preAuthToken: String, $skip: Boolean!) {
+        registerAddRecoveryEmail(userId: $userId, recoveryEmail: $recoveryEmail, registrationSessionToken: $registrationSessionToken, preAuthToken: $preAuthToken, skip: $skip){
             ...UserRegistrationStateResponseFragment
         }
     }
@@ -926,15 +926,16 @@ export const REGISTER_VERIFY_EMAIL_ADDRESS = gql`
     ${USER_REGISTRATION_STATE_RESPONSE_FRAGMENT}
 `;
 
-export const REGISTER_VERIFY_BACKUP_EMAIL_ADDRESS = gql`
-    mutation registerVerifyBackupEmail($userId: String!, $token: String!, $registrationSessionToken: String!, $preAuthToken: String) {
-        registerVerifyBackupEmail(userId: $userId, token: $token, registrationSessionToken: $registrationSessionToken, preAuthToken: $preAuthToken) {
+export const REGISTER_VERIFY_RECOVERY_EMAIL_ADDRESS = gql`
+    mutation registerVerifyRecoveryEmail($userId: String!, $token: String!, $registrationSessionToken: String!, $preAuthToken: String) {
+        registerVerifyRecoveryEmail(userId: $userId, token: $token, registrationSessionToken: $registrationSessionToken, preAuthToken: $preAuthToken) {
             ...UserRegistrationStateResponseFragment
         }
     }
 
     ${USER_REGISTRATION_STATE_RESPONSE_FRAGMENT}
 `;
+
 
 export const REGISTER_ADD_DURESS_PASSWORD = gql`
     mutation registerAddDuressPassword($userId: String!, $password: String, $skip: Boolean!, $registrationSessionToken: String!, $preAuthToken: String) {
@@ -1000,7 +1001,7 @@ export const UPDATE_SYSTEM_SETTINGS_MUTATION = gql(`
     mutation updateSystemSettings($systemSettingsUpdateInput: SystemSettingsUpdateInput!){
         updateSystemSettings(systemSettingsUpdateInput: $systemSettingsUpdateInput) {
             softwareVersion
-            allowBackupEmail
+            allowRecoveryEmail
             allowDuressPassword
             rootClientId
             enablePortalAsLegacyIdp
@@ -1019,3 +1020,25 @@ export const ENTER_SECRET_VALUE_MUTATION = gql(`
         enterSecretValue(otp: $otp, secretValue: $secretValue)
     }
 `);
+
+export const ADD_RECOVERY_EMAIL_MUTATION = `
+    mutation addRecoveryEmail($recoveryEmail: String!) {
+        addRecoveryEmail(recoveryEmail: $recoveryEmail) {
+            ...UserRegistrationStateResponseFragment
+        }
+    }
+
+    ${USER_REGISTRATION_STATE_RESPONSE_FRAGMENT}            
+`;
+
+export const SWAP_PRIMARY_AND_RECOVERY_EMAIL_MUTATION = gql(`
+    mutation swapPrimaryAndRecoveryEmail {
+        swapPrimaryAndRecoveryEmail
+    }
+`);
+
+export const DELETE_RECOVERY_EMAIL_MUTATION = gql(`
+    mutation deleteRecoveryEmail($userId: String) {
+        deleteRecoveryEmail(userId: $userId)
+    }
+`) ;

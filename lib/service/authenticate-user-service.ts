@@ -1,6 +1,6 @@
 import { OIDCContext } from "@/graphql/graphql-context";
 import IdentityDao from "../dao/identity-dao";
-import { Tenant, TenantPasswordConfig, User, UserCredential, UserMfaRel, TenantManagementDomainRel, FederatedOidcProvider, FederatedOidcProviderTenantRel, PreAuthenticationState, AuthorizationReturnUri, UserAuthenticationStateResponse, AuthenticationState, AuthenticationErrorTypes, UserAuthenticationState, UserFailedLogin, TenantLoginFailurePolicy, Fido2KeyAuthenticationInput, Fido2KeyRegistrationInput, TotpResponse, UserTermsAndConditionsAccepted, TenantLegacyUserMigrationConfig, TenantRestrictedAuthenticationDomainRel, AuthenticationGroup, AuthorizationDeviceCodeData, DeviceCodeAuthorizationStatus, UserBackupEmail } from "@/graphql/generated/graphql-types";
+import { Tenant, TenantPasswordConfig, User, UserCredential, UserMfaRel, TenantManagementDomainRel, FederatedOidcProvider, FederatedOidcProviderTenantRel, PreAuthenticationState, AuthorizationReturnUri, UserAuthenticationStateResponse, AuthenticationState, AuthenticationErrorTypes, UserAuthenticationState, UserFailedLogin, TenantLoginFailurePolicy, Fido2KeyAuthenticationInput, Fido2KeyRegistrationInput, TotpResponse, UserTermsAndConditionsAccepted, TenantLegacyUserMigrationConfig, TenantRestrictedAuthenticationDomainRel, AuthenticationGroup, AuthorizationDeviceCodeData, DeviceCodeAuthorizationStatus, UserRecoveryEmail } from "@/graphql/generated/graphql-types";
 import { DaoFactory } from "../data-sources/dao-factory";
 import TenantDao from "../dao/tenant-dao";
 import { GraphQLError } from "graphql/error";
@@ -68,7 +68,7 @@ class AuthenticateUserService extends IdentityService {
     }
 
     
-    public async authenticateHandleForgotPassword(authenticationSessionToken: string, preAuthToken: string | null, useBackupEmail: boolean): Promise<UserAuthenticationStateResponse> {
+    public async authenticateHandleForgotPassword(authenticationSessionToken: string, preAuthToken: string | null, useRecoveryEmail: boolean): Promise<UserAuthenticationStateResponse> {
         // Outline of the logic
         // There must be an existing authentication session (that is, the user has selected a tenant and gone to the next page where they have tried to enter
         // their password and have likely failed). 
@@ -92,10 +92,10 @@ class AuthenticateUserService extends IdentityService {
             response.authenticationError.errorCode = "ERROR_USER_CANNOT_BE_AUTHENTICATED";
             return Promise.resolve(response);
         }
-        let userBackupEmail: UserBackupEmail | null = null;
-        if(useBackupEmail === true){
-            userBackupEmail = await identityDao.getUserBackupEmail(user.userId);
-            if(userBackupEmail === null){
+        let userRecoveryEmail: UserRecoveryEmail | null = null;
+        if(useRecoveryEmail === true){
+            userRecoveryEmail = await identityDao.getUserRecoveryEmail(user.userId);
+            if(userRecoveryEmail === null){
                 response.authenticationError.errorCode = "ERROR_NO_BACKUP_EMIAL_CONFIGURED";
                 return Promise.resolve(response);
             }

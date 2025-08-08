@@ -490,7 +490,7 @@ class DBTenantDao extends TenantDao {
         const sequelize: Sequelize = await DBDriver.getConnection();
         
         const systemSettings: SystemSettings = {
-            allowBackupEmail: false,
+            allowRecoveryEmail: false,
             allowDuressPassword: false,
             rootClientId: "",
             enablePortalAsLegacyIdp: false,
@@ -500,7 +500,7 @@ class DBTenantDao extends TenantDao {
         const arr: Array<SystemSettingsEntity> = await sequelize.models.systemSettings.findAll();
         if(arr.length > 0){
             const first: SystemSettings = arr[0].dataValues;
-            systemSettings.allowBackupEmail = first.allowBackupEmail;
+            systemSettings.allowRecoveryEmail = first.allowRecoveryEmail;
             systemSettings.allowDuressPassword = first.allowDuressPassword;
             systemSettings.rootClientId = first.rootClientId,
             systemSettings.enablePortalAsLegacyIdp = first.enablePortalAsLegacyIdp
@@ -653,14 +653,14 @@ class DBTenantDao extends TenantDao {
             await sequelize.models.systemSettings.create({
                 systemId: randomUUID().toString(),
                 allowDuressPassword: input.allowDuressPassword,
-                allowBackupEmail: input.allowBackupEmail,
+                allowRecoveryEmail: input.allowRecoveryEmail,
                 rootClientId: input.rootClientId,
                 enablePortalAsLegacyIdp: input.enablePortalAsLegacyIdp
             })
         }
         else{
             const entity: SystemSettingsEntity = arr[0];
-            entity.setDataValue("allowBackupEmail", input.allowBackupEmail);
+            entity.setDataValue("allowRecoveryEmail", input.allowRecoveryEmail);
             entity.setDataValue("allowDuressPassword", input.allowDuressPassword);
             entity.setDataValue("rootClientId", input.rootClientId);
             entity.setDataValue("enablePortalAsLegacyIdp", input.enablePortalAsLegacyIdp);
@@ -669,7 +669,7 @@ class DBTenantDao extends TenantDao {
         return {
             softwareVersion: OPENTRUST_IDENTITY_VERSION,
             allowDuressPassword: input.allowDuressPassword,
-            allowBackupEmail: input.allowBackupEmail,
+            allowRecoveryEmail: input.allowRecoveryEmail,
             rootClientId: "",
             enablePortalAsLegacyIdp: false,
             systemCategories: []

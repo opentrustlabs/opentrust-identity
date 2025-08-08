@@ -140,14 +140,14 @@ CREATE INDEX user_first_name_idx on user(firstname);
 CREATE INDEX user_last_name_idx on user(lastname);
 CREATE INDEX user_phone_number_idx on user(phonenumber);
 
-create TABLE user_email_backup (
+create TABLE user_email_recovery (
     userid VARCHAR(64) NOT NULL,
     email VARCHAR(128) UNIQUE NOT NULL,
     emailverified BOOLEAN NOT NULL,
     PRIMARY KEY (userid),
     FOREIGN KEY (userid) REFERENCES user(userid)
 );
-CREATE INDEX user_email_backup_email_idx on user_email_backup(email);
+CREATE INDEX user_email_recovery_email_idx on user_email_recovery(email);
 
 create TABLE user_tenant_rel (
     userid VARCHAR(64) NOT NULL,
@@ -665,7 +665,7 @@ create TABLE captcha_config (
 
 create TABLE system_settings (
     systemid VARCHAR(64) PRIMARY KEY,
-    allowbackupemail BOOLEAN NOT NULL,
+    allowrecoveryemail BOOLEAN NOT NULL,
     allowduresspassword BOOLEAN NOT NULL
 );
 

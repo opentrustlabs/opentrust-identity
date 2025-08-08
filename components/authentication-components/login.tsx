@@ -92,7 +92,7 @@ const Login: React.FC<LoginProps>= ({
     const [socialOIDCProviders, setSocialOIDCProviders] = React.useState<Array<FederatedOidcProvider>>([]);
     const [isPasswordResetFlow, setIsPasswordResetFlow] = React.useState<boolean>(false);
     const [showRecoveryEmailDialog, setShowRecoveryEmailDialog] = React.useState<boolean>(false);
-    const [useBackupEmail, setUseBackupEmail] = React.useState<boolean>(false);
+    const [useRecoveryEmail, setUseRecoveryEmail] = React.useState<boolean>(false);
     
     // HOOKS FROM NEXTJS OR MUI
     const router = useRouter();
@@ -229,12 +229,9 @@ const Login: React.FC<LoginProps>= ({
                 }
             }
             else {
-                setUserAuthenticationState(authnStateResponse.userAuthenticationState);
+                setUserAuthenticationState(authnStateResponse.userAuthenticationState);                
                 if (authnStateResponse.passwordConfig) {
                     setPasswordConfig(authnStateResponse.passwordConfig);
-                }
-                if(authnStateResponse.userAuthenticationState.authenticationState === AuthenticationState.EnterPassword && selectedTenant === null){
-                    router.push(`${window.location.href}&${QUERY_PARAM_TENANT_ID}=${authnStateResponse.userAuthenticationState.tenantId}`);
                 }
                 if(authnStateResponse.userAuthenticationState.authenticationState === AuthenticationState.EnterEmail){                    
                     if(authnStateResponse.userAuthenticationState.tenantId.length > 0 && authnStateResponse && selectedTenant === null){
@@ -251,6 +248,11 @@ const Login: React.FC<LoginProps>= ({
                     }
                     else {
                         setErrorMessage("ERROR_NO_TENANT_TO_SELECT");
+                    }
+                }
+                else{
+                    if(selectedTenant === null && authnStateResponse.userAuthenticationState.tenantId){
+                        router.push(`${window.location.href}&${QUERY_PARAM_TENANT_ID}=${authnStateResponse.userAuthenticationState.tenantId}`);
                     }
                 }
             }
@@ -429,18 +431,18 @@ const Login: React.FC<LoginProps>= ({
                                     <Grid2 size={1}>
                                         <RadioStyledCheckbox 
                                             onChange={(_, checked: boolean) => {
-                                                setUseBackupEmail(false);
+                                                setUseRecoveryEmail(false);
                                             }}
-                                            checked={useBackupEmail === false}                                    
+                                            checked={useRecoveryEmail === false}                                    
                                         />
                                     </Grid2>
                                     <Grid2 size={11}>I have a backup email I want to use</Grid2>
                                     <Grid2 size={1}>
                                         <RadioStyledCheckbox 
                                             onChange={(_, checked: boolean) => {
-                                                setUseBackupEmail(true);
+                                                setUseRecoveryEmail(true);
                                             }}
-                                            checked={useBackupEmail === true}
+                                            checked={useRecoveryEmail === true}
                                         />
 
                                     </Grid2>
@@ -464,7 +466,7 @@ const Login: React.FC<LoginProps>= ({
                                         variables: {
                                             authenticationSessionToken: userAuthenticationState.authenticationSessionToken,
                                             preAuthToken: preAuthToken,
-                                            useBackupEmail: useBackupEmail
+                                            useRecoveryEmail: useRecoveryEmail
                                         }
                                     });
                                 }}

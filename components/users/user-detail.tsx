@@ -276,19 +276,6 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                                         }}
                                                     />
                                                 </Grid2>
-                                                <Grid2 alignContent={"center"} size={10}>Email verified</Grid2>
-                                                <Grid2 size={2}>
-                                                    <Checkbox 
-                                                        disabled={disableInputs || userInput.federatedOIDCProviderSubjectId !== ""}
-                                                        name="emailVerified"
-                                                        checked={userInput.emailVerified}
-                                                        onChange={(_, checked) => {
-                                                            userInput.emailVerified = checked;
-                                                            setMarkDirty(true); 
-                                                            setUserInput({...userInput});
-                                                        }}
-                                                    />
-                                                </Grid2>
                                                 <Grid2 alignContent={"center"} size={10}>Locked</Grid2>
                                                 <Grid2 size={2}>
                                                     <Checkbox                                                         
@@ -350,15 +337,56 @@ const UserDetail: React.FC<UserDetailProps> = ({
 
                                             </Select>
                                         </Grid2>
-                                        <Grid2 marginBottom={"16px"}>
+                                        <Grid2 marginBottom={"8px"}>
                                             <div>Email</div>
                                             <TextField name="email" id="email" 
                                                 disabled={disableInputs || userInput.federatedOIDCProviderSubjectId !== ""}
                                                 value={userInput.email} 
-                                                onChange={(evt) => {userInput.email = evt.target.value; setMarkDirty(true); setUserInput({...userInput}); }}
+                                                onChange={(evt) => {
+                                                    userInput.email = evt.target.value; 
+                                                    userInput.emailVerified = false;
+                                                    setMarkDirty(true); 
+                                                    setUserInput({...userInput}); 
+                                                }}
                                                 fullWidth={true} size="small" 
                                             />
                                         </Grid2>
+                                        <Grid2 paddingLeft={"8px"} marginBottom={"16px"} container size={12}>
+                                            <Grid2 alignContent={"center"} size={11}>Email verified</Grid2>
+                                                <Grid2 size={1}>
+                                                    <Checkbox 
+                                                        disabled={disableInputs || userInput.federatedOIDCProviderSubjectId !== ""}
+                                                        name="emailVerified"
+                                                        checked={userInput.emailVerified}
+                                                        onChange={(_, checked) => {
+                                                            userInput.emailVerified = checked;
+                                                            setMarkDirty(true); 
+                                                            setUserInput({...userInput});
+                                                        }}
+                                                    />
+                                            </Grid2>
+                                        </Grid2>
+                                        {user.recoveryEmail &&
+                                            <React.Fragment>
+                                                <Grid2 marginBottom={"16px"}>
+                                                    <div>Recovery Email</div>
+                                                    <TextField name="email" id="email" 
+                                                        disabled={true}
+                                                        value={user.recoveryEmail.email}                                                     
+                                                        fullWidth={true} size="small" 
+                                                    />
+                                                </Grid2>
+                                                <Grid2 paddingLeft={"8px"} marginBottom={"16px"} container size={12}>                                                    
+                                                    <Grid2 alignContent={"center"} size={11}>Recovery Email verified</Grid2>
+                                                    <Grid2 size={1} >                                                            
+                                                        <Checkbox name="recoveryEmailVerified" id="recoveryEmailVerified" 
+                                                            disabled={true}
+                                                            checked={user.recoveryEmail.emailVerified}
+                                                        />
+                                                    </Grid2>
+                                                </Grid2>
+                                            </React.Fragment>                                            
+                                        }
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Phone Number</div>
                                             <MuiTelInput

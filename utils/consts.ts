@@ -822,7 +822,7 @@ export const DEFAULT_TENANT_META_DATA: TenantMetaData = {
         footerlinks: []
     },
     systemSettings: {
-        allowBackupEmail: false,
+        allowRecoveryEmail: false,
         allowDuressPassword: false,
         rootClientId: "",
         enablePortalAsLegacyIdp: false,

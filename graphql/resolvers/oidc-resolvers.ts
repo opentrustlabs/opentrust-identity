@@ -1,6 +1,6 @@
 import ClientService from "@/lib/service/client-service";
 import TenantService from "@/lib/service/tenant-service";
-import { Resolvers, QueryResolvers, MutationResolvers, Tenant, Client, SigningKey, Scope, AuthenticationGroup, AuthorizationGroup, FederatedOidcProvider, Contact, User, TenantLoginFailurePolicy, TenantPasswordConfig, TenantLegacyUserMigrationConfig, TenantAnonymousUserConfiguration, TenantLookAndFeel, RateLimitServiceGroup, TenantRateLimitRel, RelSearchResultItem, MarkForDelete } from "@/graphql/generated/graphql-types";
+import { Resolvers, QueryResolvers, MutationResolvers, Tenant, Client, SigningKey, Scope, AuthenticationGroup, AuthorizationGroup, FederatedOidcProvider, Contact, User, TenantLoginFailurePolicy, TenantPasswordConfig, TenantLegacyUserMigrationConfig, TenantAnonymousUserConfiguration, TenantLookAndFeel, RateLimitServiceGroup, TenantRateLimitRel, RelSearchResultItem, MarkForDelete, PortalUserProfile } from "@/graphql/generated/graphql-types";
 import SigningKeysService from "@/lib/service/keys-service";
 import ScopeService from "@/lib/service/scope-service";
 import GroupService from "@/lib/service/group-service";
@@ -885,9 +885,9 @@ const resolvers: Resolvers = {
             const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);
             return service.authenticateUser(username, password, tenantId, authenticationSessionToken, preAuthToken || null);
         },
-        authenticateHandleForgotPassword: async(_: any, { authenticationSessionToken, preAuthToken, useBackupEmail }, oidcContext) => {
+        authenticateHandleForgotPassword: async(_: any, { authenticationSessionToken, preAuthToken, useRecoveryEmail }, oidcContext) => {
             const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);
-            return service.authenticateHandleForgotPassword(authenticationSessionToken, preAuthToken || null, useBackupEmail);
+            return service.authenticateHandleForgotPassword(authenticationSessionToken, preAuthToken || null, useRecoveryEmail);
         },
         authenticateRotatePassword: async(_: any, { userId, newPassword, authenticationSessionToken, preAuthToken}, oidcContext) => {
             const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);
@@ -957,13 +957,13 @@ const resolvers: Resolvers = {
             const service: RegisterUserService = new RegisterUserService(oidcContext);
             return service.registerValidateSecurityKey(userId, registrationSessionToken, fido2KeyAuthenticationInput, preAuthToken || null);
         },
-        registerAddBackupEmail: async(_: any, { userId, registrationSessionToken, backupEmail, skip, preAuthToken }, oidcContext) => {
+        registerAddRecoveryEmail: async(_: any, { userId, registrationSessionToken, recoveryEmail, skip, preAuthToken }, oidcContext) => {
             const service: RegisterUserService = new RegisterUserService(oidcContext);
-            return service.registerAddBackupEmail(userId, backupEmail || null, registrationSessionToken, preAuthToken || null, skip);
+            return service.registerAddRecoveryEmail(userId, recoveryEmail || null, registrationSessionToken, preAuthToken || null, skip);
         },
-        registerVerifyBackupEmail: async(_: any, { userId, token, registrationSessionToken, preAuthToken}, oidcContext) => {
+        registerVerifyRecoveryEmail: async(_: any, { userId, token, registrationSessionToken, preAuthToken}, oidcContext) => {
             const service: RegisterUserService = new RegisterUserService(oidcContext);
-            return service.registerVerifyBackupEmail(userId, token, registrationSessionToken, preAuthToken || null);
+            return service.registerVerifyRecoveryEmail(userId, token, registrationSessionToken, preAuthToken || null);
         },
         registerAddDuressPassword: async(_: any, { userId, password, skip, registrationSessionToken, preAuthToken }, oidcContext) => {
             const service: RegisterUserService = new RegisterUserService(oidcContext);
@@ -989,6 +989,22 @@ const resolvers: Resolvers = {
         enterSecretValue: async(_: any, { secretValue, otp }, oidcContext) => {
             const service: SecretShareService = new SecretShareService(oidcContext);
             return service.enterSecretValue(otp, secretValue);
+        },
+        swapPrimaryAndRecoveryEmail: async(_: any, { }, oidcContext) => {
+            const service: IdentityService = new IdentityService(oidcContext);
+            return service.swapPrimaryAndRecoveryEmail();
+        }
+    },
+    PortalUserProfile: {
+        recoveryEmail: async(profile: PortalUserProfile, _: any, oidcContext: OIDCContext) => {
+            const service: IdentityService = new IdentityService(oidcContext);
+            return service.getRecoveryEmail(profile.userId);
+        }
+    },
+    User: {
+        recoveryEmail: async(user: User, _: any, oidcContext: OIDCContext) => {
+            const service: IdentityService = new IdentityService(oidcContext);
+            return service.getRecoveryEmail(user.userId);
         }
     },
     RelSearchResultItem : {

@@ -1,4 +1,4 @@
-import { AuthenticationGroup, User, AuthorizationGroup, UserFailedLogin, UserTenantRel, UserCredential, UserMfaRel, Fido2Challenge, UserRegistrationState, UserAuthenticationState, UserTermsAndConditionsAccepted, UserBackupEmail } from "@/graphql/generated/graphql-types";
+import { AuthenticationGroup, User, AuthorizationGroup, UserFailedLogin, UserTenantRel, UserCredential, UserMfaRel, Fido2Challenge, UserRegistrationState, UserAuthenticationState, UserTermsAndConditionsAccepted, UserRecoveryEmail } from "@/graphql/generated/graphql-types";
 
 export type UserLookupType = "id" | "email" | "phone";
 abstract class IdentityDao {
@@ -15,9 +15,6 @@ abstract class IdentityDao {
     abstract removeFailedLogin(userId: string, failureAtMs: number): Promise<void>;
 
     abstract resetFailedLoginAttempts(userId: string): Promise<void>;
-
-    // challengeType could be email (as for registration of new users), sms, time-based-otp, or security key
-    abstract validateOTP(userId: string, challenge: string, challengeId: string, challengeType: string): Promise<boolean>;
 
     abstract saveTOTP(userMfaRel: UserMfaRel): Promise<void>;
 
@@ -147,13 +144,13 @@ abstract class IdentityDao {
 
     abstract deleteUserTermsAndConditionsAccepted(userId: string, tenantId: string): Promise<void>;
 
-    abstract getUserBackupEmail(userId: string): Promise<UserBackupEmail | null>;
+    abstract getUserRecoveryEmail(userId: string): Promise<UserRecoveryEmail | null>;
 
-    abstract addBackupEmail(userId: string, email: string, emailVerified: boolean): Promise<void>;
+    abstract addRecoveryEmail(userRecoveryEmail: UserRecoveryEmail): Promise<UserRecoveryEmail>;
 
-    abstract updateBackupEmail(userId: string, email: string, emailVerified: boolean): Promise<void>;
+    abstract updateRecoveryEmail(userRecoveryEmail: UserRecoveryEmail): Promise<UserRecoveryEmail>;
 
-    abstract deleteBackupEmail(userId: string): Promise<void>;
+    abstract deleteRecoveryEmail(userId: string): Promise<void>;
 
     abstract addUserDuressCredential(userCredential: UserCredential): Promise<void>;
 

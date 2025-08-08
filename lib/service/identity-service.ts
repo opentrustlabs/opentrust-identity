@@ -1,7 +1,7 @@
 import { OIDCContext } from "@/graphql/graphql-context";
 import * as OTPAuth from "otpauth";
 import IdentityDao from "../dao/identity-dao";
-import { Client, Fido2AuthenticationChallengeResponse, Fido2Challenge, Fido2RegistrationChallengeResponse, Fido2KeyRegistrationInput, ObjectSearchResultItem, RefreshData, RelSearchResultItem, SearchResultType, Tenant, TenantPasswordConfig, TotpResponse, User, UserCredential, UserMfaRel, UserSession, UserTenantRel, UserTenantRelView, Fido2KeyAuthenticationInput, FederatedOidcProvider, FederatedOidcAuthorizationRel, FederatedOidcAuthorizationRelType, AuthorizationCodeData, PreAuthenticationState, AuthorizationReturnUri, UserRegistrationState, RegistrationState, AuthenticationState, UserAuthenticationState, PortalUserProfile, UserScopeRel, Scope, AuthorizationGroup } from "@/graphql/generated/graphql-types";
+import { Client, Fido2AuthenticationChallengeResponse, Fido2Challenge, Fido2RegistrationChallengeResponse, Fido2KeyRegistrationInput, ObjectSearchResultItem, RefreshData, RelSearchResultItem, SearchResultType, Tenant, TenantPasswordConfig, TotpResponse, User, UserCredential, UserMfaRel, UserSession, UserTenantRel, UserTenantRelView, Fido2KeyAuthenticationInput, FederatedOidcProvider, FederatedOidcAuthorizationRel, FederatedOidcAuthorizationRelType, AuthorizationCodeData, PreAuthenticationState, AuthorizationReturnUri, UserRegistrationState, RegistrationState, AuthenticationState, UserAuthenticationState, PortalUserProfile, UserScopeRel, Scope, AuthorizationGroup, UserRecoveryEmail } from "@/graphql/generated/graphql-types";
 import { DaoFactory } from "../data-sources/dao-factory";
 import TenantDao from "../dao/tenant-dao";
 import { GraphQLError } from "graphql/error";
@@ -9,7 +9,7 @@ import { DEFAULT_PORTAL_AUTH_TOKEN_TTL_HOURS, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE
 import { sha256HashPassword, pbkdf2HashPassword, bcryptHashPassword, generateSalt, scryptHashPassword, generateRandomToken, generateCodeVerifierAndChallenge, bcryptValidatePassword } from "@/utils/dao-utils";
 import { Client as OpenSearchClient } from "@opensearch-project/opensearch";
 import { getOpenSearchClient } from "../data-sources/search";
-import { Get_Response } from "@opensearch-project/opensearch/api/index.js";
+import { Get_Response, UpdateByQuery_Response } from "@opensearch-project/opensearch/api/index.js";
 import Kms from "../kms/kms";
 import AuthDao from "../dao/auth-dao";
 import ClientDao from "../dao/client-dao";
@@ -18,6 +18,8 @@ import { validatePasswordFormat } from "@/utils/password-utils";
 import OIDCServiceUtils from "./oidc-service-utils";
 import { WellknownConfig } from "../models/wellknown-config";
 import { authorizeByScopeAndTenant, ServiceAuthorizationWrapper } from "@/utils/authz-utils";
+import client from "@/components/apollo-client/apollo-client";
+import { error } from "console";
 
 
 const identityDao: IdentityDao = DaoFactory.getInstance().getIdentityDao();
@@ -156,7 +158,7 @@ class IdentityService {
             user.lastName !== existingUser.lastName ||
             user.enabled !== existingUser.enabled
         ) {
-            await this.updateSearchIndexUserDocument(user);                
+            await this.updateSearchIndexUserDocuments(user);                
         }
         return user;
         
@@ -267,7 +269,7 @@ class IdentityService {
             else{
                 userTenantRel = await identityDao.assignUserToTenant(tenantId, userId, relType);
                 // Both the owning and parent tenant ids are the same in this case
-                await this.updateRelSearchIndex(tenantId, tenantId, user, relType);
+                await this.updateRelSearchIndex(tenantId, tenantId, user);
             }
         }
         // Otherwise, there already exists one or more relationships. 
@@ -293,7 +295,7 @@ class IdentityService {
                     userTenantRel = await identityDao.assignUserToTenant(tenantId, userId, relType);
                     // The primary rel remains as the owning tenant id, which the incoming tenant id 
                     // is the parent id
-                    await this.updateRelSearchIndex(primaryRel.tenantId, tenantId, user, relType);
+                    await this.updateRelSearchIndex(primaryRel.tenantId, tenantId, user);
                 }
             }
             
@@ -309,11 +311,11 @@ class IdentityService {
                     // Assign the incoming as primary
                     userTenantRel = await identityDao.updateUserTenantRel(tenantId, userId, relType);
                     // The incoming tenant becomes the new owning tenant as well as the parent.
-                    await this.updateRelSearchIndex(tenantId, tenantId, user, relType);
+                    await this.updateRelSearchIndex(tenantId, tenantId, user);
                     // Then update the existing primary as guest
                     await identityDao.updateUserTenantRel(primaryRel.tenantId, primaryRel.userId, USER_TENANT_REL_TYPE_GUEST);
                     // The incoming tenant is the owning tenant, which the existing primary becomes just the parent
-                    await this.updateRelSearchIndex(tenantId, primaryRel.tenantId, user, relType);
+                    await this.updateRelSearchIndex(tenantId, primaryRel.tenantId, user);
                 }
             }
         }
@@ -353,6 +355,39 @@ class IdentityService {
             throw new GraphQLError("ERROR_USER_DOES_NOT_EXIST");
         }
         return Promise.resolve();
+    }
+
+    public async getRecoveryEmail(userId: string): Promise<UserRecoveryEmail | null> {
+        if(userId !== this.oidcContext.portalUserProfile?.userId){
+            const authResult = authorizeByScopeAndTenant(this.oidcContext, [USER_READ_SCOPE], this.oidcContext.portalUserProfile?.tenantId || null);
+            if(!authResult.isAuthorized){
+                throw new GraphQLError(authResult.errorMessage || "ERROR");
+            }
+        }
+        return identityDao.getUserRecoveryEmail(userId);
+    }
+
+    public async swapPrimaryAndRecoveryEmail(): Promise<boolean> {
+        if(!this.oidcContext.portalUserProfile?.userId){            
+            throw new GraphQLError("ERROR_INVALID_TOKEN");
+        }
+        const user: User | null = await identityDao.getUserBy("id", this.oidcContext.portalUserProfile.userId);
+        if(user === null){
+            throw new GraphQLError("ERROR_INVALID_USER");
+        }
+        const userRecoveryEmail: UserRecoveryEmail | null = await identityDao.getUserRecoveryEmail(this.oidcContext.portalUserProfile.userId);
+        if(userRecoveryEmail === null){
+            throw new GraphQLError("ERROR_NO_RECOVERY_EMAIL_EXISTS");
+        }
+
+        const userEmail = user.email;
+        user.email = userRecoveryEmail.email;
+        userRecoveryEmail.email = userEmail;
+        await identityDao.updateUser(user);
+        await identityDao.updateRecoveryEmail(userRecoveryEmail);
+        this.updateSearchIndexUserDocuments(user);
+        return true;
+
     }
 
     // ##########################################################################
@@ -993,7 +1028,7 @@ class IdentityService {
         return retVal;
     }
 
-    protected async updateSearchIndexUserDocument(user: User): Promise<void> {
+    protected async updateSearchIndexUserDocuments(user: User): Promise<void> {
         const getResponse: Get_Response = await searchClient.get({
             id: user.userId,
             index: SEARCH_INDEX_OBJECT_SEARCH
@@ -1010,11 +1045,46 @@ class IdentityService {
                 body: document
             })
         }
-        // TODO: Update the rel_index as well, but do NOT wait on the results since
-        // there could be 1000s of records to modify.
+        
+        const updateByQueryBody: any = {
+            query: {
+                term: {
+                    childid: user.userId
+                }
+            },
+            script: {
+                source: "ctx._source.childdescription = params.email; ctx._source.childname = params.userName",
+                lang: "painless",
+                params: {
+                    email: user.email,
+                    userName: user.nameOrder === NAME_ORDER_WESTERN ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`,
+                }
+            }
+        };
+
+        searchClient.updateByQuery({
+            index: SEARCH_INDEX_REL_SEARCH,
+            body: updateByQueryBody,
+            requests_per_second: 100,
+            conflicts: "proceed",
+            wait_for_completion: false,
+            scroll: "240m"            
+        })
+        .then(
+            (value: UpdateByQuery_Response) => {
+                console.log("recieved bulk query response");
+                console.log(JSON.stringify(value));
+            }
+        )
+        .catch(
+            (error) => {
+                console.log("error updating search index");
+                console.log(error);
+            }
+        );
     }
 
-    protected async updateObjectSearchIndex(tenant: Tenant, user: User, relType: string): Promise<void> {
+    protected async updateObjectSearchIndex(tenant: Tenant, user: User): Promise<void> {
         let owningTenantId: string = tenant.tenantId;
         const document: ObjectSearchResultItem = {
             name: user.nameOrder === NAME_ORDER_WESTERN ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`,
@@ -1036,7 +1106,7 @@ class IdentityService {
         });
     }
 
-    protected async updateRelSearchIndex(owningTenantId: string, parentTenantId: string, user: User, relType: string): Promise<void> {
+    protected async updateRelSearchIndex(owningTenantId: string, parentTenantId: string, user: User): Promise<void> {
         
         const relDocument: RelSearchResultItem = {
             childid: user.userId,
@@ -1051,7 +1121,7 @@ class IdentityService {
             id: `${parentTenantId}::${user.userId}`,
             index: SEARCH_INDEX_REL_SEARCH,
             body: relDocument
-        })
+        });
     }
 
     protected async generateAuthorizationCode(userId: string, preAuthToken: string): Promise<AuthorizationReturnUri> {

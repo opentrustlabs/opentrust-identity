@@ -32,7 +32,7 @@ type Query {
     getUserTenantRels(userId: String!): [UserTenantRelView!]!
     getUserMFARels(userId: String!): [UserMFARel!]!
     getUserSessions(userId: String!): [UserSession!]!
-    getUserBackupEmail(userId: String!): UserBackupEmail
+    getUserRecoveryEmail(userId: String!): UserRecoveryEmail
 
     ## For tenant management and access
     me: PortalUserProfile
@@ -146,6 +146,13 @@ type Mutation {
     deleteUserSession(userId: String!, clientId: String!, tenantId: String!): String
     rotatePassword(userId: String!, oldPassword: String!, newPassword: String!): Boolean
     unlockUser(userId: String!): Boolean
+    # Users can add recovery emails or swap emails only for themselves. The user id will be taken from
+    # the requestors access token. This will return a registration response for entering
+    # the validation token sent to their email. 
+    addRecoveryEmail(recoveryEmail: String!): UserRegistrationStateResponse!
+    swapPrimaryAndRecoveryEmail: Boolean!
+    # If user id is absent then take the user id of the user requesting the deletion.    
+    deleteRecoveryEmail(userId: String): Boolean!
     
 
     ## Authentication Flows
@@ -153,7 +160,7 @@ type Mutation {
     authenticateHandleUserNameInput(username: String!, tenantId: String, preAuthToken: String, returnToUri: String, deviceCodeId: String): UserAuthenticationStateResponse!    
     authenticateUser(username: String!, password: String!, tenantId: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
     authenticateUserAndMigrate(username: String!, password: String!, tenantId: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!    
-    authenticateHandleForgotPassword(authenticationSessionToken: String!, preAuthToken: String, useBackupEmail: Boolean!): UserAuthenticationStateResponse!
+    authenticateHandleForgotPassword(authenticationSessionToken: String!, preAuthToken: String, useRecoveryEmail: Boolean!): UserAuthenticationStateResponse!
     authenticateRotatePassword(userId: String!, newPassword: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
     authenticateConfigureTOTP(userId: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
     authenticateValidateTOTP(userId: String!, totpTokenValue: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
@@ -174,8 +181,8 @@ type Mutation {
     registerValidateTOTP(userId: String!, registrationSessionToken: String!, totpTokenValue: String!, preAuthToken: String): UserRegistrationStateResponse!
     registerConfigureSecurityKey(userId: String!, registrationSessionToken: String!, fido2KeyRegistrationInput: Fido2KeyRegistrationInput, preAuthToken: String, skip: Boolean!): UserRegistrationStateResponse!
     registerValidateSecurityKey(userId: String!, registrationSessionToken: String!, fido2KeyAuthenticationInput: Fido2KeyAuthenticationInput!, preAuthToken: String): UserRegistrationStateResponse!
-    registerAddBackupEmail(userId: String!, backupEmail: String, registrationSessionToken: String!, preAuthToken: String, skip: Boolean!): UserRegistrationStateResponse!
-    registerVerifyBackupEmail(userId: String!, token: String!, registrationSessionToken: String!, preAuthToken: String): UserRegistrationStateResponse!
+    registerAddRecoveryEmail(userId: String!, recoveryEmail: String, registrationSessionToken: String!, preAuthToken: String, skip: Boolean!): UserRegistrationStateResponse!
+    registerVerifyRecoveryEmail(userId: String!, token: String!, registrationSessionToken: String!, preAuthToken: String): UserRegistrationStateResponse!
     registerAddDuressPassword(userId: String!, password: String, skip: Boolean!, registrationSessionToken: String!, preAuthToken: String): UserRegistrationStateResponse!
     cancelRegistration(userId: String!, registrationSessionToken: String!, preAuthToken: String, deviceCodeId: String): UserRegistrationStateResponse!
 
@@ -449,7 +456,8 @@ type PortalUserProfile {
     tenantName: String!
     managementAccessTenantId: String
     expiresAtMs: Float!
-    principalType: String!
+    principalType: String!    
+    recoveryEmail: UserRecoveryEmail
 }
 
 
@@ -476,9 +484,10 @@ type User {
     enabled: Boolean!
     nameOrder: String!
     markForDelete: Boolean!
+    recoveryEmail: UserRecoveryEmail
 }
 
-type UserBackupEmail {
+type UserRecoveryEmail {
     userId: String!
     email: String! 
     emailVerified: Boolean!
@@ -912,8 +921,8 @@ enum RegistrationState {
     EXPIRED
     CANCELLED
     ERROR
-    ADD_BACKUP_EMAIL_OPTIONAL
-    VALIDATE_BACKUP_EMAIL
+    ADD_RECOVERY_EMAIL_OPTIONAL
+    VALIDATE_RECOVERY_EMAIL
     ADD_DURESS_PASSWORD_OPTIONAL
     UNREGISTERED
 }
@@ -1139,7 +1148,7 @@ type SystemCategory {
 
 type SystemSettings {
     softwareVersion: String!
-    allowBackupEmail: Boolean!
+    allowRecoveryEmail: Boolean!
     allowDuressPassword: Boolean!
     rootClientId: String!
     enablePortalAsLegacyIdp: Boolean!
@@ -1603,7 +1612,7 @@ input CaptchaConfigInput {
 }
 
 input SystemSettingsUpdateInput {
-    allowBackupEmail: Boolean!
+    allowRecoveryEmail: Boolean!
     allowDuressPassword: Boolean!
     rootClientId: String!
     enablePortalAsLegacyIdp: Boolean!

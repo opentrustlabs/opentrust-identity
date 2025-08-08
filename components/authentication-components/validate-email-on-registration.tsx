@@ -5,12 +5,12 @@ import TextField from "@mui/material/TextField";
 import Stack from "@mui/material/Stack";
 import Button from "@mui/material/Button";
 import { useMutation } from "@apollo/client";
-import { REGISTER_VERIFY_BACKUP_EMAIL_ADDRESS, REGISTER_VERIFY_EMAIL_ADDRESS } from "@/graphql/mutations/oidc-mutations";
+import { REGISTER_VERIFY_RECOVERY_EMAIL_ADDRESS, REGISTER_VERIFY_EMAIL_ADDRESS } from "@/graphql/mutations/oidc-mutations";
 import { RegistrationComponentsProps } from "./register";
 import { UserRegistrationStateResponse } from "@/graphql/generated/graphql-types";
 
 export interface ValidateEmailOnRegistrationProps extends RegistrationComponentsProps {
-    isBackupEmail: boolean
+    isRecoveryEmail: boolean
 }
 
 const ValidateEmailOnRegistration: React.FC<ValidateEmailOnRegistrationProps> = ({
@@ -18,7 +18,7 @@ const ValidateEmailOnRegistration: React.FC<ValidateEmailOnRegistrationProps> = 
     onRegistrationCancelled,
     onUpdateEnd,
     onUpdateStart,
-    isBackupEmail
+    isRecoveryEmail
     
 }) => {
 
@@ -34,9 +34,9 @@ const ValidateEmailOnRegistration: React.FC<ValidateEmailOnRegistrationProps> = 
         },
     });
     
-    const [verifyBackupEmailRegistrationToken] = useMutation(REGISTER_VERIFY_BACKUP_EMAIL_ADDRESS, {
+    const [verifyRecoveryEmailRegistrationToken] = useMutation(REGISTER_VERIFY_RECOVERY_EMAIL_ADDRESS, {
         onCompleted(data) {
-            const response: UserRegistrationStateResponse = data.registerVerifyBackupEmail as UserRegistrationStateResponse;
+            const response: UserRegistrationStateResponse = data.registerVerifyRecoveryEmail as UserRegistrationStateResponse;
             onUpdateEnd(response, null)
         },
         onError(error) {
@@ -65,7 +65,7 @@ const ValidateEmailOnRegistration: React.FC<ValidateEmailOnRegistrationProps> = 
                 <Button
                     onClick={() => {
                         onUpdateStart();
-                        if(!isBackupEmail){
+                        if(!isRecoveryEmail){
                             verifyEmailRegistrationToken({
                                 variables: {
                                     userId: initialUserRegistrationState.userId,
@@ -76,7 +76,7 @@ const ValidateEmailOnRegistration: React.FC<ValidateEmailOnRegistrationProps> = 
                             });
                         }
                         else{
-                            verifyBackupEmailRegistrationToken({
+                            verifyRecoveryEmailRegistrationToken({
                                 variables: {
                                     userId: initialUserRegistrationState.userId,
                                     token: verificationCode,

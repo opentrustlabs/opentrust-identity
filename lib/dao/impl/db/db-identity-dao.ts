@@ -1,4 +1,4 @@
-import { User, AuthenticationGroup, AuthorizationGroup, UserTenantRel, UserCredential, UserMfaRel, Fido2Challenge, UserAuthenticationState, UserRegistrationState, UserFailedLogin, UserTermsAndConditionsAccepted, UserBackupEmail } from "@/graphql/generated/graphql-types";
+import { User, AuthenticationGroup, AuthorizationGroup, UserTenantRel, UserCredential, UserMfaRel, Fido2Challenge, UserAuthenticationState, UserRegistrationState, UserFailedLogin, UserTermsAndConditionsAccepted, UserRecoveryEmail } from "@/graphql/generated/graphql-types";
 import IdentityDao, { UserLookupType } from "../../identity-dao";
 import UserAuthorizationGroupRelEntity from "@/lib/entities/authorization-group-user-rel-entity";
 import AuthorizationGroupEntity from "@/lib/entities/authorization-group-entity";
@@ -15,8 +15,9 @@ import UserFido2CounterRelEntity from "@/lib/entities/user-fido2-counter-rel-ent
 import UserAuthenticationStateEntity from "@/lib/entities/user-authentication-state-entity";
 import UserRegistrationStateEntity from "@/lib/entities/user-registration-state-entity";
 import UserTermsAndConditionsAcceptedEntity from "@/lib/entities/user-terms-and-conditions-accepted-entity";
-import UserEmailBackupEntity from "@/lib/entities/user-email-backup-entity";
+import UserEmailRecoveryEntity from "@/lib/entities/user-email-recovery-entity";
 import UserDuressCredentialEntity from "@/lib/entities/user-duress-credential";
+
 
 class DBIdentityDao extends IdentityDao {
 
@@ -298,9 +299,9 @@ class DBIdentityDao extends IdentityDao {
             where: where
         });
 
-        // For email lookups, we can try the backup email table too
+        // For email lookups, we can try the recovery email table too
         if(u === null && userLookupType === "email"){
-            const entity: UserEmailBackupEntity | null = await sequelize.models.userEmailBackup.findOne({
+            const entity: UserEmailRecoveryEntity | null = await sequelize.models.userEmailRecovery.findOne({
                 where: {
                     email: value
                 }
@@ -407,11 +408,6 @@ class DBIdentityDao extends IdentityDao {
             }
         })
         return Promise.resolve();
-    }
-
-    
-    public async validateOTP(userId: string, challenge: string, challengeId: string, challengeType: string): Promise<boolean> {
-        throw new Error("Method not implemented.");
     }
 
     // prohibitedPasswords
@@ -578,7 +574,7 @@ class DBIdentityDao extends IdentityDao {
             }
         });
 
-        await sequelize.models.userEmailBackup.destroy({
+        await sequelize.models.userEmailRecovery.destroy({
             where: {
                 userId: userId
             }
@@ -812,9 +808,9 @@ class DBIdentityDao extends IdentityDao {
 
     }
 
-    public async getUserBackupEmail(userId: string): Promise<UserBackupEmail | null>{
+    public async getUserRecoveryEmail(userId: string): Promise<UserRecoveryEmail | null>{
         const sequelize: Sequelize = await DBDriver.getConnection();
-        const entity: UserEmailBackupEntity | null = await sequelize.models.userEmailBackup.findOne({
+        const entity: UserEmailRecoveryEntity | null = await sequelize.models.userEmailRecovery.findOne({
             where: {
                 userId: userId
             }
@@ -822,36 +818,26 @@ class DBIdentityDao extends IdentityDao {
         return entity ? entity.dataValues : null;
     }
 
-    public async addBackupEmail(userId: string, email: string, emailVerified: boolean): Promise<void>{
+    public async addRecoveryEmail(userRecoveryEmail: UserRecoveryEmail): Promise<UserRecoveryEmail>{
         const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.userEmailBackup.create({
-            userId: userId,
-            email: email,
-            emailVerified: emailVerified
-        });
-        return Promise.resolve();
+        await sequelize.models.userEmailRecovery.create(userRecoveryEmail);
+        return Promise.resolve(userRecoveryEmail);
     }
 
-    public async updateBackupEmail(userId: string, email: string, emailVerified: boolean): Promise<void>{
+    public async updateRecoveryEmail(userRecoveryEmail: UserRecoveryEmail): Promise<UserRecoveryEmail>{
         const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.userEmailBackup.update(
-            {
-                userId: userId,
-                email: email,
-                emailVerified: emailVerified
-            },
-            {
+        await sequelize.models.userEmailRecovery.update(userRecoveryEmail, {
                 where: {
-                    userId: userId
+                    userId: userRecoveryEmail.userId
                 }
             }
         );
-        return Promise.resolve();
+        return Promise.resolve(userRecoveryEmail);
     }
 
-    public async deleteBackupEmail(userId: string): Promise<void>{
+    public async deleteRecoveryEmail(userId: string): Promise<void>{
         const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.userEmailBackup.destroy({
+        await sequelize.models.userEmailRecovery.destroy({
             where: {
                 userId: userId
             }

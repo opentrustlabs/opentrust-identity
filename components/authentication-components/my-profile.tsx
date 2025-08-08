@@ -1,10 +1,10 @@
 "use client";
-import { PortalUserProfile, StateProvinceRegion, UserMfaRel, UserUpdateInput } from "@/graphql/generated/graphql-types";
+import { PortalUserProfile, StateProvinceRegion, User, UserMfaRel, UserRecoveryEmail, UserUpdateInput } from "@/graphql/generated/graphql-types";
 import React, { useContext } from "react";
 import { useClipboardCopyContext } from "../contexts/clipboard-copy-context";
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
-import { ME_QUERY, TENANT_META_DATA_QUERY, USER_MFA_REL_QUERY } from "@/graphql/queries/oidc-queries";
-import { useMutation, useQuery } from "@apollo/client";
+import { ME_QUERY, TENANT_META_DATA_QUERY, USER_DETAIL_QUERY, USER_MFA_REL_QUERY } from "@/graphql/queries/oidc-queries";
+import { useLazyQuery, useMutation, useQuery } from "@apollo/client";
 import { Alert, Autocomplete, Backdrop, Button, Checkbox, CircularProgress, Dialog, DialogActions, DialogContent, Grid2, MenuItem, Paper, Select, Snackbar, Stack, TextField, Typography } from "@mui/material";
 import { ResponsiveBreakpoints, ResponsiveContext } from "../contexts/responsive-context";
 import { getDefaultLanguageCodeDef, getDefaultCountryCodeDef } from "@/utils/client-utils";
@@ -14,10 +14,11 @@ import { MuiTelInput } from "mui-tel-input";
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import KeyboardReturnOutlinedIcon from '@mui/icons-material/KeyboardReturnOutlined';
 import DetailSectionActionHandler from "../layout/detail-section-action-handler";
+import SwapVertOutlinedIcon from '@mui/icons-material/SwapVertOutlined';
 import StateProvinceRegionSelector from "../users/state-province-region-selector";
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import DeleteForeverOutlinedIcon from '@mui/icons-material/DeleteForeverOutlined';
-import { FIDO_KEY_DELETION_MUTATION, TOPT_DELETION_MUTATION, USER_UPDATE_MUTATION } from "@/graphql/mutations/oidc-mutations";
+import { FIDO_KEY_DELETION_MUTATION, SWAP_PRIMARY_AND_RECOVERY_EMAIL_MUTATION, TOPT_DELETION_MUTATION, USER_UPDATE_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 
@@ -31,7 +32,7 @@ const MyProfile: React.FC = () => {
     const params = useSearchParams();
     const returnUri = params?.get(QUERY_PARAM_RETURN_URI);
 
-    const maxWidth = breakPoints.isSmall ? "90vw" : breakPoints.isMedium ? "80vw" : "650px";
+    const maxWidth = breakPoints.isSmall ? "90vw" : breakPoints.isMedium ? "80vw" : "850px";
 
     const initInput: UserUpdateInput = {
         domain: "",
@@ -56,6 +57,7 @@ const MyProfile: React.FC = () => {
     }
     // STATE VARIABLES
     const [userInput, setUserInput] = React.useState<UserUpdateInput>(initInput);
+    const [recoveryEmail, setRecoveryEmail] = React.useState<UserRecoveryEmail | null>(null);
     const [revertToInput, setRevertToInput] = React.useState<UserUpdateInput>(initInput);
     const [markDirty, setMarkDirty] = React.useState<boolean>(false);
     const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
@@ -67,7 +69,7 @@ const MyProfile: React.FC = () => {
     const [mfaTypeToDelete, setMfaTypeToDelete] = React.useState<string | null>(null);
     const [showMFADeletionConfirmationDialog, setShowMFADeletionConfirmationDialog] = React.useState<boolean>(false);
 
-    const { data } = useQuery(ME_QUERY, {
+    const { data } = useQuery(ME_QUERY, {        
         onCompleted(data) {
             if (data && data.me && data.me.userId) {
                 setUserId(data.me.userId);
@@ -79,6 +81,7 @@ const MyProfile: React.FC = () => {
                 initInput.enabled = userProfile.enabled;
                 initInput.firstName = userProfile.firstName;
                 initInput.lastName = userProfile.lastName;
+                initInput.middleName = userProfile.middleName || "";
                 initInput.locked = userProfile.locked;
                 initInput.nameOrder = userProfile.nameOrder;
                 initInput.userId = userProfile.userId;
@@ -89,9 +92,12 @@ const MyProfile: React.FC = () => {
                 initInput.postalCode = userProfile.postalCode;
                 initInput.countryCode = userProfile.countryCode;
                 initInput.federatedOIDCProviderSubjectId = userProfile.federatedOIDCProviderSubjectId;
-                initInput.middleName = userProfile.middleName;
                 initInput.phoneNumber = userProfile.phoneNumber
                 initInput.preferredLanguageCode = userProfile.preferredLanguageCode;
+                
+                if(userProfile.recoveryEmail){
+                    setRecoveryEmail(userProfile.recoveryEmail);
+                }
                 setUserInput({...initInput});
                 setRevertToInput({...initInput});
                 if(initInput.federatedOIDCProviderSubjectId && initInput.federatedOIDCProviderSubjectId !== ""){
@@ -104,14 +110,56 @@ const MyProfile: React.FC = () => {
         },
         onError(error) {
             setErrorMessage(error.message);
-        }
+        }        
     });
 
-    const {data: userMfaData, loading: userMfaDataLoading, error: userMfaDataError} = useQuery(USER_MFA_REL_QUERY, {
-            variables: {
-                userId: userId
+    const [refetch] = useLazyQuery(USER_DETAIL_QUERY, {
+        variables: {
+            userId: userId
+        },
+        fetchPolicy: "no-cache",
+        nextFetchPolicy: "no-cache",
+        onCompleted(data) {
+            const user: User = data.getUserById;
+            const input: UserUpdateInput = {
+                domain: user.domain,
+                email: user.email,
+                emailVerified: user.emailVerified,
+                enabled: user.enabled,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                middleName: user.middleName || "",
+                locked: user.locked,
+                nameOrder: user.nameOrder,
+                userId: user.userId,
+                address: user.address,
+                addressLine1: user.addressLine1,
+                city: user.city,
+                stateRegionProvince: user.stateRegionProvince,
+                postalCode: user.postalCode,
+                countryCode: user.countryCode,
+                federatedOIDCProviderSubjectId: user.federatedOIDCProviderSubjectId,
+                phoneNumber: user.phoneNumber,
+                preferredLanguageCode: user.preferredLanguageCode
+            };            
+            
+            if(user.recoveryEmail){
+                setRecoveryEmail({...user.recoveryEmail});
             }
-        });
+            setUserInput(input);
+            setRevertToInput(input);
+            
+        },
+        onError(error) {
+            setErrorMessage(error.message);
+        },
+    })
+
+    const {data: userMfaData, loading: userMfaDataLoading, error: userMfaDataError} = useQuery(USER_MFA_REL_QUERY, {
+        variables: {
+            userId: userId
+        }
+    });
 
     const { data: tenantData } = useQuery(TENANT_META_DATA_QUERY, {
         variables: {
@@ -174,6 +222,22 @@ const MyProfile: React.FC = () => {
         refetchQueries: [USER_MFA_REL_QUERY]
     });
 
+    const [swapPrimaryAndRecoveryEmail] = useMutation(SWAP_PRIMARY_AND_RECOVERY_EMAIL_MUTATION, {        
+        onCompleted(data) {
+            setShowMutationBackdrop(false);
+            if(data.swapPrimaryAndRecoveryEmail === false){
+                setErrorMessage("ERROR_SWAPPING_EMAILS_FAILED");
+            }
+            else{
+                setShowMutationSnackbar(true);
+                refetch();
+            }            
+        },
+        onError(error) {
+            setShowMutationBackdrop(false);
+            setErrorMessage(error.message)
+        }
+    })
 
     return (
         <Typography component={"div"} >
@@ -240,7 +304,7 @@ const MyProfile: React.FC = () => {
                             </Stack>
                         </Grid2>
                     }
-                    {data && tenantData &&
+                    {userInput.userId !== "" && tenantData && 
                         <React.Fragment>                            
                             {userInput.federatedOIDCProviderSubjectId && userInput.federatedOIDCProviderSubjectId.length > 0 &&
                                 <Alert severity="info">
@@ -298,19 +362,17 @@ const MyProfile: React.FC = () => {
                                                     }}
                                                 />
                                             </Grid2>
-                                            <Grid2 alignContent={"center"} size={10}>Locked</Grid2>
-                                            <Grid2 size={2}>
-                                                <Checkbox
-                                                    name="locked"
-                                                    checked={userInput.locked}
-                                                    disabled={true}
-                                                    onChange={(_, checked) => {
-                                                        userInput.locked = checked;
-                                                        setMarkDirty(true);
-                                                        setUserInput({ ...userInput });
-                                                    }}
-                                                />
-                                            </Grid2>
+                                            {recoveryEmail &&   
+                                                <React.Fragment>
+                                                    <Grid2 alignContent={"center"} size={10}>Recovery Email verified</Grid2>
+                                                    <Grid2 size={2} >                                                            
+                                                        <Checkbox name="recoveryEmailVerified" id="recoveryEmailVerified" 
+                                                            disabled={true}
+                                                            checked={recoveryEmail.emailVerified}
+                                                        />
+                                                    </Grid2>
+                                                </React.Fragment>                                                
+                                            }                                            
                                         </Grid2>
                                     </Grid2>
                                 </Grid2>
@@ -365,7 +427,7 @@ const MyProfile: React.FC = () => {
                                                 <TextField name="email" id="email"
                                                     disabled={true}
                                                     value={userInput.email}
-                                                    onChange={(evt) => { userInput.email = evt.target.value; setMarkDirty(true); setUserInput({ ...userInput }); }}
+                                                    
                                                     fullWidth={true} size="small"
                                                 />
                                                 </Grid2>
@@ -379,6 +441,51 @@ const MyProfile: React.FC = () => {
                                             </Grid2>
                                         </Grid2>
                                     </Grid2>
+                                    {recoveryEmail &&                                        
+                                        <Grid2 marginBottom={"16px"}>
+                                            <Grid2 size={12} display={"flex"} justifyContent={"center"}>
+                                                <SwapVertOutlinedIcon 
+                                                    sx={{
+                                                        cursor: "pointer",
+                                                        border: "solid 1px lightgrey",
+                                                        borderRadius: "4px",
+                                                        width: "30px",
+                                                        height: "30px"
+                                                    }}
+                                                    onClick={() => {
+                                                        setShowMutationBackdrop(true);
+                                                        swapPrimaryAndRecoveryEmail();
+                                                    }}
+                                                />
+                                            </Grid2>
+                                            <Grid2 size={12}>Recovery Email</Grid2>
+                                            <Grid2 alignItems={"center"} display={"flex"} container spacing={1} size={12}>
+                                                <Grid2 size={10}>
+                                                    <TextField name="recoveryEmail" id="recoveryEmail"
+                                                        disabled={true}
+                                                        value={recoveryEmail.email}                                                        
+                                                        fullWidth={true} size="small"
+                                                    />
+                                                    </Grid2>
+                                                <Grid2 size={1}>
+                                                    <EditOutlinedIcon 
+                                                        sx={{cursor: "pointer"}}
+                                                        onClick={() => {
+                                                            // edit email dialog...
+                                                        }}
+                                                    />
+                                                </Grid2>
+                                                <Grid2 size={1}>
+                                                    <DeleteForeverOutlinedIcon 
+                                                        sx={{cursor: "pointer"}}
+                                                        onClick={() => {
+                                                            // delete recovery email
+                                                        }}
+                                                    />
+                                                </Grid2>
+                                            </Grid2>
+                                        </Grid2>
+                                    }
                                     <Grid2 marginBottom={"16px"}>
                                         <div>Phone Number</div>
                                         <MuiTelInput

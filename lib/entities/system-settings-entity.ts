@@ -9,10 +9,11 @@ class SystemSettingsEntity extends Model {
                 primaryKey: true,
                 field: "systemid"
             },
-            allowBackupEmail: {
+            allowRecoveryEmail: {
                 type: DataTypes.BOOLEAN,
                 primaryKey: false,
-                field: "allowbackupemail"
+                allowNull: false,
+                field: "allowrecoveryemail"
             },
             allowDuressPassword: {
                 type: DataTypes.BOOLEAN,

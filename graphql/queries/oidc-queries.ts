@@ -64,7 +64,7 @@ export const TENANT_META_DATA_QUERY = gql(`
             }
             systemSettings {
                 allowDuressPassword
-                allowBackupEmail
+                allowRecoveryEmail
             }
         }
     }
@@ -137,6 +137,11 @@ export const ME_QUERY = gql(`
                 scopeId
                 scopeName
             }
+            recoveryEmail {
+                userId
+                email
+                emailVerified
+            }                
         }
     }
 `);
@@ -327,6 +332,11 @@ export const USER_DETAIL_QUERY = gql(`
             enabled
             nameOrder
             markForDelete
+            recoveryEmail {
+                userId
+                email
+                emailVerified
+            }
         }
     }    
 `);
@@ -708,7 +718,7 @@ export const SYSTEM_SETTINGS_QUERY = gql(`
     query getSystemSettings {
         getSystemSettings {
             softwareVersion
-            allowBackupEmail
+            allowRecoveryEmail
             allowDuressPassword
             rootClientId
             enablePortalAsLegacyIdp
