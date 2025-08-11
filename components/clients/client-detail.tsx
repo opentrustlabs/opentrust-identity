@@ -5,7 +5,7 @@ import Grid2 from "@mui/material/Grid2";
 import Typography from "@mui/material/Typography";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
 import BreadcrumbComponent from "../breadcrumbs/breadcrumbs";
-import { CLIENT_DELETE_SCOPE, CLIENT_SECRET_VIEW_SCOPE, CLIENT_TYPE_DEVICE, CLIENT_TYPE_SERVICE_ACCOUNT_AND_USER_DELEGATED_PERMISSIONS, CLIENT_TYPE_SERVICE_ACCOUNT_ONLY, CLIENT_TYPE_USER_DELEGATED_PERMISSIONS_ONLY, CLIENT_TYPES_DISPLAY, CLIENT_UPDATE_SCOPE, DEFAULT_BACKGROUND_COLOR, DEFAULT_END_USER_TOKEN_TTL_SECONDS, DEFAULT_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS, MAX_END_USER_TOKEN_TTL_SECONDS, MAX_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS, MIN_END_USER_TOKEN_TTL_SECONDS, MIN_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
+import { CLIENT_DELETE_SCOPE, CLIENT_SECRET_VIEW_SCOPE, CLIENT_TYPE_DEVICE, CLIENT_TYPE_IDENTITY, CLIENT_TYPE_SERVICE_ACCOUNT, CLIENT_TYPE_USER_DELEGATED_PERMISSIONS, CLIENT_TYPES, CLIENT_TYPES_DISPLAY, CLIENT_UPDATE_SCOPE, DEFAULT_END_USER_TOKEN_TTL_SECONDS, DEFAULT_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS, MAX_END_USER_TOKEN_TTL_SECONDS, MAX_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS, MIN_END_USER_TOKEN_TTL_SECONDS, MIN_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import { Client, ClientUpdateInput, MarkForDeleteObjectType, SecretObjectType, PortalUserProfile } from "@/graphql/generated/graphql-types";
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import SyncIcon from '@mui/icons-material/Sync';
@@ -53,7 +53,8 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
         maxRefreshTokenCount: client.maxRefreshTokenCount,
         oidcEnabled: client.oidcEnabled,
         pkceEnabled: client.pkceEnabled,
-        userTokenTTLSeconds: client.userTokenTTLSeconds || DEFAULT_END_USER_TOKEN_TTL_SECONDS
+        userTokenTTLSeconds: client.userTokenTTLSeconds || DEFAULT_END_USER_TOKEN_TTL_SECONDS,
+        audience: client.audience
     };
 
     const [clientUpdateInput, setClientUpdateInput] = React.useState<ClientUpdateInput>(initInput);
@@ -151,7 +152,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                             <TextField
                                                 disabled={disableInputs}
                                                 name="clientName" id="clientName" value={clientUpdateInput.clientName} fullWidth={true} size="small"
-                                                onChange={(evt) => { clientUpdateInput.clientName = evt.target.value;  setClientUpdateInput({ ...clientUpdateInput }); setMarkDirty(true); }}
+                                                onChange={(evt) => { clientUpdateInput.clientName = evt.target.value; setClientUpdateInput({ ...clientUpdateInput }); setMarkDirty(true); }}
                                             />
                                         </Grid2>
                                         <Grid2 marginBottom={"16px"}>
@@ -172,10 +173,11 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                                 name="clientType"
                                                 onChange={(evt) => { clientUpdateInput.clientType = evt.target.value; setClientUpdateInput({ ...clientUpdateInput }); setMarkDirty(true); }}
                                             >
-                                                <MenuItem value={CLIENT_TYPE_SERVICE_ACCOUNT_ONLY} >{CLIENT_TYPES_DISPLAY.get(CLIENT_TYPE_SERVICE_ACCOUNT_ONLY)}</MenuItem>
-                                                <MenuItem value={CLIENT_TYPE_SERVICE_ACCOUNT_AND_USER_DELEGATED_PERMISSIONS} >{CLIENT_TYPES_DISPLAY.get(CLIENT_TYPE_SERVICE_ACCOUNT_AND_USER_DELEGATED_PERMISSIONS)}</MenuItem>
-                                                <MenuItem value={CLIENT_TYPE_USER_DELEGATED_PERMISSIONS_ONLY} >{CLIENT_TYPES_DISPLAY.get(CLIENT_TYPE_USER_DELEGATED_PERMISSIONS_ONLY)}</MenuItem>                                                
-                                                <MenuItem value={CLIENT_TYPE_DEVICE} >{CLIENT_TYPES_DISPLAY.get(CLIENT_TYPE_DEVICE)}</MenuItem>
+                                                {CLIENT_TYPES.map(
+                                                    (val: string) => (
+                                                        <MenuItem value={val} >{CLIENT_TYPES_DISPLAY.get(val)}</MenuItem>
+                                                    )
+                                                )}
                                             </Select>
                                         </Grid2>
                                         <Grid2 marginBottom={"16px"}>
@@ -202,7 +204,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                                         <span>*******************************************</span>
                                                     </Grid2>
                                                     <Grid2 size={1}></Grid2>
-                                                    <Grid2 size={1}>                                                    
+                                                    <Grid2 size={1}>
                                                         <VisibilityOutlinedIcon
                                                             sx={{ cursor: "pointer" }}
                                                             onClick={() => setSecretDialogOpen(true)}
@@ -211,6 +213,14 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                                 </Grid2>
                                             </Grid2>
                                         }
+                                        <Grid2 marginBottom={"16px"}>
+                                            <div>Audience for access tokens (If left blank, defaults to client ID)</div>
+                                            <TextField
+                                                disabled={disableInputs}
+                                                name="audience" id="audience" value={clientUpdateInput.audience || ""} fullWidth={true} size="small"
+                                                onChange={(evt) => { clientUpdateInput.audience = evt.target.value; setClientUpdateInput({ ...clientUpdateInput }); setMarkDirty(true); }}
+                                            />
+                                        </Grid2>
                                     </Grid2>
                                     <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>
                                         <Grid2 borderLeft={"dotted 1px lightgrey"} paddingLeft={"8px"} container size={12}>
@@ -313,12 +323,12 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                                             const v: number = parseInt(evt.target.value);
                                                             clientUpdateInput.maxRefreshTokenCount = v;
                                                         }
-                                                        else{
+                                                        else {
                                                             clientUpdateInput.maxRefreshTokenCount = null;
                                                         }
                                                         setClientUpdateInput({ ...clientUpdateInput });
                                                         setMarkDirty(true);
-                                                        
+
                                                     }}
                                                     fullWidth={true} size="small" />
                                             </Grid2>
@@ -402,39 +412,47 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                             }
                         </Grid2>
                     </Grid2>
-                    <Grid2 size={12} >
-                        {!isMarkedForDelete &&
-                            <Accordion >
-                                <AccordionSummary
-                                    expandIcon={<ExpandMoreIcon />}
-                                    id={"redirect-uri-configuration"}
-                                    sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center" }}
+                    {client.clientType !== CLIENT_TYPE_IDENTITY &&
+                        <Grid2 size={12} >
+                            {!isMarkedForDelete &&
+                                <Accordion >
+                                    <AccordionSummary
+                                        expandIcon={<ExpandMoreIcon />}
+                                        id={"redirect-uri-configuration"}
+                                        sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center" }}
 
-                                >
-                                    <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-                                        <PolicyIcon /><div style={{ marginLeft: "8px" }}>Access Control</div>
-                                    </div>
-                                </AccordionSummary>
-                                <AccordionDetails>
-                                    <ScopeRelConfiguration
-                                        tenantId={client.tenantId}
-                                        id={client.clientId}
-                                        scopeRelType={ScopeRelType.CLIENT}
-                                        onUpdateEnd={(success: boolean) => {
-                                            setShowMutationBackdrop(false);
-                                            if (success) {
-                                                setShowMutationSnackbar(true);
-                                            }
-                                        }}
-                                        onUpdateStart={() => {
-                                            setShowMutationBackdrop(true);
-                                        }}
-                                    />
-
-                                </AccordionDetails>
-                            </Accordion>
-                        }
-                    </Grid2>
+                                    >
+                                        <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+                                            <PolicyIcon /><div style={{ marginLeft: "8px" }}>
+                                                {(client.clientType === CLIENT_TYPE_USER_DELEGATED_PERMISSIONS || client.clientType === CLIENT_TYPE_DEVICE )&&
+                                                    <span>Delegated Access Control</span>
+                                                }
+                                                {client.clientType === CLIENT_TYPE_SERVICE_ACCOUNT &&
+                                                    <span>Service Account Access Control</span>
+                                                }                                              
+                                            </div>
+                                        </div>
+                                    </AccordionSummary>
+                                    <AccordionDetails>
+                                        <ScopeRelConfiguration
+                                            tenantId={client.tenantId}
+                                            id={client.clientId}
+                                            scopeRelType={ScopeRelType.CLIENT}
+                                            onUpdateEnd={(success: boolean) => {
+                                                setShowMutationBackdrop(false);
+                                                if (success) {
+                                                    setShowMutationSnackbar(true);
+                                                }
+                                            }}
+                                            onUpdateStart={() => {
+                                                setShowMutationBackdrop(true);
+                                            }}
+                                        />
+                                    </AccordionDetails>
+                                </Accordion>
+                            }
+                        </Grid2>
+                    }
                 </Grid2>
                 <Grid2 spacing={2} size={{ xs: 12, sm: 12, md: 12, lg: 3, xl: 3 }}>
                     <Grid2 container spacing={2} size={12}>

@@ -101,6 +101,7 @@ create TABLE client (
     clienttokenttlseconds INT,
     maxrefreshtokencount INT,
     markfordelete BOOLEAN NOT NULL,
+    audience VARCHAR(256),
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid)
 );
 
@@ -397,7 +398,7 @@ create TABLE refresh_data (
     tenantid VARCHAR(64) NOT NULL,
     clientid VARCHAR(64) NOT NULL,
     userid VARCHAR(64) NOT NULL,
-    scope VARCHAR(128) NOT NULL,
+    scope VARCHAR(1024) NOT NULL,
     refreshtokenclienttype VARCHAR(128) NOT NULL,
     refreshcount INT,
     codechallenge VARCHAR(256),

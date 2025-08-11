@@ -337,7 +337,8 @@ const resolvers: Resolvers = {
                 maxRefreshTokenCount: clientInput.maxRefreshTokenCount,
                 clientTokenTTLSeconds: clientInput.clientTokenTTLSeconds,
                 clienttypeid: "",
-                markForDelete: false
+                markForDelete: false,
+                audience: clientInput.audience
             }
             await clientService.createClient(client);            
             return client;
@@ -358,7 +359,8 @@ const resolvers: Resolvers = {
                 maxRefreshTokenCount: clientInput.maxRefreshTokenCount,
                 clientTokenTTLSeconds: clientInput.clientTokenTTLSeconds,
                 clienttypeid: "",
-                markForDelete: false
+                markForDelete: false,
+                audience: clientInput.audience
             }
             await clientService.updateClient(client);
             return client;

@@ -7,7 +7,7 @@ import JwtService from '@/lib/service/jwt-service-utils';
 import { JWTPayload,  } from 'jose';
 import { bcryptHashPassword, bcryptValidatePassword, generateRandomToken, getFileContents, pbkdf2HashPassword, scryptHashPassword, sha256HashPassword } from '@/utils/dao-utils';
 import FSBasedKms from '@/lib/kms/fs-based-kms';
-import { CLIENT_TYPE_SERVICE_ACCOUNT_AND_USER_DELEGATED_PERMISSIONS, PASSWORD_HASH_ITERATION_64K, PRINCIPAL_TYPE_END_USER } from '@/utils/consts';
+import { PASSWORD_HASH_ITERATION_64K, PRINCIPAL_TYPE_END_USER } from '@/utils/consts';
 
 // const jwtService: JwtService = new JwtService();
 
