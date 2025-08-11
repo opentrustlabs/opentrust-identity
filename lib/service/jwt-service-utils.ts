@@ -1,4 +1,4 @@
-import { User, Tenant, Client, SigningKey, ClientAuthHistory, PortalUserProfile, AuthorizationGroup, UserScopeRel, Scope, SystemSettings, ClientScopeRel } from "@/graphql/generated/graphql-types";
+import { User, Tenant, Client, SigningKey, ClientAuthHistory, PortalUserProfile, AuthorizationGroup, UserScopeRel, Scope, SystemSettings, ClientScopeRel, RefreshData } from "@/graphql/generated/graphql-types";
 import { generateRandomToken, getDomainFromEmail } from "@/utils/dao-utils";
 import ClientDao from "@/lib/dao/client-dao";
 import TenantDao from "@/lib/dao/tenant-dao";
@@ -9,12 +9,13 @@ import SigningKeysDao from "../dao/signing-keys-dao";
 import { JWTPrincipal, OIDCUserProfile, ProfileAuthorizationGroup, ProfileScope } from "../models/principal";
 import { randomUUID, createPrivateKey, PrivateKeyInput, KeyObject, createSecretKey, createPublicKey, PublicKeyInput } from "node:crypto"; 
 import NodeCache from "node-cache";
-import { CLIENT_SECRET_ENCODING, DEFAULT_END_USER_TOKEN_TTL_SECONDS, DEFAULT_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS, KEY_USE_JWT_SIGNING, NAME_ORDER_WESTERN, PRINCIPAL_TYPE_ANONYMOUS_USER, PRINCIPAL_TYPE_END_USER, PRINCIPAL_TYPE_IAM_PORTAL_USER, PRINCIPAL_TYPE_SERVICE_ACCOUNT_TOKEN } from "@/utils/consts";
+import { CLIENT_SECRET_ENCODING, CLIENT_TYPE_DEVICE, CLIENT_TYPE_USER_DELEGATED_PERMISSIONS, DEFAULT_END_USER_TOKEN_TTL_SECONDS, DEFAULT_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS, KEY_USE_JWT_SIGNING, NAME_ORDER_WESTERN, PRINCIPAL_TYPE_ANONYMOUS_USER, PRINCIPAL_TYPE_END_USER, PRINCIPAL_TYPE_IAM_PORTAL_USER, PRINCIPAL_TYPE_SERVICE_ACCOUNT_TOKEN } from "@/utils/consts";
 import { DaoFactory } from "../data-sources/dao-factory";
 import ScopeDao from "../dao/scope-dao";
 import AuthorizationGroupDao from "../dao/authorization-group-dao";
 import Kms from "../kms/kms";
 import { use } from "react";
+import AuthDao from "../dao/auth-dao";
 
 const SIGNING_KEY_ARRAY_CACHE_KEY = "SIGNING_KEY_ARRAY_CACHE_KEY"
 interface CachedSigningKeyData {
@@ -31,6 +32,7 @@ const signingKeysDao: SigningKeysDao = DaoFactory.getInstance().getSigningKeysDa
 const scopeDao: ScopeDao = DaoFactory.getInstance().getScopeDao();
 const authorizationGroupDao: AuthorizationGroupDao = DaoFactory.getInstance().getAuthorizationGroupDao();
 const kms: Kms = DaoFactory.getInstance().getKms();
+const authDao: AuthDao = DaoFactory.getInstance().getAuthDao();
 
 const {
     AUTH_DOMAIN
@@ -85,13 +87,13 @@ class JwtServiceUtils {
         }
         
         let user: User | null = null;
-        let client: Client | null = null;
+        const client: Client | null = await clientDao.getClientById(principal.sub);
+        if(client === null){
+            return null;
+        }
         let oidcUserProfile: OIDCUserProfile | null = null;
         if(principal.principal_type === PRINCIPAL_TYPE_SERVICE_ACCOUNT_TOKEN){
-            client = await clientDao.getClientById(principal.sub);
-            if(client === null){
-                return null;
-            }
+            
             const arrScopes = includeScope ? await this.getClientScopes(client.clientId) : [];
             const arrProfileScopes = arrScopes.map(
                 (s: Scope) => {
@@ -134,6 +136,19 @@ class JwtServiceUtils {
             }
         }
         else if(principal.principal_type === PRINCIPAL_TYPE_ANONYMOUS_USER){
+            // TODO
+            // Refactor, since these both do the same queries.
+            const arrScopes = includeScope ? await this.getScopes(principal.sub, principal.tenant_id) : [];
+            const arrProfileScopes = arrScopes.map(
+                (s: Scope) => {
+                    const profileScope: ProfileScope = {
+                        scopeDescription: s.scopeDescription,
+                        scopeId: s.scopeId,
+                        scopeName: s.scopeName
+                    }
+                    return profileScope
+                }
+            )
             oidcUserProfile = {
                 domain: "",
                 email: "",
@@ -143,7 +158,7 @@ class JwtServiceUtils {
                 lastName: "",
                 locked: false,
                 nameOrder: "",
-                scope: [],
+                scope: arrProfileScopes,
                 tenantId: principal.tenant_id,
                 tenantName: principal.tenant_name,
                 userId: principal.sub,
@@ -169,19 +184,34 @@ class JwtServiceUtils {
             if(user === null){
                 return null;
             }
-            // TODO
-            // Refactor, since these both do the same queries.
-            const arrScopes = includeScope ? await this.getScopes(user.userId, principal.tenant_id) : [];
-            const arrProfileScopes = arrScopes.map(
-                (s: Scope) => {
-                    const profileScope: ProfileScope = {
-                        scopeDescription: s.scopeDescription,
-                        scopeId: s.scopeId,
-                        scopeName: s.scopeName
+            
+            let arrProfileScopes: Array<ProfileScope> = [];
+            if(client.clientType === CLIENT_TYPE_USER_DELEGATED_PERMISSIONS || client.clientType === CLIENT_TYPE_DEVICE){
+                const arrScopes = includeScope ? await this.getDelegatedScope(user.userId, client.clientId, principal.tenant_id) : [];
+                arrScopes.forEach(
+                    (s: Scope) => {
+                        const profileScope: ProfileScope = {
+                            scopeDescription: s.scopeDescription,
+                            scopeId: s.scopeId,
+                            scopeName: s.scopeName
+                        }
+                        arrProfileScopes.push(profileScope);
                     }
-                    return profileScope
-                }
-            )
+                );
+            }
+            else{
+                const arrScopes = includeScope ? await this.getScopes(user.userId, principal.tenant_id) : [];
+                arrScopes.forEach(
+                    (s: Scope) => {
+                        const profileScope: ProfileScope = {
+                            scopeDescription: s.scopeDescription,
+                            scopeId: s.scopeId,
+                            scopeName: s.scopeName
+                        }
+                        arrProfileScopes.push(profileScope);
+                    }
+                );
+            }            
 
             const arrAuthzGroups: Array<AuthorizationGroup> = includeAuthorizationGroups ? await authorizationGroupDao.getUserAuthorizationGroups(user.userId) : [];
             const arrProfileAuthzGroups: Array<ProfileAuthorizationGroup> = arrAuthzGroups.map(
@@ -411,9 +441,14 @@ class JwtServiceUtils {
             principal_type: PRINCIPAL_TYPE_END_USER
         };
 
-        const s: string | null = await this.signJwt(principal);
-        if(s === null){
+        const idToken: string | null = await this.signJwt(principal);
+        if(idToken === null){
             return Promise.resolve(null);
+        }
+        let accessToken: string | null = null;
+        if(client.audience !== null && client.audience !== ""){
+            principal.aud = client.audience;
+            accessToken = await this.signJwt(principal);
         }
         
         let generateRefreshToken: boolean = false;
@@ -425,11 +460,11 @@ class JwtServiceUtils {
         }
 
         const oidcTokenResponse: OIDCTokenResponse = {
-            access_token: s,
+            access_token: accessToken !== null ? accessToken : idToken,
             token_type: "Bearer",
             refresh_token: generateRefreshToken ? generateRandomToken(32) : null,
             expires_in: client.userTokenTTLSeconds ? ( now / 1000 ) + client.userTokenTTLSeconds : ( now / 1000 ) + DEFAULT_END_USER_TOKEN_TTL_SECONDS,
-            id_token: s
+            id_token: idToken
         }
         
         return Promise.resolve({oidcTokenResponse: oidcTokenResponse, principal: principal});
@@ -791,7 +826,25 @@ class JwtServiceUtils {
         return Promise.resolve(cachedSigningKey);
     }
 
-    
+    protected async getDelegatedScope(userId: string, clientId: string, tenantId: string): Promise<Array<Scope>>{
+        const arrRefreshData: Array<RefreshData> = await authDao.getRefreshDataByUserId(userId);
+        const refreshData: RefreshData | undefined = arrRefreshData.find(
+            (d: RefreshData) => d.userId === userId && d.clientId === clientId && d.tenantId === tenantId
+        );
+        if(!refreshData){
+            return [];
+        }
+        let arrScopeNames = refreshData.scope.split(",");
+        let arrScope: Array<Scope> = [];
+        for(let i = 0; i < arrScopeNames.length; i++){
+            const scope: Scope | null = await scopeDao.getScopeByScopeName(arrScopeNames[i]);
+            if(scope){
+                arrScope.push(scope);
+            }
+        }
+        return arrScope;
+    }
+
     protected async getScopes(userId: string, tenantId: string): Promise<Array<Scope>> {
         const setScopeIds: Set<string> = new Set();
 
@@ -815,6 +868,8 @@ class JwtServiceUtils {
         const arrScope: Array<Scope> = await scopeDao.getScope(undefined, Array.from(setScopeIds));  
         return arrScope;
     }
+
+    
 
 }
 

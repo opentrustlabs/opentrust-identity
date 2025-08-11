@@ -428,6 +428,7 @@ type Client {
     clientTokenTTLSeconds: Int
     maxRefreshTokenCount: Int
     markForDelete: Boolean!
+    audience: String
 }
 
 
@@ -1374,6 +1375,7 @@ input ClientCreateInput {
     userTokenTTLSeconds: Int
     clientTokenTTLSeconds: Int
     maxRefreshTokenCount: Int
+    audience: String
 }
 
 input ClientUpdateInput {
@@ -1389,6 +1391,7 @@ input ClientUpdateInput {
     userTokenTTLSeconds: Int
     clientTokenTTLSeconds: Int
     maxRefreshTokenCount: Int
+    audience: String
 }
 
 input SigningKeyCreateInput {

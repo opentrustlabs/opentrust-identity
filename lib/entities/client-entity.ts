@@ -80,6 +80,12 @@ class ClientEntity extends Model {
                 primaryKey: false,
                 allowNull: false,
                 field: "markfordelete"
+            },
+            audience: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: true,
+                field: "audience"
             }
         }, 
 		{

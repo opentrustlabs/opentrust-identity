@@ -203,6 +203,7 @@ export const CLIENT_DETAIL_QUERY = gql(`
             clientTokenTTLSeconds
             maxRefreshTokenCount
             markForDelete
+            audience
         }
     }
 `);

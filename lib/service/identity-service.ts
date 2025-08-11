@@ -1072,14 +1072,14 @@ class IdentityService {
         })
         .then(
             (value: UpdateByQuery_Response) => {
-                console.log("recieved bulk query response");
-                console.log(JSON.stringify(value));
+                // TODO
+                // Log results
             }
         )
         .catch(
             (error) => {
-                console.log("error updating search index");
-                console.log(error);
+                // TODO
+                // Log error                
             }
         );
     }

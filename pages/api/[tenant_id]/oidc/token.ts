@@ -4,12 +4,11 @@ import ClientDao from '@/lib/dao/client-dao';
 import TenantDao from '@/lib/dao/tenant-dao';
 import { OIDCErrorResponseBody } from '@/lib/models/error';
 import ClientAuthValidationService from '@/lib/service/client-auth-validation-service';
-import { CLIENT_TYPE_SERVICE_ACCOUNT_ONLY, CLIENT_TYPE_USER_DELEGATED_PERMISSIONS_ONLY, GRANT_TYPE_AUTHORIZATION_CODE, GRANT_TYPE_CLIENT_CREDENTIALS, GRANT_TYPE_DEVICE_CODE, GRANT_TYPE_REFRESH_TOKEN, GRANT_TYPES_SUPPORTED, OIDC_TOKEN_ERROR_AUTHORIZATION_DECLINED, OIDC_TOKEN_ERROR_AUTHORIZATION_PENDING, OIDC_TOKEN_ERROR_BAD_VERIFICATION_CODE, OIDC_TOKEN_ERROR_EXPIRED_TOKEN, OIDC_TOKEN_ERROR_INVALID_CLIENT, OIDC_TOKEN_ERROR_INVALID_GRANT, OIDC_TOKEN_ERROR_INVALID_REQUEST, OIDC_TOKEN_ERROR_UNAUTHORIZED_CLIENT, OidcTokenErrorType, REFRESH_TOKEN_CLIENT_TYPE_DEVICE, REFRESH_TOKEN_CLIENT_TYPE_PKCE, REFRESH_TOKEN_CLIENT_TYPE_SECURE_CLIENT } from '@/utils/consts';
+import { CLIENT_TYPE_SERVICE_ACCOUNT, GRANT_TYPE_AUTHORIZATION_CODE, GRANT_TYPE_CLIENT_CREDENTIALS, GRANT_TYPE_DEVICE_CODE, GRANT_TYPE_REFRESH_TOKEN, GRANT_TYPES_SUPPORTED, OIDC_TOKEN_ERROR_AUTHORIZATION_DECLINED, OIDC_TOKEN_ERROR_AUTHORIZATION_PENDING, OIDC_TOKEN_ERROR_BAD_VERIFICATION_CODE, OIDC_TOKEN_ERROR_EXPIRED_TOKEN, OIDC_TOKEN_ERROR_INVALID_CLIENT, OIDC_TOKEN_ERROR_INVALID_GRANT, OIDC_TOKEN_ERROR_INVALID_REQUEST, OIDC_TOKEN_ERROR_UNAUTHORIZED_CLIENT, OidcTokenErrorType, REFRESH_TOKEN_CLIENT_TYPE_DEVICE, REFRESH_TOKEN_CLIENT_TYPE_PKCE, REFRESH_TOKEN_CLIENT_TYPE_SECURE_CLIENT } from '@/utils/consts';
 import { generateHash } from '@/utils/dao-utils';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { randomUUID } from 'crypto'; 
 import JwtService from '@/lib/service/jwt-service-utils';
-import { OIDCTokenResponse } from '@/lib/models/token-response';
 import { DaoFactory } from '@/lib/data-sources/dao-factory';
 
 
@@ -403,7 +402,7 @@ async function handleRefreshTokenGrant(tokenData: TokenData, res: NextApiRespons
         }
         return res.status(400).json(error);
     }
-    if(client.clientType === CLIENT_TYPE_SERVICE_ACCOUNT_ONLY){        
+    if(client.clientType === CLIENT_TYPE_SERVICE_ACCOUNT){        
         const error: OIDCErrorResponseBody = {
             error: OIDC_TOKEN_ERROR_INVALID_CLIENT,
             error_code: "0000727",
@@ -551,7 +550,7 @@ async function handleClientCredentialsGrant(tokenData: TokenData, res: NextApiRe
         return res.status(400).json(error);
     }
     
-    if(client.clientType === CLIENT_TYPE_USER_DELEGATED_PERMISSIONS_ONLY){
+    if(client.clientType !== CLIENT_TYPE_SERVICE_ACCOUNT){
         const error: OIDCErrorResponseBody = {
             error: OIDC_TOKEN_ERROR_INVALID_CLIENT,
             error_code: "0000734",
