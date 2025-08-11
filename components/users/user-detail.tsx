@@ -3,7 +3,7 @@ import { MarkForDeleteObjectType, StateProvinceRegion, User, UserMfaRel, UserTen
 import React, { useContext } from "react";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
 import Typography from "@mui/material/Typography";
-import { MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, NAME_ORDER_DISPLAY, NAME_ORDER_EASTERN, NAME_ORDER_WESTERN, TENANT_TYPE_ROOT_TENANT, USER_DELETE_SCOPE, USER_TENANT_REL_TYPE_PRIMARY, USER_UPDATE_SCOPE } from "@/utils/consts";
+import { MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, NAME_ORDER_DISPLAY, NAME_ORDER_EASTERN, NAME_ORDER_WESTERN, TENANT_TYPE_ROOT_TENANT, USER_DELETE_SCOPE, USER_TENANT_REL_TYPE_PRIMARY, USER_UNLOCK_SCOPE, USER_UPDATE_SCOPE } from "@/utils/consts";
 import BreadcrumbComponent from "../breadcrumbs/breadcrumbs";
 import { DetailPageContainer, DetailPageMainContentContainer, DetailPageRightNavContainer } from "../layout/detail-page-container";
 import Grid2 from "@mui/material/Grid2";
@@ -17,10 +17,12 @@ import PeopleIcon from '@mui/icons-material/People';
 import PolicyIcon from '@mui/icons-material/Policy';
 import DeleteForeverOutlinedIcon from '@mui/icons-material/DeleteForeverOutlined';
 import SettingsApplicationsIcon from '@mui/icons-material/SettingsApplications';
+import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
+import LockOpenOutlinedIcon from '@mui/icons-material/LockOpenOutlined';
 import { COUNTRY_CODES, CountryCodeDef, LANGUAGE_CODES, LanguageCodeDef } from "@/utils/i18n";
 import { getDefaultCountryCodeDef, getDefaultLanguageCodeDef } from "@/utils/client-utils";
 import { useMutation, useQuery } from "@apollo/client";
-import { FIDO_KEY_DELETION_MUTATION, TOPT_DELETION_MUTATION, USER_UPDATE_MUTATION } from "@/graphql/mutations/oidc-mutations";
+import { FIDO_KEY_DELETION_MUTATION, TOPT_DELETION_MUTATION, UNLOCK_USER_MUTATION, USER_UPDATE_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import { USER_DETAIL_QUERY, USER_MFA_REL_QUERY } from "@/graphql/queries/oidc-queries";
 import UserTenantConfiguration from "./user-tenant-configuration";
 import UserAuthorizationGroupConfiguration from "./user-authorization-group-configuration";
@@ -82,6 +84,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
     const [isMarkedForDelete, setIsMarkedForDelete] = React.useState<boolean>(user.markForDelete);
     const [userTenantRels, setUserTenantRels] = React.useState<Array<UserTenantRelView> | undefined>(undefined);
     const [showMFADeletionConfirmationDialog, setShowMFADeletionConfirmationDialog] = React.useState<boolean>(false);
+    const [showUnlockConfirmationDialog, setShowUnlockConfirmationDialog] = React.useState<boolean>(false);
     const [mfaTypeToDelete, setMfaTypeToDelete] = React.useState<string | null>(null);
     const [disableInputs] = React.useState<boolean>(user.markForDelete || !containsScope(USER_UPDATE_SCOPE, profile?.scope|| []));
     const [canDeleteUser] = React.useState<boolean>(containsScope(USER_DELETE_SCOPE, profile?.scope || []));
@@ -139,6 +142,22 @@ const UserDetail: React.FC<UserDetailProps> = ({
         },
         refetchQueries: [USER_DETAIL_QUERY]
     });
+
+    const [unlockUserMutation] = useMutation(UNLOCK_USER_MUTATION, {
+        variables: {
+            userId: user.userId
+        },
+        onCompleted() {
+            setShowMutationBackdrop(false);
+            setShowMutationSnackbar(true);
+            setMarkDirty(false);
+        },
+        onError(error) {
+            setShowMutationBackdrop(false);
+            setErrorMessage(error.message);
+        },
+        refetchQueries: [USER_DETAIL_QUERY]
+    })
 
     // HANDLER FUNCTIONS
     const hasPrimaryTenant = (rels: Array<UserTenantRelView>): boolean => {
@@ -200,6 +219,32 @@ const UserDetail: React.FC<UserDetailProps> = ({
                     </DialogActions>
                     
                 </Dialog>
+            }
+            {showUnlockConfirmationDialog &&
+                <Dialog
+                    open={showUnlockConfirmationDialog}
+                    onClose={() => setShowUnlockConfirmationDialog(false)}
+                    maxWidth="sm"
+                    fullWidth={true}
+                >
+                    <DialogContent>
+                        <Typography>Confirm that you want to unlock this user</Typography>
+                    </DialogContent>
+                    <DialogActions>
+                        <Button onClick={() => setShowUnlockConfirmationDialog(false)}>Cancel</Button>
+                        <Button
+                            onClick={() => {
+                                setShowMutationBackdrop(true);
+                                setShowUnlockConfirmationDialog(false);
+                                unlockUserMutation();
+                            }}
+                        >
+                            Confirm
+                        </Button>
+                    </DialogActions>
+
+                </Dialog>
+
             }
             <DetailPageContainer>
                 <DetailPageMainContentContainer>
@@ -278,16 +323,38 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                                 </Grid2>
                                                 <Grid2 alignContent={"center"} size={10}>Locked</Grid2>
                                                 <Grid2 size={2}>
-                                                    <Checkbox                                                         
-                                                        name="locked"
-                                                        checked={userInput.locked}
-                                                        disabled={!user.locked || disableInputs === true}
-                                                        onChange={(_, checked) => {
-                                                            userInput.locked = checked;
-                                                            setMarkDirty(true); 
-                                                            setUserInput({...userInput});
-                                                        }}
-                                                    />
+                                                    <span style={{ padding: "9px" }}>
+                                                        {user.locked &&
+                                                            <LockOutlinedIcon
+                                                                sx={{
+                                                                    cursor: user.userId !== profile?.userId && containsScope(USER_UNLOCK_SCOPE, profile?.scope) ? "pointer" : "default",
+                                                                    backgroundColor: "red",
+                                                                    color: "white",
+                                                                    padding: "3px",
+                                                                    height: "22px",
+                                                                    width: "22px",
+                                                                    borderRadius: "4px"
+                                                                }}
+                                                                onClick={() => {
+                                                                    if (user.userId !== profile?.userId && containsScope(USER_UNLOCK_SCOPE, profile?.scope)) {
+                                                                        setShowUnlockConfirmationDialog(true);
+                                                                    }
+                                                                }}
+                                                            />
+                                                        }
+                                                        {!user.locked &&
+                                                            <LockOpenOutlinedIcon
+                                                                sx={{
+                                                                    backgroundColor: "green",
+                                                                    color: "white",
+                                                                    padding: "3px",
+                                                                    height: "22px",
+                                                                    width: "22px",
+                                                                    borderRadius: "4px"
+                                                                }}
+                                                            />
+                                                        }
+                                                    </span>
                                                 </Grid2>
                                             </Grid2>
                                         </Grid2>

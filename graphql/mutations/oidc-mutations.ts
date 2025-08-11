@@ -1042,3 +1042,9 @@ export const DELETE_RECOVERY_EMAIL_MUTATION = gql(`
         deleteRecoveryEmail(userId: $userId)
     }
 `) ;
+
+export const UNLOCK_USER_MUTATION = gql(`
+    mutation unlockUser($userId: String!) {
+        unlockUser(userId: $userId)
+    }
+`);

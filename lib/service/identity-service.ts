@@ -17,7 +17,7 @@ import { VerifiedRegistrationResponse, verifyRegistrationResponse, verifyAuthent
 import { validatePasswordFormat } from "@/utils/password-utils";
 import OIDCServiceUtils from "./oidc-service-utils";
 import { WellknownConfig } from "../models/wellknown-config";
-import { authorizeByScopeAndTenant, ServiceAuthorizationWrapper } from "@/utils/authz-utils";
+import { authorizeByScopeAndTenant, containsScope, ServiceAuthorizationWrapper } from "@/utils/authz-utils";
 import client from "@/components/apollo-client/apollo-client";
 import { error } from "console";
 
@@ -92,8 +92,16 @@ class IdentityService {
     
     public async updateUser(user: User): Promise<User> {
 
-        if(user.userId !== this.oidcContext.portalUserProfile?.userId){
-            const authResult = authorizeByScopeAndTenant(this.oidcContext, [USER_UPDATE_SCOPE], null);
+        // If the user is making the update request on their own behalf, they still need user.update scope
+        if(user.userId === this.oidcContext.portalUserProfile?.userId){
+            const isAuthorized: boolean = containsScope(USER_UPDATE_SCOPE, this.oidcContext.portalUserProfile.scope);
+            if(!isAuthorized){
+                throw new GraphQLError("ERROR_NOT_AUTHORIZED_FOR_USER_UPDATE");
+            }
+        }
+        // Otherwise somebody is making the request on the user's behalf.
+        else{
+            const authResult = authorizeByScopeAndTenant(this.oidcContext, USER_UPDATE_SCOPE, null);
             if(!authResult.isAuthorized){
                 throw new GraphQLError(authResult.errorMessage || "ERROR");
             }
