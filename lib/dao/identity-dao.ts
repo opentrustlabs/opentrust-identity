@@ -1,4 +1,4 @@
-import { AuthenticationGroup, User, AuthorizationGroup, UserFailedLogin, UserTenantRel, UserCredential, UserMfaRel, Fido2Challenge, UserRegistrationState, UserAuthenticationState, UserTermsAndConditionsAccepted, UserRecoveryEmail } from "@/graphql/generated/graphql-types";
+import { AuthenticationGroup, User, AuthorizationGroup, UserFailedLogin, UserTenantRel, UserCredential, UserMfaRel, Fido2Challenge, UserRegistrationState, UserAuthenticationState, UserTermsAndConditionsAccepted, UserRecoveryEmail, ProfileEmailChangeState } from "@/graphql/generated/graphql-types";
 
 export type UserLookupType = "id" | "email" | "phone";
 abstract class IdentityDao {
@@ -135,6 +135,14 @@ abstract class IdentityDao {
     abstract updateUserRegistrationState(userRegistrationState: UserRegistrationState): Promise<UserRegistrationState>;
 
     abstract deleteUserRegistrationState(userRegistrationState: UserRegistrationState): Promise<UserRegistrationState>;
+
+    abstract getProfileEmailChangeStates(changeStateToken: string): Promise<Array<ProfileEmailChangeState>>;
+
+    abstract createProfileEmailChangeStates(arrEmailChangeStates: Array<ProfileEmailChangeState>): Promise<Array<ProfileEmailChangeState>>;
+    
+    abstract updateProfileEmailChangeState(profileEmailChangeState: ProfileEmailChangeState): Promise<ProfileEmailChangeState>;
+
+    abstract deleteProfileEmailChangeState(profileEmailChangeState: ProfileEmailChangeState): Promise<void>;
 
     abstract deleteExpiredData(): Promise<void>;
 

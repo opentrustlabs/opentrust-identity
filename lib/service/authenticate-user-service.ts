@@ -951,8 +951,8 @@ class AuthenticateUserService extends IdentityService {
         const userCredential: UserCredential = this.generateUserCredential(user.userId, password, tenantPasswordConfig.passwordHashingAlgorithm);
         await identityDao.addUserCredential(userCredential);
         
-        await this.updateObjectSearchIndex(tenant, user, "PRIMARY");
-        await this.updateRelSearchIndex(tenant.tenantId, tenant.tenantId, user, USER_TENANT_REL_TYPE_PRIMARY);
+        await this.updateObjectSearchIndex(tenant, user);
+        await this.updateRelSearchIndex(tenant.tenantId, tenant.tenantId, user);
         
         arrUserAuthenticationStates[index].authenticationStateStatus = STATUS_COMPLETE;
         await identityDao.updateUserAuthenticationState(arrUserAuthenticationStates[index]);

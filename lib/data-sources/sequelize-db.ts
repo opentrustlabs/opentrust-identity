@@ -55,6 +55,7 @@ import UserEmailRecoveryEntity from "../entities/user-email-recovery-entity";
 import SystemSettingsEntity from "../entities/system-settings-entity";
 import AuthorizationDeviceCodeDataEntity from "../entities/authorization-device-code-data-entity";
 import SecretShareEntity from "../entities/secret-share-entity";
+import UserProfileChangeEmailStateEntity from "../entities/user-profile-email-change-state-entity";
 
 
 const {
@@ -184,6 +185,7 @@ class DBDriver {
             UserEmailRecoveryEntity.initModel(global.sequelize);
             AuthorizationDeviceCodeDataEntity.initModel(global.sequelize);
             SecretShareEntity.initModel(global.sequelize);
+            UserProfileChangeEmailStateEntity.initModel(global.sequelize);
         } 
 
         return global.sequelize;

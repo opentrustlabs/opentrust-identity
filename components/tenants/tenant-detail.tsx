@@ -352,7 +352,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                                     onChange={(_, checked: boolean) => {tenantInput.enabled = checked; setTenantInput({...tenantInput}); setOverviewDirty(true);}}
                                                 />
                                             </Grid2>                                            
-                                            <Grid2 alignContent={"center"} size={10}>Allow unlimited rate</Grid2>
+                                            <Grid2 alignContent={"center"} size={10}>Allow unlimited API rates</Grid2>
                                             <Grid2 size={2}>
                                                 <Checkbox 
                                                     disabled={disableInputs}

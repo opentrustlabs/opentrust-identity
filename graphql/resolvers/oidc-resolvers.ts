@@ -995,7 +995,28 @@ const resolvers: Resolvers = {
         swapPrimaryAndRecoveryEmail: async(_: any, { }, oidcContext) => {
             const service: IdentityService = new IdentityService(oidcContext);
             return service.swapPrimaryAndRecoveryEmail();
-        }
+        },
+        deleteRecoveryEmail: async(_: any, { userId }, oidcContext) => {
+            const service: IdentityService = new IdentityService(oidcContext);
+            await service.deleteRecoveryEmail(userId);
+            return true;
+        },
+        profileHandleEmailChange: async(_: any, { newEmail }, oidcContext) => {
+            const service: RegisterUserService = new RegisterUserService(oidcContext);
+            return service.profileHandleEmailChange(newEmail);
+        },
+        profileAddRecoveryEmail: async(_: any, { recoveryEmail }, oidcContext) => {
+            const service: RegisterUserService = new RegisterUserService(oidcContext);
+            return service.profileAddRecoveryEmail(recoveryEmail);
+        },
+        profileValidateEmail: async(_: any, { token, changeEmailSessionToken }, oidcContext) => {
+            const service: RegisterUserService = new RegisterUserService(oidcContext);
+            return service.profileValidateEmail(token, changeEmailSessionToken);
+        },
+        profileCancelEmailChange: async(_: any, { changeEmailSessionToken }, oidcContext) => {
+            const service: RegisterUserService = new RegisterUserService(oidcContext);
+            return service.profileCancelEmailChange(changeEmailSessionToken);
+        },
     },
     PortalUserProfile: {
         recoveryEmail: async(profile: PortalUserProfile, _: any, oidcContext: OIDCContext) => {

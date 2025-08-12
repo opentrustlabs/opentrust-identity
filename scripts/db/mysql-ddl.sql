@@ -655,6 +655,19 @@ create TABLE user_registration_state (
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid) 
 );
 
+create TABLE user_profile_email_change_state (
+    userid VARCHAR(64) NOT NULL,
+    email VARCHAR(128) NOT NULL,
+    emailchangestate VARCHAR(64) NOT NULL,
+    changeemailsessiontoken VARCHAR(128) NOT NULL,
+    changeorder INT NOT NULL,
+    changestatestatus VARCHAR(32) NOT NULL,
+    expiresatms BIGINT NOT NULL,
+    isprimaryemail BOOLEAN NOT NULL,
+    PRIMARY KEY (userid, changeemailsessiontoken, emailchangestate),
+    FOREIGN KEY (userid) REFERENCES user(userid) 
+);
+
 create TABLE captcha_config (
     alias VARCHAR(256) PRIMARY KEY,
     projectid VARCHAR(128),

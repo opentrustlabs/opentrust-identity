@@ -1,4 +1,4 @@
-import { User, AuthenticationGroup, AuthorizationGroup, UserTenantRel, UserCredential, UserMfaRel, Fido2Challenge, UserAuthenticationState, UserRegistrationState, UserFailedLogin, UserTermsAndConditionsAccepted, UserRecoveryEmail } from "@/graphql/generated/graphql-types";
+import { User, AuthenticationGroup, AuthorizationGroup, UserTenantRel, UserCredential, UserMfaRel, Fido2Challenge, UserAuthenticationState, UserRegistrationState, UserFailedLogin, UserTermsAndConditionsAccepted, UserRecoveryEmail, ProfileEmailChangeState } from "@/graphql/generated/graphql-types";
 import IdentityDao, { UserLookupType } from "../../identity-dao";
 import UserAuthorizationGroupRelEntity from "@/lib/entities/authorization-group-user-rel-entity";
 import AuthorizationGroupEntity from "@/lib/entities/authorization-group-entity";
@@ -17,6 +17,7 @@ import UserRegistrationStateEntity from "@/lib/entities/user-registration-state-
 import UserTermsAndConditionsAcceptedEntity from "@/lib/entities/user-terms-and-conditions-accepted-entity";
 import UserEmailRecoveryEntity from "@/lib/entities/user-email-recovery-entity";
 import UserDuressCredentialEntity from "@/lib/entities/user-duress-credential";
+import UserProfileChangeEmailStateEntity from "@/lib/entities/user-profile-email-change-state-entity";
 
 
 class DBIdentityDao extends IdentityDao {
@@ -580,6 +581,12 @@ class DBIdentityDao extends IdentityDao {
             }
         });
 
+        await sequelize.models.userProfileEmailChangeState.destroy({
+            where: {
+                userId: userId
+            }
+        });
+        
         await sequelize.models.user.destroy({
             where: {
                 userId: userId
@@ -806,6 +813,14 @@ class DBIdentityDao extends IdentityDao {
             }
         });
 
+        await sequelize.models.userProfileEmailChangeState.destroy({
+            where: {
+                expiresAtMS: {
+                    [Op.lt]: Date.now()
+                }
+            }
+        })
+
     }
 
     public async getUserRecoveryEmail(userId: string): Promise<UserRecoveryEmail | null>{
@@ -865,6 +880,48 @@ class DBIdentityDao extends IdentityDao {
         await sequelize.models.userDuressCredential.destroy({
             where: {
                 userId: userId
+            }
+        });
+        return Promise.resolve();
+    }
+
+    public async getProfileEmailChangeStates(changeStateToken: string): Promise<Array<ProfileEmailChangeState>>{
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        const arr: Array<UserProfileChangeEmailStateEntity> = await sequelize.models.userProfileEmailChangeState.findAll({
+            where: {
+                changeEmailSessionToken: changeStateToken
+            }
+        });
+        return arr.map((entity: UserProfileChangeEmailStateEntity) => entity.dataValues);
+    }
+    
+    public async createProfileEmailChangeStates(arrEmailChangeStates: Array<ProfileEmailChangeState>): Promise<Array<ProfileEmailChangeState>>{
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        for(let i = 0; i < arrEmailChangeStates.length; i++){
+            await sequelize.models.userProfileEmailChangeState.create(arrEmailChangeStates[i]);
+        }
+        return arrEmailChangeStates;
+    }
+    
+    public async updateProfileEmailChangeState(profileEmailChangeState: ProfileEmailChangeState): Promise<ProfileEmailChangeState>{
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.userProfileEmailChangeState.update(profileEmailChangeState, {
+            where: {
+                userId: profileEmailChangeState.userId,
+                emailChangeState: profileEmailChangeState.emailChangeState,
+                changeEmailSessionToken: profileEmailChangeState.changeEmailSessionToken
+            }
+        });
+        return profileEmailChangeState;
+    }
+
+    public async deleteProfileEmailChangeState(profileEmailChangeState: ProfileEmailChangeState): Promise<void>{
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.userProfileEmailChangeState.destroy({
+            where: {
+                userId: profileEmailChangeState.userId,
+                emailChangeState: profileEmailChangeState.emailChangeState,
+                changeEmailSessionToken: profileEmailChangeState.changeEmailSessionToken
             }
         });
         return Promise.resolve();

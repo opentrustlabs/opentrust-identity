@@ -148,11 +148,14 @@ type Mutation {
     unlockUser(userId: String!): Boolean
     # Users can add recovery emails or swap emails only for themselves. The user id will be taken from
     # the requestors access token. This will return a registration response for entering
-    # the validation token sent to their email. 
-    addRecoveryEmail(recoveryEmail: String!): UserRegistrationStateResponse!
+    # the validation token sent to their email.
+    profileHandleEmailChange(newEmail: String!): ProfileEmailChangeResponse!
+    profileValidateEmail(token: String!, changeEmailSessionToken: String!): ProfileEmailChangeResponse!
+    profileCancelEmailChange(changeEmailSessionToken: String!): ProfileEmailChangeResponse!    
+    profileAddRecoveryEmail(recoveryEmail: String!): ProfileEmailChangeResponse!
     swapPrimaryAndRecoveryEmail: Boolean!
     # If user id is absent then take the user id of the user requesting the deletion.    
-    deleteRecoveryEmail(userId: String): Boolean!
+    deleteRecoveryEmail(userId: String!): Boolean!
     
 
     ## Authentication Flows
@@ -953,6 +956,34 @@ type UserRegistrationState {
     preAuthToken: String
 	expiresAtMs: Float!
     deviceCodeId: String
+}
+
+enum EmailChangeState {
+    ENTER_EMAIL
+    ERROR
+    VALIDATE_EMAIL
+    COMPLETED
+}
+
+type ProfileEmailChangeError {
+    errorCode: String!
+    errorMessage: String!
+}
+
+type ProfileEmailChangeState {
+    changeEmailSessionToken: String!
+    emailChangeState: EmailChangeState!
+    email: String!
+    userId: String!
+    changeOrder: Int!
+    changeStateStatus: String!
+    expiresAtMs: Float!
+    isPrimaryEmail: Boolean!
+}
+
+type ProfileEmailChangeResponse {
+    profileEmailChangeState: ProfileEmailChangeState!
+    profileEmailChangeError: ProfileEmailChangeError!
 }
 
 

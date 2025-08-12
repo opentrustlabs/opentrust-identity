@@ -388,15 +388,43 @@ class IdentityService {
             throw new GraphQLError("ERROR_NO_RECOVERY_EMAIL_EXISTS");
         }
 
+        // Swap both the emails and the verification status.
         const userEmail = user.email;
+        const emailVerified = user.emailVerified;
+
         user.email = userRecoveryEmail.email;
+        user.emailVerified = userRecoveryEmail.emailVerified;
         userRecoveryEmail.email = userEmail;
+        userRecoveryEmail.emailVerified = emailVerified;
+        
         await identityDao.updateUser(user);
         await identityDao.updateRecoveryEmail(userRecoveryEmail);
         this.updateSearchIndexUserDocuments(user);
         return true;
 
     }
+
+    public async deleteRecoveryEmail(userId: string): Promise<void> {
+
+        // If the user is making the update request on their own behalf, they still need user.update scope
+        if(userId === this.oidcContext.portalUserProfile?.userId){
+            const isAuthorized: boolean = containsScope(USER_UPDATE_SCOPE, this.oidcContext.portalUserProfile.scope);
+            if(!isAuthorized){
+                throw new GraphQLError("ERROR_NOT_AUTHORIZED_FOR_USER_UPDATE");
+            }
+        }
+        // Otherwise somebody is making the request on the user's behalf.
+        else{
+            const authResult = authorizeByScopeAndTenant(this.oidcContext, USER_UPDATE_SCOPE, null);
+            if(!authResult.isAuthorized){
+                throw new GraphQLError(authResult.errorMessage || "ERROR");
+            }
+        }
+        await identityDao.deleteRecoveryEmail(userId);
+        return Promise.resolve();
+
+    }
+
 
     // ##########################################################################
     // 
