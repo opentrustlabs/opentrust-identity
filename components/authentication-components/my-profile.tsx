@@ -174,7 +174,6 @@ const MyProfile: React.FC = () => {
         },
         skip: userTenantId === null,
         onCompleted(data) {
-            console.log(data);
             if (data && data.getTenantMetaData) {
                 tenantBean.setTenantMetaData(data.getTenantMetaData);
             }
@@ -349,9 +348,37 @@ const MyProfile: React.FC = () => {
                         <DialogContent>
                             <EmailEdit 
                                 onCancel={() => setShowEmailEditDialog(false)}
-                                onError={(message) => setErrorMessage(message)}
+                                isPrimaryEmail={true}
                                 onSuccess={() => {
                                     setShowEmailEditDialog(false);
+                                    refetch();
+                                }}
+                                userId={userInput.userId}
+                                stateTransitionListener={(stateTransition: StateTransition) => {
+                                    if(stateTransition === StateTransition.STATE_CHANGE_SUBMITTED){
+                                        setShowMutationBackdrop(true);
+                                    }
+                                    else{
+                                        setShowMutationBackdrop(false);
+                                    }
+                                }}
+                            />
+                        </DialogContent>
+
+                    </Dialog>
+                }
+                {showAddRecoveryEmailDialog &&
+                    <Dialog
+                        open={showAddRecoveryEmailDialog}
+                        maxWidth="sm"
+                        fullWidth={true}
+                    >
+                        <DialogContent>
+                            <EmailEdit
+                                onCancel={() => setShowAddRecoveryEmailDialog(false)}
+                                isPrimaryEmail={false}
+                                onSuccess={() => {
+                                    setShowAddRecoveryEmailDialog(false);
                                     refetch();
                                 }}
                                 userId={userInput.userId}
@@ -533,7 +560,7 @@ const MyProfile: React.FC = () => {
                                                 <MailOutlineOutlinedIcon 
                                                     sx={{cursor: "pointer"}}
                                                     onClick={() => {
-
+                                                        setShowAddRecoveryEmailDialog(true);
                                                     }}
                                                 />
                                             </Grid2>

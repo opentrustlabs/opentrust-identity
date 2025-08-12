@@ -1,6 +1,6 @@
 "use client";
 import { EmailChangeState, PortalUserProfile, ProfileEmailChangeResponse, ProfileEmailChangeState } from "@/graphql/generated/graphql-types";
-import { PROFILE_CANCEL_EMAIL_CHANGE_MUTATION, PROFILE_HANDLE_EMAIL_CHANGE_MUTATION, PROFILE_VALIDATE_EMAIL_MUTATION } from "@/graphql/mutations/oidc-mutations";
+import { PROFILE_ADD_RECOVERY_EMAIL_MUTATION, PROFILE_CANCEL_EMAIL_CHANGE_MUTATION, PROFILE_HANDLE_EMAIL_CHANGE_MUTATION, PROFILE_VALIDATE_EMAIL_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import { useMutation } from "@apollo/client";
 import { Alert, Button, Grid2, Stack, TextField, Typography } from "@mui/material";
 import React from "react";
@@ -12,16 +12,16 @@ export enum StateTransition {
 
 export interface EmailEditProps {
     userId: string,
+    isPrimaryEmail: boolean,
     onCancel: () => void,
-    onError: (message: string) => void,
     onSuccess: () => void,
     stateTransitionListener: (stateTransition: StateTransition) => void,
 };
 
 const EmailEdit: React.FC<EmailEditProps> = ({
     userId,
+    isPrimaryEmail,
     onCancel,
-    onError,
     onSuccess,
     stateTransitionListener
 }) => {
@@ -60,6 +60,23 @@ const EmailEdit: React.FC<EmailEditProps> = ({
         }
     });
 
+    const [profileAddRecoveryEmailMutation] = useMutation(PROFILE_ADD_RECOVERY_EMAIL_MUTATION, {
+        onCompleted(data) {
+            stateTransitionListener(StateTransition.STATE_CHANGE_RECEIVED);
+            const profileEmailChangeResponse: ProfileEmailChangeResponse = data.profileAddRecoveryEmail;
+            if(profileEmailChangeResponse.profileEmailChangeState.emailChangeState === EmailChangeState.Error){
+                setErrorMessage(profileEmailChangeResponse.profileEmailChangeError.errorCode);
+            }
+            else{
+                setProfileEmailChangeState(profileEmailChangeResponse.profileEmailChangeState);
+            }
+        },
+        onError(error) {
+            stateTransitionListener(StateTransition.STATE_CHANGE_RECEIVED);
+            setErrorMessage(error.message);
+        }
+    });
+
     const [profileValidateEmail] = useMutation(PROFILE_VALIDATE_EMAIL_MUTATION, {
         onCompleted(data) {
             stateTransitionListener(StateTransition.STATE_CHANGE_RECEIVED);
@@ -67,12 +84,12 @@ const EmailEdit: React.FC<EmailEditProps> = ({
             if(profileEmailChangeResponse.profileEmailChangeState.emailChangeState === EmailChangeState.Error){
                 setErrorMessage(profileEmailChangeResponse.profileEmailChangeError.errorCode);
             }
-            
-            setProfileEmailChangeState(profileEmailChangeResponse.profileEmailChangeState);
-            if(profileEmailChangeResponse.profileEmailChangeState.emailChangeState === EmailChangeState.Completed){
-                onSuccess();
-            }
-            
+            else{
+                setProfileEmailChangeState(profileEmailChangeResponse.profileEmailChangeState);
+                if(profileEmailChangeResponse.profileEmailChangeState.emailChangeState === EmailChangeState.Completed){
+                    onSuccess();
+                }
+            }            
         },
         onError(error) {
             stateTransitionListener(StateTransition.STATE_CHANGE_RECEIVED);
@@ -93,7 +110,9 @@ const EmailEdit: React.FC<EmailEditProps> = ({
             }
             {profileEmailChangeState.emailChangeState === EmailChangeState.EnterEmail &&
                 <Grid2 container size={12} spacing={1}>
-                    <Grid2 fontWeight={"bold"} fontSize={"1.0em"} size={12}>Enter your new email</Grid2>
+                    <Grid2 fontWeight={"bold"} fontSize={"1.0em"} size={12}>
+                        {isPrimaryEmail ? "Enter your new email" : "Enter your recovery email"}
+                    </Grid2>
                     <TextField
                         name="newEmail"
                         fullWidth={true}
@@ -108,11 +127,20 @@ const EmailEdit: React.FC<EmailEditProps> = ({
                             disabled={newEmail.length < 7 || newEmail.indexOf("@") < 1}
                             onClick={() => {
                                 stateTransitionListener(StateTransition.STATE_CHANGE_SUBMITTED);
-                                profileHandleEmailChangeMutation({
-                                    variables: {
-                                        newEmail: newEmail
-                                    }
-                                });
+                                if(isPrimaryEmail){
+                                    profileHandleEmailChangeMutation({
+                                        variables: {
+                                            newEmail: newEmail
+                                        }
+                                    });
+                                }
+                                else{
+                                    profileAddRecoveryEmailMutation({
+                                        variables: {
+                                            recoveryEmail: newEmail
+                                        }
+                                    });
+                                }
                             }}
                         >
                             Next
