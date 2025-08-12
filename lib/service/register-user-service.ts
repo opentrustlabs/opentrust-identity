@@ -1,6 +1,6 @@
 import { OIDCContext } from "@/graphql/graphql-context";
 import IdentityDao from "../dao/identity-dao";
-import { Fido2KeyRegistrationInput, Tenant, TenantPasswordConfig, TotpResponse, User, UserCreateInput, UserCredential, Fido2KeyAuthenticationInput, TenantRestrictedAuthenticationDomainRel, PreAuthenticationState, AuthorizationReturnUri, UserRegistrationStateResponse, UserRegistrationState, RegistrationState, UserTermsAndConditionsAccepted, TenantLegacyUserMigrationConfig, SystemSettings, FederatedOidcProvider, AuthorizationDeviceCodeData, DeviceCodeAuthorizationStatus, UserRecoveryEmail } from "@/graphql/generated/graphql-types";
+import { Fido2KeyRegistrationInput, Tenant, TenantPasswordConfig, TotpResponse, User, UserCreateInput, UserCredential, Fido2KeyAuthenticationInput, TenantRestrictedAuthenticationDomainRel, PreAuthenticationState, AuthorizationReturnUri, UserRegistrationStateResponse, UserRegistrationState, RegistrationState, UserTermsAndConditionsAccepted, TenantLegacyUserMigrationConfig, SystemSettings, FederatedOidcProvider, AuthorizationDeviceCodeData, DeviceCodeAuthorizationStatus, UserRecoveryEmail, ProfileEmailChangeResponse, ProfileEmailChangeState, EmailChangeState } from "@/graphql/generated/graphql-types";
 import { DaoFactory } from "../data-sources/dao-factory";
 import TenantDao from "../dao/tenant-dao";
 import { GraphQLError } from "graphql/error";
@@ -162,200 +162,6 @@ class RegisterUserService extends IdentityService {
         return Promise.resolve(response);
     }    
 
-    /**
-     * Checks
-     * 1.   Does the tenant exist
-     * 2.   Is the tenant enabled
-     * 3.   Does the tenant allow user self registration if this is a registration flow?
-     * 4.   Does a user with the given email already exist?
-     * 5.   Is the password valid
-     * 6.   Is the domain allowed by the tenant or are there resitricted domains for this tenant?
-     * 7.   Do the rest of the required data values exist are are they the correct length, format, etc.?
-     * @param userCreateInput 
-     * @param tenantId 
-     * @param isRegistration 
-     * @returns 
-     */
-    protected async _createUser(userCreateInput: UserCreateInput, tenantId: string, isRegistration: boolean): Promise<{ user: User, tenant: Tenant, tenantPasswordConfig: TenantPasswordConfig }> {
-
-        // Always need to make sure that we lower-case the email for consistency purposes.
-        userCreateInput.email = userCreateInput.email.toLowerCase();
-
-        const tenant: Tenant | null = await tenantDao.getTenantById(tenantId);
-        if (!tenant) {
-            throw new GraphQLError("ERROR_TENANT_DOES_NOT_EXIST");
-        }
-        if (tenant.enabled === false || tenant.markForDelete === true) {
-            throw new GraphQLError("ERROR_TENANT_IS_NOT_ENABLED");
-        }
-        if (isRegistration && tenant.allowUserSelfRegistration === false) {
-            throw new GraphQLError("ERROR_TENANT_DOES_NOT_ALLOW_USER_SELF_REGISTRATION");
-        }
-        if(isRegistration){
-            if(tenant.registrationRequireTermsAndConditions && !userCreateInput.termsAndConditionsAccepted){
-                throw new GraphQLError("ERROR_TERMS_AND_CONDITIONS_NOT_ACCEPTED");
-            }
-        }
-
-        const existingUser: User | null = await identityDao.getUserBy("email", userCreateInput.email);
-        if (existingUser) {
-            throw new GraphQLError("ERROR_USER_WITH_EMAIL_ALREADY_EXISTS");
-        }
-
-        // Need to check to see if the tenant allows for migration of users from another
-        // system. If so, then if we do not find the user's email in the local data store
-        // we need to look to the legacy system as well. Of course, the admin of the
-        // IAM tool may not have configured any URLs for migration, so we need to be careful
-        // here too. If allow-migration is true, but there is no legacy config, or the URLs are
-        // null, then proceed as normal.
-        let tenantLegacyUserMigrationConfig: TenantLegacyUserMigrationConfig | null = null;
-        if(tenant.migrateLegacyUsers === true){
-            tenantLegacyUserMigrationConfig = await tenantDao.getLegacyUserMigrationConfiguration(tenant.tenantId);
-            if(tenantLegacyUserMigrationConfig && tenantLegacyUserMigrationConfig.usernameCheckUri && tenantLegacyUserMigrationConfig.authenticationUri && tenantLegacyUserMigrationConfig.userProfileUri){
-                const authToken = await jwtServiceUtils.getAuthTokenForOutboundCalls();
-                const userExistsInLegacySystem: boolean = await oidcServiceUtils.legacyUsernameCheck(tenantLegacyUserMigrationConfig.usernameCheckUri, userCreateInput.email.toLowerCase(), authToken || "");
-                if(userExistsInLegacySystem){
-                    throw new GraphQLError("ERROR_USER_ALREADY_EXISTS");
-                }
-            }
-        }
-
-        const tenantPasswordConfig: TenantPasswordConfig = await tenantDao.getTenantPasswordConfig(tenantId) || DEFAULT_TENANT_PASSWORD_CONFIGURATION;
-        const isValidPassword: boolean = await this.checkPassword(userCreateInput.password, tenantPasswordConfig);
-        if (!isValidPassword) {
-            throw new GraphQLError("INVALID_PASSWORD_EITHER_PROHIBITED_OR_INVALID_FORMAT");
-        }
-
-        const domain: string = getDomainFromEmail(userCreateInput.email);
-        if(domain.length === 0){
-            throw new GraphQLError("ERROR_INVALID_EMAIL_DOMAIN");
-        }
-        // Cannot create users who are tied to an existing external oidc provider. These types of user can ONLY be created
-        // by going through SSO with their provider.
-        const federatedOIDCProvider: FederatedOidcProvider | null = await federatedOIDCProvderDao.getFederatedOidcProviderByDomain(domain);
-        if(federatedOIDCProvider){
-            throw new GraphQLError("ERROR_DOMAIN_IS_MANAGED_BY_EXTERNAL_OIDC_PROVIDER");
-        }
-
-        const arrRestrictedDomainRel: Array<TenantRestrictedAuthenticationDomainRel> = await tenantDao.getDomainsForTenantRestrictedAuthentication(tenantId);
-        if (arrRestrictedDomainRel.length > 0) {
-            const restrictedDomainRel: TenantRestrictedAuthenticationDomainRel | undefined = arrRestrictedDomainRel.find(
-                (rel: TenantRestrictedAuthenticationDomainRel) => rel.domain === domain
-            );
-            if (restrictedDomainRel === undefined) {
-                throw new GraphQLError("ERROR_TENANT_HAS_RESTRICTED_EMAIL_DOMAINS")
-            }
-        }
-
-
-        let userEnabled = true;
-        let emailVerified = true;
-        if (isRegistration && tenant.verifyEmailOnSelfRegistration) {
-            userEnabled = false;
-            emailVerified = false;
-        }
-
-        const user: User = {
-            domain: domain,
-            email: userCreateInput.email,
-            emailVerified: emailVerified,
-            enabled: userEnabled,
-            firstName: userCreateInput.firstName,
-            lastName: userCreateInput.lastName,
-            locked: false,
-            nameOrder: userCreateInput.nameOrder,
-            userId: randomUUID().toString(),
-            address: userCreateInput.address,
-            addressLine1: userCreateInput.addressLine1,
-            city: userCreateInput.city,
-            postalCode: userCreateInput.postalCode,
-            stateRegionProvince: userCreateInput.stateRegionProvince,
-            countryCode: userCreateInput.countryCode,
-            middleName: userCreateInput.middleName,
-            phoneNumber: userCreateInput.phoneNumber,
-            preferredLanguageCode: userCreateInput.preferredLanguageCode,
-            federatedOIDCProviderSubjectId: userCreateInput.federatedOIDCProviderSubjectId,
-            markForDelete: false
-        }
-
-        await identityDao.createUser(user);
-        await identityDao.assignUserToTenant(tenant.tenantId, user.userId, "PRIMARY");
-        if(isRegistration && userCreateInput.termsAndConditionsAccepted){
-            const userTermsAndConditionsAccepted: UserTermsAndConditionsAccepted = {
-                acceptedAtMs: Date.now(),
-                tenantId: tenant.tenantId,
-                userId: user.userId
-            };
-            await identityDao.addUserTermsAndConditionsAccepted(userTermsAndConditionsAccepted);
-        }
-        const userCredential: UserCredential = this.generateUserCredential(user.userId, userCreateInput.password, tenantPasswordConfig.passwordHashingAlgorithm);
-        await identityDao.addUserCredential(userCredential);
-
-        if (isRegistration && tenant.verifyEmailOnSelfRegistration) {
-            const token: string = generateRandomToken(8, "hex").toUpperCase();
-            await identityDao.saveEmailConfirmationToken(user.userId, token);
-            // TODO
-            // Send email to the user with the token value.
-        }
-        await this.updateObjectSearchIndex(tenant, user, "PRIMARY");
-        await this.updateRelSearchIndex(tenant.tenantId, tenant.tenantId, user, USER_TENANT_REL_TYPE_PRIMARY);
-
-        return Promise.resolve({ user: user, tenant: tenant, tenantPasswordConfig: tenantPasswordConfig });
-    }
-
-       
-    /**
-     * returns the index of the 
-     * @param arrUserRegistrationState 
-     * @param response 
-     * @param expectedState 
-     * @returns 
-     */
-    protected async validateRegistrationStep(arrUserRegistrationState: Array<UserRegistrationState>, response: UserRegistrationStateResponse, expectedState: RegistrationState): Promise<number> {
-        
-        let stepIndex: number = -1;
-        let expectedRegistrationState: UserRegistrationState | null = null;
-        for(let i = 0; i < arrUserRegistrationState.length; i++){
-            if(arrUserRegistrationState[i].registrationState === expectedState){
-                stepIndex = i;
-                expectedRegistrationState = arrUserRegistrationState[i];
-                break;
-            }
-        }
-
-        if(expectedRegistrationState === null){
-            response.userRegistrationState.registrationState = RegistrationState.Error;
-            response.registrationError.errorCode = "ERROR_NO_VALID_REGISTRATION_STATE_FOUND";
-            return stepIndex;
-        }
-
-        // If expired before registration has been completed, then delete everything,
-        // including the email token, the user that was previous created, and any other relationships.
-        if(expectedRegistrationState.expiresAtMs < Date.now()){
-            response.userRegistrationState.registrationState = RegistrationState.Expired;
-            response.registrationError.errorCode = "ERROR_REGISTRATION_HAS_EXPIRED";
-            for(let i = 0; i < arrUserRegistrationState.length; i++){
-                await identityDao.deleteUserRegistrationState(arrUserRegistrationState[i]);
-            }
-            await this.deleteRegisteredUser(expectedRegistrationState.tenantId, expectedRegistrationState.userId);
-            return -1;
-        }
-        
-        // Are there previous steps and have the previous steps been completed?
-        if(stepIndex > 0){
-            for(let i = 0; i < stepIndex; i++){
-                const previousState: UserRegistrationState = arrUserRegistrationState[i];
-                if(previousState.registrationStateStatus !== STATUS_COMPLETE){
-                    response.userRegistrationState.registrationState = RegistrationState.Error;
-                    response.registrationError.errorCode = "ERROR_INCOMPLETE_REGISTRATION_STATE_FOUND";
-                    stepIndex = -1;
-                    break;
-                }
-            }            
-        }
-
-        return stepIndex;
-    }
 
 
     public async registerVerifyEmailAddress(userId: string, token: string, registrationSessionToken: string, preAuthToken: string | null | undefined): Promise<UserRegistrationStateResponse>{
@@ -406,7 +212,7 @@ class RegisterUserService extends IdentityService {
         await identityDao.deleteEmailConfirmationToken(token);
         user.emailVerified = true;
         await identityDao.updateUser(user);
-        await this.updateSearchIndexUserDocument(user);
+        await this.updateSearchIndexUserDocuments(user);
         arrUserRegistrationState[index].registrationStateStatus = STATUS_COMPLETE;
         await identityDao.updateUserRegistrationState(arrUserRegistrationState[0]);
         const nextRegistrationState = arrUserRegistrationState[index + 1];
@@ -595,21 +401,9 @@ class RegisterUserService extends IdentityService {
                 response.registrationError.errorCode = "ERROR_NO_RECOVERY_EMAIL_SUPPLIED";
                 return response;
             }
-            const userByEmail: User | null = await identityDao.getUserBy("email", recoveryEmail);
-            if(userByEmail){
-                response.registrationError.errorCode = "ERROR_EMAIL_ALREADY_IN_USE";
-                return response;
-            }
-            const domain: string = getDomainFromEmail(recoveryEmail);
-            if(domain.length === 0){
-                response.registrationError.errorCode = "ERROR_INVALID_EMAIL_ADDRESS";
-                return response;
-            }
-            // Cannot create users who are tied to an existing external oidc provider. These types of user can ONLY be created
-            // by going through SSO with their provider.
-            const federatedOIDCProvider: FederatedOidcProvider | null = await federatedOIDCProvderDao.getFederatedOidcProviderByDomain(domain);
-            if(federatedOIDCProvider){
-                response.registrationError.errorCode = "ERROR_DOMAIN_IS_MANAGED_BY_EXTERNAL_OIDC_PROVIDER";
+            const recoveryEmailValidationResult = await this.validateRecoveryEmail(userId, recoveryEmail);
+            if(recoveryEmailValidationResult.isValid === false){
+                response.registrationError.errorCode = recoveryEmailValidationResult.errorMessage;
                 return response;
             }
 
@@ -855,7 +649,290 @@ class RegisterUserService extends IdentityService {
         return Promise.resolve(response);
     }
 
+    public async profileHandleEmailChange(newEmail: string): Promise<ProfileEmailChangeResponse> {
+        
+        const response: ProfileEmailChangeResponse = {
+            profileEmailChangeState: {
+                changeEmailSessionToken: "",
+                emailChangeState: EmailChangeState.Error,
+                changeOrder: 0,
+                changeStateStatus: STATUS_INCOMPLETE,
+                email: "",
+                expiresAtMs: 0,
+                isPrimaryEmail: false,
+                userId: ""
+            },
+            profileEmailChangeError: {
+                errorCode: "",
+                errorMessage: ""
+            }
+        }
+        
+        if(!this.oidcContext.portalUserProfile?.userId){
+            response.profileEmailChangeError.errorCode = "ERROR_UNABLE_TO_ADD_RECOVERY_EMAIL";
+            return response;            
+        }
+        const domain: string = getDomainFromEmail(newEmail);
+        if(domain.length === 0){
+            response.profileEmailChangeError.errorCode = "ERROR_INVALID_EMAIL_ADDRESS";
+            return response;           
+        }
 
+        const user: User | null = await identityDao.getUserBy("id", this.oidcContext.portalUserProfile.userId);
+        if(user === null){
+            response.profileEmailChangeError.errorCode = "ERROR_NO_USER";
+            return response;            
+        }
+        if(user.locked === true || user.enabled === false){
+            response.profileEmailChangeError.errorCode = "ERROR_CANNOT_BE_MODIFIED";
+            return response; 
+        }
+        if(user.federatedOIDCProviderSubjectId && user.federatedOIDCProviderSubjectId !== ""){
+            response.profileEmailChangeError.errorCode = "ERROR_USER_PROFILE_IS_CONTROLLED_BY_3RD_PARTY_IDP";
+            return response;
+        }
+        const userByEmail: User | null = await identityDao.getUserBy("email", newEmail);
+        if(userByEmail !== null){
+            response.profileEmailChangeError.errorCode = "ERROR_EMAIL_ALREADY_IN_USE";
+            return response;            
+        }
+        
+        // Cannot update to an email domain which is tied to an existing external oidc provider. These types of user can ONLY be created
+        // by going through SSO with their provider.
+        const federatedOIDCProvider: FederatedOidcProvider | null = await federatedOIDCProvderDao.getFederatedOidcProviderByDomain(domain);
+        if(federatedOIDCProvider){
+            response.profileEmailChangeError.errorCode = "ERROR_DOMAIN_IS_MANAGED_BY_EXTERNAL_OIDC_PROVIDER";
+            return response;
+        }
+        const sessionToken: string = generateRandomToken(20, "hex");
+        const arrStates: Array<ProfileEmailChangeState> = [];
+        arrStates.push({
+            email: newEmail,
+            expiresAtMs: Date.now() + (60 * 60 * 1000),
+            changeEmailSessionToken: sessionToken,
+            emailChangeState: EmailChangeState.ValidateEmail,
+            changeOrder: 0,
+            changeStateStatus: STATUS_INCOMPLETE,
+            userId: user.userId,
+            isPrimaryEmail: true,
+        });
+
+        arrStates.push({
+            email: newEmail,
+            expiresAtMs: Date.now() + (60 * 60 * 1000),
+            changeEmailSessionToken: sessionToken,
+            emailChangeState: EmailChangeState.Completed,
+            changeOrder: 1,
+            changeStateStatus: STATUS_INCOMPLETE,
+            userId: user.userId,
+            isPrimaryEmail: true
+        });
+
+        await identityDao.createProfileEmailChangeStates(arrStates);
+        // Do not change the email yet. Only do that when the user has validated
+        // their email in the next step.
+        const emailConfirmationToken = generateRandomToken(8, "hex").toUpperCase();
+        await identityDao.saveEmailConfirmationToken(user.userId, emailConfirmationToken);
+
+        response.profileEmailChangeState = arrStates[0];
+        return response;
+
+    }
+
+    public async profileAddRecoveryEmail(recoveryEmail: string): Promise<ProfileEmailChangeResponse> {   
+
+        const response: ProfileEmailChangeResponse = {
+            profileEmailChangeState: {
+                changeEmailSessionToken: "",
+                emailChangeState: EmailChangeState.Error,
+                changeOrder: 0,
+                changeStateStatus: STATUS_INCOMPLETE,
+                email: "",
+                expiresAtMs: 0,
+                isPrimaryEmail: false,
+                userId: ""
+            },
+            profileEmailChangeError: {
+                errorCode: "",
+                errorMessage: ""
+            }
+        }
+
+        if(!this.oidcContext.portalUserProfile?.userId){
+            response.profileEmailChangeError.errorCode = "ERROR_UNABLE_TO_ADD_RECOVERY_EMAIL";
+            return response;            
+        }
+        const user: User | null = await identityDao.getUserBy("id", this.oidcContext.portalUserProfile.userId);
+        if(user === null){
+            response.profileEmailChangeError.errorCode = "ERROR_NO_USER";
+            return response;            
+        }
+        if(user.locked === true || user.enabled === false){
+            response.profileEmailChangeError.errorCode = "ERROR_CANNOT_BE_MODIFIED";
+            return response; 
+        }
+        if(user.federatedOIDCProviderSubjectId && user.federatedOIDCProviderSubjectId !== ""){
+            response.profileEmailChangeError.errorCode = "ERROR_USER_PROFILE_IS_CONTROLLED_BY_3RD_PARTY_IDP";
+            return response;
+        }
+
+        const recoveryEmailValidationResult = await this.validateRecoveryEmail(user.userId, recoveryEmail);
+        if(recoveryEmailValidationResult.isValid === false){
+            response.profileEmailChangeError.errorCode = recoveryEmailValidationResult.errorMessage;
+            return response;
+        }
+        
+        const sessionToken: string = generateRandomToken(20, "hex");
+        const arrStates: Array<ProfileEmailChangeState> = [];
+        arrStates.push({
+            email: recoveryEmail,
+            expiresAtMs: Date.now() + (60 * 60 * 1000),
+            changeEmailSessionToken: sessionToken,
+            emailChangeState: EmailChangeState.ValidateEmail,
+            changeOrder: 0,
+            changeStateStatus: STATUS_INCOMPLETE,
+            userId: user.userId,
+            isPrimaryEmail: false,
+        });
+
+        arrStates.push({
+            email: recoveryEmail,
+            expiresAtMs: Date.now() + (60 * 60 * 1000),
+            changeEmailSessionToken: sessionToken,
+            emailChangeState: EmailChangeState.Completed,
+            changeOrder: 1,
+            changeStateStatus: STATUS_INCOMPLETE,
+            userId: user.userId,
+            isPrimaryEmail: false
+        });
+
+        await identityDao.createProfileEmailChangeStates(arrStates);
+        // Do not add the recovery email to the table yet. Only do that when the user has validated
+        // their email in the next step.
+        const emailConfirmationToken = generateRandomToken(8, "hex").toUpperCase();
+        await identityDao.saveEmailConfirmationToken(user.userId, emailConfirmationToken);
+        // TODO
+        // Send an email to the user.
+
+        response.profileEmailChangeState = arrStates[0];
+        return response;
+    }
+
+    public async profileValidateEmail(token: string, changeEmailSessionToken: string): Promise<ProfileEmailChangeResponse> {
+        const response: ProfileEmailChangeResponse = {
+            profileEmailChangeState: {
+                changeEmailSessionToken: "",
+                emailChangeState: EmailChangeState.Error,
+                changeOrder: 0,
+                changeStateStatus: STATUS_INCOMPLETE,
+                email: "",
+                expiresAtMs: 0,
+                isPrimaryEmail: false,
+                userId: ""
+            },
+            profileEmailChangeError: {
+                errorCode: "",
+                errorMessage: ""
+            }
+        }
+
+        if(!this.oidcContext.portalUserProfile?.userId){
+            response.profileEmailChangeError.errorCode = "ERROR_UNABLE_TO_ADD_RECOVERY_EMAIL";
+            return response;            
+        }
+
+        const arrChangeStates: Array<ProfileEmailChangeState> = await this.getSortedEmailChangeStates(changeEmailSessionToken);
+        const index: number = await this.validateEmailChangeStep(arrChangeStates, response, EmailChangeState.ValidateEmail);
+        if(index < 0){
+            return response;
+        }
+
+        const currentState: ProfileEmailChangeState = arrChangeStates[index];
+        if(currentState.userId !== this.oidcContext.portalUserProfile.userId){
+            response.profileEmailChangeError.errorCode = "ERROR_NO_PERMISSIONS_TO_UPDATE_EMAIL";
+            return response;    
+        }
+
+        const user: User | null = await identityDao.getUserBy("id", this.oidcContext.portalUserProfile.userId);
+        if(user === null){
+            response.profileEmailChangeError.errorCode = "ERROR_NO_USER";
+            return response;            
+        }
+
+        const userByConfirmationToken: User | null = await identityDao.getUserByEmailConfirmationToken(token);
+        if(userByConfirmationToken === null){
+            response.profileEmailChangeError.errorCode = "ERROR_INVALID_TOKEN";
+            return response;  
+        }
+        if(userByConfirmationToken.userId !== user.userId){
+            response.profileEmailChangeError.errorCode = "ERROR_TOKEN_DOES_NOT_MATCH_USER";
+            return response;  
+        }
+
+        // If we made it here, then we can update the email or add a new recovery email
+        if(currentState.isPrimaryEmail){
+            user.email = currentState.email;
+            user.emailVerified = true;
+            await identityDao.updateUser(user);
+        }
+        else{
+            const userRecoveryEmail: UserRecoveryEmail = {
+                email: currentState.email,
+                emailVerified: true,
+                userId: currentState.userId
+            }
+            await identityDao.addRecoveryEmail(userRecoveryEmail);
+        }
+        await identityDao.deleteEmailConfirmationToken(token);
+
+        currentState.changeStateStatus = STATUS_COMPLETE;
+        await identityDao.updateProfileEmailChangeState(currentState);
+        
+        // There should always be a final state, so update it as well...
+        const nextState: ProfileEmailChangeState = arrChangeStates[index + 1];
+        nextState.changeStateStatus = STATUS_COMPLETE;
+        response.profileEmailChangeState = nextState;
+        
+        // Since there are no more states, delete all of the records
+        for(let i = 0; i < arrChangeStates.length; i++){
+            await identityDao.deleteProfileEmailChangeState(arrChangeStates[i]);
+        }
+        return response;
+
+    }
+
+    public async profileCancelEmailChange(changeEmailSessionToken: string): Promise<ProfileEmailChangeResponse> {
+        const arrChangeStates: Array<ProfileEmailChangeState> = await this.getSortedEmailChangeStates(changeEmailSessionToken);
+        for(let i = 0; i < arrChangeStates.length; i++){
+            await identityDao.deleteProfileEmailChangeState(arrChangeStates[i]);
+        }
+        const response: ProfileEmailChangeResponse = {
+            profileEmailChangeState: {
+                changeEmailSessionToken: "",
+                emailChangeState: EmailChangeState.Completed,
+                changeOrder: 0,
+                changeStateStatus: STATUS_COMPLETE,
+                email: "",
+                expiresAtMs: 0,
+                isPrimaryEmail: false,
+                userId: ""
+            },
+            profileEmailChangeError: {
+                errorCode: "",
+                errorMessage: ""
+            }
+        }
+        return response;
+    }
+
+    /**
+     * 
+     * @param userId 
+     * @param registrationSessionToken 
+     * @param preAuthToken 
+     * @param deviceCodeId 
+     * @returns 
+     */
     public async cancelRegistration(userId: string, registrationSessionToken: string, preAuthToken: string | null, deviceCodeId: string | null): Promise<UserRegistrationStateResponse> {
         const response: UserRegistrationStateResponse = {
             userRegistrationState: {
@@ -922,6 +999,281 @@ class RegisterUserService extends IdentityService {
 
     /**
      * 
+     * @param changeEmailSessionToken 
+     * @returns 
+     */
+    protected async getSortedEmailChangeStates(changeEmailSessionToken: string): Promise<Array<ProfileEmailChangeState>> {
+        const arrChangeStates: Array<ProfileEmailChangeState> = await identityDao.getProfileEmailChangeStates(changeEmailSessionToken);
+        arrChangeStates.sort(
+            (a: ProfileEmailChangeState, b: ProfileEmailChangeState) => a.changeOrder - b.changeOrder
+        );
+        return arrChangeStates;
+    }
+
+    protected async validateEmailChangeStep(arrEmailChangeStates: Array<ProfileEmailChangeState>, response: ProfileEmailChangeResponse, expectedState: EmailChangeState): Promise<number> {
+        let stepIndex: number = -1;
+        let expectedChangeState: ProfileEmailChangeState | null = null;
+        for(let i = 0; i < arrEmailChangeStates.length; i++){
+            if(arrEmailChangeStates[i].emailChangeState === expectedState){
+                stepIndex = i;
+                expectedChangeState = arrEmailChangeStates[i];
+                break;
+            }
+        }
+        if(expectedChangeState === null){
+            response.profileEmailChangeState.emailChangeState = EmailChangeState.Error;
+            response.profileEmailChangeError.errorCode = "ERROR_NO_VALID_EMAIL_CHANGE_STATE_FOUND";
+            return stepIndex;
+        }
+        if(expectedChangeState.expiresAtMs < Date.now()){
+            response.profileEmailChangeState.emailChangeState = EmailChangeState.Error;
+            response.profileEmailChangeError.errorCode = "ERROR_EMAIL_CHANGE_STATE_HAS_EXPIRED";
+            for(let i = 0; i < arrEmailChangeStates.length; i++){
+                await identityDao.deleteProfileEmailChangeState(arrEmailChangeStates[i]);
+            }
+            return -1;
+        }
+        if(stepIndex > 0){
+            for(let i = 0; i < stepIndex; i++){
+                const previousState: ProfileEmailChangeState = arrEmailChangeStates[i];
+                if(previousState.changeStateStatus !== STATUS_COMPLETE){
+                    response.profileEmailChangeState.emailChangeState = EmailChangeState.Error;
+                    response.profileEmailChangeError.errorCode = "ERROR_INCOMPLETE_EMAIL_CHANGE_STATE_FOUND";
+                    stepIndex = -1;
+                    break;
+                }
+            }
+        }
+        return stepIndex;
+    }
+
+        /**
+     * Checks
+     * 1.   Does the tenant exist
+     * 2.   Is the tenant enabled
+     * 3.   Does the tenant allow user self registration if this is a registration flow?
+     * 4.   Does a user with the given email already exist?
+     * 5.   Is the password valid
+     * 6.   Is the domain allowed by the tenant or are there resitricted domains for this tenant?
+     * 7.   Do the rest of the required data values exist are are they the correct length, format, etc.?
+     * @param userCreateInput 
+     * @param tenantId 
+     * @param isRegistration 
+     * @returns 
+     */
+    protected async _createUser(userCreateInput: UserCreateInput, tenantId: string, isRegistration: boolean): Promise<{ user: User, tenant: Tenant, tenantPasswordConfig: TenantPasswordConfig }> {
+
+        // Always need to make sure that we lower-case the email for consistency purposes.
+        userCreateInput.email = userCreateInput.email.toLowerCase();
+
+        const tenant: Tenant | null = await tenantDao.getTenantById(tenantId);
+        if (!tenant) {
+            throw new GraphQLError("ERROR_TENANT_DOES_NOT_EXIST");
+        }
+        if (tenant.enabled === false || tenant.markForDelete === true) {
+            throw new GraphQLError("ERROR_TENANT_IS_NOT_ENABLED");
+        }
+        if (isRegistration && tenant.allowUserSelfRegistration === false) {
+            throw new GraphQLError("ERROR_TENANT_DOES_NOT_ALLOW_USER_SELF_REGISTRATION");
+        }
+        if(isRegistration){
+            if(tenant.registrationRequireTermsAndConditions && !userCreateInput.termsAndConditionsAccepted){
+                throw new GraphQLError("ERROR_TERMS_AND_CONDITIONS_NOT_ACCEPTED");
+            }
+        }
+
+        const existingUser: User | null = await identityDao.getUserBy("email", userCreateInput.email);
+        if (existingUser) {
+            throw new GraphQLError("ERROR_USER_WITH_EMAIL_ALREADY_EXISTS");
+        }
+
+        // Need to check to see if the tenant allows for migration of users from another
+        // system. If so, then if we do not find the user's email in the local data store
+        // we need to look to the legacy system as well. Of course, the admin of the
+        // IAM tool may not have configured any URLs for migration, so we need to be careful
+        // here too. If allow-migration is true, but there is no legacy config, or the URLs are
+        // null, then proceed as normal.
+        let tenantLegacyUserMigrationConfig: TenantLegacyUserMigrationConfig | null = null;
+        if(tenant.migrateLegacyUsers === true){
+            tenantLegacyUserMigrationConfig = await tenantDao.getLegacyUserMigrationConfiguration(tenant.tenantId);
+            if(tenantLegacyUserMigrationConfig && tenantLegacyUserMigrationConfig.usernameCheckUri && tenantLegacyUserMigrationConfig.authenticationUri && tenantLegacyUserMigrationConfig.userProfileUri){
+                const authToken = await jwtServiceUtils.getAuthTokenForOutboundCalls();
+                const userExistsInLegacySystem: boolean = await oidcServiceUtils.legacyUsernameCheck(tenantLegacyUserMigrationConfig.usernameCheckUri, userCreateInput.email.toLowerCase(), authToken || "");
+                if(userExistsInLegacySystem){
+                    throw new GraphQLError("ERROR_USER_ALREADY_EXISTS");
+                }
+            }
+        }
+
+        const tenantPasswordConfig: TenantPasswordConfig = await tenantDao.getTenantPasswordConfig(tenantId) || DEFAULT_TENANT_PASSWORD_CONFIGURATION;
+        const isValidPassword: boolean = await this.checkPassword(userCreateInput.password, tenantPasswordConfig);
+        if (!isValidPassword) {
+            throw new GraphQLError("INVALID_PASSWORD_EITHER_PROHIBITED_OR_INVALID_FORMAT");
+        }
+
+        const domain: string = getDomainFromEmail(userCreateInput.email);
+        if(domain.length === 0){
+            throw new GraphQLError("ERROR_INVALID_EMAIL_DOMAIN");
+        }
+        // Cannot create users who are tied to an existing external oidc provider. These types of user can ONLY be created
+        // by going through SSO with their provider.
+        const federatedOIDCProvider: FederatedOidcProvider | null = await federatedOIDCProvderDao.getFederatedOidcProviderByDomain(domain);
+        if(federatedOIDCProvider){
+            throw new GraphQLError("ERROR_DOMAIN_IS_MANAGED_BY_EXTERNAL_OIDC_PROVIDER");
+        }
+
+        const arrRestrictedDomainRel: Array<TenantRestrictedAuthenticationDomainRel> = await tenantDao.getDomainsForTenantRestrictedAuthentication(tenantId);
+        if (arrRestrictedDomainRel.length > 0) {
+            const restrictedDomainRel: TenantRestrictedAuthenticationDomainRel | undefined = arrRestrictedDomainRel.find(
+                (rel: TenantRestrictedAuthenticationDomainRel) => rel.domain === domain
+            );
+            if (restrictedDomainRel === undefined) {
+                throw new GraphQLError("ERROR_TENANT_HAS_RESTRICTED_EMAIL_DOMAINS")
+            }
+        }
+
+
+        let userEnabled = true;
+        let emailVerified = true;
+        if (isRegistration && tenant.verifyEmailOnSelfRegistration) {
+            userEnabled = false;
+            emailVerified = false;
+        }
+
+        const user: User = {
+            domain: domain,
+            email: userCreateInput.email,
+            emailVerified: emailVerified,
+            enabled: userEnabled,
+            firstName: userCreateInput.firstName,
+            lastName: userCreateInput.lastName,
+            locked: false,
+            nameOrder: userCreateInput.nameOrder,
+            userId: randomUUID().toString(),
+            address: userCreateInput.address,
+            addressLine1: userCreateInput.addressLine1,
+            city: userCreateInput.city,
+            postalCode: userCreateInput.postalCode,
+            stateRegionProvince: userCreateInput.stateRegionProvince,
+            countryCode: userCreateInput.countryCode,
+            middleName: userCreateInput.middleName,
+            phoneNumber: userCreateInput.phoneNumber,
+            preferredLanguageCode: userCreateInput.preferredLanguageCode,
+            federatedOIDCProviderSubjectId: userCreateInput.federatedOIDCProviderSubjectId,
+            markForDelete: false
+        }
+
+        await identityDao.createUser(user);
+        await identityDao.assignUserToTenant(tenant.tenantId, user.userId, "PRIMARY");
+        if(isRegistration && userCreateInput.termsAndConditionsAccepted){
+            const userTermsAndConditionsAccepted: UserTermsAndConditionsAccepted = {
+                acceptedAtMs: Date.now(),
+                tenantId: tenant.tenantId,
+                userId: user.userId
+            };
+            await identityDao.addUserTermsAndConditionsAccepted(userTermsAndConditionsAccepted);
+        }
+        const userCredential: UserCredential = this.generateUserCredential(user.userId, userCreateInput.password, tenantPasswordConfig.passwordHashingAlgorithm);
+        await identityDao.addUserCredential(userCredential);
+
+        if (isRegistration && tenant.verifyEmailOnSelfRegistration) {
+            const token: string = generateRandomToken(8, "hex").toUpperCase();
+            await identityDao.saveEmailConfirmationToken(user.userId, token);
+            // TODO
+            // Send email to the user with the token value.
+        }
+        await this.updateObjectSearchIndex(tenant, user);
+        await this.updateRelSearchIndex(tenant.tenantId, tenant.tenantId, user);
+
+        return Promise.resolve({ user: user, tenant: tenant, tenantPasswordConfig: tenantPasswordConfig });
+    }
+
+       
+    /**
+     * returns the index of the 
+     * @param arrUserRegistrationState 
+     * @param response 
+     * @param expectedState 
+     * @returns 
+     */
+    protected async validateRegistrationStep(arrUserRegistrationState: Array<UserRegistrationState>, response: UserRegistrationStateResponse, expectedState: RegistrationState): Promise<number> {
+        
+        let stepIndex: number = -1;
+        let expectedRegistrationState: UserRegistrationState | null = null;
+        for(let i = 0; i < arrUserRegistrationState.length; i++){
+            if(arrUserRegistrationState[i].registrationState === expectedState){
+                stepIndex = i;
+                expectedRegistrationState = arrUserRegistrationState[i];
+                break;
+            }
+        }
+
+        if(expectedRegistrationState === null){
+            response.userRegistrationState.registrationState = RegistrationState.Error;
+            response.registrationError.errorCode = "ERROR_NO_VALID_REGISTRATION_STATE_FOUND";
+            return stepIndex;
+        }
+
+        // If expired before registration has been completed, then delete everything,
+        // including the email token, the user that was previously created, and any other relationships.
+        if(expectedRegistrationState.expiresAtMs < Date.now()){
+            response.userRegistrationState.registrationState = RegistrationState.Expired;
+            response.registrationError.errorCode = "ERROR_REGISTRATION_HAS_EXPIRED";
+            for(let i = 0; i < arrUserRegistrationState.length; i++){
+                await identityDao.deleteUserRegistrationState(arrUserRegistrationState[i]);
+            }
+            await this.deleteRegisteredUser(expectedRegistrationState.tenantId, expectedRegistrationState.userId);
+            return -1;
+        }
+        
+        // Are there previous steps and have the previous steps been completed?
+        if(stepIndex > 0){
+            for(let i = 0; i < stepIndex; i++){
+                const previousState: UserRegistrationState = arrUserRegistrationState[i];
+                if(previousState.registrationStateStatus !== STATUS_COMPLETE){
+                    response.userRegistrationState.registrationState = RegistrationState.Error;
+                    response.registrationError.errorCode = "ERROR_INCOMPLETE_REGISTRATION_STATE_FOUND";
+                    stepIndex = -1;
+                    break;
+                }
+            }            
+        }
+
+        return stepIndex;
+    }
+
+    /**
+     * 
+     * @param recoveryEmail 
+     * @returns 
+     */
+    protected async validateRecoveryEmail(userId: string, recoveryEmail: string): Promise<{isValid: boolean, errorMessage: string}>{
+
+        const existingRecoveryAccount: UserRecoveryEmail | null = await identityDao.getUserRecoveryEmail(userId);
+        if(existingRecoveryAccount !== null){
+            return {isValid: false, errorMessage: "ERROR_RECOVERY_ACCOUNT_ALREADY_EXISTS_FOR_USER"};
+        }
+
+        const userByEmail: User | null = await identityDao.getUserBy("email", recoveryEmail);
+        if(userByEmail){
+            return {isValid: false, errorMessage: "ERROR_EMAIL_ALREADY_IN_USE"};
+            
+        }
+        const domain: string = getDomainFromEmail(recoveryEmail);
+        if(domain.length === 0){
+            return {isValid: false, errorMessage: "ERROR_INVALID_EMAIL_ADDRESS"};            
+        }
+        // Cannot create users who are tied to an existing external oidc provider. These types of user can ONLY be created
+        // by going through SSO with their provider.
+        const federatedOIDCProvider: FederatedOidcProvider | null = await federatedOIDCProvderDao.getFederatedOidcProviderByDomain(domain);
+        if(federatedOIDCProvider){
+            return {isValid: false, errorMessage: "ERROR_DOMAIN_IS_MANAGED_BY_EXTERNAL_OIDC_PROVIDER"};            
+        }
+        return {isValid: true, errorMessage: ""}
+    }
+
+    /**
+     * 
      * @param userRegistrationState 
      * @param response 
      */
@@ -942,7 +1294,7 @@ class RegisterUserService extends IdentityService {
             return;                
         }
         await identityDao.updateUser(user);
-        await this.updateObjectSearchIndex(tenant, user, USER_TENANT_REL_TYPE_PRIMARY);
+        await this.updateObjectSearchIndex(tenant, user);
         if(userRegistrationState.deviceCodeId){
             const deviceCodeData: AuthorizationDeviceCodeData | null = await authDao.getAuthorizationDeviceCodeData(userRegistrationState.deviceCodeId, "devicecodeid");
             if(deviceCodeData){

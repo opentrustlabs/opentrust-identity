@@ -321,7 +321,9 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                                         }}
                                                     />
                                                 </Grid2>
-                                                <Grid2 alignContent={"center"} size={10}>Locked</Grid2>
+                                                <Grid2 alignContent={"center"} size={10}>
+                                                    {user.locked ? "Locked" : "Unlocked"}
+                                                </Grid2>
                                                 <Grid2 size={2}>
                                                     <span style={{ padding: "9px" }}>
                                                         {user.locked &&

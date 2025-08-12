@@ -1,5 +1,5 @@
 "use client";
-import { PortalUserProfile, StateProvinceRegion, User, UserMfaRel, UserRecoveryEmail, UserUpdateInput } from "@/graphql/generated/graphql-types";
+import { EmailChangeState, PortalUserProfile, ProfileEmailChangeResponse, StateProvinceRegion, User, UserMfaRel, UserRecoveryEmail, UserUpdateInput } from "@/graphql/generated/graphql-types";
 import React, { useContext } from "react";
 import { useClipboardCopyContext } from "../contexts/clipboard-copy-context";
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
@@ -8,7 +8,7 @@ import { useLazyQuery, useMutation, useQuery } from "@apollo/client";
 import { Alert, Autocomplete, Backdrop, Button, Checkbox, CircularProgress, Dialog, DialogActions, DialogContent, Grid2, MenuItem, Paper, Select, Snackbar, Stack, TextField, Typography } from "@mui/material";
 import { ResponsiveBreakpoints, ResponsiveContext } from "../contexts/responsive-context";
 import { getDefaultLanguageCodeDef, getDefaultCountryCodeDef } from "@/utils/client-utils";
-import { NAME_ORDER_EASTERN, NAME_ORDER_DISPLAY, NAME_ORDER_WESTERN, MFA_AUTH_TYPE_TIME_BASED_OTP, MFA_AUTH_TYPE_FIDO2, QUERY_PARAM_RETURN_URI } from "@/utils/consts";
+import { NAME_ORDER_EASTERN, NAME_ORDER_DISPLAY, NAME_ORDER_WESTERN, MFA_AUTH_TYPE_TIME_BASED_OTP, MFA_AUTH_TYPE_FIDO2, QUERY_PARAM_RETURN_URI, USER_UPDATE_SCOPE } from "@/utils/consts";
 import { LANGUAGE_CODES, LanguageCodeDef, COUNTRY_CODES, CountryCodeDef } from "@/utils/i18n";
 import { MuiTelInput } from "mui-tel-input";
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
@@ -17,10 +17,13 @@ import DetailSectionActionHandler from "../layout/detail-section-action-handler"
 import SwapVertOutlinedIcon from '@mui/icons-material/SwapVertOutlined';
 import StateProvinceRegionSelector from "../users/state-province-region-selector";
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import MailOutlineOutlinedIcon from '@mui/icons-material/MailOutlineOutlined';
 import DeleteForeverOutlinedIcon from '@mui/icons-material/DeleteForeverOutlined';
-import { FIDO_KEY_DELETION_MUTATION, SWAP_PRIMARY_AND_RECOVERY_EMAIL_MUTATION, TOPT_DELETION_MUTATION, USER_UPDATE_MUTATION } from "@/graphql/mutations/oidc-mutations";
+import { DELETE_RECOVERY_EMAIL_MUTATION, FIDO_KEY_DELETION_MUTATION, PROFILE_CANCEL_EMAIL_CHANGE_MUTATION, SWAP_PRIMARY_AND_RECOVERY_EMAIL_MUTATION, TOPT_DELETION_MUTATION, USER_UPDATE_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { containsScope } from "@/utils/authz-utils";
+import EmailEdit, { StateTransition } from "./email-edit";
 
 
 const MyProfile: React.FC = () => {
@@ -65,11 +68,15 @@ const MyProfile: React.FC = () => {
     const [showMutationSnackbar, setShowMutationSnackbar] = React.useState<boolean>(false);
     const [userId, setUserId] = React.useState<boolean | null>(null);
     const [userTenantId, setUserTenantId] = React.useState<string | null>(null);
-    const [disableInputs, setDisableInputs] = React.useState<boolean>(false);
+    const [profileIs3rdPartyControlled, setProfileIs3rdPartyControlled] = React.useState<boolean>(false);
+    const [isReadOnly, setIsReadOnly] = React.useState<boolean>(false);
     const [mfaTypeToDelete, setMfaTypeToDelete] = React.useState<string | null>(null);
     const [showMFADeletionConfirmationDialog, setShowMFADeletionConfirmationDialog] = React.useState<boolean>(false);
+    const [showConfirmDeleteRecoveryEmailDialog, setShowConfirmDeleteRecoveryEmailDialog] = React.useState<boolean>(false);
+    const [showEmailEditDialog, setShowEmailEditDialog] = React.useState<boolean>(false);
+    const [showAddRecoveryEmailDialog, setShowAddRecoveryEmailDialog] = React.useState<boolean>(false);
 
-    const { data } = useQuery(ME_QUERY, {        
+    const {  } = useQuery(ME_QUERY, {        
         onCompleted(data) {
             if (data && data.me && data.me.userId) {
                 setUserId(data.me.userId);
@@ -101,7 +108,10 @@ const MyProfile: React.FC = () => {
                 setUserInput({...initInput});
                 setRevertToInput({...initInput});
                 if(initInput.federatedOIDCProviderSubjectId && initInput.federatedOIDCProviderSubjectId !== ""){
-                    setDisableInputs(true);
+                    setProfileIs3rdPartyControlled(true);
+                }
+                if(!containsScope(USER_UPDATE_SCOPE, userProfile.scope)){
+                    setIsReadOnly(true);
                 }
             }
             else{
@@ -143,12 +153,9 @@ const MyProfile: React.FC = () => {
                 preferredLanguageCode: user.preferredLanguageCode
             };            
             
-            if(user.recoveryEmail){
-                setRecoveryEmail({...user.recoveryEmail});
-            }
             setUserInput(input);
             setRevertToInput(input);
-            
+            setRecoveryEmail(user.recoveryEmail || null);            
         },
         onError(error) {
             setErrorMessage(error.message);
@@ -237,7 +244,26 @@ const MyProfile: React.FC = () => {
             setShowMutationBackdrop(false);
             setErrorMessage(error.message)
         }
-    })
+    });
+
+    const [deleteRecoveryEmailMutation] = useMutation(DELETE_RECOVERY_EMAIL_MUTATION, {
+        onCompleted(data) {
+            setShowMutationBackdrop(false);
+            if(data.deleteRecoveryEmail === false){
+                setErrorMessage("ERROR_DELETING_RECOVERY_EMAIL");
+            }
+            else{
+                setShowMutationSnackbar(true);
+                refetch();
+            }            
+        },
+        onError(error) {
+            setShowMutationBackdrop(false);
+            setErrorMessage(error.message)
+        }
+    });
+
+    
 
     return (
         <Typography component={"div"} >
@@ -290,6 +316,58 @@ const MyProfile: React.FC = () => {
                         
                     </Dialog>
                 }
+                {showConfirmDeleteRecoveryEmailDialog &&
+                    <Dialog
+                        open={showConfirmDeleteRecoveryEmailDialog}
+                        onClose={() => setShowConfirmDeleteRecoveryEmailDialog(false)}
+                        maxWidth="sm"
+                        fullWidth={true}
+                    >
+                        <DialogContent>
+                            <Typography fontWeight={"bold"}>Confirm deletion of your recovery email</Typography>
+                        </DialogContent>
+                        <DialogActions>
+                            <Button onClick={() => setShowConfirmDeleteRecoveryEmailDialog(false)}>Cancel</Button>
+                            <Button onClick={() => {
+                                setShowConfirmDeleteRecoveryEmailDialog(false);
+                                setShowMutationBackdrop(true);
+                                deleteRecoveryEmailMutation({
+                                    variables: {
+                                        userId: userId
+                                    }
+                                });
+                            }}>Confirm</Button>
+                        </DialogActions>
+                    </Dialog>
+                }
+                {showEmailEditDialog &&
+                    <Dialog
+                        open={showEmailEditDialog}
+                        maxWidth="sm"
+                        fullWidth={true}
+                    >
+                        <DialogContent>
+                            <EmailEdit 
+                                onCancel={() => setShowEmailEditDialog(false)}
+                                onError={(message) => setErrorMessage(message)}
+                                onSuccess={() => {
+                                    setShowEmailEditDialog(false);
+                                    refetch();
+                                }}
+                                userId={userInput.userId}
+                                stateTransitionListener={(stateTransition: StateTransition) => {
+                                    if(stateTransition === StateTransition.STATE_CHANGE_SUBMITTED){
+                                        setShowMutationBackdrop(true);
+                                    }
+                                    else{
+                                        setShowMutationBackdrop(false);
+                                    }
+                                }}
+                            />
+                        </DialogContent>
+
+                    </Dialog>
+                }
                 <Grid2 spacing={3} container size={{ xs: 12 }}>
                     {errorMessage !== null &&
                         <Grid2 size={{ xs: 12 }} textAlign={"center"}>
@@ -306,7 +384,7 @@ const MyProfile: React.FC = () => {
                     }
                     {userInput.userId !== "" && tenantData && 
                         <React.Fragment>                            
-                            {userInput.federatedOIDCProviderSubjectId && userInput.federatedOIDCProviderSubjectId.length > 0 &&
+                            {profileIs3rdPartyControlled &&
                                 <Alert severity="info">
                                     Your profile is managed through a 3rd party identity provider. You can only make limited changes
                                     to your profile on this page.
@@ -317,7 +395,7 @@ const MyProfile: React.FC = () => {
                                     <Grid2 marginBottom={"8px"}>
                                         <div>First Name</div>
                                         <TextField name="firstName" id="firstName"
-                                            disabled={disableInputs}
+                                            disabled={profileIs3rdPartyControlled || isReadOnly}
                                             value={userInput.firstName}
                                             onChange={(evt) => { userInput.firstName = evt.target.value; setMarkDirty(true); setUserInput({ ...userInput }) }}
                                             fullWidth={true} size="small"
@@ -326,7 +404,7 @@ const MyProfile: React.FC = () => {
                                     <Grid2 marginBottom={"8px"}>
                                         <div>Last Name</div>
                                         <TextField name="lastName" id="lastName"
-                                            disabled={disableInputs}
+                                            disabled={profileIs3rdPartyControlled || isReadOnly}
                                             value={userInput.lastName}
                                             onChange={(evt) => { userInput.lastName = evt.target.value; setMarkDirty(true); setUserInput({ ...userInput }); }}
                                             fullWidth={true} size="small"
@@ -380,7 +458,7 @@ const MyProfile: React.FC = () => {
                                     <Grid2 marginBottom={"16px"}>
                                         <div>Middle Name</div>
                                         <TextField name="middleName" id="middleName"
-                                            disabled={disableInputs}
+                                            disabled={profileIs3rdPartyControlled || isReadOnly}
                                             value={userInput.middleName}
                                             onChange={(evt) => { userInput.middleName = evt.target.value; setMarkDirty(true); setUserInput({ ...userInput }); }}
                                             fullWidth={true} size="small"
@@ -404,7 +482,8 @@ const MyProfile: React.FC = () => {
                                     </Grid2>
                                     <Grid2 marginBottom={"16px"}>
                                         <div>Name Order</div>
-                                        <Select                                            
+                                        <Select
+                                            disabled={isReadOnly}
                                             name="nameOrder"
                                             value={userInput.nameOrder}
                                             onChange={(evt) => {
@@ -423,66 +502,81 @@ const MyProfile: React.FC = () => {
                                     <Grid2 marginBottom={"16px"}>
                                         <div>Email</div>                                        
                                         <Grid2 alignItems={"center"} display={"flex"} container spacing={1} size={12}>
-                                            <Grid2 size={11}>
+                                            <Grid2 size={profileIs3rdPartyControlled || isReadOnly ? 12 : 11}>
                                                 <TextField name="email" id="email"
                                                     disabled={true}
                                                     value={userInput.email}
                                                     
                                                     fullWidth={true} size="small"
                                                 />
+                                            </Grid2>
+                                            {!(profileIs3rdPartyControlled || isReadOnly) &&
+                                                <Grid2 size={1}>
+                                                    <EditOutlinedIcon 
+                                                        sx={{cursor: "pointer"}}
+                                                        onClick={() => {
+                                                            setShowEmailEditDialog(true);
+                                                        }}
+                                                    />
                                                 </Grid2>
+                                            }
+                                        </Grid2>
+                                    </Grid2>
+                                    {!recoveryEmail && tenantBean.getTenantMetaData().systemSettings.allowRecoveryEmail === true &&
+                                        <Grid2 marginTop={"24px"} marginBottom={"24px"} container spacing={1}>
+                                            <Grid2  size={11}>
+                                                <span style={{backgroundColor: "#1976d2", color: "white", padding: "5px 16px", borderRadius: "16px" }}>
+                                                    Add a recovery email
+                                                </span>
+                                            </Grid2>
                                             <Grid2 size={1}>
-                                                <EditOutlinedIcon 
+                                                <MailOutlineOutlinedIcon 
                                                     sx={{cursor: "pointer"}}
                                                     onClick={() => {
-                                                        // edit email dialog...
+
                                                     }}
                                                 />
                                             </Grid2>
                                         </Grid2>
-                                    </Grid2>
-                                    {recoveryEmail &&                                        
+                                    }
+                                    {recoveryEmail &&  
                                         <Grid2 marginBottom={"16px"}>
-                                            <Grid2 size={12} display={"flex"} justifyContent={"center"}>
-                                                <SwapVertOutlinedIcon 
-                                                    sx={{
-                                                        cursor: "pointer",
-                                                        border: "solid 1px lightgrey",
-                                                        borderRadius: "4px",
-                                                        width: "30px",
-                                                        height: "30px"
-                                                    }}
-                                                    onClick={() => {
-                                                        setShowMutationBackdrop(true);
-                                                        swapPrimaryAndRecoveryEmail();
-                                                    }}
-                                                />
-                                            </Grid2>
+                                            { !(profileIs3rdPartyControlled || isReadOnly) &&
+                                                <Grid2 size={12} display={"flex"} justifyContent={"center"}>
+                                                    <SwapVertOutlinedIcon 
+                                                        sx={{
+                                                            cursor: "pointer",
+                                                            border: "solid 1px lightgrey",
+                                                            borderRadius: "4px",
+                                                            width: "30px",
+                                                            height: "30px"
+                                                        }}
+                                                        onClick={() => {
+                                                            setShowMutationBackdrop(true);
+                                                            swapPrimaryAndRecoveryEmail();
+                                                        }}
+                                                    />
+                                                </Grid2>
+                                            }
                                             <Grid2 size={12}>Recovery Email</Grid2>
                                             <Grid2 alignItems={"center"} display={"flex"} container spacing={1} size={12}>
-                                                <Grid2 size={10}>
+                                                <Grid2 size={profileIs3rdPartyControlled || isReadOnly ? 12 : 11}>
                                                     <TextField name="recoveryEmail" id="recoveryEmail"
                                                         disabled={true}
                                                         value={recoveryEmail.email}                                                        
                                                         fullWidth={true} size="small"
                                                     />
                                                     </Grid2>
-                                                <Grid2 size={1}>
-                                                    <EditOutlinedIcon 
-                                                        sx={{cursor: "pointer"}}
-                                                        onClick={() => {
-                                                            // edit email dialog...
-                                                        }}
-                                                    />
-                                                </Grid2>
-                                                <Grid2 size={1}>
-                                                    <DeleteForeverOutlinedIcon 
-                                                        sx={{cursor: "pointer"}}
-                                                        onClick={() => {
-                                                            // delete recovery email
-                                                        }}
-                                                    />
-                                                </Grid2>
+                                                {!(profileIs3rdPartyControlled || isReadOnly) &&
+                                                    <Grid2 size={1}>
+                                                        <DeleteForeverOutlinedIcon 
+                                                            sx={{cursor: "pointer"}}
+                                                            onClick={() => {
+                                                                setShowConfirmDeleteRecoveryEmailDialog(true);
+                                                            }}
+                                                        />
+                                                    </Grid2>
+                                                }
                                             </Grid2>
                                         </Grid2>
                                     }
@@ -491,7 +585,7 @@ const MyProfile: React.FC = () => {
                                         <MuiTelInput
                                             name="phoneNumber"
                                             id="phoneNumber"
-                                            disabled={disableInputs}
+                                            disabled={profileIs3rdPartyControlled || isReadOnly}
                                             value={userInput.phoneNumber || ""}
                                             onChange={(newValue) => {
                                                 userInput.phoneNumber = newValue;
@@ -505,7 +599,7 @@ const MyProfile: React.FC = () => {
                                     <Grid2 marginBottom={"16px"}>
                                         <div>Preferred Language</div>
                                         <Autocomplete
-                                            disabled={disableInputs}
+                                            disabled={profileIs3rdPartyControlled || isReadOnly}
                                             id="defaultLanguage"
                                             sx={{ paddingTop: "8px" }}
                                             size="small"
@@ -560,7 +654,7 @@ const MyProfile: React.FC = () => {
                                                                 }
                                                             </Grid2>
                                                             <Grid2 size={1}>
-                                                                {!disableInputs &&
+                                                                {!(profileIs3rdPartyControlled || isReadOnly) &&
                                                                     <DeleteForeverOutlinedIcon
                                                                         sx={{ cursor: "pointer" }}
                                                                         onClick={() => {
@@ -581,7 +675,7 @@ const MyProfile: React.FC = () => {
                                     <Grid2 marginBottom={"16px"}>
                                         <div>Address</div>
                                         <TextField name="address" id="address"
-                                            disabled={disableInputs}
+                                            disabled={profileIs3rdPartyControlled || isReadOnly}
                                             value={userInput.address} fullWidth={true} size="small"
                                             onChange={(evt) => { userInput.address = evt.target.value; setUserInput({ ...userInput }); setMarkDirty(true); }}
                                         />
@@ -589,7 +683,7 @@ const MyProfile: React.FC = () => {
                                     <Grid2 marginBottom={"16px"}>
                                         <div>(Optional) Apartment, suite, unit, building, floor</div>
                                         <TextField name="addressline1" id="addressline1"
-                                            disabled={disableInputs}
+                                            disabled={profileIs3rdPartyControlled || isReadOnly}
                                             value={userInput.addressLine1}
                                             onChange={(evt) => { userInput.addressLine1 = evt.target.value; setUserInput({ ...userInput }); setMarkDirty(true); }}
                                             fullWidth={true} size="small"
@@ -598,7 +692,7 @@ const MyProfile: React.FC = () => {
                                     <Grid2 marginBottom={"16px"}>
                                         <div>City</div>
                                         <TextField name="city" id="city"
-                                            disabled={disableInputs}
+                                            disabled={profileIs3rdPartyControlled || isReadOnly}
                                             value={userInput.city}
                                             onChange={(evt) => { userInput.city = evt.target.value; setUserInput({ ...userInput }); setMarkDirty(true); }}
                                             fullWidth={true} size="small"
@@ -608,7 +702,7 @@ const MyProfile: React.FC = () => {
                                     <Grid2 size={12} marginBottom={"16px"}>
                                         <div>Country</div>
                                         <Autocomplete
-                                            disabled={disableInputs}
+                                            disabled={profileIs3rdPartyControlled || isReadOnly}
                                             id="countryCode"
                                             sx={{ paddingTop: "8px" }}
                                             size="small"
@@ -633,7 +727,7 @@ const MyProfile: React.FC = () => {
                                         <StateProvinceRegionSelector
                                             countryCode={userInput.countryCode || undefined}
                                             initValue={userInput.stateRegionProvince || undefined}
-                                            isDisabled={disableInputs}
+                                            isDisabled={profileIs3rdPartyControlled || isReadOnly}
                                             onChange={(stateProvinceRegion: StateProvinceRegion | null) => {
                                                 userInput.stateRegionProvince = stateProvinceRegion ? stateProvinceRegion.isoEntryCode : "";
                                                 setUserInput({ ...userInput });
@@ -644,7 +738,7 @@ const MyProfile: React.FC = () => {
                                     <Grid2 marginBottom={"16px"}>
                                         <div>Postal Code</div>
                                         <TextField name="postalCode" id="postalCode"
-                                            disabled={disableInputs}
+                                            disabled={profileIs3rdPartyControlled || isReadOnly}
                                             value={userInput.postalCode}
                                             fullWidth={true} size="small"
                                             onChange={(evt) => { userInput.postalCode = evt.target.value; setUserInput({ ...userInput }); setMarkDirty(true); }}

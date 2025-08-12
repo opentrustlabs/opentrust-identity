@@ -886,16 +886,6 @@ export const USER_REGISTRATION_STATE_RESPONSE_FRAGMENT = gql(`
     }
 `);
 
-// export const REGISTER_USER_MUTATION = gql`
-//     mutation registerUser($tenantId: String!, $userInput: UserCreateInput!, $preAuthToken: String, $deviceCode: String) {
-//         registerUser(tenantId: $tenantId, userInput: $userInput, preAuthToken: $preAuthToken, deviceCode: $deviceCode) {
-//             ...UserRegistrationStateResponseFragment
-//         }
-//     }
-
-//     ${USER_REGISTRATION_STATE_RESPONSE_FRAGMENT}
-// `;
-
 export const REGISTER_USER_MUTATION = gql`
     mutation registerUser($tenantId: String!, $userInput: UserCreateInput!, $preAuthToken: String) {
         registerUser(tenantId: $tenantId, userInput: $userInput, preAuthToken: $preAuthToken) {
@@ -1038,7 +1028,7 @@ export const SWAP_PRIMARY_AND_RECOVERY_EMAIL_MUTATION = gql(`
 `);
 
 export const DELETE_RECOVERY_EMAIL_MUTATION = gql(`
-    mutation deleteRecoveryEmail($userId: String) {
+    mutation deleteRecoveryEmail($userId: String!) {
         deleteRecoveryEmail(userId: $userId)
     }
 `) ;
@@ -1048,3 +1038,64 @@ export const UNLOCK_USER_MUTATION = gql(`
         unlockUser(userId: $userId)
     }
 `);
+
+// Change email flows
+export const PROFILE_EMAIL_CHANGE_RESPONSE_FRAGMENT = gql(`
+    fragment ProfileEmailChangeResponseFragment on ProfileEmailChangeResponse {
+        profileEmailChangeState {
+            changeEmailSessionToken
+            emailChangeState
+            email
+            userId
+            changeOrder
+            changeStateStatus
+            expiresAtMs
+            isPrimaryEmail
+        }
+        profileEmailChangeError {
+            errorCode
+            errorMessage            
+        }
+    }
+`);
+
+
+export const PROFILE_HANDLE_EMAIL_CHANGE_MUTATION = gql`
+    mutation profileHandleEmailChange($newEmail: String!) {
+        profileHandleEmailChange(newEmail: $newEmail) {
+            ...ProfileEmailChangeResponseFragment
+        }
+    }
+
+    ${PROFILE_EMAIL_CHANGE_RESPONSE_FRAGMENT}
+`;
+
+export const PROFILE_VALIDATE_EMAIL_MUTATION = gql`
+    mutation profileValidateEmail($token: String!, $changeEmailSessionToken: String!) {
+        profileValidateEmail(token: $token, changeEmailSessionToken: $changeEmailSessionToken) {
+            ...ProfileEmailChangeResponseFragment
+        }
+    }
+
+    ${PROFILE_EMAIL_CHANGE_RESPONSE_FRAGMENT}
+`;
+
+export const PROFILE_CANCEL_EMAIL_CHANGE_MUTATION = gql`
+    mutation profileCancelEmailChange($changeEmailSessionToken: String!) {
+        profileCancelEmailChange(changeEmailSessionToken: $changeEmailSessionToken) {
+            ...ProfileEmailChangeResponseFragment
+        }
+    }
+
+    ${PROFILE_EMAIL_CHANGE_RESPONSE_FRAGMENT}
+`;
+
+export const PROFILE_ADD_RECOVERY_EMAIL_MUTATION = gql`
+    mutation profileAddRecoveryEmail($recoveryEmail: String!) {
+        profileAddRecoveryEmail(recoveryEmail: $recoveryEmail) {
+            ...ProfileEmailChangeResponseFragment
+        }
+    }
+
+    ${PROFILE_EMAIL_CHANGE_RESPONSE_FRAGMENT}
+`;
