@@ -28,9 +28,9 @@ export default async function handler(
         const e: ErrorResponseBody =  {
             statusCode: 405,
             errorDetails: [{
+                errorCode: "405",
                 errorKey: "ERROR_METHOD_NOT_ALLOWED",
-                errorMessageCanonical: "Method not allowed",
-                errorMessageTranslated: ""
+                errorMessage: "Method not allowed"
             }]
         };
         res.status(405).json(e)
@@ -44,9 +44,9 @@ export default async function handler(
         const e: ErrorResponseBody =  {
             statusCode: 404,
             errorDetails: [{
+                errorCode: "404",
                 errorKey: "ERROR_TENANT_NOT_FOUND",
-                errorMessageCanonical: "Tenant not found",
-                errorMessageTranslated: ""
+                errorMessage: "Tenant not found"
             }]
         };
         res.status(404).json(e);
@@ -121,8 +121,6 @@ export default async function handler(
 
         });
     }
-
-    
 }
 
 

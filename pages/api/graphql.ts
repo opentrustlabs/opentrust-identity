@@ -1,10 +1,11 @@
 import { ApolloServer } from "@apollo/server";
 import { startServerAndCreateNextHandler } from '@as-integrations/next';
 import { ApolloServerPluginLandingPageLocalDefault, ApolloServerPluginLandingPageProductionDefault } from '@apollo/server/plugin/landingPage/default';
+import { ApolloServerErrorCode } from '@apollo/server/errors';
 import { PortalUserProfile, Tenant, typeDefs } from "@/graphql/generated/graphql-types";
 import resolvers from "@/graphql/resolvers/oidc-resolvers";
 import { NextApiRequest, NextApiResponse } from "next";
-import { ErrorResponseBody } from "@/lib/models/error";
+import { ERROR_CODES, ErrorDetail, ErrorResponseBody } from "@/lib/models/error";
 import JwtServiceUtils from "@/lib/service/jwt-service-utils";
 import { OIDCContext } from "@/graphql/graphql-context";
 import { DaoFactory } from "@/lib/data-sources/dao-factory";
@@ -16,6 +17,11 @@ import { HTTP_HEADER_X_GEO_LOCATION, HTTP_HEADER_X_IP_ADDRESS } from "@/utils/co
 declare global {
     var schedulerInitialized: boolean | undefined;
 }
+
+const {
+    ALLOW_GRAPHQL_INTROSPECTION,
+    ALLOW_GRAPHQL_ERROR_STACK_TRACES
+} = process.env;
 
 /**
  * Why is this funciton call here an not in the instrumentation.ts file at the root of 
@@ -34,12 +40,15 @@ if(!global.schedulerInitialized){
 
 const jwtServiceUtils: JwtServiceUtils = new JwtServiceUtils();
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
+const allowErrorStackTraces: boolean = ALLOW_GRAPHQL_ERROR_STACK_TRACES && ALLOW_GRAPHQL_ERROR_STACK_TRACES === "true" ? false : true;
+
 
 const server = new ApolloServer(
     {
         resolvers: resolvers,
         typeDefs: typeDefs,
-        introspection: true,
+        introspection: ALLOW_GRAPHQL_INTROSPECTION && ALLOW_GRAPHQL_INTROSPECTION === "true" ? true : false,
+        includeStacktraceInErrorResponses: ALLOW_GRAPHQL_ERROR_STACK_TRACES && ALLOW_GRAPHQL_ERROR_STACK_TRACES === "true" ? true : false,
         plugins: [
             process.env.NODE_ENV === 'production' 
                 ?   ApolloServerPluginLandingPageProductionDefault({
@@ -47,7 +56,38 @@ const server = new ApolloServer(
                         footer: false,
                     })
                 :   ApolloServerPluginLandingPageLocalDefault({ footer: false })
-        ]
+        ],
+        formatError(formattedError) {
+            if(formattedError && formattedError.extensions?.code === ApolloServerErrorCode.GRAPHQL_VALIDATION_FAILED){
+                return {
+                    ...formattedError, 
+                    message: "Your query does not match the graphql schema."
+                }
+            }
+            const errorDetail: ErrorDetail | null = ERROR_CODES[formattedError?.message] || ERROR_CODES.DEFAULT;
+            if(formattedError && formattedError.extensions?.lang){                
+                return {
+                    ...formattedError, 
+                    extensions: {
+                        errorCode: errorDetail.errorCode,
+                        errorMessage: errorDetail.errorMessage,
+                        errorKey: errorDetail.errorKey,
+                        lang: formattedError.extensions?.lang
+                    },
+                    message: errorDetail.errorMessage // TODO => i18N.translate(errorDetail.errorKey)
+                }
+            }            
+            return {
+                ...formattedError,
+                extensions: {
+                    errorCode: errorDetail.errorCode,
+                    errorMessage: errorDetail.errorMessage,
+                    errorKey: errorDetail.errorKey,
+                    lang: "en"
+                },
+                message: errorDetail.errorMessage
+            }
+        },
     }
 );
 

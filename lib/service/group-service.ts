@@ -4,12 +4,13 @@ import TenantDao from "@/lib/dao/tenant-dao";
 import { GraphQLError } from "graphql/error/GraphQLError";
 import { randomUUID } from 'crypto'; 
 import GroupDao from "../dao/authorization-group-dao";
-import { AUTHORIZATION_GROUP_CREATE_SCOPE, AUTHORIZATION_GROUP_DELETE_SCOPE, AUTHORIZATION_GROUP_READ_SCOPE, AUTHORIZATION_GROUP_UPDATE_SCOPE, AUTHORIZATION_GROUP_USER_ASSIGN_SCOPE, AUTHORIZATION_GROUP_USER_REMOVE_SCOPE, NAME_ORDER_EASTERN, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_READ_ALL_SCOPE } from "@/utils/consts";
+import { AUTHORIZATION_GROUP_CREATE_SCOPE, AUTHORIZATION_GROUP_READ_SCOPE, AUTHORIZATION_GROUP_UPDATE_SCOPE, AUTHORIZATION_GROUP_USER_ASSIGN_SCOPE, AUTHORIZATION_GROUP_USER_REMOVE_SCOPE, NAME_ORDER_EASTERN, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_READ_ALL_SCOPE } from "@/utils/consts";
 import { getOpenSearchClient } from "@/lib/data-sources/search";
 import { Client } from "@opensearch-project/opensearch";
 import { DaoFactory } from "../data-sources/dao-factory";
 import IdentityDao from "../dao/identity-dao";
 import { authorizeByScopeAndTenant, containsScope, filterResultsByTenant, ServiceAuthorizationWrapper } from "@/utils/authz-utils";
+import { ERROR_CODES } from "../models/error";
 
 
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
@@ -65,10 +66,10 @@ class GroupService {
                 },
                 async additionalConstraintCheck(oidcContext: OIDCContext, result: AuthorizationGroup | null) {
                     if(result && result.tenantId !== oidcContext.portalUserProfile?.managementAccessTenantId){
-                        return {isAuthorized: false, errorMessage: "ERROR_INSUFFICIENT_PERMISSIONS_TO_READ_AUTHORIZATION_GROUP", result: null};
+                        return {isAuthorized: false, errorCode: ERROR_CODES.EC00027.errorCode, result: null};
                     }
                     else{
-                        return { isAuthorized: true, errorMessage: null, result: result};
+                        return { isAuthorized: true, errorCode: "", result: result};
                     } 
                 }
             }
@@ -79,17 +80,17 @@ class GroupService {
 
     public async createGroup(group: AuthorizationGroup): Promise<AuthorizationGroup> {
 
-        const {isAuthorized, errorMessage} = authorizeByScopeAndTenant(this.oidcContext, AUTHORIZATION_GROUP_CREATE_SCOPE, group.tenantId);
+        const {isAuthorized, errorCode} = authorizeByScopeAndTenant(this.oidcContext, AUTHORIZATION_GROUP_CREATE_SCOPE, group.tenantId);
         if(!isAuthorized){
-            throw new GraphQLError(errorMessage || "ERROR");
+            throw new GraphQLError(errorCode);
         }
 
         const tenant: Tenant | null = await tenantDao.getTenantById(group.tenantId);
         if(!tenant){
-            throw new GraphQLError("ERROR_TENANT_NOT_FOUND_FOR_GROUP_CREATION");
+            throw new GraphQLError(ERROR_CODES.EC00008.errorCode);
         }
         if(tenant.enabled === false || tenant.markForDelete === true){
-            throw new GraphQLError("ERROR_TENANT_IS_DISABLED_OR_MARKED_FOR_DELETE");
+            throw new GraphQLError(ERROR_CODES.EC00009.errorCode);
         }
         
         group.groupId = randomUUID().toString();
@@ -103,11 +104,11 @@ class GroupService {
         
         const existingGroup: AuthorizationGroup | null = await groupDao.getAuthorizationGroupById(group.groupId);
         if(!existingGroup){
-            throw new GraphQLError("ERROR_GROUP_NOT_FOUND");
+            throw new GraphQLError(ERROR_CODES.EC00028.errorCode);
         }
-        const {isAuthorized, errorMessage} = authorizeByScopeAndTenant(this.oidcContext, AUTHORIZATION_GROUP_UPDATE_SCOPE, existingGroup.tenantId);
+        const {isAuthorized, errorCode} = authorizeByScopeAndTenant(this.oidcContext, AUTHORIZATION_GROUP_UPDATE_SCOPE, existingGroup.tenantId);
         if(!isAuthorized){
-            throw new GraphQLError(errorMessage || "ERROR");
+            throw new GraphQLError(errorCode);
         }
 
         existingGroup.groupName = group.groupName;
@@ -153,43 +154,30 @@ class GroupService {
             body: relSearch
         });        
     }
-
-    public async deleteGroup(groupId: string): Promise<void> {
-        const group: AuthorizationGroup | null = await groupDao.getAuthorizationGroupById(groupId);
-        if(group){
-            const {isAuthorized, errorMessage} = authorizeByScopeAndTenant(this.oidcContext, AUTHORIZATION_GROUP_DELETE_SCOPE, group.tenantId);
-            if(!isAuthorized){
-                throw new GraphQLError(errorMessage || "ERROR");
-            }
-            // TODO
-            // DELETE THE SCOPE/GROUP and USER/GROUP relationships
-        }
-
-        throw new Error("Method not implemented.");
-    }
+    
 
     public async addUserToGroup(userId: string, groupId: string): Promise<AuthorizationGroupUserRel> {
         const user: User | null = await identityDao.getUserBy("id", userId);
         // Checks:
         // 1.   Does the user exist
         if(!user){
-            throw new GraphQLError("ERROR_USER_DOES_NOT_EXIST");
+            throw new GraphQLError(ERROR_CODES.EC00013.errorCode);
         }
         // 2.   Does the authz group exist
         const authzGroup: AuthorizationGroup | null = await groupDao.getAuthorizationGroupById(groupId);
         if(!authzGroup){
-            throw new GraphQLError("ERROR_AUTHORIZATION_GROUP_DOES_NOT_EXIST");
+            throw new GraphQLError(ERROR_CODES.EC00028.errorCode);
         }
         // 3.   Is the user a member of the tenant?
         const userTenantRel: UserTenantRel | null = await identityDao.getUserTenantRel(authzGroup.tenantId, userId);
         if(!userTenantRel){
-            throw new GraphQLError("ERROR_INVALID_TENANT_FOR_USER");
+            throw new GraphQLError(ERROR_CODES.EC00029.errorCode);
         }
 
         // Is the user authorized to perform the action?
-        const {isAuthorized, errorMessage} = authorizeByScopeAndTenant(this.oidcContext, AUTHORIZATION_GROUP_USER_ASSIGN_SCOPE, authzGroup.tenantId);
+        const {isAuthorized, errorCode} = authorizeByScopeAndTenant(this.oidcContext, AUTHORIZATION_GROUP_USER_ASSIGN_SCOPE, authzGroup.tenantId);
         if(!isAuthorized){
-            throw new GraphQLError(errorMessage || "ERROR");
+            throw new GraphQLError(errorCode);
         }
 
         const r: AuthorizationGroupUserRel = await groupDao.addUserToAuthorizationGroup(userId, groupId);
@@ -217,9 +205,9 @@ class GroupService {
     public async removeUserFromGroup(userId: string, groupId: string): Promise<void> {
         const authzGroup: AuthorizationGroup | null = await groupDao.getAuthorizationGroupById(groupId);
         if(authzGroup){
-            const {isAuthorized, errorMessage} = authorizeByScopeAndTenant(this.oidcContext, AUTHORIZATION_GROUP_USER_REMOVE_SCOPE, authzGroup.tenantId);
+            const {isAuthorized, errorCode} = authorizeByScopeAndTenant(this.oidcContext, AUTHORIZATION_GROUP_USER_REMOVE_SCOPE, authzGroup.tenantId);
             if(!isAuthorized){
-                throw new GraphQLError(errorMessage || "ERROR");
+                throw new GraphQLError(errorCode);
             }
 
             await groupDao.removeUserFromAuthorizationGroup(userId, groupId);        

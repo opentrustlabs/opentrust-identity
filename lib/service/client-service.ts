@@ -12,6 +12,7 @@ import Kms from "../kms/kms";
 import { authorizeByScopeAndTenant, ServiceAuthorizationWrapper } from "@/utils/authz-utils";
 import ScopeDao from "../dao/scope-dao";
 import { isValidRedirectUri } from "@/utils/client-utils";
+import { ERROR_CODES } from "../models/error";
 
 const clientDao: ClientDao = DaoFactory.getInstance().getClientDao();
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
@@ -64,11 +65,11 @@ class ClientService {
                     const client = await clientDao.getClientById(clientId);                       
                     return client;
                 },
-                additionalConstraintCheck: async function(oidcContext, result: Client | null): Promise<{ isAuthorized: boolean; errorMessage: string | null}> {
+                additionalConstraintCheck: async function(oidcContext, result: Client | null): Promise<{ isAuthorized: boolean; errorCode: string}> {
                     if(result && result.tenantId !== oidcContext.portalUserProfile?.managementAccessTenantId){
-                        return {isAuthorized: false, errorMessage: "ERROR_NO_ACCESS_TO_TENANT"}
+                        return {isAuthorized: false, errorCode: ERROR_CODES.EC00030.errorCode}
                     }
-                    return {isAuthorized: true, errorMessage: null}
+                    return {isAuthorized: true, errorCode: ""}
                 },
                 postProcess: async function(_, result) {
                     if(result){
@@ -86,28 +87,26 @@ class ClientService {
     public async createClient(client: Client): Promise<Client> {
         const tenant: Tenant | null = await tenantDao.getTenantById(client.tenantId);
         if(!tenant){
-            throw new GraphQLError("ERROR_TENANT_NOT_FOUND", {
-
-            });
+            throw new GraphQLError(ERROR_CODES.EC00008.errorCode);
         }
         if(tenant.enabled === false || tenant.markForDelete === true){
-            throw new GraphQLError("ERROR_TENANT_IS_DISABLED_OR_MARKED_FOR_DELETE");
+            throw new GraphQLError(ERROR_CODES.EC00009.errorCode);
         }
 
-        const {isAuthorized, errorMessage} = authorizeByScopeAndTenant(this.oidcContext, CLIENT_CREATE_SCOPE, client.tenantId);
+        const {isAuthorized, errorCode} = authorizeByScopeAndTenant(this.oidcContext, CLIENT_CREATE_SCOPE, client.tenantId);
         if(!isAuthorized){
-            throw new GraphQLError(errorMessage || "ERROR");
+            throw new GraphQLError(errorCode);
         }
 
         if(!CLIENT_TYPES.includes(client.clientType)){
-            throw new GraphQLError("ERROR_INVALID_CLIENT_TYPE");
+            throw new GraphQLError(ERROR_CODES.EC00031.errorCode);
         }
 
         client.clientId = randomUUID().toString();
         const clientSecret = generateRandomToken(24, "hex");
         const encryptedClientSecret = await kms.encrypt(clientSecret);
         if(encryptedClientSecret === null){
-            throw new GraphQLError("ERROR_UNABLE_TO_ENCRYPT_CLIENT_SECRET");
+            throw new GraphQLError(ERROR_CODES.EC00032.errorCode);
         }        
         client.clientSecret = encryptedClientSecret;
 
@@ -123,16 +122,16 @@ class ClientService {
         const clientToUpdate: Client | null = await this.getClientById(client.clientId);
         
         if(!clientToUpdate){
-            throw new GraphQLError("ERROR_CLIENT_NOT_FOUND")
+            throw new GraphQLError(ERROR_CODES.EC00031.errorCode)
         }
         
-        const {isAuthorized, errorMessage} = authorizeByScopeAndTenant(this.oidcContext, CLIENT_UPDATE_SCOPE, clientToUpdate.tenantId);
+        const {isAuthorized, errorCode} = authorizeByScopeAndTenant(this.oidcContext, CLIENT_UPDATE_SCOPE, clientToUpdate.tenantId);
         if(!isAuthorized){
-            throw new GraphQLError(errorMessage || "ERROR");
+            throw new GraphQLError(errorCode);
         }
 
         if(!CLIENT_TYPES.includes(client.clientType)){
-            throw new GraphQLError("ERROR_INVALID_CLIENT_TYPE");
+            throw new GraphQLError(ERROR_CODES.EC00031.errorCode);
         }
 
         // If the client type has changed, then delete the scope values assigned to the client
@@ -204,9 +203,9 @@ class ClientService {
     public async getRedirectURIs(clientId: string): Promise<Array<string>>{
         const client: Client | null = await clientDao.getClientById(clientId);
         if(client){
-            const {isAuthorized, errorMessage} = authorizeByScopeAndTenant(this.oidcContext, [CLIENT_READ_SCOPE, TENANT_READ_ALL_SCOPE], client.tenantId);
+            const {isAuthorized, errorCode} = authorizeByScopeAndTenant(this.oidcContext, [CLIENT_READ_SCOPE, TENANT_READ_ALL_SCOPE], client.tenantId);
             if(!isAuthorized){
-                throw new GraphQLError(errorMessage || "ERROR");
+                throw new GraphQLError(errorCode);
             }
             return clientDao.getRedirectURIs(clientId);
         }
@@ -216,30 +215,31 @@ class ClientService {
     public async addRedirectURI(clientId: string, uri: string): Promise<string>{
         const client: Client | null = await this.getClientById(clientId);
         if(!client){
-            throw new GraphQLError("ERROR_UNABLE_TO_FIND_CLIENT_BY_ID");
+            throw new GraphQLError(ERROR_CODES.EC00031.errorCode);
         }
         if(client.oidcEnabled === false){
-            throw new GraphQLError("ERROR_OIDC_NOT_ENABLED_FOR_THIS_CLIENT");
-        }
-
-        const {isAuthorized, errorMessage} = authorizeByScopeAndTenant(this.oidcContext, CLIENT_UPDATE_SCOPE, client.tenantId);
-        if(!isAuthorized){
-            throw new GraphQLError(errorMessage || "ERROR");
+            throw new GraphQLError(ERROR_CODES.EC00033.errorCode);
         }
         if(!isValidRedirectUri(uri)){
-            throw new GraphQLError("ERROR_INVALID_REDIRECT_URI");
+            throw new GraphQLError(ERROR_CODES.EC00034.errorCode);
         }
+
+        const {isAuthorized, errorCode} = authorizeByScopeAndTenant(this.oidcContext, CLIENT_UPDATE_SCOPE, client.tenantId);
+        if(!isAuthorized){
+            throw new GraphQLError(errorCode);
+        }
+        
         return clientDao.addRedirectURI(clientId, uri);
     }
 
     public async removeRedirectURI(clientId: string, uri: string): Promise<void>{
         const client: Client | null = await this.getClientById(clientId);
         if(!client){
-            throw new GraphQLError("ERROR_UNABLE_TO_FIND_CLIENT_BY_ID");
+            throw new GraphQLError(ERROR_CODES.EC00031.errorCode);
         }
-        const {isAuthorized, errorMessage} = authorizeByScopeAndTenant(this.oidcContext, CLIENT_UPDATE_SCOPE, client.tenantId);
+        const {isAuthorized, errorCode} = authorizeByScopeAndTenant(this.oidcContext, CLIENT_UPDATE_SCOPE, client.tenantId);
         if(!isAuthorized){
-            throw new GraphQLError(errorMessage || "ERROR");
+            throw new GraphQLError(errorCode);
         }
         return clientDao.removeRedirectURI(clientId, uri);
     }

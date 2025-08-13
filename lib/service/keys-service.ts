@@ -10,6 +10,7 @@ import Kms from "../kms/kms";
 import { X509Certificate } from "crypto";
 import { authorizeByScopeAndTenant, ServiceAuthorizationWrapper } from "@/utils/authz-utils";
 import { createSigningKey } from "@/utils/signing-key-utils";
+import { ERROR_CODES } from "../models/error";
 
 
 const signingKeysDao = DaoFactory.getInstance().getSigningKeysDao();
@@ -64,45 +65,45 @@ class SigningKeysService {
 
         const authResult = authorizeByScopeAndTenant(this.oidcContext, [KEY_CREATE_SCOPE], key.tenantId);
         if(!authResult.isAuthorized){
-            throw new GraphQLError(authResult.errorMessage || "ERROR");
+            throw new GraphQLError(authResult.errorCode);
         }
 
         const tenant: Tenant | null = await tenantDao.getTenantById(key.tenantId);
         if(!tenant){
-            throw new GraphQLError("ERROR_TENANT_NOT_FOUND");
+            throw new GraphQLError(ERROR_CODES.EC00008.errorCode);
         }
         if(tenant.enabled === false || tenant.markForDelete === true){
-            throw new GraphQLError("ERROR_TENANT_IS_DISABLED_OR_MARKED_FOR_DELETE");
+            throw new GraphQLError(ERROR_CODES.EC00009.errorCode);
         }
 
         if(!key.keyName || key.keyName === ""){
-            throw new GraphQLError("ERROR_MISSING_KEY_NAME_OR_ALIAS");
+            throw new GraphQLError(ERROR_CODES.EC00050.errorCode);
         }
         if(!key.privateKeyPkcs8 || key.privateKeyPkcs8 === ""){
-            throw new GraphQLError("ERROR_MISSING_PRIVATE_KEY");
+            throw new GraphQLError(ERROR_CODES.EC00051.errorCode);
         }
         if(key.certificate === "" && key.publicKey === ""){
-            throw new GraphQLError("ERROR_MUST_PROVIDE_EITHER_A_PUBLIC_KEY_OR_CERTIFICATE");
+            throw new GraphQLError(ERROR_CODES.EC00052.errorCode);
         }
         if(key.password === "" && key.privateKeyPkcs8.startsWith(PKCS8_ENCRYPTED_PRIVATE_KEY_HEADER)){
-            throw new GraphQLError("ERROR_ENCRYPTED_PRIVATE_KEY_REQUIRES_PASSPHRASE");
+            throw new GraphQLError(ERROR_CODES.EC00053.errorCode);
         }
         if(key.password && key.password !== "" && key.password.length < MIN_PRIVATE_KEY_PASSWORD_LENGTH){
-            throw new GraphQLError("ERROR_INVALID_PASSPHRASE_LENGTH_FOR_PRIVATE_KEY");
+            throw new GraphQLError(ERROR_CODES.EC00054.errorCode);
         }
 
         if(key.keyType === "" || !KEY_TYPES.includes(key.keyType)){
-            throw new GraphQLError("ERROR_MISSING_OR_INVALID_KEY_TYPE");
+            throw new GraphQLError(ERROR_CODES.EC00055.errorCode);
         }
         if(key.keyUse === "" || !KEY_USES.includes(key.keyUse)){
-            throw new GraphQLError("ERROR_MISSING_OR_INVALID_KEY_USE");
+            throw new GraphQLError(ERROR_CODES.EC00056.errorCode);
         }
         if(key.publicKey && key.publicKey.length > 0){
             const now: number = new Date().getTime();                                                    
             const diff: number = key.expiresAtMs - now;
             // if negative or greater than a year, then reject
             if(diff < 0 || diff > 31557600000){
-                throw new GraphQLError("ERROR_INVALID_EXPIRATION_FOR_PUBLIC_KEY");    
+                throw new GraphQLError(ERROR_CODES.EC00057.errorCode);    
             }
         }
         if(key.certificate && key.certificate.length > 0){
@@ -114,7 +115,7 @@ class SigningKeysService {
         const plainText = key.password && key.password !== "" ? key.password : key.privateKeyPkcs8;
         const encrypted: string | null = await kms.encrypt(plainText);
         if(encrypted === null){
-            throw new GraphQLError("ERROR_UNABLE_TO_ENCRYPT_PRIVATE_KEY_INFORMATION");
+            throw new GraphQLError(ERROR_CODES.EC00058.errorCode);
         }
         if(key.password && key.password !== ""){
             key.password = encrypted
@@ -134,34 +135,34 @@ class SigningKeysService {
     public async uncheckedAutoCreateSigningKey(keyInput: AutoCreateSigningKeyInput): Promise<SigningKey> {
         const tenant: Tenant | null = await tenantDao.getTenantById(keyInput.tenantId);
         if(!tenant){
-            throw new GraphQLError("ERROR_TENANT_NOT_FOUND");
+            throw new GraphQLError(ERROR_CODES.EC00008.errorCode);
         }
         if(tenant.enabled === false || tenant.markForDelete === true){
-            throw new GraphQLError("ERROR_TENANT_IS_DISABLED_OR_MARKED_FOR_DELETE");
+            throw new GraphQLError(ERROR_CODES.EC00009.errorCode);
         }
         if(!keyInput.keyName || keyInput.keyName === ""){
-            throw new GraphQLError("ERROR_MISSING_KEY_NAME_OR_ALIAS");
+            throw new GraphQLError(ERROR_CODES.EC00050.errorCode);
         }
         if(keyInput.keyType === "" || keyInput.keyType !== KEY_TYPE_RSA){
-            throw new GraphQLError("ERROR_MISSING_OR_INVALID_KEY_TYPE");
+            throw new GraphQLError(ERROR_CODES.EC00055.errorCode);
         }
         if(keyInput.keyUse === "" || !KEY_USES.includes(keyInput.keyUse)){
-            throw new GraphQLError("ERROR_MISSING_OR_INVALID_KEY_USE");
+            throw new GraphQLError(ERROR_CODES.EC00056.errorCode);
         }
         if(!keyInput.commonName || keyInput.commonName === ""){
-            throw new GraphQLError("ERROR_MISSING_COMMON_NAME");
+            throw new GraphQLError(ERROR_CODES.EC00059.errorCode);
         }
         if(!keyInput.organizationName || keyInput.organizationName === ""){
-            throw new GraphQLError("ERROR_MISSING_ORGANIZATION_NAME");
+            throw new GraphQLError(ERROR_CODES.EC00060.errorCode);
         }
         const now: number = new Date().getTime();                                                    
         const diff: number = keyInput.expiresAtMs - now;
         // if negative or greater than a year, then reject
         if(diff < 0 || diff > 31557600000){
-            throw new GraphQLError("ERROR_INVALID_EXPIRATION_FOR_CERTIFICATE");    
+            throw new GraphQLError(ERROR_CODES.EC00061.errorCode);    
         }
         if(keyInput.password && keyInput.password !== "" && keyInput.password.length < MIN_PRIVATE_KEY_PASSWORD_LENGTH){
-            throw new GraphQLError("ERROR_INVALID_PASSPHRASE_LENGTH_FOR_PRIVATE_KEY");
+            throw new GraphQLError(ERROR_CODES.EC00054.errorCode);
         }
         
         const expiresAtDate = new Date(keyInput.expiresAtMs);        
@@ -170,7 +171,7 @@ class SigningKeysService {
         
         const encrypted: string | null = await kms.encrypt(passphrase);
         if(encrypted === null){
-            throw new GraphQLError("ERROR_UNABLE_TO_ENCRYPT_PRIVATE_KEY_INFORMATION");
+            throw new GraphQLError(ERROR_CODES.EC00058.errorCode);
         }
 
         const key: SigningKey = {
@@ -195,7 +196,7 @@ class SigningKeysService {
     public async autoCreateSigningKey(keyInput: AutoCreateSigningKeyInput): Promise<SigningKey> {
         const authResult = authorizeByScopeAndTenant(this.oidcContext, [KEY_CREATE_SCOPE], keyInput.tenantId);
         if(!authResult.isAuthorized){
-            throw new GraphQLError(authResult.errorMessage || "ERROR");
+            throw new GraphQLError(authResult.errorCode);
         }
         return this.uncheckedAutoCreateSigningKey(keyInput);        
     }
@@ -203,20 +204,20 @@ class SigningKeysService {
     public async updateSigningKey(key: SigningKey): Promise<SigningKey> {
         
         if( ! (key.status === SIGNING_KEY_STATUS_REVOKED || key.status === SIGNING_KEY_STATUS_ACTIVE)) {
-            throw new GraphQLError("ERROR_INVALID_SIGNING_KEY_STATUS");
+            throw new GraphQLError(ERROR_CODES.EC00062.errorCode);
         }
         const existingKey: SigningKey | null = await signingKeysDao.getSigningKeyById(key.keyId);
         if(!existingKey){
-            throw new GraphQLError("ERROR_SIGNING_KEY_DOES_NOT_EXIST");
+            throw new GraphQLError(ERROR_CODES.EC00015.errorCode);
         }
 
         const authResult = authorizeByScopeAndTenant(this.oidcContext, [KEY_UPDATE_SCOPE], existingKey.tenantId);
         if(!authResult.isAuthorized){
-            throw new GraphQLError(authResult.errorMessage || "ERROR");
+            throw new GraphQLError(authResult.errorCode);
         }
 
         if(existingKey.status === SIGNING_KEY_STATUS_REVOKED){
-            throw new GraphQLError("ERROR_CANNOT_UPDATE_A_REVOKED_KEY");
+            throw new GraphQLError(ERROR_CODES.EC00063.errorCode);
         }
         
         existingKey.keyName = key.keyName;
@@ -238,13 +239,13 @@ class SigningKeysService {
                 async additionalConstraintCheck(oidcContext: OIDCContext, result: SigningKey | null) {
                     if(result){                        
                         if(oidcContext.portalUserProfile?.managementAccessTenantId !== result.tenantId){
-                            return {isAuthorized: false, errorMessage: "ERROR_NO_ACCESS_TO_SIGNING_KEY"};
+                            return {isAuthorized: false, errorCode: ERROR_CODES.EC00064.errorCode};
                         }
                         else {
-                            return {isAuthorized: true, errorMessage: null};
+                            return {isAuthorized: true, errorCode: ""};
                         }
                     }
-                    return {isAuthorized: true, errorMessage: null};
+                    return {isAuthorized: true, errorCode: ""};
                 },
                 async postProcess(_, result) {
                     if(result){
@@ -275,7 +276,7 @@ class SigningKeysService {
         if(signingKey){
             const authResult = authorizeByScopeAndTenant(this.oidcContext, [KEY_DELETE_SCOPE], signingKey.tenantId);
             if(!authResult.isAuthorized){
-                throw new GraphQLError(authResult.errorMessage || "ERROR");
+                throw new GraphQLError(authResult.errorCode);
             }
 
             await signingKeysDao.deleteSigningKey(keyId);

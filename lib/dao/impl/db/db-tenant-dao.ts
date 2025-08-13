@@ -16,6 +16,7 @@ import UserTenantRelEntity from "@/lib/entities/user-tenant-rel-entity";
 import CaptchaConfigEntity from "@/lib/entities/captcha-config-entity";
 import SystemSettingsEntity from "@/lib/entities/system-settings-entity";
 import { randomUUID } from "node:crypto";
+import { ERROR_CODES } from "@/lib/models/error";
 
 class DBTenantDao extends TenantDao {
 
@@ -29,7 +30,7 @@ class DBTenantDao extends TenantDao {
         });
 
         if(!entity){
-            throw new GraphQLError("ERROR_UNABLE_TO_FIND_A_ROOT_TENANT");
+            throw new GraphQLError(ERROR_CODES.EC00035.errorCode);
         }
         return Promise.resolve(entity.dataValues as Tenant);
     }

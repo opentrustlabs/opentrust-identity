@@ -8,6 +8,7 @@ import { DaoFactory } from "../data-sources/dao-factory";
 import { DEFAULT_RATE_LIMIT_PERIOD_MINUTES, RATE_LIMIT_CREATE_SCOPE, RATE_LIMIT_DELETE_SCOPE, RATE_LIMIT_READ_SCOPE, RATE_LIMIT_TENANT_ASSIGN_SCOPE, RATE_LIMIT_TENANT_REMOVE_SCOPE, RATE_LIMIT_TENANT_UPDATE_SCOPE, RATE_LIMIT_UPDATE_SCOPE, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_READ_ALL_SCOPE } from "@/utils/consts";
 import { getOpenSearchClient } from "../data-sources/search";
 import { authorizeByScopeAndTenant, ServiceAuthorizationWrapper } from "@/utils/authz-utils";
+import { ERROR_CODES } from "../models/error";
 
 
 const rateLimitDao: RateLimitDao = DaoFactory.getInstance().getRateLimitDao();
@@ -53,11 +54,11 @@ class RateLimitService {
                     if(result){
                         const rels = await rateLimitDao.getRateLimitTenantRel(oidcContext.portalUserProfile?.managementAccessTenantId || "", null);
                         if(!rels || rels.length === 0){
-                            return {isAuthorized: false, errorMessage: "ERROR_NO_ASSIGNED_TENANT"};
+                            return {isAuthorized: false, errorCode: ERROR_CODES.EC00041.errorCode};
                         }
-                        return {isAuthorized: true, errorMessage: null};
+                        return {isAuthorized: true, errorCode: ""};
                     }
-                    return {isAuthorized: true, errorMessage: null}
+                    return {isAuthorized: true, errorCode: ""}
                 },
             }
         );
@@ -66,9 +67,9 @@ class RateLimitService {
     }
 
     public async createRateLimitServiceGroup(rateLimitServiceGroup: RateLimitServiceGroup): Promise<RateLimitServiceGroup> {
-        const {isAuthorized, errorMessage} = authorizeByScopeAndTenant(this.oidcContext, RATE_LIMIT_CREATE_SCOPE, null);
+        const {isAuthorized, errorCode} = authorizeByScopeAndTenant(this.oidcContext, RATE_LIMIT_CREATE_SCOPE, null);
         if(!isAuthorized){
-            throw new GraphQLError(errorMessage || "ERROR");
+            throw new GraphQLError(errorCode);
         }
 
         rateLimitServiceGroup.servicegroupid = randomUUID().toString();
@@ -79,14 +80,14 @@ class RateLimitService {
 
     public async updateRateLimitServiceGroup(rateLimitServiceGroup: RateLimitServiceGroup): Promise<RateLimitServiceGroup> {
 
-        const {isAuthorized, errorMessage} = authorizeByScopeAndTenant(this.oidcContext, RATE_LIMIT_UPDATE_SCOPE, null);
+        const {isAuthorized, errorCode} = authorizeByScopeAndTenant(this.oidcContext, RATE_LIMIT_UPDATE_SCOPE, null);
         if(!isAuthorized){
-            throw new GraphQLError(errorMessage || "ERROR");
+            throw new GraphQLError(errorCode);
         }
 
         const existing: RateLimitServiceGroup | null = await rateLimitDao.getRateLimitServiceGroupById(rateLimitServiceGroup.servicegroupid);
         if(!existing){
-            throw new GraphQLError("ERROR_RATE_LIMIT_SERVICE_GROUP_DOES_NOT_EXIST");
+            throw new GraphQLError(ERROR_CODES.EC00042.errorCode);
         }
         await rateLimitDao.updateRateLimitServiceGroup(rateLimitServiceGroup);
         await this.updateSearchIndex(rateLimitServiceGroup);
@@ -96,9 +97,9 @@ class RateLimitService {
     }
 
     public async deleteRateLimitServiceGroup(serviceGroupId: string): Promise<void>{
-        const {isAuthorized, errorMessage} = authorizeByScopeAndTenant(this.oidcContext, RATE_LIMIT_DELETE_SCOPE, null);
+        const {isAuthorized, errorCode} = authorizeByScopeAndTenant(this.oidcContext, RATE_LIMIT_DELETE_SCOPE, null);
         if(!isAuthorized){
-            throw new GraphQLError(errorMessage || "ERROR");
+            throw new GraphQLError(errorCode);
         }
 
         // TODO
@@ -153,19 +154,19 @@ class RateLimitService {
     
     public async assignRateLimitToTenant(tenantId: string, serviceGroupId: string, allowUnlimited: boolean, limit: number, rateLimitPeriodMinutes: number): Promise<TenantRateLimitRel> {
         
-        const {isAuthorized, errorMessage} = authorizeByScopeAndTenant(this.oidcContext, RATE_LIMIT_TENANT_ASSIGN_SCOPE, tenantId);
+        const {isAuthorized, errorCode} = authorizeByScopeAndTenant(this.oidcContext, RATE_LIMIT_TENANT_ASSIGN_SCOPE, tenantId);
         if(!isAuthorized){
-            throw new GraphQLError(errorMessage || "ERROR");
+            throw new GraphQLError(errorCode);
         }
         
         const tenant = await tenantDao.getTenantById(tenantId);
 
         if(!tenant){
-            throw new GraphQLError("ERROR_CANNOT_FIND_TENANT_TO_ASSIGN_RATE_LIMIT");
+            throw new GraphQLError(ERROR_CODES.EC00008.errorCode);
         }
         const rateLimitServiceGroup: RateLimitServiceGroup | null = await this.getRateLimitServiceGroupById(serviceGroupId);
         if(!rateLimitServiceGroup){
-            throw new GraphQLError("ERROR_CANNOT_FIND_RATE_LIMIT_TO_ASSIGN_TO_TENANT");
+            throw new GraphQLError(ERROR_CODES.EC00042.errorCode);
         }
         
         let existingRels: Array<TenantRateLimitRel> = await rateLimitDao.getRateLimitTenantRel(tenantId, null);
@@ -173,12 +174,12 @@ class RateLimitService {
             (r: TenantRateLimitRel) => r.servicegroupid === rateLimitServiceGroup.servicegroupid
         )
         if(existingRateLimitRel){
-            throw new GraphQLError("ERROR_TENENT_IS_ALREADY_ASSIGNED_RATE_LIMIT");
+            throw new GraphQLError(ERROR_CODES.EC00043.errorCode);
         }
         if(!allowUnlimited){
             const totalLimitValid: boolean = this.checkTotalLimitNotExceeded(tenant, limit, allowUnlimited, rateLimitPeriodMinutes, existingRels);
             if(!totalLimitValid){
-                throw new GraphQLError("ERROR_TOTAL_RATE_LIMIT_EXCEEDED");
+                throw new GraphQLError(ERROR_CODES.EC00044.errorCode);
             }
         }
 
@@ -192,25 +193,25 @@ class RateLimitService {
 
     public async updateRateLimitForTenant(tenantId: string, serviceGroupId: string, allowUnlimited: boolean, limit: number | null, rateLimitPeriodMinutes: number | null): Promise<TenantRateLimitRel> {
         
-        const {isAuthorized, errorMessage} = authorizeByScopeAndTenant(this.oidcContext, RATE_LIMIT_TENANT_UPDATE_SCOPE, tenantId);
+        const {isAuthorized, errorCode} = authorizeByScopeAndTenant(this.oidcContext, RATE_LIMIT_TENANT_UPDATE_SCOPE, tenantId);
         if(!isAuthorized){
-            throw new GraphQLError(errorMessage || "ERROR");
+            throw new GraphQLError(errorCode);
         }
         const existingRels: Array<TenantRateLimitRel> = await rateLimitDao.getRateLimitTenantRel(tenantId, null); 
         const existingRel: TenantRateLimitRel | undefined = existingRels.find(
             (r: TenantRateLimitRel) => r.servicegroupid === serviceGroupId && r.tenantId === tenantId
         );
         if(!existingRel){
-            throw new GraphQLError("ERROR_CANNOT_FIND_EXISTING_TENANT_RATE_LIMIT_REL_TO_UPDATE");
+            throw new GraphQLError(ERROR_CODES.EC00045.errorCode);
         }
         if(!allowUnlimited){
             const tenant = await tenantDao.getTenantById(tenantId);
             if(!tenant){
-                throw new GraphQLError("ERROR_TENANT_NOT_FOUND");
+                throw new GraphQLError(ERROR_CODES.EC00008.errorCode);
             }
             const totalLimitValid: boolean = this.checkTotalLimitNotExceeded(tenant, limit, allowUnlimited, rateLimitPeriodMinutes, existingRels);
             if(!totalLimitValid){
-                throw new GraphQLError("ERROR_TOTAL_RATE_LIMIT_EXCEEDED");
+                throw new GraphQLError(ERROR_CODES.EC00044.errorCode);
             }
         }
         existingRel.allowUnlimitedRate = allowUnlimited;
@@ -263,9 +264,9 @@ class RateLimitService {
 
 
     public async removeRateLimitFromTenant(tenantId: string, rateLimitId: string): Promise<void> {
-        const {isAuthorized, errorMessage} = authorizeByScopeAndTenant(this.oidcContext, RATE_LIMIT_TENANT_REMOVE_SCOPE, tenantId);
+        const {isAuthorized, errorCode} = authorizeByScopeAndTenant(this.oidcContext, RATE_LIMIT_TENANT_REMOVE_SCOPE, tenantId);
         if(!isAuthorized){
-            throw new GraphQLError(errorMessage || "ERROR");
+            throw new GraphQLError(errorCode);
         }
 
         await rateLimitDao.removeRateLimitFromTenant(tenantId, rateLimitId);
