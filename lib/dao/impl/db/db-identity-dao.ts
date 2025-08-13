@@ -1,4 +1,4 @@
-import { User, AuthenticationGroup, AuthorizationGroup, UserTenantRel, UserCredential, UserMfaRel, Fido2Challenge, UserAuthenticationState, UserRegistrationState, UserFailedLogin, UserTermsAndConditionsAccepted } from "@/graphql/generated/graphql-types";
+import { User, AuthenticationGroup, AuthorizationGroup, UserTenantRel, UserCredential, UserMfaRel, Fido2Challenge, UserAuthenticationState, UserRegistrationState, UserFailedLogin, UserTermsAndConditionsAccepted, UserRecoveryEmail, ProfileEmailChangeState } from "@/graphql/generated/graphql-types";
 import IdentityDao, { UserLookupType } from "../../identity-dao";
 import UserAuthorizationGroupRelEntity from "@/lib/entities/authorization-group-user-rel-entity";
 import AuthorizationGroupEntity from "@/lib/entities/authorization-group-entity";
@@ -15,8 +15,10 @@ import UserFido2CounterRelEntity from "@/lib/entities/user-fido2-counter-rel-ent
 import UserAuthenticationStateEntity from "@/lib/entities/user-authentication-state-entity";
 import UserRegistrationStateEntity from "@/lib/entities/user-registration-state-entity";
 import UserTermsAndConditionsAcceptedEntity from "@/lib/entities/user-terms-and-conditions-accepted-entity";
-import UserEmailBackupEntity from "@/lib/entities/user-email-backup-entity";
+import UserEmailRecoveryEntity from "@/lib/entities/user-email-recovery-entity";
 import UserDuressCredentialEntity from "@/lib/entities/user-duress-credential";
+import UserProfileChangeEmailStateEntity from "@/lib/entities/user-profile-email-change-state-entity";
+
 
 class DBIdentityDao extends IdentityDao {
 
@@ -298,9 +300,9 @@ class DBIdentityDao extends IdentityDao {
             where: where
         });
 
-        // For email lookups, we can try the backup email table too
+        // For email lookups, we can try the recovery email table too
         if(u === null && userLookupType === "email"){
-            const entity: UserEmailBackupEntity | null = await sequelize.models.userEmailBackup.findOne({
+            const entity: UserEmailRecoveryEntity | null = await sequelize.models.userEmailRecovery.findOne({
                 where: {
                     email: value
                 }
@@ -407,11 +409,6 @@ class DBIdentityDao extends IdentityDao {
             }
         })
         return Promise.resolve();
-    }
-
-    
-    public async validateOTP(userId: string, challenge: string, challengeId: string, challengeType: string): Promise<boolean> {
-        throw new Error("Method not implemented.");
     }
 
     // prohibitedPasswords
@@ -578,12 +575,18 @@ class DBIdentityDao extends IdentityDao {
             }
         });
 
-        await sequelize.models.userEmailBackup.destroy({
+        await sequelize.models.userEmailRecovery.destroy({
             where: {
                 userId: userId
             }
         });
 
+        await sequelize.models.userProfileEmailChangeState.destroy({
+            where: {
+                userId: userId
+            }
+        });
+        
         await sequelize.models.user.destroy({
             where: {
                 userId: userId
@@ -810,53 +813,46 @@ class DBIdentityDao extends IdentityDao {
             }
         });
 
+        await sequelize.models.userProfileEmailChangeState.destroy({
+            where: {
+                expiresAtMS: {
+                    [Op.lt]: Date.now()
+                }
+            }
+        })
+
     }
 
-    public async getUserBackupEmail(userId: string): Promise<string | null>{
+    public async getUserRecoveryEmail(userId: string): Promise<UserRecoveryEmail | null>{
         const sequelize: Sequelize = await DBDriver.getConnection();
-        const entity: UserEmailBackupEntity | null = await sequelize.models.userEmailBackup.findOne({
+        const entity: UserEmailRecoveryEntity | null = await sequelize.models.userEmailRecovery.findOne({
             where: {
                 userId: userId
             }
         });
-        if(entity){
-            return entity.getDataValue("email");
-        }
-        else{
-            return null;
-        }
+        return entity ? entity.dataValues : null;
     }
 
-    public async addBackupEmail(userId: string, email: string, emailVerified: boolean): Promise<void>{
+    public async addRecoveryEmail(userRecoveryEmail: UserRecoveryEmail): Promise<UserRecoveryEmail>{
         const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.userEmailBackup.create({
-            userId: userId,
-            email: email,
-            emailVerified: emailVerified
-        });
-        return Promise.resolve();
+        await sequelize.models.userEmailRecovery.create(userRecoveryEmail);
+        return Promise.resolve(userRecoveryEmail);
     }
 
-    public async updateBackupEmail(userId: string, email: string, emailVerified: boolean): Promise<void>{
+    public async updateRecoveryEmail(userRecoveryEmail: UserRecoveryEmail): Promise<UserRecoveryEmail>{
         const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.userEmailBackup.update(
-            {
-                userId: userId,
-                email: email,
-                emailVerified: emailVerified
-            },
-            {
+        await sequelize.models.userEmailRecovery.update(userRecoveryEmail, {
                 where: {
-                    userId: userId
+                    userId: userRecoveryEmail.userId
                 }
             }
         );
-        return Promise.resolve();
+        return Promise.resolve(userRecoveryEmail);
     }
 
-    public async deleteBackupEmail(userId: string): Promise<void>{
+    public async deleteRecoveryEmail(userId: string): Promise<void>{
         const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.userEmailBackup.destroy({
+        await sequelize.models.userEmailRecovery.destroy({
             where: {
                 userId: userId
             }
@@ -884,6 +880,48 @@ class DBIdentityDao extends IdentityDao {
         await sequelize.models.userDuressCredential.destroy({
             where: {
                 userId: userId
+            }
+        });
+        return Promise.resolve();
+    }
+
+    public async getProfileEmailChangeStates(changeStateToken: string): Promise<Array<ProfileEmailChangeState>>{
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        const arr: Array<UserProfileChangeEmailStateEntity> = await sequelize.models.userProfileEmailChangeState.findAll({
+            where: {
+                changeEmailSessionToken: changeStateToken
+            }
+        });
+        return arr.map((entity: UserProfileChangeEmailStateEntity) => entity.dataValues);
+    }
+    
+    public async createProfileEmailChangeStates(arrEmailChangeStates: Array<ProfileEmailChangeState>): Promise<Array<ProfileEmailChangeState>>{
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        for(let i = 0; i < arrEmailChangeStates.length; i++){
+            await sequelize.models.userProfileEmailChangeState.create(arrEmailChangeStates[i]);
+        }
+        return arrEmailChangeStates;
+    }
+    
+    public async updateProfileEmailChangeState(profileEmailChangeState: ProfileEmailChangeState): Promise<ProfileEmailChangeState>{
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.userProfileEmailChangeState.update(profileEmailChangeState, {
+            where: {
+                userId: profileEmailChangeState.userId,
+                emailChangeState: profileEmailChangeState.emailChangeState,
+                changeEmailSessionToken: profileEmailChangeState.changeEmailSessionToken
+            }
+        });
+        return profileEmailChangeState;
+    }
+
+    public async deleteProfileEmailChangeState(profileEmailChangeState: ProfileEmailChangeState): Promise<void>{
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.userProfileEmailChangeState.destroy({
+            where: {
+                userId: profileEmailChangeState.userId,
+                emailChangeState: profileEmailChangeState.emailChangeState,
+                changeEmailSessionToken: profileEmailChangeState.changeEmailSessionToken
             }
         });
         return Promise.resolve();

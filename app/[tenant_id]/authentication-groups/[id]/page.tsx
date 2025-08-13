@@ -27,7 +27,8 @@ const AuthenticationGroupDetailPage: React.FC = () => {
             skip: !containsScope([TENANT_READ_ALL_SCOPE, AUTHENTICATION_GROUP_READ_SCOPE], profile?.scope || []) || authenticationGroupId === null || authenticationGroupId === undefined,
             variables: {
                 authenticationGroupId: authenticationGroupId
-            }
+            },
+            fetchPolicy: "no-cache"
         }        
     )
 

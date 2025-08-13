@@ -27,7 +27,7 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
 
     // STATE VARIABLES    
     const initInput: SystemSettingsUpdateInput = {
-        allowBackupEmail: systemSettings.allowBackupEmail,
+        allowRecoveryEmail: systemSettings.allowRecoveryEmail,
         allowDuressPassword: systemSettings.allowDuressPassword,
         rootClientId: systemSettings.rootClientId,
         enablePortalAsLegacyIdp: systemSettings.enablePortalAsLegacyIdp
@@ -44,7 +44,7 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
             setShowMutationBackdrop(false);
             setMarkDirty(false);
             setSystemSettingsUpdateInput({
-                allowBackupEmail: data.updateSystemSettings.allowBackupEmail,
+                allowRecoveryEmail: data.updateSystemSettings.allowRecoveryEmail,
                 allowDuressPassword: data.updateSystemSettings.allowDuressPassword,
                 rootClientId: data.updateSystemSettings.rootClientId,
                 enablePortalAsLegacyIdp: data.updateSystemSettings.enablePortalAsLegacyIdp
@@ -85,16 +85,16 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
                                         {systemSettings.softwareVersion}
                                     </Grid2>
                                     <Grid2 size={11}>
-                                        Allow backup emails
+                                        Allow recovery emails
                                     </Grid2>
                                     <Grid2 size={1}>
                                         <Checkbox
                                             sx={{ height: "25px", width: "25px" }}
-                                            value={systemSettingsUpdateInput.allowBackupEmail}
-                                            checked={systemSettingsUpdateInput.allowBackupEmail}
+                                            value={systemSettingsUpdateInput.allowRecoveryEmail}
+                                            checked={systemSettingsUpdateInput.allowRecoveryEmail}
                                             disabled={!containsScope(SYSTEM_SETTINGS_UPDATE_SCOPE, profile?.scope)}
                                             onChange={(_, checked: boolean) => {                                                
-                                                systemSettingsUpdateInput.allowBackupEmail = checked;
+                                                systemSettingsUpdateInput.allowRecoveryEmail = checked;
                                                 setMarkDirty(true);
                                                 setSystemSettingsUpdateInput({...systemSettingsUpdateInput});                                                
                                             }}

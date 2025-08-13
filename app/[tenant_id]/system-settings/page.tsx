@@ -20,7 +20,8 @@ const SystemSettingsDetailPage: React.FC = () => {
     const {data, loading, error} = useQuery(
         SYSTEM_SETTINGS_QUERY,
         {
-            skip: !containsScope([SYSTEM_SETTINGS_READ_SCOPE], profile?.scope)
+            skip: !containsScope([SYSTEM_SETTINGS_READ_SCOPE], profile?.scope),
+            fetchPolicy: "no-cache"
         }
     )
 

@@ -87,7 +87,7 @@ const SecretViewerDialog: React.FC<SecretViewerDialogProps> = ({
                                 <Grid2 container size={12}>
                                     <Grid2 size={11.5} sx={{ marginBottom: "8px", textDecoration: "underline" }}>
                                         {secretObjectType === SecretObjectType.ClientSecret &&
-                                            `Client Secret (Base64 Encoded)`
+                                            `Client Secret`
                                         }
                                         {secretObjectType === SecretObjectType.OidcProviderClientSecret &&
                                             `OIDC Provider Client Secret`

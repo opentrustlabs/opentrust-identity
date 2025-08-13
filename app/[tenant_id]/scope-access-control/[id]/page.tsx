@@ -27,7 +27,8 @@ const ScopeDetailPage: React.FC = () => {
             skip: !containsScope([TENANT_READ_ALL_SCOPE, SCOPE_READ_SCOPE], profile?.scope || []) || scopeId === null || scopeId === undefined,
             variables: {
                 scopeId: scopeId
-            }
+            },
+            fetchPolicy: "no-cache"
         }
         
     )

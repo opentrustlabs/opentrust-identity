@@ -1,9 +1,9 @@
 import { Model, DataTypes, Sequelize } from 'sequelize';
 
-class UserEmailBackupEntity extends Model {
+class UserEmailRecoveryEntity extends Model {
     
-    static initModel(sequelize: Sequelize): typeof UserEmailBackupEntity {
-        return UserEmailBackupEntity.init({
+    static initModel(sequelize: Sequelize): typeof UserEmailRecoveryEntity {
+        return UserEmailRecoveryEntity.init({
             userId: {
                 type: DataTypes.STRING,
                 primaryKey: true,
@@ -24,12 +24,12 @@ class UserEmailBackupEntity extends Model {
         }, 
         {
             sequelize,
-            tableName: "user_email_backup",
-            modelName: "userEmailBackup",
+            tableName: "user_email_recovery",
+            modelName: "userEmailRecovery",
             timestamps: false
         });
     }
 }
 
 
-export default UserEmailBackupEntity;
+export default UserEmailRecoveryEntity;

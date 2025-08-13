@@ -27,7 +27,8 @@ const ClientDetailPage: React.FC = () => {
             skip: !containsScope([TENANT_READ_ALL_SCOPE, CLIENT_READ_SCOPE], profile?.scope || []) || clientId === null || clientId === undefined,
             variables: {
                 clientId: clientId
-            }
+            },
+            fetchPolicy: "no-cache"
         }        
     )
 

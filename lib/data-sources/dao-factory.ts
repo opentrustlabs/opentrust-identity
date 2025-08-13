@@ -31,6 +31,8 @@ import DBI18NDao from "../dao/impl/db/db-i18n-dao";
 import SchedulerDao from "../dao/scheduler-dao";
 import DBSchedulerDao from "../dao/impl/db/db-scheduler-dao";
 import NoOpKms from "../kms/no-op-kms";
+import SecretShareDao from "../dao/secret-share-dao";
+import DBSecretShareDao from "../dao/impl/db/db-secret-share-dao";
 
 const daoStrategy = process.env.DAO_STRATEGY;
 const ksmStrategy = process.env.KMS_STRATEGY;
@@ -54,6 +56,7 @@ class DaoFactory {
     protected i18nDao: I18NDao;
     protected kms: Kms;
     protected schedulerDao: SchedulerDao;
+    protected secretShareDao: SecretShareDao;
 
     private constructor() {
         // NO-OP
@@ -272,6 +275,19 @@ class DaoFactory {
         }
         else{
             throw new Error("ERROR_DAO_STRATEGY_NOT_DEFINED");
+        }
+    }
+
+    public getSecretShareDao(): SecretShareDao {
+        if(DaoFactory.instance.secretShareDao){
+            return DaoFactory.instance.secretShareDao;
+        }
+        if(daoStrategy=== "rdb"){
+            DaoFactory.instance.secretShareDao = new DBSecretShareDao();
+            return DaoFactory.instance.secretShareDao;
+        }
+        else {
+            throw new Error("ERROR_KMS_STRATEGY_NOT_IMPLEMENTED");
         }
     }
 

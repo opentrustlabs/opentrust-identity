@@ -5,13 +5,13 @@ import TextField from "@mui/material/TextField";
 import Stack from "@mui/material/Stack";
 import Button from "@mui/material/Button";
 import { useMutation } from "@apollo/client";
-import { REGISTER_ADD_BACKUP_EMAIL_MUTATION } from "@/graphql/mutations/oidc-mutations";
+import { REGISTER_ADD_RECOVERY_EMAIL_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import { RegistrationComponentsProps } from "./register";
 import { UserRegistrationStateResponse } from "@/graphql/generated/graphql-types";
 import PriorityHighOutlinedIcon from '@mui/icons-material/PriorityHighOutlined';
 
 
-const BackupEmailConfiguration: React.FC<RegistrationComponentsProps> = ({
+const RecoveryEmailConfiguration: React.FC<RegistrationComponentsProps> = ({
     initialUserRegistrationState,
     onRegistrationCancelled,
     onUpdateEnd,
@@ -21,7 +21,7 @@ const BackupEmailConfiguration: React.FC<RegistrationComponentsProps> = ({
 
     const [email, setEmail] = React.useState<string>("");
 
-    const [registerAddBackupEmail] = useMutation(REGISTER_ADD_BACKUP_EMAIL_MUTATION, {
+    const [registerAddRecoveryEmail] = useMutation(REGISTER_ADD_RECOVERY_EMAIL_MUTATION, {
         onCompleted(data) {
             const response: UserRegistrationStateResponse = data.registerAddBackupEmail as UserRegistrationStateResponse;
             onUpdateEnd(response, null)
@@ -45,7 +45,7 @@ const BackupEmailConfiguration: React.FC<RegistrationComponentsProps> = ({
                     </div>
                 </Grid2>
                 <Grid2 size={12} marginTop={"16px"} marginBottom={"16px"}>
-                    <TextField name="backupEmail" id="backupEmail"
+                    <TextField name="recoveryEmail" id="recoveryEmail"
                         value={email}
                         onChange={(evt) => setEmail(evt.target.value)}
                         fullWidth={true}
@@ -61,13 +61,13 @@ const BackupEmailConfiguration: React.FC<RegistrationComponentsProps> = ({
                 <Button
                     onClick={() => {
                         onUpdateStart();
-                        registerAddBackupEmail({
+                        registerAddRecoveryEmail({
                             variables: {
                                 userId: initialUserRegistrationState.userId,
                                 registrationSessionToken: initialUserRegistrationState.registrationSessionToken,
                                 preAuthToken: initialUserRegistrationState.preAuthToken,
                                 skip: true,
-                                backupEmail: null
+                                recoveryEmail: null
                             }
                         });
                     }}
@@ -79,13 +79,13 @@ const BackupEmailConfiguration: React.FC<RegistrationComponentsProps> = ({
                     disabled={email.length < 5 || email.indexOf("@") < 2}
                     onClick={() => {
                         onUpdateStart();
-                        registerAddBackupEmail({
+                        registerAddRecoveryEmail({
                             variables: {
                                 userId: initialUserRegistrationState.userId,
                                 registrationSessionToken: initialUserRegistrationState.registrationSessionToken,
                                 preAuthToken: initialUserRegistrationState.preAuthToken,
                                 skip: false,
-                                backupEmail: email
+                                recoveryEmail: email
                             }
                         });
                     }}
@@ -103,4 +103,4 @@ const BackupEmailConfiguration: React.FC<RegistrationComponentsProps> = ({
     )
 }
 
-export default BackupEmailConfiguration;
+export default RecoveryEmailConfiguration;

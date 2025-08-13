@@ -1,7 +1,7 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { OidcUserProfile } from '@/graphql/generated/graphql-types';
 import JwtServiceUtils from '@/lib/service/jwt-service-utils';
+import { OIDCUserProfile } from '@/lib/models/principal';
 
 const jwtServiceUtils: JwtServiceUtils = new JwtServiceUtils();
 
@@ -54,7 +54,7 @@ export default async function handler(
         }
     }
 
-    const profile: OidcUserProfile | null = await jwtServiceUtils.getOIDCUserProfile(jwt || "", includeScope, includeGroups);
+    const profile: OIDCUserProfile | null = await jwtServiceUtils.getOIDCUserProfile(jwt || "", includeScope, includeGroups);
     if(profile === null){
         res.status(403).json({ error: "ERROR_INVALID_AUTHORIZATION_HEADER_FORMAT" });
         res.end();

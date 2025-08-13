@@ -1,4 +1,4 @@
-import { User, Tenant, Client, SigningKey, ClientAuthHistory, PortalUserProfile, AuthorizationGroup, UserScopeRel, Scope, OidcUserProfile, UserProfileAuthorizationGroup, SystemSettings, ClientScopeRel } from "@/graphql/generated/graphql-types";
+import { User, Tenant, Client, SigningKey, ClientAuthHistory, PortalUserProfile, AuthorizationGroup, UserScopeRel, Scope, SystemSettings, ClientScopeRel, RefreshData } from "@/graphql/generated/graphql-types";
 import { generateRandomToken, getDomainFromEmail } from "@/utils/dao-utils";
 import ClientDao from "@/lib/dao/client-dao";
 import TenantDao from "@/lib/dao/tenant-dao";
@@ -6,14 +6,16 @@ import IdentityDao from "@/lib/dao/identity-dao";
 import { OIDCTokenResponse } from "@/lib/models/token-response";
 import { JWTPayload, SignJWT, JWTVerifyResult, jwtVerify, decodeJwt, decodeProtectedHeader, ProtectedHeaderParameters } from "jose";
 import SigningKeysDao from "../dao/signing-keys-dao";
-import { OIDCPrincipal } from "../models/principal";
+import { JWTPrincipal, OIDCUserProfile, ProfileAuthorizationGroup, ProfileScope } from "../models/principal";
 import { randomUUID, createPrivateKey, PrivateKeyInput, KeyObject, createSecretKey, createPublicKey, PublicKeyInput } from "node:crypto"; 
 import NodeCache from "node-cache";
-import { CLIENT_SECRET_ENCODING, DEFAULT_END_USER_TOKEN_TTL_SECONDS, DEFAULT_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS, KEY_USE_JWT_SIGNING, NAME_ORDER_WESTERN, TOKEN_TYPE_END_USER, TOKEN_TYPE_SERVICE_ACCOUNT_TOKEN } from "@/utils/consts";
+import { CLIENT_SECRET_ENCODING, CLIENT_TYPE_DEVICE, CLIENT_TYPE_USER_DELEGATED_PERMISSIONS, DEFAULT_END_USER_TOKEN_TTL_SECONDS, DEFAULT_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS, KEY_USE_JWT_SIGNING, NAME_ORDER_WESTERN, PRINCIPAL_TYPE_ANONYMOUS_USER, PRINCIPAL_TYPE_END_USER, PRINCIPAL_TYPE_IAM_PORTAL_USER, PRINCIPAL_TYPE_SERVICE_ACCOUNT_TOKEN } from "@/utils/consts";
 import { DaoFactory } from "../data-sources/dao-factory";
 import ScopeDao from "../dao/scope-dao";
 import AuthorizationGroupDao from "../dao/authorization-group-dao";
 import Kms from "../kms/kms";
+import { use } from "react";
+import AuthDao from "../dao/auth-dao";
 
 const SIGNING_KEY_ARRAY_CACHE_KEY = "SIGNING_KEY_ARRAY_CACHE_KEY"
 interface CachedSigningKeyData {
@@ -30,6 +32,7 @@ const signingKeysDao: SigningKeysDao = DaoFactory.getInstance().getSigningKeysDa
 const scopeDao: ScopeDao = DaoFactory.getInstance().getScopeDao();
 const authorizationGroupDao: AuthorizationGroupDao = DaoFactory.getInstance().getAuthorizationGroupDao();
 const kms: Kms = DaoFactory.getInstance().getKms();
+const authDao: AuthDao = DaoFactory.getInstance().getAuthDao();
 
 const {
     AUTH_DOMAIN
@@ -58,15 +61,22 @@ class JwtServiceUtils {
     });
 
     /**
+     * The OIDCUserProfile object is returned for external clients calling the /api/users/me endpoint
+     * to get additional information about the user beyond what the OIDC user profile. This can be used
+     * both for user-based JWTs and for client-based JWTs.
+     * 
+     * It is not to be confused with the PortalUserProfile object, which is similar. The PortalUserProfile
+     * object is to be used for authorization for all IAM-based GraphQL calls and is not meant for external
+     * consumption.
      * 
      * @param jwt 
      * @param includeScope 
      * @param includeAuthorizationGroups 
      * @returns 
      */
-    public async getOIDCUserProfile(jwt: string, includeScope: boolean, includeAuthorizationGroups: boolean): Promise<OidcUserProfile | null> {
+    public async getOIDCUserProfile(jwt: string, includeScope: boolean, includeAuthorizationGroups: boolean): Promise<OIDCUserProfile | null> {
         
-        let principal: OIDCPrincipal | null = null;
+        let principal: JWTPrincipal | null = null;
         const p = await this.validateJwt(jwt);
         if (p) {
             principal = p;
@@ -75,28 +85,145 @@ class JwtServiceUtils {
         if(principal === null){
             return null;
         }
-        else{
-            const user: User | null = await identityDao.getUserBy("id", principal.sub);
+        
+        let user: User | null = null;
+        const client: Client | null = await clientDao.getClientById(principal.sub);
+        if(client === null){
+            return null;
+        }
+        let oidcUserProfile: OIDCUserProfile | null = null;
+        if(principal.principal_type === PRINCIPAL_TYPE_SERVICE_ACCOUNT_TOKEN){
+            
+            const arrScopes = includeScope ? await this.getClientScopes(client.clientId) : [];
+            const arrProfileScopes = arrScopes.map(
+                (s: Scope) => {
+                    const profileScope: ProfileScope = {
+                        scopeDescription: s.scopeDescription,
+                        scopeId: s.scopeId,
+                        scopeName: s.scopeName
+                    }
+                    return profileScope
+                }
+            )
+            oidcUserProfile = {
+                domain: "",
+                email: "",
+                emailVerified: true,
+                enabled: client.enabled,
+                firstName: "",
+                lastName: "",
+                locked: false,
+                nameOrder: "",
+                scope: arrProfileScopes,
+                tenantId: principal.tenant_id,
+                tenantName: principal.tenant_name,
+                userId: principal.sub,
+                countryCode: principal.country_code,
+                preferredLanguageCode: principal.language_code,
+                clientId: principal.client_id,
+                clientName: principal.client_name,
+                authorizationGroups: [],
+                address: principal.address,
+                federatedOIDCProviderSubjectId: null,
+                middleName: null,
+                phoneNumber: null,
+                expiresAtMs: principal.exp * 1000,
+                principalType: principal.principal_type,
+                addressLine1: null,
+                city: null,
+                postalCode: null,
+                stateRegionProvince: null
+            }
+        }
+        else if(principal.principal_type === PRINCIPAL_TYPE_ANONYMOUS_USER){
+            // TODO
+            // Refactor, since these both do the same queries.
+            const arrScopes = includeScope ? await this.getScopes(principal.sub, principal.tenant_id) : [];
+            const arrProfileScopes = arrScopes.map(
+                (s: Scope) => {
+                    const profileScope: ProfileScope = {
+                        scopeDescription: s.scopeDescription,
+                        scopeId: s.scopeId,
+                        scopeName: s.scopeName
+                    }
+                    return profileScope
+                }
+            )
+            oidcUserProfile = {
+                domain: "",
+                email: "",
+                emailVerified: false,
+                enabled: true,
+                firstName: "",
+                lastName: "",
+                locked: false,
+                nameOrder: "",
+                scope: arrProfileScopes,
+                tenantId: principal.tenant_id,
+                tenantName: principal.tenant_name,
+                userId: principal.sub,
+                countryCode: principal.country_code,
+                preferredLanguageCode: principal.language_code,
+                clientId: principal.client_id,
+                clientName: principal.client_name,
+                authorizationGroups: [],
+                address: principal.address,
+                federatedOIDCProviderSubjectId: null,
+                middleName: null,
+                phoneNumber: null,
+                expiresAtMs: principal.exp * 1000,
+                principalType: principal.principal_type,
+                addressLine1: null,
+                city: null,
+                postalCode: null,
+                stateRegionProvince: null
+            }
+        }
+        else{            
+            user = await identityDao.getUserBy("id", principal.sub);
             if(user === null){
                 return null;
             }
+            
+            let arrProfileScopes: Array<ProfileScope> = [];
+            if(client.clientType === CLIENT_TYPE_USER_DELEGATED_PERMISSIONS || client.clientType === CLIENT_TYPE_DEVICE){
+                const arrScopes = includeScope ? await this.getDelegatedScope(user.userId, client.clientId, principal.tenant_id) : [];
+                arrScopes.forEach(
+                    (s: Scope) => {
+                        const profileScope: ProfileScope = {
+                            scopeDescription: s.scopeDescription,
+                            scopeId: s.scopeId,
+                            scopeName: s.scopeName
+                        }
+                        arrProfileScopes.push(profileScope);
+                    }
+                );
+            }
+            else{
+                const arrScopes = includeScope ? await this.getScopes(user.userId, principal.tenant_id) : [];
+                arrScopes.forEach(
+                    (s: Scope) => {
+                        const profileScope: ProfileScope = {
+                            scopeDescription: s.scopeDescription,
+                            scopeId: s.scopeId,
+                            scopeName: s.scopeName
+                        }
+                        arrProfileScopes.push(profileScope);
+                    }
+                );
+            }            
 
-            // TODO
-            // Refactor, since these both do the same queries.
-            const arrScopes = includeScope ? await this.getScopes(user.userId, principal.tenant_id) : [];
             const arrAuthzGroups: Array<AuthorizationGroup> = includeAuthorizationGroups ? await authorizationGroupDao.getUserAuthorizationGroups(user.userId) : [];
-
-            const arrPortalAuthnGroups: Array<UserProfileAuthorizationGroup> = arrAuthzGroups.map(
+            const arrProfileAuthzGroups: Array<ProfileAuthorizationGroup> = arrAuthzGroups.map(
                 (g: AuthorizationGroup) => {
-                    const portalGroup: UserProfileAuthorizationGroup = {
+                    const portalGroup: ProfileAuthorizationGroup = {
                         groupId: g.groupId,
                         groupName: g.groupName
                     }
                     return portalGroup;                    
                 }
             );
-
-            const oidcUserProfile: OidcUserProfile = {
+            oidcUserProfile = {
                 domain: getDomainFromEmail(principal.email),
                 email: principal.email,
                 emailVerified: true,
@@ -105,7 +232,7 @@ class JwtServiceUtils {
                 lastName: principal.family_name,
                 locked: false,
                 nameOrder: user.nameOrder,
-                scope: arrScopes,
+                scope: arrProfileScopes,
                 tenantId: principal.tenant_id,
                 tenantName: principal.tenant_name,
                 userId: principal.sub,
@@ -113,29 +240,37 @@ class JwtServiceUtils {
                 preferredLanguageCode: principal.language_code,
                 clientId: principal.client_id,
                 clientName: principal.client_name,
-                authorizationGroups: arrPortalAuthnGroups,
+                authorizationGroups: arrProfileAuthzGroups,
                 address: principal.address,
-                federatedOIDCProviderSubjectId: user.federatedOIDCProviderSubjectId,
-                middleName: user.middleName,
-                phoneNumber: user.phoneNumber,
-                expiresAtMs: principal.exp * 1000             
+                federatedOIDCProviderSubjectId: user.federatedOIDCProviderSubjectId || null,
+                middleName: user.middleName || null,
+                phoneNumber: user.phoneNumber || null,
+                expiresAtMs: principal.exp * 1000,
+                principalType: principal.principal_type,
+                addressLine1: user.addressLine1 || null,
+                city: user.city || null,
+                postalCode: user.postalCode || null,
+                stateRegionProvince: user.stateRegionProvince || null
             }
-            return oidcUserProfile;
-        }
+        }            
+        
+        return oidcUserProfile;
+        
     }
 
     /**
-     * 
+     * The PortalUserProfile object is for internal IAM use, not for external consumption like the OIDCUserProfile object.
+     * A 
      * @param jwt 
      * @returns 
      */
     public async getPortalUserProfile(jwt: string): Promise<PortalUserProfile | null> {
-
+        
         if(JwtServiceUtils.PortalUserProfileCache.has(jwt)){
             return JwtServiceUtils.PortalUserProfileCache.get(jwt) as PortalUserProfile;
         }
 
-        let principal: OIDCPrincipal | null = null;
+        let principal: JWTPrincipal | null = null;
 
         const p = await this.validateJwt(jwt);
         if (p) {
@@ -144,14 +279,43 @@ class JwtServiceUtils {
         if(principal === null){
             return null;
         }        
-        else{
-            const user: User | null = await identityDao.getUserBy("id", principal.sub);
-            if(user === null){
+        
+        let user: User | null = null;
+        let client: Client | null = null;
+        let profile: PortalUserProfile | null = null;
+        if(principal.principal_type === PRINCIPAL_TYPE_SERVICE_ACCOUNT_TOKEN){
+            client = await clientDao.getClientById(principal.sub);
+            if(client === null){
                 return null;
             }
-            const arrScope: Array<Scope> = await this.getScopes(user.userId, principal.tenant_id);
-            
-            const profile: PortalUserProfile = {
+            const arrScopes = await this.getClientScopes(client.clientId);            
+            profile = {
+                domain: "",
+                email: "",
+                emailVerified: true,
+                enabled: true,
+                firstName: "",
+                lastName: "",
+                locked: false,
+                nameOrder: "",
+                scope: arrScopes,
+                tenantId: principal.tenant_id,
+                tenantName: principal.tenant_name,
+                userId: principal.sub,
+                countryCode: principal.country_code,
+                preferredLanguageCode: principal.language_code,
+                managementAccessTenantId: principal.tenant_id,
+                principalType: principal.principal_type,
+                expiresAtMs: principal.exp * 1000
+            }
+        }
+        else if(principal.principal_type === PRINCIPAL_TYPE_END_USER || principal.principal_type === PRINCIPAL_TYPE_IAM_PORTAL_USER){
+            user = await identityDao.getUserBy("id", principal.sub);
+            if(user === null){
+                return null;
+            }            
+            const arrScope: Array<Scope> = principal.principal_type === PRINCIPAL_TYPE_IAM_PORTAL_USER ? await this.getScopes(user.userId, principal.tenant_id) : [];
+            profile = {
                 domain: getDomainFromEmail(principal.email),
                 email: principal.email,
                 emailVerified: true,
@@ -166,17 +330,27 @@ class JwtServiceUtils {
                 userId: principal.sub,
                 countryCode: principal.country_code,
                 preferredLanguageCode: principal.language_code,
-                managementAccessTenantId: principal.tenant_id
-            }            
-            
-            JwtServiceUtils.PortalUserProfileCache.set(jwt, profile);
-            return profile;
-        }
+                managementAccessTenantId: principal.tenant_id,
+                principalType: principal.principal_type,
+                expiresAtMs: principal.exp * 1000,
+                address: user.address,
+                addressLine1: user.addressLine1,
+                city: user.city,
+                federatedOIDCProviderSubjectId: user.federatedOIDCProviderSubjectId,
+                middleName: user.middleName,
+                phoneNumber: user.phoneNumber,
+                postalCode: user.postalCode,
+                stateRegionProvince: user.stateRegionProvince
+            }
+        } 
+        JwtServiceUtils.PortalUserProfileCache.set(jwt, profile);
+        return profile;
+        
     }
 
 
     /**
-     * 
+     * Signs a JWT means for consumption within the IAM portal.
      * @param user 
      * @param tenant 
      * @param ttlInSeconds 
@@ -210,14 +384,14 @@ class JwtServiceUtils {
             client_id: "",
             client_name: "",
             client_type: "",
-            token_type: tokenType
+            principal_type: tokenType
         };
         const s: string | null = await this.signJwt(principal);
         return Promise.resolve({accessToken: s, principal: principal});
     }
 
     /**
-     * 
+     * Signs a standard user JWT. 
      * @param user 
      * @param clientId 
      * @param tenantId 
@@ -264,12 +438,17 @@ class JwtServiceUtils {
             client_id: clientId,
             client_name: client.clientName,
             client_type: client.clientType,
-            token_type: TOKEN_TYPE_END_USER
+            principal_type: PRINCIPAL_TYPE_END_USER
         };
 
-        const s: string | null = await this.signJwt(principal);
-        if(s === null){
+        const idToken: string | null = await this.signJwt(principal);
+        if(idToken === null){
             return Promise.resolve(null);
+        }
+        let accessToken: string | null = null;
+        if(client.audience !== null && client.audience !== ""){
+            principal.aud = client.audience;
+            accessToken = await this.signJwt(principal);
         }
         
         let generateRefreshToken: boolean = false;
@@ -281,16 +460,23 @@ class JwtServiceUtils {
         }
 
         const oidcTokenResponse: OIDCTokenResponse = {
-            access_token: s,
+            access_token: accessToken !== null ? accessToken : idToken,
             token_type: "Bearer",
             refresh_token: generateRefreshToken ? generateRandomToken(32) : null,
             expires_in: client.userTokenTTLSeconds ? ( now / 1000 ) + client.userTokenTTLSeconds : ( now / 1000 ) + DEFAULT_END_USER_TOKEN_TTL_SECONDS,
-            id_token: s
+            id_token: idToken
         }
         
         return Promise.resolve({oidcTokenResponse: oidcTokenResponse, principal: principal});
     }
 
+    /**
+     * Uses the root client id to generate a JWT which is then sent to any external 
+     * service. The external service will be able to validate the JWT and get the
+     * scope assigned to the client in order to check for permissions.
+     * 
+     * @returns 
+     */
     public async getAuthTokenForOutboundCalls(): Promise<string | null>{
         const systemSettings: SystemSettings = await tenantDao.getSystemSettings();
         let authToken: string | null = null;
@@ -341,7 +527,7 @@ class JwtServiceUtils {
             client_id: client.clientId,
             client_name: client.clientName,
             client_type: client.clientType,
-            token_type: TOKEN_TYPE_SERVICE_ACCOUNT_TOKEN
+            principal_type: PRINCIPAL_TYPE_SERVICE_ACCOUNT_TOKEN
         };
         
         const s: string | null = await this.signJwt(principal);
@@ -471,12 +657,12 @@ class JwtServiceUtils {
      * 
      * @param jwt 
      */
-    public async validateJwt(jwt: string): Promise<OIDCPrincipal | null> {
+    public async validateJwt(jwt: string): Promise<JWTPrincipal | null> {
 
         // Always check the expiration value of the cached data too.
         const nowInSeconds = Date.now() / 1000;
         if(JwtServiceUtils.OIDCPrincipalCache.has(jwt)){
-            const principal: OIDCPrincipal = JwtServiceUtils.OIDCPrincipalCache.get(jwt) as OIDCPrincipal;
+            const principal: JWTPrincipal = JwtServiceUtils.OIDCPrincipalCache.get(jwt) as JWTPrincipal;
             if(principal.exp < nowInSeconds){                
                 return Promise.resolve(null);
             }
@@ -484,34 +670,33 @@ class JwtServiceUtils {
                 return principal;
             }
         }
-        
-        const protectedHeader: ProtectedHeaderParameters = decodeProtectedHeader(jwt);
-        const keyId = protectedHeader.kid;
-        if(!keyId){
-            return Promise.resolve(null);
-        }
-        if(!protectedHeader.alg || protectedHeader.alg !== "RS256"){
-            return Promise.resolve(null);
-        }
-        const payload: JWTPayload = decodeJwt(jwt);
-        
-        if(!payload.exp || payload.exp < nowInSeconds){
-            return Promise.resolve(null);
-        }
-
-        const cachedSigningKeyData: CachedSigningKeyData | null = await this.getCachedSigningKey(keyId);
-        if(!cachedSigningKeyData){
-            return Promise.resolve(null);
-        }
 
         try {
+            const protectedHeader: ProtectedHeaderParameters = decodeProtectedHeader(jwt);
+            const keyId = protectedHeader.kid;
+            if(!keyId){
+                return Promise.resolve(null);
+            }
+            if(!protectedHeader.alg || protectedHeader.alg !== "RS256"){
+                return Promise.resolve(null);
+            }
+            const payload: JWTPayload = decodeJwt(jwt);
+            
+            if(!payload.exp || payload.exp < nowInSeconds){
+                return Promise.resolve(null);
+            }
+
+            const cachedSigningKeyData: CachedSigningKeyData | null = await this.getCachedSigningKey(keyId);
+            if(!cachedSigningKeyData){
+                return Promise.resolve(null);
+            }
             const p: JWTVerifyResult = await jwtVerify(jwt, cachedSigningKeyData.publicKeyObject)
             if(!p.payload){                
                 return Promise.resolve(null);
             }
             else{
                 JwtServiceUtils.OIDCPrincipalCache.set(jwt, p.payload);
-                return Promise.resolve(p.payload as unknown as OIDCPrincipal);
+                return Promise.resolve(p.payload as unknown as JWTPrincipal);
             }
         }
         catch(error){
@@ -519,6 +704,21 @@ class JwtServiceUtils {
         }        
     }
 
+
+    /**
+     * 
+     * @param clientId 
+     * @returns 
+     */
+    public async getClientScopes(clientId: string): Promise<Array<Scope>> {
+        const arrRels: Array<ClientScopeRel> = await scopeDao.getClientScopeRels(clientId);
+        const scopeIds: Array<string> = arrRels.map(
+            (r: ClientScopeRel) => r.scopeId
+        );
+        const arrScope: Array<Scope> = await scopeDao.getScope(undefined, Array.from(scopeIds));  
+        return arrScope;
+        
+    }
 
     /**
      * 
@@ -626,15 +826,25 @@ class JwtServiceUtils {
         return Promise.resolve(cachedSigningKey);
     }
 
-    public async getClientScopes(clientId: string): Promise<Array<Scope>> {
-        const arrRels: Array<ClientScopeRel> = await scopeDao.getClientScopeRels(clientId);
-        const scopeIds: Array<string> = arrRels.map(
-            (r: ClientScopeRel) => r.scopeId
+    protected async getDelegatedScope(userId: string, clientId: string, tenantId: string): Promise<Array<Scope>>{
+        const arrRefreshData: Array<RefreshData> = await authDao.getRefreshDataByUserId(userId);
+        const refreshData: RefreshData | undefined = arrRefreshData.find(
+            (d: RefreshData) => d.userId === userId && d.clientId === clientId && d.tenantId === tenantId
         );
-        const arrScope: Array<Scope> = await scopeDao.getScope(undefined, Array.from(scopeIds));  
+        if(!refreshData){
+            return [];
+        }
+        let arrScopeNames = refreshData.scope.split(",");
+        let arrScope: Array<Scope> = [];
+        for(let i = 0; i < arrScopeNames.length; i++){
+            const scope: Scope | null = await scopeDao.getScopeByScopeName(arrScopeNames[i]);
+            if(scope){
+                arrScope.push(scope);
+            }
+        }
         return arrScope;
-        
     }
+
     protected async getScopes(userId: string, tenantId: string): Promise<Array<Scope>> {
         const setScopeIds: Set<string> = new Set();
 
@@ -659,70 +869,9 @@ class JwtServiceUtils {
         return arrScope;
     }
 
+    
+
 }
 
 export default JwtServiceUtils;
-
-    // public async testJwtSign(jwtPayload: JWTPayload, pemPrivateKey: string, passphrase?: string): Promise<string> {
-
-    //     const privateKeyInput: PrivateKeyInput = {
-    //         key: pemPrivateKey,
-    //         encoding: "utf-8",
-    //         format: "pem",
-    //         passphrase: passphrase ? passphrase : undefined
-    //     };                    
-    //     const privateKeyObject: KeyObject = createPrivateKey(privateKeyInput);
-
-    //     const s: string = await new SignJWT(jwtPayload)
-    //     .setProtectedHeader({
-    //         alg: "RS256",
-    //         kid: "1234567890"
-    //     })
-    //     .sign(privateKeyObject);
-    //     return s;
-    // }
-
-    // public async testJwtVerifySignatureWithPublicKey(jwt: string, pemPublicKey: string): Promise<OIDCPrincipal | null>{
-
-    //     const publicKeyInput: PublicKeyInput = {
-    //         key: pemPublicKey,
-    //         encoding: "utf-8",
-    //         format: "pem",
-
-    //     };
-    //     const publicKeyObject = createPublicKey(publicKeyInput);
-    //     try {
-    //         const p: JWTVerifyResult = await jwtVerify(jwt, publicKeyObject)
-    //         if(!p.payload){
-    //             return Promise.resolve(null);
-    //         }
-    //         else{
-    //             return Promise.resolve(p.payload as unknown as OIDCPrincipal);
-    //         }
-    //     }
-    //     catch(error){
-    //         console.log(error);
-    //         return Promise.resolve(null);
-    //     }
-    // }
-
-    // public async testJwtVerifySignatureWitCertificate(jwt: string, pemCertificate: string): Promise<OIDCPrincipal | null>{
-    //     const publicKeyInput: PublicKeyInput = {
-    //         key: pemCertificate,
-    //         encoding: "utf-8",
-    //         format: "pem"
-    //     };
-    //     const publicKeyObject = createPublicKey(publicKeyInput);
-    //     try {
-    //         const p: JWTVerifyResult = await jwtVerify(jwt, publicKeyObject)
-    //         if(!p.payload){
-    //             return Promise.resolve(null);
-    //         }
-    //         else{
-    //             return Promise.resolve(p.payload as unknown as OIDCPrincipal);
-    //         }
-    //     }
-    //     catch(error){
-    //         return Promise.resolve(null);
-    //     }
-    // }
+    

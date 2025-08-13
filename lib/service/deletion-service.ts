@@ -16,6 +16,7 @@ import FederatedOIDCProviderDao from "../dao/federated-oidc-provider-dao";
 import ScopeDao from "../dao/scope-dao";
 import RateLimitDao from "../dao/rate-limit-dao";
 import ContactDao from "../dao/contact-dao";
+import SecretShareDao from "../dao/secret-share-dao";
 
 
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
@@ -31,6 +32,7 @@ const authorizationGroupDao: AuthorizationGroupDao = DaoFactory.getInstance().ge
 const scopeDao: ScopeDao = DaoFactory.getInstance().getScopeDao();
 const rateLimitDao: RateLimitDao = DaoFactory.getInstance().getRateLimitDao();
 const contactDao: ContactDao = DaoFactory.getInstance().getContactDao();
+const secretShareDao: SecretShareDao = DaoFactory.getInstance().getSecretShareDao();
 const searchClient = getOpenSearchClient();
 
 interface CompletionCallback {
@@ -61,6 +63,7 @@ class DeletionService {
                 await schedulerDao.deleteExpiredData();
                 await markForDeleteDao.deleteCompletedRecords();
                 await markForDeleteDao.resetStalledJobs();
+                await secretShareDao.deleteExpiredData();
             }
         }
         catch(err){

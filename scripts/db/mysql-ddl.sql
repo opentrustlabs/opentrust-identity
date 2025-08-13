@@ -101,6 +101,7 @@ create TABLE client (
     clienttokenttlseconds INT,
     maxrefreshtokencount INT,
     markfordelete BOOLEAN NOT NULL,
+    audience VARCHAR(256),
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid)
 );
 
@@ -140,14 +141,14 @@ CREATE INDEX user_first_name_idx on user(firstname);
 CREATE INDEX user_last_name_idx on user(lastname);
 CREATE INDEX user_phone_number_idx on user(phonenumber);
 
-create TABLE user_email_backup (
+create TABLE user_email_recovery (
     userid VARCHAR(64) NOT NULL,
     email VARCHAR(128) UNIQUE NOT NULL,
     emailverified BOOLEAN NOT NULL,
     PRIMARY KEY (userid),
     FOREIGN KEY (userid) REFERENCES user(userid)
 );
-CREATE INDEX user_email_backup_email_idx on user_email_backup(email);
+CREATE INDEX user_email_recovery_email_idx on user_email_recovery(email);
 
 create TABLE user_tenant_rel (
     userid VARCHAR(64) NOT NULL,
@@ -397,7 +398,7 @@ create TABLE refresh_data (
     tenantid VARCHAR(64) NOT NULL,
     clientid VARCHAR(64) NOT NULL,
     userid VARCHAR(64) NOT NULL,
-    scope VARCHAR(128) NOT NULL,
+    scope VARCHAR(1024) NOT NULL,
     refreshtokenclienttype VARCHAR(128) NOT NULL,
     refreshcount INT,
     codechallenge VARCHAR(256),
@@ -654,6 +655,19 @@ create TABLE user_registration_state (
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid) 
 );
 
+create TABLE user_profile_email_change_state (
+    userid VARCHAR(64) NOT NULL,
+    email VARCHAR(128) NOT NULL,
+    emailchangestate VARCHAR(64) NOT NULL,
+    changeemailsessiontoken VARCHAR(128) NOT NULL,
+    changeorder INT NOT NULL,
+    changestatestatus VARCHAR(32) NOT NULL,
+    expiresatms BIGINT NOT NULL,
+    isprimaryemail BOOLEAN NOT NULL,
+    PRIMARY KEY (userid, changeemailsessiontoken, emailchangestate),
+    FOREIGN KEY (userid) REFERENCES user(userid) 
+);
+
 create TABLE captcha_config (
     alias VARCHAR(256) PRIMARY KEY,
     projectid VARCHAR(128),
@@ -665,7 +679,7 @@ create TABLE captcha_config (
 
 create TABLE system_settings (
     systemid VARCHAR(64) PRIMARY KEY,
-    allowbackupemail BOOLEAN NOT NULL,
+    allowrecoveryemail BOOLEAN NOT NULL,
     allowduresspassword BOOLEAN NOT NULL
 );
 
@@ -678,3 +692,12 @@ create TABLE user_duress_credential (
     PRIMARY KEY (userid),
     FOREIGN KEY (userid) REFERENCES user(userid)
 );
+
+create TABLE secret_share (
+    secretshareid VARCHAR(64) NOT NULL PRIMARY KEY,
+    objectid VARCHAR(64) NOT NULL,
+    objectype VARCHAR(64) NOT NULL,
+    otp VARCHAR(128) NOT NULL,
+    expiresatms BIGINT
+);
+CREATE INDEX secret_share_otp_idx ON secret_share(otp);

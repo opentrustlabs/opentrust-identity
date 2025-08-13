@@ -1,9 +1,9 @@
 "use client";
-import { FederatedOidcProvider, FederatedOidcProviderUpdateInput, MarkForDeleteObjectType, SecretObjectType, PortalUserProfile } from "@/graphql/generated/graphql-types";
+import { FederatedOidcProvider, FederatedOidcProviderUpdateInput, MarkForDeleteObjectType, SecretObjectType, PortalUserProfile, SecretShareObjectType } from "@/graphql/generated/graphql-types";
 import Typography from "@mui/material/Typography";
 import React, { useContext } from "react";
 import BreadcrumbComponent from "../breadcrumbs/breadcrumbs";
-import { FEDERATED_OIDC_PROVIDER_DELETE_SCOPE, FEDERATED_OIDC_PROVIDER_SECRET_VIEW_SCOPE, FEDERATED_OIDC_PROVIDER_TYPE_ENTERPRISE, FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL, FEDERATED_OIDC_PROVIDER_TYPES_DISPLAY, FEDERATED_OIDC_PROVIDER_UPDATE_SCOPE, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_BASIC, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_JWT, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_POST, OIDC_CLIENT_AUTH_TYPE_DISPLAY, OIDC_CLIENT_AUTH_TYPE_NONE, OIDC_EMAIL_SCOPE, OIDC_OFFLINE_ACCESS_SCOPE, OIDC_OPENID_SCOPE, OIDC_PROFILE_SCOPE, SOCIAL_OIDC_PROVIDERS, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
+import { FEDERATED_OIDC_PROVIDER_DELETE_SCOPE, FEDERATED_OIDC_PROVIDER_SECRET_VIEW_SCOPE, FEDERATED_OIDC_PROVIDER_TYPE_ENTERPRISE, FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL, FEDERATED_OIDC_PROVIDER_TYPES_DISPLAY, FEDERATED_OIDC_PROVIDER_UPDATE_SCOPE, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_BASIC, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_JWT, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_POST, OIDC_CLIENT_AUTH_TYPE_DISPLAY, OIDC_CLIENT_AUTH_TYPE_NONE, OIDC_EMAIL_SCOPE, OIDC_OFFLINE_ACCESS_SCOPE, OIDC_OPENID_SCOPE, OIDC_PROFILE_SCOPE, SECRET_ENTRY_DELEGATE_SCOPE, SOCIAL_OIDC_PROVIDERS, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
 import { DetailPageContainer, DetailPageMainContentContainer, DetailPageRightNavContainer } from "../layout/detail-page-container";
 import Grid2 from "@mui/material/Grid2";
@@ -11,19 +11,18 @@ import TextField from "@mui/material/TextField";
 import Checkbox from "@mui/material/Checkbox";
 import Paper from "@mui/material/Paper";
 import Accordion from "@mui/material/Accordion";
-import { AccordionSummary, AccordionDetails, Stack, Button, Backdrop, CircularProgress, Snackbar, Alert, Select, MenuItem, Autocomplete, InputAdornment } from "@mui/material";
+import { AccordionSummary, AccordionDetails, Backdrop, CircularProgress, Snackbar, Alert, Select, MenuItem, Autocomplete, InputAdornment, Dialog, DialogContent, DialogActions, Button } from "@mui/material";
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import AlternateEmailIcon from '@mui/icons-material/AlternateEmail';
-import SettingsApplicationsIcon from '@mui/icons-material/SettingsApplications';
 import { useMutation } from "@apollo/client";
-import { FEDERATED_OIDC_PROVIDER_UPDATE_MUTATION } from "@/graphql/mutations/oidc-mutations";
+import { FEDERATED_OIDC_PROVIDER_UPDATE_MUTATION, GENERATE_SECRET_SHARE_LINK_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
 import { FEDERATED_OIDC_PROVIDER_DETAIL_QUERY } from "@/graphql/queries/oidc-queries";
 import FederatedOIDCProviderDomainConfiguration from "./oidc-provider-domain-configuration";
-import FederatedOIDCProviderTenantConfiguration from "./oidc-provider-tenant-configuration";
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
+import SendOutlinedIcon from '@mui/icons-material/SendOutlined';
 import { useClipboardCopyContext } from "../contexts/clipboard-copy-context";
 import SecretViewerDialog from "../dialogs/secret-viewer-dialog";
 import DetailSectionActionHandler from "../layout/detail-section-action-handler";
@@ -70,6 +69,8 @@ const FederatedOIDCProviderDetail: React.FC<FederatedOIDCProviderDetailProps> = 
     const [disableInputs] = React.useState<boolean>(federatedOIDCProvider.markForDelete || !containsScope(FEDERATED_OIDC_PROVIDER_UPDATE_SCOPE, profile?.scope || []));
     const [canViewSecret] = React.useState<boolean>(containsScope(FEDERATED_OIDC_PROVIDER_SECRET_VIEW_SCOPE, profile?.scope || []));
     const [canDeleteProvider] = React.useState<boolean>(containsScope(FEDERATED_OIDC_PROVIDER_DELETE_SCOPE, profile?.scope || []));
+    const [sharedEmail, setSharedEmail] = React.useState<string>("");
+    const [showSendSecretEntryEmail, setShowSendSecretEntryEmail] = React.useState<boolean>(false);
     
     // GRAPHQL FUNCTIONS
     const [oidcProviderUpdateMutation] = useMutation(FEDERATED_OIDC_PROVIDER_UPDATE_MUTATION, {
@@ -89,6 +90,17 @@ const FederatedOIDCProviderDetail: React.FC<FederatedOIDCProviderDetailProps> = 
         refetchQueries: [FEDERATED_OIDC_PROVIDER_DETAIL_QUERY]
     });
 
+    const [generateSecretShareLink] = useMutation(GENERATE_SECRET_SHARE_LINK_MUTATION, {
+        onCompleted() {
+            setShowSendSecretEntryEmail(false);
+            setShowMutationBackdrop(false);
+        },
+        onError(error) {
+            setShowMutationBackdrop(false);
+            setErrorMessage(error.message);
+        },
+    })
+
 
     const arrBreadcrumbs = [];
     arrBreadcrumbs.push({
@@ -102,14 +114,66 @@ const FederatedOIDCProviderDetail: React.FC<FederatedOIDCProviderDetailProps> = 
     arrBreadcrumbs.push({
         linkText: federatedOIDCProvider.federatedOIDCProviderName,
         href: null
-    })
+    });
 
 
     return (
         <Typography component={"div"} >
-            <BreadcrumbComponent breadCrumbs={arrBreadcrumbs}></BreadcrumbComponent>
+            <BreadcrumbComponent breadCrumbs={arrBreadcrumbs}></BreadcrumbComponent>            
             <DetailPageContainer>
                 <DetailPageMainContentContainer>
+                    {showSendSecretEntryEmail &&
+                        <Dialog
+                            open={showSendSecretEntryEmail}
+                            onClose={() => setShowSendSecretEntryEmail(false)}
+                            maxWidth="sm"
+                            fullWidth={true}
+                        >
+                            <DialogContent>
+                                <Typography component="div">
+                                    <Grid2 container size={12} spacing={1}>
+                                        <Grid2 marginBottom={"8px"} fontWeight={"bold"} size={12}>Enter the email of the person you want to receive the update link for the client secret:</Grid2>
+                                        <Grid2 marginBottom={"8px"} fontWeight={"bold"} size={12}>
+                                            <TextField
+                                                fullWidth={true}
+                                                name="sharedEmail"
+                                                id="sharedEmail"
+                                                onChange={(evt) => {
+                                                    setSharedEmail(evt.target.value);
+                                                }}
+                                                error={sharedEmail.length < 6}
+                                                size="small"
+                                            />
+                                        </Grid2>
+                                    </Grid2>
+                                </Typography>
+                            </DialogContent>
+                            <DialogActions>
+                                <Button 
+                                    sx={{cursor: "pointer"}}
+                                    onClick={() => setShowSendSecretEntryEmail(false)}
+                                >
+                                    Cancel
+                                </Button>
+                                <Button 
+                                    sx={{cursor: "pointer"}}
+                                    disabled={sharedEmail.length < 6}
+                                    onClick={() => {
+                                        setShowMutationBackdrop(true);
+                                        generateSecretShareLink({
+                                            variables: {
+                                                objectId: federatedOIDCProvider.federatedOIDCProviderId,
+                                                secretShareObjectType: SecretShareObjectType.OidcProvider,
+                                                email: sharedEmail
+                                            }
+                                        })
+                                    }}
+                                >
+                                    Send
+                                </Button>
+                            </DialogActions>
+                        </Dialog>
+                    }
                    {secretDialogOpen &&                    
                         <SecretViewerDialog 
                             open={secretDialogOpen}
@@ -142,6 +206,13 @@ const FederatedOIDCProviderDetail: React.FC<FederatedOIDCProviderDetailProps> = 
                                 }
                             </Grid2>
                         </Grid2>
+                        {federatedOIDCProvider.usePkce === false && (federatedOIDCProvider.federatedOIDCProviderClientSecret === "") &&
+                            <Alert sx={{ width: "100%", fontSize: "0.95em" }} severity="error">
+                                Be aware that there is no client secret configured for this provider, and this provider does not use the PKCE extension 
+                                for OIDC (which does not require a client secret). Until the problem is corrected, this provider cannot be
+                                used for authentication.
+                            </Alert>
+                        }
                         <Grid2 size={12}>
                             {errorMessage &&
                                 <Grid2 size={12} marginBottom={"8px"}>
@@ -154,8 +225,7 @@ const FederatedOIDCProviderDetail: React.FC<FederatedOIDCProviderDetailProps> = 
                                 />
                             }
                             <Paper sx={{ padding: "8px" }} elevation={1}>
-                                <Grid2 container size={12} spacing={2}>
-                                    
+                                <Grid2 container size={12} spacing={2}>                                    
                                     <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>                                        
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Provider Name</div>
@@ -279,10 +349,21 @@ const FederatedOIDCProviderDetail: React.FC<FederatedOIDCProviderDetailProps> = 
                                                 }
                                                 {changeClientSecret !== true &&
                                                     <>
-                                                        <Grid2 size={10}>
+                                                        <Grid2 size={containsScope(SECRET_ENTRY_DELEGATE_SCOPE, profile?.scope) ? 9 : 10}>
                                                             <div>*******************************************</div>
                                                         </Grid2>
-                                                        
+                                                        {containsScope(SECRET_ENTRY_DELEGATE_SCOPE, profile?.scope) && 
+                                                            <Grid2 size={1}>
+                                                                {!disableInputs &&
+                                                                    <SendOutlinedIcon
+                                                                        sx={{cursor: "pointer"}}
+                                                                        onClick={() => {
+                                                                            setShowSendSecretEntryEmail(true);
+                                                                        }}
+                                                                    />
+                                                                }
+                                                            </Grid2>
+                                                        }
                                                         <Grid2 size={1}>
                                                             {!disableInputs &&
                                                                 <EditOutlinedIcon

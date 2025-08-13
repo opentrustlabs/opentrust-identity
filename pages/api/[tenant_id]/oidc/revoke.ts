@@ -6,7 +6,7 @@ import AuthDao from '@/lib/dao/auth-dao';
 import { base64Decode, generateHash } from '@/utils/dao-utils';
 import ClientAuthValidationService from '@/lib/service/client-auth-validation-service';
 import { RefreshData } from '@/graphql/generated/graphql-types';
-import { OIDCPrincipal } from '@/lib/models/principal';
+import { JWTPrincipal } from '@/lib/models/principal';
 
 const identityDao: IdentityDao = DaoFactory.getInstance().getIdentityDao();
 const authDao: AuthDao = DaoFactory.getInstance().getAuthDao();
@@ -82,6 +82,10 @@ export default async function handler(
         client_secret
     } = req.body;
 
+    // TODO
+    // Inspect the authorization header to see if there is a bearer or basic
+    // authz value.
+
     // If no token, then fail.
     if(!token){
         res.status(403).end();
@@ -141,7 +145,7 @@ export default async function handler(
             const t: string = token as string;
             const hashedToken = generateHash(t);
             const refreshData: RefreshData | null = await authDao.getRefreshData(hashedToken);
-            let principal: OIDCPrincipal | null = null;
+            let principal: JWTPrincipal | null = null;
             if(t.indexOf(".") > 0){
                 try{
                     principal = await jwtService.validateJwt(t);

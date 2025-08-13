@@ -28,6 +28,7 @@ const UserDetailPage: React.FC = () => {
             variables: {
                 userId: userId
             },
+            fetchPolicy: "no-cache"
         }
         
     )
