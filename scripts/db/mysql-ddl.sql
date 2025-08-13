@@ -701,3 +701,10 @@ create TABLE secret_share (
     expiresatms BIGINT
 );
 CREATE INDEX secret_share_otp_idx ON secret_share(otp);
+
+create TABLE user_authentication_history (
+    userid VARCHAR(64) NOT NULL,
+    lastauthenticationatms BIGINT NOT NULL,
+    PRIMARY KEY (userid, lastauthenticationatms),
+    FOREIGN KEY (userid) REFERENCES user(userid)
+);

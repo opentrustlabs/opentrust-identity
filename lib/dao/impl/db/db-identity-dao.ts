@@ -587,6 +587,12 @@ class DBIdentityDao extends IdentityDao {
             }
         });
         
+        await sequelize.models.userAuthenticationHistory.destroy({
+            where: {
+                userId: userId
+            }
+        });
+
         await sequelize.models.user.destroy({
             where: {
                 userId: userId
@@ -925,6 +931,15 @@ class DBIdentityDao extends IdentityDao {
             }
         });
         return Promise.resolve();
+    }
+
+    public async addUserAuthenticationHistory(userId: string, authenticatedAtMs: number): Promise<void>{
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.userAuthenticationHistory.create({
+            userId: userId,
+            lastAuthenticationAtMs: authenticatedAtMs
+        });
+        return Promise.resolve();        
     }
 
 }

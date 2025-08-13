@@ -1656,6 +1656,7 @@ class AuthenticateUserService extends IdentityService {
                 await identityDao.deleteUserAuthenticationState(arrUserAuthenticationStates[i]);
             }
         }
+        identityDao.addUserAuthenticationHistory(user.userId, Date.now());
     }    
 
     protected requirePasswordRotation(userCredential: UserCredential, tenantPasswordConfig: TenantPasswordConfig): boolean {

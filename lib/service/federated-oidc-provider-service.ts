@@ -3,7 +3,7 @@ import { OIDCContext } from "@/graphql/graphql-context";
 import FederatedOIDCProviderDao from "@/lib/dao/federated-oidc-provider-dao";
 import { GraphQLError } from "graphql/error/GraphQLError";
 import { randomUUID } from 'crypto'; 
-import { FEDERATED_OIDC_PROVIDER_CREATE_SCOPE, FEDERATED_OIDC_PROVIDER_DELETE_SCOPE, FEDERATED_OIDC_PROVIDER_READ_SCOPE, FEDERATED_OIDC_PROVIDER_TENANT_ASSIGN_SCOPE, FEDERATED_OIDC_PROVIDER_TENANT_REMOVE_SCOPE, FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL, FEDERATED_OIDC_PROVIDER_TYPES_DISPLAY, FEDERATED_OIDC_PROVIDER_UPDATE_SCOPE, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_READ_ALL_SCOPE } from "@/utils/consts";
+import { FEDERATED_OIDC_PROVIDER_CREATE_SCOPE, FEDERATED_OIDC_PROVIDER_DELETE_SCOPE, FEDERATED_OIDC_PROVIDER_READ_SCOPE, FEDERATED_OIDC_PROVIDER_TENANT_ASSIGN_SCOPE, FEDERATED_OIDC_PROVIDER_TENANT_REMOVE_SCOPE, FEDERATED_OIDC_PROVIDER_TYPE_ENTERPRISE, FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL, FEDERATED_OIDC_PROVIDER_TYPES_DISPLAY, FEDERATED_OIDC_PROVIDER_UPDATE_SCOPE, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_READ_ALL_SCOPE } from "@/utils/consts";
 import { Client } from "@opensearch-project/opensearch";
 import { getOpenSearchClient } from "@/lib/data-sources/search";
 import { DaoFactory } from "../data-sources/dao-factory";
@@ -279,6 +279,13 @@ class FederatedOIDCProviderService {
         if(!provider){
             throw new GraphQLError("ERROR_EXTERNAL_OIDC_PROVIDER_NOT_FOUND");
         }
+
+        // Only social providers can be assigned to a tenant. Enterprise providers will always be
+        // used for those domains assigned to the provider, regardless of the tenant. With social 
+        // providers, the user's email domain could be anything.
+        if(provider.federatedOIDCProviderType === FEDERATED_OIDC_PROVIDER_TYPE_ENTERPRISE){
+            throw new GraphQLError("ERROR_ENTERPRISE_OIDC_PROVIDERS_CANNOT_BE_ASSIGNED_TO_A_TENANT");
+        }
         const tenant: Tenant | null = await tenantDao.getTenantById(tenantId);
         if(!tenant){
             throw new GraphQLError("ERROR_TENANT_NOT_FOUND");
@@ -345,6 +352,11 @@ class FederatedOIDCProviderService {
         const provider: FederatedOidcProvider | null = await this.getFederatedOIDCProviderById(federatedOIDCProviderId);
         if(!provider){
             throw new GraphQLError("ERROR_EXTERNAL_OIDC_PROVIDER_NOT_FOUND");
+        }
+
+        // Social providers cannot have domains assigned to them, only enterprise providers.
+        if(provider.federatedOIDCProviderType === FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL){
+            throw new GraphQLError("ERROR_CANNOT_ASSIGN_DOMAINS_TO_SOCIAL_OIDC_PROVIDERS");
         }
         const existingDomainRel: FederatedOidcProvider | null = await federatedOIDCProviderDao.getFederatedOidcProviderByDomain(domain);
         if(existingDomainRel && existingDomainRel.federatedOIDCProviderId !== federatedOIDCProviderId){

@@ -1039,7 +1039,6 @@ class IdentityService {
         
         const wellKnownConfig: WellknownConfig | null = await oidcServiceUtils.getWellKnownConfig(
             provider.federatedOIDCProviderWellKnownUri
-            // "https://api.sigmaaldrich.com/auth/.well-known/openid-configuration"
         );
         
 

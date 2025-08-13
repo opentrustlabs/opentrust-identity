@@ -1354,6 +1354,7 @@ class RegisterUserService extends IdentityService {
                 await identityDao.deleteUserRegistrationState(arrUserRegistrationState[i]);
             }
         }
+        identityDao.addUserAuthenticationHistory(user.userId, Date.now());
         
     }
 
