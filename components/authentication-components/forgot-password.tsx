@@ -21,13 +21,9 @@ const ForgotPassword: React.FC = () => {
     // QUERY PARAMS
     // const params = useSearchParams();    
     const params = new Map<string, string>();
-    const preauthToken = params?.get(QUERY_PARAM_PREAUTHN_TOKEN);
     const tenantId = params?.get(QUERY_PARAM_TENANT_ID);
-    const redirectUri = params?.get(QUERY_PARAM_REDIRECT_URI);
 
-    // // PAGE STATE MANAGEMENT VARIABLES
-    // const [username, setUsername] = useState<string | null>("");
-    // const [password, setPassword] = useState<string | null>("");
+    // PAGE STATE MANAGEMENT VARIABLES
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [tenantMetaData, setTenantMetaData] = useState(tenantId ? null : DEFAULT_TENANT_META_DATA);
     // // To toggle between USERNAME_COMPONENT and PASSWORD_COMPONENT for display

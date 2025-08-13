@@ -4,7 +4,6 @@ import AuthenticationHeader from "./authentication-header";
 import AuthenticationFooter from "./authentication-footer";
 import Container from "@mui/material/Container";
 import { Grid2 } from "@mui/material";
-// import { useSearchParams } from 'next/navigation';
 import { DEFAULT_TENANT_META_DATA, QUERY_PARAM_TENANT_ID } from "@/utils/consts";
 import { useQuery } from "@apollo/client";
 import { TENANT_META_DATA_QUERY } from "@/graphql/queries/oidc-queries";
@@ -24,13 +23,11 @@ const AuthenticationLayout: React.FC<LayoutProps> = ({
 
     // CONTEXT VARIABLES
     const tenantBean: TenantMetaDataBean  = useContext(TenantContext);
-
+    
     // REACT HOOKS
     const params = useSearchParams();
     const tenantId = params?.get(QUERY_PARAM_TENANT_ID);
 
-    // STATE VARIABLES
-    // const [isComplete, setIsComplete] = React.useState<boolean>(tenantId === undefined || tenantId === null ? true : false);
 
     // GRAPHQL FUNCTIONS
     const {error, loading} = useQuery(TENANT_META_DATA_QUERY, {
@@ -107,7 +104,7 @@ const AuthenticationLayout: React.FC<LayoutProps> = ({
                 <ThemeProvider theme={theme}>                
                     <AuthenticationHeader
                         tenantMetaData={
-                            !tenantId || error ? DEFAULT_TENANT_META_DATA : tenantBean.getTenantMetaData()
+                            tenantBean.getTenantMetaData().tenant.tenantId === "" || error ? DEFAULT_TENANT_META_DATA : tenantBean.getTenantMetaData()
                         }
                     ></AuthenticationHeader>
                     <Container
@@ -127,7 +124,7 @@ const AuthenticationLayout: React.FC<LayoutProps> = ({
                     </Container>
                     <AuthenticationFooter
                         tenantMetaData={
-                            !tenantId || error ? DEFAULT_TENANT_META_DATA : tenantBean.getTenantMetaData()
+                            tenantBean.getTenantMetaData().tenant.tenantId === "" || error ? DEFAULT_TENANT_META_DATA : tenantBean.getTenantMetaData()
                         }
                     ></AuthenticationFooter>
                 </ThemeProvider>                

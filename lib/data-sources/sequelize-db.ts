@@ -51,9 +51,11 @@ import SchedulerLockEntity from "../entities/scheduler-lock-entity";
 import CaptchaConfigEntity from "../entities/captcha-config-entity";
 import UserTermsAndConditionsAcceptedEntity from "../entities/user-terms-and-conditions-accepted-entity";
 import UserDuressCredentialEntity from "../entities/user-duress-credential";
-import UserEmailBackupEntity from "../entities/user-email-backup-entity";
+import UserEmailRecoveryEntity from "../entities/user-email-recovery-entity";
 import SystemSettingsEntity from "../entities/system-settings-entity";
 import AuthorizationDeviceCodeDataEntity from "../entities/authorization-device-code-data-entity";
+import SecretShareEntity from "../entities/secret-share-entity";
+import UserProfileChangeEmailStateEntity from "../entities/user-profile-email-change-state-entity";
 
 
 const {
@@ -180,8 +182,10 @@ class DBDriver {
             UserTermsAndConditionsAcceptedEntity.initModel(global.sequelize);
             UserDuressCredentialEntity.initModel(global.sequelize);
             SystemSettingsEntity.initModel(global.sequelize);
-            UserEmailBackupEntity.initModel(global.sequelize);
+            UserEmailRecoveryEntity.initModel(global.sequelize);
             AuthorizationDeviceCodeDataEntity.initModel(global.sequelize);
+            SecretShareEntity.initModel(global.sequelize);
+            UserProfileChangeEmailStateEntity.initModel(global.sequelize);
         } 
 
         return global.sequelize;

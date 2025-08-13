@@ -28,6 +28,7 @@ const SigningKeyDetailPage: React.FC = () => {
             variables: {
                 signingKeyId: signingKeyId
             },
+            fetchPolicy: "no-cache"
         }
     )
 

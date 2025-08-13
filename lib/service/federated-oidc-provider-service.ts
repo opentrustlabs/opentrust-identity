@@ -73,8 +73,8 @@ class FederatedOIDCProviderService {
                     return {isAuthorized: true, errorMessage: null}
                 },
                 postProcess: async function(_, result) {
-                    if(result){
-                        result.federatedOIDCProviderClientSecret = ""
+                    if(result && result.federatedOIDCProviderClientSecret && result.federatedOIDCProviderClientSecret.length > 0){
+                        result.federatedOIDCProviderClientSecret = " ";
                     }
                     return result
                 },
@@ -118,9 +118,12 @@ class FederatedOIDCProviderService {
         if(!federatedOIDCProvider.federatedOIDCProviderWellKnownUri || "" === federatedOIDCProvider.federatedOIDCProviderWellKnownUri){
             return {valid: false, errorMessage: "ERROR_MISSING_WELL_KNOWN_URI_IN_OIDC_CONFIGURATION"};
         }
-        if(!federatedOIDCProvider.federatedOIDCProviderClientSecret && !federatedOIDCProvider.usePkce){
-            return {valid: false, errorMessage: "ERROR_NO_CLIENT_SECRET_AND_PKCE_IS_NOT_ALLOWED"};
-        }
+        // We will allow the creation or update without a client secret because in some cases
+        // the federated OIDC owner may want to enter this themselves via the secret-sharing
+        // process
+        // if(!federatedOIDCProvider.federatedOIDCProviderClientSecret && !federatedOIDCProvider.usePkce){
+        //     return {valid: false, errorMessage: "ERROR_NO_CLIENT_SECRET_AND_PKCE_IS_NOT_ALLOWED"};
+        // }
         if(!federatedOIDCProvider.federatedOIDCProviderName){
             return {valid: false, errorMessage: "ERROR_MISSING_OIDC_CLIENT_NAME"};
         }

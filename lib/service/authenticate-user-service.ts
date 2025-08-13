@@ -1,10 +1,10 @@
 import { OIDCContext } from "@/graphql/graphql-context";
 import IdentityDao from "../dao/identity-dao";
-import { Tenant, TenantPasswordConfig, User, UserCredential, UserMfaRel, TenantManagementDomainRel, FederatedOidcProvider, FederatedOidcProviderTenantRel, PreAuthenticationState, AuthorizationReturnUri, UserAuthenticationStateResponse, AuthenticationState, AuthenticationErrorTypes, UserAuthenticationState, UserFailedLogin, TenantLoginFailurePolicy, Fido2KeyAuthenticationInput, Fido2KeyRegistrationInput, TotpResponse, UserTermsAndConditionsAccepted, TenantLegacyUserMigrationConfig, TenantRestrictedAuthenticationDomainRel, AuthenticationGroup, AuthorizationDeviceCodeData, DeviceCodeAuthorizationStatus } from "@/graphql/generated/graphql-types";
+import { Tenant, TenantPasswordConfig, User, UserCredential, UserMfaRel, TenantManagementDomainRel, FederatedOidcProvider, FederatedOidcProviderTenantRel, PreAuthenticationState, AuthorizationReturnUri, UserAuthenticationStateResponse, AuthenticationState, AuthenticationErrorTypes, UserAuthenticationState, UserFailedLogin, TenantLoginFailurePolicy, Fido2KeyAuthenticationInput, Fido2KeyRegistrationInput, TotpResponse, UserTermsAndConditionsAccepted, TenantLegacyUserMigrationConfig, TenantRestrictedAuthenticationDomainRel, AuthenticationGroup, AuthorizationDeviceCodeData, DeviceCodeAuthorizationStatus, UserRecoveryEmail } from "@/graphql/generated/graphql-types";
 import { DaoFactory } from "../data-sources/dao-factory";
 import TenantDao from "../dao/tenant-dao";
 import { GraphQLError } from "graphql/error";
-import { DEFAULT_LOGIN_FAILURE_POLICY, DEFAULT_LOGIN_PAUSE_TIME_MINUTES, DEFAULT_MAXIMUM_LOGIN_FAILURES, DEFAULT_PASSWORD_HISTORY_PERIOD, DEFAULT_TENANT_PASSWORD_CONFIGURATION, FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE, FEDERATED_AUTHN_CONSTRAINT_PERMISSIVE, FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL, LOGIN_FAILURE_POLICY_LOCK_USER_ACCOUNT, LOGIN_FAILURE_POLICY_PAUSE, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, OIDC_AUTHORIZATION_ERROR_ACCESS_DENIED, QUERY_PARAM_AUTHENTICATE_TO_PORTAL, QUERY_PARAM_DEVICE_CODE_ID, QUERY_PARAM_TENANT_ID, RANKED_DESCENDING_HASHING_ALGORITHS, STATUS_COMPLETE, STATUS_INCOMPLETE, TOKEN_TYPE_IAM_PORTAL_USER, USER_TENANT_REL_TYPE_PRIMARY } from "@/utils/consts";
+import { DEFAULT_LOGIN_FAILURE_POLICY, DEFAULT_LOGIN_PAUSE_TIME_MINUTES, DEFAULT_MAXIMUM_LOGIN_FAILURES, DEFAULT_PASSWORD_HISTORY_PERIOD, DEFAULT_TENANT_PASSWORD_CONFIGURATION, FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE, FEDERATED_AUTHN_CONSTRAINT_PERMISSIVE, FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL, LOGIN_FAILURE_POLICY_LOCK_USER_ACCOUNT, LOGIN_FAILURE_POLICY_PAUSE, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, OIDC_AUTHORIZATION_ERROR_ACCESS_DENIED, QUERY_PARAM_AUTHENTICATE_TO_PORTAL, QUERY_PARAM_DEVICE_CODE_ID, QUERY_PARAM_TENANT_ID, RANKED_DESCENDING_HASHING_ALGORITHS, STATUS_COMPLETE, STATUS_INCOMPLETE, PRINCIPAL_TYPE_IAM_PORTAL_USER, USER_TENANT_REL_TYPE_PRIMARY } from "@/utils/consts";
 import { generateHash, generateRandomToken, getDomainFromEmail } from "@/utils/dao-utils";
 import AuthDao from "../dao/auth-dao";
 import FederatedOIDCProviderDao from "../dao/federated-oidc-provider-dao";
@@ -67,7 +67,8 @@ class AuthenticateUserService extends IdentityService {
         }        
     }
 
-    public async authenticateHandleForgotPassword(authenticationSessionToken: string, preAuthToken: string | null): Promise<UserAuthenticationStateResponse> {
+    
+    public async authenticateHandleForgotPassword(authenticationSessionToken: string, preAuthToken: string | null, useRecoveryEmail: boolean): Promise<UserAuthenticationStateResponse> {
         // Outline of the logic
         // There must be an existing authentication session (that is, the user has selected a tenant and gone to the next page where they have tried to enter
         // their password and have likely failed). 
@@ -91,6 +92,14 @@ class AuthenticateUserService extends IdentityService {
             response.authenticationError.errorCode = "ERROR_USER_CANNOT_BE_AUTHENTICATED";
             return Promise.resolve(response);
         }
+        let userRecoveryEmail: UserRecoveryEmail | null = null;
+        if(useRecoveryEmail === true){
+            userRecoveryEmail = await identityDao.getUserRecoveryEmail(user.userId);
+            if(userRecoveryEmail === null){
+                response.authenticationError.errorCode = "ERROR_NO_BACKUP_EMIAL_CONFIGURED";
+                return Promise.resolve(response);
+            }
+        }
 
         // Need to delete the earlier authentication records and replace them
         // with a new set.
@@ -109,7 +118,7 @@ class AuthenticateUserService extends IdentityService {
         
         const token: string = generateRandomToken(8, "hex").toUpperCase();        
         // TODO
-        // Send email to the user with the token value.
+        // Send email to the user with the token value using either their primary email or backup email.
         await identityDao.savePasswordResetToken(arrUserAuthenticationStates[0].userId, token);
 
         for(let i = 0; i < arrUserAuthenticationStates.length; i++){
@@ -942,8 +951,8 @@ class AuthenticateUserService extends IdentityService {
         const userCredential: UserCredential = this.generateUserCredential(user.userId, password, tenantPasswordConfig.passwordHashingAlgorithm);
         await identityDao.addUserCredential(userCredential);
         
-        await this.updateObjectSearchIndex(tenant, user, "PRIMARY");
-        await this.updateRelSearchIndex(tenant.tenantId, tenant.tenantId, user, USER_TENANT_REL_TYPE_PRIMARY);
+        await this.updateObjectSearchIndex(tenant, user);
+        await this.updateRelSearchIndex(tenant.tenantId, tenant.tenantId, user);
         
         arrUserAuthenticationStates[index].authenticationStateStatus = STATUS_COMPLETE;
         await identityDao.updateUserAuthenticationState(arrUserAuthenticationStates[index]);
@@ -1040,68 +1049,7 @@ class AuthenticateUserService extends IdentityService {
         return response;
     }
 
-    protected async determineTenantPasswordConfig(userId: string, targetTenantId: string): Promise<TenantPasswordConfig> {
-        // Need to validate the password and find the hashing algorithm for the new password: Does the user belong to any tenants? Prefer, in order
-        // 1.   Primary tenant
-        // 2.   Secondary tenant if there is exactly one user-to-tenant relationshipt
-        // 3.   Default hashing algorithm from the object DEFAULT_TENANT_PASSWORD_CONFIGURATION
-        
-        let tenantPasswordConfig: TenantPasswordConfig = DEFAULT_TENANT_PASSWORD_CONFIGURATION        
-        const userTenantRels = await identityDao.getUserTenantRelsByUserId(userId);
-        if(userTenantRels && userTenantRels.length > 0){
-            let tenantId =  userTenantRels[0].tenantId;
-            if(userTenantRels.length > 1){
-                for(let i = 0; i < userTenantRels.length; i++){
-                    if(userTenantRels[i].relType === USER_TENANT_REL_TYPE_PRIMARY){
-                        tenantId = userTenantRels[i].tenantId;
-                        break;
-                    }
-                }
-            }
-            const config: TenantPasswordConfig | null = await tenantDao.getTenantPasswordConfig(tenantId);
-            if(config){
-                tenantPasswordConfig = config;
-            }
-        }
-        
-        // We need to compare 2 password configurations if the user is logging into a
-        // different tenant than is the user's primary tenant. If one exists for the target tenant
-        // then we need to check to see if then merge the 2 configurations, taking 
-        // the more robust option from each.
-        if(tenantPasswordConfig.tenantId !== targetTenantId){
-        
-            const passwordConfig: TenantPasswordConfig | null = await tenantDao.getTenantPasswordConfig(targetTenantId);
-            if(passwordConfig){
-                // Merge the 2 configurations, taking the more robust option from each.
-                tenantPasswordConfig.passwordMaxLength = tenantPasswordConfig.passwordMaxLength > passwordConfig.passwordMaxLength ? tenantPasswordConfig.passwordMaxLength : passwordConfig.passwordMaxLength;
-                tenantPasswordConfig.passwordMinLength = tenantPasswordConfig.passwordMinLength > passwordConfig.passwordMinLength ? tenantPasswordConfig.passwordMinLength : passwordConfig.passwordMinLength;
-                tenantPasswordConfig.requireLowerCase = tenantPasswordConfig.requireLowerCase || passwordConfig.requireLowerCase;
-                tenantPasswordConfig.requireUpperCase = tenantPasswordConfig.requireUpperCase || passwordConfig.requireUpperCase;
-                tenantPasswordConfig.requireNumbers = tenantPasswordConfig.requireNumbers || passwordConfig.requireNumbers;
-                tenantPasswordConfig.requireSpecialCharacters = tenantPasswordConfig.requireSpecialCharacters || passwordConfig.requireSpecialCharacters;
-                const specialCharactersAllowed = this.findCharacterIntersection(tenantPasswordConfig.specialCharactersAllowed || "", passwordConfig.specialCharactersAllowed || "");
-                // If there are no intersecting special characters and special characters are required, then
-                // select the special characters from the target tenant if they exist, otherwise the choose the user's tenant, otherwise choose default
-                if(specialCharactersAllowed === "" && tenantPasswordConfig.requireSpecialCharacters === true){
-                    tenantPasswordConfig.specialCharactersAllowed = 
-                        passwordConfig.specialCharactersAllowed ? passwordConfig.specialCharactersAllowed :
-                        tenantPasswordConfig.specialCharactersAllowed ? tenantPasswordConfig.specialCharactersAllowed :
-                        DEFAULT_TENANT_PASSWORD_CONFIGURATION.specialCharactersAllowed
-                }
-                else{
-                    tenantPasswordConfig.specialCharactersAllowed = specialCharactersAllowed;
-                }
-                const passwordHistoryPeriod1: number = tenantPasswordConfig.passwordHistoryPeriod ? tenantPasswordConfig.passwordHistoryPeriod : DEFAULT_PASSWORD_HISTORY_PERIOD;
-                const passwordHistoryPeriod2: number = passwordConfig.passwordHistoryPeriod ? passwordConfig.passwordHistoryPeriod : DEFAULT_PASSWORD_HISTORY_PERIOD;
-                tenantPasswordConfig.passwordHistoryPeriod = passwordHistoryPeriod1 > passwordHistoryPeriod2 ? passwordHistoryPeriod1 : passwordHistoryPeriod2;
-                if(tenantPasswordConfig.passwordHashingAlgorithm !== passwordConfig.passwordHashingAlgorithm){
-                    tenantPasswordConfig.passwordHashingAlgorithm = this.determinePreferredHashAlgorithm(tenantPasswordConfig.passwordHashingAlgorithm, passwordConfig.passwordHashingAlgorithm);
-                }
-            }
-        } 
-        
-        return tenantPasswordConfig; 
-    }
+
 
 
     /**
@@ -1330,6 +1278,68 @@ class AuthenticateUserService extends IdentityService {
         return response;
     }   
 
+    protected async determineTenantPasswordConfig(userId: string, targetTenantId: string): Promise<TenantPasswordConfig> {
+        // Need to validate the password and find the hashing algorithm for the new password: Does the user belong to any tenants? Prefer, in order
+        // 1.   Primary tenant
+        // 2.   Secondary tenant if there is exactly one user-to-tenant relationshipt
+        // 3.   Default hashing algorithm from the object DEFAULT_TENANT_PASSWORD_CONFIGURATION
+        
+        let tenantPasswordConfig: TenantPasswordConfig = DEFAULT_TENANT_PASSWORD_CONFIGURATION        
+        const userTenantRels = await identityDao.getUserTenantRelsByUserId(userId);
+        if(userTenantRels && userTenantRels.length > 0){
+            let tenantId =  userTenantRels[0].tenantId;
+            if(userTenantRels.length > 1){
+                for(let i = 0; i < userTenantRels.length; i++){
+                    if(userTenantRels[i].relType === USER_TENANT_REL_TYPE_PRIMARY){
+                        tenantId = userTenantRels[i].tenantId;
+                        break;
+                    }
+                }
+            }
+            const config: TenantPasswordConfig | null = await tenantDao.getTenantPasswordConfig(tenantId);
+            if(config){
+                tenantPasswordConfig = config;
+            }
+        }
+        
+        // We need to compare 2 password configurations if the user is logging into a
+        // different tenant than is the user's primary tenant. If one exists for the target tenant
+        // then we need to check to see if then merge the 2 configurations, taking 
+        // the more robust option from each.
+        if(tenantPasswordConfig.tenantId !== targetTenantId){
+        
+            const passwordConfig: TenantPasswordConfig | null = await tenantDao.getTenantPasswordConfig(targetTenantId);
+            if(passwordConfig){
+                // Merge the 2 configurations, taking the more robust option from each.
+                tenantPasswordConfig.passwordMaxLength = tenantPasswordConfig.passwordMaxLength > passwordConfig.passwordMaxLength ? tenantPasswordConfig.passwordMaxLength : passwordConfig.passwordMaxLength;
+                tenantPasswordConfig.passwordMinLength = tenantPasswordConfig.passwordMinLength > passwordConfig.passwordMinLength ? tenantPasswordConfig.passwordMinLength : passwordConfig.passwordMinLength;
+                tenantPasswordConfig.requireLowerCase = tenantPasswordConfig.requireLowerCase || passwordConfig.requireLowerCase;
+                tenantPasswordConfig.requireUpperCase = tenantPasswordConfig.requireUpperCase || passwordConfig.requireUpperCase;
+                tenantPasswordConfig.requireNumbers = tenantPasswordConfig.requireNumbers || passwordConfig.requireNumbers;
+                tenantPasswordConfig.requireSpecialCharacters = tenantPasswordConfig.requireSpecialCharacters || passwordConfig.requireSpecialCharacters;
+                const specialCharactersAllowed = this.findCharacterIntersection(tenantPasswordConfig.specialCharactersAllowed || "", passwordConfig.specialCharactersAllowed || "");
+                // If there are no intersecting special characters and special characters are required, then
+                // select the special characters from the target tenant if they exist, otherwise the choose the user's tenant, otherwise choose default
+                if(specialCharactersAllowed === "" && tenantPasswordConfig.requireSpecialCharacters === true){
+                    tenantPasswordConfig.specialCharactersAllowed = 
+                        passwordConfig.specialCharactersAllowed ? passwordConfig.specialCharactersAllowed :
+                        tenantPasswordConfig.specialCharactersAllowed ? tenantPasswordConfig.specialCharactersAllowed :
+                        DEFAULT_TENANT_PASSWORD_CONFIGURATION.specialCharactersAllowed
+                }
+                else{
+                    tenantPasswordConfig.specialCharactersAllowed = specialCharactersAllowed;
+                }
+                const passwordHistoryPeriod1: number = tenantPasswordConfig.passwordHistoryPeriod ? tenantPasswordConfig.passwordHistoryPeriod : DEFAULT_PASSWORD_HISTORY_PERIOD;
+                const passwordHistoryPeriod2: number = passwordConfig.passwordHistoryPeriod ? passwordConfig.passwordHistoryPeriod : DEFAULT_PASSWORD_HISTORY_PERIOD;
+                tenantPasswordConfig.passwordHistoryPeriod = passwordHistoryPeriod1 > passwordHistoryPeriod2 ? passwordHistoryPeriod1 : passwordHistoryPeriod2;
+                if(tenantPasswordConfig.passwordHashingAlgorithm !== passwordConfig.passwordHashingAlgorithm){
+                    tenantPasswordConfig.passwordHashingAlgorithm = this.determinePreferredHashAlgorithm(tenantPasswordConfig.passwordHashingAlgorithm, passwordConfig.passwordHashingAlgorithm);
+                }
+            }
+        } 
+        
+        return tenantPasswordConfig; 
+    }
         /**
      * Credit to Google's AI overview
      * @param str1 
@@ -1602,7 +1612,7 @@ class AuthenticateUserService extends IdentityService {
                         response.uri = "/device/registered";
                     }
                     else{
-                        const jwtSigningResponse = await jwtServiceUtils.signIAMPortalUserJwt(user, tenant, this.getPortalAuthenTokenTTLSeconds(), TOKEN_TYPE_IAM_PORTAL_USER);                        
+                        const jwtSigningResponse = await jwtServiceUtils.signIAMPortalUserJwt(user, tenant, this.getPortalAuthenTokenTTLSeconds(), PRINCIPAL_TYPE_IAM_PORTAL_USER);                        
                         if(!jwtSigningResponse || jwtSigningResponse.accessToken === null){
                             response.authenticationError.errorCode = "ERROR_GENERATING_ACCESS_TOKEN_AUTHENTICATION_COMPLETION";
                             response.userAuthenticationState.authenticationState = AuthenticationState.Error;

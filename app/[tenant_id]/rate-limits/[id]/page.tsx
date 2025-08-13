@@ -21,6 +21,7 @@ const RateLimitServiceGroupDetailPage: React.FC = () => {
             variables: {
                 serviceGroupId: rateLimitServiceGroupId
             },
+            fetchPolicy: "no-cache"
         }
     )
 

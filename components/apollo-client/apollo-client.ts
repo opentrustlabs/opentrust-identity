@@ -5,7 +5,7 @@ import { setContext } from "@apollo/client/link/context";
 
 const authLink = setContext( (operation: GraphQLRequest, prevContext: DefaultContext) => {
 
-        const accessToken: string | null = getAccessTokenFromLocalStorage();        
+        const accessToken: string | null = getAccessTokenFromLocalStorage();
         if(!accessToken){
             return {
                 headers: {

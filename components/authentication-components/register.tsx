@@ -30,7 +30,7 @@ import { AuthSessionProps, useAuthSessionContext } from "../contexts/auth-sessio
 import { AuthContext, AuthContextProps } from "../contexts/auth-context";
 import Link from "next/link";
 import { MuiTelInput } from "mui-tel-input";
-import BackupEmailConfiguration from "./back-up-email";
+import RecoveryEmailConfiguration from "./recovery-email";
 import DuressPasswordConfiguration from "./duress-password";
 
 
@@ -52,12 +52,11 @@ const Register: React.FC = () => {
     const authContextProps: AuthContextProps = useContext(AuthContext);
 
     // QUERY PARAMS
-    const params = useSearchParams();    
+    const params = useSearchParams();
     const preAuthToken: string | null | undefined = params?.get(QUERY_PARAM_PREAUTHN_TOKEN);
     const deviceCodeId: string | null | undefined = params?.get(QUERY_PARAM_DEVICE_CODE_ID);
     const tenantId = params?.get(QUERY_PARAM_TENANT_ID);
     const username = params?.get(QUERY_PARAM_USERNAME);
-    const redirectUri = params?.get(QUERY_PARAM_REDIRECT_URI);
     
     
     // PAGE STATE MANAGEMENT VARIABLES    
@@ -667,7 +666,7 @@ const Register: React.FC = () => {
                             {
                                 (
                                     userRegistrationState.registrationState === RegistrationState.ValidateEmail || 
-                                    userRegistrationState.registrationState === RegistrationState.ValidateBackupEmail
+                                    userRegistrationState.registrationState === RegistrationState.ValidateRecoveryEmail
                                 ) &&
                                 <ValidateEmailOnRegistration 
                                     initialUserRegistrationState={userRegistrationState}
@@ -682,11 +681,11 @@ const Register: React.FC = () => {
                                         setShowMutationBackdrop(false);
                                         handleUserRegistrationStateResponse(userRegistrationStateResponse, errorMessage);
                                     }}
-                                    isBackupEmail={userRegistrationState.registrationState === RegistrationState.ValidateBackupEmail}
+                                    isRecoveryEmail={userRegistrationState.registrationState === RegistrationState.ValidateRecoveryEmail}
                                 />                                
                             }
-                            {userRegistrationState.registrationState === RegistrationState.AddBackupEmailOptional &&
-                                <BackupEmailConfiguration
+                            {userRegistrationState.registrationState === RegistrationState.AddRecoveryEmailOptional &&
+                                <RecoveryEmailConfiguration
                                     initialUserRegistrationState={userRegistrationState}
                                     onRegistrationCancelled={() => {
                                         handleCancelRegistration();

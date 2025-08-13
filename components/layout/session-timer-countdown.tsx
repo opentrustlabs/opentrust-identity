@@ -8,6 +8,7 @@ import { Button, DialogActions, DialogContent, Typography } from "@mui/material"
 import { useRouter } from "next/navigation";
 import { QUERY_PARAM_AUTHENTICATE_TO_PORTAL, QUERY_PARAM_RETURN_URI } from "@/utils/consts";
 
+
 const SessionTimerCountdown: React.FC = () => {
 
     // CONTEXT VARIABLES AND HOOKS

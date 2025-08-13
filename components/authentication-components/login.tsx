@@ -51,7 +51,7 @@ const Login: React.FC<LoginProps>= ({
     const titleSetter = useContext(PageTitleContext);
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
     const authSessionProps: AuthSessionProps = useAuthSessionContext();
-    const breakPoints: ResponsiveBreakpoints = useContext(ResponsiveContext);    
+    const breakPoints: ResponsiveBreakpoints = useContext(ResponsiveContext);
     const authContextProps: AuthContextProps = useContext(AuthContext);
 
 
@@ -91,7 +91,9 @@ const Login: React.FC<LoginProps>= ({
     const [passwordConfig, setPasswordConfig] = React.useState<TenantPasswordConfig | null>(null);
     const [socialOIDCProviders, setSocialOIDCProviders] = React.useState<Array<FederatedOidcProvider>>([]);
     const [isPasswordResetFlow, setIsPasswordResetFlow] = React.useState<boolean>(false);
-
+    const [showRecoveryEmailDialog, setShowRecoveryEmailDialog] = React.useState<boolean>(false);
+    const [useRecoveryEmail, setUseRecoveryEmail] = React.useState<boolean>(false);
+    
     // HOOKS FROM NEXTJS OR MUI
     const router = useRouter();
 
@@ -227,13 +229,13 @@ const Login: React.FC<LoginProps>= ({
                 }
             }
             else {
-                setUserAuthenticationState(authnStateResponse.userAuthenticationState);
+                setUserAuthenticationState(authnStateResponse.userAuthenticationState);                
                 if (authnStateResponse.passwordConfig) {
                     setPasswordConfig(authnStateResponse.passwordConfig);
                 }
                 if(authnStateResponse.userAuthenticationState.authenticationState === AuthenticationState.EnterEmail){                    
                     if(authnStateResponse.userAuthenticationState.tenantId.length > 0 && authnStateResponse && selectedTenant === null){
-                        setSelectedTenant(authnStateResponse.userAuthenticationState.tenantId);
+                        setSelectedTenant(authnStateResponse.userAuthenticationState.tenantId);                        
                     }
                 }
                 if (
@@ -246,6 +248,11 @@ const Login: React.FC<LoginProps>= ({
                     }
                     else {
                         setErrorMessage("ERROR_NO_TENANT_TO_SELECT");
+                    }
+                }
+                else{
+                    if(selectedTenant === null && authnStateResponse.userAuthenticationState.tenantId){
+                        router.push(`${window.location.href}&${QUERY_PARAM_TENANT_ID}=${authnStateResponse.userAuthenticationState.tenantId}`);
                     }
                 }
             }
@@ -295,6 +302,7 @@ const Login: React.FC<LoginProps>= ({
         setTenantsToSelect([]);
         setSelectedTenant(tenantId);
         setUserAuthenticationState({...authnState});
+        authSessionProps.deleteAuthSessionData();
         tenantBean.setTenantMetaData(DEFAULT_TENANT_META_DATA);
     }
 
@@ -405,6 +413,70 @@ const Login: React.FC<LoginProps>= ({
                         </Typography>
                     </Dialog>
                 }
+                {showRecoveryEmailDialog &&
+                    <Dialog
+                        open={showRecoveryEmailDialog}
+                        onClose={() => {
+                            setShowRecoveryEmailDialog(false);
+                            setIsPasswordResetFlow(false);
+                        }}
+                        maxWidth="sm"
+                        fullWidth={true}
+                    >
+                        <DialogTitle fontWeight={"bold"}>Select your password recovery option:</DialogTitle>
+                        <DialogContent>
+                            <Typography component="div">
+                                <Grid2 container size={12} spacing={1}>
+                                    <Grid2 size={11}>Use my primary email</Grid2>
+                                    <Grid2 size={1}>
+                                        <RadioStyledCheckbox 
+                                            onChange={(_, checked: boolean) => {
+                                                setUseRecoveryEmail(false);
+                                            }}
+                                            checked={useRecoveryEmail === false}                                    
+                                        />
+                                    </Grid2>
+                                    <Grid2 size={11}>I have a backup email I want to use</Grid2>
+                                    <Grid2 size={1}>
+                                        <RadioStyledCheckbox 
+                                            onChange={(_, checked: boolean) => {
+                                                setUseRecoveryEmail(true);
+                                            }}
+                                            checked={useRecoveryEmail === true}
+                                        />
+
+                                    </Grid2>
+                                </Grid2>
+                            </Typography>
+
+                        </DialogContent>
+                        <DialogActions>
+                            <Button
+                                onClick={() => {
+                                    setShowRecoveryEmailDialog(false);
+                                    setIsPasswordResetFlow(false);
+                                }}
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                onClick={() => {
+                                    setShowRecoveryEmailDialog(false);
+                                    authenticateHandleForgotPassword({
+                                        variables: {
+                                            authenticationSessionToken: userAuthenticationState.authenticationSessionToken,
+                                            preAuthToken: preAuthToken,
+                                            useRecoveryEmail: useRecoveryEmail
+                                        }
+                                    });
+                                }}
+                            >
+                                Submit
+                            </Button>
+                        </DialogActions>
+
+                    </Dialog>
+                }
                 <Grid2 spacing={3} container size={{ xs: 12 }}>
                     {errorMessage !== null &&
                         <Grid2 size={{ xs: 12 }} textAlign={"center"}>
@@ -464,13 +536,7 @@ const Login: React.FC<LoginProps>= ({
                                     >Next</Button>
                                     <Button
                                         onClick={() => {
-                                            if (redirectUri) {
-                                                router.push(`${redirectUri}?error=access_denied&error_description=authentication_cancelled_by_user`)
-                                            }
-                                            else {
-                                                setUsername("");
-                                                router.push(`/authorize/login?${QUERY_PARAM_AUTHENTICATE_TO_PORTAL}=true`);
-                                            }
+                                            handleCancelAuthentication(userAuthenticationState);
                                         }}
                                     >
                                         Cancel
@@ -575,13 +641,8 @@ const Login: React.FC<LoginProps>= ({
                                         <span 
                                             style={{fontWeight: "bold", fontSize: "0.9em", textDecoration: "underline", cursor: "pointer"}}
                                             onClick={() => {
-                                                setIsPasswordResetFlow(true);                                                
-                                                authenticateHandleForgotPassword({
-                                                    variables: {
-                                                        authenticationSessionToken: userAuthenticationState.authenticationSessionToken,
-                                                        preAuthToken: preAuthToken
-                                                    }
-                                                });
+                                                setIsPasswordResetFlow(true);
+                                                setShowRecoveryEmailDialog(true);                                                
                                             }}
                                         >Forgot Password?
                                         </span>                                            

@@ -64,7 +64,7 @@ export const TENANT_META_DATA_QUERY = gql(`
             }
             systemSettings {
                 allowDuressPassword
-                allowBackupEmail
+                allowRecoveryEmail
             }
         }
     }
@@ -108,29 +108,40 @@ export const LOGIN_USERNAME_HANDLER_QUERY = gql(`
 export const ME_QUERY = gql(`
     query me {
         me {
-            address
-            countryCode
-            domain
+            userId
+            federatedOIDCProviderSubjectId
             email
             emailVerified
-            enabled
-            federatedOIDCProviderSubjectId
+            domain
             firstName
             lastName
-            locked
-            managementAccessTenantId
             middleName
-            nameOrder
             phoneNumber
+            address
+            addressLine1
+            city
+            stateRegionProvince
+            postalCode
+            countryCode
             preferredLanguageCode
+            locked
+            enabled
+            nameOrder
+            tenantId
+            tenantName
+            managementAccessTenantId
+            expiresAtMs
+            principalType
             scope {
                 scopeDescription
                 scopeId
                 scopeName
             }
-            tenantId
-            tenantName
-            userId
+            recoveryEmail {
+                userId
+                email
+                emailVerified
+            }                
         }
     }
 `);
@@ -192,6 +203,7 @@ export const CLIENT_DETAIL_QUERY = gql(`
             clientTokenTTLSeconds
             maxRefreshTokenCount
             markForDelete
+            audience
         }
     }
 `);
@@ -321,6 +333,11 @@ export const USER_DETAIL_QUERY = gql(`
             enabled
             nameOrder
             markForDelete
+            recoveryEmail {
+                userId
+                email
+                emailVerified
+            }
         }
     }    
 `);
@@ -702,7 +719,7 @@ export const SYSTEM_SETTINGS_QUERY = gql(`
     query getSystemSettings {
         getSystemSettings {
             softwareVersion
-            allowBackupEmail
+            allowRecoveryEmail
             allowDuressPassword
             rootClientId
             enablePortalAsLegacyIdp

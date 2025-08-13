@@ -1,4 +1,4 @@
-import { Client, ObjectSearchResultItem, RelSearchResultItem, SearchResultType, Tenant } from "@/graphql/generated/graphql-types";
+import { Client, ClientScopeRel, ObjectSearchResultItem, RelSearchResultItem, SearchResultType, Tenant } from "@/graphql/generated/graphql-types";
 import { OIDCContext } from "@/graphql/graphql-context";
 import ClientDao from "@/lib/dao/client-dao";
 import { generateRandomToken } from "@/utils/dao-utils";
@@ -10,11 +10,13 @@ import { getOpenSearchClient } from "@/lib/data-sources/search";
 import { DaoFactory } from "../data-sources/dao-factory";
 import Kms from "../kms/kms";
 import { authorizeByScopeAndTenant, ServiceAuthorizationWrapper } from "@/utils/authz-utils";
+import ScopeDao from "../dao/scope-dao";
 
 const clientDao: ClientDao = DaoFactory.getInstance().getClientDao();
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
 const searchClient = getOpenSearchClient();
 const kms: Kms = DaoFactory.getInstance().getKms();
+const scopeDao: ScopeDao = DaoFactory.getInstance().getScopeDao();
 
 class ClientService {
 
@@ -101,7 +103,7 @@ class ClientService {
         }
 
         client.clientId = randomUUID().toString();
-        const clientSecret = generateRandomToken(32, CLIENT_SECRET_ENCODING);
+        const clientSecret = generateRandomToken(24, "hex");
         const encryptedClientSecret = await kms.encrypt(clientSecret);
         if(encryptedClientSecret === null){
             throw new GraphQLError("ERROR_UNABLE_TO_ENCRYPT_CLIENT_SECRET");
@@ -131,6 +133,14 @@ class ClientService {
         if(!CLIENT_TYPES.includes(client.clientType)){
             throw new GraphQLError("ERROR_INVALID_CLIENT_TYPE");
         }
+
+        // If the client type has changed, then delete the scope values assigned to the client
+        if(clientToUpdate.clientType !== client.clientType){
+            const rels: Array<ClientScopeRel> = await scopeDao.getClientScopeRels(client.clientId);
+            for(let i = 0; i < rels.length; i++){
+                scopeDao.removeScopeFromClient(rels[i].tenantId, rels[i].clientId, rels[i].scopeId);
+            }
+        }
         
         // tenantId is a write-only-read-only property, no updates regardless of what the client has sent
         // same for client secret
@@ -143,7 +153,8 @@ class ClientService {
         clientToUpdate.clientTokenTTLSeconds = client.clientTokenTTLSeconds;
         clientToUpdate.clientType = client.clientType;
         clientToUpdate.maxRefreshTokenCount = client.maxRefreshTokenCount;
-        clientToUpdate.userTokenTTLSeconds = client.userTokenTTLSeconds;        
+        clientToUpdate.userTokenTTLSeconds = client.userTokenTTLSeconds;
+        clientToUpdate.audience = client.audience;
 
         await clientDao.updateClient(clientToUpdate);
         await this.updateSearchIndex(clientToUpdate);
