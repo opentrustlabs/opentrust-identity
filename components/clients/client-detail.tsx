@@ -171,7 +171,14 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                                 fullWidth={true}
                                                 value={clientUpdateInput.clientType}
                                                 name="clientType"
-                                                onChange={(evt) => { clientUpdateInput.clientType = evt.target.value; setClientUpdateInput({ ...clientUpdateInput }); setMarkDirty(true); }}
+                                                onChange={(evt) => { 
+                                                    clientUpdateInput.clientType = evt.target.value; 
+                                                    if(clientUpdateInput.clientType === CLIENT_TYPE_SERVICE_ACCOUNT){
+                                                        clientUpdateInput.oidcEnabled = false;
+                                                        clientUpdateInput.pkceEnabled = false;
+                                                    }
+                                                    setClientUpdateInput({ ...clientUpdateInput }); 
+                                                    setMarkDirty(true); }}
                                             >
                                                 {CLIENT_TYPES.map(
                                                     (val: string) => (
@@ -236,7 +243,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                             <Grid2 alignContent={"center"} size={10}>OIDC (SSO) Enabled</Grid2>
                                             <Grid2 size={2}>
                                                 <Checkbox
-                                                    disabled={disableInputs}
+                                                    disabled={disableInputs || clientUpdateInput.clientType === CLIENT_TYPE_SERVICE_ACCOUNT}
                                                     checked={clientUpdateInput.oidcEnabled}
                                                     onChange={(_, checked: boolean) => {
                                                         clientUpdateInput.oidcEnabled = checked;

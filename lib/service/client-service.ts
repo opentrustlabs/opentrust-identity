@@ -11,6 +11,7 @@ import { DaoFactory } from "../data-sources/dao-factory";
 import Kms from "../kms/kms";
 import { authorizeByScopeAndTenant, ServiceAuthorizationWrapper } from "@/utils/authz-utils";
 import ScopeDao from "../dao/scope-dao";
+import { isValidRedirectUri } from "@/utils/client-utils";
 
 const clientDao: ClientDao = DaoFactory.getInstance().getClientDao();
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
@@ -225,7 +226,9 @@ class ClientService {
         if(!isAuthorized){
             throw new GraphQLError(errorMessage || "ERROR");
         }
-
+        if(!isValidRedirectUri(uri)){
+            throw new GraphQLError("ERROR_INVALID_REDIRECT_URI");
+        }
         return clientDao.addRedirectURI(clientId, uri);
     }
 
