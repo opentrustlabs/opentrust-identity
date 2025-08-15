@@ -1,4 +1,4 @@
-import { AuthenticationGroup, AuthenticationGroupClientRel, AuthenticationGroupUserRel, Client, ObjectSearchResultItem, RelSearchResultItem, Scope, SearchResultType, Tenant, User, UserTenantRel } from "@/graphql/generated/graphql-types";
+import { AuthenticationGroup, AuthenticationGroupClientRel, AuthenticationGroupUserRel, Client, ErrorDetail, ObjectSearchResultItem, RelSearchResultItem, Scope, SearchResultType, Tenant, User, UserTenantRel } from "@/graphql/generated/graphql-types";
 import { OIDCContext } from "@/graphql/graphql-context";
 import TenantDao from "@/lib/dao/tenant-dao";
 import ClientDao from "../dao/client-dao";
@@ -36,27 +36,27 @@ class AuthenticationGroupService {
         }
         
         if(this.oidcContext.portalUserProfile?.managementAccessTenantId === this.oidcContext.rootTenant.tenantId){
-            const {isAuthorized, errorCode} = authorizeByScopeAndTenant(this.oidcContext, [AUTHENTICATION_GROUP_READ_SCOPE, TENANT_READ_ALL_SCOPE], null);
+            const {isAuthorized, errorDetail} = authorizeByScopeAndTenant(this.oidcContext, [AUTHENTICATION_GROUP_READ_SCOPE, TENANT_READ_ALL_SCOPE], null);
             if(!isAuthorized){
-                throw new GraphQLError(errorCode);
+                throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});
             }
             return authenticationGroupDao.getAuthenticationGroups(tenantId, clientId, userId);
         }
         else if(tenantId){
-            const {isAuthorized, errorCode} = authorizeByScopeAndTenant(this.oidcContext, [AUTHENTICATION_GROUP_READ_SCOPE, TENANT_READ_ALL_SCOPE], tenantId);
+            const {isAuthorized, errorDetail} = authorizeByScopeAndTenant(this.oidcContext, [AUTHENTICATION_GROUP_READ_SCOPE, TENANT_READ_ALL_SCOPE], tenantId);
             if(!isAuthorized){
-                throw new GraphQLError(errorCode);
+                throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});
             }
             return authenticationGroupDao.getAuthenticationGroups(tenantId, clientId, userId);
         }
         else if(clientId){
             const client: Client | null = await clientDao.getClientById(clientId);
             if(!client){
-                throw new GraphQLError(ERROR_CODES.EC00001.errorCode);
+                throw new GraphQLError(ERROR_CODES.EC00001.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00001}});
             }
-            const {isAuthorized, errorCode} = authorizeByScopeAndTenant(this.oidcContext, [AUTHENTICATION_GROUP_READ_SCOPE, TENANT_READ_ALL_SCOPE], client.tenantId);
+            const {isAuthorized, errorDetail} = authorizeByScopeAndTenant(this.oidcContext, [AUTHENTICATION_GROUP_READ_SCOPE, TENANT_READ_ALL_SCOPE], client.tenantId);
             if(!isAuthorized){
-                throw new GraphQLError(errorCode);
+                throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});
             }
             return authenticationGroupDao.getAuthenticationGroups(tenantId, clientId, userId);
         }
@@ -67,11 +67,11 @@ class AuthenticationGroupService {
                 (rel: UserTenantRel) => rel.tenantId === this.oidcContext.portalUserProfile?.managementAccessTenantId
             )
             if(!matchingRel){
-                throw new GraphQLError(ERROR_CODES.EC00006.errorCode);
+                throw new GraphQLError(ERROR_CODES.EC00006.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00006}});
             }
-            const {isAuthorized, errorCode} = authorizeByScopeAndTenant(this.oidcContext, [AUTHENTICATION_GROUP_READ_SCOPE, TENANT_READ_ALL_SCOPE], matchingRel.tenantId);
+            const {isAuthorized, errorDetail} = authorizeByScopeAndTenant(this.oidcContext, [AUTHENTICATION_GROUP_READ_SCOPE, TENANT_READ_ALL_SCOPE], matchingRel.tenantId);
             if(!isAuthorized){
-                throw new GraphQLError(errorCode);
+                throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});
             }
             const arr: Array<AuthenticationGroup> = await authenticationGroupDao.getAuthenticationGroups(tenantId, clientId, userId);
             return arr.filter(
@@ -87,12 +87,12 @@ class AuthenticationGroupService {
                 performOperation: async function(_, authenticationGroupId: string): Promise<AuthenticationGroup | null> {
                     return authenticationGroupDao.getAuthenticationGroupById(authenticationGroupId);
                 },
-                additionalConstraintCheck: async function (oidcContext: OIDCContext, authenticationGroup: AuthenticationGroup | null): Promise<{ isAuthorized: boolean, errorCode: string}> {
+                additionalConstraintCheck: async function (oidcContext: OIDCContext, authenticationGroup: AuthenticationGroup | null): Promise<{ isAuthorized: boolean, errorDetail: ErrorDetail}> {
                     if(authenticationGroup && authenticationGroup.tenantId !== oidcContext.portalUserProfile?.managementAccessTenantId){
-                        return {isAuthorized: false, errorCode: ERROR_CODES.EC00007.errorCode};
+                        return {isAuthorized: false, errorDetail: ERROR_CODES.EC00007};
                     }
                     else{
-                        return { isAuthorized: true, errorCode: ""};
+                        return { isAuthorized: true, errorDetail: ERROR_CODES.NULL_ERROR};
                     }                    
                 }
             } 
@@ -103,17 +103,17 @@ class AuthenticationGroupService {
 
     public async createAuthenticationGroup(authenticationGroup: AuthenticationGroup): Promise<AuthenticationGroup | null> {
 
-        const {isAuthorized, errorCode} = authorizeByScopeAndTenant(this.oidcContext, AUTHENTICATION_GROUP_CREATE_SCOPE, authenticationGroup.tenantId);
+        const {isAuthorized, errorDetail} = authorizeByScopeAndTenant(this.oidcContext, AUTHENTICATION_GROUP_CREATE_SCOPE, authenticationGroup.tenantId);
         if(!isAuthorized){
-            throw new GraphQLError(errorCode);
+            throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});
         }
 
         const tenant: Tenant | null = await tenantDao.getTenantById(authenticationGroup.tenantId);
         if (!tenant) {
-                throw new GraphQLError(ERROR_CODES.EC00008.errorCode);
+                throw new GraphQLError(ERROR_CODES.EC00008.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00008 }});
         }
         if(tenant.enabled === false || tenant.markForDelete === true){
-            throw new GraphQLError(ERROR_CODES.EC00009.errorCode);
+            throw new GraphQLError(ERROR_CODES.EC00009.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00009 }});
         }
         
         authenticationGroup.authenticationGroupId = randomUUID().toString();
@@ -129,11 +129,11 @@ class AuthenticationGroupService {
 
         const existingAuthenticationGroup = await authenticationGroupDao.getAuthenticationGroupById(authenticationGroup.authenticationGroupId);
         if (!existingAuthenticationGroup) {
-            throw new GraphQLError(ERROR_CODES.EC00010.errorCode);
+            throw new GraphQLError(ERROR_CODES.EC00010.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00010}});
         }
-        const {isAuthorized, errorCode} = authorizeByScopeAndTenant(this.oidcContext, AUTHENTICATION_GROUP_UPDATE_SCOPE, existingAuthenticationGroup.tenantId);
+        const {isAuthorized, errorDetail} = authorizeByScopeAndTenant(this.oidcContext, AUTHENTICATION_GROUP_UPDATE_SCOPE, existingAuthenticationGroup.tenantId);
         if(!isAuthorized){
-            throw new GraphQLError(errorCode);
+            throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});
         }
 
         existingAuthenticationGroup.authenticationGroupDescription = authenticationGroup.authenticationGroupDescription;
@@ -184,20 +184,20 @@ class AuthenticationGroupService {
     public async assignAuthenticationGroupToClient(authenticationGroupId: string, clientId: string): Promise<AuthenticationGroupClientRel> {
         const client: Client | null = await clientDao.getClientById(clientId);
         if (!client) {
-            throw new GraphQLError(ERROR_CODES.EC00011.errorCode);
+            throw new GraphQLError(ERROR_CODES.EC00011.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00011 }});
         }
         const authenticationGroup = await this.getAuthenticationGroupById(authenticationGroupId);
         if (!authenticationGroup) {
-            throw new GraphQLError(ERROR_CODES.EC00010.errorCode);
+            throw new GraphQLError(ERROR_CODES.EC00010.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00010 }});
         }
         // Do the tenants match?
         if (authenticationGroup.tenantId !== client.tenantId) {
-            throw new GraphQLError(ERROR_CODES.EC00012.errorCode)
+            throw new GraphQLError(ERROR_CODES.EC00012.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00012 }});
         }
 
-        const {isAuthorized, errorCode} = authorizeByScopeAndTenant(this.oidcContext, AUTHENTICATION_GROUP_CLIENT_ASSIGN_SCOPE, client.tenantId);
+        const {isAuthorized, errorDetail} = authorizeByScopeAndTenant(this.oidcContext, AUTHENTICATION_GROUP_CLIENT_ASSIGN_SCOPE, client.tenantId);
         if(!isAuthorized){
-            throw new GraphQLError(errorCode);
+            throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});
         }
 
         const newRel = await authenticationGroupDao.assignAuthenticationGroupToClient(authenticationGroupId, clientId);        
@@ -207,9 +207,9 @@ class AuthenticationGroupService {
     public async removeAuthenticationGroupFromClient(authenticationGroupId: string, clientId: string): Promise<void> {
         const authnGroup: AuthenticationGroup | null = await authenticationGroupDao.getAuthenticationGroupById(authenticationGroupId);
         if(authnGroup){
-            const {isAuthorized, errorCode} = authorizeByScopeAndTenant(this.oidcContext, AUTHENTICATION_GROUP_CLIENT_REMOVE_SCOPE, authnGroup.tenantId);
+            const {isAuthorized, errorDetail} = authorizeByScopeAndTenant(this.oidcContext, AUTHENTICATION_GROUP_CLIENT_REMOVE_SCOPE, authnGroup.tenantId);
             if(!isAuthorized){
-                throw new GraphQLError(errorCode);
+                throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});
             }
             authenticationGroupDao.removeAuthenticationGroupFromClient(authenticationGroupId, clientId);
         }
@@ -221,22 +221,22 @@ class AuthenticationGroupService {
         // Checks:
         // 1.   Does the user exist
         if(!user){
-            throw new GraphQLError(ERROR_CODES.EC00013.errorCode);
+            throw new GraphQLError(ERROR_CODES.EC00013.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00013 }});
         }
         // 2.   Does the authn group exist
         const authnGroup: AuthenticationGroup | null = await authenticationGroupDao.getAuthenticationGroupById(authenticationGroupId);
         if(!authnGroup){
-            throw new GraphQLError(ERROR_CODES.EC00010.errorCode);
+            throw new GraphQLError(ERROR_CODES.EC00010.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00010 }});
         }
         // 3.   Is the user a member of the tenant?
         const userTenantRel: UserTenantRel | null = await identityDao.getUserTenantRel(authnGroup.tenantId, userId);
         if(!userTenantRel){
-            throw new GraphQLError(ERROR_CODES.EC00014.errorCode);
+            throw new GraphQLError(ERROR_CODES.EC00014.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00014 }});
         }
 
-        const {isAuthorized, errorCode} = authorizeByScopeAndTenant(this.oidcContext, AUTHENTICATION_GROUP_USER_ASSIGN_SCOPE, userTenantRel.tenantId);
+        const {isAuthorized, errorDetail} = authorizeByScopeAndTenant(this.oidcContext, AUTHENTICATION_GROUP_USER_ASSIGN_SCOPE, userTenantRel.tenantId);
         if(!isAuthorized){
-            throw new GraphQLError(errorCode);
+            throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});
         }
 
         const r: AuthenticationGroupUserRel = await authenticationGroupDao.assignUserToAuthenticationGroup(userId, authenticationGroupId);
@@ -264,9 +264,9 @@ class AuthenticationGroupService {
     public async removeUserFromAuthenticationGroup(userId: string, authenticationGroupId: string): Promise<void> {
         const authnGroup: AuthenticationGroup | null = await authenticationGroupDao.getAuthenticationGroupById(authenticationGroupId);
         if(authnGroup){
-            const {isAuthorized, errorCode} = authorizeByScopeAndTenant(this.oidcContext, AUTHENTICATION_GROUP_USER_REMOVE_SCOPE, authnGroup.tenantId);
+            const {isAuthorized, errorDetail} = authorizeByScopeAndTenant(this.oidcContext, AUTHENTICATION_GROUP_USER_REMOVE_SCOPE, authnGroup.tenantId);
             if(!isAuthorized){
-                throw new GraphQLError(errorCode);
+                throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});
             }
             await authenticationGroupDao.removeUserFromAuthenticationGroup(userId, authenticationGroupId);
 

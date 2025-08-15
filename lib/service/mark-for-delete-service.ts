@@ -15,7 +15,6 @@ import { GraphQLError } from "graphql/error";
 import { randomUUID } from 'crypto'; 
 import { AUTHENTICATION_GROUP_DELETE_SCOPE, AUTHORIZATION_GROUP_DELETE_SCOPE, CLIENT_DELETE_SCOPE, FEDERATED_OIDC_PROVIDER_DELETE_SCOPE, KEY_DELETE_SCOPE, RATE_LIMIT_DELETE_SCOPE, SCOPE_DELETE_SCOPE, SCOPE_USE_IAM_MANAGEMENT, TENANT_DELETE_SCOPE, TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE, TENANT_TYPE_ROOT_TENANT, USER_DELETE_SCOPE } from "@/utils/consts";
 import { authorizeByScopeAndTenant, WithAuthorizationByScopeAndTenant } from "@/utils/authz-utils";
-import client from "@/components/apollo-client/apollo-client";
 import { ERROR_CODES } from "../models/error";
 
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
@@ -79,10 +78,10 @@ class MarkForDeleteService {
             requiredScope = KEY_DELETE_SCOPE;
         }
         if(object === null){
-            throw new GraphQLError(ERROR_CODES.EC00036.errorCode);
+            throw new GraphQLError(ERROR_CODES.EC00036.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00036}});
         }
         if(requiredScope === null){
-            throw new GraphQLError(ERROR_CODES.EC00037.errorCode);
+            throw new GraphQLError(ERROR_CODES.EC00037.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00037}});
         }
 
         // Now update the individual records with the mark for delete flag before 
@@ -90,7 +89,7 @@ class MarkForDeleteService {
         if(markForDelete.objectType === MarkForDeleteObjectType.Tenant){
             const t: Tenant = object as Tenant;
             if(t.tenantType === TENANT_TYPE_ROOT_TENANT){
-                throw new GraphQLError(ERROR_CODES.EC00038.errorCode);
+                throw new GraphQLError(ERROR_CODES.EC00038.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00038}});
             }
             
             const u = WithAuthorizationByScopeAndTenant({
@@ -109,7 +108,7 @@ class MarkForDeleteService {
             // We cannot delete a client that is used for outbound communication as a representative
             // of the root tenant.
             if(c.clientId === systemSettings.rootClientId){
-                throw new GraphQLError(ERROR_CODES.EC00039.errorCode);
+                throw new GraphQLError(ERROR_CODES.EC00039.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00039}});
             }
             
             const u = WithAuthorizationByScopeAndTenant({
@@ -161,7 +160,7 @@ class MarkForDeleteService {
             // We cannot delete a scope value that is used for IAM management,
             // only those scope values defined for application management.
             if(s.scopeUse === SCOPE_USE_IAM_MANAGEMENT){
-                throw new GraphQLError(ERROR_CODES.EC00040.errorCode);
+                throw new GraphQLError(ERROR_CODES.EC00040.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00040}});
             }
             const u = WithAuthorizationByScopeAndTenant({
                 async performOperation() {
@@ -222,17 +221,17 @@ class MarkForDeleteService {
     }
 
     public async getMarkForDeleteById(markForDeleteId: string): Promise<MarkForDelete | null> {
-        const {isAuthorized, errorCode} = authorizeByScopeAndTenant(this.oidcContext, [TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE], null);
+        const {isAuthorized, errorDetail} = authorizeByScopeAndTenant(this.oidcContext, [TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE], null);
         if(!isAuthorized){
-            throw new GraphQLError(errorCode);
+            throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});
         }
         return markForDeleteDao.getMarkForDeleteById(markForDeleteId);
     }
 
     public async getDeletionStatus(markForDeleteId: string): Promise<Array<DeletionStatus>> {
-        const {isAuthorized, errorCode} = authorizeByScopeAndTenant(this.oidcContext, [TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE], null);
+        const {isAuthorized, errorDetail} = authorizeByScopeAndTenant(this.oidcContext, [TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE], null);
         if(!isAuthorized){
-            throw new GraphQLError(errorCode);
+            throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});
         }
         return markForDeleteDao.getDeletionStatus(markForDeleteId);
     }    

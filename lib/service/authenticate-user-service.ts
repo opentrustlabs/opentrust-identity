@@ -1,6 +1,6 @@
 import { OIDCContext } from "@/graphql/graphql-context";
 import IdentityDao from "../dao/identity-dao";
-import { Tenant, TenantPasswordConfig, User, UserCredential, UserMfaRel, TenantManagementDomainRel, FederatedOidcProvider, FederatedOidcProviderTenantRel, PreAuthenticationState, AuthorizationReturnUri, UserAuthenticationStateResponse, AuthenticationState, AuthenticationErrorTypes, UserAuthenticationState, UserFailedLogin, TenantLoginFailurePolicy, Fido2KeyAuthenticationInput, Fido2KeyRegistrationInput, TotpResponse, UserTermsAndConditionsAccepted, TenantLegacyUserMigrationConfig, TenantRestrictedAuthenticationDomainRel, AuthenticationGroup, AuthorizationDeviceCodeData, DeviceCodeAuthorizationStatus, UserRecoveryEmail } from "@/graphql/generated/graphql-types";
+import { Tenant, TenantPasswordConfig, User, UserCredential, UserMfaRel, TenantManagementDomainRel, FederatedOidcProvider, FederatedOidcProviderTenantRel, PreAuthenticationState, AuthorizationReturnUri, UserAuthenticationStateResponse, AuthenticationState, UserAuthenticationState, UserFailedLogin, TenantLoginFailurePolicy, Fido2KeyAuthenticationInput, Fido2KeyRegistrationInput, TotpResponse, UserTermsAndConditionsAccepted, TenantLegacyUserMigrationConfig, TenantRestrictedAuthenticationDomainRel, AuthenticationGroup, AuthorizationDeviceCodeData, DeviceCodeAuthorizationStatus, UserRecoveryEmail, ErrorDetail } from "@/graphql/generated/graphql-types";
 import { DaoFactory } from "../data-sources/dao-factory";
 import TenantDao from "../dao/tenant-dao";
 import { GraphQLError } from "graphql/error";
@@ -15,6 +15,7 @@ import { randomUUID } from "node:crypto";
 import { LegacyUserProfile } from "../models/principal";
 import AuthenticationGroupDao from "../dao/authentication-group-dao";
 import { SecurityEventType } from "../models/security-event";
+import { ERROR_CODES } from "../models/error";
 
 
 const jwtServiceUtils: JwtServiceUtils = new JwtServiceUtils();
@@ -80,23 +81,23 @@ class AuthenticateUserService extends IdentityService {
         const arrUserAuthenticationStates: Array<UserAuthenticationState> = await this.getSortedAuthenticationStates(authenticationSessionToken);
         const index: number = await this.validateAuthenticationStep(arrUserAuthenticationStates, response, AuthenticationState.EnterPassword);
         if(index < 0){
-            response.authenticationError.errorCode = "ERROR_INVALID_AUTHENTICATION_STATE";
+            response.authenticationError = ERROR_CODES.EC00095;
             return Promise.resolve(response);
         }
         const user: User | null = await identityDao.getUserBy("id", arrUserAuthenticationStates[0].userId);
         if(user === null){
-            response.authenticationError.errorCode = "ERROR_INVALID_USER_ID";
+            response.authenticationError = ERROR_CODES.EC00096;
             return Promise.resolve(response);
         }
         if(user.markForDelete || user.enabled === false){
-            response.authenticationError.errorCode = "ERROR_USER_CANNOT_BE_AUTHENTICATED";
+            response.authenticationError = ERROR_CODES.EC00097;
             return Promise.resolve(response);
         }
         let userRecoveryEmail: UserRecoveryEmail | null = null;
         if(useRecoveryEmail === true){
             userRecoveryEmail = await identityDao.getUserRecoveryEmail(user.userId);
             if(userRecoveryEmail === null){
-                response.authenticationError.errorCode = "ERROR_NO_BACKUP_EMIAL_CONFIGURED";
+                response.authenticationError = ERROR_CODES.EC00098;
                 return Promise.resolve(response);
             }
         }
@@ -153,19 +154,19 @@ class AuthenticateUserService extends IdentityService {
         
         const index: number = await this.validateAuthenticationStep(arrUserAuthenticationStates, response, AuthenticationState.ValidatePasswordResetToken);
         if(index < 0){
-            response.authenticationError.errorCode = "ERROR_INVALID_AUTHENTICATION_STATE";
+            response.authenticationError = ERROR_CODES.EC00095;
             return Promise.resolve(response);
         }
         
         const user: User | null = await identityDao.getUserByPasswordResetToken(token);
         if(user === null){
-            response.authenticationError.errorCode = "ERROR_INVALID_RESET_TOKEN";
+            response.authenticationError = ERROR_CODES.EC00099;
             return Promise.resolve(response);
         }
         // Make sure we delete the reset token before continuing...
         await identityDao.deletePasswordResetToken(token);
         if(user.markForDelete || user.enabled === false){
-            response.authenticationError.errorCode = "ERROR_USER_CANNOT_BE_AUTHENTICATED";
+            response.authenticationError = ERROR_CODES.EC00097;
             return Promise.resolve(response);
         }
         arrUserAuthenticationStates[index].authenticationStateStatus = STATUS_COMPLETE;
@@ -179,7 +180,7 @@ class AuthenticateUserService extends IdentityService {
         
         const response: UserAuthenticationStateResponse = this.initUserAuthenticationStateResponse(authenticationSessionToken, "", preAuthToken);
         if(accepted === false){
-            response.authenticationError.errorCode = "ERROR_REQUIRED_TERMS_AND_CONDITIONS_NOT_ACCEPTED";
+            response.authenticationError = ERROR_CODES.EC00100;
             response.userAuthenticationState.authenticationState = AuthenticationState.Error;
             return response;
         }
@@ -187,12 +188,12 @@ class AuthenticateUserService extends IdentityService {
         
         const index: number = await this.validateAuthenticationStep(arrUserAuthenticationStates, response, AuthenticationState.AcceptTermsAndConditions);
         if(index < 0){
-            response.authenticationError.errorCode = "ERROR_INVALID_AUTHENTICATION_STATE";
+            response.authenticationError = ERROR_CODES.EC00095;
             return Promise.resolve(response);
         }
         const user: User | null = await identityDao.getUserBy("id", arrUserAuthenticationStates[index].userId);
         if(user === null){
-            response.authenticationError.errorCode = "ERROR_INVALID_USER_ID";
+            response.authenticationError = ERROR_CODES.EC00096;
             response.userAuthenticationState.authenticationState = AuthenticationState.Error;
             return response;
         }
@@ -229,17 +230,17 @@ class AuthenticateUserService extends IdentityService {
         const deviceCodeData: AuthorizationDeviceCodeData | null = await authDao.getAuthorizationDeviceCodeData(hashedUserCode, "usercode");
         if(deviceCodeData === null){
             response.userAuthenticationState.authenticationState = AuthenticationState.Error;
-            response.authenticationError.errorCode = "ERROR_INVALID_USER_CODE_FOR_DEVICE_CODE_NOT_FOUND";
+            response.authenticationError = ERROR_CODES.EC00101;
             return response;
         }
         if(deviceCodeData.expiresAtMs < Date.now()){
             response.userAuthenticationState.authenticationState = AuthenticationState.Error;
-            response.authenticationError.errorCode = "ERROR_DEVICE_CODE_HAS_EXPIRED";
+            response.authenticationError = ERROR_CODES.EC00102;
             return response;
         }
         if(deviceCodeData.authorizationStatus === DeviceCodeAuthorizationStatus.Cancelled || deviceCodeData.authorizationStatus === DeviceCodeAuthorizationStatus.Approved){
             response.userAuthenticationState.authenticationState = AuthenticationState.Error;
-            response.authenticationError.errorCode = "ERROR_DEVICE_CODE_HAS_BEEN_FINALIZED";
+            response.authenticationError = ERROR_CODES.EC00103;
             return response;
         }
         // Note that we cannot save the authentiation states until we know who the user is. 
@@ -279,7 +280,7 @@ class AuthenticateUserService extends IdentityService {
         
         // 1.   Error. No preauthentication data or device code data is found, so no way to check the tenant, client, user, etc.
         if(preAuthenticationState === null && deviceCodeData === null){
-            response.authenticationError.errorCode = "ERROR_INVALID_PRE_AUTH_TOKEN_OR_DEVICE_CODE";
+            response.authenticationError = ERROR_CODES.EC00104;
             return response;
         }
         
@@ -289,14 +290,14 @@ class AuthenticateUserService extends IdentityService {
 
         // 2.   Error. No tenant found
         if(tenant === null){
-            response.authenticationError.errorCode = "ERROR_INVALID_TENANT_FOR_PRE_AUTH_TOKEN";
+            response.authenticationError = ERROR_CODES.EC00105;
             return response;
         }
         const federatedOidcProvider: FederatedOidcProvider | null = await federatedOIDCProviderDao.getFederatedOidcProviderByDomain(domain);
         
         // 3.   Error. There is no federated provider, and the tenant exclusively uses federated OIDC provider for authentication
         if(federatedOidcProvider === null && tenant.federatedAuthenticationConstraint === FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE){
-            response.authenticationError.errorCode = "ERROR_USER_REGISTRATION_IS_NOT_PERMITTED_FOR_THIS_TENANT";
+            response.authenticationError = ERROR_CODES.EC00106;
             return response;
         }
 
@@ -308,7 +309,7 @@ class AuthenticateUserService extends IdentityService {
                 (d: TenantRestrictedAuthenticationDomainRel) => d.domain === domain
             );
             if(!belongsToRestrictedDomain){
-                response.authenticationError.errorCode = "ERROR_USER_AUTHENTICATION_IS_NOT_PERMITTED_FOR_THIS_TENANT";
+                response.authenticationError = ERROR_CODES.EC00106;
                 return response;
             }
         }
@@ -316,7 +317,7 @@ class AuthenticateUserService extends IdentityService {
         const user: User | null = await identityDao.getUserBy("email", email.toLowerCase());
         // 5.   Error. If the user exists but is not in a state where they can be authenticated.
         if(user && (user.enabled === false || user.locked === true || user.markForDelete === true)){
-            response.authenticationError.errorCode = "ERROR_USER_ACCOUNT_STATUS_NOT_VALID_FOR_AUTHENTICATION";
+            response.authenticationError = ERROR_CODES.EC00097;
             return response;
         }
         
@@ -348,7 +349,7 @@ class AuthenticateUserService extends IdentityService {
                     }
                 );
                 if(matchingGroup === undefined){
-                    response.authenticationError.errorCode = "ERROR_USER_DOES_NOT_BELONG_TO_VALID_AUTHENTICATION_GROUP_FOR_CLIENT";
+                    response.authenticationError = ERROR_CODES.EC00107;
                     return response;
                 }
             }
@@ -374,7 +375,7 @@ class AuthenticateUserService extends IdentityService {
             }
         }
         if(user === null && !canMigrateUser && federatedOidcProvider === null && tenant.allowUserSelfRegistration === false){
-            response.authenticationError.errorCode = "ERROR_USER_REGISTRATION_IS_NOT_PERMITTED_FOR_THIS_TENANT";
+            response.authenticationError = ERROR_CODES.EC00108;
             return response;
         }
         
@@ -387,9 +388,9 @@ class AuthenticateUserService extends IdentityService {
         //      for authentication. The user will be created automatically through this process (if successful)
         if(federatedOidcProvider !== null){
             response.userAuthenticationState.authenticationState = AuthenticationState.AuthWithFederatedOidc;
-            const {hasError, errorMessage, authorizationEndpoint} = await this.createFederatedOIDCRequestProperties(email.toLowerCase(), user ? user.userId : null, federatedOidcProvider, tenant.tenantId, preAuthenticationState);
+            const {hasError, errorDetail, authorizationEndpoint} = await this.createFederatedOIDCRequestProperties(email.toLowerCase(), user ? user.userId : null, federatedOidcProvider, tenant.tenantId, preAuthenticationState);
             if(hasError){
-                throw new GraphQLError(errorMessage);
+                throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});
             }
             response.uri = authorizationEndpoint;
         }
@@ -410,7 +411,7 @@ class AuthenticateUserService extends IdentityService {
             if(user !== null){
                 userCredential = await identityDao.getUserCredentialForAuthentication(user.userId);
                 if(!userCredential){
-                    response.authenticationError.errorCode = "ERROR_NO_CREDENTIALS_FOUND_FOR_USER";
+                    response.authenticationError = ERROR_CODES.EC00109;  
                     return response;
                 }
             }
@@ -542,7 +543,7 @@ class AuthenticateUserService extends IdentityService {
         
         // 1.   Error condition #1: No domains for management of a tenant
         if(!managementDomains || managementDomains.length === 0){
-            response.authenticationError.errorCode = AuthenticationErrorTypes.ErrorNoManagementDomain;
+            response.authenticationError = ERROR_CODES.EC00110;
             return response;
         }        
 
@@ -550,7 +551,7 @@ class AuthenticateUserService extends IdentityService {
         
         // 2.   Error condition #2. The user is disabled, marked for delete, or locked
         if(user && (user.enabled === false || user.locked === true || user.markForDelete === true)){
-            response.authenticationError.errorCode = "ERROR_USER_ACCOUNT_STATUS_NOT_VALID_FOR_AUTHENTICATION";
+            response.authenticationError = ERROR_CODES.EC00097;
             return response;
         }
 
@@ -573,13 +574,13 @@ class AuthenticateUserService extends IdentityService {
         //  3.   Error condition #3: There is NO external IdP for the user, and none of the tenants allows
         //       username/password authentication or allows self-registration. This is regardless if the user exists.
         if(federatedOidcProvider === null && tenantsThatAllowPasswordLogin.length === 0 && tenantsThatAllowSelfRegistration.length === 0){
-            response.authenticationError.errorCode = AuthenticationErrorTypes.ErrorExclusiveTenantAndNoFederatedOidcProvider;
+            response.authenticationError = ERROR_CODES.EC00111;
             return response;
         }
 
         // 4.   If there is an external IdP for the user, but none of the tenants allows it.
         if(federatedOidcProvider !== null && tenantsThatAllowFederatedOIDCLogin.length === 0){
-            response.authenticationError.errorCode = AuthenticationErrorTypes.ErrorNoMatchingFederatedProviderForTenant;
+            response.authenticationError = ERROR_CODES.EC00112;
             return response;
         }
         
@@ -596,9 +597,9 @@ class AuthenticateUserService extends IdentityService {
             );  
             response.userAuthenticationState.authenticationState = tenantsThatAllowFederatedOIDCLogin.length === 1 ? AuthenticationState.AuthWithFederatedOidc : AuthenticationState.SelectTenant;
             if(tenantsThatAllowFederatedOIDCLogin.length === 1){
-                const {hasError, errorMessage, authorizationEndpoint} = await this.createFederatedOIDCRequestProperties(email, user ? user.userId : null, federatedOidcProvider, tenants[0].tenantId, null);
+                const {hasError, errorDetail, authorizationEndpoint} = await this.createFederatedOIDCRequestProperties(email, user ? user.userId : null, federatedOidcProvider, tenants[0].tenantId, null);
                 if(hasError){
-                    throw new GraphQLError(errorMessage);
+                    throw new GraphQLError(errorDetail.errorMessage, {extensions: {errorDetail}});
                 }
                 response.uri = authorizationEndpoint;
             }
@@ -641,11 +642,11 @@ class AuthenticateUserService extends IdentityService {
             }
         }
         
-        // 6.   Error condition: There is no user, the cannot be migrated from a legacy system, and none of
+        // 6.   Error condition: There is no user, they cannot be migrated from a legacy system, and none of
         //      the tenants allows for self-registration
         canMigrateUser = migrationFriendlyTenants.length > 0;
         if(user === null && !canMigrateUser && tenantsThatAllowSelfRegistration.length === 0){
-            response.authenticationError.errorCode = AuthenticationErrorTypes.ErrorNoMatchingUserAndNoTenantSelfRegistration;
+            response.authenticationError = ERROR_CODES.EC00115;
             return response;
         }
 
@@ -690,7 +691,7 @@ class AuthenticateUserService extends IdentityService {
                 if(user !== null){
                     userCredential = await identityDao.getUserCredentialForAuthentication(user.userId);
                     if(!userCredential){
-                        response.authenticationError.errorCode = "ERROR_NO_CREDENTIALS_FOUND_FOR_USER";
+                        response.authenticationError = ERROR_CODES.EC00109;
                         return response;
                     }
                 }
@@ -812,7 +813,7 @@ class AuthenticateUserService extends IdentityService {
         }
         
         // 9.   Final error conditions: There is no mechanism for authenticating or registering the user.
-        response.authenticationError.errorCode = AuthenticationErrorTypes.ErrorConditionsForAuthenticationNotMet;
+        response.authenticationError = ERROR_CODES.EC00116;
         return response;
     }
 
@@ -836,15 +837,15 @@ class AuthenticateUserService extends IdentityService {
         
         const user: User | null = await identityDao.getUserBy("email", username);
         if(!user){
-            throw new GraphQLError("ERROR_USER_NOT_FOUND_FOR_AUTHENTICATION");
+            throw new GraphQLError(ERROR_CODES.EC00013.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00013}});
         }
         if(user.enabled === false || user.markForDelete === true || user.locked === true){
-            throw new GraphQLError("ERROR_AUTHENTICATION_DISLABLED_FOR_USER");
+            throw new GraphQLError(ERROR_CODES.EC00097.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00097}});
         }        
 
         const validationResult = await this.validateAuthenticationAttempt(user, arrUserAuthenticationStates[index].tenantId, password, arrUserAuthenticationStates[index]);
         if(!validationResult.isValid){            
-            response.authenticationError.errorCode = validationResult.errorMessage;
+            response.authenticationError = validationResult.errorDetail;
             return Promise.resolve(response);
         }
         // If this is a duress logon, and if the last entry in the list of authn states is to send a successful logon message, 
@@ -890,21 +891,21 @@ class AuthenticateUserService extends IdentityService {
         }
         const tenant: Tenant | null = await tenantDao.getTenantById(arrUserAuthenticationStates[index].tenantId);
         if(tenant === null){
-            response.authenticationError.errorCode = "ERROR_TENANT_NOT_FOUND";
+            response.authenticationError = ERROR_CODES.EC00008;
             response.userAuthenticationState.authenticationState = AuthenticationState.Error;
             return Promise.resolve(response);
         }
 
         const user: User | null = await identityDao.getUserBy("id", arrUserAuthenticationStates[index].userId);
         if(user === null){
-            response.authenticationError.errorCode = "ERROR_USER_NOT_FOUND";
+            response.authenticationError = ERROR_CODES.EC00013;
             response.userAuthenticationState.authenticationState = AuthenticationState.Error;
             return Promise.resolve(response);
         }
 
         const legacyUserMigrationConfiguration: TenantLegacyUserMigrationConfig | null = await tenantDao.getLegacyUserMigrationConfiguration(arrUserAuthenticationStates[index].tenantId);
         if(!legacyUserMigrationConfiguration || !legacyUserMigrationConfiguration.authenticationUri || !legacyUserMigrationConfiguration.userProfileUri){
-            response.authenticationError.errorCode = "ERROR_NO_LEGACY_USER_MIGRATION_CONFIGURATION_FOUND";
+            response.authenticationError = ERROR_CODES.EC00122;
             response.userAuthenticationState.authenticationState = AuthenticationState.Error;
             return Promise.resolve(response);
         }
@@ -912,14 +913,14 @@ class AuthenticateUserService extends IdentityService {
         const authToken = await jwtServiceUtils.getAuthTokenForOutboundCalls();
         const authnResponse: boolean = await oidcServiceUtils.legacyUserAuthentication(legacyUserMigrationConfiguration.authenticationUri, username, password, authToken || "");
         if(authnResponse === false){
-            response.authenticationError.errorCode = "ERROR_INVALID_CREDENTIALS_FOR_USER_MIGRATION";
+            response.authenticationError = ERROR_CODES.EC00123;
             response.userAuthenticationState.authenticationState = AuthenticationState.Error;
             return Promise.resolve(response);
         }
 
         const legacyProfile: LegacyUserProfile | null = await oidcServiceUtils.legacyUserProfile(legacyUserMigrationConfiguration.userProfileUri, username, authToken || "");
         if(legacyProfile === null){
-            response.authenticationError.errorCode = "ERROR_NO_LEGACY_USER_PROFILE_FOUND";
+            response.authenticationError = ERROR_CODES.EC00124;
             response.userAuthenticationState.authenticationState = AuthenticationState.Error;
             return Promise.resolve(response);
         }
@@ -985,12 +986,12 @@ class AuthenticateUserService extends IdentityService {
         // Does the user exist and have credentials?
         const user: User | null = await identityDao.getUserBy("id", userId);
         if(user === null){
-            response.authenticationError.errorCode = "ERROR_USER_NOT_FOUND";
+            response.authenticationError = ERROR_CODES.EC00013;
             return response;
         }
         const arrUserCredentials: Array<UserCredential> = await identityDao.getUserCredentials(userId);
         if(arrUserCredentials.length === 0){
-            response.authenticationError.errorCode = "ERROR_NO_CREDENTIALS_FOUND_FOR_USER";
+            response.authenticationError = ERROR_CODES.EC00109;
             return response;
         }
         
@@ -999,7 +1000,7 @@ class AuthenticateUserService extends IdentityService {
         const tenantPasswordConfig: TenantPasswordConfig = await this.determineTenantPasswordConfig(userId, arrUserAuthenticationStates[0].tenantId);
         const isValidPassword: boolean = await this.checkPassword(newPassword, tenantPasswordConfig);
         if(!isValidPassword){
-            response.authenticationError.errorCode = "ERROR_PASSWORD_DOES_NOT_MEET_REQUIRED_FORMAT";
+            response.authenticationError = ERROR_CODES.EC00125;
             return response;
         }
         // Need to validate the password has not been used within the last N password changes,
@@ -1018,7 +1019,7 @@ class AuthenticateUserService extends IdentityService {
             }
             if(passwordHasBeenUsed){
                 response.userAuthenticationState.authenticationState = AuthenticationState.Error;
-                response.authenticationError.errorCode = "ERROR_PASSWORD_HAS_BEEN_PREVIOUSLY_USED_WITHIN_THE_PASSWORD_HISTORY_PERIOD";
+                response.authenticationError = ERROR_CODES.EC00126;
                 return response;
             }
         }
@@ -1028,7 +1029,7 @@ class AuthenticateUserService extends IdentityService {
             const b: boolean = this.validateUserCredentials(duressUserCredential, newPassword);
             if(b){
                 response.userAuthenticationState.authenticationState = AuthenticationState.Error;
-                response.authenticationError.errorCode = "ERROR_PASSWORD_HAS_BEEN_PREVIOUSLY_USED_WITHIN_THE_PASSWORD_HISTORY_PERIOD";
+                response.authenticationError = ERROR_CODES.EC00126;
                 return response;
             }
         }
@@ -1069,14 +1070,14 @@ class AuthenticateUserService extends IdentityService {
         }
         const user: User | null = await identityDao.getUserBy("id", userId);
         if(user === null){
-            response.authenticationError.errorCode = "ERROR_INVALID_USER_ID";
+            response.authenticationError = ERROR_CODES.EC00096;
             response.userAuthenticationState.authenticationState = AuthenticationState.Error;
             return response;
         }
 
         const validationResult = await this.validateAuthenticationAttempt(user, arrUserAuthenticationStates[index].tenantId, totpTokenValue, arrUserAuthenticationStates[index]);        
         if(!validationResult.isValid){
-            response.authenticationError.errorCode = validationResult.errorMessage;
+            response.authenticationError = validationResult.errorDetail;
             response.userAuthenticationState.authenticationState = AuthenticationState.Error;
             return response;
         }
@@ -1109,7 +1110,7 @@ class AuthenticateUserService extends IdentityService {
         }
         const user: User | null = await identityDao.getUserBy("id", userId);
         if(user === null){
-            response.authenticationError.errorCode = "ERROR_INVALID_USER_ID";
+            response.authenticationError = ERROR_CODES.EC00096;
             response.userAuthenticationState.authenticationState = AuthenticationState.Error;
             return response;
         }
@@ -1126,7 +1127,7 @@ class AuthenticateUserService extends IdentityService {
         }
         catch(err){
             response.userAuthenticationState.authenticationState = AuthenticationState.Error;
-            response.authenticationError.errorCode = "ERROR_CREATING_TOTP"
+            response.authenticationError = ERROR_CODES.EC00127;
         }  
         return response;
     }
@@ -1140,7 +1141,7 @@ class AuthenticateUserService extends IdentityService {
         }
         const user: User | null = await identityDao.getUserBy("id", userId);
         if(user === null){
-            response.authenticationError.errorCode = "ERROR_INVALID_USER_ID";
+            response.authenticationError = ERROR_CODES.EC00096;
             response.userAuthenticationState.authenticationState = AuthenticationState.Error;
             return response;
         }
@@ -1149,11 +1150,10 @@ class AuthenticateUserService extends IdentityService {
             validationResult = await this.validateAuthenticationAttempt(user, arrUserAuthenticationStates[index].tenantId, fido2KeyAuthenticationInput, arrUserAuthenticationStates[index])
         }
         catch(err: any){
-            response.authenticationError.errorCode = err.message
-            return response;
+            throw new GraphQLError(err.message);            
         }
         if(!validationResult.isValid){
-            response.authenticationError.errorCode = validationResult.errorMessage;
+            response.authenticationError = validationResult.errorDetail;
             return response;
         }
         // Update the authentication state values;
@@ -1184,7 +1184,7 @@ class AuthenticateUserService extends IdentityService {
         }
         const user: User | null = await identityDao.getUserBy("id", userId);
         if(user === null){
-            response.authenticationError.errorCode = "ERROR_INVALID_USER_ID";
+            response.authenticationError = ERROR_CODES.EC00096;
             response.userAuthenticationState.authenticationState = AuthenticationState.Error;
             return response;
         }
@@ -1196,7 +1196,7 @@ class AuthenticateUserService extends IdentityService {
             response.userAuthenticationState = arrUserAuthenticationStates[index + 1];
         }
         catch(err: any){
-            response.authenticationError.errorCode = "ERROR_VALIDATING_SECURITY_KEY_REGISTRATION_INPUT";
+            response.authenticationError = ERROR_CODES.EC00128;
             response.userAuthenticationState.authenticationState = AuthenticationState.Error;
         }
         return response;
@@ -1206,31 +1206,31 @@ class AuthenticateUserService extends IdentityService {
         const response: UserAuthenticationStateResponse = this.initUserAuthenticationStateResponse("", "", preAuthToken);
         const oidcProvider: FederatedOidcProvider | null = await federatedOIDCProviderDao.getFederatedOidcProviderById(federatedOIDCProviderId);
         if(oidcProvider === null){
-            response.authenticationError.errorCode = "ERROR_INVALID_OIDC_PROVIDER";
+            response.authenticationError = ERROR_CODES.EC00023;
             return response;
         }
         if(oidcProvider.federatedOIDCProviderType !== FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL){
-            response.authenticationError.errorCode = "ERROR_NOT_A_VALID_SOCIAL_OIDC_PROVIDER";
+            response.authenticationError = ERROR_CODES.EC00129;
             return response;
         }
 
         const tenant: Tenant | null = await tenantDao.getTenantById(tenantId);
         if(tenant === null){
-            response.authenticationError.errorCode = "ERROR_INVALID_TENANT";
+            response.authenticationError = ERROR_CODES.EC00008;
             return response;
         }
 
         const rels: Array<FederatedOidcProviderTenantRel> = await federatedOIDCProviderDao.getFederatedOidcProviderTenantRels(tenantId, federatedOIDCProviderId);
         if(rels.length === 0){
-            response.authenticationError.errorCode = "ERROR_SOCIAL_PROVIDER_NOT_ASSIGNED_TO_TENANT";
+            response.authenticationError = ERROR_CODES.EC00130;
             return response;
         }
 
         const preAuthenticationState: PreAuthenticationState | null = preAuthToken ? await authDao.getPreAuthenticationState(preAuthToken) : null;
                 
-        const {hasError, errorMessage, authorizationEndpoint} = await this.createFederatedOIDCRequestProperties(null, null, oidcProvider, tenantId, preAuthenticationState);
+        const {hasError, errorDetail, authorizationEndpoint} = await this.createFederatedOIDCRequestProperties(null, null, oidcProvider, tenantId, preAuthenticationState);
         if(hasError){
-            response.authenticationError.errorCode = errorMessage;
+            response.authenticationError = errorDetail;
             return response;
         }
 
@@ -1378,10 +1378,10 @@ class AuthenticateUserService extends IdentityService {
      * @param authenticationToken 
      * @returns 
      */
-    protected async validateAuthenticationAttempt(user: User, tenantId: string, authenticationToken: string | Fido2KeyAuthenticationInput, userAuthenticationState: UserAuthenticationState): Promise<{isValid: boolean, errorMessage: string, isDuress: boolean}>{
+    protected async validateAuthenticationAttempt(user: User, tenantId: string, authenticationToken: string | Fido2KeyAuthenticationInput, userAuthenticationState: UserAuthenticationState): Promise<{isValid: boolean, errorDetail: ErrorDetail, isDuress: boolean}>{
 
         if(user.locked === true){
-            return {isValid: false, errorMessage: "ERROR_USER_IS_LOCKED", isDuress: false};
+            return {isValid: false, errorDetail: ERROR_CODES.EC00118, isDuress: false};
         }
         const userFailedLoginAttempts: Array<UserFailedLogin> = await identityDao.getFailedLogins(user.userId);
         let loginFailurePolicy: TenantLoginFailurePolicy | null = await tenantDao.getLoginFailurePolicy(tenantId);
@@ -1393,20 +1393,20 @@ class AuthenticateUserService extends IdentityService {
         // and if we have a failure policy type of pause and the next login time allowed is at some point in the past.
         if(userFailedLoginAttempts.length > 0 && loginFailurePolicy.loginFailurePolicyType === LOGIN_FAILURE_POLICY_PAUSE){
             if(userFailedLoginAttempts[length - 1].nextLoginNotBefore > Date.now()){
-                return {isValid: false, errorMessage: "ERROR_AUTHENTICTION_IS_PAUSED_FOR_USER", isDuress: false}
+                return {isValid: false, errorDetail: ERROR_CODES.EC00119, isDuress: false}
             }
         }
 
         let valid: boolean = false;
-        let errorMessage: string = "";
+        let error: ErrorDetail = ERROR_CODES.NULL_ERROR;
         let isDuress: boolean = false;
         if(userAuthenticationState.authenticationState === AuthenticationState.EnterPassword){
             const userCredential: UserCredential | null = await identityDao.getUserCredentialForAuthentication(user.userId);
             if(!userCredential){
-                return {isValid: false, errorMessage: "ERROR_UNABLE_TO_FIND_CREDENTIALS_FOR_USER", isDuress: false};
+                return {isValid: false, errorDetail: ERROR_CODES.EC00109, isDuress: false};
             }
             valid = this.validateUserCredentials(userCredential, authenticationToken as string);
-            errorMessage = "ERROR_INVALID_CREDENTIALS";
+            error = ERROR_CODES.EC00117;
             // Need to check a duress password in this case.
             if(!valid){
                 const userDuressCredential: UserCredential | null = await identityDao.getUserDuressCredential(user.userId);
@@ -1414,18 +1414,18 @@ class AuthenticateUserService extends IdentityService {
                     valid = this.validateUserCredentials(userDuressCredential, authenticationToken as string);
                     if(valid){
                         isDuress = true;
-                        errorMessage = "";
+                        error = ERROR_CODES.NULL_ERROR;
                     }
                 }
             }            
         }
         else if(userAuthenticationState.authenticationState === AuthenticationState.ValidateTotp){
             valid = await this.validateTOTP(user.userId, authenticationToken as string);
-            errorMessage = "ERROR_TOTP_TOKEN_INVALID";
+            error = ERROR_CODES.EC00120;
         }
         else if(userAuthenticationState.authenticationState === AuthenticationState.ValidateSecurityKey){
             valid = await this.authenticateFIDO2Key(user.userId, authenticationToken as Fido2KeyAuthenticationInput);
-            errorMessage = "ERROR_INVALID_SECURITY_KEY_INPUT";
+            error = ERROR_CODES.EC00121;
         }
 
         if(!valid){
@@ -1480,13 +1480,13 @@ class AuthenticateUserService extends IdentityService {
                     identityDao.removeFailedLogin(userFailedLoginAttempts[i].userId, userFailedLoginAttempts[i].failureAtMs);
                 }
             }
-            return {isValid: false, errorMessage: errorMessage, isDuress: isDuress};
+            return {isValid: false, errorDetail: error, isDuress: isDuress};
         }
         
         // Otherwise the password is valid and we should remove the failed login attempts
         identityDao.resetFailedLoginAttempts(user.userId);
         
-        return {isValid: true, errorMessage: errorMessage, isDuress: isDuress};
+        return {isValid: true, errorDetail: error, isDuress: isDuress};
     }
 
     /**
@@ -1535,7 +1535,7 @@ class AuthenticateUserService extends IdentityService {
 
         if(expectedAuthenticationState === null){
             response.userAuthenticationState.authenticationState = AuthenticationState.Error;
-            response.authenticationError.errorCode = "ERROR_NO_VALID_AUTHENTICATION_SESSION_FOUND";
+            response.authenticationError = ERROR_CODES.EC00095;
             return stepIndex;
         }
 
@@ -1543,7 +1543,7 @@ class AuthenticateUserService extends IdentityService {
         // including the email token, the user that was previous created, and any other relationships.
         if(expectedAuthenticationState.expiresAtMs < Date.now()){
             response.userAuthenticationState.authenticationState = AuthenticationState.Expired;
-            response.authenticationError.errorCode = "ERROR_AUTHORIZATION_SESSION_HAS_EXPIRED";
+            response.authenticationError = ERROR_CODES.EC00095;
             for(let i = 0; i < arrUserAuthenticationState.length; i++){
                 await identityDao.deleteUserAuthenticationState(arrUserAuthenticationState[i]);
             }
@@ -1556,7 +1556,7 @@ class AuthenticateUserService extends IdentityService {
                 const previousState: UserAuthenticationState = arrUserAuthenticationState[i];
                 if(previousState.authenticationStateStatus !== STATUS_COMPLETE){
                     response.userAuthenticationState.authenticationState = AuthenticationState.Error;
-                    response.authenticationError.errorCode = "ERROR_INCOMPLETE_AUTHENTICATION_STATE_FOUND";
+                    response.authenticationError = ERROR_CODES.EC00095;
                     stepIndex = -1;
                     break;
                 }
@@ -1594,15 +1594,14 @@ class AuthenticateUserService extends IdentityService {
                 userAuthenticationState.authenticationStateStatus = STATUS_COMPLETE;                
             }
             catch(err: any){
-                response.authenticationError.errorCode = err.message;
-                response.userAuthenticationState.authenticationState = AuthenticationState.Error;
+                throw new GraphQLError(err.message);
             }            
         }
         else if(userAuthenticationState.authenticationState === AuthenticationState.RedirectToIamPortal){
             try {
                 const tenant: Tenant | null = await tenantDao.getTenantById(userAuthenticationState.tenantId);
                 if(tenant === null){
-                    response.authenticationError.errorCode = "ERROR_INVALID_TENANT_FOR_AUTHENTICATION_COMPLETION";
+                    response.authenticationError = ERROR_CODES.EC00131;
                     response.userAuthenticationState.authenticationState = AuthenticationState.Error;
                 }
                 else{
@@ -1614,7 +1613,7 @@ class AuthenticateUserService extends IdentityService {
                     else{
                         const jwtSigningResponse = await jwtServiceUtils.signIAMPortalUserJwt(user, tenant, this.getPortalAuthenTokenTTLSeconds(), PRINCIPAL_TYPE_IAM_PORTAL_USER);                        
                         if(!jwtSigningResponse || jwtSigningResponse.accessToken === null){
-                            response.authenticationError.errorCode = "ERROR_GENERATING_ACCESS_TOKEN_AUTHENTICATION_COMPLETION";
+                            response.authenticationError = ERROR_CODES.EC00132;
                             response.userAuthenticationState.authenticationState = AuthenticationState.Error;
                         }
                         else {
@@ -1646,8 +1645,7 @@ class AuthenticateUserService extends IdentityService {
                 }
             }
             catch(err: any){
-                response.authenticationError.errorCode = err.message;
-                response.userAuthenticationState.authenticationState = AuthenticationState.Error;
+                throw new GraphQLError(err.message);
             }
         }
         // If all is successful, we can delete all of the state records tied to this authentication attempt

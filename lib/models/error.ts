@@ -1,10 +1,7 @@
+import { ErrorDetail } from "@/graphql/generated/graphql-types"
 import { OidcTokenErrorType } from "@/utils/consts"
 
-export interface ErrorDetail {
-    errorCode: string,
-    errorKey: string,
-    errorMessage: string
-}
+
 
 export interface ErrorResponseBody {
     statusCode: number,
@@ -22,11 +19,14 @@ export interface OIDCErrorResponseBody {
     trace_id: string
 }
 
-// export const ERROR_CODES = new Map<string, ErrorDetail>([
-    
-// ]);
 
 export const ERROR_CODES: Record<string, ErrorDetail> = {
+    // NULL error to avoid have return types of <ErrorDetail | null> all over the place.
+    NULL_ERROR: {
+        errorCode: "NULL",
+        errorKey: "ERROR_NULL_ERROR_MESSAGE",
+        errorMessage: "Placeholder error code for non-errors."
+    },
     DEFAULT: {
         errorCode: "DEFAULT",
         errorKey: "ERROR_DEFAULT_ERROR_MESSAGE",

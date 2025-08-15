@@ -29,9 +29,9 @@ class ViewSecretService {
         if(objectType === SecretObjectType.ClientSecret){
             const client: Client | null = await clientDao.getClientById(objectId);
             if(client){
-                const {isAuthorized, errorCode} = authorizeByScopeAndTenant(this.oidcContext, CLIENT_SECRET_VIEW_SCOPE, client.tenantId);
+                const {isAuthorized, errorDetail} = authorizeByScopeAndTenant(this.oidcContext, CLIENT_SECRET_VIEW_SCOPE, client.tenantId);
                 if(!isAuthorized){
-                    throw new GraphQLError(errorCode);
+                    throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});
                 }
                 decrypted = await kms.decrypt(client.clientSecret);
             }
@@ -40,9 +40,9 @@ class ViewSecretService {
         else if(objectType === SecretObjectType.PrivateKey){
             const signingKey: SigningKey | null = await signingKeysDao.getSigningKeyById(objectId);
             if(signingKey){
-                const {isAuthorized, errorCode} = authorizeByScopeAndTenant(this.oidcContext, KEY_SECRET_VIEW_SCOPE, signingKey.tenantId);
+                const {isAuthorized, errorDetail} = authorizeByScopeAndTenant(this.oidcContext, KEY_SECRET_VIEW_SCOPE, signingKey.tenantId);
                 if(!isAuthorized){
-                    throw new GraphQLError(errorCode);
+                    throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});
                 }
                 decrypted = await kms.decrypt(signingKey.privateKeyPkcs8);                
             }
@@ -50,9 +50,9 @@ class ViewSecretService {
         else if(objectType === SecretObjectType.PrivateKeyPassword){
             const signingKey: SigningKey | null = await signingKeysDao.getSigningKeyById(objectId);
             if(signingKey){
-                const {isAuthorized, errorCode} = authorizeByScopeAndTenant(this.oidcContext, KEY_SECRET_VIEW_SCOPE, signingKey.tenantId);
+                const {isAuthorized, errorDetail} = authorizeByScopeAndTenant(this.oidcContext, KEY_SECRET_VIEW_SCOPE, signingKey.tenantId);
                 if(!isAuthorized){
-                    throw new GraphQLError(errorCode);
+                    throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});
                 }
                 if(signingKey.password){
                     decrypted = await kms.decrypt(signingKey.password);
@@ -68,17 +68,17 @@ class ViewSecretService {
                         (r: FederatedOidcProviderTenantRel) => r.tenantId === this.oidcContext.portalUserProfile?.managementAccessTenantId
                     );
                     if(!rel){
-                        throw new GraphQLError(ERROR_CODES.EC00049.errorCode);
+                        throw new GraphQLError(ERROR_CODES.EC00049.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00049}});
                     }
-                    const {isAuthorized, errorCode} = authorizeByScopeAndTenant(this.oidcContext, FEDERATED_OIDC_PROVIDER_SECRET_VIEW_SCOPE, rel.tenantId);
+                    const {isAuthorized, errorDetail} = authorizeByScopeAndTenant(this.oidcContext, FEDERATED_OIDC_PROVIDER_SECRET_VIEW_SCOPE, rel.tenantId);
                     if(!isAuthorized){
-                        throw new GraphQLError(errorCode);
+                        throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});
                     }
                 }
                 else{
-                    const {isAuthorized, errorCode} = authorizeByScopeAndTenant(this.oidcContext, FEDERATED_OIDC_PROVIDER_SECRET_VIEW_SCOPE, null);
+                    const {isAuthorized, errorDetail} = authorizeByScopeAndTenant(this.oidcContext, FEDERATED_OIDC_PROVIDER_SECRET_VIEW_SCOPE, null);
                     if(!isAuthorized){
-                        throw new GraphQLError(errorCode);
+                        throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});
                     }
                 }
                 if(provider.federatedOIDCProviderClientSecret){

@@ -30,7 +30,7 @@ class DBTenantDao extends TenantDao {
         });
 
         if(!entity){
-            throw new GraphQLError(ERROR_CODES.EC00035.errorCode);
+            throw new GraphQLError(ERROR_CODES.EC00035.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00035}});
         }
         return Promise.resolve(entity.dataValues as Tenant);
     }

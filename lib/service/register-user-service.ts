@@ -1,6 +1,6 @@
 import { OIDCContext } from "@/graphql/graphql-context";
 import IdentityDao from "../dao/identity-dao";
-import { Fido2KeyRegistrationInput, Tenant, TenantPasswordConfig, TotpResponse, User, UserCreateInput, UserCredential, Fido2KeyAuthenticationInput, TenantRestrictedAuthenticationDomainRel, PreAuthenticationState, AuthorizationReturnUri, UserRegistrationStateResponse, UserRegistrationState, RegistrationState, UserTermsAndConditionsAccepted, TenantLegacyUserMigrationConfig, SystemSettings, FederatedOidcProvider, AuthorizationDeviceCodeData, DeviceCodeAuthorizationStatus, UserRecoveryEmail, ProfileEmailChangeResponse, ProfileEmailChangeState, EmailChangeState } from "@/graphql/generated/graphql-types";
+import { Fido2KeyRegistrationInput, Tenant, TenantPasswordConfig, TotpResponse, User, UserCreateInput, UserCredential, Fido2KeyAuthenticationInput, TenantRestrictedAuthenticationDomainRel, PreAuthenticationState, AuthorizationReturnUri, UserRegistrationStateResponse, UserRegistrationState, RegistrationState, UserTermsAndConditionsAccepted, TenantLegacyUserMigrationConfig, SystemSettings, FederatedOidcProvider, AuthorizationDeviceCodeData, DeviceCodeAuthorizationStatus, UserRecoveryEmail, ProfileEmailChangeResponse, ProfileEmailChangeState, EmailChangeState, ErrorDetail } from "@/graphql/generated/graphql-types";
 import { DaoFactory } from "../data-sources/dao-factory";
 import TenantDao from "../dao/tenant-dao";
 import { GraphQLError } from "graphql/error";
@@ -14,6 +14,7 @@ import JwtServiceUtils from "./jwt-service-utils";
 import IdentityService from "./identity-service";
 import OIDCServiceUtils from "./oidc-service-utils";
 import FederatedOIDCProviderDao from "../dao/federated-oidc-provider-dao";
+import { ERROR_CODES } from "../models/error";
 
 
 const jwtServiceUtils: JwtServiceUtils = new JwtServiceUtils();
@@ -58,7 +59,7 @@ class RegisterUserService extends IdentityService {
         const existingRegistrationStates = await identityDao.getUserRegistrationStatesByEmail(userCreateInput.email);
         if(existingRegistrationStates.length > 0){
             if(existingRegistrationStates[0].expiresAtMs > Date.now()){
-                throw new GraphQLError("ERROR_REGISTRATION_FOR_USER_ALREADY_IN_PROGRESS");
+                throw new GraphQLError(ERROR_CODES.EC00133.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00133}});
             }
             else{
                 for(let i = 0; i < existingRegistrationStates.length; i++){
@@ -196,13 +197,13 @@ class RegisterUserService extends IdentityService {
         if(user === null){
             await identityDao.deleteEmailConfirmationToken(token);
             response.userRegistrationState.registrationState = RegistrationState.Error;
-            response.registrationError.errorCode = "ERROR_NO_USER_FOUND_FOR_TOKEN"
+            response.registrationError = ERROR_CODES.EC00134;
             return Promise.resolve(response);
         }
                
         if(user.userId !== userId){
             response.userRegistrationState.registrationState = RegistrationState.Error;
-            response.registrationError.errorCode = "ERROR_INVALID_USER_FOUND_FOR_TOKEN"
+            response.registrationError = ERROR_CODES.EC00135;
             return Promise.resolve(response);
         }
 
@@ -252,13 +253,13 @@ class RegisterUserService extends IdentityService {
         if(user === null){
             await identityDao.deleteEmailConfirmationToken(token);
             response.userRegistrationState.registrationState = RegistrationState.Error;
-            response.registrationError.errorCode = "ERROR_NO_USER_FOUND_FOR_TOKEN";
+            response.registrationError = ERROR_CODES.EC00134;
             return Promise.resolve(response);
         }
                
         if(user.userId !== userId){
             response.userRegistrationState.registrationState = RegistrationState.Error;
-            response.registrationError.errorCode = "ERROR_INVALID_USER_FOUND_FOR_TOKEN"
+            response.registrationError = ERROR_CODES.EC00135;
             return Promise.resolve(response);
         }
 
@@ -267,7 +268,7 @@ class RegisterUserService extends IdentityService {
         const userRecoveryEmail: UserRecoveryEmail | null = await identityDao.getUserRecoveryEmail(userId);
         if(!userRecoveryEmail){
             response.userRegistrationState.registrationState = RegistrationState.Error;
-            response.registrationError.errorCode = "ERROR_NO_RECOVERY_EMAIL_FOUND";
+            response.registrationError = ERROR_CODES.EC00136;
             return Promise.resolve(response);
         }
         
@@ -312,26 +313,26 @@ class RegisterUserService extends IdentityService {
             return Promise.resolve(response);
         }
         if(skip === false){
-            if(password === null){
-                response.registrationError.errorCode = "ERROR_NO_DURESS_PASSWORD_SUPPLIED";
+            if(password === null || password === ""){
+                response.registrationError = ERROR_CODES.EC00137;
                 return response;
             }
             const arrExistingCredentials = await identityDao.getUserCredentials(arrUserRegistrationState[index].userId);
             // There should only be one at this point!!!
             if(arrExistingCredentials.length !== 1){
-                response.registrationError.errorCode = "ERROR_PASSWORD_COUNT_INCORRECT";
+                response.registrationError = ERROR_CODES.EC00138;
                 return response;
             }
             // Check to see if the user is re-using their just-entered password and if so we should return an error
             const b: boolean = this.validateUserCredentials(arrExistingCredentials[0], password);            
             if(b){
-                response.registrationError.errorCode = "ERROR_PASSWORD_HAS_BEEN_USED_DURING_REGISTRATION";
+                response.registrationError = ERROR_CODES.EC00139;
                 return response;
             }
             const tenantPasswordConfig: TenantPasswordConfig = await tenantDao.getTenantPasswordConfig(arrUserRegistrationState[index].tenantId) || DEFAULT_TENANT_PASSWORD_CONFIGURATION;
             const isValidPassword: boolean = await this.checkPassword(password, tenantPasswordConfig);
             if(!isValidPassword){
-                response.registrationError.errorCode = "ERROR_PASSWORD_DOES_NOT_MEET_REQUIRED_FORMAT";
+                response.registrationError = ERROR_CODES.EC00125;
                 return response;
             }
             const userDuressCredential: UserCredential = this.generateUserCredential(arrUserRegistrationState[index].userId, password, tenantPasswordConfig.passwordHashingAlgorithm);
@@ -397,13 +398,13 @@ class RegisterUserService extends IdentityService {
             }
         }
         else{
-            if(recoveryEmail === null){
-                response.registrationError.errorCode = "ERROR_NO_RECOVERY_EMAIL_SUPPLIED";
+            if(recoveryEmail === null || recoveryEmail === ""){
+                response.registrationError = ERROR_CODES.EC00140;
                 return response;
             }
             const recoveryEmailValidationResult = await this.validateRecoveryEmail(userId, recoveryEmail);
             if(recoveryEmailValidationResult.isValid === false){
-                response.registrationError.errorCode = recoveryEmailValidationResult.errorMessage;
+                response.registrationError = recoveryEmailValidationResult.errorDetail;
                 return response;
             }
 
@@ -484,7 +485,7 @@ class RegisterUserService extends IdentityService {
             }
             catch(err){
                 response.userRegistrationState.registrationState = RegistrationState.Error;
-                response.registrationError.errorCode = "ERROR_CREATING_TOTP"
+                response.registrationError = ERROR_CODES.EC00127;
             }            
         }
         return Promise.resolve(response);
@@ -519,7 +520,7 @@ class RegisterUserService extends IdentityService {
         const validToken: boolean = await this.validateTOTP(userId, totpTokenValue);
         if(!validToken){
             response.userRegistrationState.registrationState = RegistrationState.Error;
-            response.registrationError.errorCode = "ERROR_INVALID_TOTP_TOKEN_VALUE";
+            response.registrationError = ERROR_CODES.EC00120;
             return response;
         }
 
@@ -581,7 +582,7 @@ class RegisterUserService extends IdentityService {
         }
         else{
             if(fido2KeyRegistrationInput === null){
-                response.registrationError.errorCode = "ERROR_INVALID_SECURITY_KEY_REGISTRATION_INPUT";
+                response.registrationError = ERROR_CODES.EC00128;
                 response.userRegistrationState.registrationState = RegistrationState.Error;
             }
             else{
@@ -592,8 +593,7 @@ class RegisterUserService extends IdentityService {
                     response.userRegistrationState = arrUserRegistrationState[index + 1];
                 }
                 catch(err: any){
-                    response.registrationError.errorCode = "ERROR_VALIDATING_SECURITY_KEY_REGISTRATION_INPUT";
-                    response.userRegistrationState.registrationState = RegistrationState.Error;
+                    throw new GraphQLError(err.message);
                 }
             }
         }
@@ -627,7 +627,7 @@ class RegisterUserService extends IdentityService {
         try{
             const isValid: boolean = await this.authenticateFIDO2Key(userId, fido2KeyAuthenticationInput);
             if(!isValid){
-                response.registrationError.errorCode = "ERROR_VALIDATING_SECURITY_KEY_VALIDATION_INPUT";
+                response.registrationError = ERROR_CODES.EC00121;
                 response.userRegistrationState.registrationState = RegistrationState.Error;
             }
             else{
@@ -641,9 +641,8 @@ class RegisterUserService extends IdentityService {
                 }
             }
         }
-        catch(err){
-            response.registrationError.errorCode = "ERROR_VALIDATING_SECURITY_KEY_VALIDATION_INPUT";
-            response.userRegistrationState.registrationState = RegistrationState.Error;
+        catch(err: any){
+            throw new GraphQLError(err.message);
         }
 
         return Promise.resolve(response);
@@ -669,31 +668,31 @@ class RegisterUserService extends IdentityService {
         }
         
         if(!this.oidcContext.portalUserProfile?.userId){
-            response.profileEmailChangeError.errorCode = "ERROR_UNABLE_TO_ADD_RECOVERY_EMAIL";
+            response.profileEmailChangeError = ERROR_CODES.EC00145;
             return response;            
         }
         const domain: string = getDomainFromEmail(newEmail);
         if(domain.length === 0){
-            response.profileEmailChangeError.errorCode = "ERROR_INVALID_EMAIL_ADDRESS";
+            response.profileEmailChangeError = ERROR_CODES.EC00017;
             return response;           
         }
 
         const user: User | null = await identityDao.getUserBy("id", this.oidcContext.portalUserProfile.userId);
         if(user === null){
-            response.profileEmailChangeError.errorCode = "ERROR_NO_USER";
+            response.profileEmailChangeError = ERROR_CODES.EC00013;
             return response;            
         }
         if(user.locked === true || user.enabled === false){
-            response.profileEmailChangeError.errorCode = "ERROR_CANNOT_BE_MODIFIED";
+            response.profileEmailChangeError = ERROR_CODES.EC00146;
             return response; 
         }
         if(user.federatedOIDCProviderSubjectId && user.federatedOIDCProviderSubjectId !== ""){
-            response.profileEmailChangeError.errorCode = "ERROR_USER_PROFILE_IS_CONTROLLED_BY_3RD_PARTY_IDP";
+            response.profileEmailChangeError = ERROR_CODES.EC00147;
             return response;
         }
         const userByEmail: User | null = await identityDao.getUserBy("email", newEmail);
         if(userByEmail !== null){
-            response.profileEmailChangeError.errorCode = "ERROR_EMAIL_ALREADY_IN_USE";
+            response.profileEmailChangeError = ERROR_CODES.EC00142;
             return response;            
         }
         
@@ -701,7 +700,7 @@ class RegisterUserService extends IdentityService {
         // by going through SSO with their provider.
         const federatedOIDCProvider: FederatedOidcProvider | null = await federatedOIDCProvderDao.getFederatedOidcProviderByDomain(domain);
         if(federatedOIDCProvider){
-            response.profileEmailChangeError.errorCode = "ERROR_DOMAIN_IS_MANAGED_BY_EXTERNAL_OIDC_PROVIDER";
+            response.profileEmailChangeError = ERROR_CODES.EC00144;
             return response;
         }
         const sessionToken: string = generateRandomToken(20, "hex");
@@ -759,26 +758,26 @@ class RegisterUserService extends IdentityService {
         }
 
         if(!this.oidcContext.portalUserProfile?.userId){
-            response.profileEmailChangeError.errorCode = "ERROR_UNABLE_TO_ADD_RECOVERY_EMAIL";
+            response.profileEmailChangeError = ERROR_CODES.EC00145;
             return response;            
         }
         const user: User | null = await identityDao.getUserBy("id", this.oidcContext.portalUserProfile.userId);
         if(user === null){
-            response.profileEmailChangeError.errorCode = "ERROR_NO_USER";
+            response.profileEmailChangeError = ERROR_CODES.EC00013;
             return response;            
         }
         if(user.locked === true || user.enabled === false){
-            response.profileEmailChangeError.errorCode = "ERROR_CANNOT_BE_MODIFIED";
+            response.profileEmailChangeError = ERROR_CODES.EC00146;
             return response; 
         }
         if(user.federatedOIDCProviderSubjectId && user.federatedOIDCProviderSubjectId !== ""){
-            response.profileEmailChangeError.errorCode = "ERROR_USER_PROFILE_IS_CONTROLLED_BY_3RD_PARTY_IDP";
+            response.profileEmailChangeError = ERROR_CODES.EC00147;
             return response;
         }
 
         const recoveryEmailValidationResult = await this.validateRecoveryEmail(user.userId, recoveryEmail);
         if(recoveryEmailValidationResult.isValid === false){
-            response.profileEmailChangeError.errorCode = recoveryEmailValidationResult.errorMessage;
+            response.profileEmailChangeError = recoveryEmailValidationResult.errorDetail;
             return response;
         }
         
@@ -837,7 +836,7 @@ class RegisterUserService extends IdentityService {
         }
 
         if(!this.oidcContext.portalUserProfile?.userId){
-            response.profileEmailChangeError.errorCode = "ERROR_UNABLE_TO_ADD_RECOVERY_EMAIL";
+            response.profileEmailChangeError = ERROR_CODES.EC00145;
             return response;            
         }
 
@@ -849,23 +848,23 @@ class RegisterUserService extends IdentityService {
 
         const currentState: ProfileEmailChangeState = arrChangeStates[index];
         if(currentState.userId !== this.oidcContext.portalUserProfile.userId){
-            response.profileEmailChangeError.errorCode = "ERROR_NO_PERMISSIONS_TO_UPDATE_EMAIL";
+            response.profileEmailChangeError = ERROR_CODES.EC00148;
             return response;    
         }
 
         const user: User | null = await identityDao.getUserBy("id", this.oidcContext.portalUserProfile.userId);
         if(user === null){
-            response.profileEmailChangeError.errorCode = "ERROR_NO_USER";
+            response.profileEmailChangeError = ERROR_CODES.EC00013;
             return response;            
         }
 
         const userByConfirmationToken: User | null = await identityDao.getUserByEmailConfirmationToken(token);
         if(userByConfirmationToken === null){
-            response.profileEmailChangeError.errorCode = "ERROR_INVALID_TOKEN";
+            response.profileEmailChangeError = ERROR_CODES.EC00134;
             return response;  
         }
         if(userByConfirmationToken.userId !== user.userId){
-            response.profileEmailChangeError.errorCode = "ERROR_TOKEN_DOES_NOT_MATCH_USER";
+            response.profileEmailChangeError = ERROR_CODES.EC00135;
             return response;  
         }
 
@@ -1022,12 +1021,12 @@ class RegisterUserService extends IdentityService {
         }
         if(expectedChangeState === null){
             response.profileEmailChangeState.emailChangeState = EmailChangeState.Error;
-            response.profileEmailChangeError.errorCode = "ERROR_NO_VALID_EMAIL_CHANGE_STATE_FOUND";
+            response.profileEmailChangeError = ERROR_CODES.EC00149;
             return stepIndex;
         }
         if(expectedChangeState.expiresAtMs < Date.now()){
             response.profileEmailChangeState.emailChangeState = EmailChangeState.Error;
-            response.profileEmailChangeError.errorCode = "ERROR_EMAIL_CHANGE_STATE_HAS_EXPIRED";
+            response.profileEmailChangeError = ERROR_CODES.EC00149;
             for(let i = 0; i < arrEmailChangeStates.length; i++){
                 await identityDao.deleteProfileEmailChangeState(arrEmailChangeStates[i]);
             }
@@ -1038,7 +1037,7 @@ class RegisterUserService extends IdentityService {
                 const previousState: ProfileEmailChangeState = arrEmailChangeStates[i];
                 if(previousState.changeStateStatus !== STATUS_COMPLETE){
                     response.profileEmailChangeState.emailChangeState = EmailChangeState.Error;
-                    response.profileEmailChangeError.errorCode = "ERROR_INCOMPLETE_EMAIL_CHANGE_STATE_FOUND";
+                    response.profileEmailChangeError = ERROR_CODES.EC00149;
                     stepIndex = -1;
                     break;
                 }
@@ -1210,7 +1209,7 @@ class RegisterUserService extends IdentityService {
 
         if(expectedRegistrationState === null){
             response.userRegistrationState.registrationState = RegistrationState.Error;
-            response.registrationError.errorCode = "ERROR_NO_VALID_REGISTRATION_STATE_FOUND";
+            response.registrationError = ERROR_CODES.EC00150;
             return stepIndex;
         }
 
@@ -1218,7 +1217,7 @@ class RegisterUserService extends IdentityService {
         // including the email token, the user that was previously created, and any other relationships.
         if(expectedRegistrationState.expiresAtMs < Date.now()){
             response.userRegistrationState.registrationState = RegistrationState.Expired;
-            response.registrationError.errorCode = "ERROR_REGISTRATION_HAS_EXPIRED";
+            response.registrationError = ERROR_CODES.EC00150;
             for(let i = 0; i < arrUserRegistrationState.length; i++){
                 await identityDao.deleteUserRegistrationState(arrUserRegistrationState[i]);
             }
@@ -1232,7 +1231,7 @@ class RegisterUserService extends IdentityService {
                 const previousState: UserRegistrationState = arrUserRegistrationState[i];
                 if(previousState.registrationStateStatus !== STATUS_COMPLETE){
                     response.userRegistrationState.registrationState = RegistrationState.Error;
-                    response.registrationError.errorCode = "ERROR_INCOMPLETE_REGISTRATION_STATE_FOUND";
+                    response.registrationError = ERROR_CODES.EC00150;
                     stepIndex = -1;
                     break;
                 }
@@ -1247,29 +1246,29 @@ class RegisterUserService extends IdentityService {
      * @param recoveryEmail 
      * @returns 
      */
-    protected async validateRecoveryEmail(userId: string, recoveryEmail: string): Promise<{isValid: boolean, errorMessage: string}>{
+    protected async validateRecoveryEmail(userId: string, recoveryEmail: string): Promise<{isValid: boolean, errorDetail: ErrorDetail}>{
 
         const existingRecoveryAccount: UserRecoveryEmail | null = await identityDao.getUserRecoveryEmail(userId);
         if(existingRecoveryAccount !== null){
-            return {isValid: false, errorMessage: "ERROR_RECOVERY_ACCOUNT_ALREADY_EXISTS_FOR_USER"};
+            return {isValid: false, errorDetail: ERROR_CODES.EC00141};
         }
 
         const userByEmail: User | null = await identityDao.getUserBy("email", recoveryEmail);
         if(userByEmail){
-            return {isValid: false, errorMessage: "ERROR_EMAIL_ALREADY_IN_USE"};
+            return {isValid: false, errorDetail: ERROR_CODES.EC00142};
             
         }
         const domain: string = getDomainFromEmail(recoveryEmail);
         if(domain.length === 0){
-            return {isValid: false, errorMessage: "ERROR_INVALID_EMAIL_ADDRESS"};            
+            return {isValid: false, errorDetail: ERROR_CODES.EC00143}
         }
         // Cannot create users who are tied to an existing external oidc provider. These types of user can ONLY be created
         // by going through SSO with their provider.
         const federatedOIDCProvider: FederatedOidcProvider | null = await federatedOIDCProvderDao.getFederatedOidcProviderByDomain(domain);
         if(federatedOIDCProvider){
-            return {isValid: false, errorMessage: "ERROR_DOMAIN_IS_MANAGED_BY_EXTERNAL_OIDC_PROVIDER"};            
+            return {isValid: false, errorDetail: ERROR_CODES.EC00144};            
         }
-        return {isValid: true, errorMessage: ""}
+        return {isValid: true, errorDetail: ERROR_CODES.NULL_ERROR}
     }
 
     /**
@@ -1281,7 +1280,7 @@ class RegisterUserService extends IdentityService {
         
         const user: User | null = await identityDao.getUserBy("id", userRegistrationState.userId);
         if(!user){
-            response.registrationError.errorCode = "ERROR_NO_USER_FOUND_FOR_REGISTRATION_COMPLETION";
+            response.registrationError = ERROR_CODES.EC00151;
             response.userRegistrationState.registrationState = RegistrationState.Error;
             return;
         }
@@ -1289,7 +1288,7 @@ class RegisterUserService extends IdentityService {
         user.enabled = true;
         const tenant: Tenant | null = await tenantDao.getTenantById(userRegistrationState.tenantId);
         if(tenant === null){
-            response.registrationError.errorCode = "ERROR_INVALID_TENANT_FOR_REGISTRATION_COMPLETION";
+            response.registrationError = ERROR_CODES.EC00152;
             response.userRegistrationState.registrationState = RegistrationState.Error;
             return;                
         }
@@ -1312,8 +1311,7 @@ class RegisterUserService extends IdentityService {
                 userRegistrationState.registrationStateStatus = STATUS_COMPLETE;        
             }
             catch(err: any){
-                response.registrationError.errorCode = err.message;
-                response.userRegistrationState.registrationState = RegistrationState.Error;
+                throw new GraphQLError(err.message);                
             }
         }
         else if(userRegistrationState.registrationState === RegistrationState.RedirectToIamPortal){
@@ -1328,7 +1326,7 @@ class RegisterUserService extends IdentityService {
                 else{
                     const jwtSigningResponse = await jwtServiceUtils.signIAMPortalUserJwt(user, tenant, this.getPortalAuthenTokenTTLSeconds(), PRINCIPAL_TYPE_IAM_PORTAL_USER);
                     if(!jwtSigningResponse || jwtSigningResponse.accessToken === null){
-                        response.registrationError.errorCode = "ERROR_GENERATING_ACCESS_TOKEN_REGISTRATION_COMPLETION";
+                        response.registrationError = ERROR_CODES.EC00153;
                         response.userRegistrationState.registrationState = RegistrationState.Error;
                     }
                     else{
@@ -1344,8 +1342,7 @@ class RegisterUserService extends IdentityService {
                 }
             }
             catch(err: any){
-                response.registrationError.errorCode = err.message;
-                response.userRegistrationState.registrationState = RegistrationState.Error;
+                throw new GraphQLError(err.message);                
             }
         }
         // If no errors, then delete all the of the registration states.

@@ -3,7 +3,7 @@ import TenantDao from "../dao/tenant-dao";
 import ClientDao from "../dao/client-dao";
 import ContactDao from "../dao/contact-dao";
 import SigningKeysDao from "../dao/signing-keys-dao";
-import { Client, Contact, SigningKey, Tenant } from "@/graphql/generated/graphql-types";
+import { Client, Contact, ErrorDetail, SigningKey, Tenant } from "@/graphql/generated/graphql-types";
 import { randomUUID } from "crypto";
 import { CLIENT_READ_SCOPE, CLIENT_UPDATE_SCOPE, CONTACT_TYPE_FOR_CLIENT, CONTACT_TYPE_FOR_SIGNING_KEY, CONTACT_TYPE_FOR_TENANT, KEY_READ_SCOPE, KEY_UPDATE_SCOPE, TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE, TENANT_UPDATE_SCOPE } from "@/utils/consts";
 import { GraphQLError } from "graphql";
@@ -32,7 +32,7 @@ class ContactService {
                 async performOperation(_, __) {
                     return contactDao.getContacts(objectId);
                 },
-                async additionalConstraintCheck(oidcContext: OIDCContext, result: Array<Contact> | null): Promise<{ isAuthorized: boolean, errorCode: string, result: Array<Contact> | null }> {
+                async additionalConstraintCheck(oidcContext: OIDCContext, result: Array<Contact> | null): Promise<{ isAuthorized: boolean, errorDetail: ErrorDetail, result: Array<Contact> | null }> {
                     if (result && result.length > 0) {
                         // just need the first contact in the list, since they will all by
                         // tied to the same type of object, based on the object id.
@@ -42,7 +42,7 @@ class ContactService {
                         if (contact.objecttype === CONTACT_TYPE_FOR_TENANT) {
                             const tenant: Tenant | null = await tenantDao.getTenantById(contact.objectid);
                             if (!tenant) {
-                                throw new GraphQLError(ERROR_CODES.EC00008.errorCode);
+                                throw new GraphQLError(ERROR_CODES.EC00008.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00008}});
                             }
                             tenantId = tenant.tenantId;
                             scopeRequired = TENANT_READ_SCOPE;
@@ -50,7 +50,7 @@ class ContactService {
                         else if (contact.objecttype === CONTACT_TYPE_FOR_CLIENT) {
                             const client: Client | null = await clientDao.getClientById(contact.objectid);
                             if (!client) {
-                                throw new GraphQLError(ERROR_CODES.EC00011.errorCode);
+                                throw new GraphQLError(ERROR_CODES.EC00011.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00011}});
                             }
                             tenantId = client.tenantId;
                             scopeRequired = CLIENT_READ_SCOPE;
@@ -58,18 +58,18 @@ class ContactService {
                         else if (contact.objecttype === CONTACT_TYPE_FOR_SIGNING_KEY) {
                             const key: SigningKey | null = await keyDao.getSigningKeyById(contact.objectid);
                             if(!key) {
-                                throw new GraphQLError(ERROR_CODES.EC00015.errorCode);
+                                throw new GraphQLError(ERROR_CODES.EC00015.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00015}});
                             }
                             tenantId = key.tenantId;
                             scopeRequired = KEY_READ_SCOPE;
                         }
-                        const {isAuthorized, errorCode} = authorizeByScopeAndTenant(oidcContext, [TENANT_READ_ALL_SCOPE, scopeRequired], tenantId);
+                        const {isAuthorized, errorDetail} = authorizeByScopeAndTenant(oidcContext, [TENANT_READ_ALL_SCOPE, scopeRequired], tenantId);
                         if(!isAuthorized){
-                            return {isAuthorized, errorCode, result: null};
+                            return {isAuthorized, errorDetail, result: null};
                         }
-                        return {isAuthorized: true, errorCode: "", result: result};
+                        return {isAuthorized: true, errorDetail: ERROR_CODES.NULL_ERROR, result: result};
                     }
-                    return {isAuthorized: true, errorCode: "", result: result};
+                    return {isAuthorized: true, errorDetail: ERROR_CODES.NULL_ERROR, result: result};
                 }
             }
         );
@@ -83,7 +83,7 @@ class ContactService {
         if(contact.objecttype === CONTACT_TYPE_FOR_TENANT){
             const tenant: Tenant | null = await tenantDao.getTenantById(contact.objectid);
             if(!tenant){
-                throw new GraphQLError(ERROR_CODES.EC00008.errorCode);
+                throw new GraphQLError(ERROR_CODES.EC00008.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00008}});
             }
             tenantId = tenant.tenantId;
             scopeRequired = TENANT_UPDATE_SCOPE;
@@ -91,7 +91,7 @@ class ContactService {
         else if(contact.objecttype === CONTACT_TYPE_FOR_CLIENT){
             const client: Client | null = await clientDao.getClientById(contact.objectid);
             if(!client){
-                throw new GraphQLError(ERROR_CODES.EC00011.errorCode);
+                throw new GraphQLError(ERROR_CODES.EC00011.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00011}});
             }
             tenantId = client.tenantId;
             scopeRequired = CLIENT_UPDATE_SCOPE;
@@ -99,21 +99,21 @@ class ContactService {
         else if(contact.objecttype === CONTACT_TYPE_FOR_SIGNING_KEY){
             const key: SigningKey | null = await keyDao.getSigningKeyById(contact.objectid);
             if(!key){
-                throw new GraphQLError(ERROR_CODES.EC00015.errorCode);
+                throw new GraphQLError(ERROR_CODES.EC00015.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00015}});
             }
             tenantId = key.tenantId;
             scopeRequired = KEY_UPDATE_SCOPE;
         }
         else {
-            throw new GraphQLError(ERROR_CODES.EC00016.errorCode)
+            throw new GraphQLError(ERROR_CODES.EC00016.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00016}});
         }
         if(contact.email.length < 3 || contact.email.indexOf("@") < 0){
-            throw new GraphQLError(ERROR_CODES.EC00017.errorCode);
+            throw new GraphQLError(ERROR_CODES.EC00017.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00017}});
         }
 
-        const {isAuthorized, errorCode} = authorizeByScopeAndTenant(this.oidcContext, scopeRequired, tenantId);
+        const {isAuthorized, errorDetail} = authorizeByScopeAndTenant(this.oidcContext, scopeRequired, tenantId);
         if(!isAuthorized){
-            throw new GraphQLError(errorCode);
+            throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});
         }
 
         contact.contactid = randomUUID().toString();
@@ -133,7 +133,7 @@ class ContactService {
             else if(contact.objecttype === CONTACT_TYPE_FOR_CLIENT){
                 const client: Client | null = await clientDao.getClientById(contact.objectid);
                 if(!client){
-                    throw new GraphQLError(ERROR_CODES.EC00011.errorCode);
+                    throw new GraphQLError(ERROR_CODES.EC00011.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00011}});
                 }
                 tenantId = client.tenantId;
                 scopeRequired = CLIENT_UPDATE_SCOPE;
@@ -141,14 +141,14 @@ class ContactService {
             else if(contact.objecttype === CONTACT_TYPE_FOR_SIGNING_KEY){
                 const key: SigningKey | null = await keyDao.getSigningKeyById(contact.objectid);
                 if(!key){
-                    throw new GraphQLError(ERROR_CODES.EC00015.errorCode);
+                    throw new GraphQLError(ERROR_CODES.EC00015.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00015}});
                 }
                 tenantId = key.tenantId;
                 scopeRequired = KEY_UPDATE_SCOPE;
             }
-            const {isAuthorized, errorCode} = authorizeByScopeAndTenant(this.oidcContext, scopeRequired, tenantId);
+            const {isAuthorized, errorDetail} = authorizeByScopeAndTenant(this.oidcContext, scopeRequired, tenantId);
             if(!isAuthorized){
-                throw new GraphQLError(errorCode);
+                throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});
             }
             await contactDao.removeContact(contactId);
         }

@@ -1,7 +1,7 @@
 import { OIDCContext } from "@/graphql/graphql-context";
 import * as OTPAuth from "otpauth";
 import IdentityDao from "../dao/identity-dao";
-import { Client, Fido2AuthenticationChallengeResponse, Fido2Challenge, Fido2RegistrationChallengeResponse, Fido2KeyRegistrationInput, ObjectSearchResultItem, RefreshData, RelSearchResultItem, SearchResultType, Tenant, TenantPasswordConfig, TotpResponse, User, UserCredential, UserMfaRel, UserSession, UserTenantRel, UserTenantRelView, Fido2KeyAuthenticationInput, FederatedOidcProvider, FederatedOidcAuthorizationRel, FederatedOidcAuthorizationRelType, AuthorizationCodeData, PreAuthenticationState, AuthorizationReturnUri, UserRegistrationState, RegistrationState, AuthenticationState, UserAuthenticationState, PortalUserProfile, UserScopeRel, Scope, AuthorizationGroup, UserRecoveryEmail } from "@/graphql/generated/graphql-types";
+import { Client, Fido2AuthenticationChallengeResponse, Fido2Challenge, Fido2RegistrationChallengeResponse, Fido2KeyRegistrationInput, ObjectSearchResultItem, RefreshData, RelSearchResultItem, SearchResultType, Tenant, TenantPasswordConfig, TotpResponse, User, UserCredential, UserMfaRel, UserSession, UserTenantRel, UserTenantRelView, Fido2KeyAuthenticationInput, FederatedOidcProvider, FederatedOidcAuthorizationRel, FederatedOidcAuthorizationRelType, AuthorizationCodeData, PreAuthenticationState, AuthorizationReturnUri, UserRegistrationState, RegistrationState, AuthenticationState, UserAuthenticationState, PortalUserProfile, UserScopeRel, Scope, AuthorizationGroup, UserRecoveryEmail, ErrorDetail } from "@/graphql/generated/graphql-types";
 import { DaoFactory } from "../data-sources/dao-factory";
 import TenantDao from "../dao/tenant-dao";
 import { GraphQLError } from "graphql/error";
@@ -20,6 +20,7 @@ import { WellknownConfig } from "../models/wellknown-config";
 import { authorizeByScopeAndTenant, containsScope, ServiceAuthorizationWrapper } from "@/utils/authz-utils";
 import client from "@/components/apollo-client/apollo-client";
 import { error } from "console";
+import { ERROR_CODES } from "../models/error";
 
 
 const identityDao: IdentityDao = DaoFactory.getInstance().getIdentityDao();
@@ -72,16 +73,16 @@ class IdentityService {
                 },
                 additionalConstraintCheck: async function(oidcContext: OIDCContext, result: User | null) {
                     if(userId === oidcContext.portalUserProfile?.userId){
-                        return {isAuthorized: true, errorMessage: null}
+                        return {isAuthorized: true, errorDetail: ERROR_CODES.NULL_ERROR}
                     }
                     const userTenantRels: Array<UserTenantRel> = await identityDao.getUserTenantRelsByUserId(userId);
                     const rel = userTenantRels.find(
                         (r: UserTenantRel) => r.tenantId === oidcContext.portalUserProfile?.managementAccessTenantId
                     );
                     if(!rel){
-                        return {isAuthorized: false, errorMessage: "ERROR_USER_TENANT_REL_DOES_NOT_EXIST"}
+                        return {isAuthorized: false, errorDetail: ERROR_CODES.EC00114}
                     }
-                    return {isAuthorized: true, errorMessage: null};
+                    return {isAuthorized: true, errorDetail: ERROR_CODES.NULL_ERROR};
                 }
             }
         );
@@ -103,7 +104,7 @@ class IdentityService {
         else{
             const authResult = authorizeByScopeAndTenant(this.oidcContext, USER_UPDATE_SCOPE, null);
             if(!authResult.isAuthorized){
-                throw new GraphQLError(authResult.errorMessage || "ERROR");
+                throw new GraphQLError(authResult.errorDetail.errorMessage, {extensions: {errorDetail: authResult.errorDetail}});
             }
         }
 
@@ -177,7 +178,7 @@ class IdentityService {
 
         const authResult = authorizeByScopeAndTenant(this.oidcContext, [USER_SESSION_READ_SCOPE], null);
         if(!authResult.isAuthorized){
-            throw new GraphQLError(authResult.errorMessage || "ERROR");
+            throw new GraphQLError(authResult.errorDetail.errorMessage, {extensions: {errorDetail: authResult.errorDetail}});
         }
 
         const arr: Array<RefreshData> = await authDao.getRefreshDataByUserId(userId);
@@ -202,7 +203,7 @@ class IdentityService {
     public async deleteUserSession(userId: string, clientId: string, tenantId: string): Promise<void>{
         const authResult = authorizeByScopeAndTenant(this.oidcContext, [USER_SESSION_DELETE_SCOPE], null);
         if(!authResult.isAuthorized){
-            throw new GraphQLError(authResult.errorMessage || "ERROR");
+            throw new GraphQLError(authResult.errorDetail.errorMessage, {extensions: {errorDetail: authResult.errorDetail}});
         }
 
         await authDao.deleteRefreshData(userId, tenantId, clientId);
@@ -246,7 +247,7 @@ class IdentityService {
     public async assignUserToTenant(tenantId: string, userId: string, relType: string): Promise<UserTenantRel> {
         const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_USER_ASSIGN_SCOPE], null);
         if(!authResult.isAuthorized){
-            throw new GraphQLError(authResult.errorMessage || "ERROR");
+            throw new GraphQLError(authResult.errorDetail.errorMessage, {extensions: {errorDetail: authResult.errorDetail}});
         }
 
         let userTenantRel: UserTenantRel = {
@@ -333,7 +334,7 @@ class IdentityService {
     public async removeUserFromTenant(tenantId: string, userId: string): Promise<void> {
         const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_USER_REMOVE_SCOPE], tenantId);
         if(!authResult.isAuthorized){
-            throw new GraphQLError(authResult.errorMessage || "ERROR");
+            throw new GraphQLError(authResult.errorDetail.errorMessage, {extensions: {errorDetail: authResult.errorDetail}});
         }
 
         // Cannot remove a primary relationship
@@ -352,7 +353,7 @@ class IdentityService {
     public async unlockUser(userId: string): Promise<void>{
         const authResult = authorizeByScopeAndTenant(this.oidcContext, [USER_UNLOCK_SCOPE], null);
         if(!authResult.isAuthorized){
-            throw new GraphQLError(authResult.errorMessage || "ERROR");
+            throw new GraphQLError(authResult.errorDetail.errorMessage, {extensions: {errorDetail: authResult.errorDetail}});
         }
         const user: User | null = await identityDao.getUserBy("id", userId);
         if(user){
@@ -369,7 +370,7 @@ class IdentityService {
         if(userId !== this.oidcContext.portalUserProfile?.userId){
             const authResult = authorizeByScopeAndTenant(this.oidcContext, [USER_READ_SCOPE], this.oidcContext.portalUserProfile?.tenantId || null);
             if(!authResult.isAuthorized){
-                throw new GraphQLError(authResult.errorMessage || "ERROR");
+                throw new GraphQLError(authResult.errorDetail.errorMessage, {extensions: {errorDetail: authResult.errorDetail}});
             }
         }
         return identityDao.getUserRecoveryEmail(userId);
@@ -417,7 +418,7 @@ class IdentityService {
         else{
             const authResult = authorizeByScopeAndTenant(this.oidcContext, USER_UPDATE_SCOPE, null);
             if(!authResult.isAuthorized){
-                throw new GraphQLError(authResult.errorMessage || "ERROR");
+                throw new GraphQLError(authResult.errorDetail.errorMessage, {extensions: {errorDetail: authResult.errorDetail}});
             }
         }
         await identityDao.deleteRecoveryEmail(userId);
@@ -663,12 +664,12 @@ class IdentityService {
                             (r: UserTenantRel) => r.tenantId === oidcContext.portalUserProfile?.managementAccessTenantId
                         );
                         if(!rel){
-                            return {isAuthorized: false, errorMessage: "ERROR_USER_TENANT_REL_DOES_NOT_EXIST"}
+                            return {isAuthorized: false, errorDetail: ERROR_CODES.EC00114}
                         }
-                        return {isAuthorized: true, errorMessage: null};
+                        return {isAuthorized: true, errorDetail: ERROR_CODES.NULL_ERROR};
                     }
                     else{
-                        return {isAuthorized: true, errorMessage: null};
+                        return {isAuthorized: true, errorDetail: ERROR_CODES.NULL_ERROR};
                     }
                 },
                 postProcess: async function(_, result) {
@@ -698,7 +699,7 @@ class IdentityService {
         if(userId !== this.oidcContext.portalUserProfile?.userId){
             const authResult = authorizeByScopeAndTenant(this.oidcContext, [USER_UPDATE_SCOPE], null);
             if(!authResult.isAuthorized){
-                throw new GraphQLError(authResult.errorMessage || "ERROR");
+                throw new GraphQLError(authResult.errorDetail.errorMessage, {extensions: {errorDetail: authResult.errorDetail}});
             }
         }
 
@@ -709,7 +710,7 @@ class IdentityService {
         if(userId !== this.oidcContext.portalUserProfile?.userId){
             const authResult = authorizeByScopeAndTenant(this.oidcContext, [USER_UPDATE_SCOPE], null);
             if(!authResult.isAuthorized){
-                throw new GraphQLError(authResult.errorMessage || "ERROR");
+                throw new GraphQLError(authResult.errorDetail.errorMessage, {extensions: {errorDetail: authResult.errorDetail}});
             }
         }
         await identityDao.deleteFido2Count(userId);
@@ -1014,7 +1015,7 @@ class IdentityService {
         }        
     }
 
-    protected async createFederatedOIDCRequestProperties(email: string | null, userId: string | null, provider: FederatedOidcProvider, tenantId: string, preAuthenticationState: PreAuthenticationState | null): Promise<{hasError: boolean, errorMessage: string, authorizationEndpoint: string}> {
+    protected async createFederatedOIDCRequestProperties(email: string | null, userId: string | null, provider: FederatedOidcProvider, tenantId: string, preAuthenticationState: PreAuthenticationState | null): Promise<{hasError: boolean, errorDetail: ErrorDetail, authorizationEndpoint: string}> {
 
         const state: string = generateRandomToken(32, "hex");
         const federatedOIDCAuthorizationRel: FederatedOidcAuthorizationRel = {
@@ -1035,7 +1036,7 @@ class IdentityService {
             initState: preAuthenticationState && preAuthenticationState.state ? preAuthenticationState.state : state,
             returnUri: ""
         }
-        const retVal = {errorMessage: "", hasError: false, authorizationEndpoint: ""};
+        const retVal = {errorDetail: ERROR_CODES.NULL_ERROR, hasError: false, authorizationEndpoint: ""};
         
         const wellKnownConfig: WellknownConfig | null = await oidcServiceUtils.getWellKnownConfig(
             provider.federatedOIDCProviderWellKnownUri
@@ -1043,7 +1044,7 @@ class IdentityService {
         
 
         if(wellKnownConfig === null){
-            retVal.errorMessage = "ERROR_UNABLE_TO_DETERMINE_AUTHORIZATION_PARAMETERS_FROM_FEDERATED_OIDC_PROVIDER";
+            retVal.errorDetail = ERROR_CODES.EC00113;
             retVal.hasError = true;
             return retVal;
         }

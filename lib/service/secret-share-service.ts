@@ -32,20 +32,20 @@ class SecretShareService {
 
         const authResult = authorizeByScopeAndTenant(this.oidcContext, [SECRET_ENTRY_DELEGATE_SCOPE], null);
         if(!authResult.isAuthorized){
-            throw new GraphQLError(authResult.errorCode);
+            throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
         }
 
         if(email.length < 6 || email.indexOf("@") < 1){
-            throw new GraphQLError(ERROR_CODES.EC00017.errorCode);
+            throw new GraphQLError(ERROR_CODES.EC00017.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00017}});
         }
         
         // We only support oidc providers at the moment. Need to make sure it exists and is enabled.
         const provider: FederatedOidcProvider | null = await federatedOIDCProvderDao.getFederatedOidcProviderById(objectId);
         if(provider === null){
-            throw new GraphQLError(ERROR_CODES.EC00023.errorCode);
+            throw new GraphQLError(ERROR_CODES.EC00023.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00023}});
         }
         if(provider.markForDelete === true){
-            throw new GraphQLError(ERROR_CODES.EC00046.errorCode);
+            throw new GraphQLError(ERROR_CODES.EC00046.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00046}});
         }
 
         const otp = generateRandomToken(24, "base64url");
@@ -74,19 +74,19 @@ class SecretShareService {
         const hashedValue = generateHash(otp);
         const secretShare: SecretShare | null = await secretShareDao.getSecretShareBy(hashedValue, "otp");
         if(secretShare === null){
-            throw new GraphQLError(ERROR_CODES.EC00047.errorCode);
+            throw new GraphQLError(ERROR_CODES.EC00047.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00047}});
         }
         if(secretShare.expiresAtMs < Date.now()){
             // Delete it and throw an error
             await secretShareDao.deleteSecretShare(secretShare.secretShareId);
-            throw new GraphQLError(ERROR_CODES.EC00048.errorCode);
+            throw new GraphQLError(ERROR_CODES.EC00048.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00048}});
         }
         const provider: FederatedOidcProvider | null = await federatedOIDCProvderDao.getFederatedOidcProviderById(secretShare.objectId);
         if(provider === null){
-            throw new GraphQLError(ERROR_CODES.EC00023.errorCode);
+            throw new GraphQLError(ERROR_CODES.EC00023.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00023}});
         }
         if(provider.markForDelete === true){
-            throw new GraphQLError(ERROR_CODES.EC00046.errorCode);
+            throw new GraphQLError(ERROR_CODES.EC00046.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00046}});
         }
 
         const encryptedValue = await kms.encrypt(secretValue);

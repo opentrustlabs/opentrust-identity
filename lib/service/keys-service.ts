@@ -65,45 +65,45 @@ class SigningKeysService {
 
         const authResult = authorizeByScopeAndTenant(this.oidcContext, [KEY_CREATE_SCOPE], key.tenantId);
         if(!authResult.isAuthorized){
-            throw new GraphQLError(authResult.errorCode);
+            throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
         }
 
         const tenant: Tenant | null = await tenantDao.getTenantById(key.tenantId);
         if(!tenant){
-            throw new GraphQLError(ERROR_CODES.EC00008.errorCode);
+            throw new GraphQLError(ERROR_CODES.EC00008.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00008}});
         }
         if(tenant.enabled === false || tenant.markForDelete === true){
-            throw new GraphQLError(ERROR_CODES.EC00009.errorCode);
+            throw new GraphQLError(ERROR_CODES.EC00009.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00009}});
         }
 
         if(!key.keyName || key.keyName === ""){
-            throw new GraphQLError(ERROR_CODES.EC00050.errorCode);
+            throw new GraphQLError(ERROR_CODES.EC00050.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00050}});
         }
         if(!key.privateKeyPkcs8 || key.privateKeyPkcs8 === ""){
-            throw new GraphQLError(ERROR_CODES.EC00051.errorCode);
+            throw new GraphQLError(ERROR_CODES.EC00051.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00051}});
         }
         if(key.certificate === "" && key.publicKey === ""){
-            throw new GraphQLError(ERROR_CODES.EC00052.errorCode);
+            throw new GraphQLError(ERROR_CODES.EC00052.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00052}});
         }
         if(key.password === "" && key.privateKeyPkcs8.startsWith(PKCS8_ENCRYPTED_PRIVATE_KEY_HEADER)){
-            throw new GraphQLError(ERROR_CODES.EC00053.errorCode);
+            throw new GraphQLError(ERROR_CODES.EC00053.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00053}});
         }
         if(key.password && key.password !== "" && key.password.length < MIN_PRIVATE_KEY_PASSWORD_LENGTH){
-            throw new GraphQLError(ERROR_CODES.EC00054.errorCode);
+            throw new GraphQLError(ERROR_CODES.EC00054.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00054}});
         }
 
         if(key.keyType === "" || !KEY_TYPES.includes(key.keyType)){
-            throw new GraphQLError(ERROR_CODES.EC00055.errorCode);
+            throw new GraphQLError(ERROR_CODES.EC00055.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00055}});
         }
         if(key.keyUse === "" || !KEY_USES.includes(key.keyUse)){
-            throw new GraphQLError(ERROR_CODES.EC00056.errorCode);
+            throw new GraphQLError(ERROR_CODES.EC00056.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00056}});
         }
         if(key.publicKey && key.publicKey.length > 0){
             const now: number = new Date().getTime();                                                    
             const diff: number = key.expiresAtMs - now;
             // if negative or greater than a year, then reject
             if(diff < 0 || diff > 31557600000){
-                throw new GraphQLError(ERROR_CODES.EC00057.errorCode);    
+                throw new GraphQLError(ERROR_CODES.EC00057.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00057}});
             }
         }
         if(key.certificate && key.certificate.length > 0){
@@ -115,7 +115,7 @@ class SigningKeysService {
         const plainText = key.password && key.password !== "" ? key.password : key.privateKeyPkcs8;
         const encrypted: string | null = await kms.encrypt(plainText);
         if(encrypted === null){
-            throw new GraphQLError(ERROR_CODES.EC00058.errorCode);
+            throw new GraphQLError(ERROR_CODES.EC00058.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00058}});
         }
         if(key.password && key.password !== ""){
             key.password = encrypted
@@ -135,34 +135,34 @@ class SigningKeysService {
     public async uncheckedAutoCreateSigningKey(keyInput: AutoCreateSigningKeyInput): Promise<SigningKey> {
         const tenant: Tenant | null = await tenantDao.getTenantById(keyInput.tenantId);
         if(!tenant){
-            throw new GraphQLError(ERROR_CODES.EC00008.errorCode);
+            throw new GraphQLError(ERROR_CODES.EC00008.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00008}});
         }
         if(tenant.enabled === false || tenant.markForDelete === true){
-            throw new GraphQLError(ERROR_CODES.EC00009.errorCode);
+            throw new GraphQLError(ERROR_CODES.EC00009.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00009}});
         }
         if(!keyInput.keyName || keyInput.keyName === ""){
-            throw new GraphQLError(ERROR_CODES.EC00050.errorCode);
+            throw new GraphQLError(ERROR_CODES.EC00050.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00050}});
         }
         if(keyInput.keyType === "" || keyInput.keyType !== KEY_TYPE_RSA){
-            throw new GraphQLError(ERROR_CODES.EC00055.errorCode);
+            throw new GraphQLError(ERROR_CODES.EC00055.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00055}});
         }
         if(keyInput.keyUse === "" || !KEY_USES.includes(keyInput.keyUse)){
-            throw new GraphQLError(ERROR_CODES.EC00056.errorCode);
+            throw new GraphQLError(ERROR_CODES.EC00056.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00056}});
         }
         if(!keyInput.commonName || keyInput.commonName === ""){
-            throw new GraphQLError(ERROR_CODES.EC00059.errorCode);
+            throw new GraphQLError(ERROR_CODES.EC00059.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00057}});
         }
         if(!keyInput.organizationName || keyInput.organizationName === ""){
-            throw new GraphQLError(ERROR_CODES.EC00060.errorCode);
+            throw new GraphQLError(ERROR_CODES.EC00060.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00058}});
         }
         const now: number = new Date().getTime();                                                    
         const diff: number = keyInput.expiresAtMs - now;
         // if negative or greater than a year, then reject
         if(diff < 0 || diff > 31557600000){
-            throw new GraphQLError(ERROR_CODES.EC00061.errorCode);    
+            throw new GraphQLError(ERROR_CODES.EC00061.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00061}});
         }
         if(keyInput.password && keyInput.password !== "" && keyInput.password.length < MIN_PRIVATE_KEY_PASSWORD_LENGTH){
-            throw new GraphQLError(ERROR_CODES.EC00054.errorCode);
+            throw new GraphQLError(ERROR_CODES.EC00054.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00054}});
         }
         
         const expiresAtDate = new Date(keyInput.expiresAtMs);        
@@ -171,7 +171,7 @@ class SigningKeysService {
         
         const encrypted: string | null = await kms.encrypt(passphrase);
         if(encrypted === null){
-            throw new GraphQLError(ERROR_CODES.EC00058.errorCode);
+            throw new GraphQLError(ERROR_CODES.EC00058.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00058}});
         }
 
         const key: SigningKey = {
@@ -196,7 +196,7 @@ class SigningKeysService {
     public async autoCreateSigningKey(keyInput: AutoCreateSigningKeyInput): Promise<SigningKey> {
         const authResult = authorizeByScopeAndTenant(this.oidcContext, [KEY_CREATE_SCOPE], keyInput.tenantId);
         if(!authResult.isAuthorized){
-            throw new GraphQLError(authResult.errorCode);
+            throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
         }
         return this.uncheckedAutoCreateSigningKey(keyInput);        
     }
@@ -204,20 +204,20 @@ class SigningKeysService {
     public async updateSigningKey(key: SigningKey): Promise<SigningKey> {
         
         if( ! (key.status === SIGNING_KEY_STATUS_REVOKED || key.status === SIGNING_KEY_STATUS_ACTIVE)) {
-            throw new GraphQLError(ERROR_CODES.EC00062.errorCode);
+            throw new GraphQLError(ERROR_CODES.EC00062.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00062}});
         }
         const existingKey: SigningKey | null = await signingKeysDao.getSigningKeyById(key.keyId);
         if(!existingKey){
-            throw new GraphQLError(ERROR_CODES.EC00015.errorCode);
+            throw new GraphQLError(ERROR_CODES.EC00015.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00015}});
         }
 
         const authResult = authorizeByScopeAndTenant(this.oidcContext, [KEY_UPDATE_SCOPE], existingKey.tenantId);
         if(!authResult.isAuthorized){
-            throw new GraphQLError(authResult.errorCode);
+            throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
         }
 
         if(existingKey.status === SIGNING_KEY_STATUS_REVOKED){
-            throw new GraphQLError(ERROR_CODES.EC00063.errorCode);
+            throw new GraphQLError(ERROR_CODES.EC00063.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00063}});
         }
         
         existingKey.keyName = key.keyName;
@@ -239,13 +239,13 @@ class SigningKeysService {
                 async additionalConstraintCheck(oidcContext: OIDCContext, result: SigningKey | null) {
                     if(result){                        
                         if(oidcContext.portalUserProfile?.managementAccessTenantId !== result.tenantId){
-                            return {isAuthorized: false, errorCode: ERROR_CODES.EC00064.errorCode};
+                            return {isAuthorized: false, errorDetail: ERROR_CODES.EC00064};
                         }
                         else {
-                            return {isAuthorized: true, errorCode: ""};
+                            return {isAuthorized: true, errorDetail: ERROR_CODES.NULL_ERROR};
                         }
                     }
-                    return {isAuthorized: true, errorCode: ""};
+                    return {isAuthorized: true, errorDetail: ERROR_CODES.NULL_ERROR};
                 },
                 async postProcess(_, result) {
                     if(result){
@@ -276,7 +276,7 @@ class SigningKeysService {
         if(signingKey){
             const authResult = authorizeByScopeAndTenant(this.oidcContext, [KEY_DELETE_SCOPE], signingKey.tenantId);
             if(!authResult.isAuthorized){
-                throw new GraphQLError(authResult.errorCode);
+                throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
             }
 
             await signingKeysDao.deleteSigningKey(keyId);

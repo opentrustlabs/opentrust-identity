@@ -1,4 +1,4 @@
-import { Scope } from "@/graphql/generated/graphql-types";
+import { ErrorDetail, Scope } from "@/graphql/generated/graphql-types";
 import { OIDCContext } from "@/graphql/graphql-context";
 import { ERROR_CODES } from "@/lib/models/error";
 import { GraphQLError } from "graphql/error/GraphQLError";
@@ -29,27 +29,27 @@ export function containsScope(allowedScope: string | Array<string>, availableSco
 }
 
 
-export function authorizeByScopeAndTenant(oidcContext: OIDCContext, allowedScope: string | Array<string>, targetTenantId: string | null): { isAuthorized: boolean, errorCode: string} {
+export function authorizeByScopeAndTenant(oidcContext: OIDCContext, allowedScope: string | Array<string>, targetTenantId: string | null): { isAuthorized: boolean, errorDetail: ErrorDetail} {
     if (!oidcContext.portalUserProfile || !oidcContext.portalUserProfile.scope) {
-        return { isAuthorized: false, errorCode: ERROR_CODES.EC00002.errorCode};
+        return { isAuthorized: false, errorDetail: ERROR_CODES.EC00002};
     }
     const b: boolean = containsScope(allowedScope, oidcContext.portalUserProfile.scope);
     if (!b) {
-        return { isAuthorized: false, errorCode: ERROR_CODES.EC00003.errorCode};
+        return { isAuthorized: false, errorDetail: ERROR_CODES.EC00003};
     }
 
     if (oidcContext.portalUserProfile.managementAccessTenantId !== oidcContext.rootTenant.tenantId) {
         if (targetTenantId) {
             if (oidcContext.portalUserProfile.managementAccessTenantId !== targetTenantId) {
-                return { isAuthorized: false, errorCode: ERROR_CODES.EC00004.errorCode}
+                return { isAuthorized: false, errorDetail: ERROR_CODES.EC00004}
             }
         }
         else {
-            return { isAuthorized: false, errorCode: ERROR_CODES.EC00005.errorCode}
+            return { isAuthorized: false, errorDetail: ERROR_CODES.EC00005}
         }
     }
 
-    return { isAuthorized: true, errorCode: "" }
+    return { isAuthorized: true, errorDetail: ERROR_CODES.NULL_ERROR }
 }
 
 export function WithAuthorizationByScopeAndTenant<TResult>(
@@ -58,9 +58,9 @@ export function WithAuthorizationByScopeAndTenant<TResult>(
     }
 ){
     return async (oidcContext: OIDCContext, allowedScope: string | Array<string>, targetTenantId: string | null): Promise<TResult | null> => {
-        const {isAuthorized, errorCode} = authorizeByScopeAndTenant(oidcContext, allowedScope, targetTenantId);
+        const {isAuthorized, errorDetail} = authorizeByScopeAndTenant(oidcContext, allowedScope, targetTenantId);
         if(!isAuthorized){
-            throw new GraphQLError(errorCode);
+            throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail: errorDetail}});
         }
         return options.performOperation(oidcContext);
     }
@@ -104,18 +104,18 @@ export function ServiceAuthorizationWrapper<TArgs extends any[], TResult>(
     options: {
         preProcess?: (oidcContext: OIDCContext, ...args: TArgs) => Promise<Partial<TArgs>>; 
         performOperation: (oidcContext: OIDCContext, ...args: TArgs) => Promise<TResult | null>;
-        additionalConstraintCheck?: (oidcContext: OIDCContext, result: TResult | null) => Promise<{isAuthorized: boolean, errorCode: string}>;
+        additionalConstraintCheck?: (oidcContext: OIDCContext, result: TResult | null) => Promise<{isAuthorized: boolean, errorDetail: ErrorDetail}>;
         postProcess?: (oidcContext: OIDCContext, result: TResult | null) => Promise<TResult | null>;
     })
     {
         return async (oidcContext: OIDCContext, allowedScope: string | Array<string>, ...args: TArgs): Promise<TResult | null> => {
             if(!oidcContext.portalUserProfile){
-                throw new GraphQLError(ERROR_CODES.EC00002.errorCode);
+                throw new GraphQLError(ERROR_CODES.EC00002.errorMessage, {extensions: {errorDetail: ERROR_CODES.EC00002}});
             }
 
             const b: boolean = containsScope(allowedScope, oidcContext.portalUserProfile.scope);        
             if(!b){
-                throw new GraphQLError(ERROR_CODES.EC00003.errorCode);
+                throw new GraphQLError(ERROR_CODES.EC00003.errorMessage, {extensions: {errorDetail: ERROR_CODES.EC00003}});
             }
 
             const overrides = options.preProcess ? await options.preProcess(oidcContext, ...args) : args || {};
@@ -125,7 +125,7 @@ export function ServiceAuthorizationWrapper<TArgs extends any[], TResult>(
             if(oidcContext.portalUserProfile.managementAccessTenantId !== oidcContext.rootTenant.tenantId && options.additionalConstraintCheck){                        
                 const postProcessResult = await options.additionalConstraintCheck(oidcContext, result);
                 if(!postProcessResult.isAuthorized){
-                    throw new GraphQLError(postProcessResult.errorCode);
+                    throw new GraphQLError(postProcessResult.errorDetail.errorMessage, {extensions: {errorDetail: postProcessResult.errorDetail}});
                 }
             }
             if(options.postProcess){

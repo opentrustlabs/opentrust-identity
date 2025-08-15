@@ -2,16 +2,17 @@ import { ApolloServer } from "@apollo/server";
 import { startServerAndCreateNextHandler } from '@as-integrations/next';
 import { ApolloServerPluginLandingPageLocalDefault, ApolloServerPluginLandingPageProductionDefault } from '@apollo/server/plugin/landingPage/default';
 import { ApolloServerErrorCode } from '@apollo/server/errors';
-import { PortalUserProfile, Tenant, typeDefs } from "@/graphql/generated/graphql-types";
+import { ErrorDetail, PortalUserProfile, Tenant, typeDefs } from "@/graphql/generated/graphql-types";
 import resolvers from "@/graphql/resolvers/oidc-resolvers";
 import { NextApiRequest, NextApiResponse } from "next";
-import { ERROR_CODES, ErrorDetail, ErrorResponseBody } from "@/lib/models/error";
+import { ERROR_CODES, ErrorResponseBody } from "@/lib/models/error";
 import JwtServiceUtils from "@/lib/service/jwt-service-utils";
 import { OIDCContext } from "@/graphql/graphql-context";
 import { DaoFactory } from "@/lib/data-sources/dao-factory";
 import TenantDao from "@/lib/dao/tenant-dao";
 import { initSchedulers } from "@/lib/service/init-scheduled-services";
 import { HTTP_HEADER_X_GEO_LOCATION, HTTP_HEADER_X_IP_ADDRESS } from "@/utils/consts";
+import { randomUUID } from "node:crypto";
 
 
 declare global {
@@ -64,15 +65,19 @@ const server = new ApolloServer(
                     message: "Your query does not match the graphql schema."
                 }
             }
-            const errorDetail: ErrorDetail | null = ERROR_CODES[formattedError?.message] || ERROR_CODES.DEFAULT;
+            // This line below is for the case when an uncaught exception is thrown somewhere and we do not
+            // want to show the actual error to the user. We will, however, log the original error with a
+            // trace ID (which we will also return to the client) and which can be used for debugging purposes.
+            // TODO: log the error
+
+            const traceId: string = randomUUID().toString();
+            const errorDetail: ErrorDetail | null = formattedError.extensions?.errorDetail as ErrorDetail || ERROR_CODES.DEFAULT;
             if(formattedError && formattedError.extensions?.lang){                
                 return {
-                    ...formattedError, 
+                    ...formattedError,
                     extensions: {
-                        errorCode: errorDetail.errorCode,
-                        errorMessage: errorDetail.errorMessage,
-                        errorKey: errorDetail.errorKey,
-                        lang: formattedError.extensions?.lang
+                        ...formattedError.extensions,
+                        traceId: traceId
                     },
                     message: errorDetail.errorMessage // TODO => i18N.translate(errorDetail.errorKey)
                 }
@@ -80,10 +85,8 @@ const server = new ApolloServer(
             return {
                 ...formattedError,
                 extensions: {
-                    errorCode: errorDetail.errorCode,
-                    errorMessage: errorDetail.errorMessage,
-                    errorKey: errorDetail.errorKey,
-                    lang: "en"
+                    ...formattedError.extensions,
+                    traceId: traceId
                 },
                 message: errorDetail.errorMessage
             }
