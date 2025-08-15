@@ -630,7 +630,7 @@ export const ERROR_CODES: Record<string, ErrorDetail> = {
     EC00120: {
         errorCode: "EC00120",
         errorKey: "ERROR_TOTP_TOKEN_INVALID",
-        errorMessage: "Your passcode you entered is not valid."
+        errorMessage: "The passcode you entered is not valid."
     },
     EC00121: {
         errorCode: "EC00121",
