@@ -1573,10 +1573,13 @@ class AuthenticateUserService extends IdentityService {
      * @param response 
      */
     protected async handleAuthenticationCompletion(user: User, userAuthenticationState: UserAuthenticationState, arrUserAuthenticationStates: Array<UserAuthenticationState>, response: UserAuthenticationStateResponse): Promise<void> {
-        // If the user was locked from a previous failed login attempt, then unlock the user
+        // If the user was was somehow locked between the start of authentication and completion, then 
+        // return an error
         if(user.locked){
-            user.locked = false;
-            await identityDao.updateUser(user);
+            response.authenticationError = ERROR_CODES.EC00097;
+            response.userAuthenticationState.authenticationState = AuthenticationState.Error;
+            return;
+            
         }
         if(userAuthenticationState.deviceCodeId){
             const deviceCodeData: AuthorizationDeviceCodeData | null = await authDao.getAuthorizationDeviceCodeData(userAuthenticationState.deviceCodeId, "devicecodeid");

@@ -1067,23 +1067,23 @@ class RegisterUserService extends IdentityService {
 
         const tenant: Tenant | null = await tenantDao.getTenantById(tenantId);
         if (!tenant) {
-            throw new GraphQLError("ERROR_TENANT_DOES_NOT_EXIST");
+            throw new GraphQLError(ERROR_CODES.EC00008.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00008}});
         }
         if (tenant.enabled === false || tenant.markForDelete === true) {
-            throw new GraphQLError("ERROR_TENANT_IS_NOT_ENABLED");
+            throw new GraphQLError(ERROR_CODES.EC00009.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00009}});
         }
         if (isRegistration && tenant.allowUserSelfRegistration === false) {
-            throw new GraphQLError("ERROR_TENANT_DOES_NOT_ALLOW_USER_SELF_REGISTRATION");
+            throw new GraphQLError(ERROR_CODES.EC00156.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00156}});
         }
         if(isRegistration){
             if(tenant.registrationRequireTermsAndConditions && !userCreateInput.termsAndConditionsAccepted){
-                throw new GraphQLError("ERROR_TERMS_AND_CONDITIONS_NOT_ACCEPTED");
+                throw new GraphQLError(ERROR_CODES.EC00100.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00100}});
             }
         }
 
         const existingUser: User | null = await identityDao.getUserBy("email", userCreateInput.email);
         if (existingUser) {
-            throw new GraphQLError("ERROR_USER_WITH_EMAIL_ALREADY_EXISTS");
+            throw new GraphQLError(ERROR_CODES.EC00142.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00142}});
         }
 
         // Need to check to see if the tenant allows for migration of users from another
@@ -1099,7 +1099,7 @@ class RegisterUserService extends IdentityService {
                 const authToken = await jwtServiceUtils.getAuthTokenForOutboundCalls();
                 const userExistsInLegacySystem: boolean = await oidcServiceUtils.legacyUsernameCheck(tenantLegacyUserMigrationConfig.usernameCheckUri, userCreateInput.email.toLowerCase(), authToken || "");
                 if(userExistsInLegacySystem){
-                    throw new GraphQLError("ERROR_USER_ALREADY_EXISTS");
+                    throw new GraphQLError(ERROR_CODES.EC00142.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00142}});
                 }
             }
         }
@@ -1107,18 +1107,18 @@ class RegisterUserService extends IdentityService {
         const tenantPasswordConfig: TenantPasswordConfig = await tenantDao.getTenantPasswordConfig(tenantId) || DEFAULT_TENANT_PASSWORD_CONFIGURATION;
         const isValidPassword: boolean = await this.checkPassword(userCreateInput.password, tenantPasswordConfig);
         if (!isValidPassword) {
-            throw new GraphQLError("INVALID_PASSWORD_EITHER_PROHIBITED_OR_INVALID_FORMAT");
+            throw new GraphQLError(ERROR_CODES.EC00157.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00157}});
         }
 
         const domain: string = getDomainFromEmail(userCreateInput.email);
-        if(domain.length === 0){
-            throw new GraphQLError("ERROR_INVALID_EMAIL_DOMAIN");
+        if(domain.length < 5 || domain.indexOf(".") < 0){
+            throw new GraphQLError(ERROR_CODES.EC00158.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00158}});
         }
         // Cannot create users who are tied to an existing external oidc provider. These types of user can ONLY be created
         // by going through SSO with their provider.
         const federatedOIDCProvider: FederatedOidcProvider | null = await federatedOIDCProvderDao.getFederatedOidcProviderByDomain(domain);
         if(federatedOIDCProvider){
-            throw new GraphQLError("ERROR_DOMAIN_IS_MANAGED_BY_EXTERNAL_OIDC_PROVIDER");
+            throw new GraphQLError(ERROR_CODES.EC00159.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00159}});
         }
 
         const arrRestrictedDomainRel: Array<TenantRestrictedAuthenticationDomainRel> = await tenantDao.getDomainsForTenantRestrictedAuthentication(tenantId);
@@ -1127,7 +1127,7 @@ class RegisterUserService extends IdentityService {
                 (rel: TenantRestrictedAuthenticationDomainRel) => rel.domain === domain
             );
             if (restrictedDomainRel === undefined) {
-                throw new GraphQLError("ERROR_TENANT_HAS_RESTRICTED_EMAIL_DOMAINS")
+                throw new GraphQLError(ERROR_CODES.EC00160.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00160}});
             }
         }
 

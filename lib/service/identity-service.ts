@@ -21,6 +21,7 @@ import { authorizeByScopeAndTenant, containsScope, ServiceAuthorizationWrapper }
 import client from "@/components/apollo-client/apollo-client";
 import { error } from "console";
 import { ERROR_CODES } from "../models/error";
+import FederatedOIDCProviderDao from "../dao/federated-oidc-provider-dao";
 
 
 const identityDao: IdentityDao = DaoFactory.getInstance().getIdentityDao();
@@ -29,6 +30,7 @@ const searchClient: OpenSearchClient = getOpenSearchClient();
 const kms: Kms = DaoFactory.getInstance().getKms();
 const authDao: AuthDao = DaoFactory.getInstance().getAuthDao();
 const clientDao: ClientDao = DaoFactory.getInstance().getClientDao();
+const federatedOIDCProviderDao: FederatedOIDCProviderDao = DaoFactory.getInstance().getFederatedOIDCProvicerDao();
 const oidcServiceUtils: OIDCServiceUtils = new OIDCServiceUtils();
 
 const {
@@ -97,7 +99,7 @@ class IdentityService {
         if(user.userId === this.oidcContext.portalUserProfile?.userId){
             const isAuthorized: boolean = containsScope(USER_UPDATE_SCOPE, this.oidcContext.portalUserProfile.scope);
             if(!isAuthorized){
-                throw new GraphQLError("ERROR_NOT_AUTHORIZED_FOR_USER_UPDATE");
+                throw new GraphQLError(ERROR_CODES.EC00154.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00154}});
             }
         }
         // Otherwise somebody is making the request on the user's behalf.
@@ -110,11 +112,11 @@ class IdentityService {
 
         const existingUser: User | null = await identityDao.getUserBy("id", user.userId);
         if(existingUser === null){
-            throw new GraphQLError("ERROR_USER_DOES_NOT_EXIST");
+            throw new GraphQLError(ERROR_CODES.EC00013.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00013}});
         }
         
         if(existingUser.markForDelete === true){
-            throw new GraphQLError("ERROR_USER_IS_MARKED_FOR_DELETE_AND_CANNOT_BE_UPDATED");
+            throw new GraphQLError(ERROR_CODES.EC00155.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00155}});
         }
 
         // If this user has a domain that is managed via a federated OIDC provider,
@@ -130,11 +132,10 @@ class IdentityService {
                 user.phoneNumber !== existingUser.phoneNumber
             )
         ){
-            throw new GraphQLError("ERROR_PROFILE_IS_CONTROLLED_BY_EXTERNAL_OIDC_PROVIDER");
+            throw new GraphQLError(ERROR_CODES.EC00147.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00147}});
         }
         
-        // Unlocking the user is done via a separate process, which may require
-        // additional auditing.
+        // Unlocking the user is done via a separate process.
         //
         // Did the email change and if so, what parts of the email have changed?
         // 1    domains 
@@ -143,19 +144,28 @@ class IdentityService {
         // In case of change.
         // 1    verify the email does not already exist
         // 2    unset the verified email flag
-        // 3    send an email to verify the new address
+        // 3    verify that the new domain is not tied to a 3rd party provider.
         if (user.email !== existingUser.email) {
             const userByEmail: User | null = await identityDao.getUserBy("email", user.email);
             if (userByEmail) {
-                throw new GraphQLError("ERROR_ATTEMPTING_TO_CHANGE_EMAIL_FAILED");
+                throw new GraphQLError(ERROR_CODES.EC00142.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00142}});
             }
-            else {
-                const domain: string = user.email.substring(
-                    user.email.indexOf("@") + 1
-                )
-                user.domain = domain;
-                user.emailVerified = false;
+            
+            const domain: string = user.email.substring(
+                user.email.indexOf("@") + 1
+            );
+            if(domain.length < 4 || domain.indexOf(".") < 0){
+                throw new GraphQLError(ERROR_CODES.EC00143.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00143}});
             }
+
+            const provider: FederatedOidcProvider | null = await federatedOIDCProviderDao.getFederatedOidcProviderByDomain(domain);
+            if(provider !== null){
+                throw new GraphQLError(ERROR_CODES.EC00144.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00144}});
+            }
+            
+            user.domain = domain;
+            user.emailVerified = false;
+            
         }
 
         await identityDao.updateUser(user);
@@ -257,15 +267,15 @@ class IdentityService {
             userId: userId
         };
         if(! ( relType === USER_TENANT_REL_TYPE_PRIMARY || relType === USER_TENANT_REL_TYPE_GUEST) ){
-            throw new GraphQLError("ERROR_INVALID_USER_TENANT_RELATIONSHIP_TYPE");
+            throw new GraphQLError(ERROR_CODES.EC00161.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00161}});
         }
         const tenant: Tenant | null = await tenantDao.getTenantById(tenantId);
         if(!tenant){
-            throw new GraphQLError("ERROR_UNABLE_TO_FIND_TENANT");
+            throw new GraphQLError(ERROR_CODES.EC00008.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00008}});
         }
         const user: User | null = await identityDao.getUserBy("id", userId);
         if(!user){
-            throw new GraphQLError("ERROR_UNABLE_TO_FIND_USER");
+            throw new GraphQLError(ERROR_CODES.EC00013.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00013}});
         }
 
         const rels: Array<UserTenantRel> = await identityDao.getUserTenantRelsByUserId(userId);
@@ -273,7 +283,7 @@ class IdentityService {
         // If not, throw an error.
         if(rels.length === 0){
             if(relType !== USER_TENANT_REL_TYPE_PRIMARY){
-                throw new GraphQLError("ERROR_MUST_BE_PRIMARY_TENANT");
+                throw new GraphQLError(ERROR_CODES.EC00162.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00162}});
             }
             else{
                 userTenantRel = await identityDao.assignUserToTenant(tenantId, userId, relType);
@@ -288,7 +298,7 @@ class IdentityService {
             );
             // There should always be a primary rel            
             if(!primaryRel){
-                throw new GraphQLError("ERROR_NO_PRIMARY_RELATIONSHIP_EXISTS_FOR_THE_USER_AND_TENANT");
+                throw new GraphQLError(ERROR_CODES.EC00163.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00163}});
             }
 
             // If there are no existing rels that match the incoming data, then create a 
@@ -298,7 +308,7 @@ class IdentityService {
             )            
             if(!existingTenantRel){
                 if(relType === USER_TENANT_REL_TYPE_PRIMARY){
-                    throw new GraphQLError("ERROR_MUST_BE_GUEST_TENANT");
+                    throw new GraphQLError(ERROR_CODES.EC00164.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00164}});
                 }
                 else{
                     userTenantRel = await identityDao.assignUserToTenant(tenantId, userId, relType);
@@ -314,7 +324,7 @@ class IdentityService {
             // have to update the incoming as PRIMARY
             else{
                 if(existingTenantRel.relType === USER_TENANT_REL_TYPE_PRIMARY && relType === USER_TENANT_REL_TYPE_GUEST){
-                    throw new GraphQLError("ERROR_CANNOT_ASSIGN_TO_A_GUEST_RELATIONSHIP");
+                    throw new GraphQLError(ERROR_CODES.EC00165.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00165}});
                 }
                 else if(existingTenantRel.relType === USER_TENANT_REL_TYPE_GUEST && relType === USER_TENANT_REL_TYPE_PRIMARY){
                     // Assign the incoming as primary
@@ -341,7 +351,7 @@ class IdentityService {
         const rel: UserTenantRel | null = await identityDao.getUserTenantRel(tenantId, userId);
         if(rel){
             if(rel.relType === USER_TENANT_REL_TYPE_PRIMARY){
-                throw new GraphQLError("ERROR_CANNOT_CANNOT_REMOVE_A_PRIMARY_RELATIONSHIP");
+                throw new GraphQLError(ERROR_CODES.EC00166.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00166}});
             }
             else {
                 await identityDao.removeUserFromTenant(tenantId, userId);
@@ -361,7 +371,7 @@ class IdentityService {
             await identityDao.updateUser(user);
         }
         else{
-            throw new GraphQLError("ERROR_USER_DOES_NOT_EXIST");
+            throw new GraphQLError(ERROR_CODES.EC00013.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00013}});
         }
         return Promise.resolve();
     }
@@ -378,15 +388,15 @@ class IdentityService {
 
     public async swapPrimaryAndRecoveryEmail(): Promise<boolean> {
         if(!this.oidcContext.portalUserProfile?.userId){            
-            throw new GraphQLError("ERROR_INVALID_TOKEN");
+            throw new GraphQLError(ERROR_CODES.EC00167.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00167}});
         }
         const user: User | null = await identityDao.getUserBy("id", this.oidcContext.portalUserProfile.userId);
         if(user === null){
-            throw new GraphQLError("ERROR_INVALID_USER");
+            throw new GraphQLError(ERROR_CODES.EC00013.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00013}});
         }
         const userRecoveryEmail: UserRecoveryEmail | null = await identityDao.getUserRecoveryEmail(this.oidcContext.portalUserProfile.userId);
         if(userRecoveryEmail === null){
-            throw new GraphQLError("ERROR_NO_RECOVERY_EMAIL_EXISTS");
+            throw new GraphQLError(ERROR_CODES.EC00168.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00168}});
         }
 
         // Swap both the emails and the verification status.
@@ -411,7 +421,7 @@ class IdentityService {
         if(userId === this.oidcContext.portalUserProfile?.userId){
             const isAuthorized: boolean = containsScope(USER_UPDATE_SCOPE, this.oidcContext.portalUserProfile.scope);
             if(!isAuthorized){
-                throw new GraphQLError("ERROR_NOT_AUTHORIZED_FOR_USER_UPDATE");
+                throw new GraphQLError(ERROR_CODES.EC00154.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00154}});
             }
         }
         // Otherwise somebody is making the request on the user's behalf.
@@ -562,19 +572,19 @@ class IdentityService {
     public async createTOTP(userId: string): Promise<TotpResponse> {
         const user: User | null = await identityDao.getUserBy("id", userId);
         if(!user){
-            throw new GraphQLError("ERROR_USER_NOT_FOUND");
+            throw new GraphQLError(ERROR_CODES.EC00013.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00013}});
         }
         let userMfaRel: UserMfaRel | null = await identityDao.getTOTP(userId);
 
         let totp: OTPAuth.TOTP | null = null;        
         if(userMfaRel){
-            throw new GraphQLError("ERROR_TOTP_ALREADY_CONFIGURED_FOR_THE_USER");            
+            throw new GraphQLError(ERROR_CODES.EC00169.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00169}});
         }
         else{
             const newSecret = new OTPAuth.Secret({size: 20});            
             const encryptedSecret = await kms.encrypt(newSecret.base32);
             if(!encryptedSecret){
-                throw new GraphQLError("ERROR_UNABLE_TO_GENERATE_TOPT_SECRET");
+                throw new GraphQLError(ERROR_CODES.EC00170.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00170}});
             }
 
             // Save the data using the encrypted value, but
@@ -620,12 +630,12 @@ class IdentityService {
     public async validateTOTP(userId: string, totpValue: string): Promise<boolean> {
         const userMfaRel: UserMfaRel | null = await identityDao.getTOTP(userId);
         if(!userMfaRel || !userMfaRel.totpSecret){
-            throw new GraphQLError("ERROR_NO_TOTP_ASSIGNED_TO_USER");
+            throw new GraphQLError(ERROR_CODES.EC00171.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00171}});
         }
 
         const secret = await kms.decrypt(userMfaRel.totpSecret);
         if(!secret){
-            throw new GraphQLError("ERROR_UNABLE_TO_DETERMINE_TOPT_SECRET");
+            throw new GraphQLError(ERROR_CODES.EC00172.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00172}});
         }
 
         // Microsoft authentication only support SHA1 as a hashing algorithm (at the momemt)
@@ -722,17 +732,17 @@ class IdentityService {
         // Validate the input
         const user: User | null = await identityDao.getUserBy("id", userId);
         if(!user){
-            throw new GraphQLError("ERROR_USER_DOES_NOT_EXIST");
+            throw new GraphQLError(ERROR_CODES.EC00013.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00013}});
         }
         
         const existingChallenge: Fido2Challenge | null = await identityDao.getFIDO2Challenge(userId);
         if(!existingChallenge){
-            throw new GraphQLError("ERROR_NO_EXISTING_CHALLENGE_FOR_USER");
+            throw new GraphQLError(ERROR_CODES.EC00173.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00173}});
         }
         if(existingChallenge.expiresAtMs < Date.now()){
             // Delete it and throw an error
             await identityDao.deleteFIDO2Challenge(userId);
-            throw new GraphQLError("ERROR_CHALLENGE_HAS_EXPIRED");
+            throw new GraphQLError(ERROR_CODES.EC00174.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00174}});
         }
 
         let verification: VerifiedRegistrationResponse;
@@ -757,16 +767,16 @@ class IdentityService {
                 expectedRPID: MFA_ID
             });
         }
-        catch(error){
-            // TODO 
-            // Log the error for real
-            console.log(error);            
+        catch(error: any){
             await identityDao.deleteFIDO2Challenge(userId);
-            throw new GraphQLError("ERROR_VALIDATING_FIDO2_REGISTRATION");
+            throw new GraphQLError(error.message);
         }
         const { verified, registrationInfo } = verification;
+        if(!verified){
+            throw new GraphQLError(ERROR_CODES.EC00121.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00121}});
+        }
         if(!registrationInfo){
-            throw new GraphQLError("ERROR_UNABLE_OBTAIN_REGISTRATION_INFO_FOR_THE_KEY");
+            throw new GraphQLError(ERROR_CODES.EC00175.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00175}});
         }
 
         const count: number = registrationInfo.credential.counter;
@@ -775,9 +785,7 @@ class IdentityService {
         const buffer = Buffer.from(publicKeyUint8Array);        
         const publicKeyAsString = buffer.toString("base64url");
 
-        if(!verified){
-            throw new GraphQLError("ERROR_FIDO2_REGISTRATION_IS_INVALID");
-        }
+        
 
         await identityDao.deleteFIDO2Challenge(userId);
         const userMfaRel: UserMfaRel = {
@@ -816,13 +824,13 @@ class IdentityService {
         // does the user exist and are they not locked, not enabled, or marked for delete?
         const user: User | null = await identityDao.getUserBy("id", userId);
         if(!user){
-            throw new GraphQLError("ERROR_USER_DOES_NOT_EXIST");
+            throw new GraphQLError(ERROR_CODES.EC00013.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00013}});
         }
         if(user.locked === true || user.markForDelete === true){
-            throw new GraphQLError("ERROR_USER_IS_NOT_ELIGIBLE_FOR_MODIFICATION");
+            throw new GraphQLError(ERROR_CODES.EC00146.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00146}});
         }
         if(sessionToken === null && user.enabled === false){
-            throw new GraphQLError("ERROR_USER_IS_NOT_ENABLED_FOR_SECURITY_KEY_REGISTRATION");
+            throw new GraphQLError(ERROR_CODES.EC00176.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00176}});
         }
         if(sessionToken !== null && sessionTokenType === SESSION_TOKEN_TYPE_REGISTRATION){
             const arrUserRegistrationStates: Array<UserRegistrationState> = await this.getSortedRegistartionStates(sessionToken);
@@ -830,7 +838,7 @@ class IdentityService {
                 (value: UserRegistrationState) => (value.registrationState === RegistrationState.ConfigureSecurityKeyRequired || value.registrationState === RegistrationState.ConfigureSecurityKeyOptional)
             );
             if(index < 0){
-                throw new GraphQLError("ERROR_INVALID_REGISTRATION_TOKEN_FOR_SECURITY_KEY_REGISTRATION");
+                throw new GraphQLError(ERROR_CODES.EC00150.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00150}});
             }
         }
         if(sessionToken !== null && sessionTokenType === SESSION_TOKEN_TYPE_AUTHENTICATION){
@@ -840,7 +848,7 @@ class IdentityService {
                 (value: UserAuthenticationState) => (value.authenticationState === AuthenticationState.ConfigureSecurityKey)
             );
             if(index < 0){
-                throw new GraphQLError("ERROR_INVALID_AUTHENTICATION_TOKEN_FOR_SECURITY_KEY_REGISTRATION");
+                throw new GraphQLError(ERROR_CODES.EC00095.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00095}});
             }
         }
 
@@ -876,13 +884,13 @@ class IdentityService {
         // does the user exist and are they not locked, not enabled, or marked for delete?
         const user: User | null = await identityDao.getUserBy("id", userId);
         if(!user){
-            throw new GraphQLError("ERROR_USER_DOES_NOT_EXIST");
+            throw new GraphQLError(ERROR_CODES.EC00013.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00013}});
         }
         if(user.locked === true || user.markForDelete === true){
-            throw new GraphQLError("ERROR_USER_IS_NOT_ELIGIBLE_FOR_MODIFICATION");
+            throw new GraphQLError(ERROR_CODES.EC00146.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00146}});
         }
         if(sessionToken === null && user.enabled === false){
-            throw new GraphQLError("ERROR_USER_IS_NOT_ENABLED_FOR_SECURITY_KEY_REGISTRATION");
+            throw new GraphQLError(ERROR_CODES.EC00176.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00176}});
         }
         if(sessionToken !== null && sessionTokenType === SESSION_TOKEN_TYPE_REGISTRATION){
             const arrUserRegistrationState: Array<UserRegistrationState> = await this.getSortedRegistartionStates(sessionToken);
@@ -890,7 +898,7 @@ class IdentityService {
                 (value: UserRegistrationState) => (value.registrationState === RegistrationState.ValidateSecurityKey)
             );
             if(index < 0){
-                throw new GraphQLError("ERROR_INVALID_REGISTRATION_TOKEN_FOR_SECURITY_KEY_VALIDATION");
+                throw new GraphQLError(ERROR_CODES.EC00150.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00150}});
             }
         }
         if(sessionToken !== null && sessionTokenType === SESSION_TOKEN_TYPE_AUTHENTICATION){
@@ -899,14 +907,14 @@ class IdentityService {
                 (value: UserAuthenticationState) => (value.authenticationState === AuthenticationState.ValidateSecurityKey)
             );
             if(index < 0){
-                throw new GraphQLError("ERROR_INVALID_AUTHENTICATION_TOKEN_FOR_SECURITY_KEY_VALIDATION");
+                throw new GraphQLError(ERROR_CODES.EC00095.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00095}});
             }
         }
 
         // Does the user have a security key configured?
         const userMfaRel: UserMfaRel | null = await identityDao.getFIDOKey(userId);
         if(!userMfaRel){
-            throw new GraphQLError("ERROR_NO_SECURITY_KEY_CONFIGURED_FOR_USER");
+            throw new GraphQLError(ERROR_CODES.EC00177.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00177}});
         }
 
         // If there is an existing challenge, then delete it and create a new one
@@ -941,28 +949,28 @@ class IdentityService {
 
         const existingChallenge: Fido2Challenge | null = await identityDao.getFIDO2Challenge(userId);
         if(!existingChallenge){
-            throw new GraphQLError("ERROR_NO_EXISTING_CHALLENGE_FOR_USER");
+            throw new GraphQLError(ERROR_CODES.EC00178.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00178}});
         }
         if(existingChallenge.expiresAtMs < Date.now()){
             // Delete it and throw an error
             await identityDao.deleteFIDO2Challenge(userId);
-            throw new GraphQLError("ERROR_CHALLENGE_HAS_EXPIRED");
+            throw new GraphQLError(ERROR_CODES.EC00174.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00174}});
         }
 
         const userMfaRel: UserMfaRel | null = await identityDao.getFIDOKey(userId);
         if(!userMfaRel){
-            throw new GraphQLError("ERROR_NO_KEY_CONFIGURED_FOR_USER");
+            throw new GraphQLError(ERROR_CODES.EC00177.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00177}});
         }
         if(!userMfaRel.fido2CredentialId){
-            throw new GraphQLError("ERROR_INVALID_MFA_TYPE");
+            throw new GraphQLError(ERROR_CODES.EC00179.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00179}});
         }
         if(userMfaRel.fido2CredentialId !== fido2KeyAuthenticationInput.id){
-            throw new GraphQLError("ERROR_INVALID_CREDENTIAL_ID");
+            throw new GraphQLError(ERROR_CODES.EC00180.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00180}});
         }
 
         const count: number | null = await identityDao.getFido2Count(userId);
         if(count === null){
-            throw new GraphQLError("ERROR_CANNOT_OBTAIN_COUNTER_VALUE");
+            throw new GraphQLError(ERROR_CODES.EC00181.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00181}});
         }
        
         const publicKeyBuffer: Buffer = Buffer.from(userMfaRel.fido2PublicKey || "", "base64url");
@@ -997,8 +1005,8 @@ class IdentityService {
 
             const { verified, authenticationInfo } = verification;
             if(!verified || !authenticationInfo){
-                await identityDao.deleteFIDO2Challenge(userId);
-                throw new GraphQLError("ERROR_UNABLE_TO_VERIFY_AUTHENTICATOR")
+                await identityDao.deleteFIDO2Challenge(userId);                
+                throw new GraphQLError(ERROR_CODES.EC00121.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00121}});
             }
             const newCount = authenticationInfo.newCounter;            
             await identityDao.deleteFIDO2Challenge(userId);
@@ -1006,12 +1014,9 @@ class IdentityService {
             return true;
 
         }
-        catch(error){
-            // TODO
-            // log error
-            console.log(error);
+        catch(error: any){
             await identityDao.deleteFIDO2Challenge(userId);
-            throw new GraphQLError("ERROR_CANNOT_VALIDATE_AUTHENTICATION_KEY");
+            throw new GraphQLError(error.message);
         }        
     }
 
@@ -1164,12 +1169,12 @@ class IdentityService {
                 
         const preAuthenticationState: PreAuthenticationState | null = await authDao.getPreAuthenticationState(preAuthToken);
         if(preAuthenticationState === null){
-            throw new GraphQLError("ERROR_INVALID_PRE_AUTHENTICATION_TOKEN");
+            throw new GraphQLError(ERROR_CODES.EC00182.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00182}});
         }
         await authDao.deletePreAuthenticationState(preAuthToken);
         if(preAuthenticationState.expiresAtMs < Date.now()){
             await authDao.deletePreAuthenticationState(preAuthToken);
-            throw new GraphQLError("ERROR_PRE_AUTHENTICATION_TOKEN_IS_EXPIRED");
+            throw new GraphQLError(ERROR_CODES.EC00183.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00183}});
         }
 
         const authorizationCodeData: AuthorizationCodeData = {
