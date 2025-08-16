@@ -14,6 +14,7 @@ import IdentityDao from "../dao/identity-dao";
 import { authorizeByScopeAndTenant, containsScope, ServiceAuthorizationWrapper } from "@/utils/authz-utils";
 import { ERROR_CODES } from "../models/error";
 import { error } from "console";
+import { logWithDetails } from "../logging/logger";
 
 const scopeDao: ScopeDao = DaoFactory.getInstance().getScopeDao();
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
@@ -652,9 +653,8 @@ class ScopeService {
                 index: SEARCH_INDEX_REL_SEARCH,
             });         
         }       
-        catch(err){
-            // TODO
-            // Log any errors
+        catch(err: any){
+            logWithDetails("error", `Error removing scope from tenant. ${err.message}`, {...err, tenantId, scopeId});
         }
     }
 
