@@ -10,6 +10,7 @@ import { DaoFactory } from "../data-sources/dao-factory";
 import Kms from "../kms/kms";
 import { authorizeByScopeAndTenant, ServiceAuthorizationWrapper } from "@/utils/authz-utils";
 import { ERROR_CODES } from "../models/error";
+import { logWithDetails } from "../logging/logger";
 
 
 const searchClient: Client = getOpenSearchClient();
@@ -81,7 +82,7 @@ class FederatedOIDCProviderService {
                 },
             }
         );
-        const f = await getData(this.oidcContext, [FEDERATED_OIDC_PROVIDER_READ_SCOPE, TENANT_READ_ALL_SCOPE], federatedOIDCProviderId);
+        const f = await getData(this.oidcContext, [FEDERATED_OIDC_PROVIDER_READ_SCOPE, TENANT_READ_ALL_SCOPE], federatedOIDCProviderId);        
         return Promise.resolve(f);
     }
 
@@ -222,9 +223,8 @@ class FederatedOIDCProviderService {
                 index: SEARCH_INDEX_REL_SEARCH
             });
         }
-        catch(err){
-            // TODO
-            // Handle errors deleting search record.
+        catch(err: any){
+            logWithDetails("error", `Error removing rel search record for tenant and federated OIDC provider. ${err.message}.`, {...err, tenantId, federatedOidcProviderId});
         }
         return Promise.resolve();
     }

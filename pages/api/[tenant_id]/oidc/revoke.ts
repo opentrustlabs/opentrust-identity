@@ -7,8 +7,8 @@ import { base64Decode, generateHash } from '@/utils/dao-utils';
 import ClientAuthValidationService from '@/lib/service/client-auth-validation-service';
 import { RefreshData } from '@/graphql/generated/graphql-types';
 import { JWTPrincipal } from '@/lib/models/principal';
+import { logWithDetails } from '@/lib/logging/logger';
 
-const identityDao: IdentityDao = DaoFactory.getInstance().getIdentityDao();
 const authDao: AuthDao = DaoFactory.getInstance().getAuthDao();
 const jwtService: JwtService = new JwtService();
 const clientAuthValidationService: ClientAuthValidationService = new ClientAuthValidationService();
@@ -150,9 +150,8 @@ export default async function handler(
                 try{
                     principal = await jwtService.validateJwt(t);
                 }
-                catch(err){
-                    // TODO
-                    // Log error
+                catch(err: any){
+                    logWithDetails("error", "Error revoking a user refresh token. Could not create a principal object from the supplied token", {...err});
                     res.status(403).end();
                     return;
                 }

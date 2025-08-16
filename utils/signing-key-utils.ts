@@ -36,10 +36,6 @@ export function createSigningKey(commonName: string, organizationName: string, e
         }
     );
 
-    //console.log(privateKey);
-    //console.log(publicKey);
-
-
     // 3.   We need to convert any encrypted private key (starting with 
     //      -----BEGIN ENCRYPTED PRIVATE KEY-----) to the basic private
     //      key that forge can work with. We can use the built-in NodeJS
@@ -53,8 +49,6 @@ export function createSigningKey(commonName: string, organizationName: string, e
 
     const privateKeyObject: KeyObject = createPrivateKey(privateKeyInput);
     const decryptedPrivateKey = privateKeyObject.export({ format: "pem", type: "pkcs8" }).toString();
-
-    // console.log(decryptedPrivateKey);
 
     // 4.   Use the forge library to generate a csr for our self-signed certificate
     //      and then sign it.
@@ -75,8 +69,6 @@ export function createSigningKey(commonName: string, organizationName: string, e
     
     csr.sign(pki.privateKeyFromPem(decryptedPrivateKey), md.sha256.create());
 
-    // console.log(pki.certificationRequestToPem(csr));
-
     // 5.   Use the forge library to create the certificate and sign it.
     const cert: pki.Certificate = pki.createCertificate();
     // Always prefix the random hex value with a 0 to make sure these are
@@ -95,8 +87,6 @@ export function createSigningKey(commonName: string, organizationName: string, e
     cert.publicKey = pki.publicKeyFromPem(publicKey);
     cert.sign(pki.privateKeyFromPem(decryptedPrivateKey), md.sha256.create());
     const pemCert = pki.certificateToPem(cert);
-
-    // console.log(pemCert);
 
     return {
         passphrase,

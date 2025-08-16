@@ -17,6 +17,7 @@ import ScopeDao from "../dao/scope-dao";
 import RateLimitDao from "../dao/rate-limit-dao";
 import ContactDao from "../dao/contact-dao";
 import SecretShareDao from "../dao/secret-share-dao";
+import { logWithDetails } from "../logging/logger";
 
 
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
@@ -66,9 +67,8 @@ class DeletionService {
                 await secretShareDao.deleteExpiredData();
             }
         }
-        catch(err){
-            // TODO 
-            // LOG error
+        catch(err: any){            
+            logWithDetails("error", `Error deleting expired records. ${err.message}.`, {...err});
         }
         await schedulerDao.deleteSchedulerLock(schedulerLock.lockInstanceId);
     }
@@ -143,11 +143,11 @@ class DeletionService {
 
             }
         }
-        catch(err){
-            // TODO
-            // Log error
-            await schedulerDao.deleteSchedulerLock(schedulerLock.lockInstanceId);
+        catch(err: any){
+            logWithDetails("error", `Error deleting marked-for-delete records. ${err.message}.`, {...err, ...m});
         }
+        await schedulerDao.deleteSchedulerLock(schedulerLock.lockInstanceId);
+        
     }
 
     protected async deleteAuthenticationGroup(authenticationGroupId: string, callback: CompletionCallback): Promise<void> {
@@ -157,10 +157,8 @@ class DeletionService {
             this.deleteRelSearchRecords(authenticationGroupId);
             callback.onFinished();
         }
-        catch (err) {
-            // TODO
-            // Log error
-            console.log(JSON.stringify(err));
+        catch (err: any) {
+            logWithDetails("error", `Error deleting authentication group. ${err.message}.`, {...err, authenticationGroupId});
         }
     }
 
@@ -171,10 +169,8 @@ class DeletionService {
             this.deleteRelSearchRecords(groupId);
             callback.onFinished();
         }
-        catch (err) {
-            // TODO
-            // Log error
-            console.log(JSON.stringify(err));
+        catch (err: any) {
+            logWithDetails("error", `Error deleting authorization group. ${err.message}.`, {...err, groupId});
         }
     }
 
@@ -185,10 +181,8 @@ class DeletionService {
             this.deleteRelSearchRecords(clientId);
             callback.onFinished();
         }
-        catch (err) {
-            // TODO
-            // Log error
-            console.log(JSON.stringify(err));
+        catch (err: any) {
+            logWithDetails("error", `Error deleting client. ${err.message}.`, {...err, clientId});
         }
     }
 
@@ -199,10 +193,8 @@ class DeletionService {
             this.deleteRelSearchRecords(providerId);
             callback.onFinished();
         }
-        catch (err) {
-            // TODO
-            // Log error
-            console.log(JSON.stringify(err));
+        catch (err: any) {
+            logWithDetails("error", `Error deleting federated OIDC provider. ${err.message}.`, {...err, providerId});
         }
     }
 
@@ -213,10 +205,8 @@ class DeletionService {
             this.deleteRelSearchRecords(serviceGroupId);
             callback.onFinished();
         }
-        catch (err) {
-            // TODO
-            // Log error
-            console.log(JSON.stringify(err));
+        catch (err: any) {
+            logWithDetails("error", `Error deleting rate limit service group. ${err.message}.`, {...err, serviceGroupId});
         }
     }
 
@@ -227,10 +217,8 @@ class DeletionService {
             this.deleteRelSearchRecords(scopeId);
             callback.onFinished();
         }
-        catch (err) {
-            // TODO
-            // Log error
-            console.log(JSON.stringify(err));
+        catch (err: any) {
+            logWithDetails("error", `Error deleting scope. ${err.message}.`, {...err, scopeId});
         }
     }
 
@@ -241,10 +229,8 @@ class DeletionService {
             this.deleteRelSearchRecords(keyId);
             callback.onFinished();
         }
-        catch (err) {
-            // TODO
-            // Log error
-            console.log(JSON.stringify(err));
+        catch (err: any) {
+            logWithDetails("error", `Error deleting signing key. ${err.message}.`, {...err, keyId});
         }
     }
 
@@ -255,10 +241,8 @@ class DeletionService {
             this.deleteRelSearchRecords(userId);
             callback.onFinished();
         }
-        catch (err) {
-            // TODO
-            // Log error
-            console.log(JSON.stringify(err));
+        catch (err: any) {
+            logWithDetails("error", `Error deleting user. ${err.message}.`, {...err, userId});
         }
     }
 
@@ -333,10 +317,8 @@ class DeletionService {
             callback.onFinished();
 
         }
-        catch(err){
-            // TODO
-            // Log error
-            console.log(JSON.stringify(err));
+        catch (err: any) {
+            logWithDetails("error", `Error deleting tenant. ${err.message}.`, {...err, tenantId});
         }
     }
 
@@ -347,10 +329,8 @@ class DeletionService {
                 index: SEARCH_INDEX_OBJECT_SEARCH
             });
         }
-        catch (err) {
-            // TODO
-            // Log error
-            console.log(JSON.stringify(err));
+        catch (err: any) {
+            logWithDetails("error", `Error deleting object search record. ${err.message}.`, {...err, id});
         }
     }
 
@@ -386,10 +366,8 @@ class DeletionService {
                 scroll: "240m"
             });
         }
-        catch (err) {
-            // TODO
-            // Log error
-            console.log(JSON.stringify(err));
+        catch (err: any) {
+            logWithDetails("error", `Error deleting rel search index. ${err.message}.`, {...err, id});
         }
     }
 }

@@ -274,7 +274,7 @@ class TenantService {
             throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
         }
         
-        return tenantDao.createAnonymousUserConfiguration(tenantId, anonymousUserConfiguration);
+        return tenantDao.createAnonymousUserConfiguration(anonymousUserConfiguration);
     }
 
     public async updateAnonymousUserConfiguration(anonymousUserConfiguration: TenantAnonymousUserConfiguration): Promise<TenantAnonymousUserConfiguration>{
@@ -430,6 +430,29 @@ class TenantService {
         else{
             return tenantDao.createTenantLegacyUserMigrationConfiguration(tenantLegacyUserMigrationConfig);
         }
+    }
+
+    public async setTenantAnonymousUserConfig(tenantAnonymousUserConfigInput: TenantAnonymousUserConfiguration): Promise<TenantAnonymousUserConfiguration> {
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_UPDATE_SCOPE], tenantAnonymousUserConfigInput.tenantId); 
+        if(!authResult.isAuthorized){
+            throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
+        }
+        const existing: TenantAnonymousUserConfiguration | null = await tenantDao.getAnonymousUserConfiguration(tenantAnonymousUserConfigInput.tenantId);
+        if(existing){
+            return tenantDao.updateAnonymousUserConfiguration(tenantAnonymousUserConfigInput);
+        }
+        else{
+            return tenantDao.createAnonymousUserConfiguration(tenantAnonymousUserConfigInput);
+        }
+    }
+
+    public async removeTenantAnonymousUserConfig(tenantId: string): Promise<void> {
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_UPDATE_SCOPE], tenantId); 
+        if(!authResult.isAuthorized){
+            throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
+        }
+        await tenantDao.deleteAnonymousUserConfiguration(tenantId);
+        return;
     }
 
     public async getDomainsForTenantRestrictedAuthentication(tenantId: string): Promise<Array<TenantRestrictedAuthenticationDomainRel>>{

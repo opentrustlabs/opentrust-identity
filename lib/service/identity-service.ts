@@ -22,6 +22,7 @@ import client from "@/components/apollo-client/apollo-client";
 import { error } from "console";
 import { ERROR_CODES } from "../models/error";
 import FederatedOIDCProviderDao from "../dao/federated-oidc-provider-dao";
+import { logWithDetails } from "../logging/logger";
 
 
 const identityDao: IdentityDao = DaoFactory.getInstance().getIdentityDao();
@@ -1112,15 +1113,21 @@ class IdentityService {
             scroll: "240m"            
         })
         .then(
-            (value: UpdateByQuery_Response) => {
-                // TODO
-                // Log results
+            (value: UpdateByQuery_Response) => {        
+                
+                logWithDetails("info", `Update user in updateSearchIndexUserDocuments.`, {
+                    userId: user.userId, 
+                    firstName: user.firstName, 
+                    lastName: user.lastName, 
+                    statusCode: value.statusCode,
+                    aborted: value.meta.aborted,
+                    attempts: value.meta.attempts
+                });
             }
         )
         .catch(
-            (error) => {
-                // TODO
-                // Log error                
+            (err: any) => {
+                logWithDetails("error", `Error in updateSearchIndexUserDocuments. ${err.message}.`, {...err, userId: user.userId, firstName: user.firstName, lastName: user.lastName});
             }
         );
     }

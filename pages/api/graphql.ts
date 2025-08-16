@@ -5,7 +5,7 @@ import { ApolloServerErrorCode } from '@apollo/server/errors';
 import { ErrorDetail, PortalUserProfile, Tenant, typeDefs } from "@/graphql/generated/graphql-types";
 import resolvers from "@/graphql/resolvers/oidc-resolvers";
 import { NextApiRequest, NextApiResponse } from "next";
-import { ERROR_CODES, ErrorResponseBody } from "@/lib/models/error";
+import { ERROR_CODES} from "@/lib/models/error";
 import JwtServiceUtils from "@/lib/service/jwt-service-utils";
 import { OIDCContext } from "@/graphql/graphql-context";
 import { DaoFactory } from "@/lib/data-sources/dao-factory";
@@ -13,6 +13,8 @@ import TenantDao from "@/lib/dao/tenant-dao";
 import { initSchedulers } from "@/lib/service/init-scheduled-services";
 import { HTTP_HEADER_X_GEO_LOCATION, HTTP_HEADER_X_IP_ADDRESS } from "@/utils/consts";
 import { randomUUID } from "node:crypto";
+import { logWithDetails } from "@/lib/logging/logger";
+import { GraphQLFormattedError } from "graphql/error";
 
 
 declare global {
@@ -41,7 +43,6 @@ if(!global.schedulerInitialized){
 
 const jwtServiceUtils: JwtServiceUtils = new JwtServiceUtils();
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
-const allowErrorStackTraces: boolean = ALLOW_GRAPHQL_ERROR_STACK_TRACES && ALLOW_GRAPHQL_ERROR_STACK_TRACES === "true" ? false : true;
 
 
 const server = new ApolloServer(
@@ -58,7 +59,11 @@ const server = new ApolloServer(
                     })
                 :   ApolloServerPluginLandingPageLocalDefault({ footer: false })
         ],
-        formatError(formattedError) {
+        formatError(formattedError: GraphQLFormattedError) {            
+
+            const traceId: string = randomUUID().toString();
+            logWithDetails("error", formattedError.message, {formattedError, traceId});
+            
             if(formattedError && formattedError.extensions?.code === ApolloServerErrorCode.GRAPHQL_VALIDATION_FAILED){
                 return {
                     ...formattedError, 
@@ -68,10 +73,10 @@ const server = new ApolloServer(
             // This line below is for the case when an uncaught exception is thrown somewhere and we do not
             // want to show the actual error to the user. We will, however, log the original error with a
             // trace ID (which we will also return to the client) and which can be used for debugging purposes.
-            // TODO: log the error
+            
 
-            const traceId: string = randomUUID().toString();
-            const errorDetail: ErrorDetail | null = formattedError.extensions?.errorDetail as ErrorDetail || ERROR_CODES.DEFAULT;
+            
+            const errorDetail: ErrorDetail = formattedError.extensions?.errorDetail as ErrorDetail || ERROR_CODES.DEFAULT;
             if(formattedError && formattedError.extensions?.lang){                
                 return {
                     ...formattedError,

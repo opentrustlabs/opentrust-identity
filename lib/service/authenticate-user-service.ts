@@ -26,9 +26,6 @@ const authDao: AuthDao = DaoFactory.getInstance().getAuthDao();
 const federatedOIDCProviderDao: FederatedOIDCProviderDao = DaoFactory.getInstance().getFederatedOIDCProvicerDao();
 const authenticationGroupDao: AuthenticationGroupDao = DaoFactory.getInstance().getAuthenticationGroupDao();
 
-const {
-    SECURITY_EVENT_CALLBACK_URI
-} = process.env;
 
 class AuthenticateUserService extends IdentityService {
 
@@ -471,17 +468,15 @@ class AuthenticateUserService extends IdentityService {
                 stateOrder.push(AuthenticationState.RedirectToIamPortal);
             }
 
-            // Finally, send a security event message to a web hook if configured. This may be modfied
-            // in the during authentication if a user enters a duress password (if allowed).
-            // This should ALWAYS be the last entry and should never be exposed to any client.
-            if(SECURITY_EVENT_CALLBACK_URI){
-                if(preAuthToken){
-                    stateOrder.push(AuthenticationState.PostAuthnStateSendSecurityEventSuccessLogon);
-                }
-                else if(deviceCodeId){
-                    stateOrder.push(AuthenticationState.PostAuthnStateSendSecurityEventDeviceRegistered);
-                }
+            // Finally, send a security event message to a web hook, if configured, or log it. This final event
+            // may be modfied if, during authentication, a user enters a duress password (if that is allowed).
+            // These event messages or logging should ALWAYS be the last entry and should never be exposed to any client.            
+            if(preAuthToken){
+                stateOrder.push(AuthenticationState.PostAuthnStateSendSecurityEventSuccessLogon);
             }
+            else if(deviceCodeId){
+                stateOrder.push(AuthenticationState.PostAuthnStateSendSecurityEventDeviceRegistered);
+            }            
 
             const arrUserAuthenticationStates: Array<UserAuthenticationState> = [];
             const authenticationSessionToken: string = generateRandomToken(20, "hex");
@@ -755,13 +750,11 @@ class AuthenticateUserService extends IdentityService {
                 }
                 stateOrder.push(AuthenticationState.RedirectToIamPortal);
 
-                // Finally, send a security event message to a web hook if configured. This may be modfied
-                // in the during authentication if a user enters a duress password (if allowed).
-                // This should ALWAYS be the last entry and should never be exposed to any client.
-                if(SECURITY_EVENT_CALLBACK_URI){
-                    stateOrder.push(AuthenticationState.PostAuthnStateSendSecurityEventSuccessLogon);
-                }
-
+                // Finally, send a security event message to a web hook, if configured, or log it. This final event
+                // may be modfied if, during authentication, a user enters a duress password (if that is allowed).
+                // These event messages or logging should ALWAYS be the last entry and should never be exposed to any client.  
+                stateOrder.push(AuthenticationState.PostAuthnStateSendSecurityEventSuccessLogon);
+                
                 const arrUserAuthenticationStates: Array<UserAuthenticationState> = [];
                 const authenticationSessionToken: string = generateRandomToken(20, "hex");
                 // authentication completion will expire after 60 minutes. 

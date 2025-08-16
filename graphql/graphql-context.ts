@@ -7,5 +7,5 @@ export interface OIDCContext {
     requestCache: Map<string, any>,
     ipAddress: string | null,
     geoLocation: string | null,
-    deviceFingerPrint: string | null // Not implemented yet. For future enhancements...
+    deviceFingerPrint: string | null // Not implemented yet. For future enhancements... 
 }

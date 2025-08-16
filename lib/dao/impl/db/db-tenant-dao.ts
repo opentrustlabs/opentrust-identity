@@ -42,16 +42,6 @@ class DBTenantDao extends TenantDao {
         return Promise.resolve(t as any as Tenant);
     }
 
-    // TODO
-    // Do we want to index the root tenant? Or do we want
-    // to call out the root tenant separately for those who
-    // have access to it. The call out would be on the left
-    // hand navigation for root tenant access and would look
-    // like:
-    // Root Tenant
-    // Tenants
-    // Clients
-    // ...etc.
     public async updateRootTenant(tenant: Tenant): Promise<Tenant> {
         tenant.tenantType = TENANT_TYPE_ROOT_TENANT;
         const sequelize: Sequelize = await DBDriver.getConnection();
@@ -158,7 +148,6 @@ class DBTenantDao extends TenantDao {
         return Promise.resolve(model);
     }
     
-    //tenantAnonymousUserConfiguration
     public async getAnonymousUserConfiguration(tenantId: string): Promise<TenantAnonymousUserConfiguration | null> {
         const sequelize: Sequelize = await DBDriver.getConnection();
         const entity: TenantAnonymousUserConfigurationEntity | null = await sequelize.models.tenantAnonymousUserConfiguration.findOne({
@@ -169,7 +158,7 @@ class DBTenantDao extends TenantDao {
         return entity ? Promise.resolve(entity.dataValues as TenantAnonymousUserConfiguration) : Promise.resolve(null);
     }
 
-    public async createAnonymousUserConfiguration(tenantId: string, anonymousUserConfiguration: TenantAnonymousUserConfiguration): Promise<TenantAnonymousUserConfiguration> {
+    public async createAnonymousUserConfiguration(anonymousUserConfiguration: TenantAnonymousUserConfiguration): Promise<TenantAnonymousUserConfiguration> {
         const sequelize: Sequelize = await DBDriver.getConnection();
         await sequelize.models.tenantAnonymousUserConfiguration.create(anonymousUserConfiguration);        
         return Promise.resolve(anonymousUserConfiguration);
