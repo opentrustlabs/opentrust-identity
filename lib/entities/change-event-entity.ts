@@ -9,12 +9,12 @@ class ChangeEventEntity extends Model {
                 primaryKey: true,
                 field: "changeeventid"
             },
-            objectid: {
+            objectId: {
                 type: DataTypes.STRING,
                 primaryKey: true,
                 field: "objectid"
             },
-            objecttype: {
+            objectType: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,

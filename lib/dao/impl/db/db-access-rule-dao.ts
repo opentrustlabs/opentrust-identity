@@ -55,8 +55,6 @@ class DBAccessRuleDao extends AccessRuleDao {
     }
 
     public async deleteAccessRule(accessRuleId: string): Promise<void> {
-        // TODO
-        // DELETE RELATIONSHIPS
         throw new Error("Method not implemented.");
     }
 

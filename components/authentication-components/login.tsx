@@ -261,8 +261,6 @@ const Login: React.FC<LoginProps>= ({
 
 
     const handleUserNameInput = () => {
-        console.log("will handle login");
-        console.log("device Code Id Is: " + userAuthenticationState.deviceCodeId);
         portalLoginEmailHandler({
             variables: {
                 username: username,

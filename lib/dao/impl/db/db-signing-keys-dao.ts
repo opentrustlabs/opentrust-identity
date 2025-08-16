@@ -33,10 +33,7 @@ class DBSigningKeysDao extends SigningKeysDao {
 
         return entity ? Promise.resolve(this.entityToModel(entity)) : Promise.resolve(null);
     }
-
-    // TODO
-    // Remove either the password or the private key from the returned data.
-    // Those values can only be viewed by somebody with the correct permissions.
+ 
     protected entityToModel(entity: SigningKeyEntity): SigningKey {
 
         const key: SigningKey = {

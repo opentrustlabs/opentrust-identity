@@ -241,7 +241,7 @@ class ScopeService {
             throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
         }
 
-        // TODO
+        // FUTURE ENHANCEMENT
         // Enhance the tenant_available_scope to include a markfordelete field (boolean).
         // There might be 1000s of relationships that need to be deleted and we do not
         // want to lock any tables. That means that the deletion should proceed outside

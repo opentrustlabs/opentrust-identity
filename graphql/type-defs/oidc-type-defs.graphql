@@ -796,8 +796,8 @@ type Contact {
 
 type ChangeEvent {
     changeEventId: String!
-    objectid: String!
-    objecttype: String!
+    objectId: String!
+    objectType: String!
     changeEventType: String!
     changeEventTypeId: String
     changeEventClass: String!

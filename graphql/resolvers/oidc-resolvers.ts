@@ -660,18 +660,21 @@ const resolvers: Resolvers = {
             await tenantService.setTenantLegacyUserMigrationConfiguration(tenantLegacyUserMigrationConfig);            
             return tenantLegacyUserMigrationConfig;
         },
-        setTenantAnonymousUserConfig: async(_: any, { tenantAnonymousUserConfigInput }, oidcContext) => {
-            // TODO
-            // Implement the service and dao functions.
-            //const tenantService: TenantService = new TenantService(oidcContext);
+        setTenantAnonymousUserConfig: async(_: any, { tenantAnonymousUserConfigInput }, oidcContext) => {            
+            const tenantService: TenantService = new TenantService(oidcContext);
             const anonymousUserConfig: TenantAnonymousUserConfiguration = {
                 tenantId: tenantAnonymousUserConfigInput.tenantId,
                 tokenttlseconds: tenantAnonymousUserConfigInput.tokenttlseconds,
                 defaultcountrycode: tenantAnonymousUserConfigInput.defaultcountrycode,
                 defaultlangugecode: tenantAnonymousUserConfigInput.defaultlangugecode
             }
-            //await tenantService.setTenantAnonymousUserConfig(anonymousUserConfig);
+            await tenantService.setTenantAnonymousUserConfig(anonymousUserConfig);
             return anonymousUserConfig;
+        },
+        removeTenantAnonymousUserConfig: async(_: any, { tenantId }, oidcContext) => {
+            const tenantService: TenantService = new TenantService(oidcContext);
+            await tenantService.removeTenantAnonymousUserConfig(tenantId);
+            return tenantId;
         },
         setTenantLookAndFeel: async(_: any, { tenantLookAndFeelInput }, oidcContext) => {            
             const tenantService: TenantService = new TenantService(oidcContext);

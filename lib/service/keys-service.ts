@@ -37,7 +37,6 @@ class SigningKeysService {
                     return args;
                 },
                 async performOperation(_, ...args) {
-                    console.log("args is: " + args);
                     const signingKeys: Array<SigningKey> = await signingKeysDao.getSigningKeys(...args);
                     return signingKeys
                 },

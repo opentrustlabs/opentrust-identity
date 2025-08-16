@@ -63,8 +63,6 @@ class SecretShareService {
         // TODO
         // Generate email with the following link:
         const secretEntryLink = `${AUTH_DOMAIN}/secret-entry?${QUERY_PARAM_SECRET_ENTRY_OTP}=${otp}`;
-        console.log(secretEntryLink);
-        
         
         return true;
     }

@@ -77,8 +77,6 @@ const AuthentiationValidateSecurityKey: React.FC<AuthenticationComponentsProps> 
                 verifyBrowserAutofillInput
             });
 
-            console.log(resp);
-
             const fido2KeyAuthenticationInput: Fido2KeyAuthenticationInput = {
                 authenticationAttachment: resp.authenticatorAttachment || "",
                 id: resp.id,
@@ -221,8 +219,6 @@ const RegistrationValidateSecurityKey: React.FC<RegistrationComponentsProps> = (
                 useBrowserAutofill,
                 verifyBrowserAutofillInput
             });
-
-            console.log(resp);
 
             const fido2KeyAuthenticationInput: Fido2KeyAuthenticationInput = {
                 authenticationAttachment: resp.authenticatorAttachment || "",

@@ -1,5 +1,6 @@
 import { AES_GCM_CIPHER, AES_KEY_LENGTH, AUTH_TAG_LENGTH, IV_LENGTH_IN_BYTES } from "@/utils/consts";
 import { generateKeySync, createCipheriv, randomBytes, KeyObject, CipherGCM, createDecipheriv, DecipherGCM } from "node:crypto";
+import { logWithDetails } from "../logging/logger";
 
 abstract class Kms {
 
@@ -159,8 +160,8 @@ abstract class Kms {
             //const ret: string = outputBuffer.toString("utf-8");
             return Promise.resolve(outputBuffer);
         }
-        catch(error){
-            console.log(error);
+        catch(error: any){
+            logWithDetails("error", `Error decryping with key wrapping (decryptBufferWithKeyWrapping()). ${error.message}`, {...error});
             return Promise.resolve(null);
         }
     }
@@ -176,9 +177,7 @@ abstract class Kms {
         if(!decryptedBuffer){
             return Promise.resolve(null);
         }
-
         return Promise.resolve(decryptedBuffer.toString("utf-8"));
-
     }
 
 }

@@ -126,16 +126,8 @@ const ManagementTenantFilter: React.FC<LayoutProps> = ({
             }
         },
         onError(error) {
-            router.push(`/access-error?access_error_code=00024&extended_message=${error.message}`)
-            // TODO
-            // Need to inspect the error message and redirect the user to the
-            // access-error page with an appropriate message. This should almost
-            // never happen, since most error conditions are handled above, and so
-            // the tenant id should always exist (unless, perhaps, the user has edited their 
-            // own local storage). But it could be that the tenant has been
-            // disabled and so we need alert the user to that fact.
-            //setErrorMessage(JSON.stringify(error));
-        },
+            router.push(`/access-error?access_error_code=00024&extended_message=${error.message}`)            
+        }
     });
 
     if(!needsRedirect && loading) return <div><DataLoading dataLoadingSize={"xl"} color={null}  /></div>
