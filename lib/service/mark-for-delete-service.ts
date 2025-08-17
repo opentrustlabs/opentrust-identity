@@ -13,9 +13,10 @@ import AuthorizationGroupDao from "../dao/authorization-group-dao";
 import SigningKeysDao from "../dao/signing-keys-dao";
 import { GraphQLError } from "graphql/error";
 import { randomUUID } from 'crypto'; 
-import { AUTHENTICATION_GROUP_DELETE_SCOPE, AUTHORIZATION_GROUP_DELETE_SCOPE, CLIENT_DELETE_SCOPE, FEDERATED_OIDC_PROVIDER_DELETE_SCOPE, KEY_DELETE_SCOPE, RATE_LIMIT_DELETE_SCOPE, SCOPE_DELETE_SCOPE, SCOPE_USE_IAM_MANAGEMENT, TENANT_DELETE_SCOPE, TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE, TENANT_TYPE_ROOT_TENANT, USER_DELETE_SCOPE } from "@/utils/consts";
+import { AUTHENTICATION_GROUP_DELETE_SCOPE, AUTHORIZATION_GROUP_DELETE_SCOPE, CHANGE_EVENT_CLASS_MARK_FOR_DELETE, CHANGE_EVENT_TYPE_CREATE, CLIENT_DELETE_SCOPE, FEDERATED_OIDC_PROVIDER_DELETE_SCOPE, KEY_DELETE_SCOPE, RATE_LIMIT_DELETE_SCOPE, SCOPE_DELETE_SCOPE, SCOPE_USE_IAM_MANAGEMENT, TENANT_DELETE_SCOPE, TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE, TENANT_TYPE_ROOT_TENANT, USER_DELETE_SCOPE } from "@/utils/consts";
 import { authorizeByScopeAndTenant, WithAuthorizationByScopeAndTenant } from "@/utils/authz-utils";
 import { ERROR_CODES } from "../models/error";
+import ChangeEventDao from "../dao/change-event-dao";
 
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
 const markForDeleteDao: MarkForDeleteDao = DaoFactory.getInstance().getMarkForDeleteDao();
@@ -27,6 +28,7 @@ const rateLimitDao: RateLimitDao = DaoFactory.getInstance().getRateLimitDao();
 const authnGroupDao: AuthenticationGroupDao = DaoFactory.getInstance().getAuthenticationGroupDao();
 const authzGroupDao: AuthorizationGroupDao = DaoFactory.getInstance().getAuthorizationGroupDao();
 const signingKeysDao: SigningKeysDao = DaoFactory.getInstance().getSigningKeysDao();
+const changeEventDao: ChangeEventDao = DaoFactory.getInstance().getChangeEventDao();
 
 class MarkForDeleteService {
 
@@ -38,8 +40,7 @@ class MarkForDeleteService {
 
     public async markForDelete(markForDelete: MarkForDelete): Promise<MarkForDelete> {
         let object: any | null = null;
-        let requiredScope: string | null = null;
-        
+        let requiredScope: string | null = null;        
 
         if(markForDelete.objectType === MarkForDeleteObjectType.Client){
             object = await clientDao.getClientById(markForDelete.objectId);
@@ -217,6 +218,17 @@ class MarkForDeleteService {
         }
         markForDelete.submittedBy = submittedBy;
         await markForDeleteDao.markForDelete(markForDelete);
+
+        changeEventDao.addChangeEvent({
+            objectId: markForDelete.markForDeleteId,
+            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+            changeEventClass: CHANGE_EVENT_CLASS_MARK_FOR_DELETE,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_CREATE,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify({...markForDelete})
+        });
+
         return Promise.resolve(markForDelete);
     }
 

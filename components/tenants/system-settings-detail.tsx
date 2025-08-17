@@ -57,9 +57,7 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
             setShowMutationBackdrop(false);
             setErrorMessage(error.message);
         }
-    })
-
-
+    });
 
     // HELPER VARIABLES AND FUNCTIONS
     const categoriesMidpoint = Math.floor(systemSettings.systemCategories.length / 2);

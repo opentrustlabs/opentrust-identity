@@ -5,18 +5,19 @@ import ContactDao from "../dao/contact-dao";
 import SigningKeysDao from "../dao/signing-keys-dao";
 import { Client, Contact, ErrorDetail, SigningKey, Tenant } from "@/graphql/generated/graphql-types";
 import { randomUUID } from "crypto";
-import { CLIENT_READ_SCOPE, CLIENT_UPDATE_SCOPE, CONTACT_TYPE_FOR_CLIENT, CONTACT_TYPE_FOR_SIGNING_KEY, CONTACT_TYPE_FOR_TENANT, KEY_READ_SCOPE, KEY_UPDATE_SCOPE, TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE, TENANT_UPDATE_SCOPE } from "@/utils/consts";
+import { CHANGE_EVENT_CLASS_CONTACT, CHANGE_EVENT_TYPE_CREATE, CHANGE_EVENT_TYPE_DELETE, CLIENT_READ_SCOPE, CLIENT_UPDATE_SCOPE, CONTACT_TYPE_FOR_CLIENT, CONTACT_TYPE_FOR_SIGNING_KEY, CONTACT_TYPE_FOR_TENANT, KEY_READ_SCOPE, KEY_UPDATE_SCOPE, TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE, TENANT_UPDATE_SCOPE } from "@/utils/consts";
 import { GraphQLError } from "graphql";
 import { DaoFactory } from "../data-sources/dao-factory";
 import { authorizeByScopeAndTenant, ServiceAuthorizationWrapper } from "@/utils/authz-utils";
 import { ERROR_CODES } from "../models/error";
+import ChangeEventDao from "../dao/change-event-dao";
 
 
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
 const clientDao: ClientDao = DaoFactory.getInstance().getClientDao();
 const keyDao: SigningKeysDao = DaoFactory.getInstance().getSigningKeysDao();
 const contactDao: ContactDao = DaoFactory.getInstance().getContactDao();
-
+const changeEventDao: ChangeEventDao = DaoFactory.getInstance().getChangeEventDao();
 
 class ContactService {
 
@@ -118,6 +119,15 @@ class ContactService {
 
         contact.contactid = randomUUID().toString();
         await contactDao.addContact(contact);
+        changeEventDao.addChangeEvent({
+            objectId: contact.contactid,
+            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+            changeEventClass: CHANGE_EVENT_CLASS_CONTACT,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_CREATE,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify({...contact})
+        });
         return Promise.resolve(contact);        
     }
 
@@ -151,6 +161,15 @@ class ContactService {
                 throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});
             }
             await contactDao.removeContact(contactId);
+            changeEventDao.addChangeEvent({
+                objectId: contact.contactid,
+                changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+                changeEventClass: CHANGE_EVENT_CLASS_CONTACT,
+                changeEventId: randomUUID().toString(),
+                changeEventType: CHANGE_EVENT_TYPE_DELETE,
+                changeTimestamp: Date.now(),
+                data: JSON.stringify({...contact})
+            });
         }
         return Promise.resolve();        
     }

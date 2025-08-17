@@ -5,15 +5,17 @@ import RateLimitDao from "../dao/rate-limit-dao";
 import { ObjectSearchResultItem, RateLimitServiceGroup, RelSearchResultItem, SearchResultType, Tenant, TenantRateLimitRel, TenantRateLimitRelView } from "@/graphql/generated/graphql-types";
 import TenantDao from "../dao/tenant-dao";
 import { DaoFactory } from "../data-sources/dao-factory";
-import { DEFAULT_RATE_LIMIT_PERIOD_MINUTES, RATE_LIMIT_CREATE_SCOPE, RATE_LIMIT_DELETE_SCOPE, RATE_LIMIT_READ_SCOPE, RATE_LIMIT_TENANT_ASSIGN_SCOPE, RATE_LIMIT_TENANT_REMOVE_SCOPE, RATE_LIMIT_TENANT_UPDATE_SCOPE, RATE_LIMIT_UPDATE_SCOPE, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_READ_ALL_SCOPE } from "@/utils/consts";
+import { CHANGE_EVENT_CLASS_RATE_LIMIT, CHANGE_EVENT_CLASS_TENANT_RATE_LIMIT_REL, CHANGE_EVENT_TYPE_CREATE, CHANGE_EVENT_TYPE_CREATE_REL, CHANGE_EVENT_TYPE_REMOVE_REL, CHANGE_EVENT_TYPE_UPDATE, CHANGE_EVENT_TYPE_UPDATE_REL, DEFAULT_RATE_LIMIT_PERIOD_MINUTES, RATE_LIMIT_CREATE_SCOPE, RATE_LIMIT_DELETE_SCOPE, RATE_LIMIT_READ_SCOPE, RATE_LIMIT_TENANT_ASSIGN_SCOPE, RATE_LIMIT_TENANT_REMOVE_SCOPE, RATE_LIMIT_TENANT_UPDATE_SCOPE, RATE_LIMIT_UPDATE_SCOPE, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_READ_ALL_SCOPE } from "@/utils/consts";
 import { getOpenSearchClient } from "../data-sources/search";
 import { authorizeByScopeAndTenant, ServiceAuthorizationWrapper } from "@/utils/authz-utils";
 import { ERROR_CODES } from "../models/error";
+import ChangeEventDao from "../dao/change-event-dao";
 
 
 const rateLimitDao: RateLimitDao = DaoFactory.getInstance().getRateLimitDao();
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
 const searchClient = getOpenSearchClient();
+const changeEventDao: ChangeEventDao = DaoFactory.getInstance().getChangeEventDao();
 
 class RateLimitService {
 
@@ -75,6 +77,17 @@ class RateLimitService {
         rateLimitServiceGroup.servicegroupid = randomUUID().toString();
         await rateLimitDao.createRateLimitServiceGroup(rateLimitServiceGroup)
         await this.updateSearchIndex(rateLimitServiceGroup);
+
+        changeEventDao.addChangeEvent({
+            objectId: rateLimitServiceGroup.servicegroupid,
+            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+            changeEventClass: CHANGE_EVENT_CLASS_RATE_LIMIT,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_CREATE,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify({...rateLimitServiceGroup})
+        });
+
         return Promise.resolve(rateLimitServiceGroup);
     }
 
@@ -91,23 +104,25 @@ class RateLimitService {
         }
         await rateLimitDao.updateRateLimitServiceGroup(rateLimitServiceGroup);
         await this.updateSearchIndex(rateLimitServiceGroup);
-        // TODO
-        // Update the rel index if the name or description of the group has changed.
+        
+        changeEventDao.addChangeEvent({
+            objectId: rateLimitServiceGroup.servicegroupid,
+            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+            changeEventClass: CHANGE_EVENT_CLASS_RATE_LIMIT,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_UPDATE,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify({...rateLimitServiceGroup})
+        });
+
+        if(rateLimitServiceGroup.servicegroupname !== existing.servicegroupname || rateLimitServiceGroup.servicegroupdescription !== existing.servicegroupdescription){
+            this.bulkUpdateRelSearchIndex(rateLimitServiceGroup);
+        }
+        
         return Promise.resolve(rateLimitServiceGroup);
     }
 
-    public async deleteRateLimitServiceGroup(serviceGroupId: string): Promise<void>{
-        const {isAuthorized, errorDetail} = authorizeByScopeAndTenant(this.oidcContext, RATE_LIMIT_DELETE_SCOPE, null);
-        if(!isAuthorized){
-            throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});
-        }
-
-        // TODO
-        // DELETE all of the relations to various tenants to which this has
-        // been assigned, in both the db and the search index.
-        return rateLimitDao.deleteRateLimitServiceGroup(serviceGroupId);
-    }
-        
+    
     public async getRateLimitTenantRel(tenantId: string | null, rateLimitServiceGroupId: string | null): Promise<Array<TenantRateLimitRel>> {
         const getData = ServiceAuthorizationWrapper(
             {
@@ -187,7 +202,16 @@ class RateLimitService {
         const minutes = allowUnlimited ? null : DEFAULT_RATE_LIMIT_PERIOD_MINUTES; //rateLimitPeriodMinutes > MAX_RATE_LIMIT_PERIOD_MINUTES ? DEFAULT_RATE_LIMIT_PERIOD_MINUTES : rateLimitPeriodMinutes < MIN_RATE_LIMIT_PERIOD_MINUTES ? DEFAULT_RATE_LIMIT_PERIOD_MINUTES : rateLimitPeriodMinutes;
 
         const r: TenantRateLimitRel = await rateLimitDao.assignRateLimitToTenant(tenantId, serviceGroupId, allowUnlimited, rateLimit, minutes);        
-        await this.updateRelSearchIndex(tenant, rateLimitServiceGroup);
+        await this.addTenantRateLimtRelToRelSearchIndex(tenant, rateLimitServiceGroup);
+        changeEventDao.addChangeEvent({
+            objectId: rateLimitServiceGroup.servicegroupid,
+            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+            changeEventClass: CHANGE_EVENT_CLASS_TENANT_RATE_LIMIT_REL,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_CREATE_REL,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify({tenantId, serviceGroupId, allowUnlimited, rateLimit, minutes})
+        });
         return r;
     }
 
@@ -219,6 +243,15 @@ class RateLimitService {
         existingRel.rateLimitPeriodMinutes = allowUnlimited ? null : DEFAULT_RATE_LIMIT_PERIOD_MINUTES;   
         
         rateLimitDao.updateRateLimitForTenant(tenantId, serviceGroupId, allowUnlimited, existingRel.rateLimit, existingRel.rateLimitPeriodMinutes);
+        changeEventDao.addChangeEvent({
+            objectId: serviceGroupId,
+            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+            changeEventClass: CHANGE_EVENT_CLASS_TENANT_RATE_LIMIT_REL,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_UPDATE_REL,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify({tenantId, serviceGroupId, allowUnlimited, rateLimit: limit, minutes: rateLimitPeriodMinutes})
+        });
 
         return Promise.resolve(existingRel);
     }
@@ -243,7 +276,7 @@ class RateLimitService {
         return rels || [];
     }
 
-    protected async updateRelSearchIndex(tenant: Tenant, rateLimitServiceGroup: RateLimitServiceGroup): Promise<void> {
+    protected async addTenantRateLimtRelToRelSearchIndex(tenant: Tenant, rateLimitServiceGroup: RateLimitServiceGroup): Promise<void> {
 
         const document: RelSearchResultItem = {
             childid: rateLimitServiceGroup.servicegroupid,
@@ -262,6 +295,28 @@ class RateLimitService {
         });
     }
 
+    protected async bulkUpdateRelSearchIndex(rateLimitServiceGroup: RateLimitServiceGroup): Promise<void>{
+        searchClient.updateByQuery({
+            index: SEARCH_INDEX_REL_SEARCH,
+            body: {
+                query: {
+                    term: {
+                        childid: rateLimitServiceGroup.servicegroupid
+                    }
+                },
+                script: {
+                    source: "ctx._source.childname = params.childname; ctx._source.childdescription = params.childdescription",
+                    lang: "painless",
+                    params: {
+                        childname: rateLimitServiceGroup.servicegroupname,
+                        childdescription: rateLimitServiceGroup.servicegroupdescription
+                    }
+                }
+            },
+            conflicts: "proceed",
+            requests_per_second: 25
+        });
+    }
 
     public async removeRateLimitFromTenant(tenantId: string, rateLimitId: string): Promise<void> {
         const {isAuthorized, errorDetail} = authorizeByScopeAndTenant(this.oidcContext, RATE_LIMIT_TENANT_REMOVE_SCOPE, tenantId);
@@ -274,6 +329,15 @@ class RateLimitService {
             id: `${tenantId}::${rateLimitId}`,
             index: SEARCH_INDEX_REL_SEARCH,
             refresh: "wait_for"
+        });
+        changeEventDao.addChangeEvent({
+            objectId: rateLimitId,
+            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+            changeEventClass: CHANGE_EVENT_CLASS_TENANT_RATE_LIMIT_REL,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_REMOVE_REL,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify({tenantId, serviceGroupId: rateLimitId})
         });
 
         return Promise.resolve();

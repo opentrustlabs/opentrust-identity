@@ -480,6 +480,7 @@ class DBTenantDao extends TenantDao {
         const sequelize: Sequelize = await DBDriver.getConnection();
         
         const systemSettings: SystemSettings = {
+            systemId: "",
             allowRecoveryEmail: false,
             allowDuressPassword: false,
             rootClientId: "",
@@ -490,10 +491,10 @@ class DBTenantDao extends TenantDao {
         }
         const systemSettingsEntity: SystemSettingsEntity | null = await sequelize.models.systemSettings.findOne();
 
-        if(systemSettingsEntity){
-            
+        if(systemSettingsEntity){            
             const first: SystemSettings = systemSettingsEntity.dataValues;
             console.log(first);
+            systemSettings.systemId = first.systemId
             systemSettings.allowRecoveryEmail = first.allowRecoveryEmail;
             systemSettings.allowDuressPassword = first.allowDuressPassword;
             systemSettings.rootClientId = first.rootClientId;
@@ -643,19 +644,10 @@ class DBTenantDao extends TenantDao {
     
     public async updateSystemSettings(input: SystemSettingsUpdateInput): Promise<SystemSettings> {
         const sequelize: Sequelize = await DBDriver.getConnection();
-        const arr: Array<SystemSettingsEntity> = await sequelize.models.systemSettings.findAll();
-        if(arr.length === 0){
-            await sequelize.models.systemSettings.create({
-                systemId: randomUUID().toString(),
-                allowDuressPassword: input.allowDuressPassword,
-                allowRecoveryEmail: input.allowRecoveryEmail,
-                rootClientId: input.rootClientId,
-                enablePortalAsLegacyIdp: input.enablePortalAsLegacyIdp,
-                auditRecordRetentionPeriodDays: input.auditRecordRetentionPeriodDays || DEFAULT_AUDIT_RECORD_RETENTION_PERIOD_DAYS
-            })
-        }
-        else{
-            const entity: SystemSettingsEntity = arr[0];
+        const entity: SystemSettingsEntity | null = await sequelize.models.systemSettings.findOne();
+        let systemId: string = "";
+        if(entity){
+            systemId = entity.getDataValue("systemId");
             entity.setDataValue("allowRecoveryEmail", input.allowRecoveryEmail);
             entity.setDataValue("allowDuressPassword", input.allowDuressPassword);
             entity.setDataValue("rootClientId", input.rootClientId);
@@ -664,6 +656,7 @@ class DBTenantDao extends TenantDao {
             await entity.save();
         }
         return {
+            systemId: systemId,
             softwareVersion: OPENTRUST_IDENTITY_VERSION,
             allowDuressPassword: input.allowDuressPassword,
             allowRecoveryEmail: input.allowRecoveryEmail,
