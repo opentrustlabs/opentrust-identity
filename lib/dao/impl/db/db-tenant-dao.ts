@@ -493,7 +493,6 @@ class DBTenantDao extends TenantDao {
 
         if(systemSettingsEntity){            
             const first: SystemSettings = systemSettingsEntity.dataValues;
-            console.log(first);
             systemSettings.systemId = first.systemId
             systemSettings.allowRecoveryEmail = first.allowRecoveryEmail;
             systemSettings.allowDuressPassword = first.allowDuressPassword;
