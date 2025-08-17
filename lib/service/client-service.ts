@@ -5,7 +5,7 @@ import { generateRandomToken } from "@/utils/dao-utils";
 import TenantDao from "@/lib/dao/tenant-dao";
 import { GraphQLError } from "graphql/error/GraphQLError";
 import { randomUUID } from 'crypto'; 
-import { CLIENT_CREATE_SCOPE, CLIENT_READ_SCOPE, CLIENT_TYPES, CLIENT_TYPES_DISPLAY, CLIENT_UPDATE_SCOPE, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_READ_ALL_SCOPE } from "@/utils/consts";
+import { CHANGE_EVENT_CLASS_CLIENT, CHANGE_EVENT_CLASS_CLIENT_REDIRECT_URI, CHANGE_EVENT_TYPE_CREATE, CHANGE_EVENT_TYPE_DELETE, CHANGE_EVENT_TYPE_UPDATE, CLIENT_CREATE_SCOPE, CLIENT_READ_SCOPE, CLIENT_TYPES, CLIENT_TYPES_DISPLAY, CLIENT_UPDATE_SCOPE, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_READ_ALL_SCOPE } from "@/utils/consts";
 import { getOpenSearchClient } from "@/lib/data-sources/search";
 import { DaoFactory } from "../data-sources/dao-factory";
 import Kms from "../kms/kms";
@@ -13,12 +13,14 @@ import { authorizeByScopeAndTenant, ServiceAuthorizationWrapper } from "@/utils/
 import ScopeDao from "../dao/scope-dao";
 import { isValidRedirectUri } from "@/utils/client-utils";
 import { ERROR_CODES } from "../models/error";
+import ChangeEventDao from "../dao/change-event-dao";
 
 const clientDao: ClientDao = DaoFactory.getInstance().getClientDao();
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
 const searchClient = getOpenSearchClient();
 const kms: Kms = DaoFactory.getInstance().getKms();
 const scopeDao: ScopeDao = DaoFactory.getInstance().getScopeDao();
+const changeEventDao: ChangeEventDao = DaoFactory.getInstance().getChangeEventDao();
 
 class ClientService {
 
@@ -115,6 +117,16 @@ class ClientService {
         // Now we need to set the actual client secret back on the object that
         // we are going to return so that the user can copy it somewhere.
         client.clientSecret = clientSecret;
+        changeEventDao.addChangeEvent({
+            objectId: client.clientId,
+            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+            changeEventClass: CHANGE_EVENT_CLASS_CLIENT,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_CREATE,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify({...client, clientSecret: ""})
+        });
+
         return Promise.resolve(client);
     }
 
@@ -158,6 +170,15 @@ class ClientService {
 
         await clientDao.updateClient(clientToUpdate);
         await this.updateSearchIndex(clientToUpdate);
+        changeEventDao.addChangeEvent({
+            objectId: client.clientId,
+            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+            changeEventClass: CHANGE_EVENT_CLASS_CLIENT,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_UPDATE,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify({...clientToUpdate, clientSecret: ""})
+        });
 
         return Promise.resolve(clientToUpdate);
     }
@@ -228,6 +249,16 @@ class ClientService {
         if(!isAuthorized){
             throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});
         }
+        changeEventDao.addChangeEvent({
+            objectId: clientId,
+            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+            changeEventClass: CHANGE_EVENT_CLASS_CLIENT_REDIRECT_URI,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_CREATE,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify({clientId, uri})
+        });
+        
         
         return clientDao.addRedirectURI(clientId, uri);
     }
@@ -241,6 +272,15 @@ class ClientService {
         if(!isAuthorized){
             throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});
         }
+        changeEventDao.addChangeEvent({
+            objectId: clientId,
+            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+            changeEventClass: CHANGE_EVENT_CLASS_CLIENT_REDIRECT_URI,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_DELETE,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify({clientId, uri})
+        });
         return clientDao.removeRedirectURI(clientId, uri);
     }
     

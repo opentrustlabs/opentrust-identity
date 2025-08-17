@@ -1,5 +1,5 @@
 import pino, { multistream } from 'pino';
-import fs from 'fs';
+import fs from 'node:fs';
 import { createStream } from 'rotating-file-stream';
 import { GraphQLFormattedError } from 'graphql/error/GraphQLError';
 import { SecurityEvent } from '../models/security-event';
@@ -36,16 +36,19 @@ export interface LogRecord {
 
 const streams: Array<any> = [];
 if(logDirectoryDefined){
-
-    // Rotate when file > 50MB, keep 10 compressed archives
-    const rotateStream = createStream("/app.log", {
-        size: '50M',                    // rotate every 50 MB  
-        compress: 'gzip',               // compress rotated files
-        maxFiles: 10,                  // keep only 10 log files
-        path: LOG_FILE_DIRECTORY       // store logs in configured directory
+    streams.push({
+        stream: fs.createWriteStream(`${LOG_FILE_DIRECTORY}/app.log`)
     });
 
-    streams.push({stream: rotateStream});
+    // Rotate when file > 50MB, keep 10 compressed archives
+    // const rotateStream = createStream("/app.log", {
+    //     size: '50M',                    // rotate every 50 MB  
+    //     compress: 'gzip',               // compress rotated files
+    //     maxFiles: 10,                  // keep only 10 log files
+    //     path: LOG_FILE_DIRECTORY       // store logs in configured directory
+    // });
+
+    // streams.push({stream: rotateStream});
 }
 
 if(logToStdOut === true){
@@ -63,7 +66,6 @@ const logger = pino(
         },
         messageKey: 'body', // maps Pino's msg -> opentelemetry "body",
         level: logLevel
-
     },
     multistream(streams)
 );

@@ -33,6 +33,8 @@ import DBSchedulerDao from "../dao/impl/db/db-scheduler-dao";
 import NoOpKms from "../kms/no-op-kms";
 import SecretShareDao from "../dao/secret-share-dao";
 import DBSecretShareDao from "../dao/impl/db/db-secret-share-dao";
+import ChangeEventDao from "../dao/change-event-dao";
+import DBChangeEventDao from "../dao/impl/db/db-change-event-dao";
 
 const daoStrategy = process.env.DAO_STRATEGY;
 const ksmStrategy = process.env.KMS_STRATEGY;
@@ -57,6 +59,7 @@ class DaoFactory {
     protected kms: Kms;
     protected schedulerDao: SchedulerDao;
     protected secretShareDao: SecretShareDao;
+    protected changeEventDao: ChangeEventDao;
 
     private constructor() {
         // NO-OP
@@ -79,6 +82,19 @@ class DaoFactory {
         }
         else{
             throw new Error("ERROR_DAO_STRATEGY_NOT_DEFINED");
+        }
+    }
+
+    public getChangeEventDao(): ChangeEventDao {
+        if(DaoFactory.instance.changeEventDao){
+            return DaoFactory.instance.changeEventDao;
+        }
+        if(ksmStrategy === "filesystem"){
+            DaoFactory.instance.changeEventDao = new DBChangeEventDao();
+            return DaoFactory.instance.changeEventDao;
+        }
+        else {
+            throw new Error("ERROR_KMS_STRATEGY_NOT_IMPLEMENTED");
         }
     }
 

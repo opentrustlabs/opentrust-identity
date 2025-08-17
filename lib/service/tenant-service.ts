@@ -557,6 +557,11 @@ class TenantService {
                 throw new GraphQLError(ERROR_CODES.EC00094.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00094}});
             }
         }
+        if(systemSettingsUpdateInput.auditRecordRetentionPeriodDays){
+            if(systemSettingsUpdateInput.auditRecordRetentionPeriodDays < 1){
+                throw new GraphQLError(ERROR_CODES.EC00186.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00186}});
+            }
+        }
 
         await tenantDao.updateSystemSettings(systemSettingsUpdateInput);
         return tenantDao.getSystemSettings();

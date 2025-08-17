@@ -796,12 +796,9 @@ type Contact {
 
 type ChangeEvent {
     changeEventId: String!
-    objectId: String!
-    objectType: String!
+    objectId: String!    
     changeEventType: String!
-    changeEventTypeId: String
     changeEventClass: String!
-    changeEventClassId: String
     changeTimestamp: Float!
     changedBy: String!
     data: String!
@@ -1157,7 +1154,6 @@ type CategoryEntry {
 type SystemCategory {
     categoryName: String!
     categoryEntries: [CategoryEntry!]!
-
 }
 
 type SystemSettings {
@@ -1166,6 +1162,7 @@ type SystemSettings {
     allowDuressPassword: Boolean!
     rootClientId: String!
     enablePortalAsLegacyIdp: Boolean!
+    auditRecordRetentionPeriodDays: Int
     systemCategories: [SystemCategory!]!
 }
 
@@ -1630,6 +1627,7 @@ input CaptchaConfigInput {
 input SystemSettingsUpdateInput {
     allowRecoveryEmail: Boolean!
     allowDuressPassword: Boolean!
-    rootClientId: String!
+    rootClientId: String!    
     enablePortalAsLegacyIdp: Boolean!
+    auditRecordRetentionPeriodDays: Int
 }

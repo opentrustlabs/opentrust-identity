@@ -1,6 +1,6 @@
 import { Tenant, TenantManagementDomainRel, TenantAnonymousUserConfiguration, TenantLookAndFeel, TenantPasswordConfig, TenantLoginFailurePolicy, TenantLegacyUserMigrationConfig, TenantRestrictedAuthenticationDomainRel, UserTenantRel, CaptchaConfig, SystemSettings, SystemSettingsUpdateInput, SystemCategory, JobData } from "@/graphql/generated/graphql-types";
 import TenantDao from "../../tenant-dao";
-import { OPENTRUST_IDENTITY_VERSION, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
+import { DEFAULT_AUDIT_RECORD_RETENTION_PERIOD_DAYS, OPENTRUST_IDENTITY_VERSION, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import { GraphQLError } from "graphql";
 import TenantManagementDomainRelEntity from "@/lib/entities/tenant-management-domain-rel-entity";
 import TenantAnonymousUserConfigurationEntity from "@/lib/entities/tenant-anonymous-user-configuration-entity";
@@ -484,16 +484,21 @@ class DBTenantDao extends TenantDao {
             allowDuressPassword: false,
             rootClientId: "",
             enablePortalAsLegacyIdp: false,
+            auditRecordRetentionPeriodDays: DEFAULT_AUDIT_RECORD_RETENTION_PERIOD_DAYS,
             softwareVersion: OPENTRUST_IDENTITY_VERSION,
             systemCategories: []
         }
-        const arr: Array<SystemSettingsEntity> = await sequelize.models.systemSettings.findAll();
-        if(arr.length > 0){
-            const first: SystemSettings = arr[0].dataValues;
+        const systemSettingsEntity: SystemSettingsEntity | null = await sequelize.models.systemSettings.findOne();
+
+        if(systemSettingsEntity){
+            
+            const first: SystemSettings = systemSettingsEntity.dataValues;
+            console.log(first);
             systemSettings.allowRecoveryEmail = first.allowRecoveryEmail;
             systemSettings.allowDuressPassword = first.allowDuressPassword;
-            systemSettings.rootClientId = first.rootClientId,
-            systemSettings.enablePortalAsLegacyIdp = first.enablePortalAsLegacyIdp
+            systemSettings.rootClientId = first.rootClientId;
+            systemSettings.enablePortalAsLegacyIdp = first.enablePortalAsLegacyIdp;
+            systemSettings.auditRecordRetentionPeriodDays = first.auditRecordRetentionPeriodDays ? first.auditRecordRetentionPeriodDays : DEFAULT_AUDIT_RECORD_RETENTION_PERIOD_DAYS;
         }
         // DB Settings
         const dbCategory: SystemCategory = {
@@ -645,7 +650,8 @@ class DBTenantDao extends TenantDao {
                 allowDuressPassword: input.allowDuressPassword,
                 allowRecoveryEmail: input.allowRecoveryEmail,
                 rootClientId: input.rootClientId,
-                enablePortalAsLegacyIdp: input.enablePortalAsLegacyIdp
+                enablePortalAsLegacyIdp: input.enablePortalAsLegacyIdp,
+                auditRecordRetentionPeriodDays: input.auditRecordRetentionPeriodDays || DEFAULT_AUDIT_RECORD_RETENTION_PERIOD_DAYS
             })
         }
         else{
@@ -654,6 +660,7 @@ class DBTenantDao extends TenantDao {
             entity.setDataValue("allowDuressPassword", input.allowDuressPassword);
             entity.setDataValue("rootClientId", input.rootClientId);
             entity.setDataValue("enablePortalAsLegacyIdp", input.enablePortalAsLegacyIdp);
+            entity.setDataValue("auditRecordRetentionPeriodDays", input.auditRecordRetentionPeriodDays || DEFAULT_AUDIT_RECORD_RETENTION_PERIOD_DAYS);
             await entity.save();
         }
         return {
@@ -664,9 +671,7 @@ class DBTenantDao extends TenantDao {
             enablePortalAsLegacyIdp: false,
             systemCategories: []
         }
-
     }
-
 
 }
 
