@@ -966,6 +966,11 @@ export const ERROR_CODES: Record<string, ErrorDetail> = {
         errorCode: "EC00188",
         errorKey: "ERROR_PKCE_CANNOT_BE_ENABLED_BECAUSE_OIDC_IS_NOT_ENABLED",
         errorMessage: "PKCE cannot be enabled because OIDC (SSO) is not enabled."
+    },
+    EC00189: {
+        errorCode: "EC00189",
+        errorKey: "ERROR_AUTHENTICATION_GROUPS_CANNOT_BE_ADDED_TO_SERVICE_CLIENTS",
+        errorMessage: "Authentication groups cannot be added to service account clients."
     }
 }
 
