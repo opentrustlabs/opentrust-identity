@@ -956,6 +956,16 @@ export const ERROR_CODES: Record<string, ErrorDetail> = {
         errorCode: "EC00185",
         errorKey: "ERROR_AUDIT_RECORD_RETENTION_PERIOD_MUST_BE_GREATER_THAN_0_DAYS",
         errorMessage: "The audit record retention period must be greater than 0 days."
+    },
+    EC00187: {
+        errorCode: "EC00187",
+        errorKey: "ERROR_SERVICE_ACCOUNT_INCOMPATABLE_WITH_OIDC",
+        errorMessage: "A service account cannot be enabled for OIDC (SSO)"
+    },
+    EC00188: {
+        errorCode: "EC00188",
+        errorKey: "ERROR_PKCE_CANNOT_BE_ENABLED_BECAUSE_OIDC_IS_NOT_ENABLED",
+        errorMessage: "PKCE cannot be enabled because OIDC (SSO) is not enabled."
     }
 }
 
