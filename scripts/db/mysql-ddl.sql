@@ -669,7 +669,7 @@ create TABLE captcha_config (
     alias VARCHAR(256) PRIMARY KEY,
     projectid VARCHAR(128),
     sitekey VARCHAR(256) NOT NULL,
-    googleapikey VARCHAR(256) NOT NULL,
+    apikey VARCHAR(256) NOT NULL,
     minscorethreshold FLOAT,
     userecaptchav3 BOOLEAN NOT NULL
 );
