@@ -1,22 +1,26 @@
-import { Client, ClientScopeRel, ObjectSearchResultItem, RelSearchResultItem, SearchResultType, Tenant } from "@/graphql/generated/graphql-types";
+import { Client, ClientScopeRel, ErrorDetail, ObjectSearchResultItem, RelSearchResultItem, SearchResultType, Tenant } from "@/graphql/generated/graphql-types";
 import { OIDCContext } from "@/graphql/graphql-context";
 import ClientDao from "@/lib/dao/client-dao";
 import { generateRandomToken } from "@/utils/dao-utils";
 import TenantDao from "@/lib/dao/tenant-dao";
 import { GraphQLError } from "graphql/error/GraphQLError";
 import { randomUUID } from 'crypto'; 
-import { CLIENT_CREATE_SCOPE, CLIENT_READ_SCOPE, CLIENT_SECRET_ENCODING, CLIENT_TYPES, CLIENT_TYPES_DISPLAY, CLIENT_UPDATE_SCOPE, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_READ_ALL_SCOPE } from "@/utils/consts";
+import { CHANGE_EVENT_CLASS_CLIENT, CHANGE_EVENT_CLASS_CLIENT_REDIRECT_URI, CHANGE_EVENT_TYPE_CREATE, CHANGE_EVENT_TYPE_CREATE_REL, CHANGE_EVENT_TYPE_REMOVE_REL, CHANGE_EVENT_TYPE_UPDATE, CLIENT_CREATE_SCOPE, CLIENT_READ_SCOPE, CLIENT_TYPE_SERVICE_ACCOUNT, CLIENT_TYPES, CLIENT_TYPES_DISPLAY, CLIENT_UPDATE_SCOPE, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_READ_ALL_SCOPE } from "@/utils/consts";
 import { getOpenSearchClient } from "@/lib/data-sources/search";
 import { DaoFactory } from "../data-sources/dao-factory";
 import Kms from "../kms/kms";
 import { authorizeByScopeAndTenant, ServiceAuthorizationWrapper } from "@/utils/authz-utils";
 import ScopeDao from "../dao/scope-dao";
+import { isValidRedirectUri } from "@/utils/client-utils";
+import { ERROR_CODES } from "../models/error";
+import ChangeEventDao from "../dao/change-event-dao";
 
 const clientDao: ClientDao = DaoFactory.getInstance().getClientDao();
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
 const searchClient = getOpenSearchClient();
 const kms: Kms = DaoFactory.getInstance().getKms();
 const scopeDao: ScopeDao = DaoFactory.getInstance().getScopeDao();
+const changeEventDao: ChangeEventDao = DaoFactory.getInstance().getChangeEventDao();
 
 class ClientService {
 
@@ -63,11 +67,11 @@ class ClientService {
                     const client = await clientDao.getClientById(clientId);                       
                     return client;
                 },
-                additionalConstraintCheck: async function(oidcContext, result: Client | null): Promise<{ isAuthorized: boolean; errorMessage: string | null}> {
+                additionalConstraintCheck: async function(oidcContext, result: Client | null): Promise<{ isAuthorized: boolean; errorDetail: ErrorDetail}> {
                     if(result && result.tenantId !== oidcContext.portalUserProfile?.managementAccessTenantId){
-                        return {isAuthorized: false, errorMessage: "ERROR_NO_ACCESS_TO_TENANT"}
+                        return {isAuthorized: false, errorDetail: ERROR_CODES.EC00030}
                     }
-                    return {isAuthorized: true, errorMessage: null}
+                    return {isAuthorized: true, errorDetail: ERROR_CODES.NULL_ERROR}
                 },
                 postProcess: async function(_, result) {
                     if(result){
@@ -85,28 +89,32 @@ class ClientService {
     public async createClient(client: Client): Promise<Client> {
         const tenant: Tenant | null = await tenantDao.getTenantById(client.tenantId);
         if(!tenant){
-            throw new GraphQLError("ERROR_TENANT_NOT_FOUND", {
-
-            });
+            throw new GraphQLError(ERROR_CODES.EC00008.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00008}});
         }
         if(tenant.enabled === false || tenant.markForDelete === true){
-            throw new GraphQLError("ERROR_TENANT_IS_DISABLED_OR_MARKED_FOR_DELETE");
+            throw new GraphQLError(ERROR_CODES.EC00009.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00009}});
         }
 
-        const {isAuthorized, errorMessage} = authorizeByScopeAndTenant(this.oidcContext, CLIENT_CREATE_SCOPE, client.tenantId);
+        const {isAuthorized, errorDetail} = authorizeByScopeAndTenant(this.oidcContext, CLIENT_CREATE_SCOPE, client.tenantId);
         if(!isAuthorized){
-            throw new GraphQLError(errorMessage || "ERROR");
+            throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});
         }
 
         if(!CLIENT_TYPES.includes(client.clientType)){
-            throw new GraphQLError("ERROR_INVALID_CLIENT_TYPE");
+            throw new GraphQLError(ERROR_CODES.EC00031.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00031}});
+        }
+        if(client.oidcEnabled === false && client.pkceEnabled === true){
+            throw new GraphQLError(ERROR_CODES.EC00188.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00188}});
+        }
+        if(client.clientType === CLIENT_TYPE_SERVICE_ACCOUNT && (client.oidcEnabled === true || client.pkceEnabled === true)){
+            throw new GraphQLError(ERROR_CODES.EC00187.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00187}});
         }
 
         client.clientId = randomUUID().toString();
         const clientSecret = generateRandomToken(24, "hex");
         const encryptedClientSecret = await kms.encrypt(clientSecret);
         if(encryptedClientSecret === null){
-            throw new GraphQLError("ERROR_UNABLE_TO_ENCRYPT_CLIENT_SECRET");
+            throw new GraphQLError(ERROR_CODES.EC00032.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00032}});
         }        
         client.clientSecret = encryptedClientSecret;
 
@@ -115,6 +123,16 @@ class ClientService {
         // Now we need to set the actual client secret back on the object that
         // we are going to return so that the user can copy it somewhere.
         client.clientSecret = clientSecret;
+        changeEventDao.addChangeEvent({
+            objectId: client.clientId,
+            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+            changeEventClass: CHANGE_EVENT_CLASS_CLIENT,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_CREATE,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify({...client, clientSecret: ""})
+        });
+
         return Promise.resolve(client);
     }
 
@@ -122,16 +140,22 @@ class ClientService {
         const clientToUpdate: Client | null = await this.getClientById(client.clientId);
         
         if(!clientToUpdate){
-            throw new GraphQLError("ERROR_CLIENT_NOT_FOUND")
+            throw new GraphQLError(ERROR_CODES.EC00011.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00011}});
         }
         
-        const {isAuthorized, errorMessage} = authorizeByScopeAndTenant(this.oidcContext, CLIENT_UPDATE_SCOPE, clientToUpdate.tenantId);
+        const {isAuthorized, errorDetail} = authorizeByScopeAndTenant(this.oidcContext, CLIENT_UPDATE_SCOPE, clientToUpdate.tenantId);
         if(!isAuthorized){
-            throw new GraphQLError(errorMessage || "ERROR");
+            throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});
         }
 
         if(!CLIENT_TYPES.includes(client.clientType)){
-            throw new GraphQLError("ERROR_INVALID_CLIENT_TYPE");
+            throw new GraphQLError(ERROR_CODES.EC00031.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00031}});
+        }
+        if(client.oidcEnabled === false && client.pkceEnabled === true){
+            throw new GraphQLError(ERROR_CODES.EC00188.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00188}});
+        }
+        if(client.clientType === CLIENT_TYPE_SERVICE_ACCOUNT && (client.oidcEnabled === true || client.pkceEnabled === true)){
+            throw new GraphQLError(ERROR_CODES.EC00187.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00187}});
         }
 
         // If the client type has changed, then delete the scope values assigned to the client
@@ -158,6 +182,15 @@ class ClientService {
 
         await clientDao.updateClient(clientToUpdate);
         await this.updateSearchIndex(clientToUpdate);
+        changeEventDao.addChangeEvent({
+            objectId: client.clientId,
+            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+            changeEventClass: CHANGE_EVENT_CLASS_CLIENT,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_UPDATE,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify({...clientToUpdate, clientSecret: ""})
+        });
 
         return Promise.resolve(clientToUpdate);
     }
@@ -203,9 +236,9 @@ class ClientService {
     public async getRedirectURIs(clientId: string): Promise<Array<string>>{
         const client: Client | null = await clientDao.getClientById(clientId);
         if(client){
-            const {isAuthorized, errorMessage} = authorizeByScopeAndTenant(this.oidcContext, [CLIENT_READ_SCOPE, TENANT_READ_ALL_SCOPE], client.tenantId);
+            const {isAuthorized, errorDetail} = authorizeByScopeAndTenant(this.oidcContext, [CLIENT_READ_SCOPE, TENANT_READ_ALL_SCOPE], client.tenantId);
             if(!isAuthorized){
-                throw new GraphQLError(errorMessage || "ERROR");
+                throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});
             }
             return clientDao.getRedirectURIs(clientId);
         }
@@ -215,29 +248,51 @@ class ClientService {
     public async addRedirectURI(clientId: string, uri: string): Promise<string>{
         const client: Client | null = await this.getClientById(clientId);
         if(!client){
-            throw new GraphQLError("ERROR_UNABLE_TO_FIND_CLIENT_BY_ID");
+            throw new GraphQLError(ERROR_CODES.EC00031.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00031}});
         }
         if(client.oidcEnabled === false){
-            throw new GraphQLError("ERROR_OIDC_NOT_ENABLED_FOR_THIS_CLIENT");
+            throw new GraphQLError(ERROR_CODES.EC00033.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00033}});
+        }
+        if(!isValidRedirectUri(uri)){
+            throw new GraphQLError(ERROR_CODES.EC00034.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00034}});
         }
 
-        const {isAuthorized, errorMessage} = authorizeByScopeAndTenant(this.oidcContext, CLIENT_UPDATE_SCOPE, client.tenantId);
+        const {isAuthorized, errorDetail} = authorizeByScopeAndTenant(this.oidcContext, CLIENT_UPDATE_SCOPE, client.tenantId);
         if(!isAuthorized){
-            throw new GraphQLError(errorMessage || "ERROR");
+            throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});
         }
-
+        changeEventDao.addChangeEvent({
+            objectId: clientId,
+            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+            changeEventClass: CHANGE_EVENT_CLASS_CLIENT_REDIRECT_URI,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_CREATE_REL,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify({clientId, uri})
+        });
+        
+        
         return clientDao.addRedirectURI(clientId, uri);
     }
 
     public async removeRedirectURI(clientId: string, uri: string): Promise<void>{
         const client: Client | null = await this.getClientById(clientId);
         if(!client){
-            throw new GraphQLError("ERROR_UNABLE_TO_FIND_CLIENT_BY_ID");
+            throw new GraphQLError(ERROR_CODES.EC00031.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00031}});
         }
-        const {isAuthorized, errorMessage} = authorizeByScopeAndTenant(this.oidcContext, CLIENT_UPDATE_SCOPE, client.tenantId);
+        const {isAuthorized, errorDetail} = authorizeByScopeAndTenant(this.oidcContext, CLIENT_UPDATE_SCOPE, client.tenantId);
         if(!isAuthorized){
-            throw new GraphQLError(errorMessage || "ERROR");
+            throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});
         }
+        changeEventDao.addChangeEvent({
+            objectId: clientId,
+            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+            changeEventClass: CHANGE_EVENT_CLASS_CLIENT_REDIRECT_URI,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_REMOVE_REL,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify({clientId, uri})
+        });
         return clientDao.removeRedirectURI(clientId, uri);
     }
     

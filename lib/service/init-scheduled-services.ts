@@ -9,6 +9,7 @@ import { generateRandomToken } from "@/utils/dao-utils";
 import { CronJob } from "cron";
 import DeletionService from "./deletion-service";
 import SigningKeysService from "./keys-service";
+import { logWithDetails } from "../logging/logger";
 
 
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
@@ -100,9 +101,8 @@ async function createNewJwtSigningKey(){
             }
         }
     }
-    catch(err){
-        // TODO
-        // Log error message and send alert.
+    catch(err: any){
+        logWithDetails("error", `Error creating new JWT signing key. ${err.message}.`, {...err});
     }
     await schedulerDao.deleteSchedulerLock(schedulerLock.lockInstanceId);
 }

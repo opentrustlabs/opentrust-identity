@@ -1,4 +1,4 @@
-import { LookaheadResult, ObjectSearchResults, SearchFilterInput, SearchFilterInputObjectType, SearchInput, ObjectSearchResultItem, RelSearchResults, RelSearchInput, RelSearchResultItem, SearchRelType, SearchResultType, LookaheadItem } from "@/graphql/generated/graphql-types";
+import { LookaheadResult, ObjectSearchResults, SearchFilterInput, SearchFilterInputObjectType, SearchInput, ObjectSearchResultItem, RelSearchResults, RelSearchInput, RelSearchResultItem, SearchRelType, SearchResultType, LookaheadItem, ErrorDetail } from "@/graphql/generated/graphql-types";
 import { OIDCContext } from "@/graphql/graphql-context";
 import { getOpenSearchClient } from "../data-sources/search";
 import { Client } from "@opensearch-project/opensearch";
@@ -6,6 +6,7 @@ import { Search_Response } from "@opensearch-project/opensearch/api/index.js";
 import { ALLOWED_OBJECT_SEARCH_SORT_FIELDS, ALLOWED_SEARCH_DIRECTIONS, AUTHENTICATION_GROUP_READ_SCOPE, AUTHORIZATION_GROUP_READ_SCOPE, CLIENT_READ_SCOPE, FEDERATED_OIDC_PROVIDER_READ_SCOPE, KEY_READ_SCOPE, MAX_SEARCH_PAGE, MAX_SEARCH_PAGE_SIZE, MIN_SEARCH_PAGE_SIZE, RATE_LIMIT_READ_SCOPE, SCOPE_READ_SCOPE, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE, USER_READ_SCOPE } from "@/utils/consts";
 import { containsScope } from "@/utils/authz-utils";
 import { GraphQLError } from "graphql";
+import { ERROR_CODES } from "../models/error";
 
 
 // The opensearch javascript client api documentation and boolean query documentation: 
@@ -46,9 +47,9 @@ class SearchService {
     public async search(searchInput: SearchInput): Promise<ObjectSearchResults> {
 
 
-        const {isPermitted, errorMessage} = this.validatePermissions(searchInput.resultType || null);
+        const {isPermitted, errorDetail} = this.validatePermissions(searchInput.resultType || null);
         if(!isPermitted){
-            throw new GraphQLError(errorMessage || "");
+            throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});
         }
 
         const searchResultsTypesToOmit: Array<SearchResultType> = this.getSearchTypesToOmit();
@@ -115,9 +116,9 @@ class SearchService {
 
     public async relSearch(relSearchInput: RelSearchInput): Promise<RelSearchResults> {
 
-        const {isPermitted, errorMessage} = this.validatePermissions(relSearchInput.childtype || null);
+        const {isPermitted, errorDetail} = this.validatePermissions(relSearchInput.childtype || null);
         if(!isPermitted){
-            throw new GraphQLError(errorMessage || "");
+            throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});
         }
 
         const searchResultsTypesToOmit: Array<SearchResultType> = this.getSearchTypesToOmit();
@@ -365,29 +366,27 @@ class SearchService {
         return searchResults;        
     }
     
-    protected validatePermissions(resultType: SearchResultType | null): {isPermitted: boolean, errorMessage: string | null} {
+    protected validatePermissions(resultType: SearchResultType | null): {isPermitted: boolean, errorDetail: ErrorDetail} {
 
         if(!containsScope(MINIMUM_SCOPES_REQUIRED_FOR_SEARCH, this.oidcContext.portalUserProfile?.scope || [])){
-            //throw new GraphQLError("ERROR_NO_PERMISSIONS_FOR_SEARCH");
-            return {isPermitted: false, errorMessage: "ERROR_NO_PERMISSIONS_FOR_SEARCH"};
+            return {isPermitted: false, errorDetail: ERROR_CODES.EC00085};
         }
         // If the user specified a particular type of object to return, do they have the permission
         // to view those types of objects
         if( !(resultType === undefined || resultType === null ) ){
+            // Is the result type one of the know results types supported?
             const requiredScope: string | undefined = MAP_SEARCH_RESULT_TYPE_TO_SCOPE.get(resultType);
             if(requiredScope === undefined){
-                //throw new GraphQLError("ERROR_NO_VALID_PERMISSIONS_FOR_SEARCH");
-                return {isPermitted: false, errorMessage: "ERROR_NO_VALID_PERMISSIONS_FOR_SEARCH"};
+                return {isPermitted: false, errorDetail: ERROR_CODES.EC00086};
             }
             else{
                 const b: boolean = containsScope([requiredScope, TENANT_READ_ALL_SCOPE], this.oidcContext.portalUserProfile?.scope || []);
                 if(!b){
-                    //throw new GraphQLError("ERROR_NO_PERMISSION");
-                    return {isPermitted: false, errorMessage: "ERROR_NO_PERMISSION"};
+                    return {isPermitted: false, errorDetail: ERROR_CODES.EC00087};
                 }
             }
         }
-        return {isPermitted: true, errorMessage: null}
+        return {isPermitted: true, errorDetail: ERROR_CODES.NULL_ERROR}
     }
 
 

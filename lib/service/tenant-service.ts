@@ -1,9 +1,9 @@
-import { TenantAnonymousUserConfiguration, ObjectSearchResultItem, SearchResultType, Tenant, TenantLegacyUserMigrationConfig, TenantLookAndFeel, TenantManagementDomainRel, TenantMetaData, TenantPasswordConfig, TenantRestrictedAuthenticationDomainRel, FederatedOidcProviderTenantRel, TenantAvailableScope, TenantLoginFailurePolicy, CaptchaConfig, SystemSettings, SystemSettingsUpdateInput, JobData, Client } from "@/graphql/generated/graphql-types";
+import { TenantAnonymousUserConfiguration, ObjectSearchResultItem, SearchResultType, Tenant, TenantLegacyUserMigrationConfig, TenantLookAndFeel, TenantManagementDomainRel, TenantMetaData, TenantPasswordConfig, TenantRestrictedAuthenticationDomainRel, FederatedOidcProviderTenantRel, TenantAvailableScope, TenantLoginFailurePolicy, CaptchaConfig, SystemSettings, SystemSettingsUpdateInput, JobData, Client, ErrorDetail } from "@/graphql/generated/graphql-types";
 import { OIDCContext } from "@/graphql/graphql-context";
 import TenantDao from "@/lib/dao/tenant-dao";
 import { GraphQLError } from "graphql";
 import { randomUUID } from 'crypto'; 
-import { CAPTCHA_CONFIG_SCOPE, DEFAULT_TENANT_META_DATA, JOBS_READ_SCOPE, MFA_AUTH_TYPE_NONE, MFA_AUTH_TYPES, PASSWORD_HASHING_ALGORITHMS, PASSWORD_MAXIMUM_LENGTH, PASSWORD_MINIMUM_LENGTH, SEARCH_INDEX_OBJECT_SEARCH, SYSTEM_SETTINGS_READ_SCOPE, SYSTEM_SETTINGS_UPDATE_SCOPE, TENANT_CREATE_SCOPE, TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE, TENANT_TYPE_ROOT_TENANT, TENANT_TYPES_DISPLAY, TENANT_UPDATE_SCOPE } from "@/utils/consts";
+import { CAPTCHA_CONFIG_SCOPE, CHANGE_EVENT_CLASS_TENANT, CHANGE_EVENT_CLASS_TENANT_ANONYMOUS_USER_CONFIGURATION, CHANGE_EVENT_CLASS_TENANT_AUTHENTICATION_DOMAIN_REL, CHANGE_EVENT_CLASS_TENANT_LEGACY_USER_MIGRATION_CONFIGURATION, CHANGE_EVENT_CLASS_TENANT_LOGIN_FAILURE_POLICY, CHANGE_EVENT_CLASS_TENANT_LOOK_AND_FEEL, CHANGE_EVENT_CLASS_TENANT_PASSWORD_CONFIGURATION, CHANGE_EVENT_TYPE_CREATE, CHANGE_EVENT_TYPE_CREATE_REL, CHANGE_EVENT_TYPE_DELETE, CHANGE_EVENT_TYPE_REMOVE_REL, CHANGE_EVENT_TYPE_UPDATE, DEFAULT_TENANT_META_DATA, JOBS_READ_SCOPE, MFA_AUTH_TYPE_NONE, MFA_AUTH_TYPES, PASSWORD_HASHING_ALGORITHMS, PASSWORD_MAXIMUM_LENGTH, PASSWORD_MINIMUM_LENGTH, SEARCH_INDEX_OBJECT_SEARCH, SYSTEM_SETTINGS_READ_SCOPE, SYSTEM_SETTINGS_UPDATE_SCOPE, TENANT_CREATE_SCOPE, TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE, TENANT_TYPE_ROOT_TENANT, TENANT_TYPES_DISPLAY, TENANT_UPDATE_SCOPE } from "@/utils/consts";
 import { getOpenSearchClient } from "@/lib/data-sources/search";
 import FederatedOIDCProviderDao from "../dao/federated-oidc-provider-dao";
 import { DaoFactory } from "../data-sources/dao-factory";
@@ -12,6 +12,8 @@ import { authorizeByScopeAndTenant, containsScope, ServiceAuthorizationWrapper }
 import MarkForDeleteDao from "../dao/mark-for-delete-dao";
 import SchedulerDao from "../dao/scheduler-dao";
 import ClientDao from "../dao/client-dao";
+import { ERROR_CODES } from "../models/error";
+import ChangeEventDao from "../dao/change-event-dao";
 
 const searchClient = getOpenSearchClient();
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
@@ -20,7 +22,7 @@ const federatedOIDCProviderDao: FederatedOIDCProviderDao = DaoFactory.getInstanc
 const scopeDao: ScopeDao = DaoFactory.getInstance().getScopeDao();
 const markForDeleteDao: MarkForDeleteDao = DaoFactory.getInstance().getMarkForDeleteDao();
 const schedulerDao: SchedulerDao = DaoFactory.getInstance().getSchedulerDao();
-
+const changeEventDao: ChangeEventDao = DaoFactory.getInstance().getChangeEventDao();
 
 class TenantService {
 
@@ -57,12 +59,12 @@ class TenantService {
     public async updateRootTenant(tenant: Tenant): Promise<Tenant> {
         const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_UPDATE_SCOPE], tenant.tenantId);
         if(!authResult.isAuthorized){
-            throw new GraphQLError(authResult.errorMessage || "ERROR");
+            throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
         }
 
-        const {valid, errorMessage} = await this.validateTenantInput(tenant);        
+        const {valid, errorDetail} = await this.validateTenantInput(tenant);        
         if(!valid){
-            throw new GraphQLError(errorMessage);
+            throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});
         }
 
         // TODO
@@ -76,7 +78,7 @@ class TenantService {
     public async getTenants(tenantIds?: Array<string>, federatedOIDCProviderId?: string, scopeId?: string): Promise<Array<Tenant>> {
         const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE], this.oidcContext.portalUserProfile?.managementAccessTenantId || "");
         if(!authResult.isAuthorized){
-            throw new GraphQLError(authResult.errorMessage || "ERROR");
+            throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
         }
 
         let tenantFilterIds: Array<string> | undefined = undefined;
@@ -105,7 +107,7 @@ class TenantService {
     public async getTenantById(tenantId: string): Promise<Tenant | null> {
         const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE], tenantId);
         if(!authResult.isAuthorized){
-            throw new GraphQLError(authResult.errorMessage || "ERROR");
+            throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
         }
 
         return tenantDao.getTenantById(tenantId);
@@ -115,17 +117,27 @@ class TenantService {
 
         const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_CREATE_SCOPE], null);
         if(!authResult.isAuthorized){
-            throw new GraphQLError(authResult.errorMessage || "ERROR");
+            throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
         }
 
-        const {valid, errorMessage} = await this.validateTenantInput(tenant);
+        const {valid, errorDetail} = await this.validateTenantInput(tenant);
         if(!valid){
-            throw new GraphQLError(errorMessage);
+            throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});
         }
         
         tenant.tenantId = randomUUID().toString();
         await tenantDao.createTenant(tenant);
         await this.updateSearchIndex(tenant);
+
+        changeEventDao.addChangeEvent({
+            objectId: tenant.tenantId,
+            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+            changeEventClass: CHANGE_EVENT_CLASS_TENANT,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_CREATE,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify(tenant)
+        });
 
         return Promise.resolve(tenant);
     }
@@ -156,7 +168,7 @@ class TenantService {
         });        
     }
     
-    protected async validateTenantInput(tenant: Tenant): Promise<{valid: boolean, errorMessage: string}> {
+    protected async validateTenantInput(tenant: Tenant): Promise<{valid: boolean, errorDetail: ErrorDetail}> {
         // TODO
         //
         //
@@ -170,18 +182,18 @@ class TenantService {
         //     }
         // }
         
-        return {valid: true, errorMessage: ""};
+        return {valid: true, errorDetail: ERROR_CODES.NULL_ERROR};
     }
 
     public async updateTenant(tenant: Tenant): Promise<Tenant> {
         const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_UPDATE_SCOPE], tenant.tenantId);
         if(!authResult.isAuthorized){
-            throw new GraphQLError(authResult.errorMessage || "ERROR");
+            throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
         }
 
-        const {valid, errorMessage} = await this.validateTenantInput(tenant);
+        const {valid, errorDetail} = await this.validateTenantInput(tenant);
         if(!valid){
-            throw new GraphQLError(errorMessage);
+            throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});
         }
         
         // TODO
@@ -189,62 +201,68 @@ class TenantService {
         // provider with a provider type of "SOCIAL"
         await tenantDao.updateTenant(tenant);
         await this.updateSearchIndex(tenant);
-        return Promise.resolve(tenant);
-    }
 
-    public async deleteTenant(tenantId: string): Promise<void> {
-        // delete all clients
-        // delete all groups
-        // delete all users
-        // delete all login groups
-        // delete all LoginGroupClientRel
-        // delete all LoginGroupUserRel
-        // delete all UserGroupRel
-        // UserCredential
-        // UserCredentialHistory
-        // Key
-        // TenantRateLimitRel
-        // TenantScopeRel
-        // ClientTenantScopeRel
-        // TenantManagementDomainRel
-        // delete tenant
-        throw new Error("Method not implemented.");
+        changeEventDao.addChangeEvent({
+            objectId: tenant.tenantId,
+            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+            changeEventClass: CHANGE_EVENT_CLASS_TENANT,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_UPDATE,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify(tenant)
+        });
+
+        return Promise.resolve(tenant);
     }
 
 
     public async addDomainToTenantManagement(tenantId: string, domain: string): Promise<TenantManagementDomainRel | null> {
         const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_UPDATE_SCOPE], tenantId);
         if(!authResult.isAuthorized){
-            throw new GraphQLError(authResult.errorMessage || "ERROR");
+            throw new GraphQLError(authResult.errorDetail.errorMessage, {extensions: {errorDetail: authResult.errorDetail}});
         }
 
         const tenant: Tenant | null = await tenantDao.getTenantById(tenantId);
-        if(!tenant){
-            throw new GraphQLError("ERROR_TENANT_DOES_NOT_EXIST");
+        if(!tenant){            
+            throw new GraphQLError(ERROR_CODES.EC00008.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00008}});
         }
-        // if this exists, there should be at most 1. If the tenant id is different, then delete the existing record
-        // and insert a new one, since the domain needs to be a unique key in this relationship.
-        const relsByDomain: Array<TenantManagementDomainRel> = await this.getDomainTenantManagementRels(undefined, domain);
-        if(!relsByDomain || relsByDomain.length === 0){
-            return tenantDao.addDomainToTenantManagement(tenantId, domain);
+        // if the relsByDomain exists, just return it        
+        const relsByDomain: Array<TenantManagementDomainRel> = await this.getDomainTenantManagementRels(tenantId, domain);
+        if(relsByDomain.length === 1){
+            return {
+                domain,
+                tenantId
+            };
         }
-        else{    
-            const rel: TenantManagementDomainRel = relsByDomain[0];
-            // if equal to existing record, just return it
-            if(rel.tenantId === tenantId){
-                return Promise.resolve({tenantId, domain});
-            }
-            // else delete the existing relationship and add new
-            await this.removeDomainFromTenantManagement(tenantId, domain);
-            return tenantDao.addDomainToTenantManagement(tenantId, domain);
-        }        
+
+        changeEventDao.addChangeEvent({
+            objectId: tenantId,
+            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+            changeEventClass: CHANGE_EVENT_CLASS_TENANT_AUTHENTICATION_DOMAIN_REL,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_CREATE_REL,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify({tenantId, domain})
+        });
+
+        return tenantDao.addDomainToTenantManagement(tenantId, domain);
     }
 
     public async removeDomainFromTenantManagement(tenantId: string, domain: string): Promise<TenantManagementDomainRel | null> {
         const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_UPDATE_SCOPE], tenantId);
         if(!authResult.isAuthorized){
-            throw new GraphQLError(authResult.errorMessage || "ERROR");
+            throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
         }
+        changeEventDao.addChangeEvent({
+            objectId: tenantId,
+            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+            changeEventClass: CHANGE_EVENT_CLASS_TENANT_AUTHENTICATION_DOMAIN_REL,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_REMOVE_REL,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify({tenantId, domain})
+        });
+
         return tenantDao.removeDomainFromTenantManagement(tenantId, domain);
     }
 
@@ -265,37 +283,12 @@ class TenantService {
         const rels = await getData(this.oidcContext, [TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE], tenantId, domain);
         return rels || [];
     }
-
-
-    public async createAnonymousUserConfiguration(tenantId: string, anonymousUserConfiguration: TenantAnonymousUserConfiguration): Promise<TenantAnonymousUserConfiguration>{
-        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_UPDATE_SCOPE], tenantId);
-        if(!authResult.isAuthorized){
-            throw new GraphQLError(authResult.errorMessage || "ERROR");
-        }
-        
-        return tenantDao.createAnonymousUserConfiguration(tenantId, anonymousUserConfiguration);
-    }
-
-    public async updateAnonymousUserConfiguration(anonymousUserConfiguration: TenantAnonymousUserConfiguration): Promise<TenantAnonymousUserConfiguration>{
-        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_UPDATE_SCOPE], anonymousUserConfiguration.tenantId);
-        if(!authResult.isAuthorized){
-            throw new GraphQLError(authResult.errorMessage || "ERROR");
-        }
-        return tenantDao.updateAnonymousUserConfiguration(anonymousUserConfiguration);
-    }
-
-    public async deleteAnonymousUserConfiguration(tenantId: string): Promise<void>{
-        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_UPDATE_SCOPE], tenantId);
-        if(!authResult.isAuthorized){
-            throw new GraphQLError(authResult.errorMessage || "ERROR");
-        }
-        return tenantDao.deleteAnonymousUserConfiguration(tenantId);
-    }
+   
 
     public async getTenantMetaData(tenantId: string): Promise<TenantMetaData | null> {
         const tenant: Tenant | null = await tenantDao.getTenantById(tenantId);
         if(!tenant){
-            throw new GraphQLError("ERROR_TENANT_DOES_NOT_EXIST");
+            throw new GraphQLError(ERROR_CODES.EC00008.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00008}});
         }
         
         const tenantLookAndFeel: TenantLookAndFeel | null = await tenantDao.getTenantLookAndFeel(tenantId);
@@ -316,7 +309,7 @@ class TenantService {
     public async getTenantLookAndFeel(tenantId: string): Promise<TenantLookAndFeel | null> {
         const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_READ_SCOPE, TENANT_READ_ALL_SCOPE], tenantId);
         if(!authResult.isAuthorized){
-            throw new GraphQLError(authResult.errorMessage || "ERROR");
+            throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
         }
         const tenantLookAndFeel: TenantLookAndFeel | null = await tenantDao.getTenantLookAndFeel(tenantId);
         return Promise.resolve(tenantLookAndFeel);
@@ -325,14 +318,32 @@ class TenantService {
     public async setTenantLookAndFeel(tenantLookAndFeel: TenantLookAndFeel): Promise<TenantLookAndFeel>{
         const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_UPDATE_SCOPE], tenantLookAndFeel.tenantid);
         if(!authResult.isAuthorized){
-            throw new GraphQLError(authResult.errorMessage || "ERROR");
+            throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
         }
 
         const existing: TenantLookAndFeel | null = await tenantDao.getTenantLookAndFeel(tenantLookAndFeel.tenantid);
         if(!existing){
+            changeEventDao.addChangeEvent({
+                objectId: tenantLookAndFeel.tenantid,
+                changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+                changeEventClass: CHANGE_EVENT_CLASS_TENANT_LOOK_AND_FEEL,
+                changeEventId: randomUUID().toString(),
+                changeEventType: CHANGE_EVENT_TYPE_CREATE,
+                changeTimestamp: Date.now(),
+                data: JSON.stringify(tenantLookAndFeel)
+            });
             return tenantDao.createTenantLookAndFeel(tenantLookAndFeel);
         }
         else {
+            changeEventDao.addChangeEvent({
+                objectId: tenantLookAndFeel.tenantid,
+                changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+                changeEventClass: CHANGE_EVENT_CLASS_TENANT_LOOK_AND_FEEL,
+                changeEventId: randomUUID().toString(),
+                changeEventType: CHANGE_EVENT_TYPE_UPDATE,
+                changeTimestamp: Date.now(),
+                data: JSON.stringify(tenantLookAndFeel)
+            });
             return tenantDao.updateTenantLookAndFeel(tenantLookAndFeel);
         }
     }
@@ -341,8 +352,18 @@ class TenantService {
     public async deleteTenantLookAndFeel(tenantId: string): Promise<void>{
         const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_UPDATE_SCOPE], tenantId);
         if(!authResult.isAuthorized){
-            throw new GraphQLError(authResult.errorMessage || "ERROR");
+            throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
         }
+        
+        changeEventDao.addChangeEvent({
+            objectId: tenantId,
+            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+            changeEventClass: CHANGE_EVENT_CLASS_TENANT_LOOK_AND_FEEL,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_DELETE,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify({tenantId})
+        });
         return tenantDao.deleteTenantLookAndFeel(tenantId);
     }
 
@@ -353,18 +374,18 @@ class TenantService {
     public async assignPasswordConfigToTenant(tenantPasswordConfig: TenantPasswordConfig): Promise<TenantPasswordConfig>{
         const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_UPDATE_SCOPE], tenantPasswordConfig.tenantId);
         if(!authResult.isAuthorized){
-            throw new GraphQLError(authResult.errorMessage || "ERROR");
+            throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
         }
 
         if(tenantPasswordConfig.passwordMinLength < PASSWORD_MINIMUM_LENGTH){
-            throw new GraphQLError("ERROR_PASSWORD_MINIMUM_LENGTH_OUT_OF_BOUNDS");
+            throw new GraphQLError(ERROR_CODES.EC00088.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00088}});
         }
         if(tenantPasswordConfig.passwordMaxLength > PASSWORD_MAXIMUM_LENGTH){
-            throw new GraphQLError("ERROR_PASSWORD_MAXIMUM_LENGTH_OUT_OF_BOUNDS");
+            throw new GraphQLError(ERROR_CODES.EC00089.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00089}});
         }
         if(tenantPasswordConfig.requireMfa){
             if(tenantPasswordConfig.mfaTypesRequired === null || tenantPasswordConfig.mfaTypesRequired === undefined || tenantPasswordConfig.mfaTypesRequired === ""){
-                throw new GraphQLError("ERROR_NO_MFA_TYPE_SPECIFIED_FOR_REQUIRED_MFA");
+                throw new GraphQLError(ERROR_CODES.EC00090.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00090}});
             }
             else{
                 const mfaTypes = tenantPasswordConfig.mfaTypesRequired.split(",");
@@ -380,23 +401,41 @@ class TenantService {
                     }
                 }
                 if(hasValidMfaTypes === false){
-                    throw new GraphQLError("ERROR_INVALID_MFA_TYPE_SUPPLIED");
+                    throw new GraphQLError(ERROR_CODES.EC00091.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00091}});
                 }
             }
         }
         if(!PASSWORD_HASHING_ALGORITHMS.includes(tenantPasswordConfig.passwordHashingAlgorithm)){
-            throw new GraphQLError("ERROR_INVALID_HASHING_ALGORITHM_SUPPLIED");
+            throw new GraphQLError(ERROR_CODES.EC00092.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00092}});
         }
 
         const tenant: Tenant | null = await tenantDao.getTenantById(tenantPasswordConfig.tenantId);
         if(tenant === null){
-            throw new GraphQLError("ERROR_UNABLE_TO_RETRIEVE_TENANT");
+            throw new GraphQLError(ERROR_CODES.EC00008.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00008}});
         }
         const existingConfig: TenantPasswordConfig | null = await tenantDao.getTenantPasswordConfig(tenantPasswordConfig.tenantId);
-        if(existingConfig === null){
+        if(existingConfig === null){ 
+            changeEventDao.addChangeEvent({
+                objectId: tenantPasswordConfig.tenantId,
+                changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+                changeEventClass: CHANGE_EVENT_CLASS_TENANT_PASSWORD_CONFIGURATION,
+                changeEventId: randomUUID().toString(),
+                changeEventType: CHANGE_EVENT_TYPE_CREATE,
+                changeTimestamp: Date.now(),
+                data: JSON.stringify(tenantPasswordConfig)
+            });
             return tenantDao.assignPasswordConfigToTenant(tenantPasswordConfig);    
         }
         else{
+            changeEventDao.addChangeEvent({
+                objectId: tenantPasswordConfig.tenantId,
+                changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+                changeEventClass: CHANGE_EVENT_CLASS_TENANT_PASSWORD_CONFIGURATION,
+                changeEventId: randomUUID().toString(),
+                changeEventType: CHANGE_EVENT_TYPE_UPDATE,
+                changeTimestamp: Date.now(),
+                data: JSON.stringify(tenantPasswordConfig)
+            });
             return tenantDao.updatePasswordConfig(tenantPasswordConfig);
         }
     }
@@ -404,15 +443,24 @@ class TenantService {
     public async removePasswordConfigFromTenant(tenantId: string): Promise<void>{
         const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_UPDATE_SCOPE], tenantId);
         if(!authResult.isAuthorized){
-            throw new GraphQLError(authResult.errorMessage || "ERROR");
+            throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
         }
+        changeEventDao.addChangeEvent({
+            objectId: tenantId,
+            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+            changeEventClass: CHANGE_EVENT_CLASS_TENANT_PASSWORD_CONFIGURATION,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_DELETE,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify({tenantId})
+        });
         return tenantDao.removePasswordConfigFromTenant(tenantId);
     }
 
     public async getLegacyUserMigrationConfiguration(tenantId: string): Promise<TenantLegacyUserMigrationConfig | null> {
         const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_READ_SCOPE, TENANT_READ_ALL_SCOPE], tenantId);
         if(!authResult.isAuthorized){
-            throw new GraphQLError(authResult.errorMessage || "ERROR");
+            throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
         }
         return tenantDao.getLegacyUserMigrationConfiguration(tenantId);
     }
@@ -420,21 +468,89 @@ class TenantService {
     public async setTenantLegacyUserMigrationConfiguration(tenantLegacyUserMigrationConfig: TenantLegacyUserMigrationConfig): Promise<TenantLegacyUserMigrationConfig | null> {
         const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_UPDATE_SCOPE], tenantLegacyUserMigrationConfig.tenantId);
         if(!authResult.isAuthorized){
-            throw new GraphQLError(authResult.errorMessage || "ERROR");
+            throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
         }
         const existing: TenantLegacyUserMigrationConfig | null = await tenantDao.getLegacyUserMigrationConfiguration(tenantLegacyUserMigrationConfig.tenantId);
-        if(existing){
+        if(existing){ CHANGE_EVENT_CLASS_TENANT_LEGACY_USER_MIGRATION_CONFIGURATION
+            changeEventDao.addChangeEvent({
+                objectId: tenantLegacyUserMigrationConfig.tenantId,
+                changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+                changeEventClass: CHANGE_EVENT_CLASS_TENANT_LEGACY_USER_MIGRATION_CONFIGURATION,
+                changeEventId: randomUUID().toString(),
+                changeEventType: CHANGE_EVENT_TYPE_UPDATE,
+                changeTimestamp: Date.now(),
+                data: JSON.stringify(tenantLegacyUserMigrationConfig)
+            });
             return tenantDao.updateTenantLegacyUserMigrationConfiguration(tenantLegacyUserMigrationConfig)
         }
         else{
+            changeEventDao.addChangeEvent({
+                objectId: tenantLegacyUserMigrationConfig.tenantId,
+                changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+                changeEventClass: CHANGE_EVENT_CLASS_TENANT_LEGACY_USER_MIGRATION_CONFIGURATION,
+                changeEventId: randomUUID().toString(),
+                changeEventType: CHANGE_EVENT_TYPE_CREATE,
+                changeTimestamp: Date.now(),
+                data: JSON.stringify(tenantLegacyUserMigrationConfig)
+            });
             return tenantDao.createTenantLegacyUserMigrationConfiguration(tenantLegacyUserMigrationConfig);
         }
+    }
+
+    public async setTenantAnonymousUserConfig(tenantAnonymousUserConfigInput: TenantAnonymousUserConfiguration): Promise<TenantAnonymousUserConfiguration> {
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_UPDATE_SCOPE], tenantAnonymousUserConfigInput.tenantId); 
+        if(!authResult.isAuthorized){
+            throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
+        }
+        const existing: TenantAnonymousUserConfiguration | null = await tenantDao.getAnonymousUserConfiguration(tenantAnonymousUserConfigInput.tenantId);
+        if(existing){
+            changeEventDao.addChangeEvent({
+                objectId: tenantAnonymousUserConfigInput.tenantId,
+                changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+                changeEventClass: CHANGE_EVENT_CLASS_TENANT_ANONYMOUS_USER_CONFIGURATION,
+                changeEventId: randomUUID().toString(),
+                changeEventType: CHANGE_EVENT_TYPE_UPDATE,
+                changeTimestamp: Date.now(),
+                data: JSON.stringify(tenantAnonymousUserConfigInput)
+            });
+            return tenantDao.updateAnonymousUserConfiguration(tenantAnonymousUserConfigInput);
+        }
+        else{
+            changeEventDao.addChangeEvent({
+                objectId: tenantAnonymousUserConfigInput.tenantId,
+                changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+                changeEventClass: CHANGE_EVENT_CLASS_TENANT_ANONYMOUS_USER_CONFIGURATION,
+                changeEventId: randomUUID().toString(),
+                changeEventType: CHANGE_EVENT_TYPE_CREATE,
+                changeTimestamp: Date.now(),
+                data: JSON.stringify(tenantAnonymousUserConfigInput)
+            });
+            return tenantDao.createAnonymousUserConfiguration(tenantAnonymousUserConfigInput);
+        }
+    }
+
+    public async removeTenantAnonymousUserConfig(tenantId: string): Promise<void> {
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_UPDATE_SCOPE], tenantId); 
+        if(!authResult.isAuthorized){
+            throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
+        }
+        await tenantDao.deleteAnonymousUserConfiguration(tenantId);
+        changeEventDao.addChangeEvent({
+            objectId: tenantId,
+            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+            changeEventClass: CHANGE_EVENT_CLASS_TENANT_ANONYMOUS_USER_CONFIGURATION,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_DELETE,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify({tenantId})
+        });
+        return;
     }
 
     public async getDomainsForTenantRestrictedAuthentication(tenantId: string): Promise<Array<TenantRestrictedAuthenticationDomainRel>>{
         const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_READ_SCOPE, TENANT_READ_ALL_SCOPE], tenantId);
         if(!authResult.isAuthorized){
-            throw new GraphQLError(authResult.errorMessage || "ERROR");
+            throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
         }
         return tenantDao.getDomainsForTenantRestrictedAuthentication(tenantId);
     }
@@ -442,23 +558,42 @@ class TenantService {
     public async addDomainToTenantRestrictedAuthentication(tenantId: string, domain: string): Promise<TenantRestrictedAuthenticationDomainRel> {
         const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_UPDATE_SCOPE], tenantId);
         if(!authResult.isAuthorized){
-            throw new GraphQLError(authResult.errorMessage || "ERROR");
-        }
+            throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
+        } 
+
+        changeEventDao.addChangeEvent({
+            objectId: tenantId,
+            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+            changeEventClass: CHANGE_EVENT_CLASS_TENANT_AUTHENTICATION_DOMAIN_REL,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_CREATE_REL,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify({tenantId, domain})
+        });
         return tenantDao.addDomainToTenantRestrictedAuthentication(tenantId, domain);
     }
 
     public async removeDomainFromTenantRestrictedAuthentication(tenantId: string, domain: string): Promise<void>{
         const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_UPDATE_SCOPE], tenantId);
         if(!authResult.isAuthorized){
-            throw new GraphQLError(authResult.errorMessage || "ERROR");
+            throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
         }
+        changeEventDao.addChangeEvent({
+            objectId: tenantId,
+            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+            changeEventClass: CHANGE_EVENT_CLASS_TENANT_AUTHENTICATION_DOMAIN_REL,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_REMOVE_REL,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify({tenantId, domain})
+        });
         return tenantDao.removeDomainFromTenantRestrictedAuthentication(tenantId, domain);
     }
 
     public async getTenantLoginFailurePolicy(tenantId: string): Promise<TenantLoginFailurePolicy | null> {
         const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_READ_SCOPE, TENANT_READ_ALL_SCOPE], tenantId);
         if(!authResult.isAuthorized){
-            throw new GraphQLError(authResult.errorMessage || "ERROR");
+            throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
         }
         return tenantDao.getLoginFailurePolicy(tenantId);
     }
@@ -466,14 +601,32 @@ class TenantService {
     public async setTenantLoginFailurePolicy(loginFailurePolicy: TenantLoginFailurePolicy): Promise<TenantLoginFailurePolicy> {
         const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_UPDATE_SCOPE], loginFailurePolicy.tenantId);
         if(!authResult.isAuthorized){
-            throw new GraphQLError(authResult.errorMessage || "ERROR");
+            throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
         }
         const existing: TenantLoginFailurePolicy | null = await tenantDao.getLoginFailurePolicy(loginFailurePolicy.tenantId);
         
-        if(!existing){        
+        if(!existing){  
+            changeEventDao.addChangeEvent({
+                objectId: loginFailurePolicy.tenantId,
+                changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+                changeEventClass: CHANGE_EVENT_CLASS_TENANT_LOGIN_FAILURE_POLICY,
+                changeEventId: randomUUID().toString(),
+                changeEventType: CHANGE_EVENT_TYPE_CREATE,
+                changeTimestamp: Date.now(),
+                data: JSON.stringify(loginFailurePolicy)
+            });
             await tenantDao.createLoginFailurePolicy(loginFailurePolicy);        
         }
         else{
+            changeEventDao.addChangeEvent({
+                objectId: loginFailurePolicy.tenantId,
+                changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+                changeEventClass: CHANGE_EVENT_CLASS_TENANT_LOGIN_FAILURE_POLICY,
+                changeEventId: randomUUID().toString(),
+                changeEventType: CHANGE_EVENT_TYPE_UPDATE,
+                changeTimestamp: Date.now(),
+                data: JSON.stringify(loginFailurePolicy)
+            });
             await tenantDao.updateLoginFailurePolicy(loginFailurePolicy);
         }
         return loginFailurePolicy;
@@ -482,8 +635,17 @@ class TenantService {
     public async removeTenantLoginFailurePolicy(tenantId: string): Promise<void> {
         const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_UPDATE_SCOPE], tenantId);
         if(!authResult.isAuthorized){
-            throw new GraphQLError(authResult.errorMessage || "ERROR");
+            throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
         }
+        changeEventDao.addChangeEvent({
+            objectId: tenantId,
+            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+            changeEventClass: CHANGE_EVENT_CLASS_TENANT_LOGIN_FAILURE_POLICY,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_DELETE,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify({tenantId})
+        });
         await tenantDao.removeLoginFailurePolicy(tenantId);
     }
 
@@ -511,7 +673,7 @@ class TenantService {
     public async getSystemSettings(): Promise<SystemSettings> {
         const authResult = authorizeByScopeAndTenant(this.oidcContext, [SYSTEM_SETTINGS_READ_SCOPE], null);
         if(!authResult.isAuthorized){
-            throw new GraphQLError(authResult.errorMessage || "ERROR");
+            throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
         }
         return tenantDao.getSystemSettings();
     }
@@ -519,29 +681,44 @@ class TenantService {
     public async updateSystemSettings(systemSettingsUpdateInput: SystemSettingsUpdateInput): Promise<SystemSettings> {
         const authResult = authorizeByScopeAndTenant(this.oidcContext, [SYSTEM_SETTINGS_UPDATE_SCOPE], null);
         if(!authResult.isAuthorized){
-            throw new GraphQLError(authResult.errorMessage || "ERROR");
+            throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
         }
         
         const existingSystemSettings = await tenantDao.getSystemSettings();
         if(existingSystemSettings.rootClientId !== systemSettingsUpdateInput.rootClientId){
             const client: Client | null = await clientDao.getClientById(systemSettingsUpdateInput.rootClientId);
             if(client === null){
-                throw new GraphQLError("ERROR_INVALID_ROOT_CLIENT");
+                throw new GraphQLError(ERROR_CODES.EC00093.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00093}});
             }
             const rootTenant: Tenant = await tenantDao.getRootTenant();
             if(client.tenantId !== rootTenant.tenantId){
-                throw new GraphQLError("ERROR_CLIENT_DOES_NOT_BELONG_TO_THE_ROOT_TENANT");
+                throw new GraphQLError(ERROR_CODES.EC00094.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00094}});
+            }
+        }
+        if(systemSettingsUpdateInput.auditRecordRetentionPeriodDays){
+            if(systemSettingsUpdateInput.auditRecordRetentionPeriodDays < 1){
+                throw new GraphQLError(ERROR_CODES.EC00186.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00186}});
             }
         }
 
         await tenantDao.updateSystemSettings(systemSettingsUpdateInput);
+        changeEventDao.addChangeEvent({
+            objectId: existingSystemSettings.systemId,
+            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+            changeEventClass: CHANGE_EVENT_CLASS_TENANT_LOGIN_FAILURE_POLICY,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_UPDATE,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify(systemSettingsUpdateInput)
+        });
+        
         return tenantDao.getSystemSettings();
     }
 
     public async getJobData(): Promise<JobData>{
         const authResult = authorizeByScopeAndTenant(this.oidcContext, [JOBS_READ_SCOPE], null);
         if(!authResult.isAuthorized){
-            throw new GraphQLError(authResult.errorMessage || "ERROR");
+            throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
         }
 
         const m = await markForDeleteDao.getLatestMarkForDeleteRecords(500);

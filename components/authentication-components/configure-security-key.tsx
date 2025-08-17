@@ -119,9 +119,8 @@ const AuthentiationConfigureSecurityKey: React.FC<AuthenticationComponentsProps>
                     }
                 });
             }
-            catch(err){
-                console.log("in catch block");
-                console.log(err);
+            catch(err: any){
+                setErrorMessage(err.message);
             }
         }
     }
@@ -266,7 +265,6 @@ const RegistrationConfigureSecurityKey: React.FC<RegistrationComponentsProps> = 
                         }
                     }
                 });
-                console.log(attResp);
 
                 const fido2KeyRegistrationInput: Fido2KeyRegistrationInput = {
                     authenticationAttachment: attResp.authenticatorAttachment || "",
@@ -293,8 +291,8 @@ const RegistrationConfigureSecurityKey: React.FC<RegistrationComponentsProps> = 
                     }
                 });
             }
-            catch(err){
-                console.log(err);
+            catch(err: any){
+                setErrorMessage(err.message);
             }
         }
     }

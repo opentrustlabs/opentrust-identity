@@ -19,7 +19,7 @@ import PolicyIcon from '@mui/icons-material/Policy';
 import SpeedIcon from '@mui/icons-material/Speed';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import DisplaySettingsIcon from '@mui/icons-material/DisplaySettings';
-// import AutoAwesomeMosaicIcon from '@mui/icons-material/AutoAwesomeMosaic';
+import AutoAwesomeMosaicIcon from '@mui/icons-material/AutoAwesomeMosaic';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { TENANT_UPDATE_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import LoginFailureConfiguration from "./login-failure-configuration";
@@ -29,7 +29,6 @@ import AnonymousUserConfiguration from "./anonymous-user-configuration";
 import TenantLookAndFeelConfiguration from "./tenant-look-and-feel-configuration";
 import TenantManagementDomainConfiguration from "./tenant-management-domain-configuration";
 import TenantAuthenticationDomainConfiguration from "./tenant-authentication-domain-configuration";
-// import TenantFederatedOIDCProviderConfiguration from "./tenant-federated-oidc-provider-configuration";
 import ContactConfiguration from "../contacts/contact-configuration";
 import { useClipboardCopyContext } from "../contexts/clipboard-copy-context";
 import DetailSectionActionHandler from "../layout/detail-section-action-handler";
@@ -40,6 +39,7 @@ import MarkForDeleteAlert from "../deletion/mark-for-delete-alert";
 import { AuthContext, AuthContextProps } from "@/components/contexts/auth-context";
 import { PortalUserProfile } from "@/graphql/generated/graphql-types";
 import { containsScope } from "@/utils/authz-utils";
+import TenantFederatedOIDCProviderConfiguration from "./tenant-federated-oidc-provider-configuration";
 
 
 export interface TenantDetailProps {
@@ -57,7 +57,6 @@ const TenantDetail: React.FC<TenantDetailProps> = ({ tenantId }) => {
                 tenantId: tenantId
             }
         }
-
     );
 
     if (loading) return <DataLoading dataLoadingSize="xl" color={null} />
@@ -621,7 +620,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                 </Accordion>
                             }
                         </Grid2>
-                        {/* {tenantBean.getTenantMetaData().tenant.tenantType === TENANT_TYPE_ROOT_TENANT &&
+                        {tenantBean.getTenantMetaData().tenant.allowSocialLogin &&
                             <Grid2 size={12}>
                                 {!isMarkedForDelete && 
                                     <Accordion >
@@ -631,7 +630,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                             sx={{ fontWeight: "bold" }}
                                         >
                                             <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
-                                                <AutoAwesomeMosaicIcon /><div style={{marginLeft: "8px"}}>Federated OIDC Providers</div>
+                                                <AutoAwesomeMosaicIcon /><div style={{marginLeft: "8px"}}>Social OIDC Providers</div>
                                             </div>
                                             
                                         </AccordionSummary>
@@ -653,7 +652,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                     </Accordion>
                                 }
                             </Grid2>
-                        } */}
+                        }
                         
                         {tenantBean.getTenantMetaData().tenant.tenantType === TENANT_TYPE_ROOT_TENANT &&
                             <Grid2 size={12} >

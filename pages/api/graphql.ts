@@ -1,21 +1,30 @@
 import { ApolloServer } from "@apollo/server";
 import { startServerAndCreateNextHandler } from '@as-integrations/next';
 import { ApolloServerPluginLandingPageLocalDefault, ApolloServerPluginLandingPageProductionDefault } from '@apollo/server/plugin/landingPage/default';
-import { PortalUserProfile, Tenant, typeDefs } from "@/graphql/generated/graphql-types";
+import { ApolloServerErrorCode } from '@apollo/server/errors';
+import { ErrorDetail, PortalUserProfile, Tenant, typeDefs } from "@/graphql/generated/graphql-types";
 import resolvers from "@/graphql/resolvers/oidc-resolvers";
 import { NextApiRequest, NextApiResponse } from "next";
-import { ErrorResponseBody } from "@/lib/models/error";
+import { ERROR_CODES} from "@/lib/models/error";
 import JwtServiceUtils from "@/lib/service/jwt-service-utils";
 import { OIDCContext } from "@/graphql/graphql-context";
 import { DaoFactory } from "@/lib/data-sources/dao-factory";
 import TenantDao from "@/lib/dao/tenant-dao";
 import { initSchedulers } from "@/lib/service/init-scheduled-services";
 import { HTTP_HEADER_X_GEO_LOCATION, HTTP_HEADER_X_IP_ADDRESS } from "@/utils/consts";
+import { randomUUID } from "node:crypto";
+import { logWithDetails } from "@/lib/logging/logger";
+import { GraphQLFormattedError } from "graphql/error";
 
 
 declare global {
     var schedulerInitialized: boolean | undefined;
 }
+
+const {
+    ALLOW_GRAPHQL_INTROSPECTION,
+    ALLOW_GRAPHQL_ERROR_STACK_TRACES
+} = process.env;
 
 /**
  * Why is this funciton call here an not in the instrumentation.ts file at the root of 
@@ -35,11 +44,13 @@ if(!global.schedulerInitialized){
 const jwtServiceUtils: JwtServiceUtils = new JwtServiceUtils();
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
 
+
 const server = new ApolloServer(
     {
         resolvers: resolvers,
         typeDefs: typeDefs,
-        introspection: true,
+        introspection: ALLOW_GRAPHQL_INTROSPECTION && ALLOW_GRAPHQL_INTROSPECTION === "true" ? true : false,
+        includeStacktraceInErrorResponses: ALLOW_GRAPHQL_ERROR_STACK_TRACES && ALLOW_GRAPHQL_ERROR_STACK_TRACES === "true" ? true : false,
         plugins: [
             process.env.NODE_ENV === 'production' 
                 ?   ApolloServerPluginLandingPageProductionDefault({
@@ -47,7 +58,44 @@ const server = new ApolloServer(
                         footer: false,
                     })
                 :   ApolloServerPluginLandingPageLocalDefault({ footer: false })
-        ]
+        ],
+        formatError(formattedError: GraphQLFormattedError) {            
+
+            const traceId: string = randomUUID().toString();
+            logWithDetails("error", formattedError.message, {formattedError, traceId});
+            
+            if(formattedError && formattedError.extensions?.code === ApolloServerErrorCode.GRAPHQL_VALIDATION_FAILED){
+                return {
+                    ...formattedError, 
+                    message: "Your query does not match the graphql schema."
+                }
+            }
+            // This line below is for the case when an uncaught exception is thrown somewhere and we do not
+            // want to show the actual error to the user. We will, however, log the original error with a
+            // trace ID (which we will also return to the client) and which can be used for debugging purposes.
+            
+
+            
+            const errorDetail: ErrorDetail = formattedError.extensions?.errorDetail as ErrorDetail || ERROR_CODES.DEFAULT;
+            if(formattedError && formattedError.extensions?.lang){                
+                return {
+                    ...formattedError,
+                    extensions: {
+                        ...formattedError.extensions,
+                        traceId: traceId
+                    },
+                    message: errorDetail.errorMessage // TODO => i18N.translate(errorDetail.errorKey)
+                }
+            }            
+            return {
+                ...formattedError,
+                extensions: {
+                    ...formattedError.extensions,
+                    traceId: traceId
+                },
+                message: errorDetail.errorMessage
+            }
+        },
     }
 );
 

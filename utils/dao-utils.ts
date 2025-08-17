@@ -164,3 +164,45 @@ export function getDomainFromEmail(email: string): string {
     );
     return domain;
 }
+
+/**
+ * Performs an additional check on the redirect URI during the authorization 
+ * call of a client application in case none of the strict comparisons of
+ * redirect URIs match.
+ * 
+ * For some applications, the actual redirect URI for localhost (or other loopback URI) 
+ * may vary depending on what ports are available. For those applications we can ignore 
+ * differences in port number and just check to make sure that the hostnames match and
+ * the paths match.
+ * 
+ * @param uris 
+ * @param redirectUri 
+ * @returns 
+ */
+export function hasValidLoopbackRedirectUri(uris: Array<string>, redirectUri: string): boolean {
+    let bRetVal: boolean = false;
+    try{
+        const rUrl: URL = new URL(redirectUri);
+        if(rUrl.hostname === "localhost" || rUrl.hostname === "127.0.0.1"){
+            for(let i = 0; i < uris.length; i++){
+                try{
+                    const tUrl = new URL(uris[i]);
+                    if(tUrl.hostname === rUrl.hostname){
+                        if(tUrl.pathname === rUrl.pathname){
+                            bRetVal = true;
+                            break;
+                        }
+                    }
+                }
+                catch(e){
+                    // Ignore, although there really shouldn't be any misconfigured URIs stored 
+                    // for the client
+                }
+            }
+        }
+    }
+    catch(ignore: any){
+        // In case any parsing of the supplied redirectUri by the client
+    }
+    return bRetVal;
+}

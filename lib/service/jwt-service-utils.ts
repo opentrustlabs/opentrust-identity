@@ -135,9 +135,7 @@ class JwtServiceUtils {
                 stateRegionProvince: null
             }
         }
-        else if(principal.principal_type === PRINCIPAL_TYPE_ANONYMOUS_USER){
-            // TODO
-            // Refactor, since these both do the same queries.
+        else if(principal.principal_type === PRINCIPAL_TYPE_ANONYMOUS_USER){            
             const arrScopes = includeScope ? await this.getScopes(principal.sub, principal.tenant_id) : [];
             const arrProfileScopes = arrScopes.map(
                 (s: Scope) => {
@@ -373,8 +371,7 @@ class JwtServiceUtils {
             preferred_username: "",
             profile: "",
             phone_number: user.phoneNumber,
-            address: user.address,
-            updated_at: "", // TODO get the history of the updates to the user
+            address: user.address,            
             email: user.email,
             country_code: user.countryCode,
             language_code: user.preferredLanguageCode,
@@ -428,7 +425,6 @@ class JwtServiceUtils {
             profile: "",
             phone_number: user.phoneNumber,
             address: user.address,
-            updated_at: "", // TODO get the history of the updates to the user
             email: user.email,
             country_code: user.countryCode,
             language_code: user.preferredLanguageCode,

@@ -5,6 +5,7 @@ import DataLoading from "@/components/layout/data-loading";
 import ScopeDetail from "@/components/scope/scope-detail";
 import { PortalUserProfile } from "@/graphql/generated/graphql-types";
 import { SCOPE_DETAIL_QUERY } from "@/graphql/queries/oidc-queries";
+import { ERROR_CODES } from "@/lib/models/error";
 import { containsScope } from "@/utils/authz-utils";
 import { SCOPE_READ_SCOPE, TENANT_READ_ALL_SCOPE } from "@/utils/consts";
 import { useQuery } from "@apollo/client";
@@ -33,10 +34,10 @@ const ScopeDetailPage: React.FC = () => {
         
     )
 
-    if(!containsScope([TENANT_READ_ALL_SCOPE, SCOPE_READ_SCOPE], profile?.scope || [])) return <ErrorComponent message={"You do not have sufficient permission to view this page."} componentSize='lg' />
+    if(!containsScope([TENANT_READ_ALL_SCOPE, SCOPE_READ_SCOPE], profile?.scope || [])) return <ErrorComponent message={ERROR_CODES.EC00184.errorMessage} componentSize='lg' />
     if (loading) return <DataLoading dataLoadingSize="xl" color={null} />
-    if (error || !scopeId) return <ErrorComponent message={error ? error.message : "No scope detail could be found."} componentSize='lg' />
-    if (data && data.getScopeById === null) return <ErrorComponent message={"Scope Not Found"} componentSize='lg' />
+    if (error || !scopeId) return <ErrorComponent message={error ? error.message : ERROR_CODES.EC00071.errorMessage} componentSize='lg' />
+    if (data && data.getScopeById === null) return <ErrorComponent message={ERROR_CODES.EC00071.errorMessage} componentSize='lg' />
 
     return (
         <ScopeDetail scope={data.getScopeById} />

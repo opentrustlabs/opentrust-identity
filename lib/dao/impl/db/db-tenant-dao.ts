@@ -1,6 +1,6 @@
 import { Tenant, TenantManagementDomainRel, TenantAnonymousUserConfiguration, TenantLookAndFeel, TenantPasswordConfig, TenantLoginFailurePolicy, TenantLegacyUserMigrationConfig, TenantRestrictedAuthenticationDomainRel, UserTenantRel, CaptchaConfig, SystemSettings, SystemSettingsUpdateInput, SystemCategory, JobData } from "@/graphql/generated/graphql-types";
 import TenantDao from "../../tenant-dao";
-import { OPENTRUST_IDENTITY_VERSION, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
+import { DEFAULT_AUDIT_RECORD_RETENTION_PERIOD_DAYS, OPENTRUST_IDENTITY_VERSION, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import { GraphQLError } from "graphql";
 import TenantManagementDomainRelEntity from "@/lib/entities/tenant-management-domain-rel-entity";
 import TenantAnonymousUserConfigurationEntity from "@/lib/entities/tenant-anonymous-user-configuration-entity";
@@ -16,6 +16,7 @@ import UserTenantRelEntity from "@/lib/entities/user-tenant-rel-entity";
 import CaptchaConfigEntity from "@/lib/entities/captcha-config-entity";
 import SystemSettingsEntity from "@/lib/entities/system-settings-entity";
 import { randomUUID } from "node:crypto";
+import { ERROR_CODES } from "@/lib/models/error";
 
 class DBTenantDao extends TenantDao {
 
@@ -29,7 +30,7 @@ class DBTenantDao extends TenantDao {
         });
 
         if(!entity){
-            throw new GraphQLError("ERROR_UNABLE_TO_FIND_A_ROOT_TENANT");
+            throw new GraphQLError(ERROR_CODES.EC00035.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00035}});
         }
         return Promise.resolve(entity.dataValues as Tenant);
     }
@@ -41,16 +42,6 @@ class DBTenantDao extends TenantDao {
         return Promise.resolve(t as any as Tenant);
     }
 
-    // TODO
-    // Do we want to index the root tenant? Or do we want
-    // to call out the root tenant separately for those who
-    // have access to it. The call out would be on the left
-    // hand navigation for root tenant access and would look
-    // like:
-    // Root Tenant
-    // Tenants
-    // Clients
-    // ...etc.
     public async updateRootTenant(tenant: Tenant): Promise<Tenant> {
         tenant.tenantType = TENANT_TYPE_ROOT_TENANT;
         const sequelize: Sequelize = await DBDriver.getConnection();
@@ -157,7 +148,6 @@ class DBTenantDao extends TenantDao {
         return Promise.resolve(model);
     }
     
-    //tenantAnonymousUserConfiguration
     public async getAnonymousUserConfiguration(tenantId: string): Promise<TenantAnonymousUserConfiguration | null> {
         const sequelize: Sequelize = await DBDriver.getConnection();
         const entity: TenantAnonymousUserConfigurationEntity | null = await sequelize.models.tenantAnonymousUserConfiguration.findOne({
@@ -168,7 +158,7 @@ class DBTenantDao extends TenantDao {
         return entity ? Promise.resolve(entity.dataValues as TenantAnonymousUserConfiguration) : Promise.resolve(null);
     }
 
-    public async createAnonymousUserConfiguration(tenantId: string, anonymousUserConfiguration: TenantAnonymousUserConfiguration): Promise<TenantAnonymousUserConfiguration> {
+    public async createAnonymousUserConfiguration(anonymousUserConfiguration: TenantAnonymousUserConfiguration): Promise<TenantAnonymousUserConfiguration> {
         const sequelize: Sequelize = await DBDriver.getConnection();
         await sequelize.models.tenantAnonymousUserConfiguration.create(anonymousUserConfiguration);        
         return Promise.resolve(anonymousUserConfiguration);
@@ -490,20 +480,25 @@ class DBTenantDao extends TenantDao {
         const sequelize: Sequelize = await DBDriver.getConnection();
         
         const systemSettings: SystemSettings = {
+            systemId: "",
             allowRecoveryEmail: false,
             allowDuressPassword: false,
             rootClientId: "",
             enablePortalAsLegacyIdp: false,
+            auditRecordRetentionPeriodDays: DEFAULT_AUDIT_RECORD_RETENTION_PERIOD_DAYS,
             softwareVersion: OPENTRUST_IDENTITY_VERSION,
             systemCategories: []
         }
-        const arr: Array<SystemSettingsEntity> = await sequelize.models.systemSettings.findAll();
-        if(arr.length > 0){
-            const first: SystemSettings = arr[0].dataValues;
+        const systemSettingsEntity: SystemSettingsEntity | null = await sequelize.models.systemSettings.findOne();
+
+        if(systemSettingsEntity){            
+            const first: SystemSettings = systemSettingsEntity.dataValues;
+            systemSettings.systemId = first.systemId
             systemSettings.allowRecoveryEmail = first.allowRecoveryEmail;
             systemSettings.allowDuressPassword = first.allowDuressPassword;
-            systemSettings.rootClientId = first.rootClientId,
-            systemSettings.enablePortalAsLegacyIdp = first.enablePortalAsLegacyIdp
+            systemSettings.rootClientId = first.rootClientId;
+            systemSettings.enablePortalAsLegacyIdp = first.enablePortalAsLegacyIdp;
+            systemSettings.auditRecordRetentionPeriodDays = first.auditRecordRetentionPeriodDays ? first.auditRecordRetentionPeriodDays : DEFAULT_AUDIT_RECORD_RETENTION_PERIOD_DAYS;
         }
         // DB Settings
         const dbCategory: SystemCategory = {
@@ -648,25 +643,19 @@ class DBTenantDao extends TenantDao {
     
     public async updateSystemSettings(input: SystemSettingsUpdateInput): Promise<SystemSettings> {
         const sequelize: Sequelize = await DBDriver.getConnection();
-        const arr: Array<SystemSettingsEntity> = await sequelize.models.systemSettings.findAll();
-        if(arr.length === 0){
-            await sequelize.models.systemSettings.create({
-                systemId: randomUUID().toString(),
-                allowDuressPassword: input.allowDuressPassword,
-                allowRecoveryEmail: input.allowRecoveryEmail,
-                rootClientId: input.rootClientId,
-                enablePortalAsLegacyIdp: input.enablePortalAsLegacyIdp
-            })
-        }
-        else{
-            const entity: SystemSettingsEntity = arr[0];
+        const entity: SystemSettingsEntity | null = await sequelize.models.systemSettings.findOne();
+        let systemId: string = "";
+        if(entity){
+            systemId = entity.getDataValue("systemId");
             entity.setDataValue("allowRecoveryEmail", input.allowRecoveryEmail);
             entity.setDataValue("allowDuressPassword", input.allowDuressPassword);
             entity.setDataValue("rootClientId", input.rootClientId);
             entity.setDataValue("enablePortalAsLegacyIdp", input.enablePortalAsLegacyIdp);
+            entity.setDataValue("auditRecordRetentionPeriodDays", input.auditRecordRetentionPeriodDays || DEFAULT_AUDIT_RECORD_RETENTION_PERIOD_DAYS);
             await entity.save();
         }
         return {
+            systemId: systemId,
             softwareVersion: OPENTRUST_IDENTITY_VERSION,
             allowDuressPassword: input.allowDuressPassword,
             allowRecoveryEmail: input.allowRecoveryEmail,
@@ -674,9 +663,7 @@ class DBTenantDao extends TenantDao {
             enablePortalAsLegacyIdp: false,
             systemCategories: []
         }
-
     }
-
 
 }
 

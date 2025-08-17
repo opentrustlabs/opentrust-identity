@@ -22,6 +22,7 @@ import { FEDERATED_OIDC_PROVIDER_DETAIL_QUERY } from "@/graphql/queries/oidc-que
 import FederatedOIDCProviderDomainConfiguration from "./oidc-provider-domain-configuration";
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
+import SettingsApplicationsIcon from '@mui/icons-material/SettingsApplications';
 import SendOutlinedIcon from '@mui/icons-material/SendOutlined';
 import { useClipboardCopyContext } from "../contexts/clipboard-copy-context";
 import SecretViewerDialog from "../dialogs/secret-viewer-dialog";
@@ -30,6 +31,7 @@ import SubmitMarkForDelete from "../deletion/submit-mark-for-delete";
 import MarkForDeleteAlert from "../deletion/mark-for-delete-alert";
 import { AuthContext, AuthContextProps } from "../contexts/auth-context";
 import { containsScope } from "@/utils/authz-utils";
+import FederatedOIDCProviderTenantConfiguration from "./oidc-provider-tenant-configuration";
 
 export interface FederatedOIDCProviderDetailProps {
     federatedOIDCProvider: FederatedOidcProvider
@@ -387,7 +389,8 @@ const FederatedOIDCProviderDetail: React.FC<FederatedOIDCProviderDetailProps> = 
                                             </Grid2>
                                         </Grid2>
                                     </Grid2>
-                                    <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>                                        
+                                    <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>    
+                                                                          
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Well Known URI</div>
                                             <TextField name="providerWellKnownUri" id="providerWellKnownUri"
@@ -396,6 +399,22 @@ const FederatedOIDCProviderDetail: React.FC<FederatedOIDCProviderDetailProps> = 
                                                 onChange={(evt) => { oidcProviderInput.federatedOIDCProviderWellKnownUri = evt.target.value; setOIDCProviderInput({ ...oidcProviderInput }); setMarkDirty(true); }}
                                                 fullWidth={true} size="small" />
                                         </Grid2>
+                                        <Grid2 marginBottom={"16px"}>
+                                            <div style={{textDecoration: "underline"}}>Redirect URI (to be configured with the provider)</div>
+                                            <Grid2 marginTop={"8px"} container display={"inline-flex"} size={12}>
+                                                <Grid2 size={11}>
+                                                    {`${new URL(location.href).host}/api/federated-auth/return`}
+                                                </Grid2>
+                                                <Grid2 size={1}>
+                                                    <ContentCopyIcon 
+                                                        sx={{cursor: "pointer"}}
+                                                        onClick={() => {
+                                                            copyContentToClipboard(`${new URL(location.href).host}/api/federated-auth/return`, "Redirect URI copied to clipboard");
+                                                        }}
+                                                    />
+                                                </Grid2>
+                                            </Grid2>
+                                        </Grid2>  
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Authentication Type</div>
                                             <Select
@@ -491,69 +510,71 @@ const FederatedOIDCProviderDetail: React.FC<FederatedOIDCProviderDetailProps> = 
                                 />                                  
                             </Paper>
                         </Grid2>
-                        
-                        <Grid2 size={12} marginBottom={"16px"}>
-                            {!isMarkedForDelete &&
-                                <Accordion defaultExpanded={true}  >
-                                    <AccordionSummary
-                                        expandIcon={<ExpandMoreIcon />}
-                                        id={"domain-configuration"}
-                                        sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center"}}
+                        {federatedOIDCProvider.federatedOIDCProviderType === FEDERATED_OIDC_PROVIDER_TYPE_ENTERPRISE &&
+                            <Grid2 size={12} marginBottom={"16px"}>
+                                {!isMarkedForDelete &&
+                                    <Accordion defaultExpanded={true}  >
+                                        <AccordionSummary
+                                            expandIcon={<ExpandMoreIcon />}
+                                            id={"domain-configuration"}
+                                            sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center"}}
 
-                                    >
-                                        <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
-                                            <AlternateEmailIcon /><div style={{marginLeft: "8px"}}>Domains</div>
-                                        </div>
-                                    </AccordionSummary>
-                                    <AccordionDetails>
-                                        <FederatedOIDCProviderDomainConfiguration
-                                            federatedOIDCProviderId={federatedOIDCProvider.federatedOIDCProviderId}
-                                            onUpdateEnd={(success: boolean) =>{
-                                                setShowMutationBackdrop(false);
-                                                if(success){
-                                                    setShowMutationSnackbar(true);
-                                                }
-                                            }}
-                                            onUpdateStart={() =>{
-                                                setShowMutationBackdrop(true);
-                                            }}
-                                            readOnly={disableInputs}
-                                        />
-                                    </AccordionDetails>
-                                </Accordion>
-                            }
-                        </Grid2>
-                        
-                        {/* <Grid2 size={12} marginBottom={"16px"}>
-                            {!isMarkedForDelete &&
-                                <Accordion defaultExpanded={false}  >
-                                    <AccordionSummary
-                                        expandIcon={<ExpandMoreIcon />}
-                                        id={"login-failure-configuration"}
-                                        sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center"}}
+                                        >
+                                            <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
+                                                <AlternateEmailIcon /><div style={{marginLeft: "8px"}}>Domains</div>
+                                            </div>
+                                        </AccordionSummary>
+                                        <AccordionDetails>
+                                            <FederatedOIDCProviderDomainConfiguration
+                                                federatedOIDCProviderId={federatedOIDCProvider.federatedOIDCProviderId}
+                                                onUpdateEnd={(success: boolean) =>{
+                                                    setShowMutationBackdrop(false);
+                                                    if(success){
+                                                        setShowMutationSnackbar(true);
+                                                    }
+                                                }}
+                                                onUpdateStart={() =>{
+                                                    setShowMutationBackdrop(true);
+                                                }}
+                                                readOnly={disableInputs}
+                                            />
+                                        </AccordionDetails>
+                                    </Accordion>
+                                }
+                            </Grid2>
+                        }
+                        {federatedOIDCProvider.federatedOIDCProviderType === FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL &&
+                            <Grid2 size={12} marginBottom={"16px"}>
+                                {!isMarkedForDelete &&
+                                    <Accordion defaultExpanded={false}  >
+                                        <AccordionSummary
+                                            expandIcon={<ExpandMoreIcon />}
+                                            id={"login-failure-configuration"}
+                                            sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center"}}
 
-                                    >
-                                        <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
-                                            <SettingsApplicationsIcon /><div style={{marginLeft: "8px"}}>Tenants</div>
-                                        </div>
-                                    </AccordionSummary>
-                                    <AccordionDetails>
-                                        <FederatedOIDCProviderTenantConfiguration
-                                            federatedOIDCProviderId={federatedOIDCProvider.federatedOIDCProviderId}
-                                            onUpdateEnd={(success: boolean) =>{
-                                                setShowMutationBackdrop(false);
-                                                if(success){
-                                                    setShowMutationSnackbar(true);
-                                                }
-                                            }}
-                                            onUpdateStart={() =>{
-                                                setShowMutationBackdrop(true);
-                                            }}
-                                        />                                        
-                                    </AccordionDetails>
-                                </Accordion>
-                            }
-                        </Grid2> */}
+                                        >
+                                            <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
+                                                <SettingsApplicationsIcon /><div style={{marginLeft: "8px"}}>Tenants</div>
+                                            </div>
+                                        </AccordionSummary>
+                                        <AccordionDetails>
+                                            <FederatedOIDCProviderTenantConfiguration
+                                                federatedOIDCProviderId={federatedOIDCProvider.federatedOIDCProviderId}
+                                                onUpdateEnd={(success: boolean) =>{
+                                                    setShowMutationBackdrop(false);
+                                                    if(success){
+                                                        setShowMutationSnackbar(true);
+                                                    }
+                                                }}
+                                                onUpdateStart={() =>{
+                                                    setShowMutationBackdrop(true);
+                                                }}
+                                            />                                        
+                                        </AccordionDetails>
+                                    </Accordion>
+                                }
+                            </Grid2>
+                        }
                     </Grid2>
                 </DetailPageMainContentContainer>
             </DetailPageContainer>

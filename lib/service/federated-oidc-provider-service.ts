@@ -1,20 +1,24 @@
-import { FederatedOidcProvider, FederatedOidcProviderDomainRel, FederatedOidcProviderTenantRel, ObjectSearchResultItem, RelSearchResultItem, SearchResultType, Tenant } from "@/graphql/generated/graphql-types";
+import { ErrorDetail, FederatedOidcProvider, FederatedOidcProviderDomainRel, FederatedOidcProviderTenantRel, ObjectSearchResultItem, RelSearchResultItem, SearchResultType, Tenant } from "@/graphql/generated/graphql-types";
 import { OIDCContext } from "@/graphql/graphql-context";
 import FederatedOIDCProviderDao from "@/lib/dao/federated-oidc-provider-dao";
 import { GraphQLError } from "graphql/error/GraphQLError";
 import { randomUUID } from 'crypto'; 
-import { FEDERATED_OIDC_PROVIDER_CREATE_SCOPE, FEDERATED_OIDC_PROVIDER_DELETE_SCOPE, FEDERATED_OIDC_PROVIDER_READ_SCOPE, FEDERATED_OIDC_PROVIDER_TENANT_ASSIGN_SCOPE, FEDERATED_OIDC_PROVIDER_TENANT_REMOVE_SCOPE, FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL, FEDERATED_OIDC_PROVIDER_TYPES_DISPLAY, FEDERATED_OIDC_PROVIDER_UPDATE_SCOPE, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_READ_ALL_SCOPE } from "@/utils/consts";
+import { CHANGE_EVENT_CLASS_OIDC_PROVIDER, CHANGE_EVENT_CLASS_OIDC_PROVIDER_DOMAIN_REL, CHANGE_EVENT_CLASS_OIDC_PROVIDER_TENANT_REL, CHANGE_EVENT_TYPE_CREATE, CHANGE_EVENT_TYPE_CREATE_REL, CHANGE_EVENT_TYPE_REMOVE_REL, CHANGE_EVENT_TYPE_UPDATE, FEDERATED_OIDC_PROVIDER_CREATE_SCOPE, FEDERATED_OIDC_PROVIDER_DELETE_SCOPE, FEDERATED_OIDC_PROVIDER_READ_SCOPE, FEDERATED_OIDC_PROVIDER_TENANT_ASSIGN_SCOPE, FEDERATED_OIDC_PROVIDER_TENANT_REMOVE_SCOPE, FEDERATED_OIDC_PROVIDER_TYPE_ENTERPRISE, FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL, FEDERATED_OIDC_PROVIDER_TYPES_DISPLAY, FEDERATED_OIDC_PROVIDER_UPDATE_SCOPE, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_READ_ALL_SCOPE } from "@/utils/consts";
 import { Client } from "@opensearch-project/opensearch";
 import { getOpenSearchClient } from "@/lib/data-sources/search";
 import { DaoFactory } from "../data-sources/dao-factory";
 import Kms from "../kms/kms";
 import { authorizeByScopeAndTenant, ServiceAuthorizationWrapper } from "@/utils/authz-utils";
+import { ERROR_CODES } from "../models/error";
+import { logWithDetails } from "../logging/logger";
+import ChangeEventDao from "../dao/change-event-dao";
 
 
 const searchClient: Client = getOpenSearchClient();
 const federatedOIDCProviderDao: FederatedOIDCProviderDao = DaoFactory.getInstance().getFederatedOIDCProvicerDao();
 const tenantDao = DaoFactory.getInstance().getTenantDao();
 const kms: Kms = DaoFactory.getInstance().getKms();
+const changeEventDao: ChangeEventDao = DaoFactory.getInstance().getChangeEventDao();
 
 class FederatedOIDCProviderService {
 
@@ -58,19 +62,19 @@ class FederatedOIDCProviderService {
                     const provider: FederatedOidcProvider | null = await federatedOIDCProviderDao.getFederatedOidcProviderById(federatedOIDCProviderId);                    
                     return provider;
                 },
-                additionalConstraintCheck: async function(oidcContext: OIDCContext, result: FederatedOidcProvider | null): Promise<{isAuthorized: boolean, errorMessage: string | null}> {
+                additionalConstraintCheck: async function(oidcContext: OIDCContext, result: FederatedOidcProvider | null): Promise<{isAuthorized: boolean, errorDetail: ErrorDetail}> {
                     if(result){
                         if(oidcContext.portalUserProfile?.managementAccessTenantId){
                             const arr: Array<FederatedOidcProviderTenantRel> = await federatedOIDCProviderDao.getFederatedOidcProviderTenantRels(oidcContext.portalUserProfile.managementAccessTenantId, result.federatedOIDCProviderId);
                             if(arr.length === 0){
-                                return { isAuthorized: false, errorMessage: "ERROR_OIDC_PROVIDER_NOT_ASSIGNED_TO_TENANT"}
+                                return { isAuthorized: false, errorDetail: ERROR_CODES.EC00018}
                             }
                             else{
-                                return { isAuthorized: true, errorMessage: null}
+                                return { isAuthorized: true, errorDetail: ERROR_CODES.NULL_ERROR}
                             }
                         }
                     }
-                    return {isAuthorized: true, errorMessage: null}
+                    return {isAuthorized: true, errorDetail: ERROR_CODES.NULL_ERROR}
                 },
                 postProcess: async function(_, result) {
                     if(result && result.federatedOIDCProviderClientSecret && result.federatedOIDCProviderClientSecret.length > 0){
@@ -80,25 +84,25 @@ class FederatedOIDCProviderService {
                 },
             }
         );
-        const f = await getData(this.oidcContext, [FEDERATED_OIDC_PROVIDER_READ_SCOPE, TENANT_READ_ALL_SCOPE], federatedOIDCProviderId);
+        const f = await getData(this.oidcContext, [FEDERATED_OIDC_PROVIDER_READ_SCOPE, TENANT_READ_ALL_SCOPE], federatedOIDCProviderId);        
         return Promise.resolve(f);
     }
 
     public async createFederatedOIDCProvider(federatedOIDCProvider: FederatedOidcProvider): Promise<FederatedOidcProvider>{
-        const { isAuthorized, errorMessage } = authorizeByScopeAndTenant(this.oidcContext, FEDERATED_OIDC_PROVIDER_CREATE_SCOPE, null);
+        const { isAuthorized, errorDetail } = authorizeByScopeAndTenant(this.oidcContext, FEDERATED_OIDC_PROVIDER_CREATE_SCOPE, null);
         if(!isAuthorized){
-            throw new GraphQLError(errorMessage || "ERROR"); 
+            throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}}); 
         }
         
         let inputValidation = this.validateOIDCProviderInput(federatedOIDCProvider);        
         if(!inputValidation.valid){
-            throw new GraphQLError(inputValidation.errorMessage);
+            throw new GraphQLError(inputValidation.errorDetail.errorCode, {extensions: {errorDetail: inputValidation.errorDetail}});
         }
         
         if(federatedOIDCProvider.federatedOIDCProviderClientSecret && federatedOIDCProvider.federatedOIDCProviderClientSecret !== ""){
             const encryptedSecret: string | null = await kms.encrypt(federatedOIDCProvider.federatedOIDCProviderClientSecret);
             if(encryptedSecret === null){
-                throw new GraphQLError("ERROR_UNABLE_TO_ENCRYPT_OIDC_PROVIDER_CLIENT_SECRET");
+                throw new GraphQLError(ERROR_CODES.EC00019.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00019}});
             }
             else{
                 federatedOIDCProvider.federatedOIDCProviderClientSecret = encryptedSecret;
@@ -108,38 +112,47 @@ class FederatedOIDCProviderService {
         federatedOIDCProvider.federatedOIDCProviderId = randomUUID().toString();
         await federatedOIDCProviderDao.createFederatedOidcProvider(federatedOIDCProvider);
         await this.updateSearchIndex(federatedOIDCProvider);
+        changeEventDao.addChangeEvent({
+            objectId: federatedOIDCProvider.federatedOIDCProviderId,
+            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+            changeEventClass: CHANGE_EVENT_CLASS_OIDC_PROVIDER,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_CREATE,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify({...federatedOIDCProvider, federatedOIDCProviderClientSecret: ""})
+        });
         return Promise.resolve(federatedOIDCProvider);
     }
 
-    protected validateOIDCProviderInput(federatedOIDCProvider: FederatedOidcProvider): {valid: boolean, errorMessage: string} {
+    protected validateOIDCProviderInput(federatedOIDCProvider: FederatedOidcProvider): {valid: boolean, errorDetail: ErrorDetail} {
         if(!federatedOIDCProvider.federatedOIDCProviderClientId || "" === federatedOIDCProvider.federatedOIDCProviderClientId){
-            return {valid: false, errorMessage: "ERROR_MISSING_CLIENT_ID_IN_OIDC_CONFIGURATION"};
+            return {valid: false, errorDetail: ERROR_CODES.EC00020};
         }
         if(!federatedOIDCProvider.federatedOIDCProviderWellKnownUri || "" === federatedOIDCProvider.federatedOIDCProviderWellKnownUri){
-            return {valid: false, errorMessage: "ERROR_MISSING_WELL_KNOWN_URI_IN_OIDC_CONFIGURATION"};
+            return {valid: false, errorDetail: ERROR_CODES.EC00021};
         }
         // We will allow the creation or update without a client secret because in some cases
         // the federated OIDC owner may want to enter this themselves via the secret-sharing
         // process
         // if(!federatedOIDCProvider.federatedOIDCProviderClientSecret && !federatedOIDCProvider.usePkce){
-        //     return {valid: false, errorMessage: "ERROR_NO_CLIENT_SECRET_AND_PKCE_IS_NOT_ALLOWED"};
+        //     return {valid: false, errorCode: "NO_CLIENT_SECRET_AND_PKCE_IS_NOT_ALLOWED"};
         // }
         if(!federatedOIDCProvider.federatedOIDCProviderName){
-            return {valid: false, errorMessage: "ERROR_MISSING_OIDC_CLIENT_NAME"};
+            return {valid: false, errorDetail: ERROR_CODES.EC00022};
         }
-        return {valid: true, errorMessage: ""}
+        return {valid: true, errorDetail: ERROR_CODES.NULL_ERROR}
     }
     
     public async updateFederatedOIDCProvider(federatedOIDCProvider: FederatedOidcProvider): Promise<FederatedOidcProvider>{    
         
         const authorizedResult = authorizeByScopeAndTenant(this.oidcContext, FEDERATED_OIDC_PROVIDER_UPDATE_SCOPE, null);
         if(!authorizedResult.isAuthorized){
-            throw new GraphQLError(authorizedResult.errorMessage || "ERROR");
+            throw new GraphQLError(authorizedResult.errorDetail.errorCode, {extensions: {errorDetail: authorizedResult.errorDetail}});
         }
 
         const existingProvider: FederatedOidcProvider | null = await federatedOIDCProviderDao.getFederatedOidcProviderById(federatedOIDCProvider.federatedOIDCProviderId);
         if(!existingProvider){
-            throw new GraphQLError("ERROR_NO_FEDERATED_OIDC_PROVIDER_FOUND");
+            throw new GraphQLError(ERROR_CODES.EC00023.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00023}});
         }
         // If the user intended to update the client secret, then overwrite the existing secret. Otherwise, just use the
         // existing secret.                
@@ -151,7 +164,7 @@ class FederatedOIDCProviderService {
         else if(federatedOIDCProvider.federatedOIDCProviderClientSecret && federatedOIDCProvider.federatedOIDCProviderClientSecret !== ""){
             const encryptedSecret: string | null = await kms.encrypt(federatedOIDCProvider.federatedOIDCProviderClientSecret);
             if(encryptedSecret === null){
-                throw new GraphQLError("ERROR_UNABLE_TO_ENCRYPT_OIDC_PROVIDER_CLIENT_SECRET");
+                throw new GraphQLError(ERROR_CODES.EC00019.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00019}});
             }
             else{
                 federatedOIDCProvider.federatedOIDCProviderClientSecret = encryptedSecret;
@@ -164,14 +177,23 @@ class FederatedOIDCProviderService {
         federatedOIDCProvider.socialLoginProvider = existingProvider.socialLoginProvider;
         federatedOIDCProvider.federatedOIDCProviderType = existingProvider.federatedOIDCProviderType;
 
-        const { valid, errorMessage } = this.validateOIDCProviderInput(federatedOIDCProvider);
+        const { valid, errorDetail } = this.validateOIDCProviderInput(federatedOIDCProvider);
         if(!valid){
-            throw new GraphQLError(errorMessage);
+            throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});
         }        
 
         await federatedOIDCProviderDao.updateFederatedOidcProvider(federatedOIDCProvider);
         await this.updateSearchIndex(federatedOIDCProvider);
         this.bulkUpdateRelSearchRecord(federatedOIDCProvider);
+        changeEventDao.addChangeEvent({
+            objectId: federatedOIDCProvider.federatedOIDCProviderId,
+            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+            changeEventClass: CHANGE_EVENT_CLASS_OIDC_PROVIDER,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_UPDATE,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify({...federatedOIDCProvider, federatedOIDCProviderClientSecret: ""})
+        });
         return Promise.resolve(federatedOIDCProvider);
     }
 
@@ -221,9 +243,8 @@ class FederatedOIDCProviderService {
                 index: SEARCH_INDEX_REL_SEARCH
             });
         }
-        catch(err){
-            // TODO
-            // Handle errors deleting search record.
+        catch(err: any){
+            logWithDetails("error", `Error removing rel search record for tenant and federated OIDC provider. ${err.message}.`, {...err, tenantId, federatedOidcProviderId});
         }
         return Promise.resolve();
     }
@@ -270,34 +291,59 @@ class FederatedOIDCProviderService {
     }
 
     public async assignFederatedOIDCProviderToTenant(federatedOIDCProviderId: string, tenantId: string): Promise<FederatedOidcProviderTenantRel>{
-        const {isAuthorized, errorMessage} = authorizeByScopeAndTenant(this.oidcContext, FEDERATED_OIDC_PROVIDER_TENANT_ASSIGN_SCOPE, null);
+        const {isAuthorized, errorDetail} = authorizeByScopeAndTenant(this.oidcContext, FEDERATED_OIDC_PROVIDER_TENANT_ASSIGN_SCOPE, null);
         if(!isAuthorized){
-            throw new GraphQLError(errorMessage || "ERROR");
+            throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});
         }
 
         const provider: FederatedOidcProvider | null = await this.getFederatedOIDCProviderById(federatedOIDCProviderId);
         if(!provider){
-            throw new GraphQLError("ERROR_EXTERNAL_OIDC_PROVIDER_NOT_FOUND");
+            throw new GraphQLError(ERROR_CODES.EC00023.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00023}});
+        }
+
+        // Only social providers can be assigned to a tenant. Enterprise providers will always be
+        // used for those domains assigned to the provider, regardless of the tenant. With social 
+        // providers, the user's email domain could be anything.
+        if(provider.federatedOIDCProviderType === FEDERATED_OIDC_PROVIDER_TYPE_ENTERPRISE){
+            throw new GraphQLError(ERROR_CODES.EC00024.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00024}});
         }
         const tenant: Tenant | null = await tenantDao.getTenantById(tenantId);
         if(!tenant){
-            throw new GraphQLError("ERROR_TENANT_NOT_FOUND");
+            throw new GraphQLError(ERROR_CODES.EC00008.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00008}});
         }
 
         const data = await federatedOIDCProviderDao.assignFederatedOidcProviderToTenant(federatedOIDCProviderId, tenantId);
         await this.updateRelSearchIndex(tenantId, provider);
+        changeEventDao.addChangeEvent({
+            objectId: tenantId,
+            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+            changeEventClass: CHANGE_EVENT_CLASS_OIDC_PROVIDER_TENANT_REL,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_CREATE_REL,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify({federatedOIDCProviderId, tenantId})
+        });
 
         return data;
         
     }
 
     public async removeFederatedOIDCProviderFromTenant(federatedOIDCProviderId: string, tenantId: string): Promise<FederatedOidcProviderTenantRel> {
-        const {isAuthorized, errorMessage} = authorizeByScopeAndTenant(this.oidcContext, FEDERATED_OIDC_PROVIDER_TENANT_REMOVE_SCOPE, null);
+        const {isAuthorized, errorDetail} = authorizeByScopeAndTenant(this.oidcContext, FEDERATED_OIDC_PROVIDER_TENANT_REMOVE_SCOPE, null);
         if(!isAuthorized){
-            throw new GraphQLError(errorMessage || "ERROR");
+            throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});
         }
         const rel: FederatedOidcProviderTenantRel = await federatedOIDCProviderDao.removeFederatedOidcProviderFromTenant(federatedOIDCProviderId, tenantId)
         await this.removeRelSearchRecord(tenantId, federatedOIDCProviderId);
+        changeEventDao.addChangeEvent({
+            objectId: tenantId,
+            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+            changeEventClass: CHANGE_EVENT_CLASS_OIDC_PROVIDER_TENANT_REL,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_REMOVE_REL,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify({federatedOIDCProviderId, tenantId})
+        });
         return rel;
     }
 
@@ -337,18 +383,23 @@ class FederatedOIDCProviderService {
     }
 
     public async assignFederatedOIDCProviderToDomain(federatedOIDCProviderId: string, domain: string): Promise<FederatedOidcProviderDomainRel> {
-        const {isAuthorized, errorMessage} = authorizeByScopeAndTenant(this.oidcContext, FEDERATED_OIDC_PROVIDER_UPDATE_SCOPE, null);
+        const {isAuthorized, errorDetail} = authorizeByScopeAndTenant(this.oidcContext, FEDERATED_OIDC_PROVIDER_UPDATE_SCOPE, null);
         if(!isAuthorized){
-            throw new GraphQLError(errorMessage || "ERROR");
+            throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});
         }
 
         const provider: FederatedOidcProvider | null = await this.getFederatedOIDCProviderById(federatedOIDCProviderId);
         if(!provider){
-            throw new GraphQLError("ERROR_EXTERNAL_OIDC_PROVIDER_NOT_FOUND");
+            throw new GraphQLError(ERROR_CODES.EC00023.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00023}});
+        }
+
+        // Social providers cannot have domains assigned to them, only enterprise providers.
+        if(provider.federatedOIDCProviderType === FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL){
+            throw new GraphQLError(ERROR_CODES.EC00025.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00025}});
         }
         const existingDomainRel: FederatedOidcProvider | null = await federatedOIDCProviderDao.getFederatedOidcProviderByDomain(domain);
         if(existingDomainRel && existingDomainRel.federatedOIDCProviderId !== federatedOIDCProviderId){
-            throw new GraphQLError("ERROR_DOMAIN_IS_ALREADY_ASSIGNED_TO_AN_EXTERNAL_OIDC_PROVIDER");
+            throw new GraphQLError(ERROR_CODES.EC00026.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00026}});
         }
         
         if(existingDomainRel && existingDomainRel.federatedOIDCProviderId === federatedOIDCProviderId){
@@ -357,24 +408,35 @@ class FederatedOIDCProviderService {
                 federatedOIDCProviderId: federatedOIDCProviderId
             })
         }
+        changeEventDao.addChangeEvent({
+            objectId: federatedOIDCProviderId,
+            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+            changeEventClass: CHANGE_EVENT_CLASS_OIDC_PROVIDER_DOMAIN_REL,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_CREATE_REL,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify({federatedOIDCProviderId, domain})
+        });
         return federatedOIDCProviderDao.assignFederatedOidcProviderToDomain(federatedOIDCProviderId, domain);
     }
 
     public async removeFederatedOIDCProviderFromDomain(federatedOIDCProviderId: string, domain: string): Promise<FederatedOidcProviderDomainRel>{
-        const {isAuthorized, errorMessage} = authorizeByScopeAndTenant(this.oidcContext, FEDERATED_OIDC_PROVIDER_UPDATE_SCOPE, null);
+        const {isAuthorized, errorDetail} = authorizeByScopeAndTenant(this.oidcContext, FEDERATED_OIDC_PROVIDER_UPDATE_SCOPE, null);
         if(!isAuthorized){
-            throw new GraphQLError(errorMessage || "ERROR");
+            throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});
         }
+        changeEventDao.addChangeEvent({
+            objectId: federatedOIDCProviderId,
+            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+            changeEventClass: CHANGE_EVENT_CLASS_OIDC_PROVIDER_DOMAIN_REL,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_REMOVE_REL,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify({federatedOIDCProviderId, domain})
+        });
         return federatedOIDCProviderDao.removeFederatedOidcProviderFromDomain(federatedOIDCProviderId, domain);
     }
-
-    public async deleteFederatedOIDCProvider(federatedOIDCProviderId: string): Promise<void>{
-        const {isAuthorized, errorMessage} = authorizeByScopeAndTenant(this.oidcContext, FEDERATED_OIDC_PROVIDER_DELETE_SCOPE, null);
-        if(!isAuthorized){
-            throw new GraphQLError(errorMessage || "ERROR");
-        }
-        return Promise.resolve()
-    }
+    
 }
 
 export default FederatedOIDCProviderService;

@@ -447,19 +447,16 @@ create TABLE client_auth_history (
 
 create TABLE change_event (
     changeeventid VARCHAR(64) NOT NULL,
-    objectid VARCHAR(64) NOT NULL,
-    objecttype VARCHAR(128) NOT NULL,
+    objectid VARCHAR(64) NOT NULL,    
     changeeventtype VARCHAR(128) NOT NULL,
-	changeeventtypeid VARCHAR(64),
     changeeventclass VARCHAR(128) NOT NULL,
-	changeeventclassid VARCHAR(64),
     changetimestamp BIGINT NOT NULL,
     changedby VARCHAR(128) NOT NULL,
     data BLOB NOT NULL,	
     PRIMARY KEY (changeeventid, objectid)	
 );
 CREATE INDEX change_event_objectid_idx ON change_event(objectid);
-CREATE INDEX change_event_objecttype_idx ON change_event(objecttype);
+CREATE INDEX change_event_changeeventclass_idx ON change_event(changeeventclass);
 
 create TABLE tenant_anonymous_user_configuration (
     tenantid VARCHAR(64) PRIMARY KEY,
@@ -672,7 +669,7 @@ create TABLE captcha_config (
     alias VARCHAR(256) PRIMARY KEY,
     projectid VARCHAR(128),
     sitekey VARCHAR(256) NOT NULL,
-    googleapikey VARCHAR(256) NOT NULL,
+    apikey VARCHAR(256) NOT NULL,
     minscorethreshold FLOAT,
     userecaptchav3 BOOLEAN NOT NULL
 );
@@ -680,7 +677,10 @@ create TABLE captcha_config (
 create TABLE system_settings (
     systemid VARCHAR(64) PRIMARY KEY,
     allowrecoveryemail BOOLEAN NOT NULL,
-    allowduresspassword BOOLEAN NOT NULL
+    allowduresspassword BOOLEAN NOT NULL,
+    rootclientid VARCHAR(64) NOT NULL,
+    auditrecordretentionperioddays INT,
+    FOREIGN KEY (rootclientid) REFERENCES client(clientid)
 );
 
 create TABLE user_duress_credential (
@@ -701,3 +701,10 @@ create TABLE secret_share (
     expiresatms BIGINT
 );
 CREATE INDEX secret_share_otp_idx ON secret_share(otp);
+
+create TABLE user_authentication_history (
+    userid VARCHAR(64) NOT NULL,
+    lastauthenticationatms BIGINT NOT NULL,
+    PRIMARY KEY (userid, lastauthenticationatms),
+    FOREIGN KEY (userid) REFERENCES user(userid)
+);

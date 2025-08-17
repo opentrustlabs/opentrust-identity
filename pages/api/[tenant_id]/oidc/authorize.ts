@@ -6,8 +6,8 @@ import TenantDao from '@/lib/dao/tenant-dao';
 import { DaoFactory } from '@/lib/data-sources/dao-factory';
 import { WellknownConfig } from '@/lib/models/wellknown-config';
 import OIDCServiceUtils from '@/lib/service/oidc-service-utils';
-import { ALL_OIDC_SUPPORTED_SCOPE_VALUES, CLIENT_TYPE_SERVICE_ACCOUNT_ONLY, FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE, OIDC_OPENID_SCOPE, QUERY_PARAM_REDIRECT_URI, QUERY_PARAM_TENANT_ID, QUERY_PARAM_PREAUTHN_TOKEN } from '@/utils/consts';
-import { generateCodeVerifierAndChallenge, generateRandomToken } from '@/utils/dao-utils';
+import { ALL_OIDC_SUPPORTED_SCOPE_VALUES, CLIENT_TYPE_SERVICE_ACCOUNT, FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE, OIDC_OPENID_SCOPE, QUERY_PARAM_REDIRECT_URI, QUERY_PARAM_TENANT_ID, QUERY_PARAM_PREAUTHN_TOKEN } from '@/utils/consts';
+import { generateCodeVerifierAndChallenge, generateRandomToken, hasValidLoopbackRedirectUri } from '@/utils/dao-utils';
 import type { NextApiRequest, NextApiResponse } from 'next'
 
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
@@ -138,7 +138,7 @@ export default async function handler(
         res.end();
         return;
 	}
-    if(client.clientType === CLIENT_TYPE_SERVICE_ACCOUNT_ONLY){
+    if(client.clientType === CLIENT_TYPE_SERVICE_ACCOUNT){
         res.status(302).setHeader("location", `/authorize/login?tenant_id=${tenantId}&client_id=${clientId}&state=${oidcState}&error=unauthorized_client&error_message=ERROR_CLIENT_NOT_ENABLED_FOR_SSO&redirect_uri=${redirectUri}&scope=${oidcScope}&response_type=${responseType}&response_mode=${responseMode}`);
         res.end();
         return;
@@ -151,7 +151,7 @@ export default async function handler(
 		return;
 	}
     const uris = await clientDao.getRedirectURIs(clientId) || [];
-	if (!redirectUri || !uris.includes(redirectUri)) {
+	if (!redirectUri || !uris.includes(redirectUri) || !hasValidLoopbackRedirectUri(uris, redirectUri)) {
 		res.status(302).setHeader("location", `/authorize/login?tenant_id=${tenantId}&client_id=${clientId}&state=${oidcState}&error=unauthorized_client&error_message=ERROR_INVALID_REDIRECT_URI&redirect_uri=${redirectUri}&scope=${oidcScope}&response_type=${responseType}&response_mode=${responseMode}`);
 		res.end();
 		return;
@@ -197,7 +197,6 @@ export default async function handler(
             // create state, etc, and save that data with the incoming state, etc.
             const wellKnownConfig: WellknownConfig | null = await oidcServiceUtils.getWellKnownConfig(
                 oidcProviders[0].federatedOIDCProviderWellKnownUri
-                //"https://api.sigmaaldrich.com/auth/.well-known/openid-configuration"
             );
             if(!wellKnownConfig){
                 res.status(302).setHeader("location", `/authorize/login?tenant_id=${tenantId}&client_id=${clientId}&state=${oidcState}&error=unauthorized_client&error_message=ERROR_TENANT_INCORRECTLY_CONFIGURED_FOR_FEDERATED_OIDC_PROVIDER_INVALID_WELL_KNOWN_URI&redirect_uri=${redirectUri}&scope=${oidcScope}&response_type=${responseType}&response_mode=${responseMode}`);
@@ -238,10 +237,6 @@ export default async function handler(
 	// In the success case, create a unique key for the query parameter which maps 
 	// all of the incoming values to a single record and return it instead of the multiple 
 	// query params.
-	// console.log('tenantId is: ' + tenantId);
-	// console.log("scope is " + (scope as string));
-	// console.log("state is: " + (state as string));
-	// console.log("clientId is " + clientId);
 
     const preAuthenticationState: PreAuthenticationState = {
         clientId: clientId,

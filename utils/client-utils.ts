@@ -71,3 +71,30 @@ export function setAccessTokenOnLocalStorage(token: string, expiresAtMs: number)
     localStorage.setItem(TOKEN_EXPIRIES_AT_MS_LOCAL_KEY, expiresAtMs.toString())
 }
 
+export function isValidRedirectUri(uri: string): boolean {
+        
+    if(!uri){        
+        return false;
+    }
+    if(uri.length < 7){
+        return false;
+    }
+    let url: URL | null = null;
+    try{
+        url = new URL(uri);
+    }
+    catch(err){
+        return false;
+    }
+
+    if(url.protocol === "http:" && (url.hostname !== "localhost" && url.hostname !== "127.0.0.1")){
+        return false;
+    }
+    if(!url.pathname){
+        return false;
+    }
+    if(url.pathname && url.pathname.length < 2){
+        return false;
+    }
+    return true;
+}

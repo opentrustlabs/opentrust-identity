@@ -3,13 +3,14 @@ import AuthenticationGroupDetail from "@/components/authentication-groups/authen
 import ErrorComponent from "@/components/error/error-component";
 import DataLoading from "@/components/layout/data-loading";
 import { AUTHENTICATION_GROUP_DETAIL_QUERY } from "@/graphql/queries/oidc-queries";
-import { useQuery } from "@apollo/client";
+import { ApolloError, useQuery } from "@apollo/client";
 import { useParams } from "next/navigation";
 import React, { useContext } from "react";
 import { AuthContext, AuthContextProps } from "@/components/contexts/auth-context";
 import { PortalUserProfile } from "@/graphql/generated/graphql-types";
 import { containsScope } from "@/utils/authz-utils";
 import { AUTHENTICATION_GROUP_READ_SCOPE, TENANT_READ_ALL_SCOPE } from "@/utils/consts";
+import { ERROR_CODES } from "@/lib/models/error";
 
 const AuthenticationGroupDetailPage: React.FC = () => {
 
@@ -32,10 +33,10 @@ const AuthenticationGroupDetailPage: React.FC = () => {
         }        
     )
 
-    if(!containsScope([TENANT_READ_ALL_SCOPE, AUTHENTICATION_GROUP_READ_SCOPE], profile?.scope || [])) return <ErrorComponent message={"You do not have sufficient permission to view this page."} componentSize='lg' />
+    if(!containsScope([TENANT_READ_ALL_SCOPE, AUTHENTICATION_GROUP_READ_SCOPE], profile?.scope || [])) return <ErrorComponent message={ERROR_CODES.EC00184.errorMessage} componentSize='lg' />
     if (loading) return <DataLoading dataLoadingSize="xl" color={null} />
-    if (error || !authenticationGroupId) return <ErrorComponent message={error ? error.message : "No authentication group with this ID can be found"} componentSize='lg' />
-    if (data && data.getAuthenticationGroupById === null) return <ErrorComponent message={"Authentication Group Not Found"} componentSize='lg' />
+    if (error || !authenticationGroupId) return <ErrorComponent message={error ? error.message : ERROR_CODES.EC00010.errorMessage} componentSize='lg' />
+    if (data && data.getAuthenticationGroupById === null) return <ErrorComponent message={ERROR_CODES.EC00010.errorMessage} componentSize='lg' />
 
     return (
         <AuthenticationGroupDetail authenticationGroup={data.getAuthenticationGroupById} />

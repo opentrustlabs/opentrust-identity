@@ -32,6 +32,13 @@ class SystemSettingsEntity extends Model {
                 primaryKey: false,
                 allowNull: false,
                 field: "enableportalaslegacyidp"
+            },
+            auditRecordRetentionPeriodDays: {
+                type: DataTypes.INTEGER,
+                primaryKey: false,
+                allowNull: true,
+                field: "auditrecordretentionperioddays"
+
             }
         }, 
         {

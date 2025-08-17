@@ -32,6 +32,7 @@ import Link from "next/link";
 import { MuiTelInput } from "mui-tel-input";
 import RecoveryEmailConfiguration from "./recovery-email";
 import DuressPasswordConfiguration from "./duress-password";
+import { ERROR_CODES } from "@/lib/models/error";
 
 
 export interface RegistrationComponentsProps {
@@ -168,7 +169,7 @@ const Register: React.FC = () => {
         }
         else{
             if (response.userRegistrationState.registrationState === RegistrationState.Error) {
-                setErrorMessage(response.registrationError.errorCode || "ERROR");
+                setErrorMessage(response?.registrationError?.errorMessage || ERROR_CODES.DEFAULT.errorMessage);
             }
             else if (
                 response.userRegistrationState.registrationState === RegistrationState.RedirectBackToApplication ||
@@ -196,7 +197,6 @@ const Register: React.FC = () => {
     }
 
     const handleCancelRegistration = async () => {
-        console.log("registration cancelled");
         tenantBean.setTenantMetaData(DEFAULT_TENANT_META_DATA);
         
         await cancelRegistration({

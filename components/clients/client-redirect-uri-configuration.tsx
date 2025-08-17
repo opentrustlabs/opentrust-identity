@@ -17,6 +17,7 @@ import AddBoxIcon from '@mui/icons-material/AddBox';
 import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
 import DialogTitle from "@mui/material/DialogTitle";
 import { TextField } from "@mui/material";
+import { isValidRedirectUri } from "@/utils/client-utils";
 
 
 
@@ -84,37 +85,6 @@ const ClientRedirectUriConfiguration: React.FC<ClientRedirectUriConfigurationPro
     });
 
 
-    // HANDLER FUNCTIONS
-    const isValidUri = (uri: string): boolean => {
-        
-        if(!uri){        
-            return false;
-        }
-        if(uri.length < 7){
-            return false;
-        }
-        let url: URL | null = null;
-        try{
-            url = new URL(uri);
-        }
-        catch(err){
-            return false;
-        }
-
-        if(! (url.protocol == "http:" || url.protocol === "https:")){
-            return false;
-        }
-        if(url.protocol === "http:" && url.hostname !== "localhost"){
-            return false;
-        }
-        if(!url.pathname){
-            return false;
-        }
-        if(url.pathname && url.pathname.length < 2){
-            return false;
-        }
-        return true;
-    }
 
     if (loading) return <DataLoading dataLoadingSize="md" color={null} />
     if (error) return <ErrorComponent message={error.message} componentSize='md' />
@@ -167,7 +137,7 @@ const ClientRedirectUriConfiguration: React.FC<ClientRedirectUriConfigurationPro
                     <DialogActions>
                         <Button onClick={() => setSelectDialogOpen(false)}>Cancel</Button>
                         <Button 
-                            disabled={!isValidUri(uriToAdd || "")}
+                            disabled={!isValidRedirectUri(uriToAdd || "")}
                             onClick={() =>{
                                 onUpdateStart();
                                 addRedirectUriMutation();

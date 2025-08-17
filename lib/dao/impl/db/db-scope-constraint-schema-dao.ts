@@ -31,8 +31,6 @@ class DBScopeConstraintSchemaDao extends ScopeConstraintSchemaDao {
     // }
 
     public async deleteScopeConstraintSchema(scopeConstraintSchemaId: string): Promise<void> {
-        // TODO
-        // REMOVE RELATIONSHIPS
         throw new Error("Method not implemented.");
     }
 

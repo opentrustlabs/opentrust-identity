@@ -3,7 +3,7 @@ import React, { useContext, useEffect, useState } from "react";
 import { Backdrop, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, Divider, Grid2, Paper, Stack, TextField, Typography } from "@mui/material";
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { DEFAULT_TENANT_META_DATA, FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL, PASSWORD_MINIMUM_LENGTH, QUERY_PARAM_AUTHENTICATE_TO_PORTAL, QUERY_PARAM_PREAUTHN_TOKEN, QUERY_PARAM_REDIRECT_URI, QUERY_PARAM_RETURN_URI, QUERY_PARAM_TENANT_ID, SOCIAL_OIDC_PROVIDER_APPLE, SOCIAL_OIDC_PROVIDER_FACEBOOK, SOCIAL_OIDC_PROVIDER_GOOGLE, SOCIAL_OIDC_PROVIDER_LINKEDIN, SOCIAL_OIDC_PROVIDER_SALESFORCE } from "@/utils/consts";
+import { DEFAULT_TENANT_META_DATA, FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL, PASSWORD_MINIMUM_LENGTH, QUERY_PARAM_PREAUTHN_TOKEN, QUERY_PARAM_REDIRECT_URI, QUERY_PARAM_RETURN_URI, QUERY_PARAM_TENANT_ID, SOCIAL_OIDC_PROVIDER_APPLE, SOCIAL_OIDC_PROVIDER_FACEBOOK, SOCIAL_OIDC_PROVIDER_GOOGLE, SOCIAL_OIDC_PROVIDER_LINKEDIN, SOCIAL_OIDC_PROVIDER_SALESFORCE } from "@/utils/consts";
 import { useMutation, useQuery } from "@apollo/client";
 import { UserAuthenticationStateResponse, TenantSelectorData, AuthenticationState, UserAuthenticationState, TenantPasswordConfig, FederatedOidcProvider } from "@/graphql/generated/graphql-types";
 import Alert from '@mui/material/Alert';
@@ -24,8 +24,8 @@ import ValidatePasswordResetToken from "./validate-password-reset-token";
 import { AuthSessionProps, useAuthSessionContext } from "../contexts/auth-session-context";
 import { AuthContext, AuthContextProps } from "../contexts/auth-context";
 import AuthentiationAcceptTermsAndConditions from "./accept-terms-and-conditions";
-import DeviceCode from "./user-code";
 import UserCodeInput from "./user-code";
+import { ERROR_CODES } from "@/lib/models/error";
 
 
 const MIN_USERNAME_LENGTH = 6;
@@ -191,7 +191,7 @@ const Login: React.FC<LoginProps>= ({
         }
         else {
             if (authnStateResponse.userAuthenticationState.authenticationState === AuthenticationState.Error) {
-                setErrorMessage(authnStateResponse.authenticationError.errorCode || "ERROR");
+                setErrorMessage(authnStateResponse?.authenticationError?.errorMessage || ERROR_CODES.DEFAULT.errorMessage);
             }
             else if (authnStateResponse.userAuthenticationState.authenticationState === AuthenticationState.AuthWithFederatedOidc) {
                 if (!authnStateResponse.uri) {
@@ -261,8 +261,6 @@ const Login: React.FC<LoginProps>= ({
 
 
     const handleUserNameInput = () => {
-        console.log("will handle login");
-        console.log("device Code Id Is: " + userAuthenticationState.deviceCodeId);
         portalLoginEmailHandler({
             variables: {
                 username: username,

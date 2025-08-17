@@ -110,7 +110,7 @@ const TenantFederatedOIDCProviderConfiguration: React.FC<TenantFederatedOIDCProv
                 >
                     <DialogContent>
                         <Typography component="div">
-                            <span>Confirm removal of OIDC provider: </span><span style={{fontWeight: "bold"}}>{selectedOIDCProviderToRemove?.name || ""}</span>
+                            <span>Confirm removal of Social OIDC provider: </span><span style={{fontWeight: "bold"}}>{selectedOIDCProviderToRemove?.name || ""}</span>
                         </Typography>
                     </DialogContent>
                     <DialogActions>
@@ -139,8 +139,10 @@ const TenantFederatedOIDCProviderConfiguration: React.FC<TenantFederatedOIDCProv
                             if(d && d.getFederatedOIDCProviders){
                                 return d.getFederatedOIDCProviders
                                 .filter(
-                                    (provider: FederatedOidcProvider) => {
-                                        
+                                    (provider: FederatedOidcProvider) => {  
+                                        if(provider.federatedOIDCProviderType === FEDERATED_OIDC_PROVIDER_TYPE_ENTERPRISE){
+                                            return false;
+                                        }
                                         if(provider.federatedOIDCProviderType === FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL && !allowSocialLogin){
                                             return false;
                                         }
@@ -178,7 +180,7 @@ const TenantFederatedOIDCProviderConfiguration: React.FC<TenantFederatedOIDCProv
                                 }
                             }); 
                         }}
-                        selectorLabel="Select a provider"
+                        selectorLabel="Select a social provider"
                     />
                 </Dialog>
             }
@@ -190,7 +192,7 @@ const TenantFederatedOIDCProviderConfiguration: React.FC<TenantFederatedOIDCProv
                                     sx={{cursor: "pointer"}}
                                     onClick={() => setSelectDialogOpen(true)}
                                 />
-                                <div style={{marginLeft: "8px", fontWeight: "bold"}}>Add OIDC Provider</div>                        
+                                <div style={{marginLeft: "8px", fontWeight: "bold"}}>Add Social OIDC Provider</div>                        
                             </Grid2>
                         
                     </Grid2>
@@ -206,7 +208,7 @@ const TenantFederatedOIDCProviderConfiguration: React.FC<TenantFederatedOIDCProv
             {data.getFederatedOIDCProviders.length === 0 &&
                 <Grid2 marginTop={"16px"}  spacing={2} container size={12} textAlign={"center"} >    
                     <Grid2 margin={"8px 0px 8px 0px"} textAlign={"center"} size={12} spacing={1}>
-                        No Federated OIDC Providers
+                        No Social OIDC Providers
                     </Grid2>
                 </Grid2>
             }

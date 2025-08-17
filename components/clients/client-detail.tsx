@@ -171,7 +171,14 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                                 fullWidth={true}
                                                 value={clientUpdateInput.clientType}
                                                 name="clientType"
-                                                onChange={(evt) => { clientUpdateInput.clientType = evt.target.value; setClientUpdateInput({ ...clientUpdateInput }); setMarkDirty(true); }}
+                                                onChange={(evt) => { 
+                                                    clientUpdateInput.clientType = evt.target.value; 
+                                                    if(clientUpdateInput.clientType === CLIENT_TYPE_SERVICE_ACCOUNT){
+                                                        clientUpdateInput.oidcEnabled = false;
+                                                        clientUpdateInput.pkceEnabled = false;
+                                                    }
+                                                    setClientUpdateInput({ ...clientUpdateInput }); 
+                                                    setMarkDirty(true); }}
                                             >
                                                 {CLIENT_TYPES.map(
                                                     (val: string) => (
@@ -236,7 +243,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                             <Grid2 alignContent={"center"} size={10}>OIDC (SSO) Enabled</Grid2>
                                             <Grid2 size={2}>
                                                 <Checkbox
-                                                    disabled={disableInputs}
+                                                    disabled={disableInputs || clientUpdateInput.clientType === CLIENT_TYPE_SERVICE_ACCOUNT}
                                                     checked={clientUpdateInput.oidcEnabled}
                                                     onChange={(_, checked: boolean) => {
                                                         clientUpdateInput.oidcEnabled = checked;
@@ -349,68 +356,69 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                             </Paper>
                         </Grid2>
 
+                        {client.clientType !== CLIENT_TYPE_SERVICE_ACCOUNT &&
+                            <Grid2 size={12} marginBottom={"16px"}>
+                                {!isMarkedForDelete &&
+                                    <Accordion defaultExpanded={true}  >
+                                        <AccordionSummary
+                                            expandIcon={<ExpandMoreIcon />}
+                                            id={"redirect-uri-configuration"}
+                                            sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center" }}
 
-                        <Grid2 size={12} marginBottom={"16px"}>
-                            {!isMarkedForDelete &&
-                                <Accordion defaultExpanded={true}  >
-                                    <AccordionSummary
-                                        expandIcon={<ExpandMoreIcon />}
-                                        id={"redirect-uri-configuration"}
-                                        sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center" }}
+                                        >
+                                            <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+                                                <SyncIcon /><div style={{ marginLeft: "8px" }}>Redirect URI Configuration</div>
+                                            </div>
+                                        </AccordionSummary>
+                                        <AccordionDetails>
+                                            <ClientRedirectUriConfiguration
+                                                oidcEnabled={client.oidcEnabled}
+                                                clientId={client.clientId}
+                                                onUpdateStart={() => setShowMutationBackdrop(true)}
+                                                onUpdateEnd={(success: boolean) => {
+                                                    setShowMutationBackdrop(false);
+                                                    if (success) {
+                                                        setShowMutationSnackbar(true);
+                                                    }
+                                                }}
+                                                readOnly={disableInputs}
+                                            />
+                                        </AccordionDetails>
+                                    </Accordion>
+                                }
+                            </Grid2>
+                        }
+                        {client.clientType !== CLIENT_TYPE_SERVICE_ACCOUNT &&
+                            <Grid2 size={12} marginBottom={"16px"}>
+                                {!isMarkedForDelete &&
+                                    <Accordion >
+                                        <AccordionSummary
+                                            expandIcon={<ExpandMoreIcon />}
+                                            id={"authentication-groups-configuration"}
+                                            sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center" }}
 
-                                    >
-                                        <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-                                            <SyncIcon /><div style={{ marginLeft: "8px" }}>Redirect URI Configuration</div>
-                                        </div>
-                                    </AccordionSummary>
-                                    <AccordionDetails>
-                                        <ClientRedirectUriConfiguration
-                                            oidcEnabled={client.oidcEnabled}
-                                            clientId={client.clientId}
-                                            onUpdateStart={() => setShowMutationBackdrop(true)}
-                                            onUpdateEnd={(success: boolean) => {
-                                                setShowMutationBackdrop(false);
-                                                if (success) {
-                                                    setShowMutationSnackbar(true);
-                                                }
-                                            }}
-                                            readOnly={disableInputs}
-                                        />
-                                    </AccordionDetails>
-                                </Accordion>
-                            }
-                        </Grid2>
-
-
-                        <Grid2 size={12} marginBottom={"16px"}>
-                            {!isMarkedForDelete &&
-                                <Accordion >
-                                    <AccordionSummary
-                                        expandIcon={<ExpandMoreIcon />}
-                                        id={"redirect-uri-configuration"}
-                                        sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center" }}
-
-                                    >
-                                        <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-                                            <GroupIcon /><div style={{ marginLeft: "8px" }}>Authentication Groups</div>
-                                        </div>
-                                    </AccordionSummary>
-                                    <AccordionDetails>
-                                        <ClientAuthenticationGroupConfiguration
-                                            tenantId={client.tenantId}
-                                            clientId={client.clientId}
-                                            onUpdateEnd={(success: boolean) => {
-                                                setShowMutationBackdrop(false);
-                                                if (success) {
-                                                    setShowMutationSnackbar(true);
-                                                }
-                                            }}
-                                            onUpdateStart={() => setShowMutationBackdrop(true)}
-                                        />
-                                    </AccordionDetails>
-                                </Accordion>
-                            }
-                        </Grid2>
+                                        >
+                                            <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+                                                <GroupIcon /><div style={{ marginLeft: "8px" }}>Authentication Groups</div>
+                                            </div>
+                                        </AccordionSummary>
+                                        <AccordionDetails>
+                                            <ClientAuthenticationGroupConfiguration
+                                                tenantId={client.tenantId}
+                                                clientId={client.clientId}
+                                                onUpdateEnd={(success: boolean) => {
+                                                    setShowMutationBackdrop(false);
+                                                    if (success) {
+                                                        setShowMutationSnackbar(true);
+                                                    }
+                                                }}
+                                                onUpdateStart={() => setShowMutationBackdrop(true)}
+                                            />
+                                        </AccordionDetails>
+                                    </Accordion>
+                                }
+                            </Grid2>
+                        }
                     </Grid2>
                     {client.clientType !== CLIENT_TYPE_IDENTITY &&
                         <Grid2 size={12} >

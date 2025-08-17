@@ -1,7 +1,7 @@
 "use client";
 import { Client, ClientCreateInput } from "@/graphql/generated/graphql-types";
 import { CLIENT_CREATE_MUTATION } from "@/graphql/mutations/oidc-mutations";
-import { CLIENT_TYPE_IDENTITY, CLIENT_TYPES, CLIENT_TYPES_DISPLAY, DEFAULT_END_USER_TOKEN_TTL_SECONDS, DEFAULT_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
+import { CLIENT_TYPE_IDENTITY, CLIENT_TYPE_SERVICE_ACCOUNT, CLIENT_TYPES, CLIENT_TYPES_DISPLAY, DEFAULT_END_USER_TOKEN_TTL_SECONDS, DEFAULT_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import { useMutation } from "@apollo/client";
 import { Alert, Button, DialogActions, DialogContent, DialogTitle, Grid2, MenuItem, Select, Stack, TextField, Typography } from "@mui/material";
 import React, { useContext } from "react";
@@ -36,7 +36,7 @@ const NewClientDialog: React.FC<NewClientDialogProps> = ({
         clientTokenTTLSeconds: DEFAULT_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS,
         enabled: true,
         maxRefreshTokenCount: null,
-        oidcEnabled: true,
+        oidcEnabled: false,
         pkceEnabled: false,
         userTokenTTLSeconds: DEFAULT_END_USER_TOKEN_TTL_SECONDS,
         audience: null
@@ -153,7 +153,11 @@ const NewClientDialog: React.FC<NewClientDialogProps> = ({
                                         fullWidth={true}
                                         value={clientInput.clientType}
                                         name="clientType"
-                                        onChange={(evt) => { clientInput.clientType = evt.target.value; setClientInput({ ...clientInput }); }}
+                                        onChange={(evt) => { 
+                                            clientInput.clientType = evt.target.value;
+                                            clientInput.oidcEnabled = evt.target.value !== CLIENT_TYPE_SERVICE_ACCOUNT;                                            
+                                            setClientInput({ ...clientInput }); 
+                                        }}
                                     >
                                         {CLIENT_TYPES.map(
                                             (val: string) => (

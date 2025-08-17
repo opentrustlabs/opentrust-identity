@@ -30,11 +30,11 @@ abstract class TenantDao {
 
     abstract getAnonymousUserConfiguration(tenantId: string): Promise<TenantAnonymousUserConfiguration | null>;
 
-    abstract createAnonymousUserConfiguration(tenantId: string, anonymousUserConfiguration: TenantAnonymousUserConfiguration): Promise<TenantAnonymousUserConfiguration>;
+    abstract createAnonymousUserConfiguration(anonymousUserConfiguration: TenantAnonymousUserConfiguration): Promise<TenantAnonymousUserConfiguration>;
 
     abstract updateAnonymousUserConfiguration(anonymousUserConfiguration: TenantAnonymousUserConfiguration): Promise<TenantAnonymousUserConfiguration>;
 
-    abstract deleteAnonymousUserConfiguration(configurationId: string): Promise<void>;
+    abstract deleteAnonymousUserConfiguration(tenantId: string): Promise<void>;
 
     abstract createTenantLookAndFeel(tenantLookAndFeel: TenantLookAndFeel): Promise<TenantLookAndFeel>;
 

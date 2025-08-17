@@ -165,6 +165,8 @@ abstract class IdentityDao {
     abstract getUserDuressCredential(userId: string): Promise<UserCredential | null>;
 
     abstract deleteUserDuressCredential(userId: string): Promise<void>;
+
+    abstract addUserAuthenticationHistory(userId: string, authenticatedAtMs: number): Promise<void>;
     
 }
 

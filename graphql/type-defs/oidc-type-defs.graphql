@@ -796,12 +796,9 @@ type Contact {
 
 type ChangeEvent {
     changeEventId: String!
-    objectid: String!
-    objecttype: String!
+    objectId: String!    
     changeEventType: String!
-    changeEventTypeId: String
     changeEventClass: String!
-    changeEventClassId: String
     changeTimestamp: Float!
     changedBy: String!
     data: String!
@@ -881,14 +878,15 @@ enum AuthenticationState {
     ENTER_USER_CODE
 }
 
-type AuthenticationError {
+type ErrorDetail {
     errorCode: String!
+    errorKey: String
     errorMessage: String!
 }
 
 type UserAuthenticationStateResponse {
     userAuthenticationState: UserAuthenticationState!
-    authenticationError: AuthenticationError!
+    authenticationError: ErrorDetail
     availableTenants: [TenantSelectorData!]
     uri: String
     totpSecret: String
@@ -931,14 +929,9 @@ enum RegistrationState {
     UNREGISTERED
 }
 
-type RegistrationError {
-    errorCode: String!
-    errorMessage: String!
-}
-
 type UserRegistrationStateResponse {
     userRegistrationState: UserRegistrationState!
-    registrationError: RegistrationError! 
+    registrationError: ErrorDetail 
 	accessToken: String
     tokenExpiresAtMs: Float
     totpSecret: String
@@ -965,11 +958,6 @@ enum EmailChangeState {
     COMPLETED
 }
 
-type ProfileEmailChangeError {
-    errorCode: String!
-    errorMessage: String!
-}
-
 type ProfileEmailChangeState {
     changeEmailSessionToken: String!
     emailChangeState: EmailChangeState!
@@ -983,7 +971,7 @@ type ProfileEmailChangeState {
 
 type ProfileEmailChangeResponse {
     profileEmailChangeState: ProfileEmailChangeState!
-    profileEmailChangeError: ProfileEmailChangeError!
+    profileEmailChangeError: ErrorDetail
 }
 
 
@@ -992,15 +980,6 @@ enum SecondFactorType {
     SECURITY_KEY
 }
 
-
-enum AuthenticationErrorTypes {
-    ERROR_INVALID_USERNAME_OR_PASSWORD
-    ERROR_CONDITIONS_FOR_AUTHENTICATION_NOT_MET
-    ERROR_NO_MANAGEMENT_DOMAIN
-    ERROR_NO_MATCHING_FEDERATED_PROVIDER_FOR_TENANT
-    ERROR_EXCLUSIVE_TENANT_AND_NO_FEDERATED_OIDC_PROVIDER
-    ERROR_NO_MATCHING_USER_AND_NO_TENANT_SELF_REGISTRATION
-}
 
 
 enum MarkForDeleteObjectType {
@@ -1175,15 +1154,16 @@ type CategoryEntry {
 type SystemCategory {
     categoryName: String!
     categoryEntries: [CategoryEntry!]!
-
 }
 
 type SystemSettings {
+    systemId: String!
     softwareVersion: String!
     allowRecoveryEmail: Boolean!
     allowDuressPassword: Boolean!
     rootClientId: String!
     enablePortalAsLegacyIdp: Boolean!
+    auditRecordRetentionPeriodDays: Int
     systemCategories: [SystemCategory!]!
 }
 
@@ -1648,6 +1628,7 @@ input CaptchaConfigInput {
 input SystemSettingsUpdateInput {
     allowRecoveryEmail: Boolean!
     allowDuressPassword: Boolean!
-    rootClientId: String!
+    rootClientId: String!    
     enablePortalAsLegacyIdp: Boolean!
+    auditRecordRetentionPeriodDays: Int
 }

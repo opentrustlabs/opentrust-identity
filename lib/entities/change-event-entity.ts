@@ -9,16 +9,10 @@ class ChangeEventEntity extends Model {
                 primaryKey: true,
                 field: "changeeventid"
             },
-            objectid: {
+            objectId: {
                 type: DataTypes.STRING,
                 primaryKey: true,
                 field: "objectid"
-            },
-            objecttype: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                field: "objecttype"
             },
             changeEventClass: {
                 type: DataTypes.STRING,
@@ -26,23 +20,11 @@ class ChangeEventEntity extends Model {
                 allowNull: false,
 				field: "changeeventclass"
             },
-            changeEventClassId: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: true,
-				field: "changeeventclassid"
-            },
             changeEventType: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
                 field: "changeeventtype"
-            },
-            changeEventTypeId: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: true,
-                field: "changeeventtypeid"
             },
             changeTimestamp: {
                 type: DataTypes.NUMBER,

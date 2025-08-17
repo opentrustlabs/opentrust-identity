@@ -4,7 +4,7 @@ import { Alert, Backdrop, Button, Checkbox, CircularProgress, Grid2, Paper, Snac
 import React, { useContext } from "react";
 import { DetailPageContainer, DetailPageMainContentContainer } from "../layout/detail-page-container";
 import { AuthContext, AuthContextProps } from "../contexts/auth-context";
-import { SYSTEM_SETTINGS_UPDATE_SCOPE } from "@/utils/consts";
+import { DEFAULT_AUDIT_RECORD_RETENTION_PERIOD_DAYS, SYSTEM_SETTINGS_UPDATE_SCOPE } from "@/utils/consts";
 import { containsScope } from "@/utils/authz-utils";
 import DetailSectionActionHandler from "../layout/detail-section-action-handler";
 import { useMutation } from "@apollo/client";
@@ -30,7 +30,8 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
         allowRecoveryEmail: systemSettings.allowRecoveryEmail,
         allowDuressPassword: systemSettings.allowDuressPassword,
         rootClientId: systemSettings.rootClientId,
-        enablePortalAsLegacyIdp: systemSettings.enablePortalAsLegacyIdp
+        enablePortalAsLegacyIdp: systemSettings.enablePortalAsLegacyIdp,
+        auditRecordRetentionPeriodDays: systemSettings.auditRecordRetentionPeriodDays || DEFAULT_AUDIT_RECORD_RETENTION_PERIOD_DAYS
     }
     const [systemSettingsUpdateInput, setSystemSettingsUpdateInput] = React.useState<SystemSettingsUpdateInput>(initInput);
     const [markDirty, setMarkDirty] = React.useState<boolean>(false);
@@ -47,7 +48,8 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
                 allowRecoveryEmail: data.updateSystemSettings.allowRecoveryEmail,
                 allowDuressPassword: data.updateSystemSettings.allowDuressPassword,
                 rootClientId: data.updateSystemSettings.rootClientId,
-                enablePortalAsLegacyIdp: data.updateSystemSettings.enablePortalAsLegacyIdp
+                enablePortalAsLegacyIdp: data.updateSystemSettings.enablePortalAsLegacyIdp,
+                auditRecordRetentionPeriodDays: data.updateSystemSettings.auditRecordRetentionPeriodDays
             });
             setShowMutationSnackbar(true);
         },
@@ -55,9 +57,7 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
             setShowMutationBackdrop(false);
             setErrorMessage(error.message);
         }
-    })
-
-
+    });
 
     // HELPER VARIABLES AND FUNCTIONS
     const categoriesMidpoint = Math.floor(systemSettings.systemCategories.length / 2);
@@ -140,19 +140,31 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
                                             size="small"
                                             fullWidth={true}
                                             value={systemSettingsUpdateInput.rootClientId}
-                                            disabled={true}
-                                        />
-                                        {/* <Checkbox
-                                            sx={{ height: "25px", width: "25px" }}
-                                            value={systemSettingsUpdateInput.enablePortalAsLegacyIdp}
-                                            checked={systemSettingsUpdateInput.enablePortalAsLegacyIdp}
-                                            disabled={!containsScope(SYSTEM_SETTINGS_UPDATE_SCOPE, profile?.scope)}
-                                            onChange={(_, checked: boolean) => {                                                
-                                                systemSettingsUpdateInput.enablePortalAsLegacyIdp = checked;
+                                            onChange={(evt) => {
+                                                systemSettingsUpdateInput.rootClientId = evt.target.value;
                                                 setMarkDirty(true);
-                                                setSystemSettingsUpdateInput({...systemSettingsUpdateInput});                                                
-                                            }}
-                                        /> */}
+                                                setSystemSettingsUpdateInput({...systemSettingsUpdateInput});
+                                            }}                         
+                                        />                                        
+                                    </Grid2>
+                                    <Grid2 size={12}>
+                                        Audit Record Retention Period (Days) Defaults to {DEFAULT_AUDIT_RECORD_RETENTION_PERIOD_DAYS}:
+                                    </Grid2>
+                                    <Grid2 size={12}>
+                                        <TextField
+                                            size="small"
+                                            fullWidth={true}
+                                            type="number"
+                                            value={systemSettingsUpdateInput.auditRecordRetentionPeriodDays}
+                                            onChange={(evt) => {
+                                                const v = parseInt(evt.target.value);
+                                                if(!isNaN(v)){
+                                                    systemSettingsUpdateInput.auditRecordRetentionPeriodDays = v;
+                                                    setMarkDirty(true);
+                                                    setSystemSettingsUpdateInput({...systemSettingsUpdateInput});
+                                                }
+                                            }}                         
+                                        />                                        
                                     </Grid2>
                                     {containsScope(SYSTEM_SETTINGS_UPDATE_SCOPE, profile?.scope) &&
                                         <Grid2 size={12}>

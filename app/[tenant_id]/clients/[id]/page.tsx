@@ -10,6 +10,7 @@ import { AuthContext, AuthContextProps } from "@/components/contexts/auth-contex
 import { PortalUserProfile } from "@/graphql/generated/graphql-types";
 import { containsScope } from "@/utils/authz-utils";
 import { CLIENT_READ_SCOPE, TENANT_READ_ALL_SCOPE } from "@/utils/consts";
+import { ERROR_CODES } from "@/lib/models/error";
 
 const ClientDetailPage: React.FC = () => {
 
@@ -32,10 +33,10 @@ const ClientDetailPage: React.FC = () => {
         }        
     )
 
-    if(!containsScope([TENANT_READ_ALL_SCOPE, CLIENT_READ_SCOPE], profile?.scope || [])) return <ErrorComponent message={"You do not have sufficient permission to view this page."} componentSize='lg' />
+    if(!containsScope([TENANT_READ_ALL_SCOPE, CLIENT_READ_SCOPE], profile?.scope || [])) return <ErrorComponent message={ERROR_CODES.EC00184.errorMessage} componentSize='lg' />
     if (loading) return <DataLoading dataLoadingSize="xl" color={null} />
     if (error) return <ErrorComponent message={error.message} componentSize='lg' />
-    if (data && data.getClientById === null) return <ErrorComponent message={"Client Not Found"} componentSize='lg' />
+    if (data && data.getClientById === null) return <ErrorComponent message={ERROR_CODES.EC00011.errorMessage} componentSize='lg' />
 
     return (
         <ClientDetail client={data.getClientById} />

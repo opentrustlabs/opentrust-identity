@@ -4,7 +4,8 @@ import NodeCache from "node-cache";
 import { LegacyUserAuthenticationPayload, LegacyUserProfile } from "../models/principal";
 import { SecurityEvent, SecurityEventType } from "../models/security-event";
 import { OIDCContext } from "@/graphql/graphql-context";
-import { User } from "@/graphql/generated/graphql-types";
+import { PortalUserProfile, User } from "@/graphql/generated/graphql-types";
+import { logWithDetails } from "../logging/logger";
 
 
 const {
@@ -76,8 +77,8 @@ class OIDCServiceUtils {
             wellknownConfig = response.data;
             oidcWellknowCache.set(wellKnownUri, wellknownConfig);
         }
-        catch (err) {
-            console.log(err);
+        catch (err: any) {
+            logWithDetails("error", `Error getting well-known URI: ${wellKnownUri}`, {...err});            
         }
         return wellknownConfig !== undefined ? Promise.resolve(wellknownConfig) : Promise.resolve(null);
     }
@@ -182,7 +183,7 @@ class OIDCServiceUtils {
         }
     }
 
-    public async fireSecurityEvent(securityEventType: SecurityEventType, oidcContext: OIDCContext, user: User, jti: string | null, authToken: string | null){
+    public async fireSecurityEvent(securityEventType: SecurityEventType, oidcContext: OIDCContext, user: User | PortalUserProfile, jti: string | null, authToken: string | null){
         const securityEvent: SecurityEvent = {
             securityEventType: securityEventType,
             userId: user.userId,
@@ -211,17 +212,14 @@ class OIDCServiceUtils {
                 },
                 timeout: 30000
             }).catch(
-                (error) => {
-                    // TODO
-                    // Log the error
-                    console.log(error);
+                (error: any) => {                    
+                    logWithDetails("error", `Error invoking the security event web hook. ${error.message}`, {...error, securityEvent});
+                    logWithDetails("info", securityEvent.securityEventType, {securityEvent});
                 }
             )
         }
         else{
-            // TODO
-            // Log the inability to send a security event
-            console.log("ERROR_NO_WEB_HOOK_DEFINED");
+            logWithDetails("info", securityEvent.securityEventType, {securityEvent});
         }
         
     }

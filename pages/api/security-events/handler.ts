@@ -1,3 +1,4 @@
+import { logWithDetails } from '@/lib/logging/logger';
 import { SecurityEvent } from '@/lib/models/security-event';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
@@ -24,8 +25,8 @@ export default async function handler(
 ) {
 
     if(req.method === "POST"){
-        const event: SecurityEvent = req.body as SecurityEvent;
-        console.log(JSON.stringify(event));
+        const event: SecurityEvent = req.body as SecurityEvent;        
+        logWithDetails("info", event.securityEventType, {...event});
     }
     res.status(200).end();
 }
