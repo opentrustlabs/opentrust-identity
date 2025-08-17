@@ -5,7 +5,7 @@ import ClientDao from "../dao/client-dao";
 import { GraphQLError } from "graphql/error/GraphQLError";
 import { randomUUID } from 'crypto'; 
 import AuthenticationGroupDao from "../dao/authentication-group-dao";
-import { AUTHENTICATION_GROUP_CLIENT_ASSIGN_SCOPE, AUTHENTICATION_GROUP_CLIENT_REMOVE_SCOPE, AUTHENTICATION_GROUP_CREATE_SCOPE, AUTHENTICATION_GROUP_DELETE_SCOPE, AUTHENTICATION_GROUP_READ_SCOPE, AUTHENTICATION_GROUP_UPDATE_SCOPE, AUTHENTICATION_GROUP_USER_ASSIGN_SCOPE, AUTHENTICATION_GROUP_USER_REMOVE_SCOPE, CHANGE_EVENT_CLASS_AUTHENTICATION_GROUP, CHANGE_EVENT_CLASS_AUTHENTICATION_GROUP_USER_REL, CHANGE_EVENT_CLASS_CLIENT_AUTHENTICATION_GROUP, CHANGE_EVENT_TYPE_CREATE, CHANGE_EVENT_TYPE_CREATE_REL, CHANGE_EVENT_TYPE_DELETE, CHANGE_EVENT_TYPE_REMOVE_REL, CHANGE_EVENT_TYPE_UPDATE, NAME_ORDER_EASTERN, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_READ_ALL_SCOPE } from "@/utils/consts";
+import { AUTHENTICATION_GROUP_CLIENT_ASSIGN_SCOPE, AUTHENTICATION_GROUP_CLIENT_REMOVE_SCOPE, AUTHENTICATION_GROUP_CREATE_SCOPE, AUTHENTICATION_GROUP_DELETE_SCOPE, AUTHENTICATION_GROUP_READ_SCOPE, AUTHENTICATION_GROUP_UPDATE_SCOPE, AUTHENTICATION_GROUP_USER_ASSIGN_SCOPE, AUTHENTICATION_GROUP_USER_REMOVE_SCOPE, CHANGE_EVENT_CLASS_AUTHENTICATION_GROUP, CHANGE_EVENT_CLASS_AUTHENTICATION_GROUP_USER_REL, CHANGE_EVENT_CLASS_CLIENT_AUTHENTICATION_GROUP, CHANGE_EVENT_TYPE_CREATE, CHANGE_EVENT_TYPE_CREATE_REL, CHANGE_EVENT_TYPE_DELETE, CHANGE_EVENT_TYPE_REMOVE_REL, CHANGE_EVENT_TYPE_UPDATE, CLIENT_TYPE_SERVICE_ACCOUNT, NAME_ORDER_EASTERN, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_READ_ALL_SCOPE } from "@/utils/consts";
 import { Client as SearchClient } from "@opensearch-project/opensearch";
 import { getOpenSearchClient } from "@/lib/data-sources/search";
 import IdentityDao from "../dao/identity-dao";
@@ -207,6 +207,10 @@ class AuthenticationGroupService {
         if (!client) {
             throw new GraphQLError(ERROR_CODES.EC00011.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00011 }});
         }
+        // Is the client type enabled for authenticaiton groups?
+        if(client.clientType === CLIENT_TYPE_SERVICE_ACCOUNT){
+            throw new GraphQLError(ERROR_CODES.EC00189.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00189 }});
+        }
         const authenticationGroup = await this.getAuthenticationGroupById(authenticationGroupId);
         if (!authenticationGroup) {
             throw new GraphQLError(ERROR_CODES.EC00010.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00010 }});
@@ -215,6 +219,7 @@ class AuthenticationGroupService {
         if (authenticationGroup.tenantId !== client.tenantId) {
             throw new GraphQLError(ERROR_CODES.EC00012.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00012 }});
         }
+        
 
         const {isAuthorized, errorDetail} = authorizeByScopeAndTenant(this.oidcContext, AUTHENTICATION_GROUP_CLIENT_ASSIGN_SCOPE, client.tenantId);
         if(!isAuthorized){
