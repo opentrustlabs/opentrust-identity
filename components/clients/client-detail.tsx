@@ -356,45 +356,44 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                             </Paper>
                         </Grid2>
 
+                        {client.clientType !== CLIENT_TYPE_SERVICE_ACCOUNT &&
+                            <Grid2 size={12} marginBottom={"16px"}>
+                                {!isMarkedForDelete &&
+                                    <Accordion defaultExpanded={true}  >
+                                        <AccordionSummary
+                                            expandIcon={<ExpandMoreIcon />}
+                                            id={"redirect-uri-configuration"}
+                                            sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center" }}
 
-                        <Grid2 size={12} marginBottom={"16px"}>
-                            {!isMarkedForDelete &&
-                                <Accordion defaultExpanded={true}  >
-                                    <AccordionSummary
-                                        expandIcon={<ExpandMoreIcon />}
-                                        id={"redirect-uri-configuration"}
-                                        sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center" }}
-
-                                    >
-                                        <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-                                            <SyncIcon /><div style={{ marginLeft: "8px" }}>Redirect URI Configuration</div>
-                                        </div>
-                                    </AccordionSummary>
-                                    <AccordionDetails>
-                                        <ClientRedirectUriConfiguration
-                                            oidcEnabled={client.oidcEnabled}
-                                            clientId={client.clientId}
-                                            onUpdateStart={() => setShowMutationBackdrop(true)}
-                                            onUpdateEnd={(success: boolean) => {
-                                                setShowMutationBackdrop(false);
-                                                if (success) {
-                                                    setShowMutationSnackbar(true);
-                                                }
-                                            }}
-                                            readOnly={disableInputs}
-                                        />
-                                    </AccordionDetails>
-                                </Accordion>
-                            }
-                        </Grid2>
-
-
+                                        >
+                                            <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+                                                <SyncIcon /><div style={{ marginLeft: "8px" }}>Redirect URI Configuration</div>
+                                            </div>
+                                        </AccordionSummary>
+                                        <AccordionDetails>
+                                            <ClientRedirectUriConfiguration
+                                                oidcEnabled={client.oidcEnabled}
+                                                clientId={client.clientId}
+                                                onUpdateStart={() => setShowMutationBackdrop(true)}
+                                                onUpdateEnd={(success: boolean) => {
+                                                    setShowMutationBackdrop(false);
+                                                    if (success) {
+                                                        setShowMutationSnackbar(true);
+                                                    }
+                                                }}
+                                                readOnly={disableInputs}
+                                            />
+                                        </AccordionDetails>
+                                    </Accordion>
+                                }
+                            </Grid2>
+                        }
                         <Grid2 size={12} marginBottom={"16px"}>
                             {!isMarkedForDelete &&
                                 <Accordion >
                                     <AccordionSummary
                                         expandIcon={<ExpandMoreIcon />}
-                                        id={"redirect-uri-configuration"}
+                                        id={"authentication-groups-configuration"}
                                         sx={{ fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center" }}
 
                                     >
