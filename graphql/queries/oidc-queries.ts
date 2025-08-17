@@ -723,6 +723,7 @@ export const SYSTEM_SETTINGS_QUERY = gql(`
             allowDuressPassword
             rootClientId
             enablePortalAsLegacyIdp
+            auditRecordRetentionPeriodDays
             systemCategories {
                 categoryName
                 categoryEntries {

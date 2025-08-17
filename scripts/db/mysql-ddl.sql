@@ -447,19 +447,16 @@ create TABLE client_auth_history (
 
 create TABLE change_event (
     changeeventid VARCHAR(64) NOT NULL,
-    objectid VARCHAR(64) NOT NULL,
-    objecttype VARCHAR(128) NOT NULL,
+    objectid VARCHAR(64) NOT NULL,    
     changeeventtype VARCHAR(128) NOT NULL,
-	changeeventtypeid VARCHAR(64),
     changeeventclass VARCHAR(128) NOT NULL,
-	changeeventclassid VARCHAR(64),
     changetimestamp BIGINT NOT NULL,
     changedby VARCHAR(128) NOT NULL,
     data BLOB NOT NULL,	
     PRIMARY KEY (changeeventid, objectid)	
 );
 CREATE INDEX change_event_objectid_idx ON change_event(objectid);
-CREATE INDEX change_event_objecttype_idx ON change_event(objecttype);
+CREATE INDEX change_event_changeeventclass_idx ON change_event(changeeventclass);
 
 create TABLE tenant_anonymous_user_configuration (
     tenantid VARCHAR(64) PRIMARY KEY,
@@ -680,7 +677,10 @@ create TABLE captcha_config (
 create TABLE system_settings (
     systemid VARCHAR(64) PRIMARY KEY,
     allowrecoveryemail BOOLEAN NOT NULL,
-    allowduresspassword BOOLEAN NOT NULL
+    allowduresspassword BOOLEAN NOT NULL,
+    rootclientid VARCHAR(64) NOT NULL,
+    auditrecordretentionperioddays INT,
+    FOREIGN KEY (rootclientid) REFERENCES client(clientid)
 );
 
 create TABLE user_duress_credential (

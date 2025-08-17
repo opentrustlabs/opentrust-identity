@@ -18,6 +18,7 @@ import RateLimitDao from "../dao/rate-limit-dao";
 import ContactDao from "../dao/contact-dao";
 import SecretShareDao from "../dao/secret-share-dao";
 import { logWithDetails } from "../logging/logger";
+import ChangeEventDao from "../dao/change-event-dao";
 
 
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
@@ -34,6 +35,7 @@ const scopeDao: ScopeDao = DaoFactory.getInstance().getScopeDao();
 const rateLimitDao: RateLimitDao = DaoFactory.getInstance().getRateLimitDao();
 const contactDao: ContactDao = DaoFactory.getInstance().getContactDao();
 const secretShareDao: SecretShareDao = DaoFactory.getInstance().getSecretShareDao();
+const changeEventDao: ChangeEventDao = DaoFactory.getInstance().getChangeEventDao();
 const searchClient = getOpenSearchClient();
 
 interface CompletionCallback {
@@ -65,6 +67,7 @@ class DeletionService {
                 await markForDeleteDao.deleteCompletedRecords();
                 await markForDeleteDao.resetStalledJobs();
                 await secretShareDao.deleteExpiredData();
+                await changeEventDao.deleteExpiredData();
             }
         }
         catch(err: any){            

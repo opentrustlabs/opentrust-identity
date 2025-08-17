@@ -995,6 +995,7 @@ export const UPDATE_SYSTEM_SETTINGS_MUTATION = gql(`
             allowDuressPassword
             rootClientId
             enablePortalAsLegacyIdp
+            auditRecordRetentionPeriodDays
         }
     }
 `);

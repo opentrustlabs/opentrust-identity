@@ -14,35 +14,17 @@ class ChangeEventEntity extends Model {
                 primaryKey: true,
                 field: "objectid"
             },
-            objectType: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                field: "objecttype"
-            },
             changeEventClass: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
 				field: "changeeventclass"
             },
-            changeEventClassId: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: true,
-				field: "changeeventclassid"
-            },
             changeEventType: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
                 field: "changeeventtype"
-            },
-            changeEventTypeId: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: true,
-                field: "changeeventtypeid"
             },
             changeTimestamp: {
                 type: DataTypes.NUMBER,

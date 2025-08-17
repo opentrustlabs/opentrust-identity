@@ -951,6 +951,11 @@ export const ERROR_CODES: Record<string, ErrorDetail> = {
         errorCode: "EC00184",
         errorKey: "ERROR_YOU_DO_NOT_HAVE_SUFFICIENT_PERMISSIONS_TO_VIEW_THIS_PAGE",
         errorMessage: "You do not have sufficient permission to view this page."
+    },
+    EC00186: {
+        errorCode: "EC00185",
+        errorKey: "ERROR_AUDIT_RECORD_RETENTION_PERIOD_MUST_BE_GREATER_THAN_0_DAYS",
+        errorMessage: "The audit record retention period must be greater than 0 days."
     }
 }
 
