@@ -3,7 +3,7 @@ import { OIDCContext } from "@/graphql/graphql-context";
 import TenantDao from "@/lib/dao/tenant-dao";
 import { GraphQLError } from "graphql";
 import { randomUUID } from 'crypto'; 
-import { CAPTCHA_CONFIG_SCOPE, DEFAULT_TENANT_META_DATA, JOBS_READ_SCOPE, MFA_AUTH_TYPE_NONE, MFA_AUTH_TYPES, PASSWORD_HASHING_ALGORITHMS, PASSWORD_MAXIMUM_LENGTH, PASSWORD_MINIMUM_LENGTH, SEARCH_INDEX_OBJECT_SEARCH, SYSTEM_SETTINGS_READ_SCOPE, SYSTEM_SETTINGS_UPDATE_SCOPE, TENANT_CREATE_SCOPE, TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE, TENANT_TYPE_ROOT_TENANT, TENANT_TYPES_DISPLAY, TENANT_UPDATE_SCOPE } from "@/utils/consts";
+import { CAPTCHA_CONFIG_SCOPE, CHANGE_EVENT_CLASS_TENANT, CHANGE_EVENT_CLASS_TENANT_ANONYMOUS_USER_CONFIGURATION, CHANGE_EVENT_CLASS_TENANT_AUTHENTICATION_DOMAIN_REL, CHANGE_EVENT_CLASS_TENANT_LEGACY_USER_MIGRATION_CONFIGURATION, CHANGE_EVENT_CLASS_TENANT_LOGIN_FAILURE_POLICY, CHANGE_EVENT_CLASS_TENANT_LOOK_AND_FEEL, CHANGE_EVENT_CLASS_TENANT_PASSWORD_CONFIGURATION, CHANGE_EVENT_TYPE_CREATE, CHANGE_EVENT_TYPE_CREATE_REL, CHANGE_EVENT_TYPE_DELETE, CHANGE_EVENT_TYPE_REMOVE_REL, CHANGE_EVENT_TYPE_UPDATE, DEFAULT_TENANT_META_DATA, JOBS_READ_SCOPE, MFA_AUTH_TYPE_NONE, MFA_AUTH_TYPES, PASSWORD_HASHING_ALGORITHMS, PASSWORD_MAXIMUM_LENGTH, PASSWORD_MINIMUM_LENGTH, SEARCH_INDEX_OBJECT_SEARCH, SYSTEM_SETTINGS_READ_SCOPE, SYSTEM_SETTINGS_UPDATE_SCOPE, TENANT_CREATE_SCOPE, TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE, TENANT_TYPE_ROOT_TENANT, TENANT_TYPES_DISPLAY, TENANT_UPDATE_SCOPE } from "@/utils/consts";
 import { getOpenSearchClient } from "@/lib/data-sources/search";
 import FederatedOIDCProviderDao from "../dao/federated-oidc-provider-dao";
 import { DaoFactory } from "../data-sources/dao-factory";
@@ -13,6 +13,7 @@ import MarkForDeleteDao from "../dao/mark-for-delete-dao";
 import SchedulerDao from "../dao/scheduler-dao";
 import ClientDao from "../dao/client-dao";
 import { ERROR_CODES } from "../models/error";
+import ChangeEventDao from "../dao/change-event-dao";
 
 const searchClient = getOpenSearchClient();
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
@@ -21,7 +22,7 @@ const federatedOIDCProviderDao: FederatedOIDCProviderDao = DaoFactory.getInstanc
 const scopeDao: ScopeDao = DaoFactory.getInstance().getScopeDao();
 const markForDeleteDao: MarkForDeleteDao = DaoFactory.getInstance().getMarkForDeleteDao();
 const schedulerDao: SchedulerDao = DaoFactory.getInstance().getSchedulerDao();
-
+const changeEventDao: ChangeEventDao = DaoFactory.getInstance().getChangeEventDao();
 
 class TenantService {
 
@@ -128,6 +129,16 @@ class TenantService {
         await tenantDao.createTenant(tenant);
         await this.updateSearchIndex(tenant);
 
+        changeEventDao.addChangeEvent({
+            objectId: tenant.tenantId,
+            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+            changeEventClass: CHANGE_EVENT_CLASS_TENANT,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_CREATE,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify(tenant)
+        });
+
         return Promise.resolve(tenant);
     }
     
@@ -190,26 +201,18 @@ class TenantService {
         // provider with a provider type of "SOCIAL"
         await tenantDao.updateTenant(tenant);
         await this.updateSearchIndex(tenant);
-        return Promise.resolve(tenant);
-    }
 
-    public async deleteTenant(tenantId: string): Promise<void> {
-        // delete all clients
-        // delete all groups
-        // delete all users
-        // delete all login groups
-        // delete all LoginGroupClientRel
-        // delete all LoginGroupUserRel
-        // delete all UserGroupRel
-        // UserCredential
-        // UserCredentialHistory
-        // Key
-        // TenantRateLimitRel
-        // TenantScopeRel
-        // ClientTenantScopeRel
-        // TenantManagementDomainRel
-        // delete tenant
-        throw new Error("Method not implemented.");
+        changeEventDao.addChangeEvent({
+            objectId: tenant.tenantId,
+            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+            changeEventClass: CHANGE_EVENT_CLASS_TENANT,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_UPDATE,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify(tenant)
+        });
+
+        return Promise.resolve(tenant);
     }
 
 
@@ -223,22 +226,26 @@ class TenantService {
         if(!tenant){            
             throw new GraphQLError(ERROR_CODES.EC00008.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00008}});
         }
-        // if this exists, there should be at most 1. If the tenant id is different, then delete the existing record
-        // and insert a new one, since the domain needs to be a unique key in this relationship.
-        const relsByDomain: Array<TenantManagementDomainRel> = await this.getDomainTenantManagementRels(undefined, domain);
-        if(!relsByDomain || relsByDomain.length === 0){
-            return tenantDao.addDomainToTenantManagement(tenantId, domain);
+        // if the relsByDomain exists, just return it        
+        const relsByDomain: Array<TenantManagementDomainRel> = await this.getDomainTenantManagementRels(tenantId, domain);
+        if(relsByDomain.length === 1){
+            return {
+                domain,
+                tenantId
+            };
         }
-        else{    
-            const rel: TenantManagementDomainRel = relsByDomain[0];
-            // if equal to existing record, just return it
-            if(rel.tenantId === tenantId){
-                return Promise.resolve({tenantId, domain});
-            }
-            // else delete the existing relationship and add new
-            await this.removeDomainFromTenantManagement(tenantId, domain);
-            return tenantDao.addDomainToTenantManagement(tenantId, domain);
-        }        
+
+        changeEventDao.addChangeEvent({
+            objectId: tenantId,
+            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+            changeEventClass: CHANGE_EVENT_CLASS_TENANT_AUTHENTICATION_DOMAIN_REL,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_CREATE_REL,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify({tenantId, domain})
+        });
+
+        return tenantDao.addDomainToTenantManagement(tenantId, domain);
     }
 
     public async removeDomainFromTenantManagement(tenantId: string, domain: string): Promise<TenantManagementDomainRel | null> {
@@ -246,6 +253,16 @@ class TenantService {
         if(!authResult.isAuthorized){
             throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
         }
+        changeEventDao.addChangeEvent({
+            objectId: tenantId,
+            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+            changeEventClass: CHANGE_EVENT_CLASS_TENANT_AUTHENTICATION_DOMAIN_REL,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_REMOVE_REL,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify({tenantId, domain})
+        });
+
         return tenantDao.removeDomainFromTenantManagement(tenantId, domain);
     }
 
@@ -266,32 +283,7 @@ class TenantService {
         const rels = await getData(this.oidcContext, [TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE], tenantId, domain);
         return rels || [];
     }
-
-
-    public async createAnonymousUserConfiguration(tenantId: string, anonymousUserConfiguration: TenantAnonymousUserConfiguration): Promise<TenantAnonymousUserConfiguration>{
-        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_UPDATE_SCOPE], tenantId);
-        if(!authResult.isAuthorized){
-            throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
-        }
-        
-        return tenantDao.createAnonymousUserConfiguration(anonymousUserConfiguration);
-    }
-
-    public async updateAnonymousUserConfiguration(anonymousUserConfiguration: TenantAnonymousUserConfiguration): Promise<TenantAnonymousUserConfiguration>{
-        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_UPDATE_SCOPE], anonymousUserConfiguration.tenantId);
-        if(!authResult.isAuthorized){
-            throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
-        }
-        return tenantDao.updateAnonymousUserConfiguration(anonymousUserConfiguration);
-    }
-
-    public async deleteAnonymousUserConfiguration(tenantId: string): Promise<void>{
-        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_UPDATE_SCOPE], tenantId);
-        if(!authResult.isAuthorized){
-            throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
-        }
-        return tenantDao.deleteAnonymousUserConfiguration(tenantId);
-    }
+   
 
     public async getTenantMetaData(tenantId: string): Promise<TenantMetaData | null> {
         const tenant: Tenant | null = await tenantDao.getTenantById(tenantId);
@@ -331,9 +323,27 @@ class TenantService {
 
         const existing: TenantLookAndFeel | null = await tenantDao.getTenantLookAndFeel(tenantLookAndFeel.tenantid);
         if(!existing){
+            changeEventDao.addChangeEvent({
+                objectId: tenantLookAndFeel.tenantid,
+                changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+                changeEventClass: CHANGE_EVENT_CLASS_TENANT_LOOK_AND_FEEL,
+                changeEventId: randomUUID().toString(),
+                changeEventType: CHANGE_EVENT_TYPE_CREATE,
+                changeTimestamp: Date.now(),
+                data: JSON.stringify(tenantLookAndFeel)
+            });
             return tenantDao.createTenantLookAndFeel(tenantLookAndFeel);
         }
         else {
+            changeEventDao.addChangeEvent({
+                objectId: tenantLookAndFeel.tenantid,
+                changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+                changeEventClass: CHANGE_EVENT_CLASS_TENANT_LOOK_AND_FEEL,
+                changeEventId: randomUUID().toString(),
+                changeEventType: CHANGE_EVENT_TYPE_UPDATE,
+                changeTimestamp: Date.now(),
+                data: JSON.stringify(tenantLookAndFeel)
+            });
             return tenantDao.updateTenantLookAndFeel(tenantLookAndFeel);
         }
     }
@@ -344,6 +354,16 @@ class TenantService {
         if(!authResult.isAuthorized){
             throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
         }
+        
+        changeEventDao.addChangeEvent({
+            objectId: tenantId,
+            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+            changeEventClass: CHANGE_EVENT_CLASS_TENANT_LOOK_AND_FEEL,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_DELETE,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify({tenantId})
+        });
         return tenantDao.deleteTenantLookAndFeel(tenantId);
     }
 
@@ -394,10 +414,28 @@ class TenantService {
             throw new GraphQLError(ERROR_CODES.EC00008.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00008}});
         }
         const existingConfig: TenantPasswordConfig | null = await tenantDao.getTenantPasswordConfig(tenantPasswordConfig.tenantId);
-        if(existingConfig === null){
+        if(existingConfig === null){ 
+            changeEventDao.addChangeEvent({
+                objectId: tenantPasswordConfig.tenantId,
+                changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+                changeEventClass: CHANGE_EVENT_CLASS_TENANT_PASSWORD_CONFIGURATION,
+                changeEventId: randomUUID().toString(),
+                changeEventType: CHANGE_EVENT_TYPE_CREATE,
+                changeTimestamp: Date.now(),
+                data: JSON.stringify(tenantPasswordConfig)
+            });
             return tenantDao.assignPasswordConfigToTenant(tenantPasswordConfig);    
         }
         else{
+            changeEventDao.addChangeEvent({
+                objectId: tenantPasswordConfig.tenantId,
+                changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+                changeEventClass: CHANGE_EVENT_CLASS_TENANT_PASSWORD_CONFIGURATION,
+                changeEventId: randomUUID().toString(),
+                changeEventType: CHANGE_EVENT_TYPE_UPDATE,
+                changeTimestamp: Date.now(),
+                data: JSON.stringify(tenantPasswordConfig)
+            });
             return tenantDao.updatePasswordConfig(tenantPasswordConfig);
         }
     }
@@ -407,6 +445,15 @@ class TenantService {
         if(!authResult.isAuthorized){
             throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
         }
+        changeEventDao.addChangeEvent({
+            objectId: tenantId,
+            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+            changeEventClass: CHANGE_EVENT_CLASS_TENANT_PASSWORD_CONFIGURATION,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_DELETE,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify({tenantId})
+        });
         return tenantDao.removePasswordConfigFromTenant(tenantId);
     }
 
@@ -424,10 +471,28 @@ class TenantService {
             throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
         }
         const existing: TenantLegacyUserMigrationConfig | null = await tenantDao.getLegacyUserMigrationConfiguration(tenantLegacyUserMigrationConfig.tenantId);
-        if(existing){
+        if(existing){ CHANGE_EVENT_CLASS_TENANT_LEGACY_USER_MIGRATION_CONFIGURATION
+            changeEventDao.addChangeEvent({
+                objectId: tenantLegacyUserMigrationConfig.tenantId,
+                changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+                changeEventClass: CHANGE_EVENT_CLASS_TENANT_LEGACY_USER_MIGRATION_CONFIGURATION,
+                changeEventId: randomUUID().toString(),
+                changeEventType: CHANGE_EVENT_TYPE_UPDATE,
+                changeTimestamp: Date.now(),
+                data: JSON.stringify(tenantLegacyUserMigrationConfig)
+            });
             return tenantDao.updateTenantLegacyUserMigrationConfiguration(tenantLegacyUserMigrationConfig)
         }
         else{
+            changeEventDao.addChangeEvent({
+                objectId: tenantLegacyUserMigrationConfig.tenantId,
+                changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+                changeEventClass: CHANGE_EVENT_CLASS_TENANT_LEGACY_USER_MIGRATION_CONFIGURATION,
+                changeEventId: randomUUID().toString(),
+                changeEventType: CHANGE_EVENT_TYPE_CREATE,
+                changeTimestamp: Date.now(),
+                data: JSON.stringify(tenantLegacyUserMigrationConfig)
+            });
             return tenantDao.createTenantLegacyUserMigrationConfiguration(tenantLegacyUserMigrationConfig);
         }
     }
@@ -439,9 +504,27 @@ class TenantService {
         }
         const existing: TenantAnonymousUserConfiguration | null = await tenantDao.getAnonymousUserConfiguration(tenantAnonymousUserConfigInput.tenantId);
         if(existing){
+            changeEventDao.addChangeEvent({
+                objectId: tenantAnonymousUserConfigInput.tenantId,
+                changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+                changeEventClass: CHANGE_EVENT_CLASS_TENANT_ANONYMOUS_USER_CONFIGURATION,
+                changeEventId: randomUUID().toString(),
+                changeEventType: CHANGE_EVENT_TYPE_UPDATE,
+                changeTimestamp: Date.now(),
+                data: JSON.stringify(tenantAnonymousUserConfigInput)
+            });
             return tenantDao.updateAnonymousUserConfiguration(tenantAnonymousUserConfigInput);
         }
         else{
+            changeEventDao.addChangeEvent({
+                objectId: tenantAnonymousUserConfigInput.tenantId,
+                changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+                changeEventClass: CHANGE_EVENT_CLASS_TENANT_ANONYMOUS_USER_CONFIGURATION,
+                changeEventId: randomUUID().toString(),
+                changeEventType: CHANGE_EVENT_TYPE_CREATE,
+                changeTimestamp: Date.now(),
+                data: JSON.stringify(tenantAnonymousUserConfigInput)
+            });
             return tenantDao.createAnonymousUserConfiguration(tenantAnonymousUserConfigInput);
         }
     }
@@ -452,6 +535,15 @@ class TenantService {
             throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
         }
         await tenantDao.deleteAnonymousUserConfiguration(tenantId);
+        changeEventDao.addChangeEvent({
+            objectId: tenantId,
+            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+            changeEventClass: CHANGE_EVENT_CLASS_TENANT_ANONYMOUS_USER_CONFIGURATION,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_DELETE,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify({tenantId})
+        });
         return;
     }
 
@@ -467,7 +559,17 @@ class TenantService {
         const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_UPDATE_SCOPE], tenantId);
         if(!authResult.isAuthorized){
             throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
-        }
+        } 
+
+        changeEventDao.addChangeEvent({
+            objectId: tenantId,
+            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+            changeEventClass: CHANGE_EVENT_CLASS_TENANT_AUTHENTICATION_DOMAIN_REL,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_CREATE_REL,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify({tenantId, domain})
+        });
         return tenantDao.addDomainToTenantRestrictedAuthentication(tenantId, domain);
     }
 
@@ -476,6 +578,15 @@ class TenantService {
         if(!authResult.isAuthorized){
             throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
         }
+        changeEventDao.addChangeEvent({
+            objectId: tenantId,
+            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+            changeEventClass: CHANGE_EVENT_CLASS_TENANT_AUTHENTICATION_DOMAIN_REL,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_REMOVE_REL,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify({tenantId, domain})
+        });
         return tenantDao.removeDomainFromTenantRestrictedAuthentication(tenantId, domain);
     }
 
@@ -494,10 +605,28 @@ class TenantService {
         }
         const existing: TenantLoginFailurePolicy | null = await tenantDao.getLoginFailurePolicy(loginFailurePolicy.tenantId);
         
-        if(!existing){        
+        if(!existing){  
+            changeEventDao.addChangeEvent({
+                objectId: loginFailurePolicy.tenantId,
+                changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+                changeEventClass: CHANGE_EVENT_CLASS_TENANT_LOGIN_FAILURE_POLICY,
+                changeEventId: randomUUID().toString(),
+                changeEventType: CHANGE_EVENT_TYPE_CREATE,
+                changeTimestamp: Date.now(),
+                data: JSON.stringify(loginFailurePolicy)
+            });
             await tenantDao.createLoginFailurePolicy(loginFailurePolicy);        
         }
         else{
+            changeEventDao.addChangeEvent({
+                objectId: loginFailurePolicy.tenantId,
+                changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+                changeEventClass: CHANGE_EVENT_CLASS_TENANT_LOGIN_FAILURE_POLICY,
+                changeEventId: randomUUID().toString(),
+                changeEventType: CHANGE_EVENT_TYPE_UPDATE,
+                changeTimestamp: Date.now(),
+                data: JSON.stringify(loginFailurePolicy)
+            });
             await tenantDao.updateLoginFailurePolicy(loginFailurePolicy);
         }
         return loginFailurePolicy;
@@ -508,6 +637,15 @@ class TenantService {
         if(!authResult.isAuthorized){
             throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
         }
+        changeEventDao.addChangeEvent({
+            objectId: tenantId,
+            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+            changeEventClass: CHANGE_EVENT_CLASS_TENANT_LOGIN_FAILURE_POLICY,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_DELETE,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify({tenantId})
+        });
         await tenantDao.removeLoginFailurePolicy(tenantId);
     }
 
@@ -564,6 +702,16 @@ class TenantService {
         }
 
         await tenantDao.updateSystemSettings(systemSettingsUpdateInput);
+        changeEventDao.addChangeEvent({
+            objectId: existingSystemSettings.systemId,
+            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+            changeEventClass: CHANGE_EVENT_CLASS_TENANT_LOGIN_FAILURE_POLICY,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_UPDATE,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify(systemSettingsUpdateInput)
+        });
+        
         return tenantDao.getSystemSettings();
     }
 

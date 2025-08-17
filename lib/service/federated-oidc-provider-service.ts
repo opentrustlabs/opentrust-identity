@@ -3,7 +3,7 @@ import { OIDCContext } from "@/graphql/graphql-context";
 import FederatedOIDCProviderDao from "@/lib/dao/federated-oidc-provider-dao";
 import { GraphQLError } from "graphql/error/GraphQLError";
 import { randomUUID } from 'crypto'; 
-import { FEDERATED_OIDC_PROVIDER_CREATE_SCOPE, FEDERATED_OIDC_PROVIDER_DELETE_SCOPE, FEDERATED_OIDC_PROVIDER_READ_SCOPE, FEDERATED_OIDC_PROVIDER_TENANT_ASSIGN_SCOPE, FEDERATED_OIDC_PROVIDER_TENANT_REMOVE_SCOPE, FEDERATED_OIDC_PROVIDER_TYPE_ENTERPRISE, FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL, FEDERATED_OIDC_PROVIDER_TYPES_DISPLAY, FEDERATED_OIDC_PROVIDER_UPDATE_SCOPE, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_READ_ALL_SCOPE } from "@/utils/consts";
+import { CHANGE_EVENT_CLASS_OIDC_PROVIDER, CHANGE_EVENT_CLASS_OIDC_PROVIDER_DOMAIN_REL, CHANGE_EVENT_CLASS_OIDC_PROVIDER_TENANT_REL, CHANGE_EVENT_TYPE_CREATE, CHANGE_EVENT_TYPE_CREATE_REL, CHANGE_EVENT_TYPE_REMOVE_REL, CHANGE_EVENT_TYPE_UPDATE, FEDERATED_OIDC_PROVIDER_CREATE_SCOPE, FEDERATED_OIDC_PROVIDER_DELETE_SCOPE, FEDERATED_OIDC_PROVIDER_READ_SCOPE, FEDERATED_OIDC_PROVIDER_TENANT_ASSIGN_SCOPE, FEDERATED_OIDC_PROVIDER_TENANT_REMOVE_SCOPE, FEDERATED_OIDC_PROVIDER_TYPE_ENTERPRISE, FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL, FEDERATED_OIDC_PROVIDER_TYPES_DISPLAY, FEDERATED_OIDC_PROVIDER_UPDATE_SCOPE, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_READ_ALL_SCOPE } from "@/utils/consts";
 import { Client } from "@opensearch-project/opensearch";
 import { getOpenSearchClient } from "@/lib/data-sources/search";
 import { DaoFactory } from "../data-sources/dao-factory";
@@ -11,12 +11,14 @@ import Kms from "../kms/kms";
 import { authorizeByScopeAndTenant, ServiceAuthorizationWrapper } from "@/utils/authz-utils";
 import { ERROR_CODES } from "../models/error";
 import { logWithDetails } from "../logging/logger";
+import ChangeEventDao from "../dao/change-event-dao";
 
 
 const searchClient: Client = getOpenSearchClient();
 const federatedOIDCProviderDao: FederatedOIDCProviderDao = DaoFactory.getInstance().getFederatedOIDCProvicerDao();
 const tenantDao = DaoFactory.getInstance().getTenantDao();
 const kms: Kms = DaoFactory.getInstance().getKms();
+const changeEventDao: ChangeEventDao = DaoFactory.getInstance().getChangeEventDao();
 
 class FederatedOIDCProviderService {
 
@@ -110,6 +112,15 @@ class FederatedOIDCProviderService {
         federatedOIDCProvider.federatedOIDCProviderId = randomUUID().toString();
         await federatedOIDCProviderDao.createFederatedOidcProvider(federatedOIDCProvider);
         await this.updateSearchIndex(federatedOIDCProvider);
+        changeEventDao.addChangeEvent({
+            objectId: federatedOIDCProvider.federatedOIDCProviderId,
+            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+            changeEventClass: CHANGE_EVENT_CLASS_OIDC_PROVIDER,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_CREATE,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify({...federatedOIDCProvider, federatedOIDCProviderClientSecret: ""})
+        });
         return Promise.resolve(federatedOIDCProvider);
     }
 
@@ -174,6 +185,15 @@ class FederatedOIDCProviderService {
         await federatedOIDCProviderDao.updateFederatedOidcProvider(federatedOIDCProvider);
         await this.updateSearchIndex(federatedOIDCProvider);
         this.bulkUpdateRelSearchRecord(federatedOIDCProvider);
+        changeEventDao.addChangeEvent({
+            objectId: federatedOIDCProvider.federatedOIDCProviderId,
+            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+            changeEventClass: CHANGE_EVENT_CLASS_OIDC_PROVIDER,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_UPDATE,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify({...federatedOIDCProvider, federatedOIDCProviderClientSecret: ""})
+        });
         return Promise.resolve(federatedOIDCProvider);
     }
 
@@ -294,6 +314,15 @@ class FederatedOIDCProviderService {
 
         const data = await federatedOIDCProviderDao.assignFederatedOidcProviderToTenant(federatedOIDCProviderId, tenantId);
         await this.updateRelSearchIndex(tenantId, provider);
+        changeEventDao.addChangeEvent({
+            objectId: tenantId,
+            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+            changeEventClass: CHANGE_EVENT_CLASS_OIDC_PROVIDER_TENANT_REL,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_CREATE_REL,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify({federatedOIDCProviderId, tenantId})
+        });
 
         return data;
         
@@ -306,6 +335,15 @@ class FederatedOIDCProviderService {
         }
         const rel: FederatedOidcProviderTenantRel = await federatedOIDCProviderDao.removeFederatedOidcProviderFromTenant(federatedOIDCProviderId, tenantId)
         await this.removeRelSearchRecord(tenantId, federatedOIDCProviderId);
+        changeEventDao.addChangeEvent({
+            objectId: tenantId,
+            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+            changeEventClass: CHANGE_EVENT_CLASS_OIDC_PROVIDER_TENANT_REL,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_REMOVE_REL,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify({federatedOIDCProviderId, tenantId})
+        });
         return rel;
     }
 
@@ -370,6 +408,15 @@ class FederatedOIDCProviderService {
                 federatedOIDCProviderId: federatedOIDCProviderId
             })
         }
+        changeEventDao.addChangeEvent({
+            objectId: federatedOIDCProviderId,
+            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+            changeEventClass: CHANGE_EVENT_CLASS_OIDC_PROVIDER_DOMAIN_REL,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_CREATE_REL,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify({federatedOIDCProviderId, domain})
+        });
         return federatedOIDCProviderDao.assignFederatedOidcProviderToDomain(federatedOIDCProviderId, domain);
     }
 
@@ -378,6 +425,15 @@ class FederatedOIDCProviderService {
         if(!isAuthorized){
             throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});
         }
+        changeEventDao.addChangeEvent({
+            objectId: federatedOIDCProviderId,
+            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+            changeEventClass: CHANGE_EVENT_CLASS_OIDC_PROVIDER_DOMAIN_REL,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_REMOVE_REL,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify({federatedOIDCProviderId, domain})
+        });
         return federatedOIDCProviderDao.removeFederatedOidcProviderFromDomain(federatedOIDCProviderId, domain);
     }
     

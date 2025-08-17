@@ -1157,6 +1157,7 @@ type SystemCategory {
 }
 
 type SystemSettings {
+    systemId: String!
     softwareVersion: String!
     allowRecoveryEmail: Boolean!
     allowDuressPassword: Boolean!

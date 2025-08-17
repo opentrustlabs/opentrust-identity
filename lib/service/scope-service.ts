@@ -7,14 +7,14 @@ import TenantDao from "../dao/tenant-dao";
 import ClientDao from "../dao/client-dao";
 import AccessRuleDao from "../dao/access-rule-dao";
 import { DaoFactory } from "../data-sources/dao-factory";
-import { CLIENT_TYPE_IDENTITY, ROOT_TENANT_EXCLUSIVE_INTERNAL_SCOPE_NAMES, SCOPE_CLIENT_ASSIGN_SCOPE, SCOPE_CLIENT_REMOVE_SCOPE, SCOPE_CREATE_SCOPE, SCOPE_DELETE_SCOPE, SCOPE_GROUP_ASSIGN_SCOPE, SCOPE_GROUP_REMOVE_SCOPE, SCOPE_READ_SCOPE, SCOPE_TENANT_ASSIGN_SCOPE, SCOPE_TENANT_REMOVE_SCOPE, SCOPE_UPDATE_SCOPE, SCOPE_USE_APPLICATION_MANAGEMENT, SCOPE_USE_DISPLAY, SCOPE_USE_IAM_MANAGEMENT, SCOPE_USER_ASSIGN_SCOPE, SCOPE_USER_REMOVE_SCOPE, SCOPE_USES, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_READ_ALL_SCOPE, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
+import { CHANGE_EVENT_CLASS_AUTHORIZATION_GROUP_TENANT_SCOPE_REL, CHANGE_EVENT_CLASS_CLIENT_TENANT_SCOPE_REL, CHANGE_EVENT_CLASS_SCOPE, CHANGE_EVENT_CLASS_TENANT_SCOPE_REL, CHANGE_EVENT_CLASS_USER_TENANT_SCOPE_REL, CHANGE_EVENT_TYPE_CREATE, CHANGE_EVENT_TYPE_CREATE_REL, CHANGE_EVENT_TYPE_REMOVE_REL, CHANGE_EVENT_TYPE_UPDATE, CLIENT_TYPE_IDENTITY, ROOT_TENANT_EXCLUSIVE_INTERNAL_SCOPE_NAMES, SCOPE_CLIENT_ASSIGN_SCOPE, SCOPE_CLIENT_REMOVE_SCOPE, SCOPE_CREATE_SCOPE, SCOPE_DELETE_SCOPE, SCOPE_GROUP_ASSIGN_SCOPE, SCOPE_GROUP_REMOVE_SCOPE, SCOPE_READ_SCOPE, SCOPE_TENANT_ASSIGN_SCOPE, SCOPE_TENANT_REMOVE_SCOPE, SCOPE_UPDATE_SCOPE, SCOPE_USE_APPLICATION_MANAGEMENT, SCOPE_USE_DISPLAY, SCOPE_USE_IAM_MANAGEMENT, SCOPE_USER_ASSIGN_SCOPE, SCOPE_USER_REMOVE_SCOPE, SCOPE_USES, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_READ_ALL_SCOPE, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import { getOpenSearchClient } from "../data-sources/search";
 import AuthorizationGroupDao from "../dao/authorization-group-dao";
 import IdentityDao from "../dao/identity-dao";
-import { authorizeByScopeAndTenant, containsScope, ServiceAuthorizationWrapper } from "@/utils/authz-utils";
+import { authorizeByScopeAndTenant, containsScope } from "@/utils/authz-utils";
 import { ERROR_CODES } from "../models/error";
-import { error } from "console";
 import { logWithDetails } from "../logging/logger";
+import ChangeEventDao from "../dao/change-event-dao";
 
 const scopeDao: ScopeDao = DaoFactory.getInstance().getScopeDao();
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
@@ -23,7 +23,8 @@ const accessRuleDao: AccessRuleDao = DaoFactory.getInstance().getAccessRuleDao()
 const authorizationGroupDao: AuthorizationGroupDao = DaoFactory.getInstance().getAuthorizationGroupDao();
 const identityDao: IdentityDao = DaoFactory.getInstance().getIdentityDao();
 const searchClient = getOpenSearchClient();
-
+const changeEventDao: ChangeEventDao = DaoFactory.getInstance().getChangeEventDao();
+ 
 class ScopeService {
 
     oidcContext: OIDCContext;
@@ -126,6 +127,16 @@ class ScopeService {
         const s: Scope = await scopeDao.createScope(scope);
         await this.updateSearchIndex(scope);
 
+        changeEventDao.addChangeEvent({
+            objectId: scope.scopeId,
+            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+            changeEventClass: CHANGE_EVENT_CLASS_SCOPE,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_CREATE,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify({...scope})
+        });
+
         return Promise.resolve(scope);
     }
 
@@ -162,6 +173,16 @@ class ScopeService {
         // Do not wait on the bulk update. Fire and forget...
         this.bulkUpdateScopeRelIndex(existingScope);
 
+        changeEventDao.addChangeEvent({
+            objectId: scope.scopeId,
+            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+            changeEventClass: CHANGE_EVENT_CLASS_SCOPE,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_UPDATE,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify({...scope})
+        });
+
         return Promise.resolve(existingScope);
     }
 
@@ -185,6 +206,17 @@ class ScopeService {
         if(scope){
             await this.indexTenantScopeRel(tenant, scope);
         }
+
+        changeEventDao.addChangeEvent({
+            objectId: tenantId,
+            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+            changeEventClass: CHANGE_EVENT_CLASS_TENANT_SCOPE_REL,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_CREATE_REL,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify({tenantId, scopeId})
+        });
+
         return tenantAvailableScope
         
     }
@@ -231,6 +263,18 @@ class ScopeService {
             await this.indexTenantScopeRel(tenant, arrayScope[i]);
             arrayTenantAvailableScope.push(rel);
         }
+        const scopeIds = arrayScope.map((s: Scope) => s.scopeId);
+        
+        changeEventDao.addChangeEvent({
+            objectId: tenantId,
+            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+            changeEventClass: CHANGE_EVENT_CLASS_TENANT_SCOPE_REL,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_CREATE_REL,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify({tenantId, scopeIds})
+        });
+
         return arrayTenantAvailableScope;
     }
 
@@ -262,6 +306,16 @@ class ScopeService {
 
         await scopeDao.removeScopeFromTenant(tenantId, scopeId);
         await this.removeTenantScopeRelFromIndex(tenantId, scopeId);
+
+        changeEventDao.addChangeEvent({
+            objectId: tenantId,
+            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+            changeEventClass: CHANGE_EVENT_CLASS_TENANT_SCOPE_REL,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_REMOVE_REL,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify({tenantId, scopeId})
+        });
 
         return Promise.resolve();
     }
@@ -363,6 +417,16 @@ class ScopeService {
             throw new GraphQLError(ERROR_CODES.EC00077.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00077}});
         }
 
+        changeEventDao.addChangeEvent({
+            objectId: tenantId,
+            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+            changeEventClass: CHANGE_EVENT_CLASS_CLIENT_TENANT_SCOPE_REL,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_CREATE_REL,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify({tenantId, clientId, scopeId})
+        });
+
         return scopeDao.assignScopeToClient(tenantId, clientId, scopeId);        
     }
 
@@ -401,6 +465,17 @@ class ScopeService {
             const rel = await scopeDao.assignScopeToClient(tenantId, clientId, bulkScopeInput[i].scopeId);
             arr.push(rel);
         }
+        const scopeIds = arr.map((v: ClientScopeRel) => v.scopeId);
+        changeEventDao.addChangeEvent({
+            objectId: tenantId,
+            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+            changeEventClass: CHANGE_EVENT_CLASS_CLIENT_TENANT_SCOPE_REL,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_CREATE_REL,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify({tenantId, clientId, scopeIds})
+        });
+
         return arr;
     }
 
@@ -410,6 +485,15 @@ class ScopeService {
         if(!authResult.isAuthorized){
             throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
         }
+        changeEventDao.addChangeEvent({
+            objectId: tenantId,
+            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+            changeEventClass: CHANGE_EVENT_CLASS_CLIENT_TENANT_SCOPE_REL,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_REMOVE_REL,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify({tenantId, clientId, scopeId})
+        });
 
         return scopeDao.removeScopeFromClient(tenantId, clientId, scopeId);
     }
@@ -446,6 +530,17 @@ class ScopeService {
         if(authnGroup.tenantId !== tenantId){
             throw new GraphQLError(ERROR_CODES.EC00080.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00080}});
         }
+        
+        changeEventDao.addChangeEvent({
+            objectId: tenantId,
+            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+            changeEventClass: CHANGE_EVENT_CLASS_AUTHORIZATION_GROUP_TENANT_SCOPE_REL,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_CREATE_REL,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify({tenantId, groupId, scopeId})
+        });
+
         return scopeDao.assignScopeToAuthorizationGroup(tenantId, groupId, scopeId);
 
     }
@@ -495,6 +590,17 @@ class ScopeService {
             const rel = await scopeDao.assignScopeToAuthorizationGroup(tenantId, groupId, bulkScopeInput[i].scopeId);
             arr.push(rel);
         }
+
+        const scopeIds = arr.map((v: AuthorizationGroupScopeRel) => v.scopeId);
+        changeEventDao.addChangeEvent({
+            objectId: tenantId,
+            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+            changeEventClass: CHANGE_EVENT_CLASS_AUTHORIZATION_GROUP_TENANT_SCOPE_REL,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_CREATE_REL,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify({tenantId, groupId, scopeIds})
+        });
         return arr;
     }
 
@@ -504,6 +610,16 @@ class ScopeService {
         if(!authResult.isAuthorized){
             throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
         }
+        changeEventDao.addChangeEvent({
+            objectId: tenantId,
+            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+            changeEventClass: CHANGE_EVENT_CLASS_AUTHORIZATION_GROUP_TENANT_SCOPE_REL,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_REMOVE_REL,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify({tenantId, groupId, scopeId})
+        });
+
         return scopeDao.removeScopeFromAuthorizationGroup(tenantId, groupId, scopeId);
     }
 
@@ -540,6 +656,17 @@ class ScopeService {
         if(!userTenantRel){
             throw new GraphQLError(ERROR_CODES.EC00081.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00081}});
         }
+
+        changeEventDao.addChangeEvent({
+            objectId: tenantId,
+            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+            changeEventClass: CHANGE_EVENT_CLASS_USER_TENANT_SCOPE_REL,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_CREATE_REL,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify({tenantId, userId, scopeId})
+        });
+
         return scopeDao.assignScopeToUser(tenantId, userId, scopeId);
     }
 
@@ -590,6 +717,17 @@ class ScopeService {
             const rel = await scopeDao.assignScopeToUser(tenantId, userId, bulkScopeInput[i].scopeId);
             arr.push(rel);
         }
+        const scopeIds = arr.map((v) => v.scopeId);
+        changeEventDao.addChangeEvent({
+            objectId: tenantId,
+            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+            changeEventClass: CHANGE_EVENT_CLASS_USER_TENANT_SCOPE_REL,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_CREATE_REL,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify({tenantId, userId, scopeIds})
+        });
+
         return arr;
     }
 
@@ -598,6 +736,15 @@ class ScopeService {
         if(!authResult.isAuthorized){
             throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
         }
+        changeEventDao.addChangeEvent({
+            objectId: tenantId,
+            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+            changeEventClass: CHANGE_EVENT_CLASS_USER_TENANT_SCOPE_REL,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_REMOVE_REL,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify({tenantId, userId, scopeId})
+        });
         return scopeDao.removeScopeFromUser(tenantId, userId, scopeId);
     }
     
@@ -681,10 +828,6 @@ class ScopeService {
         });
     }
 
-    protected async bulkRemoveScopeFromRelIndex(scopeId: string): Promise<void>{
-        // TODO
-        throw new GraphQLError("ERROR_METHOD_NOT_IMPLEMENTED");
-    }
     
     protected async indexTenantScopeRel(tenant: Tenant, scope: Scope): Promise<void>{
         const document: RelSearchResultItem = {

@@ -4,19 +4,21 @@ import TenantDao from "@/lib/dao/tenant-dao";
 import { GraphQLError } from "graphql/error/GraphQLError";
 import { randomUUID } from 'crypto'; 
 import GroupDao from "../dao/authorization-group-dao";
-import { AUTHORIZATION_GROUP_CREATE_SCOPE, AUTHORIZATION_GROUP_READ_SCOPE, AUTHORIZATION_GROUP_UPDATE_SCOPE, AUTHORIZATION_GROUP_USER_ASSIGN_SCOPE, AUTHORIZATION_GROUP_USER_REMOVE_SCOPE, NAME_ORDER_EASTERN, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_READ_ALL_SCOPE } from "@/utils/consts";
+import { AUTHORIZATION_GROUP_CREATE_SCOPE, AUTHORIZATION_GROUP_READ_SCOPE, AUTHORIZATION_GROUP_UPDATE_SCOPE, AUTHORIZATION_GROUP_USER_ASSIGN_SCOPE, AUTHORIZATION_GROUP_USER_REMOVE_SCOPE, CHANGE_EVENT_CLASS_AUTHORIZATION_GROUP, CHANGE_EVENT_CLASS_AUTHORIZATION_GROUP_USER_REL, CHANGE_EVENT_TYPE_CREATE, CHANGE_EVENT_TYPE_CREATE_REL, CHANGE_EVENT_TYPE_REMOVE_REL, CHANGE_EVENT_TYPE_UPDATE, NAME_ORDER_EASTERN, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_READ_ALL_SCOPE } from "@/utils/consts";
 import { getOpenSearchClient } from "@/lib/data-sources/search";
 import { Client } from "@opensearch-project/opensearch";
 import { DaoFactory } from "../data-sources/dao-factory";
 import IdentityDao from "../dao/identity-dao";
-import { authorizeByScopeAndTenant, containsScope, filterResultsByTenant, ServiceAuthorizationWrapper } from "@/utils/authz-utils";
+import { authorizeByScopeAndTenant, filterResultsByTenant, ServiceAuthorizationWrapper } from "@/utils/authz-utils";
 import { ERROR_CODES } from "../models/error";
+import ChangeEventDao from "../dao/change-event-dao";
 
 
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
 const groupDao: GroupDao = DaoFactory.getInstance().getAuthorizationGroupDao();
 const searchClient: Client = getOpenSearchClient();
 const identityDao: IdentityDao = DaoFactory.getInstance().getIdentityDao();
+const changeEventDao: ChangeEventDao = DaoFactory.getInstance().getChangeEventDao();
 
 class GroupService {
 
@@ -97,6 +99,15 @@ class GroupService {
 
         await groupDao.createAuthorizationGroup(group);
         await this.updateSearchIndex(group);
+        changeEventDao.addChangeEvent({
+            objectId: group.groupId,
+            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+            changeEventClass: CHANGE_EVENT_CLASS_AUTHORIZATION_GROUP,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_CREATE,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify({...group})
+        });
         return Promise.resolve(group);
     }
 
@@ -116,6 +127,15 @@ class GroupService {
         existingGroup.groupDescription = group.groupDescription;
         await groupDao.updateAuthorizationGroup(existingGroup);
         await this.updateSearchIndex(existingGroup);
+        changeEventDao.addChangeEvent({
+            objectId: group.groupId,
+            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+            changeEventClass: CHANGE_EVENT_CLASS_AUTHORIZATION_GROUP,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_UPDATE,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify({...group})
+        });
         return Promise.resolve(existingGroup);
     }
 
@@ -198,6 +218,16 @@ class GroupService {
             refresh: "wait_for"
         });
 
+        changeEventDao.addChangeEvent({
+            objectId: groupId,
+            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+            changeEventClass: CHANGE_EVENT_CLASS_AUTHORIZATION_GROUP_USER_REL,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_CREATE_REL,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify({groupId, userId})
+        });
+
         return Promise.resolve(r);
         
     }
@@ -217,6 +247,17 @@ class GroupService {
                 refresh: "wait_for"
             });  
         }
+
+        changeEventDao.addChangeEvent({
+            objectId: groupId,
+            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+            changeEventClass: CHANGE_EVENT_CLASS_AUTHORIZATION_GROUP_USER_REL,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_REMOVE_REL,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify({groupId, userId})
+        });
+
         return Promise.resolve();
     }
 

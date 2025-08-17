@@ -2,7 +2,7 @@ import { AutoCreateSigningKeyInput, ObjectSearchResultItem, RelSearchResultItem,
 import { GraphQLError } from "graphql/error/GraphQLError";
 import { randomUUID } from 'crypto'; 
 import { OIDCContext } from "@/graphql/graphql-context";
-import { KEY_CREATE_SCOPE, KEY_DELETE_SCOPE, KEY_READ_SCOPE, KEY_TYPE_RSA, KEY_TYPES, KEY_UPDATE_SCOPE, KEY_USES, MIN_PRIVATE_KEY_PASSWORD_LENGTH, PKCS8_ENCRYPTED_PRIVATE_KEY_HEADER, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, SIGNING_KEY_STATUS_ACTIVE, SIGNING_KEY_STATUS_REVOKED, TENANT_READ_ALL_SCOPE } from "@/utils/consts";
+import { CHANGE_EVENT_CLASS_SIGNING_KEY, CHANGE_EVENT_TYPE_CREATE, CHANGE_EVENT_TYPE_UPDATE, KEY_CREATE_SCOPE, KEY_DELETE_SCOPE, KEY_READ_SCOPE, KEY_TYPE_RSA, KEY_TYPES, KEY_UPDATE_SCOPE, KEY_USES, MIN_PRIVATE_KEY_PASSWORD_LENGTH, PKCS8_ENCRYPTED_PRIVATE_KEY_HEADER, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, SIGNING_KEY_STATUS_ACTIVE, SIGNING_KEY_STATUS_REVOKED, TENANT_READ_ALL_SCOPE } from "@/utils/consts";
 import { DaoFactory } from "../data-sources/dao-factory";
 import { Client } from "@opensearch-project/opensearch";
 import { getOpenSearchClient } from "../data-sources/search";
@@ -11,12 +11,14 @@ import { X509Certificate } from "crypto";
 import { authorizeByScopeAndTenant, ServiceAuthorizationWrapper } from "@/utils/authz-utils";
 import { createSigningKey } from "@/utils/signing-key-utils";
 import { ERROR_CODES } from "../models/error";
+import ChangeEventDao from "../dao/change-event-dao";
 
 
 const signingKeysDao = DaoFactory.getInstance().getSigningKeysDao();
 const tenantDao = DaoFactory.getInstance().getTenantDao();
 const searchClient: Client = getOpenSearchClient();
 const kms: Kms = DaoFactory.getInstance().getKms();
+const changeEventDao: ChangeEventDao = DaoFactory.getInstance().getChangeEventDao();
 
 class SigningKeysService {
 
@@ -128,6 +130,17 @@ class SigningKeysService {
 
         await signingKeysDao.createSigningKey(key);
         await this.updateSearchIndex(key);
+
+        changeEventDao.addChangeEvent({
+            objectId: key.keyId,
+            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+            changeEventClass: CHANGE_EVENT_CLASS_SIGNING_KEY,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_CREATE,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify({keyName: key.keyName, keyType: key.keyType, keyUse: key.keyUse})
+        });
+
         return Promise.resolve(key);        
     } 
 
@@ -189,6 +202,17 @@ class SigningKeysService {
         }
         await signingKeysDao.createSigningKey(key);
         await this.updateSearchIndex(key);
+
+        changeEventDao.addChangeEvent({
+            objectId: key.keyId,
+            changedBy: "SCHEDULED_PROCESS",
+            changeEventClass: CHANGE_EVENT_CLASS_SIGNING_KEY,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_CREATE,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify({keyName: key.keyName, keyType: key.keyType, keyUse: key.keyUse})
+        });
+
         return Promise.resolve(key); 
     }
     
@@ -224,6 +248,17 @@ class SigningKeysService {
 
         await signingKeysDao.updateSigningKey(existingKey);
         await this.updateSearchIndex(existingKey);
+
+        changeEventDao.addChangeEvent({
+            objectId: key.keyId,
+            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+            changeEventClass: CHANGE_EVENT_CLASS_SIGNING_KEY,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_UPDATE,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify({keyName: key.keyName, keyType: key.keyType, keyUse: key.keyUse})
+        });
+
         return Promise.resolve(existingKey);
     }
 
@@ -269,29 +304,6 @@ class SigningKeysService {
         return Promise.resolve(signingKey);        
     }
     
-
-    public async deleteSigningKey(keyId: string): Promise<void> {
-        const signingKey: SigningKey | null = await signingKeysDao.getSigningKeyById(keyId);
-        if(signingKey){
-            const authResult = authorizeByScopeAndTenant(this.oidcContext, [KEY_DELETE_SCOPE], signingKey.tenantId);
-            if(!authResult.isAuthorized){
-                throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
-            }
-
-            await signingKeysDao.deleteSigningKey(keyId);
-            await searchClient.delete({
-                id: keyId,
-                index: SEARCH_INDEX_OBJECT_SEARCH,
-                refresh: "wait_for"
-            });
-            await searchClient.delete({
-                id: `${signingKey.tenantId}::${signingKey.keyId}`,
-                index: SEARCH_INDEX_REL_SEARCH,
-                refresh: "wait_for"
-            });
-        }        
-        return Promise.resolve();        
-    }
     
     protected async updateSearchIndex(key: SigningKey): Promise<void> {
         

@@ -9,12 +9,15 @@ import { authorizeByScopeAndTenant } from "@/utils/authz-utils";
 import { CLIENT_SECRET_VIEW_SCOPE, FEDERATED_OIDC_PROVIDER_SECRET_VIEW_SCOPE, KEY_SECRET_VIEW_SCOPE } from "@/utils/consts";
 import { GraphQLError } from "graphql";
 import { ERROR_CODES } from "../models/error";
-
+import JwtServiceUtils from "./jwt-service-utils";
+import OIDCServiceUtils from "./oidc-service-utils";
 
 const kms: Kms = DaoFactory.getInstance().getKms();
 const clientDao: ClientDao = DaoFactory.getInstance().getClientDao();
 const signingKeysDao: SigningKeysDao = DaoFactory.getInstance().getSigningKeysDao();
 const federatedOIDCProviderDao: FederatedOIDCProviderDao = DaoFactory.getInstance().getFederatedOIDCProvicerDao();
+const jwtServiceUtils: JwtServiceUtils = new JwtServiceUtils();
+const oidcServiceUtils: OIDCServiceUtils = new OIDCServiceUtils();
 
 class ViewSecretService {
 
@@ -86,6 +89,12 @@ class ViewSecretService {
                 }
             }
         }
+
+        if(this.oidcContext.portalUserProfile){
+            const authToken = await jwtServiceUtils.getAuthTokenForOutboundCalls();
+            oidcServiceUtils.fireSecurityEvent("secret_viewed", this.oidcContext, this.oidcContext.portalUserProfile, null, authToken);
+        }
+
         return decrypted;
     }
 

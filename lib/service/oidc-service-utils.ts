@@ -4,7 +4,7 @@ import NodeCache from "node-cache";
 import { LegacyUserAuthenticationPayload, LegacyUserProfile } from "../models/principal";
 import { SecurityEvent, SecurityEventType } from "../models/security-event";
 import { OIDCContext } from "@/graphql/graphql-context";
-import { User } from "@/graphql/generated/graphql-types";
+import { PortalUserProfile, User } from "@/graphql/generated/graphql-types";
 import { logWithDetails } from "../logging/logger";
 
 
@@ -183,7 +183,7 @@ class OIDCServiceUtils {
         }
     }
 
-    public async fireSecurityEvent(securityEventType: SecurityEventType, oidcContext: OIDCContext, user: User, jti: string | null, authToken: string | null){
+    public async fireSecurityEvent(securityEventType: SecurityEventType, oidcContext: OIDCContext, user: User | PortalUserProfile, jti: string | null, authToken: string | null){
         const securityEvent: SecurityEvent = {
             securityEventType: securityEventType,
             userId: user.userId,

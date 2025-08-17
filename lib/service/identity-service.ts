@@ -5,7 +5,7 @@ import { Client, Fido2AuthenticationChallengeResponse, Fido2Challenge, Fido2Regi
 import { DaoFactory } from "../data-sources/dao-factory";
 import TenantDao from "../dao/tenant-dao";
 import { GraphQLError } from "graphql/error";
-import { DEFAULT_PORTAL_AUTH_TOKEN_TTL_HOURS, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, NAME_ORDER_WESTERN, PASSWORD_HASH_ITERATION_128K, PASSWORD_HASH_ITERATION_256K, PASSWORD_HASH_ITERATION_32K, PASSWORD_HASH_ITERATION_64K, PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_32K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_64K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, SESSION_TOKEN_TYPE_AUTHENTICATION, SESSION_TOKEN_TYPE_REGISTRATION, TENANT_READ_ALL_SCOPE, TENANT_USER_ASSIGN_SCOPE, TENANT_USER_REMOVE_SCOPE, TOTP_HASH_ALGORITHM_SHA1, USER_READ_SCOPE, USER_SESSION_DELETE_SCOPE, USER_SESSION_READ_SCOPE, USER_TENANT_REL_TYPE_GUEST, USER_TENANT_REL_TYPE_PRIMARY, USER_UNLOCK_SCOPE, USER_UPDATE_SCOPE } from "@/utils/consts";
+import { CHANGE_EVENT_CLASS_TENANT_USER_REL, CHANGE_EVENT_CLASS_USER, CHANGE_EVENT_CLASS_USER_UNLOCKED, CHANGE_EVENT_TYPE_CREATE, CHANGE_EVENT_TYPE_CREATE_REL, CHANGE_EVENT_TYPE_REMOVE_REL, CHANGE_EVENT_TYPE_UPDATE, DEFAULT_PORTAL_AUTH_TOKEN_TTL_HOURS, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, NAME_ORDER_WESTERN, PASSWORD_HASH_ITERATION_128K, PASSWORD_HASH_ITERATION_256K, PASSWORD_HASH_ITERATION_32K, PASSWORD_HASH_ITERATION_64K, PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_32K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_64K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, SESSION_TOKEN_TYPE_AUTHENTICATION, SESSION_TOKEN_TYPE_REGISTRATION, TENANT_READ_ALL_SCOPE, TENANT_USER_ASSIGN_SCOPE, TENANT_USER_REMOVE_SCOPE, TOTP_HASH_ALGORITHM_SHA1, USER_READ_SCOPE, USER_SESSION_DELETE_SCOPE, USER_SESSION_READ_SCOPE, USER_TENANT_REL_TYPE_GUEST, USER_TENANT_REL_TYPE_PRIMARY, USER_UNLOCK_SCOPE, USER_UPDATE_SCOPE } from "@/utils/consts";
 import { sha256HashPassword, pbkdf2HashPassword, bcryptHashPassword, generateSalt, scryptHashPassword, generateRandomToken, generateCodeVerifierAndChallenge, bcryptValidatePassword } from "@/utils/dao-utils";
 import { Client as OpenSearchClient } from "@opensearch-project/opensearch";
 import { getOpenSearchClient } from "../data-sources/search";
@@ -23,6 +23,9 @@ import { error } from "console";
 import { ERROR_CODES } from "../models/error";
 import FederatedOIDCProviderDao from "../dao/federated-oidc-provider-dao";
 import { logWithDetails } from "../logging/logger";
+import ChangeEventDao from "../dao/change-event-dao";
+import { randomUUID } from "crypto";
+import JwtServiceUtils from "./jwt-service-utils";
 
 
 const identityDao: IdentityDao = DaoFactory.getInstance().getIdentityDao();
@@ -33,6 +36,8 @@ const authDao: AuthDao = DaoFactory.getInstance().getAuthDao();
 const clientDao: ClientDao = DaoFactory.getInstance().getClientDao();
 const federatedOIDCProviderDao: FederatedOIDCProviderDao = DaoFactory.getInstance().getFederatedOIDCProvicerDao();
 const oidcServiceUtils: OIDCServiceUtils = new OIDCServiceUtils();
+const changeEventDao: ChangeEventDao = DaoFactory.getInstance().getChangeEventDao();
+const jwtServiceUtils: JwtServiceUtils = new JwtServiceUtils();
 
 const {
     MFA_ISSUER,
@@ -171,6 +176,17 @@ class IdentityService {
 
         await identityDao.updateUser(user);
 
+        changeEventDao.addChangeEvent({
+            objectId: user.userId,
+            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+            changeEventClass: CHANGE_EVENT_CLASS_USER,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_CREATE,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify(user)
+        });
+
+
         // Only update the search index if anything has changed
         if (
             user.email !== existingUser.email ||
@@ -282,11 +298,13 @@ class IdentityService {
         const rels: Array<UserTenantRel> = await identityDao.getUserTenantRelsByUserId(userId);
         // If there is not an existing relationship, then it MUST be a PRIMARY relationship.
         // If not, throw an error.
+        let hasUpdateRel: boolean = false;
         if(rels.length === 0){
             if(relType !== USER_TENANT_REL_TYPE_PRIMARY){
                 throw new GraphQLError(ERROR_CODES.EC00162.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00162}});
             }
             else{
+                hasUpdateRel = true;
                 userTenantRel = await identityDao.assignUserToTenant(tenantId, userId, relType);
                 // Both the owning and parent tenant ids are the same in this case
                 await this.updateRelSearchIndex(tenantId, tenantId, user);
@@ -312,6 +330,7 @@ class IdentityService {
                     throw new GraphQLError(ERROR_CODES.EC00164.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00164}});
                 }
                 else{
+                    hasUpdateRel = true;
                     userTenantRel = await identityDao.assignUserToTenant(tenantId, userId, relType);
                     // The primary rel remains as the owning tenant id, which the incoming tenant id 
                     // is the parent id
@@ -328,6 +347,7 @@ class IdentityService {
                     throw new GraphQLError(ERROR_CODES.EC00165.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00165}});
                 }
                 else if(existingTenantRel.relType === USER_TENANT_REL_TYPE_GUEST && relType === USER_TENANT_REL_TYPE_PRIMARY){
+                    hasUpdateRel = true;
                     // Assign the incoming as primary
                     userTenantRel = await identityDao.updateUserTenantRel(tenantId, userId, relType);
                     // The incoming tenant becomes the new owning tenant as well as the parent.
@@ -338,6 +358,17 @@ class IdentityService {
                     await this.updateRelSearchIndex(tenantId, primaryRel.tenantId, user);
                 }
             }
+        }
+        if(hasUpdateRel){
+            changeEventDao.addChangeEvent({
+                objectId: user.userId,
+                changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+                changeEventClass: CHANGE_EVENT_CLASS_TENANT_USER_REL,
+                changeEventId: randomUUID().toString(),
+                changeEventType: CHANGE_EVENT_TYPE_CREATE_REL,
+                changeTimestamp: Date.now(),
+                data: JSON.stringify({tenantId, userId, relType})
+            });
         }
         return userTenantRel;        
     }
@@ -355,6 +386,15 @@ class IdentityService {
                 throw new GraphQLError(ERROR_CODES.EC00166.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00166}});
             }
             else {
+                changeEventDao.addChangeEvent({
+                    objectId: userId,
+                    changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+                    changeEventClass: CHANGE_EVENT_CLASS_TENANT_USER_REL,
+                    changeEventId: randomUUID().toString(),
+                    changeEventType: CHANGE_EVENT_TYPE_REMOVE_REL,
+                    changeTimestamp: Date.now(),
+                    data: JSON.stringify({userId, tenantId})
+                });
                 await identityDao.removeUserFromTenant(tenantId, userId);
             }
         }        
@@ -370,6 +410,19 @@ class IdentityService {
         if(user){
             user.locked = false;
             await identityDao.updateUser(user);
+            
+            const authToken = await jwtServiceUtils.getAuthTokenForOutboundCalls();
+            oidcServiceUtils.fireSecurityEvent("account_unlocked", this.oidcContext, user, null, authToken);
+
+            changeEventDao.addChangeEvent({
+                objectId: userId,
+                changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+                changeEventClass: CHANGE_EVENT_CLASS_USER_UNLOCKED,
+                changeEventId: randomUUID().toString(),
+                changeEventType: CHANGE_EVENT_TYPE_UPDATE,
+                changeTimestamp: Date.now(),
+                data: JSON.stringify(user)
+            });
         }
         else{
             throw new GraphQLError(ERROR_CODES.EC00013.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00013}});

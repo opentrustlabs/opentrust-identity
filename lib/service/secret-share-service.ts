@@ -10,11 +10,15 @@ import { authorizeByScopeAndTenant } from "@/utils/authz-utils";
 import { QUERY_PARAM_SECRET_ENTRY_OTP, SECRET_ENTRY_DELEGATE_SCOPE } from "@/utils/consts";
 import Kms from "../kms/kms";
 import { ERROR_CODES } from "../models/error";
+import JwtServiceUtils from "./jwt-service-utils";
+import OIDCServiceUtils from "./oidc-service-utils";
 
 
 const secretShareDao: SecretShareDao = DaoFactory.getInstance().getSecretShareDao();
 const federatedOIDCProvderDao: FederatedOIDCProviderDao = DaoFactory.getInstance().getFederatedOIDCProvicerDao();
 const kms: Kms = DaoFactory.getInstance().getKms();
+const jwtServiceUtils: JwtServiceUtils = new JwtServiceUtils();
+const oidcServiceUtils: OIDCServiceUtils = new OIDCServiceUtils();
 
 const {
      AUTH_DOMAIN
@@ -59,6 +63,11 @@ class SecretShareService {
             expiresAtMs: Date.now() + (2 * 60 * 60 * 1000) // 2 hours from now
         };
         await secretShareDao.createSecretShare(secretShare);
+
+        if(this.oidcContext.portalUserProfile){
+            const authToken = await jwtServiceUtils.getAuthTokenForOutboundCalls();
+            oidcServiceUtils.fireSecurityEvent("secret_share_link_generated", this.oidcContext, this.oidcContext.portalUserProfile, null, authToken);
+        }
         
         // TODO
         // Generate email with the following link:
