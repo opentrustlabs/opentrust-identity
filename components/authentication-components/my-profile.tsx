@@ -115,7 +115,7 @@ const MyProfile: React.FC = () => {
                 }
             }
             else{
-                setErrorMessage("ERROR_PROFILE_NOT_FOUND");
+                setErrorMessage("Your user profile count not be found.");
             }
         },
         onError(error) {
@@ -230,14 +230,9 @@ const MyProfile: React.FC = () => {
 
     const [swapPrimaryAndRecoveryEmail] = useMutation(SWAP_PRIMARY_AND_RECOVERY_EMAIL_MUTATION, {        
         onCompleted(data) {
-            setShowMutationBackdrop(false);
-            if(data.swapPrimaryAndRecoveryEmail === false){
-                setErrorMessage("ERROR_SWAPPING_EMAILS_FAILED");
-            }
-            else{
-                setShowMutationSnackbar(true);
-                refetch();
-            }            
+            setShowMutationBackdrop(false);            
+            setShowMutationSnackbar(true);
+            refetch();                        
         },
         onError(error) {
             setShowMutationBackdrop(false);
@@ -247,14 +242,9 @@ const MyProfile: React.FC = () => {
 
     const [deleteRecoveryEmailMutation] = useMutation(DELETE_RECOVERY_EMAIL_MUTATION, {
         onCompleted(data) {
-            setShowMutationBackdrop(false);
-            if(data.deleteRecoveryEmail === false){
-                setErrorMessage("ERROR_DELETING_RECOVERY_EMAIL");
-            }
-            else{
-                setShowMutationSnackbar(true);
-                refetch();
-            }            
+            setShowMutationBackdrop(false);            
+            setShowMutationSnackbar(true);
+            refetch();            
         },
         onError(error) {
             setShowMutationBackdrop(false);

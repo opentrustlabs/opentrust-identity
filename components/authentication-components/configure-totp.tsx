@@ -207,7 +207,8 @@ const RegistrationConfigureTotp: React.FC<RegistrationComponentsProps> = ({
                             }
                             {initialUserRegistrationState.registrationState === RegistrationState.ConfigureTotpRequired &&
                                 <div style={{ marginBottom: "16px", fontWeight: "bold", fontSize: "1.0em" }}>
-                                    You will need to configure a one-time passcode (OTP). This is required for access.
+                                    For access to this tenant you will need to configure a one-time passcode (OTP) using
+                                    an authenticator app (such as Google Authenticator or Microsoft Authenticator).
                                 </div>
                             }
                         </Grid2>
