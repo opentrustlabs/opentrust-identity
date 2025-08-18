@@ -4,13 +4,14 @@ import { IntlProvider } from 'react-intl';
 
 import enMessages from "../../locales/en.json";
 import itMessages from "../../locales/it.json";
-import { SELECTED_LANUGAGE_CODE } from "@/utils/consts";
+import { SELECTED_LANUGAGE_CODE_STORAGE_KEY } from "@/utils/consts";
 
 const messages: Record<string, any> = {
     en: enMessages,
     it: itMessages,
 };
 
+const DEFAULT_LANGUAGE="en";
 
 interface I18NProps {
     hasSelectedLanguage: () => boolean,
@@ -23,7 +24,7 @@ const InternationalizationContext = createContext<I18NProps>({
         return false;
     },
     getLanguage() {
-        return "en"
+        return DEFAULT_LANGUAGE;
     },
     setLanguage() {
         // NO OP
@@ -34,20 +35,20 @@ const InternationalizationContextProvider: React.FC<{ children: React.ReactNode}
     children
 }) => {
 
-    const [lang, setLang] = React.useState<string>("en");
+    const [lang, setLang] = React.useState<string>("");
 
     const getSelectedLanguageCodeFromLocalStorage = (): string | null => {
-        const v = localStorage.getItem(SELECTED_LANUGAGE_CODE);
+        const v = localStorage.getItem(SELECTED_LANUGAGE_CODE_STORAGE_KEY);
         return v;
     }
 
     const setSelectedLanguageCodeOnLocalStorage = (lang: string): void => {
-        localStorage.setItem(SELECTED_LANUGAGE_CODE, lang);
+        localStorage.setItem(SELECTED_LANUGAGE_CODE_STORAGE_KEY, lang);
     }
 
     useEffect(() => {
         if(typeof window !== "undefined"){
-            setLang(getSelectedLanguageCodeFromLocalStorage() || "en");
+            setLang(getSelectedLanguageCodeFromLocalStorage() || "");
         }
     }, []);
 
@@ -59,6 +60,9 @@ const InternationalizationContextProvider: React.FC<{ children: React.ReactNode}
                         return getSelectedLanguageCodeFromLocalStorage() !== null
                     },
                     getLanguage() {
+                        if(lang === ""){
+                            return DEFAULT_LANGUAGE;
+                        }
                         return lang;
                     },
                     setLanguage(lang) {
@@ -68,7 +72,7 @@ const InternationalizationContextProvider: React.FC<{ children: React.ReactNode}
                 }
             }
         >
-            <IntlProvider locale={lang} messages={messages[lang] || messages["en"]}>
+            <IntlProvider locale={lang !== "" ? lang : DEFAULT_LANGUAGE} messages={messages[lang] || messages[DEFAULT_LANGUAGE]}>
                 {children}
             </IntlProvider>
             

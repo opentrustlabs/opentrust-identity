@@ -191,6 +191,6 @@
 
     "SEARCH": "Cerca",
     "TENANT_LIST": "Elenco di Tenant",
-    "CLIENT_LIST": "Elenco di Client",
-    "USER_LIST": "Elenco di User"
+    "CLIENT_LIST": "Elenco Clienti",
+    "USER_LIST": "Elenco Utenti"
 }
