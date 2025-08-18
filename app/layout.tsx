@@ -17,6 +17,7 @@ import { ThemeProvider } from '@mui/material/styles';
 import { ClipboardCopyContextProvider } from "@/components/contexts/clipboard-copy-context";
 import { AuthenSessionContextProvider } from "@/components/contexts/auth-session-context";
 import ProfilePreProcessorContextProvider from "@/components/contexts/my-profile-preprocessor";
+import { InternationalizationContextProvider } from "@/components/contexts/internationalization-context";
 
 
 const theme = createTheme({    
@@ -98,42 +99,45 @@ export default function RootLayout({
     const pathName = usePathname();
     const isAuthenticationLayoutPage: boolean = AUTHORIZATION_LAYOUT_PAGES.includes(pathName || "");
     const isProfileLayoutPage: boolean = PROFILE_LAYOUT_PAGES.includes(pathName || "");
+    
 
     return (
         <html lang="en">
             <body suppressHydrationWarning className={`${geistSans.variable} ${geistMono.variable}`}>                
-                <ResponsiveContextProvider>                        
-                    <PageTitleContextProvider>
-                        <ClipboardCopyContextProvider>
-                            <AuthenSessionContextProvider>
-                                <ApolloProvider client={client}>
-                                    {isProfileLayoutPage &&
-                                        <ProfilePreProcessorContextProvider>
-                                            <TenantContextProvider>
-                                                <AuthenticationLayout>{children}</AuthenticationLayout>
-                                            </TenantContextProvider>                                            
-                                        </ProfilePreProcessorContextProvider>
-                                    }
-                                    {!isProfileLayoutPage &&
-                                        <AuthContextProvider>
-                                            <TenantContextProvider>
-                                                {isAuthenticationLayoutPage &&                                         
-                                                    <AuthenticationLayout>{children}</AuthenticationLayout>                                        
-                                                }
-                                                {!isAuthenticationLayoutPage &&                                        
-                                                    <ManagementTenantFilter>
-                                                        <ThemeProvider theme={theme}>
-                                                            <ManagementLayout>{children}</ManagementLayout>
-                                                        </ThemeProvider>
-                                                    </ManagementTenantFilter>                                                                            
-                                                }
-                                            </TenantContextProvider>
-                                        </AuthContextProvider>
-                                    }
-                                </ApolloProvider>
-                            </AuthenSessionContextProvider>
-                        </ClipboardCopyContextProvider>
-                    </PageTitleContextProvider>
+                <ResponsiveContextProvider>
+                    <InternationalizationContextProvider>
+                        <PageTitleContextProvider>
+                            <ClipboardCopyContextProvider>
+                                <AuthenSessionContextProvider>
+                                    <ApolloProvider client={client}>
+                                        {isProfileLayoutPage &&
+                                            <ProfilePreProcessorContextProvider>
+                                                <TenantContextProvider>
+                                                    <AuthenticationLayout>{children}</AuthenticationLayout>
+                                                </TenantContextProvider>                                            
+                                            </ProfilePreProcessorContextProvider>
+                                        }
+                                        {!isProfileLayoutPage &&
+                                            <AuthContextProvider>
+                                                <TenantContextProvider>
+                                                    {isAuthenticationLayoutPage &&                                         
+                                                        <AuthenticationLayout>{children}</AuthenticationLayout>                                        
+                                                    }
+                                                    {!isAuthenticationLayoutPage &&                                        
+                                                        <ManagementTenantFilter>
+                                                            <ThemeProvider theme={theme}>
+                                                                <ManagementLayout>{children}</ManagementLayout>
+                                                            </ThemeProvider>
+                                                        </ManagementTenantFilter>                                                                            
+                                                    }
+                                                </TenantContextProvider>
+                                            </AuthContextProvider>
+                                        }
+                                    </ApolloProvider>
+                                </AuthenSessionContextProvider>
+                            </ClipboardCopyContextProvider>
+                        </PageTitleContextProvider>
+                    </InternationalizationContextProvider>
                 </ResponsiveContextProvider>                
             </body>
         </html>

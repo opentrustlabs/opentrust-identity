@@ -1,6 +1,6 @@
 "use client";
 import React, { Suspense, useContext, useState } from "react";
-import { Autocomplete, Backdrop, Button, Checkbox, CircularProgress, Grid2, InputAdornment, MenuItem, Paper, Select, Stack, TextField, Typography } from "@mui/material";
+import { Autocomplete, Backdrop, Button, Checkbox, CircularProgress, Dialog, DialogContent, Grid2, InputAdornment, MenuItem, Paper, Select, Stack, TextField, Typography } from "@mui/material";
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -33,6 +33,8 @@ import { MuiTelInput } from "mui-tel-input";
 import RecoveryEmailConfiguration from "./recovery-email";
 import DuressPasswordConfiguration from "./duress-password";
 import { ERROR_CODES } from "@/lib/models/error";
+import { useInternationalizationContext } from "../contexts/internationalization-context";
+import SelectLanguage from "./select-language";
 
 
 export interface RegistrationComponentsProps {
@@ -51,6 +53,7 @@ const Register: React.FC = () => {
     titleSetter.setPageTitle("Register");
     const authSessionProps: AuthSessionProps = useAuthSessionContext();
     const authContextProps: AuthContextProps = useContext(AuthContext);
+    const i18nContext = useInternationalizationContext();
 
     // QUERY PARAMS
     const params = useSearchParams();
@@ -285,6 +288,17 @@ const Register: React.FC = () => {
                     elevation={4}
                     sx={{ padding: 2, height: "100%", maxWidth: maxWidth, width: maxWidth, margin: "16px 0px" }}
                 >
+                    {i18nContext.hasSelectedLanguage() !== true &&
+                        <Dialog 
+                            open={i18nContext.hasSelectedLanguage() !== true}
+                            maxWidth="sm"
+                            fullWidth={true}
+                        >
+                            <DialogContent>
+                                <SelectLanguage />
+                            </DialogContent>
+                        </Dialog>
+                    }
                     <Typography component="div" fontSize={"0.95em"}>                        
                         <Grid2 spacing={1} container size={{ xs: 12 }}>
                             {errorMessage !== null &&
@@ -297,7 +311,6 @@ const Register: React.FC = () => {
                                             sx={{ width: "100%" }}
                                         >
                                             <Alert onClose={() => setErrorMessage(null)} sx={{ width: "100%" }} severity="error">{errorMessage}</Alert>
-
                                         </Stack>
                                     </Grid2>
                                 </>
