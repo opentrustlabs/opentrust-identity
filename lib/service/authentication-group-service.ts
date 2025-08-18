@@ -1,11 +1,11 @@
-import { AuthenticationGroup, AuthenticationGroupClientRel, AuthenticationGroupUserRel, Client, ErrorDetail, ObjectSearchResultItem, RelSearchResultItem, Scope, SearchResultType, Tenant, User, UserTenantRel } from "@/graphql/generated/graphql-types";
+import { AuthenticationGroup, AuthenticationGroupClientRel, AuthenticationGroupUserRel, Client, ErrorDetail, ObjectSearchResultItem, RelSearchResultItem, SearchResultType, Tenant, User, UserTenantRel } from "@/graphql/generated/graphql-types";
 import { OIDCContext } from "@/graphql/graphql-context";
 import TenantDao from "@/lib/dao/tenant-dao";
 import ClientDao from "../dao/client-dao";
 import { GraphQLError } from "graphql/error/GraphQLError";
 import { randomUUID } from 'crypto'; 
 import AuthenticationGroupDao from "../dao/authentication-group-dao";
-import { AUTHENTICATION_GROUP_CLIENT_ASSIGN_SCOPE, AUTHENTICATION_GROUP_CLIENT_REMOVE_SCOPE, AUTHENTICATION_GROUP_CREATE_SCOPE, AUTHENTICATION_GROUP_DELETE_SCOPE, AUTHENTICATION_GROUP_READ_SCOPE, AUTHENTICATION_GROUP_UPDATE_SCOPE, AUTHENTICATION_GROUP_USER_ASSIGN_SCOPE, AUTHENTICATION_GROUP_USER_REMOVE_SCOPE, CHANGE_EVENT_CLASS_AUTHENTICATION_GROUP, CHANGE_EVENT_CLASS_AUTHENTICATION_GROUP_USER_REL, CHANGE_EVENT_CLASS_CLIENT_AUTHENTICATION_GROUP, CHANGE_EVENT_TYPE_CREATE, CHANGE_EVENT_TYPE_CREATE_REL, CHANGE_EVENT_TYPE_DELETE, CHANGE_EVENT_TYPE_REMOVE_REL, CHANGE_EVENT_TYPE_UPDATE, CLIENT_TYPE_SERVICE_ACCOUNT, NAME_ORDER_EASTERN, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_READ_ALL_SCOPE } from "@/utils/consts";
+import { AUTHENTICATION_GROUP_CLIENT_ASSIGN_SCOPE, AUTHENTICATION_GROUP_CLIENT_REMOVE_SCOPE, AUTHENTICATION_GROUP_CREATE_SCOPE, AUTHENTICATION_GROUP_READ_SCOPE, AUTHENTICATION_GROUP_UPDATE_SCOPE, AUTHENTICATION_GROUP_USER_ASSIGN_SCOPE, AUTHENTICATION_GROUP_USER_REMOVE_SCOPE, CHANGE_EVENT_CLASS_AUTHENTICATION_GROUP, CHANGE_EVENT_CLASS_AUTHENTICATION_GROUP_USER_REL, CHANGE_EVENT_CLASS_CLIENT_AUTHENTICATION_GROUP, CHANGE_EVENT_TYPE_CREATE, CHANGE_EVENT_TYPE_CREATE_REL, CHANGE_EVENT_TYPE_REMOVE_REL, CHANGE_EVENT_TYPE_UPDATE, CLIENT_TYPE_SERVICE_ACCOUNT, NAME_ORDER_EASTERN, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_READ_ALL_SCOPE } from "@/utils/consts";
 import { Client as SearchClient } from "@opensearch-project/opensearch";
 import { getOpenSearchClient } from "@/lib/data-sources/search";
 import IdentityDao from "../dao/identity-dao";
@@ -84,6 +84,8 @@ class AuthenticationGroupService {
     }        
 
     public async getAuthenticationGroupById(authenticationGroupId: string): Promise<AuthenticationGroup | null> {
+
+        // @typescript-eslint/no-explicit-any
         const getData = ServiceAuthorizationWrapper<any[], AuthenticationGroup | null>(
             {
                 performOperation: async function(_, authenticationGroupId: string): Promise<AuthenticationGroup | null> {

@@ -33,6 +33,7 @@ class DBAuthenticationGroupDao extends AuthenticationGroupDao {
                     return r.getDataValue("authenticationGroupId");
                 }
             );
+            // @typescript-eslint/no-explicit-any
             const filter: any = {};
             filter.authenticationGroupId = { [Op.in]: inValues};
             const authnGroups = await sequelize.models.authenticationGroup.findAll(
@@ -48,6 +49,7 @@ class DBAuthenticationGroupDao extends AuthenticationGroupDao {
         else if(userId){
             const rels: Array<AuthenticationGroupUserRel> = await this.getAuthenticationGroupUserRels(userId);
             const inValues: Array<string> = rels.map( (r: AuthenticationGroupUserRel) => r.authenticationGroupId);
+            // @typescript-eslint/no-explicit-any
             const filter: any = {};
             filter.authenticationGroupId = { [Op.in]: inValues};
             const authnGroups = await sequelize.models.authenticationGroup.findAll(
@@ -207,10 +209,9 @@ class DBAuthenticationGroupDao extends AuthenticationGroupDao {
         const res: Array<AuthenticationGroupUserRelEntity> = await sequelize.models.authenticationGroupUserRel.findAll({
             where: {
                 userId: userId
-            },
-            raw: true
+            }
         });
-        return res as any as Array<AuthenticationGroupUserRel>;
+        return res.map((rel: AuthenticationGroupClientRelEntity) => rel.dataValues);
     }
 
 }

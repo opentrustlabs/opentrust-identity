@@ -9,6 +9,7 @@ class DBAccessRuleDao extends AccessRuleDao {
     public async getAccessRules(tenantId?: string): Promise<Array<AccessRule>> {
 
         const sequelize: Sequelize = await DBDriver.getConnection();
+        // @typescript-eslint/no-explicit-any
         const whereParams: any = {};
         if(tenantId){
             whereParams.tenantId = tenantId
@@ -54,7 +55,7 @@ class DBAccessRuleDao extends AccessRuleDao {
         return Promise.resolve(accessRule);
     }
 
-    public async deleteAccessRule(accessRuleId: string): Promise<void> {
+    public async deleteAccessRule(): Promise<void> {
         throw new Error("Method not implemented.");
     }
 

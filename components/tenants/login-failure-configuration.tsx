@@ -26,7 +26,7 @@ const LoginFailureConfiguration: React.FC<LoginFailureConfigurationProps> = ({
     readOnly
 }) => {
 
-    let initInput: TenantLoginFailurePolicyInput = {
+    const initInput: TenantLoginFailurePolicyInput = {
         failureThreshold: DEFAULT_LOGIN_FAILURE_LOCK_THRESHOLD,
         loginFailurePolicyType: LOGIN_FAILURE_POLICY_LOCK_USER_ACCOUNT,
         tenantId: tenantId,

@@ -122,7 +122,7 @@ const TenantAuthenticationDomainConfiguration: React.FC<TenantAuthenticationDoma
                     <Grid2 size={12} textAlign={"center"}>No restricted domains found</Grid2>
                 }
                 {data.getDomainsForTenantAuthentication.map(
-                    (rel: TenantManagementDomainRel, idx: number) => (
+                    (rel: TenantManagementDomainRel) => (
                         <Grid2 container key={rel.domain} size={12}>
                             <Grid2  size={10.8}>{rel.domain}</Grid2>
                             <Grid2 size={1.2}>

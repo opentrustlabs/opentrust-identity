@@ -185,6 +185,8 @@ class DBScopeDao extends ScopeDao {
 
     public async getTenantScopeRel(tenantId?: string, scopeId?: string): Promise<Array<TenantAvailableScope>> {
         const sequelize: Sequelize = await DBDriver.getConnection();
+        
+        // @typescript-eslint/no-explicit-any
         const params: any = {};
         if(tenantId){
             params.tenantId = tenantId;

@@ -30,7 +30,6 @@ import I18NDao from "../dao/i18n-dao";
 import DBI18NDao from "../dao/impl/db/db-i18n-dao";
 import SchedulerDao from "../dao/scheduler-dao";
 import DBSchedulerDao from "../dao/impl/db/db-scheduler-dao";
-import NoOpKms from "../kms/no-op-kms";
 import SecretShareDao from "../dao/secret-share-dao";
 import DBSecretShareDao from "../dao/impl/db/db-secret-share-dao";
 import ChangeEventDao from "../dao/change-event-dao";

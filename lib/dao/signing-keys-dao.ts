@@ -1,4 +1,4 @@
-import { Contact, SigningKey } from "@/graphql/generated/graphql-types";
+import { SigningKey } from "@/graphql/generated/graphql-types";
 
 
 abstract class SigningKeysDao {

@@ -1,4 +1,4 @@
-import { Tenant, TenantManagementDomainRel, TenantAnonymousUserConfiguration, TenantLookAndFeel, TenantPasswordConfig, TenantLoginFailurePolicy, TenantLegacyUserMigrationConfig, TenantRestrictedAuthenticationDomainRel, UserTenantRel, CaptchaConfig, SystemSettings, SystemSettingsUpdateInput, SystemCategory, JobData } from "@/graphql/generated/graphql-types";
+import { Tenant, TenantManagementDomainRel, TenantAnonymousUserConfiguration, TenantLookAndFeel, TenantPasswordConfig, TenantLoginFailurePolicy, TenantLegacyUserMigrationConfig, TenantRestrictedAuthenticationDomainRel, CaptchaConfig, SystemSettings, SystemSettingsUpdateInput, SystemCategory } from "@/graphql/generated/graphql-types";
 import TenantDao from "../../tenant-dao";
 import { DEFAULT_AUDIT_RECORD_RETENTION_PERIOD_DAYS, OPENTRUST_IDENTITY_VERSION, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import { GraphQLError } from "graphql";
@@ -15,7 +15,6 @@ import TenantLoginFailurePolicyEntity from "@/lib/entities/tenant-login-failure-
 import UserTenantRelEntity from "@/lib/entities/user-tenant-rel-entity";
 import CaptchaConfigEntity from "@/lib/entities/captcha-config-entity";
 import SystemSettingsEntity from "@/lib/entities/system-settings-entity";
-import { randomUUID } from "node:crypto";
 import { ERROR_CODES } from "@/lib/models/error";
 
 class DBTenantDao extends TenantDao {
@@ -39,18 +38,20 @@ class DBTenantDao extends TenantDao {
         tenant.tenantType = TENANT_TYPE_ROOT_TENANT;
         const sequelize: Sequelize = await DBDriver.getConnection();
         const t: TenantEntity = await sequelize.models.tenant.create(tenant);
-        return Promise.resolve(t as any as Tenant);
+        return Promise.resolve(t.dataValues as Tenant);
     }
 
     public async updateRootTenant(tenant: Tenant): Promise<Tenant> {
         tenant.tenantType = TENANT_TYPE_ROOT_TENANT;
         const sequelize: Sequelize = await DBDriver.getConnection();
-        const count: [affectedCount: number] = await sequelize.models.tenant.update(tenant, {where: {tenantId: tenant.tenantId}});        
+        await sequelize.models.tenant.update(tenant, {where: {tenantId: tenant.tenantId}});        
         return Promise.resolve(tenant);
     }
 
     public async getTenants(tenantIds?: Array<string>): Promise<Array<Tenant>> {
         const sequelize: Sequelize = await DBDriver.getConnection();
+
+        // @typescript-eslint/no-explicit-any
         const filter: any = {};
         if(tenantIds){
             filter.tenantId = { [Op.in]: tenantIds};
@@ -82,13 +83,13 @@ class DBTenantDao extends TenantDao {
 
     public async createTenant(tenant: Tenant): Promise<Tenant | null> {
         const sequelize: Sequelize = await DBDriver.getConnection();
-        const t: TenantEntity = await sequelize.models.tenant.create(tenant);
-        return Promise.resolve(t as any as Tenant);
+        await sequelize.models.tenant.create(tenant);
+        return tenant;
     }
 
     public async updateTenant(tenant: Tenant): Promise<Tenant> {
         const sequelize: Sequelize = await DBDriver.getConnection();
-        const count: [affectedCount: number] = await sequelize.models.tenant.update(tenant, {where: {tenantId: tenant.tenantId}});
+        await sequelize.models.tenant.update(tenant, {where: {tenantId: tenant.tenantId}});
         return Promise.resolve(tenant);    
     }
 
@@ -106,6 +107,7 @@ class DBTenantDao extends TenantDao {
     
     public async getDomainTenantManagementRels(tenantId?: string, domain?: string): Promise<Array<TenantManagementDomainRel>> {
 
+        // @typescript-eslint/no-explicit-any
         const queryParams: any = {};
         if(tenantId){
             queryParams.tenantId = tenantId;
@@ -119,7 +121,7 @@ class DBTenantDao extends TenantDao {
             where: queryParams
         });
 
-        return Promise.resolve(tenantManagementDomainRelEntities as any as Array<TenantManagementDomainRel>);
+        return tenantManagementDomainRelEntities.map((entity) => entity.dataValues);
     }
 
     public async addDomainToTenantManagement(tenantId: string, domain: string): Promise<TenantManagementDomainRel | null> {
@@ -291,7 +293,7 @@ class DBTenantDao extends TenantDao {
             }
         });
 
-        return entity ? Promise.resolve(entity.dataValues as any as TenantLegacyUserMigrationConfig) : Promise.resolve(null);
+        return entity ? Promise.resolve(entity.dataValues as TenantLegacyUserMigrationConfig) : Promise.resolve(null);
     }
 
     
@@ -302,8 +304,7 @@ class DBTenantDao extends TenantDao {
                 tenantId: tenantId
             }
         });        
-        
-        return Promise.resolve(entities as any as Array<TenantRestrictedAuthenticationDomainRel>);
+        return entities.map((entity) => entity.dataValues);
     }
 
     public async addDomainToTenantRestrictedAuthentication(tenantId: string, domain: string): Promise<TenantRestrictedAuthenticationDomainRel> {
@@ -327,7 +328,7 @@ class DBTenantDao extends TenantDao {
         return Promise.resolve();
     }
 
-    public async getLoginFailurePolicy(tenantId: String): Promise<TenantLoginFailurePolicy | null>{
+    public async getLoginFailurePolicy(tenantId: string): Promise<TenantLoginFailurePolicy | null>{
         const sequelize: Sequelize = await DBDriver.getConnection();
         const entity: TenantLoginFailurePolicyEntity | null = await sequelize.models.tenantLoginFailurePolicy.findOne({
             where: {

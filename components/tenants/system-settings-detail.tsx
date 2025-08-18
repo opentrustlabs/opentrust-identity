@@ -1,6 +1,6 @@
 "use client";
 import { CategoryEntry, PortalUserProfile, SystemCategory, SystemSettings, SystemSettingsUpdateInput } from "@/graphql/generated/graphql-types";
-import { Alert, Backdrop, Button, Checkbox, CircularProgress, Grid2, Paper, Snackbar, Stack, TextField, Typography } from "@mui/material";
+import { Alert, Backdrop, Checkbox, CircularProgress, Grid2, Paper, Snackbar, TextField, Typography } from "@mui/material";
 import React, { useContext } from "react";
 import { DetailPageContainer, DetailPageMainContentContainer } from "../layout/detail-page-container";
 import { AuthContext, AuthContextProps } from "../contexts/auth-context";
@@ -9,7 +9,7 @@ import { containsScope } from "@/utils/authz-utils";
 import DetailSectionActionHandler from "../layout/detail-section-action-handler";
 import { useMutation } from "@apollo/client";
 import { UPDATE_SYSTEM_SETTINGS_MUTATION } from "@/graphql/mutations/oidc-mutations";
-import { SYSTEM_SETTINGS_QUERY } from "@/graphql/queries/oidc-queries";
+
 
 export interface SystemSettingsDetailProps {
     systemSettings: SystemSettings

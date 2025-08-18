@@ -25,7 +25,7 @@ class DBRateLimitDao extends RateLimitDao {
                 ], 
                 raw: true                
             });
-            return Promise.resolve(arr as any as Array<RateLimitServiceGroup>);
+            return arr.map((entity: RateLimitServiceGroupEntity) => entity.dataValues);
         }
         else{
             const arr: Array<RateLimitServiceGroupEntity> = await sequelize.models.rateLimitServiceGroup.findAll({
@@ -34,7 +34,7 @@ class DBRateLimitDao extends RateLimitDao {
                 ],
                 raw: true
             });
-            return Promise.resolve(arr as any as Array<RateLimitServiceGroup>);
+            return arr.map((entity: RateLimitServiceGroupEntity) => entity.dataValues);
         }
     }
 
@@ -47,7 +47,8 @@ class DBRateLimitDao extends RateLimitDao {
     public async getRateLimitTenantRelViews(rateLimitServiceGroupId: string | null, tenantId: string | null): Promise<Array<TenantRateLimitRelView>> {
         const sequelize: Sequelize = await DBDriver.getConnection();
         const whereClauses = [];
-        let bindVars: any = {};
+        // @typescript-eslint/no-explicit-any
+        const bindVars: any = {};
         if(rateLimitServiceGroupId){
             whereClauses.push("tenant_rate_limit_rel.servicegroupid = $servicegroupid");
             bindVars.servicegroupid = rateLimitServiceGroupId;
@@ -61,6 +62,8 @@ class DBRateLimitDao extends RateLimitDao {
             where = `WHERE ${whereClauses.join(" AND ")}`
         }
 
+        // @typescript-eslint/no-unused-vars
+        // @typescript-eslint/no-explicit-any
         const [resultList, _] = await sequelize.query(
             "select tenant_rate_limit_rel.*, tenant.tenantname, rate_limit_service_group.servicegroupname " +
             "    FROM tenant_rate_limit_rel " + 
@@ -74,7 +77,8 @@ class DBRateLimitDao extends RateLimitDao {
         );
         
         
-        return resultList.map(
+        return resultList.map(            
+            // @typescript-eslint/no-explicit-any
             (item: any) => {
                 const view: TenantRateLimitRelView = {
                     servicegroupid: item.servicegroupid,
@@ -125,11 +129,11 @@ class DBRateLimitDao extends RateLimitDao {
         return Promise.resolve();
     }
 
-
     
     public async getRateLimitTenantRel(tenantId: string | null, rateLimitServiceGroupId: string | null): Promise<Array<TenantRateLimitRel>> {
         const sequelize: Sequelize = await DBDriver.getConnection();
 
+        // @typescript-eslint/no-explicit-any
         const where: any = {};
         if(tenantId){
             where.tenantId = tenantId

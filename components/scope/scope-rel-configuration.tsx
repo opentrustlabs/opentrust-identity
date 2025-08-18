@@ -133,6 +133,8 @@ const ScopeRelConfiguration: React.FC<ScopeRelConfigurationProps> = ({
     })
 
     // HANDLER FUNCTIONS
+    // @typescript-eslint/no-unused-vars
+    // @typescript-eslint/no-explicit-any
     const handlePageChange = (_: any, page: number) => {
         setPage(page + 1);
     }

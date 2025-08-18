@@ -4,6 +4,7 @@ import Kms from "./kms";
 import path from "node:path";
 import { KMS_KEYS_FILE } from "@/utils/consts";
 import { getFileContents } from "@/utils/dao-utils";
+import { logWithDetails } from "../logging/logger";
 
 const dataDir = process.env.FS_BASED_DATA_DIR ?? path.join(__dirname);
 
@@ -188,7 +189,9 @@ class FSBasedKms extends Kms {
             
             return Promise.resolve(outputBuffer);
         }
-        catch(error){
+        catch(error: unknown){
+            const e = error as Error;
+            logWithDetails("error", `Error decrypting buffer. ${e.message}`, {e});
             return Promise.resolve(null);
         }
     }

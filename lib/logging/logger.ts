@@ -1,6 +1,6 @@
 import pino, { multistream } from 'pino';
 import fs from 'node:fs';
-import { createStream } from 'rotating-file-stream';
+// import { createStream } from 'rotating-file-stream';
 import { GraphQLFormattedError } from 'graphql/error/GraphQLError';
 import { SecurityEvent } from '../models/security-event';
 
@@ -34,6 +34,7 @@ export interface LogRecord {
     }
 }
 
+// @typescript-eslint/no-explicit-any
 const streams: Array<any> = [];
 if(logDirectoryDefined){
     streams.push({

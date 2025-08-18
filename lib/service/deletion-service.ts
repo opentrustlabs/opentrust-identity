@@ -70,6 +70,7 @@ class DeletionService {
                 await changeEventDao.deleteExpiredData();
             }
         }
+        // @typescript-eslint/no-explicit-any
         catch(err: any){            
             logWithDetails("error", `Error deleting expired records. ${err.message}.`, {...err});
         }
@@ -146,6 +147,7 @@ class DeletionService {
 
             }
         }
+        // @typescript-eslint/no-explicit-any
         catch(err: any){
             logWithDetails("error", `Error deleting marked-for-delete records. ${err.message}.`, {...err, ...m});
         }
@@ -160,6 +162,7 @@ class DeletionService {
             this.deleteRelSearchRecords(authenticationGroupId);
             callback.onFinished();
         }
+        // @typescript-eslint/no-explicit-any
         catch (err: any) {
             logWithDetails("error", `Error deleting authentication group. ${err.message}.`, {...err, authenticationGroupId});
         }
@@ -172,6 +175,7 @@ class DeletionService {
             this.deleteRelSearchRecords(groupId);
             callback.onFinished();
         }
+        // @typescript-eslint/no-explicit-any
         catch (err: any) {
             logWithDetails("error", `Error deleting authorization group. ${err.message}.`, {...err, groupId});
         }
@@ -196,6 +200,7 @@ class DeletionService {
             this.deleteRelSearchRecords(providerId);
             callback.onFinished();
         }
+        // @typescript-eslint/no-explicit-any
         catch (err: any) {
             logWithDetails("error", `Error deleting federated OIDC provider. ${err.message}.`, {...err, providerId});
         }
@@ -208,6 +213,7 @@ class DeletionService {
             this.deleteRelSearchRecords(serviceGroupId);
             callback.onFinished();
         }
+        // @typescript-eslint/no-explicit-any
         catch (err: any) {
             logWithDetails("error", `Error deleting rate limit service group. ${err.message}.`, {...err, serviceGroupId});
         }
@@ -220,6 +226,7 @@ class DeletionService {
             this.deleteRelSearchRecords(scopeId);
             callback.onFinished();
         }
+        // @typescript-eslint/no-explicit-any
         catch (err: any) {
             logWithDetails("error", `Error deleting scope. ${err.message}.`, {...err, scopeId});
         }
@@ -232,6 +239,7 @@ class DeletionService {
             this.deleteRelSearchRecords(keyId);
             callback.onFinished();
         }
+        // @typescript-eslint/no-explicit-any
         catch (err: any) {
             logWithDetails("error", `Error deleting signing key. ${err.message}.`, {...err, keyId});
         }
@@ -244,6 +252,7 @@ class DeletionService {
             this.deleteRelSearchRecords(userId);
             callback.onFinished();
         }
+        // @typescript-eslint/no-explicit-any
         catch (err: any) {
             logWithDetails("error", `Error deleting user. ${err.message}.`, {...err, userId});
         }
@@ -320,6 +329,7 @@ class DeletionService {
             callback.onFinished();
 
         }
+        // @typescript-eslint/no-explicit-any
         catch (err: any) {
             logWithDetails("error", `Error deleting tenant. ${err.message}.`, {...err, tenantId});
         }
@@ -332,6 +342,7 @@ class DeletionService {
                 index: SEARCH_INDEX_OBJECT_SEARCH
             });
         }
+        // @typescript-eslint/no-explicit-any
         catch (err: any) {
             logWithDetails("error", `Error deleting object search record. ${err.message}.`, {...err, id});
         }
@@ -369,6 +380,7 @@ class DeletionService {
                 scroll: "240m"
             });
         }
+        // @typescript-eslint/no-explicit-any
         catch (err: any) {
             logWithDetails("error", `Error deleting rel search index. ${err.message}.`, {...err, id});
         }

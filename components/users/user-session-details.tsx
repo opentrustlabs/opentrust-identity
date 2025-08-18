@@ -11,7 +11,7 @@ import Alert from "@mui/material/Alert";
 import { UserSession, PortalUserProfile } from "@/graphql/generated/graphql-types";
 import DeleteForeverOutlinedIcon from '@mui/icons-material/DeleteForeverOutlined';
 import Dialog from "@mui/material/Dialog";
-import { Button, DialogActions, DialogContent, Divider, Portal } from "@mui/material";
+import { Button, DialogActions, DialogContent, Divider } from "@mui/material";
 import { AuthContext, AuthContextProps } from "../contexts/auth-context";
 import { containsScope } from "@/utils/authz-utils";
 import { USER_SESSION_DELETE_SCOPE } from "@/utils/consts";

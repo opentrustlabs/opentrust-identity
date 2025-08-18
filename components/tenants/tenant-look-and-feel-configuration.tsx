@@ -7,7 +7,6 @@ import React, { useContext } from "react";
 import DataLoading from "../layout/data-loading";
 import ErrorComponent from "../error/error-component";
 import Grid2 from "@mui/material/Grid2";
-import Stack from "@mui/material/Stack";
 import Button from "@mui/material/Button";
 import TextField from "@mui/material/TextField";
 import ColorizeIcon from '@mui/icons-material/Colorize';
@@ -32,7 +31,7 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
     readOnly
 }) => {
 
-    let initInput: TenantLookAndFeelInput = {
+    const initInput: TenantLookAndFeelInput = {
         tenantid: tenantId,
         adminheaderbackgroundcolor: "",
         adminheadertextcolor: "",

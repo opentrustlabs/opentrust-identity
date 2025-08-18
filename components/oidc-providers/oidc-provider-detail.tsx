@@ -46,7 +46,7 @@ const FederatedOIDCProviderDetail: React.FC<FederatedOIDCProviderDetailProps> = 
     const profile: PortalUserProfile | null = authContextProps.portalUserProfile;
 
     // STATE VARIABLES
-    let initInput: FederatedOidcProviderUpdateInput = {
+    const initInput: FederatedOidcProviderUpdateInput = {
         clientAuthType: federatedOIDCProvider.clientAuthType,
         federatedOIDCProviderClientId: federatedOIDCProvider.federatedOIDCProviderClientId,
         federatedOIDCProviderId: federatedOIDCProvider.federatedOIDCProviderId,
@@ -455,7 +455,9 @@ const FederatedOIDCProviderDetail: React.FC<FederatedOIDCProviderDetailProps> = 
                                                         }
                                                     }
                                                 )}
-                                                onChange={(_, value: any) => {                                                    
+                                                // @typescript-eslint/no-explicit-any
+                                                onChange={(_, value: any) => {      
+                                                    // @typescript-eslint/no-explicit-any                                              
                                                     oidcProviderInput.scopes = value.map((v: any) => v.id);
                                                     setOIDCProviderInput({ ...oidcProviderInput });
                                                     setMarkDirty(true);

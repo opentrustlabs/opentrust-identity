@@ -26,7 +26,7 @@ const PasswordRulesConfiguration: React.FC<PasswordRulesConfigurationProps> = ({
     readOnly
 }) => {
 
-    let initInput: PasswordConfigInput = DEFAULT_TENANT_PASSWORD_CONFIGURATION;
+    const initInput: PasswordConfigInput = DEFAULT_TENANT_PASSWORD_CONFIGURATION;
     initInput.tenantId = tenantId;
 
     // STATE VARIABLES
@@ -167,7 +167,9 @@ const PasswordRulesConfiguration: React.FC<PasswordRulesConfigurationProps> = ({
                         >
                             {PASSWORD_HASHING_ALGORITHMS.map(
                                 (algorithm: string) => (
-                                    <MenuItem value={algorithm}>{PASSWORD_HASHING_ALGORITHMS_DISPLAY.get(algorithm)}</MenuItem>
+                                    <React.Fragment key={algorithm}>
+                                        <MenuItem value={algorithm}>{PASSWORD_HASHING_ALGORITHMS_DISPLAY.get(algorithm)}</MenuItem>
+                                    </React.Fragment>
                                 )
                             )}
                         </Select>
@@ -279,7 +281,10 @@ const PasswordRulesConfiguration: React.FC<PasswordRulesConfigurationProps> = ({
                                             passwordConfigInput.mfaTypesRequired.split(",").map(s => { return { id: s, label: MFA_AUTH_TYPE_DISPLAY.get(s) } }) :
                                             []
                                 }
+                                // @typescript-eslint/no-unused-vars
+                                // @typescript-eslint/no-explicit-any
                                 onChange={(_, value: any) => {
+                                    // @typescript-eslint/no-explicit-any
                                     const val: any = value.map((s: any) => s.id).join(",");                                    
                                     if (passwordConfigInput.requireMfa) {
                                         passwordConfigInput.mfaTypesRequired = val;

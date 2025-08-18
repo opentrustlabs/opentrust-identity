@@ -292,7 +292,7 @@ const AuthenticationGroupsAssignDialog: React.FC<AuthenticationGroupAssignDialog
         }
     });
 
-    let { data: searchData, loading: searchLoading, error: searchError, previousData: searchPreviousData } = useQuery(SEARCH_QUERY, {
+    const { data: searchData, loading: searchLoading, previousData: searchPreviousData } = useQuery(SEARCH_QUERY, {
         variables: {
             searchInput: {
                 term: filterTerm,
@@ -309,6 +309,8 @@ const AuthenticationGroupsAssignDialog: React.FC<AuthenticationGroupAssignDialog
 
 
     // HANDLER FUNCTIONS
+    // @typescript-eslint/no-unused-vars
+    // @typescript-eslint/no-explicit-any
     const handlePageChange = async (evt: any, page: number) => {
         setPage(page + 1);     
     }

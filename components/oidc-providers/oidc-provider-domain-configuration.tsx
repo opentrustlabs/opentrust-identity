@@ -118,7 +118,7 @@ const FederatedOIDCProviderDomainConfiguration: React.FC<FederatedOIDCProviderDo
         }
 
         onUpdateStart();
-        const {data: fData, error: fError, loading: fLoading} = await fetchRels({
+        const {data: fData} = await fetchRels({
             variables: {
                 domain: domainToAdd
             }

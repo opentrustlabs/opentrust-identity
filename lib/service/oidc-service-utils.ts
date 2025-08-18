@@ -77,6 +77,7 @@ class OIDCServiceUtils {
             wellknownConfig = response.data;
             oidcWellknowCache.set(wellKnownUri, wellknownConfig);
         }
+        // @typescript-eslint/no-explicit-any
         catch (err: any) {
             logWithDetails("error", `Error getting well-known URI: ${wellKnownUri}`, {...err});            
         }
@@ -211,7 +212,9 @@ class OIDCServiceUtils {
                     "Content-Type": "application/json"
                 },
                 timeout: 30000
-            }).catch(
+            })
+            .catch(
+                // @typescript-eslint/no-explicit-any
                 (error: any) => {                    
                     logWithDetails("error", `Error invoking the security event web hook. ${error.message}`, {...error, securityEvent});
                     logWithDetails("info", securityEvent.securityEventType, {securityEvent});

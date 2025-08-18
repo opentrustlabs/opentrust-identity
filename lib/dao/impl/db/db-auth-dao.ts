@@ -72,7 +72,7 @@ class DBAuthDao extends AuthDao {
                 code: code
             }
         });
-        return entity ? Promise.resolve(entity as any as AuthorizationCodeData) : Promise.resolve(null);
+        return entity ? Promise.resolve(entity.dataValues as AuthorizationCodeData) : Promise.resolve(null);
     }
 
     public async deleteAuthorizationCodeData(code: string): Promise<void> {
@@ -129,6 +129,7 @@ class DBAuthDao extends AuthDao {
     
     public async getAuthorizationDeviceCodeData(code: string, authorizationCodeType: AuthorizationCodeType): Promise<AuthorizationDeviceCodeData | null>{
         const sequelize: Sequelize = await DBDriver.getConnection();
+        // @typescript-eslint/no-explicit-any
         const whereParams: any = {};
 
         if(authorizationCodeType === "devicecode"){
@@ -172,7 +173,7 @@ class DBAuthDao extends AuthDao {
                 }
             }
         );
-        return entity ? Promise.resolve(entity as any as FederatedOidcAuthorizationRel) : Promise.resolve(null);
+        return entity ? Promise.resolve(entity.dataValues as FederatedOidcAuthorizationRel) : Promise.resolve(null);
     }
 
     public async deleteFederatedOIDCAuthorizationRel(state: string): Promise<void> {

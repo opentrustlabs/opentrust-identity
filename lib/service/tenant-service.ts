@@ -169,6 +169,7 @@ class TenantService {
     }
     
     protected async validateTenantInput(tenant: Tenant): Promise<{valid: boolean, errorDetail: ErrorDetail}> {
+    
         // TODO
         //
         //
@@ -181,7 +182,9 @@ class TenantService {
         //         return {valid: false, errorMessage: "ERROR_INVALID_OIDC_PROVIDER"};
         //     }
         // }
-        
+        if(tenant.tenantType === ""){
+            return {valid: false, errorDetail: ERROR_CODES.EC00008}
+        }
         return {valid: true, errorDetail: ERROR_CODES.NULL_ERROR};
     }
 
@@ -471,7 +474,7 @@ class TenantService {
             throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
         }
         const existing: TenantLegacyUserMigrationConfig | null = await tenantDao.getLegacyUserMigrationConfiguration(tenantLegacyUserMigrationConfig.tenantId);
-        if(existing){ CHANGE_EVENT_CLASS_TENANT_LEGACY_USER_MIGRATION_CONFIGURATION
+        if(existing){ 
             changeEventDao.addChangeEvent({
                 objectId: tenantLegacyUserMigrationConfig.tenantId,
                 changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
@@ -652,7 +655,7 @@ class TenantService {
     public async getCaptchaConfig(): Promise<CaptchaConfig | null> {
         const getData = ServiceAuthorizationWrapper(
             {                
-                performOperation: async function(_, __) {                    
+                performOperation: async function() {                    
                     return tenantDao.getCaptchaConfig();
                 },
                 postProcess: async function(oidcContext: OIDCContext, result) {
@@ -666,7 +669,7 @@ class TenantService {
                 }
             }
         );
-        const config = await getData(this.oidcContext, [TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE], null);
+        const config = await getData(this.oidcContext, [TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE]);
         return config;
     }
 

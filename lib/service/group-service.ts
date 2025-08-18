@@ -265,7 +265,7 @@ class GroupService {
 
         const getData = ServiceAuthorizationWrapper(
             {
-                performOperation: async function (_, __): Promise<Array<AuthorizationGroup>>  {
+                performOperation: async function (): Promise<Array<AuthorizationGroup>>  {
                     const groups: Array<AuthorizationGroup> = await groupDao.getUserAuthorizationGroups(userId);
                     return groups;
                 }, 
@@ -279,7 +279,7 @@ class GroupService {
                 },
             }
         );
-        const groups = await getData(this.oidcContext, [AUTHORIZATION_GROUP_READ_SCOPE, TENANT_READ_ALL_SCOPE], userId);
+        const groups = await getData(this.oidcContext, [AUTHORIZATION_GROUP_READ_SCOPE, TENANT_READ_ALL_SCOPE]);
         return groups || [];
     }
 }

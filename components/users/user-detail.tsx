@@ -160,19 +160,19 @@ const UserDetail: React.FC<UserDetailProps> = ({
     })
 
     // HANDLER FUNCTIONS
-    const hasPrimaryTenant = (rels: Array<UserTenantRelView>): boolean => {
-        const rel = rels.find(
-            (r: UserTenantRelView) => r.relType === USER_TENANT_REL_TYPE_PRIMARY
-        )
-        return rel !== undefined;
-    }
+    // const hasPrimaryTenant = (rels: Array<UserTenantRelView>): boolean => {
+    //     const rel = rels.find(
+    //         (r: UserTenantRelView) => r.relType === USER_TENANT_REL_TYPE_PRIMARY
+    //     )
+    //     return rel !== undefined;
+    // }
 
-    const getPrimaryTenantId = (rels: Array<UserTenantRelView>): string | null => {
-        const rel = rels.find(
-            (r: UserTenantRelView) => r.relType === USER_TENANT_REL_TYPE_PRIMARY
-        );
-        return rel?.tenantId || null;
-    }
+    // const getPrimaryTenantId = (rels: Array<UserTenantRelView>): string | null => {
+    //     const rel = rels.find(
+    //         (r: UserTenantRelView) => r.relType === USER_TENANT_REL_TYPE_PRIMARY
+    //     );
+    //     return rel?.tenantId || null;
+    // }
 
     return (
         <Typography component={"div"} >
@@ -487,6 +487,8 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                                     )
                                                 }                        
                                                 value={getDefaultLanguageCodeDef(userInput.preferredLanguageCode || "")}
+                                                // @typescript-eslint/no-unused-vars
+                                                // @typescript-eslint/no-explicit-any
                                                 onChange={ (_, value: any) => {
                                                     userInput.preferredLanguageCode = value.id;
                                                     setMarkDirty(true);
@@ -591,6 +593,8 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                                     )
                                                 }                        
                                                 value={getDefaultCountryCodeDef(userInput.countryCode || "")}
+                                                // @typescript-eslint/no-unused-vars
+                                                // @typescript-eslint/no-explicit-any
                                                 onChange={ (_, value: any) => {      
                                                     userInput.countryCode = value.id;
                                                     setUserInput({...userInput});                                                    

@@ -1,6 +1,6 @@
 "use client";
 import React, { useContext } from "react";
-import { Accordion, AccordionDetails, AccordionSummary, Alert, Backdrop, Checkbox, CircularProgress, FormControl, MenuItem, Paper, Select, Snackbar, Stack, TextField } from "@mui/material";
+import { Accordion, AccordionDetails, AccordionSummary, Alert, Backdrop, Checkbox, CircularProgress, MenuItem, Paper, Select, Snackbar, Stack, TextField } from "@mui/material";
 import Grid2 from "@mui/material/Grid2";
 import Typography from "@mui/material/Typography";
 import BreadcrumbComponent from "../breadcrumbs/breadcrumbs";
@@ -128,7 +128,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
             variables: {
                 tenantInput: tenantInput
             },
-            onCompleted(data) {                
+            onCompleted() {                
                 setOverviewDirty(false);
                 setShowMutationBackdrop(false);
                 setShowMutationSnackbar(true);

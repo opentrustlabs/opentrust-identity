@@ -14,8 +14,8 @@ import { DaoFactory } from "../data-sources/dao-factory";
 import ScopeDao from "../dao/scope-dao";
 import AuthorizationGroupDao from "../dao/authorization-group-dao";
 import Kms from "../kms/kms";
-import { use } from "react";
 import AuthDao from "../dao/auth-dao";
+import { logWithDetails } from "../logging/logger";
 
 const SIGNING_KEY_ARRAY_CACHE_KEY = "SIGNING_KEY_ARRAY_CACHE_KEY"
 interface CachedSigningKeyData {
@@ -183,7 +183,7 @@ class JwtServiceUtils {
                 return null;
             }
             
-            let arrProfileScopes: Array<ProfileScope> = [];
+            const arrProfileScopes: Array<ProfileScope> = [];
             if(client.clientType === CLIENT_TYPE_USER_DELEGATED_PERMISSIONS || client.clientType === CLIENT_TYPE_DEVICE){
                 const arrScopes = includeScope ? await this.getDelegatedScope(user.userId, client.clientId, principal.tenant_id) : [];
                 arrScopes.forEach(
@@ -630,7 +630,9 @@ class JwtServiceUtils {
                 return Promise.resolve(false);
             }
         }
-        catch(err){
+        // @typescript-eslint/no-explicit-any
+        catch(err: any){
+            logWithDetails("error", `Error validating client auth JWT. ${err.message}`, {...err});
             return Promise.resolve(false);
         }
         const secretKey: KeyObject = createSecretKey(decryptedClientSecret, CLIENT_SECRET_ENCODING);
@@ -644,7 +646,9 @@ class JwtServiceUtils {
                 return Promise.resolve(true);
             }
         }
-        catch(error){
+        // @typescript-eslint/no-explicit-any
+        catch(err: any){
+            logWithDetails("error", `Error validating client auth JWT. ${err.message}`, {...err});
             return Promise.resolve(false)
         }
     }

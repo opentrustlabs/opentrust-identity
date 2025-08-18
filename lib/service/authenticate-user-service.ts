@@ -16,6 +16,7 @@ import { LegacyUserProfile } from "../models/principal";
 import AuthenticationGroupDao from "../dao/authentication-group-dao";
 import { SecurityEventType } from "../models/security-event";
 import { ERROR_CODES } from "../models/error";
+import { logWithDetails } from "../logging/logger";
 
 
 const jwtServiceUtils: JwtServiceUtils = new JwtServiceUtils();
@@ -1118,7 +1119,9 @@ class AuthenticateUserService extends IdentityService {
             arrUserAuthenticationStates[index].authenticationStateStatus = STATUS_COMPLETE;
             await identityDao.updateUserAuthenticationState(arrUserAuthenticationStates[index]);
         }
-        catch(err){
+        catch(err: unknown){
+            const e = err as Error;
+            logWithDetails("error", `Error configuring TOTP. ${e.message}`, {e});
             response.userAuthenticationState.authenticationState = AuthenticationState.Error;
             response.authenticationError = ERROR_CODES.EC00127;
         }  
@@ -1189,6 +1192,8 @@ class AuthenticateUserService extends IdentityService {
             response.userAuthenticationState = arrUserAuthenticationStates[index + 1];
         }
         catch(err: any){
+            const e = err as Error;
+            logWithDetails("error", `Error configuring TOTP. ${e.message}`, {e});
             response.authenticationError = ERROR_CODES.EC00128;
             response.userAuthenticationState.authenticationState = AuthenticationState.Error;
         }
@@ -1589,8 +1594,9 @@ class AuthenticateUserService extends IdentityService {
                 response.uri = authorizationCode.uri;
                 userAuthenticationState.authenticationStateStatus = STATUS_COMPLETE;                
             }
-            catch(err: any){
-                throw new GraphQLError(err.message);
+            catch(err: unknown){
+                const e = err as Error;
+                throw new GraphQLError(e.message);
             }            
         }
         else if(userAuthenticationState.authenticationState === AuthenticationState.RedirectToIamPortal){
@@ -1640,8 +1646,9 @@ class AuthenticateUserService extends IdentityService {
                     }
                 }
             }
-            catch(err: any){
-                throw new GraphQLError(err.message);
+            catch(err: unknown){
+                const e = err as Error;            
+                throw new GraphQLError(e.message);
             }
         }
         // If all is successful, we can delete all of the state records tied to this authentication attempt

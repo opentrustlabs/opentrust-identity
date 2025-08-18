@@ -63,7 +63,7 @@ class ClientService {
     public async getClientById(clientId: string): Promise<Client | null> {
         const getData = ServiceAuthorizationWrapper<any[], Client | null>(
             {
-                performOperation: async function(oidcContext, ...args): Promise<Client | null> {
+                performOperation: async function(): Promise<Client | null> {
                     const client = await clientDao.getClientById(clientId);                       
                     return client;
                 },

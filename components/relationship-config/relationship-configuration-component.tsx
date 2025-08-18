@@ -1,11 +1,11 @@
 "use client";
-import { RelSearchInput, RelSearchResultItem, RelSearchResults, SearchFilterInput, SearchFilterInputObjectType, SearchRelType, SearchResultType } from "@/graphql/generated/graphql-types";
-import { REL_SEARCH_QUERY, SEARCH_QUERY } from "@/graphql/queries/oidc-queries";
+import { RelSearchInput, RelSearchResultItem, RelSearchResults, SearchFilterInput, SearchFilterInputObjectType, SearchResultType } from "@/graphql/generated/graphql-types";
+import { REL_SEARCH_QUERY } from "@/graphql/queries/oidc-queries";
 import { useQuery } from "@apollo/client";
 import React, { useContext } from "react";
 import DataLoading from "../layout/data-loading";
 import ErrorComponent from "../error/error-component";
-import { Alert, Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, Divider, Grid2, InputAdornment, Link, Stack, TablePagination, TextField, Typography } from "@mui/material";
+import { Alert, Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, Divider, Grid2, InputAdornment, Stack, TablePagination, TextField, Typography } from "@mui/material";
 import AddBoxIcon from '@mui/icons-material/AddBox';
 import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
@@ -75,6 +75,8 @@ const RelationshipConfigurationComponent: React.FC<RelationshipConfigurationComp
     });
 
     // HANDLER FUNCTIONS
+    // @typescript-eslint/no-unused-vars
+    // @typescript-eslint/no-explicit-any
     const handlePageChange = async (evt: any, newPage: number) => {
         setPage(newPage + 1);
         refetch({
@@ -88,6 +90,7 @@ const RelationshipConfigurationComponent: React.FC<RelationshipConfigurationComp
         });
     }
 
+    // @typescript-eslint/no-explicit-any
     const handleFilterTermChange = async (evt: any) => {
         const term = evt.target.value || "";
         setFilterTerm(term);
@@ -319,7 +322,6 @@ interface RelSearchProps {
 }
 
 const RelSearch: React.FC<RelSearchProps> = ({
-    parentType,
     parentId,
     tenantId,
     childType,
@@ -390,6 +392,8 @@ const RelSearch: React.FC<RelSearchProps> = ({
 
 
     // HANDLER FUNCTIONS
+    // @typescript-eslint/no-unused-vars
+    // @typescript-eslint/no-explicit-any
     const handlePageChange = async (evt: any, newPage: number) => {
         setPage(newPage + 1);
     }

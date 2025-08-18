@@ -10,10 +10,9 @@ class DBSchedulerDao extends SchedulerDao {
         const sequelize: Sequelize = await DBDriver.getConnection();
         const arr: Array<SchedulerLockEntity> = await sequelize.models.schedulerLock.findAll({            
             order: ["lockStartTimeMS"],
-            limit: limit,
-            raw: true
+            limit: limit
         });
-        return arr as any as Array<SchedulerLock>;
+        return arr.map((entity: SchedulerLockEntity) => entity.dataValues);
     }
 
     public async getSchedulerLocksByName(lockName: string): Promise<Array<SchedulerLock>> {
@@ -22,10 +21,9 @@ class DBSchedulerDao extends SchedulerDao {
             where: {
                 lockName: lockName
             },
-            order: ["lockStartTimeMS"],
-            raw: true
+            order: ["lockStartTimeMS"]
         });
-        return arr as any as Array<SchedulerLock>;
+        return arr.map((entity: SchedulerLockEntity) => entity.dataValues);
     }
 
     public async getSchedulerLockByInstanceId(lockInstanceId: string): Promise<SchedulerLock | null>{
@@ -33,10 +31,9 @@ class DBSchedulerDao extends SchedulerDao {
         const e: SchedulerLockEntity | null = await sequelize.models.schedulerLock.findOne({
             where: {
                 lockInstanceId: lockInstanceId
-            },
-            raw: true
+            }
         });
-        return e as any as SchedulerLock;
+        return e ? e.dataValues as SchedulerLock : null;
     }
 
     public async createSchedulerLock(lock: SchedulerLock): Promise<SchedulerLock> {

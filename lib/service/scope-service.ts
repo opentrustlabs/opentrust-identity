@@ -7,7 +7,7 @@ import TenantDao from "../dao/tenant-dao";
 import ClientDao from "../dao/client-dao";
 import AccessRuleDao from "../dao/access-rule-dao";
 import { DaoFactory } from "../data-sources/dao-factory";
-import { CHANGE_EVENT_CLASS_AUTHORIZATION_GROUP_TENANT_SCOPE_REL, CHANGE_EVENT_CLASS_CLIENT_TENANT_SCOPE_REL, CHANGE_EVENT_CLASS_SCOPE, CHANGE_EVENT_CLASS_TENANT_SCOPE_REL, CHANGE_EVENT_CLASS_USER_TENANT_SCOPE_REL, CHANGE_EVENT_TYPE_CREATE, CHANGE_EVENT_TYPE_CREATE_REL, CHANGE_EVENT_TYPE_REMOVE_REL, CHANGE_EVENT_TYPE_UPDATE, CLIENT_TYPE_IDENTITY, ROOT_TENANT_EXCLUSIVE_INTERNAL_SCOPE_NAMES, SCOPE_CLIENT_ASSIGN_SCOPE, SCOPE_CLIENT_REMOVE_SCOPE, SCOPE_CREATE_SCOPE, SCOPE_DELETE_SCOPE, SCOPE_GROUP_ASSIGN_SCOPE, SCOPE_GROUP_REMOVE_SCOPE, SCOPE_READ_SCOPE, SCOPE_TENANT_ASSIGN_SCOPE, SCOPE_TENANT_REMOVE_SCOPE, SCOPE_UPDATE_SCOPE, SCOPE_USE_APPLICATION_MANAGEMENT, SCOPE_USE_DISPLAY, SCOPE_USE_IAM_MANAGEMENT, SCOPE_USER_ASSIGN_SCOPE, SCOPE_USER_REMOVE_SCOPE, SCOPE_USES, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_READ_ALL_SCOPE, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
+import { CHANGE_EVENT_CLASS_AUTHORIZATION_GROUP_TENANT_SCOPE_REL, CHANGE_EVENT_CLASS_CLIENT_TENANT_SCOPE_REL, CHANGE_EVENT_CLASS_SCOPE, CHANGE_EVENT_CLASS_TENANT_SCOPE_REL, CHANGE_EVENT_CLASS_USER_TENANT_SCOPE_REL, CHANGE_EVENT_TYPE_CREATE, CHANGE_EVENT_TYPE_CREATE_REL, CHANGE_EVENT_TYPE_REMOVE_REL, CHANGE_EVENT_TYPE_UPDATE, CLIENT_TYPE_IDENTITY, ROOT_TENANT_EXCLUSIVE_INTERNAL_SCOPE_NAMES, SCOPE_CLIENT_ASSIGN_SCOPE, SCOPE_CLIENT_REMOVE_SCOPE, SCOPE_CREATE_SCOPE, SCOPE_GROUP_ASSIGN_SCOPE, SCOPE_GROUP_REMOVE_SCOPE, SCOPE_READ_SCOPE, SCOPE_TENANT_ASSIGN_SCOPE, SCOPE_TENANT_REMOVE_SCOPE, SCOPE_UPDATE_SCOPE, SCOPE_USE_DISPLAY, SCOPE_USE_IAM_MANAGEMENT, SCOPE_USER_ASSIGN_SCOPE, SCOPE_USER_REMOVE_SCOPE, SCOPE_USES, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_READ_ALL_SCOPE, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import { getOpenSearchClient } from "../data-sources/search";
 import AuthorizationGroupDao from "../dao/authorization-group-dao";
 import IdentityDao from "../dao/identity-dao";
@@ -50,7 +50,7 @@ class ScopeService {
         }
 
         
-        let isRootTenant: boolean = tenantId === this.oidcContext.rootTenant.tenantId;        
+        const isRootTenant: boolean = tenantId === this.oidcContext.rootTenant.tenantId;        
                 
         if(isRootTenant && !filterBy){
             const arr: Array<Scope> = await scopeDao.getScope();
@@ -124,7 +124,7 @@ class ScopeService {
             throw new GraphQLError(ERROR_CODES.EC00070.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00070}});
         }
         scope.scopeId = randomUUID().toString();
-        const s: Scope = await scopeDao.createScope(scope);
+        await scopeDao.createScope(scope);
         await this.updateSearchIndex(scope);
 
         changeEventDao.addChangeEvent({
@@ -799,7 +799,8 @@ class ScopeService {
                 id: `${tenantId}::${scopeId}`,
                 index: SEARCH_INDEX_REL_SEARCH,
             });         
-        }       
+        }
+        // @typescript-eslint/no-explicit-any
         catch(err: any){
             logWithDetails("error", `Error removing scope from tenant. ${err.message}`, {...err, tenantId, scopeId});
         }

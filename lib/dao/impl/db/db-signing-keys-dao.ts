@@ -10,6 +10,7 @@ class DBSigningKeysDao extends SigningKeysDao {
     
     public async getSigningKeys(tenantId?: string): Promise<Array<SigningKey>> {
         const sequelize: Sequelize = await DBDriver.getConnection();
+        // @typescript-eslint/no-explicit-any
         const queryParams: any = {};
         if(tenantId){
             queryParams.tenantid = tenantId;

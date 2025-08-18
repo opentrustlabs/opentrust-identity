@@ -123,7 +123,7 @@ const TenantManagementDomainConfiguration: React.FC<TenantManagementDomainConfig
                     <Grid2 size={12} textAlign={"center"}>No domains for tenant management</Grid2>
                 }
                 {data.getDomainsForTenantManagement.map(
-                    (rel: TenantManagementDomainRel, idx: number) => (
+                    (rel: TenantManagementDomainRel) => (
                         <Grid2 container key={rel.domain} size={12}>
                             <Grid2 size={10.8}>{rel.domain}</Grid2>                            
                             <Grid2 size={1.2}>

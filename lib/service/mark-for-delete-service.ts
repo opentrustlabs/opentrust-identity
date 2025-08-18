@@ -39,6 +39,7 @@ class MarkForDeleteService {
     }
 
     public async markForDelete(markForDelete: MarkForDelete): Promise<MarkForDelete> {
+        // @typescript-eslint/no-explicit-any
         let object: any | null = null;
         let requiredScope: string | null = null;        
 
@@ -131,8 +132,7 @@ class MarkForDeleteService {
                     await identityDao.updateUser(user);
                 },
             });
-            await u(this.oidcContext, requiredScope, null);  
-            
+            await u(this.oidcContext, requiredScope, null);            
         }
         if(markForDelete.objectType === MarkForDeleteObjectType.AuthorizationGroup){
             const a: AuthorizationGroup = object as AuthorizationGroup; 
