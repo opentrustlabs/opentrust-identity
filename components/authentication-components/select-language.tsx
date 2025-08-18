@@ -7,7 +7,7 @@ import MenuItem from "@mui/material/MenuItem";
 import Stack from "@mui/material/Stack";
 import Button from "@mui/material/Button";
 
-const DEFAULT_LANGUAGE="en";
+
 const SUPPORTED_LANGUAGES = ["de", "en", "es", "fr", "it"];
 const TRANSLATED_LANGUAGES = new Map<string, string>([
     ["de", "Deutsch"],
