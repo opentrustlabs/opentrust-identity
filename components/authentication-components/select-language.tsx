@@ -4,12 +4,18 @@ import { useInternationalizationContext } from "../contexts/internationalization
 import Grid2 from "@mui/material/Grid2";
 import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
-import { LANGUAGE_CODES, LanguageCodeDef } from "@/utils/i18n";
 import Stack from "@mui/material/Stack";
 import Button from "@mui/material/Button";
 
 const DEFAULT_LANGUAGE="en";
-const SUPPORTED_LANGUAGES = ["en", "es", "de", "it", "fr"];
+const SUPPORTED_LANGUAGES = ["de", "en", "es", "fr", "it"];
+const TRANSLATED_LANGUAGES = new Map<string, string>([
+    ["de", "Deutsch"],
+    ["en", "English"],
+    ["es", "Español"],
+    ["fr", "Français"],
+    ["it", "Italiano"],
+]);
 
 // LANGUAGE_CODES.filter()
 
@@ -19,7 +25,7 @@ const SelectLanguage: React.FC  = () => {
     const i18nContext = useInternationalizationContext();
 
     // STATE VARIABLES
-    const [lang, setLang] = React.useState<string>(DEFAULT_LANGUAGE);
+    const [lang, setLang] = React.useState<string>("");
 
     return (
         <React.Fragment>
@@ -34,15 +40,12 @@ const SelectLanguage: React.FC  = () => {
                         value={lang}
                         name="lang"
                         onChange={(evt) => { 
-                            setLang(evt.target.value); 
-                            
+                            setLang(evt.target.value);                             
                         }}
                     >
-                        {LANGUAGE_CODES.filter(
-                            (val: LanguageCodeDef) => SUPPORTED_LANGUAGES.includes(val.languageCode)
-                        ).map(
-                            (val: LanguageCodeDef) => (
-                                <MenuItem value={val.languageCode} >{val.language}</MenuItem>
+                        {SUPPORTED_LANGUAGES.map(
+                            (languageCode) => (
+                                <MenuItem value={languageCode} >{TRANSLATED_LANGUAGES.get(languageCode)}</MenuItem>
                             )
                         )}
                     </Select>
@@ -50,6 +53,7 @@ const SelectLanguage: React.FC  = () => {
             </Grid2>
             <Stack direction={"row-reverse"} width={"100%"}>
                 <Button 
+                    disabled={!SUPPORTED_LANGUAGES.includes(lang)}
                     onClick={() => {
                         i18nContext.setLanguage(lang);
                     }}

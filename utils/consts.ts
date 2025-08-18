@@ -21,7 +21,7 @@ export const DEFAULT_PORTAL_AUTH_TOKEN_TTL_HOURS=12;
 export const AUTH_TOKEN_LOCAL_STORAGE_KEY="auth-token";
 export const TOKEN_EXPIRIES_AT_MS_LOCAL_KEY="token-expires-at-ms";
 export const MANAGEMENT_TENANT_LOCAL_STORAGE_KEY="management-tenant-id";
-export const SELECTED_LANUGAGE_CODE="selected-language-code";
+export const SELECTED_LANUGAGE_CODE_STORAGE_KEY="selected-language-code";
 
 // ************************************************************************** //
 // 
