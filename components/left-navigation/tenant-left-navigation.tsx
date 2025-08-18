@@ -32,6 +32,7 @@ import { AuthContext, AuthContextProps } from "@/components/contexts/auth-contex
 import { PortalUserProfile } from "@/graphql/generated/graphql-types";
 import { containsScope } from "@/utils/authz-utils";
 import { AuthSessionProps, useAuthSessionContext } from "../contexts/auth-session-context";
+import { useIntl } from 'react-intl';
 
 
 interface NavigationProps {
@@ -48,6 +49,7 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
     const authContextProps: AuthContextProps = useContext(AuthContext);
     const profile: PortalUserProfile | null = authContextProps.portalUserProfile;
     const authSessionProps: AuthSessionProps = useAuthSessionContext();
+    const intl = useIntl();
     
 
     // STATE VARIABLES
@@ -190,7 +192,7 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
                                         {...params} 
                                         size="small" 
                                         multiline={false} 
-                                        label="Search" 
+                                        label={intl.formatMessage({id: "SEARCH"})}
                                         fullWidth={true}
                                     />
                             }}

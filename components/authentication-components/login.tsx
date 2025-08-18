@@ -26,6 +26,8 @@ import { AuthContext, AuthContextProps } from "../contexts/auth-context";
 import AuthentiationAcceptTermsAndConditions from "./accept-terms-and-conditions";
 import UserCodeInput from "./user-code";
 import { ERROR_CODES } from "@/lib/models/error";
+import { useInternationalizationContext } from "../contexts/internationalization-context";
+import SelectLanguage from "./select-language";
 
 
 const MIN_USERNAME_LENGTH = 6;
@@ -53,6 +55,7 @@ const Login: React.FC<LoginProps>= ({
     const authSessionProps: AuthSessionProps = useAuthSessionContext();
     const breakPoints: ResponsiveBreakpoints = useContext(ResponsiveContext);
     const authContextProps: AuthContextProps = useContext(AuthContext);
+    const i18nContext = useInternationalizationContext();
 
 
     useEffect(() => {
@@ -354,6 +357,17 @@ const Login: React.FC<LoginProps>= ({
                 elevation={4}
                 sx={{ padding: 2, height: "100%", maxWidth: maxWidth, width: maxWidth }}
             >
+                {i18nContext.hasSelectedLanguage() !== true &&
+                    <Dialog 
+                        open={i18nContext.hasSelectedLanguage() !== true}
+                        maxWidth="sm"
+                        fullWidth={true}
+                    >
+                        <DialogContent>
+                            <SelectLanguage />
+                        </DialogContent>
+                    </Dialog>
+                }
                 {showTenantSelector &&
                     <Dialog
                         open={showTenantSelector}
