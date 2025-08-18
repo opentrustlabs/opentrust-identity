@@ -119,8 +119,9 @@ const AuthentiationConfigureSecurityKey: React.FC<AuthenticationComponentsProps>
                     }
                 });
             }
-            catch(err: any){
-                setErrorMessage(err.message);
+            catch(err: unknown){
+                const e = err as Error;
+                setErrorMessage(e.message);
             }
         }
     }
@@ -291,8 +292,9 @@ const RegistrationConfigureSecurityKey: React.FC<RegistrationComponentsProps> = 
                     }
                 });
             }
-            catch(err: any){
-                setErrorMessage(err.message);
+            catch(err: unknown){
+                const e = err as Error;
+                setErrorMessage(e.message);
             }
         }
     }
@@ -327,13 +329,13 @@ const RegistrationConfigureSecurityKey: React.FC<RegistrationComponentsProps> = 
                     {initialUserRegistrationState.registrationState === RegistrationState.ConfigureSecurityKeyOptional &&
                         <div style={{ marginBottom: "16px", fontWeight: "bold", fontSize: "1.0em" }}>
                             Do you want to configure a security key? This is an optional step and requires a hardware device
-                            such as a YubiKey or Google's Titan Security Key
+                            such as a YubiKey or Titan Security Key
                         </div>
                     }
                     {initialUserRegistrationState.registrationState === RegistrationState.ConfigureSecurityKeyRequired &&
                         <div style={{ marginBottom: "16px", fontWeight: "bold", fontSize: "1.0em" }}>
                             You will need to configure a security key to continue. This requires a hardware device
-                            such as a YubiKey or Google's Titan Security Key
+                            such as a YubiKey or Titan Security Key
                         </div>
                     }
                 </Grid2>

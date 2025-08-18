@@ -1,4 +1,3 @@
-import IdentityDao from '@/lib/dao/identity-dao';
 import { DaoFactory } from '@/lib/data-sources/dao-factory';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import JwtService from '@/lib/service/jwt-service-utils';
@@ -150,8 +149,9 @@ export default async function handler(
                 try{
                     principal = await jwtService.validateJwt(t);
                 }
-                catch(err: any){
-                    logWithDetails("error", "Error revoking a user refresh token. Could not create a principal object from the supplied token", {...err});
+                catch(err: unknown){
+                    const e = err as Error
+                    logWithDetails("error", "Error revoking a user refresh token. Could not create a principal object from the supplied token", {e});                    
                     res.status(403).end();
                     return;
                 }
@@ -172,6 +172,8 @@ export default async function handler(
             }
         }
         catch(err){
+            const e = err as Error
+            logWithDetails("error", "Error revoking a user refresh token. Encountered an unexpected error.", {e});  
             res.status(403).end();
             return;
         }        

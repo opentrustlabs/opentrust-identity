@@ -45,7 +45,9 @@ const SelectLanguage: React.FC  = () => {
                     >
                         {SUPPORTED_LANGUAGES.map(
                             (languageCode) => (
-                                <MenuItem value={languageCode} >{TRANSLATED_LANGUAGES.get(languageCode)}</MenuItem>
+                                <React.Fragment key={languageCode}>
+                                    <MenuItem value={languageCode} >{TRANSLATED_LANGUAGES.get(languageCode)}</MenuItem>
+                                </React.Fragment>
                             )
                         )}
                     </Select>

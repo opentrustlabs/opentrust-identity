@@ -270,7 +270,7 @@ const AuthorizationGroupDetail: React.FC<AuthorizationGroupDetailProps> = ({ aut
                                                 <Grid2 size={11}>
                                                     <Typography>
                                                         For default authorization groups, ALL users who belong to the tenant will also automatically belong to this group. To
-                                                        select users individually, uncheck the "Default" checkbox above and save your changes.
+                                                        select users individually, uncheck the Default checkbox above and save your changes.
                                                     </Typography>
                                                 </Grid2>
                                             </Grid2>

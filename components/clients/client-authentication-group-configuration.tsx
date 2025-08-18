@@ -45,7 +45,6 @@ const ClientAuthenticationGroupConfiguration: React.FC<ClientAuthenticationGroup
 
     
     // STATE VARIABLES
-    const [groupToAdd, setGroupToAdd] = React.useState<string | null>(null);
     const [groupToRemove, setGroupToRemove] = React.useState<AuthenticationGroup | null>(null);
     const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
     const [selectDialogOpen, setSelectDialogOpen] = React.useState(false);
@@ -156,8 +155,7 @@ const ClientAuthenticationGroupConfiguration: React.FC<ClientAuthenticationGroup
                         multiSelect={false}
                         helpText="Select a valid group"
                         onCancel={() => setSelectDialogOpen(false)}
-                        onSelected={(id: string | Array<string>) => {
-                            setGroupToAdd(id as string);
+                        onSelected={(id: string | Array<string>) => {                            
                             onUpdateStart();
                             addAuthenticationGroupMutation({
                                 variables: {

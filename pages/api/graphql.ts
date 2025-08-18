@@ -18,6 +18,7 @@ import { GraphQLFormattedError } from "graphql/error";
 
 
 declare global {
+    // eslint-disable-next-line no-var
     var schedulerInitialized: boolean | undefined;
 }
 
@@ -101,8 +102,9 @@ const server = new ApolloServer(
 
 export default startServerAndCreateNextHandler(server, {
 
-    context: async(req: NextApiRequest, res: NextApiResponse) => {
-        return getOIDCContext(req);        
+    context: async(req: NextApiRequest) => {
+        return getOIDCContext(req);
+        
     }
 
 });

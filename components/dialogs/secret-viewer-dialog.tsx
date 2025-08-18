@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect } from "react";
+import React from "react";
 import { SecretObjectType } from "@/graphql/generated/graphql-types";
 import { GET_SECRET_VALUE_QUERY } from "@/graphql/queries/oidc-queries";
 import { useQuery } from "@apollo/client";
@@ -9,9 +9,6 @@ import PriorityHighOutlinedIcon from '@mui/icons-material/PriorityHighOutlined';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import DataLoading from "../layout/data-loading";
 import { useClipboardCopyContext } from "../contexts/clipboard-copy-context";
-import { TypeOrFieldNameRegExp } from "@apollo/client/cache/inmemory/helpers";
-
-
 
 export interface SecretViewerDialogProps {
     open: boolean,

@@ -1,5 +1,5 @@
 "use client";
-import { EmailChangeState, PortalUserProfile, ProfileEmailChangeResponse, StateProvinceRegion, User, UserMfaRel, UserRecoveryEmail, UserUpdateInput } from "@/graphql/generated/graphql-types";
+import { PortalUserProfile, StateProvinceRegion, User, UserMfaRel, UserRecoveryEmail, UserUpdateInput } from "@/graphql/generated/graphql-types";
 import React, { useContext } from "react";
 import { useClipboardCopyContext } from "../contexts/clipboard-copy-context";
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
@@ -19,7 +19,7 @@ import StateProvinceRegionSelector from "../users/state-province-region-selector
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import MailOutlineOutlinedIcon from '@mui/icons-material/MailOutlineOutlined';
 import DeleteForeverOutlinedIcon from '@mui/icons-material/DeleteForeverOutlined';
-import { DELETE_RECOVERY_EMAIL_MUTATION, FIDO_KEY_DELETION_MUTATION, PROFILE_CANCEL_EMAIL_CHANGE_MUTATION, SWAP_PRIMARY_AND_RECOVERY_EMAIL_MUTATION, TOPT_DELETION_MUTATION, USER_UPDATE_MUTATION } from "@/graphql/mutations/oidc-mutations";
+import { DELETE_RECOVERY_EMAIL_MUTATION, FIDO_KEY_DELETION_MUTATION, SWAP_PRIMARY_AND_RECOVERY_EMAIL_MUTATION, TOPT_DELETION_MUTATION, USER_UPDATE_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { containsScope } from "@/utils/authz-utils";
@@ -229,7 +229,7 @@ const MyProfile: React.FC = () => {
     });
 
     const [swapPrimaryAndRecoveryEmail] = useMutation(SWAP_PRIMARY_AND_RECOVERY_EMAIL_MUTATION, {        
-        onCompleted(data) {
+        onCompleted() {
             setShowMutationBackdrop(false);            
             setShowMutationSnackbar(true);
             refetch();                        
@@ -241,7 +241,7 @@ const MyProfile: React.FC = () => {
     });
 
     const [deleteRecoveryEmailMutation] = useMutation(DELETE_RECOVERY_EMAIL_MUTATION, {
-        onCompleted(data) {
+        onCompleted() {
             setShowMutationBackdrop(false);            
             setShowMutationSnackbar(true);
             refetch();            
@@ -629,6 +629,7 @@ const MyProfile: React.FC = () => {
                                                 )
                                             }
                                             value={getDefaultLanguageCodeDef(userInput.preferredLanguageCode || "")}
+                                            //  @typescript-eslint/no-explicit-any
                                             onChange={(_, value: any) => {
                                                 userInput.preferredLanguageCode = value.id;
                                                 setMarkDirty(true);
@@ -732,6 +733,7 @@ const MyProfile: React.FC = () => {
                                                 )
                                             }
                                             value={getDefaultCountryCodeDef(userInput.countryCode || "")}
+                                            //  @typescript-eslint/no-explicit-any
                                             onChange={(_, value: any) => {
                                                 userInput.countryCode = value.id;
                                                 setUserInput({ ...userInput });

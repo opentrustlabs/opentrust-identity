@@ -41,12 +41,4 @@ const AccessError: React.FC = () => {
 }
 export const dynamic = 'force-dynamic';
 
-const Wrapper: React.FC = () => {
-    return (
-        <Suspense>
-            <AccessError />
-        </Suspense>
-    )
-}
-
 export default AccessError;

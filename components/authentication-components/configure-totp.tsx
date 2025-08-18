@@ -93,7 +93,7 @@ const AuthentiationConfigureTotp: React.FC<AuthenticationComponentsProps> = ({
                 <React.Fragment>
                     <Grid2 container size={12} spacing={1}>
                         <Grid2 marginBottom={"8px"} fontWeight={"bold"} fontSize={"1.0em"} size={12}>
-                            Use the QR code or the secret value to configure OTP on your device. Once completed click "Next"
+                            Use the QR code or the secret value to configure OTP on your device. Once completed click Next
                         </Grid2>
                         <Grid2 size={12}>
                             <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
@@ -262,7 +262,7 @@ const RegistrationConfigureTotp: React.FC<RegistrationComponentsProps> = ({
                 <React.Fragment>
                     <Grid2 container size={12} spacing={1}>
                         <Grid2 marginBottom={"8px"} fontWeight={"bold"} fontSize={"1.0em"} size={12}>
-                            Use the QR code or the secret value to configure OTP on your device. Once completed click "Next"
+                            Use the QR code or the secret value to configure OTP on your device. Once completed click Next
                         </Grid2>
                         <Grid2 size={12}>
                             <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>

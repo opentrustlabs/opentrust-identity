@@ -2,12 +2,8 @@ import { TenantLookAndFeel } from '@/graphql/generated/graphql-types';
 import TenantDao from '@/lib/dao/tenant-dao';
 import { DaoFactory } from '@/lib/data-sources/dao-factory';
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { readFileSync } from 'node:fs';
 
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
-
-
-
 
 const EMPTY_LOGO = "<svg xmlns=\"http://www.w3.org/2000/svg\"></svg>";
 const DEFAULT_CONTENT_TYPE = "image/svg+xml";
@@ -23,7 +19,7 @@ export default async function handler(
 
 
     let logo = EMPTY_LOGO;
-    let contentType = DEFAULT_CONTENT_TYPE;
+    const contentType = DEFAULT_CONTENT_TYPE;
     const tenantLookAndFeel: TenantLookAndFeel | null = await tenantDao.getTenantLookAndFeel(tenant_id as string || "");
     if(tenantLookAndFeel){
         logo = tenantLookAndFeel.authenticationlogo || EMPTY_LOGO;        

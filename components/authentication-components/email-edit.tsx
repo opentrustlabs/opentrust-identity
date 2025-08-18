@@ -1,5 +1,5 @@
 "use client";
-import { EmailChangeState, PortalUserProfile, ProfileEmailChangeResponse, ProfileEmailChangeState } from "@/graphql/generated/graphql-types";
+import { EmailChangeState, ProfileEmailChangeResponse, ProfileEmailChangeState } from "@/graphql/generated/graphql-types";
 import { PROFILE_ADD_RECOVERY_EMAIL_MUTATION, PROFILE_CANCEL_EMAIL_CHANGE_MUTATION, PROFILE_HANDLE_EMAIL_CHANGE_MUTATION, PROFILE_VALIDATE_EMAIL_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import { useMutation } from "@apollo/client";
 import { Alert, Button, Grid2, Stack, TextField, Typography } from "@mui/material";
@@ -47,8 +47,8 @@ const EmailEdit: React.FC<EmailEditProps> = ({
         onCompleted(data) {
             stateTransitionListener(StateTransition.STATE_CHANGE_RECEIVED);
             const profileEmailChangeResponse: ProfileEmailChangeResponse = data.profileHandleEmailChange;
-            if(profileEmailChangeResponse.profileEmailChangeState.emailChangeState === EmailChangeState.Error){
-                setErrorMessage(profileEmailChangeResponse.profileEmailChangeError.errorCode);
+            if(profileEmailChangeResponse.profileEmailChangeState.emailChangeState === EmailChangeState.Error){                
+                setErrorMessage(profileEmailChangeResponse.profileEmailChangeError?.errorMessage || "ERROR");
             }
             else{
                 setProfileEmailChangeState(profileEmailChangeResponse.profileEmailChangeState);
@@ -65,7 +65,7 @@ const EmailEdit: React.FC<EmailEditProps> = ({
             stateTransitionListener(StateTransition.STATE_CHANGE_RECEIVED);
             const profileEmailChangeResponse: ProfileEmailChangeResponse = data.profileAddRecoveryEmail;
             if(profileEmailChangeResponse.profileEmailChangeState.emailChangeState === EmailChangeState.Error){
-                setErrorMessage(profileEmailChangeResponse.profileEmailChangeError.errorCode);
+                setErrorMessage(profileEmailChangeResponse.profileEmailChangeError?.errorCode || "ERROR");
             }
             else{
                 setProfileEmailChangeState(profileEmailChangeResponse.profileEmailChangeState);
@@ -82,7 +82,7 @@ const EmailEdit: React.FC<EmailEditProps> = ({
             stateTransitionListener(StateTransition.STATE_CHANGE_RECEIVED);
             const profileEmailChangeResponse: ProfileEmailChangeResponse = data.profileValidateEmail;
             if(profileEmailChangeResponse.profileEmailChangeState.emailChangeState === EmailChangeState.Error){
-                setErrorMessage(profileEmailChangeResponse.profileEmailChangeError.errorCode);
+                setErrorMessage(profileEmailChangeResponse.profileEmailChangeError?.errorCode || "ERROR");
             }
             else{
                 setProfileEmailChangeState(profileEmailChangeResponse.profileEmailChangeState);

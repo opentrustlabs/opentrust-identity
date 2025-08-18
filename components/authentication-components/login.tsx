@@ -59,8 +59,8 @@ const Login: React.FC<LoginProps>= ({
 
 
     useEffect(() => {
-        titleSetter.setPageTitle("");
-    }, []);
+        titleSetter.setPageTitle("Login");
+    }, [titleSetter]);
 
     // QUERY PARAMS
     const params = useSearchParams();
@@ -307,10 +307,6 @@ const Login: React.FC<LoginProps>= ({
         tenantBean.setTenantMetaData(DEFAULT_TENANT_META_DATA);
     }
 
-    const enterKeyLoginHandler = (evt: React.KeyboardEvent) => {
-
-    }
-
     const closeTenantSelector = () => {
         setShowTenantSelector(false);
         setSelectedTenant(null);
@@ -442,7 +438,7 @@ const Login: React.FC<LoginProps>= ({
                                     <Grid2 size={11}>Use my primary email</Grid2>
                                     <Grid2 size={1}>
                                         <RadioStyledCheckbox 
-                                            onChange={(_, checked: boolean) => {
+                                            onChange={() => {
                                                 setUseRecoveryEmail(false);
                                             }}
                                             checked={useRecoveryEmail === false}                                    
@@ -451,7 +447,7 @@ const Login: React.FC<LoginProps>= ({
                                     <Grid2 size={11}>I have a backup email I want to use</Grid2>
                                     <Grid2 size={1}>
                                         <RadioStyledCheckbox 
-                                            onChange={(_, checked: boolean) => {
+                                            onChange={() => {
                                                 setUseRecoveryEmail(true);
                                             }}
                                             checked={useRecoveryEmail === true}
@@ -621,7 +617,7 @@ const Login: React.FC<LoginProps>= ({
                                     name="password"
                                     fullWidth
                                     onChange={(evt) => setPassword(evt.target.value)}
-                                    onKeyDown={enterKeyLoginHandler}
+                                    
                                     value={password}
                                     sx={{
                                         "& .MuiOutlinedInput-root": {
@@ -715,7 +711,7 @@ const Login: React.FC<LoginProps>= ({
                                     name="password"
                                     fullWidth
                                     onChange={(evt) => setPassword(evt.target.value)}
-                                    onKeyDown={enterKeyLoginHandler}
+                                    
                                     value={password}                                    
                                 >
                                 </TextField>

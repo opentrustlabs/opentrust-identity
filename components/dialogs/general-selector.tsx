@@ -10,7 +10,9 @@ import RadioButtonCheckedIcon from '@mui/icons-material/RadioButtonChecked';
 
 export interface GeneralSelectorProps {
     query: DocumentNode,
+    // @typescript-eslint/no-explicity-any
     queryVars: any,
+    // @typescript-eslint/no-explicity-any
     dataMapper: (data: any) => Array<{ id: string, label: string }>,
     onCancel: () => void,
     multiSelect: boolean,
@@ -194,22 +196,35 @@ const GeneralSelector: React.FC<GeneralSelectorProps> = ({
             <DialogActions>
                 <Button onClick={() => onCancel()}>Cancel</Button>
                 {multiSelect === false &&
-                    <Button disabled={selectedId === null} onClick={() => { selectedId !== null ? onSelected(selectedId) : setErrorMessage(helpText) }}>
+                    <Button 
+                        disabled={selectedId === null} 
+                        onClick={() => { 
+                            if(selectedId !== null){
+                                onSelected(selectedId);
+                             }
+                             else{
+                                setErrorMessage(helpText);
+                             }
+                        }}
+                    >
                         {submitButtonText ? submitButtonText : "Submit"}
                     </Button>
                 }
                 {multiSelect === true &&
                     <Button disabled={selectedIds.size === 0} 
                         onClick={() => {                             
-                            selectedIds.size > 0 ? onSelected(Array.from(selectedIds.keys())) : setErrorMessage(helpText) }}
-                        >
+                            if(selectedIds.size > 0){
+                                onSelected(Array.from(selectedIds.keys()));
+                            }
+                            else{
+                                setErrorMessage(helpText);
+                            }
+                        }}
+                    >
                         {submitButtonText ? submitButtonText : "Submit"}
                     </Button>
-                }
-
-                
+                }                
             </DialogActions>
-
         </>
     )
 

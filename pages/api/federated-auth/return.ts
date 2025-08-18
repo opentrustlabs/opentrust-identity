@@ -25,5 +25,6 @@ export default async function handler(
     // In the error case (or in case the token redemption fails), the user will be 
     // redirected to the error page with a detailed message.
 
+    res.status(404).json(req.headers);
     
 }

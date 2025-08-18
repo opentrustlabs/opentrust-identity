@@ -28,7 +28,7 @@ const OIDCSelector: React.FC<OIDCSelectorProps> = ({
 
     // HANDLER FUNCTIONS
     const createProviderOptions = () => {
-        let options: Array<{id: string, label: string}>= [];        
+        const options: Array<{id: string, label: string}>= [];        
         if(data && data.getFederatedOIDCProviders){
             data.getFederatedOIDCProviders
                 .filter(
@@ -61,12 +61,25 @@ const OIDCSelector: React.FC<OIDCSelectorProps> = ({
                     sx={{paddingTop: "8px"}}
                     renderInput={(params) => <TextField {...params} label="Select Provider" />}
                     options={createProviderOptions()}
+                    // @typescript-eslint/no-explicit-any
                     onChange={ (_, value: any) => setSelectedProvider(value.id)}
                 />
             </DialogContent>
             <DialogActions>
                 <Button onClick={() => onCancel()}>Cancel</Button>
-                <Button disabled={selectedProvider === null} onClick={() => {selectedProvider !== null ? onSelected(selectedProvider) : setErrorMessage("Select a valid provider")}}>Submit</Button>
+                <Button 
+                    disabled={selectedProvider === null}                 
+                    onClick={() => {
+                        if(selectedProvider !== null){
+                            onSelected(selectedProvider);
+                        }
+                        else{
+                            setErrorMessage("Select a valid provider")
+                        }
+                    }}
+                >
+                    Submit
+                </Button>
             </DialogActions>
         
         </>

@@ -90,20 +90,23 @@ const SearchResultListLayout: React.FC<SearchResultListProps> = ({
         });
     }
 
-    breadCrumbText &&
+    if(breadCrumbText){
         arrBreadcrumbs.push({
             linkText: breadCrumbText,
             href: null
         });
+    }
     const filters: Array<SearchFilterInput> = [];
 
-    tenantBean.getTenantMetaData().tenant.tenantType !== TENANT_TYPE_ROOT_TENANT && filters.push({
-        objectType: SearchFilterInputObjectType.TenantId,
-        objectValue: tenantBean.getTenantMetaData().tenant.tenantId
-    });
+    if(tenantBean.getTenantMetaData().tenant.tenantType !== TENANT_TYPE_ROOT_TENANT){
+        filters.push({
+            objectType: SearchFilterInputObjectType.TenantId,
+            objectValue: tenantBean.getTenantMetaData().tenant.tenantId
+        });
+    }
 
 
-    let { data, loading, error, previousData } = useQuery(SEARCH_QUERY, {
+    const { data, loading, error, previousData } = useQuery(SEARCH_QUERY, {
         variables: {
             searchInput: {
                 term: filterTerm,
@@ -124,6 +127,8 @@ const SearchResultListLayout: React.FC<SearchResultListProps> = ({
     // So we need to constantly adjust from zero-based to 1-based
     // indexing. They should really use OFFSET rather than page,
     // since that makes more sense.
+    // @typescript-eslint/no-unused-vars
+    // @typescript-eslint/no-explicit-any
     const handlePageChange = async (evt: any, page: number) => {
         setPage(page + 1);        
         topOfSearchList.current?.scrollIntoView({
@@ -131,7 +136,7 @@ const SearchResultListLayout: React.FC<SearchResultListProps> = ({
         })
     }
 
-
+    // @typescript-eslint/no-explicit-any
     const handleFilterTermChange = async (evt: any) => {
         const term = evt.target.value || "";        
         setFilterTerm(term);      

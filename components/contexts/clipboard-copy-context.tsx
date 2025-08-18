@@ -33,6 +33,7 @@ const ClipboardCopyContextProvider: React.FC<ClipboardCopyContextProps> = ({ chi
                 setMessage(message);
             }
         }
+        // @typescript-eslint/no-explicit-any
         catch (error: any){
             setMessage(`Error copying data to the clipboard: ${error.message}`);
         }        

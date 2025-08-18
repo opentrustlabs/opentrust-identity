@@ -6,6 +6,7 @@ import enMessages from "../../locales/en.json";
 import itMessages from "../../locales/it.json";
 import { SELECTED_LANUGAGE_CODE_STORAGE_KEY } from "@/utils/consts";
 
+// @typescript-eslint/no-explicit-any
 const messages: Record<string, any> = {
     en: enMessages,
     it: itMessages,

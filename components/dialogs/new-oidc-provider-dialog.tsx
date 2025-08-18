@@ -263,7 +263,9 @@ const NewOIDCProviderDialog: React.FC<NewOIDCProviderDialogProps> = ({
                                             }
                                         }
                                     )}
+                                    // @typescript-eslint/no-explicit-any
                                     onChange={(_, value: any) => {
+                                        // @typescript-eslint/no-explicit-any
                                         oidcProviderInput.scopes = value.map((v: any) => v.id);
                                         setOIDCProviderInput({ ...oidcProviderInput });
                                     }}

@@ -106,7 +106,7 @@ const ManagementTenantFilter: React.FC<LayoutProps> = ({
         if(needsRedirect){
             router.push(redirectUri);
         }
-    }, [profile, tenantIdFromPath]);
+    }, [profile, tenantIdFromPath, needsRedirect, redirectUri, router]);
 
     
 

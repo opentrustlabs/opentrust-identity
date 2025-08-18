@@ -99,8 +99,9 @@ const AuthentiationValidateSecurityKey: React.FC<AuthenticationComponentsProps> 
                 }
             });
         }
-        catch(error){
-
+        catch(error: unknown){
+            const e = error as Error;
+            setErrorMessage(e.message);
         }
     }
     
@@ -242,8 +243,9 @@ const RegistrationValidateSecurityKey: React.FC<RegistrationComponentsProps> = (
                 }
             });
         }
-        catch(error){
-
+        catch(error: unknown){
+            const e = error as Error;
+            setErrorMessage(e.message);
         }
     }
     

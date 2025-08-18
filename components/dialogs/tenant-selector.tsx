@@ -5,7 +5,7 @@ import React from "react";
 import DataLoading from "../layout/data-loading";
 import ErrorComponent from "../error/error-component";
 import { Button, Checkbox, DialogActions, DialogContent, DialogTitle, Divider, Grid2, InputAdornment, TablePagination, TextField, Typography } from "@mui/material";
-import { ObjectSearchResultItem, SearchResultType, Tenant } from "@/graphql/generated/graphql-types";
+import { ObjectSearchResultItem, SearchResultType } from "@/graphql/generated/graphql-types";
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
 import RadioButtonUncheckedOutlinedIcon from '@mui/icons-material/RadioButtonUncheckedOutlined';
 import RadioButtonCheckedIcon from '@mui/icons-material/RadioButtonChecked';
@@ -36,7 +36,7 @@ const TenantSelector: React.FC<TenantSelectorProps> = ({
     const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
 
 
-    let { data, loading, error, previousData } = useQuery(SEARCH_QUERY, {
+    const { data, loading, error, previousData } = useQuery(SEARCH_QUERY, {
         variables: {
             searchInput: {
                 term: filterTerm,
@@ -64,6 +64,8 @@ const TenantSelector: React.FC<TenantSelectorProps> = ({
         return false;
     }
 
+    // @typescript-eslint/no-unused-vars
+    // @typescript-eslint/no-explicit-any
     const handlePageChange = async (evt: any, newPage: number) => {
         setPage(newPage + 1);
     }

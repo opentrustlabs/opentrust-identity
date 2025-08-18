@@ -4,7 +4,7 @@ import { Autocomplete, Backdrop, Button, Checkbox, CircularProgress, Dialog, Dia
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { DEFAULT_TENANT_PASSWORD_CONFIGURATION, NAME_ORDER_DISPLAY, NAME_ORDER_EASTERN, NAME_ORDER_WESTERN, NAME_ORDERS, QUERY_PARAM_AUTHENTICATE_TO_PORTAL, QUERY_PARAM_REDIRECT_URI, QUERY_PARAM_TENANT_ID, QUERY_PARAM_PREAUTHN_TOKEN, QUERY_PARAM_USERNAME, DEFAULT_TENANT_META_DATA, QUERY_PARAM_DEVICE_CODE_ID } from "@/utils/consts";
+import { DEFAULT_TENANT_PASSWORD_CONFIGURATION, NAME_ORDER_DISPLAY, NAME_ORDER_EASTERN, NAME_ORDER_WESTERN, NAME_ORDERS, QUERY_PARAM_AUTHENTICATE_TO_PORTAL, QUERY_PARAM_TENANT_ID, QUERY_PARAM_PREAUTHN_TOKEN, QUERY_PARAM_USERNAME, DEFAULT_TENANT_META_DATA, QUERY_PARAM_DEVICE_CODE_ID } from "@/utils/consts";
 import {  TENANT_PASSWORD_CONFIG_QUERY } from "@/graphql/queries/oidc-queries";
 import { useMutation, useQuery } from "@apollo/client";
 import { RegistrationState, StateProvinceRegion, TenantPasswordConfig, UserCreateInput, UserRegistrationState, UserRegistrationStateResponse } from "@/graphql/generated/graphql-types";
@@ -529,6 +529,7 @@ const Register: React.FC = () => {
                                                     )
                                                 }
                                                 value={getDefaultLanguageCodeDef(userInput.preferredLanguageCode || "")}
+                                                //  @typescript-eslint/no-explicit-any
                                                 onChange={(_, value: any) => {
                                                     userInput.preferredLanguageCode = value.id;
 
@@ -583,6 +584,7 @@ const Register: React.FC = () => {
                                                     )
                                                 }
                                                 value={getDefaultCountryCodeDef(userInput.countryCode || "")}
+                                                //  @typescript-eslint/no-explicit-any
                                                 onChange={(_, value: any) => {
                                                     userInput.countryCode = value.id;
                                                     setUserInput({ ...userInput });

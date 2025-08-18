@@ -182,7 +182,9 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                             >
                                                 {CLIENT_TYPES.map(
                                                     (val: string) => (
-                                                        <MenuItem value={val} >{CLIENT_TYPES_DISPLAY.get(val)}</MenuItem>
+                                                        <React.Fragment key={val}>
+                                                            <MenuItem value={val} >{CLIENT_TYPES_DISPLAY.get(val)}</MenuItem>
+                                                        </React.Fragment>
                                                     )
                                                 )}
                                             </Select>
