@@ -347,7 +347,7 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
                                     groupBy={(option) => option.displayCategory}
                                     includeInputInList
                                     filterSelectedOptions
-                                    // @typescript-eslint/no-unused-vars
+                                    // eslint-disable-next-line @typescript-eslint/no-unused-vars
                                     onChange={(evt, value, reason) => {
                                         if(reason === "clear"){
                                             setLookaheadOptions([]);
@@ -366,7 +366,7 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
                                     forcePopupIcon={false}
                                     slots={{ popper: Popper, paper: Paper }}                                
                                     renderOption={(props, option) => {
-                                        const { key, ...optionProps } = props;
+                                        const { ...optionProps } = props;
                                         return (
                                             <li {...optionProps} key={option.id}>
                                                 <Grid2  alignItems={"center"} size={12} container spacing={0} >

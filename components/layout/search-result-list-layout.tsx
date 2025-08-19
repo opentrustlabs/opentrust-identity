@@ -127,8 +127,8 @@ const SearchResultListLayout: React.FC<SearchResultListProps> = ({
     // So we need to constantly adjust from zero-based to 1-based
     // indexing. They should really use OFFSET rather than page,
     // since that makes more sense.
-    // @typescript-eslint/no-unused-vars
-    // @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handlePageChange = async (evt: any, page: number) => {
         setPage(page + 1);        
         topOfSearchList.current?.scrollIntoView({

@@ -189,13 +189,13 @@ class SearchService {
 
     protected async _getObjectSearchByIds(ids: Array<string>): Promise<Array<ObjectSearchResultItem>>{
 
-        // @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const query: any = {
             ids: {
                 values: ids
             }
         }
-        // @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const searchBody: any = {
             from: 0,
             size: ids.length,
@@ -213,9 +213,9 @@ class SearchService {
         });
 
         searchResponse.body.hits.hits.forEach(
-            // @typescript-eslint/no-explicit-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (hit: any) => {
-                // @typescript-eslint/no-explicit-any
+                // eslint-disable-next-line@typescript-eslint/no-explicit-any
                 const source: any = hit._source;
                 items.push(source);
             }
@@ -230,7 +230,7 @@ class SearchService {
         // object type (tenant vs client vs user vs oidc provider vs ...) or for the
         // tenant in which the user resides.
         
-        // @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let query: any = {
             bool: {
                 must: {},
@@ -310,13 +310,13 @@ class SearchService {
             );
         }
         
-        // @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const sortObj: any = {};
         if(searchInput.sortDirection && searchInput.sortField){
             sortObj[`${searchInput.sortField}.raw`] = { order: searchInput.sortDirection};
         }
 
-        // @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const searchBody: any = {
             from: (searchInput.page - 1) * searchInput.perPage,
             size: searchInput.perPage,
@@ -355,9 +355,9 @@ class SearchService {
         }
 
         searchResponse.body.hits.hits.forEach(
-            // @typescript-eslint/no-explicit-any
+            //eslint-disable-next-line  @typescript-eslint/no-explicit-any
             (hit: any) => {
-                // @typescript-eslint/no-explicit-any
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const source: any = hit._source;
                 items.push(source);
             }
@@ -408,7 +408,7 @@ class SearchService {
         // Default result list is am empty array
         let items: Array<RelSearchResultItem> = [];
 
-        // @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let query: any = {
             bool: {
                 must: {},
@@ -492,13 +492,13 @@ class SearchService {
             );
         }
         
-        // @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const sortObj: any = {};
         if(relSearchInput.sortDirection && relSearchInput.sortField){
             sortObj[`${relSearchInput.sortField}.raw`] = { order: relSearchInput.sortDirection};
         }
 
-        // @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const searchBody: any = {
             from: (relSearchInput.page - 1) * relSearchInput.perPage,
             size: relSearchInput.perPage,
@@ -531,9 +531,9 @@ class SearchService {
         }
 
         searchResponse.body.hits.hits.forEach(
-            // @typescript-eslint/no-explicit-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (hit: any) => {
-                // @typescript-eslint/no-explicit-any
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const source: any = hit._source;
                 return items.push(source);
             }

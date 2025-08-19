@@ -64,9 +64,9 @@ const TenantSelector: React.FC<TenantSelectorProps> = ({
         return false;
     }
 
-    // @typescript-eslint/no-unused-vars
-    // @typescript-eslint/no-explicit-any
-    const handlePageChange = async (evt: any, newPage: number) => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const handlePageChange = async (_evt: any, newPage: number) => {
         setPage(newPage + 1);
     }
 

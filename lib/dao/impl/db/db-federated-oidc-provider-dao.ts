@@ -76,7 +76,7 @@ class DBFederatedOIDCProviderDao extends FederatedOIDCProviderDao {
 
     public async getFederatedOidcProviderTenantRels(tenantId?: string, federatedOIDCProviderId?: string): Promise<Array<FederatedOidcProviderTenantRel>> {
         const sequelize: Sequelize = await DBDriver.getConnection();
-        // @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const whereClause: any = {};
         if(tenantId){
             whereClause.tenantId = tenantId;
@@ -145,7 +145,7 @@ class DBFederatedOIDCProviderDao extends FederatedOIDCProviderDao {
     public async getFederatedOidcProviderDomainRels(federatedOIDCProviderId: string | null, domain: string | null): Promise<Array<FederatedOidcProviderDomainRel>> {
         const sequelize: Sequelize = await DBDriver.getConnection();
 
-        // @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const params: any = {};
         if(federatedOIDCProviderId){
             params.federatedOIDCProviderId = federatedOIDCProviderId;

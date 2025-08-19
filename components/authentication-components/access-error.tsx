@@ -2,7 +2,7 @@
 import { ResponsiveBreakpoints, ResponsiveContext } from "@/components/contexts/responsive-context";
 import Alert from "@mui/material/Alert";
 // import { useSearchParams } from "next/navigation";
-import React, { Suspense, useContext } from "react";
+import React, { useContext } from "react";
 
 const DEFAULT_ERROR_MESSAGE = "The resource which you have requested is not available to your account."
 

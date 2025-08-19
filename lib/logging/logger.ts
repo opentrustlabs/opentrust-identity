@@ -34,7 +34,7 @@ export interface LogRecord {
     }
 }
 
-// @typescript-eslint/no-explicit-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const streams: Array<any> = [];
 if(logDirectoryDefined){
     streams.push({

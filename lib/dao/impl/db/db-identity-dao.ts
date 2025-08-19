@@ -18,7 +18,6 @@ import UserTermsAndConditionsAcceptedEntity from "@/lib/entities/user-terms-and-
 import UserEmailRecoveryEntity from "@/lib/entities/user-email-recovery-entity";
 import UserDuressCredentialEntity from "@/lib/entities/user-duress-credential";
 import UserProfileChangeEmailStateEntity from "@/lib/entities/user-profile-email-change-state-entity";
-import { group } from "console";
 
 
 class DBIdentityDao extends IdentityDao {
@@ -287,7 +286,7 @@ class DBIdentityDao extends IdentityDao {
     public async getUserBy(userLookupType: UserLookupType, value: string): Promise<User | null> {
         const sequelize: Sequelize = await DBDriver.getConnection();
 
-        // @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const where: any = {};
         if(userLookupType === "email"){
             where.email = value;
@@ -437,7 +436,7 @@ class DBIdentityDao extends IdentityDao {
     public async deleteUserCredential(userId: string, dateCreated?: Date): Promise<void> {
         const sequelize: Sequelize = await DBDriver.getConnection();
 
-        // @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const queryParams: any = {
             userId: userId
         };
