@@ -175,7 +175,7 @@ export default async function handler(
     // If this is a device client or a user delegated client, then add the delegated scope
     // values to the list of requested scopes so that we can carry this over to the refresh
     // data if this client allows refresh data    
-    if((client.clientType === CLIENT_TYPE_DEVICE || client.clientType === CLIENT_TYPE_USER_DELEGATED_PERMISSIONS) && client.maxRefreshTokenCount && client.maxRefreshTokenCount > 0){
+    if(client.clientType === CLIENT_TYPE_DEVICE || client.clientType === CLIENT_TYPE_USER_DELEGATED_PERMISSIONS){
         const scopeRels: Array<ClientScopeRel> = await scopeDao.getClientScopeRels(client.clientId);
         const ids = scopeRels.map((rel: ClientScopeRel) => rel.scopeId);
         const scopes: Array<Scope> = await scopeDao.getScope(undefined, ids);

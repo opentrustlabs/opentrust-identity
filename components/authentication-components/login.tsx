@@ -287,8 +287,7 @@ const Login: React.FC<LoginProps>= ({
 
 
     const handleCancelAuthentication = (userAuthenticationState: UserAuthenticationState) => {
-        if(!preAuthToken && authorizationError && redirectUri){
-            console.log("checkpoint 1");
+        if(!preAuthToken && authorizationError && redirectUri){            
             const newHref = `${redirectUri}?${QUERY_PARAM_ERROR}=${authorizationError}&${QUERY_PARAM_ERROR_DESCRIPTION}=${authorizationErrorDescription}`;
             console.log(newHref);
             window.location.href = `${redirectUri}?${QUERY_PARAM_ERROR}=${authorizationError}&${QUERY_PARAM_ERROR_DESCRIPTION}=${authorizationErrorDescription}`
@@ -546,7 +545,7 @@ const Login: React.FC<LoginProps>= ({
                                         <Alert severity="info" sx={{width: "100%", fontSize: "0.95em"}}>
                                             <Grid2 marginBottom={"8px"} size={{xs: 12}}>
                                                 <span style={{fontWeight: "bold"}}>{authorizationScopeApprovalData.clientName}</span>
-                                                <span> wants your permission to access the following features:</span>
+                                                <span> wants your permission to access the following features or services:</span>
                                             </Grid2>
                                             <Grid2 size={{xs: 12}}>
                                                 <ul style={{ paddingLeft: "32px", marginBottom: "8px" }}>

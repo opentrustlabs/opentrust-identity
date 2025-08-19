@@ -299,27 +299,23 @@ class ClientService {
         return clientDao.removeRedirectURI(clientId, uri);
     }
 
-    public async getAuthorizationScopeApprovalData(preAuthToken: string): Promise<AuthorizationScopeApprovalData>{
-        console.log("checkpoint 1")
+    public async getAuthorizationScopeApprovalData(preAuthToken: string): Promise<AuthorizationScopeApprovalData>{        
         const approvalData: AuthorizationScopeApprovalData = {
             clientId: "",
             clientName: "",
             requestedScope: [],
             requiresUserApproval: false
         };
-        const preAuthenticationState: PreAuthenticationState | null = await authDao.getPreAuthenticationState(preAuthToken);
-        console.log("checkpoint 2")
+        const preAuthenticationState: PreAuthenticationState | null = await authDao.getPreAuthenticationState(preAuthToken);        
         if(preAuthenticationState === null){
-            console.log("checkpoint 3")
             return approvalData;
         }
-        console.log("checkpoint 4")
+        
         const client: Client | null = await clientDao.getClientById(preAuthenticationState.clientId);
-        if(client === null){
-            console.log("checkpoint 5")
+        if(client === null){            
             return approvalData;
         }
-        console.log("checkpoint 6")
+        
         const clientScopes: Array<ClientScopeRel> = await scopeDao.getClientScopeRels(client.clientId);
         const ids: Array<string> = clientScopes.map( (rel: ClientScopeRel) => rel.scopeId);
         const scopes = await scopeDao.getScope(undefined, ids);

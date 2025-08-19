@@ -323,5 +323,5 @@
     "TIME_BASED_OTP": "Time-based One Time Passcode",
     "SECURITY_KEY": "Security Key",
     "PROFILE_UPDATED": "Profile Updated",
-    "SCOPE_PERMISSION_REQUEST": "wants your permission to access the following"
+    "SCOPE_PERMISSION_REQUEST": "wants your permission to access the following features or services"
 }
