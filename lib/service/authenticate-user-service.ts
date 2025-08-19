@@ -1592,7 +1592,7 @@ class AuthenticateUserService extends IdentityService {
             }
         }
         
-        if(userAuthenticationState.authenticationState === AuthenticationState.RedirectBackToApplication){
+        if(userAuthenticationState.authenticationState === AuthenticationState.RedirectBackToApplication){            
             try {
                 const authorizationCode: AuthorizationReturnUri = await this.generateAuthorizationCode(userAuthenticationState.userId, userAuthenticationState.preAuthToken || "");
                 response.userAuthenticationState = userAuthenticationState;

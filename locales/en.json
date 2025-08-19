@@ -107,7 +107,7 @@
     "ERROR_INVALID_PRE_AUTH_TOKEN_OR_DEVICE_CODE": "Authentication is denied.",
     "ERROR_INVALID_TENANT_FOR_PRE_AUTH_TOKEN": "Authentication cannot be completed due to incorrect or missing information.",
     "ERROR_USER_IS_NOT_PERMITTED_TO_AUTHENTICATE_TO_THIS_TENANT": "You are not permitted to authenticate to this tenant.",
-    "ERROR_USER_DOES_NOT_BELONG_TO_VALID_AUTHENTICATION_GROUP_FOR_CLIENT": "You are not permitted to authenticate to the application.",
+    "ERROR_USER_DOES_NOT_BELONG_TO_VALID_AUTHENTICATION_GROUP_FOR_CLIENT": "You are not permitted to authenticate to the application because you do not belong to an authentication group assigned to this application.",
     "ERROR_USER_REGISTRATION_IS_NOT_PERMITTED_FOR_THIS_TENANT": "Your account cannot be found and registration is not permitted for this tenant.",
     "ERROR_NO_CREDENTIALS_FOUND_FOR_USER": "Authentication failed. No credentials were found for your account.",
     "ERROR_NO_DOMAIN_FOUND_FOR_TENANT_MANAGEMENT": "You are not allowed management access to any tenant.",
@@ -322,5 +322,6 @@
     "MULTI_FACTOR_AUTHENTICATION": "Multi-factor Authentication",
     "TIME_BASED_OTP": "Time-based One Time Passcode",
     "SECURITY_KEY": "Security Key",
-    "PROFILE_UPDATED": "Profile Updated"
+    "PROFILE_UPDATED": "Profile Updated",
+    "SCOPE_PERMISSION_REQUEST": "wants your permission to access the following"
 }

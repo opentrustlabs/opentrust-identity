@@ -5,8 +5,8 @@ import { Backdrop, Button, CircularProgress, Dialog, DialogActions, DialogConten
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { DEFAULT_TENANT_META_DATA, PASSWORD_MINIMUM_LENGTH, QUERY_PARAM_ERROR, QUERY_PARAM_ERROR_DESCRIPTION, QUERY_PARAM_PREAUTHN_TOKEN, QUERY_PARAM_REDIRECT_URI, QUERY_PARAM_RETURN_URI, QUERY_PARAM_TENANT_ID, SOCIAL_OIDC_PROVIDER_APPLE, SOCIAL_OIDC_PROVIDER_FACEBOOK, SOCIAL_OIDC_PROVIDER_GOOGLE, SOCIAL_OIDC_PROVIDER_LINKEDIN, SOCIAL_OIDC_PROVIDER_SALESFORCE } from "@/utils/consts";
-import { useMutation } from "@apollo/client";
-import { UserAuthenticationStateResponse, TenantSelectorData, AuthenticationState, UserAuthenticationState, TenantPasswordConfig, FederatedOidcProvider } from "@/graphql/generated/graphql-types";
+import { useMutation, useQuery } from "@apollo/client";
+import { UserAuthenticationStateResponse, TenantSelectorData, AuthenticationState, UserAuthenticationState, TenantPasswordConfig, FederatedOidcProvider, AuthorizationScopeApprovalData, Scope } from "@/graphql/generated/graphql-types";
 import Alert from '@mui/material/Alert';
 import { AUTHENTICATE_HANDLE_FORGOT_PASSWORD, AUTHENTICATE_USER, AUTHENTICATE_USER_AND_MIGRATE, AUTHENTICATE_USERNAME_INPUT_MUTATION, AUTHENTICATE_WITH_SOCIAL_OIDC_PROVIDER, CANCEL_AUTHENTICATION } from "@/graphql/mutations/oidc-mutations";
 import { PageTitleContext } from "@/components/contexts/page-title-context";
@@ -28,6 +28,7 @@ import UserCodeInput from "./user-code";
 import { ERROR_CODES } from "@/lib/models/error";
 import { useInternationalizationContext } from "../contexts/internationalization-context";
 import SelectLanguage from "./select-language";
+import { GET_AUTHORIZATION_SCOPE_APPROVAL_DATA_QUERY } from "@/graphql/queries/oidc-queries";
 
 
 const MIN_USERNAME_LENGTH = 6;
@@ -97,7 +98,8 @@ const Login: React.FC<LoginProps>= ({
     const [isPasswordResetFlow, setIsPasswordResetFlow] = React.useState<boolean>(false);
     const [showRecoveryEmailDialog, setShowRecoveryEmailDialog] = React.useState<boolean>(false);
     const [useRecoveryEmail, setUseRecoveryEmail] = React.useState<boolean>(false);
-    const [isLoginDisabled] = React.useState<boolean>( !(authorizationError === null || authorizationError === "") )
+    const [isLoginDisabled] = React.useState<boolean>( !(authorizationError === null || authorizationError === "") );
+    const [authorizationScopeApprovalData, setAuthorizationScopeApprovalData] = React.useState<AuthorizationScopeApprovalData | null>(null);
     
     // HOOKS FROM NEXTJS OR MUI
     const router = useRouter();
@@ -105,6 +107,20 @@ const Login: React.FC<LoginProps>= ({
     const maxWidth = breakPoints.isSmall ? "90vw" : breakPoints.isMedium ? "80vw" : "650px";
 
     // GRAPHQL FUNCTIONS
+    const {} = useQuery(GET_AUTHORIZATION_SCOPE_APPROVAL_DATA_QUERY, {
+        variables: {
+            preAuthToken: preAuthToken
+        },
+        skip: preAuthToken === null || preAuthToken === undefined,
+        onCompleted(data) {
+            const approvalData: AuthorizationScopeApprovalData | null = data.getAuthorizationScopeApprovalData;
+            if(approvalData && approvalData.requiresUserApproval && approvalData.requestedScope.length > 0){
+                setAuthorizationScopeApprovalData(approvalData);
+            }
+        }
+    })
+
+
     const [portalLoginEmailHandler] = useMutation(AUTHENTICATE_USERNAME_INPUT_MUTATION, {
         onCompleted(data) {
             const authnStateResponse: UserAuthenticationStateResponse = data.authenticateHandleUserNameInput;
@@ -271,26 +287,28 @@ const Login: React.FC<LoginProps>= ({
 
 
     const handleCancelAuthentication = (userAuthenticationState: UserAuthenticationState) => {
-        cancelAuthentication({
-            variables: {
-                userId: userAuthenticationState.userId,
-                authenticationSessionToken: userAuthenticationState.authenticationSessionToken,
-                preAuthToken: userAuthenticationState.preAuthToken
-            }
-        });
-
-        
-        setUsername("");
-        setPassword("");
-        setErrorMessage(null);
-        setTenantsToSelect([]);
-        setSelectedTenant(tenantId);
-        setUserAuthenticationState({...authnState});
-        authSessionProps.deleteAuthSessionData();
-        tenantBean.setTenantMetaData(DEFAULT_TENANT_META_DATA);
-
-        if(errorMessage && redirectUri){
-            window.location.href = `${redirectUri}?`
+        if(!preAuthToken && authorizationError && redirectUri){
+            console.log("checkpoint 1");
+            const newHref = `${redirectUri}?${QUERY_PARAM_ERROR}=${authorizationError}&${QUERY_PARAM_ERROR_DESCRIPTION}=${authorizationErrorDescription}`;
+            console.log(newHref);
+            window.location.href = `${redirectUri}?${QUERY_PARAM_ERROR}=${authorizationError}&${QUERY_PARAM_ERROR_DESCRIPTION}=${authorizationErrorDescription}`
+        }
+        else{
+            cancelAuthentication({
+                variables: {
+                    userId: userAuthenticationState.userId,
+                    authenticationSessionToken: userAuthenticationState.authenticationSessionToken,
+                    preAuthToken: userAuthenticationState.preAuthToken
+                }
+            });            
+            setUsername("");
+            setPassword("");
+            setErrorMessage(null);
+            setTenantsToSelect([]);
+            setSelectedTenant(tenantId);
+            setUserAuthenticationState({...authnState});
+            authSessionProps.deleteAuthSessionData();
+            tenantBean.setTenantMetaData(DEFAULT_TENANT_META_DATA);
         }
     }
 
@@ -522,6 +540,27 @@ const Login: React.FC<LoginProps>= ({
                     }
                     {userAuthenticationState.authenticationState === AuthenticationState.EnterEmail &&
                         <React.Fragment>
+                            {authorizationScopeApprovalData &&
+                                <Grid2 container size={12} spacing={1}>
+                                    <Typography component="div" sx={{width: "100%"}}>
+                                        <Alert severity="info" sx={{width: "100%", fontSize: "0.95em"}}>
+                                            <Grid2 marginBottom={"8px"} size={{xs: 12}}>
+                                                <span style={{fontWeight: "bold"}}>{authorizationScopeApprovalData.clientName}</span>
+                                                <span> wants your permission to access the following:</span>
+                                            </Grid2>
+                                            <Grid2 size={{xs: 12}}>
+                                                <ul style={{ paddingLeft: "32px", marginBottom: "8px" }}>
+                                                    {authorizationScopeApprovalData.requestedScope.map(
+                                                        (scope: Scope) => (
+                                                            <li key={scope.scopeId}>{scope.scopeDescription}</li>
+                                                        )
+                                                    )}
+                                                </ul>
+                                            </Grid2>
+                                        </Alert>
+                                    </Typography>
+                                </Grid2>
+                            }
                             <Grid2 size={{ xs: 12 }}>
                                 <div style={{ marginBottom: "16px", fontWeight: "bold", fontSize: "1.2em" }}>Sign In</div>
                                 <TextField

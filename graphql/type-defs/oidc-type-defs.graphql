@@ -53,6 +53,7 @@ type Query {
     getClientScopes(clientId: String!): [Scope!]!
     getAuthorizationGroupScopes(groupId: String!): [Scope!]!
     getUserScopes(userId: String!, tenantId: String!): [Scope!]!
+    getAuthorizationScopeApprovalData(preAuthToken: String!): AuthorizationScopeApprovalData!
 
 
     ## Scope constraints
@@ -598,6 +599,13 @@ type ScopeAccessRuleSchema {
     schemaVersion: Int!
     scopeId: String!
     scopeAccessRuleSchema: String!
+}
+
+type AuthorizationScopeApprovalData {
+    clientId: String!
+    clientName: String!
+    requiresUserApproval: Boolean!
+    requestedScope: [Scope!]!
 }
 
 type AccessRule {

@@ -764,3 +764,18 @@ export const RUNNING_JOBS_QUERY = gql(`
         }
     }
 `);
+
+export const GET_AUTHORIZATION_SCOPE_APPROVAL_DATA_QUERY = gql(`
+    query getAuthorizationScopeApprovalData($preAuthToken: String!) {
+        getAuthorizationScopeApprovalData(preAuthToken: $preAuthToken) {
+            clientId
+            clientName
+            requiresUserApproval
+            requestedScope {
+                scopeId
+                scopeName
+                scopeDescription
+            }
+        }
+    }
+`);

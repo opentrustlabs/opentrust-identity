@@ -185,7 +185,7 @@ class JwtServiceUtils {
             
             const arrProfileScopes: Array<ProfileScope> = [];
             if(client.clientType === CLIENT_TYPE_USER_DELEGATED_PERMISSIONS || client.clientType === CLIENT_TYPE_DEVICE){
-                const arrScopes = includeScope ? await this.getDelegatedScope(user.userId, client.clientId, principal.tenant_id) : [];
+                const arrScopes = includeScope ? await this.getDelegatedScope(user, client, principal.tenant_id) : [];
                 arrScopes.forEach(
                     (s: Scope) => {
                         const profileScope: ProfileScope = {
@@ -828,21 +828,33 @@ class JwtServiceUtils {
         return Promise.resolve(cachedSigningKey);
     }
 
-    protected async getDelegatedScope(userId: string, clientId: string, tenantId: string): Promise<Array<Scope>>{
-        const arrRefreshData: Array<RefreshData> = await authDao.getRefreshDataByUserId(userId);
+    protected async getDelegatedScope(user: User, client: Client, tenantId: string): Promise<Array<Scope>>{
+        const arrRefreshData: Array<RefreshData> = await authDao.getRefreshDataByUserId(user.userId);
         const refreshData: RefreshData | undefined = arrRefreshData.find(
-            (d: RefreshData) => d.userId === userId && d.clientId === clientId && d.tenantId === tenantId
+            (d: RefreshData) => d.userId === user.userId && d.clientId === client.clientId && d.tenantId === tenantId
         );
-        if(!refreshData){
-            return [];
-        }
-        const arrScopeNames = refreshData.scope.split(",");
+        
         const arrScope: Array<Scope> = [];
-        for(let i = 0; i < arrScopeNames.length; i++){
-            const scope: Scope | null = await scopeDao.getScopeByScopeName(arrScopeNames[i]);
-            if(scope){
-                arrScope.push(scope);
+        if(refreshData){
+            const arrScopeNames = refreshData.scope.split(",");            
+            for(let i = 0; i < arrScopeNames.length; i++){
+                const scope: Scope | null = await scopeDao.getScopeByScopeName(arrScopeNames[i]);
+                if(scope){
+                    arrScope.push(scope);
+                }
             }
+        }
+        else{
+            // If no refresh data is found, then this is a client which does not allow refresh tokens, so
+            // take the client's delegated scope values.
+            if(client.clientType === CLIENT_TYPE_USER_DELEGATED_PERMISSIONS || client.clientType === CLIENT_TYPE_DEVICE){
+                const scopeRel = await scopeDao.getClientScopeRels(client.clientId);
+                const ids = scopeRel.map( (rel: ClientScopeRel) => rel.scopeId);
+                const scopes: Array<Scope> = await scopeDao.getScope(undefined, ids);
+                scopes.forEach(
+                    (s: Scope) => arrScope.push(s)
+                )
+            }            
         }
         return arrScope;
     }

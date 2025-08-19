@@ -1,11 +1,11 @@
-import { Client, ClientScopeRel, ErrorDetail, ObjectSearchResultItem, RelSearchResultItem, SearchResultType, Tenant } from "@/graphql/generated/graphql-types";
+import { AuthorizationScopeApprovalData, Client, ClientScopeRel, ErrorDetail, ObjectSearchResultItem, PreAuthenticationState, RelSearchResultItem, SearchResultType, Tenant } from "@/graphql/generated/graphql-types";
 import { OIDCContext } from "@/graphql/graphql-context";
 import ClientDao from "@/lib/dao/client-dao";
 import { generateRandomToken } from "@/utils/dao-utils";
 import TenantDao from "@/lib/dao/tenant-dao";
 import { GraphQLError } from "graphql/error/GraphQLError";
 import { randomUUID } from 'crypto'; 
-import { CHANGE_EVENT_CLASS_CLIENT, CHANGE_EVENT_CLASS_CLIENT_REDIRECT_URI, CHANGE_EVENT_TYPE_CREATE, CHANGE_EVENT_TYPE_CREATE_REL, CHANGE_EVENT_TYPE_REMOVE_REL, CHANGE_EVENT_TYPE_UPDATE, CLIENT_CREATE_SCOPE, CLIENT_READ_SCOPE, CLIENT_TYPE_SERVICE_ACCOUNT, CLIENT_TYPES, CLIENT_TYPES_DISPLAY, CLIENT_UPDATE_SCOPE, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_READ_ALL_SCOPE } from "@/utils/consts";
+import { CHANGE_EVENT_CLASS_CLIENT, CHANGE_EVENT_CLASS_CLIENT_REDIRECT_URI, CHANGE_EVENT_TYPE_CREATE, CHANGE_EVENT_TYPE_CREATE_REL, CHANGE_EVENT_TYPE_REMOVE_REL, CHANGE_EVENT_TYPE_UPDATE, CLIENT_CREATE_SCOPE, CLIENT_READ_SCOPE, CLIENT_TYPE_DEVICE, CLIENT_TYPE_IDENTITY, CLIENT_TYPE_SERVICE_ACCOUNT, CLIENT_TYPE_USER_DELEGATED_PERMISSIONS, CLIENT_TYPES, CLIENT_TYPES_DISPLAY, CLIENT_UPDATE_SCOPE, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_READ_ALL_SCOPE } from "@/utils/consts";
 import { getOpenSearchClient } from "@/lib/data-sources/search";
 import { DaoFactory } from "../data-sources/dao-factory";
 import Kms from "../kms/kms";
@@ -14,6 +14,7 @@ import ScopeDao from "../dao/scope-dao";
 import { isValidRedirectUri } from "@/utils/client-utils";
 import { ERROR_CODES } from "../models/error";
 import ChangeEventDao from "../dao/change-event-dao";
+import AuthDao from "../dao/auth-dao";
 
 const clientDao: ClientDao = DaoFactory.getInstance().getClientDao();
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
@@ -21,6 +22,7 @@ const searchClient = getOpenSearchClient();
 const kms: Kms = DaoFactory.getInstance().getKms();
 const scopeDao: ScopeDao = DaoFactory.getInstance().getScopeDao();
 const changeEventDao: ChangeEventDao = DaoFactory.getInstance().getChangeEventDao();
+const authDao: AuthDao = DaoFactory.getInstance().getAuthDao();
 
 class ClientService {
 
@@ -295,6 +297,37 @@ class ClientService {
             data: JSON.stringify({clientId, uri})
         });
         return clientDao.removeRedirectURI(clientId, uri);
+    }
+
+    public async getAuthorizationScopeApprovalData(preAuthToken: string): Promise<AuthorizationScopeApprovalData>{
+        console.log("checkpoint 1")
+        const approvalData: AuthorizationScopeApprovalData = {
+            clientId: "",
+            clientName: "",
+            requestedScope: [],
+            requiresUserApproval: false
+        };
+        const preAuthenticationState: PreAuthenticationState | null = await authDao.getPreAuthenticationState(preAuthToken);
+        console.log("checkpoint 2")
+        if(preAuthenticationState === null){
+            console.log("checkpoint 3")
+            return approvalData;
+        }
+        console.log("checkpoint 4")
+        const client: Client | null = await clientDao.getClientById(preAuthenticationState.clientId);
+        if(client === null){
+            console.log("checkpoint 5")
+            return approvalData;
+        }
+        console.log("checkpoint 6")
+        const clientScopes: Array<ClientScopeRel> = await scopeDao.getClientScopeRels(client.clientId);
+        const ids: Array<string> = clientScopes.map( (rel: ClientScopeRel) => rel.scopeId);
+        const scopes = await scopeDao.getScope(undefined, ids);
+        approvalData.clientId = client.clientId;
+        approvalData.clientName = client.clientName;
+        approvalData.requestedScope = scopes;
+        approvalData.requiresUserApproval = client.clientType === CLIENT_TYPE_DEVICE || client.clientType === CLIENT_TYPE_USER_DELEGATED_PERMISSIONS
+        return approvalData;
     }
     
 }
