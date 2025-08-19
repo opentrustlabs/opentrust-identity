@@ -166,10 +166,8 @@ const PasswordRulesConfiguration: React.FC<PasswordRulesConfigurationProps> = ({
                             onChange={(evt) => { passwordConfigInput.passwordHashingAlgorithm = evt.target.value; setPasswordConfigInput({ ...passwordConfigInput }); setMarkDirty(true); }}
                         >
                             {PASSWORD_HASHING_ALGORITHMS.map(
-                                (algorithm: string) => (
-                                    <React.Fragment key={algorithm}>
-                                        <MenuItem value={algorithm}>{PASSWORD_HASHING_ALGORITHMS_DISPLAY.get(algorithm)}</MenuItem>
-                                    </React.Fragment>
+                                (algorithm: string) => (                                    
+                                    <MenuItem value={algorithm} key={algorithm}>{PASSWORD_HASHING_ALGORITHMS_DISPLAY.get(algorithm)}</MenuItem>                                    
                                 )
                             )}
                         </Select>

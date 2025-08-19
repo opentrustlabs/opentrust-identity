@@ -37,8 +37,8 @@ class FederatedOIDCProviderService {
                     }
                     return args;
                 },
-                performOperation: async function (_, ...args): Promise<Array<FederatedOidcProvider>> {
-                    const arr = await federatedOIDCProviderDao.getFederatedOidcProviders(...args);
+                performOperation: async function (_, ...args): Promise<Array<FederatedOidcProvider>> {                    
+                    const arr = await federatedOIDCProviderDao.getFederatedOidcProviders(...args);                    
                     return arr;
                 },
                 postProcess: async function(_, result) {

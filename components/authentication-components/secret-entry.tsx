@@ -24,11 +24,6 @@ const SecretEntry: React.FC = () => {
 
     // CONTEXT VARIABLES
     const c: ResponsiveBreakpoints = useContext(ResponsiveContext);
-    // const tenantBean: TenantMetaDataBean  = useContext(TenantContext);    
-    // const titleSetter = useContext(PageTitleContext);
-    // titleSetter.setPageTitle("Register");
-    // const authSessionProps: AuthSessionProps = useAuthSessionContext();
-    // const authContextProps: AuthContextProps = useContext(AuthContext);
 
     // STATE VARIABLES
     const [secretValue, setSecretValue] = React.useState<string>("");

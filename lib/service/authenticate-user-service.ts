@@ -513,7 +513,9 @@ class AuthenticateUserService extends IdentityService {
                     expiresAtMs: expiresAt,
                     tenantId: tenantId,
                     userId: userId,
-                    deviceCodeId: deviceCodeId
+                    deviceCodeId: deviceCodeId,
+                    preAuthToken: preAuthToken,
+                    returnToUri: ""
                 }
                 arrUserAuthenticationStates.push(uas);
             }
@@ -1589,6 +1591,7 @@ class AuthenticateUserService extends IdentityService {
                 await authDao.updateAuthorizationDeviceCodeData(deviceCodeData);
             }
         }
+        
         if(userAuthenticationState.authenticationState === AuthenticationState.RedirectBackToApplication){
             try {
                 const authorizationCode: AuthorizationReturnUri = await this.generateAuthorizationCode(userAuthenticationState.userId, userAuthenticationState.preAuthToken || "");

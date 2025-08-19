@@ -85,8 +85,7 @@ class DBFederatedOIDCProviderDao extends FederatedOIDCProviderDao {
             whereClause.federatedOIDCProviderId = federatedOIDCProviderId;
         }
         const a: Array<FederatedOIDCProviderTenantRelEntity> = await sequelize.models.federatedOidcProviderTenantRel.findAll({
-            where: whereClause,
-            raw: true
+            where: whereClause
         });
         return a.map((entity: FederatedOIDCProviderTenantRelEntity) => entity.dataValues);        
     }

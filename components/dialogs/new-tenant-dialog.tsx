@@ -37,7 +37,9 @@ const NewTenantDialog: React.FC<NewTenantDialogProps> = ({
         tenantId: "",
         tenantName: "",
         tenantType: "",
-        verifyEmailOnSelfRegistration: false
+        verifyEmailOnSelfRegistration: false,
+        registrationRequireCaptcha: false,
+        registrationRequireTermsAndConditions: false
     }
 
     // HOOKS

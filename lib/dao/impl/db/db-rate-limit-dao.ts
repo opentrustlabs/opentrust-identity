@@ -22,8 +22,7 @@ class DBRateLimitDao extends RateLimitDao {
                 },
                 order: [
                     ["servicegroupname", "ASC"]
-                ], 
-                raw: true                
+                ]            
             });
             return arr.map((entity: RateLimitServiceGroupEntity) => entity.dataValues);
         }
@@ -31,8 +30,7 @@ class DBRateLimitDao extends RateLimitDao {
             const arr: Array<RateLimitServiceGroupEntity> = await sequelize.models.rateLimitServiceGroup.findAll({
                 order: [
                     ["servicegroupname", "ASC"]
-                ],
-                raw: true
+                ]
             });
             return arr.map((entity: RateLimitServiceGroupEntity) => entity.dataValues);
         }
@@ -40,7 +38,7 @@ class DBRateLimitDao extends RateLimitDao {
 
     public async getRateLimitServiceGroupById(serviceGroupId: string): Promise<RateLimitServiceGroup | null> {
         const sequelize: Sequelize = await DBDriver.getConnection();
-        const r: RateLimitServiceGroupEntity | null = await sequelize.models.rateLimitServiceGroup.findByPk(serviceGroupId, {raw: true});
+        const r: RateLimitServiceGroupEntity | null = await sequelize.models.rateLimitServiceGroup.findByPk(serviceGroupId);
         return r ? Promise.resolve(r.dataValues as RateLimitServiceGroup) : Promise.resolve(null);
     }
 
@@ -62,9 +60,7 @@ class DBRateLimitDao extends RateLimitDao {
             where = `WHERE ${whereClauses.join(" AND ")}`
         }
 
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const [resultList, _] = await sequelize.query(
+        const [resultList] = await sequelize.query(
             "select tenant_rate_limit_rel.*, tenant.tenantname, rate_limit_service_group.servicegroupname " +
             "    FROM tenant_rate_limit_rel " + 
             "    INNER JOIN tenant ON tenant_rate_limit_rel.tenantid = tenant.tenantid " +

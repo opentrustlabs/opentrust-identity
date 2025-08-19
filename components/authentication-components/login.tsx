@@ -4,7 +4,7 @@ import React, { useContext, useEffect, useState } from "react";
 import { Backdrop, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, Divider, Grid2, Paper, Stack, TextField, Typography } from "@mui/material";
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { DEFAULT_TENANT_META_DATA, FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL, PASSWORD_MINIMUM_LENGTH, QUERY_PARAM_PREAUTHN_TOKEN, QUERY_PARAM_REDIRECT_URI, QUERY_PARAM_RETURN_URI, QUERY_PARAM_TENANT_ID, SOCIAL_OIDC_PROVIDER_APPLE, SOCIAL_OIDC_PROVIDER_FACEBOOK, SOCIAL_OIDC_PROVIDER_GOOGLE, SOCIAL_OIDC_PROVIDER_LINKEDIN, SOCIAL_OIDC_PROVIDER_SALESFORCE } from "@/utils/consts";
+import { DEFAULT_TENANT_META_DATA, PASSWORD_MINIMUM_LENGTH, QUERY_PARAM_ERROR, QUERY_PARAM_ERROR_DESCRIPTION, QUERY_PARAM_PREAUTHN_TOKEN, QUERY_PARAM_REDIRECT_URI, QUERY_PARAM_RETURN_URI, QUERY_PARAM_TENANT_ID, SOCIAL_OIDC_PROVIDER_APPLE, SOCIAL_OIDC_PROVIDER_FACEBOOK, SOCIAL_OIDC_PROVIDER_GOOGLE, SOCIAL_OIDC_PROVIDER_LINKEDIN, SOCIAL_OIDC_PROVIDER_SALESFORCE } from "@/utils/consts";
 import { useMutation, useQuery } from "@apollo/client";
 import { UserAuthenticationStateResponse, TenantSelectorData, AuthenticationState, UserAuthenticationState, TenantPasswordConfig, FederatedOidcProvider } from "@/graphql/generated/graphql-types";
 import Alert from '@mui/material/Alert';
@@ -18,7 +18,6 @@ import { AuthentiationConfigureSecurityKey } from "./configure-security-key";
 import { AuthentiationValidateSecurityKey } from "./validate-security-key";
 import AuthentiationRotatePassword from "./rotate-password";
 import { useSearchParams } from 'next/navigation';
-import { FEDERATED_OIDC_PROVIDERS_QUERY } from "@/graphql/queries/oidc-queries";
 import { ResponsiveBreakpoints, ResponsiveContext } from "../contexts/responsive-context";
 import Skeleton from '@mui/material/Skeleton';
 import ValidatePasswordResetToken from "./validate-password-reset-token";
@@ -69,8 +68,9 @@ const Login: React.FC<LoginProps>= ({
     const tenantId: string | null = params?.get(QUERY_PARAM_TENANT_ID) || null;
     const redirectUri = params?.get(QUERY_PARAM_REDIRECT_URI);
     const returnToUri = params?.get(QUERY_PARAM_RETURN_URI);
-
-
+    const authorizationError = params?.get(QUERY_PARAM_ERROR);
+    const authorizationErrorDescription = params?.get(QUERY_PARAM_ERROR_DESCRIPTION);
+  
     // PAGE STATE MANAGEMENT VARIABLES
     const authnState: UserAuthenticationState = initialUserAuthenticationState ? initialUserAuthenticationState : {
         authenticationSessionToken: "",
@@ -80,10 +80,11 @@ const Login: React.FC<LoginProps>= ({
         expiresAtMs: 0,
         tenantId: "",
         userId: "",
-        preAuthToken: "",
-        returnToUri: ""
+        preAuthToken: preAuthToken,
+        returnToUri: returnToUri
     };
 
+    
     const [username, setUsername] = useState<string | null>("");
     const [password, setPassword] = useState<string | null>("");
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -93,10 +94,10 @@ const Login: React.FC<LoginProps>= ({
     const [selectedTenant, setSelectedTenant] = useState<string | null>(tenantId);
     const [userAuthenticationState, setUserAuthenticationState] = React.useState<UserAuthenticationState>(authnState);
     const [passwordConfig, setPasswordConfig] = React.useState<TenantPasswordConfig | null>(null);
-    const [socialOIDCProviders, setSocialOIDCProviders] = React.useState<Array<FederatedOidcProvider>>([]);
     const [isPasswordResetFlow, setIsPasswordResetFlow] = React.useState<boolean>(false);
     const [showRecoveryEmailDialog, setShowRecoveryEmailDialog] = React.useState<boolean>(false);
     const [useRecoveryEmail, setUseRecoveryEmail] = React.useState<boolean>(false);
+    const [isLoginDisabled] = React.useState<boolean>( !(authorizationError === null || authorizationError === "") )
     
     // HOOKS FROM NEXTJS OR MUI
     const router = useRouter();
@@ -104,25 +105,6 @@ const Login: React.FC<LoginProps>= ({
     const maxWidth = breakPoints.isSmall ? "90vw" : breakPoints.isMedium ? "80vw" : "650px";
 
     // GRAPHQL FUNCTIONS
-    const { } = useQuery(FEDERATED_OIDC_PROVIDERS_QUERY, {
-        variables: {
-            tenantId: tenantId
-        },
-        ssr: false,
-        skip: tenantId === null || tenantBean.getTenantMetaData().tenant.allowSocialLogin !== true,
-        onCompleted(data) {
-            if (data && data.getFederatedOIDCProviders) {
-                let arr: Array<FederatedOidcProvider> = data.getFederatedOIDCProviders;
-                arr = arr.filter(
-                    (provider: FederatedOidcProvider) => provider.federatedOIDCProviderType === FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL
-                );
-                if (arr.length > 0) {
-                    setSocialOIDCProviders(arr);
-                }
-            }
-        }
-    });
-
     const [portalLoginEmailHandler] = useMutation(AUTHENTICATE_USERNAME_INPUT_MUTATION, {
         onCompleted(data) {
             const authnStateResponse: UserAuthenticationStateResponse = data.authenticateHandleUserNameInput;
@@ -224,12 +206,10 @@ const Login: React.FC<LoginProps>= ({
                     if (authnStateResponse.userAuthenticationState.authenticationState === AuthenticationState.RedirectToIamPortal) {
                         if (authnStateResponse.accessToken) {
                             authSessionProps.setAuthSessionData({ accessToken: authnStateResponse.accessToken, expiresAtMs: authnStateResponse.tokenExpiresAtMs || 0 });
+                            authContextProps.forceProfileRefetch();
                         }
                     }
-                    router.push(authnStateResponse.uri);
-                    if(authnStateResponse.userAuthenticationState.authenticationState === AuthenticationState.RedirectToIamPortal){
-                        authContextProps.forceProfileRefetch();
-                    }
+                    window.location.href = authnStateResponse.uri;                    
                 }
             }
             else {
@@ -256,7 +236,7 @@ const Login: React.FC<LoginProps>= ({
                 }
                 else{
                     if(selectedTenant === null && authnStateResponse.userAuthenticationState.tenantId){
-                        router.push(`${window.location.href}&${QUERY_PARAM_TENANT_ID}=${authnStateResponse.userAuthenticationState.tenantId}`);
+                        setSelectedTenant(authnStateResponse.userAuthenticationState.tenantId);                        
                     }
                 }
             }
@@ -290,7 +270,7 @@ const Login: React.FC<LoginProps>= ({
     }
 
 
-    const handleCancelAuthentication = (userAuthenticationState: UserAuthenticationState) => {        
+    const handleCancelAuthentication = (userAuthenticationState: UserAuthenticationState) => {
         cancelAuthentication({
             variables: {
                 userId: userAuthenticationState.userId,
@@ -298,6 +278,8 @@ const Login: React.FC<LoginProps>= ({
                 preAuthToken: userAuthenticationState.preAuthToken
             }
         });
+
+        
         setUsername("");
         setPassword("");
         setErrorMessage(null);
@@ -306,6 +288,10 @@ const Login: React.FC<LoginProps>= ({
         setUserAuthenticationState({...authnState});
         authSessionProps.deleteAuthSessionData();
         tenantBean.setTenantMetaData(DEFAULT_TENANT_META_DATA);
+
+        if(errorMessage && redirectUri){
+            window.location.href = `${redirectUri}?`
+        }
     }
 
     const closeTenantSelector = () => {
@@ -329,19 +315,19 @@ const Login: React.FC<LoginProps>= ({
 
     const getIconForSocialProvider = (provider: FederatedOidcProvider) => {
         if (provider.socialLoginProvider === SOCIAL_OIDC_PROVIDER_GOOGLE) {
-            return <img src="/google.png" width={"25px"} />
+            return <img alt="google logo" src="/google.png" width={"25px"} />
         }
         else if (provider.socialLoginProvider === SOCIAL_OIDC_PROVIDER_FACEBOOK) {
-            return <img src="/facebook.png" width={"25px"} />
+            return <img alt="facebook logo" src="/facebook.png" width={"25px"} />
         }
         else if (provider.socialLoginProvider === SOCIAL_OIDC_PROVIDER_LINKEDIN) {
-            return <img src="/linkedin.png" width={"25px"} />
+            return <img alt="linkedin logo" src="/linkedin.png" width={"25px"} />
         }
         else if (provider.socialLoginProvider === SOCIAL_OIDC_PROVIDER_APPLE) {
-            return <img src="/apple.png" width={"25px"} />
+            return <img alt="apple logo" src="/apple.png" width={"25px"} />
         }
         else if (provider.socialLoginProvider === SOCIAL_OIDC_PROVIDER_SALESFORCE) {
-            return <img src="/salesforce.png" width={"25px"} />
+            return <img alt="salesforce logo" src="/salesforce.png" width={"25px"} />
         }
         else {
             return <Skeleton height={"25px"} width={"25px"} />
@@ -486,6 +472,7 @@ const Login: React.FC<LoginProps>= ({
 
                     </Dialog>
                 }
+                
                 <Grid2 spacing={3} container size={{ xs: 12 }}>
                     {errorMessage !== null &&
                         <Grid2 size={{ xs: 12 }} textAlign={"center"}>
@@ -496,6 +483,23 @@ const Login: React.FC<LoginProps>= ({
                                 sx={{ width: "100%" }}
                             >
                                 <Alert onClose={() => setErrorMessage(null)} sx={{ width: "100%" }} severity="error">{errorMessage}</Alert>
+
+                            </Stack>
+                        </Grid2>
+                    }
+                    {authorizationError &&
+                        <Grid2 size={{ xs: 12 }} textAlign={"center"}>
+                            <Stack
+                                direction={"row"}
+                                justifyItems={"center"}
+                                alignItems={"center"}
+                                sx={{ width: "100%" }}
+                            >
+                                <Alert onClose={() => setErrorMessage(null)} sx={{ width: "100%", fontSize: "0.85em", lineHeight: "1.6em" }} severity="error">
+                                    <span>There was an error with the configuration of the client or referring application:</span>
+                                    <span style={{fontWeight: "bold"}}> {authorizationErrorDescription}. </span>
+                                    <span>Login will not be permitted until the issues are resolved. Please try again later or contact support if the problem persists.</span>
+                                </Alert>
 
                             </Stack>
                         </Grid2>
@@ -530,7 +534,7 @@ const Login: React.FC<LoginProps>= ({
                                     onChange={(evt) => setUsername(evt.target.value)}
                                     onKeyDown={handleEnterButtonPress}
                                     value={username}
-                                    
+                                    disabled={isLoginDisabled}
                                 >
                                 </TextField>
                             </Grid2>
@@ -570,13 +574,13 @@ const Login: React.FC<LoginProps>= ({
                                     </Stack>
                                 </Grid2>
                             }
-                            {tenantBean.getTenantMetaData().tenant.allowSocialLogin && socialOIDCProviders.length > 0 &&
+                            {tenantBean.getTenantMetaData().tenant.allowSocialLogin && tenantBean.getTenantMetaData().socialOIDCProviders.length > 0 &&
                                 <React.Fragment>
                                     <Grid2 size={{ xs: 12 }}>
                                         <Divider>OR</Divider>
                                     </Grid2>
                                     <Typography width={"100%"} component="div">
-                                        {socialOIDCProviders.map(
+                                        {tenantBean.getTenantMetaData().socialOIDCProviders.map(
                                             (provider: FederatedOidcProvider) => (
                                                 <Grid2
                                                     className="social-media-login-container"

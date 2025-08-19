@@ -369,6 +369,7 @@ class DeletionService {
             term: { childid: id }
         });
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const searchBody: any = {
             query: query
         }

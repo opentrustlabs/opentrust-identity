@@ -1,5 +1,5 @@
 "use client";
-import { PortalUserProfile, TenantMetaData } from "@/graphql/generated/graphql-types";
+import { PortalUserProfile } from "@/graphql/generated/graphql-types";
 import { Avatar, Container, Divider, IconButton, ListItemIcon, MenuItem, Stack, Tooltip, Menu } from "@mui/material";
 import React, { useContext } from "react";
 import { ResponsiveBreakpoints, ResponsiveContext } from "../contexts/responsive-context";
@@ -7,16 +7,17 @@ import SessionTimerCountdown from "./session-timer-countdown";
 import Logout from '@mui/icons-material/Logout';
 import { AuthSessionProps, useAuthSessionContext } from "../contexts/auth-session-context";
 import { useRouter } from "next/navigation";
-import { QUERY_PARAM_AUTHENTICATE_TO_PORTAL } from "@/utils/consts";
+import { DEFAULT_TENANT_META_DATA, QUERY_PARAM_AUTHENTICATE_TO_PORTAL } from "@/utils/consts";
 import Link from "next/link";
+import { TenantMetaDataBean } from "../contexts/tenant-context";
 
 export interface ManagementHeaderProps {
-    tenantMetaData: TenantMetaData,
+    tenantBean: TenantMetaDataBean,
     profile: PortalUserProfile | null
 }
 
 const ManagementHeader: React.FC<ManagementHeaderProps> = ({
-    tenantMetaData,
+    tenantBean,
     profile
 }) => {
 
@@ -63,10 +64,10 @@ const ManagementHeader: React.FC<ManagementHeaderProps> = ({
                     justifyItems={"center"}
                     alignItems={"center"}
                 >
-                    {tenantMetaData.tenantLookAndFeel?.adminheadertext &&
-                        <div style={{ verticalAlign: "center", fontWeight: "bold", marginLeft: "8px" }}>{tenantMetaData.tenantLookAndFeel?.adminheadertext}</div>
+                    {tenantBean.getTenantMetaData().tenantLookAndFeel?.adminheadertext &&
+                        <div style={{ verticalAlign: "center", fontWeight: "bold", marginLeft: "8px" }}>{tenantBean.getTenantMetaData().tenantLookAndFeel?.adminheadertext}</div>
                     }
-                    {!tenantMetaData.tenantLookAndFeel?.adminheadertext &&
+                    {!tenantBean.getTenantMetaData().tenantLookAndFeel?.adminheadertext &&
                         <div style={{ verticalAlign: "center", fontWeight: "bold", padding: "8px" }}>OpenTrust Identity</div>
                     }
                 </Stack>
@@ -129,7 +130,7 @@ const ManagementHeader: React.FC<ManagementHeaderProps> = ({
                     >
                         <MenuItem onClick={handleClose}>
                             <Avatar /> 
-                            <Link className="undecorated" href={`/${tenantMetaData.tenant.tenantId}/users/${profile?.userId}`}>Profile</Link>
+                            <Link className="undecorated" href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/users/${profile?.userId}`}>Profile</Link>
                         </MenuItem>
 
                         <Divider></Divider>
@@ -137,6 +138,7 @@ const ManagementHeader: React.FC<ManagementHeaderProps> = ({
                         <MenuItem onClick={() => {
                             handleClose();
                             authSessionProps.deleteAuthSessionData();
+                            tenantBean.setTenantMetaData(DEFAULT_TENANT_META_DATA);
                             router.push(`/authorize/login?${QUERY_PARAM_AUTHENTICATE_TO_PORTAL}=true`);                            
                         }}>
                             <ListItemIcon>
