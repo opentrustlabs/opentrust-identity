@@ -546,7 +546,7 @@ const Login: React.FC<LoginProps>= ({
                                         <Alert severity="info" sx={{width: "100%", fontSize: "0.95em"}}>
                                             <Grid2 marginBottom={"8px"} size={{xs: 12}}>
                                                 <span style={{fontWeight: "bold"}}>{authorizationScopeApprovalData.clientName}</span>
-                                                <span> wants your permission to access the following:</span>
+                                                <span> wants your permission to access the following features:</span>
                                             </Grid2>
                                             <Grid2 size={{xs: 12}}>
                                                 <ul style={{ paddingLeft: "32px", marginBottom: "8px" }}>

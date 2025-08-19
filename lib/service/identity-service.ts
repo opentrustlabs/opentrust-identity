@@ -77,10 +77,7 @@ class IdentityService {
                 performOperation: async function() {
                     return identityDao.getUserBy("id", userId);
                 },
-                additionalConstraintCheck: async function(oidcContext: OIDCContext) {
-                    if(userId === oidcContext.portalUserProfile?.userId){
-                        return {isAuthorized: true, errorDetail: ERROR_CODES.NULL_ERROR}
-                    }
+                additionalConstraintCheck: async function(oidcContext: OIDCContext) {                    
                     const userTenantRels: Array<UserTenantRel> = await identityDao.getUserTenantRelsByUserId(userId);
                     const rel = userTenantRels.find(
                         (r: UserTenantRel) => r.tenantId === oidcContext.portalUserProfile?.managementAccessTenantId
