@@ -124,7 +124,7 @@ const RateLimitTenantRelConfiguration: React.FC<RateLimitTenantRelConfigurationP
 
 
     // HANDLER FUNCTIONS
-    // @typescript-eslint/no-unused-vars
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const handlePageChange = (evt: any, page: number) => {
         setPage(page + 1);
     }

@@ -142,7 +142,7 @@ class DBAuthorizationGroupDao extends AuthorizationGroupDao {
             }
         );
 
-        // @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const filter: any = {};
         filter.groupId = { [Op.in]: inValues};
         const authzGroups: Array<AuthorizationGroupEntity> = await sequelize.models.authorizationGroup.findAll(

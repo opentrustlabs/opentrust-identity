@@ -62,8 +62,8 @@ class DBRateLimitDao extends RateLimitDao {
             where = `WHERE ${whereClauses.join(" AND ")}`
         }
 
-        // @typescript-eslint/no-unused-vars
-        // @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const [resultList, _] = await sequelize.query(
             "select tenant_rate_limit_rel.*, tenant.tenantname, rate_limit_service_group.servicegroupname " +
             "    FROM tenant_rate_limit_rel " + 

@@ -243,7 +243,7 @@ class FederatedOIDCProviderService {
                 index: SEARCH_INDEX_REL_SEARCH
             });
         }
-        // @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         catch(err: any){
             logWithDetails("error", `Error removing rel search record for tenant and federated OIDC provider. ${err.message}.`, {...err, tenantId, federatedOidcProviderId});
         }

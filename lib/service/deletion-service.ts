@@ -356,6 +356,7 @@ class DeletionService {
      * @param id 
      */
     protected async deleteRelSearchRecords(id: string): Promise<void> {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const query: any = {
             bool: {
                 should: []

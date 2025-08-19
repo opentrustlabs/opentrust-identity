@@ -9,7 +9,7 @@ class DBSecretShareDao extends SecretShareDao {
 
     public async getSecretShareBy(value: string, type: SecretShareLookupType): Promise<SecretShare | null> {
         const sequelize: Sequelize = await DBDriver.getConnection();
-        // @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const whereParams: any = type === "id" ? {sharedSecretId: value} : {otp: value};
         const entity: SecretShareEntity | null = await sequelize.models.secretShare.findOne({
             where: whereParams

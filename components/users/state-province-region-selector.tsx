@@ -71,8 +71,7 @@ const StateProvinceRegionSelector: React.FC<StateProvinceRegionSelectorProps> = 
                     )
                 }                        
                 value={data && data.getStateProvinceRegions ? getInitValue(data.getStateProvinceRegions) : stateProvinceRegion}
-                // @typescript-eslint/no-unused-vars
-                // @typescript-eslint/no-explicit-any
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 onChange={ (_, value: any) => {      
                     setStateProvinceRegion(value || {id: "", label: ""});
                     if(value){

@@ -7,7 +7,7 @@ import { GraphQLError } from "graphql";
 import { generateHash, generateRandomToken } from "@/utils/dao-utils";
 import { OIDCContext } from "@/graphql/graphql-context";
 import { authorizeByScopeAndTenant } from "@/utils/authz-utils";
-import { QUERY_PARAM_SECRET_ENTRY_OTP, SECRET_ENTRY_DELEGATE_SCOPE } from "@/utils/consts";
+import { SECRET_ENTRY_DELEGATE_SCOPE } from "@/utils/consts";
 import Kms from "../kms/kms";
 import { ERROR_CODES } from "../models/error";
 import JwtServiceUtils from "./jwt-service-utils";
@@ -20,9 +20,9 @@ const kms: Kms = DaoFactory.getInstance().getKms();
 const jwtServiceUtils: JwtServiceUtils = new JwtServiceUtils();
 const oidcServiceUtils: OIDCServiceUtils = new OIDCServiceUtils();
 
-const {
-     AUTH_DOMAIN
-} = process.env;
+// const {
+//      AUTH_DOMAIN
+// } = process.env;
 
 class SecretShareService {
 

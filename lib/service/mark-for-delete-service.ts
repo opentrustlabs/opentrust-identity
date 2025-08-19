@@ -39,7 +39,7 @@ class MarkForDeleteService {
     }
 
     public async markForDelete(markForDelete: MarkForDelete): Promise<MarkForDelete> {
-        // @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let object: any | null = null;
         let requiredScope: string | null = null;        
 

@@ -61,6 +61,7 @@ class ClientService {
     
 
     public async getClientById(clientId: string): Promise<Client | null> {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const getData = ServiceAuthorizationWrapper<any[], Client | null>(
             {
                 performOperation: async function(): Promise<Client | null> {

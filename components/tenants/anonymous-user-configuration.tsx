@@ -112,9 +112,8 @@ const AnonymousUserConfiguration: React.FC<AnonymousUserConfigurationProps> = ({
                                         }
                                     )
                                 }
-                                value={allowAnonymousUsers ? getDefaultCountryCodeDef(tenantAnonymousUserConfigInput.defaultcountrycode || "") : { id: "", label: "" }}
-                                // @typescript-eslint/no-unused-vars
-                                // @typescript-eslint/no-explicit-any
+                                value={allowAnonymousUsers ? getDefaultCountryCodeDef(tenantAnonymousUserConfigInput.defaultcountrycode || "") : { id: "", label: "" }}                                
+                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                 onChange={(_, value: any) => {
                                     tenantAnonymousUserConfigInput.defaultcountrycode = value ? value.id : "";
                                     setTenantAnonymousUserConfigInput({ ...tenantAnonymousUserConfigInput });
@@ -137,9 +136,8 @@ const AnonymousUserConfiguration: React.FC<AnonymousUserConfigurationProps> = ({
                                         }
                                     )
                                 }
-                                value={allowAnonymousUsers ? getDefaultLanguageCodeDef(tenantAnonymousUserConfigInput.defaultlangugecode || "") : { id: "", label: "" }}
-                                // @typescript-eslint/no-unused-vars
-                                // @typescript-eslint/no-explicit-any
+                                value={allowAnonymousUsers ? getDefaultLanguageCodeDef(tenantAnonymousUserConfigInput.defaultlangugecode || "") : { id: "", label: "" }}                                
+                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                 onChange={(_, value: any) => {
                                     tenantAnonymousUserConfigInput.defaultlangugecode = value ? value.id : "";
                                     setTenantAnonymousUserConfigInput({ ...tenantAnonymousUserConfigInput });

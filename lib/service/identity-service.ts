@@ -819,7 +819,7 @@ class IdentityService {
                 expectedRPID: MFA_ID
             });
         }
-        // @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         catch(error: any){
             await identityDao.deleteFIDO2Challenge(userId);
             throw new GraphQLError(error.message);
@@ -1130,14 +1130,14 @@ class IdentityService {
         
         if (getResponse.body) {
             const document: ObjectSearchResultItem = getResponse.body._source as ObjectSearchResultItem;
-            document.name = user.nameOrder === NAME_ORDER_WESTERN ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`,
+            document.name = user.nameOrder === NAME_ORDER_WESTERN ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`;
             document.email = user.email;
             document.enabled = user.enabled;
             await searchClient.index({
                 id: user.userId,
                 index: SEARCH_INDEX_OBJECT_SEARCH,
                 body: document
-            })
+            });
         }
         
         // @typescript-eslint/no-explicit-any

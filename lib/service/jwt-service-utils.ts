@@ -630,7 +630,7 @@ class JwtServiceUtils {
                 return Promise.resolve(false);
             }
         }
-        // @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         catch(err: any){
             logWithDetails("error", `Error validating client auth JWT. ${err.message}`, {...err});
             return Promise.resolve(false);
@@ -646,7 +646,7 @@ class JwtServiceUtils {
                 return Promise.resolve(true);
             }
         }
-        // @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         catch(err: any){
             logWithDetails("error", `Error validating client auth JWT. ${err.message}`, {...err});
             return Promise.resolve(false)
@@ -699,7 +699,9 @@ class JwtServiceUtils {
                 return Promise.resolve(p.payload as unknown as JWTPrincipal);
             }
         }
-        catch(error){
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        catch(err: any){
+            logWithDetails("error", `Error validating client auth JWT. ${err.message}`, {...err});
             return Promise.resolve(null);
         }        
     }
@@ -777,9 +779,9 @@ class JwtServiceUtils {
                 (key1, key2) => key2.expiresAtMs - key1.expiresAtMs
             );            
             
-            let cachedArray: Array<CachedSigningKeyData> = [];
+            const cachedArray: Array<CachedSigningKeyData> = [];
             for(let i = 0; i < signingKeys.length; i++){
-                let key: SigningKey = signingKeys[i];
+                const key: SigningKey = signingKeys[i];
                 
                 let passphrase: string | undefined = undefined;
                 if(key.password){
@@ -834,8 +836,8 @@ class JwtServiceUtils {
         if(!refreshData){
             return [];
         }
-        let arrScopeNames = refreshData.scope.split(",");
-        let arrScope: Array<Scope> = [];
+        const arrScopeNames = refreshData.scope.split(",");
+        const arrScope: Array<Scope> = [];
         for(let i = 0; i < arrScopeNames.length; i++){
             const scope: Scope | null = await scopeDao.getScopeByScopeName(arrScopeNames[i]);
             if(scope){

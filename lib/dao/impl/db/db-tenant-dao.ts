@@ -51,7 +51,7 @@ class DBTenantDao extends TenantDao {
     public async getTenants(tenantIds?: Array<string>): Promise<Array<Tenant>> {
         const sequelize: Sequelize = await DBDriver.getConnection();
 
-        // @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const filter: any = {};
         if(tenantIds){
             filter.tenantId = { [Op.in]: tenantIds};
@@ -107,7 +107,7 @@ class DBTenantDao extends TenantDao {
     
     public async getDomainTenantManagementRels(tenantId?: string, domain?: string): Promise<Array<TenantManagementDomainRel>> {
 
-        // @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const queryParams: any = {};
         if(tenantId){
             queryParams.tenantId = tenantId;

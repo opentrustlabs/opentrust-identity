@@ -280,11 +280,10 @@ const PasswordRulesConfiguration: React.FC<PasswordRulesConfigurationProps> = ({
                                         passwordConfigInput.mfaTypesRequired && passwordConfigInput.mfaTypesRequired !== "" ?
                                             passwordConfigInput.mfaTypesRequired.split(",").map(s => { return { id: s, label: MFA_AUTH_TYPE_DISPLAY.get(s) } }) :
                                             []
-                                }
-                                // @typescript-eslint/no-unused-vars
-                                // @typescript-eslint/no-explicit-any
+                                }                                
+                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                 onChange={(_, value: any) => {
-                                    // @typescript-eslint/no-explicit-any
+                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                     const val: any = value.map((s: any) => s.id).join(",");                                    
                                     if (passwordConfigInput.requireMfa) {
                                         passwordConfigInput.mfaTypesRequired = val;

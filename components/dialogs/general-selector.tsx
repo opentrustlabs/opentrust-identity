@@ -10,9 +10,9 @@ import RadioButtonCheckedIcon from '@mui/icons-material/RadioButtonChecked';
 
 export interface GeneralSelectorProps {
     query: DocumentNode,
-    // eslint-disable-next-line @typescript-eslint/no-explicity-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     queryVars: any,
-    // eslint-disable-next-line @typescript-eslint/no-explicity-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     dataMapper: (data: any) => Array<{ id: string, label: string }>,
     onCancel: () => void,
     multiSelect: boolean,

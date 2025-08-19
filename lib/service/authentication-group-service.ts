@@ -85,7 +85,7 @@ class AuthenticationGroupService {
 
     public async getAuthenticationGroupById(authenticationGroupId: string): Promise<AuthenticationGroup | null> {
 
-        // @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const getData = ServiceAuthorizationWrapper<any[], AuthenticationGroup | null>(
             {
                 performOperation: async function(_, authenticationGroupId: string): Promise<AuthenticationGroup | null> {

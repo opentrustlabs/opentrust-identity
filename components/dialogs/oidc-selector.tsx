@@ -61,7 +61,7 @@ const OIDCSelector: React.FC<OIDCSelectorProps> = ({
                     sx={{paddingTop: "8px"}}
                     renderInput={(params) => <TextField {...params} label="Select Provider" />}
                     options={createProviderOptions()}
-                    // @typescript-eslint/no-explicit-any
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     onChange={ (_, value: any) => setSelectedProvider(value.id)}
                 />
             </DialogContent>

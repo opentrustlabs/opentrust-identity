@@ -309,8 +309,8 @@ const AuthenticationGroupsAssignDialog: React.FC<AuthenticationGroupAssignDialog
 
 
     // HANDLER FUNCTIONS
-    // @typescript-eslint/no-unused-vars
-    // @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handlePageChange = async (evt: any, page: number) => {
         setPage(page + 1);     
     }

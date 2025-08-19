@@ -136,7 +136,7 @@ const SearchResultListLayout: React.FC<SearchResultListProps> = ({
         })
     }
 
-    // @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handleFilterTermChange = async (evt: any) => {
         const term = evt.target.value || "";        
         setFilterTerm(term);      

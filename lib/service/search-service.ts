@@ -201,11 +201,9 @@ class SearchService {
             size: ids.length,
             query: query            
         }
-        // Start the timer
-        const start = Date.now();
 
         // Default result list is am empty array
-        let items: Array<ObjectSearchResultItem> = [];
+        const items: Array<ObjectSearchResultItem> = [];
 
         const searchResponse: Search_Response = await client.search({
             index: SEARCH_INDEX_OBJECT_SEARCH,
@@ -231,7 +229,7 @@ class SearchService {
         // tenant in which the user resides.
         
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        let query: any = {
+        const query: any = {
             bool: {
                 must: {},
                 filter: []
@@ -334,7 +332,7 @@ class SearchService {
         const start = Date.now();
 
         // Default result list is am empty array
-        let items: Array<ObjectSearchResultItem> = [];
+        const items: Array<ObjectSearchResultItem> = [];
 
         const searchResponse: Search_Response = await client.search({
             index: SEARCH_INDEX_OBJECT_SEARCH,
@@ -406,10 +404,10 @@ class SearchService {
         const start = Date.now();
 
         // Default result list is am empty array
-        let items: Array<RelSearchResultItem> = [];
+        const items: Array<RelSearchResultItem> = [];
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        let query: any = {
+        const query: any = {
             bool: {
                 must: {},
                 filter: [],
