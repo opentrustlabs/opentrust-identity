@@ -923,19 +923,19 @@ class AuthenticateUserService extends IdentityService {
         user.emailVerified = legacyProfile.emailVerified;
         user.enabled = true;
         user.firstName = legacyProfile.firstName;
-        user.lastName = legacyProfile.lastName,
-        user.locked = false,
-        user.nameOrder = legacyProfile.nameOrder,
-        user.address = legacyProfile.address,
-        user.addressLine1 = legacyProfile.addressLine1,
-        user.city = legacyProfile.city,
-        user.postalCode = legacyProfile.postalCode,
-        user.stateRegionProvince = legacyProfile.stateRegionProvince,
-        user.countryCode = legacyProfile.countryCode,
-        user.middleName = legacyProfile.middleName,
-        user.phoneNumber = legacyProfile.phoneNumber,
-        user.preferredLanguageCode = legacyProfile.preferredLanguageCode,
-        user.federatedOIDCProviderSubjectId = "",
+        user.lastName = legacyProfile.lastName;
+        user.locked = false;
+        user.nameOrder = legacyProfile.nameOrder;
+        user.address = legacyProfile.address;
+        user.addressLine1 = legacyProfile.addressLine1;
+        user.city = legacyProfile.city;
+        user.postalCode = legacyProfile.postalCode;
+        user.stateRegionProvince = legacyProfile.stateRegionProvince;
+        user.countryCode = legacyProfile.countryCode;
+        user.middleName = legacyProfile.middleName;
+        user.phoneNumber = legacyProfile.phoneNumber;
+        user.preferredLanguageCode = legacyProfile.preferredLanguageCode;
+        user.federatedOIDCProviderSubjectId = "";
         user.markForDelete = false;
         
         const tenantPasswordConfig: TenantPasswordConfig = await tenantDao.getTenantPasswordConfig(arrUserAuthenticationStates[index].tenantId) || DEFAULT_TENANT_PASSWORD_CONFIGURATION;
@@ -1145,6 +1145,7 @@ class AuthenticateUserService extends IdentityService {
         try{
             validationResult = await this.validateAuthenticationAttempt(user, arrUserAuthenticationStates[index].tenantId, fido2KeyAuthenticationInput, arrUserAuthenticationStates[index])
         }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         catch(err: any){
             throw new GraphQLError(err.message);            
         }
@@ -1191,6 +1192,7 @@ class AuthenticateUserService extends IdentityService {
             await identityDao.updateUserAuthenticationState(arrUserAuthenticationStates[index]);
             response.userAuthenticationState = arrUserAuthenticationStates[index + 1];
         }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         catch(err: any){
             const e = err as Error;
             logWithDetails("error", `Error configuring TOTP. ${e.message}`, {e});

@@ -18,9 +18,9 @@ import type { NextApiRequest, NextApiResponse } from 'next'
 // const authDao: AuthDao = DaoFactory.getInstance().getAuthDao();
 // const oidcServiceClient: OIDCServiceClient = new OIDCServiceClient();
 
-const {
-    AUTH_DOMAIN
-} = process.env;
+// const {
+//     AUTH_DOMAIN
+// } = process.env;
 
 export default async function handler(
 	req: NextApiRequest,

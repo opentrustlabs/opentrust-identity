@@ -800,7 +800,7 @@ class ScopeService {
                 index: SEARCH_INDEX_REL_SEARCH,
             });         
         }
-        // @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         catch(err: any){
             logWithDetails("error", `Error removing scope from tenant. ${err.message}`, {...err, tenantId, scopeId});
         }

@@ -4,7 +4,7 @@ import { ApolloServerPluginLandingPageLocalDefault, ApolloServerPluginLandingPag
 import { ApolloServerErrorCode } from '@apollo/server/errors';
 import { ErrorDetail, PortalUserProfile, Tenant, typeDefs } from "@/graphql/generated/graphql-types";
 import resolvers from "@/graphql/resolvers/oidc-resolvers";
-import { NextApiRequest, NextApiResponse } from "next";
+import { NextApiRequest } from "next";
 import { ERROR_CODES} from "@/lib/models/error";
 import JwtServiceUtils from "@/lib/service/jwt-service-utils";
 import { OIDCContext } from "@/graphql/graphql-context";

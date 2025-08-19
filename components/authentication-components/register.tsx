@@ -529,7 +529,7 @@ const Register: React.FC = () => {
                                                     )
                                                 }
                                                 value={getDefaultLanguageCodeDef(userInput.preferredLanguageCode || "")}
-                                                //  @typescript-eslint/no-explicit-any
+                                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                 onChange={(_, value: any) => {
                                                     userInput.preferredLanguageCode = value.id;
 
@@ -584,7 +584,7 @@ const Register: React.FC = () => {
                                                     )
                                                 }
                                                 value={getDefaultCountryCodeDef(userInput.countryCode || "")}
-                                                //  @typescript-eslint/no-explicit-any
+                                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                 onChange={(_, value: any) => {
                                                     userInput.countryCode = value.id;
                                                     setUserInput({ ...userInput });

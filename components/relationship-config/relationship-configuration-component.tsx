@@ -75,8 +75,8 @@ const RelationshipConfigurationComponent: React.FC<RelationshipConfigurationComp
     });
 
     // HANDLER FUNCTIONS
-    // @typescript-eslint/no-unused-vars
-    // @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handlePageChange = async (evt: any, newPage: number) => {
         setPage(newPage + 1);
         refetch({
@@ -90,7 +90,7 @@ const RelationshipConfigurationComponent: React.FC<RelationshipConfigurationComp
         });
     }
 
-    // @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handleFilterTermChange = async (evt: any) => {
         const term = evt.target.value || "";
         setFilterTerm(term);
@@ -392,8 +392,8 @@ const RelSearch: React.FC<RelSearchProps> = ({
 
 
     // HANDLER FUNCTIONS
-    // @typescript-eslint/no-unused-vars
-    // @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handlePageChange = async (evt: any, newPage: number) => {
         setPage(newPage + 1);
     }

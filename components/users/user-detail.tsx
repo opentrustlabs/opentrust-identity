@@ -3,7 +3,7 @@ import { MarkForDeleteObjectType, StateProvinceRegion, User, UserMfaRel, UserTen
 import React, { useContext } from "react";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
 import Typography from "@mui/material/Typography";
-import { MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, NAME_ORDER_DISPLAY, NAME_ORDER_EASTERN, NAME_ORDER_WESTERN, TENANT_TYPE_ROOT_TENANT, USER_DELETE_SCOPE, USER_TENANT_REL_TYPE_PRIMARY, USER_UNLOCK_SCOPE, USER_UPDATE_SCOPE } from "@/utils/consts";
+import { MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, NAME_ORDER_DISPLAY, NAME_ORDER_EASTERN, NAME_ORDER_WESTERN, TENANT_TYPE_ROOT_TENANT, USER_DELETE_SCOPE, USER_UNLOCK_SCOPE, USER_UPDATE_SCOPE } from "@/utils/consts";
 import BreadcrumbComponent from "../breadcrumbs/breadcrumbs";
 import { DetailPageContainer, DetailPageMainContentContainer, DetailPageRightNavContainer } from "../layout/detail-page-container";
 import Grid2 from "@mui/material/Grid2";
@@ -486,9 +486,8 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                                         }
                                                     )
                                                 }                        
-                                                value={getDefaultLanguageCodeDef(userInput.preferredLanguageCode || "")}
-                                                // @typescript-eslint/no-unused-vars
-                                                // @typescript-eslint/no-explicit-any
+                                                value={getDefaultLanguageCodeDef(userInput.preferredLanguageCode || "")}                                                
+                                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                 onChange={ (_, value: any) => {
                                                     userInput.preferredLanguageCode = value.id;
                                                     setMarkDirty(true);
@@ -592,9 +591,8 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                                         }
                                                     )
                                                 }                        
-                                                value={getDefaultCountryCodeDef(userInput.countryCode || "")}
-                                                // @typescript-eslint/no-unused-vars
-                                                // @typescript-eslint/no-explicit-any
+                                                value={getDefaultCountryCodeDef(userInput.countryCode || "")}                                                
+                                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                 onChange={ (_, value: any) => {      
                                                     userInput.countryCode = value.id;
                                                     setUserInput({...userInput});                                                    

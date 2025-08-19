@@ -129,7 +129,7 @@ class DBAuthDao extends AuthDao {
     
     public async getAuthorizationDeviceCodeData(code: string, authorizationCodeType: AuthorizationCodeType): Promise<AuthorizationDeviceCodeData | null>{
         const sequelize: Sequelize = await DBDriver.getConnection();
-        // @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const whereParams: any = {};
 
         if(authorizationCodeType === "devicecode"){

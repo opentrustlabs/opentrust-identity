@@ -484,7 +484,7 @@ class RegisterUserService extends IdentityService {
                 arrUserRegistrationState[index].registrationStateStatus = STATUS_COMPLETE;
                 await identityDao.updateUserRegistrationState(arrUserRegistrationState[index]);
             }
-            // @typescript-eslint/no-explicit-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             catch(err: any){
                 logWithDetails("error", `Error creating TOTP. ${err.message}`, {...err});
                 response.userRegistrationState.registrationState = RegistrationState.Error;
@@ -595,7 +595,7 @@ class RegisterUserService extends IdentityService {
                     await identityDao.updateUserRegistrationState(arrUserRegistrationState[index]);
                     response.userRegistrationState = arrUserRegistrationState[index + 1];
                 }
-                // @typescript-eslint/no-explicit-any
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 catch(err: any){
                     throw new GraphQLError(err.message);
                 }
@@ -645,7 +645,7 @@ class RegisterUserService extends IdentityService {
                 }
             }
         }
-        // @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         catch(err: any){
             throw new GraphQLError(err.message);
         }
@@ -1315,7 +1315,7 @@ class RegisterUserService extends IdentityService {
                 response.uri = authorizationCode.uri;
                 userRegistrationState.registrationStateStatus = STATUS_COMPLETE;        
             }
-            // @typescript-eslint/no-explicit-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             catch(err: any){
                 throw new GraphQLError(err.message);                
             }
@@ -1347,7 +1347,7 @@ class RegisterUserService extends IdentityService {
                     }
                 }
             }
-            // @typescript-eslint/no-explicit-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             catch(err: any){
                 throw new GraphQLError(err.message);                
             }
