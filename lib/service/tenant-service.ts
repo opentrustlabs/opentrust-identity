@@ -306,7 +306,7 @@ class TenantService {
         socialProviders.forEach(
             (p: FederatedOidcProvider) => {
                 p.federatedOIDCProviderClientSecret = "";
-                p.federatedOIDCProviderWellKnownUri = "",
+                p.federatedOIDCProviderWellKnownUri = "";
                 p.clientAuthType = "";
                 p.scopes = [];                
             }

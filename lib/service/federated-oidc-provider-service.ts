@@ -229,11 +229,17 @@ class FederatedOIDCProviderService {
             parentid: tenantId,
             parenttype: SearchResultType.Tenant
         };
-        await searchClient.index({
-            id: `${tenantId}::${federatedOIDCProvider.federatedOIDCProviderId}`,
-            index: SEARCH_INDEX_REL_SEARCH,
-            body: document
-        });
+        try{
+            await searchClient.index({
+                id: `${tenantId}::${federatedOIDCProvider.federatedOIDCProviderId}`,
+                index: SEARCH_INDEX_REL_SEARCH,
+                body: document
+            });
+        }        
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        catch(err: any){
+            logWithDetails("error", `Error adding rel search record for tenant and federated OIDC provider. ${err.message}.`, {...err, tenantId, federatedOidcProviderId: federatedOIDCProvider.federatedOIDCProviderId});
+        }        
     }
 
     protected async removeRelSearchRecord(tenantId: string, federatedOidcProviderId: string): Promise<void> {

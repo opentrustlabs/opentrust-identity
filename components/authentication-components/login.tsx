@@ -5,7 +5,7 @@ import { Backdrop, Button, CircularProgress, Dialog, DialogActions, DialogConten
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { DEFAULT_TENANT_META_DATA, PASSWORD_MINIMUM_LENGTH, QUERY_PARAM_ERROR, QUERY_PARAM_ERROR_DESCRIPTION, QUERY_PARAM_PREAUTHN_TOKEN, QUERY_PARAM_REDIRECT_URI, QUERY_PARAM_RETURN_URI, QUERY_PARAM_TENANT_ID, SOCIAL_OIDC_PROVIDER_APPLE, SOCIAL_OIDC_PROVIDER_FACEBOOK, SOCIAL_OIDC_PROVIDER_GOOGLE, SOCIAL_OIDC_PROVIDER_LINKEDIN, SOCIAL_OIDC_PROVIDER_SALESFORCE } from "@/utils/consts";
-import { useMutation, useQuery } from "@apollo/client";
+import { useMutation } from "@apollo/client";
 import { UserAuthenticationStateResponse, TenantSelectorData, AuthenticationState, UserAuthenticationState, TenantPasswordConfig, FederatedOidcProvider } from "@/graphql/generated/graphql-types";
 import Alert from '@mui/material/Alert';
 import { AUTHENTICATE_HANDLE_FORGOT_PASSWORD, AUTHENTICATE_USER, AUTHENTICATE_USER_AND_MIGRATE, AUTHENTICATE_USERNAME_INPUT_MUTATION, AUTHENTICATE_WITH_SOCIAL_OIDC_PROVIDER, CANCEL_AUTHENTICATION } from "@/graphql/mutations/oidc-mutations";
