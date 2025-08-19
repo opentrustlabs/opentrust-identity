@@ -829,6 +829,7 @@ type TenantMetaData {
     tenantLookAndFeel: TenantLookAndFeel
     tenant: Tenant!
     systemSettings: SystemSettings!
+    socialOIDCProviders: [FederatedOIDCProvider!]!
 }
 
 type SchedulerLock {

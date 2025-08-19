@@ -66,6 +66,14 @@ export const TENANT_META_DATA_QUERY = gql(`
                 allowDuressPassword
                 allowRecoveryEmail
             }
+            socialOIDCProviders {
+                federatedOIDCProviderDescription
+                federatedOIDCProviderId
+                federatedOIDCProviderName
+                federatedOIDCProviderTenantId
+                federatedOIDCProviderType 
+                socialLoginProvider
+            }
         }
     }
 `);

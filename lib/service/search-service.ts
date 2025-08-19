@@ -213,7 +213,7 @@ class SearchService {
         searchResponse.body.hits.hits.forEach(
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (hit: any) => {
-                // eslint-disable-next-line@typescript-eslint/no-explicit-any
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const source: any = hit._source;
                 items.push(source);
             }
@@ -348,6 +348,7 @@ class SearchService {
                 total = totalValueOf;
             }
             else{
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 total = (totalValueOf as any).value;
             }
         }
@@ -524,6 +525,7 @@ class SearchService {
                 total = totalValueOf;
             }
             else{
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 total = (totalValueOf as any).value;
             }
         }

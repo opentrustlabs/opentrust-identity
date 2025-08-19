@@ -793,6 +793,8 @@ export const QUERY_PARAM_RETURN_URI="return_uri";
 export const QUERY_PARAM_USERNAME="username";
 export const QUERY_PARAM_DEVICE_CODE_ID="devicecodeid";
 export const QUERY_PARAM_SECRET_ENTRY_OTP="_seotp";
+export const QUERY_PARAM_ERROR="error";
+export const QUERY_PARAM_ERROR_DESCRIPTION="error_description";
 export const HASH_PARAM_AUTH_TOKEN="_atk";
 
 
@@ -862,7 +864,9 @@ export const DEFAULT_TENANT_META_DATA: TenantMetaData = {
         enablePortalAsLegacyIdp: false,
         softwareVersion: OPENTRUST_IDENTITY_VERSION,
         systemCategories: []
-    }
+    },
+    socialOIDCProviders: []
+
 }
 
 export const DEFAULT_TENANT_PASSWORD_CONFIGURATION: TenantPasswordConfig = {

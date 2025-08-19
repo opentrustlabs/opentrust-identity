@@ -161,9 +161,7 @@ const NewClientDialog: React.FC<NewClientDialogProps> = ({
                                     >
                                         {CLIENT_TYPES.map(
                                             (val: string) => (
-                                                <React.Fragment key={val}>
-                                                    <MenuItem value={val} >{CLIENT_TYPES_DISPLAY.get(val)}</MenuItem>
-                                                </React.Fragment>
+                                                <MenuItem key={val} value={val} >{CLIENT_TYPES_DISPLAY.get(val)}</MenuItem>                                                
                                             )
                                         )}
                                     </Select>

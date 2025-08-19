@@ -16,7 +16,7 @@ import { createTheme } from '@mui/material/styles';
 import { ThemeProvider } from '@mui/material/styles';
 import { ClipboardCopyContextProvider } from "@/components/contexts/clipboard-copy-context";
 import { AuthenSessionContextProvider } from "@/components/contexts/auth-session-context";
-import ProfilePreProcessorContextProvider from "@/components/contexts/my-profile-preprocessor";
+//import ProfilePreProcessorContextProvider from "@/components/contexts/my-profile-preprocessor";
 import { InternationalizationContextProvider } from "@/components/contexts/internationalization-context";
 
 
@@ -110,13 +110,13 @@ export default function RootLayout({
                             <ClipboardCopyContextProvider>
                                 <AuthenSessionContextProvider>
                                     <ApolloProvider client={client}>
-                                        {isProfileLayoutPage &&
+                                        {/* {isProfileLayoutPage &&
                                             <ProfilePreProcessorContextProvider>
                                                 <TenantContextProvider>
                                                     <AuthenticationLayout>{children}</AuthenticationLayout>
                                                 </TenantContextProvider>                                            
                                             </ProfilePreProcessorContextProvider>
-                                        }
+                                        } */}
                                         {!isProfileLayoutPage &&
                                             <AuthContextProvider>
                                                 <TenantContextProvider>

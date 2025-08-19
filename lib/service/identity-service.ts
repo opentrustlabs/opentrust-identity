@@ -1066,7 +1066,7 @@ class IdentityService {
             await identityDao.updateFido2Count(userId, newCount);
             return true;
         }
-        // @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         catch(error: any){
             await identityDao.deleteFIDO2Challenge(userId);
             throw new GraphQLError(error.message);
@@ -1140,7 +1140,7 @@ class IdentityService {
             });
         }
         
-        // @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const updateByQueryBody: any = {
             query: {
                 term: {
@@ -1179,7 +1179,7 @@ class IdentityService {
             }
         )
         .catch(
-            // @typescript-eslint/no-explicit-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (err: any) => {
                 logWithDetails("error", `Error in updateSearchIndexUserDocuments. ${err.message}.`, {...err, userId: user.userId, firstName: user.firstName, lastName: user.lastName});
             }
