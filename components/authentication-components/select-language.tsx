@@ -7,6 +7,7 @@ import MenuItem from "@mui/material/MenuItem";
 import Stack from "@mui/material/Stack";
 import Button from "@mui/material/Button";
 import LanguageIcon from '@mui/icons-material/Language';
+import { useIntl } from 'react-intl';
 
 
 const SUPPORTED_LANGUAGES = ["zh", "da", "de", "en", "es", "fr", "hi", "it", "ja", "ko", "nl", "no", "pl", "pt", "ru", "sv", "fi", "vi"];
@@ -45,6 +46,7 @@ const SelectLanguage: React.FC<SelectLanguageProps>  = ({
 
     // CONTEXT VARIABLES
     const i18nContext = useInternationalizationContext();
+    const intl = useIntl();
 
     // STATE VARIABLES
     const [lang, setLang] = React.useState<string>("");
@@ -53,7 +55,13 @@ const SelectLanguage: React.FC<SelectLanguageProps>  = ({
         <React.Fragment>
             <Grid2 marginBottom={"16px"} display={"flex"} alignContent={"center"} container spacing={1} size={12}>
                 <div><LanguageIcon /></div>
-                <div style={{fontWeight: "bold"}}>Select a Language:</div>
+                <div style={{fontWeight: "bold"}}>
+                    {i18nContext.hasSelectedLanguage() === true ?
+                        intl.formatMessage({id: "SELECT_A_LANGUAGE"})
+                        :
+                        "Select a Language"
+                    }                    
+                </div>
             </Grid2>
             <Grid2  container spacing={1} size={12}>                
                 <Grid2 marginBottom={"16px"} size={12}>
@@ -63,7 +71,7 @@ const SelectLanguage: React.FC<SelectLanguageProps>  = ({
                         value={lang}
                         name="lang"
                         onChange={(evt) => { 
-                            setLang(evt.target.value);                             
+                            setLang(evt.target.value);
                         }}
                     >
                         {SUPPORTED_LANGUAGES.map(
@@ -84,7 +92,11 @@ const SelectLanguage: React.FC<SelectLanguageProps>  = ({
                         }
                     }}
                 >
-                    Submit
+                    {i18nContext.hasSelectedLanguage() === true ?
+                        intl.formatMessage({id: "SUBMIT"})
+                        :
+                        "Submit"
+                    }
                 </Button>
                 {allowCancel &&
                     <Button 
@@ -94,7 +106,11 @@ const SelectLanguage: React.FC<SelectLanguageProps>  = ({
                             }
                         }}
                     >
-                        Cancel
+                        {i18nContext.hasSelectedLanguage() === true ?
+                            intl.formatMessage({id: "CANCEL"})
+                            :
+                            "Cancel"
+                        }                        
                     </Button>
                 }
                 
