@@ -7,17 +7,30 @@ import MenuItem from "@mui/material/MenuItem";
 import Stack from "@mui/material/Stack";
 import Button from "@mui/material/Button";
 
-
-const SUPPORTED_LANGUAGES = ["de", "en", "es", "fr", "it"];
+// 
+const SUPPORTED_LANGUAGES = ["zh", "de", "en", "es", "fr", "it", "pt", "no", "sv", "fi", "pl", "ru", "hi", "ko", "vi", "ja", "da", "nl"];
 const TRANSLATED_LANGUAGES = new Map<string, string>([
+    ["zh", "中國人"],
+    ["da", "Dansk"],
     ["de", "Deutsch"],
     ["en", "English"],
     ["es", "Español"],
     ["fr", "Français"],
+    ["hi", "हिंदी"],
     ["it", "Italiano"],
+    ["ja", "日本語"],
+    ["ko", "한국인"],
+    ["pt", "Português"], 
+    ["nl", "Nederlands"],
+    ["no", "Norsk"],
+    ["pl", "Polski"],
+    ["ru", "Русский"],
+    ["sv", "Svenska"],
+    ["fi", "Suomi"],    
+    ["vi", "Tiếng Việt"]
 ]);
 
-// LANGUAGE_CODES.filter()
+
 
 const SelectLanguage: React.FC  = () => {
 

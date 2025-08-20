@@ -289,7 +289,6 @@ const Login: React.FC<LoginProps>= ({
     const handleCancelAuthentication = (userAuthenticationState: UserAuthenticationState) => {
         if(!preAuthToken && authorizationError && redirectUri){            
             const newHref = `${redirectUri}?${QUERY_PARAM_ERROR}=${authorizationError}&${QUERY_PARAM_ERROR_DESCRIPTION}=${authorizationErrorDescription}`;
-            console.log(newHref);
             window.location.href = `${redirectUri}?${QUERY_PARAM_ERROR}=${authorizationError}&${QUERY_PARAM_ERROR_DESCRIPTION}=${authorizationErrorDescription}`
         }
         else{
