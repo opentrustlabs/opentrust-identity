@@ -889,7 +889,7 @@ enum AuthenticationState {
 
 type ErrorDetail {
     errorCode: String!
-    errorKey: String
+    errorKey: String!
     errorMessage: String!
 }
 

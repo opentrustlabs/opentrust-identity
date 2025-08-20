@@ -6,9 +6,10 @@ import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
 import Stack from "@mui/material/Stack";
 import Button from "@mui/material/Button";
+import LanguageIcon from '@mui/icons-material/Language';
 
-// 
-const SUPPORTED_LANGUAGES = ["zh", "de", "en", "es", "fr", "it", "pt", "no", "sv", "fi", "pl", "ru", "hi", "ko", "vi", "ja", "da", "nl"];
+
+const SUPPORTED_LANGUAGES = ["zh", "da", "de", "en", "es", "fr", "hi", "it", "ja", "ko", "nl", "no", "pl", "pt", "ru", "sv", "fi", "vi"];
 const TRANSLATED_LANGUAGES = new Map<string, string>([
     ["zh", "中國人"],
     ["da", "Dansk"],
@@ -30,9 +31,17 @@ const TRANSLATED_LANGUAGES = new Map<string, string>([
     ["vi", "Tiếng Việt"]
 ]);
 
+export interface SelectLanguageProps {
+    allowCancel?: boolean,
+    cancelCallback?: () => void,
+    onLanguageChanged?: (lang: string) => void
+}
 
-
-const SelectLanguage: React.FC  = () => {
+const SelectLanguage: React.FC<SelectLanguageProps>  = ({
+    allowCancel,
+    cancelCallback,
+    onLanguageChanged
+}) => {
 
     // CONTEXT VARIABLES
     const i18nContext = useInternationalizationContext();
@@ -42,10 +51,11 @@ const SelectLanguage: React.FC  = () => {
 
     return (
         <React.Fragment>
-            <Grid2  container spacing={1} size={12}>
-                <Grid2 fontWeight={"bold"} marginBottom={"16px"} size={12}>
-                    Select a Language:
-                </Grid2>
+            <Grid2 marginBottom={"16px"} display={"flex"} alignContent={"center"} container spacing={1} size={12}>
+                <div><LanguageIcon /></div>
+                <div style={{fontWeight: "bold"}}>Select a Language:</div>
+            </Grid2>
+            <Grid2  container spacing={1} size={12}>                
                 <Grid2 marginBottom={"16px"} size={12}>
                     <Select                        
                         size="small"
@@ -69,10 +79,25 @@ const SelectLanguage: React.FC  = () => {
                     disabled={!SUPPORTED_LANGUAGES.includes(lang)}
                     onClick={() => {
                         i18nContext.setLanguage(lang);
+                        if(onLanguageChanged){
+                            onLanguageChanged(lang);
+                        }
                     }}
                 >
                     Submit
                 </Button>
+                {allowCancel &&
+                    <Button 
+                        onClick={() => {
+                            if(cancelCallback){
+                                cancelCallback();
+                            }
+                        }}
+                    >
+                        Cancel
+                    </Button>
+                }
+                
             </Stack>
         </React.Fragment>
     )

@@ -11,6 +11,8 @@ import ArrowDropDownOutlinedIcon from '@mui/icons-material/ArrowDropDownOutlined
 import ArrowDropUpOutlinedIcon from '@mui/icons-material/ArrowDropUpOutlined';
 import { validatePasswordFormat } from "@/utils/password-utils";
 import PasswordRulesDisplay from "./password-rules-display";
+import { useIntl } from 'react-intl';
+
 
 
 export interface AuthenticationRotatePasswordProps extends AuthenticationComponentsProps {
@@ -33,6 +35,7 @@ const AuthentiationRotatePassword: React.FC<AuthenticationRotatePasswordProps> =
     const [viewPassword, setViewPassword] = React.useState<boolean>(false);
     const [viewRepeatPassword, setViewRepeatPassword] = React.useState<boolean>(false);
     const [showPasswordRules, setShowPasswordRules] = React.useState<boolean>(false);
+    const intl = useIntl();
 
 
     // GRAPHQL FUNCTIONS
@@ -51,19 +54,19 @@ const AuthentiationRotatePassword: React.FC<AuthenticationRotatePasswordProps> =
                 <Grid2 size={12} container spacing={1}>
                     {isPasswordResetFlow &&
                         <Grid2 marginBottom={"8px"} size={12} fontWeight={"bold"}>
-                            Enter your new password:
+                            {intl.formatMessage({id: "ENTER_NEW_PASSWORD"})}:
                         </Grid2>
                     }
                     {!isPasswordResetFlow &&
                         <Grid2 marginBottom={"8px"} size={12} fontWeight={"bold"}>
-                            Continued access requires your password to be updated. Enter your new password below:
+                            {intl.formatMessage({id: "REQUIRE_NEW_PASSWORD"})}:
                         </Grid2>
                     }
                     <Grid2 marginBottom={"8px"} size={12}>
                         <Stack spacing={1} direction={"row"}>
-                            <div>Password</div>
+                            <div>{intl.formatMessage({id: "PASSWORD"})}</div>
                             <div>
-                                (Rules)
+                                ({intl.formatMessage({id: "PASSWORD_RULES"})})
                             </div>
                             <div>
                                 {showPasswordRules === false &&
@@ -122,7 +125,7 @@ const AuthentiationRotatePassword: React.FC<AuthenticationRotatePasswordProps> =
                         />
                     </Grid2>
                     <Grid2 marginBottom={"8px"} size={12}>
-                        <div>Repeat Password</div>
+                        <div>{intl.formatMessage({id: "REPEAT_PASSWORD"})}</div>
                         <TextField name="repeatPassword" id="repeatPassword"
                             type={viewRepeatPassword === true ? "text" : "password"}
                             value={repeatPassword}
@@ -175,12 +178,12 @@ const AuthentiationRotatePassword: React.FC<AuthenticationRotatePasswordProps> =
                         }}
                         disabled={password !== repeatPassword && !validatePasswordFormat(password, passwordConfig)}
                     >
-                        Update
+                        {intl.formatMessage({id: "UPDATE"})}
                     </Button>
                     <Button
                         onClick={() => onAuthenticationCancelled()}
                     >
-                        Cancel
+                        {intl.formatMessage({id: "CANCEL"})}
                     </Button>
                 </Stack>
             </Typography>

@@ -1511,10 +1511,7 @@ class AuthenticateUserService extends IdentityService {
                 tenantId: tenantId,
                 userId: ""
             },
-            authenticationError: {
-                errorCode: "",
-                errorMessage: ""
-            },
+            authenticationError: ERROR_CODES.DEFAULT,
             accessToken: null,
             totpSecret: null,
             uri: null,
