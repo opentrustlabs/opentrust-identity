@@ -62,6 +62,8 @@ const server = new ApolloServer(
         ],
         formatError(formattedError: GraphQLFormattedError) {            
 
+            // Always log the original error with a trace ID (which we will also return 
+            // to the client) and which can be used for debugging purposes.
             const traceId: string = randomUUID().toString();
             logWithDetails("error", formattedError.message, {formattedError, traceId});
             
@@ -72,11 +74,7 @@ const server = new ApolloServer(
                 }
             }
             // This line below is for the case when an uncaught exception is thrown somewhere and we do not
-            // want to show the actual error to the user. We will, however, log the original error with a
-            // trace ID (which we will also return to the client) and which can be used for debugging purposes.
-            
-
-            
+            // want to show the actual error to the user.            
             const errorDetail: ErrorDetail = formattedError.extensions?.errorDetail as ErrorDetail || ERROR_CODES.DEFAULT;
             if(formattedError && formattedError.extensions?.lang){                
                 return {
@@ -103,8 +101,7 @@ const server = new ApolloServer(
 export default startServerAndCreateNextHandler(server, {
 
     context: async(req: NextApiRequest) => {
-        return getOIDCContext(req);
-        
+        return getOIDCContext(req);        
     }
 
 });

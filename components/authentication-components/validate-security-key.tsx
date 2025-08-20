@@ -13,6 +13,7 @@ import { startAuthentication, PublicKeyCredentialRequestOptionsJSON, Authenticat
 import Backdrop from "@mui/material/Backdrop";
 import Typography from "@mui/material/Typography";
 import { SESSION_TOKEN_TYPE_AUTHENTICATION, SESSION_TOKEN_TYPE_REGISTRATION } from "@/utils/consts";
+import { useIntl } from 'react-intl';
 
 
 const AuthentiationValidateSecurityKey: React.FC<AuthenticationComponentsProps> = ({
@@ -22,6 +23,9 @@ const AuthentiationValidateSecurityKey: React.FC<AuthenticationComponentsProps> 
     onUpdateStart
 }) => {
     
+    // CONTEXT VARIABLES
+    const intl = useIntl();
+
     // STATE VARIABLES
     const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
     const [showMutationBackdrop, setShowMutationBackdrop] = React.useState<boolean>(false);
@@ -123,7 +127,9 @@ const AuthentiationValidateSecurityKey: React.FC<AuthenticationComponentsProps> 
             }
             <Grid2 size={12} container spacing={1}>
                 <Grid2 marginBottom={"8px"} size={12}>
-                    <div style={{marginBottom: "16px", fontWeight: "bold", fontSize: "1.0em"}}>Validate your security key</div>                    
+                    <div style={{marginBottom: "16px", fontWeight: "bold", fontSize: "1.0em"}}>
+                        {intl.formatMessage({id: "VALIDATE_YOUR_SECURITY_KEY"})}                    
+                    </div>
                 </Grid2>
             </Grid2>
             <Stack 
@@ -138,12 +144,12 @@ const AuthentiationValidateSecurityKey: React.FC<AuthenticationComponentsProps> 
                         createFido2AuthenticationChallenge();
                     }}
                 >
-                    Validate Key
+                    {intl.formatMessage({id: "VALIDATE_SECURITY_KEY"})}
                 </Button>
                 <Button
                     onClick={() => onAuthenticationCancelled()}
                 >
-                    Cancel
+                    {intl.formatMessage({id: "CANCEL"})}
                 </Button>
             </Stack>
             <Backdrop
@@ -152,7 +158,7 @@ const AuthentiationValidateSecurityKey: React.FC<AuthenticationComponentsProps> 
                     onClick={() => setShowMutationBackdrop(false)}
                 >
                     <Typography variant="h6" color="white">
-                        Generating Challenge...
+                        {intl.formatMessage({id: "GENERATING_CHALLENGE"})}
                     </Typography>
                 </Backdrop>
         </React.Fragment>
@@ -165,6 +171,9 @@ const RegistrationValidateSecurityKey: React.FC<RegistrationComponentsProps> = (
     onUpdateEnd,
     onUpdateStart
 }) => {
+
+    // CONTEXT VARIABLES
+    const intl = useIntl();
 
     // STATE VARIABLES
     const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
@@ -267,7 +276,9 @@ const RegistrationValidateSecurityKey: React.FC<RegistrationComponentsProps> = (
             }
             <Grid2 size={12} container spacing={1}>
                 <Grid2 marginBottom={"8px"} size={12}>
-                    <div style={{marginBottom: "16px", fontWeight: "bold", fontSize: "1.0em"}}>Validate your security key</div>                    
+                    <div style={{marginBottom: "16px", fontWeight: "bold", fontSize: "1.0em"}}>
+                        {intl.formatMessage({id: "VALIDATE_YOUR_SECURITY_KEY"})}
+                    </div>
                 </Grid2>
             </Grid2>
             <Stack 
@@ -282,12 +293,12 @@ const RegistrationValidateSecurityKey: React.FC<RegistrationComponentsProps> = (
                         createFido2AuthenticationChallenge();
                     }}
                 >
-                    Validate Key
+                    {intl.formatMessage({id: "VALIDATE_SECURITY_KEY"})}
                 </Button>
                 <Button
                     onClick={() => onRegistrationCancelled()}
                 >
-                    Cancel
+                    {intl.formatMessage({id: "CANCEL"})}
                 </Button>
             </Stack>
             <Backdrop
@@ -296,7 +307,7 @@ const RegistrationValidateSecurityKey: React.FC<RegistrationComponentsProps> = (
                     onClick={() => setShowMutationBackdrop(false)}
                 >
                     <Typography variant="h6" color="white">
-                        Generating Challenge...
+                        {intl.formatMessage({id: "GENERATING_CHALLENGE"})}
                     </Typography>
                 </Backdrop>
         </React.Fragment>

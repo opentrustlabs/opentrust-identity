@@ -156,10 +156,7 @@ class RegisterUserService extends IdentityService {
             userRegistrationState: arrState[0],
             accessToken: "",
             uri: "",
-            registrationError: {
-                errorCode: "",
-                errorMessage: ""
-            }
+            registrationError: ERROR_CODES.DEFAULT,
         }
         return Promise.resolve(response);
     }    
@@ -179,10 +176,7 @@ class RegisterUserService extends IdentityService {
                 tenantId: "",
                 userId: userId
             },
-            registrationError: {
-                errorCode: "",
-                errorMessage: ""
-            },
+            registrationError: ERROR_CODES.DEFAULT,
             accessToken: null,
             totpSecret: null,
             uri: null
@@ -235,10 +229,7 @@ class RegisterUserService extends IdentityService {
                 tenantId: "",
                 userId: userId
             },
-            registrationError: {
-                errorCode: "",
-                errorMessage: ""
-            },
+            registrationError: ERROR_CODES.DEFAULT,
             accessToken: null,
             totpSecret: null,
             uri: null
@@ -299,10 +290,7 @@ class RegisterUserService extends IdentityService {
                 tenantId: "",
                 userId: userId
             },
-            registrationError: {
-                errorCode: "",
-                errorMessage: ""
-            },
+            registrationError: ERROR_CODES.DEFAULT,
             accessToken: null,
             totpSecret: null,
             uri: null
@@ -366,10 +354,7 @@ class RegisterUserService extends IdentityService {
                 tenantId: "",
                 userId: userId
             },
-            registrationError: {
-                errorCode: "",
-                errorMessage: ""
-            },
+            registrationError: ERROR_CODES.DEFAULT,
             accessToken: null,
             totpSecret: null,
             uri: null
@@ -441,10 +426,7 @@ class RegisterUserService extends IdentityService {
                 tenantId: "",
                 userId: userId
             },
-            registrationError: {
-                errorCode: "",
-                errorMessage: ""
-            },
+            registrationError: ERROR_CODES.DEFAULT,
             accessToken: null,
             totpSecret: null,
             uri: null
@@ -507,10 +489,7 @@ class RegisterUserService extends IdentityService {
                 tenantId: "",
                 userId: userId
             },
-            registrationError: {
-                errorCode: "",
-                errorMessage: ""
-            }
+            registrationError: ERROR_CODES.DEFAULT,
         }
 
         const arrUserRegistrationState: Array<UserRegistrationState> = await this.getSortedRegistartionStates(registrationSessionToken);
@@ -552,10 +531,7 @@ class RegisterUserService extends IdentityService {
                 tenantId: "",
                 userId: userId
             },
-            registrationError: {
-                errorCode: "",
-                errorMessage: ""
-            }
+            registrationError: ERROR_CODES.DEFAULT,
         };
 
         const arrUserRegistrationState: Array<UserRegistrationState> = await this.getSortedRegistartionStates(registrationSessionToken);
@@ -617,10 +593,7 @@ class RegisterUserService extends IdentityService {
                 tenantId: "",
                 userId: userId
             },
-            registrationError: {
-                errorCode: "",
-                errorMessage: ""
-            }
+            registrationError: ERROR_CODES.DEFAULT,
         };
 
         const arrUserRegistrationState: Array<UserRegistrationState> = await this.getSortedRegistartionStates(registrationSessionToken);
@@ -666,10 +639,7 @@ class RegisterUserService extends IdentityService {
                 isPrimaryEmail: false,
                 userId: ""
             },
-            profileEmailChangeError: {
-                errorCode: "",
-                errorMessage: ""
-            }
+            profileEmailChangeError: ERROR_CODES.DEFAULT,
         }
         
         if(!this.oidcContext.portalUserProfile?.userId){
@@ -756,10 +726,7 @@ class RegisterUserService extends IdentityService {
                 isPrimaryEmail: false,
                 userId: ""
             },
-            profileEmailChangeError: {
-                errorCode: "",
-                errorMessage: ""
-            }
+            profileEmailChangeError: ERROR_CODES.DEFAULT,
         }
 
         if(!this.oidcContext.portalUserProfile?.userId){
@@ -834,10 +801,7 @@ class RegisterUserService extends IdentityService {
                 isPrimaryEmail: false,
                 userId: ""
             },
-            profileEmailChangeError: {
-                errorCode: "",
-                errorMessage: ""
-            }
+            profileEmailChangeError: ERROR_CODES.DEFAULT,
         }
 
         if(!this.oidcContext.portalUserProfile?.userId){
@@ -921,10 +885,7 @@ class RegisterUserService extends IdentityService {
                 isPrimaryEmail: false,
                 userId: ""
             },
-            profileEmailChangeError: {
-                errorCode: "",
-                errorMessage: ""
-            }
+            profileEmailChangeError: ERROR_CODES.DEFAULT
         }
         return response;
     }
@@ -951,10 +912,7 @@ class RegisterUserService extends IdentityService {
                 userId: userId,
                 deviceCodeId: ""
             },
-            registrationError: {
-                errorCode: "",
-                errorMessage: ""
-            }
+            registrationError: ERROR_CODES.DEFAULT
         };
         const arrUserRegistrationState: Array<UserRegistrationState> = await this.getSortedRegistartionStates(registrationSessionToken);
         let tenantId: string | null = null;

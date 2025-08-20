@@ -11,6 +11,9 @@ import Link from "next/link";
 import Checkbox from "@mui/material/Checkbox";
 import { TENANT_META_DATA_QUERY } from "@/graphql/queries/oidc-queries";
 import { Typography } from "@mui/material";
+import { useIntl } from 'react-intl';
+
+
 
 
 const AuthentiationAcceptTermsAndConditions: React.FC<AuthenticationComponentsProps> = ({
@@ -20,6 +23,9 @@ const AuthentiationAcceptTermsAndConditions: React.FC<AuthenticationComponentsPr
     onUpdateStart
 }) => {
        
+
+    // CONTEXT VARIABLES
+    const intl = useIntl();
 
     // STATE VARIABLES
     const [linkClicked, setLinkClicked] = React.useState<boolean>(false);
@@ -53,12 +59,16 @@ const AuthentiationAcceptTermsAndConditions: React.FC<AuthenticationComponentsPr
         <React.Fragment>
             <Typography component="div">
                 <Grid2 marginBottom={"8px"} container size={12} spacing={1}>
-                    <Grid2 fontWeight={"bold"} size={12} marginBottom={"8px"}>This application has terms and conditions which must be accepted before continuing.</Grid2>
+                    <Grid2 fontWeight={"bold"} size={12} marginBottom={"8px"}>
+                        {intl.formatMessage({id: "TERMS_AND_CONDITIONS_REQUIRED_BEFORE_CONTINUING"})}
+                    </Grid2>
                     <Grid2  size={11}>
                         {tenant &&
                             <React.Fragment>
-                                <span>I agree to accept the </span>
-                                <Link onClick={() => setLinkClicked(true)} href={tenant.termsAndConditionsUri || ""} target="_blank">Terms and Conditions</Link>
+                                <span>{intl.formatMessage({id: "I_AGREE_TO_ACCEPT"})} </span>
+                                <Link onClick={() => setLinkClicked(true)} href={tenant.termsAndConditionsUri || ""} target="_blank">
+                                    {intl.formatMessage({id: "TERMS_AND_CONDITIONS"})}
+                                </Link>
                             </React.Fragment>
                         }
                     </Grid2>
@@ -90,12 +100,12 @@ const AuthentiationAcceptTermsAndConditions: React.FC<AuthenticationComponentsPr
                         }}
                         disabled={linkClicked === false || termsAccepted === false}
                     >
-                        Continue
+                        {intl.formatMessage({id: "CONTINUE"})}
                     </Button>
                     <Button
                         onClick={() => onAuthenticationCancelled()}
                     >
-                        Cancel
+                        {intl.formatMessage({id: "CANCEL"})}
                     </Button>
                 </Stack>
             </Typography>
