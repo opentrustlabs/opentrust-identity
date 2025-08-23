@@ -18,6 +18,8 @@ import { TENANT_RATE_LIMIT_ASSIGN_MUTATION, TENANT_RATE_LIMIT_REMOVE_MUTATION, T
 import TenatRateLimitConfigurationDialog from "../dialogs/tenant-rate-limit-configuration-dialog";
 import { AuthContext, AuthContextProps } from "../contexts/auth-context";
 import { containsScope } from "@/utils/authz-utils";
+import { useIntl } from 'react-intl';
+
 
 export interface TenantRateLimitConfigurationProps {
     tenantId: string,
@@ -38,6 +40,7 @@ const TenantRateLimitConfiguration: React.FC<TenantRateLimitConfigurationProps> 
     const breakPoints: ResponsiveBreakpoints = useContext(ResponsiveContext);
     const authContextProps: AuthContextProps = useContext(AuthContext);
     const profile: PortalUserProfile | null = authContextProps.portalUserProfile;
+    const intl = useIntl();
     
     // STATE VARIABLES
     const [page, setPage] = React.useState<number>(1);
@@ -75,7 +78,7 @@ const TenantRateLimitConfiguration: React.FC<TenantRateLimitConfigurationProps> 
         },
         onError(error) {
             rateLimitSummaryHandler(0);
-            setErrorMessage(error.message)
+            setErrorMessage(intl.formatMessage({id: error.message}));
         },
         notifyOnNetworkStatusChange: true
     });
@@ -87,7 +90,7 @@ const TenantRateLimitConfiguration: React.FC<TenantRateLimitConfigurationProps> 
             setErrorMessage(null);
         },
         onError(error) {
-            setErrorMessage(error.message);
+            setErrorMessage(intl.formatMessage({id: error.message}));
         },
         refetchQueries: [TENANT_RATE_LIMIT_REL_VIEW_QUERY]
     });
@@ -104,7 +107,7 @@ const TenantRateLimitConfiguration: React.FC<TenantRateLimitConfigurationProps> 
         },
         onError(error) {
             setShowTenantEditDialogOpen(false);
-            setErrorMessage(error.message);
+            setErrorMessage(intl.formatMessage({id: error.message}));
         },
         refetchQueries: [TENANT_RATE_LIMIT_REL_VIEW_QUERY]
     });
@@ -119,7 +122,7 @@ const TenantRateLimitConfiguration: React.FC<TenantRateLimitConfigurationProps> 
             setErrorMessage(null);
         },
         onError(error) {
-            setErrorMessage(error.message);
+            setErrorMessage(intl.formatMessage({id: error.message}));
         },
         refetchQueries: [TENANT_RATE_LIMIT_REL_VIEW_QUERY]
     });

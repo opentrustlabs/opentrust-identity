@@ -19,6 +19,8 @@ import TenantSelector from "../dialogs/tenant-selector";
 import { AuthContext, AuthContextProps } from "../contexts/auth-context";
 import { containsScope } from "@/utils/authz-utils";
 import { FEDERATED_OIDC_PROVIDER_TENANT_ASSIGN_SCOPE, FEDERATED_OIDC_PROVIDER_TENANT_REMOVE_SCOPE } from "@/utils/consts";
+import { useIntl } from 'react-intl';
+
 
 export interface FederatedOIDCProviderTenantConfigurationProps {
     federatedOIDCProviderId: string,
@@ -36,6 +38,8 @@ const FederatedOIDCProviderTenantConfiguration: React.FC<FederatedOIDCProviderTe
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
     const authContextProps: AuthContextProps = useContext(AuthContext);
     const profile: PortalUserProfile | null = authContextProps.portalUserProfile;
+    const intl = useIntl();
+
 
     // STATE VARIABLES
     const [tenantToAdd, setTenantToAdd] = React.useState<string | null>(null);
@@ -68,7 +72,7 @@ const FederatedOIDCProviderTenantConfiguration: React.FC<FederatedOIDCProviderTe
         onError(error){
             onUpdateEnd(false);
             setShowAddDialog(false);
-            setErrorMessage(error.message);
+            setErrorMessage(intl.formatMessage({id: error.message}));
         },
         refetchQueries: [TENANTS_QUERY]
     });
@@ -86,7 +90,7 @@ const FederatedOIDCProviderTenantConfiguration: React.FC<FederatedOIDCProviderTe
         onError(error){
             onUpdateEnd(false);
             setShowRemoveDialog(false);
-            setErrorMessage(error.message);
+            setErrorMessage(intl.formatMessage({id: error.message}));
         },
         refetchQueries: [TENANTS_QUERY]
     });

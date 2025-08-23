@@ -12,6 +12,8 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { PickerValue } from "@mui/x-date-pickers/internals";
 import { NewSigningKeyDialogProps } from "./new-signing-key-dialog";
+import { useIntl } from 'react-intl';
+
 
 
 const NewBroughtMyOwnSigningKeyDialog: React.FC<NewSigningKeyDialogProps> = ({
@@ -22,6 +24,9 @@ const NewBroughtMyOwnSigningKeyDialog: React.FC<NewSigningKeyDialogProps> = ({
     onCreateStart
 }) => {
 
+    // CONTEXT VARIABLES
+    const intl = useIntl();
+    
     const initInput: SigningKeyCreateInput = {
         tenantId: tenantId,
         keyType: "",
@@ -62,7 +67,7 @@ const NewBroughtMyOwnSigningKeyDialog: React.FC<NewSigningKeyDialogProps> = ({
             },
             onError(error) {
                 onCreateEnd(false);
-                setErrorMessage(error.message);
+                setErrorMessage(intl.formatMessage({id: error.message}));
             },
         }
     );

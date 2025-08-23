@@ -6,6 +6,7 @@ import { Alert, Button, DialogActions, DialogContent, DialogTitle, Grid2, Stack,
 import React, { useContext } from "react";
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
 import { useRouter } from 'next/navigation';
+import { useIntl } from 'react-intl';
 
 
 export interface NewRateLimitDialogProps {
@@ -32,6 +33,7 @@ const NewRateLimitDialog: React.FC<NewRateLimitDialogProps> = ({
 
     // CONTEXT
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
+    const intl = useIntl();
 
     // STATE VARIABLES    
     const [rateLimitServiceGroupInput, setRateLimitServiceGroupInput] = React.useState<RateLimitServiceGroupCreateInput>(initInput);
@@ -53,7 +55,7 @@ const NewRateLimitDialog: React.FC<NewRateLimitDialogProps> = ({
             },
             onError(error) {
                 onCreateEnd(false);
-                setErrorMessage(error.message)
+                setErrorMessage(intl.formatMessage({id: error.message}));
             },
         }
     );

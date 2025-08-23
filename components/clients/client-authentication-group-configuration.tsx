@@ -22,6 +22,7 @@ import Link from "next/link";
 import { AuthContext, AuthContextProps } from "../contexts/auth-context";
 import { containsScope } from "@/utils/authz-utils";
 import { AUTHENTICATION_GROUP_CLIENT_ASSIGN_SCOPE, AUTHENTICATION_GROUP_CLIENT_REMOVE_SCOPE } from "@/utils/consts";
+import { useIntl } from 'react-intl';
 
 
 export interface ClientAuthenticationGroupConfigurationProps {
@@ -42,6 +43,7 @@ const ClientAuthenticationGroupConfiguration: React.FC<ClientAuthenticationGroup
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
     const authContextProps: AuthContextProps = useContext(AuthContext);
     const profile: PortalUserProfile | null = authContextProps.portalUserProfile;
+    const intl = useIntl();
 
     
     // STATE VARIABLES
@@ -67,7 +69,7 @@ const ClientAuthenticationGroupConfiguration: React.FC<ClientAuthenticationGroup
         },
         onError(error) {
             onUpdateEnd(false);            
-            setErrorMessage(error.message);
+            setErrorMessage(intl.formatMessage({id: error.message}));
         },
         refetchQueries: [AUTHENTICATION_GROUPS_QUERY]
     });
@@ -82,7 +84,7 @@ const ClientAuthenticationGroupConfiguration: React.FC<ClientAuthenticationGroup
         },
         onError(error) {
             onUpdateEnd(false);
-            setErrorMessage(error.message);
+            setErrorMessage(intl.formatMessage({id: error.message}));
         },
         refetchQueries: [AUTHENTICATION_GROUPS_QUERY]
     });

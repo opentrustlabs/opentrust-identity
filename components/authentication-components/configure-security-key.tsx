@@ -49,7 +49,7 @@ const AuthentiationConfigureSecurityKey: React.FC<AuthenticationComponentsProps>
         },
         onError(error) {
             setShowMutationBackdrop(false);
-            setErrorMessage(error.message)
+            setErrorMessage(intl.formatMessage({id: error.message}));
         },
     });
 
@@ -223,7 +223,7 @@ const RegistrationConfigureSecurityKey: React.FC<RegistrationComponentsProps> = 
         },
         onError(error) {
             setShowMutationBackdrop(false);
-            setErrorMessage(error.message)
+            setErrorMessage(intl.formatMessage({id: error.message}));
         },
     });
    

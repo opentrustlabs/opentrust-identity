@@ -13,10 +13,11 @@ import DialogTitle from "@mui/material/DialogTitle";
 import { Button, DialogActions, DialogContent, Divider, TextField } from "@mui/material";
 import AddBoxIcon from '@mui/icons-material/AddBox';
 import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
-
 import { FederatedOidcProviderDomainRel } from "@/graphql/generated/graphql-types";
 import Link from "next/link";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
+import { useIntl } from 'react-intl';
+
 
 export interface FederatedOIDCProviderDomainConfigurationProps {
     federatedOIDCProviderId: string,
@@ -34,6 +35,8 @@ const FederatedOIDCProviderDomainConfiguration: React.FC<FederatedOIDCProviderDo
 
     // CONTEXT VARIABLES
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
+    const intl = useIntl();
+
 
     // STATE VARIABLES
     const [domainToAdd, setDomainToAdd] = React.useState<string | null>(null);
@@ -71,7 +74,7 @@ const FederatedOIDCProviderDomainConfiguration: React.FC<FederatedOIDCProviderDo
         onError(error){
             onUpdateEnd(false);
             //setShowAddDialog(false);
-            setAddErrorMessage(error.message);
+            setAddErrorMessage(intl.formatMessage({id: error.message}));
         },
         refetchQueries: [FEDERATED_OIDC_PROVIDER_DOMAIN_REL_QUERY]
     });
@@ -89,7 +92,7 @@ const FederatedOIDCProviderDomainConfiguration: React.FC<FederatedOIDCProviderDo
         onError(error){
             onUpdateEnd(false);
             setShowRemoveDialog(false);
-            setErrorMessage(error.message);
+            setErrorMessage(intl.formatMessage({id: error.message}));
         },
         refetchQueries: [FEDERATED_OIDC_PROVIDER_DOMAIN_REL_QUERY]
     });

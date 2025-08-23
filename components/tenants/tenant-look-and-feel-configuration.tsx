@@ -16,6 +16,8 @@ import { ResponsiveBreakpoints, ResponsiveContext } from "../contexts/responsive
 import { HexColorPicker } from "react-colorful";
 import DeleteForeverOutlinedIcon from '@mui/icons-material/DeleteForeverOutlined';
 import DetailSectionActionHandler from "../layout/detail-section-action-handler";
+import { useIntl } from 'react-intl';
+
 
 export interface TenantLookAndFeelProps {
     tenantId: string,
@@ -47,6 +49,7 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
 
     // CONTEXT VARIABLES
     const breakPoints: ResponsiveBreakpoints = useContext(ResponsiveContext);
+    const intl = useIntl();
 
     // STATE VARIABLES
     const [markDirty, setMarkDirty] = React.useState<boolean>(false);
@@ -89,7 +92,7 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
         },
         onError(error) {
             onUpdateEnd(false);
-            setErrorMessage(error.message);
+            setErrorMessage(intl.formatMessage({id: error.message}));
             //setShowReset(true);
         }
     });

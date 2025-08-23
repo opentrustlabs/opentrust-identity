@@ -24,6 +24,7 @@
 // import Link from "next/link";
 // import { containsScope } from "@/utils/authz-utils";
 // import EmailEdit, { StateTransition } from "./email-edit";
+// import { useIntl } from 'react-intl';
 
 
 // const MyProfile: React.FC = () => {
@@ -36,6 +37,8 @@
 //     const url = new URL(window.location.href);
 //     const returnUri = url.searchParams.get(QUERY_PARAM_RETURN_URI);
 //     //const returnUri = params?.get(QUERY_PARAM_RETURN_URI);
+//  const intl = useIntl();
+
 
 //     const maxWidth = breakPoints.isSmall ? "90vw" : breakPoints.isMedium ? "80vw" : "850px";
 
@@ -121,7 +124,7 @@
 //             }
 //         },
 //         onError(error) {
-//             setErrorMessage(error.message);
+//             setErrorMessage(intl.formatMessage({id: error.message}));
 //         }        
 //     });
 
@@ -160,7 +163,7 @@
 //             setRecoveryEmail(user.recoveryEmail || null);            
 //         },
 //         onError(error) {
-//             setErrorMessage(error.message);
+//             setErrorMessage(intl.formatMessage({id: error.message}));
 //         },
 //     })
 
@@ -181,7 +184,7 @@
 //             }
 //         },
 //         onError(error) {
-//             setErrorMessage(error.message);
+//             setErrorMessage(intl.formatMessage({id: error.message}));
 //         }
 //     });
 
@@ -196,7 +199,7 @@
 //         },
 //         onError(error) {
 //             setShowMutationBackdrop(false);
-//             setErrorMessage(error.message);
+//             setErrorMessage(intl.formatMessage({id: error.message}));
 //         }
 //     });
 
@@ -210,7 +213,7 @@
 //         },
 //         onError(error) {
 //             setShowMutationBackdrop(false);
-//             setErrorMessage(error.message)
+//             setErrorMessage(intl.formatMessage({id: error.message}));
 //         },
 //         refetchQueries: [USER_MFA_REL_QUERY]
 //     });
@@ -225,7 +228,7 @@
 //         },
 //         onError(error) {
 //             setShowMutationBackdrop(false);
-//             setErrorMessage(error.message)
+//             setErrorMessage(intl.formatMessage({id: error.message}));
 //         },
 //         refetchQueries: [USER_MFA_REL_QUERY]
 //     });
@@ -238,7 +241,7 @@
 //         },
 //         onError(error) {
 //             setShowMutationBackdrop(false);
-//             setErrorMessage(error.message)
+//             setErrorMessage(intl.formatMessage({id: error.message}));
 //         }
 //     });
 
@@ -250,7 +253,7 @@
 //         },
 //         onError(error) {
 //             setShowMutationBackdrop(false);
-//             setErrorMessage(error.message)
+//             setErrorMessage(intl.formatMessage({id: error.message}));
 //         }
 //     });
 

@@ -20,6 +20,8 @@ import Divider from "@mui/material/Divider";
 import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
 import AddBoxIcon from '@mui/icons-material/AddBox';
 import MailOutlineOutlinedIcon from '@mui/icons-material/MailOutlineOutlined';
+import { useIntl } from 'react-intl';
+
 
 
 export type ContactForType = "tenant" | "client" | "signing-key";
@@ -40,7 +42,8 @@ const ContactConfiguration: React.FC<ContactConfigurationProps> = ({
     readOnly
 }) => {
 
-    
+    // CONTEXT VARIABLES
+    const intl = useIntl();
 
     const type = contactForType === "tenant" ?
                     CONTACT_TYPE_FOR_TENANT :
@@ -88,7 +91,7 @@ const ContactConfiguration: React.FC<ContactConfigurationProps> = ({
         },
         onError(error) {
             onUpdateEnd(false);
-            setErrorMessage(error.message);
+            setErrorMessage(intl.formatMessage({id: error.message}));
         }
     });
 
@@ -103,7 +106,7 @@ const ContactConfiguration: React.FC<ContactConfigurationProps> = ({
         },
         onError(error) {
             onUpdateEnd(false);
-            setErrorMessage(error.message);
+            setErrorMessage(intl.formatMessage({id: error.message}));
         }
     });
     

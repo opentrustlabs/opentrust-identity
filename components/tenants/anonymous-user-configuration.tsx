@@ -12,6 +12,7 @@ import Autocomplete from "@mui/material/Autocomplete";
 import { COUNTRY_CODES, CountryCodeDef, LANGUAGE_CODES, LanguageCodeDef } from "@/utils/i18n";
 import { getDefaultCountryCodeDef, getDefaultLanguageCodeDef } from "@/utils/client-utils";
 import DetailSectionActionHandler from "../layout/detail-section-action-handler";
+import { useIntl } from 'react-intl';
 
 
 export interface AnonymousUserConfigurationProps {
@@ -29,6 +30,10 @@ const AnonymousUserConfiguration: React.FC<AnonymousUserConfigurationProps> = ({
     onUpdateStart,
     readOnly
 }) => {
+
+    // CONTEXT VARIABLES
+    const intl = useIntl();
+    
 
     const initInput: TenantAnonymousUserConfigInput = {
         defaultcountrycode: "",
@@ -72,7 +77,7 @@ const AnonymousUserConfiguration: React.FC<AnonymousUserConfigurationProps> = ({
         },
         onError(error) {
             onUpdateEnd(false);
-            setErrorMessage(error.message);
+            setErrorMessage(intl.formatMessage({id: error.message}));
             //setShowReset(true);
         }
     });

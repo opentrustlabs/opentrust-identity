@@ -9,6 +9,8 @@ import Grid2 from "@mui/material/Grid2";
 import TextField from "@mui/material/TextField";
 import { LEGACY_USER_MIGRATION_CONFIGURATION_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import DetailSectionActionHandler from "../layout/detail-section-action-handler";
+import { useIntl } from 'react-intl';
+
 
 export interface LegacyUserMigrationConfigurationProps {
     tenantId: string,
@@ -25,6 +27,9 @@ const LegacyUserMigrationConfiguration: React.FC<LegacyUserMigrationConfiguratio
     onUpdateStart,
     readOnly
 }) => {
+
+    // CONTEXT VARIABLES
+    const intl = useIntl();
 
     const initInput: TenantLegacyUserMigrationConfigInput = {
         authenticationUri: "",
@@ -68,7 +73,7 @@ const LegacyUserMigrationConfiguration: React.FC<LegacyUserMigrationConfiguratio
         },
         onError(error) {
             onUpdateEnd(false);
-            setErrorMessage(error.message);
+            setErrorMessage(intl.formatMessage({id: error.message}));
             //setShowReset(true);
         }
     });

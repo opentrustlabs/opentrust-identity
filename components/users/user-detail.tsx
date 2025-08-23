@@ -39,6 +39,8 @@ import StateProvinceRegionSelector from "./state-province-region-selector";
 import { AuthContext, AuthContextProps } from "@/components/contexts/auth-context";
 import { containsScope } from "@/utils/authz-utils";
 import { MuiTelInput } from "mui-tel-input";
+import { ERROR_CODES } from "@/lib/models/error";
+import { useIntl } from 'react-intl';
 
 export interface UserDetailProps {
     user: User;
@@ -53,6 +55,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
     const { copyContentToClipboard } = useClipboardCopyContext();
     const authContextProps: AuthContextProps = useContext(AuthContext);
     const profile: PortalUserProfile | null = authContextProps.portalUserProfile;
+    const intl = useIntl();
 
     const initInput: UserUpdateInput = {
         domain: user.domain,
@@ -106,7 +109,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
         },
         onError(error) {
             setShowMutationBackdrop(false);
-            setErrorMessage(error.message)
+            setErrorMessage(intl.formatMessage({id: error.message}));
         },
         refetchQueries: [USER_MFA_REL_QUERY]
     });
@@ -121,7 +124,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
         },
         onError(error) {
             setShowMutationBackdrop(false);
-            setErrorMessage(error.message)
+            setErrorMessage(intl.formatMessage({id: error.message}));
         },
         refetchQueries: [USER_MFA_REL_QUERY]
     });
@@ -138,7 +141,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
         },
         onError(error) {
             setShowMutationBackdrop(false);
-            setErrorMessage(error.message);
+            setErrorMessage(intl.formatMessage({id: error.message}));
         },
         refetchQueries: [USER_DETAIL_QUERY]
     });
@@ -154,7 +157,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
         },
         onError(error) {
             setShowMutationBackdrop(false);
-            setErrorMessage(error.message);
+            setErrorMessage(intl.formatMessage({id: error.message}));
         },
         refetchQueries: [USER_DETAIL_QUERY]
     })
@@ -264,7 +267,12 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                                 setIsMarkedForDelete(true);
                                             }
                                             else{
-                                                setErrorMessage(errorMessage || "ERROR");
+                                                if(errorMessage){
+                                                    setErrorMessage(intl.formatMessage({id: errorMessage}));    
+                                                }
+                                                else{
+                                                    setErrorMessage(intl.formatMessage({id: ERROR_CODES.DEFAULT.errorKey}));
+                                                } 
                                             }
                                         }}
                                         onDeleteStart={() => setShowMutationBackdrop(true)}

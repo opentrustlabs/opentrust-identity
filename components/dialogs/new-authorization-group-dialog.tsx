@@ -6,6 +6,7 @@ import { Alert, Button, Checkbox, DialogActions, DialogContent, DialogTitle, Gri
 import React, { useContext } from "react";
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
 import { useRouter } from 'next/navigation';
+import { useIntl } from 'react-intl';
 
 
 export interface NewAuthorizationGroupDialogProps {
@@ -37,6 +38,7 @@ const NewAuthorizationGroupDialog: React.FC<NewAuthorizationGroupDialogProps> = 
 
     // CONTEXT
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
+    const intl = useIntl();
 
     // STATE VARIABLES    
     const [authzGroupInput, setAuthzGroupInput] = React.useState<AuthorizationGroupCreateInput>(initInput);
@@ -58,7 +60,7 @@ const NewAuthorizationGroupDialog: React.FC<NewAuthorizationGroupDialogProps> = 
             },
             onError(error) {
                 onCreateEnd(false);
-                setErrorMessage(error.message)
+                setErrorMessage(intl.formatMessage({id: error.message}));
             },
         }
     );
