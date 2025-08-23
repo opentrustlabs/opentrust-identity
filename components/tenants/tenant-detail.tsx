@@ -40,6 +40,8 @@ import { AuthContext, AuthContextProps } from "@/components/contexts/auth-contex
 import { PortalUserProfile } from "@/graphql/generated/graphql-types";
 import { containsScope } from "@/utils/authz-utils";
 import TenantFederatedOIDCProviderConfiguration from "./tenant-federated-oidc-provider-configuration";
+import { ERROR_CODES } from "@/lib/models/error";
+import { useIntl } from 'react-intl';
 
 
 export interface TenantDetailProps {
@@ -79,6 +81,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
     const { copyContentToClipboard } = useClipboardCopyContext();
     const authContextProps: AuthContextProps = useContext(AuthContext);
     const profile: PortalUserProfile | null = authContextProps.portalUserProfile;
+    const intl = useIntl();
 
     const initInput: TenantUpdateInput = {
         allowAnonymousUsers: tenant.allowAnonymousUsers,
@@ -136,7 +139,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
             onError(error) {
                 setOverviewDirty(false);
                 setShowMutationBackdrop(false);
-                setErrorMessage(error.message);
+                setErrorMessage(intl.formatMessage({id: error.message}));
             },
             refetchQueries: [{query: TENANT_DETAIL_QUERY, variables: {tenantId: tenant.tenantId}}]
         }
@@ -191,7 +194,12 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                                     setIsMarkedForDelete(true);
                                                 }
                                                 else{
-                                                    setErrorMessage(errorMessage || "ERROR");
+                                                    if(errorMessage){
+                                                        setErrorMessage(intl.formatMessage({id: errorMessage}));    
+                                                    }
+                                                    else{
+                                                        setErrorMessage(intl.formatMessage({id: ERROR_CODES.DEFAULT.errorKey}));
+                                                    } 
                                                 }
                                             }}
                                             onDeleteStart={() => setShowMutationBackdrop(true)}

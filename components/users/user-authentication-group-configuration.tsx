@@ -23,9 +23,7 @@ import Link from "next/link";
 import { AuthContext, AuthContextProps } from "../contexts/auth-context";
 import { containsScope } from "@/utils/authz-utils";
 import { AUTHENTICATION_GROUP_USER_ASSIGN_SCOPE, AUTHENTICATION_GROUP_USER_REMOVE_SCOPE, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
-
-
-
+import { useIntl } from 'react-intl';
 
 export interface UserAuthenticationGroupConfigurationProps {
     userId: string
@@ -43,6 +41,7 @@ const UserAuthenticationGroupConfiguration: React.FC<UserAuthenticationGroupConf
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
     const authContextProps: AuthContextProps = useContext(AuthContext);
     const profile: PortalUserProfile | null = authContextProps.portalUserProfile;
+    const intl = useIntl();
 
 
     // STATE VARIABLES
@@ -73,7 +72,7 @@ const UserAuthenticationGroupConfiguration: React.FC<UserAuthenticationGroupConf
         onError(error) {
             onUpdateEnd(false);
             setShowAddDialog(false);
-            setErrorMessage(error.message);
+            setErrorMessage(intl.formatMessage({id: error.message}));
             setGroupToAdd(null);
         },
         refetchQueries: [AUTHENTICATION_GROUPS_QUERY]
@@ -88,7 +87,7 @@ const UserAuthenticationGroupConfiguration: React.FC<UserAuthenticationGroupConf
         onError(error) {
             onUpdateEnd(false);
             setShowAddDialog(false);
-            setErrorMessage(error.message);
+            setErrorMessage(intl.formatMessage({id: error.message}));
             setGroupToRemove(null);
         },
         refetchQueries: [AUTHENTICATION_GROUPS_QUERY]

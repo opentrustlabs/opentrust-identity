@@ -9,6 +9,8 @@ import { containsScope } from "@/utils/authz-utils";
 import DetailSectionActionHandler from "../layout/detail-section-action-handler";
 import { useMutation } from "@apollo/client";
 import { UPDATE_SYSTEM_SETTINGS_MUTATION } from "@/graphql/mutations/oidc-mutations";
+import { useIntl } from 'react-intl';
+
 
 
 export interface SystemSettingsDetailProps {
@@ -24,6 +26,8 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
     // CONTEXT VARIABLES
     const authContextProps: AuthContextProps = useContext(AuthContext);
     const profile: PortalUserProfile | null = authContextProps.portalUserProfile;
+    const intl = useIntl();
+
 
     // STATE VARIABLES    
     const initInput: SystemSettingsUpdateInput = {
@@ -55,7 +59,7 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
         },
         onError(error) {
             setShowMutationBackdrop(false);
-            setErrorMessage(error.message);
+            setErrorMessage(intl.formatMessage({id: error.message}));
         }
     });
 

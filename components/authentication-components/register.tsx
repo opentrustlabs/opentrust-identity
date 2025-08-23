@@ -135,7 +135,7 @@ const Register: React.FC = () => {
             }
         },
         onError(error) {
-            setErrorMessage(error.message);            
+            setErrorMessage(intl.formatMessage({id: error.message}));            
         }
     });
 
@@ -147,7 +147,7 @@ const Register: React.FC = () => {
         },
         onError(error) {
             setShowMutationBackdrop(false);
-            setErrorMessage(error.message);
+            setErrorMessage(intl.formatMessage({id: error.message}));
         },
     });
 
@@ -158,7 +158,7 @@ const Register: React.FC = () => {
             handleUserRegistrationStateResponse(userRegistrationStateResponse, null);
         },
         onError(error) {
-            setErrorMessage(error.message);
+            
         },
     })
 
@@ -169,7 +169,7 @@ const Register: React.FC = () => {
                 setErrorMessage(intl.formatMessage({id: "ERROR_DEFAULT_ERROR_MESSAGE"}));
             }
             else{
-                setErrorMessage(errorMessage);
+                setErrorMessage(intl.formatMessage({id: errorMessage}));
             }
         }
         else{

@@ -24,6 +24,8 @@ import { SCOPE_CLIENT_ASSIGN_SCOPE, SCOPE_CLIENT_REMOVE_SCOPE, SCOPE_GROUP_ASSIG
 import { USER_SCOPE_REMOVE_MUTATION, AUTHORIZATION_GROUP_SCOPE_REMOVE_MUTATION, CLIENT_SCOPE_REMOVE_MUTATION, BULK_CLIENT_SCOPE_ASSIGN_MUTATION, BULK_AUTHORIZATION_GROUP_SCOPE_ASSIGN_MUTATION, BULK_USER_SCOPE_ASSIGN_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import { AuthContext, AuthContextProps } from "../contexts/auth-context";
 import { containsScope } from "@/utils/authz-utils";
+import { useIntl } from 'react-intl';
+
 
 export enum ScopeRelType {
     USER,
@@ -52,6 +54,8 @@ const ScopeRelConfiguration: React.FC<ScopeRelConfigurationProps> = ({
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
     const authContextProps: AuthContextProps = useContext(AuthContext);
     const profile: PortalUserProfile | null = authContextProps.portalUserProfile;
+    const intl = useIntl();
+
 
     // STATE VARIABLES
     const requiredAssignScope = scopeRelType === ScopeRelType.USER ? SCOPE_USER_ASSIGN_SCOPE :
@@ -116,7 +120,7 @@ const ScopeRelConfiguration: React.FC<ScopeRelConfigurationProps> = ({
         },
         onError(error) {
             onUpdateEnd(false);
-            setErrorMessage(error.message)
+            setErrorMessage(intl.formatMessage({id: error.message}));
         }
     });
 
@@ -128,7 +132,7 @@ const ScopeRelConfiguration: React.FC<ScopeRelConfigurationProps> = ({
         },
         onError(error) {
             onUpdateEnd(false);
-            setErrorMessage(error.message)
+            setErrorMessage(intl.formatMessage({id: error.message}));
         }
     })
 

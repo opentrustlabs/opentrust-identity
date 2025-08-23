@@ -18,6 +18,8 @@ import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
 import GeneralSelector from "../dialogs/general-selector";
 import { AuthContext, AuthContextProps } from "../contexts/auth-context";
 import { containsScope } from "@/utils/authz-utils";
+import { useIntl } from 'react-intl';
+
 
 export interface TenantFederatedOIDCProviderConfigurationProps {
     tenantId: string,
@@ -38,6 +40,7 @@ const TenantFederatedOIDCProviderConfiguration: React.FC<TenantFederatedOIDCProv
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
     const authContextProps: AuthContextProps = useContext(AuthContext);
     const profile: PortalUserProfile | null = authContextProps.portalUserProfile;
+    const intl = useIntl();
 
     // STATE VARIABLES
     const [selectedOIDCProviderToRemove, setSelectedOIDCProviderToRemove] = React.useState<{id: string, name: string} | null>(null);
@@ -64,7 +67,7 @@ const TenantFederatedOIDCProviderConfiguration: React.FC<TenantFederatedOIDCProv
         },
         onError(error) {
             onUpdateEnd(false);
-            setErrorMessage(error.message);
+            setErrorMessage(intl.formatMessage({id: error.message}));
         },
         
     });
@@ -81,7 +84,7 @@ const TenantFederatedOIDCProviderConfiguration: React.FC<TenantFederatedOIDCProv
         },
         onError(error) {
             onUpdateEnd(false);
-            setErrorMessage(error.message);
+            setErrorMessage(intl.formatMessage({id: error.message}));
         },
     });
 

@@ -11,6 +11,7 @@ import { Alert, Button, DialogActions, DialogTitle, Divider, Grid2, TextField, T
 import DataLoading from "../layout/data-loading";
 import ErrorComponent from "../error/error-component";
 import { TenantManagementDomainRel } from "@/graphql/generated/graphql-types";
+import { useIntl } from 'react-intl';
 
 export interface TenantAuthenticationDomainConfigurationProps {
     tenantId: string,
@@ -26,18 +27,24 @@ const TenantAuthenticationDomainConfiguration: React.FC<TenantAuthenticationDoma
     readOnly
 }) => {
 
+    // CONTEXT VARIABLES
+    const intl = useIntl();
 
+
+    // STATE VARIABLES
     const [selectedDomainToAdd, setSelectedDomainToAdd] = React.useState<string | null>(null);
     const [selectedDomainToDelete, setSelectedDomainToDelete] = React.useState<string | null>(null);
     const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
     const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
     const [addDialogOpen, setAddDialogOpen] = React.useState(false);
 
+
+    // GRAPHQL FUNCTIONS
     const {data, loading, error} = useQuery(TENANT_AUTHENTICATION_DOMAIN_REL_QUERY, {
         variables: {
             tenantId: tenantId
         }
-    })
+    });
 
     const [addTenantAuthenticationDomainRel] = useMutation(TENANT_RESTRICTED_DOMAIN_REL_ADD_MUTATION, {
         variables: {
@@ -50,7 +57,7 @@ const TenantAuthenticationDomainConfiguration: React.FC<TenantAuthenticationDoma
         },
         onError(error) {
             onUpdateEnd(false);
-            setErrorMessage(error.message);
+            setErrorMessage(intl.formatMessage({id: error.message}));
         },
         refetchQueries: [TENANT_AUTHENTICATION_DOMAIN_REL_QUERY]
     });
@@ -66,7 +73,7 @@ const TenantAuthenticationDomainConfiguration: React.FC<TenantAuthenticationDoma
         },
         onError(error) {
             onUpdateEnd(false);
-            setErrorMessage(error.message);
+            setErrorMessage(intl.formatMessage({id: error.message}));
         },
         refetchQueries: [TENANT_AUTHENTICATION_DOMAIN_REL_QUERY]
     });

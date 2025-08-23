@@ -131,7 +131,7 @@ const Login: React.FC<LoginProps>= ({
             handleUserAuthenticationResponse(authnStateResponse, null);
         },
         onError(error) {
-            setErrorMessage(error.message);
+            setErrorMessage(intl.formatMessage({id: error.message}));
         }
     });
 
@@ -141,7 +141,7 @@ const Login: React.FC<LoginProps>= ({
             handleUserAuthenticationResponse(authnStateResponse, null);
         },
         onError(error) {
-            setErrorMessage(error.message);
+            setErrorMessage(intl.formatMessage({id: error.message}));
         }
     });
 
@@ -151,7 +151,7 @@ const Login: React.FC<LoginProps>= ({
             handleUserAuthenticationResponse(authnStateResponse, null);
         },
         onError(error) {
-            setErrorMessage(error.message);
+            setErrorMessage(intl.formatMessage({id: error.message}));
         }
     })
 
@@ -161,7 +161,7 @@ const Login: React.FC<LoginProps>= ({
             handleUserAuthenticationResponse(authnStateResponse, null);
         },
         onError(error) {
-            setErrorMessage(error.message);
+            setErrorMessage(intl.formatMessage({id: error.message}));
         }
     });
 
@@ -171,7 +171,7 @@ const Login: React.FC<LoginProps>= ({
             handleUserAuthenticationResponse(authnStateResponse, null);
         },
         onError(error) {
-            setErrorMessage(error.message);
+            setErrorMessage(intl.formatMessage({id: error.message}));
         }
     });
 
@@ -181,7 +181,7 @@ const Login: React.FC<LoginProps>= ({
             handleUserAuthenticationResponse(authnStateResponse, null);
         },
         onError(error) {
-            setErrorMessage(error.message);
+            setErrorMessage(intl.formatMessage({id: error.message}));
         }
     });
 
@@ -192,7 +192,7 @@ const Login: React.FC<LoginProps>= ({
                 setErrorMessage(intl.formatMessage({id: "ERROR_DEFAULT_ERROR_MESSAGE"}));
             }
             else {
-                setErrorMessage(errorMessage);
+                setErrorMessage(intl.formatMessage({id: errorMessage}));
             }
         }
         else {

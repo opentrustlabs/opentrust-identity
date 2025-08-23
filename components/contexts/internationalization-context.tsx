@@ -108,7 +108,7 @@ const InternationalizationContextProvider: React.FC<{ children: React.ReactNode}
                 }
             }
         >
-            <IntlProvider locale={lang !== "" ? lang : DEFAULT_LANGUAGE} messages={messages[lang] || messages[DEFAULT_LANGUAGE]}>
+            <IntlProvider defaultLocale="en" locale={lang !== "" ? lang : DEFAULT_LANGUAGE} messages={messages[lang] || messages[DEFAULT_LANGUAGE]}>
                 {children}
             </IntlProvider>
             

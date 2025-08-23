@@ -18,6 +18,8 @@ import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
 import DialogTitle from "@mui/material/DialogTitle";
 import { TextField } from "@mui/material";
 import { isValidRedirectUri } from "@/utils/client-utils";
+import { useIntl } from 'react-intl';
+
 
 
 
@@ -37,6 +39,9 @@ const ClientRedirectUriConfiguration: React.FC<ClientRedirectUriConfigurationPro
     readOnly
 }) => {
 
+    // CONTEXT VARIABLES
+    const intl = useIntl();
+    
     // STATE VARIABLES
     const [uriToAdd, setUriToAdd] = React.useState<string | null>(null);
     const [uriToRemove, setUriToRemove] = React.useState<string | null>(null);
@@ -64,7 +69,7 @@ const ClientRedirectUriConfiguration: React.FC<ClientRedirectUriConfigurationPro
         onError(error) {
             onUpdateEnd(false);
             setSelectDialogOpen(false);
-            setErrorMessage(error.message);
+            setErrorMessage(intl.formatMessage({id: error.message}));
         },
         refetchQueries: [REDIRECT_URIS_QUERY]
     });
@@ -79,7 +84,7 @@ const ClientRedirectUriConfiguration: React.FC<ClientRedirectUriConfigurationPro
         },
         onError(error) {
             onUpdateEnd(false);
-            setErrorMessage(error.message);
+            setErrorMessage(intl.formatMessage({id: error.message}));
         },
         refetchQueries: [REDIRECT_URIS_QUERY]
     });

@@ -11,6 +11,8 @@ import TextField from "@mui/material/TextField";
 import { Alert, Autocomplete, Checkbox, Divider, MenuItem, Select } from "@mui/material";
 import { PASSWORD_CONFIGURATION_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import DetailSectionActionHandler from "../layout/detail-section-action-handler";
+import { useIntl } from 'react-intl';
+
 
 export interface PasswordRulesConfigurationProps {
     tenantId: string,
@@ -26,6 +28,9 @@ const PasswordRulesConfiguration: React.FC<PasswordRulesConfigurationProps> = ({
     readOnly
 }) => {
 
+    // CONTEXT VARIABLES
+    const intl = useIntl();
+    
     const initInput: PasswordConfigInput = DEFAULT_TENANT_PASSWORD_CONFIGURATION;
     initInput.tenantId = tenantId;
 
@@ -75,7 +80,7 @@ const PasswordRulesConfiguration: React.FC<PasswordRulesConfigurationProps> = ({
         onError(error) {
             onUpdateEnd(false);
             setPasswordConfigInput(revertToInput);
-            setErrorMessage(error.message)
+            setErrorMessage(intl.formatMessage({id: error.message}));
         },
         refetchQueries: [TENANT_PASSWORD_CONFIG_QUERY]
     }
