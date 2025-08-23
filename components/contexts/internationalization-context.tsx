@@ -6,6 +6,7 @@ import daMessages from "../../locales/da.json";
 import deMessages from "../../locales/de.json";
 import enMessages from "../../locales/en.json";
 import esMessages from "../../locales/es.json";
+import csMessages from "../../locales/cs.json";
 import fiMessages from "../../locales/fi.json";
 import frMessages from "../../locales/fr.json";
 import hiMessages from "../../locales/hi.json";
@@ -25,6 +26,7 @@ import { SELECTED_LANUGAGE_CODE_STORAGE_KEY } from "@/utils/consts";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const messages: Record<string, any> = {
+    cs: csMessages,
     da: daMessages,
     de: deMessages,
     en: enMessages,

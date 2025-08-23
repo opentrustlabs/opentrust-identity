@@ -321,6 +321,15 @@
 	"TIME_BASED_OTP": "Одноразовый пароль с ограничением по времени",
 	"SECURITY_KEY": "Ключ безопасности",
 	"PROFILE_UPDATED": "Профиль обновлен",
-	"SCOPE_PERMISSION_REQUEST": "требует вашего разрешения на доступ к следующим функциям или сервисам"
-
+	"SCOPE_PERMISSION_REQUEST": "требует вашего разрешения на доступ к следующим функциям или сервисам",
+    "ERROR_NO_AUTHORIZATION_ENDPOINT_CONFIGURED": "Не настроен URI авторизации.",
+    "ERROR_NO_REGISTRATION_REDIRECT_URI_CONFIGURED": "Не настроен URI регистрации.",
+    "ERROR_NO_REDIRECT_ENDPOINT_CONFIGURED": "Не настроен URI перенаправления.",
+    "ERROR_NO_TENANT_TO_SELECT": "Не выбран клиент.",
+    "ERROR_OIDC_AUTHORIZATION_FAILED_CLIENT_CONFIGURATION_ERROR": "Произошла ошибка в конфигурации клиента или ссылающегося приложения.",
+    "ERROR_OIDC_AUTHORIZATION_FAILED_NO_LOGIN_PERMITTED": "Вход будет невозможен до устранения проблем. Повторите попытку позже или обратитесь в службу поддержки, если проблема не исчезнет.",
+    "NEED_TO_CREATE_AN_ACCOUNT": "Нужно создать учётную запись?",
+    "OR": "Или",
+    "SIGN_IN_WITH": "Войти с помощью",
+    "SELECT_A_LANGUAGE": "Выберите язык"
 }

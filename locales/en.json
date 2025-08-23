@@ -321,5 +321,15 @@
     "TIME_BASED_OTP": "Time-based One Time Passcode",
     "SECURITY_KEY": "Security Key",
     "PROFILE_UPDATED": "Profile Updated",
-    "SCOPE_PERMISSION_REQUEST": "wants your permission to access the following features or services"
+    "SCOPE_PERMISSION_REQUEST": "wants your permission to access the following features or services",
+    "ERROR_NO_AUTHORIZATION_ENDPOINT_CONFIGURED": "There is no authorization URI configured",
+    "ERROR_NO_REGISTRATION_REDIRECT_URI_CONFIGURED": "There is no registration URI configured",
+    "ERROR_NO_REDIRECT_ENDPOINT_CONFIGURED": "There is no redirect URI configured",
+    "ERROR_NO_TENANT_TO_SELECT": "There is no tenant to select",
+    "ERROR_OIDC_AUTHORIZATION_FAILED_CLIENT_CONFIGURATION_ERROR": "There was an error with the configuration of the client or referring application",
+    "ERROR_OIDC_AUTHORIZATION_FAILED_NO_LOGIN_PERMITTED": "Login will not be permitted until the issues are resolved. Please try again later or contact support if the problem persists.",
+    "NEED_TO_CREATE_AN_ACCOUNT": "Need to create an account?",
+    "OR": "Or",
+    "SIGN_IN_WITH": "Sign in with",
+    "SELECT_A_LANGUAGE": "Select a Language"
 }

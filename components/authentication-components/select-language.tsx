@@ -10,9 +10,10 @@ import LanguageIcon from '@mui/icons-material/Language';
 import { useIntl } from 'react-intl';
 
 
-const SUPPORTED_LANGUAGES = ["zh", "da", "de", "en", "es", "fr", "hi", "it", "ja", "ko", "nl", "no", "pl", "pt", "ru", "sv", "fi", "vi"];
+const SUPPORTED_LANGUAGES = ["zh", "cs", "da", "de", "en", "es", "fr", "hi", "it", "ja", "ko", "nl", "no", "pl", "pt", "ru", "sv", "fi", "vi"];
 const TRANSLATED_LANGUAGES = new Map<string, string>([
     ["zh", "中國人"],
+    ["cs", "český"],
     ["da", "Dansk"],
     ["de", "Deutsch"],
     ["en", "English"],

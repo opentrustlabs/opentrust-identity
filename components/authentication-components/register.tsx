@@ -186,7 +186,7 @@ const Register: React.FC = () => {
                 response.userRegistrationState.registrationState === RegistrationState.RedirectToIamPortal
             ) {
                 if (!response.uri) {
-                    setErrorMessage("ERROR_NO_REDIRECT_ENDPOINT_CONFIGURED");
+                    setErrorMessage(intl.formatMessage({id: "ERROR_NO_REDIRECT_ENDPOINT_CONFIGURED"}));
                 }
                 else {
                     if(response.userRegistrationState.registrationState === RegistrationState.RedirectToIamPortal){

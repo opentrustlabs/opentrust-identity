@@ -321,6 +321,15 @@
 	"TIME_BASED_OTP": "Codice di accesso monouso basato sul tempo",
 	"SECURITY_KEY": "Chiave di sicurezza",
 	"PROFILE_UPDATED": "Profilo aggiornato",
-	"SCOPE_PERMISSION_REQUEST": "richiede la tua autorizzazione per accedere alle seguenti funzionalità o servizi"
-
+	"SCOPE_PERMISSION_REQUEST": "richiede la tua autorizzazione per accedere alle seguenti funzionalità o servizi",
+    "ERROR_NO_AUTHORIZATION_ENDPOINT_CONFIGURED": "Nessun URI di autorizzazione configurato",
+    "ERROR_NO_REGISTRATION_REDIRECT_URI_CONFIGURED": "Nessun URI di registrazione configurato",
+    "ERROR_NO_REDIRECT_ENDPOINT_CONFIGURED": "Nessun URI di reindirizzamento configurato",
+    "ERROR_NO_TENANT_TO_SELECT": "Nessun tenant da selezionare",
+    "ERROR_OIDC_AUTHORIZATION_FAILED_CLIENT_CONFIGURATION_ERROR": "Si è verificato un errore nella configurazione del client o dell'applicazione di riferimento",
+    "ERROR_OIDC_AUTHORIZATION_FAILED_NO_LOGIN_PERMITTED": "L'accesso non sarà consentito finché i problemi non saranno risolti. Riprovare più tardi o contattare l'assistenza se il problema persiste.",
+    "NEED_TO_CREATE_AN_ACCOUNT": "Devi creare un account?",
+    "OR": "Oppure",
+    "SIGN_IN_WITH": "Accedi con",
+    "SELECT_A_LANGUAGE": "Seleziona una lingua"
 }

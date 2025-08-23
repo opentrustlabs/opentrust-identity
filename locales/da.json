@@ -321,5 +321,15 @@
 	"TIME_BASED_OTP": "Tidsbaseret engangsadgangskode",
 	"SECURITY_KEY": "Sikkerhedsnøgle",
 	"PROFILE_UPDATED": "Profil opdateret",
-	"SCOPE_PERMISSION_REQUEST": "ønsker din tilladelse til at få adgang til følgende funktioner eller tjenester"
+	"SCOPE_PERMISSION_REQUEST": "ønsker din tilladelse til at få adgang til følgende funktioner eller tjenester",
+    "ERROR_NO_AUTHORIZATION_ENDPOINT_CONFIGURED": "Der er ingen konfigureret godkendelses-URI",
+    "ERROR_NO_REGISTRATION_REDIRECT_URI_CONFIGURED": "Der er ingen konfigureret registrerings-URI",
+    "ERROR_NO_REDIRECT_ENDPOINT_CONFIGURED": "Der er ingen konfigureret omdirigerings-URI",
+    "ERROR_NO_TENANT_TO_SELECT": "Der er ingen lejer at vælge",
+    "ERROR_OIDC_AUTHORIZATION_FAILED_CLIENT_CONFIGURATION_ERROR": "Der opstod en fejl med konfigurationen af klienten eller det henvisende program",
+    "ERROR_OIDC_AUTHORIZATION_FAILED_NO_LOGIN_PERMITTED": "Login er ikke tilladt, før problemerne er løst. Prøv igen senere, eller kontakt support, hvis problemet fortsætter.",
+    "NEED_TO_CREATE_AN_ACCOUNT": "Har du brug for at oprette en konto?",
+    "OR": "Eller",
+    "SIGN_IN_WITH": "Log ind med",
+    "SELECT_A_LANGUAGE": "Vælg et sprog"
 }

@@ -321,5 +321,15 @@
 	"TIME_BASED_OTP": "Tidsbaserat engångslösenord",
 	"SECURITY_KEY": "Säkerhetsnyckel",
 	"PROFILE_UPDATED": "Profil uppdaterad",
-	"SCOPE_PERMISSION_REQUEST": "vill ha din behörighet att komma åt följande funktioner eller tjänster"
+	"SCOPE_PERMISSION_REQUEST": "vill ha din behörighet att komma åt följande funktioner eller tjänster",
+    "ERROR_NO_AUTHORIZATION_ENDPOINT_CONFIGURED": "Ingen auktoriserings-URI har konfigurerats",
+    "ERROR_NO_REGISTRATION_REDIRECT_URI_CONFIGURED": "Ingen registrerings-URI har konfigurerats",
+    "ERROR_NO_REDIRECT_ENDPOINT_CONFIGURED": "Ingen omdirigerings-URI har konfigurerats",
+    "ERROR_NO_TENANT_TO_SELECT": "Ingen hyresgäst att välja",
+    "ERROR_OIDC_AUTHORIZATION_FAILED_CLIENT_CONFIGURATION_ERROR": "Ett fel uppstod med konfigurationen av klienten eller det refererande programmet",
+    "ERROR_OIDC_AUTHORIZATION_FAILED_NO_LOGIN_PERMITTED": "Inloggning tillåts inte förrän problemen är lösta. Försök igen senare eller kontakta supporten om problemet kvarstår.",
+    "NEED_TO_CREATE_AN_ACCOUNT": "Behöver du skapa ett konto?",
+    "OR": "Eller",
+    "SIGN_IN_WITH": "Logga in med",
+    "SELECT_A_LANGUAGE": "Välj ett språk"
 }

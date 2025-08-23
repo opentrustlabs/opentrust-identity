@@ -321,5 +321,15 @@
 	"TIME_BASED_OTP": "基於時間的一次性密碼",
 	"SECURITY_KEY": "安全金鑰",
 	"PROFILE_UPDATED": "個人資料已更新",
-	"SCOPE_PERMISSION_REQUEST": "請求您的許可以存取以下功能或服務"
+	"SCOPE_PERMISSION_REQUEST": "請求您的許可以存取以下功能或服務",
+    "ERROR_NO_AUTHORIZATION_ENDPOINT_CONFIGURED": "未設定授權 URI",
+    "ERROR_NO_REGISTRATION_REDIRECT_URI_CONFIGURED": "未設定註冊 URI",
+    "ERROR_NO_REDIRECT_ENDPOINT_CONFIGURED": "未配置重定向 URI",
+    "ERROR_NO_TENANT_TO_SELECT": "沒有租戶可供選擇",
+    "ERROR_OIDC_AUTHORIZATION_FAILED_CLIENT_CONFIGURATION_ERROR": "客戶端或引用應用程式的配置存在錯誤",
+    "ERROR_OIDC_AUTHORIZATION_FAILED_NO_LOGIN_PERMITTED": "在問題解決之前，將不允許登入。請稍後重試，如果問題仍然存在，請聯絡支援人員。",
+    "NEED_TO_CREATE_AN_ACCOUNT": "需要建立帳戶嗎？",
+    "OR": "或",
+    "SIGN_IN_WITH": "使用以下方式登入",
+    "SELECT_A_LANGUAGE": "選擇語言"
 }

@@ -321,6 +321,15 @@
 	"TIME_BASED_OTP": "Palavra-passe de uso único com base no tempo",
 	"SECURITY_KEY": "Chave de segurança",
 	"PROFILE_UPDATED": "Perfil atualizado",
-	"SCOPE_PERMISSION_REQUEST": "pretende a sua permissão para aceder aos seguintes recursos ou serviços"
-
+	"SCOPE_PERMISSION_REQUEST": "pretende a sua permissão para aceder aos seguintes recursos ou serviços",
+    "ERROR_NO_AUTHORIZATION_ENDPOINT_CONFIGURED": "Não há URI de autorização configurado",
+    "ERROR_NO_REGISTRATION_REDIRECT_URI_CONFIGURED": "Não há URI de registo configurado",
+    "ERROR_NO_REDIRECT_ENDPOINT_CONFIGURED": "Não há URI de redireccionamento configurado",
+    "ERROR_NO_TENANT_TO_SELECT": "Não há locatário para selecionar",
+    "ERROR_OIDC_AUTHORIZATION_FAILED_CLIENT_CONFIGURATION_ERROR": "Ocorreu um erro com a configuração do cliente ou da aplicação de referência",
+    "ERROR_OIDC_AUTHORIZATION_FAILED_NO_LOGIN_PERMITTED": "O login não será permitido até que os problemas sejam resolvidos. Tente novamente mais tarde ou contacte o suporte se o problema persistir.",
+    "NEED_TO_CREATE_AN_ACCOUNT": "Precisa de criar uma conta?",
+    "OR": "Ou",
+    "SIGN_IN_WITH": "Faça login com",
+    "SELECT_A_LANGUAGE": "Selecione um idioma"
 }

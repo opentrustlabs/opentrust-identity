@@ -321,5 +321,15 @@
     "TIME_BASED_OTP": "Zeitbasierter Einmalpasswort",
     "SECURITY_KEY": "Sicherheitsschlüssel",
     "PROFILE_UPDATED": "Profil aktualisiert",
-    "SCOPE_PERMISSION_REQUEST": "Benötigt Ihre Erlaubnis für den Zugriff auf die folgenden Funktionen oder Dienste"
+    "SCOPE_PERMISSION_REQUEST": "Benötigt Ihre Erlaubnis für den Zugriff auf die folgenden Funktionen oder Dienste",
+    "ERROR_NO_AUTHORIZATION_ENDPOINT_CONFIGURED": "Es ist keine Autorisierungs-URI konfiguriert.",
+    "ERROR_NO_REGISTRATION_REDIRECT_URI_CONFIGURED": "Es ist keine Registrierungs-URI konfiguriert.",
+    "ERROR_NO_REDIRECT_ENDPOINT_CONFIGURED": "Es ist keine Weiterleitungs-URI konfiguriert.",
+    "ERROR_NO_TENANT_TO_SELECT": "Es steht kein Mandant zur Auswahl.",
+    "ERROR_OIDC_AUTHORIZATION_FAILED_CLIENT_CONFIGURATION_ERROR": "Bei der Konfiguration des Clients oder der verweisenden Anwendung ist ein Fehler aufgetreten.",
+    "ERROR_OIDC_AUTHORIZATION_FAILED_NO_LOGIN_PERMITTED": "Die Anmeldung ist erst nach Behebung des Problems möglich. Bitte versuchen Sie es später erneut oder wenden Sie sich an den Support, falls das Problem weiterhin besteht.",
+    "NEED_TO_CREATE_AN_ACCOUNT": "Müssen Sie ein Konto erstellen?",
+    "OR": "Oder",
+    "SIGN_IN_WITH": "Anmelden mit",
+    "SELECT_A_LANGUAGE": "Sprache auswählen"
 }

@@ -321,5 +321,15 @@
 	"TIME_BASED_OTP": "Tijdgebonden eenmalige toegangscode",
 	"SECURITY_KEY": "Beveiligingssleutel",
 	"PROFILE_UPDATED": "Profiel bijgewerkt",
-	"SCOPE_PERMISSION_REQUEST": "vraagt uw toestemming voor toegang tot de volgende functies of services"
+	"SCOPE_PERMISSION_REQUEST": "vraagt uw toestemming voor toegang tot de volgende functies of services",
+    "ERROR_NO_AUTHORIZATION_ENDPOINT_CONFIGURED": "Er is geen autorisatie-URI geconfigureerd",
+    "ERROR_NO_REGISTRATION_REDIRECT_URI_CONFIGURED": "Er is geen registratie-URI geconfigureerd",
+    "ERROR_NO_REDIRECT_ENDPOINT_CONFIGURED": "Er is geen omleidings-URI geconfigureerd",
+    "ERROR_NO_TENANT_TO_SELECT": "Er is geen tenant om te selecteren",
+    "ERROR_OIDC_AUTHORIZATION_FAILED_CLIENT_CONFIGURATION_ERROR": "Er is een fout opgetreden bij de configuratie van de client of verwijzende applicatie",
+    "ERROR_OIDC_AUTHORIZATION_FAILED_NO_LOGIN_PERMITTED": "Aanmelden is niet toegestaan ​​totdat de problemen zijn opgelost. Probeer het later opnieuw of neem contact op met de ondersteuning als het probleem aanhoudt.",
+    "NEED_TO_CREATE_AN_ACCOUNT": "Moet u een account aanmaken?",
+    "OR": "Of",
+    "SIGN_IN_WITH": "Meld u aan met",
+    "SELECT_A_LANGUAGE": "Selecteer een taal"
 }

@@ -321,5 +321,15 @@
 	"TIME_BASED_OTP": "समय-आधारित एकमुश्त पासकोड",
 	"SECURITY_KEY": "सुरक्षा कुंजी",
 	"PROFILE_UPDATED": "प्रोफ़ाइल अपडेट की गई",
-	"SCOPE_PERMISSION_REQUEST": "निम्नलिखित सुविधाओं या सेवाओं तक पहुँचने के लिए आपकी अनुमति चाहता है"
+	"SCOPE_PERMISSION_REQUEST": "निम्नलिखित सुविधाओं या सेवाओं तक पहुँचने के लिए आपकी अनुमति चाहता है",
+    "ERROR_NO_AUTHORIZATION_ENDPOINT_CONFIGURED": "कोई प्राधिकरण URI कॉन्फ़िगर नहीं किया गया है",
+    "ERROR_NO_REGISTRATION_REDIRECT_URI_CONFIGURED": "कोई पंजीकरण URI कॉन्फ़िगर नहीं किया गया है",
+    "ERROR_NO_REDIRECT_ENDPOINT_CONFIGURED": "कोई रीडायरेक्ट URI कॉन्फ़िगर नहीं किया गया है",
+    "ERROR_NO_TENANT_TO_SELECT": "चुनने के लिए कोई टेनेंट नहीं है",
+    "ERROR_OIDC_AUTHORIZATION_FAILED_CLIENT_CONFIGURATION_ERROR": "क्लाइंट या रेफ़रिंग एप्लिकेशन के कॉन्फ़िगरेशन में कोई त्रुटि हुई है",
+    "ERROR_OIDC_AUTHORIZATION_FAILED_NO_LOGIN_PERMITTED": "समस्याओं का समाधान होने तक लॉगिन की अनुमति नहीं दी जाएगी। कृपया बाद में पुनः प्रयास करें या यदि समस्या बनी रहती है, तो सहायता से संपर्क करें।",
+    "NEED_TO_CREATE_AN_ACCOUNT": "क्या आपको खाता बनाने की आवश्यकता है?",
+    "OR": "या",
+    "SIGN_IN_WITH": "इससे साइन इन करें",
+    "SELECT_A_LANGUAGE": "भाषा चुनें"
 }

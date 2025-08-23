@@ -206,7 +206,7 @@ const Login: React.FC<LoginProps>= ({
             }
             else if (authnStateResponse.userAuthenticationState.authenticationState === AuthenticationState.AuthWithFederatedOidc) {
                 if (!authnStateResponse.uri) {
-                    setErrorMessage("ERROR_NO_AUTHORIZATION_ENDPOINT_CONFIGURED");
+                    setErrorMessage(intl.formatMessage({id: "ERROR_NO_AUTHORIZATION_ENDPOINT_CONFIGURED"}));
                 }
                 else {
                     router.push(authnStateResponse.uri);
@@ -214,7 +214,7 @@ const Login: React.FC<LoginProps>= ({
             }
             else if (authnStateResponse.userAuthenticationState.authenticationState === AuthenticationState.Register) {
                 if (!authnStateResponse.uri) {
-                    setErrorMessage("ERROR_NO_REGISTRATION_REDIRECT_URI_CONFIGURED");
+                    setErrorMessage(intl.formatMessage({id: "ERROR_NO_REGISTRATION_REDIRECT_URI_CONFIGURED"}));
                 }
                 else {
                     router.push(authnStateResponse.uri);
@@ -225,7 +225,7 @@ const Login: React.FC<LoginProps>= ({
                 authnStateResponse.userAuthenticationState.authenticationState === AuthenticationState.RedirectToIamPortal
             ) {
                 if (!authnStateResponse.uri) {
-                    setErrorMessage("ERROR_NO_REDIRECT_ENDPOINT_CONFIGURED");
+                    setErrorMessage(intl.formatMessage({id: "ERROR_NO_REDIRECT_ENDPOINT_CONFIGURED"}));
                 }
                 else {
                     if (authnStateResponse.userAuthenticationState.authenticationState === AuthenticationState.RedirectToIamPortal) {
@@ -256,7 +256,7 @@ const Login: React.FC<LoginProps>= ({
                         setShowTenantSelector(true);
                     }
                     else {
-                        setErrorMessage("ERROR_NO_TENANT_TO_SELECT");
+                        setErrorMessage(intl.formatMessage({id: "ERROR_NO_TENANT_TO_SELECT"}));
                     }
                 }
                 else{
