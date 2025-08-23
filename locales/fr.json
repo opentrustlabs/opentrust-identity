@@ -321,5 +321,15 @@
 	"TIME_BASED_OTP": "Code d'accès à usage unique basé sur le temps",
 	"SECURITY_KEY": "Clé de sécurité",
 	"PROFILE_UPDATED": "Profil mis à jour",
-	"SCOPE_PERMISSION_REQUEST": "souhaite votre autorisation pour accéder aux fonctionnalités ou services suivants"
+	"SCOPE_PERMISSION_REQUEST": "souhaite votre autorisation pour accéder aux fonctionnalités ou services suivants",
+    "ERROR_NO_AUTHORIZATION_ENDPOINT_CONFIGURED": "Aucune URI d'autorisation n'est configurée.",
+    "ERROR_NO_REGISTRATION_REDIRECT_URI_CONFIGURED": "Aucune URI d'inscription n'est configurée.",
+    "ERROR_NO_REDIRECT_ENDPOINT_CONFIGURED": "Aucune URI de redirection n'est configurée.",
+    "ERROR_NO_TENANT_TO_SELECT": "Aucun locataire à sélectionner.",
+    "ERROR_OIDC_AUTHORIZATION_FAILED_CLIENT_CONFIGURATION_ERROR": "Une erreur s'est produite lors de la configuration du client ou de l'application référente.",
+    "ERROR_OIDC_AUTHORIZATION_FAILED_NO_LOGIN_PERMITTED": "La connexion ne sera pas autorisée tant que les problèmes ne seront pas résolus. Veuillez réessayer ultérieurement ou contacter l'assistance si le problème persiste.",
+    "NEED_TO_CREATE_AN_ACCOUNT": "Besoin de créer un compte?",
+    "OR": "Ou",
+    "SIGN_IN_WITH": "Se connecter avec",
+    "SELECT_A_LANGUAGE": "Sélectionner une langue"
 }

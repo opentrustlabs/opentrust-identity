@@ -321,6 +321,15 @@
 	"TIME_BASED_OTP": "시간 기반 일회용 암호",
 	"SECURITY_KEY": "보안 키",
 	"PROFILE_UPDATED": "프로필 업데이트됨",
-	"SCOPE_PERMISSION_REQUEST": "다음 기능 또는 서비스에 대한 액세스 권한을 요청합니다."
-
+	"SCOPE_PERMISSION_REQUEST": "다음 기능 또는 서비스에 대한 액세스 권한을 요청합니다.",
+    "ERROR_NO_AUTHORIZATION_ENDPOINT_CONFIGURED": "구성된 권한 부여 URI가 없습니다.",
+    "ERROR_NO_REGISTRATION_REDIRECT_URI_CONFIGURED": "구성된 등록 URI가 없습니다.",
+    "ERROR_NO_REDIRECT_ENDPOINT_CONFIGURED": "구성된 리디렉션 URI가 없습니다.",
+    "ERROR_NO_TENANT_TO_SELECT": "선택할 테넌트가 없습니다.",
+    "ERROR_OIDC_AUTHORIZATION_FAILED_CLIENT_CONFIGURATION_ERROR": "클라이언트 또는 참조 애플리케이션 구성에 오류가 발생했습니다.",
+    "ERROR_OIDC_AUTHORIZATION_FAILED_NO_LOGIN_PERMITTED": "문제가 해결될 때까지 로그인이 허용되지 않습니다. 나중에 다시 시도하거나 문제가 지속되면 지원팀에 문의하세요.",
+    "NEED_TO_CREATE_AN_ACCOUNT": "계정을 생성해야 합니까?",
+    "OR": "또는",
+    "SIGN_IN_WITH": "다음으로 로그인",
+    "SELECT_A_LANGUAGE": "언어 선택"
 }
