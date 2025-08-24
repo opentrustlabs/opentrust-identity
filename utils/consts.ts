@@ -208,6 +208,9 @@ export const SECURITY_EVENT_WRITE_SCOPE="security.event.write";
 // value for an object. This may mean sending that person
 // an email with a time-limited otp.
 export const SECRET_ENTRY_DELEGATE_SCOPE="secret.entry.delegate";
+// Allows a client to invoke custom encryption/decryption services
+// This is for implementations which use a KMS_STRATEGY of "custom"
+export const CUSTOM_ENCRYP_DECRYPT_SCOPE="custom.encryptdecrypt";
 
 
 export const SCOPE_USE_IAM_MANAGEMENT="IAM_MANAGEMENT";
@@ -259,7 +262,9 @@ export const ALL_INTERNAL_SCOPE_NAMES = [
     SYSTEM_SETTINGS_UPDATE_SCOPE, SYSTEM_SETTINGS_READ_SCOPE, JOBS_READ_SCOPE, JOBS_UPDATE_SCOPE,
     LEGACY_USER_MIGRATION_SCOPE, SECURITY_EVENT_WRITE_SCOPE,
     // Secret entry
-    SECRET_ENTRY_DELEGATE_SCOPE
+    SECRET_ENTRY_DELEGATE_SCOPE,
+    // Custom encryption/decryption
+    CUSTOM_ENCRYP_DECRYPT_SCOPE
 ];
 
 
@@ -287,7 +292,9 @@ export const ROOT_TENANT_EXCLUSIVE_INTERNAL_SCOPE_NAMES = [
     SYSTEM_SETTINGS_UPDATE_SCOPE, SYSTEM_SETTINGS_READ_SCOPE, JOBS_READ_SCOPE, JOBS_UPDATE_SCOPE,
     LEGACY_USER_MIGRATION_SCOPE, SECURITY_EVENT_WRITE_SCOPE,
     // Secret entry
-    SECRET_ENTRY_DELEGATE_SCOPE
+    SECRET_ENTRY_DELEGATE_SCOPE,
+    // Custom encryption/decryption
+    CUSTOM_ENCRYP_DECRYPT_SCOPE
 ];
 
 // These are the scope values which can be used WITHIN a non-root tenant. So actions such as 

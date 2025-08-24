@@ -8,6 +8,8 @@ import { SecurityEvent, SecurityEventType } from "../models/security-event";
 import { OIDCContext } from "@/graphql/graphql-context";
 import { PortalUserProfile, User } from "@/graphql/generated/graphql-types";
 import { logWithDetails } from "../logging/logger";
+import { randomUUID } from "node:crypto";
+import { CustomKmsDecryptionResponseBody, CustomKmsEncryptionResponseBody, CustomKmsRequestBody } from "../kms/custom-kms";
 
 const DEFAULT_HTTP_TIMEOUT_MS=60000;
 
@@ -246,8 +248,67 @@ class OIDCServiceUtils {
         }
         else{
             logWithDetails("info", securityEvent.securityEventType, {securityEvent});
+        }        
+    }
+
+    public async customEncrypt(customEncryptUri: string, value: string, authToken: string, aad?: string): Promise<string | null> {
+
+        const body: CustomKmsRequestBody = {
+            value: value,
+            aad: aad
         }
-        
+        const response = await axiosInstance.post(
+            customEncryptUri, 
+            body,
+            {
+                headers: {
+                    "Authorization": `Bearer ${authToken}`,
+                    "Content-Type": "application/json"
+                },
+                responseType: "json"
+            }
+        );
+        if(response.status !== 200){
+            logWithDetails("error", "Error: Encryption failed", {
+                responseBody: response.data ? JSON.stringify(response.data) : "No response body from server", 
+                traceId: randomUUID().toString(),
+                statusTesnt: response.statusText,
+                status: response.status
+            });
+            return null;
+        }
+
+        const encryptionResponse: CustomKmsEncryptionResponseBody = response.data;
+        return encryptionResponse.encrypted;
+    }
+
+    public async customDecrypt(customDecryptUri: string, value: string, authToken: string, aad?: string): Promise<string | null> {
+        const body: CustomKmsRequestBody = {
+            value: value,
+            aad: aad
+        }
+        const response = await axiosInstance.post(
+            customDecryptUri, 
+            body,
+            {
+                headers: {
+                    "Authorization": `Bearer ${authToken}`,
+                    "Content-Type": "application/json"
+                },
+                responseType: "json"
+            }
+        );
+        if(response.status !== 200){
+            logWithDetails("error", "Error: Decryption failed", {
+                responseBody: response.data ? JSON.stringify(response.data) : "No response body from server", 
+                traceId: randomUUID().toString(),
+                statusTesnt: response.statusText,
+                status: response.status
+            });
+            return null;
+        }
+        const decryptionResponse: CustomKmsDecryptionResponseBody = response.data;
+        return decryptionResponse.decrypted;
     }
 
 }
