@@ -414,13 +414,13 @@ const FederatedOIDCProviderDetail: React.FC<FederatedOIDCProviderDetailProps> = 
                                             <div style={{textDecoration: "underline"}}>Redirect URI (to be configured with the provider)</div>
                                             <Grid2 marginTop={"8px"} container display={"inline-flex"} size={12}>
                                                 <Grid2 size={11}>
-                                                    {`${new URL(location.href).host}/api/federated-auth/return`}
+                                                    {`${location.protocol}//${location.host}/api/federated-auth/return`}
                                                 </Grid2>
                                                 <Grid2 size={1}>
                                                     <ContentCopyIcon 
                                                         sx={{cursor: "pointer"}}
                                                         onClick={() => {
-                                                            copyContentToClipboard(`${new URL(location.href).host}/api/federated-auth/return`, "Redirect URI copied to clipboard");
+                                                            copyContentToClipboard(`${location.protocol}//${location.host}/api/federated-auth/return`, "Redirect URI copied to clipboard");
                                                         }}
                                                     />
                                                 </Grid2>

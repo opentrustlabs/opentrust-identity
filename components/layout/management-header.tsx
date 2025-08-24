@@ -10,7 +10,6 @@ import { useRouter } from "next/navigation";
 import { DEFAULT_TENANT_META_DATA, QUERY_PARAM_AUTHENTICATE_TO_PORTAL } from "@/utils/consts";
 import Link from "next/link";
 import { TenantMetaDataBean } from "../contexts/tenant-context";
-import { useInternationalizationContext } from "../contexts/internationalization-context";
 import SelectLanguage from "../authentication-components/select-language";
 import LanguageIcon from '@mui/icons-material/Language';
 
@@ -28,7 +27,6 @@ const ManagementHeader: React.FC<ManagementHeaderProps> = ({
     const responsiveBreakpoints: ResponsiveBreakpoints = useContext(ResponsiveContext);
     const authSessionProps: AuthSessionProps = useAuthSessionContext();
     const router = useRouter();
-    const i18nContext = useInternationalizationContext();
     
     // STATE VARIABLES
     const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);

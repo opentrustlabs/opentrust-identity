@@ -148,7 +148,7 @@ const Register: React.FC = () => {
         onError(error) {
             setShowMutationBackdrop(false);
             setErrorMessage(intl.formatMessage({id: error.message}));
-        },
+        }
     });
 
 
@@ -158,8 +158,8 @@ const Register: React.FC = () => {
             handleUserRegistrationStateResponse(userRegistrationStateResponse, null);
         },
         onError(error) {
-            
-        },
+            setErrorMessage(intl.formatMessage({id: error.message}));
+        }
     })
 
     // HANDLER FUNCTIONS

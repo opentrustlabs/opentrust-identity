@@ -4,7 +4,7 @@ import ClientDao from '@/lib/dao/client-dao';
 import ScopeDao from '@/lib/dao/scope-dao';
 import TenantDao from '@/lib/dao/tenant-dao';
 import { DaoFactory } from '@/lib/data-sources/dao-factory';
-import { ALL_OIDC_SUPPORTED_SCOPE_VALUES, CLIENT_TYPE_SERVICE_ACCOUNT, OIDC_OPENID_SCOPE, QUERY_PARAM_REDIRECT_URI, QUERY_PARAM_TENANT_ID, QUERY_PARAM_PREAUTHN_TOKEN, CLIENT_TYPE_DEVICE, CLIENT_TYPE_USER_DELEGATED_PERMISSIONS } from '@/utils/consts';
+import { ALL_OIDC_SUPPORTED_SCOPE_VALUES, CLIENT_TYPE_SERVICE_ACCOUNT, QUERY_PARAM_REDIRECT_URI, QUERY_PARAM_TENANT_ID, QUERY_PARAM_PREAUTHN_TOKEN, CLIENT_TYPE_DEVICE, CLIENT_TYPE_USER_DELEGATED_PERMISSIONS } from '@/utils/consts';
 import { generateRandomToken, hasValidLoopbackRedirectUri } from '@/utils/dao-utils';
 import type { NextApiRequest, NextApiResponse } from 'next'
 
@@ -58,7 +58,7 @@ export default async function handler(
 
 	// Scope should be set (at a minimum) to openid to access the user info endpoint.
 	// profile email and offline_access are all optional but recommended.
-	let oidcScope = scope as string;
+	const oidcScope = scope as string;
 
 	// Clients SHOULD sent a state value
 	const oidcState = state as string;

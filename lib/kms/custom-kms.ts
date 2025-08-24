@@ -1,7 +1,5 @@
-import { AES_GCM_CIPHER, AUTH_TAG_LENGTH, IV_LENGTH_IN_BYTES, MAX_ENCRYPTION_LENGTH } from "@/utils/consts";
-import { createCipheriv, randomBytes, KeyObject, CipherGCM, createDecipheriv, DecipherGCM, createSecretKey,  } from "node:crypto";
+import { MAX_ENCRYPTION_LENGTH } from "@/utils/consts";
 import Kms from "./kms";
-import { logWithDetails } from "../logging/logger";
 import OIDCServiceUtils from "../service/oidc-service-utils";
 import JwtServiceUtils from "../service/jwt-service-utils";
 
