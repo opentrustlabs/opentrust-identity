@@ -143,11 +143,11 @@ const UserAuthorizationGroupConfiguration: React.FC<UserAuthorizationGroupConfig
                 <Dialog
                     open={showRemoveDialog}
                     onClose={() => setShowRemoveDialog(false)}
-                    maxWidth="xs"
+                    maxWidth="sm"
                     fullWidth={true}
                 >
                     <DialogContent>
-                        Confirm removal of authorization group
+                        <Typography>Confirm removal of authorization group</Typography>
                     </DialogContent>
                     <DialogActions>
                         <Button
