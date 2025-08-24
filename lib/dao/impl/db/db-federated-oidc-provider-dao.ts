@@ -1,4 +1,4 @@
-import { FederatedOidcProvider, FederatedOidcProviderTenantRel, FederatedOidcProviderDomainRel, ObjectSearchResultItem, SearchResultType } from "@/graphql/generated/graphql-types";
+import { FederatedOidcProvider, FederatedOidcProviderTenantRel, FederatedOidcProviderDomainRel } from "@/graphql/generated/graphql-types";
 import FederatedOIDCProviderDao from "../../federated-oidc-provider-dao";
 import FederatedOIDCProviderTenantRelEntity from "@/lib/entities/federated-oidc-provider-tenant-rel-entity";
 import FederatedOIDCProviderDomainRelEntity from "@/lib/entities/federated-oidc-provider-domain-rel-entity";
@@ -76,6 +76,7 @@ class DBFederatedOIDCProviderDao extends FederatedOIDCProviderDao {
 
     public async getFederatedOidcProviderTenantRels(tenantId?: string, federatedOIDCProviderId?: string): Promise<Array<FederatedOidcProviderTenantRel>> {
         const sequelize: Sequelize = await DBDriver.getConnection();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const whereClause: any = {};
         if(tenantId){
             whereClause.tenantId = tenantId;
@@ -84,10 +85,9 @@ class DBFederatedOIDCProviderDao extends FederatedOIDCProviderDao {
             whereClause.federatedOIDCProviderId = federatedOIDCProviderId;
         }
         const a: Array<FederatedOIDCProviderTenantRelEntity> = await sequelize.models.federatedOidcProviderTenantRel.findAll({
-            where: whereClause,
-            raw: true
+            where: whereClause
         });
-        return Promise.resolve(a as any as Array<FederatedOidcProviderTenantRel>) ;
+        return a.map((entity: FederatedOIDCProviderTenantRelEntity) => entity.dataValues);        
     }
 
     public async getFederatedOidcProviderByDomain(domain: string): Promise<FederatedOidcProvider | null> {
@@ -121,7 +121,7 @@ class DBFederatedOIDCProviderDao extends FederatedOIDCProviderDao {
             tenantId,
             federatedOIDCProviderId
         }).save();        
-        return Promise.resolve(federatedOidcProviderTenantRel as any as FederatedOidcProviderTenantRel);
+        return Promise.resolve(federatedOidcProviderTenantRel.dataValues as FederatedOidcProviderTenantRel);
 
     }
 
@@ -143,6 +143,8 @@ class DBFederatedOIDCProviderDao extends FederatedOIDCProviderDao {
 
     public async getFederatedOidcProviderDomainRels(federatedOIDCProviderId: string | null, domain: string | null): Promise<Array<FederatedOidcProviderDomainRel>> {
         const sequelize: Sequelize = await DBDriver.getConnection();
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const params: any = {};
         if(federatedOIDCProviderId){
             params.federatedOIDCProviderId = federatedOIDCProviderId;
@@ -156,7 +158,7 @@ class DBFederatedOIDCProviderDao extends FederatedOIDCProviderDao {
             
 
         const models = entities.map(
-            (e: FederatedOIDCProviderDomainRelEntity) => e as any as FederatedOidcProviderDomainRel
+            (e: FederatedOIDCProviderDomainRelEntity) => e.dataValues as FederatedOidcProviderDomainRel
         );
         return Promise.resolve(models);
     }

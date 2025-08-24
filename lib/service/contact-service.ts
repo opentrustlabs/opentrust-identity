@@ -30,7 +30,7 @@ class ContactService {
     public async getContacts(objectId: string): Promise<Array<Contact>> {
         const getData = ServiceAuthorizationWrapper(
             {
-                async performOperation(_, __) {
+                async performOperation() {
                     return contactDao.getContacts(objectId);
                 },
                 async additionalConstraintCheck(oidcContext: OIDCContext, result: Array<Contact> | null): Promise<{ isAuthorized: boolean, errorDetail: ErrorDetail, result: Array<Contact> | null }> {
@@ -74,7 +74,7 @@ class ContactService {
                 }
             }
         );
-        const contacts = await getData(this.oidcContext, [TENANT_READ_ALL_SCOPE, CLIENT_READ_SCOPE, TENANT_READ_SCOPE, KEY_READ_SCOPE], objectId);
+        const contacts = await getData(this.oidcContext, [TENANT_READ_ALL_SCOPE, CLIENT_READ_SCOPE, TENANT_READ_SCOPE, KEY_READ_SCOPE]);
         return contacts || [];
     }
 

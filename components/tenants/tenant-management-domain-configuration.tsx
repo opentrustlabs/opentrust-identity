@@ -11,6 +11,8 @@ import { Alert, Button, DialogActions, DialogTitle, Divider, Grid2, TextField, T
 import DataLoading from "../layout/data-loading";
 import ErrorComponent from "../error/error-component";
 import { TenantManagementDomainRel } from "@/graphql/generated/graphql-types";
+import { useIntl } from 'react-intl';
+
 
 export interface TenantManagementDomainConfigurationProps {
     tenantId: string,
@@ -26,6 +28,9 @@ const TenantManagementDomainConfiguration: React.FC<TenantManagementDomainConfig
     readOnly
 }) => {
 
+
+    // CONTEXT VARIABLES
+    const intl = useIntl();
 
     const [selectedDomainToAdd, setSelectedDomainToAdd] = React.useState<string | null>(null);
     const [selectedDomainToDelete, setSelectedDomainToDelete] = React.useState<string | null>(null);
@@ -50,7 +55,7 @@ const TenantManagementDomainConfiguration: React.FC<TenantManagementDomainConfig
         },
         onError(error) {
             onUpdateEnd(false);
-            setErrorMessage(error.message);
+            setErrorMessage(intl.formatMessage({id: error.message}));
         },
         refetchQueries: [TENANT_DOMAIN_MANAGEMENT_REL_QUERY]
     });
@@ -66,7 +71,7 @@ const TenantManagementDomainConfiguration: React.FC<TenantManagementDomainConfig
         },
         onError(error) {
             onUpdateEnd(false);
-            setErrorMessage(error.message);
+            setErrorMessage(intl.formatMessage({id: error.message}));
         },
         refetchQueries: [TENANT_DOMAIN_MANAGEMENT_REL_QUERY]
     });
@@ -123,7 +128,7 @@ const TenantManagementDomainConfiguration: React.FC<TenantManagementDomainConfig
                     <Grid2 size={12} textAlign={"center"}>No domains for tenant management</Grid2>
                 }
                 {data.getDomainsForTenantManagement.map(
-                    (rel: TenantManagementDomainRel, idx: number) => (
+                    (rel: TenantManagementDomainRel) => (
                         <Grid2 container key={rel.domain} size={12}>
                             <Grid2 size={10.8}>{rel.domain}</Grid2>                            
                             <Grid2 size={1.2}>

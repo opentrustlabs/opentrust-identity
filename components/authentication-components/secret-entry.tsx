@@ -17,6 +17,7 @@ import { useMutation } from "@apollo/client";
 import { ENTER_SECRET_VALUE_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import Backdrop from "@mui/material/Backdrop";
 import CircularProgress from "@mui/material/CircularProgress";
+import { useIntl } from 'react-intl';
 
 
 const SecretEntry: React.FC = () => {
@@ -24,11 +25,7 @@ const SecretEntry: React.FC = () => {
 
     // CONTEXT VARIABLES
     const c: ResponsiveBreakpoints = useContext(ResponsiveContext);
-    // const tenantBean: TenantMetaDataBean  = useContext(TenantContext);    
-    // const titleSetter = useContext(PageTitleContext);
-    // titleSetter.setPageTitle("Register");
-    // const authSessionProps: AuthSessionProps = useAuthSessionContext();
-    // const authContextProps: AuthContextProps = useContext(AuthContext);
+    const intl = useIntl();
 
     // STATE VARIABLES
     const [secretValue, setSecretValue] = React.useState<string>("");
@@ -51,7 +48,7 @@ const SecretEntry: React.FC = () => {
         },
         onError(error) {
             setShowMutationBackdrop(false);
-            setErrorMessage(error.message);
+            setErrorMessage(intl.formatMessage({id: error.message}));
         }
     })
 

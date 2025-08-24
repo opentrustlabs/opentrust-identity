@@ -195,8 +195,7 @@ class DBIdentityDao extends IdentityDao {
                 groupId: { [Op.in]: groupIds}
             }
         });
-
-        return Promise.resolve(groups as any as Array<AuthorizationGroup>);
+        return groups.map((entity: AuthenticationGroupEntity) => entity.dataValues);
     }
 
     public async getUserAuthenticationGroups(userId: string): Promise<Array<AuthenticationGroup>> {
@@ -214,7 +213,7 @@ class DBIdentityDao extends IdentityDao {
             }
         });
         
-        return Promise.resolve(authnGroups as any as Array<AuthenticationGroup>);
+        return authnGroups.map((entity: AuthenticationGroupEntity) => entity.dataValues);
     }
 
     public async getUserCredentials(userId: string): Promise<Array<UserCredential>>{
@@ -286,6 +285,8 @@ class DBIdentityDao extends IdentityDao {
 
     public async getUserBy(userLookupType: UserLookupType, value: string): Promise<User | null> {
         const sequelize: Sequelize = await DBDriver.getConnection();
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const where: any = {};
         if(userLookupType === "email"){
             where.email = value;
@@ -353,7 +354,7 @@ class DBIdentityDao extends IdentityDao {
         const user: UserEntity | null = await sequelize.models.user.findOne({
             where: {userId: tokenEntity.getDataValue("userId")}
         });
-        return user ? Promise.resolve(user as any as User) : Promise.resolve(null);
+        return user ? Promise.resolve(user.dataValues as User) : Promise.resolve(null);
     }
 
     public async deletePasswordResetToken(token: string): Promise<void> {
@@ -434,6 +435,8 @@ class DBIdentityDao extends IdentityDao {
 
     public async deleteUserCredential(userId: string, dateCreated?: Date): Promise<void> {
         const sequelize: Sequelize = await DBDriver.getConnection();
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const queryParams: any = {
             userId: userId
         };

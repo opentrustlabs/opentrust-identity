@@ -1,7 +1,7 @@
 import { OIDCContext } from "@/graphql/graphql-context";
 import * as OTPAuth from "otpauth";
 import IdentityDao from "../dao/identity-dao";
-import { Client, Fido2AuthenticationChallengeResponse, Fido2Challenge, Fido2RegistrationChallengeResponse, Fido2KeyRegistrationInput, ObjectSearchResultItem, RefreshData, RelSearchResultItem, SearchResultType, Tenant, TenantPasswordConfig, TotpResponse, User, UserCredential, UserMfaRel, UserSession, UserTenantRel, UserTenantRelView, Fido2KeyAuthenticationInput, FederatedOidcProvider, FederatedOidcAuthorizationRel, FederatedOidcAuthorizationRelType, AuthorizationCodeData, PreAuthenticationState, AuthorizationReturnUri, UserRegistrationState, RegistrationState, AuthenticationState, UserAuthenticationState, PortalUserProfile, UserScopeRel, Scope, AuthorizationGroup, UserRecoveryEmail, ErrorDetail } from "@/graphql/generated/graphql-types";
+import { Client, Fido2AuthenticationChallengeResponse, Fido2Challenge, Fido2RegistrationChallengeResponse, Fido2KeyRegistrationInput, ObjectSearchResultItem, RefreshData, RelSearchResultItem, SearchResultType, Tenant, TenantPasswordConfig, TotpResponse, User, UserCredential, UserMfaRel, UserSession, UserTenantRel, UserTenantRelView, Fido2KeyAuthenticationInput, FederatedOidcProvider, FederatedOidcAuthorizationRel, FederatedOidcAuthorizationRelType, AuthorizationCodeData, PreAuthenticationState, AuthorizationReturnUri, UserRegistrationState, RegistrationState, AuthenticationState, UserAuthenticationState, UserRecoveryEmail, ErrorDetail } from "@/graphql/generated/graphql-types";
 import { DaoFactory } from "../data-sources/dao-factory";
 import TenantDao from "../dao/tenant-dao";
 import { GraphQLError } from "graphql/error";
@@ -18,8 +18,6 @@ import { validatePasswordFormat } from "@/utils/password-utils";
 import OIDCServiceUtils from "./oidc-service-utils";
 import { WellknownConfig } from "../models/wellknown-config";
 import { authorizeByScopeAndTenant, containsScope, ServiceAuthorizationWrapper } from "@/utils/authz-utils";
-import client from "@/components/apollo-client/apollo-client";
-import { error } from "console";
 import { ERROR_CODES } from "../models/error";
 import FederatedOIDCProviderDao from "../dao/federated-oidc-provider-dao";
 import { logWithDetails } from "../logging/logger";
@@ -76,13 +74,10 @@ class IdentityService {
         // 3. the user themselves
         const getData = ServiceAuthorizationWrapper(
             {
-                performOperation: async function(_, __) {
+                performOperation: async function() {
                     return identityDao.getUserBy("id", userId);
                 },
-                additionalConstraintCheck: async function(oidcContext: OIDCContext, result: User | null) {
-                    if(userId === oidcContext.portalUserProfile?.userId){
-                        return {isAuthorized: true, errorDetail: ERROR_CODES.NULL_ERROR}
-                    }
+                additionalConstraintCheck: async function(oidcContext: OIDCContext) {                    
                     const userTenantRels: Array<UserTenantRel> = await identityDao.getUserTenantRelsByUserId(userId);
                     const rel = userTenantRels.find(
                         (r: UserTenantRel) => r.tenantId === oidcContext.portalUserProfile?.managementAccessTenantId
@@ -94,7 +89,7 @@ class IdentityService {
                 }
             }
         );
-        const user = await getData(this.oidcContext, [USER_READ_SCOPE, TENANT_READ_ALL_SCOPE], userId);
+        const user = await getData(this.oidcContext, [USER_READ_SCOPE, TENANT_READ_ALL_SCOPE]);
         return user;
     }
 
@@ -241,7 +236,7 @@ class IdentityService {
 
         const getData = ServiceAuthorizationWrapper(
             {
-                performOperation: async function(_, __): Promise<Array<UserTenantRelView> | null> {
+                performOperation: async function(): Promise<Array<UserTenantRelView> | null> {
                     const rels: Array<UserTenantRel> = await identityDao.getUserTenantRelsByUserId(userId);
                     const retVal: Array<UserTenantRelView> = [];
                     for(let i = 0; i < rels.length; i++){
@@ -267,7 +262,7 @@ class IdentityService {
             }
         );
 
-        const retVal = await getData(this.oidcContext, [TENANT_READ_ALL_SCOPE, USER_READ_SCOPE], userId);
+        const retVal = await getData(this.oidcContext, [TENANT_READ_ALL_SCOPE, USER_READ_SCOPE]);
         return retVal || [];
     }
 
@@ -717,11 +712,11 @@ class IdentityService {
 
         const getData = ServiceAuthorizationWrapper(
             {
-                performOperation: async function(_, __): Promise<Array<UserMfaRel> | null> {
+                performOperation: async function(): Promise<Array<UserMfaRel> | null> {
                     const arr: Array<UserMfaRel> = await identityDao.getUserMFARels(userId);
                     return arr;
                 },
-                additionalConstraintCheck: async function(oidcContext, result: Array<UserMfaRel> | null) {
+                additionalConstraintCheck: async function(oidcContext) {
                     if(userId !== oidcContext.portalUserProfile?.userId){
                         const userTenantRels = await identityDao.getUserTenantRelsByUserId(userId);
                         const rel = userTenantRels.find(
@@ -755,7 +750,7 @@ class IdentityService {
             }
         );
 
-        const mfas = await getData(this.oidcContext, [TENANT_READ_ALL_SCOPE, USER_READ_SCOPE], userId);
+        const mfas = await getData(this.oidcContext, [TENANT_READ_ALL_SCOPE, USER_READ_SCOPE]);
         return mfas || [];             
     }
 
@@ -821,6 +816,7 @@ class IdentityService {
                 expectedRPID: MFA_ID
             });
         }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         catch(error: any){
             await identityDao.deleteFIDO2Challenge(userId);
             throw new GraphQLError(error.message);
@@ -1066,8 +1062,8 @@ class IdentityService {
             await identityDao.deleteFIDO2Challenge(userId);
             await identityDao.updateFido2Count(userId, newCount);
             return true;
-
         }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         catch(error: any){
             await identityDao.deleteFIDO2Challenge(userId);
             throw new GraphQLError(error.message);
@@ -1131,16 +1127,17 @@ class IdentityService {
         
         if (getResponse.body) {
             const document: ObjectSearchResultItem = getResponse.body._source as ObjectSearchResultItem;
-            document.name = user.nameOrder === NAME_ORDER_WESTERN ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`,
+            document.name = user.nameOrder === NAME_ORDER_WESTERN ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`;
             document.email = user.email;
             document.enabled = user.enabled;
             await searchClient.index({
                 id: user.userId,
                 index: SEARCH_INDEX_OBJECT_SEARCH,
                 body: document
-            })
+            });
         }
         
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const updateByQueryBody: any = {
             query: {
                 term: {
@@ -1179,6 +1176,7 @@ class IdentityService {
             }
         )
         .catch(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (err: any) => {
                 logWithDetails("error", `Error in updateSearchIndexUserDocuments. ${err.message}.`, {...err, userId: user.userId, firstName: user.firstName, lastName: user.lastName});
             }
@@ -1186,7 +1184,7 @@ class IdentityService {
     }
 
     protected async updateObjectSearchIndex(tenant: Tenant, user: User): Promise<void> {
-        let owningTenantId: string = tenant.tenantId;
+        const owningTenantId: string = tenant.tenantId;
         const document: ObjectSearchResultItem = {
             name: user.nameOrder === NAME_ORDER_WESTERN ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`,
             description: "",

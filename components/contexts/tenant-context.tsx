@@ -16,7 +16,7 @@ export interface TenantContextProps {
 
 
 export const TenantContext: Context<TenantMetaDataBean> = React.createContext<TenantMetaDataBean>({
-    setTenantMetaData: function (tenantMetadata: TenantMetaData): void {
+    setTenantMetaData: function (): void {
         throw new Error("Function not implemented.");
     },
     getTenantMetaData: function (): TenantMetaData {

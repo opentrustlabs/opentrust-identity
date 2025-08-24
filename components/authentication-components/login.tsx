@@ -1,11 +1,12 @@
 "use client";
+/* eslint-disable @next/next/no-img-element */
 import React, { useContext, useEffect, useState } from "react";
 import { Backdrop, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, Divider, Grid2, Paper, Stack, TextField, Typography } from "@mui/material";
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { DEFAULT_TENANT_META_DATA, FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL, PASSWORD_MINIMUM_LENGTH, QUERY_PARAM_PREAUTHN_TOKEN, QUERY_PARAM_REDIRECT_URI, QUERY_PARAM_RETURN_URI, QUERY_PARAM_TENANT_ID, SOCIAL_OIDC_PROVIDER_APPLE, SOCIAL_OIDC_PROVIDER_FACEBOOK, SOCIAL_OIDC_PROVIDER_GOOGLE, SOCIAL_OIDC_PROVIDER_LINKEDIN, SOCIAL_OIDC_PROVIDER_SALESFORCE } from "@/utils/consts";
+import { DEFAULT_TENANT_META_DATA, PASSWORD_MINIMUM_LENGTH, QUERY_PARAM_ERROR, QUERY_PARAM_ERROR_DESCRIPTION, QUERY_PARAM_PREAUTHN_TOKEN, QUERY_PARAM_REDIRECT_URI, QUERY_PARAM_RETURN_URI, QUERY_PARAM_TENANT_ID, SOCIAL_OIDC_PROVIDER_APPLE, SOCIAL_OIDC_PROVIDER_FACEBOOK, SOCIAL_OIDC_PROVIDER_GOOGLE, SOCIAL_OIDC_PROVIDER_LINKEDIN, SOCIAL_OIDC_PROVIDER_SALESFORCE } from "@/utils/consts";
 import { useMutation, useQuery } from "@apollo/client";
-import { UserAuthenticationStateResponse, TenantSelectorData, AuthenticationState, UserAuthenticationState, TenantPasswordConfig, FederatedOidcProvider } from "@/graphql/generated/graphql-types";
+import { UserAuthenticationStateResponse, TenantSelectorData, AuthenticationState, UserAuthenticationState, TenantPasswordConfig, FederatedOidcProvider, AuthorizationScopeApprovalData, Scope } from "@/graphql/generated/graphql-types";
 import Alert from '@mui/material/Alert';
 import { AUTHENTICATE_HANDLE_FORGOT_PASSWORD, AUTHENTICATE_USER, AUTHENTICATE_USER_AND_MIGRATE, AUTHENTICATE_USERNAME_INPUT_MUTATION, AUTHENTICATE_WITH_SOCIAL_OIDC_PROVIDER, CANCEL_AUTHENTICATION } from "@/graphql/mutations/oidc-mutations";
 import { PageTitleContext } from "@/components/contexts/page-title-context";
@@ -17,7 +18,6 @@ import { AuthentiationConfigureSecurityKey } from "./configure-security-key";
 import { AuthentiationValidateSecurityKey } from "./validate-security-key";
 import AuthentiationRotatePassword from "./rotate-password";
 import { useSearchParams } from 'next/navigation';
-import { FEDERATED_OIDC_PROVIDERS_QUERY } from "@/graphql/queries/oidc-queries";
 import { ResponsiveBreakpoints, ResponsiveContext } from "../contexts/responsive-context";
 import Skeleton from '@mui/material/Skeleton';
 import ValidatePasswordResetToken from "./validate-password-reset-token";
@@ -26,6 +26,11 @@ import { AuthContext, AuthContextProps } from "../contexts/auth-context";
 import AuthentiationAcceptTermsAndConditions from "./accept-terms-and-conditions";
 import UserCodeInput from "./user-code";
 import { ERROR_CODES } from "@/lib/models/error";
+import { useInternationalizationContext } from "../contexts/internationalization-context";
+import SelectLanguage from "./select-language";
+import { GET_AUTHORIZATION_SCOPE_APPROVAL_DATA_QUERY } from "@/graphql/queries/oidc-queries";
+import LanguageIcon from '@mui/icons-material/Language';
+import { useIntl } from 'react-intl';
 
 
 const MIN_USERNAME_LENGTH = 6;
@@ -53,11 +58,13 @@ const Login: React.FC<LoginProps>= ({
     const authSessionProps: AuthSessionProps = useAuthSessionContext();
     const breakPoints: ResponsiveBreakpoints = useContext(ResponsiveContext);
     const authContextProps: AuthContextProps = useContext(AuthContext);
+    const i18nContext = useInternationalizationContext();
+    const intl = useIntl();
 
 
     useEffect(() => {
-        titleSetter.setPageTitle("");
-    }, []);
+        titleSetter.setPageTitle("Login");
+    }, [titleSetter]);
 
     // QUERY PARAMS
     const params = useSearchParams();
@@ -65,8 +72,9 @@ const Login: React.FC<LoginProps>= ({
     const tenantId: string | null = params?.get(QUERY_PARAM_TENANT_ID) || null;
     const redirectUri = params?.get(QUERY_PARAM_REDIRECT_URI);
     const returnToUri = params?.get(QUERY_PARAM_RETURN_URI);
-
-
+    const authorizationError = params?.get(QUERY_PARAM_ERROR);
+    const authorizationErrorDescription = params?.get(QUERY_PARAM_ERROR_DESCRIPTION);
+  
     // PAGE STATE MANAGEMENT VARIABLES
     const authnState: UserAuthenticationState = initialUserAuthenticationState ? initialUserAuthenticationState : {
         authenticationSessionToken: "",
@@ -76,10 +84,11 @@ const Login: React.FC<LoginProps>= ({
         expiresAtMs: 0,
         tenantId: "",
         userId: "",
-        preAuthToken: "",
-        returnToUri: ""
+        preAuthToken: preAuthToken,
+        returnToUri: returnToUri
     };
 
+    
     const [username, setUsername] = useState<string | null>("");
     const [password, setPassword] = useState<string | null>("");
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -89,10 +98,12 @@ const Login: React.FC<LoginProps>= ({
     const [selectedTenant, setSelectedTenant] = useState<string | null>(tenantId);
     const [userAuthenticationState, setUserAuthenticationState] = React.useState<UserAuthenticationState>(authnState);
     const [passwordConfig, setPasswordConfig] = React.useState<TenantPasswordConfig | null>(null);
-    const [socialOIDCProviders, setSocialOIDCProviders] = React.useState<Array<FederatedOidcProvider>>([]);
     const [isPasswordResetFlow, setIsPasswordResetFlow] = React.useState<boolean>(false);
     const [showRecoveryEmailDialog, setShowRecoveryEmailDialog] = React.useState<boolean>(false);
     const [useRecoveryEmail, setUseRecoveryEmail] = React.useState<boolean>(false);
+    const [isLoginDisabled] = React.useState<boolean>( !(authorizationError === null || authorizationError === "") );
+    const [authorizationScopeApprovalData, setAuthorizationScopeApprovalData] = React.useState<AuthorizationScopeApprovalData | null>(null);
+    const [openLanguageSelector, setOpenLanguageSelector] = React.useState<boolean>(false);
     
     // HOOKS FROM NEXTJS OR MUI
     const router = useRouter();
@@ -100,24 +111,19 @@ const Login: React.FC<LoginProps>= ({
     const maxWidth = breakPoints.isSmall ? "90vw" : breakPoints.isMedium ? "80vw" : "650px";
 
     // GRAPHQL FUNCTIONS
-    const { } = useQuery(FEDERATED_OIDC_PROVIDERS_QUERY, {
+    const {} = useQuery(GET_AUTHORIZATION_SCOPE_APPROVAL_DATA_QUERY, {
         variables: {
-            tenantId: tenantId
+            preAuthToken: preAuthToken
         },
-        ssr: false,
-        skip: tenantId === null || tenantBean.getTenantMetaData().tenant.allowSocialLogin !== true,
+        skip: preAuthToken === null || preAuthToken === undefined,
         onCompleted(data) {
-            if (data && data.getFederatedOIDCProviders) {
-                let arr: Array<FederatedOidcProvider> = data.getFederatedOIDCProviders;
-                arr = arr.filter(
-                    (provider: FederatedOidcProvider) => provider.federatedOIDCProviderType === FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL
-                );
-                if (arr.length > 0) {
-                    setSocialOIDCProviders(arr);
-                }
+            const approvalData: AuthorizationScopeApprovalData | null = data.getAuthorizationScopeApprovalData;
+            if(approvalData && approvalData.requiresUserApproval && approvalData.requestedScope.length > 0){
+                setAuthorizationScopeApprovalData(approvalData);
             }
         }
-    });
+    })
+
 
     const [portalLoginEmailHandler] = useMutation(AUTHENTICATE_USERNAME_INPUT_MUTATION, {
         onCompleted(data) {
@@ -125,7 +131,7 @@ const Login: React.FC<LoginProps>= ({
             handleUserAuthenticationResponse(authnStateResponse, null);
         },
         onError(error) {
-            setErrorMessage(error.message);
+            setErrorMessage(intl.formatMessage({id: error.message}));
         }
     });
 
@@ -135,7 +141,7 @@ const Login: React.FC<LoginProps>= ({
             handleUserAuthenticationResponse(authnStateResponse, null);
         },
         onError(error) {
-            setErrorMessage(error.message);
+            setErrorMessage(intl.formatMessage({id: error.message}));
         }
     });
 
@@ -145,7 +151,7 @@ const Login: React.FC<LoginProps>= ({
             handleUserAuthenticationResponse(authnStateResponse, null);
         },
         onError(error) {
-            setErrorMessage(error.message);
+            setErrorMessage(intl.formatMessage({id: error.message}));
         }
     })
 
@@ -155,7 +161,7 @@ const Login: React.FC<LoginProps>= ({
             handleUserAuthenticationResponse(authnStateResponse, null);
         },
         onError(error) {
-            setErrorMessage(error.message);
+            setErrorMessage(intl.formatMessage({id: error.message}));
         }
     });
 
@@ -165,7 +171,7 @@ const Login: React.FC<LoginProps>= ({
             handleUserAuthenticationResponse(authnStateResponse, null);
         },
         onError(error) {
-            setErrorMessage(error.message);
+            setErrorMessage(intl.formatMessage({id: error.message}));
         }
     });
 
@@ -175,7 +181,7 @@ const Login: React.FC<LoginProps>= ({
             handleUserAuthenticationResponse(authnStateResponse, null);
         },
         onError(error) {
-            setErrorMessage(error.message);
+            setErrorMessage(intl.formatMessage({id: error.message}));
         }
     });
 
@@ -183,19 +189,24 @@ const Login: React.FC<LoginProps>= ({
     const handleUserAuthenticationResponse = (authnStateResponse: UserAuthenticationStateResponse | null, errorMessage: string | null) => {
         if (authnStateResponse === null) {
             if (errorMessage === null) {
-                setErrorMessage("ERROR_RETRIEVING_RESPONSE_FROM_SERVER");
+                setErrorMessage(intl.formatMessage({id: "ERROR_DEFAULT_ERROR_MESSAGE"}));
             }
             else {
-                setErrorMessage(errorMessage);
+                setErrorMessage(intl.formatMessage({id: errorMessage}));
             }
         }
         else {
             if (authnStateResponse.userAuthenticationState.authenticationState === AuthenticationState.Error) {
-                setErrorMessage(authnStateResponse?.authenticationError?.errorMessage || ERROR_CODES.DEFAULT.errorMessage);
+                const id: string = authnStateResponse.authenticationError ? authnStateResponse.authenticationError.errorKey : ERROR_CODES.DEFAULT.errorKey;
+                setErrorMessage(
+                    intl.formatMessage(
+                        {id: id}
+                    )
+                );                
             }
             else if (authnStateResponse.userAuthenticationState.authenticationState === AuthenticationState.AuthWithFederatedOidc) {
                 if (!authnStateResponse.uri) {
-                    setErrorMessage("ERROR_NO_AUTHORIZATION_ENDPOINT_CONFIGURED");
+                    setErrorMessage(intl.formatMessage({id: "ERROR_NO_AUTHORIZATION_ENDPOINT_CONFIGURED"}));
                 }
                 else {
                     router.push(authnStateResponse.uri);
@@ -203,7 +214,7 @@ const Login: React.FC<LoginProps>= ({
             }
             else if (authnStateResponse.userAuthenticationState.authenticationState === AuthenticationState.Register) {
                 if (!authnStateResponse.uri) {
-                    setErrorMessage("ERROR_NO_REGISTRATION_REDIRECT_URI_CONFIGURED");
+                    setErrorMessage(intl.formatMessage({id: "ERROR_NO_REGISTRATION_REDIRECT_URI_CONFIGURED"}));
                 }
                 else {
                     router.push(authnStateResponse.uri);
@@ -214,18 +225,16 @@ const Login: React.FC<LoginProps>= ({
                 authnStateResponse.userAuthenticationState.authenticationState === AuthenticationState.RedirectToIamPortal
             ) {
                 if (!authnStateResponse.uri) {
-                    setErrorMessage("ERROR_NO_REDIRECT_ENDPOINT_CONFIGURED");
+                    setErrorMessage(intl.formatMessage({id: "ERROR_NO_REDIRECT_ENDPOINT_CONFIGURED"}));
                 }
                 else {
                     if (authnStateResponse.userAuthenticationState.authenticationState === AuthenticationState.RedirectToIamPortal) {
                         if (authnStateResponse.accessToken) {
                             authSessionProps.setAuthSessionData({ accessToken: authnStateResponse.accessToken, expiresAtMs: authnStateResponse.tokenExpiresAtMs || 0 });
+                            authContextProps.forceProfileRefetch();
                         }
                     }
-                    router.push(authnStateResponse.uri);
-                    if(authnStateResponse.userAuthenticationState.authenticationState === AuthenticationState.RedirectToIamPortal){
-                        authContextProps.forceProfileRefetch();
-                    }
+                    window.location.href = authnStateResponse.uri;                    
                 }
             }
             else {
@@ -247,12 +256,12 @@ const Login: React.FC<LoginProps>= ({
                         setShowTenantSelector(true);
                     }
                     else {
-                        setErrorMessage("ERROR_NO_TENANT_TO_SELECT");
+                        setErrorMessage(intl.formatMessage({id: "ERROR_NO_TENANT_TO_SELECT"}));
                     }
                 }
                 else{
                     if(selectedTenant === null && authnStateResponse.userAuthenticationState.tenantId){
-                        router.push(`${window.location.href}&${QUERY_PARAM_TENANT_ID}=${authnStateResponse.userAuthenticationState.tenantId}`);
+                        setSelectedTenant(authnStateResponse.userAuthenticationState.tenantId);                        
                     }
                 }
             }
@@ -286,26 +295,27 @@ const Login: React.FC<LoginProps>= ({
     }
 
 
-    const handleCancelAuthentication = (userAuthenticationState: UserAuthenticationState) => {        
-        cancelAuthentication({
-            variables: {
-                userId: userAuthenticationState.userId,
-                authenticationSessionToken: userAuthenticationState.authenticationSessionToken,
-                preAuthToken: userAuthenticationState.preAuthToken
-            }
-        });
-        setUsername("");
-        setPassword("");
-        setErrorMessage(null);
-        setTenantsToSelect([]);
-        setSelectedTenant(tenantId);
-        setUserAuthenticationState({...authnState});
-        authSessionProps.deleteAuthSessionData();
-        tenantBean.setTenantMetaData(DEFAULT_TENANT_META_DATA);
-    }
-
-    const enterKeyLoginHandler = (evt: React.KeyboardEvent) => {
-
+    const handleCancelAuthentication = (userAuthenticationState: UserAuthenticationState) => {
+        if(!preAuthToken && authorizationError && redirectUri){            
+            window.location.href = `${redirectUri}?${QUERY_PARAM_ERROR}=${authorizationError}&${QUERY_PARAM_ERROR_DESCRIPTION}=${authorizationErrorDescription}`
+        }
+        else{
+            cancelAuthentication({
+                variables: {
+                    userId: userAuthenticationState.userId,
+                    authenticationSessionToken: userAuthenticationState.authenticationSessionToken,
+                    preAuthToken: userAuthenticationState.preAuthToken
+                }
+            });            
+            setUsername("");
+            setPassword("");
+            setErrorMessage(null);
+            setTenantsToSelect([]);
+            setSelectedTenant(tenantId);
+            setUserAuthenticationState({...authnState});
+            authSessionProps.deleteAuthSessionData();
+            tenantBean.setTenantMetaData(DEFAULT_TENANT_META_DATA);
+        }
     }
 
     const closeTenantSelector = () => {
@@ -329,19 +339,19 @@ const Login: React.FC<LoginProps>= ({
 
     const getIconForSocialProvider = (provider: FederatedOidcProvider) => {
         if (provider.socialLoginProvider === SOCIAL_OIDC_PROVIDER_GOOGLE) {
-            return <img src="/google.png" width={"25px"} />
+            return <img alt="google logo" src="/google.png" width={"25px"} />
         }
         else if (provider.socialLoginProvider === SOCIAL_OIDC_PROVIDER_FACEBOOK) {
-            return <img src="/facebook.png" width={"25px"} />
+            return <img alt="facebook logo" src="/facebook.png" width={"25px"} />
         }
         else if (provider.socialLoginProvider === SOCIAL_OIDC_PROVIDER_LINKEDIN) {
-            return <img src="/linkedin.png" width={"25px"} />
+            return <img alt="linkedin logo" src="/linkedin.png" width={"25px"} />
         }
         else if (provider.socialLoginProvider === SOCIAL_OIDC_PROVIDER_APPLE) {
-            return <img src="/apple.png" width={"25px"} />
+            return <img alt="apple logo" src="/apple.png" width={"25px"} />
         }
         else if (provider.socialLoginProvider === SOCIAL_OIDC_PROVIDER_SALESFORCE) {
-            return <img src="/salesforce.png" width={"25px"} />
+            return <img alt="salesforce logo" src="/salesforce.png" width={"25px"} />
         }
         else {
             return <Skeleton height={"25px"} width={"25px"} />
@@ -354,6 +364,21 @@ const Login: React.FC<LoginProps>= ({
                 elevation={4}
                 sx={{ padding: 2, height: "100%", maxWidth: maxWidth, width: maxWidth }}
             >
+                {(i18nContext.hasSelectedLanguage() !== true || openLanguageSelector) &&
+                    <Dialog 
+                        open={i18nContext.hasSelectedLanguage() !== true || openLanguageSelector}
+                        maxWidth="sm"
+                        fullWidth={true}
+                    >
+                        <DialogContent>
+                            <SelectLanguage 
+                                allowCancel={i18nContext.hasSelectedLanguage() === true}
+                                cancelCallback={() => setOpenLanguageSelector(false)}
+                                onLanguageChanged={() => setOpenLanguageSelector(false)}
+                            />
+                        </DialogContent>
+                    </Dialog>
+                }
                 {showTenantSelector &&
                     <Dialog
                         open={showTenantSelector}
@@ -362,7 +387,7 @@ const Login: React.FC<LoginProps>= ({
                         onClose={() => closeTenantSelector()}
                     >
 
-                        <DialogTitle><Typography fontSize={"0.95em"}>Select Tenant</Typography></DialogTitle>
+                        <DialogTitle><Typography fontSize={"0.95em"}>{intl.formatMessage({id: "SELECT_TENANT"})}</Typography></DialogTitle>
                         <Typography component="div" fontSize={"0.90em"}>
                             <DialogContent>
                                 <Grid2 alignItems={"center"} container size={12} spacing={0}>
@@ -396,7 +421,7 @@ const Login: React.FC<LoginProps>= ({
                                 <Button
                                     onClick={() => closeTenantSelector()}
                                 >
-                                    Cancel
+                                    {intl.formatMessage({id: "CANCEL"})}
                                 </Button>
                                 <Button
                                     onClick={() => {
@@ -405,7 +430,7 @@ const Login: React.FC<LoginProps>= ({
                                     }}
                                     disabled={selectedTenant === null}
                                 >
-                                    Next
+                                    {intl.formatMessage({id: "NEXT"})}
                                 </Button>
                             </DialogActions>
                         </Typography>
@@ -421,23 +446,23 @@ const Login: React.FC<LoginProps>= ({
                         maxWidth="sm"
                         fullWidth={true}
                     >
-                        <DialogTitle fontWeight={"bold"}>Select your password recovery option:</DialogTitle>
+                        <DialogTitle fontWeight={"bold"}>{intl.formatMessage({id: "SELECT_PASSWORD_RECOVERY_OPTION"})}</DialogTitle>
                         <DialogContent>
                             <Typography component="div">
                                 <Grid2 container size={12} spacing={1}>
-                                    <Grid2 size={11}>Use my primary email</Grid2>
+                                    <Grid2 size={11}>{intl.formatMessage({id: "USE_PRIMARY_EMAIL"})}</Grid2>
                                     <Grid2 size={1}>
                                         <RadioStyledCheckbox 
-                                            onChange={(_, checked: boolean) => {
+                                            onChange={() => {
                                                 setUseRecoveryEmail(false);
                                             }}
                                             checked={useRecoveryEmail === false}                                    
                                         />
                                     </Grid2>
-                                    <Grid2 size={11}>I have a backup email I want to use</Grid2>
+                                    <Grid2 size={11}>{intl.formatMessage({id: "USE_RECOVERY_EMAI"})}</Grid2>
                                     <Grid2 size={1}>
                                         <RadioStyledCheckbox 
-                                            onChange={(_, checked: boolean) => {
+                                            onChange={() => {
                                                 setUseRecoveryEmail(true);
                                             }}
                                             checked={useRecoveryEmail === true}
@@ -455,7 +480,7 @@ const Login: React.FC<LoginProps>= ({
                                     setIsPasswordResetFlow(false);
                                 }}
                             >
-                                Cancel
+                                {intl.formatMessage({id: "CANCEL"})}
                             </Button>
                             <Button
                                 onClick={() => {
@@ -469,12 +494,13 @@ const Login: React.FC<LoginProps>= ({
                                     });
                                 }}
                             >
-                                Submit
+                                {intl.formatMessage({id: "SUBMIT"})}
                             </Button>
                         </DialogActions>
 
                     </Dialog>
                 }
+                
                 <Grid2 spacing={3} container size={{ xs: 12 }}>
                     {errorMessage !== null &&
                         <Grid2 size={{ xs: 12 }} textAlign={"center"}>
@@ -485,6 +511,23 @@ const Login: React.FC<LoginProps>= ({
                                 sx={{ width: "100%" }}
                             >
                                 <Alert onClose={() => setErrorMessage(null)} sx={{ width: "100%" }} severity="error">{errorMessage}</Alert>
+
+                            </Stack>
+                        </Grid2>
+                    }
+                    {authorizationError &&
+                        <Grid2 size={{ xs: 12 }} textAlign={"center"}>
+                            <Stack
+                                direction={"row"}
+                                justifyItems={"center"}
+                                alignItems={"center"}
+                                sx={{ width: "100%" }}
+                            >
+                                <Alert onClose={() => setErrorMessage(null)} sx={{ width: "100%", fontSize: "0.85em", lineHeight: "1.6em" }} severity="error">
+                                    <span>There was an error with the configuration of the client or referring application:</span>
+                                    <span style={{fontWeight: "bold"}}> {authorizationErrorDescription}. </span>
+                                    <span>Login will not be permitted until the issues are resolved. Please try again later or contact support if the problem persists.</span>
+                                </Alert>
 
                             </Stack>
                         </Grid2>
@@ -507,22 +550,57 @@ const Login: React.FC<LoginProps>= ({
                     }
                     {userAuthenticationState.authenticationState === AuthenticationState.EnterEmail &&
                         <React.Fragment>
-                            <Grid2 size={{ xs: 12 }}>
-                                <div style={{ marginBottom: "16px", fontWeight: "bold", fontSize: "1.2em" }}>Sign In</div>
-                                <TextField
-                                    id="email"
-                                    required={true}
-                                    autoFocus={true}
-                                    label={tenantBean.getTenantMetaData().tenant.allowLoginByPhoneNumber ? "Email or phone number" : "Email"}
-                                    name="email"
-                                    fullWidth
-                                    onChange={(evt) => setUsername(evt.target.value)}
-                                    onKeyDown={handleEnterButtonPress}
-                                    value={username}
-                                    
-                                >
-                                </TextField>
+                            {authorizationScopeApprovalData &&
+                                <Grid2 container size={12} spacing={1}>
+                                    <Typography component="div" sx={{width: "100%"}}>
+                                        <Alert severity="info" sx={{width: "100%", fontSize: "0.95em"}}>
+                                            <Grid2 marginBottom={"8px"} size={{xs: 12}}>
+                                                <span style={{fontWeight: "bold"}}>{authorizationScopeApprovalData.clientName}</span>
+                                                <span>{intl.formatMessage({id: "SCOPE_PERMISSION_REQUEST"})}:</span>
+                                            </Grid2>
+                                            <Grid2 size={{xs: 12}}>
+                                                <ul style={{ paddingLeft: "32px", marginBottom: "8px" }}>
+                                                    {authorizationScopeApprovalData.requestedScope.map(
+                                                        (scope: Scope) => (
+                                                            <li key={scope.scopeId}>{scope.scopeDescription}</li>
+                                                        )
+                                                    )}
+                                                </ul>
+                                            </Grid2>
+                                        </Alert>
+                                    </Typography>
+                                </Grid2>
+                            }
+                            <Grid2 container size={12} spacing={1}>
+                                <Grid2 size={11}>
+                                    <div style={{ marginBottom: "16px", fontWeight: "bold", fontSize: "1.2em" }}>{intl.formatMessage({id: "SIGN_IN"})}</div>                                    
+                                </Grid2>
+                                <Grid2 size={1}>
+                                    <LanguageIcon 
+                                        sx={{cursor: "pointer"}}
+                                        onClick={() => {
+                                            setOpenLanguageSelector(true);
+                                        }}
+                                    />
+                                </Grid2>
+                                <Grid2 size={12}>
+                                    <TextField
+                                        id="email"
+                                        required={true}
+                                        autoFocus={true}
+                                        label={tenantBean.getTenantMetaData().tenant.allowLoginByPhoneNumber ? intl.formatMessage({id: "ENTER_EMAIL_OR_PHONE_NUMBER"}) : intl.formatMessage({id: "EMAIL"})}
+                                        name="email"
+                                        fullWidth
+                                        onChange={(evt) => setUsername(evt.target.value)}
+                                        onKeyDown={handleEnterButtonPress}
+                                        value={username}
+                                        disabled={isLoginDisabled}
+                                    >
+                                    </TextField>
+                                </Grid2>
+
                             </Grid2>
+                            
                             <Grid2 size={{ xs: 12 }}>
                                 <Stack
                                     direction={"row-reverse"}
@@ -531,13 +609,15 @@ const Login: React.FC<LoginProps>= ({
                                         disabled={username === null || username.length < MIN_USERNAME_LENGTH || (!tenantBean.getTenantMetaData().tenant.allowLoginByPhoneNumber && username.indexOf("@") < 1)}
                                         variant="contained"                                        
                                         onClick={() => handleUserNameInput()}
-                                    >Next</Button>
+                                    >
+                                        {intl.formatMessage({id: "NEXT"})}
+                                    </Button>
                                     <Button
                                         onClick={() => {
                                             handleCancelAuthentication(userAuthenticationState);
                                         }}
                                     >
-                                        Cancel
+                                        {intl.formatMessage({id: "CANCEL"})}
                                     </Button>
                                 </Stack>
                             </Grid2>
@@ -552,20 +632,22 @@ const Login: React.FC<LoginProps>= ({
                                             <Button
                                                 disabled={false}
                                                 variant="contained"                                                
-                                            >Register</Button>
+                                            >
+                                                {intl.formatMessage({id: "REGISTER"})}
+                                            </Button>
                                         </Link>
 
                                         <div style={{ verticalAlign: "center", fontWeight: "bold", fontSize: "0.9em" }}>Need to create an account?</div>
                                     </Stack>
                                 </Grid2>
                             }
-                            {tenantBean.getTenantMetaData().tenant.allowSocialLogin && socialOIDCProviders.length > 0 &&
+                            {tenantBean.getTenantMetaData().tenant.allowSocialLogin && tenantBean.getTenantMetaData().socialOIDCProviders.length > 0 &&
                                 <React.Fragment>
                                     <Grid2 size={{ xs: 12 }}>
                                         <Divider>OR</Divider>
                                     </Grid2>
                                     <Typography width={"100%"} component="div">
-                                        {socialOIDCProviders.map(
+                                        {tenantBean.getTenantMetaData().socialOIDCProviders.map(
                                             (provider: FederatedOidcProvider) => (
                                                 <Grid2
                                                     className="social-media-login-container"
@@ -582,8 +664,8 @@ const Login: React.FC<LoginProps>= ({
                                                     container spacing={0}
                                                     size={{ xs: 12 }}
                                                 >
-                                                    <Grid2 size={breakPoints.isMedium ? 2 : 1.5}>{getIconForSocialProvider(provider)}
-
+                                                    <Grid2 size={breakPoints.isMedium ? 2 : 1.5}>
+                                                        {getIconForSocialProvider(provider)}
                                                     </Grid2>
                                                     <Grid2 size={breakPoints.isMedium ? 10 : 10.5}>Sign in with {provider.federatedOIDCProviderName}</Grid2>
                                                 </Grid2>
@@ -597,17 +679,17 @@ const Login: React.FC<LoginProps>= ({
                     {userAuthenticationState.authenticationState === AuthenticationState.EnterPassword &&
                         <React.Fragment>
                             <Grid2 size={{ xs: 12 }}>
-                                <div style={{ marginBottom: "16px", fontWeight: "bold", fontSize: "1.2em" }}>Sign In</div>
+                                <div style={{ marginBottom: "16px", fontWeight: "bold", fontSize: "1.2em" }}>{intl.formatMessage({id: "SIGN_IN"})}</div>
                                 <TextField
                                     type="password"
                                     id="password"
                                     required={true}
                                     autoFocus={true}
-                                    label={"Password"}
+                                    label={intl.formatMessage({id: "PASSWORD"})}
                                     name="password"
                                     fullWidth
                                     onChange={(evt) => setPassword(evt.target.value)}
-                                    onKeyDown={enterKeyLoginHandler}
+                                    
                                     value={password}
                                     sx={{
                                         "& .MuiOutlinedInput-root": {
@@ -642,7 +724,8 @@ const Login: React.FC<LoginProps>= ({
                                                 setIsPasswordResetFlow(true);
                                                 setShowRecoveryEmailDialog(true);                                                
                                             }}
-                                        >Forgot Password?
+                                        >
+                                            {intl.formatMessage({id: "FORGOT_PASSWORD"})}?
                                         </span>                                            
                                     </Stack>
                                 </Grid2>
@@ -666,7 +749,9 @@ const Login: React.FC<LoginProps>= ({
                                                 }
                                             });
                                         }}
-                                    >Login</Button>
+                                    >
+                                        {intl.formatMessage({id: "LOGIN"})}
+                                    </Button>
                                     <Button
                                         disabled={false}
                                         variant="contained"
@@ -675,14 +760,16 @@ const Login: React.FC<LoginProps>= ({
                                             setPassword(""); 
                                             setUserAuthenticationState({...authnState});
                                         }}
-                                    >Back</Button>
+                                    >
+                                        {intl.formatMessage({id: "BACK"})}
+                                    </Button>
                                     <Button
                                         onClick={() => {
                                             handleCancelAuthentication(userAuthenticationState);
                                         }}
                                         variant="contained"
                                     >
-                                        Cancel
+                                        {intl.formatMessage({id: "CANCEL"})}
                                     </Button>
                                 </Stack>
                             </Grid2>
@@ -691,17 +778,16 @@ const Login: React.FC<LoginProps>= ({
                     {userAuthenticationState.authenticationState === AuthenticationState.EnterPasswordAndMigrateUser &&
                         <React.Fragment>
                             <Grid2 size={{ xs: 12 }}>
-                                <div style={{ marginBottom: "16px", fontWeight: "bold", fontSize: "1.2em" }}>Sign In</div>
+                                <div style={{ marginBottom: "16px", fontWeight: "bold", fontSize: "1.2em" }}>{intl.formatMessage({id: "SIGN_IN"})}</div>
                                 <TextField
                                     type="password"
                                     id="password"
                                     required={true}
                                     autoFocus={true}
-                                    label={"Password"}
+                                    label={intl.formatMessage({id: "PASSWORD"})}
                                     name="password"
                                     fullWidth
-                                    onChange={(evt) => setPassword(evt.target.value)}
-                                    onKeyDown={enterKeyLoginHandler}
+                                    onChange={(evt) => setPassword(evt.target.value)}                                    
                                     value={password}                                    
                                 >
                                 </TextField>
@@ -725,7 +811,9 @@ const Login: React.FC<LoginProps>= ({
                                                 }
                                             });
                                         }}
-                                    >Login</Button>
+                                    >
+                                        {intl.formatMessage({id: "LOGIN"})}
+                                    </Button>
                                     <Button
                                         disabled={false}
                                         variant="contained"
@@ -734,14 +822,16 @@ const Login: React.FC<LoginProps>= ({
                                             setPassword(""); 
                                             setUserAuthenticationState({...authnState});
                                         }}
-                                    >Back</Button>
+                                    >
+                                        {intl.formatMessage({id: "BACK"})}
+                                    </Button>
                                     <Button
                                         onClick={() => {
                                             handleCancelAuthentication(userAuthenticationState);
                                         }}
                                         variant="contained"
                                     >
-                                        Cancel
+                                        {intl.formatMessage({id: "CANCEL"})}
                                     </Button>
                                 </Stack>
                             </Grid2>

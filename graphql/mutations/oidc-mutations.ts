@@ -689,7 +689,8 @@ export const USER_AUTHENTICATION_STATE_RESPONSE_FRAGMENT = gql(`
         }
         authenticationError {
             errorCode
-            errorMessage  
+            errorMessage
+            errorKey
         }
         availableTenants {
             tenantId
@@ -877,7 +878,8 @@ export const USER_REGISTRATION_STATE_RESPONSE_FRAGMENT = gql(`
         }
         registrationError {
             errorCode
-            errorMessage            
+            errorMessage
+            errorKey
         }
         uri
         totpSecret

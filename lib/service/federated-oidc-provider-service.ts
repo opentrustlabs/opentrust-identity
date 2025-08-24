@@ -3,7 +3,7 @@ import { OIDCContext } from "@/graphql/graphql-context";
 import FederatedOIDCProviderDao from "@/lib/dao/federated-oidc-provider-dao";
 import { GraphQLError } from "graphql/error/GraphQLError";
 import { randomUUID } from 'crypto'; 
-import { CHANGE_EVENT_CLASS_OIDC_PROVIDER, CHANGE_EVENT_CLASS_OIDC_PROVIDER_DOMAIN_REL, CHANGE_EVENT_CLASS_OIDC_PROVIDER_TENANT_REL, CHANGE_EVENT_TYPE_CREATE, CHANGE_EVENT_TYPE_CREATE_REL, CHANGE_EVENT_TYPE_REMOVE_REL, CHANGE_EVENT_TYPE_UPDATE, FEDERATED_OIDC_PROVIDER_CREATE_SCOPE, FEDERATED_OIDC_PROVIDER_DELETE_SCOPE, FEDERATED_OIDC_PROVIDER_READ_SCOPE, FEDERATED_OIDC_PROVIDER_TENANT_ASSIGN_SCOPE, FEDERATED_OIDC_PROVIDER_TENANT_REMOVE_SCOPE, FEDERATED_OIDC_PROVIDER_TYPE_ENTERPRISE, FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL, FEDERATED_OIDC_PROVIDER_TYPES_DISPLAY, FEDERATED_OIDC_PROVIDER_UPDATE_SCOPE, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_READ_ALL_SCOPE } from "@/utils/consts";
+import { CHANGE_EVENT_CLASS_OIDC_PROVIDER, CHANGE_EVENT_CLASS_OIDC_PROVIDER_DOMAIN_REL, CHANGE_EVENT_CLASS_OIDC_PROVIDER_TENANT_REL, CHANGE_EVENT_TYPE_CREATE, CHANGE_EVENT_TYPE_CREATE_REL, CHANGE_EVENT_TYPE_REMOVE_REL, CHANGE_EVENT_TYPE_UPDATE, FEDERATED_OIDC_PROVIDER_CREATE_SCOPE, FEDERATED_OIDC_PROVIDER_READ_SCOPE, FEDERATED_OIDC_PROVIDER_TENANT_ASSIGN_SCOPE, FEDERATED_OIDC_PROVIDER_TENANT_REMOVE_SCOPE, FEDERATED_OIDC_PROVIDER_TYPE_ENTERPRISE, FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL, FEDERATED_OIDC_PROVIDER_TYPES_DISPLAY, FEDERATED_OIDC_PROVIDER_UPDATE_SCOPE, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_READ_ALL_SCOPE } from "@/utils/consts";
 import { Client } from "@opensearch-project/opensearch";
 import { getOpenSearchClient } from "@/lib/data-sources/search";
 import { DaoFactory } from "../data-sources/dao-factory";
@@ -37,8 +37,8 @@ class FederatedOIDCProviderService {
                     }
                     return args;
                 },
-                performOperation: async function (_, ...args): Promise<Array<FederatedOidcProvider>> {
-                    const arr = await federatedOIDCProviderDao.getFederatedOidcProviders(...args);
+                performOperation: async function (_, ...args): Promise<Array<FederatedOidcProvider>> {                    
+                    const arr = await federatedOIDCProviderDao.getFederatedOidcProviders(...args);                    
                     return arr;
                 },
                 postProcess: async function(_, result) {
@@ -94,7 +94,7 @@ class FederatedOIDCProviderService {
             throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}}); 
         }
         
-        let inputValidation = this.validateOIDCProviderInput(federatedOIDCProvider);        
+        const inputValidation = this.validateOIDCProviderInput(federatedOIDCProvider);        
         if(!inputValidation.valid){
             throw new GraphQLError(inputValidation.errorDetail.errorCode, {extensions: {errorDetail: inputValidation.errorDetail}});
         }
@@ -229,11 +229,17 @@ class FederatedOIDCProviderService {
             parentid: tenantId,
             parenttype: SearchResultType.Tenant
         };
-        await searchClient.index({
-            id: `${tenantId}::${federatedOIDCProvider.federatedOIDCProviderId}`,
-            index: SEARCH_INDEX_REL_SEARCH,
-            body: document
-        });
+        try{
+            await searchClient.index({
+                id: `${tenantId}::${federatedOIDCProvider.federatedOIDCProviderId}`,
+                index: SEARCH_INDEX_REL_SEARCH,
+                body: document
+            });
+        }        
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        catch(err: any){
+            logWithDetails("error", `Error adding rel search record for tenant and federated OIDC provider. ${err.message}.`, {...err, tenantId, federatedOidcProviderId: federatedOIDCProvider.federatedOIDCProviderId});
+        }        
     }
 
     protected async removeRelSearchRecord(tenantId: string, federatedOidcProviderId: string): Promise<void> {
@@ -243,6 +249,7 @@ class FederatedOIDCProviderService {
                 index: SEARCH_INDEX_REL_SEARCH
             });
         }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         catch(err: any){
             logWithDetails("error", `Error removing rel search record for tenant and federated OIDC provider. ${err.message}.`, {...err, tenantId, federatedOidcProviderId});
         }

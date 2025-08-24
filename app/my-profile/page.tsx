@@ -1,10 +1,12 @@
 "use client";
-import MyProfile from "@/components/authentication-components/my-profile";
 import React, { Suspense } from "react";
+import MyProfile from "@/components/authentication-components/my-profile";
 
 const MyProfilePage: React.FC = () => {
+
     return (
-        <Suspense>
+        <Suspense
+        >
             <MyProfile />
         </Suspense>
     )

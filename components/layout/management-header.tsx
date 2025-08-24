@@ -1,22 +1,25 @@
 "use client";
-import { PortalUserProfile, TenantMetaData } from "@/graphql/generated/graphql-types";
-import { Avatar, Container, Divider, IconButton, ListItemIcon, MenuItem, Stack, Tooltip, Menu } from "@mui/material";
+import { PortalUserProfile } from "@/graphql/generated/graphql-types";
+import { Avatar, Container, Divider, IconButton, ListItemIcon, MenuItem, Stack, Tooltip, Menu, Dialog, DialogContent } from "@mui/material";
 import React, { useContext } from "react";
 import { ResponsiveBreakpoints, ResponsiveContext } from "../contexts/responsive-context";
 import SessionTimerCountdown from "./session-timer-countdown";
 import Logout from '@mui/icons-material/Logout';
 import { AuthSessionProps, useAuthSessionContext } from "../contexts/auth-session-context";
 import { useRouter } from "next/navigation";
-import { QUERY_PARAM_AUTHENTICATE_TO_PORTAL } from "@/utils/consts";
+import { DEFAULT_TENANT_META_DATA, QUERY_PARAM_AUTHENTICATE_TO_PORTAL } from "@/utils/consts";
 import Link from "next/link";
+import { TenantMetaDataBean } from "../contexts/tenant-context";
+import SelectLanguage from "../authentication-components/select-language";
+import LanguageIcon from '@mui/icons-material/Language';
 
 export interface ManagementHeaderProps {
-    tenantMetaData: TenantMetaData,
+    tenantBean: TenantMetaDataBean,
     profile: PortalUserProfile | null
 }
 
 const ManagementHeader: React.FC<ManagementHeaderProps> = ({
-    tenantMetaData,
+    tenantBean,
     profile
 }) => {
 
@@ -24,9 +27,10 @@ const ManagementHeader: React.FC<ManagementHeaderProps> = ({
     const responsiveBreakpoints: ResponsiveBreakpoints = useContext(ResponsiveContext);
     const authSessionProps: AuthSessionProps = useAuthSessionContext();
     const router = useRouter();
-
+    
     // STATE VARIABLES
     const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+    const [openLanguageSelector, setOpenLanguageSelector] = React.useState<boolean>(false);
     const open = Boolean(anchorEl);
 
 
@@ -58,15 +62,29 @@ const ManagementHeader: React.FC<ManagementHeaderProps> = ({
                 disableGutters={true}
                 sx={{ height: "100%", alignItems: "center", display: "flex", justifyContent: "space-between" }}
             >
+                <Dialog 
+                    open={openLanguageSelector}
+                    onClose={() => setOpenLanguageSelector(false)}
+                    maxWidth="sm"
+                    fullWidth={true}
+                >
+                    <DialogContent>
+                        <SelectLanguage 
+                            onLanguageChanged={() => setOpenLanguageSelector(false)}
+                            allowCancel={true}
+                            cancelCallback={() => setOpenLanguageSelector(false)}
+                        />
+                    </DialogContent>
+                </Dialog>
                 <Stack
                     direction={"row"}
                     justifyItems={"center"}
                     alignItems={"center"}
                 >
-                    {tenantMetaData.tenantLookAndFeel?.adminheadertext &&
-                        <div style={{ verticalAlign: "center", fontWeight: "bold", marginLeft: "8px" }}>{tenantMetaData.tenantLookAndFeel?.adminheadertext}</div>
+                    {tenantBean.getTenantMetaData().tenantLookAndFeel?.adminheadertext &&
+                        <div style={{ verticalAlign: "center", fontWeight: "bold", marginLeft: "8px" }}>{tenantBean.getTenantMetaData().tenantLookAndFeel?.adminheadertext}</div>
                     }
-                    {!tenantMetaData.tenantLookAndFeel?.adminheadertext &&
+                    {!tenantBean.getTenantMetaData().tenantLookAndFeel?.adminheadertext &&
                         <div style={{ verticalAlign: "center", fontWeight: "bold", padding: "8px" }}>OpenTrust Identity</div>
                     }
                 </Stack>
@@ -129,21 +147,33 @@ const ManagementHeader: React.FC<ManagementHeaderProps> = ({
                     >
                         <MenuItem onClick={handleClose}>
                             <Avatar /> 
-                            <Link className="undecorated" href={`/${tenantMetaData.tenant.tenantId}/users/${profile?.userId}`}>Profile</Link>
+                            <Link className="undecorated" href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/users/${profile?.userId}`}>Profile</Link>
                         </MenuItem>
 
                         <Divider></Divider>
                         
+                        <MenuItem 
+                            onClick={() => {
+                                setOpenLanguageSelector(true);
+                            }}
+                        >
+                            <ListItemIcon>
+                                <LanguageIcon fontSize="small" />
+                            </ListItemIcon>
+                            <span>Language</span>
+                        </MenuItem>
+
                         <MenuItem onClick={() => {
                             handleClose();
                             authSessionProps.deleteAuthSessionData();
+                            tenantBean.setTenantMetaData(DEFAULT_TENANT_META_DATA);
                             router.push(`/authorize/login?${QUERY_PARAM_AUTHENTICATE_TO_PORTAL}=true`);                            
                         }}>
                             <ListItemIcon>
                                 <Logout fontSize="small" />
                             </ListItemIcon>
                             Logout
-                        </MenuItem>
+                        </MenuItem>                        
                     </Menu>
                 </Stack>
             </Container>

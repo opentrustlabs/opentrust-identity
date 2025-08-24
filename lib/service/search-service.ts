@@ -1,4 +1,4 @@
-import { LookaheadResult, ObjectSearchResults, SearchFilterInput, SearchFilterInputObjectType, SearchInput, ObjectSearchResultItem, RelSearchResults, RelSearchInput, RelSearchResultItem, SearchRelType, SearchResultType, LookaheadItem, ErrorDetail } from "@/graphql/generated/graphql-types";
+import { LookaheadResult, ObjectSearchResults, SearchFilterInput, SearchFilterInputObjectType, SearchInput, ObjectSearchResultItem, RelSearchResults, RelSearchInput, RelSearchResultItem, SearchResultType, LookaheadItem, ErrorDetail } from "@/graphql/generated/graphql-types";
 import { OIDCContext } from "@/graphql/graphql-context";
 import { getOpenSearchClient } from "../data-sources/search";
 import { Client } from "@opensearch-project/opensearch";
@@ -189,21 +189,21 @@ class SearchService {
 
     protected async _getObjectSearchByIds(ids: Array<string>): Promise<Array<ObjectSearchResultItem>>{
 
-        let query: any = {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const query: any = {
             ids: {
                 values: ids
             }
         }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const searchBody: any = {
             from: 0,
             size: ids.length,
             query: query            
         }
-        // Start the timer
-        const start = Date.now();
 
         // Default result list is am empty array
-        let items: Array<ObjectSearchResultItem> = [];
+        const items: Array<ObjectSearchResultItem> = [];
 
         const searchResponse: Search_Response = await client.search({
             index: SEARCH_INDEX_OBJECT_SEARCH,
@@ -211,7 +211,9 @@ class SearchService {
         });
 
         searchResponse.body.hits.hits.forEach(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (hit: any) => {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const source: any = hit._source;
                 items.push(source);
             }
@@ -225,7 +227,9 @@ class SearchService {
         // there is not. We will almost always need to some kind of filters, whether for
         // object type (tenant vs client vs user vs oidc provider vs ...) or for the
         // tenant in which the user resides.
-        let query: any = {
+        
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const query: any = {
             bool: {
                 must: {},
                 filter: []
@@ -304,11 +308,13 @@ class SearchService {
             );
         }
         
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const sortObj: any = {};
         if(searchInput.sortDirection && searchInput.sortField){
             sortObj[`${searchInput.sortField}.raw`] = { order: searchInput.sortDirection};
         }
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const searchBody: any = {
             from: (searchInput.page - 1) * searchInput.perPage,
             size: searchInput.perPage,
@@ -326,7 +332,7 @@ class SearchService {
         const start = Date.now();
 
         // Default result list is am empty array
-        let items: Array<ObjectSearchResultItem> = [];
+        const items: Array<ObjectSearchResultItem> = [];
 
         const searchResponse: Search_Response = await client.search({
             index: SEARCH_INDEX_OBJECT_SEARCH,
@@ -342,12 +348,15 @@ class SearchService {
                 total = totalValueOf;
             }
             else{
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 total = (totalValueOf as any).value;
             }
         }
 
         searchResponse.body.hits.hits.forEach(
+            //eslint-disable-next-line  @typescript-eslint/no-explicit-any
             (hit: any) => {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const source: any = hit._source;
                 items.push(source);
             }
@@ -396,9 +405,10 @@ class SearchService {
         const start = Date.now();
 
         // Default result list is am empty array
-        let items: Array<RelSearchResultItem> = [];
+        const items: Array<RelSearchResultItem> = [];
 
-        let query: any = {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const query: any = {
             bool: {
                 must: {},
                 filter: [],
@@ -481,11 +491,13 @@ class SearchService {
             );
         }
         
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const sortObj: any = {};
         if(relSearchInput.sortDirection && relSearchInput.sortField){
             sortObj[`${relSearchInput.sortField}.raw`] = { order: relSearchInput.sortDirection};
         }
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const searchBody: any = {
             from: (relSearchInput.page - 1) * relSearchInput.perPage,
             size: relSearchInput.perPage,
@@ -513,12 +525,15 @@ class SearchService {
                 total = totalValueOf;
             }
             else{
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 total = (totalValueOf as any).value;
             }
         }
 
         searchResponse.body.hits.hits.forEach(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (hit: any) => {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const source: any = hit._source;
                 return items.push(source);
             }

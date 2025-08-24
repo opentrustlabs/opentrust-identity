@@ -22,6 +22,7 @@ import Link from "next/link";
 import { AuthContext, AuthContextProps } from "../contexts/auth-context";
 import { containsScope } from "@/utils/authz-utils";
 import { AUTHENTICATION_GROUP_CLIENT_ASSIGN_SCOPE, AUTHENTICATION_GROUP_CLIENT_REMOVE_SCOPE } from "@/utils/consts";
+import { useIntl } from 'react-intl';
 
 
 export interface ClientAuthenticationGroupConfigurationProps {
@@ -42,10 +43,10 @@ const ClientAuthenticationGroupConfiguration: React.FC<ClientAuthenticationGroup
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
     const authContextProps: AuthContextProps = useContext(AuthContext);
     const profile: PortalUserProfile | null = authContextProps.portalUserProfile;
+    const intl = useIntl();
 
     
     // STATE VARIABLES
-    const [groupToAdd, setGroupToAdd] = React.useState<string | null>(null);
     const [groupToRemove, setGroupToRemove] = React.useState<AuthenticationGroup | null>(null);
     const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
     const [selectDialogOpen, setSelectDialogOpen] = React.useState(false);
@@ -68,7 +69,7 @@ const ClientAuthenticationGroupConfiguration: React.FC<ClientAuthenticationGroup
         },
         onError(error) {
             onUpdateEnd(false);            
-            setErrorMessage(error.message);
+            setErrorMessage(intl.formatMessage({id: error.message}));
         },
         refetchQueries: [AUTHENTICATION_GROUPS_QUERY]
     });
@@ -83,7 +84,7 @@ const ClientAuthenticationGroupConfiguration: React.FC<ClientAuthenticationGroup
         },
         onError(error) {
             onUpdateEnd(false);
-            setErrorMessage(error.message);
+            setErrorMessage(intl.formatMessage({id: error.message}));
         },
         refetchQueries: [AUTHENTICATION_GROUPS_QUERY]
     });
@@ -156,8 +157,7 @@ const ClientAuthenticationGroupConfiguration: React.FC<ClientAuthenticationGroup
                         multiSelect={false}
                         helpText="Select a valid group"
                         onCancel={() => setSelectDialogOpen(false)}
-                        onSelected={(id: string | Array<string>) => {
-                            setGroupToAdd(id as string);
+                        onSelected={(id: string | Array<string>) => {                            
                             onUpdateStart();
                             addAuthenticationGroupMutation({
                                 variables: {

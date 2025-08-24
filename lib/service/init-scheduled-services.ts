@@ -101,6 +101,7 @@ async function createNewJwtSigningKey(){
             }
         }
     }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     catch(err: any){
         logWithDetails("error", `Error creating new JWT signing key. ${err.message}.`, {...err});
     }

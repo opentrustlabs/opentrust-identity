@@ -1,7 +1,7 @@
 "use client";
 import React, { useContext } from "react";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
-import { ObjectSearchResultItem, SearchResultType } from "@/graphql/generated/graphql-types";
+import { ObjectSearchResultItem } from "@/graphql/generated/graphql-types";
 import { ResponsiveBreakpoints, ResponsiveContext } from "../contexts/responsive-context";
 import { Typography,  Divider, Grid2 } from "@mui/material";
 import UnfoldMoreOutlinedIcon from '@mui/icons-material/UnfoldMoreOutlined';

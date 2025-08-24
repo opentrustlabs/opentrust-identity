@@ -68,8 +68,9 @@ export function getAccessTokenExpiresAtMs(): number | null {
 
 export function setAccessTokenOnLocalStorage(token: string, expiresAtMs: number): void {
     localStorage.setItem(AUTH_TOKEN_LOCAL_STORAGE_KEY, token);
-    localStorage.setItem(TOKEN_EXPIRIES_AT_MS_LOCAL_KEY, expiresAtMs.toString())
+    localStorage.setItem(TOKEN_EXPIRIES_AT_MS_LOCAL_KEY, expiresAtMs.toString());
 }
+
 
 export function isValidRedirectUri(uri: string): boolean {
         

@@ -2,7 +2,7 @@ import { AutoCreateSigningKeyInput, ObjectSearchResultItem, RelSearchResultItem,
 import { GraphQLError } from "graphql/error/GraphQLError";
 import { randomUUID } from 'crypto'; 
 import { OIDCContext } from "@/graphql/graphql-context";
-import { CHANGE_EVENT_CLASS_SIGNING_KEY, CHANGE_EVENT_TYPE_CREATE, CHANGE_EVENT_TYPE_UPDATE, KEY_CREATE_SCOPE, KEY_DELETE_SCOPE, KEY_READ_SCOPE, KEY_TYPE_RSA, KEY_TYPES, KEY_UPDATE_SCOPE, KEY_USES, MIN_PRIVATE_KEY_PASSWORD_LENGTH, PKCS8_ENCRYPTED_PRIVATE_KEY_HEADER, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, SIGNING_KEY_STATUS_ACTIVE, SIGNING_KEY_STATUS_REVOKED, TENANT_READ_ALL_SCOPE } from "@/utils/consts";
+import { CHANGE_EVENT_CLASS_SIGNING_KEY, CHANGE_EVENT_TYPE_CREATE, CHANGE_EVENT_TYPE_UPDATE, KEY_CREATE_SCOPE, KEY_READ_SCOPE, KEY_TYPE_RSA, KEY_TYPES, KEY_UPDATE_SCOPE, KEY_USES, MIN_PRIVATE_KEY_PASSWORD_LENGTH, PKCS8_ENCRYPTED_PRIVATE_KEY_HEADER, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, SIGNING_KEY_STATUS_ACTIVE, SIGNING_KEY_STATUS_REVOKED, TENANT_READ_ALL_SCOPE } from "@/utils/consts";
 import { DaoFactory } from "../data-sources/dao-factory";
 import { Client } from "@opensearch-project/opensearch";
 import { getOpenSearchClient } from "../data-sources/search";
@@ -126,7 +126,7 @@ class SigningKeysService {
         }
         
         key.keyId = randomUUID().toString();
-        key.status === SIGNING_KEY_STATUS_ACTIVE
+        key.status = SIGNING_KEY_STATUS_ACTIVE;
 
         await signingKeysDao.createSigningKey(key);
         await this.updateSearchIndex(key);
@@ -266,7 +266,7 @@ class SigningKeysService {
 
         const getData = ServiceAuthorizationWrapper(
             {
-                async performOperation(_, __) {
+                async performOperation() {
                     const signingKey: SigningKey | null = await signingKeysDao.getSigningKeyById(keyId);
                     return signingKey;
                 },
@@ -281,6 +281,7 @@ class SigningKeysService {
                     }
                     return {isAuthorized: true, errorDetail: ERROR_CODES.NULL_ERROR};
                 },
+                // @typescript-eslint/no-unused-vars
                 async postProcess(_, result) {
                     if(result){
                         // Only return the public data. Viewing either the password for an encrypted
@@ -300,7 +301,7 @@ class SigningKeysService {
             }
         );
 
-        const signingKey: SigningKey | null = await getData(this.oidcContext, [TENANT_READ_ALL_SCOPE, KEY_READ_SCOPE], keyId);        
+        const signingKey: SigningKey | null = await getData(this.oidcContext, [TENANT_READ_ALL_SCOPE, KEY_READ_SCOPE]);        
         return Promise.resolve(signingKey);        
     }
     

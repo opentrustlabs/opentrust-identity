@@ -26,7 +26,7 @@ class DBClientDao extends ClientDao {
         });
 
         if(clientEntity){            
-            return clientEntity.dataValues as any as Client;
+            return clientEntity.dataValues as Client;
         }
         else{
             return null;
@@ -123,7 +123,7 @@ class DBClientDao extends ClientDao {
                 jti: jti
             }
         }); 
-        return entity ? Promise.resolve(entity as any as ClientAuthHistory) : Promise.resolve(null);
+        return entity ? Promise.resolve(entity.dataValues as ClientAuthHistory) : Promise.resolve(null);
     }
 
     public async saveClientAuthHistory(clientAuthHistory: ClientAuthHistory): Promise<void> {

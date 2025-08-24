@@ -1,10 +1,10 @@
 "use client";
 import React, { Suspense, useContext, useState } from "react";
-import { Autocomplete, Backdrop, Button, Checkbox, CircularProgress, Grid2, InputAdornment, MenuItem, Paper, Select, Stack, TextField, Typography } from "@mui/material";
+import { Autocomplete, Backdrop, Button, Checkbox, CircularProgress, Dialog, DialogContent, Grid2, InputAdornment, MenuItem, Paper, Select, Stack, TextField, Typography } from "@mui/material";
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { DEFAULT_TENANT_PASSWORD_CONFIGURATION, NAME_ORDER_DISPLAY, NAME_ORDER_EASTERN, NAME_ORDER_WESTERN, NAME_ORDERS, QUERY_PARAM_AUTHENTICATE_TO_PORTAL, QUERY_PARAM_REDIRECT_URI, QUERY_PARAM_TENANT_ID, QUERY_PARAM_PREAUTHN_TOKEN, QUERY_PARAM_USERNAME, DEFAULT_TENANT_META_DATA, QUERY_PARAM_DEVICE_CODE_ID } from "@/utils/consts";
+import { DEFAULT_TENANT_PASSWORD_CONFIGURATION, NAME_ORDER_DISPLAY, NAME_ORDER_EASTERN, NAME_ORDER_WESTERN, NAME_ORDERS, QUERY_PARAM_AUTHENTICATE_TO_PORTAL, QUERY_PARAM_TENANT_ID, QUERY_PARAM_PREAUTHN_TOKEN, QUERY_PARAM_USERNAME, DEFAULT_TENANT_META_DATA, QUERY_PARAM_DEVICE_CODE_ID } from "@/utils/consts";
 import {  TENANT_PASSWORD_CONFIG_QUERY } from "@/graphql/queries/oidc-queries";
 import { useMutation, useQuery } from "@apollo/client";
 import { RegistrationState, StateProvinceRegion, TenantPasswordConfig, UserCreateInput, UserRegistrationState, UserRegistrationStateResponse } from "@/graphql/generated/graphql-types";
@@ -33,6 +33,9 @@ import { MuiTelInput } from "mui-tel-input";
 import RecoveryEmailConfiguration from "./recovery-email";
 import DuressPasswordConfiguration from "./duress-password";
 import { ERROR_CODES } from "@/lib/models/error";
+import { useInternationalizationContext } from "../contexts/internationalization-context";
+import SelectLanguage from "./select-language";
+import { useIntl } from 'react-intl';
 
 
 export interface RegistrationComponentsProps {
@@ -51,6 +54,8 @@ const Register: React.FC = () => {
     titleSetter.setPageTitle("Register");
     const authSessionProps: AuthSessionProps = useAuthSessionContext();
     const authContextProps: AuthContextProps = useContext(AuthContext);
+    const i18nContext = useInternationalizationContext();
+    const intl = useIntl();
 
     // QUERY PARAMS
     const params = useSearchParams();
@@ -130,7 +135,7 @@ const Register: React.FC = () => {
             }
         },
         onError(error) {
-            setErrorMessage(error.message);            
+            setErrorMessage(intl.formatMessage({id: error.message}));            
         }
     });
 
@@ -142,8 +147,8 @@ const Register: React.FC = () => {
         },
         onError(error) {
             setShowMutationBackdrop(false);
-            setErrorMessage(error.message);
-        },
+            setErrorMessage(intl.formatMessage({id: error.message}));
+        }
     });
 
 
@@ -153,30 +158,35 @@ const Register: React.FC = () => {
             handleUserRegistrationStateResponse(userRegistrationStateResponse, null);
         },
         onError(error) {
-            setErrorMessage(error.message);
-        },
+            setErrorMessage(intl.formatMessage({id: error.message}));
+        }
     })
 
     // HANDLER FUNCTIONS
     const handleUserRegistrationStateResponse = (response: UserRegistrationStateResponse | null, errorMessage: string | null) => {
         if(response === null){
             if(errorMessage === null){
-                setErrorMessage("ERROR_RETRIEVING_RESPONSE_FROM_SERVER");
+                setErrorMessage(intl.formatMessage({id: "ERROR_DEFAULT_ERROR_MESSAGE"}));
             }
             else{
-                setErrorMessage(errorMessage);
+                setErrorMessage(intl.formatMessage({id: errorMessage}));
             }
         }
         else{
             if (response.userRegistrationState.registrationState === RegistrationState.Error) {
-                setErrorMessage(response?.registrationError?.errorMessage || ERROR_CODES.DEFAULT.errorMessage);
+                const id: string = response.registrationError ? response.registrationError.errorKey : ERROR_CODES.DEFAULT.errorKey;
+                setErrorMessage(
+                    intl.formatMessage(
+                        {id: id}
+                    )
+                ); 
             }
             else if (
                 response.userRegistrationState.registrationState === RegistrationState.RedirectBackToApplication ||
                 response.userRegistrationState.registrationState === RegistrationState.RedirectToIamPortal
             ) {
                 if (!response.uri) {
-                    setErrorMessage("ERROR_NO_REDIRECT_ENDPOINT_CONFIGURED");
+                    setErrorMessage(intl.formatMessage({id: "ERROR_NO_REDIRECT_ENDPOINT_CONFIGURED"}));
                 }
                 else {
                     if(response.userRegistrationState.registrationState === RegistrationState.RedirectToIamPortal){
@@ -285,6 +295,17 @@ const Register: React.FC = () => {
                     elevation={4}
                     sx={{ padding: 2, height: "100%", maxWidth: maxWidth, width: maxWidth, margin: "16px 0px" }}
                 >
+                    {i18nContext.hasSelectedLanguage() !== true &&
+                        <Dialog 
+                            open={i18nContext.hasSelectedLanguage() !== true}
+                            maxWidth="sm"
+                            fullWidth={true}
+                        >
+                            <DialogContent>
+                                <SelectLanguage />
+                            </DialogContent>
+                        </Dialog>
+                    }
                     <Typography component="div" fontSize={"0.95em"}>                        
                         <Grid2 spacing={1} container size={{ xs: 12 }}>
                             {errorMessage !== null &&
@@ -297,19 +318,18 @@ const Register: React.FC = () => {
                                             sx={{ width: "100%" }}
                                         >
                                             <Alert onClose={() => setErrorMessage(null)} sx={{ width: "100%" }} severity="error">{errorMessage}</Alert>
-
                                         </Stack>
                                     </Grid2>
                                 </>
                             }
                             <Grid2 size={{ xs: 12 }}>
-                                <div style={{ marginBottom: "16px", fontWeight: "bold", fontSize: "1.0em" }}>Register</div>
+                                <div style={{ marginBottom: "16px", fontWeight: "bold", fontSize: "1.0em" }}>{intl.formatMessage({id: "REGISTER"})}</div>
                             </Grid2>
                             {userRegistrationState.registrationState === RegistrationState.Unregistered && registrationPage === 1 &&
                                 <React.Fragment>
                                     <Grid2 size={12} container spacing={1}>
                                         <Grid2 marginBottom={"8px"} size={12}>
-                                            <div>First Name</div>
+                                            <div>{intl.formatMessage({id: "FIRST_NAME"})}</div>
                                             <TextField name="firstName" id="firstName" 
                                                 error={!userInput.firstName || userInput.firstName.length < 3}
                                                 value={userInput.firstName}
@@ -318,7 +338,7 @@ const Register: React.FC = () => {
                                             />
                                         </Grid2>
                                         <Grid2 marginBottom={"8px"} size={12}>
-                                            <div>Last Name</div>
+                                            <div>{intl.formatMessage({id: "LAST_NAME"})}</div>
                                             <TextField name="lastName" id="lastName"
                                                 error={!userInput.lastName || userInput.lastName.length < 3}
                                                 value={userInput.lastName}
@@ -327,7 +347,7 @@ const Register: React.FC = () => {
                                             />
                                         </Grid2>
                                         <Grid2 marginBottom={"8px"} size={12}>
-                                            <div>Middle Name</div>
+                                            <div>{intl.formatMessage({id: "MIDDLE_NAME"})}</div>
                                             <TextField name="middleName" id="middleName"
                                                 value={userInput.middleName}
                                                 onChange={(evt) => { userInput.middleName = evt.target.value; setUserInput({ ...userInput }); }}
@@ -335,7 +355,7 @@ const Register: React.FC = () => {
                                             />
                                         </Grid2>
                                         <Grid2 marginBottom={"8px"} size={12}>
-                                            <div>Name Order</div>
+                                            <div>{intl.formatMessage({id: "NAME_ORDER"})}</div>
                                             <Select
                                                 name="nameOrder"
                                                 value={userInput.nameOrder}
@@ -353,7 +373,7 @@ const Register: React.FC = () => {
                                             </Select>
                                         </Grid2>
                                         <Grid2 marginBottom={"8px"} size={12}>
-                                            <div>Email</div>
+                                            <div>{intl.formatMessage({id: "EMAIL"})}</div>
                                             <TextField name="email" id="email"
                                                 value={userInput.email}
                                                 onChange={(evt) => { userInput.email = evt.target.value; setUserInput({ ...userInput }); }}
@@ -364,9 +384,9 @@ const Register: React.FC = () => {
                                         </Grid2>
                                         <Grid2 marginBottom={"8px"} size={12}>
                                             <Stack spacing={1} direction={"row"}>
-                                                <div>Password</div>
+                                                <div>{intl.formatMessage({id: "PASSWORD"})}</div>
                                                 <div>
-                                                    (Rules) 
+                                                    ({intl.formatMessage({id: "PASSWORD_RULES"})}) 
                                                 </div>
                                                     <div>
                                                         {showPasswordRules === false &&
@@ -426,7 +446,7 @@ const Register: React.FC = () => {
                                             />
                                         </Grid2>
                                         <Grid2 marginBottom={"8px"} size={12}>
-                                            <div>Repeat Password</div>
+                                            <div>{intl.formatMessage({id: "REPEAT_PASSWORD"})}</div>
                                             <TextField name="repeatPassword" id="repeatPassword"
                                                 type={viewRepeatPassword === true ? "text" : "password"}
                                                 value={repeatPassword}
@@ -460,7 +480,7 @@ const Register: React.FC = () => {
                                             />
                                         </Grid2>
                                         <Grid2 marginBottom={"8px"} size={12}>
-                                            <div>Phone Number</div>
+                                            <div>{intl.formatMessage({id: "PHONE_NUMBER"})}</div>
                                             <MuiTelInput
                                                 value={userInput.phoneNumber || ""}
                                                 onChange={(newValue) => { userInput.phoneNumber = newValue; setUserInput({ ...userInput }); }}
@@ -482,13 +502,15 @@ const Register: React.FC = () => {
                                                 !isPage1InputValid()
                                             }
                                         >
-                                            Next
+                                            {intl.formatMessage({id: "NEXT"})}
                                         </Button>
                                         <Button 
                                             onClick={() => {
                                                 handleCancelRegistration();
                                             }}
-                                        >Cancel</Button>
+                                        >
+                                            {intl.formatMessage({id: "CANCEL"})}
+                                        </Button>
                                     </Stack>
                                 </React.Fragment>
                             }
@@ -496,9 +518,8 @@ const Register: React.FC = () => {
                                 <React.Fragment>
                                     <Grid2 size={12} container spacing={1}>
                                         <Grid2 marginBottom={"8px"} size={12}>
-                                            <div>Preferred Language</div>
-                                            <Autocomplete
-                                                
+                                            <div>{intl.formatMessage({id: "PREFERRED_LANGUAGE"})}</div>
+                                            <Autocomplete                                                
                                                 id="defaultLanguage"
                                                 sx={{ paddingTop: "8px" }}
                                                 size="small"
@@ -516,6 +537,7 @@ const Register: React.FC = () => {
                                                     )
                                                 }
                                                 value={getDefaultLanguageCodeDef(userInput.preferredLanguageCode || "")}
+                                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                 onChange={(_, value: any) => {
                                                     userInput.preferredLanguageCode = value.id;
 
@@ -524,7 +546,7 @@ const Register: React.FC = () => {
                                             />
                                         </Grid2>
                                         <Grid2 marginBottom={"8px"} size={12}>
-                                            <div>Address</div>
+                                            <div>{intl.formatMessage({id: "ADDRESS"})}</div>
                                             <TextField name="address" id="address"
                                                 error={!userInput.address || userInput.address.length < 3}
                                                 value={userInput.address} fullWidth={true} size="small"
@@ -532,7 +554,7 @@ const Register: React.FC = () => {
                                             />
                                         </Grid2>
                                         <Grid2 marginBottom={"8px"} size={12}>
-                                            <div>(Optional) Apartment, suite, unit, building, floor</div>
+                                            <div>{intl.formatMessage({id: "ADDRESS_LINE_1"})}</div>
                                             <TextField name="addressline1" id="addressline1"
                                                 value={userInput.addressLine1}
                                                 onChange={(evt) => { userInput.addressLine1 = evt.target.value; setUserInput({ ...userInput }); }}
@@ -540,7 +562,7 @@ const Register: React.FC = () => {
                                             />
                                         </Grid2>
                                         <Grid2 marginBottom={"8px"} size={12}>
-                                            <div>City</div>
+                                            <div>{intl.formatMessage({id: "CITY"})}</div>
                                             <TextField name="city" id="city"
                                                 error={!userInput.city || userInput.city.length < 3}
                                                 value={userInput.city}
@@ -550,7 +572,7 @@ const Register: React.FC = () => {
                                             />
                                         </Grid2>
                                         <Grid2 marginBottom={"8px"} size={12}>
-                                            <div>Country</div>
+                                            <div>{intl.formatMessage({id: "COUNTRY"})}</div>
                                             <Autocomplete
                                                 sx={{ paddingTop: "8px" }}
                                                 size="small"
@@ -570,6 +592,7 @@ const Register: React.FC = () => {
                                                     )
                                                 }
                                                 value={getDefaultCountryCodeDef(userInput.countryCode || "")}
+                                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                 onChange={(_, value: any) => {
                                                     userInput.countryCode = value.id;
                                                     setUserInput({ ...userInput });
@@ -577,7 +600,7 @@ const Register: React.FC = () => {
                                             />
                                         </Grid2>
                                         <Grid2 marginBottom={"8px"} size={12}>
-                                            <div>State / Province / Region</div>
+                                            <div>{intl.formatMessage({id: "STATE_PROVINCE_REGION"})}</div>
                                             <StateProvinceRegionSelector
                                                 countryCode={userInput.countryCode || undefined}
                                                 initValue={userInput.stateRegionProvince || ""}
@@ -589,7 +612,7 @@ const Register: React.FC = () => {
                                             />
                                         </Grid2>
                                         <Grid2 marginBottom={"8px"} size={12}>
-                                            <div>Postal Code</div>
+                                            <div>{intl.formatMessage({id: "POSTAL_CODE"})}</div>
                                             <TextField name="postalCode" id="postalCode"
                                                 error={!userInput.postalCode || userInput.postalCode.length < 3}
                                                 value={userInput.postalCode}
@@ -600,8 +623,12 @@ const Register: React.FC = () => {
                                         {tenantBean.getTenantMetaData().tenant.registrationRequireTermsAndConditions &&
                                             <Grid2 container marginBottom={"8px"} size={12}>
                                                 <Grid2 size={11}>
-                                                    <span>I agree to accept the </span>
-                                                    <Link onClick={() => setUserClickedTermsAndConditionsLink(true)} href={tenantBean.getTenantMetaData().tenant.termsAndConditionsUri || ""} target="_blank">Terms and Conditions</Link>
+                                                    <span>{intl.formatMessage({id: "I_AGREE_TO_ACCEPT"})} </span>
+                                                    <Link onClick={() => setUserClickedTermsAndConditionsLink(true)} 
+                                                        href={tenantBean.getTenantMetaData().tenant.termsAndConditionsUri || ""} 
+                                                        target="_blank">
+                                                            {intl.formatMessage({id: "TERMS_AND_CONDITIONS"})}
+                                                        </Link>
                                                 </Grid2>
                                                 <Grid2 size={1}>
                                                     <Checkbox
@@ -618,8 +645,12 @@ const Register: React.FC = () => {
                                         {tenantBean.getTenantMetaData().tenant.registrationRequireTermsAndConditions === false && tenantBean.getTenantMetaData().tenant.termsAndConditionsUri &&
                                             <Grid2 container marginBottom={"8px"} size={12}>
                                                 <Grid2 size={12}>
-                                                    <span>This site uses the following </span>
-                                                    <Link onClick={() => setUserClickedTermsAndConditionsLink(true)} href={tenantBean.getTenantMetaData().tenant.termsAndConditionsUri || ""} target="_blank">Terms and Conditions</Link>
+                                                    <span>{intl.formatMessage({id: "THIS_SITE_USES_THE_FOLLOWING"})} </span>
+                                                    <Link onClick={() => setUserClickedTermsAndConditionsLink(true)} 
+                                                        href={tenantBean.getTenantMetaData().tenant.termsAndConditionsUri || ""} 
+                                                        target="_blank">
+                                                            {intl.formatMessage({id: "TERMS_AND_CONDITIONS"})}
+                                                        </Link>
                                                 </Grid2>                                                
                                             </Grid2>
                                         }
@@ -646,20 +677,22 @@ const Register: React.FC = () => {
                                                 !isPage2InputValid()
                                             }
                                         >
-                                            Next
+                                            {intl.formatMessage({id: "NEXT"})}
                                         </Button>
                                         <Button
                                             onClick={() => {
                                                 setRegistrationPage(registrationPage - 1);
                                             }}
                                         >
-                                            Back
+                                            {intl.formatMessage({id: "BACK"})}
                                         </Button>
                                         <Button 
                                             onClick={() => {
                                                 handleCancelRegistration();
                                             }}
-                                        >Cancel</Button>
+                                        >
+                                            {intl.formatMessage({id: "CANCEL"})}
+                                        </Button>
                                     </Stack>
                                 </React.Fragment>                                
                             }

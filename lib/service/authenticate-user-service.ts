@@ -16,6 +16,7 @@ import { LegacyUserProfile } from "../models/principal";
 import AuthenticationGroupDao from "../dao/authentication-group-dao";
 import { SecurityEventType } from "../models/security-event";
 import { ERROR_CODES } from "../models/error";
+import { logWithDetails } from "../logging/logger";
 
 
 const jwtServiceUtils: JwtServiceUtils = new JwtServiceUtils();
@@ -512,7 +513,9 @@ class AuthenticateUserService extends IdentityService {
                     expiresAtMs: expiresAt,
                     tenantId: tenantId,
                     userId: userId,
-                    deviceCodeId: deviceCodeId
+                    deviceCodeId: deviceCodeId,
+                    preAuthToken: preAuthToken,
+                    returnToUri: ""
                 }
                 arrUserAuthenticationStates.push(uas);
             }
@@ -922,19 +925,19 @@ class AuthenticateUserService extends IdentityService {
         user.emailVerified = legacyProfile.emailVerified;
         user.enabled = true;
         user.firstName = legacyProfile.firstName;
-        user.lastName = legacyProfile.lastName,
-        user.locked = false,
-        user.nameOrder = legacyProfile.nameOrder,
-        user.address = legacyProfile.address,
-        user.addressLine1 = legacyProfile.addressLine1,
-        user.city = legacyProfile.city,
-        user.postalCode = legacyProfile.postalCode,
-        user.stateRegionProvince = legacyProfile.stateRegionProvince,
-        user.countryCode = legacyProfile.countryCode,
-        user.middleName = legacyProfile.middleName,
-        user.phoneNumber = legacyProfile.phoneNumber,
-        user.preferredLanguageCode = legacyProfile.preferredLanguageCode,
-        user.federatedOIDCProviderSubjectId = "",
+        user.lastName = legacyProfile.lastName;
+        user.locked = false;
+        user.nameOrder = legacyProfile.nameOrder;
+        user.address = legacyProfile.address;
+        user.addressLine1 = legacyProfile.addressLine1;
+        user.city = legacyProfile.city;
+        user.postalCode = legacyProfile.postalCode;
+        user.stateRegionProvince = legacyProfile.stateRegionProvince;
+        user.countryCode = legacyProfile.countryCode;
+        user.middleName = legacyProfile.middleName;
+        user.phoneNumber = legacyProfile.phoneNumber;
+        user.preferredLanguageCode = legacyProfile.preferredLanguageCode;
+        user.federatedOIDCProviderSubjectId = "";
         user.markForDelete = false;
         
         const tenantPasswordConfig: TenantPasswordConfig = await tenantDao.getTenantPasswordConfig(arrUserAuthenticationStates[index].tenantId) || DEFAULT_TENANT_PASSWORD_CONFIGURATION;
@@ -1118,7 +1121,9 @@ class AuthenticateUserService extends IdentityService {
             arrUserAuthenticationStates[index].authenticationStateStatus = STATUS_COMPLETE;
             await identityDao.updateUserAuthenticationState(arrUserAuthenticationStates[index]);
         }
-        catch(err){
+        catch(err: unknown){
+            const e = err as Error;
+            logWithDetails("error", `Error configuring TOTP. ${e.message}`, {e});
             response.userAuthenticationState.authenticationState = AuthenticationState.Error;
             response.authenticationError = ERROR_CODES.EC00127;
         }  
@@ -1142,6 +1147,7 @@ class AuthenticateUserService extends IdentityService {
         try{
             validationResult = await this.validateAuthenticationAttempt(user, arrUserAuthenticationStates[index].tenantId, fido2KeyAuthenticationInput, arrUserAuthenticationStates[index])
         }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         catch(err: any){
             throw new GraphQLError(err.message);            
         }
@@ -1188,7 +1194,10 @@ class AuthenticateUserService extends IdentityService {
             await identityDao.updateUserAuthenticationState(arrUserAuthenticationStates[index]);
             response.userAuthenticationState = arrUserAuthenticationStates[index + 1];
         }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         catch(err: any){
+            const e = err as Error;
+            logWithDetails("error", `Error configuring TOTP. ${e.message}`, {e});
             response.authenticationError = ERROR_CODES.EC00128;
             response.userAuthenticationState.authenticationState = AuthenticationState.Error;
         }
@@ -1502,10 +1511,7 @@ class AuthenticateUserService extends IdentityService {
                 tenantId: tenantId,
                 userId: ""
             },
-            authenticationError: {
-                errorCode: "",
-                errorMessage: ""
-            },
+            authenticationError: ERROR_CODES.DEFAULT,
             accessToken: null,
             totpSecret: null,
             uri: null,
@@ -1582,15 +1588,17 @@ class AuthenticateUserService extends IdentityService {
                 await authDao.updateAuthorizationDeviceCodeData(deviceCodeData);
             }
         }
-        if(userAuthenticationState.authenticationState === AuthenticationState.RedirectBackToApplication){
+        
+        if(userAuthenticationState.authenticationState === AuthenticationState.RedirectBackToApplication){            
             try {
                 const authorizationCode: AuthorizationReturnUri = await this.generateAuthorizationCode(userAuthenticationState.userId, userAuthenticationState.preAuthToken || "");
                 response.userAuthenticationState = userAuthenticationState;
                 response.uri = authorizationCode.uri;
                 userAuthenticationState.authenticationStateStatus = STATUS_COMPLETE;                
             }
-            catch(err: any){
-                throw new GraphQLError(err.message);
+            catch(err: unknown){
+                const e = err as Error;
+                throw new GraphQLError(e.message);
             }            
         }
         else if(userAuthenticationState.authenticationState === AuthenticationState.RedirectToIamPortal){
@@ -1640,8 +1648,9 @@ class AuthenticateUserService extends IdentityService {
                     }
                 }
             }
-            catch(err: any){
-                throw new GraphQLError(err.message);
+            catch(err: unknown){
+                const e = err as Error;            
+                throw new GraphQLError(e.message);
             }
         }
         // If all is successful, we can delete all of the state records tied to this authentication attempt

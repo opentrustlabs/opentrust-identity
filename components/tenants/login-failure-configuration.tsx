@@ -11,6 +11,8 @@ import TextField from "@mui/material/TextField";
 import { MenuItem, Select } from "@mui/material";
 import { LOGIN_FAILURE_POLICY_CONFIGURATION_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import DetailSectionActionHandler from "../layout/detail-section-action-handler";
+import { useIntl } from 'react-intl';
+
 
 export interface LoginFailureConfigurationProps {
     tenantId: string,
@@ -26,7 +28,10 @@ const LoginFailureConfiguration: React.FC<LoginFailureConfigurationProps> = ({
     readOnly
 }) => {
 
-    let initInput: TenantLoginFailurePolicyInput = {
+    // CONTEXT VARIABLES
+    const intl = useIntl();
+
+    const initInput: TenantLoginFailurePolicyInput = {
         failureThreshold: DEFAULT_LOGIN_FAILURE_LOCK_THRESHOLD,
         loginFailurePolicyType: LOGIN_FAILURE_POLICY_LOCK_USER_ACCOUNT,
         tenantId: tenantId,
@@ -71,7 +76,7 @@ const LoginFailureConfiguration: React.FC<LoginFailureConfigurationProps> = ({
         onError(error) {
             onUpdateEnd(false);
             setFailurePolicyInput(revertToPolicyInput);
-            setErrorMessage(error.message)
+            setErrorMessage(intl.formatMessage({id: error.message}));
         },
     }
 

@@ -160,8 +160,9 @@ abstract class Kms {
             //const ret: string = outputBuffer.toString("utf-8");
             return Promise.resolve(outputBuffer);
         }
-        catch(error: any){
-            logWithDetails("error", `Error decryping with key wrapping (decryptBufferWithKeyWrapping()). ${error.message}`, {...error});
+        catch(error: unknown){
+            const e = error as Error;
+            logWithDetails("error", `Error decryping with key wrapping (decryptBufferWithKeyWrapping()). ${e.message}`, {e});
             return Promise.resolve(null);
         }
     }

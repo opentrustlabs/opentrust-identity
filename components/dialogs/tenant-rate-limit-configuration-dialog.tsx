@@ -141,6 +141,7 @@ const TenatRateLimitConfigurationDialog: React.FC<TenatRateLimitConfigurationDia
                                     try {
                                         limit = parseInt(evt.target.value)
                                     }
+                                    // eslint-disable-next-line @typescript-eslint/no-unused-vars
                                     catch (err) { limit = 0 }
                                     if ((limit + used) > tenantDetailData.defaultRateLimit) {
                                         setLimit(tenantDetailData.defaultRateLimit - used);

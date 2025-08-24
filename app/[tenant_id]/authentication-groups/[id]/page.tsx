@@ -3,7 +3,7 @@ import AuthenticationGroupDetail from "@/components/authentication-groups/authen
 import ErrorComponent from "@/components/error/error-component";
 import DataLoading from "@/components/layout/data-loading";
 import { AUTHENTICATION_GROUP_DETAIL_QUERY } from "@/graphql/queries/oidc-queries";
-import { ApolloError, useQuery } from "@apollo/client";
+import { useQuery } from "@apollo/client";
 import { useParams } from "next/navigation";
 import React, { useContext } from "react";
 import { AuthContext, AuthContextProps } from "@/components/contexts/auth-context";

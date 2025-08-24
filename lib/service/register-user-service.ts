@@ -5,7 +5,7 @@ import { DaoFactory } from "../data-sources/dao-factory";
 import TenantDao from "../dao/tenant-dao";
 import { GraphQLError } from "graphql/error";
 import { randomUUID } from "crypto";
-import { DEFAULT_TENANT_PASSWORD_CONFIGURATION, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, OIDC_AUTHORIZATION_ERROR_ACCESS_DENIED, QUERY_PARAM_AUTHENTICATE_TO_PORTAL, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, STATUS_COMPLETE, STATUS_INCOMPLETE, PRINCIPAL_TYPE_IAM_PORTAL_USER, USER_TENANT_REL_TYPE_PRIMARY } from "@/utils/consts";
+import { DEFAULT_TENANT_PASSWORD_CONFIGURATION, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, OIDC_AUTHORIZATION_ERROR_ACCESS_DENIED, QUERY_PARAM_AUTHENTICATE_TO_PORTAL, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, STATUS_COMPLETE, STATUS_INCOMPLETE, PRINCIPAL_TYPE_IAM_PORTAL_USER } from "@/utils/consts";
 import {  generateRandomToken, getDomainFromEmail } from "@/utils/dao-utils";
 import { Client as OpenSearchClient } from "@opensearch-project/opensearch";
 import { getOpenSearchClient } from "../data-sources/search";
@@ -15,6 +15,7 @@ import IdentityService from "./identity-service";
 import OIDCServiceUtils from "./oidc-service-utils";
 import FederatedOIDCProviderDao from "../dao/federated-oidc-provider-dao";
 import { ERROR_CODES } from "../models/error";
+import { logWithDetails } from "../logging/logger";
 
 
 const jwtServiceUtils: JwtServiceUtils = new JwtServiceUtils();
@@ -155,10 +156,7 @@ class RegisterUserService extends IdentityService {
             userRegistrationState: arrState[0],
             accessToken: "",
             uri: "",
-            registrationError: {
-                errorCode: "",
-                errorMessage: ""
-            }
+            registrationError: ERROR_CODES.DEFAULT,
         }
         return Promise.resolve(response);
     }    
@@ -178,10 +176,7 @@ class RegisterUserService extends IdentityService {
                 tenantId: "",
                 userId: userId
             },
-            registrationError: {
-                errorCode: "",
-                errorMessage: ""
-            },
+            registrationError: ERROR_CODES.DEFAULT,
             accessToken: null,
             totpSecret: null,
             uri: null
@@ -234,10 +229,7 @@ class RegisterUserService extends IdentityService {
                 tenantId: "",
                 userId: userId
             },
-            registrationError: {
-                errorCode: "",
-                errorMessage: ""
-            },
+            registrationError: ERROR_CODES.DEFAULT,
             accessToken: null,
             totpSecret: null,
             uri: null
@@ -298,10 +290,7 @@ class RegisterUserService extends IdentityService {
                 tenantId: "",
                 userId: userId
             },
-            registrationError: {
-                errorCode: "",
-                errorMessage: ""
-            },
+            registrationError: ERROR_CODES.DEFAULT,
             accessToken: null,
             totpSecret: null,
             uri: null
@@ -365,10 +354,7 @@ class RegisterUserService extends IdentityService {
                 tenantId: "",
                 userId: userId
             },
-            registrationError: {
-                errorCode: "",
-                errorMessage: ""
-            },
+            registrationError: ERROR_CODES.DEFAULT,
             accessToken: null,
             totpSecret: null,
             uri: null
@@ -440,10 +426,7 @@ class RegisterUserService extends IdentityService {
                 tenantId: "",
                 userId: userId
             },
-            registrationError: {
-                errorCode: "",
-                errorMessage: ""
-            },
+            registrationError: ERROR_CODES.DEFAULT,
             accessToken: null,
             totpSecret: null,
             uri: null
@@ -483,7 +466,9 @@ class RegisterUserService extends IdentityService {
                 arrUserRegistrationState[index].registrationStateStatus = STATUS_COMPLETE;
                 await identityDao.updateUserRegistrationState(arrUserRegistrationState[index]);
             }
-            catch(err){
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            catch(err: any){
+                logWithDetails("error", `Error creating TOTP. ${err.message}`, {...err});
                 response.userRegistrationState.registrationState = RegistrationState.Error;
                 response.registrationError = ERROR_CODES.EC00127;
             }            
@@ -504,10 +489,7 @@ class RegisterUserService extends IdentityService {
                 tenantId: "",
                 userId: userId
             },
-            registrationError: {
-                errorCode: "",
-                errorMessage: ""
-            }
+            registrationError: ERROR_CODES.DEFAULT,
         }
 
         const arrUserRegistrationState: Array<UserRegistrationState> = await this.getSortedRegistartionStates(registrationSessionToken);
@@ -549,10 +531,7 @@ class RegisterUserService extends IdentityService {
                 tenantId: "",
                 userId: userId
             },
-            registrationError: {
-                errorCode: "",
-                errorMessage: ""
-            }
+            registrationError: ERROR_CODES.DEFAULT,
         };
 
         const arrUserRegistrationState: Array<UserRegistrationState> = await this.getSortedRegistartionStates(registrationSessionToken);
@@ -592,6 +571,7 @@ class RegisterUserService extends IdentityService {
                     await identityDao.updateUserRegistrationState(arrUserRegistrationState[index]);
                     response.userRegistrationState = arrUserRegistrationState[index + 1];
                 }
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 catch(err: any){
                     throw new GraphQLError(err.message);
                 }
@@ -613,10 +593,7 @@ class RegisterUserService extends IdentityService {
                 tenantId: "",
                 userId: userId
             },
-            registrationError: {
-                errorCode: "",
-                errorMessage: ""
-            }
+            registrationError: ERROR_CODES.DEFAULT,
         };
 
         const arrUserRegistrationState: Array<UserRegistrationState> = await this.getSortedRegistartionStates(registrationSessionToken);
@@ -641,6 +618,7 @@ class RegisterUserService extends IdentityService {
                 }
             }
         }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         catch(err: any){
             throw new GraphQLError(err.message);
         }
@@ -661,10 +639,7 @@ class RegisterUserService extends IdentityService {
                 isPrimaryEmail: false,
                 userId: ""
             },
-            profileEmailChangeError: {
-                errorCode: "",
-                errorMessage: ""
-            }
+            profileEmailChangeError: ERROR_CODES.DEFAULT,
         }
         
         if(!this.oidcContext.portalUserProfile?.userId){
@@ -751,10 +726,7 @@ class RegisterUserService extends IdentityService {
                 isPrimaryEmail: false,
                 userId: ""
             },
-            profileEmailChangeError: {
-                errorCode: "",
-                errorMessage: ""
-            }
+            profileEmailChangeError: ERROR_CODES.DEFAULT,
         }
 
         if(!this.oidcContext.portalUserProfile?.userId){
@@ -829,10 +801,7 @@ class RegisterUserService extends IdentityService {
                 isPrimaryEmail: false,
                 userId: ""
             },
-            profileEmailChangeError: {
-                errorCode: "",
-                errorMessage: ""
-            }
+            profileEmailChangeError: ERROR_CODES.DEFAULT,
         }
 
         if(!this.oidcContext.portalUserProfile?.userId){
@@ -916,10 +885,7 @@ class RegisterUserService extends IdentityService {
                 isPrimaryEmail: false,
                 userId: ""
             },
-            profileEmailChangeError: {
-                errorCode: "",
-                errorMessage: ""
-            }
+            profileEmailChangeError: ERROR_CODES.DEFAULT
         }
         return response;
     }
@@ -946,10 +912,7 @@ class RegisterUserService extends IdentityService {
                 userId: userId,
                 deviceCodeId: ""
             },
-            registrationError: {
-                errorCode: "",
-                errorMessage: ""
-            }
+            registrationError: ERROR_CODES.DEFAULT
         };
         const arrUserRegistrationState: Array<UserRegistrationState> = await this.getSortedRegistartionStates(registrationSessionToken);
         let tenantId: string | null = null;
@@ -1310,6 +1273,7 @@ class RegisterUserService extends IdentityService {
                 response.uri = authorizationCode.uri;
                 userRegistrationState.registrationStateStatus = STATUS_COMPLETE;        
             }
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             catch(err: any){
                 throw new GraphQLError(err.message);                
             }
@@ -1341,6 +1305,7 @@ class RegisterUserService extends IdentityService {
                     }
                 }
             }
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             catch(err: any){
                 throw new GraphQLError(err.message);                
             }

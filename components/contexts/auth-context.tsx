@@ -5,6 +5,7 @@ import { useQuery } from "@apollo/client";
 import { ME_QUERY } from "@/graphql/queries/oidc-queries";
 import DataLoading from "../layout/data-loading";
 import { useAuthSessionContext } from "./auth-session-context";
+import { useInternationalizationContext } from "./internationalization-context";
 
 
 
@@ -31,13 +32,24 @@ const AuthContextProvider: React.FC<AuthContextProviderProps> = ({
 }) => {
     
     const sessionProps = useAuthSessionContext();
+    const i18nContext = useInternationalizationContext();
 
     const {data, loading, previousData, refetch} = useQuery(ME_QUERY, {          
             pollInterval: 900000,
             fetchPolicy: "no-cache",
             notifyOnNetworkStatusChange: true,
             nextFetchPolicy: "no-cache",
-            skip: sessionProps.getTokenTtlMs() < 0
+            skip: sessionProps.getTokenTtlMs() < 0,
+            onCompleted(data) {
+                if(data && data.me){
+                    const portalUserProfile: PortalUserProfile = data.me;
+                    if(!i18nContext.hasSelectedLanguage()){
+                        if(portalUserProfile.preferredLanguageCode){
+                            i18nContext.setLanguage(portalUserProfile.preferredLanguageCode);
+                        }
+                    }
+                }
+            },
         }
     );
 

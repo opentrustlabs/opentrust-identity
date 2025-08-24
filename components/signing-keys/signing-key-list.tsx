@@ -6,12 +6,11 @@ import { KEY_USE_DISPLAY } from "@/utils/consts";
 import Typography from "@mui/material/Typography";
 import UnfoldLessOutlinedIcon from '@mui/icons-material/UnfoldLessOutlined';
 import UnfoldMoreOutlinedIcon from "@mui/icons-material/UnfoldMoreOutlined";
-import DeleteForeverOutlinedIcon from '@mui/icons-material/DeleteForeverOutlined';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import Divider from "@mui/material/Divider";
 import Grid2 from "@mui/material/Grid2";
 import Link from "next/link";
-import { ObjectSearchResultItem, SigningKey } from "@/graphql/generated/graphql-types";
+import { ObjectSearchResultItem } from "@/graphql/generated/graphql-types";
 
 import { ResultListProps } from "../layout/search-result-list-layout";
 import { useClipboardCopyContext } from "../contexts/clipboard-copy-context";

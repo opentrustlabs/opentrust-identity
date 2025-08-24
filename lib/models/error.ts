@@ -565,7 +565,7 @@ export const ERROR_CODES: Record<string, ErrorDetail> = {
     EC00107: {
         errorCode: "EC00107",
         errorKey: "ERROR_USER_DOES_NOT_BELONG_TO_VALID_AUTHENTICATION_GROUP_FOR_CLIENT",
-        errorMessage: "You are not permitted to authenticate to the application."
+        errorMessage: "You are not permitted to authenticate to the application because you do not belong to an authentication group assigned to this application."
     },
     EC00108: {
         errorCode: "EC00108",
