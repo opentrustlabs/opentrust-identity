@@ -18,7 +18,7 @@ import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
 import Link from "next/link";
 import { AuthContext, AuthContextProps } from "../contexts/auth-context";
 import { containsScope } from "@/utils/authz-utils";
-
+import { useIntl } from 'react-intl';
 
 export interface UserTenantConfigurationProps {
     userId: string,
@@ -39,6 +39,7 @@ const UserTenantConfiguration: React.FC<UserTenantConfigurationProps> = ({
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
     const authContextProps: AuthContextProps = useContext(AuthContext);
     const profile: PortalUserProfile | null = authContextProps.portalUserProfile;
+    const intl = useIntl();
 
     // STATE VARIABLES
     const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
@@ -61,7 +62,7 @@ const UserTenantConfiguration: React.FC<UserTenantConfigurationProps> = ({
         },
         onError(error) {
             onUpdateEnd(false);
-            setErrorMessage(error.message)
+            setErrorMessage(intl.formatMessage({id: error.message}));
         },
         refetchQueries: [USER_TENANT_RELS_QUERY]
     });
@@ -72,7 +73,7 @@ const UserTenantConfiguration: React.FC<UserTenantConfigurationProps> = ({
         },
         onError(error) {
             onUpdateEnd(false);
-            setErrorMessage(error.message)
+            setErrorMessage(intl.formatMessage({id: error.message}));
         },
         refetchQueries: [USER_TENANT_RELS_QUERY]
     });

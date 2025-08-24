@@ -3,7 +3,7 @@ import React from "react";
 import AutoDeleteOutlinedIcon from '@mui/icons-material/AutoDeleteOutlined';
 import { MarkForDeleteInput, MarkForDeleteObjectType } from "@/graphql/generated/graphql-types";
 import Dialog from "@mui/material/Dialog";
-import { Alert, Button, DialogActions, DialogContent, DialogTitle, Typography } from "@mui/material";
+import { Alert, Button, DialogActions, DialogContent } from "@mui/material";
 import { useMutation } from "@apollo/client";
 import { MARK_FOR_DELETE_MUTATION } from "@/graphql/mutations/oidc-mutations";
 

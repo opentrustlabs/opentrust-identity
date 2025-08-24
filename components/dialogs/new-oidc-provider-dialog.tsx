@@ -7,6 +7,7 @@ import { Alert, Autocomplete, Button, Checkbox, DialogActions, DialogContent, Gr
 import React, { useContext } from "react";
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
 import { useRouter } from 'next/navigation';
+import { useIntl } from 'react-intl';
 
 
 export interface NewOIDCProviderDialogProps {
@@ -23,6 +24,9 @@ const NewOIDCProviderDialog: React.FC<NewOIDCProviderDialogProps> = ({
     onCreateStart
 }) => {
 
+    // CONTEXT VARIABLES
+    const intl = useIntl();
+    
     const initInput: FederatedOidcProviderCreateInput = {
         federatedOIDCProviderName: "",
         federatedOIDCProviderDescription: "",
@@ -65,7 +69,7 @@ const NewOIDCProviderDialog: React.FC<NewOIDCProviderDialogProps> = ({
             },
             onError(error) {
                 onCreateEnd(false);
-                setErrorMessage(error.message);
+                setErrorMessage(intl.formatMessage({id: error.message}));
             },
         }
     );
@@ -263,7 +267,9 @@ const NewOIDCProviderDialog: React.FC<NewOIDCProviderDialogProps> = ({
                                             }
                                         }
                                     )}
+                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                     onChange={(_, value: any) => {
+                                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                         oidcProviderInput.scopes = value.map((v: any) => v.id);
                                         setOIDCProviderInput({ ...oidcProviderInput });
                                     }}

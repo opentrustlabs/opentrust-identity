@@ -86,6 +86,10 @@ const resolvers: Resolvers = {
             const scopeService: ScopeService = new ScopeService(oidcContext);
             return scopeService.getScopeById(scopeId);
         },
+        getAuthorizationScopeApprovalData: (_: any, { preAuthToken }, oidcContext) => {
+            const clientService: ClientService = new ClientService(oidcContext);
+            return clientService.getAuthorizationScopeApprovalData(preAuthToken);
+        },
         getAuthenticationGroups: (_: any, { tenantId, clientId, userId }, oidcContext) => {
             const authenticationGroupService: AuthenticationGroupService = new AuthenticationGroupService(oidcContext);
             return authenticationGroupService.getAuthenticationGroups(tenantId || undefined, clientId || undefined, userId || undefined);

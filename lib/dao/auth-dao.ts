@@ -7,7 +7,7 @@ abstract class AuthDao {
 
     abstract getPreAuthenticationState(tk: string): Promise<PreAuthenticationState | null>;
 
-    abstract deletePreAuthenticationState(tk: String): Promise<void>;
+    abstract deletePreAuthenticationState(tk: string): Promise<void>;
     
     abstract saveAuthorizationCodeData(authorizationCodeData: AuthorizationCodeData): Promise<AuthorizationCodeData>;
 

@@ -15,6 +15,8 @@ import Typography from "@mui/material/Typography";
 import WarningOutlinedIcon from '@mui/icons-material/WarningOutlined';
 import PriorityHighOutlinedIcon from '@mui/icons-material/PriorityHighOutlined';
 import { SESSION_TOKEN_TYPE_AUTHENTICATION, SESSION_TOKEN_TYPE_REGISTRATION } from "@/utils/consts";
+import { useIntl } from 'react-intl';
+
 
 const AuthentiationConfigureSecurityKey: React.FC<AuthenticationComponentsProps> = ({
     initialUserAuthenticationState,
@@ -22,7 +24,11 @@ const AuthentiationConfigureSecurityKey: React.FC<AuthenticationComponentsProps>
     onUpdateEnd,
     onUpdateStart
 }) => {
-    
+
+    // CONTEXT VARIABLES
+    const intl = useIntl();
+
+
     // STATE VARIABLES
     // Need duplicate of the parent state variables for the generation of the 
     // key challenge.
@@ -43,7 +49,7 @@ const AuthentiationConfigureSecurityKey: React.FC<AuthenticationComponentsProps>
         },
         onError(error) {
             setShowMutationBackdrop(false);
-            setErrorMessage(error.message)
+            setErrorMessage(intl.formatMessage({id: error.message}));
         },
     });
 
@@ -119,8 +125,9 @@ const AuthentiationConfigureSecurityKey: React.FC<AuthenticationComponentsProps>
                     }
                 });
             }
-            catch(err: any){
-                setErrorMessage(err.message);
+            catch(err: unknown){
+                const e = err as Error;
+                setErrorMessage(e.message);
             }
         }
     }
@@ -149,7 +156,7 @@ const AuthentiationConfigureSecurityKey: React.FC<AuthenticationComponentsProps>
                 </Grid2>
                 <Grid2 marginBottom={"8px"} size={11}>
                     <div style={{ marginBottom: "16px", fontWeight: "bold", fontSize: "1.0em" }}>
-                        Access to this tenant requires multi-factor authentication using a security key
+                        {intl.formatMessage({id: "SECURITY_KEY_REQUIRED"})}
                     </div>
                 </Grid2>
             </Grid2>
@@ -164,12 +171,12 @@ const AuthentiationConfigureSecurityKey: React.FC<AuthenticationComponentsProps>
                         createFido2Challenge();
                     }}
                 >
-                    Configure Key
+                    {intl.formatMessage({id: "CONFIGURE_SECURITY_KEY"})}
                 </Button>
                 <Button
                     onClick={() => onAuthenticationCancelled()}
                 >
-                    Cancel
+                    {intl.formatMessage({id: "CANCEL"})}
                 </Button>
             </Stack>
             <Backdrop
@@ -178,7 +185,7 @@ const AuthentiationConfigureSecurityKey: React.FC<AuthenticationComponentsProps>
                     onClick={() => setShowMutationBackdrop(false)}
                 >
                     <Typography variant="h6" color="white">
-                        Generating Challenge...
+                        {intl.formatMessage({id: "GENERATING_CHALLENGE"})}
                     </Typography>
                 </Backdrop>
         </React.Fragment>
@@ -191,6 +198,9 @@ const RegistrationConfigureSecurityKey: React.FC<RegistrationComponentsProps> = 
     onUpdateEnd,
     onUpdateStart
 }) => {
+
+    // CONTEXT VARIABLES
+    const intl = useIntl();
 
     // STATE VARIABLES
     // We need a local version of the following two variables because we need to
@@ -213,7 +223,7 @@ const RegistrationConfigureSecurityKey: React.FC<RegistrationComponentsProps> = 
         },
         onError(error) {
             setShowMutationBackdrop(false);
-            setErrorMessage(error.message)
+            setErrorMessage(intl.formatMessage({id: error.message}));
         },
     });
    
@@ -291,8 +301,9 @@ const RegistrationConfigureSecurityKey: React.FC<RegistrationComponentsProps> = 
                     }
                 });
             }
-            catch(err: any){
-                setErrorMessage(err.message);
+            catch(err: unknown){
+                const e = err as Error;
+                setErrorMessage(e.message);
             }
         }
     }
@@ -326,14 +337,12 @@ const RegistrationConfigureSecurityKey: React.FC<RegistrationComponentsProps> = 
                 <Grid2 marginBottom={"8px"} size={11}>
                     {initialUserRegistrationState.registrationState === RegistrationState.ConfigureSecurityKeyOptional &&
                         <div style={{ marginBottom: "16px", fontWeight: "bold", fontSize: "1.0em" }}>
-                            Do you want to configure a security key? This is an optional step and requires a hardware device
-                            such as a YubiKey or Google's Titan Security Key
+                            {intl.formatMessage({id: "SECURITY_KEY_OPTIONAL"})}
                         </div>
                     }
                     {initialUserRegistrationState.registrationState === RegistrationState.ConfigureSecurityKeyRequired &&
                         <div style={{ marginBottom: "16px", fontWeight: "bold", fontSize: "1.0em" }}>
-                            You will need to configure a security key to continue. This requires a hardware device
-                            such as a YubiKey or Google's Titan Security Key
+                            {intl.formatMessage({id: "SECURITY_KEY_REQUIRED"})}
                         </div>
                     }
                 </Grid2>
@@ -358,7 +367,7 @@ const RegistrationConfigureSecurityKey: React.FC<RegistrationComponentsProps> = 
                             });
                         }}
                     >
-                        Skip
+                        {intl.formatMessage({id: "SKIP"})}
                     </Button>
                 }
                 <Button
@@ -367,12 +376,12 @@ const RegistrationConfigureSecurityKey: React.FC<RegistrationComponentsProps> = 
                         createFido2RegistrationChallenge();
                     }}
                 >
-                    Configure Key
+                    {intl.formatMessage({id: "CONFIGURE_KEY"})}
                 </Button>
                 <Button
                     onClick={() => onRegistrationCancelled()}
                 >
-                    Cancel
+                    {intl.formatMessage({id: "CANCEL"})}
                 </Button>
             </Stack>
             <Backdrop
@@ -381,7 +390,7 @@ const RegistrationConfigureSecurityKey: React.FC<RegistrationComponentsProps> = 
                     onClick={() => setShowMutationBackdrop(false)}
                 >
                     <Typography variant="h6" color="white">
-                        Generating Challenge...
+                        {intl.formatMessage({id: "GENERATING_CHALLENGE"})}
                     </Typography>
                 </Backdrop>
         </React.Fragment>

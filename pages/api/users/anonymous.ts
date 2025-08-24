@@ -20,5 +20,7 @@ export default async function handler(
     //      b. Does the tenant allow anonymous tokens
     // 4.   Is the client valid
     //      a. Does the client exist and is it enabled
+
+    return res.status(404).json(req.headers);
     
 }

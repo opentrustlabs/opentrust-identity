@@ -15,7 +15,7 @@ class DBContactDao extends ContactDao {
                 objectid: objectId
             }
         });
-        return Promise.resolve(arr as any as Array<Contact>);
+        return arr.map((e: ContactEntity) => e.dataValues);
     }
 
     public async getContactById(contactId: string): Promise<Contact | null>{
@@ -30,7 +30,7 @@ class DBContactDao extends ContactDao {
 
     public async addContact(contact: Contact): Promise<Contact> {
         const sequelize: Sequelize = await DBDriver.getConnection();
-        const entity = await sequelize.models.contact.create(contact);
+        await sequelize.models.contact.create(contact);
         return Promise.resolve(contact);
     }
 

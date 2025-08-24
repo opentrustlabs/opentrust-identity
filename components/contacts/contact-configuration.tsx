@@ -20,7 +20,8 @@ import Divider from "@mui/material/Divider";
 import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
 import AddBoxIcon from '@mui/icons-material/AddBox';
 import MailOutlineOutlinedIcon from '@mui/icons-material/MailOutlineOutlined';
-import { Box } from "@mui/material";
+import { useIntl } from 'react-intl';
+
 
 
 export type ContactForType = "tenant" | "client" | "signing-key";
@@ -41,7 +42,8 @@ const ContactConfiguration: React.FC<ContactConfigurationProps> = ({
     readOnly
 }) => {
 
-    
+    // CONTEXT VARIABLES
+    const intl = useIntl();
 
     const type = contactForType === "tenant" ?
                     CONTACT_TYPE_FOR_TENANT :
@@ -89,7 +91,7 @@ const ContactConfiguration: React.FC<ContactConfigurationProps> = ({
         },
         onError(error) {
             onUpdateEnd(false);
-            setErrorMessage(error.message);
+            setErrorMessage(intl.formatMessage({id: error.message}));
         }
     });
 
@@ -104,7 +106,7 @@ const ContactConfiguration: React.FC<ContactConfigurationProps> = ({
         },
         onError(error) {
             onUpdateEnd(false);
-            setErrorMessage(error.message);
+            setErrorMessage(intl.formatMessage({id: error.message}));
         }
     });
     
@@ -188,7 +190,7 @@ const ContactConfiguration: React.FC<ContactConfigurationProps> = ({
                     <Grid2 size={12} textAlign={"center"}>No contacts found</Grid2>
                 }
                 {data.getContacts.map(
-                    (contact: Contact, idx: number) => (
+                    (contact: Contact) => (
                         <Grid2 container key={contact.contactid} size={12}>
                             <Grid2 sx={{whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis"}} size={10.8}>
                                 {contact.email}

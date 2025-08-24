@@ -22,6 +22,8 @@ import Link from "next/link";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
 import { AuthContext, AuthContextProps } from "../contexts/auth-context";
 import { containsScope } from "@/utils/authz-utils";
+import { useIntl } from 'react-intl';
+
 
 
 export interface ScopeTenantConfigurationProps {
@@ -42,6 +44,7 @@ const ScopeTenantConfiguration: React.FC<ScopeTenantConfigurationProps> = ({
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
     const authContextProps: AuthContextProps = useContext(AuthContext);
     const profile: PortalUserProfile | null = authContextProps.portalUserProfile;
+    const intl = useIntl();
 
     // STATE VARIABLES
     const [page, setPage] = React.useState<number>(1);
@@ -77,7 +80,7 @@ const ScopeTenantConfiguration: React.FC<ScopeTenantConfigurationProps> = ({
             setErrorMessage(null);
         },
         onError(error) {
-            setErrorMessage(error.message);
+            setErrorMessage(intl.formatMessage({id: error.message}));
         },
         refetchQueries: [TENANTS_QUERY]
     });
@@ -93,13 +96,15 @@ const ScopeTenantConfiguration: React.FC<ScopeTenantConfigurationProps> = ({
         },
         onError(error) {
             onUpdateEnd(true);
-            setErrorMessage(error.message);
+            setErrorMessage(intl.formatMessage({id: error.message}));
         },
         refetchQueries: [TENANTS_QUERY]
     });
 
 
     // HANDLER FUNCTIONS
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handlePageChange = (_: any, page: number) => {
         setPage(page + 1);
     }

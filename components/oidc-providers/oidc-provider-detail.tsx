@@ -32,6 +32,9 @@ import MarkForDeleteAlert from "../deletion/mark-for-delete-alert";
 import { AuthContext, AuthContextProps } from "../contexts/auth-context";
 import { containsScope } from "@/utils/authz-utils";
 import FederatedOIDCProviderTenantConfiguration from "./oidc-provider-tenant-configuration";
+import { ERROR_CODES } from "@/lib/models/error";
+import { useIntl } from 'react-intl';
+
 
 export interface FederatedOIDCProviderDetailProps {
     federatedOIDCProvider: FederatedOidcProvider
@@ -44,9 +47,12 @@ const FederatedOIDCProviderDetail: React.FC<FederatedOIDCProviderDetailProps> = 
     const { copyContentToClipboard } = useClipboardCopyContext();
     const authContextProps: AuthContextProps = useContext(AuthContext);
     const profile: PortalUserProfile | null = authContextProps.portalUserProfile;
+    const intl = useIntl();
+
+
 
     // STATE VARIABLES
-    let initInput: FederatedOidcProviderUpdateInput = {
+    const initInput: FederatedOidcProviderUpdateInput = {
         clientAuthType: federatedOIDCProvider.clientAuthType,
         federatedOIDCProviderClientId: federatedOIDCProvider.federatedOIDCProviderClientId,
         federatedOIDCProviderId: federatedOIDCProvider.federatedOIDCProviderId,
@@ -87,7 +93,7 @@ const FederatedOIDCProviderDetail: React.FC<FederatedOIDCProviderDetailProps> = 
         },
         onError(error) {
             setShowMutationBackdrop(false);
-            setErrorMessage(error.message);
+            setErrorMessage(intl.formatMessage({id: error.message}));
         },
         refetchQueries: [FEDERATED_OIDC_PROVIDER_DETAIL_QUERY]
     });
@@ -99,7 +105,7 @@ const FederatedOIDCProviderDetail: React.FC<FederatedOIDCProviderDetailProps> = 
         },
         onError(error) {
             setShowMutationBackdrop(false);
-            setErrorMessage(error.message);
+            setErrorMessage(intl.formatMessage({id: error.message}));
         },
     })
 
@@ -200,7 +206,12 @@ const FederatedOIDCProviderDetail: React.FC<FederatedOIDCProviderDetailProps> = 
                                                 setIsMarkedForDelete(true);
                                             }
                                             else{
-                                                setErrorMessage(errorMessage || "ERROR");
+                                                if(errorMessage){
+                                                    setErrorMessage(intl.formatMessage({id: errorMessage}));    
+                                                }
+                                                else{
+                                                    setErrorMessage(intl.formatMessage({id: ERROR_CODES.DEFAULT.errorKey}));
+                                                } 
                                             }
                                         }}
                                         onDeleteStart={() => setShowMutationBackdrop(true)}
@@ -403,13 +414,13 @@ const FederatedOIDCProviderDetail: React.FC<FederatedOIDCProviderDetailProps> = 
                                             <div style={{textDecoration: "underline"}}>Redirect URI (to be configured with the provider)</div>
                                             <Grid2 marginTop={"8px"} container display={"inline-flex"} size={12}>
                                                 <Grid2 size={11}>
-                                                    {`${new URL(location.href).host}/api/federated-auth/return`}
+                                                    {`${location.protocol}//${location.host}/api/federated-auth/return`}
                                                 </Grid2>
                                                 <Grid2 size={1}>
                                                     <ContentCopyIcon 
                                                         sx={{cursor: "pointer"}}
                                                         onClick={() => {
-                                                            copyContentToClipboard(`${new URL(location.href).host}/api/federated-auth/return`, "Redirect URI copied to clipboard");
+                                                            copyContentToClipboard(`${location.protocol}//${location.host}/api/federated-auth/return`, "Redirect URI copied to clipboard");
                                                         }}
                                                     />
                                                 </Grid2>
@@ -455,7 +466,9 @@ const FederatedOIDCProviderDetail: React.FC<FederatedOIDCProviderDetailProps> = 
                                                         }
                                                     }
                                                 )}
-                                                onChange={(_, value: any) => {                                                    
+                                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                                onChange={(_, value: any) => {      
+                                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any                                              
                                                     oidcProviderInput.scopes = value.map((v: any) => v.id);
                                                     setOIDCProviderInput({ ...oidcProviderInput });
                                                     setMarkDirty(true);

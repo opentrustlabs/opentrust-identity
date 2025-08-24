@@ -7,6 +7,8 @@ import { Alert, Button, Checkbox, DialogActions, DialogContent, DialogTitle, Gri
 import React, { useContext } from "react";
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
 import { useRouter } from 'next/navigation';
+import { useIntl } from 'react-intl';
+
 
 
 export interface NewTenantDialogProps {
@@ -37,7 +39,9 @@ const NewTenantDialog: React.FC<NewTenantDialogProps> = ({
         tenantId: "",
         tenantName: "",
         tenantType: "",
-        verifyEmailOnSelfRegistration: false
+        verifyEmailOnSelfRegistration: false,
+        registrationRequireCaptcha: false,
+        registrationRequireTermsAndConditions: false
     }
 
     // HOOKS
@@ -45,6 +49,8 @@ const NewTenantDialog: React.FC<NewTenantDialogProps> = ({
 
     // CONTEXT
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
+    const intl = useIntl();
+
 
     // STATE VARIABLES    
     const [tenantInput, setTenantInput] = React.useState<TenantCreateInput>(initInput);
@@ -63,7 +69,7 @@ const NewTenantDialog: React.FC<NewTenantDialogProps> = ({
                 onClose();
             },
             onError(error) {
-                setErrorMessage(error.message)
+                setErrorMessage(intl.formatMessage({id: error.message}));
                 onCreateEnd(false);
             },
         }

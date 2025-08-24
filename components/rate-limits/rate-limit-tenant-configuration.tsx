@@ -26,6 +26,7 @@ import TenatRateLimitConfigurationDialog from "../dialogs/tenant-rate-limit-conf
 import { AuthContext, AuthContextProps } from "../contexts/auth-context";
 import { containsScope } from "@/utils/authz-utils";
 import { RATE_LIMIT_TENANT_ASSIGN_SCOPE, RATE_LIMIT_TENANT_REMOVE_SCOPE, RATE_LIMIT_TENANT_UPDATE_SCOPE } from "@/utils/consts";
+import { useIntl } from 'react-intl';
 
 
 export interface RateLimitTenantRelConfigurationProps {
@@ -45,9 +46,10 @@ const RateLimitTenantRelConfiguration: React.FC<RateLimitTenantRelConfigurationP
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
     const authContextProps: AuthContextProps = useContext(AuthContext);
     const profile: PortalUserProfile | null = authContextProps.portalUserProfile;
+    const intl = useIntl();
 
-    // STATE VARIABLES
-    
+
+    // STATE VARIABLES    
     const [page, setPage] = React.useState<number>(1);
     const [showRemoveConfirmationDialog, setShowRemoveConfirmationDialog] = React.useState(false);
     const [tenantIdToAdd, setTenantIdToAdd] = React.useState<string | null>(null);
@@ -87,7 +89,7 @@ const RateLimitTenantRelConfiguration: React.FC<RateLimitTenantRelConfigurationP
             setErrorMessage(null);
         },
         onError(error) {
-            setErrorMessage(error.message);
+            setErrorMessage(intl.formatMessage({id: error.message}));
         },
         refetchQueries: [TENANT_RATE_LIMIT_REL_VIEW_QUERY]
     });
@@ -103,7 +105,7 @@ const RateLimitTenantRelConfiguration: React.FC<RateLimitTenantRelConfigurationP
         },
         onError(error) {
             setShowTenantEditDialogOpen(false);
-            setErrorMessage(error.message);
+            setErrorMessage(intl.formatMessage({id: error.message}));
         },
         refetchQueries: [TENANT_RATE_LIMIT_REL_VIEW_QUERY]
     });
@@ -117,13 +119,15 @@ const RateLimitTenantRelConfiguration: React.FC<RateLimitTenantRelConfigurationP
             setErrorMessage(null);
         },
         onError(error) {
-            setErrorMessage(error.message);
+            setErrorMessage(intl.formatMessage({id: error.message}));
         },
         refetchQueries: [TENANT_RATE_LIMIT_REL_VIEW_QUERY]
     });
 
 
     // HANDLER FUNCTIONS
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handlePageChange = (evt: any, page: number) => {
         setPage(page + 1);
     }

@@ -28,6 +28,9 @@ import PolicyIcon from '@mui/icons-material/Policy';
 import ScopeRelConfiguration, { ScopeRelType } from "../scope/scope-rel-configuration";
 import { AuthContext, AuthContextProps } from "@/components/contexts/auth-context";
 import { containsScope } from "@/utils/authz-utils";
+import { ERROR_CODES } from "@/lib/models/error";
+import { useIntl } from 'react-intl';
+
 
 export interface ClientDetailProps {
     client: Client
@@ -39,6 +42,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
     const { copyContentToClipboard } = useClipboardCopyContext();
     const authContextProps: AuthContextProps = useContext(AuthContext);
     const profile: PortalUserProfile | null = authContextProps.portalUserProfile;
+    const intl = useIntl();
 
 
     // STATE VARIABLES
@@ -79,7 +83,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
             setShowMutationSnackbar(true);
         },
         onError(error) {
-            setErrorMessage(error.message);
+            setErrorMessage(intl.formatMessage({id: error.message}));
             setShowMutationBackdrop(false);
         },
         refetchQueries: [CLIENT_DETAIL_QUERY]
@@ -125,7 +129,12 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                                 setIsMarkedForDelete(true);
                                             }
                                             else {
-                                                setErrorMessage(errorMessage || "ERROR");
+                                                if(errorMessage){
+                                                    setErrorMessage(intl.formatMessage({id: errorMessage}));                                                    
+                                                }
+                                                else{
+                                                    setErrorMessage(intl.formatMessage({id: ERROR_CODES.DEFAULT.errorKey}));
+                                                }  
                                             }
                                         }}
                                         onDeleteStart={() => setShowMutationBackdrop(true)}
@@ -182,7 +191,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client }) => {
                                             >
                                                 {CLIENT_TYPES.map(
                                                     (val: string) => (
-                                                        <MenuItem value={val} >{CLIENT_TYPES_DISPLAY.get(val)}</MenuItem>
+                                                        <MenuItem key={val} value={val} >{CLIENT_TYPES_DISPLAY.get(val)}</MenuItem>                                                        
                                                     )
                                                 )}
                                             </Select>

@@ -19,6 +19,8 @@ import GeneralSelector from "../dialogs/general-selector";
 import { ResponsiveBreakpoints, ResponsiveContext } from "../contexts/responsive-context";
 import { AuthContext, AuthContextProps } from "../contexts/auth-context";
 import { containsScope } from "@/utils/authz-utils";
+import { useIntl } from 'react-intl';
+
 
 export interface TenantScopeConfigurationProps {
     tenantId: string,
@@ -40,6 +42,8 @@ const TenantScopeConfiguration: React.FC<TenantScopeConfigurationProps> = ({
     const responseBreakPoints: ResponsiveBreakpoints = useContext(ResponsiveContext);
     const authContextProps: AuthContextProps = useContext(AuthContext);
     const profile: PortalUserProfile | null = authContextProps.portalUserProfile;
+    const intl = useIntl();
+
 
     // STATE VARIABLES
     const [selectedScopeToRemove, setSelectedScopeToRemove] = React.useState<{id: string, name: string} | null>(null);
@@ -67,7 +71,7 @@ const TenantScopeConfiguration: React.FC<TenantScopeConfigurationProps> = ({
             setErrorMessage(null);
         },
         onError(error) {
-            setErrorMessage(error.message);
+            setErrorMessage(intl.formatMessage({id: error.message}));
         },
         refetchQueries: [SCOPE_QUERY]
     });
@@ -83,7 +87,7 @@ const TenantScopeConfiguration: React.FC<TenantScopeConfigurationProps> = ({
         },
         onError(error) {
             onUpdateEnd(true);
-            setErrorMessage(error.message);
+            setErrorMessage(intl.formatMessage({id: error.message}));
         },
         refetchQueries: [SCOPE_QUERY]
     });

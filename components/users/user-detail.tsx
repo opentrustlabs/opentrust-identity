@@ -3,7 +3,7 @@ import { MarkForDeleteObjectType, StateProvinceRegion, User, UserMfaRel, UserTen
 import React, { useContext } from "react";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
 import Typography from "@mui/material/Typography";
-import { MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, NAME_ORDER_DISPLAY, NAME_ORDER_EASTERN, NAME_ORDER_WESTERN, TENANT_TYPE_ROOT_TENANT, USER_DELETE_SCOPE, USER_TENANT_REL_TYPE_PRIMARY, USER_UNLOCK_SCOPE, USER_UPDATE_SCOPE } from "@/utils/consts";
+import { MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, NAME_ORDER_DISPLAY, NAME_ORDER_EASTERN, NAME_ORDER_WESTERN, TENANT_TYPE_ROOT_TENANT, USER_DELETE_SCOPE, USER_UNLOCK_SCOPE, USER_UPDATE_SCOPE } from "@/utils/consts";
 import BreadcrumbComponent from "../breadcrumbs/breadcrumbs";
 import { DetailPageContainer, DetailPageMainContentContainer, DetailPageRightNavContainer } from "../layout/detail-page-container";
 import Grid2 from "@mui/material/Grid2";
@@ -39,6 +39,8 @@ import StateProvinceRegionSelector from "./state-province-region-selector";
 import { AuthContext, AuthContextProps } from "@/components/contexts/auth-context";
 import { containsScope } from "@/utils/authz-utils";
 import { MuiTelInput } from "mui-tel-input";
+import { ERROR_CODES } from "@/lib/models/error";
+import { useIntl } from 'react-intl';
 
 export interface UserDetailProps {
     user: User;
@@ -53,6 +55,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
     const { copyContentToClipboard } = useClipboardCopyContext();
     const authContextProps: AuthContextProps = useContext(AuthContext);
     const profile: PortalUserProfile | null = authContextProps.portalUserProfile;
+    const intl = useIntl();
 
     const initInput: UserUpdateInput = {
         domain: user.domain,
@@ -106,7 +109,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
         },
         onError(error) {
             setShowMutationBackdrop(false);
-            setErrorMessage(error.message)
+            setErrorMessage(intl.formatMessage({id: error.message}));
         },
         refetchQueries: [USER_MFA_REL_QUERY]
     });
@@ -121,7 +124,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
         },
         onError(error) {
             setShowMutationBackdrop(false);
-            setErrorMessage(error.message)
+            setErrorMessage(intl.formatMessage({id: error.message}));
         },
         refetchQueries: [USER_MFA_REL_QUERY]
     });
@@ -138,7 +141,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
         },
         onError(error) {
             setShowMutationBackdrop(false);
-            setErrorMessage(error.message);
+            setErrorMessage(intl.formatMessage({id: error.message}));
         },
         refetchQueries: [USER_DETAIL_QUERY]
     });
@@ -154,25 +157,25 @@ const UserDetail: React.FC<UserDetailProps> = ({
         },
         onError(error) {
             setShowMutationBackdrop(false);
-            setErrorMessage(error.message);
+            setErrorMessage(intl.formatMessage({id: error.message}));
         },
         refetchQueries: [USER_DETAIL_QUERY]
     })
 
     // HANDLER FUNCTIONS
-    const hasPrimaryTenant = (rels: Array<UserTenantRelView>): boolean => {
-        const rel = rels.find(
-            (r: UserTenantRelView) => r.relType === USER_TENANT_REL_TYPE_PRIMARY
-        )
-        return rel !== undefined;
-    }
+    // const hasPrimaryTenant = (rels: Array<UserTenantRelView>): boolean => {
+    //     const rel = rels.find(
+    //         (r: UserTenantRelView) => r.relType === USER_TENANT_REL_TYPE_PRIMARY
+    //     )
+    //     return rel !== undefined;
+    // }
 
-    const getPrimaryTenantId = (rels: Array<UserTenantRelView>): string | null => {
-        const rel = rels.find(
-            (r: UserTenantRelView) => r.relType === USER_TENANT_REL_TYPE_PRIMARY
-        );
-        return rel?.tenantId || null;
-    }
+    // const getPrimaryTenantId = (rels: Array<UserTenantRelView>): string | null => {
+    //     const rel = rels.find(
+    //         (r: UserTenantRelView) => r.relType === USER_TENANT_REL_TYPE_PRIMARY
+    //     );
+    //     return rel?.tenantId || null;
+    // }
 
     return (
         <Typography component={"div"} >
@@ -264,7 +267,12 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                                 setIsMarkedForDelete(true);
                                             }
                                             else{
-                                                setErrorMessage(errorMessage || "ERROR");
+                                                if(errorMessage){
+                                                    setErrorMessage(intl.formatMessage({id: errorMessage}));    
+                                                }
+                                                else{
+                                                    setErrorMessage(intl.formatMessage({id: ERROR_CODES.DEFAULT.errorKey}));
+                                                } 
                                             }
                                         }}
                                         onDeleteStart={() => setShowMutationBackdrop(true)}
@@ -486,7 +494,8 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                                         }
                                                     )
                                                 }                        
-                                                value={getDefaultLanguageCodeDef(userInput.preferredLanguageCode || "")}
+                                                value={getDefaultLanguageCodeDef(userInput.preferredLanguageCode || "")}                                                
+                                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                 onChange={ (_, value: any) => {
                                                     userInput.preferredLanguageCode = value.id;
                                                     setMarkDirty(true);
@@ -590,7 +599,8 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                                         }
                                                     )
                                                 }                        
-                                                value={getDefaultCountryCodeDef(userInput.countryCode || "")}
+                                                value={getDefaultCountryCodeDef(userInput.countryCode || "")}                                                
+                                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                 onChange={ (_, value: any) => {      
                                                     userInput.countryCode = value.id;
                                                     setUserInput({...userInput});                                                    

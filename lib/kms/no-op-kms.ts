@@ -8,19 +8,19 @@ import Kms from "./kms";
  */
 class NoOpKms  extends Kms {
 
-    public async encrypt(data: string, aad?: string): Promise<string | null> {
+    public async encrypt(data: string): Promise<string | null> {
         return data;
     }
     
-    public async encryptBuffer(data: Buffer, aad?: string): Promise<Buffer | null> {
+    public async encryptBuffer(data: Buffer): Promise<Buffer | null> {
         return data;
     }
 
-    public async decrypt(data: string, aad?: string): Promise<string | null> {
+    public async decrypt(data: string): Promise<string | null> {
         return data;
     }
 
-    public async decryptBuffer(data: Buffer, aad?: string): Promise<Buffer | null> {
+    public async decryptBuffer(data: Buffer): Promise<Buffer | null> {
         return data;
     }
 

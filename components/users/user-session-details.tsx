@@ -11,11 +11,11 @@ import Alert from "@mui/material/Alert";
 import { UserSession, PortalUserProfile } from "@/graphql/generated/graphql-types";
 import DeleteForeverOutlinedIcon from '@mui/icons-material/DeleteForeverOutlined';
 import Dialog from "@mui/material/Dialog";
-import { Button, DialogActions, DialogContent, Divider, Portal } from "@mui/material";
+import { Button, DialogActions, DialogContent, Divider } from "@mui/material";
 import { AuthContext, AuthContextProps } from "../contexts/auth-context";
 import { containsScope } from "@/utils/authz-utils";
 import { USER_SESSION_DELETE_SCOPE } from "@/utils/consts";
-
+import { useIntl } from 'react-intl';
 
 export interface UserSessionDetailsProps {
     userId: string,
@@ -32,6 +32,8 @@ const UserSessionDetails: React.FC<UserSessionDetailsProps> = ({
     // CONTEXT VARIABLES    
     const authContextProps: AuthContextProps = useContext(AuthContext);
     const profile: PortalUserProfile | null = authContextProps.portalUserProfile;
+    const intl = useIntl();
+
 
     // STATE VARIABLES
     const [sessionToDelete, setSessionToDelete] = React.useState<null | {clientId: string, tenantId: string}>(null);
@@ -55,7 +57,7 @@ const UserSessionDetails: React.FC<UserSessionDetailsProps> = ({
 
         },
         onError(error) {
-            setErrorMessage(error.message);
+            setErrorMessage(intl.formatMessage({id: error.message}));
             onUpdateEnd(false);
         },
         refetchQueries: [USER_SESSIONS_QUERY]

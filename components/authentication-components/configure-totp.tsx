@@ -13,6 +13,8 @@ import Backdrop from "@mui/material/Backdrop";
 import { CircularProgress } from "@mui/material";
 import WarningOutlinedIcon from '@mui/icons-material/WarningOutlined';
 import PriorityHighOutlinedIcon from '@mui/icons-material/PriorityHighOutlined';
+import { useIntl } from 'react-intl';
+
 
 
 const AuthentiationConfigureTotp: React.FC<AuthenticationComponentsProps> = ({
@@ -20,6 +22,9 @@ const AuthentiationConfigureTotp: React.FC<AuthenticationComponentsProps> = ({
     onAuthenticationCancelled,
     onUpdateEnd
 }) => {
+
+    // CONTEXT VARIABLES
+    const intl = useIntl();
 
 
     // STATE VARIABLES
@@ -57,8 +62,7 @@ const AuthentiationConfigureTotp: React.FC<AuthenticationComponentsProps> = ({
                         </Grid2>
                         <Grid2 size={11}>
                             <div style={{ marginBottom: "16px", fontWeight: "bold", fontSize: "0.95em" }}>
-                                For access to this tenant you will need to configure a one-time passcode (OTP) using
-                                an authenticator app (such as Google Authenticator or Microsoft Authenticator).
+                                {intl.formatMessage({id: "TOTP_REQUIRED_FOR_ACCESS"})}
                             </div>
                         </Grid2>
                     </Grid2>
@@ -79,12 +83,12 @@ const AuthentiationConfigureTotp: React.FC<AuthenticationComponentsProps> = ({
                                 });
                             }}
                         >
-                            Configure
+                            {intl.formatMessage({id: "CONFIGURE"})}
                         </Button>
                         <Button
                             onClick={() => onAuthenticationCancelled()}
                         >
-                            Cancel
+                            {intl.formatMessage({id: "CANCEL"})}
                         </Button>
                     </Stack>
                 </React.Fragment>
@@ -93,7 +97,7 @@ const AuthentiationConfigureTotp: React.FC<AuthenticationComponentsProps> = ({
                 <React.Fragment>
                     <Grid2 container size={12} spacing={1}>
                         <Grid2 marginBottom={"8px"} fontWeight={"bold"} fontSize={"1.0em"} size={12}>
-                            Use the QR code or the secret value to configure OTP on your device. Once completed click "Next"
+                            {intl.formatMessage({id: "TOTP_CONFIGURE_APP_FOR_CODE"})}
                         </Grid2>
                         <Grid2 size={12}>
                             <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
@@ -107,7 +111,9 @@ const AuthentiationConfigureTotp: React.FC<AuthenticationComponentsProps> = ({
                             <div>
                                 {nextUserAuthenticationStateResponse && nextUserAuthenticationStateResponse.totpSecret &&
                                     <div style={{ margin: "25px 0px" }}>
-                                        <div>Plain Text value of secret</div>
+                                        <div>
+                                            {intl.formatMessage({id: "PLAIN_TEXT_VALUE_OF_THE_SECRET"})}
+                                        </div>
                                         <div><pre style={{ fontSize: "1.4em", letterSpacing: "4px", wordWrap: "break-word", whiteSpace: "pre-wrap" }}>{nextUserAuthenticationStateResponse.totpSecret}</pre></div>
                                     </div>
                                 }
@@ -126,12 +132,12 @@ const AuthentiationConfigureTotp: React.FC<AuthenticationComponentsProps> = ({
                                 }
                             }}
                         >
-                            Next
+                            {intl.formatMessage({id: "NEXT"})}
                         </Button>
                         <Button
                             onClick={() => onAuthenticationCancelled()}
                         >
-                            Cancel
+                            {intl.formatMessage({id: "CANCEL"})}
                         </Button>
                     </Stack>
                 </React.Fragment>
@@ -156,6 +162,9 @@ const RegistrationConfigureTotp: React.FC<RegistrationComponentsProps> = ({
     onUpdateEnd,
     onUpdateStart
 }) => {
+
+    // CONTEXT VARIABLES
+    const intl = useIntl();
 
     // STATE VARIABLES
     const [showMutationBackdrop, setShowMutationBackdrop] = React.useState<boolean>(false);
@@ -201,13 +210,12 @@ const RegistrationConfigureTotp: React.FC<RegistrationComponentsProps> = ({
                         <Grid2 marginBottom={"8px"} size={11}>
                             {initialUserRegistrationState.registrationState === RegistrationState.ConfigureTotpOptional &&
                                 <div style={{ marginBottom: "16px", fontWeight: "bold", fontSize: "1.0em" }}>
-                                    Do you want to configure a one-time passcode (OTP)? It is not required, but is recommended. You
-                                    will need an authenticator app (such as Google Authenticator or Microsoft Authenticator).
+                                    {intl.formatMessage({id: "OPTIONAL_TOTP_CONFIGURATION"})}
                                 </div>
                             }
                             {initialUserRegistrationState.registrationState === RegistrationState.ConfigureTotpRequired &&
                                 <div style={{ marginBottom: "16px", fontWeight: "bold", fontSize: "1.0em" }}>
-                                    You will need to configure a one-time passcode (OTP). This is required for access.
+                                    {intl.formatMessage({id: "TOTP_REQUIRED_FOR_ACCESS"})}
                                 </div>
                             }
                         </Grid2>
@@ -231,7 +239,7 @@ const RegistrationConfigureTotp: React.FC<RegistrationComponentsProps> = ({
                                     });
                                 }}
                             >
-                                Skip
+                                {intl.formatMessage({id: "SKIP"})}
                             </Button>
                         }
                         <Button
@@ -247,12 +255,12 @@ const RegistrationConfigureTotp: React.FC<RegistrationComponentsProps> = ({
                                 });
                             }}
                         >
-                            Configure
+                            {intl.formatMessage({id: "CONFIGURE"})}
                         </Button>
                         <Button
                             onClick={() => onRegistrationCancelled()}
                         >
-                            Cancel
+                            {intl.formatMessage({id: "CANCEL"})}
                         </Button>
                     </Stack>
                 </React.Fragment>
@@ -261,7 +269,7 @@ const RegistrationConfigureTotp: React.FC<RegistrationComponentsProps> = ({
                 <React.Fragment>
                     <Grid2 container size={12} spacing={1}>
                         <Grid2 marginBottom={"8px"} fontWeight={"bold"} fontSize={"1.0em"} size={12}>
-                            Use the QR code or the secret value to configure OTP on your device. Once completed click "Next"
+                            {intl.formatMessage({id: "TOTP_CONFIGURE_APP_FOR_CODE"})}
                         </Grid2>
                         <Grid2 size={12}>
                             <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
@@ -275,7 +283,7 @@ const RegistrationConfigureTotp: React.FC<RegistrationComponentsProps> = ({
                             <div>
                                 {nextUserRegistrationResponse && nextUserRegistrationResponse.totpSecret &&
                                     <div style={{ margin: "25px 0px" }}>
-                                        <div>Plain Text value of secret</div>
+                                        <div>{intl.formatMessage({id: "PLAIN_TEXT_VALUE_OF_THE_SECRET"})}</div>
                                         <div><pre style={{ fontSize: "1.4em", letterSpacing: "4px", wordWrap: "break-word", whiteSpace: "pre-wrap" }}>{nextUserRegistrationResponse.totpSecret}</pre></div>
                                     </div>
                                 }
@@ -294,12 +302,12 @@ const RegistrationConfigureTotp: React.FC<RegistrationComponentsProps> = ({
                                 }
                             }}
                         >
-                            Next
+                            {intl.formatMessage({id: "NEXT"})}
                         </Button>
                         <Button
                             onClick={() => onRegistrationCancelled()}
                         >
-                            Cancel
+                            {intl.formatMessage({id: "CANCEL"})}
                         </Button>
                     </Stack>
                 </React.Fragment>

@@ -30,7 +30,7 @@ class DBScopeConstraintSchemaDao extends ScopeConstraintSchemaDao {
     //     return Promise.resolve(scopeConstraintSchema);
     // }
 
-    public async deleteScopeConstraintSchema(scopeConstraintSchemaId: string): Promise<void> {
+    public async deleteScopeConstraintSchema(): Promise<void> {
         throw new Error("Method not implemented.");
     }
 

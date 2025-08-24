@@ -10,6 +10,8 @@ import { useRouter } from 'next/navigation';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import PriorityHighOutlinedIcon from '@mui/icons-material/PriorityHighOutlined';
 import { useClipboardCopyContext } from "../contexts/clipboard-copy-context";
+import { useIntl } from 'react-intl';
+
 
 
 export interface NewClientDialogProps {
@@ -27,6 +29,10 @@ const NewClientDialog: React.FC<NewClientDialogProps> = ({
     onCreateEnd,
     onCreateStart
 }) => {
+
+    // CONTEXT VARIABLES
+    const intl = useIntl();
+
 
     const initInput: ClientCreateInput = {
         clientName: "",
@@ -67,7 +73,7 @@ const NewClientDialog: React.FC<NewClientDialogProps> = ({
             },
             onError(error) {
                 onCreateEnd(false);
-                setErrorMessage(error.message)
+                setErrorMessage(intl.formatMessage({id: error.message}));
             },
         }
     );
@@ -161,7 +167,7 @@ const NewClientDialog: React.FC<NewClientDialogProps> = ({
                                     >
                                         {CLIENT_TYPES.map(
                                             (val: string) => (
-                                                <MenuItem value={val} >{CLIENT_TYPES_DISPLAY.get(val)}</MenuItem>
+                                                <MenuItem key={val} value={val} >{CLIENT_TYPES_DISPLAY.get(val)}</MenuItem>                                                
                                             )
                                         )}
                                     </Select>

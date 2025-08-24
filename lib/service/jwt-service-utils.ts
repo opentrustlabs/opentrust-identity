@@ -14,8 +14,8 @@ import { DaoFactory } from "../data-sources/dao-factory";
 import ScopeDao from "../dao/scope-dao";
 import AuthorizationGroupDao from "../dao/authorization-group-dao";
 import Kms from "../kms/kms";
-import { use } from "react";
 import AuthDao from "../dao/auth-dao";
+import { logWithDetails } from "../logging/logger";
 
 const SIGNING_KEY_ARRAY_CACHE_KEY = "SIGNING_KEY_ARRAY_CACHE_KEY"
 interface CachedSigningKeyData {
@@ -183,9 +183,9 @@ class JwtServiceUtils {
                 return null;
             }
             
-            let arrProfileScopes: Array<ProfileScope> = [];
+            const arrProfileScopes: Array<ProfileScope> = [];
             if(client.clientType === CLIENT_TYPE_USER_DELEGATED_PERMISSIONS || client.clientType === CLIENT_TYPE_DEVICE){
-                const arrScopes = includeScope ? await this.getDelegatedScope(user.userId, client.clientId, principal.tenant_id) : [];
+                const arrScopes = includeScope ? await this.getDelegatedScope(user, client, principal.tenant_id) : [];
                 arrScopes.forEach(
                     (s: Scope) => {
                         const profileScope: ProfileScope = {
@@ -630,7 +630,9 @@ class JwtServiceUtils {
                 return Promise.resolve(false);
             }
         }
-        catch(err){
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        catch(err: any){
+            logWithDetails("error", `Error validating client auth JWT. ${err.message}`, {...err});
             return Promise.resolve(false);
         }
         const secretKey: KeyObject = createSecretKey(decryptedClientSecret, CLIENT_SECRET_ENCODING);
@@ -644,7 +646,9 @@ class JwtServiceUtils {
                 return Promise.resolve(true);
             }
         }
-        catch(error){
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        catch(err: any){
+            logWithDetails("error", `Error validating client auth JWT. ${err.message}`, {...err});
             return Promise.resolve(false)
         }
     }
@@ -695,7 +699,9 @@ class JwtServiceUtils {
                 return Promise.resolve(p.payload as unknown as JWTPrincipal);
             }
         }
-        catch(error){
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        catch(err: any){
+            logWithDetails("error", `Error validating client auth JWT. ${err.message}`, {...err});
             return Promise.resolve(null);
         }        
     }
@@ -773,9 +779,9 @@ class JwtServiceUtils {
                 (key1, key2) => key2.expiresAtMs - key1.expiresAtMs
             );            
             
-            let cachedArray: Array<CachedSigningKeyData> = [];
+            const cachedArray: Array<CachedSigningKeyData> = [];
             for(let i = 0; i < signingKeys.length; i++){
-                let key: SigningKey = signingKeys[i];
+                const key: SigningKey = signingKeys[i];
                 
                 let passphrase: string | undefined = undefined;
                 if(key.password){
@@ -822,21 +828,33 @@ class JwtServiceUtils {
         return Promise.resolve(cachedSigningKey);
     }
 
-    protected async getDelegatedScope(userId: string, clientId: string, tenantId: string): Promise<Array<Scope>>{
-        const arrRefreshData: Array<RefreshData> = await authDao.getRefreshDataByUserId(userId);
+    protected async getDelegatedScope(user: User, client: Client, tenantId: string): Promise<Array<Scope>>{
+        const arrRefreshData: Array<RefreshData> = await authDao.getRefreshDataByUserId(user.userId);
         const refreshData: RefreshData | undefined = arrRefreshData.find(
-            (d: RefreshData) => d.userId === userId && d.clientId === clientId && d.tenantId === tenantId
+            (d: RefreshData) => d.userId === user.userId && d.clientId === client.clientId && d.tenantId === tenantId
         );
-        if(!refreshData){
-            return [];
-        }
-        let arrScopeNames = refreshData.scope.split(",");
-        let arrScope: Array<Scope> = [];
-        for(let i = 0; i < arrScopeNames.length; i++){
-            const scope: Scope | null = await scopeDao.getScopeByScopeName(arrScopeNames[i]);
-            if(scope){
-                arrScope.push(scope);
+        
+        const arrScope: Array<Scope> = [];
+        if(refreshData){
+            const arrScopeNames = refreshData.scope.split(",");            
+            for(let i = 0; i < arrScopeNames.length; i++){
+                const scope: Scope | null = await scopeDao.getScopeByScopeName(arrScopeNames[i]);
+                if(scope){
+                    arrScope.push(scope);
+                }
             }
+        }
+        else{
+            // If no refresh data is found, then this is a client which does not allow refresh tokens, so
+            // take the client's delegated scope values.
+            if(client.clientType === CLIENT_TYPE_USER_DELEGATED_PERMISSIONS || client.clientType === CLIENT_TYPE_DEVICE){
+                const scopeRel = await scopeDao.getClientScopeRels(client.clientId);
+                const ids = scopeRel.map( (rel: ClientScopeRel) => rel.scopeId);
+                const scopes: Array<Scope> = await scopeDao.getScope(undefined, ids);
+                scopes.forEach(
+                    (s: Scope) => arrScope.push(s)
+                )
+            }            
         }
         return arrScope;
     }

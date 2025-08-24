@@ -11,6 +11,8 @@ import TextField from "@mui/material/TextField";
 import { Alert, Autocomplete, Checkbox, Divider, MenuItem, Select } from "@mui/material";
 import { PASSWORD_CONFIGURATION_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import DetailSectionActionHandler from "../layout/detail-section-action-handler";
+import { useIntl } from 'react-intl';
+
 
 export interface PasswordRulesConfigurationProps {
     tenantId: string,
@@ -26,7 +28,10 @@ const PasswordRulesConfiguration: React.FC<PasswordRulesConfigurationProps> = ({
     readOnly
 }) => {
 
-    let initInput: PasswordConfigInput = DEFAULT_TENANT_PASSWORD_CONFIGURATION;
+    // CONTEXT VARIABLES
+    const intl = useIntl();
+    
+    const initInput: PasswordConfigInput = DEFAULT_TENANT_PASSWORD_CONFIGURATION;
     initInput.tenantId = tenantId;
 
     // STATE VARIABLES
@@ -75,7 +80,7 @@ const PasswordRulesConfiguration: React.FC<PasswordRulesConfigurationProps> = ({
         onError(error) {
             onUpdateEnd(false);
             setPasswordConfigInput(revertToInput);
-            setErrorMessage(error.message)
+            setErrorMessage(intl.formatMessage({id: error.message}));
         },
         refetchQueries: [TENANT_PASSWORD_CONFIG_QUERY]
     }
@@ -166,8 +171,8 @@ const PasswordRulesConfiguration: React.FC<PasswordRulesConfigurationProps> = ({
                             onChange={(evt) => { passwordConfigInput.passwordHashingAlgorithm = evt.target.value; setPasswordConfigInput({ ...passwordConfigInput }); setMarkDirty(true); }}
                         >
                             {PASSWORD_HASHING_ALGORITHMS.map(
-                                (algorithm: string) => (
-                                    <MenuItem value={algorithm}>{PASSWORD_HASHING_ALGORITHMS_DISPLAY.get(algorithm)}</MenuItem>
+                                (algorithm: string) => (                                    
+                                    <MenuItem value={algorithm} key={algorithm}>{PASSWORD_HASHING_ALGORITHMS_DISPLAY.get(algorithm)}</MenuItem>                                    
                                 )
                             )}
                         </Select>
@@ -278,8 +283,10 @@ const PasswordRulesConfiguration: React.FC<PasswordRulesConfigurationProps> = ({
                                         passwordConfigInput.mfaTypesRequired && passwordConfigInput.mfaTypesRequired !== "" ?
                                             passwordConfigInput.mfaTypesRequired.split(",").map(s => { return { id: s, label: MFA_AUTH_TYPE_DISPLAY.get(s) } }) :
                                             []
-                                }
+                                }                                
+                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                 onChange={(_, value: any) => {
+                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                     const val: any = value.map((s: any) => s.id).join(",");                                    
                                     if (passwordConfigInput.requireMfa) {
                                         passwordConfigInput.mfaTypesRequired = val;

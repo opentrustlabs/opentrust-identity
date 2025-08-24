@@ -12,8 +12,7 @@ export interface DataLoadingProps {
 
 
 const DataLoading: React.FC<DataLoadingProps> = ({
-    dataLoadingSize,
-    color
+    dataLoadingSize
 }) => {
 
     let height = dataLoadingSize; // default is whatever the client set.

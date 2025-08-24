@@ -7,11 +7,10 @@ import ErrorComponent from "../error/error-component";
 import { TenantLegacyUserMigrationConfig, TenantLegacyUserMigrationConfigInput } from "@/graphql/generated/graphql-types";
 import Grid2 from "@mui/material/Grid2";
 import TextField from "@mui/material/TextField";
-import Stack from "@mui/material/Stack";
-import Button from "@mui/material/Button";
 import { LEGACY_USER_MIGRATION_CONFIGURATION_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import DetailSectionActionHandler from "../layout/detail-section-action-handler";
-import Typography from "@mui/material/Typography";
+import { useIntl } from 'react-intl';
+
 
 export interface LegacyUserMigrationConfigurationProps {
     tenantId: string,
@@ -29,7 +28,10 @@ const LegacyUserMigrationConfiguration: React.FC<LegacyUserMigrationConfiguratio
     readOnly
 }) => {
 
-    let initInput: TenantLegacyUserMigrationConfigInput = {
+    // CONTEXT VARIABLES
+    const intl = useIntl();
+
+    const initInput: TenantLegacyUserMigrationConfigInput = {
         authenticationUri: "",
         tenantId: tenantId,
         userProfileUri: "",
@@ -71,7 +73,7 @@ const LegacyUserMigrationConfiguration: React.FC<LegacyUserMigrationConfiguratio
         },
         onError(error) {
             onUpdateEnd(false);
-            setErrorMessage(error.message);
+            setErrorMessage(intl.formatMessage({id: error.message}));
             //setShowReset(true);
         }
     });

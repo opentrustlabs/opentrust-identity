@@ -7,7 +7,7 @@ import React, { useContext } from "react";
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
 import { useRouter } from 'next/navigation';
 import { SCOPE_USE_APPLICATION_MANAGEMENT, SCOPE_USE_DISPLAY, SCOPE_USE_IAM_MANAGEMENT } from "@/utils/consts";
-
+import { useIntl } from 'react-intl';
 
 export interface NewScopeDialogProps {
     onCancel: () => void,
@@ -35,6 +35,7 @@ const NewScopeDialog: React.FC<NewScopeDialogProps> = ({
 
     // CONTEXT
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
+    const intl = useIntl();
 
     // STATE VARIABLES    
     const [scopeCreateInput, setScopeCreateInput] = React.useState<ScopeCreateInput>(initInput);
@@ -56,7 +57,7 @@ const NewScopeDialog: React.FC<NewScopeDialogProps> = ({
             },
             onError(error) {
                 onCreateEnd(false);
-                setErrorMessage(error.message)
+                setErrorMessage(intl.formatMessage({id: error.message}));
             },
         }
     );

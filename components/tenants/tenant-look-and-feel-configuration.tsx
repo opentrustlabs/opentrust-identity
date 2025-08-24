@@ -7,7 +7,6 @@ import React, { useContext } from "react";
 import DataLoading from "../layout/data-loading";
 import ErrorComponent from "../error/error-component";
 import Grid2 from "@mui/material/Grid2";
-import Stack from "@mui/material/Stack";
 import Button from "@mui/material/Button";
 import TextField from "@mui/material/TextField";
 import ColorizeIcon from '@mui/icons-material/Colorize';
@@ -17,6 +16,8 @@ import { ResponsiveBreakpoints, ResponsiveContext } from "../contexts/responsive
 import { HexColorPicker } from "react-colorful";
 import DeleteForeverOutlinedIcon from '@mui/icons-material/DeleteForeverOutlined';
 import DetailSectionActionHandler from "../layout/detail-section-action-handler";
+import { useIntl } from 'react-intl';
+
 
 export interface TenantLookAndFeelProps {
     tenantId: string,
@@ -32,7 +33,7 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
     readOnly
 }) => {
 
-    let initInput: TenantLookAndFeelInput = {
+    const initInput: TenantLookAndFeelInput = {
         tenantid: tenantId,
         adminheaderbackgroundcolor: "",
         adminheadertextcolor: "",
@@ -48,6 +49,7 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
 
     // CONTEXT VARIABLES
     const breakPoints: ResponsiveBreakpoints = useContext(ResponsiveContext);
+    const intl = useIntl();
 
     // STATE VARIABLES
     const [markDirty, setMarkDirty] = React.useState<boolean>(false);
@@ -90,7 +92,7 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
         },
         onError(error) {
             onUpdateEnd(false);
-            setErrorMessage(error.message);
+            setErrorMessage(intl.formatMessage({id: error.message}));
             //setShowReset(true);
         }
     });

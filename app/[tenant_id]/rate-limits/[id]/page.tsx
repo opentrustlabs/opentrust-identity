@@ -1,7 +1,7 @@
 "use client";
 import React, { useContext } from "react";
 import { useParams } from 'next/navigation';
-import { RATE_LIMIT_BY_ID_QUERY, SIGNING_KEY_DETAIL_QUERY } from "@/graphql/queries/oidc-queries";
+import { RATE_LIMIT_BY_ID_QUERY } from "@/graphql/queries/oidc-queries";
 import { useQuery } from "@apollo/client";
 import DataLoading from "@/components/layout/data-loading";
 import ErrorComponent from "@/components/error/error-component";

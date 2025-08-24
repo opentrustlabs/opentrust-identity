@@ -66,6 +66,14 @@ export const TENANT_META_DATA_QUERY = gql(`
                 allowDuressPassword
                 allowRecoveryEmail
             }
+            socialOIDCProviders {
+                federatedOIDCProviderDescription
+                federatedOIDCProviderId
+                federatedOIDCProviderName
+                federatedOIDCProviderTenantId
+                federatedOIDCProviderType 
+                socialLoginProvider
+            }
         }
     }
 `);
@@ -752,6 +760,21 @@ export const RUNNING_JOBS_QUERY = gql(`
                 lockInstanceId
                 lockStartTimeMS
                 lockExpiresAtMS
+            }
+        }
+    }
+`);
+
+export const GET_AUTHORIZATION_SCOPE_APPROVAL_DATA_QUERY = gql(`
+    query getAuthorizationScopeApprovalData($preAuthToken: String!) {
+        getAuthorizationScopeApprovalData(preAuthToken: $preAuthToken) {
+            clientId
+            clientName
+            requiresUserApproval
+            requestedScope {
+                scopeId
+                scopeName
+                scopeDescription
             }
         }
     }

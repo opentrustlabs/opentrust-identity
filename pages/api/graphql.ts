@@ -4,7 +4,7 @@ import { ApolloServerPluginLandingPageLocalDefault, ApolloServerPluginLandingPag
 import { ApolloServerErrorCode } from '@apollo/server/errors';
 import { ErrorDetail, PortalUserProfile, Tenant, typeDefs } from "@/graphql/generated/graphql-types";
 import resolvers from "@/graphql/resolvers/oidc-resolvers";
-import { NextApiRequest, NextApiResponse } from "next";
+import { NextApiRequest } from "next";
 import { ERROR_CODES} from "@/lib/models/error";
 import JwtServiceUtils from "@/lib/service/jwt-service-utils";
 import { OIDCContext } from "@/graphql/graphql-context";
@@ -18,6 +18,7 @@ import { GraphQLFormattedError } from "graphql/error";
 
 
 declare global {
+    // eslint-disable-next-line no-var
     var schedulerInitialized: boolean | undefined;
 }
 
@@ -61,6 +62,8 @@ const server = new ApolloServer(
         ],
         formatError(formattedError: GraphQLFormattedError) {            
 
+            // Always log the original error with a trace ID (which we will also return 
+            // to the client) and which can be used for debugging purposes.
             const traceId: string = randomUUID().toString();
             logWithDetails("error", formattedError.message, {formattedError, traceId});
             
@@ -71,29 +74,25 @@ const server = new ApolloServer(
                 }
             }
             // This line below is for the case when an uncaught exception is thrown somewhere and we do not
-            // want to show the actual error to the user. We will, however, log the original error with a
-            // trace ID (which we will also return to the client) and which can be used for debugging purposes.
-            
-
-            
+            // want to show the actual error to the user.            
             const errorDetail: ErrorDetail = formattedError.extensions?.errorDetail as ErrorDetail || ERROR_CODES.DEFAULT;
-            if(formattedError && formattedError.extensions?.lang){                
-                return {
-                    ...formattedError,
-                    extensions: {
-                        ...formattedError.extensions,
-                        traceId: traceId
-                    },
-                    message: errorDetail.errorMessage // TODO => i18N.translate(errorDetail.errorKey)
-                }
-            }            
+            // if(formattedError && formattedError.extensions?.lang){                
+            //     return {
+            //         ...formattedError,
+            //         extensions: {
+            //             ...formattedError.extensions,
+            //             traceId: traceId
+            //         },
+            //         message: errorDetail.errorMessage // TODO => i18N.translate(errorDetail.errorKey)
+            //     }
+            // }            
             return {
                 ...formattedError,
                 extensions: {
                     ...formattedError.extensions,
                     traceId: traceId
                 },
-                message: errorDetail.errorMessage
+                message: errorDetail.errorKey
             }
         },
     }
@@ -101,7 +100,7 @@ const server = new ApolloServer(
 
 export default startServerAndCreateNextHandler(server, {
 
-    context: async(req: NextApiRequest, res: NextApiResponse) => {
+    context: async(req: NextApiRequest) => {
         return getOIDCContext(req);        
     }
 

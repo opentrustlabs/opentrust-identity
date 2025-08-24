@@ -59,6 +59,9 @@ import UserProfileChangeEmailStateEntity from "../entities/user-profile-email-ch
 import UserAuthenticationHistoryEntity from "../entities/user-authentication-history-entity";
 
 
+// Will need these 2 values for DB which authenticate credentials based on AD
+// DB_AUTH_SCHEME,
+// DB_USER_DOMAIN,
 const {
     DB_USER,
     DB_PASSWORD,
@@ -66,15 +69,14 @@ const {
     DB_NAME,
     DB_PORT,
     DB_MIN_POOL_SIZE,
-    DB_MAX_POOL_SIZE,
-    DB_AUTH_SCHEME,
-    DB_USER_DOMAIN,
+    DB_MAX_POOL_SIZE,    
     RDB_DIALECT,
     DB_ENABLE_QUERY_LOGGING
 } = process.env;
 
 
 declare global {
+    // eslint-disable-next-line no-var
     var sequelize: Sequelize | undefined;
 }
 

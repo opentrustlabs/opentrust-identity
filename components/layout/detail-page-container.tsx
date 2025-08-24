@@ -1,6 +1,6 @@
 "use client";
 import Grid2 from "@mui/material/Grid2";
-import React, { ReactNode } from "react";
+import React from "react";
 
 
 export interface DetailPageContainerProps {

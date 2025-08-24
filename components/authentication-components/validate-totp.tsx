@@ -9,6 +9,8 @@ import Alert from "@mui/material/Alert";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
+import { useIntl } from 'react-intl';
+
 
 
 const AuthentiationValidateTotp: React.FC<AuthenticationComponentsProps> = ({
@@ -18,6 +20,9 @@ const AuthentiationValidateTotp: React.FC<AuthenticationComponentsProps> = ({
     onUpdateStart
 }) => {
     
+    // CONTEXT VARIABLES
+    const intl = useIntl();
+
     // STATE VARIABLES
     const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
     const [passcode, setPasscode] = React.useState<string>("");
@@ -50,14 +55,16 @@ const AuthentiationValidateTotp: React.FC<AuthenticationComponentsProps> = ({
             }
             <Grid2 size={12} container spacing={1}>
                 <Grid2 marginBottom={"8px"} size={12}>
-                    <div style={{ marginBottom: "16px", fontWeight: "bold", fontSize: "1.0em" }}>Enter the code from your authenticator app</div>
+                    <div style={{ marginBottom: "16px", fontWeight: "bold", fontSize: "1.0em" }}>
+                        {intl.formatMessage({id: "ENTER_TOTP_CODE"})}
+                    </div>
                     <TextField name="passcode" id="passcode"
                         value={passcode}
                         onChange={(evt) => setPasscode(evt.target.value)}
                         fullWidth={true}                   
                         required={true}
                         autoFocus={true}
-                        label={"One-time-passcode"}
+                        label={intl.formatMessage({id: "ONE_TIME_PASSCODE"})}
                         autoComplete="off"
                     />
                 </Grid2>
@@ -81,12 +88,12 @@ const AuthentiationValidateTotp: React.FC<AuthenticationComponentsProps> = ({
                     }}
                     disabled={passcode === null || passcode.length < 6}
                 >
-                    Confirm
+                    {intl.formatMessage({id: "CONFIRM"})}
                 </Button>
                 <Button
                     onClick={() => onAuthenticationCancelled()}
                 >
-                    Cancel
+                    {intl.formatMessage({id: "CANCEL"})}
                 </Button>
             </Stack>
         </React.Fragment>
@@ -99,6 +106,9 @@ const RegistrationValidateTotp: React.FC<RegistrationComponentsProps> = ({
     onUpdateEnd,
     onUpdateStart
 }) => {
+
+    // CONTEXT VARIABLES
+    const intl = useIntl();
 
     // STATE VARIABLES
     const [passcode, setPasscode] = React.useState<string>("");
@@ -117,14 +127,16 @@ const RegistrationValidateTotp: React.FC<RegistrationComponentsProps> = ({
         <React.Fragment>
             <Grid2 size={12} container spacing={1}>
                 <Grid2 marginBottom={"8px"} size={12}>
-                    <div style={{ marginBottom: "16px", fontWeight: "bold", fontSize: "1.0em" }}>Enter the code from your authenticator app</div>
+                    <div style={{ marginBottom: "16px", fontWeight: "bold", fontSize: "1.0em" }}>
+                        {intl.formatMessage({id: "ENTER_TOTP_CODE"})}
+                    </div>
                     <TextField name="passcode" id="passcode"
                         value={passcode}
                         onChange={(evt) => setPasscode(evt.target.value)}
                         fullWidth={true}
                         required={true}
                         autoFocus={true}
-                        label={"One-time-passcode"}
+                        label={intl.formatMessage({id: "ONE_TIME_PASSCODE"})}
                         autoComplete="off"
                     />
                 </Grid2>
@@ -148,12 +160,12 @@ const RegistrationValidateTotp: React.FC<RegistrationComponentsProps> = ({
                     }}
                     disabled={passcode === null || passcode.length < 6}
                 >
-                    Confirm
+                    {intl.formatMessage({id: "CONFIRM"})}
                 </Button>
                 <Button
                     onClick={() => onRegistrationCancelled()}
                 >
-                    Cancel
+                    {intl.formatMessage({id: "CANCEL"})}
                 </Button>
             </Stack>
         </React.Fragment>

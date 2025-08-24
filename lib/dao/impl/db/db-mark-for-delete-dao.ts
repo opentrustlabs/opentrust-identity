@@ -3,6 +3,7 @@ import MarkForDeleteDao from "../../mark-for-delete-dao";
 import { Op, Sequelize } from "sequelize";
 import DBDriver from "@/lib/data-sources/sequelize-db";
 import { MarkForDeleteEntity } from "@/lib/entities/mark-for-delete-entity";
+import { DeletionStatusEntity } from "@/lib/entities/deletion-status-entity";
 
 
 class DBMarkForDeleteDao extends MarkForDeleteDao {
@@ -17,7 +18,7 @@ class DBMarkForDeleteDao extends MarkForDeleteDao {
         const sequelize: Sequelize = await DBDriver.getConnection();
         const entity: MarkForDeleteEntity | null = await sequelize.models.markForDelete.findByPk(markForDeleteId);
         if(entity){
-            return Promise.resolve(entity as any as MarkForDelete);
+            return Promise.resolve(entity.dataValues as MarkForDelete);
         }
         return Promise.resolve(null);
     }
@@ -43,12 +44,12 @@ class DBMarkForDeleteDao extends MarkForDeleteDao {
 
     public async getDeletionStatus(markForDeleteId: string): Promise<Array<DeletionStatus>> {
         const sequelize: Sequelize = await DBDriver.getConnection();
-        const arr = await sequelize.models.deletionStatus.findAll({
+        const arr: Array<DeletionStatusEntity> = await sequelize.models.deletionStatus.findAll({
             where: {
                 markForDeleteId: markForDeleteId
             }
         });
-        return Promise.resolve(arr as any as Array<DeletionStatus>);
+        return arr.map((entity: DeletionStatusEntity) => entity.dataValues);        
     }
 
     public async deleteCompletedRecords(): Promise<void> {
@@ -87,11 +88,11 @@ class DBMarkForDeleteDao extends MarkForDeleteDao {
         return Promise.resolve();
     }
 
-    public async startStep(markForDeleteId: string, step: string): Promise<void> {
+    public async startStep(): Promise<void> {
         throw new Error("Method not implemented.");
     }
 
-    public async completeStep(markForDeleteId: string, step: string): Promise<void> {
+    public async completeStep(): Promise<void> {
         throw new Error("Method not implemented.");
     }
 

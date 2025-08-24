@@ -21,7 +21,7 @@ import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import Logout from '@mui/icons-material/Logout';
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
 import WorkHistoryOutlinedIcon from '@mui/icons-material/WorkHistoryOutlined';
-import { AUTHENTICATION_GROUP_CREATE_SCOPE, AUTHENTICATION_GROUP_READ_SCOPE, AUTHORIZATION_GROUP_CREATE_SCOPE, AUTHORIZATION_GROUP_READ_SCOPE, CAPTCHA_CONFIG_SCOPE, CLIENT_CREATE_SCOPE, CLIENT_READ_SCOPE, FEDERATED_OIDC_PROVIDER_CREATE_SCOPE, FEDERATED_OIDC_PROVIDER_READ_SCOPE, JOBS_READ_SCOPE, KEY_CREATE_SCOPE, KEY_READ_SCOPE, QUERY_PARAM_AUTHENTICATE_TO_PORTAL, RATE_LIMIT_CREATE_SCOPE, RATE_LIMIT_READ_SCOPE, SCOPE_CREATE_SCOPE, SCOPE_READ_SCOPE, SYSTEM_SETTINGS_READ_SCOPE, TENANT_CREATE_SCOPE, TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE, TENANT_TYPE_ROOT_TENANT, USER_READ_SCOPE } from "@/utils/consts";
+import { AUTHENTICATION_GROUP_CREATE_SCOPE, AUTHENTICATION_GROUP_READ_SCOPE, AUTHORIZATION_GROUP_CREATE_SCOPE, AUTHORIZATION_GROUP_READ_SCOPE, CLIENT_CREATE_SCOPE, CLIENT_READ_SCOPE, FEDERATED_OIDC_PROVIDER_CREATE_SCOPE, FEDERATED_OIDC_PROVIDER_READ_SCOPE, JOBS_READ_SCOPE, KEY_CREATE_SCOPE, KEY_READ_SCOPE, QUERY_PARAM_AUTHENTICATE_TO_PORTAL, RATE_LIMIT_CREATE_SCOPE, RATE_LIMIT_READ_SCOPE, SCOPE_CREATE_SCOPE, SCOPE_READ_SCOPE, SYSTEM_SETTINGS_READ_SCOPE, TENANT_CREATE_SCOPE, TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE, TENANT_TYPE_ROOT_TENANT, USER_READ_SCOPE } from "@/utils/consts";
 import CreateNewDialog from "../dialogs/create-new-dialog";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
 import { useRouter } from "next/navigation";
@@ -32,6 +32,7 @@ import { AuthContext, AuthContextProps } from "@/components/contexts/auth-contex
 import { PortalUserProfile } from "@/graphql/generated/graphql-types";
 import { containsScope } from "@/utils/authz-utils";
 import { AuthSessionProps, useAuthSessionContext } from "../contexts/auth-session-context";
+import { useIntl } from 'react-intl';
 
 
 interface NavigationProps {
@@ -48,6 +49,7 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
     const authContextProps: AuthContextProps = useContext(AuthContext);
     const profile: PortalUserProfile | null = authContextProps.portalUserProfile;
     const authSessionProps: AuthSessionProps = useAuthSessionContext();
+    const intl = useIntl();
     
 
     // STATE VARIABLES
@@ -140,7 +142,12 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
                             }}
                             onHighlightChange={(_, option) => {
                                 if(option !== null){
-                                    typeof option === "string" ? setHighlightedTerm(option) : setHighlightedTerm(option.displayValue);
+                                    if(typeof option === "string"){
+                                        setHighlightedTerm(option)
+                                     }
+                                     else{
+                                        setHighlightedTerm(option.displayValue);
+                                     }
                                 }
                                 else {
                                     setHighlightedTerm(null);
@@ -150,9 +157,13 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
                                 if(reason === "clear"){
                                     setLookaheadOptions([]);
                                 }
-                                else if(reason === "selectOption" && value !== null){
-                                    const v: string = typeof value === "string" ? value : value.displayValue;
-                                    typeof value === "string" ? setSearchTerm(value) : setSearchTerm(value.displayValue)
+                                else if(reason === "selectOption" && value !== null){                                    
+                                    if(typeof value === "string"){
+                                        setSearchTerm(value);
+                                    }
+                                    else{
+                                        setSearchTerm(value.displayValue);
+                                    }
                                 }
                             } }
                             groupBy={(option) => option.displayCategory}
@@ -163,7 +174,7 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
                             clearOnEscape={true}
                             slots={{ popper: Popper, paper: Paper }}                                
                             renderOption={(props, option) => {
-                                const { key, ...optionProps } = props;
+                                const { ...optionProps } = props;
                                 return (
                                     <li {...optionProps} key={option.id}>
                                         <Grid2  alignItems={"center"} size={12} container spacing={0} >
@@ -190,7 +201,7 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
                                         {...params} 
                                         size="small" 
                                         multiline={false} 
-                                        label="Search" 
+                                        label={intl.formatMessage({id: "SEARCH"})}
                                         fullWidth={true}
                                     />
                             }}
@@ -329,12 +340,14 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
                                     size="small"
                                     id="searchinput"
                                     onKeyDown={handleKeyPressSearch}
-                                    onInputChange={(evt, newInputValue, reason: string) => {                                    
+                                    // @typescript-eslint/no-unused-vars
+                                    onInputChange={(evt, newInputValue) => {                                    
                                         setSearchTerm(newInputValue);
                                     }}
                                     groupBy={(option) => option.displayCategory}
                                     includeInputInList
                                     filterSelectedOptions
+                                    // eslint-disable-next-line @typescript-eslint/no-unused-vars
                                     onChange={(evt, value, reason) => {
                                         if(reason === "clear"){
                                             setLookaheadOptions([]);
@@ -353,7 +366,7 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
                                     forcePopupIcon={false}
                                     slots={{ popper: Popper, paper: Paper }}                                
                                     renderOption={(props, option) => {
-                                        const { key, ...optionProps } = props;
+                                        const { ...optionProps } = props;
                                         return (
                                             <li {...optionProps} key={option.id}>
                                                 <Grid2  alignItems={"center"} size={12} container spacing={0} >

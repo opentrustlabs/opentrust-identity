@@ -4,7 +4,7 @@ import Typography from "@mui/material/Typography";
 import React, { useContext } from "react";
 import { DetailPageContainer, DetailPageMainContentContainer, DetailPageRightNavContainer } from "../layout/detail-page-container";
 import { KEY_DELETE_SCOPE, KEY_SECRET_VIEW_SCOPE, KEY_UPDATE_SCOPE, KEY_USE_DISPLAY, PKCS8_ENCRYPTED_PRIVATE_KEY_HEADER, SIGNING_KEY_STATUS_ACTIVE, SIGNING_KEY_STATUS_REVOKED, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
-import { Alert, Backdrop, Button, CircularProgress, Dialog, DialogActions, DialogContent, Grid2, MenuItem, Paper, Select, Snackbar, Stack, TextField } from "@mui/material";
+import { Alert, Backdrop, Button, CircularProgress, Dialog, DialogActions, DialogContent, Grid2, MenuItem, Paper, Select, Snackbar, TextField } from "@mui/material";
 import BreadcrumbComponent from "../breadcrumbs/breadcrumbs";
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
@@ -23,6 +23,9 @@ import SubmitMarkForDelete from "../deletion/submit-mark-for-delete";
 import MarkForDeleteAlert from "../deletion/mark-for-delete-alert";
 import { AuthContext, AuthContextProps } from "../contexts/auth-context";
 import { containsScope } from "@/utils/authz-utils";
+import { ERROR_CODES } from "@/lib/models/error";
+import { useIntl } from 'react-intl';
+
 
 export interface SigningKeyDetailProps {
     signingKey: SigningKey
@@ -35,6 +38,8 @@ const SigningKeyDetail: React.FC<SigningKeyDetailProps> = ({ signingKey }) => {
     const { copyContentToClipboard } = useClipboardCopyContext();
     const authContextProps: AuthContextProps = useContext(AuthContext);
     const profile: PortalUserProfile | null = authContextProps.portalUserProfile;
+    const intl = useIntl();
+
 
     // STATE VARIABLES
     const [showMutationBackdrop, setShowMutationBackdrop] = React.useState<boolean>(false);
@@ -69,7 +74,7 @@ const SigningKeyDetail: React.FC<SigningKeyDetailProps> = ({ signingKey }) => {
         },
         onError(error) {
             setShowMutationBackdrop(false);
-            setErrorMessage(error.message);
+            setErrorMessage(intl.formatMessage({id: error.message}));
         },
         refetchQueries: [ {query: SIGNING_KEY_DETAIL_QUERY, variables: {signingKeyId: signingKey.keyId}}]
     });
@@ -151,7 +156,12 @@ const SigningKeyDetail: React.FC<SigningKeyDetailProps> = ({ signingKey }) => {
                                                 setIsMarkedForDelete(true);
                                             }
                                             else{
-                                                setErrorMessage(errorMessage || "ERROR");
+                                                if(errorMessage){
+                                                    setErrorMessage(intl.formatMessage({id: errorMessage}));    
+                                                }
+                                                else{
+                                                    setErrorMessage(intl.formatMessage({id: ERROR_CODES.DEFAULT.errorKey}));
+                                                } 
                                             }
                                         }}
                                         onDeleteStart={() => setShowMutationBackdrop(true)}
@@ -263,7 +273,16 @@ const SigningKeyDetail: React.FC<SigningKeyDetailProps> = ({ signingKey }) => {
                                         <Grid2 size={{xs: 12, sm: 2, md: 2, lg: 2, xl: 2}} sx={{textDecoration: breakPoints.isSmall ? "underline": "none"}}>
                                             <Grid2 container>                                            
                                                 <Grid2 size={9}>Private Key</Grid2>
-                                                <Grid2 size={3}><ContentCopyIcon /></Grid2>                                            
+                                                <Grid2 size={3}>
+                                                    <ContentCopyIcon 
+                                                        sx={{cursor: "pointer"}}
+                                                        onClick={() => {
+                                                            const textToCopy: string = signingKey.privateKeyPkcs8;
+                                                            const message = "Encrypted key copied to clipboard";
+                                                            copyContentToClipboard(textToCopy, message);
+                                                        }}
+                                                    />
+                                                </Grid2>
                                             </Grid2>
                                         </Grid2>
                                         <Grid2 size={{xs: 12, sm: 10, md: 10, lg: 10, xl: 10}}>

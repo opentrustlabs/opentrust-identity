@@ -23,8 +23,7 @@ import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
 import { AuthContext, AuthContextProps } from "../contexts/auth-context";
 import { containsScope } from "@/utils/authz-utils";
 import { AUTHORIZATION_GROUP_USER_ASSIGN_SCOPE, AUTHORIZATION_GROUP_USER_REMOVE_SCOPE } from "@/utils/consts";
-
-
+import { useIntl } from 'react-intl';
 
 export interface UserAuthorizationGroupConfigurationProps {
     userId: string
@@ -42,6 +41,8 @@ const UserAuthorizationGroupConfiguration: React.FC<UserAuthorizationGroupConfig
     const tenantBean: TenantMetaDataBean = useContext(TenantContext);
     const authContextProps: AuthContextProps = useContext(AuthContext);
     const profile: PortalUserProfile | null = authContextProps.portalUserProfile;
+    const intl = useIntl();
+
 
     // STATE VARIABLES
     const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
@@ -70,7 +71,7 @@ const UserAuthorizationGroupConfiguration: React.FC<UserAuthorizationGroupConfig
         onError(error) {
             onUpdateEnd(false);
             setShowAddDialog(false);
-            setErrorMessage(error.message);
+            setErrorMessage(intl.formatMessage({id: error.message}));
             setGroupToAdd(null);
         },
         refetchQueries: [USER_AUTHORIZATION_GROUP_QUERY]
@@ -85,7 +86,7 @@ const UserAuthorizationGroupConfiguration: React.FC<UserAuthorizationGroupConfig
         onError(error) {
             onUpdateEnd(false);
             setShowAddDialog(false);
-            setErrorMessage(error.message);
+            setErrorMessage(intl.formatMessage({id: error.message}));
             setGroupToRemove(null);
         },
         refetchQueries: [USER_AUTHORIZATION_GROUP_QUERY]
@@ -142,11 +143,11 @@ const UserAuthorizationGroupConfiguration: React.FC<UserAuthorizationGroupConfig
                 <Dialog
                     open={showRemoveDialog}
                     onClose={() => setShowRemoveDialog(false)}
-                    maxWidth="xs"
+                    maxWidth="sm"
                     fullWidth={true}
                 >
                     <DialogContent>
-                        Confirm removal of authorization group
+                        <Typography>Confirm removal of authorization group</Typography>
                     </DialogContent>
                     <DialogActions>
                         <Button
@@ -292,7 +293,7 @@ const AuthorizationGroupsAssignDialog: React.FC<AuthorizationGroupAssignDialogPr
         }
     });
 
-    let { data: searchData, loading: searchLoading, previousData: searchPreviousData } = useQuery(SEARCH_QUERY, {
+    const { data: searchData, loading: searchLoading, previousData: searchPreviousData } = useQuery(SEARCH_QUERY, {
         variables: {
             searchInput: {
                 term: filterTerm,
@@ -309,6 +310,8 @@ const AuthorizationGroupsAssignDialog: React.FC<AuthorizationGroupAssignDialogPr
 
 
     // HANDLER FUNCTIONS
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handlePageChange = async (evt: any, page: number) => {
         setPage(page + 1);     
     }

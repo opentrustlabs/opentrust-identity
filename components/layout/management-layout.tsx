@@ -36,8 +36,8 @@ const ManagementLayout: React.FC<Props> = ({children}) => {
             style={{ }}
         >
             <ManagementHeader
-                tenantMetaData={
-                    tenantBean.getTenantMetaData()
+                tenantBean={
+                    tenantBean
                 }
                 profile={profile}
             />             

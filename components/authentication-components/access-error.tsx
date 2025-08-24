@@ -1,8 +1,8 @@
 "use client";
 import { ResponsiveBreakpoints, ResponsiveContext } from "@/components/contexts/responsive-context";
 import Alert from "@mui/material/Alert";
-// import { useSearchParams } from "next/navigation";
-import React, { Suspense, useContext } from "react";
+import { useSearchParams } from "next/navigation";
+import React, { useContext } from "react";
 
 const DEFAULT_ERROR_MESSAGE = "The resource which you have requested is not available to your account."
 
@@ -12,8 +12,7 @@ const AccessError: React.FC = () => {
     const breakPoints: ResponsiveBreakpoints = useContext(ResponsiveContext);
 
     // QUERY PARAMS
-    // const params = useSearchParams();
-    const params = new Map<string, string>();
+    const params = useSearchParams();    
     const errorCode = params?.get("access_error_code") as string;
     const extendedMessage = params?.get("extended_message") as string;
 
@@ -40,13 +39,5 @@ const AccessError: React.FC = () => {
     )
 }
 export const dynamic = 'force-dynamic';
-
-const Wrapper: React.FC = () => {
-    return (
-        <Suspense>
-            <AccessError />
-        </Suspense>
-    )
-}
 
 export default AccessError;

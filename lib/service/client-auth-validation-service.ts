@@ -2,6 +2,7 @@ import { Client } from "@/graphql/generated/graphql-types";
 import ClientDao from "@/lib/dao/client-dao";
 import { DaoFactory } from "../data-sources/dao-factory";
 import Kms from "../kms/kms";
+import { logWithDetails } from "../logging/logger";
 
 
 
@@ -31,7 +32,9 @@ class ClientAuthValidationService {
             }
             return Promise.resolve(true);
         }
-        catch(err){
+        catch(err: unknown){
+            const e = err as Error;
+            logWithDetails("error", `Error validating client auth credentials. ${e.message}`, {e});
             return Promise.resolve(false);
         }
     }
