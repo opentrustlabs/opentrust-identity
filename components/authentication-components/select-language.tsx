@@ -101,6 +101,7 @@ const SelectLanguage: React.FC<SelectLanguageProps>  = ({
                 </Button>
                 {allowCancel &&
                     <Button 
+                        sx={{ marginRight: "8px" }}
                         onClick={() => {
                             if(cancelCallback){
                                 cancelCallback();

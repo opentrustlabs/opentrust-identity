@@ -25,7 +25,7 @@ export default async function handler(
 ) {
 
     if(req.method === "POST"){
-        const event: SecurityEvent = req.body as SecurityEvent;        
+        const event: SecurityEvent = req.body as SecurityEvent;
         logWithDetails("info", event.securityEventType, {...event});
     }
     res.status(200).end();

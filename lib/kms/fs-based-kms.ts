@@ -40,7 +40,7 @@ class FSBasedKms extends Kms {
      * @param aad 
      * @returns 
      */
-    public async  encryptBuffer(data: Buffer, aad?: string): Promise<Buffer | null> {
+    public async encryptBuffer(data: Buffer, aad?: string): Promise<Buffer | null> {
 
         if(data.length > MAX_ENCRYPTION_LENGTH){
             return Promise.resolve(null);

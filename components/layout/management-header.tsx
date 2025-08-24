@@ -1,6 +1,6 @@
 "use client";
 import { PortalUserProfile } from "@/graphql/generated/graphql-types";
-import { Avatar, Container, Divider, IconButton, ListItemIcon, MenuItem, Stack, Tooltip, Menu } from "@mui/material";
+import { Avatar, Container, Divider, IconButton, ListItemIcon, MenuItem, Stack, Tooltip, Menu, Dialog, DialogContent } from "@mui/material";
 import React, { useContext } from "react";
 import { ResponsiveBreakpoints, ResponsiveContext } from "../contexts/responsive-context";
 import SessionTimerCountdown from "./session-timer-countdown";
@@ -10,6 +10,9 @@ import { useRouter } from "next/navigation";
 import { DEFAULT_TENANT_META_DATA, QUERY_PARAM_AUTHENTICATE_TO_PORTAL } from "@/utils/consts";
 import Link from "next/link";
 import { TenantMetaDataBean } from "../contexts/tenant-context";
+import { useInternationalizationContext } from "../contexts/internationalization-context";
+import SelectLanguage from "../authentication-components/select-language";
+import LanguageIcon from '@mui/icons-material/Language';
 
 export interface ManagementHeaderProps {
     tenantBean: TenantMetaDataBean,
@@ -25,9 +28,11 @@ const ManagementHeader: React.FC<ManagementHeaderProps> = ({
     const responsiveBreakpoints: ResponsiveBreakpoints = useContext(ResponsiveContext);
     const authSessionProps: AuthSessionProps = useAuthSessionContext();
     const router = useRouter();
-
+    const i18nContext = useInternationalizationContext();
+    
     // STATE VARIABLES
     const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+    const [openLanguageSelector, setOpenLanguageSelector] = React.useState<boolean>(false);
     const open = Boolean(anchorEl);
 
 
@@ -59,6 +64,20 @@ const ManagementHeader: React.FC<ManagementHeaderProps> = ({
                 disableGutters={true}
                 sx={{ height: "100%", alignItems: "center", display: "flex", justifyContent: "space-between" }}
             >
+                <Dialog 
+                    open={openLanguageSelector}
+                    onClose={() => setOpenLanguageSelector(false)}
+                    maxWidth="sm"
+                    fullWidth={true}
+                >
+                    <DialogContent>
+                        <SelectLanguage 
+                            onLanguageChanged={() => setOpenLanguageSelector(false)}
+                            allowCancel={true}
+                            cancelCallback={() => setOpenLanguageSelector(false)}
+                        />
+                    </DialogContent>
+                </Dialog>
                 <Stack
                     direction={"row"}
                     justifyItems={"center"}
@@ -135,6 +154,17 @@ const ManagementHeader: React.FC<ManagementHeaderProps> = ({
 
                         <Divider></Divider>
                         
+                        <MenuItem 
+                            onClick={() => {
+                                setOpenLanguageSelector(true);
+                            }}
+                        >
+                            <ListItemIcon>
+                                <LanguageIcon fontSize="small" />
+                            </ListItemIcon>
+                            <span>Language</span>
+                        </MenuItem>
+
                         <MenuItem onClick={() => {
                             handleClose();
                             authSessionProps.deleteAuthSessionData();
@@ -145,7 +175,7 @@ const ManagementHeader: React.FC<ManagementHeaderProps> = ({
                                 <Logout fontSize="small" />
                             </ListItemIcon>
                             Logout
-                        </MenuItem>
+                        </MenuItem>                        
                     </Menu>
                 </Stack>
             </Container>
