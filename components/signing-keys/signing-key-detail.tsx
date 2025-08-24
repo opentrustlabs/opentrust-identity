@@ -273,7 +273,16 @@ const SigningKeyDetail: React.FC<SigningKeyDetailProps> = ({ signingKey }) => {
                                         <Grid2 size={{xs: 12, sm: 2, md: 2, lg: 2, xl: 2}} sx={{textDecoration: breakPoints.isSmall ? "underline": "none"}}>
                                             <Grid2 container>                                            
                                                 <Grid2 size={9}>Private Key</Grid2>
-                                                <Grid2 size={3}><ContentCopyIcon /></Grid2>                                            
+                                                <Grid2 size={3}>
+                                                    <ContentCopyIcon 
+                                                        sx={{cursor: "pointer"}}
+                                                        onClick={() => {
+                                                            const textToCopy: string = signingKey.privateKeyPkcs8;
+                                                            const message = "Encrypted key copied to clipboard";
+                                                            copyContentToClipboard(textToCopy, message);
+                                                        }}
+                                                    />
+                                                </Grid2>
                                             </Grid2>
                                         </Grid2>
                                         <Grid2 size={{xs: 12, sm: 10, md: 10, lg: 10, xl: 10}}>

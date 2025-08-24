@@ -1,4 +1,6 @@
-import axios, { AxiosResponse } from "axios";
+import { readFileSync } from "node:fs";
+import axios, { AxiosProxyConfig, AxiosResponse } from "axios";
+import { Agent } from "https";
 import { Jwks, WellknownConfig } from "@/lib/models/wellknown-config";
 import NodeCache from "node-cache";
 import { LegacyUserAuthenticationPayload, LegacyUserProfile } from "../models/principal";
@@ -7,34 +9,61 @@ import { OIDCContext } from "@/graphql/graphql-context";
 import { PortalUserProfile, User } from "@/graphql/generated/graphql-types";
 import { logWithDetails } from "../logging/logger";
 
+const DEFAULT_HTTP_TIMEOUT_MS=60000;
 
 const {
+    HTTP_TIMEOUT_MS,
+    MTLS_USE_PKI_IDENTITY,
+    MTLS_PKI_IDENTITY_PRIVATE_KEY_FILE,
+    MTLS_PKI_IDENTITY_CERTIFICATE_FILE,
+    MTLS_PKI_IDENTITY_PRIVATE_KEY_PASSWORD,
+    MTLS_PKI_IDENTITY_TRUST_STORE_FILE,
+    HTTP_CLIENT_USE_PROXY,
+    HTTP_PROXY_PROTOCOL,
+    HTTP_PROXY_HOST,
+    HTTP_PROXY_PORT,
+    HTTP_PROXY_USE_AUTHENTICATION,
+    HTTP_PROXY_USERNAME,
+    HTTP_PROXY_PASSWORD,
     SECURITY_EVENT_CALLBACK_URI
 } = process.env;
 
-// TODO
-// Need to consider the following properties on the axios requests:
-//   httpsAgent?: any;
-//   proxy?: AxiosProxyConfig | false;
-//
-// and make these configurable in the .env file
-// Examples:
-//
-// import { Agent } from "https";
-// import axios, { AxiosProxyConfig, AxiosResponse } from "axios";
-// 
-//      agent: Agent = new Agent({
-//         key: "",
-//         cert: "",
-//         passphrase: "",
-//         rejectUnauthorized: true,
-//         ca: ""
-//     });
-//
-//      proxy: AxiosProxyConfig = {
-//         host: "",
-//         port: 0
-//     }
+
+
+
+const proxy: AxiosProxyConfig | undefined = HTTP_CLIENT_USE_PROXY === "true" ? 
+    {
+        protocol: HTTP_PROXY_PROTOCOL,
+        host: HTTP_PROXY_HOST || "",
+        port: parseInt(HTTP_PROXY_PORT || "0"),
+        auth: HTTP_PROXY_USE_AUTHENTICATION ? {
+                username: HTTP_PROXY_USERNAME || "",
+                password: HTTP_PROXY_PASSWORD || ""
+            } : 
+            undefined
+    } :
+    undefined;
+
+const agent: Agent | null = MTLS_USE_PKI_IDENTITY === "true" ? new Agent(
+        {
+            key: MTLS_PKI_IDENTITY_PRIVATE_KEY_FILE ? readFileSync(MTLS_PKI_IDENTITY_PRIVATE_KEY_FILE) : "",
+            cert: MTLS_PKI_IDENTITY_CERTIFICATE_FILE ? readFileSync(MTLS_PKI_IDENTITY_CERTIFICATE_FILE) : "",
+            ca: MTLS_PKI_IDENTITY_TRUST_STORE_FILE ? readFileSync(MTLS_PKI_IDENTITY_TRUST_STORE_FILE) : undefined,
+            passphrase: MTLS_PKI_IDENTITY_PRIVATE_KEY_PASSWORD,            
+            rejectUnauthorized: true,
+            timeout: HTTP_TIMEOUT_MS ? parseInt(HTTP_TIMEOUT_MS) : DEFAULT_HTTP_TIMEOUT_MS
+        }
+    ) :     
+    new Agent({        
+        timeout: HTTP_TIMEOUT_MS ? parseInt(HTTP_TIMEOUT_MS) : DEFAULT_HTTP_TIMEOUT_MS
+    });
+
+
+const axiosInstance = axios.create({
+    httpsAgent: agent,
+    proxy: proxy,
+    timeout: HTTP_TIMEOUT_MS ? parseInt(HTTP_TIMEOUT_MS) : DEFAULT_HTTP_TIMEOUT_MS
+})
 
 const oidcWellknowCache = new NodeCache(
     {
@@ -66,8 +95,7 @@ class OIDCServiceUtils {
             return Promise.resolve(wellknownConfig);
         }
         try {
-            const response: AxiosResponse = await axios.get<WellknownConfig>(wellKnownUri, {
-                timeout: 30000, // 30 seconds
+            const response: AxiosResponse = await axiosInstance.get<WellknownConfig>(wellKnownUri, {
                 responseEncoding: "utf-8",
                 responseType: "json"
             });
@@ -94,8 +122,7 @@ class OIDCServiceUtils {
         if(keys){
             return Promise.resolve(keys);
         }
-        const response: AxiosResponse = await axios.get<Jwks>(jwksUri, {
-            timeout: 30000,
+        const response: AxiosResponse = await axiosInstance.get<Jwks>(jwksUri, {
             responseEncoding: "utf-8",
             responseType: "json"
         });
@@ -114,8 +141,7 @@ class OIDCServiceUtils {
      * @returns 
      */
     public async legacyUsernameCheck(uri: string, email: string, authToken: string): Promise<boolean> {
-        const response: AxiosResponse = await axios.head(`${uri}?email=${email}`, {
-            timeout: 30000,
+        const response: AxiosResponse = await axiosInstance.head(`${uri}?email=${email}`, {
             responseEncoding: "utf-8",
             headers: {                
                 "Authorization": `Bearer ${authToken}`
@@ -141,8 +167,7 @@ class OIDCServiceUtils {
             password: password
         }
 
-        const response: AxiosResponse = await axios.post(uri, payload, {
-            timeout: 30000,
+        const response: AxiosResponse = await axiosInstance.post(uri, payload, {
             responseEncoding: "utf-8",
             headers: {
                 "Content-Type": "application/json",
@@ -168,11 +193,10 @@ class OIDCServiceUtils {
      */
     public async legacyUserProfile(uri: string, email: string, authToken: string): Promise<LegacyUserProfile | null>{
 
-        const response: AxiosResponse = await axios.get(`${uri}?email=${email}`, {
+        const response: AxiosResponse = await axiosInstance.get(`${uri}?email=${email}`, {
             headers: {
                 "Authorization": `Bearer ${authToken}`
             },
-            timeout: 30000,
             responseType: "json"
         });
 
@@ -206,12 +230,11 @@ class OIDCServiceUtils {
     public async invokeSecurityEventCallback(securityEvent: SecurityEvent, authToken: string | null){
         // Fire asynchronously, but if there is an error, log the error.
         if(SECURITY_EVENT_CALLBACK_URI){
-            axios.post(SECURITY_EVENT_CALLBACK_URI, securityEvent, {
+            axiosInstance.post(SECURITY_EVENT_CALLBACK_URI, securityEvent, {
                 headers: {
                     "Authorization": authToken ? `Bearer ${authToken}` : "",
                     "Content-Type": "application/json"
-                },
-                timeout: 30000
+                }
             })
             .catch(
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
