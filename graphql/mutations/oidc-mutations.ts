@@ -71,6 +71,12 @@ export const PASSWORD_CONFIGURATION_MUTATION = gql(`
     }
 `);
 
+export const PASSWORD_CONFIGURATION_DELETION_MUTATION = gql(`
+    mutation removeTenantPasswordConfig($tenantId: String!) {
+        removeTenantPasswordConfig(tenantId: $tenantId)
+    }
+`);
+
 export const LEGACY_USER_MIGRATION_CONFIGURATION_MUTATION = gql(`
     mutation setTenantLegacyUserMigrationConfig($tenantLegacyUserMigrationConfigInput: TenantLegacyUserMigrationConfigInput!) {
         setTenantLegacyUserMigrationConfig(tenantLegacyUserMigrationConfigInput: $tenantLegacyUserMigrationConfigInput) {

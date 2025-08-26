@@ -201,10 +201,10 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
                                         {systemCategory.categoryEntries.map(
                                             (categoryEntry: CategoryEntry) => (
                                                 <Grid2 size={12} paddingTop={"4px"} container key={categoryEntry.categoryKey}>
-                                                    <Grid2 size={6}>
+                                                    <Grid2 sx={{overflowWrap: "break-word"}} size={6}>
                                                         {categoryEntry.categoryKey}
                                                     </Grid2>
-                                                    <Grid2 size={6}>
+                                                    <Grid2 sx={{overflowWrap: "break-word"}} size={6}>
                                                         {categoryEntry.categoryValue}
                                                     </Grid2>
                                                 </Grid2>
@@ -225,10 +225,10 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
                                         {systemCategory.categoryEntries.map(
                                             (categoryEntry: CategoryEntry) => (
                                                 <Grid2 size={12} paddingTop={"4px"} container key={categoryEntry.categoryKey}>
-                                                    <Grid2 size={6}>
+                                                    <Grid2 sx={{overflowWrap: "break-word"}} size={6}>
                                                         {categoryEntry.categoryKey}
                                                     </Grid2>
-                                                    <Grid2 size={6}>
+                                                    <Grid2 sx={{overflowWrap: "break-word"}} size={6}>
                                                         {categoryEntry.categoryValue}
                                                     </Grid2>
                                                 </Grid2>

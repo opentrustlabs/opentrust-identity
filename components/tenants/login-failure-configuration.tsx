@@ -8,10 +8,11 @@ import { TenantLoginFailurePolicy, TenantLoginFailurePolicyInput } from "@/graph
 import { DEFAULT_LOGIN_FAILURE_LOCK_THRESHOLD, DEFAULT_LOGIN_PAUSE_TIME_MINUTES, DEFAULT_MAXIMUM_LOGIN_FAILURES, LOGIN_FAILURE_POLICY_LOCK_USER_ACCOUNT, LOGIN_FAILURE_POLICY_PAUSE, LOGIN_FAILURE_POLICY_TYPE_DISPLAY } from "@/utils/consts";
 import Grid2 from "@mui/material/Grid2";
 import TextField from "@mui/material/TextField";
-import { MenuItem, Select } from "@mui/material";
+import { Alert, MenuItem, Select, Typography } from "@mui/material";
 import { LOGIN_FAILURE_POLICY_CONFIGURATION_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import DetailSectionActionHandler from "../layout/detail-section-action-handler";
 import { useIntl } from 'react-intl';
+import { TypeOrFieldNameRegExp } from "@apollo/client/cache/inmemory/helpers";
 
 
 export interface LoginFailureConfigurationProps {
@@ -44,6 +45,7 @@ const LoginFailureConfiguration: React.FC<LoginFailureConfigurationProps> = ({
     const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
     const [failurePolicyInput, setFailurePolicyInput] = React.useState<TenantLoginFailurePolicyInput | null>(null);
     const [revertToPolicyInput, setRevertToPolicyInput] = React.useState<TenantLoginFailurePolicyInput | null>(null);
+    const [hasSystemDefaultFailurePolicy, setHasSystemDefaultFailulrePolicy] = React.useState<boolean>(false);
 
 
     // GRAPHQL FUNCTIONS
@@ -59,6 +61,9 @@ const LoginFailureConfiguration: React.FC<LoginFailureConfigurationProps> = ({
                 initInput.loginFailurePolicyType = policy.loginFailurePolicyType;                
                 initInput.pauseDurationMinutes = policy.pauseDurationMinutes;
                 initInput.maximumLoginFailures = policy.maximumLoginFailures;
+            }
+            else{
+                setHasSystemDefaultFailulrePolicy(true);
             }
             setFailurePolicyInput(initInput);
             setRevertToPolicyInput(initInput);
@@ -78,9 +83,7 @@ const LoginFailureConfiguration: React.FC<LoginFailureConfigurationProps> = ({
             setFailurePolicyInput(revertToPolicyInput);
             setErrorMessage(intl.formatMessage({id: error.message}));
         },
-    }
-
-    )
+    });
 
     if (loading) return <DataLoading dataLoadingSize="md" color={null} />
     if (error) return <ErrorComponent message={error.message} componentSize='md' />
@@ -93,7 +96,11 @@ const LoginFailureConfiguration: React.FC<LoginFailureConfigurationProps> = ({
                         <div>{errorMessage}</div>
                     </Grid2>
                 }
-                
+                {hasSystemDefaultFailurePolicy &&
+                    <Grid2  margin={"8px 0px"} size={12}>
+                        <Alert severity="info" sx={{width: "100%", fontSize: "0.90em"}}>These are the system default settings for handling login failures.</Alert>
+                    </Grid2>
+                }
                 <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
                     <div>Login Failure Policy Type</div>
                     <Select

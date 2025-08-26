@@ -10,8 +10,7 @@ import { PortalUserProfile, User } from "@/graphql/generated/graphql-types";
 import { logWithDetails } from "../logging/logger";
 import { randomUUID } from "node:crypto";
 import { CustomKmsDecryptionResponseBody, CustomKmsEncryptionResponseBody, CustomKmsRequestBody } from "../kms/custom-kms";
-
-const DEFAULT_HTTP_TIMEOUT_MS=60000;
+import { DEFAULT_HTTP_TIMEOUT_MS } from "@/utils/consts";
 
 const {
     HTTP_TIMEOUT_MS,

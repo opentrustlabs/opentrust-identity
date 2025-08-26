@@ -1,6 +1,6 @@
 import ClientService from "@/lib/service/client-service";
 import TenantService from "@/lib/service/tenant-service";
-import { Resolvers, QueryResolvers, MutationResolvers, Tenant, Client, SigningKey, Scope, AuthenticationGroup, AuthorizationGroup, FederatedOidcProvider, Contact, User, TenantLoginFailurePolicy, TenantPasswordConfig, TenantLegacyUserMigrationConfig, TenantAnonymousUserConfiguration, TenantLookAndFeel, RateLimitServiceGroup, TenantRateLimitRel, RelSearchResultItem, MarkForDelete, PortalUserProfile } from "@/graphql/generated/graphql-types";
+import { Resolvers, Tenant, Client, SigningKey, Scope, AuthenticationGroup, AuthorizationGroup, FederatedOidcProvider, Contact, User, TenantLoginFailurePolicy, TenantPasswordConfig, TenantLegacyUserMigrationConfig, TenantAnonymousUserConfiguration, TenantLookAndFeel, RateLimitServiceGroup, TenantRateLimitRel, RelSearchResultItem, MarkForDelete, PortalUserProfile } from "@/graphql/generated/graphql-types";
 import SigningKeysService from "@/lib/service/keys-service";
 import ScopeService from "@/lib/service/scope-service";
 import GroupService from "@/lib/service/group-service";
@@ -633,7 +633,7 @@ const resolvers: Resolvers = {
             return tenantId;
         },  
         setTenantPasswordConfig: async(_: any, { passwordConfigInput }, oidcContext) => {
-            const tenantService: TenantService = new TenantService(oidcContext);            
+            const tenantService: TenantService = new TenantService(oidcContext);
             const tenantPasswordConfig: TenantPasswordConfig = {
                 passwordHashingAlgorithm: passwordConfigInput.passwordHashingAlgorithm,
                 passwordMaxLength: passwordConfigInput.passwordMaxLength,
@@ -652,6 +652,11 @@ const resolvers: Resolvers = {
             };
             await tenantService.assignPasswordConfigToTenant(tenantPasswordConfig);
             return tenantPasswordConfig;
+        },
+        removeTenantPasswordConfig: async(_: any, { tenantId }, oidcContext) => {
+            const tenantService: TenantService = new TenantService(oidcContext);
+            await tenantService.removeTenantPasswordConfig(tenantId);
+            return tenantId;
         },
         setTenantLegacyUserMigrationConfig: async(_: any, { tenantLegacyUserMigrationConfigInput }, oidcContext) => {
             const tenantLegacyUserMigrationConfig: TenantLegacyUserMigrationConfig = {
