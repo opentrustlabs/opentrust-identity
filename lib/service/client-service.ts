@@ -140,7 +140,7 @@ class ClientService {
     }
 
     public async updateClient(client: Client): Promise<Client> {
-        const clientToUpdate: Client | null = await this.getClientById(client.clientId);
+        const clientToUpdate: Client | null = await clientDao.getClientById(client.clientId);
         
         if(!clientToUpdate){
             throw new GraphQLError(ERROR_CODES.EC00011.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00011}});
@@ -249,7 +249,7 @@ class ClientService {
     }
 
     public async addRedirectURI(clientId: string, uri: string): Promise<string>{
-        const client: Client | null = await this.getClientById(clientId);
+        const client: Client | null = await clientDao.getClientById(clientId);
         if(!client){
             throw new GraphQLError(ERROR_CODES.EC00031.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00031}});
         }
@@ -279,7 +279,7 @@ class ClientService {
     }
 
     public async removeRedirectURI(clientId: string, uri: string): Promise<void>{
-        const client: Client | null = await this.getClientById(clientId);
+        const client: Client | null = await clientDao.getClientById(clientId);
         if(!client){
             throw new GraphQLError(ERROR_CODES.EC00031.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00031}});
         }

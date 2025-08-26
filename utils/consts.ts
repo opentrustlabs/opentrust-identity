@@ -997,3 +997,5 @@ export const MARK_FOR_DELETE_LOCK_NAME_PREFIX="DELETE_MARK_FOR_DELETE";
 // ************************************************************************** //
 export const HTTP_HEADER_X_IP_ADDRESS="x-ip-address";
 export const HTTP_HEADER_X_GEO_LOCATION="x-geo-location";
+
+export const DEFAULT_HTTP_TIMEOUT_MS=60000;

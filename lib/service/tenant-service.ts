@@ -389,6 +389,23 @@ class TenantService {
         return tenantDao.getTenantPasswordConfig(tenantId);
     }
 
+    public async removeTenantPasswordConfig(tenantId: string): Promise<void>{
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_UPDATE_SCOPE], null);
+        if(!authResult.isAuthorized){
+            throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
+        }        
+        await tenantDao.removePasswordConfigFromTenant(tenantId);
+        changeEventDao.addChangeEvent({
+            objectId: tenantId,
+            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+            changeEventClass: CHANGE_EVENT_CLASS_TENANT_PASSWORD_CONFIGURATION,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_DELETE,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify({tenantId})
+        });
+    }
+
     public async assignPasswordConfigToTenant(tenantPasswordConfig: TenantPasswordConfig): Promise<TenantPasswordConfig>{
         const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_UPDATE_SCOPE], tenantPasswordConfig.tenantId);
         if(!authResult.isAuthorized){
