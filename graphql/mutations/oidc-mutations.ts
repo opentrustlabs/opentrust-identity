@@ -51,6 +51,12 @@ export const LOGIN_FAILURE_POLICY_CONFIGURATION_MUTATION = gql(`
     }
 `);
 
+export const REMOVE_LOGIN_FAILURE_POLICY_CONFIGURATION_MUTATION = gql(`
+    mutation removeTenantLoginFailurePolicy($tenantId: String!) {
+        removeTenantLoginFailurePolicy(tenantId: $tenantId) 
+    }    
+`);
+
 export const PASSWORD_CONFIGURATION_MUTATION = gql(`
     mutation setTenantPasswordConfig($passwordConfigInput: PasswordConfigInput!){
         setTenantPasswordConfig(passwordConfigInput: $passwordConfigInput){
@@ -113,6 +119,12 @@ export const TENANT_LOOK_AND_FEEL_MUTATION = gql(`
             authenticationlogomimetype
             authenticationheadertext     
         }
+    }
+`);
+
+export const REMOVE_TENANT_LOOK_AND_FEEL_MUTATION = gql(`
+    mutation removeTenantLookAndFeel($tenantId: String!){
+        removeTenantLookAndFeel(tenantId: $tenantId)
     }
 `);
 

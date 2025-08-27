@@ -556,6 +556,7 @@ export const TENANT_LOOK_AND_FEEL_QUERY = gql(`
             authenticationheaderbackgroundcolor
             authenticationheadertextcolor
             authenticationlogo
+            authenticationlogouri
             authenticationlogomimetype
             authenticationheadertext                      
         }

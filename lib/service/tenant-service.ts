@@ -366,6 +366,24 @@ class TenantService {
         }
     }
 
+    public async removeTenantLookAndFeel(tenantId: string): Promise<void> {
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_UPDATE_SCOPE], tenantId);
+        if(!authResult.isAuthorized){
+            throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
+        }
+        await tenantDao.deleteTenantLookAndFeel(tenantId);
+        changeEventDao.addChangeEvent({
+            objectId: tenantId,
+            changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
+            changeEventClass: CHANGE_EVENT_CLASS_TENANT_LOOK_AND_FEEL,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_DELETE,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify({tenantId})
+        });
+        return Promise.resolve();
+    }
+
  
     public async deleteTenantLookAndFeel(tenantId: string): Promise<void>{
         const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_UPDATE_SCOPE], tenantId);

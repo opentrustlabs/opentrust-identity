@@ -667,7 +667,7 @@ const Login: React.FC<LoginProps>= ({
                                                     <Grid2 size={breakPoints.isMedium ? 2 : 1.5}>
                                                         {getIconForSocialProvider(provider)}
                                                     </Grid2>
-                                                    <Grid2 size={breakPoints.isMedium ? 10 : 10.5}>Sign in with {provider.federatedOIDCProviderName}</Grid2>
+                                                    <Grid2 size={breakPoints.isMedium ? 10 : 10.5}>{intl.formatMessage({id: "SIGN_IN_WITH"})} {provider.federatedOIDCProviderName}</Grid2>
                                                 </Grid2>
                                             )
                                         )}

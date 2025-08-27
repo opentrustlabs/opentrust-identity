@@ -756,7 +756,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                                 </div>
                                             </AccordionSummary>
                                             <AccordionDetails>
-                                                <Typography>
+                                                <Typography component={"div"}>
                                                     <Grid2  display={"flex"} justifyContent={"center"}>
                                                         <div>This user does not belong to any tenants and so no scope can be assigned to this user</div>
                                                     </Grid2>

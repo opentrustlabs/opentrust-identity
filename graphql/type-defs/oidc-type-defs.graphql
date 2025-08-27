@@ -821,6 +821,7 @@ type TenantLookAndFeel {
     authenticationheaderbackgroundcolor: String
     authenticationheadertextcolor: String
     authenticationlogo: String
+    authenticationlogouri: String
     authenticationlogomimetype: String
     authenticationheadertext: String
     footerlinks: [FooterLink]
@@ -1378,6 +1379,7 @@ input TenantLookAndFeelInput {
     authenticationheaderbackgroundcolor: String
     authenticationheadertextcolor: String
     authenticationlogo: String
+    authenticationlogouri: String
     authenticationlogomimetype: String
     authenticationheadertext: String
     footerlinks: [FooterLinkInput]

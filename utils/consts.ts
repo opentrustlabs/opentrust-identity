@@ -52,7 +52,6 @@ export const ALL_OIDC_SUPPORTED_SCOPE_VALUES = [
 export const GRANT_TYPE_AUTHORIZATION_CODE = "authorization_code";
 export const GRANT_TYPE_REFRESH_TOKEN = "refresh_token";
 export const GRANT_TYPE_CLIENT_CREDENTIALS = "client_credentials";
-// For future development work, support device code auth grants. Will need a /code endpoint for this
 export const GRANT_TYPE_DEVICE_CODE = "urn:ietf:params:oauth:grant-type:device_code";
 export const GRANT_TYPES_SUPPORTED: Array<string> = [    
     GRANT_TYPE_AUTHORIZATION_CODE,

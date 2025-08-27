@@ -8,7 +8,7 @@ import { PasswordConfigInput, PortalUserProfile, TenantPasswordConfig } from "@/
 import { DEFAULT_TENANT_PASSWORD_CONFIGURATION, MFA_AUTH_TYPE_DISPLAY, MFA_AUTH_TYPE_NONE, MFA_AUTH_TYPES, PASSWORD_HASHING_ALGORITHMS, PASSWORD_HASHING_ALGORITHMS_DISPLAY, TENANT_UPDATE_SCOPE } from "@/utils/consts";
 import Grid2 from "@mui/material/Grid2";
 import TextField from "@mui/material/TextField";
-import { Alert, Autocomplete, Checkbox, Divider, MenuItem, Select } from "@mui/material";
+import { Alert, Autocomplete, Button, Checkbox, Dialog, DialogActions, DialogContent, Divider, MenuItem, Select, Typography } from "@mui/material";
 import { PASSWORD_CONFIGURATION_DELETION_MUTATION, PASSWORD_CONFIGURATION_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import DetailSectionActionHandler from "../layout/detail-section-action-handler";
 import { useIntl } from 'react-intl';
@@ -44,6 +44,7 @@ const PasswordRulesConfiguration: React.FC<PasswordRulesConfigurationProps> = ({
     const [passwordConfigInput, setPasswordConfigInput] = React.useState<PasswordConfigInput>(initInput);
     const [revertToInput, setRevertToInput] = React.useState<PasswordConfigInput>(initInput);
     const [hasSystemDefaultPasswordRules, setHasSystemDefaultPasswordRules] = React.useState<boolean>(false);
+    const [showConfirmRestorePasswordDefaultDialog, setShowConfirmRestorePasswordDefaultDialog] = React.useState<boolean>(false)
     
 
     // GRAPHQL FUNCTIONS
@@ -80,8 +81,7 @@ const PasswordRulesConfiguration: React.FC<PasswordRulesConfigurationProps> = ({
                 setHasSystemDefaultPasswordRules(true);
                 setPasswordConfigInput({...DEFAULT_TENANT_PASSWORD_CONFIGURATION});
                 setRevertToInput({...DEFAULT_TENANT_PASSWORD_CONFIGURATION});
-            }
-            
+            }            
         },
     });
 
@@ -96,7 +96,7 @@ const PasswordRulesConfiguration: React.FC<PasswordRulesConfigurationProps> = ({
         },
         onError(error) {
             onUpdateEnd(false);
-            setPasswordConfigInput(revertToInput);
+            setPasswordConfigInput({...revertToInput});
             setErrorMessage(intl.formatMessage({id: error.message}));
         }
     });
@@ -123,6 +123,35 @@ const PasswordRulesConfiguration: React.FC<PasswordRulesConfigurationProps> = ({
 
     return (
         <React.Fragment>
+            {showConfirmRestorePasswordDefaultDialog &&
+                <Dialog
+                    open={showConfirmRestorePasswordDefaultDialog}
+                    maxWidth="sm"
+                    fullWidth={true}
+                >
+                    <DialogContent>
+                        <Typography>
+                            Confirm that you want to restore the system default settings for password rules:
+                        </Typography>
+                    </DialogContent>
+                    <DialogActions>
+                        <Button
+                            onClick={() => setShowConfirmRestorePasswordDefaultDialog(false)}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            onClick={() => {
+                                setShowConfirmRestorePasswordDefaultDialog(false);
+                                onUpdateStart();
+                                deletePasswordConfigurationMutation();
+                            }}
+                        >
+                            Confirm
+                        </Button>
+                    </DialogActions>
+                </Dialog>
+            }
             <Grid2 container size={12} spacing={2}>
                 {errorMessage &&
                     <Grid2 marginBottom={"16px"} size={12} >
@@ -350,8 +379,7 @@ const PasswordRulesConfiguration: React.FC<PasswordRulesConfigurationProps> = ({
                 disableSubmit={!containsScope(TENANT_UPDATE_SCOPE, profile?.scope || [])}
                 enableRestoreDefault={hasSystemDefaultPasswordRules === false}
                 restoreDefaultHandler={() => {
-                    onUpdateStart();
-                    deletePasswordConfigurationMutation();                    
+                    setShowConfirmRestorePasswordDefaultDialog(true);                    
                 }}
             />
         </React.Fragment>

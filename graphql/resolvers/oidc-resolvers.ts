@@ -697,10 +697,16 @@ const resolvers: Resolvers = {
                 adminheaderbackgroundcolor: tenantLookAndFeelInput.adminheaderbackgroundcolor,
                 adminheadertext: tenantLookAndFeelInput.adminheadertext,
                 adminheadertextcolor: tenantLookAndFeelInput.adminheadertextcolor,
-                adminlogo: tenantLookAndFeelInput.adminlogo
+                adminlogo: tenantLookAndFeelInput.adminlogo,
+                authenticationlogouri: tenantLookAndFeelInput.authenticationlogouri
             }
             await tenantService.setTenantLookAndFeel(tenantLookAndFeel);
             return tenantLookAndFeel;
+        },
+        removeTenantLookAndFeel: async(_: any, { tenantId }, oidcContext) => {
+            const tenantService: TenantService = new TenantService(oidcContext);
+            await tenantService.removeTenantLookAndFeel(tenantId);
+            return tenantId;
         },
         addDomainToTenantManagement: async(_: any, { tenantId, domain }, oidcContext) => {
             const tenantService: TenantService = new TenantService(oidcContext);
