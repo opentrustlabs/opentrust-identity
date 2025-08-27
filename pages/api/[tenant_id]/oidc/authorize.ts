@@ -137,11 +137,17 @@ export default async function handler(
 		return;
 	}
     const uris = await clientDao.getRedirectURIs(clientId) || [];
-	if (!redirectUri || !uris.includes(redirectUri) || !hasValidLoopbackRedirectUri(uris, redirectUri)) {
+    console.log(redirectUri);
+    console.log(uris);
+    console.log("checkoint 1");
+	if (!( redirectUri || uris.includes(redirectUri) || hasValidLoopbackRedirectUri(uris, redirectUri)) ) {
+        console.log("checkoint 2");
 		res.status(302).setHeader("location", `/authorize/login?tenant_id=${tenantId}&client_id=${clientId}&state=${oidcState}&error=unauthorized_client&error_description=ERROR_INVALID_REDIRECT_URI&redirect_uri=${redirectUri}&scope=${oidcScope}&response_type=${responseType}&response_mode=${responseMode}`);
 		res.end();
 		return;
 	}
+
+    console.log("checkoint 3");
 
 	// 6.	 Does the client allow the PKCE extension to OAuth2 and do they allow the 
 	//			code challenge method (which should ONLY be set to "S256", never "plain")

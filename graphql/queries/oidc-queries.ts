@@ -38,6 +38,7 @@ export const TENANT_META_DATA_QUERY = gql(`
                 authenticationheaderbackgroundcolor
                 authenticationheadertextcolor
                 authenticationlogo
+                authenticationlogouri
                 authenticationheadertext
             }
             tenant {

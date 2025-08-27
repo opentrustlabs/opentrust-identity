@@ -165,6 +165,7 @@ const AuthentiationRotatePassword: React.FC<AuthenticationRotatePasswordProps> =
                     spacing={2}
                 >
                     <Button
+                        variant="contained"
                         onClick={() => {
                             onUpdateStart();
                             authenticateRotatePassword({
@@ -181,6 +182,7 @@ const AuthentiationRotatePassword: React.FC<AuthenticationRotatePasswordProps> =
                         {intl.formatMessage({id: "UPDATE"})}
                     </Button>
                     <Button
+                        variant="contained"
                         onClick={() => onAuthenticationCancelled()}
                     >
                         {intl.formatMessage({id: "CANCEL"})}

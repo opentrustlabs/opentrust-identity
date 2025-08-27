@@ -294,7 +294,12 @@ class TenantService {
             throw new GraphQLError(ERROR_CODES.EC00008.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00008}});
         }
         
-        const tenantLookAndFeel: TenantLookAndFeel | null = await tenantDao.getTenantLookAndFeel(tenantId);
+        // Tenant look and feel can be over-ridden by tenant. If none is defined for a tenant, then
+        // use the root tenant by default.
+        let tenantLookAndFeel: TenantLookAndFeel | null = await tenantDao.getTenantLookAndFeel(tenantId);
+        if(tenantLookAndFeel === null && tenantId !== this.oidcContext.rootTenant.tenantId){
+            tenantLookAndFeel = await tenantDao.getTenantLookAndFeel(this.oidcContext.rootTenant.tenantId);
+        }
 
         const systemSettings: SystemSettings = await tenantDao.getSystemSettings();
         // clear out the details of the system settings. Details are only for admin users with sufficient permissions

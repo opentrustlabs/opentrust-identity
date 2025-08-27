@@ -72,6 +72,7 @@ const AuthentiationConfigureTotp: React.FC<AuthenticationComponentsProps> = ({
                         spacing={2}
                     >                        
                         <Button
+                            variant="contained"
                             onClick={() => {
                                 setShowMutationBackdrop(true);
                                 authenticateConfigureTOTP({
@@ -86,6 +87,7 @@ const AuthentiationConfigureTotp: React.FC<AuthenticationComponentsProps> = ({
                             {intl.formatMessage({id: "CONFIGURE"})}
                         </Button>
                         <Button
+                            variant="contained"
                             onClick={() => onAuthenticationCancelled()}
                         >
                             {intl.formatMessage({id: "CANCEL"})}
@@ -126,6 +128,7 @@ const AuthentiationConfigureTotp: React.FC<AuthenticationComponentsProps> = ({
                         spacing={2}
                     >
                         <Button
+                            variant="contained"
                             onClick={() => {
                                 if (nextUserAuthenticationStateResponse) {
                                     onUpdateEnd(nextUserAuthenticationStateResponse, null);
@@ -135,6 +138,7 @@ const AuthentiationConfigureTotp: React.FC<AuthenticationComponentsProps> = ({
                             {intl.formatMessage({id: "NEXT"})}
                         </Button>
                         <Button
+                            variant="contained"
                             onClick={() => onAuthenticationCancelled()}
                         >
                             {intl.formatMessage({id: "CANCEL"})}
@@ -227,6 +231,7 @@ const RegistrationConfigureTotp: React.FC<RegistrationComponentsProps> = ({
                     >
                         {initialUserRegistrationState.registrationState === RegistrationState.ConfigureTotpOptional &&
                             <Button
+                                variant="contained"
                                 onClick={() => {
                                     onUpdateStart();
                                     registerConfigureTOTP({
@@ -243,6 +248,7 @@ const RegistrationConfigureTotp: React.FC<RegistrationComponentsProps> = ({
                             </Button>
                         }
                         <Button
+                            variant="contained"
                             onClick={() => {
                                 setShowMutationBackdrop(true);
                                 registerConfigureTOTP({
@@ -258,6 +264,7 @@ const RegistrationConfigureTotp: React.FC<RegistrationComponentsProps> = ({
                             {intl.formatMessage({id: "CONFIGURE"})}
                         </Button>
                         <Button
+                            variant="contained"
                             onClick={() => onRegistrationCancelled()}
                         >
                             {intl.formatMessage({id: "CANCEL"})}
@@ -296,6 +303,7 @@ const RegistrationConfigureTotp: React.FC<RegistrationComponentsProps> = ({
                         spacing={2}
                     >
                         <Button
+                            variant="contained"
                             onClick={() => {
                                 if (nextUserRegistrationResponse) {
                                     onUpdateEnd(nextUserRegistrationResponse, null);
@@ -305,6 +313,7 @@ const RegistrationConfigureTotp: React.FC<RegistrationComponentsProps> = ({
                             {intl.formatMessage({id: "NEXT"})}
                         </Button>
                         <Button
+                            variant="contained"
                             onClick={() => onRegistrationCancelled()}
                         >
                             {intl.formatMessage({id: "CANCEL"})}
