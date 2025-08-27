@@ -75,6 +75,7 @@ const AuthentiationValidateTotp: React.FC<AuthenticationComponentsProps> = ({
                 spacing={2}
             >
                 <Button
+                    variant="contained"
                     onClick={() => {
                         onUpdateStart();
                         authenticateValidateTotp({
@@ -91,6 +92,7 @@ const AuthentiationValidateTotp: React.FC<AuthenticationComponentsProps> = ({
                     {intl.formatMessage({id: "CONFIRM"})}
                 </Button>
                 <Button
+                    variant="contained"
                     onClick={() => onAuthenticationCancelled()}
                 >
                     {intl.formatMessage({id: "CANCEL"})}
@@ -147,6 +149,7 @@ const RegistrationValidateTotp: React.FC<RegistrationComponentsProps> = ({
                 spacing={2}
             >
                 <Button
+                    variant="contained"
                     onClick={() => {
                         onUpdateStart();
                         registerValidateTOTP({
@@ -163,6 +166,7 @@ const RegistrationValidateTotp: React.FC<RegistrationComponentsProps> = ({
                     {intl.formatMessage({id: "CONFIRM"})}
                 </Button>
                 <Button
+                    variant="contained"
                     onClick={() => onRegistrationCancelled()}
                 >
                     {intl.formatMessage({id: "CANCEL"})}

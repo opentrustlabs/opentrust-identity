@@ -50,17 +50,17 @@ const AuthenticationLayout: React.FC<LayoutProps> = ({
             components: {
                 MuiButton: {
                     defaultProps: {
-                        
+                        variant: "contained"
                     },                    
                     styleOverrides: {
-                        root: {
+                        root: {                            
                             "&:disabled": {
                                 color: "white",
                                 backgroundColor: "lightgrey"
                             },
                             variants: [
                                 {
-        
+                                    
                                 }
                             ],
                             color: tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheadertextcolor || "white",

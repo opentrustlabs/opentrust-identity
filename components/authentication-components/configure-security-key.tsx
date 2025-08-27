@@ -166,6 +166,7 @@ const AuthentiationConfigureSecurityKey: React.FC<AuthenticationComponentsProps>
                 spacing={2}
             >
                 <Button
+                    variant="contained"
                     onClick={() => {
                         setShowMutationBackdrop(true);
                         createFido2Challenge();
@@ -174,6 +175,7 @@ const AuthentiationConfigureSecurityKey: React.FC<AuthenticationComponentsProps>
                     {intl.formatMessage({id: "CONFIGURE_SECURITY_KEY"})}
                 </Button>
                 <Button
+                    variant="contained"
                     onClick={() => onAuthenticationCancelled()}
                 >
                     {intl.formatMessage({id: "CANCEL"})}
@@ -355,6 +357,7 @@ const RegistrationConfigureSecurityKey: React.FC<RegistrationComponentsProps> = 
             >
                 {initialUserRegistrationState.registrationState === RegistrationState.ConfigureSecurityKeyOptional &&
                     <Button
+                        variant="contained"
                         onClick={() => {
                             registerConfigureSecurityKey({
                                 variables: {
@@ -371,6 +374,7 @@ const RegistrationConfigureSecurityKey: React.FC<RegistrationComponentsProps> = 
                     </Button>
                 }
                 <Button
+                    variant="contained"
                     onClick={() => {
                         setShowMutationBackdrop(true);
                         createFido2RegistrationChallenge();
@@ -379,6 +383,7 @@ const RegistrationConfigureSecurityKey: React.FC<RegistrationComponentsProps> = 
                     {intl.formatMessage({id: "CONFIGURE_KEY"})}
                 </Button>
                 <Button
+                    variant="contained"
                     onClick={() => onRegistrationCancelled()}
                 >
                     {intl.formatMessage({id: "CANCEL"})}

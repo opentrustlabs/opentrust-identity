@@ -81,7 +81,7 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
                 const config: TenantLookAndFeel = data.getTenantLookAndFeel as TenantLookAndFeel;
                 const input: TenantLookAndFeelInput = {
                     tenantid: tenantId,
-                    adminheaderbackgroundcolor: config.authenticationheaderbackgroundcolor || DEFAULT_BACKGROUND_COLOR,
+                    authenticationheaderbackgroundcolor: config.authenticationheaderbackgroundcolor || DEFAULT_BACKGROUND_COLOR,
                     authenticationheadertext: config.authenticationheadertext,
                     authenticationheadertextcolor: config.authenticationheadertextcolor || "white",
                     authenticationlogo: config.authenticationlogo,
@@ -316,7 +316,7 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
                     {!readOnly &&
                         <React.Fragment>
                             <Grid2 container size={12}>
-                                <Grid2 size={11}>Logo (svg)</Grid2>
+                                <Grid2 size={11}>Logo (svg, no more than 45 pixes in height)</Grid2>
                                 <Grid2 size={1}>
                                     <DeleteForeverOutlinedIcon 
                                         sx={{cursor: "pointer"}}
@@ -324,11 +324,11 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
                                     />
                                 </Grid2>
                             </Grid2>
-                            <Grid2 size={12} paddingTop={"8px"}>
+                            <Grid2 marginBottom={"8px"} size={12} paddingTop={"8px"}>
                                 <input type="file" accept="image/svg+xml, .svg" id="logoFile" onChange={(evt) => handleTemporaryFileUpload(evt)} />                            
                             </Grid2>
                             <Divider>OR</Divider>
-                            <Grid2 container size={12}>
+                            <Grid2 marginTop={"8px"} container size={12}>
                                 <Grid2 size={12}>Logo URI</Grid2>
                                 <Grid2 size={12}>
                                     <TextField
