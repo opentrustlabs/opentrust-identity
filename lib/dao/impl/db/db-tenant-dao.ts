@@ -248,7 +248,8 @@ class DBTenantDao extends TenantDao {
                 authenticationheadertext: entity.getDataValue("authenticationheadertext"),
                 authenticationheadertextcolor: entity.getDataValue("authenticationheadertextcolor"),
                 authenticationlogo: entity.getDataValue("authenticationlogo") ?
-                    Buffer.from(entity.getDataValue("authenticationlogo")).toString("utf-8") : "",                
+                    Buffer.from(entity.getDataValue("authenticationlogo")).toString("utf-8") : "",
+                authenticationlogouri: entity.getDataValue("authenticationlogouri"),
                 authenticationlogomimetype: entity.getDataValue("authenticationlogomimetype")
             }
             return Promise.resolve(tenantLookAndFeel);

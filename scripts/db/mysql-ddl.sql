@@ -476,6 +476,7 @@ create TABLE tenant_look_and_feel (
     authenticationheaderbackgroundcolor VARCHAR(32),
     authenticationheadertextcolor VARCHAR(32),
     authenticationlogo BLOB,
+    authenticationlogouri VARCHAR(256),
     authenticationlogomimetype VARCHAR(16),
     authenticationheadertext VARCHAR(128),    
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid)

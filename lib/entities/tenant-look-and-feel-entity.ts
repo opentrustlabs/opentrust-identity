@@ -57,6 +57,12 @@ class TenantLookAndFeelEntity extends Model {
                 allowNull: true,
                 field: "authenticationlogo"
             },
+            authenticationlogouri: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: true,
+                field: "authenticationlogouri"
+            },
             authenticationlogomimetype: {
                 type: DataTypes.STRING,
                 primaryKey: false,

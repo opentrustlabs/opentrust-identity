@@ -4,7 +4,7 @@ import Fade from "@mui/material/Fade";
 import Stack from "@mui/material/Stack";
 import React from "react";
 import RestoreOutlinedIcon from '@mui/icons-material/RestoreOutlined';
-import { Tooltip } from "@mui/material";
+import { Grid2, Tooltip } from "@mui/material";
 
 
 
@@ -29,35 +29,41 @@ const DetailSectionActionHandler: React.FC<DetailSectionActionHandlerProps> = ({
 
 
     return (
-        <Stack sx={{ marginTop: "8px" }} direction={"row"} flexDirection={"row-reverse"} >
-            {enableRestoreDefault && restoreDefaultHandler &&
-                <Button
-                    sx={{marginRight: "8px", marginLeft: "8px"}}
-                    onClick={() => restoreDefaultHandler()}
-                >
-                    <Tooltip title={"Revert to system settings"}>
-                        <RestoreOutlinedIcon />
-                    </Tooltip>
-                </Button>
-            }
-            <Button
-                onClick={() => onUpdateClickedHandler()}
-                disabled={disableSubmit ? disableSubmit : !markDirty}
-                sx={{ border: "solid 1px lightgrey", borderRadius: "4px" }}
-            >
-                Update
-            </Button>
-            <Fade in={markDirty} timeout={500}>
-                <Button
-                    disabled={!markDirty}
-                    sx={{ marginRight: "8px" }}
-                    onClick={() => onDiscardClickedHandler()}
-                >
-                    Discard
-                </Button>
-            </Fade>
-            
-        </Stack>
+        <Grid2 container spacing={1}>
+            <Grid2 marginTop={"8px"} size={1}>
+                {enableRestoreDefault && restoreDefaultHandler &&
+                        <Button
+                            sx={{marginRight: "8px", marginLeft: "8px"}}
+                            onClick={() => restoreDefaultHandler()}
+                        >
+                            <Tooltip title={"Revert to system settings"}>
+                                <RestoreOutlinedIcon sx={{height: "25px", width: "35px"}} />
+                            </Tooltip>
+                        </Button>
+                    }
+            </Grid2>
+            <Grid2 size={11}>
+                <Stack sx={{ marginTop: "8px" }} direction={"row"} flexDirection={"row-reverse"} >                    
+                    <Button
+                        onClick={() => onUpdateClickedHandler()}
+                        disabled={disableSubmit ? disableSubmit : !markDirty}
+                        sx={{ border: "solid 1px lightgrey", borderRadius: "4px" }}
+                    >
+                        Update
+                    </Button>
+                    <Fade in={markDirty} timeout={500}>
+                        <Button
+                            disabled={!markDirty}
+                            sx={{ marginRight: "8px" }}
+                            onClick={() => onDiscardClickedHandler()}
+                        >
+                            Discard
+                        </Button>
+                    </Fade>
+                    
+                </Stack>
+            </Grid2>
+        </Grid2>
     )
 }
 
