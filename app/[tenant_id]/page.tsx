@@ -6,6 +6,7 @@ import { TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import TenantDetail from "@/components/tenants/tenant-detail";
 import SearchResultListLayout from "@/components/layout/search-result-list-layout";
 import { SearchResultType } from "@/graphql/generated/graphql-types";
+import LandingPage from "@/components/layout/landing-page";
 
 
 const TenantLandingPage: React.FC = () => {
@@ -31,7 +32,10 @@ const TenantLandingPage: React.FC = () => {
 
     return (
         <>
-            {(section === null || section === "tenants") && tenantBean.getTenantMetaData().tenant.tenantType === TENANT_TYPE_ROOT_TENANT && 
+            {section === null &&
+                <LandingPage />
+            }
+            {section === "tenants" && tenantBean.getTenantMetaData().tenant.tenantType === TENANT_TYPE_ROOT_TENANT && 
                 <SearchResultListLayout 
                     page={1} 
                     perPage={20} 
@@ -43,7 +47,7 @@ const TenantLandingPage: React.FC = () => {
 
                 />
             }
-            {(section === null || section === "tenants") && tenantBean.getTenantMetaData().tenant.tenantType !== TENANT_TYPE_ROOT_TENANT && 
+            {section === "tenants" && tenantBean.getTenantMetaData().tenant.tenantType !== TENANT_TYPE_ROOT_TENANT && 
                 <TenantDetail tenantId={tenantBean.getTenantMetaData().tenant.tenantId} />
             }
             {section === "search" &&
