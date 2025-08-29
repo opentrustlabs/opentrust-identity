@@ -367,7 +367,6 @@ const PasswordRulesConfiguration: React.FC<PasswordRulesConfigurationProps> = ({
             </Grid2>
             <DetailSectionActionHandler
                 onDiscardClickedHandler={() => {
-                    console.log(revertToInput);
                     setPasswordConfigInput({...revertToInput});
                     setMarkDirty(false);
                 }}

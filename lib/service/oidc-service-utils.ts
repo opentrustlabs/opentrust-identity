@@ -11,6 +11,7 @@ import { logWithDetails } from "../logging/logger";
 import { randomUUID } from "node:crypto";
 import { CustomKmsDecryptionResponseBody, CustomKmsEncryptionResponseBody, CustomKmsRequestBody } from "../kms/custom-kms";
 import { DEFAULT_HTTP_TIMEOUT_MS } from "@/utils/consts";
+import { RecaptchaV3Response } from "../models/recaptcha";
 
 const {
     HTTP_TIMEOUT_MS,
@@ -28,8 +29,6 @@ const {
     HTTP_PROXY_PASSWORD,
     SECURITY_EVENT_CALLBACK_URI
 } = process.env;
-
-
 
 
 const proxy: AxiosProxyConfig | undefined = HTTP_CLIENT_USE_PROXY === "true" ? 
@@ -308,6 +307,34 @@ class OIDCServiceUtils {
         }
         const decryptionResponse: CustomKmsDecryptionResponseBody = response.data;
         return decryptionResponse.decrypted;
+    }
+
+    public async validateRecaptchaV3(apiKey: string, recaptchaToken: string): Promise<RecaptchaV3Response>{
+        
+        let recaptchaResponse: RecaptchaV3Response = {
+            challenge_ts: "",
+            score: 0,
+            "error-codes": [],
+            hostname: "",
+            success: false
+        }
+        try{
+            const response = await axios.post("https://www.google.com/recaptcha/api/siteverify", 
+                `secret=${apiKey}&response=${recaptchaToken}`,
+                {
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded"
+                    }                        
+                }
+            );
+            recaptchaResponse = response.data;
+        }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        catch(error: any) {
+            logWithDetails("error", `Error invoking Google recaptcha verification. ${error.message}`, {...error});            
+        }
+
+        return recaptchaResponse;
     }
 
 }

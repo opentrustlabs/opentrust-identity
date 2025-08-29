@@ -23,7 +23,7 @@ const RecoveryEmailConfiguration: React.FC<RegistrationComponentsProps> = ({
 
     const [registerAddRecoveryEmail] = useMutation(REGISTER_ADD_RECOVERY_EMAIL_MUTATION, {
         onCompleted(data) {
-            const response: UserRegistrationStateResponse = data.registerAddBackupEmail as UserRegistrationStateResponse;
+            const response: UserRegistrationStateResponse = data.registerAddRecoveryEmail as UserRegistrationStateResponse;
             onUpdateEnd(response, null)
         },
         onError(error) {

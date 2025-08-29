@@ -907,8 +907,8 @@ export const USER_REGISTRATION_STATE_RESPONSE_FRAGMENT = gql(`
 `);
 
 export const REGISTER_USER_MUTATION = gql`
-    mutation registerUser($tenantId: String!, $userInput: UserCreateInput!, $preAuthToken: String) {
-        registerUser(tenantId: $tenantId, userInput: $userInput, preAuthToken: $preAuthToken) {
+    mutation registerUser($tenantId: String!, $userInput: UserCreateInput!, $preAuthToken: String, $recaptchaToken: String) {
+        registerUser(tenantId: $tenantId, userInput: $userInput, preAuthToken: $preAuthToken, recaptchaToken: $recaptchaToken) {
             ...UserRegistrationStateResponseFragment
         }
     }

@@ -1,4 +1,4 @@
-import { TenantAnonymousUserConfiguration, ObjectSearchResultItem, SearchResultType, Tenant, TenantLegacyUserMigrationConfig, TenantLookAndFeel, TenantManagementDomainRel, TenantMetaData, TenantPasswordConfig, TenantRestrictedAuthenticationDomainRel, FederatedOidcProviderTenantRel, TenantAvailableScope, TenantLoginFailurePolicy, CaptchaConfig, SystemSettings, SystemSettingsUpdateInput, JobData, Client, ErrorDetail, FederatedOidcProvider } from "@/graphql/generated/graphql-types";
+import { TenantAnonymousUserConfiguration, ObjectSearchResultItem, SearchResultType, Tenant, TenantLegacyUserMigrationConfig, TenantLookAndFeel, TenantManagementDomainRel, TenantMetaData, TenantPasswordConfig, TenantRestrictedAuthenticationDomainRel, FederatedOidcProviderTenantRel, TenantAvailableScope, TenantLoginFailurePolicy, CaptchaConfig, SystemSettings, SystemSettingsUpdateInput, JobData, Client, ErrorDetail, FederatedOidcProvider, RecaptchaMetaData, CaptchaConfigInput } from "@/graphql/generated/graphql-types";
 import { OIDCContext } from "@/graphql/graphql-context";
 import TenantDao from "@/lib/dao/tenant-dao";
 import { GraphQLError } from "graphql";
@@ -14,6 +14,7 @@ import SchedulerDao from "../dao/scheduler-dao";
 import ClientDao from "../dao/client-dao";
 import { ERROR_CODES } from "../models/error";
 import ChangeEventDao from "../dao/change-event-dao";
+import Kms from "../kms/kms";
 
 const searchClient = getOpenSearchClient();
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
@@ -23,6 +24,7 @@ const scopeDao: ScopeDao = DaoFactory.getInstance().getScopeDao();
 const markForDeleteDao: MarkForDeleteDao = DaoFactory.getInstance().getMarkForDeleteDao();
 const schedulerDao: SchedulerDao = DaoFactory.getInstance().getSchedulerDao();
 const changeEventDao: ChangeEventDao = DaoFactory.getInstance().getChangeEventDao();
+const kms: Kms = DaoFactory.getInstance().getKms();
 
 class TenantService {
 
@@ -318,13 +320,23 @@ class TenantService {
         );        
         socialProviders = socialProviders.filter(
             (p: FederatedOidcProvider) => p.markForDelete === false && p.federatedOIDCProviderType === FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL
-        );        
+        );
+
+        const captchaConfig: CaptchaConfig | null = await tenantDao.getCaptchaConfig();
+        const recaptchaMetaData: RecaptchaMetaData | null = captchaConfig ? 
+            {
+                recaptchaSiteKey: captchaConfig.siteKey,
+                useCaptchaV3: captchaConfig.useCaptchaV3,
+                useEnterpriseCaptcha: captchaConfig.useEnterpriseCaptcha
+            } : 
+            null;
         return Promise.resolve(
             {
                 tenant: tenant,
                 tenantLookAndFeel: tenantLookAndFeel ? tenantLookAndFeel : DEFAULT_TENANT_META_DATA.tenantLookAndFeel,
                 systemSettings: systemSettings,
-                socialOIDCProviders: socialProviders
+                socialOIDCProviders: socialProviders,
+                recaptchaMetaData: recaptchaMetaData
             }
         );
     }
@@ -408,7 +420,7 @@ class TenantService {
         return tenantDao.deleteTenantLookAndFeel(tenantId);
     }
 
-    public async getTenantPasswordConfig(tenantId: string): Promise<TenantPasswordConfig | null> {        
+    public async getTenantPasswordConfig(tenantId: string): Promise<TenantPasswordConfig | null> {
         return tenantDao.getTenantPasswordConfig(tenantId);
     }
 
@@ -714,12 +726,16 @@ class TenantService {
                     return tenantDao.getCaptchaConfig();
                 },
                 postProcess: async function(oidcContext: OIDCContext, result) {
-                    if(result && !containsScope(CAPTCHA_CONFIG_SCOPE, oidcContext.portalUserProfile?.scope || [])){
+
+                    // always clear out the api key. 
+                    if(result){
                         result.apiKey = "";
-                        result.siteKey = "";
-                        result.minScopeThreshold = null;
-                        result.projectId = null;
-                    }
+                        if(!containsScope(CAPTCHA_CONFIG_SCOPE, oidcContext.portalUserProfile?.scope || [])){
+                            result.siteKey = "";
+                            result.minScopeThreshold = null;
+                            result.projectId = null;
+                        }
+                    }                    
                     return result;
                 }
             }
@@ -788,6 +804,58 @@ class TenantService {
         };
         
         return jobData;
+    }
+
+    public async setCaptchaConfig(captchaConfigInput: CaptchaConfigInput): Promise<CaptchaConfig>{
+
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [CAPTCHA_CONFIG_SCOPE], null);
+        if(!authResult.isAuthorized){
+            throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
+        }
+
+        if(captchaConfigInput.useCaptchaV3 && !captchaConfigInput.minScopeThreshold){
+
+        }
+        if(captchaConfigInput.minScopeThreshold && (captchaConfigInput.minScopeThreshold > 1 || captchaConfigInput.minScopeThreshold < 0)){
+
+        }
+
+        const captchaConfig: CaptchaConfig = {
+            alias: captchaConfigInput.alias,
+            apiKey: "",
+            siteKey: captchaConfigInput.siteKey,
+            useCaptchaV3: true,
+            minScopeThreshold: captchaConfigInput.minScopeThreshold,
+            projectId: captchaConfigInput.projectId,
+            useEnterpriseCaptcha: captchaConfigInput.useEnterpriseCaptcha
+        }
+        
+        // Did the user NOT change the api key? if so, then re-save the existing api key, without encryption
+        const existing: CaptchaConfig | null = await tenantDao.getCaptchaConfig();
+        if(existing !== null && captchaConfigInput.siteKey ===""){
+            captchaConfig.apiKey = existing.apiKey;
+        }
+        else{
+            const encryptedApiKey: string | null = await kms.encrypt(captchaConfigInput.apiKey);
+            if(encryptedApiKey === null){
+                // TODO
+                // GENERATE A NEW ERROR CODE
+                throw new GraphQLError(ERROR_CODES.EC00186.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00186}});
+            }
+            captchaConfig.apiKey = encryptedApiKey;
+        }
+
+        await tenantDao.setCaptchaConfig(captchaConfig);
+        return captchaConfig;        
+    }
+
+
+    public async removeCaptchaConfig(): Promise<void>{
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [CAPTCHA_CONFIG_SCOPE], null);
+        if(!authResult.isAuthorized){
+            throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
+        }
+        await tenantDao.removeCaptchaConfig();        
     }
 
 }

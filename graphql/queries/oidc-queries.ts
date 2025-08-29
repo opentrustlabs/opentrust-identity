@@ -75,6 +75,11 @@ export const TENANT_META_DATA_QUERY = gql(`
                 federatedOIDCProviderType 
                 socialLoginProvider
             }
+            recaptchaMetaData {
+                recaptchaSiteKey
+                useEnterpriseCaptcha
+                useCaptchaV3
+            }
         }
     }
 `);

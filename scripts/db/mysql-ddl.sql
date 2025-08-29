@@ -672,7 +672,8 @@ create TABLE captcha_config (
     sitekey VARCHAR(256) NOT NULL,
     apikey VARCHAR(256) NOT NULL,
     minscorethreshold FLOAT,
-    userecaptchav3 BOOLEAN NOT NULL
+    userecaptchav3 BOOLEAN NOT NULL,
+    useenterprisecaptcha BOOLEAN NOT NULL
 );
 
 create TABLE system_settings (

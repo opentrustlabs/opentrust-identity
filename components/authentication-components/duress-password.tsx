@@ -58,7 +58,7 @@ const DuressPasswordConfiguration: React.FC<DuressPasswordConfigurationProps> = 
                 </Grid2>
                 <Grid2 marginBottom={"8px"} size={11}>
                     <div style={{ marginBottom: "16px", fontWeight: "bold", fontSize: "1.0em" }}>
-                        Do you want to add a duress password? It is not required, but is recommended. You
+                        Do you want to add a duress password? It is not required. You
                         can always add one later if you choose.
                     </div>
                 </Grid2>

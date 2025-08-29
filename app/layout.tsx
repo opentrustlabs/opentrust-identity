@@ -18,6 +18,7 @@ import { ClipboardCopyContextProvider } from "@/components/contexts/clipboard-co
 import { AuthenSessionContextProvider } from "@/components/contexts/auth-session-context";
 //import ProfilePreProcessorContextProvider from "@/components/contexts/my-profile-preprocessor";
 import { InternationalizationContextProvider } from "@/components/contexts/internationalization-context";
+import RecaptchaContextProvider from "@/components/contexts/recaptcha-context-provider";
 
 
 const theme = createTheme({    
@@ -120,8 +121,8 @@ export default function RootLayout({
                                         {!isProfileLayoutPage &&
                                             <AuthContextProvider>
                                                 <TenantContextProvider>
-                                                    {isAuthenticationLayoutPage &&                                         
-                                                        <AuthenticationLayout>{children}</AuthenticationLayout>                                        
+                                                    {isAuthenticationLayoutPage &&                                                         
+                                                        <AuthenticationLayout>{children}</AuthenticationLayout>                                                        
                                                     }
                                                     {!isAuthenticationLayoutPage &&                                        
                                                         <ManagementTenantFilter>

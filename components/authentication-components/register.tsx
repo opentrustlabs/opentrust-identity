@@ -36,6 +36,10 @@ import { ERROR_CODES } from "@/lib/models/error";
 import { useInternationalizationContext } from "../contexts/internationalization-context";
 import SelectLanguage from "./select-language";
 import { useIntl } from 'react-intl';
+import { useGoogleReCaptcha } from 'react-google-recaptcha-v3';
+import ReCAPTCHA from "react-google-recaptcha";
+import { GoogleReCaptchaProvider } from "react-google-recaptcha-v3";
+
 
 
 export interface RegistrationComponentsProps {
@@ -45,8 +49,41 @@ export interface RegistrationComponentsProps {
     onUpdateEnd: (userRegistrationStateResponse: UserRegistrationStateResponse | null, errorMessage: string | null) => void
 }
 
-
 const Register: React.FC = () => {
+    // CONTEXT VARIABLES
+    const tenantBean: TenantMetaDataBean = useContext(TenantContext);
+    const i18nContext = useInternationalizationContext();
+
+    if(tenantBean.getTenantMetaData().tenant.registrationRequireCaptcha === true && tenantBean.getTenantMetaData().recaptchaMetaData?.useCaptchaV3 === true) return (
+        <GoogleReCaptchaProvider
+            reCaptchaKey={tenantBean.getTenantMetaData().recaptchaMetaData?.recaptchaSiteKey || ""}
+            language={i18nContext.getLanguage()}
+            useRecaptchaNet={false}
+            useEnterprise={tenantBean.getTenantMetaData().recaptchaMetaData?.useEnterpriseCaptcha || false}
+            scriptProps={{
+                async: true, // optional, default to false,
+                defer: true, // optional, default to false
+                appendTo: 'body', // optional, default to "head", can be "head" or "body",
+                nonce: undefined // optional, default undefined
+            }}
+            // container={{ // optional to render inside custom element
+            // element: "[required_id_or_htmlelement]",
+            // parameters: {
+            //     badge: '[inline|bottomright|bottomleft]', // optional, default undefined
+            //     theme: 'dark', // optional, default undefined
+            // }
+            // }}
+        >
+            <RegisterInnerComponent />
+        </GoogleReCaptchaProvider>
+    )
+
+    return (
+        <RegisterInnerComponent />
+    )
+}
+
+const RegisterInnerComponent: React.FC = () => {
 
     // CONTEXT VARIABLES
     const tenantBean: TenantMetaDataBean  = useContext(TenantContext);    
@@ -56,6 +93,8 @@ const Register: React.FC = () => {
     const authContextProps: AuthContextProps = useContext(AuthContext);
     const i18nContext = useInternationalizationContext();
     const intl = useIntl();
+
+    const { executeRecaptcha } = useGoogleReCaptcha();
 
     // QUERY PARAMS
     const params = useSearchParams();
@@ -113,6 +152,7 @@ const Register: React.FC = () => {
     const [showMutationBackdrop, setShowMutationBackdrop] = React.useState<boolean>(false);
     const [userRegistrationState, setUserRegistrationState] = React.useState<UserRegistrationState>(initUserRegistrationState);
     const [userClickedTermsAndConditionsLink, setUserClickedTermsAndConditionsLink] = React.useState<boolean>(false);
+    const [recaptchaToken, setRecaptchaToken] = React.useState<string | null>(null);
 
     // HOOKS FROM NEXTJS OR MUI
     const router = useRouter();
@@ -128,6 +168,7 @@ const Register: React.FC = () => {
         variables: {
             tenantId: tenantId
         },
+        fetchPolicy: "network-only",
         onCompleted(data) {
             if (data && data.getTenantPasswordConfig) {
                 const config: TenantPasswordConfig = data.getTenantPasswordConfig as TenantPasswordConfig;
@@ -136,7 +177,8 @@ const Register: React.FC = () => {
         },
         onError(error) {
             setErrorMessage(intl.formatMessage({id: error.message}));            
-        }
+        },
+        
     });
 
     const [registerUser] = useMutation(REGISTER_USER_MUTATION, {
@@ -280,6 +322,28 @@ const Register: React.FC = () => {
         return bRetVal;
     }
 
+    const checkRecaptchaAndRegisterUser = async () => {
+
+        let recaptchaToken: string | null = null;
+        if(
+            tenantBean.getTenantMetaData().tenant.registrationRequireCaptcha && 
+            tenantBean.getTenantMetaData().recaptchaMetaData?.useCaptchaV3 === true &&
+            executeRecaptcha
+        ) {
+            recaptchaToken = await executeRecaptcha("registration");
+        }
+
+        registerUser({
+            variables: {
+                tenantId: tenantId,
+                userInput: userInput,
+                preAuthToken: preAuthToken,
+                deviceCodeId: deviceCodeId,
+                recaptchaToken: recaptchaToken
+            }
+        });        
+    }
+
     
     // Cannot register without a valid tenant id to register against    
     if(tenantBean.getTenantMetaData().tenant.tenantId === "" &&  (tenantId === null || tenantId === undefined)){
@@ -325,194 +389,193 @@ const Register: React.FC = () => {
                             <Grid2 size={{ xs: 12 }}>
                                 <div style={{ marginBottom: "16px", fontWeight: "bold", fontSize: "1.0em" }}>{intl.formatMessage({id: "REGISTER"})}</div>
                             </Grid2>
-                            {userRegistrationState.registrationState === RegistrationState.Unregistered && registrationPage === 1 &&
-                                <React.Fragment>
-                                    <Grid2 size={12} container spacing={1}>
-                                        <Grid2 marginBottom={"8px"} size={12}>
-                                            <div>{intl.formatMessage({id: "FIRST_NAME"})}</div>
-                                            <TextField name="firstName" id="firstName" 
-                                                error={!userInput.firstName || userInput.firstName.length < 3}
-                                                value={userInput.firstName}
-                                                onChange={(evt) => { userInput.firstName = evt.target.value; setUserInput({ ...userInput }) }}
-                                                fullWidth={true} size="small" required={true}
-                                            />
-                                        </Grid2>
-                                        <Grid2 marginBottom={"8px"} size={12}>
-                                            <div>{intl.formatMessage({id: "LAST_NAME"})}</div>
-                                            <TextField name="lastName" id="lastName"
-                                                error={!userInput.lastName || userInput.lastName.length < 3}
-                                                value={userInput.lastName}
-                                                onChange={(evt) => { userInput.lastName = evt.target.value; setUserInput({ ...userInput }); }}
-                                                fullWidth={true} size="small"
-                                            />
-                                        </Grid2>
-                                        <Grid2 marginBottom={"8px"} size={12}>
-                                            <div>{intl.formatMessage({id: "MIDDLE_NAME"})}</div>
-                                            <TextField name="middleName" id="middleName"
-                                                value={userInput.middleName}
-                                                onChange={(evt) => { userInput.middleName = evt.target.value; setUserInput({ ...userInput }); }}
-                                                fullWidth={true} size="small"
-                                            />
-                                        </Grid2>
-                                        <Grid2 marginBottom={"8px"} size={12}>
-                                            <div>{intl.formatMessage({id: "NAME_ORDER"})}</div>
-                                            <Select
-                                                name="nameOrder"
-                                                value={userInput.nameOrder}
-                                                onChange={(evt) => {
-                                                    userInput.nameOrder = evt.target.value;
-                                                    setUserInput({ ...userInput });
-                                                }}
-                                                size="small"
-                                                fullWidth={true}
-                                                error={!userInput.nameOrder || !NAME_ORDERS.includes(userInput.nameOrder)}
-                                            >
-                                                <MenuItem value={NAME_ORDER_EASTERN}>{NAME_ORDER_DISPLAY.get(NAME_ORDER_EASTERN)}</MenuItem>
-                                                <MenuItem value={NAME_ORDER_WESTERN}>{NAME_ORDER_DISPLAY.get(NAME_ORDER_WESTERN)}</MenuItem>
+                            {userRegistrationState.registrationState === RegistrationState.Unregistered && registrationPage === 1 &&                                
+                                    <React.Fragment>
+                                        <Grid2 size={12} container spacing={1}>
+                                            <Grid2 marginBottom={"8px"} size={12}>
+                                                <div>{intl.formatMessage({id: "FIRST_NAME"})}</div>
+                                                <TextField name="firstName" id="firstName" 
+                                                    error={!userInput.firstName || userInput.firstName.length < 3}
+                                                    value={userInput.firstName}
+                                                    onChange={(evt) => { userInput.firstName = evt.target.value; setUserInput({ ...userInput }) }}
+                                                    fullWidth={true} size="small" required={true}
+                                                />
+                                            </Grid2>
+                                            <Grid2 marginBottom={"8px"} size={12}>
+                                                <div>{intl.formatMessage({id: "LAST_NAME"})}</div>
+                                                <TextField name="lastName" id="lastName"
+                                                    error={!userInput.lastName || userInput.lastName.length < 3}
+                                                    value={userInput.lastName}
+                                                    onChange={(evt) => { userInput.lastName = evt.target.value; setUserInput({ ...userInput }); }}
+                                                    fullWidth={true} size="small"
+                                                />
+                                            </Grid2>
+                                            <Grid2 marginBottom={"8px"} size={12}>
+                                                <div>{intl.formatMessage({id: "MIDDLE_NAME"})}</div>
+                                                <TextField name="middleName" id="middleName"
+                                                    value={userInput.middleName}
+                                                    onChange={(evt) => { userInput.middleName = evt.target.value; setUserInput({ ...userInput }); }}
+                                                    fullWidth={true} size="small"
+                                                />
+                                            </Grid2>
+                                            <Grid2 marginBottom={"8px"} size={12}>
+                                                <div>{intl.formatMessage({id: "NAME_ORDER"})}</div>
+                                                <Select
+                                                    name="nameOrder"
+                                                    value={userInput.nameOrder}
+                                                    onChange={(evt) => {
+                                                        userInput.nameOrder = evt.target.value;
+                                                        setUserInput({ ...userInput });
+                                                    }}
+                                                    size="small"
+                                                    fullWidth={true}
+                                                    error={!userInput.nameOrder || !NAME_ORDERS.includes(userInput.nameOrder)}
+                                                >
+                                                    <MenuItem value={NAME_ORDER_EASTERN}>{NAME_ORDER_DISPLAY.get(NAME_ORDER_EASTERN)}</MenuItem>
+                                                    <MenuItem value={NAME_ORDER_WESTERN}>{NAME_ORDER_DISPLAY.get(NAME_ORDER_WESTERN)}</MenuItem>
 
-                                            </Select>
-                                        </Grid2>
-                                        <Grid2 marginBottom={"8px"} size={12}>
-                                            <div>{intl.formatMessage({id: "EMAIL"})}</div>
-                                            <TextField name="email" id="email"
-                                                value={userInput.email}
-                                                onChange={(evt) => { userInput.email = evt.target.value; setUserInput({ ...userInput }); }}
-                                                fullWidth={true} size="small"
-                                                error={!userInput.email || userInput.email.length < 7}
-                                                disabled={! (username === null || username === undefined)}
-                                            />
-                                        </Grid2>
-                                        <Grid2 marginBottom={"8px"} size={12}>
-                                            <Stack spacing={1} direction={"row"}>
-                                                <div>{intl.formatMessage({id: "PASSWORD"})}</div>
-                                                <div>
-                                                    ({intl.formatMessage({id: "PASSWORD_RULES"})}) 
-                                                </div>
+                                                </Select>
+                                            </Grid2>
+                                            <Grid2 marginBottom={"8px"} size={12}>
+                                                <div>{intl.formatMessage({id: "EMAIL"})}</div>
+                                                <TextField name="email" id="email"
+                                                    value={userInput.email}
+                                                    onChange={(evt) => { userInput.email = evt.target.value; setUserInput({ ...userInput }); }}
+                                                    fullWidth={true} size="small"
+                                                    error={!userInput.email || userInput.email.length < 7}
+                                                    disabled={! (username === null || username === undefined)}
+                                                />
+                                            </Grid2>
+                                            <Grid2 marginBottom={"8px"} size={12}>
+                                                <Stack spacing={1} direction={"row"}>
+                                                    <div>{intl.formatMessage({id: "PASSWORD"})}</div>
                                                     <div>
-                                                        {showPasswordRules === false &&
-                                                            <ArrowDropDownOutlinedIcon 
-                                                                sx={{cursor: "pointer"}}
-                                                                onClick={() => setShowPasswordRules(true)}
-                                                            />
+                                                        ({intl.formatMessage({id: "PASSWORD_RULES"})}) 
+                                                    </div>
+                                                        <div>
+                                                            {showPasswordRules === false &&
+                                                                <ArrowDropDownOutlinedIcon 
+                                                                    sx={{cursor: "pointer"}}
+                                                                    onClick={() => setShowPasswordRules(true)}
+                                                                />
+                                                            }
+                                                            {showPasswordRules === true &&
+                                                                <ArrowDropUpOutlinedIcon
+                                                                    sx={{cursor: "pointer"}}
+                                                                    onClick={() => setShowPasswordRules(false)}
+                                                                />
+                                                            }
+                                                    </div>
+                                                </Stack>
+                                                <Stack spacing={1} direction={"column"}>
+                                                    {showPasswordRules === true &&
+                                                        <PasswordRulesDisplay 
+                                                            passwordConfig={passwordConfig}
+                                                        />
+                                                    }
+                                                </Stack>
+                                                <TextField name="password" id="password"
+                                                    type={ viewPassword === true ? "text" : "password"}
+                                                    value={userInput.password}
+                                                    onChange={(evt) => { 
+                                                        userInput.password = evt.target.value;
+                                                        setUserInput({ ...userInput }); 
+                                                    }}
+                                                    fullWidth={true} size="small"
+                                                    error={!validatePasswordFormat(userInput.password, passwordConfig).result}
+                                                    slotProps={{
+                                                        input: {
+                                                            endAdornment: (
+                                                                <InputAdornment position="end">
+                                                                    {viewPassword === true &&
+                                                                        <VisibilityOffOutlinedIcon
+                                                                            sx={{ cursor: "pointer" }}
+                                                                            onClick={() => { 
+                                                                                setViewPassword(false);
+                                                                            }}
+                                                                        />
+                                                                    }
+                                                                    {viewPassword === false &&
+                                                                        <VisibilityOutlinedIcon
+                                                                            sx={{ cursor: "pointer" }}
+                                                                            onClick={() => { 
+                                                                                setViewPassword(true);
+                                                                            }}
+                                                                        />
+                                                                    }
+                                                                </InputAdornment>
+                                                            )
                                                         }
-                                                        {showPasswordRules === true &&
-                                                            <ArrowDropUpOutlinedIcon
-                                                                sx={{cursor: "pointer"}}
-                                                                onClick={() => setShowPasswordRules(false)}
-                                                            />
+                                                    }}
+                                                />
+                                            </Grid2>
+                                            <Grid2 marginBottom={"8px"} size={12}>
+                                                <div>{intl.formatMessage({id: "REPEAT_PASSWORD"})}</div>
+                                                <TextField name="repeatPassword" id="repeatPassword"
+                                                    type={viewRepeatPassword === true ? "text" : "password"}
+                                                    value={repeatPassword}
+                                                    onChange={(evt) => { setRepeatPassword(evt.target.value);}}
+                                                    fullWidth={true} size="small"
+                                                    error={!repeatPassword || repeatPassword !== userInput.password}
+                                                    slotProps={{
+                                                        input: {
+                                                            endAdornment: (
+                                                                <InputAdornment position="end">
+                                                                    {viewRepeatPassword === true &&
+                                                                        <VisibilityOffOutlinedIcon
+                                                                            sx={{ cursor: "pointer" }}
+                                                                            onClick={() => { 
+                                                                                setViewRepeatPassword(false);
+                                                                            }}
+                                                                        />
+                                                                    }
+                                                                    {viewRepeatPassword === false &&
+                                                                        <VisibilityOutlinedIcon
+                                                                            sx={{ cursor: "pointer" }}
+                                                                            onClick={() => { 
+                                                                                setViewRepeatPassword(true);
+                                                                            }}
+                                                                        />
+                                                                    }
+                                                                </InputAdornment>
+                                                            )
                                                         }
-                                                </div>
-                                            </Stack>
-                                            <Stack spacing={1} direction={"column"}>
-                                                {showPasswordRules === true &&
-                                                    <PasswordRulesDisplay 
-                                                        passwordConfig={passwordConfig}
-                                                    />
+                                                    }}
+                                                />
+                                            </Grid2>
+                                            <Grid2 marginBottom={"8px"} size={12}>
+                                                <div>{intl.formatMessage({id: "PHONE_NUMBER"})}</div>
+                                                <MuiTelInput
+                                                    value={userInput.phoneNumber || ""}
+                                                    onChange={(newValue) => { userInput.phoneNumber = newValue; setUserInput({ ...userInput }); }}
+                                                    fullWidth={true} size="small"
+                                                />
+                                            </Grid2>                                            
+                                        </Grid2>                                        
+                                        <Stack 
+                                            width={"100%"}
+                                            direction={"row-reverse"}
+                                            spacing={2}
+                                        >
+                                            <Button 
+                                                onClick={() => {
+                                                    setRegistrationPage(registrationPage + 1);
+                                                }}
+                                                disabled={
+                                                    !isPage1InputValid()
                                                 }
-                                            </Stack>
-                                            <TextField name="password" id="password"
-                                                type={ viewPassword === true ? "text" : "password"}
-                                                value={userInput.password}
-                                                onChange={(evt) => { 
-                                                    userInput.password = evt.target.value;
-                                                    setUserInput({ ...userInput }); 
+                                            >
+                                                {intl.formatMessage({id: "NEXT"})}
+                                            </Button>
+                                            <Button 
+                                                onClick={() => {
+                                                    handleCancelRegistration();
                                                 }}
-                                                fullWidth={true} size="small"
-                                                error={!validatePasswordFormat(userInput.password, passwordConfig).result}
-                                                slotProps={{
-                                                    input: {
-                                                        endAdornment: (
-                                                            <InputAdornment position="end">
-                                                                {viewPassword === true &&
-                                                                    <VisibilityOffOutlinedIcon
-                                                                        sx={{ cursor: "pointer" }}
-                                                                        onClick={() => { 
-                                                                            setViewPassword(false);
-                                                                        }}
-                                                                    />
-                                                                }
-                                                                {viewPassword === false &&
-                                                                    <VisibilityOutlinedIcon
-                                                                        sx={{ cursor: "pointer" }}
-                                                                        onClick={() => { 
-                                                                            setViewPassword(true);
-                                                                        }}
-                                                                    />
-                                                                }
-                                                            </InputAdornment>
-                                                        )
-                                                    }
-                                                }}
-                                            />
-                                        </Grid2>
-                                        <Grid2 marginBottom={"8px"} size={12}>
-                                            <div>{intl.formatMessage({id: "REPEAT_PASSWORD"})}</div>
-                                            <TextField name="repeatPassword" id="repeatPassword"
-                                                type={viewRepeatPassword === true ? "text" : "password"}
-                                                value={repeatPassword}
-                                                onChange={(evt) => { setRepeatPassword(evt.target.value);}}
-                                                fullWidth={true} size="small"
-                                                error={!repeatPassword || repeatPassword !== userInput.password}
-                                                slotProps={{
-                                                    input: {
-                                                        endAdornment: (
-                                                            <InputAdornment position="end">
-                                                                {viewRepeatPassword === true &&
-                                                                    <VisibilityOffOutlinedIcon
-                                                                        sx={{ cursor: "pointer" }}
-                                                                        onClick={() => { 
-                                                                            setViewRepeatPassword(false);
-                                                                        }}
-                                                                    />
-                                                                }
-                                                                {viewRepeatPassword === false &&
-                                                                    <VisibilityOutlinedIcon
-                                                                        sx={{ cursor: "pointer" }}
-                                                                        onClick={() => { 
-                                                                            setViewRepeatPassword(true);
-                                                                        }}
-                                                                    />
-                                                                }
-                                                            </InputAdornment>
-                                                        )
-                                                    }
-                                                }}
-                                            />
-                                        </Grid2>
-                                        <Grid2 marginBottom={"8px"} size={12}>
-                                            <div>{intl.formatMessage({id: "PHONE_NUMBER"})}</div>
-                                            <MuiTelInput
-                                                value={userInput.phoneNumber || ""}
-                                                onChange={(newValue) => { userInput.phoneNumber = newValue; setUserInput({ ...userInput }); }}
-                                                fullWidth={true} size="small"
-                                            />
-                                        </Grid2>
-                                        
-                                    </Grid2>
-                                    <Stack 
-                                        width={"100%"}
-                                        direction={"row-reverse"}
-                                        spacing={2}
-                                    >
-                                        <Button 
-                                            onClick={() => {
-                                                setRegistrationPage(registrationPage + 1);
-                                            }}
-                                            disabled={
-                                                !isPage1InputValid()
-                                            }
-                                        >
-                                            {intl.formatMessage({id: "NEXT"})}
-                                        </Button>
-                                        <Button 
-                                            onClick={() => {
-                                                handleCancelRegistration();
-                                            }}
-                                        >
-                                            {intl.formatMessage({id: "CANCEL"})}
-                                        </Button>
-                                    </Stack>
-                                </React.Fragment>
+                                            >
+                                                {intl.formatMessage({id: "CANCEL"})}
+                                            </Button>
+                                        </Stack>
+                                    </React.Fragment>
                             }
                             {userRegistrationState.registrationState === RegistrationState.Unregistered && registrationPage === 2 &&
                                 <React.Fragment>
@@ -654,6 +717,16 @@ const Register: React.FC = () => {
                                                 </Grid2>                                                
                                             </Grid2>
                                         }
+                                        {tenantBean.getTenantMetaData().tenant.registrationRequireCaptcha === true && tenantBean.getTenantMetaData().recaptchaMetaData?.useCaptchaV3 === false &&
+                                            <Grid2 marginBottom={"8px"} size={12}>
+                                                <ReCAPTCHA 
+                                                    sitekey={tenantBean.getTenantMetaData().recaptchaMetaData?.recaptchaSiteKey || ""} 
+                                                    onChange={(token: string | null) => {
+                                                        console.log("token value is: " + token);
+                                                    }} 
+                                                />
+                                            </Grid2>
+                                        }
                                     </Grid2>
                                     <Stack 
                                         width={"100%"}
@@ -663,15 +736,9 @@ const Register: React.FC = () => {
                                         <Button
                                             onClick={() => {
                                                 setErrorMessage(null);
-                                                setShowMutationBackdrop(true);                                            
-                                                registerUser({
-                                                    variables: {
-                                                        tenantId: tenantId,
-                                                        userInput: userInput,
-                                                        preAuthToken: preAuthToken,
-                                                        deviceCodeId: deviceCodeId
-                                                    }
-                                                });
+                                                setShowMutationBackdrop(true);
+                                                checkRecaptchaAndRegisterUser();
+                                                
                                             }}
                                             disabled={
                                                 !isPage2InputValid()

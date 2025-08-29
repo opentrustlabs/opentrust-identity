@@ -971,6 +971,26 @@ export const ERROR_CODES: Record<string, ErrorDetail> = {
         errorCode: "EC00189",
         errorKey: "ERROR_AUTHENTICATION_GROUPS_CANNOT_BE_ADDED_TO_SERVICE_CLIENTS",
         errorMessage: "Authentication groups cannot be added to service account clients."
+    },
+    EC00190: {
+        errorCode: "EC00190",
+        errorKey: "ERROR_RECAPTCHA_NOT_CONFIGURED_FOR_TENANT_WHICH_REQUIRES_RECAPTCHA",
+        errorMessage: "No Recaptcha has been configured for a tenant which requires Recaptcha for registration."
+    },
+    EC00191: {
+        errorCode: "EC00191",
+        errorKey: "ERROR_INVALID_RECAPTCHA_VERSION_EXPECTING_VERSION_3",
+        errorMessage: "There was an error validating your registration."
+    },
+    EC00192: {
+        errorCode: "EC00192",
+        errorKey: "ERROR_INVALID_RECAPTCHA_TOKEN",
+        errorMessage: "There was an error validating your registration."
+    },
+    EC00193: {
+        errorCode: "EC00193",
+        errorKey: "ERROR_RECAPTCHA_SCORE_LOWER_THAN_ALLOWED",
+        errorMessage: "There was an error validating your registration This could be because you are a bot. Please wait 30 minutes or more before trying again."
     }
 }
 

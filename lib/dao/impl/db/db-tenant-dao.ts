@@ -478,6 +478,18 @@ class DBTenantDao extends TenantDao {
         }
     }
 
+    public async setCaptchaConfig(captchaConfig: CaptchaConfig): Promise<CaptchaConfig>{
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.captchaConfig.truncate();
+        await sequelize.models.captchaConfig.create(captchaConfig);        
+        return captchaConfig;
+    }
+
+    public async removeCaptchaConfig(): Promise<void>{
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.captchaConfig.truncate();
+    }
+
     public async getSystemSettings(): Promise<SystemSettings> {
         const sequelize: Sequelize = await DBDriver.getConnection();
         

@@ -953,9 +953,9 @@ const resolvers: Resolvers = {
             const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);
             return service.authenticateHandleUserCodeInput(userCode);
         },
-        registerUser: async(_: any, { tenantId, userInput, preAuthToken, deviceCodeId }, oidcContext) => {
+        registerUser: async(_: any, { tenantId, userInput, preAuthToken, deviceCodeId, recaptchaToken }, oidcContext) => {
             const service: RegisterUserService = new RegisterUserService(oidcContext);
-            return service.registerUser(userInput, tenantId, preAuthToken || null, deviceCodeId || null);
+            return service.registerUser(userInput, tenantId, preAuthToken || null, deviceCodeId || null, recaptchaToken || null);
         },
         registerVerifyEmailAddress: async(_: any, { userId, token, registrationSessionToken, preAuthToken }, oidcContext) => {
             const service: RegisterUserService = new RegisterUserService(oidcContext);
@@ -1035,6 +1035,15 @@ const resolvers: Resolvers = {
             const service: RegisterUserService = new RegisterUserService(oidcContext);
             return service.profileCancelEmailChange(changeEmailSessionToken);
         },
+        setCaptchaConfig: async(_: any, { captchaConfigInput }, oidcContext) => {
+            const service: TenantService = new TenantService(oidcContext);
+            return service.setCaptchaConfig(captchaConfigInput);
+        },            
+        removeCaptchaConfig: async(_: any, {}, oidcContext) => {
+            const service: TenantService = new TenantService(oidcContext);
+            await service.removeCaptchaConfig();
+            return "";
+        }
     },
     PortalUserProfile: {
         recoveryEmail: async(profile: PortalUserProfile, _: any, oidcContext: OIDCContext) => {
