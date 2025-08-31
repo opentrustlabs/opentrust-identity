@@ -130,7 +130,8 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
             {!breakPoints.isMedium && 
                 <div style={{position: "sticky", top: "5px"}}>  
                     <Stack spacing={0} fontSize={"0.9em"}  direction={"row"} paddingTop={"8px"}>                                              
-                        <Autocomplete                            
+                        <Autocomplete 
+                            disabled={profile === null || !containsScope([TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE], profile.scope)}
                             freeSolo={true}
                             value={searchTerm}
                             filterOptions={(x) => x}
@@ -333,7 +334,8 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
                         }
                         {mobileSearchOpen === true &&                        
                             <Grid2  size={12} >                            
-                                <Autocomplete                                
+                                <Autocomplete
+                                    disabled={profile === null || !containsScope([TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE], profile.scope)}
                                     freeSolo={true}
                                     value={searchTerm}
                                     filterOptions={(x) => x}

@@ -89,14 +89,14 @@ const ManagementTenantFilter: React.FC<LayoutProps> = ({
             else{
                 // Need to check to see if the user has any permissions within the tenant
                 // They need to have, at a minimum tenant.all.read or tenant.read scope
-                // if(profile.scope.length === 0 || !containsScope([TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE], profile.scope)){
-                //     redirectUri = `/access-error?access_error_code=00025`;
-                // }
-                // else{
+                if(profile.scope.length === 0 || !containsScope([TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE], profile.scope)){
+                    redirectUri = `/access-error?access_error_code=00025`;
+                }
+                else{
                     // No need to do anything else, since the user is on a valid page for managing
                     // their tenant.
                     needsRedirect = false;
-                // }
+                }
             }            
         }
     }
