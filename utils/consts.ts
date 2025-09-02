@@ -998,3 +998,11 @@ export const HTTP_HEADER_X_IP_ADDRESS="x-ip-address";
 export const HTTP_HEADER_X_GEO_LOCATION="x-geo-location";
 
 export const DEFAULT_HTTP_TIMEOUT_MS=60000;
+
+// ************************************************************************** //
+// 
+//                  CAPTCHA DEFAULTS
+// 
+// ************************************************************************** //
+// For Version 3 of captcha, default to a score of 0.7 for bot detection
+export const DEFAULT_CAPTCHA_V3_MINIMUM_SCORE=0.7;

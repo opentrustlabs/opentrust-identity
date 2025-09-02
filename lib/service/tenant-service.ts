@@ -824,13 +824,13 @@ class TenantService {
             alias: captchaConfigInput.alias,
             apiKey: "",
             siteKey: captchaConfigInput.siteKey,
-            useCaptchaV3: true,
+            useCaptchaV3: captchaConfigInput.useCaptchaV3,
             minScopeThreshold: captchaConfigInput.minScopeThreshold,
             projectId: captchaConfigInput.projectId,
             useEnterpriseCaptcha: captchaConfigInput.useEnterpriseCaptcha
         }
         
-        // Did the user NOT change the api key? if so, then re-save the existing api key, without encryption
+        // Did the user NOT change the api key? if so, then re-save the existing api key (without re-encrypting it)
         const existing: CaptchaConfig | null = await tenantDao.getCaptchaConfig();
         if(existing !== null && captchaConfigInput.siteKey ===""){
             captchaConfig.apiKey = existing.apiKey;

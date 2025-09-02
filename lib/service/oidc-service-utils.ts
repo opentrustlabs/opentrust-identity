@@ -11,7 +11,7 @@ import { logWithDetails } from "../logging/logger";
 import { randomUUID } from "node:crypto";
 import { CustomKmsDecryptionResponseBody, CustomKmsEncryptionResponseBody, CustomKmsRequestBody } from "../kms/custom-kms";
 import { DEFAULT_HTTP_TIMEOUT_MS } from "@/utils/consts";
-import { RecaptchaV3Response } from "../models/recaptcha";
+import { RecaptchaResponse } from "../models/recaptcha";
 
 const {
     HTTP_TIMEOUT_MS,
@@ -309,9 +309,9 @@ class OIDCServiceUtils {
         return decryptionResponse.decrypted;
     }
 
-    public async validateRecaptchaV3(apiKey: string, recaptchaToken: string): Promise<RecaptchaV3Response>{
+    public async validateRecaptchaV3(apiKey: string, recaptchaToken: string): Promise<RecaptchaResponse>{
         
-        let recaptchaResponse: RecaptchaV3Response = {
+        let recaptchaResponse: RecaptchaResponse = {
             challenge_ts: "",
             score: 0,
             "error-codes": [],
@@ -333,7 +333,7 @@ class OIDCServiceUtils {
         catch(error: any) {
             logWithDetails("error", `Error invoking Google recaptcha verification. ${error.message}`, {...error});            
         }
-
+        console.log(recaptchaResponse);
         return recaptchaResponse;
     }
 

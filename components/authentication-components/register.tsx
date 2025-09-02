@@ -324,22 +324,28 @@ const RegisterInnerComponent: React.FC = () => {
 
     const checkRecaptchaAndRegisterUser = async () => {
 
-        let recaptchaToken: string | null = null;
+        let token: string | null = null;
         if(
             tenantBean.getTenantMetaData().tenant.registrationRequireCaptcha && 
             tenantBean.getTenantMetaData().recaptchaMetaData?.useCaptchaV3 === true &&
             executeRecaptcha
         ) {
-            recaptchaToken = await executeRecaptcha("registration");
+            token = await executeRecaptcha("registration");
         }
-
+        else if(
+            tenantBean.getTenantMetaData().tenant.registrationRequireCaptcha && 
+            tenantBean.getTenantMetaData().recaptchaMetaData?.useCaptchaV3 === false
+        ) {
+            token = recaptchaToken;
+        }
+        
         registerUser({
             variables: {
                 tenantId: tenantId,
                 userInput: userInput,
                 preAuthToken: preAuthToken,
                 deviceCodeId: deviceCodeId,
-                recaptchaToken: recaptchaToken
+                recaptchaToken: token
             }
         });        
     }
@@ -723,6 +729,7 @@ const RegisterInnerComponent: React.FC = () => {
                                                     sitekey={tenantBean.getTenantMetaData().recaptchaMetaData?.recaptchaSiteKey || ""} 
                                                     onChange={(token: string | null) => {
                                                         console.log("token value is: " + token);
+                                                        setRecaptchaToken(token);
                                                     }} 
                                                 />
                                             </Grid2>

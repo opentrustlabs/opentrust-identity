@@ -1,5 +1,5 @@
 
-export interface RecaptchaV3Response {
+export interface RecaptchaResponse {
   success: boolean,
   score: number,
   challenge_ts: string,

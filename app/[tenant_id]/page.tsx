@@ -32,7 +32,7 @@ const TenantLandingPage: React.FC = () => {
 
     return (
         <>            
-            {section === null || section === "tenants" && tenantBean.getTenantMetaData().tenant.tenantType === TENANT_TYPE_ROOT_TENANT && 
+            {(section === null || section === "tenants") && tenantBean.getTenantMetaData().tenant.tenantType === TENANT_TYPE_ROOT_TENANT && 
                 <SearchResultListLayout 
                     page={1} 
                     perPage={20} 
@@ -44,7 +44,7 @@ const TenantLandingPage: React.FC = () => {
 
                 />
             }
-            {section === null || section === "tenants" && tenantBean.getTenantMetaData().tenant.tenantType !== TENANT_TYPE_ROOT_TENANT && 
+            {(section === null || section === "tenants") && tenantBean.getTenantMetaData().tenant.tenantType !== TENANT_TYPE_ROOT_TENANT && 
                 <TenantDetail tenantId={tenantBean.getTenantMetaData().tenant.tenantId} />
             }
             {section === "search" &&

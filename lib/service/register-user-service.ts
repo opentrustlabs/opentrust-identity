@@ -5,7 +5,7 @@ import { DaoFactory } from "../data-sources/dao-factory";
 import TenantDao from "../dao/tenant-dao";
 import { GraphQLError } from "graphql/error";
 import { randomUUID } from "crypto";
-import { DEFAULT_TENANT_PASSWORD_CONFIGURATION, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, OIDC_AUTHORIZATION_ERROR_ACCESS_DENIED, QUERY_PARAM_AUTHENTICATE_TO_PORTAL, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, STATUS_COMPLETE, STATUS_INCOMPLETE, PRINCIPAL_TYPE_IAM_PORTAL_USER } from "@/utils/consts";
+import { DEFAULT_TENANT_PASSWORD_CONFIGURATION, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, OIDC_AUTHORIZATION_ERROR_ACCESS_DENIED, QUERY_PARAM_AUTHENTICATE_TO_PORTAL, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, STATUS_COMPLETE, STATUS_INCOMPLETE, PRINCIPAL_TYPE_IAM_PORTAL_USER, DEFAULT_CAPTCHA_V3_MINIMUM_SCORE } from "@/utils/consts";
 import {  generateRandomToken, getDomainFromEmail } from "@/utils/dao-utils";
 import { Client as OpenSearchClient } from "@opensearch-project/opensearch";
 import { getOpenSearchClient } from "../data-sources/search";
@@ -17,7 +17,7 @@ import FederatedOIDCProviderDao from "../dao/federated-oidc-provider-dao";
 import { ERROR_CODES } from "../models/error";
 import { logWithDetails } from "../logging/logger";
 import Kms from "../kms/kms";
-import { RecaptchaV3Response } from "../models/recaptcha";
+import { RecaptchaResponse } from "../models/recaptcha";
 
 
 const jwtServiceUtils: JwtServiceUtils = new JwtServiceUtils();
@@ -1057,17 +1057,16 @@ class RegisterUserService extends IdentityService {
             if(!captchaConfig){
                 throw new GraphQLError(ERROR_CODES.EC00190.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00190}});
             }
-            if(!captchaConfig.useCaptchaV3){                
-                throw new GraphQLError(ERROR_CODES.EC00191.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00191}});
-            }
             const decryptedApiKey: string | null = await kms.decrypt(captchaConfig.apiKey);
-            const recaptchaV3Response: RecaptchaV3Response = await oidcServiceUtils.validateRecaptchaV3(decryptedApiKey || "", recaptchaToken || "");
-            if(!recaptchaV3Response.success){
+            const recaptchaResponse: RecaptchaResponse = await oidcServiceUtils.validateRecaptchaV3(decryptedApiKey || "", recaptchaToken || "");
+            if(!recaptchaResponse.success){
                 throw new GraphQLError(ERROR_CODES.EC00192.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00192}});
             }
-            const minScore = captchaConfig.minScopeThreshold || 0.5;
-            if(recaptchaV3Response.score < minScore){
-                throw new GraphQLError(ERROR_CODES.EC00193.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00193}});
+            if(captchaConfig.useCaptchaV3 === true){
+                const minScore = captchaConfig.minScopeThreshold || DEFAULT_CAPTCHA_V3_MINIMUM_SCORE;
+                if(recaptchaResponse.score < minScore){
+                    throw new GraphQLError(ERROR_CODES.EC00193.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00193}});
+                }
             }
         }
 
