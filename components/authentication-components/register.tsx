@@ -319,6 +319,13 @@ const RegisterInnerComponent: React.FC = () => {
         if(tenantBean.getTenantMetaData().tenant.registrationRequireTermsAndConditions && !userInput.termsAndConditionsAccepted){
             bRetVal = false;
         }
+        if(
+            tenantBean.getTenantMetaData().recaptchaMetaData && 
+            tenantBean.getTenantMetaData().recaptchaMetaData?.useCaptchaV3 === false &&
+            recaptchaToken === null
+        ){
+            bRetVal = false;
+        }
         return bRetVal;
     }
 
@@ -338,7 +345,7 @@ const RegisterInnerComponent: React.FC = () => {
         ) {
             token = recaptchaToken;
         }
-        
+
         registerUser({
             variables: {
                 tenantId: tenantId,
@@ -728,7 +735,6 @@ const RegisterInnerComponent: React.FC = () => {
                                                 <ReCAPTCHA 
                                                     sitekey={tenantBean.getTenantMetaData().recaptchaMetaData?.recaptchaSiteKey || ""} 
                                                     onChange={(token: string | null) => {
-                                                        console.log("token value is: " + token);
                                                         setRecaptchaToken(token);
                                                     }} 
                                                 />
