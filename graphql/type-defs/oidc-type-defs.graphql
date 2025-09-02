@@ -382,7 +382,7 @@ type CaptchaConfig {
     projectId: String
     siteKey: String!
     apiKey: String!
-    minScopeThreshold: Float
+    minScoreThreshold: Float
     useCaptchaV3: Boolean!
     useEnterpriseCaptcha: Boolean!
 }
@@ -1640,7 +1640,7 @@ input CaptchaConfigInput {
     projectId: String
     siteKey: String!
     apiKey: String!
-    minScopeThreshold: Float
+    minScoreThreshold: Float
     useCaptchaV3: Boolean!
     useEnterpriseCaptcha: Boolean!
 }

@@ -724,8 +724,9 @@ export const CAPTCHA_CONFIG_QUERY = gql(`
             projectId
             siteKey
             apiKey
-            minScopeThreshold
+            minScoreThreshold
             useCaptchaV3
+            useEnterpriseCaptcha
         }
     }
 `);
