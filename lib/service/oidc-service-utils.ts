@@ -333,7 +333,6 @@ class OIDCServiceUtils {
         catch(error: any) {
             logWithDetails("error", `Error invoking Google recaptcha verification. ${error.message}`, {...error});            
         }
-        console.log(recaptchaResponse);
         return recaptchaResponse;
     }
 
