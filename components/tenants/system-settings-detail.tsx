@@ -1,15 +1,16 @@
 "use client";
-import { CategoryEntry, PortalUserProfile, SystemCategory, SystemSettings, SystemSettingsUpdateInput } from "@/graphql/generated/graphql-types";
+import { CaptchaConfig, CaptchaConfigInput, CategoryEntry, PortalUserProfile, SystemCategory, SystemSettings, SystemSettingsUpdateInput } from "@/graphql/generated/graphql-types";
 import { Alert, Backdrop, Checkbox, CircularProgress, Grid2, Paper, Snackbar, TextField, Typography } from "@mui/material";
 import React, { useContext } from "react";
 import { DetailPageContainer, DetailPageMainContentContainer } from "../layout/detail-page-container";
 import { AuthContext, AuthContextProps } from "../contexts/auth-context";
-import { DEFAULT_AUDIT_RECORD_RETENTION_PERIOD_DAYS, SYSTEM_SETTINGS_UPDATE_SCOPE } from "@/utils/consts";
+import { CAPTCHA_CONFIG_SCOPE, DEFAULT_AUDIT_RECORD_RETENTION_PERIOD_DAYS, SYSTEM_SETTINGS_UPDATE_SCOPE } from "@/utils/consts";
 import { containsScope } from "@/utils/authz-utils";
 import DetailSectionActionHandler from "../layout/detail-section-action-handler";
-import { useMutation } from "@apollo/client";
+import { useMutation, useQuery } from "@apollo/client";
 import { UPDATE_SYSTEM_SETTINGS_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import { useIntl } from 'react-intl';
+import { CAPTCHA_CONFIG_QUERY } from "@/graphql/queries/oidc-queries";
 
 
 
@@ -36,8 +37,19 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
         rootClientId: systemSettings.rootClientId,
         enablePortalAsLegacyIdp: systemSettings.enablePortalAsLegacyIdp,
         auditRecordRetentionPeriodDays: systemSettings.auditRecordRetentionPeriodDays || DEFAULT_AUDIT_RECORD_RETENTION_PERIOD_DAYS
+    };
+
+    const initCaptchaInput: CaptchaConfigInput = {
+        alias: "",
+        apiKey: "",
+        siteKey: "",
+        useCaptchaV3: false,
+        useEnterpriseCaptcha: false,
+        minScoreThreshold: 0,
+        projectId: ""
     }
     const [systemSettingsUpdateInput, setSystemSettingsUpdateInput] = React.useState<SystemSettingsUpdateInput>(initInput);
+    const [captchaConfigInput, setCaptchaConfigInput] = React.useState<CaptchaConfigInput>(initCaptchaInput);
     const [markDirty, setMarkDirty] = React.useState<boolean>(false);
     const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
     const [showMutationBackdrop, setShowMutationBackdrop] = React.useState<boolean>(false);
@@ -62,6 +74,28 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
             setErrorMessage(intl.formatMessage({id: error.message}));
         }
     });
+
+    const {} = useQuery(CAPTCHA_CONFIG_QUERY, {
+        onCompleted(data) {
+            if(data && data.getCaptchaConfig){
+                
+                const config: CaptchaConfig = data.getCaptchaConfig;
+                console.log(config);
+                const input: CaptchaConfigInput = {
+                    alias: config.alias,
+                    apiKey: config.apiKey,
+                    siteKey: config.siteKey,
+                    useCaptchaV3: config.useCaptchaV3,
+                    useEnterpriseCaptcha: config.useEnterpriseCaptcha,
+                    minScoreThreshold: config.minScoreThreshold,
+                    projectId: config.projectId
+                }
+                setCaptchaConfigInput(input);
+            }
+        },
+        skip: !containsScope(CAPTCHA_CONFIG_SCOPE, profile?.scope)
+    })
+
 
     // HELPER VARIABLES AND FUNCTIONS
     const categoriesMidpoint = Math.floor(systemSettings.systemCategories.length / 2);
@@ -216,6 +250,134 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
                         </Grid2>
                     
                         <Grid2 marginTop={"8px"} size={{ sm: 6, md: 6 }}>
+                            {containsScope(CAPTCHA_CONFIG_SCOPE, profile?.scope) &&
+                                <Paper sx={{ padding: "8px", marginTop: "16px" }} elevation={2}>
+                                    <Grid2 sx={{marginBottom: "16px", textDecoration: "underline", fontWeight: "bold"}}>
+                                        ReCaptcha Configuration
+                                    </Grid2>
+                                    <Grid2 alignItems={"center"} container size={12} spacing={1}>                                        
+                                        <Grid2 marginBottom={"8px"} size={12}>
+                                            <div>Alias</div>
+                                            <TextField
+                                                id="captchaAlias" name="captchaAlias"
+                                                onChange={(evt) => {
+                                                    captchaConfigInput.alias = evt.target.value;
+                                                    setCaptchaConfigInput({...captchaConfigInput});
+                                                }}
+                                                value={captchaConfigInput.alias}
+                                                size="small"
+                                                fullWidth={true}
+                                            />
+                                        </Grid2>
+                                        <Grid2 marginBottom={"8px"} size={12}>
+                                            <div>Project ID (Optional)</div>
+                                            <TextField
+                                                id="projectId" name="projectId"
+                                                onChange={(evt) => {
+                                                    captchaConfigInput.projectId = evt.target.value;
+                                                    setCaptchaConfigInput({...captchaConfigInput});
+                                                }}
+                                                value={captchaConfigInput.projectId}
+                                                size="small"
+                                                fullWidth={true}
+                                            />
+                                        </Grid2>
+
+                                        <Grid2 marginBottom={"8px"} size={12}>
+                                            <div>Site Key</div>
+                                            <TextField
+                                                id="siteKey" name="siteKey"
+                                                onChange={(evt) => {
+                                                    captchaConfigInput.siteKey = evt.target.value;
+                                                    setCaptchaConfigInput({...captchaConfigInput});
+                                                }}
+                                                value={captchaConfigInput.siteKey}
+                                                size="small"
+                                                fullWidth={true}
+                                            />
+                                        </Grid2>
+
+                                        <Grid2 marginBottom={"8px"} size={12}>
+                                            <div>Api (Secret) Key</div>
+                                            <TextField
+                                                type="password"
+                                                id="apiKey" name="apiKey"
+                                                onChange={(evt) => {
+                                                    captchaConfigInput.apiKey = evt.target.value;
+                                                    setCaptchaConfigInput({...captchaConfigInput});
+                                                }}
+                                                value={captchaConfigInput.apiKey}
+                                                size="small"
+                                                fullWidth={true}
+                                            />
+                                        </Grid2>
+
+                                        <Grid2 size={11} marginBottom={"8px"}>
+                                            Use ReCaptcha V3
+                                        </Grid2>
+                                        <Grid2 size={1}>
+                                            <Checkbox
+                                                checked={captchaConfigInput.useCaptchaV3 === true}
+                                                onChange={(_, checked: boolean) => {
+                                                    captchaConfigInput.useCaptchaV3 = checked;
+                                                    setCaptchaConfigInput({...captchaConfigInput});
+                                                }}
+                                            />
+                                        </Grid2>
+
+                                        <Grid2 marginBottom={"8px"} size={12}>
+                                            <div>Min. Score Threshold (for V3 ReCaptcha) 0.0 to 1.0</div>
+                                            <TextField
+                                                type="number"
+                                                id="minScore" name="minScore"
+                                                onChange={(evt) => {
+                                                    if(evt.target.value === ""){
+                                                        console.log("value is empty string");
+                                                        captchaConfigInput.minScoreThreshold = undefined;
+                                                        setCaptchaConfigInput({...captchaConfigInput});
+                                                    }
+                                                    else{
+                                                        const v: number = parseFloat(evt.target.value);
+                                                        if(!isNaN(v)){                                                            
+                                                            captchaConfigInput.minScoreThreshold = v;
+                                                            setCaptchaConfigInput({...captchaConfigInput});
+                                                        }
+                                                        else{
+                                                            captchaConfigInput.minScoreThreshold = undefined;
+                                                            setCaptchaConfigInput({...captchaConfigInput});
+                                                        }
+                                                    }
+                                                    
+                                                }}
+                                                value={captchaConfigInput.minScoreThreshold || ""}
+                                                size="small"
+                                                fullWidth={true}
+                                            />
+                                        </Grid2>
+
+
+                                        <Grid2 size={11} marginBottom={"8px"}>
+                                            Use Enterprise ReCaptcha
+                                        </Grid2>
+                                        <Grid2 size={1}>
+                                            <Checkbox
+                                                checked={captchaConfigInput.useEnterpriseCaptcha === true}
+                                                onChange={(_, checked: boolean) => {
+                                                    captchaConfigInput.useEnterpriseCaptcha = checked;
+                                                    setCaptchaConfigInput({...captchaConfigInput});
+                                                }}
+                                            />
+                                        </Grid2>                                        
+                                    
+                                    
+                                    </Grid2>
+
+
+                                </Paper>
+                            }
+
+
+                            <React.Fragment>
                             {systemSettings.systemCategories.slice(categoriesMidpoint).map(
                                 (systemCategory: SystemCategory) => (                                
                                     <Paper sx={{ padding: "8px", marginTop: "16px"}} elevation={2} key={systemCategory.categoryName}>
@@ -237,6 +399,7 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
                                     </Paper>
                                 )
                             )}
+                            </React.Fragment>
                         </Grid2>
                     </Grid2>
                 </DetailPageMainContentContainer>

@@ -726,21 +726,24 @@ class TenantService {
                     return tenantDao.getCaptchaConfig();
                 },
                 postProcess: async function(oidcContext: OIDCContext, result) {
-
-                    // always clear out the api key. 
-                    if(result){
-                        result.apiKey = "";
+                    // always clear out the api key for read-only users. 
+                    if(result){                                              
                         if(!containsScope(CAPTCHA_CONFIG_SCOPE, oidcContext.portalUserProfile?.scope || [])){
-                            result.siteKey = "";
-                            result.minScopeThreshold = null;
-                            result.projectId = null;
+                            result.apiKey = "";
+                            // result.siteKey = "";
+                            // result.minScoreThreshold = null;
+                            // result.projectId = null;
+                        }
+                        else{
+                            const decrypted: string | null = await kms.decrypt(result.apiKey);
+                            result.apiKey = decrypted || "";  
                         }
                     }                    
                     return result;
                 }
             }
         );
-        const config = await getData(this.oidcContext, [TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE]);
+        const config = await getData(this.oidcContext, [TENANT_READ_ALL_SCOPE, CAPTCHA_CONFIG_SCOPE]);
         return config;
     }
 
@@ -813,10 +816,10 @@ class TenantService {
             throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
         }
 
-        if(captchaConfigInput.useCaptchaV3 && !captchaConfigInput.minScopeThreshold){
+        if(captchaConfigInput.useCaptchaV3 && !captchaConfigInput.minScoreThreshold){
 
         }
-        if(captchaConfigInput.minScopeThreshold && (captchaConfigInput.minScopeThreshold > 1 || captchaConfigInput.minScopeThreshold < 0)){
+        if(captchaConfigInput.minScoreThreshold && (captchaConfigInput.minScoreThreshold > 1 || captchaConfigInput.minScoreThreshold < 0)){
 
         }
 
@@ -825,7 +828,7 @@ class TenantService {
             apiKey: "",
             siteKey: captchaConfigInput.siteKey,
             useCaptchaV3: captchaConfigInput.useCaptchaV3,
-            minScopeThreshold: captchaConfigInput.minScopeThreshold,
+            minScoreThreshold: captchaConfigInput.minScoreThreshold,
             projectId: captchaConfigInput.projectId,
             useEnterpriseCaptcha: captchaConfigInput.useEnterpriseCaptcha
         }

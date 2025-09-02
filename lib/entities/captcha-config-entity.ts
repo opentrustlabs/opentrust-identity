@@ -27,7 +27,7 @@ class CaptchaConfigEntity extends Model {
                 allowNull: false,
                 field: "apikey"
             },
-            minScopeThreshold: {
+            minScoreThreshold: {
                 type: DataTypes.FLOAT,
                 primaryKey: false,
                 allowNull: true,

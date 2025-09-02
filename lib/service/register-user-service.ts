@@ -1063,7 +1063,7 @@ class RegisterUserService extends IdentityService {
                 throw new GraphQLError(ERROR_CODES.EC00192.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00192}});
             }
             if(captchaConfig.useCaptchaV3 === true){
-                const minScore = captchaConfig.minScopeThreshold || DEFAULT_CAPTCHA_V3_MINIMUM_SCORE;
+                const minScore = captchaConfig.minScoreThreshold || DEFAULT_CAPTCHA_V3_MINIMUM_SCORE;
                 if(recaptchaResponse.score < minScore){
                     throw new GraphQLError(ERROR_CODES.EC00193.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00193}});
                 }
