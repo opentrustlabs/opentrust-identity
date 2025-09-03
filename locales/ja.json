@@ -331,5 +331,21 @@
     "NEED_TO_CREATE_AN_ACCOUNT": "アカウントを作成してください。",
     "OR": "または",
     "SIGN_IN_WITH": "サインイン",
-    "SELECT_A_LANGUAGE": "言語を選択してください"
+    "SELECT_A_LANGUAGE": "言語を選択してください",
+    "WELCOME": "ようこそ",
+    "QUICK_LINKS": "クイックリンク",
+    "CONFIGURE_KEY": "キーの設定",
+    "ERROR_RECAPTCHA_NOT_CONFIGURED_FOR_TENANT_WHICH_REQUIRES_RECAPTCHA": "登録にRecaptchaが必要なテナントに対して、Recaptchaが設定されていません。",
+    "ERROR_INVALID_RECAPTCHA_VERSION_EXPECTING_VERSION_3": "登録の検証中にエラーが発生しました。",
+    "ERROR_INVALID_RECAPTCHA_TOKEN": "登録の検証中にエラーが発生しました。",
+    "ERROR_RECAPTCHA_SCORE_LOWER_THAN_ALLOWED": "登録の検証中にエラーが発生しました。ボットである可能性があります。30分以上待ってから再度お試しください。",
+    "ERROR_V3_RECAPTCHA_REQUIRES_MINIMUM_SCORE_THRESHOLD_VALUE": "ReCaptchaバージョン3では、最小スコアしきい値が必要です。",
+    "ERROR_RECAPTCHA_MINIMUM_SCORE_MUST_BE_BETWEEN_1_AND_0": "最小しきい値スコアは0.0～1.0の範囲で指定する必要があります。",
+    "ERROR_FAILURE_TO_ENCRYPT_THE_RECAPTCHA_API_KEY": "ReCaptcha APIキーの暗号化に失敗しました。",
+    "ERROR_TENANT_NAME_MIN_LENGTH": "テナント名が短すぎます。",
+    "ERROR_CANNOT_CREATE_ANOTHER_ROOT_TENANT": "ルートテナントが既に存在します。",
+    "ERROR_CANNOT_ASSIGN_AS_ROOT_TENANT": "このテナントをルートテナントとして割り当てることはできません。",
+    "ERROR_INVALID_URL_FOR_TERMS_AND_CONDITIONS": "利用規約リンクのURLが無効です。",
+    "ERROR_NO_TERMS_AND_CONDITIONS_URL_WAS_SPECIFIED": "利用規約URLは必須です。",
+    "ERROR_NO_DEFAULT_RATE_LIMIT_SPECIFIED_FOR_LIMITED_API_RATE": "レート制限値を指定する必要があります。"
 }

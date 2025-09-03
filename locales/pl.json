@@ -331,5 +331,21 @@
     "NEED_TO_CREATE_AN_ACCOUNT": "Chcesz utworzyć konto?",
     "OR": "Lub",
     "SIGN_IN_WITH": "Zaloguj się za pomocą",
-    "SELECT_A_LANGUAGE": "Wybierz język"
+    "SELECT_A_LANGUAGE": "Wybierz język",
+    "WELCOME": "Witamy",
+    "QUICK_LINKS": "Szybkie linki",
+    "CONFIGURE_KEY": "Konfiguracja klucza",
+    "ERROR_RECAPTCHA_NOT_CONFIGURED_FOR_TENANT_WHICH_REQUIRES_RECAPTCHA": "Nie skonfigurowano Recaptcha dla dzierżawcy, który wymaga Recaptcha do rejestracji.",
+    "ERROR_INVALID_RECAPTCHA_VERSION_EXPECTING_VERSION_3": "Wystąpił błąd podczas weryfikacji rejestracji.",
+    "ERROR_INVALID_RECAPTCHA_TOKEN": "Wystąpił błąd podczas weryfikacji rejestracji.",
+    "ERROR_RECAPTCHA_SCORE_LOWER_THAN_ALLOWED": "Wystąpił błąd podczas weryfikacji rejestracji. Przyczyną może być bot. Odczekaj 30 minut lub dłużej przed ponowną próbą.",
+    "ERROR_V3_RECAPTCHA_REQUIRES_MINIMUM_SCORE_THRESHOLD_VALUE": "Wersja 3 ReCaptcha wymaga minimalnej wartości progowej wyniku.",
+    "ERROR_RECAPTCHA_MINIMUM_SCORE_MUST_BE_BETWEEN_1_AND_0": "Minimalna wartość progowa wyniku musi mieścić się w przedziale od 0,0 do 1,0.",
+    "ERROR_FAILURE_TO_ENCRYPT_THE_RECAPTCHA_API_KEY": "Wystąpił błąd podczas szyfrowania klucza API ReCaptcha.",
+    "ERROR_TENANT_NAME_MIN_LENGTH": "Nazwa dzierżawcy jest zbyt krótka.",
+    "ERROR_CANNOT_CREATE_ANOTHER_ROOT_TENANT": "Dzierżawca główny już istnieje.",
+    "ERROR_CANNOT_ASSIGN_AS_ROOT_TENANT": "Dzierżawcy nie można przypisać jako dzierżawcy głównego.",
+    "ERROR_INVALID_URL_FOR_TERMS_AND_CONDITIONS": "Adres URL linku do warunków umowy jest nieprawidłowy.",
+    "ERROR_NO_TERMS_AND_CONDITIONS_URL_WAS_SPECIFIED": "Adres URL warunków umowy jest wymagany.",
+    "ERROR_NO_DEFAULT_RATE_LIMIT_SPECIFIED_FOR_LIMITED_API_RATE": "Należy określić wartość limitu szybkości."
 }

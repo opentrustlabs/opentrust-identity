@@ -331,5 +331,21 @@
     "NEED_TO_CREATE_AN_ACCOUNT": "Precisa de criar uma conta?",
     "OR": "Ou",
     "SIGN_IN_WITH": "Faça login com",
-    "SELECT_A_LANGUAGE": "Selecione um idioma"
+    "SELECT_A_LANGUAGE": "Selecione um idioma",
+    "WELCOME": "Bem-vindo",
+    "QUICK_LINKS": "Links Rápidos",
+    "CONFIGURE_KEY": "Configurar Chave",
+    "ERROR_RECAPTCHA_NOT_CONFIGURED_FOR_TENANT_WHICH_REQUIRES_RECAPTCHA": "Nenhum Recaptcha foi configurado para um tenant que requer o Recaptcha para registo.",
+    "ERROR_INVALID_RECAPTCHA_VERSION_EXPECTING_VERSION_3": "Ocorreu um erro ao validar o seu registo.",
+    "ERROR_INVALID_RECAPTCHA_TOKEN": "Ocorreu um erro ao validar o seu registo.",
+    "ERROR_RECAPTCHA_SCORE_LOWER_THAN_ALLOWED": "Ocorreu um erro ao validar o seu registo. Isto pode ocorrer porque é um bot. Aguarde 30 minutos ou mais antes de tentar novamente.",
+    "ERROR_V3_RECAPTCHA_REQUIRES_MINIMUM_SCORE_THRESHOLD_VALUE": "A versão 3 do ReCaptcha exige um valor mínimo de pontuação.",
+    "ERROR_RECAPTCHA_MINIMUM_SCORE_MUST_BE_BETWEEN_1_AND_0": "O valor mínimo de pontuação deve estar entre 0,0 e 1,0.",
+    "ERROR_FAILURE_TO_ENCRYPT_THE_RECAPTCHA_API_KEY": "Ocorreu uma falha ao encriptar a chave API do ReCaptcha.",
+    "ERROR_TENANT_NAME_MIN_LENGTH": "O nome do locatário é demasiado curto.",
+    "ERROR_CANNOT_CREATE_ANOTHER_ROOT_TENANT": "Já existe um locatário raiz.",
+    "ERROR_CANNOT_ASSIGN_AS_ROOT_TENANT": "O locatário não pode ser atribuído como locatário raiz.",
+    "ERROR_INVALID_URL_FOR_TERMS_AND_CONDITIONS": "O URL para o link dos termos e condições é inválido.",
+    "ERROR_NO_TERMS_AND_CONDITIONS_URL_WAS_SPECIFIED": "O URL dos termos e condições é obrigatório.",
+    "ERROR_NO_DEFAULT_RATE_LIMIT_SPECIFIED_FOR_LIMITED_API_RATE": "Um valor limite de taxa precisa de ser especificado."
 }

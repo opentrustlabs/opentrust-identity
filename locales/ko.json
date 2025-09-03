@@ -331,5 +331,21 @@
     "NEED_TO_CREATE_AN_ACCOUNT": "계정을 생성해야 합니까?",
     "OR": "또는",
     "SIGN_IN_WITH": "다음으로 로그인",
-    "SELECT_A_LANGUAGE": "언어 선택"
+    "SELECT_A_LANGUAGE": "언어 선택",
+    "WELCOME": "환영합니다",
+    "QUICK_LINKS": "빠른 링크",
+    "CONFIGURE_KEY": "키 구성",
+    "ERROR_RECAPTCHA_NOT_CONFIGURED_FOR_TENANT_WHICH_REQUIRES_RECAPTCHA": "등록 시 ReCaptcha가 필요한 테넌트에 대해 ReCaptcha가 구성되지 않았습니다.",
+    "ERROR_INVALID_RECAPTCHA_VERSION_EXPECTING_VERSION_3": "등록을 검증하는 중 오류가 발생했습니다.",
+    "ERROR_INVALID_RECAPTCHA_TOKEN": "등록을 검증하는 중 오류가 발생했습니다.",
+    "ERROR_RECAPTCHA_SCORE_LOWER_THAN_ALLOWED": "등록을 검증하는 중 오류가 발생했습니다. 봇이기 때문일 수 있습니다. 30분 이상 기다린 후 다시 시도해 주세요.",
+    "ERROR_V3_RECAPTCHA_REQUIRES_MINIMUM_SCORE_THRESHOLD_VALUE": "ReCaptcha 버전 3에는 최소 점수 임계값이 필요합니다.",
+    "ERROR_RECAPTCHA_MINIMUM_SCORE_MUST_BE_BETWEEN_1_AND_0": "최소 점수 임계값은 0.0에서 1.0 사이여야 합니다.",
+    "ERROR_FAILURE_TO_ENCRYPT_THE_RECAPTCHA_API_KEY": "ReCaptcha API 키를 암호화하는 중 오류가 발생했습니다.",
+    "ERROR_TENANT_NAME_MIN_LENGTH": "테넌트 이름이 너무 짧습니다.",
+    "ERROR_CANNOT_CREATE_ANOTHER_ROOT_TENANT": "루트 테넌트가 이미 있습니다.",
+    "ERROR_CANNOT_ASSIGN_AS_ROOT_TENANT": "테넌트를 루트 테넌트로 지정할 수 없습니다.",
+    "ERROR_INVALID_URL_FOR_TERMS_AND_CONDITIONS": "이용 약관 링크의 URL이 잘못되었습니다.",
+    "ERROR_NO_TERMS_AND_CONDITIONS_URL_WAS_SPECIFIED": "이용 약관 URL이 필요합니다.",
+    "ERROR_NO_DEFAULT_RATE_LIMIT_SPECIFIED_FOR_LIMITED_API_RATE": "속도 제한 값을 지정해야 합니다."
 }

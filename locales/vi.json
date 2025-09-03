@@ -331,5 +331,21 @@
     "NEED_TO_CREATE_AN_ACCOUNT": "Bạn cần tạo tài khoản?",
     "OR": "Hoặc",
     "SIGN_IN_WITH": "Đăng nhập bằng",
-    "SELECT_A_LANGUAGE": "Chọn ngôn ngữ"
+    "SELECT_A_LANGUAGE": "Chọn ngôn ngữ",
+    "WELCOME": "Chào mừng",
+    "QUICK_LINKS": "Liên kết nhanh",
+    "CONFIGURE_KEY": "Khóa Cấu hình",
+    "ERROR_RECAPTCHA_NOT_CONFIGURED_FOR_TENANT_WHICH_REQUIRES_RECAPTCHA": "Không có Recaptcha nào được cấu hình cho một đối tượng thuê yêu cầu Recaptcha để đăng ký.",
+    "ERROR_INVALID_RECAPTCHA_VERSION_EXPECTING_VERSION_3": "Đã xảy ra lỗi khi xác thực đăng ký của bạn.",
+    "ERROR_INVALID_RECAPTCHA_TOKEN": "Đã xảy ra lỗi khi xác thực đăng ký của bạn.",
+    "ERROR_RECAPTCHA_SCORE_LOWER_THAN_ALLOWED": "Đã xảy ra lỗi khi xác thực đăng ký của bạn. Điều này có thể do bạn là bot. Vui lòng đợi 30 phút hoặc lâu hơn trước khi thử lại.",
+    "ERROR_V3_RECAPTCHA_REQUIRES_MINIMUM_SCORE_THRESHOLD_VALUE": "Phiên bản 3 của ReCaptcha yêu cầu ngưỡng điểm tối thiểu.",
+    "ERROR_RECAPTCHA_MINIMUM_SCORE_MUST_BE_BETWEEN_1_AND_0": "Điểm ngưỡng tối thiểu phải nằm trong khoảng từ 0,0 đến 1,0.",
+    "ERROR_FAILURE_TO_ENCRYPT_THE_RECAPTCHA_API_KEY": "Đã xảy ra lỗi khi mã hóa khóa API ReCaptcha.",
+    "ERROR_TENANT_NAME_MIN_LENGTH": "Tên đối tượng thuê quá ngắn.",
+    "ERROR_CANNOT_CREATE_ANOTHER_ROOT_TENANT": "Đã tồn tại một đối tượng thuê gốc.",
+    "ERROR_CANNOT_ASSIGN_AS_ROOT_TENANT": "Không thể chỉ định đối tượng thuê làm đối tượng thuê gốc.",
+    "ERROR_INVALID_URL_FOR_TERMS_AND_CONDITIONS": "URL cho liên kết điều khoản và điều kiện không hợp lệ.",
+    "ERROR_NO_TERMS_AND_CONDITIONS_URL_WAS_SPECIFIED": "URL điều khoản và điều kiện là bắt buộc.",
+    "ERROR_NO_DEFAULT_RATE_LIMIT_SPECIFIED_FOR_LIMITED_API_RATE": "Cần chỉ định giá trị giới hạn tốc độ."
 }

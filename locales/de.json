@@ -331,5 +331,21 @@
     "NEED_TO_CREATE_AN_ACCOUNT": "Müssen Sie ein Konto erstellen?",
     "OR": "Oder",
     "SIGN_IN_WITH": "Anmelden mit",
-    "SELECT_A_LANGUAGE": "Sprache auswählen"
+    "SELECT_A_LANGUAGE": "Sprache auswählen",
+    "WELCOME": "Willkommen",
+    "QUICK_LINKS": "Schnellzugriff",
+    "CONFIGURE_KEY": "Schlüssel konfigurieren",
+    "ERROR_RECAPTCHA_NOT_CONFIGURED_FOR_TENANT_WHICH_REQUIRES_RECAPTCHA": "Für einen Mandanten, der Recaptcha zur Registrierung benötigt, wurde kein Recaptcha konfiguriert.",
+    "ERROR_INVALID_RECAPTCHA_VERSION_EXPECTING_VERSION_3": "Bei der Validierung Ihrer Registrierung ist ein Fehler aufgetreten.",
+    "ERROR_INVALID_RECAPTCHA_TOKEN": "Bei der Validierung Ihrer Registrierung ist ein Fehler aufgetreten.",
+    "ERROR_RECAPTCHA_SCORE_LOWER_THAN_ALLOWED": "Bei der Validierung Ihrer Registrierung ist ein Fehler aufgetreten. Dies könnte daran liegen, dass Sie ein Bot sind. Bitte warten Sie mindestens 30 Minuten, bevor Sie es erneut versuchen.",
+    "ERROR_V3_RECAPTCHA_REQUIRES_MINIMUM_SCORE_THRESHOLD_VALUE": "ReCaptcha Version 3 erfordert einen Mindestwert.",
+    "ERROR_RECAPTCHA_MINIMUM_SCORE_MUST_BE_BETWEEN_1_AND_0": "Der Mindestwert muss zwischen 0,0 und 1,0 liegen.",
+    "ERROR_FAILURE_TO_ENCRYPT_THE_RECAPTCHA_API_KEY": "Bei der Verschlüsselung des ReCaptcha-API-Schlüssels ist ein Fehler aufgetreten.",
+    "ERROR_TENANT_NAME_MIN_LENGTH": "Der Mandantenname ist zu kurz.",
+    "ERROR_CANNOT_CREATE_ANOTHER_ROOT_TENANT": "Es ist bereits ein Root-Mandant vorhanden.",
+    "ERROR_CANNOT_ASSIGN_AS_ROOT_TENANT": "Der Mandant kann nicht als Root-Mandant zugewiesen werden.",
+    "ERROR_INVALID_URL_FOR_TERMS_AND_CONDITIONS": "Die URL für den Link zu den Nutzungsbedingungen ist ungültig.",
+    "ERROR_NO_TERMS_AND_CONDITIONS_URL_WAS_SPECIFIED": "Die URL der Nutzungsbedingungen ist erforderlich.",
+    "ERROR_NO_DEFAULT_RATE_LIMIT_SPECIFIED_FOR_LIMITED_API_RATE": "Es muss ein Ratenlimit angegeben werden."
 }

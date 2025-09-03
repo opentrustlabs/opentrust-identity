@@ -331,5 +331,21 @@
     "NEED_TO_CREATE_AN_ACCOUNT": "Trenger du å opprette en konto?",
     "OR": "Eller",
     "SIGN_IN_WITH": "Logg inn med",
-    "SELECT_A_LANGUAGE": "Velg et språk"
+    "SELECT_A_LANGUAGE": "Velg et språk",
+    "WELCOME": "Velkommen",
+    "QUICK_LINKS": "Hurtiglenker",
+    "CONFIGURE_KEY": "Konfigurer nøkkel",
+    "ERROR_RECAPTCHA_NOT_CONFIGURED_FOR_TENANT_WHICH_REQUIRES_RECAPTCHA": "Ingen Recaptcha er konfigurert for en leietaker som krever Recaptcha for registrering.",
+    "ERROR_INVALID_RECAPTCHA_VERSION_EXPECTING_VERSION_3": "Det oppsto en feil under validering av registreringen din.",
+    "ERROR_INVALID_RECAPTCHA_TOKEN": "Det oppsto en feil under validering av registreringen din.",
+    "ERROR_RECAPTCHA_SCORE_LOWER_THAN_ALLOWED": "Det oppsto en feil under validering av registreringen din. Dette kan skyldes at du er en bot. Vent 30 minutter eller mer før du prøver på nytt.",
+    "ERROR_V3_RECAPTCHA_REQUIRES_MINIMUM_SCORE_THRESHOLD_VALUE": "Versjon 3 av ReCaptcha krever en minimumsterskelverdi for poengsum.",
+    "ERROR_RECAPTCHA_MINIMUM_SCORE_MUST_BE_BETWEEN_1_AND_0": "Minimumsterskelverdien må være mellom 0,0 og 1,0.",
+    "ERROR_FAILURE_TO_ENCRYPT_THE_RECAPTCHA_API_KEY": "Det oppsto en feil under kryptering av ReCaptcha API-nøkkelen.",
+    "ERROR_TENANT_NAME_MIN_LENGTH": "Leietakernavnet er for kort.",
+    "ERROR_CANNOT_CREATE_ANOTHER_ROOT_TENANT": "En rotleietaker finnes allerede.",
+    "ERROR_CANNOT_ASSIGN_AS_ROOT_TENANT": "Leietakeren kan ikke tilordnes som rotleietaker.",
+    "ERROR_INVALID_URL_FOR_TERMS_AND_CONDITIONS": "URL-en for lenken til vilkår og betingelser er ugyldig.",
+    "ERROR_NO_TERMS_AND_CONDITIONS_URL_WAS_SPECIFIED": "URL-en til vilkår og betingelser er nødvendig.",
+    "ERROR_NO_DEFAULT_RATE_LIMIT_SPECIFIED_FOR_LIMITED_API_RATE": "En grenseverdi for hastighet må angis."
 }

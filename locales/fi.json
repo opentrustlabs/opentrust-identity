@@ -331,5 +331,21 @@
     "NEED_TO_CREATE_AN_ACCOUNT": "Haluatko luoda tilin?",
     "OR": "Tai",
     "SIGN_IN_WITH": "Kirjaudu sisään",
-    "SELECT_A_LANGUAGE": "Valitse kieli"
+    "SELECT_A_LANGUAGE": "Valitse kieli",
+    "WELCOME": "Tervetuloa",
+    "QUICK_LINKS": "Pikalinkit",
+    "CONFIGURE_KEY": "Määritä avain",
+    "ERROR_RECAPTCHA_NOT_CONFIGURED_FOR_TENANT_WHICH_REQUIRES_RECAPTCHA": "ReCAPTCHA-toimintoa vaativalle vuokralaiselle ei ole määritetty ReCAPTCHA-toimintoa.",
+    "ERROR_INVALID_RECAPTCHA_VERSION_EXPECTING_VERSION_3": "Rekisteröitymisesi vahvistamisessa tapahtui virhe.",
+    "ERROR_INVALID_RECAPTCHA_TOKEN": "Rekisteröitymisesi vahvistamisessa tapahtui virhe.",
+    "ERROR_RECAPTCHA_SCORE_LOWER_THAN_ALLOWED": "Rekisteröitymisesi vahvistamisessa tapahtui virhe. Tämä voi johtua siitä, että olet botti. Odota vähintään 30 minuuttia ennen kuin yrität uudelleen.",
+    "ERROR_V3_RECAPTCHA_REQUIRES_MINIMUM_SCORE_THRESHOLD_VALUE": "ReCAPTCHA-versio 3 vaatii vähimmäispistemäärän kynnysarvon.",
+    "ERROR_RECAPTCHA_MINIMUM_SCORE_MUST_BE_BETWEEN_1_AND_0": "Minimipistemäärän on oltava välillä 0,0–1,0.",
+    "ERROR_FAILURE_TO_ENCRYPT_THE_RECAPTCHA_API_KEY": "ReCAPTCHA-API-avaimen salauksessa tapahtui virhe.",
+    "ERROR_TENANT_NAME_MIN_LENGTH": "Vuokralaisen nimi on liian lyhyt.",
+    "ERROR_CANNOT_CREATE_ANOTHER_ROOT_TENANT": "Päävuokralainen on jo olemassa.",
+    "ERROR_CANNOT_ASSIGN_AS_ROOT_TENANT": "Vuokralaista ei voida määrittää päävuokralaiseksi.",
+    "ERROR_INVALID_URL_FOR_TERMS_AND_CONDITIONS": "Ehtojen ja edellytysten linkin URL-osoite on virheellinen.",
+    "ERROR_NO_TERMS_AND_CONDITIONS_URL_WAS_SPECIFIED": "Ehtojen ja edellytysten URL-osoite on pakollinen.",
+    "ERROR_NO_DEFAULT_RATE_LIMIT_SPECIFIED_FOR_LIMITED_API_RATE": "Nopeusraja on määritettävä."
 }

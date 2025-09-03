@@ -331,5 +331,21 @@
     "NEED_TO_CREATE_AN_ACCOUNT": "क्या आपको खाता बनाने की आवश्यकता है?",
     "OR": "या",
     "SIGN_IN_WITH": "इससे साइन इन करें",
-    "SELECT_A_LANGUAGE": "भाषा चुनें"
+    "SELECT_A_LANGUAGE": "भाषा चुनें",
+    "WELCOME": "स्वागत है",
+    "QUICK_LINKS": "त्वरित लिंक",
+    "CONFIGURE_KEY": "कॉन्फ़िगर कुंजी",
+    "ERROR_RECAPTCHA_NOT_CONFIGURED_FOR_TENANT_WHICH_REQUIRES_RECAPTCHA": "ऐसे टेनेंट के लिए कोई Recaptcha कॉन्फ़िगर नहीं किया गया है जिसके पंजीकरण के लिए Recaptcha की आवश्यकता हो।",
+    "ERROR_INVALID_RECAPTCHA_VERSION_EXPECTING_VERSION_3": "आपके पंजीकरण को सत्यापित करते समय एक त्रुटि हुई।",
+    "ERROR_INVALID_RECAPTCHA_TOKEN": "आपके पंजीकरण को सत्यापित करते समय एक त्रुटि हुई।",
+    "ERROR_RECAPTCHA_SCORE_LOWER_THAN_ALLOWED": "आपके पंजीकरण को सत्यापित करते समय एक त्रुटि हुई। ऐसा इसलिए हो सकता है क्योंकि आप एक बॉट हैं। कृपया पुनः प्रयास करने से पहले 30 मिनट या उससे अधिक प्रतीक्षा करें।",
+    "ERROR_V3_RECAPTCHA_REQUIRES_MINIMUM_SCORE_THRESHOLD_VALUE": "ReCaptcha के संस्करण 3 के लिए न्यूनतम स्कोर सीमा मान आवश्यक है।",
+    "ERROR_RECAPTCHA_MINIMUM_SCORE_MUST_BE_BETWEEN_1_AND_0": "न्यूनतम सीमा स्कोर 0.0 और 1.0 के बीच होना चाहिए।",
+    "ERROR_FAILURE_TO_ENCRYPT_THE_RECAPTCHA_API_KEY": "ReCaptcha API कुंजी को एन्क्रिप्ट करने में विफलता हुई।",
+    "ERROR_TENANT_NAME_MIN_LENGTH": "टेनेंट का नाम बहुत छोटा है।",
+    "ERROR_CANNOT_CREATE_ANOTHER_ROOT_TENANT": "एक रूट टेनेंट पहले से मौजूद है।",
+    "ERROR_CANNOT_ASSIGN_AS_ROOT_TENANT": "टेनेंट को रूट टेनेंट के रूप में असाइन नहीं किया जा सकता।",
+    "ERROR_INVALID_URL_FOR_TERMS_AND_CONDITIONS": "नियम और शर्तें लिंक का URL अमान्य है।",
+    "ERROR_NO_TERMS_AND_CONDITIONS_URL_WAS_SPECIFIED": "नियम और शर्तें URL आवश्यक है।",
+    "ERROR_NO_DEFAULT_RATE_LIMIT_SPECIFIED_FOR_LIMITED_API_RATE": "एक दर सीमा मान निर्दिष्ट करना आवश्यक है।"
 }
