@@ -38,8 +38,19 @@ class SystemSettingsEntity extends Model {
                 primaryKey: false,
                 allowNull: true,
                 field: "auditrecordretentionperioddays"
-
-            }
+            },
+            noReplyEmail: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: true,
+                field: "noreplyemail"
+            },
+            contactEmail: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: true,
+                field: "contactemail"
+            },
         }, 
         {
             sequelize,

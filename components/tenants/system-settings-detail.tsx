@@ -39,7 +39,9 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
         allowDuressPassword: systemSettings.allowDuressPassword,
         rootClientId: systemSettings.rootClientId,
         enablePortalAsLegacyIdp: systemSettings.enablePortalAsLegacyIdp,
-        auditRecordRetentionPeriodDays: systemSettings.auditRecordRetentionPeriodDays || DEFAULT_AUDIT_RECORD_RETENTION_PERIOD_DAYS
+        auditRecordRetentionPeriodDays: systemSettings.auditRecordRetentionPeriodDays || DEFAULT_AUDIT_RECORD_RETENTION_PERIOD_DAYS,
+        noReplyEmail: systemSettings.noReplyEmail,
+        contactEmail: systemSettings.contactEmail
     };
 
     const initCaptchaInput: CaptchaConfigInput = {
@@ -73,7 +75,9 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
                 allowDuressPassword: data.updateSystemSettings.allowDuressPassword,
                 rootClientId: data.updateSystemSettings.rootClientId,
                 enablePortalAsLegacyIdp: data.updateSystemSettings.enablePortalAsLegacyIdp,
-                auditRecordRetentionPeriodDays: data.updateSystemSettings.auditRecordRetentionPeriodDays
+                auditRecordRetentionPeriodDays: data.updateSystemSettings.auditRecordRetentionPeriodDays,
+                contactEmail: data.updateSystemSettings.contactEmail,
+                noReplyEmail: data.updateSystemSettings.noReplyEmail
             });
             setShowMutationSnackbar(true);
         },
@@ -246,10 +250,8 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
                                             }}
                                         />
                                     </Grid2>
-                                    <Grid2 size={12}>
-                                        Root Client ID:
-                                    </Grid2>
-                                    <Grid2 size={12}>
+                                    <Grid2 marginBlock={"8px"} size={12}>
+                                        <div>Root Client ID:</div>
                                         <TextField
                                             size="small"
                                             fullWidth={true}
@@ -261,10 +263,8 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
                                             }}                         
                                         />                                        
                                     </Grid2>
-                                    <Grid2 size={12}>
-                                        Audit Record Retention Period (Days). Defaults to {DEFAULT_AUDIT_RECORD_RETENTION_PERIOD_DAYS}
-                                    </Grid2>
-                                    <Grid2 size={12}>
+                                    <Grid2 marginBlock={"8px"} size={12}>
+                                        <div>Audit Record Retention Period (Days). Defaults to {DEFAULT_AUDIT_RECORD_RETENTION_PERIOD_DAYS}</div>
                                         <TextField
                                             size="small"
                                             fullWidth={true}
@@ -280,6 +280,34 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
                                             }}                         
                                         />                                        
                                     </Grid2>
+                                    <Grid2 marginBlock={"8px"} size={12}>
+                                        <div>No-Reply Email (Optional, but recommended)</div>
+                                        <TextField
+                                            size="small"
+                                            fullWidth={true}
+                                            value={systemSettingsUpdateInput.noReplyEmail || ""}
+                                            onChange={(evt) => {
+                                                systemSettingsUpdateInput.noReplyEmail = evt.target.value;
+                                                setMarkDirty(true);
+                                                setSystemSettingsUpdateInput({...systemSettingsUpdateInput});
+                                            }}                         
+                                        />                                        
+                                    </Grid2>
+
+                                    <Grid2 marginBlock={"8px"} size={12}>
+                                        <div>Contact Email (Optional, but recommended)</div>
+                                        <TextField
+                                            size="small"
+                                            fullWidth={true}
+                                            value={systemSettingsUpdateInput.contactEmail || ""}
+                                            onChange={(evt) => {
+                                                systemSettingsUpdateInput.contactEmail = evt.target.value;
+                                                setMarkDirty(true);
+                                                setSystemSettingsUpdateInput({...systemSettingsUpdateInput});                                                
+                                            }}                         
+                                        />                                        
+                                    </Grid2>
+
                                     {containsScope(SYSTEM_SETTINGS_UPDATE_SCOPE, profile?.scope) &&
                                         <Grid2 size={12}>
                                             <DetailSectionActionHandler
