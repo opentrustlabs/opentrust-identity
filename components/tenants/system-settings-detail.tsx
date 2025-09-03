@@ -188,6 +188,9 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
                                 {errorMessage &&
                                     <Alert severity="error" onClose={() => setErrorMessage(null)} >{errorMessage}</Alert>
                                 }
+                                <Grid2 marginBottom={"8px"} sx={{ textDecoration: "underline" }} size={12} fontWeight={"bold"}>
+                                    Global Settings
+                                </Grid2>
                                 <Grid2 alignItems={"stretch"} container size={12} spacing={1}>
                                     <Grid2 size={11}>
                                         Software version:
@@ -259,7 +262,7 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
                                         />                                        
                                     </Grid2>
                                     <Grid2 size={12}>
-                                        Audit Record Retention Period (Days) Defaults to {DEFAULT_AUDIT_RECORD_RETENTION_PERIOD_DAYS}:
+                                        Audit Record Retention Period (Days). Defaults to {DEFAULT_AUDIT_RECORD_RETENTION_PERIOD_DAYS}
                                     </Grid2>
                                     <Grid2 size={12}>
                                         <TextField
@@ -302,12 +305,12 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
                             {systemSettings.systemCategories.slice(0, categoriesMidpoint).map(
                                 (systemCategory: SystemCategory) => (
                                     <Paper sx={{ padding: "8px", marginTop: "16px" }} elevation={2} key={systemCategory.categoryName}>
-                                        <Grid2 sx={{ textDecoration: "underline" }} size={12} fontWeight={"bold"}>
+                                        <Grid2 marginBottom={"8px"} sx={{ textDecoration: "underline" }} size={12} fontWeight={"bold"}>
                                             {systemCategory.categoryName}
                                         </Grid2>
                                         {systemCategory.categoryEntries.map(
                                             (categoryEntry: CategoryEntry) => (
-                                                <Grid2 size={12} paddingTop={"4px"} container key={categoryEntry.categoryKey}>
+                                                <Grid2 size={12} paddingTop={"2px"} container key={categoryEntry.categoryKey}>
                                                     <Grid2 sx={{overflowWrap: "break-word"}} size={6}>
                                                         {categoryEntry.categoryKey}
                                                     </Grid2>
@@ -522,12 +525,12 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
                             {systemSettings.systemCategories.slice(categoriesMidpoint).map(
                                 (systemCategory: SystemCategory) => (                                
                                     <Paper sx={{ padding: "8px", marginTop: "16px"}} elevation={2} key={systemCategory.categoryName}>
-                                        <Grid2 sx={{ textDecoration: "underline" }} size={12} fontWeight={"bold"}>
+                                        <Grid2 marginBottom={"8px"}  sx={{ textDecoration: "underline" }} size={12} fontWeight={"bold"}>
                                             {systemCategory.categoryName}
                                         </Grid2>
                                         {systemCategory.categoryEntries.map(
                                             (categoryEntry: CategoryEntry) => (
-                                                <Grid2 size={12} paddingTop={"4px"} container key={categoryEntry.categoryKey}>
+                                                <Grid2 size={12} paddingTop={"2px"} container key={categoryEntry.categoryKey}>
                                                     <Grid2 sx={{overflowWrap: "break-word"}} size={6}>
                                                         {categoryEntry.categoryKey}
                                                     </Grid2>

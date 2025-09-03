@@ -331,5 +331,21 @@
     "NEED_TO_CREATE_AN_ACCOUNT": "Devi creare un account?",
     "OR": "Oppure",
     "SIGN_IN_WITH": "Accedi con",
-    "SELECT_A_LANGUAGE": "Seleziona una lingua"
+    "SELECT_A_LANGUAGE": "Seleziona una lingua",
+    "WELCOME": "Benvenuto",
+    "QUICK_LINKS": "Link rapidi",
+    "CONFIGURE_KEY": "Configura chiave",
+    "ERROR_RECAPTCHA_NOT_CONFIGURED_FOR_TENANT_WHICH_REQUIRES_RECAPTCHA": "Nessun Recaptcha è stato configurato per un tenant che richiede Recaptcha per la registrazione.",
+    "ERROR_INVALID_RECAPTCHA_VERSION_EXPECTING_VERSION_3": "Si è verificato un errore durante la convalida della registrazione.",
+    "ERROR_INVALID_RECAPTCHA_TOKEN": "Si è verificato un errore durante la convalida della registrazione.",
+    "ERROR_RECAPTCHA_SCORE_LOWER_THAN_ALLOWED": "Si è verificato un errore durante la convalida della registrazione. Potrebbe essere dovuto al fatto che sei un bot. Attendi 30 minuti o più prima di riprovare.",
+    "ERROR_V3_RECAPTCHA_REQUIRES_MINIMUM_SCORE_THRESHOLD_VALUE": "La versione 3 di ReCaptcha richiede un valore di soglia minimo.",
+    "ERROR_RECAPTCHA_MINIMUM_SCORE_MUST_BE_BETWEEN_1_AND_0": "Il punteggio di soglia minimo deve essere compreso tra 0,0 e 1,0.",
+    "ERROR_FAILURE_TO_ENCRYPT_THE_RECAPTCHA_API_KEY": "Si è verificato un errore durante la crittografia della chiave API di ReCaptcha.",
+    "ERROR_TENANT_NAME_MIN_LENGTH": "Il nome del tenant è troppo corto.",
+    "ERROR_CANNOT_CREATE_ANOTHER_ROOT_TENANT": "Esiste già un tenant root.",
+    "ERROR_CANNOT_ASSIGN_AS_ROOT_TENANT": "Impossibile assegnare il tenant come tenant root.",
+    "ERROR_INVALID_URL_FOR_TERMS_AND_CONDITIONS": "L'URL per il link ai termini e condizioni non è valido.",
+    "ERROR_NO_TERMS_AND_CONDITIONS_URL_WAS_SPECIFIED": "L'URL dei termini e condizioni è obbligatorio.",
+    "ERROR_NO_DEFAULT_RATE_LIMIT_SPECIFIED_FOR_LIMITED_API_RATE": "È necessario specificare un valore per il limite di velocità."
 }
