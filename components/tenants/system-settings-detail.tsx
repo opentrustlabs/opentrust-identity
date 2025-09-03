@@ -410,7 +410,7 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
                                             {changeApiKey !== true &&
                                                 <Grid2 container size={12} spacing={1}>
                                                     <Grid2 size={10}>
-                                                        {data === null || data.getCaptchaConfig === null &&
+                                                        {(!data || data.getCaptchaConfig === null) &&
                                                             <TextField disabled={true} size="small" fullWidth={true} sx={{backgroundColor: "#efefef"}}></TextField>
                                                         }
                                                         {data && data.getCaptchaConfig &&
@@ -511,7 +511,7 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
                                             }}
                                             markDirty={captchaConfigMarkDirty}
                                             disableSubmit={false}
-                                            enableRestoreDefault={data !== null && data.getCaptchaConfig !== null}
+                                            enableRestoreDefault={data && data.getCaptchaConfig !== null}
                                             restoreDefaultHandler={() => {
                                                 setShowConfirmRecaptchaRemoveDialogOpen(true);
                                             }}
