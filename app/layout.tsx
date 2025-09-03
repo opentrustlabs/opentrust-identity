@@ -120,8 +120,8 @@ export default function RootLayout({
                                         {!isProfileLayoutPage &&
                                             <AuthContextProvider>
                                                 <TenantContextProvider>
-                                                    {isAuthenticationLayoutPage &&                                         
-                                                        <AuthenticationLayout>{children}</AuthenticationLayout>                                        
+                                                    {isAuthenticationLayoutPage &&                                                         
+                                                        <AuthenticationLayout>{children}</AuthenticationLayout>                                                        
                                                     }
                                                     {!isAuthenticationLayoutPage &&                                        
                                                         <ManagementTenantFilter>

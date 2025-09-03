@@ -51,6 +51,12 @@ export const LOGIN_FAILURE_POLICY_CONFIGURATION_MUTATION = gql(`
     }
 `);
 
+export const REMOVE_LOGIN_FAILURE_POLICY_CONFIGURATION_MUTATION = gql(`
+    mutation removeTenantLoginFailurePolicy($tenantId: String!) {
+        removeTenantLoginFailurePolicy(tenantId: $tenantId) 
+    }    
+`);
+
 export const PASSWORD_CONFIGURATION_MUTATION = gql(`
     mutation setTenantPasswordConfig($passwordConfigInput: PasswordConfigInput!){
         setTenantPasswordConfig(passwordConfigInput: $passwordConfigInput){
@@ -68,6 +74,12 @@ export const PASSWORD_CONFIGURATION_MUTATION = gql(`
             maxRepeatingCharacterLength
             passwordRotationPeriodDays        
         }
+    }
+`);
+
+export const PASSWORD_CONFIGURATION_DELETION_MUTATION = gql(`
+    mutation removeTenantPasswordConfig($tenantId: String!) {
+        removeTenantPasswordConfig(tenantId: $tenantId)
     }
 `);
 
@@ -107,6 +119,12 @@ export const TENANT_LOOK_AND_FEEL_MUTATION = gql(`
             authenticationlogomimetype
             authenticationheadertext     
         }
+    }
+`);
+
+export const REMOVE_TENANT_LOOK_AND_FEEL_MUTATION = gql(`
+    mutation removeTenantLookAndFeel($tenantId: String!){
+        removeTenantLookAndFeel(tenantId: $tenantId)
     }
 `);
 
@@ -889,8 +907,8 @@ export const USER_REGISTRATION_STATE_RESPONSE_FRAGMENT = gql(`
 `);
 
 export const REGISTER_USER_MUTATION = gql`
-    mutation registerUser($tenantId: String!, $userInput: UserCreateInput!, $preAuthToken: String) {
-        registerUser(tenantId: $tenantId, userInput: $userInput, preAuthToken: $preAuthToken) {
+    mutation registerUser($tenantId: String!, $userInput: UserCreateInput!, $preAuthToken: String, $recaptchaToken: String) {
+        registerUser(tenantId: $tenantId, userInput: $userInput, preAuthToken: $preAuthToken, recaptchaToken: $recaptchaToken) {
             ...UserRegistrationStateResponseFragment
         }
     }
@@ -1102,3 +1120,18 @@ export const PROFILE_ADD_RECOVERY_EMAIL_MUTATION = gql`
 
     ${PROFILE_EMAIL_CHANGE_RESPONSE_FRAGMENT}
 `;
+
+export const SET_CAPTCHA_CONFIG_MUTATION = gql(`
+    mutation setCaptchaConfig($captchaConfigInput: CaptchaConfigInput!){
+        setCaptchaConfig(captchaConfigInput: $captchaConfigInput) {
+            alias
+            projectId
+        }
+    }
+`);
+
+export const REMOVE_CAPTCHA_CONFIG_MUTATION = gql(`
+    mutation removeCaptchaConfig {
+        removeCaptchaConfig
+    }
+`);

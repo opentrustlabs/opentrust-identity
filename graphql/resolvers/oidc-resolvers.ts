@@ -1,6 +1,6 @@
 import ClientService from "@/lib/service/client-service";
 import TenantService from "@/lib/service/tenant-service";
-import { Resolvers, QueryResolvers, MutationResolvers, Tenant, Client, SigningKey, Scope, AuthenticationGroup, AuthorizationGroup, FederatedOidcProvider, Contact, User, TenantLoginFailurePolicy, TenantPasswordConfig, TenantLegacyUserMigrationConfig, TenantAnonymousUserConfiguration, TenantLookAndFeel, RateLimitServiceGroup, TenantRateLimitRel, RelSearchResultItem, MarkForDelete, PortalUserProfile } from "@/graphql/generated/graphql-types";
+import { Resolvers, Tenant, Client, SigningKey, Scope, AuthenticationGroup, AuthorizationGroup, FederatedOidcProvider, Contact, User, TenantLoginFailurePolicy, TenantPasswordConfig, TenantLegacyUserMigrationConfig, TenantAnonymousUserConfiguration, TenantLookAndFeel, RateLimitServiceGroup, TenantRateLimitRel, RelSearchResultItem, MarkForDelete, PortalUserProfile } from "@/graphql/generated/graphql-types";
 import SigningKeysService from "@/lib/service/keys-service";
 import ScopeService from "@/lib/service/scope-service";
 import GroupService from "@/lib/service/group-service";
@@ -633,7 +633,7 @@ const resolvers: Resolvers = {
             return tenantId;
         },  
         setTenantPasswordConfig: async(_: any, { passwordConfigInput }, oidcContext) => {
-            const tenantService: TenantService = new TenantService(oidcContext);            
+            const tenantService: TenantService = new TenantService(oidcContext);
             const tenantPasswordConfig: TenantPasswordConfig = {
                 passwordHashingAlgorithm: passwordConfigInput.passwordHashingAlgorithm,
                 passwordMaxLength: passwordConfigInput.passwordMaxLength,
@@ -652,6 +652,11 @@ const resolvers: Resolvers = {
             };
             await tenantService.assignPasswordConfigToTenant(tenantPasswordConfig);
             return tenantPasswordConfig;
+        },
+        removeTenantPasswordConfig: async(_: any, { tenantId }, oidcContext) => {
+            const tenantService: TenantService = new TenantService(oidcContext);
+            await tenantService.removeTenantPasswordConfig(tenantId);
+            return tenantId;
         },
         setTenantLegacyUserMigrationConfig: async(_: any, { tenantLegacyUserMigrationConfigInput }, oidcContext) => {
             const tenantLegacyUserMigrationConfig: TenantLegacyUserMigrationConfig = {
@@ -692,10 +697,16 @@ const resolvers: Resolvers = {
                 adminheaderbackgroundcolor: tenantLookAndFeelInput.adminheaderbackgroundcolor,
                 adminheadertext: tenantLookAndFeelInput.adminheadertext,
                 adminheadertextcolor: tenantLookAndFeelInput.adminheadertextcolor,
-                adminlogo: tenantLookAndFeelInput.adminlogo
+                adminlogo: tenantLookAndFeelInput.adminlogo,
+                authenticationlogouri: tenantLookAndFeelInput.authenticationlogouri
             }
             await tenantService.setTenantLookAndFeel(tenantLookAndFeel);
             return tenantLookAndFeel;
+        },
+        removeTenantLookAndFeel: async(_: any, { tenantId }, oidcContext) => {
+            const tenantService: TenantService = new TenantService(oidcContext);
+            await tenantService.removeTenantLookAndFeel(tenantId);
+            return tenantId;
         },
         addDomainToTenantManagement: async(_: any, { tenantId, domain }, oidcContext) => {
             const tenantService: TenantService = new TenantService(oidcContext);
@@ -942,9 +953,9 @@ const resolvers: Resolvers = {
             const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);
             return service.authenticateHandleUserCodeInput(userCode);
         },
-        registerUser: async(_: any, { tenantId, userInput, preAuthToken, deviceCodeId }, oidcContext) => {
+        registerUser: async(_: any, { tenantId, userInput, preAuthToken, deviceCodeId, recaptchaToken }, oidcContext) => {
             const service: RegisterUserService = new RegisterUserService(oidcContext);
-            return service.registerUser(userInput, tenantId, preAuthToken || null, deviceCodeId || null);
+            return service.registerUser(userInput, tenantId, preAuthToken || null, deviceCodeId || null, recaptchaToken || null);
         },
         registerVerifyEmailAddress: async(_: any, { userId, token, registrationSessionToken, preAuthToken }, oidcContext) => {
             const service: RegisterUserService = new RegisterUserService(oidcContext);
@@ -1024,6 +1035,15 @@ const resolvers: Resolvers = {
             const service: RegisterUserService = new RegisterUserService(oidcContext);
             return service.profileCancelEmailChange(changeEmailSessionToken);
         },
+        setCaptchaConfig: async(_: any, { captchaConfigInput }, oidcContext) => {
+            const service: TenantService = new TenantService(oidcContext);
+            return service.setCaptchaConfig(captchaConfigInput);
+        },            
+        removeCaptchaConfig: async(_: any, {}, oidcContext) => {
+            const service: TenantService = new TenantService(oidcContext);
+            await service.removeCaptchaConfig();
+            return "";
+        }
     },
     PortalUserProfile: {
         recoveryEmail: async(profile: PortalUserProfile, _: any, oidcContext: OIDCContext) => {

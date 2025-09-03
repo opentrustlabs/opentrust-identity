@@ -179,7 +179,7 @@ type Mutation {
     authenticateWithSocialOIDCProvider(preAuthToken: String, tenantId: String!, federatedOIDCProviderId: String!): UserAuthenticationStateResponse!
 
     ## Registration Flows
-    registerUser(tenantId: String!, userInput: UserCreateInput!, preAuthToken: String, deviceCodeId: String): UserRegistrationStateResponse!
+    registerUser(tenantId: String!, userInput: UserCreateInput!, recaptchaToken: String, preAuthToken: String, deviceCodeId: String): UserRegistrationStateResponse!
     registerVerifyEmailAddress(userId: String!, token: String!, registrationSessionToken: String!, preAuthToken: String): UserRegistrationStateResponse!
     registerConfigureTOTP(userId: String!, registrationSessionToken: String!, preAuthToken: String, skip: Boolean!): UserRegistrationStateResponse!
     registerValidateTOTP(userId: String!, registrationSessionToken: String!, totpTokenValue: String!, preAuthToken: String): UserRegistrationStateResponse!
@@ -290,6 +290,7 @@ enum SecretObjectType {
     PRIVATE_KEY
     PRIVATE_KEY_PASSWORD
     OIDC_PROVIDER_CLIENT_SECRET
+    CAPTCHA_API_KEY
 }
 
 type TenantLoginFailurePolicy {
@@ -382,8 +383,9 @@ type CaptchaConfig {
     projectId: String
     siteKey: String!
     apiKey: String!
-    minScopeThreshold: Float
+    minScoreThreshold: Float
     useCaptchaV3: Boolean!
+    useEnterpriseCaptcha: Boolean!
 }
 
 # domain is the primary key (unique) in this relationship.
@@ -821,6 +823,7 @@ type TenantLookAndFeel {
     authenticationheaderbackgroundcolor: String
     authenticationheadertextcolor: String
     authenticationlogo: String
+    authenticationlogouri: String
     authenticationlogomimetype: String
     authenticationheadertext: String
     footerlinks: [FooterLink]
@@ -838,6 +841,13 @@ type TenantMetaData {
     tenant: Tenant!
     systemSettings: SystemSettings!
     socialOIDCProviders: [FederatedOIDCProvider!]!
+    recaptchaMetaData: RecaptchaMetaData
+}
+
+type RecaptchaMetaData {
+    recaptchaSiteKey: String!
+    useEnterpriseCaptcha: Boolean!
+    useCaptchaV3: Boolean!
 }
 
 type SchedulerLock {
@@ -1378,6 +1388,7 @@ input TenantLookAndFeelInput {
     authenticationheaderbackgroundcolor: String
     authenticationheadertextcolor: String
     authenticationlogo: String
+    authenticationlogouri: String
     authenticationlogomimetype: String
     authenticationheadertext: String
     footerlinks: [FooterLinkInput]
@@ -1630,8 +1641,9 @@ input CaptchaConfigInput {
     projectId: String
     siteKey: String!
     apiKey: String!
-    minScopeThreshold: Float
+    minScoreThreshold: Float
     useCaptchaV3: Boolean!
+    useEnterpriseCaptcha: Boolean!
 }
 
 input SystemSettingsUpdateInput {

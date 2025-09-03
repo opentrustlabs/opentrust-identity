@@ -27,7 +27,7 @@ class CaptchaConfigEntity extends Model {
                 allowNull: false,
                 field: "apikey"
             },
-            minScopeThreshold: {
+            minScoreThreshold: {
                 type: DataTypes.FLOAT,
                 primaryKey: false,
                 allowNull: true,
@@ -38,8 +38,13 @@ class CaptchaConfigEntity extends Model {
                 primaryKey: false,
                 allowNull: false,
                 field: "userecaptchav3"
+            },
+            useEnterpriseCaptcha: {
+                type: DataTypes.BOOLEAN,
+                primaryKey: false,
+                allowNull: false,
+                field: "useenterprisecaptcha"
             }
-
         }, 
         {
             sequelize,

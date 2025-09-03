@@ -16,6 +16,7 @@ import ArrowDropDownOutlinedIcon from '@mui/icons-material/ArrowDropDownOutlined
 import ArrowDropUpOutlinedIcon from '@mui/icons-material/ArrowDropUpOutlined';
 import InputAdornment from "@mui/material/InputAdornment";
 import { validatePasswordFormat } from "@/utils/password-utils";
+import { useIntl } from "react-intl";
 
 export interface DuressPasswordConfigurationProps extends RegistrationComponentsProps {
     tenantPasswordConfig: TenantPasswordConfig
@@ -29,6 +30,9 @@ const DuressPasswordConfiguration: React.FC<DuressPasswordConfigurationProps> = 
     tenantPasswordConfig
 }) => {
 
+    // CONTEXT VARIABLES
+    const intl = useIntl();
+    
     // STATE VARIABLES
     const [duressPassword, setDuressPassword] = React.useState<string>("");
     const [repeatDuressPassword, setRepeatDuressPassword] = React.useState<string>("");
@@ -58,8 +62,7 @@ const DuressPasswordConfiguration: React.FC<DuressPasswordConfigurationProps> = 
                 </Grid2>
                 <Grid2 marginBottom={"8px"} size={11}>
                     <div style={{ marginBottom: "16px", fontWeight: "bold", fontSize: "1.0em" }}>
-                        Do you want to add a duress password? It is not required, but is recommended. You
-                        can always add one later if you choose.
+                        {intl.formatMessage({id: "OPTIONAL_ADD_DURESS_PASSWORD"})}
                     </div>
                 </Grid2>
                 <Grid2 marginBottom={"8px"} size={12}>
@@ -178,7 +181,7 @@ const DuressPasswordConfiguration: React.FC<DuressPasswordConfigurationProps> = 
                         });
                     }}
                 >
-                    Skip
+                    {intl.formatMessage({id: "SKIP"})}
                 </Button>
 
                 <Button                    
@@ -195,12 +198,12 @@ const DuressPasswordConfiguration: React.FC<DuressPasswordConfigurationProps> = 
                         });
                     }}
                 >
-                    Add
+                    {intl.formatMessage({id: "ADD"})}
                 </Button>
                 <Button
                     onClick={() => onRegistrationCancelled()}
                 >
-                    Cancel
+                    {intl.formatMessage({id: "CANCEL"})}
                 </Button>
             </Stack>
         </React.Fragment>

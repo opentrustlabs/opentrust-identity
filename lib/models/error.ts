@@ -971,6 +971,71 @@ export const ERROR_CODES: Record<string, ErrorDetail> = {
         errorCode: "EC00189",
         errorKey: "ERROR_AUTHENTICATION_GROUPS_CANNOT_BE_ADDED_TO_SERVICE_CLIENTS",
         errorMessage: "Authentication groups cannot be added to service account clients."
+    },
+    EC00190: {
+        errorCode: "EC00190",
+        errorKey: "ERROR_RECAPTCHA_NOT_CONFIGURED_FOR_TENANT_WHICH_REQUIRES_RECAPTCHA",
+        errorMessage: "No Recaptcha has been configured for a tenant which requires Recaptcha for registration."
+    },
+    EC00191: {
+        errorCode: "EC00191",
+        errorKey: "ERROR_INVALID_RECAPTCHA_VERSION_EXPECTING_VERSION_3",
+        errorMessage: "There was an error validating your registration."
+    },
+    EC00192: {
+        errorCode: "EC00192",
+        errorKey: "ERROR_INVALID_RECAPTCHA_TOKEN",
+        errorMessage: "There was an error validating your registration."
+    },
+    EC00193: {
+        errorCode: "EC00193",
+        errorKey: "ERROR_RECAPTCHA_SCORE_LOWER_THAN_ALLOWED",
+        errorMessage: "There was an error validating your registration This could be because you are a bot. Please wait 30 minutes or more before trying again."
+    },
+    EC00194: {
+        errorCode: "EC00194",
+        errorKey: "ERROR_V3_RECAPTCHA_REQUIRES_MINIMUM_SCORE_THRESHOLD_VALUE",
+        errorMessage: "Version 3 of ReCaptcha requires a minimum score threshold value."
+    },
+    EC00195: {
+        errorCode: "EC00195",
+        errorKey: "ERROR_RECAPTCHA_MINIMUM_SCORE_MUST_BE_BETWEEN_1_AND_0",
+        errorMessage: "The minimum threshold score must be between 0.0 and 1.0."
+    },
+    EC00196: {
+        errorCode: "EC00196",
+        errorKey: "ERROR_FAILURE_TO_ENCRYPT_THE_RECAPTCHA_API_KEY",
+        errorMessage: "There was a failure encrypting the ReCaptcha API key."
+    },
+    EC00197: {
+        errorCode: "EC00197",
+        errorKey: "ERROR_TENANT_NAME_MIN_LENGTH",
+        errorMessage: "The tenant name is too short."
+    },
+    EC00198: {
+        errorCode: "EC00198",
+        errorKey: "ERROR_CANNOT_CREATE_ANOTHER_ROOT_TENANT",
+        errorMessage: "A root tenant already exists."
+    },
+    EC00199: {
+        errorCode: "EC00199",
+        errorKey: "ERROR_CANNOT_ASSIGN_AS_ROOT_TENANT",
+        errorMessage: "The tenant cannot be assigned as a root tenant."
+    },
+    EC00200: {
+        errorCode: "EC00200",
+        errorKey: "ERROR_INVALID_URL_FOR_TERMS_AND_CONDITIONS",
+        errorMessage: "The URL for the terms and conditions link is invalid."
+    },
+    EC00201: {
+        errorCode: "EC00201",
+        errorKey: "ERROR_NO_TERMS_AND_CONDITIONS_URL_WAS_SPECIFIED",
+        errorMessage: "The terms and conditions URL is required."
+    },
+    EC00202: {
+        errorCode: "EC00202",
+        errorKey: "ERROR_NO_DEFAULT_RATE_LIMIT_SPECIFIED_FOR_LIMITED_API_RATE",
+        errorMessage: "A rate limit value needs to be specified."
     }
 }
 

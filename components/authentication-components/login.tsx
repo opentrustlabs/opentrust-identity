@@ -555,7 +555,7 @@ const Login: React.FC<LoginProps>= ({
                                     <Typography component="div" sx={{width: "100%"}}>
                                         <Alert severity="info" sx={{width: "100%", fontSize: "0.95em"}}>
                                             <Grid2 marginBottom={"8px"} size={{xs: 12}}>
-                                                <span style={{fontWeight: "bold"}}>{authorizationScopeApprovalData.clientName}</span>
+                                                <span style={{fontWeight: "bold"}}>{authorizationScopeApprovalData.clientName} </span>
                                                 <span>{intl.formatMessage({id: "SCOPE_PERMISSION_REQUEST"})}:</span>
                                             </Grid2>
                                             <Grid2 size={{xs: 12}}>
@@ -613,8 +613,9 @@ const Login: React.FC<LoginProps>= ({
                                         {intl.formatMessage({id: "NEXT"})}
                                     </Button>
                                     <Button
+                                        variant="contained"  
                                         onClick={() => {
-                                            handleCancelAuthentication(userAuthenticationState);
+                                            handleCancelAuthentication(userAuthenticationState);                                            
                                         }}
                                     >
                                         {intl.formatMessage({id: "CANCEL"})}
@@ -667,7 +668,7 @@ const Login: React.FC<LoginProps>= ({
                                                     <Grid2 size={breakPoints.isMedium ? 2 : 1.5}>
                                                         {getIconForSocialProvider(provider)}
                                                     </Grid2>
-                                                    <Grid2 size={breakPoints.isMedium ? 10 : 10.5}>Sign in with {provider.federatedOIDCProviderName}</Grid2>
+                                                    <Grid2 size={breakPoints.isMedium ? 10 : 10.5}>{intl.formatMessage({id: "SIGN_IN_WITH"})} {provider.federatedOIDCProviderName}</Grid2>
                                                 </Grid2>
                                             )
                                         )}
@@ -695,9 +696,9 @@ const Login: React.FC<LoginProps>= ({
                                         "& .MuiOutlinedInput-root": {
                                             "&.Mui-focused fieldset": {
                                                 borderColor:
-                                                    (tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheaderbackgroundcolor === "white" ||
-                                                        tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheaderbackgroundcolor === "FFF" ||
-                                                        tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheaderbackgroundcolor === "fff") ?
+                                                    (tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheaderbackgroundcolor === "white" ||                                                        
+                                                        tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheaderbackgroundcolor === "#FFFFFF" ||
+                                                        tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheaderbackgroundcolor === "#ffffff") ?
                                                         "lightgray" :
                                                         tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheaderbackgroundcolor
                                             }

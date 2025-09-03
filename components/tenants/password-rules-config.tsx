@@ -1,17 +1,19 @@
 "use client";
 import { TENANT_PASSWORD_CONFIG_QUERY } from "@/graphql/queries/oidc-queries";
 import { useMutation, useQuery } from "@apollo/client";
-import React from "react";
+import React, { useContext } from "react";
 import DataLoading from "../layout/data-loading";
 import ErrorComponent from "../error/error-component";
-import { PasswordConfigInput, TenantPasswordConfig } from "@/graphql/generated/graphql-types";
-import { DEFAULT_TENANT_PASSWORD_CONFIGURATION, MFA_AUTH_TYPE_DISPLAY, MFA_AUTH_TYPE_NONE, MFA_AUTH_TYPES, PASSWORD_HASHING_ALGORITHMS, PASSWORD_HASHING_ALGORITHMS_DISPLAY } from "@/utils/consts";
+import { PasswordConfigInput, PortalUserProfile, TenantPasswordConfig } from "@/graphql/generated/graphql-types";
+import { DEFAULT_TENANT_PASSWORD_CONFIGURATION, MFA_AUTH_TYPE_DISPLAY, MFA_AUTH_TYPE_NONE, MFA_AUTH_TYPES, PASSWORD_HASHING_ALGORITHMS, PASSWORD_HASHING_ALGORITHMS_DISPLAY, TENANT_UPDATE_SCOPE } from "@/utils/consts";
 import Grid2 from "@mui/material/Grid2";
 import TextField from "@mui/material/TextField";
-import { Alert, Autocomplete, Checkbox, Divider, MenuItem, Select } from "@mui/material";
-import { PASSWORD_CONFIGURATION_MUTATION } from "@/graphql/mutations/oidc-mutations";
+import { Alert, Autocomplete, Button, Checkbox, Dialog, DialogActions, DialogContent, Divider, MenuItem, Select, Typography } from "@mui/material";
+import { PASSWORD_CONFIGURATION_DELETION_MUTATION, PASSWORD_CONFIGURATION_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import DetailSectionActionHandler from "../layout/detail-section-action-handler";
 import { useIntl } from 'react-intl';
+import { AuthContext, AuthContextProps } from "../contexts/auth-context";
+import { containsScope } from "@/utils/authz-utils";
 
 
 export interface PasswordRulesConfigurationProps {
@@ -30,6 +32,8 @@ const PasswordRulesConfiguration: React.FC<PasswordRulesConfigurationProps> = ({
 
     // CONTEXT VARIABLES
     const intl = useIntl();
+    const authContextProps: AuthContextProps = useContext(AuthContext);
+    const profile: PortalUserProfile | null = authContextProps.portalUserProfile;
     
     const initInput: PasswordConfigInput = DEFAULT_TENANT_PASSWORD_CONFIGURATION;
     initInput.tenantId = tenantId;
@@ -37,35 +41,47 @@ const PasswordRulesConfiguration: React.FC<PasswordRulesConfigurationProps> = ({
     // STATE VARIABLES
     const [markDirty, setMarkDirty] = React.useState<boolean>(false);
     const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
-    const [passwordConfigInput, setPasswordConfigInput] = React.useState<PasswordConfigInput | null>(null);
-    const [revertToInput, setRevertToInput] = React.useState<PasswordConfigInput | null>(null);
-
+    const [passwordConfigInput, setPasswordConfigInput] = React.useState<PasswordConfigInput>(initInput);
+    const [revertToInput, setRevertToInput] = React.useState<PasswordConfigInput>(initInput);
+    const [hasSystemDefaultPasswordRules, setHasSystemDefaultPasswordRules] = React.useState<boolean>(false);
+    const [showConfirmRestorePasswordDefaultDialog, setShowConfirmRestorePasswordDefaultDialog] = React.useState<boolean>(false)
+    
 
     // GRAPHQL FUNCTIONS
-    // data may be null, so present some sensible defaults
-    const { loading, error } = useQuery(TENANT_PASSWORD_CONFIG_QUERY, {
+    // data.getTenantPasswordConfig may be null, so present some sensible defaults
+    const {loading, error, refetch } = useQuery(TENANT_PASSWORD_CONFIG_QUERY, {
         variables: {
             tenantId: tenantId
         },
+        notifyOnNetworkStatusChange: true,
         onCompleted(data) {
             if (data && data.getTenantPasswordConfig) {
                 const config: TenantPasswordConfig = data.getTenantPasswordConfig as TenantPasswordConfig;
-                initInput.maxRepeatingCharacterLength = config.maxRepeatingCharacterLength;
-                initInput.mfaTypesRequired = config.mfaTypesRequired;
-                initInput.passwordHashingAlgorithm = config.passwordHashingAlgorithm;
-                initInput.passwordMaxLength = config.passwordMaxLength;
-                initInput.passwordMinLength = config.passwordMinLength;
-                initInput.requireLowerCase = config.requireLowerCase;
-                initInput.requireMfa = config.requireMfa;
-                initInput.requireNumbers = config.requireNumbers;
-                initInput.requireSpecialCharacters = config.requireSpecialCharacters;
-                initInput.requireUpperCase = config.requireUpperCase;
-                initInput.specialCharactersAllowed = config.specialCharactersAllowed;
-                initInput.passwordHistoryPeriod = config.passwordHistoryPeriod;
-                initInput.passwordRotationPeriodDays = config.passwordRotationPeriodDays;
+                const input: PasswordConfigInput = {
+                    maxRepeatingCharacterLength: config.maxRepeatingCharacterLength,
+                    mfaTypesRequired: config.mfaTypesRequired,
+                    passwordHashingAlgorithm: config.passwordHashingAlgorithm,
+                    passwordMaxLength: config.passwordMaxLength,
+                    passwordMinLength: config.passwordMinLength,
+                    requireLowerCase: config.requireLowerCase,
+                    requireMfa: config.requireMfa,
+                    requireNumbers: config.requireNumbers,
+                    requireSpecialCharacters: config.requireSpecialCharacters,
+                    requireUpperCase: config.requireUpperCase,
+                    specialCharactersAllowed: config.specialCharactersAllowed,
+                    passwordHistoryPeriod: config.passwordHistoryPeriod,
+                    passwordRotationPeriodDays: config.passwordRotationPeriodDays,
+                    tenantId: tenantId
+                }
+                setPasswordConfigInput(input);
+                setRevertToInput({...input});
+                setHasSystemDefaultPasswordRules(false);
             }
-            setPasswordConfigInput(initInput);
-            setRevertToInput(initInput)
+            else{
+                setHasSystemDefaultPasswordRules(true);
+                setPasswordConfigInput({...DEFAULT_TENANT_PASSWORD_CONFIGURATION});
+                setRevertToInput({...DEFAULT_TENANT_PASSWORD_CONFIGURATION});
+            }            
         },
     });
 
@@ -76,27 +92,75 @@ const PasswordRulesConfiguration: React.FC<PasswordRulesConfigurationProps> = ({
         onCompleted() {
             onUpdateEnd(true);
             setMarkDirty(false);
+            refetch();
         },
         onError(error) {
             onUpdateEnd(false);
-            setPasswordConfigInput(revertToInput);
+            setPasswordConfigInput({...revertToInput});
             setErrorMessage(intl.formatMessage({id: error.message}));
-        },
-        refetchQueries: [TENANT_PASSWORD_CONFIG_QUERY]
-    }
+        }
+    });
 
-    )
+    const [deletePasswordConfigurationMutation] = useMutation(PASSWORD_CONFIGURATION_DELETION_MUTATION, {
+        variables: {
+            tenantId: tenantId
+        },
+        onCompleted() {
+            onUpdateEnd(true);
+            setMarkDirty(false);
+            refetch();
+        },
+        onError(error) {
+            onUpdateEnd(false);
+            setPasswordConfigInput({...revertToInput});
+            setErrorMessage(intl.formatMessage({id: error.message}));
+        }
+    });
+
 
     if (loading) return <DataLoading dataLoadingSize="md" color={null} />
     if (error) return <ErrorComponent message={error.message} componentSize='md' />
 
-    if (passwordConfigInput) return (
-
-        <>
+    return (
+        <React.Fragment>
+            {showConfirmRestorePasswordDefaultDialog &&
+                <Dialog
+                    open={showConfirmRestorePasswordDefaultDialog}
+                    maxWidth="sm"
+                    fullWidth={true}
+                >
+                    <DialogContent>
+                        <Typography>
+                            Confirm that you want to restore the system default settings for password rules:
+                        </Typography>
+                    </DialogContent>
+                    <DialogActions>
+                        <Button
+                            onClick={() => setShowConfirmRestorePasswordDefaultDialog(false)}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            onClick={() => {
+                                setShowConfirmRestorePasswordDefaultDialog(false);
+                                onUpdateStart();
+                                deletePasswordConfigurationMutation();
+                            }}
+                        >
+                            Confirm
+                        </Button>
+                    </DialogActions>
+                </Dialog>
+            }
             <Grid2 container size={12} spacing={2}>
                 {errorMessage &&
                     <Grid2 marginBottom={"16px"} size={12} >
                         <Alert onClose={() => setErrorMessage(null)} severity="error">{errorMessage}</Alert>
+                    </Grid2>
+                }
+                {hasSystemDefaultPasswordRules &&
+                    <Grid2  margin={"8px 0px"} size={12}>
+                        <Alert severity="info" sx={{width: "100%", fontSize: "0.90em"}}>These are the system default settings for passwords.</Alert>
                     </Grid2>
                 }
                 <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
@@ -260,8 +324,7 @@ const PasswordRulesConfiguration: React.FC<PasswordRulesConfigurationProps> = ({
                             MFA Types Required
                         </Grid2>
                         <Grid2 alignContent={"center"} size={12}>
-                            <Autocomplete
-                                
+                            <Autocomplete                                
                                 id="mfaTypes"
                                 multiple={true}
                                 size="small"
@@ -304,7 +367,7 @@ const PasswordRulesConfiguration: React.FC<PasswordRulesConfigurationProps> = ({
             </Grid2>
             <DetailSectionActionHandler
                 onDiscardClickedHandler={() => {
-                    setPasswordConfigInput(initInput); 
+                    setPasswordConfigInput({...revertToInput});
                     setMarkDirty(false);
                 }}
                 onUpdateClickedHandler={() => {
@@ -312,8 +375,13 @@ const PasswordRulesConfiguration: React.FC<PasswordRulesConfigurationProps> = ({
                     mutatePasswordConfiguration(); 
                 }}
                 markDirty={markDirty}
+                disableSubmit={!containsScope(TENANT_UPDATE_SCOPE, profile?.scope || [])}
+                enableRestoreDefault={hasSystemDefaultPasswordRules === false}
+                restoreDefaultHandler={() => {
+                    setShowConfirmRestorePasswordDefaultDialog(true);                    
+                }}
             />
-        </>
+        </React.Fragment>
 
     )
 

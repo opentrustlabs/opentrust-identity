@@ -41,6 +41,16 @@ const AuthenticationHeader: React.FC<AuthenticationHeaderProps> = ({
                             </img>
                         </div>
                     }
+                    {tenantMetaData.tenantLookAndFeel?.authenticationlogouri &&
+                        <div style={{verticalAlign: "center"}}>
+                            <img 
+                                alt="tenant logo"
+                                style={{display: "block"}} 
+                                src={tenantMetaData.tenantLookAndFeel?.authenticationlogouri}
+                                height="48px" >
+                            </img>
+                        </div>
+                    }
                     {tenantMetaData.tenantLookAndFeel?.authenticationheadertext &&                        
                         <div style={{verticalAlign: "center", fontWeight: "bold", marginLeft: "24px"}}>{tenantMetaData.tenantLookAndFeel?.authenticationheadertext}</div>                        
                     }

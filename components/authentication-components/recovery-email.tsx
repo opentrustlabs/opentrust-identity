@@ -9,6 +9,7 @@ import { REGISTER_ADD_RECOVERY_EMAIL_MUTATION } from "@/graphql/mutations/oidc-m
 import { RegistrationComponentsProps } from "./register";
 import { UserRegistrationStateResponse } from "@/graphql/generated/graphql-types";
 import PriorityHighOutlinedIcon from '@mui/icons-material/PriorityHighOutlined';
+import { useIntl } from "react-intl";
 
 
 const RecoveryEmailConfiguration: React.FC<RegistrationComponentsProps> = ({
@@ -19,11 +20,16 @@ const RecoveryEmailConfiguration: React.FC<RegistrationComponentsProps> = ({
 
 }) => {
 
+    // CONTEXT VARIABLES
+    const intl = useIntl();
+
+    // STATE VARIABLES
     const [email, setEmail] = React.useState<string>("");
 
+    // GRAPHQL FUNCTIONS
     const [registerAddRecoveryEmail] = useMutation(REGISTER_ADD_RECOVERY_EMAIL_MUTATION, {
         onCompleted(data) {
-            const response: UserRegistrationStateResponse = data.registerAddBackupEmail as UserRegistrationStateResponse;
+            const response: UserRegistrationStateResponse = data.registerAddRecoveryEmail as UserRegistrationStateResponse;
             onUpdateEnd(response, null)
         },
         onError(error) {
@@ -40,8 +46,7 @@ const RecoveryEmailConfiguration: React.FC<RegistrationComponentsProps> = ({
                 </Grid2>
                 <Grid2 marginBottom={"8px"} size={11}>
                     <div style={{ marginBottom: "16px", fontWeight: "bold", fontSize: "1.0em" }}>
-                        Do you want to add a recovery email? It is not required, but is recommended. You
-                        can always add one later if you choose.
+                        {intl.formatMessage({id: "OPTIONAL_ADD_RECOVERY_EMAIL"})}
                     </div>
                 </Grid2>
                 <Grid2 size={12} marginTop={"16px"} marginBottom={"16px"}>
@@ -72,7 +77,7 @@ const RecoveryEmailConfiguration: React.FC<RegistrationComponentsProps> = ({
                         });
                     }}
                 >
-                    Skip
+                    {intl.formatMessage({id: "SKIP"})}
                 </Button>
 
                 <Button
@@ -90,12 +95,12 @@ const RecoveryEmailConfiguration: React.FC<RegistrationComponentsProps> = ({
                         });
                     }}
                 >
-                    Add
+                    {intl.formatMessage({id: "ADD"})}
                 </Button>
                 <Button
                     onClick={() => onRegistrationCancelled()}
                 >
-                    Cancel
+                    {intl.formatMessage({id: "CANCEL"})}
                 </Button>
             </Stack>
         </React.Fragment>

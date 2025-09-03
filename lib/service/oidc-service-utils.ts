@@ -10,8 +10,8 @@ import { PortalUserProfile, User } from "@/graphql/generated/graphql-types";
 import { logWithDetails } from "../logging/logger";
 import { randomUUID } from "node:crypto";
 import { CustomKmsDecryptionResponseBody, CustomKmsEncryptionResponseBody, CustomKmsRequestBody } from "../kms/custom-kms";
-
-const DEFAULT_HTTP_TIMEOUT_MS=60000;
+import { DEFAULT_HTTP_TIMEOUT_MS } from "@/utils/consts";
+import { RecaptchaResponse } from "../models/recaptcha";
 
 const {
     HTTP_TIMEOUT_MS,
@@ -29,8 +29,6 @@ const {
     HTTP_PROXY_PASSWORD,
     SECURITY_EVENT_CALLBACK_URI
 } = process.env;
-
-
 
 
 const proxy: AxiosProxyConfig | undefined = HTTP_CLIENT_USE_PROXY === "true" ? 
@@ -210,17 +208,17 @@ class OIDCServiceUtils {
         }
     }
 
-    public async fireSecurityEvent(securityEventType: SecurityEventType, oidcContext: OIDCContext, user: User | PortalUserProfile, jti: string | null, authToken: string | null){
+    public async fireSecurityEvent(securityEventType: SecurityEventType, oidcContext: OIDCContext, user: User | PortalUserProfile | null, jti: string | null, authToken: string | null){
         const securityEvent: SecurityEvent = {
             securityEventType: securityEventType,
-            userId: user.userId,
-            email: user.email,
-            phoneNumber: user.phoneNumber || null,
-            address: user.address || null,
-            city: user.city || null,
-            stateRegionProvince: user.stateRegionProvince || null,
-            countryCode: user.countryCode || null,
-            postalCode: user.postalCode || null,
+            userId: user?.userId || "unknown",
+            email: user?.email || "unknown",
+            phoneNumber: user?.phoneNumber || null,
+            address: user?.address || null,
+            city: user?.city || null,
+            stateRegionProvince: user?.stateRegionProvince || null,
+            countryCode: user?.countryCode || null,
+            postalCode: user?.postalCode || null,
             jti: jti,
             ipAddress: oidcContext.ipAddress,
             geoLocation: oidcContext.geoLocation,
@@ -309,6 +307,33 @@ class OIDCServiceUtils {
         }
         const decryptionResponse: CustomKmsDecryptionResponseBody = response.data;
         return decryptionResponse.decrypted;
+    }
+
+    public async validateRecaptchaV3(apiKey: string, recaptchaToken: string): Promise<RecaptchaResponse>{
+        
+        let recaptchaResponse: RecaptchaResponse = {
+            challenge_ts: "",
+            score: 0,
+            "error-codes": [],
+            hostname: "",
+            success: false
+        }
+        try{
+            const response = await axios.post("https://www.google.com/recaptcha/api/siteverify", 
+                `secret=${apiKey}&response=${recaptchaToken}`,
+                {
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded"
+                    }                        
+                }
+            );
+            recaptchaResponse = response.data;
+        }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        catch(error: any) {
+            logWithDetails("error", `Error invoking Google recaptcha verification. ${error.message}`, {...error});            
+        }
+        return recaptchaResponse;
     }
 
 }

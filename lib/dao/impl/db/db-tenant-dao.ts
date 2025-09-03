@@ -1,6 +1,6 @@
 import { Tenant, TenantManagementDomainRel, TenantAnonymousUserConfiguration, TenantLookAndFeel, TenantPasswordConfig, TenantLoginFailurePolicy, TenantLegacyUserMigrationConfig, TenantRestrictedAuthenticationDomainRel, CaptchaConfig, SystemSettings, SystemSettingsUpdateInput, SystemCategory } from "@/graphql/generated/graphql-types";
 import TenantDao from "../../tenant-dao";
-import { DEFAULT_AUDIT_RECORD_RETENTION_PERIOD_DAYS, OPENTRUST_IDENTITY_VERSION, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
+import { DEFAULT_AUDIT_RECORD_RETENTION_PERIOD_DAYS, DEFAULT_HTTP_TIMEOUT_MS, OPENTRUST_IDENTITY_VERSION, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import { GraphQLError } from "graphql";
 import TenantManagementDomainRelEntity from "@/lib/entities/tenant-management-domain-rel-entity";
 import TenantAnonymousUserConfigurationEntity from "@/lib/entities/tenant-anonymous-user-configuration-entity";
@@ -248,7 +248,8 @@ class DBTenantDao extends TenantDao {
                 authenticationheadertext: entity.getDataValue("authenticationheadertext"),
                 authenticationheadertextcolor: entity.getDataValue("authenticationheadertextcolor"),
                 authenticationlogo: entity.getDataValue("authenticationlogo") ?
-                    Buffer.from(entity.getDataValue("authenticationlogo")).toString("utf-8") : "",                
+                    Buffer.from(entity.getDataValue("authenticationlogo")).toString("utf-8") : "",
+                authenticationlogouri: entity.getDataValue("authenticationlogouri"),
                 authenticationlogomimetype: entity.getDataValue("authenticationlogomimetype")
             }
             return Promise.resolve(tenantLookAndFeel);
@@ -477,6 +478,18 @@ class DBTenantDao extends TenantDao {
         }
     }
 
+    public async setCaptchaConfig(captchaConfig: CaptchaConfig): Promise<CaptchaConfig>{
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.captchaConfig.truncate();
+        await sequelize.models.captchaConfig.create(captchaConfig);        
+        return captchaConfig;
+    }
+
+    public async removeCaptchaConfig(): Promise<void>{
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.captchaConfig.truncate();
+    }
+
     public async getSystemSettings(): Promise<SystemSettings> {
         const sequelize: Sequelize = await DBDriver.getConnection();
         
@@ -599,26 +612,7 @@ class DBTenantDao extends TenantDao {
         });
         systemSettings.systemCategories.push(searchSettings);
 
-        // Trust store settings
-        const trustStoreSettings: SystemCategory = {
-            categoryEntries: [],
-            categoryName: "Trust Store Settings"
-        }
-        const {PKI_IDENTITY_PRIVATE_KEY_PATH, PKI_IDENTITY_CERTIFICATE_PATH, PKI_IDENTITY_CA_TRUST_STORE_PATH} = process.env;
-        trustStoreSettings.categoryEntries.push({
-            categoryKey: "Private Key Path",
-            categoryValue: PKI_IDENTITY_PRIVATE_KEY_PATH || "NA"
-        });
-        trustStoreSettings.categoryEntries.push({
-            categoryKey: "Certificate Path",
-            categoryValue: PKI_IDENTITY_CERTIFICATE_PATH || "NA"
-        });
-        trustStoreSettings.categoryEntries.push({
-            categoryKey: "CA Trust Store Path",
-            categoryValue: PKI_IDENTITY_CA_TRUST_STORE_PATH || "NA"
-        });
-        systemSettings.systemCategories.push(trustStoreSettings);
-
+        
         // Auth domain settings 
         const authDomainCategory: SystemCategory = {
             categoryEntries: [],
@@ -638,6 +632,95 @@ class DBTenantDao extends TenantDao {
             categoryValue: SECURITY_EVENT_CALLBACK_URI || ""
         });
         systemSettings.systemCategories.push(authDomainCategory);
+
+        // GraphQL Settings
+        const graphqlSettingCategory: SystemCategory = {
+            categoryEntries: [],
+            categoryName: "GraphQL Settings"
+        };
+        const {ALLOW_GRAPHQL_INTROSPECTION, ALLOW_GRAPHQL_ERROR_STACK_TRACES} = process.env;
+        graphqlSettingCategory.categoryEntries.push({
+            categoryKey: "Allow GraphQL Introspection",
+            categoryValue: ALLOW_GRAPHQL_INTROSPECTION || "false"
+        });
+        graphqlSettingCategory.categoryEntries.push({
+            categoryKey: "Allow GraphQL Error Stack Traces",
+            categoryValue: ALLOW_GRAPHQL_ERROR_STACK_TRACES || "false"
+        });
+        systemSettings.systemCategories.push(graphqlSettingCategory);
+
+        // Logging Settings
+        const loggingSettingsCategory: SystemCategory = {
+            categoryEntries: [],
+            categoryName: "Logging Settings"
+        };
+        const {LOG_FILE_DIRECTORY, LOG_TO_STD_OUT, LOG_LEVEL} = process.env;
+        loggingSettingsCategory.categoryEntries.push({
+            categoryKey: "Log file directory",
+            categoryValue: LOG_FILE_DIRECTORY || "Not Configured"
+        });
+        loggingSettingsCategory.categoryEntries.push({
+            categoryKey: "Log to STDOUT",
+            categoryValue: LOG_TO_STD_OUT || "false"
+        });
+        loggingSettingsCategory.categoryEntries.push({
+            categoryKey: "Log level",
+            categoryValue: LOG_LEVEL || "Not Configured"
+        });
+        systemSettings.systemCategories.push(loggingSettingsCategory);
+
+        // HTTP Client Settings
+        const httpClientSettingsCategory: SystemCategory = {
+            categoryEntries: [],
+            categoryName: "HTTP Client Settings"
+        };
+        const {
+            HTTP_TIMEOUT_MS, MTLS_USE_PKI_IDENTITY, MTLS_PKI_IDENTITY_PRIVATE_KEY_FILE, MTLS_PKI_IDENTITY_CERTIFICATE_FILE, 
+            MTLS_PKI_IDENTITY_TRUST_STORE_FILE, HTTP_CLIENT_USE_PROXY, HTTP_PROXY_PROTOCOL, HTTP_PROXY_HOST, 
+            HTTP_PROXY_PORT, HTTP_PROXY_USE_AUTHENTICATION 
+        } = process.env;
+        httpClientSettingsCategory.categoryEntries.push({
+            categoryKey: "Request Timeout (milliseconds)",
+            categoryValue: HTTP_TIMEOUT_MS || DEFAULT_HTTP_TIMEOUT_MS.toString()
+        });
+        httpClientSettingsCategory.categoryEntries.push({
+            categoryKey: "Use mTLS",
+            categoryValue: MTLS_USE_PKI_IDENTITY || "false"
+        });
+        httpClientSettingsCategory.categoryEntries.push({
+            categoryKey: "Private Key File",
+            categoryValue: MTLS_PKI_IDENTITY_PRIVATE_KEY_FILE || "Not Configured"
+        });
+        httpClientSettingsCategory.categoryEntries.push({
+            categoryKey: "Certificate File",
+            categoryValue: MTLS_PKI_IDENTITY_CERTIFICATE_FILE || "Not Configured"
+        });
+        httpClientSettingsCategory.categoryEntries.push({
+            categoryKey: "Trust Store File",
+            categoryValue: MTLS_PKI_IDENTITY_TRUST_STORE_FILE || "Not Configured"
+        });
+        httpClientSettingsCategory.categoryEntries.push({
+            categoryKey: "Use Proxy",
+            categoryValue: HTTP_CLIENT_USE_PROXY || "false"
+        });
+        httpClientSettingsCategory.categoryEntries.push({
+            categoryKey: "Proxy Protocol",
+            categoryValue: HTTP_PROXY_PROTOCOL || "Not Configured"
+        });
+        httpClientSettingsCategory.categoryEntries.push({
+            categoryKey: "Proxy Host",
+            categoryValue: HTTP_PROXY_HOST || "Not Configured"
+        });
+        httpClientSettingsCategory.categoryEntries.push({
+            categoryKey: "Proxy Port",
+            categoryValue: HTTP_PROXY_PORT || "Not Configured"
+        });
+        httpClientSettingsCategory.categoryEntries.push({
+            categoryKey: "Use Proxy Authentication",
+            categoryValue: HTTP_PROXY_USE_AUTHENTICATION || "false"
+        });        
+        systemSettings.systemCategories.push(httpClientSettingsCategory);
+
         return systemSettings;
 
     }

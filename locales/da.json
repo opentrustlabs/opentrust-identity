@@ -331,5 +331,21 @@
     "NEED_TO_CREATE_AN_ACCOUNT": "Har du brug for at oprette en konto?",
     "OR": "Eller",
     "SIGN_IN_WITH": "Log ind med",
-    "SELECT_A_LANGUAGE": "Vælg et sprog"
+    "SELECT_A_LANGUAGE": "Vælg et sprog",
+    "WELCOME": "Velkommen",
+    "QUICK_LINKS": "Hurtige links",
+    "CONFIGURE_KEY": "Konfigurer nøgle",
+    "ERROR_RECAPTCHA_NOT_CONFIGURED_FOR_TENANT_WHICH_REQUIRES_RECAPTCHA": "Der er ikke konfigureret Recaptcha for en lejer, der kræver Recaptcha til registrering.",
+    "ERROR_INVALID_RECAPTCHA_VERSION_EXPECTING_VERSION_3": "Der opstod en fejl under validering af din registrering.",
+    "ERROR_INVALID_RECAPTCHA_TOKEN": "Der opstod en fejl under validering af din registrering.",
+    "ERROR_RECAPTCHA_SCORE_LOWER_THAN_ALLOWED": "Der opstod en fejl under validering af din registrering. Dette kan skyldes, at du er en bot. Vent venligst 30 minutter eller mere, før du prøver igen.",
+    "ERROR_V3_RECAPTCHA_REQUIRES_MINIMUM_SCORE_THRESHOLD_VALUE": "Version 3 af ReCaptcha kræver en minimumsscoregrænseværdi.",
+    "ERROR_RECAPTCHA_MINIMUM_SCORE_MUST_BE_BETWEEN_1_AND_0": "Minimumsscoren skal være mellem 0,0 og 1,0.",
+    "ERROR_FAILURE_TO_ENCRYPT_THE_RECAPTCHA_API_KEY": "Der opstod en fejl under kryptering af ReCaptcha API-nøglen.",
+    "ERROR_TENANT_NAME_MIN_LENGTH": "Lejernavnet er for kort.",
+    "ERROR_CANNOT_CREATE_ANOTHER_ROOT_TENANT": "En rodlejer findes allerede.",
+    "ERROR_CANNOT_ASSIGN_AS_ROOT_TENANT": "Lejeren kan ikke tildeles som rodlejer.",
+    "ERROR_INVALID_URL_FOR_TERMS_AND_CONDITIONS": "URL'en til linket til vilkår og betingelser er ugyldig.",
+    "ERROR_NO_TERMS_AND_CONDITIONS_URL_WAS_SPECIFIED": "URL'en til vilkår og betingelser er påkrævet.",
+    "ERROR_NO_DEFAULT_RATE_LIMIT_SPECIFIED_FOR_LIMITED_API_RATE": "En hastighedsgrænseværdi skal angives."
 }

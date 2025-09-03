@@ -56,6 +56,7 @@ const ValidatePasswordResetToken: React.FC<AuthenticationComponentsProps> = ({
                 spacing={2}
             >
                 <Button
+                    variant="contained"    
                     onClick={() => {
                         onUpdateStart();
                         verifyPasswordResetToken({
@@ -71,6 +72,7 @@ const ValidatePasswordResetToken: React.FC<AuthenticationComponentsProps> = ({
                     {intl.formatMessage({id: "CONFIRM"})}
                 </Button>
                 <Button
+                    variant="contained"    
                     onClick={() => onAuthenticationCancelled()}
                 >
                     {intl.formatMessage({id: "CANCEL"})}

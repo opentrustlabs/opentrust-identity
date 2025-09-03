@@ -27,10 +27,12 @@ const AccessError: React.FC = () => {
             break;
         }
         case "00025" : {
-            errorMessage = "Your account has not been configured with any permissions to access the IAM portal."
+            errorMessage = "Your profile is not currently configured for access to this portal. Please contact your administrator for access.";
+            break;
         }
         case "00075": {
-            errorMessage = "Device registration has been cancelled."
+            errorMessage = "Device registration has been cancelled.";
+            break;
         }
     }
 

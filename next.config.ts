@@ -18,6 +18,7 @@ const nextConfig: NextConfig = {
   /* config options here */  
   logging: false,
   transpilePackages: ['mui-tel-input'],
+  allowedDevOrigins: ["localhost"],
   eslint: {
     // Warning: This allows production builds to successfully complete even if
     // your project has ESLint errors.

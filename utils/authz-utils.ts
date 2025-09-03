@@ -129,7 +129,7 @@ export function ServiceAuthorizationWrapper<TArgs extends any[], TResult>(
                 }
             }
             if(options.postProcess){
-                options.postProcess(oidcContext, result);
+                await options.postProcess(oidcContext, result);
             }
             return result;        
         };

@@ -38,6 +38,7 @@ export const TENANT_META_DATA_QUERY = gql(`
                 authenticationheaderbackgroundcolor
                 authenticationheadertextcolor
                 authenticationlogo
+                authenticationlogouri
                 authenticationheadertext
             }
             tenant {
@@ -73,6 +74,11 @@ export const TENANT_META_DATA_QUERY = gql(`
                 federatedOIDCProviderTenantId
                 federatedOIDCProviderType 
                 socialLoginProvider
+            }
+            recaptchaMetaData {
+                recaptchaSiteKey
+                useEnterpriseCaptcha
+                useCaptchaV3
             }
         }
     }
@@ -556,6 +562,7 @@ export const TENANT_LOOK_AND_FEEL_QUERY = gql(`
             authenticationheaderbackgroundcolor
             authenticationheadertextcolor
             authenticationlogo
+            authenticationlogouri
             authenticationlogomimetype
             authenticationheadertext                      
         }
@@ -717,8 +724,9 @@ export const CAPTCHA_CONFIG_QUERY = gql(`
             projectId
             siteKey
             apiKey
-            minScopeThreshold
+            minScoreThreshold
             useCaptchaV3
+            useEnterpriseCaptcha
         }
     }
 `);

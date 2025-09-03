@@ -78,6 +78,10 @@ abstract class TenantDao {
 
     abstract getCaptchaConfig(): Promise<CaptchaConfig | null>;
 
+    abstract setCaptchaConfig(captchaConfig: CaptchaConfig): Promise<CaptchaConfig>;
+
+    abstract removeCaptchaConfig(): Promise<void>;
+
     abstract getSystemSettings(): Promise<SystemSettings>;
 
     abstract updateSystemSettings(input: SystemSettingsUpdateInput): Promise<SystemSettings>;

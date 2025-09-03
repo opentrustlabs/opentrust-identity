@@ -38,6 +38,9 @@ const SecretViewerDialog: React.FC<SecretViewerDialogProps> = ({
     if (secretObjectType === SecretObjectType.PrivateKeyPassword) {
         message = "Private Key Password Copied"
     }
+    if (secretObjectType === SecretObjectType.CaptchaApiKey){
+        message = "ReCaptcha API Key"
+    }
     const [clipboardMessage] = React.useState<string>(message);
 
 
@@ -60,7 +63,6 @@ const SecretViewerDialog: React.FC<SecretViewerDialogProps> = ({
                     maxWidth="sm"
                     fullWidth={true}
                 >
-
                     <DialogTitle>
                         <Grid2 container size={12}>
                             <Grid2 size={1}>
@@ -95,6 +97,9 @@ const SecretViewerDialog: React.FC<SecretViewerDialogProps> = ({
                                         {secretObjectType === SecretObjectType.PrivateKeyPassword &&
                                             `Private Key Password`
                                         }
+                                        {secretObjectType === SecretObjectType.CaptchaApiKey &&
+                                            `ReCaptcha API Key`
+                                        }
                                     </Grid2>
                                     <Grid2 size={0.5}>
                                         <ContentCopyIcon
@@ -112,8 +117,6 @@ const SecretViewerDialog: React.FC<SecretViewerDialogProps> = ({
                     <DialogActions>
                         <Button onClick={() => onClose()}>Close</Button>
                     </DialogActions>
-
-
                 </Dialog>
             }
         </React.Fragment>

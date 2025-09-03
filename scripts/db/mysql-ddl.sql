@@ -476,6 +476,7 @@ create TABLE tenant_look_and_feel (
     authenticationheaderbackgroundcolor VARCHAR(32),
     authenticationheadertextcolor VARCHAR(32),
     authenticationlogo BLOB,
+    authenticationlogouri VARCHAR(256),
     authenticationlogomimetype VARCHAR(16),
     authenticationheadertext VARCHAR(128),    
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid)
@@ -671,7 +672,8 @@ create TABLE captcha_config (
     sitekey VARCHAR(256) NOT NULL,
     apikey VARCHAR(256) NOT NULL,
     minscorethreshold FLOAT,
-    userecaptchav3 BOOLEAN NOT NULL
+    userecaptchav3 BOOLEAN NOT NULL,
+    useenterprisecaptcha BOOLEAN NOT NULL
 );
 
 create TABLE system_settings (

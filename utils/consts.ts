@@ -52,7 +52,6 @@ export const ALL_OIDC_SUPPORTED_SCOPE_VALUES = [
 export const GRANT_TYPE_AUTHORIZATION_CODE = "authorization_code";
 export const GRANT_TYPE_REFRESH_TOKEN = "refresh_token";
 export const GRANT_TYPE_CLIENT_CREDENTIALS = "client_credentials";
-// For future development work, support device code auth grants. Will need a /code endpoint for this
 export const GRANT_TYPE_DEVICE_CODE = "urn:ietf:params:oauth:grant-type:device_code";
 export const GRANT_TYPES_SUPPORTED: Array<string> = [    
     GRANT_TYPE_AUTHORIZATION_CODE,
@@ -903,6 +902,8 @@ export const DEFAULT_LOGIN_FAILURE_POLICY: TenantLoginFailurePolicy = {
 }
 
 export const DEFAULT_AUDIT_RECORD_RETENTION_PERIOD_DAYS=90;
+export const TENANT_NAME_MINIMUM_LENGTH=4;
+
 
 // ************************************************************************** //
 // 
@@ -997,3 +998,13 @@ export const MARK_FOR_DELETE_LOCK_NAME_PREFIX="DELETE_MARK_FOR_DELETE";
 // ************************************************************************** //
 export const HTTP_HEADER_X_IP_ADDRESS="x-ip-address";
 export const HTTP_HEADER_X_GEO_LOCATION="x-geo-location";
+
+export const DEFAULT_HTTP_TIMEOUT_MS=60000;
+
+// ************************************************************************** //
+// 
+//                  CAPTCHA DEFAULTS
+// 
+// ************************************************************************** //
+// For Version 3 of captcha, default to a score of 0.7 for bot detection
+export const DEFAULT_CAPTCHA_V3_MINIMUM_SCORE=0.7;

@@ -77,13 +77,16 @@ class IdentityService {
                 performOperation: async function() {
                     return identityDao.getUserBy("id", userId);
                 },
-                additionalConstraintCheck: async function(oidcContext: OIDCContext) {                    
-                    const userTenantRels: Array<UserTenantRel> = await identityDao.getUserTenantRelsByUserId(userId);
-                    const rel = userTenantRels.find(
-                        (r: UserTenantRel) => r.tenantId === oidcContext.portalUserProfile?.managementAccessTenantId
-                    );
-                    if(!rel){
-                        return {isAuthorized: false, errorDetail: ERROR_CODES.EC00114}
+                additionalConstraintCheck: async function(oidcContext: OIDCContext) {
+
+                    if(oidcContext.rootTenant.tenantId !== oidcContext.portalUserProfile?.managementAccessTenantId){
+                        const userTenantRels: Array<UserTenantRel> = await identityDao.getUserTenantRelsByUserId(userId);
+                        const rel = userTenantRels.find(
+                            (r: UserTenantRel) => r.tenantId === oidcContext.portalUserProfile?.managementAccessTenantId
+                        );
+                        if(!rel){
+                            return {isAuthorized: false, errorDetail: ERROR_CODES.EC00114}
+                        }
                     }
                     return {isAuthorized: true, errorDetail: ERROR_CODES.NULL_ERROR};
                 }
@@ -427,7 +430,7 @@ class IdentityService {
 
     public async getRecoveryEmail(userId: string): Promise<UserRecoveryEmail | null> {
         if(userId !== this.oidcContext.portalUserProfile?.userId){
-            const authResult = authorizeByScopeAndTenant(this.oidcContext, [USER_READ_SCOPE], this.oidcContext.portalUserProfile?.tenantId || null);
+            const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_READ_ALL_SCOPE, USER_READ_SCOPE], this.oidcContext.portalUserProfile?.tenantId || null);
             if(!authResult.isAuthorized){
                 throw new GraphQLError(authResult.errorDetail.errorMessage, {extensions: {errorDetail: authResult.errorDetail}});
             }

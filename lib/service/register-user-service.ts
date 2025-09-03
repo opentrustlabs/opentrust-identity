@@ -1,11 +1,11 @@
 import { OIDCContext } from "@/graphql/graphql-context";
 import IdentityDao from "../dao/identity-dao";
-import { Fido2KeyRegistrationInput, Tenant, TenantPasswordConfig, TotpResponse, User, UserCreateInput, UserCredential, Fido2KeyAuthenticationInput, TenantRestrictedAuthenticationDomainRel, PreAuthenticationState, AuthorizationReturnUri, UserRegistrationStateResponse, UserRegistrationState, RegistrationState, UserTermsAndConditionsAccepted, TenantLegacyUserMigrationConfig, SystemSettings, FederatedOidcProvider, AuthorizationDeviceCodeData, DeviceCodeAuthorizationStatus, UserRecoveryEmail, ProfileEmailChangeResponse, ProfileEmailChangeState, EmailChangeState, ErrorDetail } from "@/graphql/generated/graphql-types";
+import { Fido2KeyRegistrationInput, Tenant, TenantPasswordConfig, TotpResponse, User, UserCreateInput, UserCredential, Fido2KeyAuthenticationInput, TenantRestrictedAuthenticationDomainRel, PreAuthenticationState, AuthorizationReturnUri, UserRegistrationStateResponse, UserRegistrationState, RegistrationState, UserTermsAndConditionsAccepted, TenantLegacyUserMigrationConfig, SystemSettings, FederatedOidcProvider, AuthorizationDeviceCodeData, DeviceCodeAuthorizationStatus, UserRecoveryEmail, ProfileEmailChangeResponse, ProfileEmailChangeState, EmailChangeState, ErrorDetail, CaptchaConfig } from "@/graphql/generated/graphql-types";
 import { DaoFactory } from "../data-sources/dao-factory";
 import TenantDao from "../dao/tenant-dao";
 import { GraphQLError } from "graphql/error";
 import { randomUUID } from "crypto";
-import { DEFAULT_TENANT_PASSWORD_CONFIGURATION, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, OIDC_AUTHORIZATION_ERROR_ACCESS_DENIED, QUERY_PARAM_AUTHENTICATE_TO_PORTAL, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, STATUS_COMPLETE, STATUS_INCOMPLETE, PRINCIPAL_TYPE_IAM_PORTAL_USER } from "@/utils/consts";
+import { DEFAULT_TENANT_PASSWORD_CONFIGURATION, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, OIDC_AUTHORIZATION_ERROR_ACCESS_DENIED, QUERY_PARAM_AUTHENTICATE_TO_PORTAL, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, STATUS_COMPLETE, STATUS_INCOMPLETE, PRINCIPAL_TYPE_IAM_PORTAL_USER, DEFAULT_CAPTCHA_V3_MINIMUM_SCORE } from "@/utils/consts";
 import {  generateRandomToken, getDomainFromEmail } from "@/utils/dao-utils";
 import { Client as OpenSearchClient } from "@opensearch-project/opensearch";
 import { getOpenSearchClient } from "../data-sources/search";
@@ -16,6 +16,8 @@ import OIDCServiceUtils from "./oidc-service-utils";
 import FederatedOIDCProviderDao from "../dao/federated-oidc-provider-dao";
 import { ERROR_CODES } from "../models/error";
 import { logWithDetails } from "../logging/logger";
+import Kms from "../kms/kms";
+import { RecaptchaResponse } from "../models/recaptcha";
 
 
 const jwtServiceUtils: JwtServiceUtils = new JwtServiceUtils();
@@ -25,7 +27,7 @@ const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
 const searchClient: OpenSearchClient = getOpenSearchClient();
 const authDao: AuthDao = DaoFactory.getInstance().getAuthDao();
 const federatedOIDCProvderDao: FederatedOIDCProviderDao = DaoFactory.getInstance().getFederatedOIDCProvicerDao();
-
+const kms: Kms = DaoFactory.getInstance().getKms();
 
 class RegisterUserService extends IdentityService {
 
@@ -51,7 +53,7 @@ class RegisterUserService extends IdentityService {
          * @param preAuthToken 
          * @returns 
          */    
-    public async registerUser(userCreateInput: UserCreateInput, tenantId: string, preAuthToken: string | null, deviceCodeId: string | null): Promise<UserRegistrationStateResponse>{
+    public async registerUser(userCreateInput: UserCreateInput, tenantId: string, preAuthToken: string | null, deviceCodeId: string | null, recaptchaToken: string | null): Promise<UserRegistrationStateResponse>{
             
         // Need to check to see if there is an active registration session happening with the
         // user, based on their email. If so, then return error if the session has not expired.
@@ -73,7 +75,7 @@ class RegisterUserService extends IdentityService {
         // TODO
         // Refactor the _createUser to return a RegistrationState value or null, and an isCreated and an errorMessage
         // rather than throw exceptions.
-        const {user, tenant, tenantPasswordConfig} = await this._createUser(userCreateInput, tenantId, true);
+        const {user, tenant, tenantPasswordConfig} = await this._createUser(userCreateInput, tenantId, true, recaptchaToken || undefined);
 
         const registrationSessionToken: string = generateRandomToken(20, "hex");
 
@@ -290,7 +292,7 @@ class RegisterUserService extends IdentityService {
                 tenantId: "",
                 userId: userId
             },
-            registrationError: ERROR_CODES.DEFAULT,
+            registrationError: undefined,
             accessToken: null,
             totpSecret: null,
             uri: null
@@ -1023,7 +1025,7 @@ class RegisterUserService extends IdentityService {
      * @param isRegistration 
      * @returns 
      */
-    protected async _createUser(userCreateInput: UserCreateInput, tenantId: string, isRegistration: boolean): Promise<{ user: User, tenant: Tenant, tenantPasswordConfig: TenantPasswordConfig }> {
+    protected async _createUser(userCreateInput: UserCreateInput, tenantId: string, isRegistration: boolean, recaptchaToken?: string): Promise<{ user: User, tenant: Tenant, tenantPasswordConfig: TenantPasswordConfig }> {
 
         // Always need to make sure that we lower-case the email for consistency purposes.
         userCreateInput.email = userCreateInput.email.toLowerCase();
@@ -1047,6 +1049,25 @@ class RegisterUserService extends IdentityService {
         const existingUser: User | null = await identityDao.getUserBy("email", userCreateInput.email);
         if (existingUser) {
             throw new GraphQLError(ERROR_CODES.EC00142.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00142}});
+        }
+
+        // Check the recaptcha configuration and validate the recaptcha token
+        if(isRegistration === true && tenant.registrationRequireCaptcha === true){
+            const captchaConfig: CaptchaConfig | null = await tenantDao.getCaptchaConfig();
+            if(!captchaConfig){
+                throw new GraphQLError(ERROR_CODES.EC00190.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00190}});
+            }
+            const decryptedApiKey: string | null = await kms.decrypt(captchaConfig.apiKey);
+            const recaptchaResponse: RecaptchaResponse = await oidcServiceUtils.validateRecaptchaV3(decryptedApiKey || "", recaptchaToken || "");
+            if(!recaptchaResponse.success){
+                throw new GraphQLError(ERROR_CODES.EC00192.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00192}});
+            }
+            if(captchaConfig.useCaptchaV3 === true){
+                const minScore = captchaConfig.minScoreThreshold || DEFAULT_CAPTCHA_V3_MINIMUM_SCORE;
+                if(recaptchaResponse.score < minScore){
+                    throw new GraphQLError(ERROR_CODES.EC00193.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00193}});
+                }
+            }
         }
 
         // Need to check to see if the tenant allows for migration of users from another
