@@ -16,7 +16,9 @@
 
 export type SecurityEventType = "user_registered" | "account_locked" | "account_unlocked" | "duress_authentication" | 
                                 "successful_authentication" | "reset_password" | "backup_email_authentication" | 
-                                "logout" | "device_registered" | "auth_code_exchanged" | "secret_viewed" | "secret_share_link_generated";
+                                "logout" | "device_registered" | "auth_code_exchanged" | "federated_idp_secret_viewed" | 
+                                "client_secret_viewed" | "private_key_viewed" | "private_key_password_viewed" |
+                                "recaptcha_api_key_viewed" | "secret_share_link_generated";
 
 export interface SecurityEvent {
     securityEventType: SecurityEventType,

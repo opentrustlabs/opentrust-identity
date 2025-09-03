@@ -3,7 +3,7 @@ import { OIDCContext } from "@/graphql/graphql-context";
 import TenantDao from "@/lib/dao/tenant-dao";
 import { GraphQLError } from "graphql";
 import { randomUUID } from 'crypto'; 
-import { CAPTCHA_CONFIG_SCOPE, CHANGE_EVENT_CLASS_TENANT, CHANGE_EVENT_CLASS_TENANT_ANONYMOUS_USER_CONFIGURATION, CHANGE_EVENT_CLASS_TENANT_AUTHENTICATION_DOMAIN_REL, CHANGE_EVENT_CLASS_TENANT_LEGACY_USER_MIGRATION_CONFIGURATION, CHANGE_EVENT_CLASS_TENANT_LOGIN_FAILURE_POLICY, CHANGE_EVENT_CLASS_TENANT_LOOK_AND_FEEL, CHANGE_EVENT_CLASS_TENANT_PASSWORD_CONFIGURATION, CHANGE_EVENT_TYPE_CREATE, CHANGE_EVENT_TYPE_CREATE_REL, CHANGE_EVENT_TYPE_DELETE, CHANGE_EVENT_TYPE_REMOVE_REL, CHANGE_EVENT_TYPE_UPDATE, DEFAULT_TENANT_META_DATA, FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL, JOBS_READ_SCOPE, MFA_AUTH_TYPE_NONE, MFA_AUTH_TYPES, PASSWORD_HASHING_ALGORITHMS, PASSWORD_MAXIMUM_LENGTH, PASSWORD_MINIMUM_LENGTH, SEARCH_INDEX_OBJECT_SEARCH, SYSTEM_SETTINGS_READ_SCOPE, SYSTEM_SETTINGS_UPDATE_SCOPE, TENANT_CREATE_SCOPE, TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE, TENANT_TYPE_ROOT_TENANT, TENANT_TYPES_DISPLAY, TENANT_UPDATE_SCOPE } from "@/utils/consts";
+import { CAPTCHA_CONFIG_SCOPE, CHANGE_EVENT_CLASS_TENANT, CHANGE_EVENT_CLASS_TENANT_ANONYMOUS_USER_CONFIGURATION, CHANGE_EVENT_CLASS_TENANT_AUTHENTICATION_DOMAIN_REL, CHANGE_EVENT_CLASS_TENANT_LEGACY_USER_MIGRATION_CONFIGURATION, CHANGE_EVENT_CLASS_TENANT_LOGIN_FAILURE_POLICY, CHANGE_EVENT_CLASS_TENANT_LOOK_AND_FEEL, CHANGE_EVENT_CLASS_TENANT_PASSWORD_CONFIGURATION, CHANGE_EVENT_TYPE_CREATE, CHANGE_EVENT_TYPE_CREATE_REL, CHANGE_EVENT_TYPE_DELETE, CHANGE_EVENT_TYPE_REMOVE_REL, CHANGE_EVENT_TYPE_UPDATE, DEFAULT_RATE_LIMIT_PERIOD_MINUTES, DEFAULT_TENANT_META_DATA, FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL, JOBS_READ_SCOPE, MFA_AUTH_TYPE_NONE, MFA_AUTH_TYPES, PASSWORD_HASHING_ALGORITHMS, PASSWORD_MAXIMUM_LENGTH, PASSWORD_MINIMUM_LENGTH, SEARCH_INDEX_OBJECT_SEARCH, SYSTEM_SETTINGS_READ_SCOPE, SYSTEM_SETTINGS_UPDATE_SCOPE, TENANT_CREATE_SCOPE, TENANT_NAME_MINIMUM_LENGTH, TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE, TENANT_TYPE_ROOT_TENANT, TENANT_TYPES, TENANT_TYPES_DISPLAY, TENANT_UPDATE_SCOPE } from "@/utils/consts";
 import { getOpenSearchClient } from "@/lib/data-sources/search";
 import FederatedOIDCProviderDao from "../dao/federated-oidc-provider-dao";
 import { DaoFactory } from "../data-sources/dao-factory";
@@ -64,7 +64,7 @@ class TenantService {
             throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
         }
 
-        const {valid, errorDetail} = await this.validateTenantInput(tenant);        
+        const {valid, errorDetail} = await this.validateTenantInput(tenant, false);        
         if(!valid){
             throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});
         }
@@ -122,7 +122,7 @@ class TenantService {
             throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
         }
 
-        const {valid, errorDetail} = await this.validateTenantInput(tenant);
+        const {valid, errorDetail} = await this.validateTenantInput(tenant, true);
         if(!valid){
             throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});
         }
@@ -170,23 +170,84 @@ class TenantService {
         });        
     }
     
-    protected async validateTenantInput(tenant: Tenant): Promise<{valid: boolean, errorDetail: ErrorDetail}> {
-    
-        // TODO
-        //
-        //
-        // if(tenant.federatedAuthenticationConstraint === FederatedAuthenticationConstraint.Exclusive && (!tenant.federatedOIDCProviderId || "" === tenant.federatedOIDCProviderId)){
-        //     return {valid: false, errorMessage: "ERROR_MISSING_EXTERNAL_OIDC_PROVIDER"};
-        // }
-        // if(tenant.federatedOIDCProviderId && "" !== tenant.federatedOIDCProviderId){
-        //     const oidcProvider: FederatedOidcProvider | null = await federatedOIDCProviderDao.getFederatedOidcProviderById(tenant.federatedOIDCProviderId || "");
-        //     if(!oidcProvider){
-        //         return {valid: false, errorMessage: "ERROR_INVALID_OIDC_PROVIDER"};
-        //     }
-        // }
-        if(tenant.tenantType === ""){
-            return {valid: false, errorDetail: ERROR_CODES.EC00008}
+    /**
+     * This checks for the following:
+     * 1.   Tenant name > 4 characters long
+     * 2.   Tenant type is one of the allowed values.
+     * 3.   Tenant type cannot be ROOT tenant for any existing non-root tenant
+     * 4.   If "Require Terms And Conditions" is true, then a valid terms-and-condtions URI must be specified
+     * 5.   If the terms and conditions URI is specified, then it must be a valid URI
+     * 6.   If "Allow unlimited API rates" is false, then the default rate limit must be specified and be > 0 and < .
+     * 
+     * The validation routine has some side-effects in addition to the validation checks it performs:
+     * 1.   If "Allow unlimited API rates" is true, then the default rate limit and rate limit periods are cleared out
+     * 2.   If "Require recaptcha on registration" is true, and there is no RecaptchaConfig, then set to false
+     * 
+     * @param tenant 
+     * @returns 
+     */
+    protected async validateTenantInput(tenant: Tenant, isCreate: boolean): Promise<{valid: boolean, errorDetail: ErrorDetail}> {
+        
+        if(tenant.tenantName.length < TENANT_NAME_MINIMUM_LENGTH){
+            return {valid: false, errorDetail: ERROR_CODES.EC00197};
         }
+        if(tenant.tenantType === "" || !TENANT_TYPES.includes(tenant.tenantType)){
+            return {valid: false, errorDetail: ERROR_CODES.EC00008};
+        }
+        if(tenant.tenantType === TENANT_TYPE_ROOT_TENANT && isCreate === true){
+            return {valid: false, errorDetail: ERROR_CODES.EC00198};
+        }
+        if(tenant.tenantType === TENANT_TYPE_ROOT_TENANT && tenant.tenantId !== "" && tenant.tenantId !== this.oidcContext.rootTenant.tenantId){
+            return {valid: false, errorDetail: ERROR_CODES.EC00199};
+        }
+
+        let termsAndConditionsURL: URL | null = null;
+        let isValidUrl = false;
+        if(tenant.termsAndConditionsUri){        
+            try{
+                termsAndConditionsURL = new URL(tenant.termsAndConditionsUri);
+                if(
+                    !termsAndConditionsURL.protocol.startsWith("http") ||
+                    termsAndConditionsURL.hostname.length < 4 ||
+                    termsAndConditionsURL.pathname.length < 3
+                ){
+                    isValidUrl = false;
+                }
+                else{
+                    isValidUrl = true;
+                }
+            }
+            catch(_){
+                isValidUrl = false;
+            }
+            if(isValidUrl === false){
+                return {valid: false, errorDetail: ERROR_CODES.EC00200};
+            }
+        }
+
+        if(tenant.registrationRequireTermsAndConditions === true && termsAndConditionsURL === null){
+            return {valid: false, errorDetail: ERROR_CODES.EC00201};
+        }
+        if(tenant.allowUnlimitedRate === false && (!tenant.defaultRateLimit || tenant.defaultRateLimit < 0)){
+            return {valid: false, errorDetail: ERROR_CODES.EC00202};
+        }
+
+        // Side-effects here...
+        if(tenant.allowUnlimitedRate === false){
+            tenant.defaultRateLimitPeriodMinutes = DEFAULT_RATE_LIMIT_PERIOD_MINUTES;
+        }
+        else{
+            tenant.defaultRateLimitPeriodMinutes = undefined;
+            tenant.defaultRateLimit = undefined;
+        }
+
+        if(tenant.registrationRequireCaptcha === true){
+            const captchaConfig: CaptchaConfig | null = await tenantDao.getCaptchaConfig();
+            if(captchaConfig === null){
+                tenant.registrationRequireCaptcha = false;
+            }
+        }
+
         return {valid: true, errorDetail: ERROR_CODES.NULL_ERROR};
     }
 
@@ -196,7 +257,7 @@ class TenantService {
             throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
         }
 
-        const {valid, errorDetail} = await this.validateTenantInput(tenant);
+        const {valid, errorDetail} = await this.validateTenantInput(tenant, false);
         if(!valid){
             throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});
         }
@@ -725,25 +786,16 @@ class TenantService {
                 performOperation: async function() {                    
                     return tenantDao.getCaptchaConfig();
                 },
-                postProcess: async function(oidcContext: OIDCContext, result) {
-                    // always clear out the api key for read-only users. 
-                    if(result){                                              
-                        if(!containsScope(CAPTCHA_CONFIG_SCOPE, oidcContext.portalUserProfile?.scope || [])){
-                            result.apiKey = "";
-                            // result.siteKey = "";
-                            // result.minScoreThreshold = null;
-                            // result.projectId = null;
-                        }
-                        else{
-                            const decrypted: string | null = await kms.decrypt(result.apiKey);
-                            result.apiKey = decrypted || "";  
-                        }
+                postProcess: async function(_, result) {
+                    // always clear out the api key. 
+                    if(result){
+                        result.apiKey = "";                        
                     }                    
                     return result;
                 }
             }
         );
-        const config = await getData(this.oidcContext, [TENANT_READ_ALL_SCOPE, CAPTCHA_CONFIG_SCOPE]);
+        const config = await getData(this.oidcContext, CAPTCHA_CONFIG_SCOPE);
         return config;
     }
 
@@ -817,10 +869,11 @@ class TenantService {
         }
 
         if(captchaConfigInput.useCaptchaV3 && !captchaConfigInput.minScoreThreshold){
+            throw new GraphQLError(ERROR_CODES.EC00194.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00194}});            
 
         }
         if(captchaConfigInput.minScoreThreshold && (captchaConfigInput.minScoreThreshold > 1 || captchaConfigInput.minScoreThreshold < 0)){
-
+            throw new GraphQLError(ERROR_CODES.EC00195.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00195}});            
         }
 
         const captchaConfig: CaptchaConfig = {
@@ -833,17 +886,15 @@ class TenantService {
             useEnterpriseCaptcha: captchaConfigInput.useEnterpriseCaptcha
         }
         
-        // Did the user NOT change the api key? if so, then re-save the existing api key (without re-encrypting it)
+        // Did the user NOT change the api key? if so, then re-save the existing api key (without needing to re-encrypt it)
         const existing: CaptchaConfig | null = await tenantDao.getCaptchaConfig();
-        if(existing !== null && captchaConfigInput.siteKey ===""){
+        if(existing !== null && captchaConfigInput.apiKey === ""){
             captchaConfig.apiKey = existing.apiKey;
         }
         else{
             const encryptedApiKey: string | null = await kms.encrypt(captchaConfigInput.apiKey);
             if(encryptedApiKey === null){
-                // TODO
-                // GENERATE A NEW ERROR CODE
-                throw new GraphQLError(ERROR_CODES.EC00186.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00186}});
+                throw new GraphQLError(ERROR_CODES.EC00196.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00196}});
             }
             captchaConfig.apiKey = encryptedApiKey;
         }

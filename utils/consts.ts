@@ -902,6 +902,8 @@ export const DEFAULT_LOGIN_FAILURE_POLICY: TenantLoginFailurePolicy = {
 }
 
 export const DEFAULT_AUDIT_RECORD_RETENTION_PERIOD_DAYS=90;
+export const TENANT_NAME_MINIMUM_LENGTH=4;
+
 
 // ************************************************************************** //
 // 

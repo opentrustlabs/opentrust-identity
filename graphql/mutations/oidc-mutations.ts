@@ -1120,3 +1120,18 @@ export const PROFILE_ADD_RECOVERY_EMAIL_MUTATION = gql`
 
     ${PROFILE_EMAIL_CHANGE_RESPONSE_FRAGMENT}
 `;
+
+export const SET_CAPTCHA_CONFIG_MUTATION = gql(`
+    mutation setCaptchaConfig($captchaConfigInput: CaptchaConfigInput!){
+        setCaptchaConfig(captchaConfigInput: $captchaConfigInput) {
+            alias
+            projectId
+        }
+    }
+`);
+
+export const REMOVE_CAPTCHA_CONFIG_MUTATION = gql(`
+    mutation removeCaptchaConfig {
+        removeCaptchaConfig
+    }
+`);

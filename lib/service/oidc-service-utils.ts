@@ -208,17 +208,17 @@ class OIDCServiceUtils {
         }
     }
 
-    public async fireSecurityEvent(securityEventType: SecurityEventType, oidcContext: OIDCContext, user: User | PortalUserProfile, jti: string | null, authToken: string | null){
+    public async fireSecurityEvent(securityEventType: SecurityEventType, oidcContext: OIDCContext, user: User | PortalUserProfile | null, jti: string | null, authToken: string | null){
         const securityEvent: SecurityEvent = {
             securityEventType: securityEventType,
-            userId: user.userId,
-            email: user.email,
-            phoneNumber: user.phoneNumber || null,
-            address: user.address || null,
-            city: user.city || null,
-            stateRegionProvince: user.stateRegionProvince || null,
-            countryCode: user.countryCode || null,
-            postalCode: user.postalCode || null,
+            userId: user?.userId || "unknown",
+            email: user?.email || "unknown",
+            phoneNumber: user?.phoneNumber || null,
+            address: user?.address || null,
+            city: user?.city || null,
+            stateRegionProvince: user?.stateRegionProvince || null,
+            countryCode: user?.countryCode || null,
+            postalCode: user?.postalCode || null,
             jti: jti,
             ipAddress: oidcContext.ipAddress,
             geoLocation: oidcContext.geoLocation,

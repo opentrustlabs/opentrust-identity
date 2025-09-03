@@ -14,7 +14,8 @@ export interface DetailSectionActionHandlerProps {
     markDirty: boolean,
     disableSubmit?: boolean,
     enableRestoreDefault?: boolean,
-    restoreDefaultHandler?: () => void
+    restoreDefaultHandler?: () => void,
+    tooltipTitle?: string
 }
 
 const DetailSectionActionHandler: React.FC<DetailSectionActionHandlerProps> = ({
@@ -23,7 +24,8 @@ const DetailSectionActionHandler: React.FC<DetailSectionActionHandlerProps> = ({
     markDirty,
     disableSubmit,
     enableRestoreDefault,
-    restoreDefaultHandler
+    restoreDefaultHandler,
+    tooltipTitle
 }) => {
 
 
@@ -36,7 +38,7 @@ const DetailSectionActionHandler: React.FC<DetailSectionActionHandlerProps> = ({
                             sx={{marginRight: "8px", marginLeft: "8px"}}
                             onClick={() => restoreDefaultHandler()}
                         >
-                            <Tooltip title={"Revert to system settings"}>
+                            <Tooltip title={tooltipTitle ? tooltipTitle : "Revert to system defaults"}>
                                 <RestoreOutlinedIcon sx={{height: "25px", width: "35px"}} />
                             </Tooltip>
                         </Button>

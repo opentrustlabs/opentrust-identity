@@ -1,6 +1,6 @@
 "use client";
-import { CaptchaConfig, CaptchaConfigInput, CategoryEntry, PortalUserProfile, SystemCategory, SystemSettings, SystemSettingsUpdateInput } from "@/graphql/generated/graphql-types";
-import { Alert, Backdrop, Checkbox, CircularProgress, Grid2, Paper, Snackbar, TextField, Typography } from "@mui/material";
+import { CaptchaConfig, CaptchaConfigInput, CategoryEntry, PortalUserProfile, SecretObjectType, SystemCategory, SystemSettings, SystemSettingsUpdateInput } from "@/graphql/generated/graphql-types";
+import { Alert, Backdrop, Button, Checkbox, CircularProgress, Dialog, DialogActions, DialogContent, Grid2, InputAdornment, Paper, Snackbar, TextField, Typography } from "@mui/material";
 import React, { useContext } from "react";
 import { DetailPageContainer, DetailPageMainContentContainer } from "../layout/detail-page-container";
 import { AuthContext, AuthContextProps } from "../contexts/auth-context";
@@ -8,10 +8,13 @@ import { CAPTCHA_CONFIG_SCOPE, DEFAULT_AUDIT_RECORD_RETENTION_PERIOD_DAYS, SYSTE
 import { containsScope } from "@/utils/authz-utils";
 import DetailSectionActionHandler from "../layout/detail-section-action-handler";
 import { useMutation, useQuery } from "@apollo/client";
-import { UPDATE_SYSTEM_SETTINGS_MUTATION } from "@/graphql/mutations/oidc-mutations";
+import { REMOVE_CAPTCHA_CONFIG_MUTATION, SET_CAPTCHA_CONFIG_MUTATION, UPDATE_SYSTEM_SETTINGS_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import { useIntl } from 'react-intl';
 import { CAPTCHA_CONFIG_QUERY } from "@/graphql/queries/oidc-queries";
-
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
+import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
+import SecretViewerDialog from "../dialogs/secret-viewer-dialog";
 
 
 export interface SystemSettingsDetailProps {
@@ -50,10 +53,15 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
     }
     const [systemSettingsUpdateInput, setSystemSettingsUpdateInput] = React.useState<SystemSettingsUpdateInput>(initInput);
     const [captchaConfigInput, setCaptchaConfigInput] = React.useState<CaptchaConfigInput>(initCaptchaInput);
+    const [captchaConfigRevertToInput, setCaptchaRevertToInput] = React.useState<CaptchaConfigInput>(initCaptchaInput);
     const [markDirty, setMarkDirty] = React.useState<boolean>(false);
+    const [captchaConfigMarkDirty, setCaptchaConfigMarkDirty] = React.useState<boolean>(false);
     const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
     const [showMutationBackdrop, setShowMutationBackdrop] = React.useState<boolean>(false);
     const [showMutationSnackbar, setShowMutationSnackbar] = React.useState<boolean>(false);
+    const [changeApiKey, setChangeApiKey] = React.useState<boolean>(false);
+    const [secretDialogOpen, setSecretDialogOpen] = React.useState<boolean>(false);
+    const [showConfirmRecaptchaRemoveDialogOpen, setShowConfirmRecaptchaRemoveDialogOpen] = React.useState<boolean>(false);
 
     // GRAPHQL FUNCTIONS
     const [updateSystemSettingsMutation] = useMutation(UPDATE_SYSTEM_SETTINGS_MUTATION, {
@@ -75,12 +83,11 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
         }
     });
 
-    const {} = useQuery(CAPTCHA_CONFIG_QUERY, {
+    const {data, refetch} = useQuery(CAPTCHA_CONFIG_QUERY, {
+        notifyOnNetworkStatusChange: true,
         onCompleted(data) {
-            if(data && data.getCaptchaConfig){
-                
-                const config: CaptchaConfig = data.getCaptchaConfig;
-                console.log(config);
+            if(data && data.getCaptchaConfig){                
+                const config: CaptchaConfig = data.getCaptchaConfig;                
                 const input: CaptchaConfigInput = {
                     alias: config.alias,
                     apiKey: config.apiKey,
@@ -91,10 +98,40 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
                     projectId: config.projectId
                 }
                 setCaptchaConfigInput(input);
+                setCaptchaRevertToInput({...input});
             }
         },
         skip: !containsScope(CAPTCHA_CONFIG_SCOPE, profile?.scope)
-    })
+    });
+
+    const [updateCaptchaConfigMutation] = useMutation(SET_CAPTCHA_CONFIG_MUTATION, {
+        onCompleted() {
+            setShowMutationBackdrop(false);
+            setCaptchaConfigMarkDirty(false);
+            setShowMutationSnackbar(true);
+            setChangeApiKey(false);
+            refetch();
+        },
+        onError(error) {
+            setShowMutationBackdrop(false);
+            setCaptchaConfigMarkDirty(false);
+            setErrorMessage(intl.formatMessage({id: error.message}));
+        }
+    });
+
+    const [removeCaptchaConfigMutation] = useMutation(REMOVE_CAPTCHA_CONFIG_MUTATION, {
+        onCompleted() {
+            setShowMutationBackdrop(false);
+            setCaptchaConfigMarkDirty(false);
+            setShowMutationSnackbar(true);
+            refetch();
+        },
+        onError(error) {
+            setShowMutationBackdrop(false);
+            setCaptchaConfigMarkDirty(false);
+            setErrorMessage(intl.formatMessage({id: error.message}));
+        }
+    });
 
 
     // HELPER VARIABLES AND FUNCTIONS
@@ -102,6 +139,42 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
 
     return (
         <Typography component={"div"}>
+            {secretDialogOpen &&                    
+                <SecretViewerDialog 
+                    open={secretDialogOpen}
+                    onClose={() => setSecretDialogOpen(false)}
+                    objectId={captchaConfigInput.alias}
+                    secretObjectType={SecretObjectType.CaptchaApiKey}                     
+                />
+            }
+            {showConfirmRecaptchaRemoveDialogOpen &&
+                <Dialog
+                    open={showConfirmRecaptchaRemoveDialogOpen}
+                    onClose={() => setShowConfirmRecaptchaRemoveDialogOpen(false)}
+                    maxWidth="sm"
+                    fullWidth={true}
+                >
+                    <DialogContent>
+                        <Typography>Confirm removal of ReCaptcha configuration</Typography>
+                    </DialogContent>
+                    <DialogActions>
+                        <Button
+                            onClick={() => setShowConfirmRecaptchaRemoveDialogOpen(false)}
+                        >
+                            {intl.formatMessage({id: "CANCEL"})}
+                        </Button>
+                        <Button
+                            onClick={() => {
+                                setShowConfirmRecaptchaRemoveDialogOpen(false);
+                                setShowMutationBackdrop(true);
+                                removeCaptchaConfigMutation();
+                            }}
+                        >
+                            {intl.formatMessage({id: "CONFIRM"})}
+                        </Button>
+                    </DialogActions>
+                </Dialog>
+            }
             <DetailPageContainer>
                 <DetailPageMainContentContainer>
                     <Grid2 container size={12} spacing={2} marginTop={"16px"}>
@@ -263,6 +336,7 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
                                                 onChange={(evt) => {
                                                     captchaConfigInput.alias = evt.target.value;
                                                     setCaptchaConfigInput({...captchaConfigInput});
+                                                    setCaptchaConfigMarkDirty(true);
                                                 }}
                                                 value={captchaConfigInput.alias}
                                                 size="small"
@@ -276,6 +350,7 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
                                                 onChange={(evt) => {
                                                     captchaConfigInput.projectId = evt.target.value;
                                                     setCaptchaConfigInput({...captchaConfigInput});
+                                                    setCaptchaConfigMarkDirty(true);
                                                 }}
                                                 value={captchaConfigInput.projectId}
                                                 size="small"
@@ -290,6 +365,7 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
                                                 onChange={(evt) => {
                                                     captchaConfigInput.siteKey = evt.target.value;
                                                     setCaptchaConfigInput({...captchaConfigInput});
+                                                    setCaptchaConfigMarkDirty(true);
                                                 }}
                                                 value={captchaConfigInput.siteKey}
                                                 size="small"
@@ -299,17 +375,61 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
 
                                         <Grid2 marginBottom={"8px"} size={12}>
                                             <div>Api (Secret) Key</div>
-                                            <TextField
-                                                type="password"
-                                                id="apiKey" name="apiKey"
-                                                onChange={(evt) => {
-                                                    captchaConfigInput.apiKey = evt.target.value;
-                                                    setCaptchaConfigInput({...captchaConfigInput});
-                                                }}
-                                                value={captchaConfigInput.apiKey}
-                                                size="small"
-                                                fullWidth={true}
-                                            />
+                                            {changeApiKey === true &&
+                                                <Grid2 size={12}>
+                                                    <TextField type="password" name="apiKey" id="apiKey"
+                                                        value={captchaConfigInput.apiKey}
+                                                        onChange={(evt) => {
+                                                            captchaConfigInput.apiKey = evt.target.value;
+                                                            setCaptchaConfigInput({ ...captchaConfigInput });
+                                                            setCaptchaConfigMarkDirty(true);
+                                                        }}
+                                                        fullWidth={true} size="small"
+                                                        slotProps={{
+                                                            input: {
+                                                                endAdornment: (
+                                                                    <InputAdornment position="end">
+                                                                        <CloseOutlinedIcon
+                                                                            sx={{ cursor: "pointer" }}
+                                                                            onClick={() => {
+                                                                                captchaConfigInput.apiKey = "";
+                                                                                setCaptchaConfigInput({ ...captchaConfigInput });
+                                                                                setChangeApiKey(false);
+                                                                            }}
+                                                                        />
+                                                                    </InputAdornment>
+                                                                )
+                                                            }
+                                                        }}
+                                                    />
+                                                </Grid2>
+                                            }
+                                            {changeApiKey !== true &&
+                                                <Grid2 container size={12} spacing={1}>
+                                                    <Grid2 size={10}>
+                                                        {data === null || data.getCaptchaConfig === null &&
+                                                            <TextField disabled={true} size="small" fullWidth={true} sx={{backgroundColor: "#efefef"}}></TextField>
+                                                        }
+                                                        {data && data.getCaptchaConfig &&
+                                                            <div>*******************************************</div>
+                                                        }
+                                                    </Grid2>
+                                                    <Grid2 size={1}>
+                                                        <EditOutlinedIcon
+                                                            sx={{ cursor: "pointer" }}
+                                                            onClick={() => {
+                                                                setChangeApiKey(true);
+                                                            }}
+                                                        />
+                                                    </Grid2>
+                                                    <Grid2 size={1}>
+                                                        <VisibilityOutlinedIcon
+                                                            sx={{ cursor: "pointer" }}
+                                                            onClick={() => setSecretDialogOpen(true)}
+                                                        />
+                                                    </Grid2>
+                                                </Grid2>
+                                            }
                                         </Grid2>
 
                                         <Grid2 size={11} marginBottom={"8px"}>
@@ -321,6 +441,7 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
                                                 onChange={(_, checked: boolean) => {
                                                     captchaConfigInput.useCaptchaV3 = checked;
                                                     setCaptchaConfigInput({...captchaConfigInput});
+                                                    setCaptchaConfigMarkDirty(true);
                                                 }}
                                             />
                                         </Grid2>
@@ -328,17 +449,18 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
                                         <Grid2 marginBottom={"8px"} size={12}>
                                             <div>Min. Score Threshold (for V3 ReCaptcha) 0.0 to 1.0</div>
                                             <TextField
+                                                disabled={captchaConfigInput.useCaptchaV3 === false}
                                                 type="number"
                                                 id="minScore" name="minScore"
                                                 onChange={(evt) => {
-                                                    if(evt.target.value === ""){
-                                                        console.log("value is empty string");
+                                                    console.log(evt.target.value);
+                                                    if(evt.target.value === ""){                                                        
                                                         captchaConfigInput.minScoreThreshold = undefined;
                                                         setCaptchaConfigInput({...captchaConfigInput});
                                                     }
                                                     else{
                                                         const v: number = parseFloat(evt.target.value);
-                                                        if(!isNaN(v)){                                                            
+                                                        if(!isNaN(v)){
                                                             captchaConfigInput.minScoreThreshold = v;
                                                             setCaptchaConfigInput({...captchaConfigInput});
                                                         }
@@ -347,15 +469,13 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
                                                             setCaptchaConfigInput({...captchaConfigInput});
                                                         }
                                                     }
-                                                    
+                                                    setCaptchaConfigMarkDirty(true);                                                    
                                                 }}
-                                                value={captchaConfigInput.minScoreThreshold || ""}
+                                                value={captchaConfigInput.useCaptchaV3 ? captchaConfigInput.minScoreThreshold : ""}
                                                 size="small"
                                                 fullWidth={true}
                                             />
                                         </Grid2>
-
-
                                         <Grid2 size={11} marginBottom={"8px"}>
                                             Use Enterprise ReCaptcha
                                         </Grid2>
@@ -365,17 +485,38 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
                                                 onChange={(_, checked: boolean) => {
                                                     captchaConfigInput.useEnterpriseCaptcha = checked;
                                                     setCaptchaConfigInput({...captchaConfigInput});
+                                                    setCaptchaConfigMarkDirty(true);
                                                 }}
                                             />
-                                        </Grid2>                                        
-                                    
-                                    
+                                        </Grid2>
                                     </Grid2>
-
-
+                                    <Grid2 size={12}>
+                                        <DetailSectionActionHandler
+                                            onDiscardClickedHandler={() => {
+                                                console.log(captchaConfigRevertToInput);
+                                                setCaptchaConfigInput({...captchaConfigRevertToInput}); 
+                                                setCaptchaConfigMarkDirty(false);
+                                            }}
+                                            onUpdateClickedHandler={() => {
+                                                setShowMutationBackdrop(true);
+                                                updateCaptchaConfigMutation({
+                                                    variables: {
+                                                        captchaConfigInput: captchaConfigInput
+                                                    }
+                                                });
+                                                
+                                            }}
+                                            markDirty={captchaConfigMarkDirty}
+                                            disableSubmit={false}
+                                            enableRestoreDefault={data !== null && data.getCaptchaConfig !== null}
+                                            restoreDefaultHandler={() => {
+                                                setShowConfirmRecaptchaRemoveDialogOpen(true);
+                                            }}
+                                            tooltipTitle="Remove ReCaptcha Configuration"
+                                        />
+                                    </Grid2>
                                 </Paper>
                             }
-
 
                             <React.Fragment>
                             {systemSettings.systemCategories.slice(categoriesMidpoint).map(

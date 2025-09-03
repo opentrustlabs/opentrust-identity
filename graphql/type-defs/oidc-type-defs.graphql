@@ -290,6 +290,7 @@ enum SecretObjectType {
     PRIVATE_KEY
     PRIVATE_KEY_PASSWORD
     OIDC_PROVIDER_CLIENT_SECRET
+    CAPTCHA_API_KEY
 }
 
 type TenantLoginFailurePolicy {
