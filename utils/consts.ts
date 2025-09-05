@@ -4,7 +4,7 @@
 //                    AUTH-TOKEN-RELATED CONSTANTS
 // 
 
-import { TenantLoginFailurePolicy, TenantMetaData, TenantPasswordConfig } from "@/graphql/generated/graphql-types";
+import { TenantLoginFailurePolicy, TenantLookAndFeel, TenantMetaData, TenantPasswordConfig } from "@/graphql/generated/graphql-types";
 
 export const OPENTRUST_IDENTITY_VERSION="1.0.0";
 
@@ -827,6 +827,20 @@ export const PROFILE_LAYOUT_PAGES =[
 //                  DEFAULT CONSTANTS
 // 
 // ************************************************************************** //
+
+export const DEFAULT_TENANT_LOOK_AND_FEEL: TenantLookAndFeel = {
+    tenantid: "",
+    adminheaderbackgroundcolor: "",
+    adminheadertextcolor: "white",
+    adminlogo: null,
+    adminheadertext: "",
+    authenticationheaderbackgroundcolor: "#1976d2",
+    authenticationheadertextcolor: "white",
+    authenticationlogo: null,
+    authenticationheadertext: "",
+    footerlinks: []
+};
+
 export const DEFAULT_TENANT_META_DATA: TenantMetaData = {
     tenant: {
         __typename: undefined,
@@ -851,18 +865,7 @@ export const DEFAULT_TENANT_META_DATA: TenantMetaData = {
         registrationRequireTermsAndConditions: false,
         termsAndConditionsUri: ""
     },
-    tenantLookAndFeel: {
-        tenantid: "",
-        adminheaderbackgroundcolor: "",
-        adminheadertextcolor: "white",
-        adminlogo: null,
-        adminheadertext: "",
-        authenticationheaderbackgroundcolor: "#1976d2",
-        authenticationheadertextcolor: "white",
-        authenticationlogo: null,
-        authenticationheadertext: "",
-        footerlinks: []
-    },
+    tenantLookAndFeel: DEFAULT_TENANT_LOOK_AND_FEEL,
     systemSettings: {
         systemId: "",
         allowRecoveryEmail: false,

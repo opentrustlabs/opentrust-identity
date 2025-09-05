@@ -12,6 +12,10 @@ import { randomUUID } from "node:crypto";
 import { CustomKmsDecryptionResponseBody, CustomKmsEncryptionResponseBody, CustomKmsRequestBody } from "../kms/custom-kms";
 import { DEFAULT_HTTP_TIMEOUT_MS } from "@/utils/consts";
 import { RecaptchaResponse } from "../models/recaptcha";
+import nodemailer from "nodemailer";
+import SMTPTransport from "nodemailer/lib/smtp-transport";
+import { AuthenticationTypeLogin, AuthenticationTypeOAuth2 } from "nodemailer/lib/smtp-connection";
+import SMTPPool from "nodemailer/lib/smtp-pool";
 
 const {
     HTTP_TIMEOUT_MS,
@@ -27,8 +31,57 @@ const {
     HTTP_PROXY_USE_AUTHENTICATION,
     HTTP_PROXY_USERNAME,
     HTTP_PROXY_PASSWORD,
-    SECURITY_EVENT_CALLBACK_URI
+    SECURITY_EVENT_CALLBACK_URI,
+    EMAIL_SERVER_HOST,
+    EMAIL_SERVER_PORT,
+    EMAIL_SERVER_USERNAME,
+    EMAIL_SERVER_PASSWORD,
+    EMAIL_SERVER_USE_CONNECTION_POOL,
+    EMAIL_SERVER_PROXY,
+    EMAIL_SERVER_USE_SECURE,
+    EMAIL_SERVER_REQUIRE_TLS,
+    EMAIL_CLIENT_LOG_TO_CONSOLE,
+    EMAIL_CLIENT_DEBUG_LOG
 } = process.env;
+
+// Thanks to ChatGPT for helping with configuration of nodemailer, which
+// is a great library, but very very difficult to configure with all of
+// the options you want.
+// parseInt(EMAIL_SERVER_PORT || "587"),
+type TransportOptions = (SMTPTransport.Options | SMTPPool.Options) & {
+  proxy?: string; // add proxy explicitly (typing not always included)
+};
+
+const transportOptions: TransportOptions = {
+    host: EMAIL_SERVER_HOST,
+    port: parseInt(EMAIL_SERVER_PORT || "587"),
+    auth: {
+        user: EMAIL_SERVER_USERNAME,
+        pass: EMAIL_SERVER_PASSWORD
+    },
+    secure: EMAIL_SERVER_USE_SECURE === "true",
+    requireTLS: EMAIL_SERVER_REQUIRE_TLS === "true",
+    debug: EMAIL_CLIENT_DEBUG_LOG === "true",
+    logger: EMAIL_CLIENT_LOG_TO_CONSOLE === "true"
+}
+
+if(EMAIL_SERVER_PROXY){
+    transportOptions.proxy = EMAIL_SERVER_PROXY;
+}
+
+if(EMAIL_SERVER_USE_CONNECTION_POOL && EMAIL_SERVER_USE_CONNECTION_POOL === "true"){
+    Object.assign(
+        transportOptions, 
+        {
+            pool: true,
+            maxConnections: 5,
+            maxMessages: 100
+        } satisfies SMTPPool.Options
+    );
+};
+
+
+const emailTransporter = nodemailer.createTransport(transportOptions);
 
 
 const proxy: AxiosProxyConfig | undefined = HTTP_CLIENT_USE_PROXY === "true" ? 
@@ -334,6 +387,16 @@ class OIDCServiceUtils {
             logWithDetails("error", `Error invoking Google recaptcha verification. ${error.message}`, {...error});            
         }
         return recaptchaResponse;
+    }
+
+    public async sendEmail(from: string, to: string, subject: string, text?: string, html?: string): Promise<void> {
+        await emailTransporter.sendMail({
+            from,
+            to,
+            subject,
+            text,
+            html
+        });
     }
 
 }
