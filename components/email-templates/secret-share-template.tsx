@@ -2,18 +2,38 @@ import * as React from 'react';
 import { Body, Container, Head, Html, Preview, Text, Row, Column, Section, Button } from '@react-email/components';
 import { TenantLookAndFeel } from '@/graphql/generated/graphql-types';
 import { DEFAULT_BACKGROUND_COLOR, DEFAULT_TEXT_COLOR } from '@/utils/consts';
-
+import { IntlProvider, useIntl } from "react-intl";
+import { DEFAULT_LANGUAGE, messages } from '@/locales/localization-utils';
 
 
 export interface SecretShareProps {
     url: string,    
-    tenantLookAndFeel: TenantLookAndFeel    
+    tenantLookAndFeel: TenantLookAndFeel,
+    languageCode: string
 }
 
 export const SecretShare: React.FC<SecretShareProps> = ({
     url,
-    tenantLookAndFeel    
+    tenantLookAndFeel,
+    languageCode
 }) => {
+
+    return (
+        <IntlProvider locale={languageCode} messages={messages[languageCode]} defaultLocale={DEFAULT_LANGUAGE}>
+            <InnerComponent
+                url={url}
+                tenantLookAndFeel={tenantLookAndFeel}
+            />
+        </IntlProvider>
+    )
+}
+
+const InnerComponent: React.FC<{url: string, tenantLookAndFeel: TenantLookAndFeel}> = ({
+    url,
+    tenantLookAndFeel
+}) => {
+
+    const intl = useIntl();
 
     const headerStyle = {
         minHeight: "55px",
@@ -28,7 +48,7 @@ export const SecretShare: React.FC<SecretShareProps> = ({
     return (
         <Html>
             <Head />
-            <Preview>Enter your secret</Preview>
+            <Preview>{intl.formatMessage({id: "ENTER_SECRET"})}</Preview>
             <Body style={{fontFamily: "Arial, sans-serif", fontSize: "16px"}}>
                 <Container style={headerStyle}>
                     <Section>
@@ -48,8 +68,8 @@ export const SecretShare: React.FC<SecretShareProps> = ({
                 </Container>
                 <Container style={{marginBottom: "24px"}}>
                     <Text>
-                        Click the link below to enter the secret value:
-                    </Text>
+                        {intl.formatMessage({id: "CLICK_LINK_TO_ENTER_SECRET_VALUE"})}
+                    </Text>                    
                 </Container>
                 <Container style={{marginBottom: "24px"}}>
                     <Button
@@ -64,7 +84,7 @@ export const SecretShare: React.FC<SecretShareProps> = ({
                             border: "solid 1px lightgrey"
                         }}
                     >
-                        Enter secret
+                        {intl.formatMessage({id: "ENTER_SECRET"})}
                     </Button>
                 </Container>
             </Body>

@@ -796,7 +796,7 @@ class RegisterUserService extends IdentityService {
         }
         const name = user.nameOrder === NAME_ORDER_WESTERN ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`;
         const tenantLookAndFeel: TenantLookAndFeel = await tenantDao.getTenantLookAndFeel(this.oidcContext.rootTenant.tenantId) || DEFAULT_TENANT_LOOK_AND_FEEL;
-        oidcServiceUtils.sendEmailVerificationEmail(fromEmailAddr, user.email, name, emailConfirmationToken, tenantLookAndFeel, systemSettings.contactEmail || undefined);
+        oidcServiceUtils.sendEmailVerificationEmail(fromEmailAddr, user.email, name, emailConfirmationToken, tenantLookAndFeel, user.preferredLanguageCode || "en", systemSettings.contactEmail || undefined);
 
         response.profileEmailChangeState = arrStates[0];
         return response;
@@ -1185,7 +1185,7 @@ class RegisterUserService extends IdentityService {
             }
             const name = user.nameOrder === NAME_ORDER_WESTERN ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`;
             const tenantLookAndFeel: TenantLookAndFeel = await tenantDao.getTenantLookAndFeel(this.oidcContext.rootTenant.tenantId) || DEFAULT_TENANT_LOOK_AND_FEEL;
-            oidcServiceUtils.sendEmailVerificationEmail(fromEmailAddr, user.email, name, token, tenantLookAndFeel, systemSettings.contactEmail || undefined);
+            oidcServiceUtils.sendEmailVerificationEmail(fromEmailAddr, user.email, name, token, tenantLookAndFeel, user.preferredLanguageCode || "en", systemSettings.contactEmail || undefined);
         }
         await this.updateObjectSearchIndex(tenant, user);
         await this.updateRelSearchIndex(tenant.tenantId, tenant.tenantId, user);

@@ -347,5 +347,10 @@
     "ERROR_CANNOT_ASSIGN_AS_ROOT_TENANT": "Impossibile assegnare il tenant come tenant root.",
     "ERROR_INVALID_URL_FOR_TERMS_AND_CONDITIONS": "L'URL per il link ai termini e condizioni non è valido.",
     "ERROR_NO_TERMS_AND_CONDITIONS_URL_WAS_SPECIFIED": "L'URL dei termini e condizioni è obbligatorio.",
-    "ERROR_NO_DEFAULT_RATE_LIMIT_SPECIFIED_FOR_LIMITED_API_RATE": "È necessario specificare un valore per il limite di velocità."
+    "ERROR_NO_DEFAULT_RATE_LIMIT_SPECIFIED_FOR_LIMITED_API_RATE": "È necessario specificare un valore per il limite di velocità.",
+    "CLICK_LINK_TO_ENTER_SECRET_VALUE": "Clicca sul link qui sotto per inserire il valore segreto",
+    "ENTER_SECRET": "Inserisci il segreto",
+    "USE_THE_FOLLOWING_CODE_TO_CONFIRM_YOUR_EMAIL": "Utilizza il seguente codice per confermare il tuo indirizzo email",
+    "UNAUTHORIZED_REGISTRATION": "Se non hai registrato questo indirizzo email, segnalalo",
+    "REPORT_UNAUTHORIZED_REGISTRATION": "Segnala una registrazione non autorizzata"
 }

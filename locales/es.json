@@ -347,5 +347,10 @@
     "ERROR_CANNOT_ASSIGN_AS_ROOT_TENANT": "El inquilino no se puede asignar como inquilino raíz.",
     "ERROR_INVALID_URL_FOR_TERMS_AND_CONDITIONS": "La URL del enlace de términos y condiciones no es válida.",
     "ERROR_NO_TERMS_AND_CONDITIONS_URL_WAS_SPECIFIED": "La URL de términos y condiciones es obligatoria.",
-    "ERROR_NO_DEFAULT_RATE_LIMIT_SPECIFIED_FOR_LIMITED_API_RATE": "Se debe especificar un valor límite de tasa."
+    "ERROR_NO_DEFAULT_RATE_LIMIT_SPECIFIED_FOR_LIMITED_API_RATE": "Se debe especificar un valor límite de tasa.",
+    "CLICK_LINK_TO_ENTER_SECRET_VALUE": "Haz clic en el enlace de abajo para introducir el valor secreto.",
+    "ENTER_SECRET": "Introduce el secreto.",
+    "USE_THE_FOLLOWING_CODE_TO_CONFIRM_YOUR_EMAIL": "Usa el siguiente código para confirmar tu correo electrónico.",
+    "UNAUTHORIZED_REGISTRATION": "Si no registraste este correo electrónico, por favor, repórtalo.",
+    "REPORT_UNAUTHORIZED_REGISTRATION": "Reportar registro no autorizado."
 }

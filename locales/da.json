@@ -347,5 +347,10 @@
     "ERROR_CANNOT_ASSIGN_AS_ROOT_TENANT": "Lejeren kan ikke tildeles som rodlejer.",
     "ERROR_INVALID_URL_FOR_TERMS_AND_CONDITIONS": "URL'en til linket til vilkår og betingelser er ugyldig.",
     "ERROR_NO_TERMS_AND_CONDITIONS_URL_WAS_SPECIFIED": "URL'en til vilkår og betingelser er påkrævet.",
-    "ERROR_NO_DEFAULT_RATE_LIMIT_SPECIFIED_FOR_LIMITED_API_RATE": "En hastighedsgrænseværdi skal angives."
+    "ERROR_NO_DEFAULT_RATE_LIMIT_SPECIFIED_FOR_LIMITED_API_RATE": "En hastighedsgrænseværdi skal angives.",
+    "CLICK_LINK_TO_ENTER_SECRET_VALUE": "Klik på linket nedenfor for at indtaste den hemmelige værdi",
+    "ENTER_SECRET": "Indtast hemmelighed",
+    "USE_THE_FOLLOWING_CODE_TO_CONFIRM_YOUR_EMAIL": "Brug følgende kode til at bekræfte din e-mailadresse",
+    "UNAUTHORIZED_REGISTRATION": "Hvis du ikke har registreret denne e-mailadresse, bedes du rapportere den",
+    "REPORT_UNAUTHORIZED_REGISTRATION": "Rapporter uautoriseret registrering"
 }

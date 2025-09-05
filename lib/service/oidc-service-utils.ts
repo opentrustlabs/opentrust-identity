@@ -47,45 +47,54 @@ const {
     EMAIL_CLIENT_DEBUG_LOG
 } = process.env;
 
+declare global {
+    // eslint-disable-next-line no-var
+    var emailTransporter: nodemailer.Transporter<SMTPTransport.SentMessageInfo, SMTPTransport.Options> | undefined;
+}
+
+
 // Thanks to ChatGPT for helping with configuration of nodemailer, which
 // is a great library, but very very difficult to configure with all of
 // the options you want.
-// parseInt(EMAIL_SERVER_PORT || "587"),
 type TransportOptions = (SMTPTransport.Options | SMTPPool.Options) & {
   proxy?: string; // add proxy explicitly (typing not always included)
 };
 
-const transportOptions: TransportOptions = {
-    host: EMAIL_SERVER_HOST,
-    port: parseInt(EMAIL_SERVER_PORT || "587"),
-    auth: {
-        user: EMAIL_SERVER_USERNAME,
-        pass: EMAIL_SERVER_PASSWORD
-    },
-    secure: EMAIL_SERVER_USE_SECURE === "true",
-    requireTLS: EMAIL_SERVER_REQUIRE_TLS === "true",
-    debug: EMAIL_CLIENT_DEBUG_LOG === "true",
-    logger: EMAIL_CLIENT_LOG_TO_CONSOLE === "true"
+
+
+function getEmailTransporter() {
+    if(!global.emailTransporter){
+        const transportOptions: TransportOptions = {
+            host: EMAIL_SERVER_HOST,
+            port: parseInt(EMAIL_SERVER_PORT || "587"),
+            auth: {
+                user: EMAIL_SERVER_USERNAME,
+                pass: EMAIL_SERVER_PASSWORD
+            },
+            secure: EMAIL_SERVER_USE_SECURE === "true",
+            requireTLS: EMAIL_SERVER_REQUIRE_TLS === "true",
+            debug: EMAIL_CLIENT_DEBUG_LOG === "true",
+            logger: EMAIL_CLIENT_LOG_TO_CONSOLE === "true"
+        }
+
+        if(EMAIL_SERVER_PROXY){
+            transportOptions.proxy = EMAIL_SERVER_PROXY;
+        }
+
+        if(EMAIL_SERVER_USE_CONNECTION_POOL && EMAIL_SERVER_USE_CONNECTION_POOL === "true"){
+            Object.assign(
+                transportOptions, 
+                {
+                    pool: true,
+                    maxConnections: 5,
+                    maxMessages: 100
+                } satisfies SMTPPool.Options
+            );
+        };
+        global.emailTransporter = nodemailer.createTransport(transportOptions);
+    }
+    return global.emailTransporter;
 }
-
-if(EMAIL_SERVER_PROXY){
-    transportOptions.proxy = EMAIL_SERVER_PROXY;
-}
-
-if(EMAIL_SERVER_USE_CONNECTION_POOL && EMAIL_SERVER_USE_CONNECTION_POOL === "true"){
-    Object.assign(
-        transportOptions, 
-        {
-            pool: true,
-            maxConnections: 5,
-            maxMessages: 100
-        } satisfies SMTPPool.Options
-    );
-};
-
-
-const emailTransporter = nodemailer.createTransport(transportOptions);
-
 
 const proxy: AxiosProxyConfig | undefined = HTTP_CLIENT_USE_PROXY === "true" ? 
     {
@@ -392,7 +401,7 @@ class OIDCServiceUtils {
         return recaptchaResponse;
     }
 
-    public async sendEmailVerificationEmail(from: string, to: string, name: string, token: string, tenantLookAndFeel: TenantLookAndFeel, contactEmail?: string): Promise<void> {
+    public async sendEmailVerificationEmail(from: string, to: string, name: string, token: string, tenantLookAndFeel: TenantLookAndFeel, languageCode: string, contactEmail?: string): Promise<void> {
         const html = await render(
             React.createElement(
                 VerifyRegistration, 
@@ -400,7 +409,8 @@ class OIDCServiceUtils {
                     name: name, 
                     token: token, 
                     tenantLookAndFeel: tenantLookAndFeel, 
-                    contactEmail: contactEmail
+                    contactEmail: contactEmail,
+                    languageCode: languageCode
                 }
             )
         );
@@ -408,12 +418,13 @@ class OIDCServiceUtils {
         this.sendEmail(from, to, "Verify Email", undefined, html);
     }
 
-    public async sendSecretEntryEmail(from: string, to: string, url: string, tenantLookAndFeel: TenantLookAndFeel): Promise<void>{
+    public async sendSecretEntryEmail(from: string, to: string, url: string, tenantLookAndFeel: TenantLookAndFeel, languageCode: string): Promise<void>{
         const html = await render(
             React.createElement(
                 SecretShare, {
                     url: url,
-                    tenantLookAndFeel: tenantLookAndFeel
+                    tenantLookAndFeel: tenantLookAndFeel,
+                    languageCode: languageCode
                 }
             )
         );
@@ -422,7 +433,7 @@ class OIDCServiceUtils {
 
 
     public async sendEmail(from: string, to: string, subject: string, text?: string, html?: string): Promise<void> {
-        await emailTransporter.sendMail({
+        await getEmailTransporter().sendMail({
             from,
             to,
             subject,

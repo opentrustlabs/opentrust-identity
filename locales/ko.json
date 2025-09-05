@@ -347,5 +347,10 @@
     "ERROR_CANNOT_ASSIGN_AS_ROOT_TENANT": "테넌트를 루트 테넌트로 지정할 수 없습니다.",
     "ERROR_INVALID_URL_FOR_TERMS_AND_CONDITIONS": "이용 약관 링크의 URL이 잘못되었습니다.",
     "ERROR_NO_TERMS_AND_CONDITIONS_URL_WAS_SPECIFIED": "이용 약관 URL이 필요합니다.",
-    "ERROR_NO_DEFAULT_RATE_LIMIT_SPECIFIED_FOR_LIMITED_API_RATE": "속도 제한 값을 지정해야 합니다."
+    "ERROR_NO_DEFAULT_RATE_LIMIT_SPECIFIED_FOR_LIMITED_API_RATE": "속도 제한 값을 지정해야 합니다.",
+    "CLICK_LINK_TO_ENTER_SECRET_VALUE": "아래 링크를 클릭하여 비밀번호를 입력하세요.",
+    "ENTER_SECRET": "비밀번호를 입력하세요.",
+    "USE_THE_FOLLOWING_CODE_TO_CONFIRM_YOUR_EMAIL": "다음 코드를 사용하여 이메일 주소를 확인하세요.",
+    "UNAUTHORIZED_REGISTRATION": "이 이메일 주소를 등록하지 않으셨다면 신고해 주세요.",
+    "REPORT_UNAUTHORIZED_REGISTRATION": "무단 등록 신고"
 }

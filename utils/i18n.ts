@@ -1,19 +1,3 @@
-// import IntlMessageFormat from 'intl-messageformat';
-// import memoizeFormatConstructor  from 'intl-format-cache';
-
-// const getMessageFormatter = memoizeFormatConstructor(IntlMessageFormat);
-
-// export function getFormattedMessage(locale: string, messageId: string, values = {}) {
-//     const messages = require(`./${locale}.json`); // Load messages for the given locale
-//     const message = messages[messageId];
-
-//     if (!message) {
-//         return `Translation missing for: ${messageId}`; // Handle missing translations
-//     }
-
-//     const formatter = getMessageFormatter(message, locale);
-//     return formatter.format(values);
-// }
 
 export interface CountryCodeDef {
     countryCode: string,

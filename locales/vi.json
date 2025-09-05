@@ -347,5 +347,10 @@
     "ERROR_CANNOT_ASSIGN_AS_ROOT_TENANT": "Không thể chỉ định đối tượng thuê làm đối tượng thuê gốc.",
     "ERROR_INVALID_URL_FOR_TERMS_AND_CONDITIONS": "URL cho liên kết điều khoản và điều kiện không hợp lệ.",
     "ERROR_NO_TERMS_AND_CONDITIONS_URL_WAS_SPECIFIED": "URL điều khoản và điều kiện là bắt buộc.",
-    "ERROR_NO_DEFAULT_RATE_LIMIT_SPECIFIED_FOR_LIMITED_API_RATE": "Cần chỉ định giá trị giới hạn tốc độ."
+    "ERROR_NO_DEFAULT_RATE_LIMIT_SPECIFIED_FOR_LIMITED_API_RATE": "Cần chỉ định giá trị giới hạn tốc độ.",
+    "CLICK_LINK_TO_ENTER_SECRET_VALUE": "Nhấp vào liên kết bên dưới để nhập giá trị bí mật",
+    "ENTER_SECRET": "Nhập bí mật",
+    "USE_THE_FOLLOWING_CODE_TO_CONFIRM_YOUR_EMAIL": "Sử dụng mã sau để xác nhận địa chỉ email của bạn",
+    "UNAUTHORIZED_REGISTRATION": "Nếu bạn chưa đăng ký địa chỉ email này, vui lòng báo cáo",
+    "REPORT_UNAUTHORIZED_REGISTRATION": "Báo cáo đăng ký trái phép"
 }

@@ -132,7 +132,7 @@ class AuthenticateUserService extends IdentityService {
         }
         const name = user.nameOrder === NAME_ORDER_WESTERN ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`;
         const tenantLookAndFeel: TenantLookAndFeel = await tenantDao.getTenantLookAndFeel(this.oidcContext.rootTenant.tenantId) || DEFAULT_TENANT_LOOK_AND_FEEL;
-        oidcServiceUtils.sendEmailVerificationEmail(fromEmailAddr, toEmailAddr, name, token, tenantLookAndFeel, systemSettings.contactEmail || undefined);
+        oidcServiceUtils.sendEmailVerificationEmail(fromEmailAddr, toEmailAddr, name, token, tenantLookAndFeel, user.preferredLanguageCode || "en", systemSettings.contactEmail || undefined);
 
         // Delete the old entries for the authentication state and create new ones.
         for(let i = 0; i < arrUserAuthenticationStates.length; i++){

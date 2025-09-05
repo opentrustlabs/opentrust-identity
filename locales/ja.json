@@ -347,5 +347,10 @@
     "ERROR_CANNOT_ASSIGN_AS_ROOT_TENANT": "このテナントをルートテナントとして割り当てることはできません。",
     "ERROR_INVALID_URL_FOR_TERMS_AND_CONDITIONS": "利用規約リンクのURLが無効です。",
     "ERROR_NO_TERMS_AND_CONDITIONS_URL_WAS_SPECIFIED": "利用規約URLは必須です。",
-    "ERROR_NO_DEFAULT_RATE_LIMIT_SPECIFIED_FOR_LIMITED_API_RATE": "レート制限値を指定する必要があります。"
+    "ERROR_NO_DEFAULT_RATE_LIMIT_SPECIFIED_FOR_LIMITED_API_RATE": "レート制限値を指定する必要があります。",
+    "CLICK_LINK_TO_ENTER_SECRET_VALUE": "以下のリンクをクリックしてシークレット値を入力してください",
+    "ENTER_SECRET": "シークレットを入力してください",
+    "USE_THE_FOLLOWING_CODE_TO_CONFIRM_YOUR_EMAIL": "以下のコードを使用してメールアドレスを確認してください",
+    "UNAUTHORIZED_REGISTRATION": "このメールアドレスを登録していない場合は、ご報告ください",
+    "REPORT_UNAUTHORIZED_REGISTRATION": "不正な登録を報告する"
 }
