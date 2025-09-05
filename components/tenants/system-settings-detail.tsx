@@ -484,7 +484,6 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
                                                 type="number"
                                                 id="minScore" name="minScore"
                                                 onChange={(evt) => {
-                                                    console.log(evt.target.value);
                                                     if(evt.target.value === ""){                                                        
                                                         captchaConfigInput.minScoreThreshold = undefined;
                                                         setCaptchaConfigInput({...captchaConfigInput});
@@ -524,7 +523,6 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
                                     <Grid2 size={12}>
                                         <DetailSectionActionHandler
                                             onDiscardClickedHandler={() => {
-                                                console.log(captchaConfigRevertToInput);
                                                 setCaptchaConfigInput({...captchaConfigRevertToInput}); 
                                                 setCaptchaConfigMarkDirty(false);
                                             }}

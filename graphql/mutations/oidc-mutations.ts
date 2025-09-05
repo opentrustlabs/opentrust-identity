@@ -448,8 +448,6 @@ export const RATE_LIMIT_SERVICE_GROUP_UPDATE_MUTATION = gql(`
     }    
 `);
 
-//  TODO
-//  deleteRateLimitServiceGroup(serviceGroupId: String!): String
 
 export const TENANT_RATE_LIMIT_ASSIGN_MUTATION = gql(`
     mutation assignRateLimitToTenant($tenantId: String!, $serviceGroupId: String!, $allowUnlimited: Boolean, $limit: Int, $rateLimitPeriodMinutes: Int) {

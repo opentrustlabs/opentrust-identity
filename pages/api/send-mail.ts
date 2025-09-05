@@ -7,6 +7,7 @@ import { DaoFactory } from '@/lib/data-sources/dao-factory';
 import TenantDao from '@/lib/dao/tenant-dao';
 import { Tenant, TenantLookAndFeel } from '@/graphql/generated/graphql-types';
 import { DEFAULT_TENANT_LOOK_AND_FEEL } from '@/utils/consts';
+import { SecretShare } from '@/components/email-templates/secret-share-template';
 
 const oidcServiceUtils: OIDCServiceUtils = new OIDCServiceUtils()
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
@@ -23,9 +24,10 @@ export default async function handler(
     }
    
     
-    const html = await render(React.createElement(VerifyRegistration, {name: "Reggie White", token: "748392EA3", tenantLookAndFeel: tenantLookAndFeel, contactEmail: "contactus@opentrust.org"}));
+    const html = await render(React.createElement(SecretShare, {url:"https://localhost:3000/token/share", tenantLookAndFeel: tenantLookAndFeel}));
+    //await render(React.createElement(VerifyRegistration, {name: "Reggie White", token: "748392EA3", tenantLookAndFeel: tenantLookAndFeel, contactEmail: "contactus@opentrust.org"}));
 
-    oidcServiceUtils.sendEmail("no-reply@opentrust.org", "reggie.white@opentrust.org", "Verify Email", undefined, html);
+    //oidcServiceUtils.sendEmail("no-reply@opentrust.org", "reggie.white@opentrust.org", "Verify Email", undefined, html);
 
     res.status(200).setHeader("Content-Type", "text/html").write(html);
     res.end();
