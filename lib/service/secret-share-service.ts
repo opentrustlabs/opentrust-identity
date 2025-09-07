@@ -1,4 +1,4 @@
-import { FederatedOidcProvider, SecretShare, SecretShareObjectType } from "@/graphql/generated/graphql-types";
+import { FederatedOidcProvider, SecretShare, SecretShareObjectType, SystemSettings, TenantLookAndFeel } from "@/graphql/generated/graphql-types";
 import SecretShareDao from "../dao/secret-share-dao";
 import { DaoFactory } from "../data-sources/dao-factory";
 import FederatedOIDCProviderDao from "../dao/federated-oidc-provider-dao";
@@ -7,22 +7,24 @@ import { GraphQLError } from "graphql";
 import { generateHash, generateRandomToken } from "@/utils/dao-utils";
 import { OIDCContext } from "@/graphql/graphql-context";
 import { authorizeByScopeAndTenant } from "@/utils/authz-utils";
-import { SECRET_ENTRY_DELEGATE_SCOPE } from "@/utils/consts";
+import { DEFAULT_TENANT_LOOK_AND_FEEL, QUERY_PARAM_SECRET_ENTRY_OTP, SECRET_ENTRY_DELEGATE_SCOPE } from "@/utils/consts";
 import Kms from "../kms/kms";
 import { ERROR_CODES } from "../models/error";
 import JwtServiceUtils from "./jwt-service-utils";
 import OIDCServiceUtils from "./oidc-service-utils";
+import TenantDao from "../dao/tenant-dao";
 
 
 const secretShareDao: SecretShareDao = DaoFactory.getInstance().getSecretShareDao();
 const federatedOIDCProvderDao: FederatedOIDCProviderDao = DaoFactory.getInstance().getFederatedOIDCProvicerDao();
 const kms: Kms = DaoFactory.getInstance().getKms();
+const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
 const jwtServiceUtils: JwtServiceUtils = new JwtServiceUtils();
 const oidcServiceUtils: OIDCServiceUtils = new OIDCServiceUtils();
 
-// const {
-//      AUTH_DOMAIN
-// } = process.env;
+const {
+     AUTH_DOMAIN
+} = process.env;
 
 class SecretShareService {
 
@@ -69,9 +71,17 @@ class SecretShareService {
             oidcServiceUtils.fireSecurityEvent("secret_share_link_generated", this.oidcContext, this.oidcContext.portalUserProfile, null, authToken);
         }
         
-        // TODO
-        // Generate email with the following link:
-        // const secretEntryLink = `${AUTH_DOMAIN}/secret-entry?${QUERY_PARAM_SECRET_ENTRY_OTP}=${otp}`;
+        const systemSettings: SystemSettings = await tenantDao.getSystemSettings();
+        const fromEmail = systemSettings.noReplyEmail ? systemSettings.noReplyEmail : "no-reply";
+        const secretEntryLink = `${AUTH_DOMAIN}/secret-entry?${QUERY_PARAM_SECRET_ENTRY_OTP}=${otp}`;
+        const tenantLookAndFeel: TenantLookAndFeel = await tenantDao.getTenantLookAndFeel(this.oidcContext.rootTenant.tenantId) || DEFAULT_TENANT_LOOK_AND_FEEL;
+
+        oidcServiceUtils.sendSecretEntryEmail(
+            fromEmail,
+            email,
+            secretEntryLink,
+            tenantLookAndFeel
+        );
         
         return true;
     }

@@ -1,11 +1,11 @@
 import { OIDCContext } from "@/graphql/graphql-context";
 import IdentityDao from "../dao/identity-dao";
-import { Fido2KeyRegistrationInput, Tenant, TenantPasswordConfig, TotpResponse, User, UserCreateInput, UserCredential, Fido2KeyAuthenticationInput, TenantRestrictedAuthenticationDomainRel, PreAuthenticationState, AuthorizationReturnUri, UserRegistrationStateResponse, UserRegistrationState, RegistrationState, UserTermsAndConditionsAccepted, TenantLegacyUserMigrationConfig, SystemSettings, FederatedOidcProvider, AuthorizationDeviceCodeData, DeviceCodeAuthorizationStatus, UserRecoveryEmail, ProfileEmailChangeResponse, ProfileEmailChangeState, EmailChangeState, ErrorDetail, CaptchaConfig } from "@/graphql/generated/graphql-types";
+import { Fido2KeyRegistrationInput, Tenant, TenantPasswordConfig, TotpResponse, User, UserCreateInput, UserCredential, Fido2KeyAuthenticationInput, TenantRestrictedAuthenticationDomainRel, PreAuthenticationState, AuthorizationReturnUri, UserRegistrationStateResponse, UserRegistrationState, RegistrationState, UserTermsAndConditionsAccepted, TenantLegacyUserMigrationConfig, SystemSettings, FederatedOidcProvider, AuthorizationDeviceCodeData, DeviceCodeAuthorizationStatus, UserRecoveryEmail, ProfileEmailChangeResponse, ProfileEmailChangeState, EmailChangeState, ErrorDetail, CaptchaConfig, TenantLookAndFeel } from "@/graphql/generated/graphql-types";
 import { DaoFactory } from "../data-sources/dao-factory";
 import TenantDao from "../dao/tenant-dao";
 import { GraphQLError } from "graphql/error";
 import { randomUUID } from "crypto";
-import { DEFAULT_TENANT_PASSWORD_CONFIGURATION, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, OIDC_AUTHORIZATION_ERROR_ACCESS_DENIED, QUERY_PARAM_AUTHENTICATE_TO_PORTAL, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, STATUS_COMPLETE, STATUS_INCOMPLETE, PRINCIPAL_TYPE_IAM_PORTAL_USER, DEFAULT_CAPTCHA_V3_MINIMUM_SCORE } from "@/utils/consts";
+import { DEFAULT_TENANT_PASSWORD_CONFIGURATION, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, OIDC_AUTHORIZATION_ERROR_ACCESS_DENIED, QUERY_PARAM_AUTHENTICATE_TO_PORTAL, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, STATUS_COMPLETE, STATUS_INCOMPLETE, PRINCIPAL_TYPE_IAM_PORTAL_USER, DEFAULT_CAPTCHA_V3_MINIMUM_SCORE, NAME_ORDER_WESTERN, DEFAULT_TENANT_LOOK_AND_FEEL } from "@/utils/consts";
 import {  generateRandomToken, getDomainFromEmail } from "@/utils/dao-utils";
 import { Client as OpenSearchClient } from "@opensearch-project/opensearch";
 import { getOpenSearchClient } from "../data-sources/search";
@@ -784,8 +784,19 @@ class RegisterUserService extends IdentityService {
         // their email in the next step.
         const emailConfirmationToken = generateRandomToken(8, "hex").toUpperCase();
         await identityDao.saveEmailConfirmationToken(user.userId, emailConfirmationToken);
-        // TODO
-        // Send an email to the user.
+        
+        // Send an email to the user with the token value.        
+        let fromEmailAddr: string = "";
+        const systemSettings = await tenantDao.getSystemSettings();
+        if(systemSettings && systemSettings.noReplyEmail){
+            fromEmailAddr = systemSettings.noReplyEmail;
+        }
+        else{
+            fromEmailAddr = this.oidcContext.rootTenant.tenantName.toLowerCase().replaceAll(" ", "") + ".com";
+        }
+        const name = user.nameOrder === NAME_ORDER_WESTERN ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`;
+        const tenantLookAndFeel: TenantLookAndFeel = await tenantDao.getTenantLookAndFeel(this.oidcContext.rootTenant.tenantId) || DEFAULT_TENANT_LOOK_AND_FEEL;
+        oidcServiceUtils.sendEmailVerificationEmail(fromEmailAddr, user.email, name, emailConfirmationToken, tenantLookAndFeel, user.preferredLanguageCode || "en", systemSettings.contactEmail || undefined);
 
         response.profileEmailChangeState = arrStates[0];
         return response;
@@ -1162,8 +1173,19 @@ class RegisterUserService extends IdentityService {
         if (isRegistration && tenant.verifyEmailOnSelfRegistration) {
             const token: string = generateRandomToken(8, "hex").toUpperCase();
             await identityDao.saveEmailConfirmationToken(user.userId, token);
-            // TODO
-            // Send email to the user with the token value.
+            
+            // Send an email to the user with the token value.        
+            let fromEmailAddr: string = "";
+            const systemSettings = await tenantDao.getSystemSettings();
+            if(systemSettings && systemSettings.noReplyEmail){
+                fromEmailAddr = systemSettings.noReplyEmail;
+            }
+            else{
+                fromEmailAddr = this.oidcContext.rootTenant.tenantName.toLowerCase().replaceAll(" ", "") + ".com";
+            }
+            const name = user.nameOrder === NAME_ORDER_WESTERN ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`;
+            const tenantLookAndFeel: TenantLookAndFeel = await tenantDao.getTenantLookAndFeel(this.oidcContext.rootTenant.tenantId) || DEFAULT_TENANT_LOOK_AND_FEEL;
+            oidcServiceUtils.sendEmailVerificationEmail(fromEmailAddr, user.email, name, token, tenantLookAndFeel, user.preferredLanguageCode || "en", systemSettings.contactEmail || undefined);
         }
         await this.updateObjectSearchIndex(tenant, user);
         await this.updateRelSearchIndex(tenant.tenantId, tenant.tenantId, user);

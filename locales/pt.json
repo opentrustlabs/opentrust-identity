@@ -347,5 +347,10 @@
     "ERROR_CANNOT_ASSIGN_AS_ROOT_TENANT": "O locatário não pode ser atribuído como locatário raiz.",
     "ERROR_INVALID_URL_FOR_TERMS_AND_CONDITIONS": "O URL para o link dos termos e condições é inválido.",
     "ERROR_NO_TERMS_AND_CONDITIONS_URL_WAS_SPECIFIED": "O URL dos termos e condições é obrigatório.",
-    "ERROR_NO_DEFAULT_RATE_LIMIT_SPECIFIED_FOR_LIMITED_API_RATE": "Um valor limite de taxa precisa de ser especificado."
+    "ERROR_NO_DEFAULT_RATE_LIMIT_SPECIFIED_FOR_LIMITED_API_RATE": "Um valor limite de taxa precisa de ser especificado.",
+    "CLICK_LINK_TO_ENTER_SECRET_VALUE": "Clique no link abaixo para introduzir o valor secreto",
+    "ENTER_SECRET": "Introduza o valor secreto",
+    "USE_THE_FOLLOWING_CODE_TO_CONFIRM_YOUR_EMAIL": "Utilize o seguinte código para confirmar o seu endereço de e-mail",
+    "UNAUTHORIZED_REGISTRATION": "Se não registou este endereço de e-mail, denuncie-o",
+    "REPORT_UNAUTHORIZED_REGISTRATION": "Denunciar registo não autorizado"
 }

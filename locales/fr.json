@@ -347,5 +347,10 @@
     "ERROR_CANNOT_ASSIGN_AS_ROOT_TENANT": "Le locataire ne peut pas être désigné comme locataire racine.",
     "ERROR_INVALID_URL_FOR_TERMS_AND_CONDITIONS": "L'URL du lien vers les conditions générales n'est pas valide.",
     "ERROR_NO_TERMS_AND_CONDITIONS_URL_WAS_SPECIFIED": "L'URL des conditions générales est obligatoire.",
-    "ERROR_NO_DEFAULT_RATE_LIMIT_SPECIFIED_FOR_LIMITED_API_RATE": "Une valeur limite de débit doit être spécifiée."
+    "ERROR_NO_DEFAULT_RATE_LIMIT_SPECIFIED_FOR_LIMITED_API_RATE": "Une valeur limite de débit doit être spécifiée.",
+    "CLICK_LINK_TO_ENTER_SECRET_VALUE": "Cliquez sur le lien ci-dessous pour saisir le code secret.",
+    "ENTER_SECRET": "Saisir le code secret.",
+    "USE_THE_FOLLOWING_CODE_TO_CONFIRM_YOUR_EMAIL": "Utilisez le code suivant pour confirmer votre adresse e-mail.",
+    "UNAUTHORIZED_REGISTRATION": "Si vous n'avez pas enregistré cette adresse e-mail, veuillez la signaler.",
+    "REPORT_UNAUTHORIZED_REGISTRATION": "Signaler une inscription non autorisée."
 }

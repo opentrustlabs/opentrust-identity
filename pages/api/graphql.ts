@@ -75,17 +75,7 @@ const server = new ApolloServer(
             }
             // This line below is for the case when an uncaught exception is thrown somewhere and we do not
             // want to show the actual error to the user.            
-            const errorDetail: ErrorDetail = formattedError.extensions?.errorDetail as ErrorDetail || ERROR_CODES.DEFAULT;
-            // if(formattedError && formattedError.extensions?.lang){                
-            //     return {
-            //         ...formattedError,
-            //         extensions: {
-            //             ...formattedError.extensions,
-            //             traceId: traceId
-            //         },
-            //         message: errorDetail.errorMessage // TODO => i18N.translate(errorDetail.errorKey)
-            //     }
-            // }            
+            const errorDetail: ErrorDetail = formattedError.extensions?.errorDetail as ErrorDetail || ERROR_CODES.DEFAULT;                       
             return {
                 ...formattedError,
                 extensions: {

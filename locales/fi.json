@@ -347,5 +347,10 @@
     "ERROR_CANNOT_ASSIGN_AS_ROOT_TENANT": "Vuokralaista ei voida määrittää päävuokralaiseksi.",
     "ERROR_INVALID_URL_FOR_TERMS_AND_CONDITIONS": "Ehtojen ja edellytysten linkin URL-osoite on virheellinen.",
     "ERROR_NO_TERMS_AND_CONDITIONS_URL_WAS_SPECIFIED": "Ehtojen ja edellytysten URL-osoite on pakollinen.",
-    "ERROR_NO_DEFAULT_RATE_LIMIT_SPECIFIED_FOR_LIMITED_API_RATE": "Nopeusraja on määritettävä."
+    "ERROR_NO_DEFAULT_RATE_LIMIT_SPECIFIED_FOR_LIMITED_API_RATE": "Nopeusraja on määritettävä.",
+    "CLICK_LINK_TO_ENTER_SECRET_VALUE": "Napsauta alla olevaa linkkiä syöttääksesi salaisen koodin",
+    "ENTER_SECRET": "Syötä salaisuus",
+    "USE_THE_FOLLOWING_CODE_TO_CONFIRM_YOUR_EMAIL": "Vahvista sähköpostiosoitteesi seuraavalla koodilla",
+    "UNAUTHORIZED_REGISTRATION": "Jos et rekisteröinyt tätä sähköpostiosoitetta, ilmoita siitä",
+    "REPORT_UNAUTHORIZED_REGISTRATION": "Ilmoita luvattomasta rekisteröinnistä"
 }

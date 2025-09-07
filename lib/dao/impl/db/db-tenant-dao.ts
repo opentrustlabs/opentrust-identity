@@ -513,6 +513,8 @@ class DBTenantDao extends TenantDao {
             systemSettings.rootClientId = first.rootClientId;
             systemSettings.enablePortalAsLegacyIdp = first.enablePortalAsLegacyIdp;
             systemSettings.auditRecordRetentionPeriodDays = first.auditRecordRetentionPeriodDays ? first.auditRecordRetentionPeriodDays : DEFAULT_AUDIT_RECORD_RETENTION_PERIOD_DAYS;
+            systemSettings.contactEmail = first.contactEmail;
+            systemSettings.noReplyEmail = first.noReplyEmail;
         }
         // DB Settings
         const dbCategory: SystemCategory = {
@@ -736,6 +738,8 @@ class DBTenantDao extends TenantDao {
             entity.setDataValue("rootClientId", input.rootClientId);
             entity.setDataValue("enablePortalAsLegacyIdp", input.enablePortalAsLegacyIdp);
             entity.setDataValue("auditRecordRetentionPeriodDays", input.auditRecordRetentionPeriodDays || DEFAULT_AUDIT_RECORD_RETENTION_PERIOD_DAYS);
+            entity.setDataValue("noReplyEmail", input.noReplyEmail);
+            entity.setDataValue("contactEmail", input.contactEmail);
             await entity.save();
         }
         return {
@@ -743,8 +747,11 @@ class DBTenantDao extends TenantDao {
             softwareVersion: OPENTRUST_IDENTITY_VERSION,
             allowDuressPassword: input.allowDuressPassword,
             allowRecoveryEmail: input.allowRecoveryEmail,
-            rootClientId: "",
-            enablePortalAsLegacyIdp: false,
+            rootClientId: input.rootClientId,
+            enablePortalAsLegacyIdp: input.enablePortalAsLegacyIdp,
+            auditRecordRetentionPeriodDays: input.auditRecordRetentionPeriodDays,
+            noReplyEmail: input.noReplyEmail,
+            contactEmail: input.contactEmail,
             systemCategories: []
         }
     }
