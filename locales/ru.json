@@ -347,5 +347,10 @@
     "ERROR_CANNOT_ASSIGN_AS_ROOT_TENANT": "Клиент не может быть назначен корневым клиентом.",
     "ERROR_INVALID_URL_FOR_TERMS_AND_CONDITIONS": "URL-адрес ссылки на условия и положения недействителен.",
     "ERROR_NO_TERMS_AND_CONDITIONS_URL_WAS_SPECIFIED": "Необходимо указать URL-адрес условий и положений.",
-    "ERROR_NO_DEFAULT_RATE_LIMIT_SPECIFIED_FOR_LIMITED_API_RATE": "Необходимо указать ограничение скорости."
+    "ERROR_NO_DEFAULT_RATE_LIMIT_SPECIFIED_FOR_LIMITED_API_RATE": "Необходимо указать ограничение скорости.",
+    "CLICK_LINK_TO_ENTER_SECRET_VALUE": "Нажмите на ссылку ниже, чтобы ввести секретное значение.",
+    "ENTER_SECRET": "Введите секретное значение.",
+    "USE_THE_FOLLOWING_CODE_TO_CONFIRM_YOUR_EMAIL": "Используйте следующий код для подтверждения адреса электронной почты.",
+    "UNAUTHORIZED_REGISTRATION": "Если вы не регистрировали этот адрес электронной почты, сообщите об этом.",
+    "REPORT_UNAUTHORIZED_REGISTRATION": "Сообщить о несанкционированной регистрации."
 }

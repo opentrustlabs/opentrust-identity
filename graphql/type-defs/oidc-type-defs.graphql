@@ -1183,6 +1183,8 @@ type SystemSettings {
     rootClientId: String!
     enablePortalAsLegacyIdp: Boolean!
     auditRecordRetentionPeriodDays: Int
+    noReplyEmail: String
+    contactEmail: String
     systemCategories: [SystemCategory!]!
 }
 
@@ -1652,4 +1654,6 @@ input SystemSettingsUpdateInput {
     rootClientId: String!    
     enablePortalAsLegacyIdp: Boolean!
     auditRecordRetentionPeriodDays: Int
+    noReplyEmail: String
+    contactEmail: String
 }

@@ -682,6 +682,8 @@ create TABLE system_settings (
     allowduresspassword BOOLEAN NOT NULL,
     rootclientid VARCHAR(64) NOT NULL,
     auditrecordretentionperioddays INT,
+    noreplyemail VARCHAR(64),
+    contactemail VARCHAR(64),
     FOREIGN KEY (rootclientid) REFERENCES client(clientid)
 );
 

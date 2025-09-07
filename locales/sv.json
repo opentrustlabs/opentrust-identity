@@ -347,5 +347,10 @@
     "ERROR_CANNOT_ASSIGN_AS_ROOT_TENANT": "Hyresgästen kan inte tilldelas som rothyresgäst.",
     "ERROR_INVALID_URL_FOR_TERMS_AND_CONDITIONS": "URL:en för länken till villkoren är ogiltig.",
     "ERROR_NO_TERMS_AND_CONDITIONS_URL_WAS_SPECIFIED": "URL:en för villkoren krävs.",
-    "ERROR_NO_DEFAULT_RATE_LIMIT_SPECIFIED_FOR_LIMITED_API_RATE": "Ett hastighetsgränsvärde måste anges."
+    "ERROR_NO_DEFAULT_RATE_LIMIT_SPECIFIED_FOR_LIMITED_API_RATE": "Ett hastighetsgränsvärde måste anges.",
+    "CLICK_LINK_TO_ENTER_SECRET_VALUE": "Klicka på länken nedan för att ange det hemliga värdet",
+    "ENTER_SECRET": "Ange hemlighet",
+    "USE_THE_FOLLOWING_CODE_TO_CONFIRM_YOUR_EMAIL": "Använd följande kod för att bekräfta din e-postadress",
+    "UNAUTHORIZED_REGISTRATION": "Om du inte registrerade den här e-postadressen, vänligen rapportera den",
+    "REPORT_UNAUTHORIZED_REGISTRATION": "Rapportera obehörig registrering"
 }

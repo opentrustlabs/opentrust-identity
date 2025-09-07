@@ -347,5 +347,10 @@
     "ERROR_CANNOT_ASSIGN_AS_ROOT_TENANT": "Klienta nelze přiřadit jako kořenového klienta.",
     "ERROR_INVALID_URL_FOR_TERMS_AND_CONDITIONS": "Adresa URL odkazu na obchodní podmínky je neplatná.",
     "ERROR_NO_TERMS_AND_CONDITIONS_URL_WAS_SPECIFIED": "Adresa URL obchodních podmínek je povinná.",
-    "ERROR_NO_DEFAULT_RATE_LIMIT_SPECIFIED_FOR_LIMITED_API_RATE": "Je třeba zadat limitní hodnotu rychlosti."
+    "ERROR_NO_DEFAULT_RATE_LIMIT_SPECIFIED_FOR_LIMITED_API_RATE": "Je třeba zadat limitní hodnotu rychlosti.",
+    "CLICK_LINK_TO_ENTER_SECRET_VALUE": "Klikněte na odkaz níže a zadejte hodnotu tajného kódu",
+    "ENTER_SECRET": "Zadejte tajný kód",
+    "USE_THE_FOLLOWING_CODE_TO_CONFIRM_YOUR_EMAIL": "Použijte následující kód k potvrzení vaší e-mailové adresy",
+    "UNAUTHORIZED_REGISTRATION": "Pokud jste tuto e-mailovou adresu nezaregistrovali, nahlaste ji prosím",
+    "REPORT_UNAUTHORIZED_REGISTRATION": "Nahlásit neoprávněnou registraci"
 }

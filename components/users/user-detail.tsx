@@ -477,6 +477,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                                 }}
                                                 fullWidth={true} 
                                                 size="small"
+                                                disabled={disableInputs}
                                             />
                                         </Grid2>
                                         <Grid2 marginBottom={"16px"}>

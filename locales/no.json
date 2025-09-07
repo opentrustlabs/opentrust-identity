@@ -347,5 +347,10 @@
     "ERROR_CANNOT_ASSIGN_AS_ROOT_TENANT": "Leietakeren kan ikke tilordnes som rotleietaker.",
     "ERROR_INVALID_URL_FOR_TERMS_AND_CONDITIONS": "URL-en for lenken til vilkår og betingelser er ugyldig.",
     "ERROR_NO_TERMS_AND_CONDITIONS_URL_WAS_SPECIFIED": "URL-en til vilkår og betingelser er nødvendig.",
-    "ERROR_NO_DEFAULT_RATE_LIMIT_SPECIFIED_FOR_LIMITED_API_RATE": "En grenseverdi for hastighet må angis."
+    "ERROR_NO_DEFAULT_RATE_LIMIT_SPECIFIED_FOR_LIMITED_API_RATE": "En grenseverdi for hastighet må angis.",
+    "CLICK_LINK_TO_ENTER_SECRET_VALUE": "Klikk på lenken nedenfor for å legge inn den hemmelige verdien",
+    "ENTER_SECRET": "Skriv inn hemmelig",
+    "USE_THE_FOLLOWING_CODE_TO_CONFIRM_YOUR_EMAIL": "Bruk følgende kode for å bekrefte e-postadressen din",
+    "UNAUTHORIZED_REGISTRATION": "Hvis du ikke registrerte denne e-postadressen, vennligst rapporter den",
+    "REPORT_UNAUTHORIZED_REGISTRATION": "Rapporter uautorisert registrering"
 }

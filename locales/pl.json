@@ -347,5 +347,10 @@
     "ERROR_CANNOT_ASSIGN_AS_ROOT_TENANT": "Dzierżawcy nie można przypisać jako dzierżawcy głównego.",
     "ERROR_INVALID_URL_FOR_TERMS_AND_CONDITIONS": "Adres URL linku do warunków umowy jest nieprawidłowy.",
     "ERROR_NO_TERMS_AND_CONDITIONS_URL_WAS_SPECIFIED": "Adres URL warunków umowy jest wymagany.",
-    "ERROR_NO_DEFAULT_RATE_LIMIT_SPECIFIED_FOR_LIMITED_API_RATE": "Należy określić wartość limitu szybkości."
+    "ERROR_NO_DEFAULT_RATE_LIMIT_SPECIFIED_FOR_LIMITED_API_RATE": "Należy określić wartość limitu szybkości.",
+    "CLICK_LINK_TO_ENTER_SECRET_VALUE": "Kliknij poniższy link, aby wprowadzić wartość tajnego hasła.",
+    "ENTER_SECRET": "Wprowadź tajny kod.",
+    "USE_THE_FOLLOWING_CODE_TO_CONFIRM_YOUR_EMAIL": "Użyj poniższego kodu, aby potwierdzić swój adres e-mail.",
+    "UNAUTHORIZED_REGISTRATION": "Jeśli nie zarejestrowałeś tego adresu e-mail, zgłoś to.",
+    "REPORT_UNAUTHORIZED_REGISTRATION": "Zgłoś nieautoryzowaną rejestrację."
 }

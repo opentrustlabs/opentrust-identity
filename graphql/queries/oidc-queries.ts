@@ -740,6 +740,8 @@ export const SYSTEM_SETTINGS_QUERY = gql(`
             rootClientId
             enablePortalAsLegacyIdp
             auditRecordRetentionPeriodDays
+            noReplyEmail
+            contactEmail
             systemCategories {
                 categoryName
                 categoryEntries {

@@ -830,7 +830,7 @@ class TenantService {
             }
         }
 
-        await tenantDao.updateSystemSettings(systemSettingsUpdateInput);
+        const s: SystemSettings = await tenantDao.updateSystemSettings(systemSettingsUpdateInput);
         changeEventDao.addChangeEvent({
             objectId: existingSystemSettings.systemId,
             changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
@@ -841,7 +841,7 @@ class TenantService {
             data: JSON.stringify(systemSettingsUpdateInput)
         });
         
-        return tenantDao.getSystemSettings();
+        return s;
     }
 
     public async getJobData(): Promise<JobData>{

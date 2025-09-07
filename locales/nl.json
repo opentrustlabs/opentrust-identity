@@ -347,5 +347,10 @@
     "ERROR_CANNOT_ASSIGN_AS_ROOT_TENANT": "De tenant kan niet worden toegewezen als root-tenant.",
     "ERROR_INVALID_URL_FOR_TERMS_AND_CONDITIONS": "De URL voor de link naar de algemene voorwaarden is ongeldig.",
     "ERROR_NO_TERMS_AND_CONDITIONS_URL_WAS_SPECIFIED": "De URL voor de algemene voorwaarden is vereist.",
-    "ERROR_NO_DEFAULT_RATE_LIMIT_SPECIFIED_FOR_LIMITED_API_RATE": "Er moet een limietwaarde worden opgegeven."
+    "ERROR_NO_DEFAULT_RATE_LIMIT_SPECIFIED_FOR_LIMITED_API_RATE": "Er moet een limietwaarde worden opgegeven.",
+    "CLICK_LINK_TO_ENTER_SECRET_VALUE": "Klik op de onderstaande link om de geheime waarde in te voeren",
+    "ENTER_SECRET": "Voer het geheime e-mailadres in",
+    "USE_THE_FOLLOWING_CODE_TO_CONFIRM_YOUR_EMAIL": "Gebruik de volgende code om uw e-mailadres te bevestigen",
+    "UNAUTHORIZED_REGISTRATION": "Als u dit e-mailadres niet heeft geregistreerd, meld dit dan",
+    "REPORT_UNAUTHORIZED_REGISTRATION": "Meld ongeautoriseerde registratie"
 }

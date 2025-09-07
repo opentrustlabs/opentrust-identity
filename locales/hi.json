@@ -347,5 +347,10 @@
     "ERROR_CANNOT_ASSIGN_AS_ROOT_TENANT": "टेनेंट को रूट टेनेंट के रूप में असाइन नहीं किया जा सकता।",
     "ERROR_INVALID_URL_FOR_TERMS_AND_CONDITIONS": "नियम और शर्तें लिंक का URL अमान्य है।",
     "ERROR_NO_TERMS_AND_CONDITIONS_URL_WAS_SPECIFIED": "नियम और शर्तें URL आवश्यक है।",
-    "ERROR_NO_DEFAULT_RATE_LIMIT_SPECIFIED_FOR_LIMITED_API_RATE": "एक दर सीमा मान निर्दिष्ट करना आवश्यक है।"
+    "ERROR_NO_DEFAULT_RATE_LIMIT_SPECIFIED_FOR_LIMITED_API_RATE": "एक दर सीमा मान निर्दिष्ट करना आवश्यक है।",
+    "CLICK_LINK_TO_ENTER_SECRET_VALUE": "गुप्त मान दर्ज करने के लिए नीचे दिए गए लिंक पर क्लिक करें",
+    "ENTER_SECRET": "गुप्त मान दर्ज करें",
+    "USE_THE_FOLLOWING_CODE_TO_CONFIRM_YOUR_EMAIL": "अपना ईमेल पता सत्यापित करने के लिए निम्नलिखित कोड का उपयोग करें",
+    "UNAUTHORIZED_REGISTRATION": "यदि आपने यह ईमेल पता पंजीकृत नहीं किया है, तो कृपया इसकी रिपोर्ट करें",
+    "REPORT_UNAUTHORIZED_REGISTRATION": "अनधिकृत पंजीकरण की रिपोर्ट करें"
 }

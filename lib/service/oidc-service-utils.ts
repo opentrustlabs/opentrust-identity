@@ -6,12 +6,19 @@ import NodeCache from "node-cache";
 import { LegacyUserAuthenticationPayload, LegacyUserProfile } from "../models/principal";
 import { SecurityEvent, SecurityEventType } from "../models/security-event";
 import { OIDCContext } from "@/graphql/graphql-context";
-import { PortalUserProfile, User } from "@/graphql/generated/graphql-types";
+import { PortalUserProfile, TenantLookAndFeel, User } from "@/graphql/generated/graphql-types";
 import { logWithDetails } from "../logging/logger";
 import { randomUUID } from "node:crypto";
 import { CustomKmsDecryptionResponseBody, CustomKmsEncryptionResponseBody, CustomKmsRequestBody } from "../kms/custom-kms";
 import { DEFAULT_HTTP_TIMEOUT_MS } from "@/utils/consts";
 import { RecaptchaResponse } from "../models/recaptcha";
+import nodemailer from "nodemailer";
+import SMTPTransport from "nodemailer/lib/smtp-transport";
+import SMTPPool from "nodemailer/lib/smtp-pool";
+import { render } from "@react-email/render";
+import React from "react";
+import { VerifyRegistration } from "@/components/email-templates/verify-registration-template";
+import { SecretShare } from "@/components/email-templates/secret-share-template";
 
 const {
     HTTP_TIMEOUT_MS,
@@ -27,9 +34,67 @@ const {
     HTTP_PROXY_USE_AUTHENTICATION,
     HTTP_PROXY_USERNAME,
     HTTP_PROXY_PASSWORD,
-    SECURITY_EVENT_CALLBACK_URI
+    SECURITY_EVENT_CALLBACK_URI,
+    EMAIL_SERVER_HOST,
+    EMAIL_SERVER_PORT,
+    EMAIL_SERVER_USERNAME,
+    EMAIL_SERVER_PASSWORD,
+    EMAIL_SERVER_USE_CONNECTION_POOL,
+    EMAIL_SERVER_PROXY,
+    EMAIL_SERVER_USE_SECURE,
+    EMAIL_SERVER_REQUIRE_TLS,
+    EMAIL_CLIENT_LOG_TO_CONSOLE,
+    EMAIL_CLIENT_DEBUG_LOG
 } = process.env;
 
+declare global {
+    // eslint-disable-next-line no-var
+    var emailTransporter: nodemailer.Transporter<SMTPTransport.SentMessageInfo, SMTPTransport.Options> | undefined;
+}
+
+
+// Thanks to ChatGPT for helping with configuration of nodemailer, which
+// is a great library, but very very difficult to configure with all of
+// the options you want.
+type TransportOptions = (SMTPTransport.Options | SMTPPool.Options) & {
+  proxy?: string; // add proxy explicitly (typing not always included)
+};
+
+
+
+function getEmailTransporter() {
+    if(!global.emailTransporter){
+        const transportOptions: TransportOptions = {
+            host: EMAIL_SERVER_HOST,
+            port: parseInt(EMAIL_SERVER_PORT || "587"),
+            auth: {
+                user: EMAIL_SERVER_USERNAME,
+                pass: EMAIL_SERVER_PASSWORD
+            },
+            secure: EMAIL_SERVER_USE_SECURE === "true",
+            requireTLS: EMAIL_SERVER_REQUIRE_TLS === "true",
+            debug: EMAIL_CLIENT_DEBUG_LOG === "true",
+            logger: EMAIL_CLIENT_LOG_TO_CONSOLE === "true"
+        }
+
+        if(EMAIL_SERVER_PROXY){
+            transportOptions.proxy = EMAIL_SERVER_PROXY;
+        }
+
+        if(EMAIL_SERVER_USE_CONNECTION_POOL && EMAIL_SERVER_USE_CONNECTION_POOL === "true"){
+            Object.assign(
+                transportOptions, 
+                {
+                    pool: true,
+                    maxConnections: 5,
+                    maxMessages: 100
+                } satisfies SMTPPool.Options
+            );
+        };
+        global.emailTransporter = nodemailer.createTransport(transportOptions);
+    }
+    return global.emailTransporter;
+}
 
 const proxy: AxiosProxyConfig | undefined = HTTP_CLIENT_USE_PROXY === "true" ? 
     {
@@ -334,6 +399,47 @@ class OIDCServiceUtils {
             logWithDetails("error", `Error invoking Google recaptcha verification. ${error.message}`, {...error});            
         }
         return recaptchaResponse;
+    }
+
+    public async sendEmailVerificationEmail(from: string, to: string, name: string, token: string, tenantLookAndFeel: TenantLookAndFeel, languageCode: string, contactEmail?: string): Promise<void> {
+        const html = await render(
+            React.createElement(
+                VerifyRegistration, 
+                {
+                    name: name, 
+                    token: token, 
+                    tenantLookAndFeel: tenantLookAndFeel, 
+                    contactEmail: contactEmail,
+                    languageCode: languageCode
+                }
+            )
+        );
+
+        this.sendEmail(from, to, "Verify Email", undefined, html);
+    }
+
+    public async sendSecretEntryEmail(from: string, to: string, url: string, tenantLookAndFeel: TenantLookAndFeel, languageCode: string): Promise<void>{
+        const html = await render(
+            React.createElement(
+                SecretShare, {
+                    url: url,
+                    tenantLookAndFeel: tenantLookAndFeel,
+                    languageCode: languageCode
+                }
+            )
+        );
+        this.sendEmail(from, to, "Enter Secret", undefined, html);
+    }
+
+
+    public async sendEmail(from: string, to: string, subject: string, text?: string, html?: string): Promise<void> {
+        await getEmailTransporter().sendMail({
+            from,
+            to,
+            subject,
+            text,
+            html
+        });
     }
 
 }
