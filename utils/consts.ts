@@ -1100,7 +1100,8 @@ export const DEFAULT_CAPTCHA_V3_MINIMUM_SCORE=0.7;
 
 // ************************************************************************** //
 // 
-//                  INITIALIZATION DEFAULTS
+//                  INITIALIZATION CONSTANTS
 // 
 // ************************************************************************** //
 export const SYSTEM_INITIALIZATION_KEY_ID="6b9f3310-0be9-4b5f-8f92-701109bc8f43";
+export const VALID_KMS_STRATEGIES = ["googlekms", "awskms", "azurekms", "tencentkms", "custom", "filesystem", "none"];

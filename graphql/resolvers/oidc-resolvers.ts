@@ -220,8 +220,8 @@ const resolvers: Resolvers = {
             const service: TenantService = new TenantService(oidcContext);
             return service.getJobData();
         },
-        systemInitializationReady: (_: any, {}) => {
-            const service: SystemInitializationService = new SystemInitializationService();
+        systemInitializationReady: (_: any, {}, oidcContext) => {
+            const service: SystemInitializationService = new SystemInitializationService(oidcContext);
             return service.systemInitializationReady();
         }
     },
@@ -1024,12 +1024,12 @@ const resolvers: Resolvers = {
             await service.removeCaptchaConfig();
             return "";
         },
-        systemInitializationAuthentication: async(_: any, {privateKey, password}) => {
-            const service: SystemInitializationService = new SystemInitializationService();
+        systemInitializationAuthentication: async(_: any, {privateKey, password}, oidcContext) => {
+            const service: SystemInitializationService = new SystemInitializationService(oidcContext);
             return service.systemInitializationAuthentication(privateKey, password || null);
         },
         initializeSystem: async(_: any, { systemInitializationInput }, oidcContext) => {
-            const service: SystemInitializationService = new SystemInitializationService();
+            const service: SystemInitializationService = new SystemInitializationService(oidcContext);
             return service.initializeSystem(systemInitializationInput);
         }
     },

@@ -15,12 +15,13 @@ import { ERROR_CODES } from "../models/error";
 import { logWithDetails } from "../logging/logger";
 import BaseSearchService from "./base-search-service";
 import JwtServiceUtils from "./jwt-service-utils";
-import { ALL_INTERNAL_SCOPE_NAMES, ALL_INTERNAL_SCOPE_NAMES_DISPLAY, CONTACT_TYPE_FOR_CLIENT, CONTACT_TYPE_FOR_TENANT, KEY_TYPE_RSA, KEY_USE_JWT_SIGNING, OPENTRUST_IDENTITY_VERSION, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, PRINCIPAL_TYPE_SYSTEM_INIT_USER, SCOPE_USE_IAM_MANAGEMENT, SIGNING_KEY_STATUS_ACTIVE, SYSTEM_INITIALIZATION_KEY_ID, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
+import { ALL_INTERNAL_SCOPE_NAMES, ALL_INTERNAL_SCOPE_NAMES_DISPLAY, CONTACT_TYPE_FOR_CLIENT, CONTACT_TYPE_FOR_TENANT, KEY_TYPE_RSA, KEY_USE_JWT_SIGNING, OPENTRUST_IDENTITY_VERSION, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, PRINCIPAL_TYPE_SYSTEM_INIT_USER, SCOPE_USE_IAM_MANAGEMENT, SIGNING_KEY_STATUS_ACTIVE, SYSTEM_INITIALIZATION_KEY_ID, TENANT_TYPE_ROOT_TENANT, VALID_KMS_STRATEGIES } from "@/utils/consts";
 import { JWTPayload } from "jose";
 import { generateRandomToken, generateUserCredential, getDomainFromEmail } from "@/utils/dao-utils";
 import IdentityDao from "../dao/identity-dao";
 import { createSigningKey } from "@/utils/signing-key-utils";
 import SigningKeysDao from "../dao/signing-keys-dao";
+import { OIDCContext } from "@/graphql/graphql-context";
 
 
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
@@ -28,7 +29,6 @@ const clientDao: ClientDao = DaoFactory.getInstance().getClientDao();
 const authorizationGroupDao: AuthorizationGroupDao = DaoFactory.getInstance().getAuthorizationGroupDao();
 const scopeDao: ScopeDao = DaoFactory.getInstance().getScopeDao();
 const federatedOIDCProviderDao: FederatedOIDCProviderDao = DaoFactory.getInstance().getFederatedOIDCProvicerDao();
-const searchClient = getOpenSearchClient();
 const changeEventDao: ChangeEventDao = DaoFactory.getInstance().getChangeEventDao();
 const signingKeysDao: SigningKeysDao = DaoFactory.getInstance().getSigningKeysDao();
 const kms: Kms = DaoFactory.getInstance().getKms();
@@ -50,10 +50,15 @@ const {
     MFA_ID
 } = process.env;
 
-const VALID_KMS_STRATEGIES = ["googlekms", "awskms", "azurekms", "tencentkms", "custom", "filesystem", "none"];
 
 class SystemInitializationService extends BaseSearchService {
 
+    oidcContext: OIDCContext; 
+    
+    constructor(oidcContext: OIDCContext){
+        super()
+        this.oidcContext = oidcContext;
+    }
 
     public async systemInitializationReady(): Promise<SystemInitializationReadyResponse> {
         const preReqErrors = await this.hasPreRequisites();
@@ -342,6 +347,7 @@ class SystemInitializationService extends BaseSearchService {
         // ************************************************************************************************
         // Create all scope values and assign them to the root tenant and then to the root authz group
         // ************************************************************************************************
+        const scopes: Array<Scope> = [];
         for(let i = 0; i < ALL_INTERNAL_SCOPE_NAMES_DISPLAY.length; i++){
             const scope: Scope = {
                 markForDelete: false,
@@ -351,6 +357,7 @@ class SystemInitializationService extends BaseSearchService {
                 scopeUse: SCOPE_USE_IAM_MANAGEMENT
             };
             await scopeDao.createScope(scope);
+            scopes.push(scope);
             await scopeDao.assignScopeToTenant(rootTenantId, scope.scopeId);
             await scopeDao.assignScopeToAuthorizationGroup(rootTenantId, rootAuthzGroup.groupId, scope.scopeId);
         }
@@ -379,11 +386,28 @@ class SystemInitializationService extends BaseSearchService {
             password: encrypted
         }
         await signingKeysDao.createSigningKey(key);
+
+
+        // ************************************************************************************************
+        // Index all of the documents
+        // ************************************************************************************************
+        await this.indexTenant(tenant, tenant);
+        await this.indexClient(client);
+        await this.indexAuthorizationGroup(rootAuthzGroup);
+        await this.indexSigningKey(key);
         
-        
-        // await this.updateSearchIndex(key);
-        
-        
+        await this.indexUser(user, tenant.tenantId, tenant.tenantId);
+        for(let i = 0; i < scopes.length; i++){
+            await this.indexScope(scopes[i], tenant.tenantId);
+        }
+        if(readOnlyAuthzGroup){
+            await this.indexAuthorizationGroup(readOnlyAuthzGroup);
+        }
+        if(federatedOIDCProvider){
+            await this.indexFederatedOIDCProvider(federatedOIDCProvider);
+        }
+
+        response.tenant = tenant;       
         
         return response;
     }
