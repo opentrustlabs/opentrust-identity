@@ -20,25 +20,25 @@ import { ERROR_CODES } from "@/lib/models/error";
 class DBTenantDao extends TenantDao {
 
 
-    public async getRootTenant(): Promise<Tenant> {
+    /**
+     * 
+     * @returns 
+     */
+    public async getRootTenant(): Promise<Tenant | null> {
         const sequelize: Sequelize = await DBDriver.getConnection();
         const entity: TenantEntity | null = await sequelize.models.tenant.findOne({
             where: {
                 tenanttype: TENANT_TYPE_ROOT_TENANT
             }
         });
-
-        if(!entity){
-            throw new GraphQLError(ERROR_CODES.EC00035.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00035}});
-        }
-        return Promise.resolve(entity.dataValues as Tenant);
+        return Promise.resolve(entity ? entity.dataValues as Tenant : null);
     }
 
     public async createRootTenant(tenant: Tenant): Promise<Tenant> {
         tenant.tenantType = TENANT_TYPE_ROOT_TENANT;
         const sequelize: Sequelize = await DBDriver.getConnection();
         const t: TenantEntity = await sequelize.models.tenant.create(tenant);
-        return Promise.resolve(t.dataValues as Tenant);
+        return Promise.resolve(tenant);
     }
 
     public async updateRootTenant(tenant: Tenant): Promise<Tenant> {

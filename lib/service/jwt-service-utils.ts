@@ -480,7 +480,10 @@ class JwtServiceUtils {
         if(systemSettings.rootClientId){
             const client: Client | null = await clientDao.getClientById(systemSettings.rootClientId);
             if(client !== null){
-                const tenant: Tenant = await tenantDao.getRootTenant();
+                const tenant: Tenant | null = await tenantDao.getRootTenant();
+                if(tenant === null){
+                    return null;
+                }
                 const tokenResponse = await this.signClientJwt(client, tenant);
                 if(tokenResponse && tokenResponse.oidcTokenResponse){
                     authToken = tokenResponse.oidcTokenResponse.access_token;
@@ -778,7 +781,10 @@ class JwtServiceUtils {
             }
         }
         else{
-            const rootTenant: Tenant = await tenantDao.getRootTenant();
+            const rootTenant: Tenant | null = await tenantDao.getRootTenant();
+            if(rootTenant === null){
+                return null;
+            }
             let signingKeys: Array<SigningKey> = await signingKeysDao.getSigningKeys(rootTenant.tenantId) || [];            
             const now = Date.now();
             

@@ -52,7 +52,10 @@ export function initSchedulers(){
 
 async function createNewJwtSigningKey(){
     
-    const tenant: Tenant = await tenantDao.getRootTenant();
+    const tenant: Tenant | null = await tenantDao.getRootTenant();
+    if(tenant === null){
+        return;
+    }
 
     const schedulerLock: SchedulerLock = {
         lockExpiresAtMS: Date.now() + (1000 * 1800),

@@ -81,7 +81,7 @@ class SearchService extends BaseSearchService {
         // 
         // If the user needs to search the rel search index, we need to forward the search query to the
         // rel search method, then convert the rel search results to a valid array of object search results.
-        if(this.oidcContext.portalUserProfile?.managementAccessTenantId !== this.oidcContext.rootTenant.tenantId){
+        if(this.oidcContext.portalUserProfile?.managementAccessTenantId !== this.oidcContext.rootTenant.tenantId){            
             const relSearchInput: RelSearchInput =  {
                 page: page,
                 perPage: perPage,
@@ -109,7 +109,6 @@ class SearchService extends BaseSearchService {
             } 
             return searchResults;
         }
-
         else{
             return this._objectSearch(searchInput, searchResultsTypesToOmit);
         }
