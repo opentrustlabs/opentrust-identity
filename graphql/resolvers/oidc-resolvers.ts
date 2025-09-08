@@ -18,6 +18,7 @@ import I18NService from "@/lib/service/i18n-service";
 import RegisterUserService from "@/lib/service/register-user-service";
 import AuthenticateUserService from "@/lib/service/authenticate-user-service";
 import SecretShareService from "@/lib/service/secret-share-service";
+import SystemInitializationService from "@/lib/service/system-initialization-service";
 
 
 const resolvers: Resolvers = {
@@ -218,6 +219,10 @@ const resolvers: Resolvers = {
         getRunningJobs: (_: any, {}, oidcContext) => {
             const service: TenantService = new TenantService(oidcContext);
             return service.getJobData();
+        },
+        systemInitializationReady: (_: any, {}) => {
+            const service: SystemInitializationService = new SystemInitializationService();
+            return service.systemInitializationReady();
         }
     },
     Mutation: {
@@ -1043,6 +1048,14 @@ const resolvers: Resolvers = {
             const service: TenantService = new TenantService(oidcContext);
             await service.removeCaptchaConfig();
             return "";
+        },
+        systemInitializationAuthentication: async(_: any, {privateKey, password}) => {
+            const service: SystemInitializationService = new SystemInitializationService();
+            return service.systemInitializationAuthentication(privateKey, password || null);
+        },
+        initializeSystem: async(_: any, { systemInitializationInput }, oidcContext) => {
+            const service: SystemInitializationService = new SystemInitializationService();
+            return service.initializeSystem(systemInitializationInput);
         }
     },
     PortalUserProfile: {

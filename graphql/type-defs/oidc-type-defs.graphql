@@ -105,6 +105,9 @@ type Query {
     getSystemSettings: SystemSettings!
     getRunningJobs: JobData!
 
+    ## System Initialization
+    systemInitializationReady: SystemInitializationReadyResponse!
+
 
 }
 
@@ -277,6 +280,10 @@ type Mutation {
     ## Secret sharing and entry
     generateSecretShareLink(objectId: String!, secretShareObjectType: SecretShareObjectType!, email: String!): Boolean!
     enterSecretValue(otp: String!, secretValue: String!): Boolean!
+
+    ## System initialization
+    systemInitializationAuthentication(privateKey: String!, password: String): UserAuthenticationStateResponse!
+    initializeSystem(systemInitializationInput: SystemInitializationInput!): SystemInitializationResponse!
 
 }
 
@@ -1212,6 +1219,23 @@ type SecretShare {
 
 
 ############################################################################
+###### SYSTEM INITIALIZATION ENTRY TYPES AND RESPONSES FOR MUTATATIONS #####
+############################################################################
+
+type SystemInitializationResponse {
+    tenant: Tenant
+    systemInitializationErrors: [ErrorDetail!]
+}
+
+type SystemInitializationReadyResponse {
+    systemInitializationReady: Boolean!
+    systemInitializationReadyErrors: [ErrorDetail!]
+    systemInitializationWarnings: [ErrorDetail!]
+}
+
+
+
+############################################################################
 ################ INPUT TYPES AND RESPONSES FOR MUTATATIONS #################
 ############################################################################
 
@@ -1656,4 +1680,18 @@ input SystemSettingsUpdateInput {
     auditRecordRetentionPeriodDays: Int
     noReplyEmail: String
     contactEmail: String
+}
+
+input SystemInitializationInput {
+    rootTenantInput: TenantCreateInput!
+    rootClientInput: ClientCreateInput!
+    rootAuthorizationGroupInput: AuthorizationGroupCreateInput!
+    rootReadOnlyAuthorizationGroupInput: AuthorizationGroupCreateInput
+    rootUserCreateInput: UserCreateInput!
+    rootContact: ContactCreateInput!
+    rootAuthenticationDomain: String!
+    systemSettingsInput: SystemSettingsUpdateInput!
+    captchaConfigInput: CaptchaConfigInput
+    rootFederatedOIDCProviderInput: FederatedOIDCProviderCreateInput    
+    rootFederatedOIDCProviderDomain: String
 }
