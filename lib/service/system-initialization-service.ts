@@ -391,21 +391,21 @@ class SystemInitializationService extends BaseSearchService {
         // ************************************************************************************************
         // Index all of the documents
         // ************************************************************************************************
-        await this.indexTenant(tenant, tenant);
-        await this.indexClient(client);
-        await this.indexAuthorizationGroup(rootAuthzGroup);
-        await this.indexSigningKey(key);
+        // await this.indexTenant(tenant, tenant);
+        // await this.indexClient(client);
+        // await this.indexAuthorizationGroup(rootAuthzGroup);
+        // await this.indexSigningKey(key);
         
-        await this.indexUser(user, tenant.tenantId, tenant.tenantId);
-        for(let i = 0; i < scopes.length; i++){
-            await this.indexScope(scopes[i], tenant.tenantId);
-        }
-        if(readOnlyAuthzGroup){
-            await this.indexAuthorizationGroup(readOnlyAuthzGroup);
-        }
-        if(federatedOIDCProvider){
-            await this.indexFederatedOIDCProvider(federatedOIDCProvider);
-        }
+        // await this.indexUser(user, tenant.tenantId, tenant.tenantId);
+        // for(let i = 0; i < scopes.length; i++){
+        //     await this.indexScope(scopes[i], tenant.tenantId);
+        // }
+        // if(readOnlyAuthzGroup){
+        //     await this.indexAuthorizationGroup(readOnlyAuthzGroup);
+        // }
+        // if(federatedOIDCProvider){
+        //     await this.indexFederatedOIDCProvider(federatedOIDCProvider);
+        // }
 
         response.tenant = tenant;       
         
