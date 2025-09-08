@@ -1,10 +1,10 @@
-import { Client } from "@opensearch-project/opensearch";
-import { SearchInput, SearchResultType, ObjectSearchResults, SearchFilterInput, SearchFilterInputObjectType, ObjectSearchResultItem, RelSearchInput, RelSearchResults, RelSearchResultItem } from "@/graphql/generated/graphql-types";
-import { SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH } from "@/utils/consts";
+import { Client as SearchClient } from "@opensearch-project/opensearch";
+import { SearchInput, SearchResultType, ObjectSearchResults, SearchFilterInput, SearchFilterInputObjectType, ObjectSearchResultItem, RelSearchInput, RelSearchResults, RelSearchResultItem, Tenant, Client, AuthorizationGroup, FederatedOidcProvider, SigningKey, User, Scope } from "@/graphql/generated/graphql-types";
+import { CLIENT_TYPES_DISPLAY, FEDERATED_OIDC_PROVIDER_TYPES_DISPLAY, NAME_ORDER_WESTERN, SCOPE_USE_DISPLAY, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, SIGNING_KEY_STATUS_ACTIVE, TENANT_TYPES_DISPLAY } from "@/utils/consts";
 import { Search_Response } from "@opensearch-project/opensearch/api/index.js";
 import { getOpenSearchClient } from "../data-sources/search";
 
-const client: Client = getOpenSearchClient();
+const searchClient: SearchClient = getOpenSearchClient();
 
 class BaseSearchService {
 
@@ -120,7 +120,7 @@ class BaseSearchService {
         // Default result list is am empty array
         const items: Array<ObjectSearchResultItem> = [];
 
-        const searchResponse: Search_Response = await client.search({
+        const searchResponse: Search_Response = await searchClient.search({
             index: SEARCH_INDEX_OBJECT_SEARCH,
             body: searchBody
         });
@@ -273,7 +273,7 @@ class BaseSearchService {
             }
         }
 
-        const searchResponse: Search_Response = await client.search({
+        const searchResponse: Search_Response = await searchClient.search({
             index: SEARCH_INDEX_REL_SEARCH,
             body: searchBody
         });
@@ -313,6 +313,228 @@ class BaseSearchService {
 
         return searchResults;
 
+    }
+
+    protected async indexTenant(tenant: Tenant, rootTenant: Tenant){
+        const document: ObjectSearchResultItem = {
+            name: tenant.tenantName,
+            description: tenant.tenantDescription,
+            objectid: tenant.tenantId,
+            objecttype: SearchResultType.Tenant,
+            owningtenantid: rootTenant.tenantId,
+            email: "",
+            enabled: tenant.enabled,
+            owningclientid: "",
+            subtype: TENANT_TYPES_DISPLAY.get(tenant.tenantType),
+            subtypekey: tenant.tenantType
+        }
+        
+        await searchClient.index({
+            id: tenant.tenantId,
+            index: SEARCH_INDEX_OBJECT_SEARCH,
+            body: document
+        });
+    }
+
+    protected async indexClient(client: Client) {
+        const document: ObjectSearchResultItem = {
+            name: client.clientName,
+            description: client.clientDescription,
+            objectid: client.clientId,
+            objecttype: SearchResultType.Client,
+            owningtenantid: client.tenantId,
+            email: "",
+            enabled: client.enabled,
+            owningclientid: "",
+            subtype: CLIENT_TYPES_DISPLAY.get(client.clientType),
+            subtypekey: client.clientType
+        }
+        
+        await searchClient.index({
+            id: client.clientId,
+            index: SEARCH_INDEX_OBJECT_SEARCH,
+            body: document
+        });
+
+        const relSearch: RelSearchResultItem = {
+            childid: client.clientId,
+            childname: client.clientName,
+            childtype: SearchResultType.Client,
+            owningtenantid: client.tenantId,
+            parentid: client.tenantId,
+            parenttype: SearchResultType.Tenant,
+            childdescription: client.clientDescription
+        }
+        await searchClient.index({
+            id: `${client.tenantId}::${client.clientId}`,
+            index: SEARCH_INDEX_REL_SEARCH,
+            body: relSearch
+        });	
+    }
+
+    protected async indexAuthorizationGroup(group: AuthorizationGroup){
+        const document: ObjectSearchResultItem = {
+            name: group.groupName,
+            description: group.groupDescription,
+            objectid: group.groupId,
+            objecttype: SearchResultType.AuthorizationGroup,
+            owningtenantid: group.tenantId,
+            email: "",
+            enabled: true,
+            owningclientid: "",
+            subtype: "",
+            subtypekey: ""            
+        }
+        
+        await searchClient.index({
+            id: group.groupId,
+            index: SEARCH_INDEX_OBJECT_SEARCH,
+            body: document
+        });
+
+        const relSearch: RelSearchResultItem = {
+            childid: group.groupId,
+            childname: group.groupName,
+            childtype: SearchResultType.AuthorizationGroup,
+            owningtenantid: group.tenantId,
+            parentid: group.tenantId,
+            parenttype: SearchResultType.Tenant,
+            childdescription: group.groupDescription
+        }
+        await searchClient.index({
+            id: `${group.tenantId}::${group.groupId}`,
+            index: SEARCH_INDEX_REL_SEARCH,
+            body: relSearch
+        });
+    }
+
+    protected async indexFederatedOIDCProvider(federatedOIDCProvider: FederatedOidcProvider){
+        	const document: ObjectSearchResultItem = {
+            name: federatedOIDCProvider.federatedOIDCProviderName,
+            description: federatedOIDCProvider.federatedOIDCProviderDescription,
+            objectid: federatedOIDCProvider.federatedOIDCProviderId,
+            objecttype: SearchResultType.OidcProvider,
+            owningtenantid: "",
+            email: "",
+            enabled: true,
+            owningclientid: "",
+            subtype: FEDERATED_OIDC_PROVIDER_TYPES_DISPLAY.get(federatedOIDCProvider.federatedOIDCProviderType),
+            subtypekey: federatedOIDCProvider.federatedOIDCProviderType
+        }
+        
+        await searchClient.index({
+            id: federatedOIDCProvider.federatedOIDCProviderId,
+            index: SEARCH_INDEX_OBJECT_SEARCH,
+            body: document
+        }); 
+    }
+
+    protected async indexSigningKey(key: SigningKey){
+        const document: ObjectSearchResultItem = {
+            name: key.keyName,
+            description: key.keyUse,
+            objectid: key.keyId,
+            objecttype: SearchResultType.Key,
+            owningtenantid: key.tenantId,
+            email: "",
+            enabled: key.status === SIGNING_KEY_STATUS_ACTIVE,
+            owningclientid: "",
+            subtype: key.keyType,
+            subtypekey: key.keyType
+        }        
+        await searchClient.index({
+            id: key.keyId,
+            index: SEARCH_INDEX_OBJECT_SEARCH,
+            body: document
+        });   
+        
+        const relSearch: RelSearchResultItem = {
+            childid: key.keyId,
+            childname: key.keyName,
+            childtype: SearchResultType.Key,
+            owningtenantid: key.tenantId,
+            parentid: key.tenantId,
+            parenttype: SearchResultType.Tenant,
+            childdescription: key.keyType
+        }
+        await searchClient.index({
+            id: `${key.tenantId}::${key.keyId}`,
+            index: SEARCH_INDEX_REL_SEARCH,
+            body: relSearch
+        });
+    }
+
+    protected async indexUser(user: User, owningTenantId: string, parentTenantId: string,){        
+        const document: ObjectSearchResultItem = {
+            name: user.nameOrder === NAME_ORDER_WESTERN ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`,
+            description: "",
+            objectid: user.userId,
+            objecttype: SearchResultType.User,
+            owningtenantid: owningTenantId,
+            email: user.email,
+            enabled: user.enabled,
+            owningclientid: "",
+            subtype: "",
+            subtypekey: ""
+        }
+        
+        await searchClient.index({
+            id: user.userId,
+            index: SEARCH_INDEX_OBJECT_SEARCH,
+            body: document
+        });
+
+        
+        const relDocument: RelSearchResultItem = {
+            childid: user.userId,
+            childname: user.nameOrder === NAME_ORDER_WESTERN ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`,
+            childtype: SearchResultType.User,
+            owningtenantid: owningTenantId,
+            parentid: parentTenantId,
+            parenttype: SearchResultType.Tenant,
+            childdescription: user.email
+        }
+        await searchClient.index({
+            id: `${parentTenantId}::${user.userId}`,
+            index: SEARCH_INDEX_REL_SEARCH,
+            body: relDocument
+        });
+    }
+
+    protected async indexScope(scope: Scope, tenantId: string){
+        const document: ObjectSearchResultItem = {
+            name: scope.scopeName,
+            description: scope.scopeDescription,
+            objectid: scope.scopeId,
+            objecttype: SearchResultType.AccessControl,
+            owningtenantid: "",
+            email: "",
+            enabled: true,
+            owningclientid: "",
+            subtype: SCOPE_USE_DISPLAY.get(scope.scopeUse),
+            subtypekey: scope.scopeUse
+        }
+        await searchClient.index({
+            id: scope.scopeId,
+            index: SEARCH_INDEX_OBJECT_SEARCH,
+            body: document
+        });
+
+        const relSearchDocument: RelSearchResultItem = {
+            childid: scope.scopeId,
+            childname: scope.scopeName,
+            childtype: SearchResultType.AccessControl,
+            owningtenantid: tenantId,
+            parentid: tenantId,
+            parenttype: SearchResultType.Tenant,
+            childdescription: scope.scopeDescription
+        }; 
+        await searchClient.index({
+            id: `${tenantId}::${scope.scopeId}`,
+            index: SEARCH_INDEX_REL_SEARCH,
+            body: relSearchDocument
+        });
+        
     }
 
 
