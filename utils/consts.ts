@@ -554,6 +554,7 @@ export const CLIENT_TYPES_DISPLAY = new Map<string, string>(
     ]
 );
 
+export const PRINCIPAL_TYPE_SYSTEM_INIT_USER="SYSTEM_INIT_USER";
 export const PRINCIPAL_TYPE_SERVICE_ACCOUNT_TOKEN="SERVICE_ACCOUNT";
 export const PRINCIPAL_TYPE_END_USER="END_USER";
 export const PRINCIPAL_TYPE_ANONYMOUS_USER="ANONYMOUS_USER";
@@ -1011,3 +1012,10 @@ export const DEFAULT_HTTP_TIMEOUT_MS=60000;
 // ************************************************************************** //
 // For Version 3 of captcha, default to a score of 0.7 for bot detection
 export const DEFAULT_CAPTCHA_V3_MINIMUM_SCORE=0.7;
+
+// ************************************************************************** //
+// 
+//                  INITIALIZATION DEFAULTS
+// 
+// ************************************************************************** //
+export const SYSTEM_INITIALIZATION_KEY_ID="6b9f3310-0be9-4b5f-8f92-701109bc8f43";

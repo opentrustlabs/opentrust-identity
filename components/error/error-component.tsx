@@ -3,17 +3,21 @@ import React from "react";
 import Alert from "@mui/material/Alert";
 import { Box } from "@mui/material";
 import { useIntl } from "react-intl";
+import { ErrorDetail } from "@/graphql/generated/graphql-types";
 
 type ErrorComponentSizeType = "full-page" | "xl" | "lg" | "md" | "sm" | "xs";
 
 export interface ErrorComponentProps {
     componentSize: ErrorComponentSizeType,
-    message: string
+    message: string,
+    errorDetail?: ErrorDetail
 }
 
 const ErrorComponent: React.FC<ErrorComponentProps> = ({
     componentSize,
-    message
+    message,
+    errorDetail
+    
 }) => {
 
     // CONTEXT VARIABLES
@@ -40,10 +44,14 @@ const ErrorComponent: React.FC<ErrorComponentProps> = ({
     }
 
     return (
-        <Box display={"flex"} height={height} justifyContent={"center"} alignItems={"center"}>
-            
+        <Box display={"flex"} height={height} justifyContent={"center"} alignItems={"center"}>            
             <Alert severity="error">
-                {intl.formatMessage({id: message})}
+                {errorDetail && 
+                    <React.Fragment>{intl.formatMessage({id: errorDetail.errorKey})}</React.Fragment>
+                }
+                {!errorDetail &&
+                    message
+                }                
             </Alert>
         </Box>
     )

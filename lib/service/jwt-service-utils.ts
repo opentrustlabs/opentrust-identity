@@ -16,6 +16,7 @@ import AuthorizationGroupDao from "../dao/authorization-group-dao";
 import Kms from "../kms/kms";
 import AuthDao from "../dao/auth-dao";
 import { logWithDetails } from "../logging/logger";
+import { sliderClasses } from "@mui/material";
 
 const SIGNING_KEY_ARRAY_CACHE_KEY = "SIGNING_KEY_ARRAY_CACHE_KEY"
 interface CachedSigningKeyData {
@@ -690,7 +691,7 @@ class JwtServiceUtils {
             if(!cachedSigningKeyData){
                 return Promise.resolve(null);
             }
-            const p: JWTVerifyResult = await jwtVerify(jwt, cachedSigningKeyData.publicKeyObject)
+            const p: JWTVerifyResult = await jwtVerify(jwt, cachedSigningKeyData.publicKeyObject);
             if(!p.payload){                
                 return Promise.resolve(null);
             }
@@ -704,6 +705,11 @@ class JwtServiceUtils {
             logWithDetails("error", `Error validating client auth JWT. ${err.message}`, {...err});
             return Promise.resolve(null);
         }        
+    }
+
+    public async validateJwtWithCertificate(jwt: string, publicKeyObject: KeyObject): Promise<JWTVerifyResult> {
+        const p: JWTVerifyResult = await jwtVerify(jwt, publicKeyObject);
+        return p;
     }
 
 
@@ -722,24 +728,30 @@ class JwtServiceUtils {
         
     }
 
+    public async signJwtWithKey(principal: JWTPayload, privateKeyObject: KeyObject, keyId: string): Promise<string> {
+        const s: string = await new SignJWT(principal)
+            .setProtectedHeader({
+                alg: "RS256",
+                kid: keyId
+            })
+            .sign(privateKeyObject);
+
+        return s;
+    }
+
     /**
      * 
      * @param principal 
      * @returns 
      */
-    protected async signJwt(principal: JWTPayload): Promise<string | null> {
-        const cachedSigningKeyData: CachedSigningKeyData | null = await this.getCachedSigningKey();
-        
+    public async signJwt(principal: JWTPayload): Promise<string | null> {
+
+        const cachedSigningKeyData: CachedSigningKeyData | null = await this.getCachedSigningKey();        
         if(!cachedSigningKeyData){
             return Promise.resolve(null);
         }
         
-        const s: string = await new SignJWT(principal)
-            .setProtectedHeader({
-                alg: "RS256",
-                kid: cachedSigningKeyData.signingKey.keyId
-            })
-            .sign(cachedSigningKeyData.privateKeyObject);
+        const s: string = await this.signJwtWithKey(principal, cachedSigningKeyData.privateKeyObject, cachedSigningKeyData.signingKey.keyId);
         return s;
     }
 

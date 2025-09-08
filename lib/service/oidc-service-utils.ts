@@ -35,6 +35,7 @@ const {
     HTTP_PROXY_USERNAME,
     HTTP_PROXY_PASSWORD,
     SECURITY_EVENT_CALLBACK_URI,
+    SMTP_ENABLED,
     EMAIL_SERVER_HOST,
     EMAIL_SERVER_PORT,
     EMAIL_SERVER_USERNAME,
@@ -62,38 +63,41 @@ type TransportOptions = (SMTPTransport.Options | SMTPPool.Options) & {
 
 
 
-function getEmailTransporter() {
-    if(!global.emailTransporter){
-        const transportOptions: TransportOptions = {
-            host: EMAIL_SERVER_HOST,
-            port: parseInt(EMAIL_SERVER_PORT || "587"),
-            auth: {
-                user: EMAIL_SERVER_USERNAME,
-                pass: EMAIL_SERVER_PASSWORD
-            },
-            secure: EMAIL_SERVER_USE_SECURE === "true",
-            requireTLS: EMAIL_SERVER_REQUIRE_TLS === "true",
-            debug: EMAIL_CLIENT_DEBUG_LOG === "true",
-            logger: EMAIL_CLIENT_LOG_TO_CONSOLE === "true"
-        }
+function getEmailTransporter(): nodemailer.Transporter<SMTPTransport.SentMessageInfo, SMTPTransport.Options> | undefined {
+    if(SMTP_ENABLED === "true"){
+        if(!global.emailTransporter){
+            const transportOptions: TransportOptions = {
+                host: EMAIL_SERVER_HOST,
+                port: parseInt(EMAIL_SERVER_PORT || "587"),
+                auth: {
+                    user: EMAIL_SERVER_USERNAME,
+                    pass: EMAIL_SERVER_PASSWORD
+                },
+                secure: EMAIL_SERVER_USE_SECURE === "true",
+                requireTLS: EMAIL_SERVER_REQUIRE_TLS === "true",
+                debug: EMAIL_CLIENT_DEBUG_LOG === "true",
+                logger: EMAIL_CLIENT_LOG_TO_CONSOLE === "true"
+            }
 
-        if(EMAIL_SERVER_PROXY){
-            transportOptions.proxy = EMAIL_SERVER_PROXY;
-        }
+            if(EMAIL_SERVER_PROXY){
+                transportOptions.proxy = EMAIL_SERVER_PROXY;
+            }
 
-        if(EMAIL_SERVER_USE_CONNECTION_POOL && EMAIL_SERVER_USE_CONNECTION_POOL === "true"){
-            Object.assign(
-                transportOptions, 
-                {
-                    pool: true,
-                    maxConnections: 5,
-                    maxMessages: 100
-                } satisfies SMTPPool.Options
-            );
-        };
-        global.emailTransporter = nodemailer.createTransport(transportOptions);
+            if(EMAIL_SERVER_USE_CONNECTION_POOL && EMAIL_SERVER_USE_CONNECTION_POOL === "true"){
+                Object.assign(
+                    transportOptions, 
+                    {
+                        pool: true,
+                        maxConnections: 5,
+                        maxMessages: 100
+                    } satisfies SMTPPool.Options
+                );
+            };
+            global.emailTransporter = nodemailer.createTransport(transportOptions);
+        }
+        return global.emailTransporter;
     }
-    return global.emailTransporter;
+    return undefined;
 }
 
 const proxy: AxiosProxyConfig | undefined = HTTP_CLIENT_USE_PROXY === "true" ? 
@@ -433,15 +437,17 @@ class OIDCServiceUtils {
 
 
     public async sendEmail(from: string, to: string, subject: string, text?: string, html?: string): Promise<void> {
-        await getEmailTransporter().sendMail({
-            from,
-            to,
-            subject,
-            text,
-            html
-        });
+        const transporter: nodemailer.Transporter<SMTPTransport.SentMessageInfo, SMTPTransport.Options> | undefined = getEmailTransporter();
+        if(transporter){
+            await transporter.sendMail({
+                from,
+                to,
+                subject,
+                text,
+                html
+            });
+        }        
     }
-
 }
 
 export default OIDCServiceUtils;
