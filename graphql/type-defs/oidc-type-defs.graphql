@@ -112,8 +112,7 @@ type Query {
 }
 
 type Mutation {
-    ## Tenants
-    createRootTenant(tenantInput: TenantCreateInput!): Tenant
+    ## Tenants    
     updateRootTenant(tenantInput: TenantUpdateInput!): Tenant
     
     createTenant(tenantInput: TenantCreateInput!): Tenant
@@ -1692,6 +1691,5 @@ input SystemInitializationInput {
     rootAuthenticationDomain: String!
     systemSettingsInput: SystemSettingsUpdateInput!
     captchaConfigInput: CaptchaConfigInput
-    rootFederatedOIDCProviderInput: FederatedOIDCProviderCreateInput    
-    rootFederatedOIDCProviderDomain: String
+    rootFederatedOIDCProviderInput: FederatedOIDCProviderCreateInput
 }

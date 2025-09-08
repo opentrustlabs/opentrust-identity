@@ -35,27 +35,11 @@ class TenantService {
     }
 
     public async getRootTenant(): Promise<Tenant> {
-        return tenantDao.getRootTenant();
-    }
-
-    public async createRootTenant(tenant: Tenant): Promise<Tenant> {
-
-        // TODO
-        // Get the root tenant first in a try/catch block. If the root
-        // tenant does not already exist, the error object should have the 
-        // message: ERROR_UNABLE_TO_FIND_A_ROOT_TENANT
-        // In that case, create a new tenant
-        // 
-        // If there is already a root tenant, then throw an error
-        //
-        // The scope should be TENANT_CREATE (derived from an RSA key pair for identity) 
-        // and the .env file should have a property called: INIT_IAM_PORTAL=true
-
-        tenant.tenantId = randomUUID().toString();
-        await tenantDao.createRootTenant(tenant);
-        await this.updateSearchIndex(tenant);
-
-        return Promise.resolve(tenant);        
+        const tenant: Tenant | null = await tenantDao.getRootTenant();
+        if(tenant === null){
+            throw new GraphQLError(ERROR_CODES.EC00035.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00035}});
+        }
+        return tenant;
     }
 
     public async updateRootTenant(tenant: Tenant): Promise<Tenant> {
@@ -819,7 +803,10 @@ class TenantService {
             if(client === null){
                 throw new GraphQLError(ERROR_CODES.EC00093.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00093}});
             }
-            const rootTenant: Tenant = await tenantDao.getRootTenant();
+            const rootTenant: Tenant | null = await tenantDao.getRootTenant();
+            if(rootTenant === null){
+                throw new GraphQLError(ERROR_CODES.EC00035.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00035}});
+            }
             if(client.tenantId !== rootTenant.tenantId){
                 throw new GraphQLError(ERROR_CODES.EC00094.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00094}});
             }

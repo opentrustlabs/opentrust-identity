@@ -11,7 +11,7 @@ import { OIDCContext } from "@/graphql/graphql-context";
 import { DaoFactory } from "@/lib/data-sources/dao-factory";
 import TenantDao from "@/lib/dao/tenant-dao";
 import { initSchedulers } from "@/lib/service/init-scheduled-services";
-import { HTTP_HEADER_X_GEO_LOCATION, HTTP_HEADER_X_IP_ADDRESS } from "@/utils/consts";
+import { DEFAULT_TENANT_META_DATA, HTTP_HEADER_X_GEO_LOCATION, HTTP_HEADER_X_IP_ADDRESS } from "@/utils/consts";
 import { randomUUID } from "node:crypto";
 import { logWithDetails } from "@/lib/logging/logger";
 import { GraphQLFormattedError } from "graphql/error";
@@ -114,12 +114,12 @@ async function getOIDCContext(req: NextApiRequest): Promise<OIDCContext> {
     const ipAddress: string = req.headers[HTTP_HEADER_X_IP_ADDRESS] as string || "";
     const geoLocation: string = req.headers[HTTP_HEADER_X_GEO_LOCATION] as string || ""
 
-    const rootTenant: Tenant = await tenantDao.getRootTenant();
+    const rootTenant: Tenant | null = await tenantDao.getRootTenant();
 
     const context: OIDCContext = {
         authToken: jwt || "",
         portalUserProfile: portalUserProfile,
-        rootTenant: rootTenant,
+        rootTenant: rootTenant ? rootTenant : DEFAULT_TENANT_META_DATA.tenant,
         requestCache: new Map(),
         ipAddress: ipAddress,
         geoLocation: geoLocation,

@@ -29,7 +29,11 @@ export default async function handler(
     if(req.method !== "POST"){
         res.status(405);
     }
-    const rootTenant: Tenant = await tenantDao.getRootTenant();
+    const rootTenant: Tenant | null = await tenantDao.getRootTenant();
+    if(rootTenant === null){
+        res.status(403);
+        return;
+    }
 
     const systemSettings: SystemSettings = await tenantDao.getSystemSettings();
     if (systemSettings.enablePortalAsLegacyIdp === false) {

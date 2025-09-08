@@ -6,7 +6,7 @@ import { DaoFactory } from "../data-sources/dao-factory";
 import TenantDao from "../dao/tenant-dao";
 import { GraphQLError } from "graphql/error";
 import { CHANGE_EVENT_CLASS_TENANT_USER_REL, CHANGE_EVENT_CLASS_USER, CHANGE_EVENT_CLASS_USER_UNLOCKED, CHANGE_EVENT_TYPE_CREATE, CHANGE_EVENT_TYPE_CREATE_REL, CHANGE_EVENT_TYPE_REMOVE_REL, CHANGE_EVENT_TYPE_UPDATE, DEFAULT_PORTAL_AUTH_TOKEN_TTL_HOURS, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, NAME_ORDER_WESTERN, PASSWORD_HASH_ITERATION_128K, PASSWORD_HASH_ITERATION_256K, PASSWORD_HASH_ITERATION_32K, PASSWORD_HASH_ITERATION_64K, PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_32K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_64K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, SESSION_TOKEN_TYPE_AUTHENTICATION, SESSION_TOKEN_TYPE_REGISTRATION, TENANT_READ_ALL_SCOPE, TENANT_USER_ASSIGN_SCOPE, TENANT_USER_REMOVE_SCOPE, TOTP_HASH_ALGORITHM_SHA1, USER_READ_SCOPE, USER_SESSION_DELETE_SCOPE, USER_SESSION_READ_SCOPE, USER_TENANT_REL_TYPE_GUEST, USER_TENANT_REL_TYPE_PRIMARY, USER_UNLOCK_SCOPE, USER_UPDATE_SCOPE } from "@/utils/consts";
-import { sha256HashPassword, pbkdf2HashPassword, bcryptHashPassword, generateSalt, scryptHashPassword, generateRandomToken, generateCodeVerifierAndChallenge, bcryptValidatePassword } from "@/utils/dao-utils";
+import { sha256HashPassword, pbkdf2HashPassword, scryptHashPassword, generateRandomToken, generateCodeVerifierAndChallenge, bcryptValidatePassword } from "@/utils/dao-utils";
 import { Client as OpenSearchClient } from "@opensearch-project/opensearch";
 import { getOpenSearchClient } from "../data-sources/search";
 import { Get_Response, UpdateByQuery_Response } from "@opensearch-project/opensearch/api/index.js";
@@ -553,65 +553,65 @@ class IdentityService {
         return valid;
     }    
 
-    /**
-     * 
-     * @param userId 
-     * @param password 
-     * @param hashAlgorithm 
-     * @returns 
-     */
-    public generateUserCredential(userId: string, password: string, hashAlgorithm: string): UserCredential {
-        // For the Bcrypt hashing algorithm, the salt value is included in the final salted password
-        // so we can just leave it as the empty string.
-        let salt = "";
-        let hashedPassword = "";
+    // /**
+    //  * 
+    //  * @param userId 
+    //  * @param password 
+    //  * @param hashAlgorithm 
+    //  * @returns 
+    //  */
+    // public generateUserCredential(userId: string, password: string, hashAlgorithm: string): UserCredential {
+    //     // For the Bcrypt hashing algorithm, the salt value is included in the final salted password
+    //     // so we can just leave it as the empty string.
+    //     let salt = "";
+    //     let hashedPassword = "";
 
-        if(hashAlgorithm === PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS){
-            hashedPassword = bcryptHashPassword(password, 10);
-        }
-        else if(hashAlgorithm === PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS){
-            hashedPassword = bcryptHashPassword(password, 11);
-        }
-        else if(hashAlgorithm === PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS){
-            hashedPassword = bcryptHashPassword(password, 12);
-        }                   
-        else if(hashAlgorithm === PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS){
-            salt = generateSalt();
-            hashedPassword = sha256HashPassword(password, salt, PASSWORD_HASH_ITERATION_64K);            
-        }
-        else if(hashAlgorithm === PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS){
-            salt = generateSalt();
-            hashedPassword = sha256HashPassword(password, salt, PASSWORD_HASH_ITERATION_128K);            
-        }
-        else if(hashAlgorithm === PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS){
-            salt = generateSalt();
-            hashedPassword = pbkdf2HashPassword(password, salt, PASSWORD_HASH_ITERATION_128K);            
-        }
-        else if(hashAlgorithm === PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS){
-            salt = generateSalt();
-            hashedPassword = pbkdf2HashPassword(password, salt, PASSWORD_HASH_ITERATION_256K);            
-        }
-        else if(hashAlgorithm === PASSWORD_HASHING_ALGORITHM_SCRYPT_32K_ITERATIONS){
-            salt = generateSalt();
-            hashedPassword = scryptHashPassword(password, salt, PASSWORD_HASH_ITERATION_32K);            
-        }
-        else if(hashAlgorithm === PASSWORD_HASHING_ALGORITHM_SCRYPT_64K_ITERATIONS){
-            salt = generateSalt();
-            hashedPassword = scryptHashPassword(password, salt, PASSWORD_HASH_ITERATION_64K);  
-        }
-        else if(hashAlgorithm === PASSWORD_HASHING_ALGORITHM_SCRYPT_128K_ITERATIONS){
-            salt = generateSalt();
-            hashedPassword = scryptHashPassword(password, salt, PASSWORD_HASH_ITERATION_128K);
-        }
+    //     if(hashAlgorithm === PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS){
+    //         hashedPassword = bcryptHashPassword(password, 10);
+    //     }
+    //     else if(hashAlgorithm === PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS){
+    //         hashedPassword = bcryptHashPassword(password, 11);
+    //     }
+    //     else if(hashAlgorithm === PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS){
+    //         hashedPassword = bcryptHashPassword(password, 12);
+    //     }                   
+    //     else if(hashAlgorithm === PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS){
+    //         salt = generateSalt();
+    //         hashedPassword = sha256HashPassword(password, salt, PASSWORD_HASH_ITERATION_64K);            
+    //     }
+    //     else if(hashAlgorithm === PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS){
+    //         salt = generateSalt();
+    //         hashedPassword = sha256HashPassword(password, salt, PASSWORD_HASH_ITERATION_128K);            
+    //     }
+    //     else if(hashAlgorithm === PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS){
+    //         salt = generateSalt();
+    //         hashedPassword = pbkdf2HashPassword(password, salt, PASSWORD_HASH_ITERATION_128K);            
+    //     }
+    //     else if(hashAlgorithm === PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS){
+    //         salt = generateSalt();
+    //         hashedPassword = pbkdf2HashPassword(password, salt, PASSWORD_HASH_ITERATION_256K);            
+    //     }
+    //     else if(hashAlgorithm === PASSWORD_HASHING_ALGORITHM_SCRYPT_32K_ITERATIONS){
+    //         salt = generateSalt();
+    //         hashedPassword = scryptHashPassword(password, salt, PASSWORD_HASH_ITERATION_32K);            
+    //     }
+    //     else if(hashAlgorithm === PASSWORD_HASHING_ALGORITHM_SCRYPT_64K_ITERATIONS){
+    //         salt = generateSalt();
+    //         hashedPassword = scryptHashPassword(password, salt, PASSWORD_HASH_ITERATION_64K);  
+    //     }
+    //     else if(hashAlgorithm === PASSWORD_HASHING_ALGORITHM_SCRYPT_128K_ITERATIONS){
+    //         salt = generateSalt();
+    //         hashedPassword = scryptHashPassword(password, salt, PASSWORD_HASH_ITERATION_128K);
+    //     }
 
-        return {
-            dateCreated: new Date().toISOString(),
-            hashedPassword: hashedPassword,
-            salt: salt,
-            hashingAlgorithm: hashAlgorithm,
-            userId: userId
-        }
-    }    
+    //     return {
+    //         dateCreated: new Date().toISOString(),
+    //         hashedPassword: hashedPassword,
+    //         salt: salt,
+    //         hashingAlgorithm: hashAlgorithm,
+    //         userId: userId
+    //     }
+    // }    
     
     protected async getSortedAuthenticationStates(authenticationSessionToken: string): Promise<Array<UserAuthenticationState>> {
         const arrUserAuthenticationState: Array<UserAuthenticationState> = await identityDao.getUserAuthenticationStates(authenticationSessionToken);

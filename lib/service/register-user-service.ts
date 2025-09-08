@@ -6,7 +6,7 @@ import TenantDao from "../dao/tenant-dao";
 import { GraphQLError } from "graphql/error";
 import { randomUUID } from "crypto";
 import { DEFAULT_TENANT_PASSWORD_CONFIGURATION, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, OIDC_AUTHORIZATION_ERROR_ACCESS_DENIED, QUERY_PARAM_AUTHENTICATE_TO_PORTAL, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, STATUS_COMPLETE, STATUS_INCOMPLETE, PRINCIPAL_TYPE_IAM_PORTAL_USER, DEFAULT_CAPTCHA_V3_MINIMUM_SCORE, NAME_ORDER_WESTERN, DEFAULT_TENANT_LOOK_AND_FEEL } from "@/utils/consts";
-import {  generateRandomToken, getDomainFromEmail } from "@/utils/dao-utils";
+import {  generateRandomToken, generateUserCredential, getDomainFromEmail } from "@/utils/dao-utils";
 import { Client as OpenSearchClient } from "@opensearch-project/opensearch";
 import { getOpenSearchClient } from "../data-sources/search";
 import AuthDao from "../dao/auth-dao";
@@ -326,7 +326,7 @@ class RegisterUserService extends IdentityService {
                 response.registrationError = ERROR_CODES.EC00125;
                 return response;
             }
-            const userDuressCredential: UserCredential = this.generateUserCredential(arrUserRegistrationState[index].userId, password, tenantPasswordConfig.passwordHashingAlgorithm);
+            const userDuressCredential: UserCredential = generateUserCredential(arrUserRegistrationState[index].userId, password, tenantPasswordConfig.passwordHashingAlgorithm);
             await identityDao.addUserDuressCredential(userDuressCredential);
         }
 
@@ -1167,7 +1167,7 @@ class RegisterUserService extends IdentityService {
             };
             await identityDao.addUserTermsAndConditionsAccepted(userTermsAndConditionsAccepted);
         }
-        const userCredential: UserCredential = this.generateUserCredential(user.userId, userCreateInput.password, tenantPasswordConfig.passwordHashingAlgorithm);
+        const userCredential: UserCredential = generateUserCredential(user.userId, userCreateInput.password, tenantPasswordConfig.passwordHashingAlgorithm);
         await identityDao.addUserCredential(userCredential);
 
         if (isRegistration && tenant.verifyEmailOnSelfRegistration) {

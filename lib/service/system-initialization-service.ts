@@ -1,4 +1,4 @@
-import { AuthenticationState, ErrorDetail, SystemInitializationInput, SystemInitializationReadyResponse, SystemInitializationResponse, Tenant, UserAuthenticationStateResponse } from "@/graphql/generated/graphql-types";
+import { AuthenticationState, AuthorizationGroup, Client, Contact, ErrorDetail, FederatedOidcProvider, Scope, SigningKey, SystemInitializationInput, SystemInitializationReadyResponse, SystemInitializationResponse, SystemSettings, Tenant, User, UserAuthenticationStateResponse, UserCredential } from "@/graphql/generated/graphql-types";
 import { DaoFactory } from "../data-sources/dao-factory";
 import ClientDao from "../dao/client-dao";
 import TenantDao from "../dao/tenant-dao";
@@ -15,8 +15,12 @@ import { ERROR_CODES } from "../models/error";
 import { logWithDetails } from "../logging/logger";
 import BaseSearchService from "./base-search-service";
 import JwtServiceUtils from "./jwt-service-utils";
-import { PRINCIPAL_TYPE_SYSTEM_INIT_USER, SYSTEM_INITIALIZATION_KEY_ID } from "@/utils/consts";
+import { ALL_INTERNAL_SCOPE_NAMES, ALL_INTERNAL_SCOPE_NAMES_DISPLAY, CONTACT_TYPE_FOR_CLIENT, CONTACT_TYPE_FOR_TENANT, KEY_TYPE_RSA, KEY_USE_JWT_SIGNING, OPENTRUST_IDENTITY_VERSION, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, PRINCIPAL_TYPE_SYSTEM_INIT_USER, SCOPE_USE_IAM_MANAGEMENT, SIGNING_KEY_STATUS_ACTIVE, SYSTEM_INITIALIZATION_KEY_ID, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import { JWTPayload } from "jose";
+import { generateRandomToken, generateUserCredential, getDomainFromEmail } from "@/utils/dao-utils";
+import IdentityDao from "../dao/identity-dao";
+import { createSigningKey } from "@/utils/signing-key-utils";
+import SigningKeysDao from "../dao/signing-keys-dao";
 
 
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
@@ -26,8 +30,10 @@ const scopeDao: ScopeDao = DaoFactory.getInstance().getScopeDao();
 const federatedOIDCProviderDao: FederatedOIDCProviderDao = DaoFactory.getInstance().getFederatedOIDCProvicerDao();
 const searchClient = getOpenSearchClient();
 const changeEventDao: ChangeEventDao = DaoFactory.getInstance().getChangeEventDao();
+const signingKeysDao: SigningKeysDao = DaoFactory.getInstance().getSigningKeysDao();
 const kms: Kms = DaoFactory.getInstance().getKms();
 const contactDao: ContactDao = DaoFactory.getInstance().getContactDao();
+const identityDao: IdentityDao = DaoFactory.getInstance().getIdentityDao();
 const jwtServiceUtils: JwtServiceUtils = new JwtServiceUtils();
 
 const {
@@ -150,8 +156,235 @@ class SystemInitializationService extends BaseSearchService {
 
     public async initializeSystem(systemInitializationInput: SystemInitializationInput): Promise<SystemInitializationResponse> {
         const response: SystemInitializationResponse = {
-
+            systemInitializationErrors: [],
+            tenant: null,
         };
+
+        // ************************************************************************************************
+        // Create the root tenant
+        // ************************************************************************************************
+        const rootTenantId: string = randomUUID().toString();
+        const tenant: Tenant = {
+            allowAnonymousUsers: false,
+            allowForgotPassword: systemInitializationInput.rootTenantInput.allowForgotPassword,
+            allowLoginByPhoneNumber: false,
+            allowSocialLogin: false,
+            allowUnlimitedRate: true,
+            allowUserSelfRegistration: systemInitializationInput.rootTenantInput.allowUserSelfRegistration,
+            enabled: true,
+            federatedAuthenticationConstraint: systemInitializationInput.rootTenantInput.federatedAuthenticationConstraint,
+            markForDelete: false,
+            migrateLegacyUsers: false,
+            registrationRequireCaptcha: false,
+            registrationRequireTermsAndConditions: false,
+            tenantId: rootTenantId,
+            tenantName: systemInitializationInput.rootTenantInput.tenantName,
+            tenantDescription: systemInitializationInput.rootTenantInput.tenantDescription,            
+            tenantType: TENANT_TYPE_ROOT_TENANT,
+            verifyEmailOnSelfRegistration: systemInitializationInput.rootTenantInput.verifyEmailOnSelfRegistration
+        };
+        await tenantDao.createRootTenant(tenant);
+
+        // ************************************************************************************************
+        // Create the root client
+        // ************************************************************************************************
+        const client: Client = {
+            clientId: randomUUID().toString(),
+            clientName: systemInitializationInput.rootClientInput.clientName,
+            clientSecret: "",
+            clientType: systemInitializationInput.rootClientInput.clientType,
+            enabled: true,
+            markForDelete: false,
+            oidcEnabled: systemInitializationInput.rootClientInput.oidcEnabled,
+            pkceEnabled: systemInitializationInput.rootClientInput.pkceEnabled,
+            tenantId: rootTenantId,
+            audience: systemInitializationInput.rootClientInput.audience,
+            clientDescription: systemInitializationInput.rootClientInput.clientDescription,
+            clientTokenTTLSeconds: systemInitializationInput.rootClientInput.clientTokenTTLSeconds,
+            maxRefreshTokenCount: systemInitializationInput.rootClientInput.maxRefreshTokenCount,
+            userTokenTTLSeconds: systemInitializationInput.rootClientInput.userTokenTTLSeconds
+        };
+        const clientSecret = generateRandomToken(24, "hex");
+        const encryptedClientSecret = await kms.encrypt(clientSecret);
+        if(encryptedClientSecret === null){
+            response.systemInitializationErrors?.push(ERROR_CODES.EC00032);
+            return response;
+        }        
+        client.clientSecret = encryptedClientSecret;
+        await clientDao.createClient(client);
+
+        // ************************************************************************************************
+        // Create the root authorization group and optionally a read-only authz group
+        // ************************************************************************************************
+        const rootAuthzGroup: AuthorizationGroup = {
+            allowForAnonymousUsers: false,
+            default: false,
+            groupId: randomUUID().toString(),
+            groupName: systemInitializationInput.rootAuthorizationGroupInput.groupName,
+            markForDelete: false,
+            tenantId: rootTenantId,
+            groupDescription: systemInitializationInput.rootAuthorizationGroupInput.groupDescription
+        };
+        await authorizationGroupDao.createAuthorizationGroup(rootAuthzGroup);
+
+        let readOnlyAuthzGroup: AuthorizationGroup | null = null;
+        if(systemInitializationInput.rootReadOnlyAuthorizationGroupInput){
+            readOnlyAuthzGroup = {
+                allowForAnonymousUsers: false,
+                default: true,
+                groupId: randomUUID().toString(),
+                groupName: systemInitializationInput.rootReadOnlyAuthorizationGroupInput.groupName,
+                groupDescription: systemInitializationInput.rootReadOnlyAuthorizationGroupInput.groupDescription,
+                markForDelete: false,
+                tenantId: rootTenantId
+            }
+            await authorizationGroupDao.createAuthorizationGroup(readOnlyAuthzGroup);
+        };
+
+        // ************************************************************************************************
+        // Create the user and credentials and assign the user to the root authz group
+        // ************************************************************************************************
+        const domain: string = getDomainFromEmail(systemInitializationInput.rootUserCreateInput.email);        
+        const user: User = {
+            domain: domain,
+            email: systemInitializationInput.rootUserCreateInput.email,
+            emailVerified: false,
+            enabled: true,
+            firstName: systemInitializationInput.rootUserCreateInput.firstName,
+            lastName: systemInitializationInput.rootUserCreateInput.lastName,
+            locked: false,
+            markForDelete: false,
+            nameOrder: systemInitializationInput.rootUserCreateInput.nameOrder,
+            userId: randomUUID().toString(),
+            preferredLanguageCode: systemInitializationInput.rootUserCreateInput.preferredLanguageCode,
+            countryCode: systemInitializationInput.rootUserCreateInput.countryCode,
+            middleName: systemInitializationInput.rootUserCreateInput.middleName,
+            phoneNumber: systemInitializationInput.rootUserCreateInput.phoneNumber
+        };
+        await identityDao.createUser(user);
+
+        const userCredential: UserCredential = generateUserCredential(user.userId, systemInitializationInput.rootUserCreateInput.password, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS);
+        await identityDao.addUserCredential(userCredential);
+
+        await authorizationGroupDao.addUserToAuthorizationGroup(user.userId, rootAuthzGroup.groupId);
+
+
+        // ************************************************************************************************
+        // Create the contacts for the tenant and client
+        // ************************************************************************************************
+        const rootTenantContact: Contact = {
+            contactid: randomUUID().toString(),
+            email: systemInitializationInput.rootContact.email,
+            objectid: rootTenantId,
+            objecttype: CONTACT_TYPE_FOR_TENANT,
+            name: systemInitializationInput.rootContact.name
+        };
+        await contactDao.addContact(rootTenantContact);
+
+        const rootClientContact: Contact = {
+            contactid: randomUUID().toString(),
+            email: systemInitializationInput.rootContact.email,
+            objectid: client.clientId,
+            objecttype: CONTACT_TYPE_FOR_CLIENT,
+            name: systemInitializationInput.rootContact.name
+        };
+        await contactDao.addContact(rootClientContact);
+
+
+        // ************************************************************************************************
+        // Add authentication and management domains for the root tenant.
+        // ************************************************************************************************
+        await tenantDao.addDomainToTenantManagement(rootTenantId, systemInitializationInput.rootAuthenticationDomain);
+        await tenantDao.addDomainToTenantRestrictedAuthentication(rootTenantId, systemInitializationInput.rootAuthenticationDomain);
+
+
+        // ************************************************************************************************
+        // Set the system settings
+        // ************************************************************************************************
+        const systemSettings: SystemSettings = {
+            allowDuressPassword: systemInitializationInput.systemSettingsInput.allowDuressPassword,
+            allowRecoveryEmail: systemInitializationInput.systemSettingsInput.allowRecoveryEmail,
+            enablePortalAsLegacyIdp: false,
+            rootClientId: client.clientId,
+            softwareVersion: OPENTRUST_IDENTITY_VERSION,
+            systemCategories: [],
+            systemId: randomUUID().toString(),
+            auditRecordRetentionPeriodDays: systemInitializationInput.systemSettingsInput.auditRecordRetentionPeriodDays,
+            contactEmail: systemInitializationInput.systemSettingsInput.contactEmail,
+            noReplyEmail: systemInitializationInput.systemSettingsInput.noReplyEmail
+        };
+        await tenantDao.updateSystemSettings(systemSettings);
+
+        // ************************************************************************************************
+        // Federated OIDC Provider. If this is set, then we also need to test it
+        // ************************************************************************************************
+        let federatedOIDCProvider: FederatedOidcProvider | null = null;
+        if(systemInitializationInput.rootFederatedOIDCProviderInput){
+            federatedOIDCProvider = {
+                clientAuthType: systemInitializationInput.rootFederatedOIDCProviderInput.clientAuthType,
+                federatedOIDCProviderClientId: systemInitializationInput.rootFederatedOIDCProviderInput.federatedOIDCProviderClientId,
+                federatedOIDCProviderId: randomUUID().toString(),
+                federatedOIDCProviderName: systemInitializationInput.rootFederatedOIDCProviderInput.federatedOIDCProviderName,
+                federatedOIDCProviderType: systemInitializationInput.rootFederatedOIDCProviderInput.federatedOIDCProviderType,
+                federatedOIDCProviderWellKnownUri: systemInitializationInput.rootFederatedOIDCProviderInput.federatedOIDCProviderWellKnownUri,
+                markForDelete: false,
+                refreshTokenAllowed: systemInitializationInput.rootFederatedOIDCProviderInput.refreshTokenAllowed,
+                scopes: systemInitializationInput.rootFederatedOIDCProviderInput.scopes,
+                usePkce: systemInitializationInput.rootFederatedOIDCProviderInput.usePkce,
+                federatedOIDCProviderClientSecret: systemInitializationInput.rootFederatedOIDCProviderInput.federatedOIDCProviderClientSecret,
+                federatedOIDCProviderDescription: systemInitializationInput.rootFederatedOIDCProviderInput.federatedOIDCProviderDescription,
+                federatedOIDCProviderTenantId: systemInitializationInput.rootFederatedOIDCProviderInput.federatedOIDCProviderTenantId
+            }
+            await federatedOIDCProviderDao.createFederatedOidcProvider(federatedOIDCProvider);
+            await federatedOIDCProviderDao.assignFederatedOidcProviderToDomain(federatedOIDCProvider.federatedOIDCProviderId, systemInitializationInput.rootAuthenticationDomain);
+        }
+
+        // ************************************************************************************************
+        // Create all scope values and assign them to the root tenant and then to the root authz group
+        // ************************************************************************************************
+        for(let i = 0; i < ALL_INTERNAL_SCOPE_NAMES_DISPLAY.length; i++){
+            const scope: Scope = {
+                markForDelete: false,
+                scopeDescription: ALL_INTERNAL_SCOPE_NAMES_DISPLAY[i].scopeDescription,
+                scopeId: randomUUID().toString(),
+                scopeName: ALL_INTERNAL_SCOPE_NAMES_DISPLAY[i].scopeName,
+                scopeUse: SCOPE_USE_IAM_MANAGEMENT
+            };
+            await scopeDao.createScope(scope);
+            await scopeDao.assignScopeToTenant(rootTenantId, scope.scopeId);
+            await scopeDao.assignScopeToAuthorizationGroup(rootTenantId, rootAuthzGroup.groupId, scope.scopeId);
+        }
+
+        // ************************************************************************************************
+        // Create the JWT signing key
+        // ************************************************************************************************
+        const expiresAtDate = new Date(Date.now() + (120 * 24 * 60 * 60 * 1000));
+        const keyVersion = generateRandomToken(8, "hex").toUpperCase();
+        const keyName = `${tenant.tenantName} JWT Signing Key V-${keyVersion}`;
+        const {passphrase, privateKey, certificate} = createSigningKey(keyName, tenant.tenantName, expiresAtDate);        
+        const encrypted: string | null = await kms.encrypt(passphrase);        
+
+        const key: SigningKey = {
+            createdAtMs: Date.now(),
+            expiresAtMs: expiresAtDate.getTime(),
+            keyId: randomUUID().toString(),
+            keyName: keyName,
+            keyType: KEY_TYPE_RSA,
+            keyUse: KEY_USE_JWT_SIGNING,            
+            markForDelete: false,
+            privateKeyPkcs8: privateKey,
+            status: SIGNING_KEY_STATUS_ACTIVE,
+            tenantId: tenant.tenantId,
+            certificate: certificate,
+            password: encrypted
+        }
+        await signingKeysDao.createSigningKey(key);
+        
+        
+        // await this.updateSearchIndex(key);
+        
+        
+        
         return response;
     }
 
@@ -195,7 +428,7 @@ class SystemInitializationService extends BaseSearchService {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         catch(err: any){
             logWithDetails("error", `Error reading tenant information for initialization: ${err.message}`, {});
-            arr.push(ERROR_CODES.EC00001);
+            arr.push(ERROR_CODES.EC00001)
         }
 
         try {

@@ -225,32 +225,7 @@ const resolvers: Resolvers = {
             return service.systemInitializationReady();
         }
     },
-    Mutation: {
-        createRootTenant: async(_: any, { tenantInput }, oidcContext) => {
-            const tenantService: TenantService = new TenantService(oidcContext);
-            let tenant: Tenant = {
-                enabled: true,
-                tenantId: "",
-                allowUnlimitedRate: tenantInput.allowUnlimitedRate,
-                tenantName: tenantInput.tenantName,
-                tenantDescription: tenantInput.tenantDescription ?? "",
-                allowUserSelfRegistration: tenantInput.allowUserSelfRegistration,
-                verifyEmailOnSelfRegistration: tenantInput.verifyEmailOnSelfRegistration,
-                federatedAuthenticationConstraint: tenantInput.federatedAuthenticationConstraint,
-                markForDelete: false,
-                tenantType: TENANT_TYPE_ROOT_TENANT,
-                allowSocialLogin: false,
-                allowAnonymousUsers: false,
-                migrateLegacyUsers: false,
-                allowLoginByPhoneNumber: false,
-                allowForgotPassword: false,
-                registrationRequireCaptcha: false,
-                registrationRequireTermsAndConditions: false,
-                termsAndConditionsUri: tenantInput.termsAndConditionsUri
-            };
-            await tenantService.createRootTenant(tenant);          
-            return tenant;
-        },
+    Mutation: {        
         updateRootTenant: async(_: any, { tenantInput }, oidcContext) => {
             const tenantService: TenantService = new TenantService(oidcContext);
             let tenant: Tenant = {
