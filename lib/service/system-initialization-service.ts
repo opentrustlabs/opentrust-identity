@@ -15,7 +15,7 @@ import { ERROR_CODES } from "../models/error";
 import { logWithDetails } from "../logging/logger";
 import BaseSearchService from "./base-search-service";
 import JwtServiceUtils from "./jwt-service-utils";
-import { ALL_INTERNAL_SCOPE_NAMES, ALL_INTERNAL_SCOPE_NAMES_DISPLAY, CONTACT_TYPE_FOR_CLIENT, CONTACT_TYPE_FOR_TENANT, KEY_TYPE_RSA, KEY_USE_JWT_SIGNING, OPENTRUST_IDENTITY_VERSION, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, PRINCIPAL_TYPE_SYSTEM_INIT_USER, SCOPE_USE_IAM_MANAGEMENT, SIGNING_KEY_STATUS_ACTIVE, SYSTEM_INITIALIZATION_KEY_ID, TENANT_TYPE_ROOT_TENANT, VALID_KMS_STRATEGIES } from "@/utils/consts";
+import { ALL_INTERNAL_SCOPE_NAMES, ALL_INTERNAL_SCOPE_NAMES_DISPLAY, CONTACT_TYPE_FOR_CLIENT, CONTACT_TYPE_FOR_TENANT, CUSTOM_ENCRYP_DECRYPT_SCOPE, KEY_TYPE_RSA, KEY_USE_JWT_SIGNING, LEGACY_USER_MIGRATION_SCOPE, OPENTRUST_IDENTITY_VERSION, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, PRINCIPAL_TYPE_SYSTEM_INIT_USER, SCOPE_USE_IAM_MANAGEMENT, SECURITY_EVENT_WRITE_SCOPE, SIGNING_KEY_STATUS_ACTIVE, SYSTEM_INITIALIZATION_KEY_ID, TENANT_READ_ALL_SCOPE, TENANT_TYPE_ROOT_TENANT, USER_TENANT_REL_TYPE_PRIMARY, VALID_KMS_STRATEGIES } from "@/utils/consts";
 import { JWTPayload } from "jose";
 import { generateRandomToken, generateUserCredential, getDomainFromEmail } from "@/utils/dao-utils";
 import IdentityDao from "../dao/identity-dao";
@@ -247,7 +247,7 @@ class SystemInitializationService extends BaseSearchService {
         };
 
         // ************************************************************************************************
-        // Create the user and credentials and assign the user to the root authz group
+        // Create the user and credentials and assign the user to the root tenant and root authz group
         // ************************************************************************************************
         const domain: string = getDomainFromEmail(systemInitializationInput.rootUserCreateInput.email);        
         const user: User = {
@@ -266,11 +266,11 @@ class SystemInitializationService extends BaseSearchService {
             middleName: systemInitializationInput.rootUserCreateInput.middleName,
             phoneNumber: systemInitializationInput.rootUserCreateInput.phoneNumber
         };
-        await identityDao.createUser(user);
-
+        await identityDao.createUser(user);        
         const userCredential: UserCredential = generateUserCredential(user.userId, systemInitializationInput.rootUserCreateInput.password, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS);
         await identityDao.addUserCredential(userCredential);
-
+        
+        await identityDao.assignUserToTenant(rootTenantId, user.userId, USER_TENANT_REL_TYPE_PRIMARY);
         await authorizationGroupDao.addUserToAuthorizationGroup(user.userId, rootAuthzGroup.groupId);
 
 
@@ -356,10 +356,19 @@ class SystemInitializationService extends BaseSearchService {
                 scopeName: ALL_INTERNAL_SCOPE_NAMES_DISPLAY[i].scopeName,
                 scopeUse: SCOPE_USE_IAM_MANAGEMENT
             };
-            await scopeDao.createScope(scope);
+            await scopeDao.createScope(scope);            
             scopes.push(scope);
             await scopeDao.assignScopeToTenant(rootTenantId, scope.scopeId);
             await scopeDao.assignScopeToAuthorizationGroup(rootTenantId, rootAuthzGroup.groupId, scope.scopeId);
+
+            // Assign the 3 outbound calling scopes to the root client
+            if(scope.scopeName === CUSTOM_ENCRYP_DECRYPT_SCOPE || scope.scopeName === LEGACY_USER_MIGRATION_SCOPE || scope.scopeName === SECURITY_EVENT_WRITE_SCOPE){
+                await scopeDao.assignScopeToClient(rootTenantId, client.clientId, scope.scopeId);
+            }
+            if(readOnlyAuthzGroup !== null && scope.scopeName === TENANT_READ_ALL_SCOPE){
+                await scopeDao.assignScopeToAuthorizationGroup(rootTenantId, readOnlyAuthzGroup.groupId, scope.scopeId);
+            }
+            
         }
 
         // ************************************************************************************************
@@ -391,21 +400,21 @@ class SystemInitializationService extends BaseSearchService {
         // ************************************************************************************************
         // Index all of the documents
         // ************************************************************************************************
-        // await this.indexTenant(tenant, tenant);
-        // await this.indexClient(client);
-        // await this.indexAuthorizationGroup(rootAuthzGroup);
-        // await this.indexSigningKey(key);
+        await this.indexTenant(tenant, tenant);
+        await this.indexClient(client);
+        await this.indexAuthorizationGroup(rootAuthzGroup);
+        await this.indexSigningKey(key);
         
-        // await this.indexUser(user, tenant.tenantId, tenant.tenantId);
-        // for(let i = 0; i < scopes.length; i++){
-        //     await this.indexScope(scopes[i], tenant.tenantId);
-        // }
-        // if(readOnlyAuthzGroup){
-        //     await this.indexAuthorizationGroup(readOnlyAuthzGroup);
-        // }
-        // if(federatedOIDCProvider){
-        //     await this.indexFederatedOIDCProvider(federatedOIDCProvider);
-        // }
+        await this.indexUser(user, tenant.tenantId, tenant.tenantId, rootAuthzGroup);
+        for(let i = 0; i < scopes.length; i++){
+            await this.indexScope(scopes[i], tenant.tenantId);
+        }
+        if(readOnlyAuthzGroup){
+            await this.indexAuthorizationGroup(readOnlyAuthzGroup);
+        }
+        if(federatedOIDCProvider){
+            await this.indexFederatedOIDCProvider(federatedOIDCProvider);
+        }
 
         response.tenant = tenant;       
         

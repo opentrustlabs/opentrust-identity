@@ -425,7 +425,8 @@ class OIDCServiceUtils {
     public async sendSecretEntryEmail(from: string, to: string, url: string, tenantLookAndFeel: TenantLookAndFeel, languageCode: string): Promise<void>{
         const html = await render(
             React.createElement(
-                SecretShare, {
+                SecretShare, 
+                {
                     url: url,
                     tenantLookAndFeel: tenantLookAndFeel,
                     languageCode: languageCode

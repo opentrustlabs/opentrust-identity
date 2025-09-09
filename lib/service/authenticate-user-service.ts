@@ -5,7 +5,7 @@ import { DaoFactory } from "../data-sources/dao-factory";
 import TenantDao from "../dao/tenant-dao";
 import { GraphQLError } from "graphql/error";
 import { DEFAULT_LOGIN_FAILURE_POLICY, DEFAULT_LOGIN_PAUSE_TIME_MINUTES, DEFAULT_MAXIMUM_LOGIN_FAILURES, DEFAULT_PASSWORD_HISTORY_PERIOD, DEFAULT_TENANT_PASSWORD_CONFIGURATION, FEDERATED_AUTHN_CONSTRAINT_EXCLUSIVE, FEDERATED_AUTHN_CONSTRAINT_PERMISSIVE, FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL, LOGIN_FAILURE_POLICY_LOCK_USER_ACCOUNT, LOGIN_FAILURE_POLICY_PAUSE, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, OIDC_AUTHORIZATION_ERROR_ACCESS_DENIED, QUERY_PARAM_AUTHENTICATE_TO_PORTAL, QUERY_PARAM_DEVICE_CODE_ID, QUERY_PARAM_TENANT_ID, RANKED_DESCENDING_HASHING_ALGORITHS, STATUS_COMPLETE, STATUS_INCOMPLETE, PRINCIPAL_TYPE_IAM_PORTAL_USER, USER_TENANT_REL_TYPE_PRIMARY, NAME_ORDER_WESTERN, DEFAULT_TENANT_LOOK_AND_FEEL } from "@/utils/consts";
-import { generateHash, generateRandomToken, getDomainFromEmail } from "@/utils/dao-utils";
+import { generateHash, generateRandomToken, generateUserCredential, getDomainFromEmail } from "@/utils/dao-utils";
 import AuthDao from "../dao/auth-dao";
 import FederatedOIDCProviderDao from "../dao/federated-oidc-provider-dao";
 import JwtServiceUtils from "./jwt-service-utils";
@@ -960,7 +960,7 @@ class AuthenticateUserService extends IdentityService {
         await identityDao.updateUser(user);
         await identityDao.assignUserToTenant(arrUserAuthenticationStates[index].tenantId, user.userId, "PRIMARY");
         
-        const userCredential: UserCredential = this.generateUserCredential(user.userId, password, tenantPasswordConfig.passwordHashingAlgorithm);
+        const userCredential: UserCredential = generateUserCredential(user.userId, password, tenantPasswordConfig.passwordHashingAlgorithm);
         await identityDao.addUserCredential(userCredential);
         
         await this.updateObjectSearchIndex(tenant, user);
@@ -1045,7 +1045,7 @@ class AuthenticateUserService extends IdentityService {
             }
         }
 
-        const cred: UserCredential = this.generateUserCredential(userId, newPassword, tenantPasswordConfig.passwordHashingAlgorithm);
+        const cred: UserCredential = generateUserCredential(userId, newPassword, tenantPasswordConfig.passwordHashingAlgorithm);
         await identityDao.addUserCredential(cred);
 
         arrUserAuthenticationStates[index].authenticationStateStatus = STATUS_COMPLETE;

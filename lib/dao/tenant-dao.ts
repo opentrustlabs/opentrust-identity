@@ -89,7 +89,7 @@ abstract class TenantDao {
 
     abstract getSystemSettings(): Promise<SystemSettings>;
 
-    abstract updateSystemSettings(input: SystemSettingsUpdateInput): Promise<SystemSettings>;
+    abstract updateSystemSettings(systemSettings: SystemSettings): Promise<SystemSettings>;
 
 }
 

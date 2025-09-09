@@ -1,6 +1,6 @@
 import { Client as SearchClient } from "@opensearch-project/opensearch";
 import { SearchInput, SearchResultType, ObjectSearchResults, SearchFilterInput, SearchFilterInputObjectType, ObjectSearchResultItem, RelSearchInput, RelSearchResults, RelSearchResultItem, Tenant, Client, AuthorizationGroup, FederatedOidcProvider, SigningKey, User, Scope } from "@/graphql/generated/graphql-types";
-import { CLIENT_TYPES_DISPLAY, FEDERATED_OIDC_PROVIDER_TYPES_DISPLAY, NAME_ORDER_WESTERN, SCOPE_USE_DISPLAY, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, SIGNING_KEY_STATUS_ACTIVE, TENANT_TYPES_DISPLAY } from "@/utils/consts";
+import { CLIENT_TYPES_DISPLAY, FEDERATED_OIDC_PROVIDER_TYPES_DISPLAY, NAME_ORDER_EASTERN, NAME_ORDER_WESTERN, SCOPE_USE_DISPLAY, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, SIGNING_KEY_STATUS_ACTIVE, TENANT_TYPES_DISPLAY } from "@/utils/consts";
 import { Search_Response } from "@opensearch-project/opensearch/api/index.js";
 import { getOpenSearchClient } from "../data-sources/search";
 
@@ -464,7 +464,7 @@ class BaseSearchService {
         });
     }
 
-    protected async indexUser(user: User, owningTenantId: string, parentTenantId: string,){        
+    protected async indexUser(user: User, owningTenantId: string, parentTenantId: string, authzGroup: AuthorizationGroup){        
         const document: ObjectSearchResultItem = {
             name: user.nameOrder === NAME_ORDER_WESTERN ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`,
             description: "",
@@ -498,6 +498,22 @@ class BaseSearchService {
             id: `${parentTenantId}::${user.userId}`,
             index: SEARCH_INDEX_REL_SEARCH,
             body: relDocument
+        });
+
+        const authzGroupUserRel: RelSearchResultItem = {
+            childid: user.userId,
+            childname: user.nameOrder === NAME_ORDER_EASTERN ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`,
+            childtype: SearchResultType.User,
+            owningtenantid: authzGroup.tenantId,
+            parentid: authzGroup.groupId,
+            parenttype: SearchResultType.AuthorizationGroup,
+            childdescription: user.email
+        }
+        await searchClient.index({
+            id: `${authzGroup.groupId}::${user.userId}`,
+            index: SEARCH_INDEX_REL_SEARCH,
+            body: authzGroupUserRel,
+            refresh: "wait_for"
         });
     }
 

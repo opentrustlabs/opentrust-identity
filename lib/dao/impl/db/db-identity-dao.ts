@@ -604,7 +604,7 @@ class DBIdentityDao extends IdentityDao {
         return Promise.resolve();
     }
 
-    // userTenantRel
+    
     public async assignUserToTenant(tenantId: string, userId: string, relType: string): Promise<UserTenantRel> {
         const sequelize: Sequelize = await DBDriver.getConnection();
         const model: UserTenantRel = {

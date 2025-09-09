@@ -776,7 +776,7 @@ export const CHANGE_EVENT_CLASS_TENANT_ANONYMOUS_="TENANT_AUTHENTICATION_DOMAIN_
 export const CHANGE_EVENT_CLASS_TENANT_AUTHENTICATION_DOMAIN_REL="TENANT_AUTHENTICATION_DOMAIN_REL";
 export const CHANGE_EVENT_CLASS_TENANT_USER_REL="TENANT_USER_REL";
 export const CHANGE_EVENT_CLASS_TENANT_LOGIN_FAILURE_POLICY="TENANT_LOGIN_FAILURE_POLICY";
-export const CHANGE_EVENT_SYSTEM_SETTINGS="SYSTEM_SETTINGS";
+export const CHANGE_EVENT_CLASS_SYSTEM_SETTINGS="SYSTEM_SETTINGS";
 export const CHANGE_EVENT_CLASS_CLIENT="CLIENT";
 export const CHANGE_EVENT_CLASS_CLIENT_REDIRECT_URI="CLIENT_REDIRECT_URI";
 export const CHANGE_EVENT_CLASS_CLIENT_AUTHENTICATION_GROUP="CLIENT_AUTHENTICATION_GROUP";
@@ -972,7 +972,7 @@ export const DEFAULT_TENANT_PASSWORD_CONFIGURATION: TenantPasswordConfig = {
     requireLowerCase: true,
     requireMfa: false,
     requireNumbers: true,
-    requireSpecialCharacters: true,
+    requireSpecialCharacters: false,
     requireUpperCase: true,
     tenantId: "",
     mfaTypesRequired: "",
@@ -1004,8 +1004,8 @@ export const MIN_SEARCH_PAGE_SIZE=5;
 export const MAX_SEARCH_PAGE=1000
 export const ALLOWED_OBJECT_SEARCH_SORT_FIELDS = ["name", "description", "email"];
 export const ALLOWED_SEARCH_DIRECTIONS=["asc", "desc"];
-export const SEARCH_INDEX_OBJECT_SEARCH="object_search";
-export const SEARCH_INDEX_REL_SEARCH="rel_search";
+export const SEARCH_INDEX_OBJECT_SEARCH="iam_object_search";
+export const SEARCH_INDEX_REL_SEARCH="iam_rel_search";
 
 
 
