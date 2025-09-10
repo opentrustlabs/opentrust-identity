@@ -5,8 +5,24 @@ import { Alert, Button, Grid2, Stack, Typography } from "@mui/material";
 import React, { useContext } from "react";
 import ErrorComponent from "../error/error-component";
 import DataLoading from "../layout/data-loading";
-import { ErrorDetail } from "@/graphql/generated/graphql-types";
+import { ErrorDetail, SystemInitializationInput } from "@/graphql/generated/graphql-types";
 import { ResponsiveBreakpoints, ResponsiveContext } from "../contexts/responsive-context";
+import RootTenantConfiguration from "./root-tenant-configuration";
+import InitAuthentication from "./init-authentication";
+import RootClientConfiguration from "./root-client-configuration";
+import RootAuthzConfiguration from "./root-authz-group-configuration";
+import RootUserConfiguration from "./root-user-configuration";
+import ReadOnlyAuthzGroupConfiguration from "./read-only-authz-group-configuration";
+import InitFederatedOIDCProviderConfiguration from "./init-federated-oidc-provider-configuration";
+import InitSystemSettingsConfiguration from "./system-settings-configuration";
+import InitCaptchaConfiguration from "./init-captcha-configuration";
+
+export interface SystemInitializationConfigProps {
+    onNext: (updatedInput: SystemInitializationInput) => void,
+    onBack: () => void,
+    onError: (message: string) => void,
+    systemInitInput: SystemInitializationInput
+}
 
 const INIT_SYSTEM_READY_CHECK = "INIT_SYSTEM_READY_CHECK";
 const INIT_AUTHENTICATION = "INIT_AUTHENTICATION";
@@ -16,9 +32,10 @@ const INIT_ROOT_AUTHZ_GROUP = "INIT_ROOT_AUTHZ_GROUP";
 const INIT_ROOT_USER = "INIT_ROOT_USER";
 const INIT_ROOT_READ_ONLY_AUTHZ_GROUP = "INIT_ROOT_READ_ONLY_AUTHZ_GROUP";
 const INIT_OIDC_PROVIDER = "INIT_OIDC_PROVIDER";
-const INIT_ROOT_CONTACT = "INIT_ROOT_CONTACT";
+//const INIT_ROOT_CONTACT = "INIT_ROOT_CONTACT";
 const INIT_SYSTEM_SETTINGS = "INIT_SYSTEM_SETTINGS";
 const INIT_CAPTCHA_CONFIG = "INIT_CAPTCHA_CONFIG";
+const INIT_SUBMIT="INIT_SUBMIT";
 
 const INITIALIZATION_STATES = [
     INIT_SYSTEM_READY_CHECK,
@@ -29,9 +46,10 @@ const INITIALIZATION_STATES = [
     INIT_ROOT_USER,
     INIT_ROOT_READ_ONLY_AUTHZ_GROUP,
     INIT_OIDC_PROVIDER,
-    INIT_ROOT_CONTACT,
+    //INIT_ROOT_CONTACT,
     INIT_SYSTEM_SETTINGS,
-    INIT_CAPTCHA_CONFIG
+    INIT_CAPTCHA_CONFIG,
+    INIT_SUBMIT
 ];
 
 const SystemInit: React.FC = () => {
@@ -39,11 +57,98 @@ const SystemInit: React.FC = () => {
     // CONTEXT VARIABLES
     const responsiveBreakpoints: ResponsiveBreakpoints = useContext(ResponsiveContext);
 
+    const input: SystemInitializationInput = {
+        rootAuthenticationDomain: "",
+        rootAuthorizationGroupInput: {
+            allowForAnonymousUsers: false,
+            default: false,
+            groupDescription: undefined,
+            groupName: "",
+            tenantId: ""
+        },
+        rootClientInput: {
+            audience: undefined,
+            clientDescription: undefined,
+            clientName: "",
+            clientTokenTTLSeconds: undefined,
+            clientType: "",
+            clienttypeid: undefined,
+            enabled: false,
+            maxRefreshTokenCount: undefined,
+            oidcEnabled: false,
+            pkceEnabled: false,
+            tenantId: "",
+            userTokenTTLSeconds: undefined
+        },
+        rootContact: {
+            email: "",
+            name: undefined,
+            objectid: "",
+            objecttype: "",
+            userid: undefined
+        },
+        rootTenantInput: {
+            allowAnonymousUsers: false,
+            allowForgotPassword: false,
+            allowLoginByPhoneNumber: false,
+            allowSocialLogin: false,
+            allowUnlimitedRate: false,
+            allowUserSelfRegistration: false,
+            defaultRateLimit: undefined,
+            defaultRateLimitPeriodMinutes: undefined,
+            enabled: false,
+            federatedAuthenticationConstraint: "",
+            migrateLegacyUsers: false,
+            registrationRequireCaptcha: false,
+            registrationRequireTermsAndConditions: false,
+            tenantDescription: undefined,
+            tenantId: "",
+            tenantName: "",
+            tenantType: "",
+            termsAndConditionsUri: undefined,
+            verifyEmailOnSelfRegistration: false
+        },
+        rootUserCreateInput: {
+            address: undefined,
+            addressLine1: undefined,
+            city: undefined,
+            countryCode: undefined,
+            domain: "",
+            email: "",
+            emailVerified: false,
+            enabled: false,
+            federatedOIDCProviderSubjectId: undefined,
+            firstName: "",
+            lastName: "",
+            locked: false,
+            middleName: undefined,
+            nameOrder: "",
+            password: "",
+            phoneNumber: undefined,
+            postalCode: undefined,
+            preferredLanguageCode: undefined,
+            stateRegionProvince: undefined,
+            termsAndConditionsAccepted: false
+        },
+        systemSettingsInput: {
+            allowDuressPassword: false,
+            allowRecoveryEmail: false,
+            auditRecordRetentionPeriodDays: undefined,
+            contactEmail: undefined,
+            enablePortalAsLegacyIdp: false,
+            noReplyEmail: undefined,
+            rootClientId: ""
+        },
+        captchaConfigInput: null,
+        rootFederatedOIDCProviderInput: null,
+        rootReadOnlyAuthorizationGroupInput: null
+    }
     // STATE VARIABLES
     const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
     const [hasReadinessError, setHasReadinessError] = React.useState<boolean>(false);
     const [hasReadinessWarning, setHasReadinessWarning] = React.useState<boolean>(false);
     const [initializationStateIndex, setInitializationStateIndex] = React.useState<number>(0);
+    const [systemInitializationInput, setSystemInitializationInput] = React.useState<SystemInitializationInput>(input);
 
     // GRAPHQL FUNCTIONS
     const { data, loading, error } = useQuery(SYSTEM_INITIALIZATION_READY_QUERY, {
@@ -67,15 +172,16 @@ const SystemInit: React.FC = () => {
 
     return (
         <React.Fragment>
+            <Grid2 marginBottom={"16px"} maxWidth={"750px"} container size={12} spacing={1}>
+                {errorMessage &&
+                    <Alert onClose={() => setErrorMessage(null)} sx={{ width: !responsiveBreakpoints.isMedium ? "750px" : undefined, maxWidth: "750px" }} severity="error">
+                        {errorMessage}
+                    </Alert>
+                }
+            </Grid2>
             {INITIALIZATION_STATES[initializationStateIndex] === INIT_SYSTEM_READY_CHECK &&
                 <Typography component="div">
-                    <Grid2 marginBottom={"16px"} maxWidth={"750px"} container size={12} spacing={1}>
-                        {errorMessage &&
-                            <Alert sx={{ width: !responsiveBreakpoints.isMedium ? "750px" : undefined, maxWidth: "750px" }} severity="error">
-                                {errorMessage};
-                            </Alert>
-                        }
-                    </Grid2>
+                    
 
                     {data && data.systemInitializationReady && data.systemInitializationReady.systemInitializationReadyErrors && data.systemInitializationReady.systemInitializationReadyErrors.length > 0 &&
                         <Grid2 marginBottom={"16px"} maxWidth={"750px"} container size={12} spacing={1}>
@@ -129,17 +235,170 @@ const SystemInit: React.FC = () => {
                             </Alert>
                         </Grid2>
                     }
-                    {!hasReadinessError &&
+                    {hasReadinessError &&
                         <Stack
                             direction={"row-reverse"}
                             sx={{ width: "100%" }}
                         >
-                            <Button>Next</Button>
+                            <Button
+                                onClick={() => {
+                                    setInitializationStateIndex(initializationStateIndex + 1);
+                                }}
+                            >
+                                Next
+                            </Button>
                         </Stack>
                     }
                 </Typography>
             }
+            {INITIALIZATION_STATES[initializationStateIndex] === INIT_AUTHENTICATION &&
+                <Grid2 marginBottom={"16px"} maxWidth={"750px"} container size={12} spacing={1}>
+                <InitAuthentication
+                    onBack={() => {
+                        setInitializationStateIndex(initializationStateIndex - 1);
+                    }}
+                    onError={(message) => {
+                        setErrorMessage(message)
+                    }}
+                    onNext={(updatedInput: SystemInitializationInput) => {
+                        setInitializationStateIndex(initializationStateIndex + 1);
+                    }}
+                    systemInitInput={systemInitializationInput} 
+                />
+                </Grid2>
+            }
+            {INITIALIZATION_STATES[initializationStateIndex] === INIT_TENANT &&
+                <Grid2 marginBottom={"16px"} maxWidth={"750px"} container size={12} spacing={1}>
+                <RootTenantConfiguration
+                    onBack={() => {
+                        setInitializationStateIndex(initializationStateIndex - 1);
+                    }}
+                    onError={(message) => {
+                        setErrorMessage(message)
+                    }}
+                    onNext={(updatedInput: SystemInitializationInput) => {
+                        setInitializationStateIndex(initializationStateIndex + 1);
+                    }}
+                    systemInitInput={systemInitializationInput} 
+                />
+                </Grid2>
+            }
+            {INITIALIZATION_STATES[initializationStateIndex] === INIT_CLIENT &&
+                <RootClientConfiguration
+                    onBack={() => {
+                        setInitializationStateIndex(initializationStateIndex - 1);
+                    }}
+                    onError={(message) => {
+                        setErrorMessage(message)
+                    }}
+                    onNext={(updatedInput: SystemInitializationInput) => {
+                        setInitializationStateIndex(initializationStateIndex + 1);
+                    }}
+                    systemInitInput={systemInitializationInput} 
+                />
+            }
+            {INITIALIZATION_STATES[initializationStateIndex] === INIT_ROOT_AUTHZ_GROUP &&
+                <RootAuthzConfiguration
+                    onBack={() => {
+                        setInitializationStateIndex(initializationStateIndex - 1);
+                    }}
+                    onError={(message) => {
+                        setErrorMessage(message)
+                    }}
+                    onNext={(updatedInput: SystemInitializationInput) => {
+                        setInitializationStateIndex(initializationStateIndex + 1);
+                    }}
+                    systemInitInput={systemInitializationInput} 
+                />
+            }
+            {INITIALIZATION_STATES[initializationStateIndex] === INIT_ROOT_USER && 
+                <RootUserConfiguration
+                    onBack={() => {
+                        setInitializationStateIndex(initializationStateIndex - 1);
+                    }}
+                    onError={(message) => {
+                        setErrorMessage(message)
+                    }}
+                    onNext={(updatedInput: SystemInitializationInput) => {
+                        setInitializationStateIndex(initializationStateIndex + 1);
+                    }}
+                    systemInitInput={systemInitializationInput} 
+                />
+            }
+            {INITIALIZATION_STATES[initializationStateIndex] === INIT_ROOT_READ_ONLY_AUTHZ_GROUP && 
+                <ReadOnlyAuthzGroupConfiguration
+                    onBack={() => {
+                        setInitializationStateIndex(initializationStateIndex - 1);
+                    }}
+                    onError={(message) => {
+                        setErrorMessage(message)
+                    }}
+                    onNext={(updatedInput: SystemInitializationInput) => {
+                        setInitializationStateIndex(initializationStateIndex + 1);
+                    }}
+                    systemInitInput={systemInitializationInput} 
+                />
+            }
+            {INITIALIZATION_STATES[initializationStateIndex] === INIT_OIDC_PROVIDER && 
+                <InitFederatedOIDCProviderConfiguration
+                    onBack={() => {
+                        setInitializationStateIndex(initializationStateIndex - 1);
+                    }}
+                    onError={(message) => {
+                        setErrorMessage(message)
+                    }}
+                    onNext={(updatedInput: SystemInitializationInput) => {
+                        setInitializationStateIndex(initializationStateIndex + 1);
+                    }}
+                    systemInitInput={systemInitializationInput} 
+                />
+            }
+            {INITIALIZATION_STATES[initializationStateIndex] === INIT_SYSTEM_SETTINGS && 
+                <InitSystemSettingsConfiguration
+                    onBack={() => {
+                        setInitializationStateIndex(initializationStateIndex - 1);
+                    }}
+                    onError={(message) => {
+                        setErrorMessage(message)
+                    }}
+                    onNext={(updatedInput: SystemInitializationInput) => {
+                        setInitializationStateIndex(initializationStateIndex + 1);
+                    }}
+                    systemInitInput={systemInitializationInput} 
+                />
+            }
+            {INITIALIZATION_STATES[initializationStateIndex] === INIT_CAPTCHA_CONFIG && 
+                <InitCaptchaConfiguration
+                    onBack={() => {
+                        setInitializationStateIndex(initializationStateIndex - 1);
+                    }}
+                    onError={(message) => {
+                        setErrorMessage(message)
+                    }}
+                    onNext={(updatedInput: SystemInitializationInput) => {
+                        setInitializationStateIndex(initializationStateIndex + 1);
+                    }}
+                    systemInitInput={systemInitializationInput} 
+                />
+            }
+
+
         </React.Fragment>
+
+//  const INITIALIZATION_STATES = [
+//     INIT_SYSTEM_READY_CHECK,
+//     INIT_AUTHENTICATION,
+//     INIT_TENANT,
+//     INIT_CLIENT,
+//     INIT_ROOT_AUTHZ_GROUP,
+//     INIT_ROOT_USER,
+//     INIT_ROOT_READ_ONLY_AUTHZ_GROUP,
+//     INIT_OIDC_PROVIDER,
+//     INIT_ROOT_CONTACT,
+//     INIT_SYSTEM_SETTINGS,
+//     INIT_CAPTCHA_CONFIG,
+//     INIT_SUBMIT
+// ];
 
     )
 }
