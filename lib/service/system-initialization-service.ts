@@ -5,7 +5,6 @@ import TenantDao from "../dao/tenant-dao";
 import AuthorizationGroupDao from "../dao/authorization-group-dao";
 import FederatedOIDCProviderDao from "../dao/federated-oidc-provider-dao";
 import ScopeDao from "../dao/scope-dao";
-import { getOpenSearchClient } from "../data-sources/search";
 import ChangeEventDao from "../dao/change-event-dao";
 import Kms from "../kms/kms";
 import ContactDao from "../dao/contact-dao";
@@ -15,7 +14,7 @@ import { ERROR_CODES } from "../models/error";
 import { logWithDetails } from "../logging/logger";
 import BaseSearchService from "./base-search-service";
 import JwtServiceUtils from "./jwt-service-utils";
-import { ALL_INTERNAL_SCOPE_NAMES, ALL_INTERNAL_SCOPE_NAMES_DISPLAY, CONTACT_TYPE_FOR_CLIENT, CONTACT_TYPE_FOR_TENANT, CUSTOM_ENCRYP_DECRYPT_SCOPE, KEY_TYPE_RSA, KEY_USE_JWT_SIGNING, LEGACY_USER_MIGRATION_SCOPE, OPENTRUST_IDENTITY_VERSION, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, PRINCIPAL_TYPE_SYSTEM_INIT_USER, SCOPE_USE_IAM_MANAGEMENT, SECURITY_EVENT_WRITE_SCOPE, SIGNING_KEY_STATUS_ACTIVE, SYSTEM_INITIALIZATION_KEY_ID, TENANT_READ_ALL_SCOPE, TENANT_TYPE_ROOT_TENANT, USER_TENANT_REL_TYPE_PRIMARY, VALID_KMS_STRATEGIES } from "@/utils/consts";
+import { ALL_INTERNAL_SCOPE_NAMES_DISPLAY, CHANGE_EVENT_CLASS_AUTHORIZATION_GROUP, CHANGE_EVENT_CLASS_CLIENT, CHANGE_EVENT_CLASS_OIDC_PROVIDER, CHANGE_EVENT_CLASS_SCOPE, CHANGE_EVENT_CLASS_SIGNING_KEY, CHANGE_EVENT_CLASS_TENANT, CHANGE_EVENT_CLASS_USER, CHANGE_EVENT_TYPE_CREATE, CONTACT_TYPE_FOR_CLIENT, CONTACT_TYPE_FOR_TENANT, CUSTOM_ENCRYP_DECRYPT_SCOPE, KEY_TYPE_RSA, KEY_USE_JWT_SIGNING, LEGACY_USER_MIGRATION_SCOPE, NAME_ORDER_WESTERN, OPENTRUST_IDENTITY_VERSION, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, PRINCIPAL_TYPE_SYSTEM_INIT_USER, SCOPE_USE_IAM_MANAGEMENT, SECURITY_EVENT_WRITE_SCOPE, SIGNING_KEY_STATUS_ACTIVE, SYSTEM_INITIALIZATION_KEY_ID, TENANT_READ_ALL_SCOPE, TENANT_TYPE_ROOT_TENANT, USER_TENANT_REL_TYPE_PRIMARY, VALID_KMS_STRATEGIES } from "@/utils/consts";
 import { JWTPayload } from "jose";
 import { generateRandomToken, generateUserCredential, getDomainFromEmail } from "@/utils/dao-utils";
 import IdentityDao from "../dao/identity-dao";
@@ -88,9 +87,14 @@ class SystemInitializationService extends BaseSearchService {
                 userId: ""
             },
             accessToken: "",
-            authenticationError: ERROR_CODES.EC00003,
+            authenticationError: null,
             tokenExpiresAtMs: 0
         };
+        const preReqErrors = await this.hasPreRequisites();
+        if(preReqErrors.length > 0){
+            response.authenticationError = ERROR_CODES.EC00218;
+            return response;
+        }
 
         const privateKeyInput: PrivateKeyInput = {
             key: privateKey,
@@ -142,6 +146,7 @@ class SystemInitializationService extends BaseSearchService {
             const jwt: string = await jwtServiceUtils.signJwtWithKey(principal, privateKeyObject, SYSTEM_INITIALIZATION_KEY_ID);
             const p = await jwtServiceUtils.validateJwtWithCertificate(jwt, publicKeyObject);
             if(!p.payload){
+                response.authenticationError = ERROR_CODES.EC00219;
                 return response;    
             }
             else{
@@ -154,6 +159,7 @@ class SystemInitializationService extends BaseSearchService {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         catch(err: any){
             logWithDetails("error", `Error creating or validating the JWT for system initialization: ${err.message}`, {});
+            response.authenticationError = ERROR_CODES.EC00219;
             return response;
         }
 
@@ -164,6 +170,17 @@ class SystemInitializationService extends BaseSearchService {
             systemInitializationErrors: [],
             tenant: null,
         };
+        
+        const preReqErrors = await this.hasPreRequisites();
+        if(preReqErrors.length > 0){
+            response.systemInitializationErrors = preReqErrors;
+            return response;
+        }
+
+        if(!this.oidcContext.portalUserProfile || this.oidcContext.portalUserProfile.principalType !== PRINCIPAL_TYPE_SYSTEM_INIT_USER){
+            response.systemInitializationErrors = [ERROR_CODES.EC00217];
+            return response;
+        }
 
         // ************************************************************************************************
         // Create the root tenant
@@ -415,6 +432,97 @@ class SystemInitializationService extends BaseSearchService {
         if(federatedOIDCProvider){
             await this.indexFederatedOIDCProvider(federatedOIDCProvider);
         }
+        
+        // ************************************************************************************************
+        // Create the changes events for all of these objects
+        // ************************************************************************************************
+        let changeByUser = user.nameOrder === NAME_ORDER_WESTERN ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`
+        changeByUser = `${changeByUser} - ${user.userId}`
+        await changeEventDao.addChangeEvent({
+            changedBy: changeByUser,
+            changeEventClass: CHANGE_EVENT_CLASS_TENANT,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_CREATE,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify(tenant),
+            objectId: tenant.tenantId
+        });
+
+        await changeEventDao.addChangeEvent({
+            changedBy: changeByUser,
+            changeEventClass: CHANGE_EVENT_CLASS_CLIENT,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_CREATE,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify(client),
+            objectId: client.clientId
+        });
+
+        await changeEventDao.addChangeEvent({
+            changedBy: changeByUser,
+            changeEventClass: CHANGE_EVENT_CLASS_AUTHORIZATION_GROUP,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_CREATE,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify(rootAuthzGroup),
+            objectId: rootAuthzGroup.groupId
+        });
+
+        await changeEventDao.addChangeEvent({
+            changedBy: changeByUser,
+            changeEventClass: CHANGE_EVENT_CLASS_USER,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_CREATE,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify(user),
+            objectId: user.userId
+        });
+
+        await changeEventDao.addChangeEvent({
+            changedBy: changeByUser,
+            changeEventClass: CHANGE_EVENT_CLASS_SIGNING_KEY,
+            changeEventId: randomUUID().toString(),
+            changeEventType: CHANGE_EVENT_TYPE_CREATE,
+            changeTimestamp: Date.now(),
+            data: JSON.stringify({keyId: key.keyId, keyName: key.keyName, createdAtMs: key.createdAtMs, expiresAtMs: key.expiresAtMs, keyType: key.keyType, keyUse: key.keyUse}),
+            objectId: key.keyId
+        });
+
+        if(readOnlyAuthzGroup){
+            await changeEventDao.addChangeEvent({
+                changedBy: changeByUser,
+                changeEventClass: CHANGE_EVENT_CLASS_AUTHORIZATION_GROUP,
+                changeEventId: randomUUID().toString(),
+                changeEventType: CHANGE_EVENT_TYPE_CREATE,
+                changeTimestamp: Date.now(),
+                data: JSON.stringify(readOnlyAuthzGroup),
+                objectId: readOnlyAuthzGroup.groupId
+            });
+        }
+        
+        if(federatedOIDCProvider){
+            await changeEventDao.addChangeEvent({
+                changedBy: changeByUser,
+                changeEventClass: CHANGE_EVENT_CLASS_OIDC_PROVIDER,
+                changeEventId: randomUUID().toString(),
+                changeEventType: CHANGE_EVENT_TYPE_CREATE,
+                changeTimestamp: Date.now(),
+                data: JSON.stringify({federatedOIDCProviderWellKnownUri: federatedOIDCProvider.federatedOIDCProviderWellKnownUri, federatedOIDCProviderId: federatedOIDCProvider.federatedOIDCProviderId, federatedOIDCProviderName: federatedOIDCProvider.federatedOIDCProviderName, federatedOIDCProviderType: federatedOIDCProvider.federatedOIDCProviderType, }),
+                objectId: federatedOIDCProvider.federatedOIDCProviderId
+            });
+        }
+        
+        for(let i = 0; i < scopes.length; i++){
+            await changeEventDao.addChangeEvent({
+                changedBy: changeByUser,
+                changeEventClass: CHANGE_EVENT_CLASS_SCOPE,
+                changeEventId: randomUUID().toString(),
+                changeEventType: CHANGE_EVENT_TYPE_CREATE,
+                changeTimestamp: Date.now(),
+                data: JSON.stringify(scopes[i]),
+                objectId: scopes[i].scopeId
+            }); 
+        }
 
         response.tenant = tenant;       
         
@@ -425,13 +533,13 @@ class SystemInitializationService extends BaseSearchService {
     protected async hasWarnings(): Promise<Array<ErrorDetail>> {
         const arr: Array<ErrorDetail> = [];
         if(!SMTP_ENABLED || SMTP_ENABLED !== "true"){
-            arr.push(ERROR_CODES.EC00002);
+            arr.push(ERROR_CODES.EC00214);
         }
         if(SMTP_ENABLED === "true" && (!EMAIL_SERVER_HOST || !EMAIL_SERVER_PORT)){
-            arr.push(ERROR_CODES.EC00002);
+            arr.push(ERROR_CODES.EC00215);
         }
         if(!SECURITY_EVENT_CALLBACK_URI){
-            arr.push(ERROR_CODES.EC00002);
+            arr.push(ERROR_CODES.EC00216);
         }
 
         return arr;
@@ -442,26 +550,26 @@ class SystemInitializationService extends BaseSearchService {
         const arr: Array<ErrorDetail> = [];
 
         if (!SYSTEM_INIT || SYSTEM_INIT !== "true") {
-            arr.push(ERROR_CODES.EC00001);
+            arr.push(ERROR_CODES.EC00203);
         }
         if (!SYSTEM_INIT_CERTIFICATE_FILE) {
-            arr.push(ERROR_CODES.EC00001);
+            arr.push(ERROR_CODES.EC00204);
         }
         const x509Cert: X509Certificate | null = this.getInitializationCertificate();
         if(x509Cert === null){
-            arr.push(ERROR_CODES.EC00001);
+            arr.push(ERROR_CODES.EC00205);
         }
 
         try{
             const tenant: Tenant | null = await tenantDao.getRootTenant();
             if(tenant !== null){
-                arr.push(ERROR_CODES.EC00001);
+                arr.push(ERROR_CODES.EC00206);
             }
         }
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         catch(err: any){
             logWithDetails("error", `Error reading tenant information for initialization: ${err.message}`, {});
-            arr.push(ERROR_CODES.EC00001)
+            arr.push(ERROR_CODES.EC00207)
         }
 
         try {
@@ -473,7 +581,7 @@ class SystemInitializationService extends BaseSearchService {
                 []
             );
             if(!objectSearchResults){
-                arr.push(ERROR_CODES.EC00001);
+                arr.push(ERROR_CODES.EC00208);
             }
             const relSearch = await this._relSearch(
                 {
@@ -483,21 +591,21 @@ class SystemInitializationService extends BaseSearchService {
                 []
             );
             if(!relSearch){
-                arr.push(ERROR_CODES.EC00001);
+                arr.push(ERROR_CODES.EC00209);
             }
         }
         catch(err: any){
             logWithDetails("error", `Error querying search index for initialization: ${err.message}`, {});
-            arr.push(ERROR_CODES.EC00001);
+            arr.push(ERROR_CODES.EC00210);
         }
         if(!KMS_STRATEGY || !VALID_KMS_STRATEGIES.includes(KMS_STRATEGY)){
-            arr.push(ERROR_CODES.EC00001);
+            arr.push(ERROR_CODES.EC00211);
         }
         if(!AUTH_DOMAIN){
-            arr.push(ERROR_CODES.EC00001);
+            arr.push(ERROR_CODES.EC00212);
         }
         if(!MFA_ISSUER || !MFA_ORIGIN || !MFA_ID){
-            arr.push(ERROR_CODES.EC00001);
+            arr.push(ERROR_CODES.EC00213);
         }
 
         return arr;
