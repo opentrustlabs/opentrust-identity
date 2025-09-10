@@ -899,7 +899,8 @@ export const AUTHORIZATION_LAYOUT_PAGES = [
     "/device",
     "/device/registered",
     "/my-profile",
-    "/secret-entry"
+    "/secret-entry",
+    "/system-init"
 ];
 
 export const PROFILE_LAYOUT_PAGES =[

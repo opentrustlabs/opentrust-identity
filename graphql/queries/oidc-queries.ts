@@ -789,3 +789,21 @@ export const GET_AUTHORIZATION_SCOPE_APPROVAL_DATA_QUERY = gql(`
         }
     }
 `);
+
+export const SYSTEM_INITIALIZATION_READY_QUERY = gql(`
+    query systemInitializationReady {
+        systemInitializationReady {
+            systemInitializationReady
+            systemInitializationReadyErrors {
+                errorCode
+                errorKey
+                errorMessage
+            }
+            systemInitializationWarnings {
+                errorCode
+                errorKey
+                errorMessage
+            }
+        }
+    }
+`);
