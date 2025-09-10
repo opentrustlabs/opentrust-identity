@@ -1135,3 +1135,13 @@ export const REMOVE_CAPTCHA_CONFIG_MUTATION = gql(`
         removeCaptchaConfig
     }
 `);
+
+export const SYSTEM_INITIALIZATION_AUTHENTICATION_MUTATION = gql`
+    mutation systemInitializationAuthentication($privateKey: String!, $password: String) {
+        systemInitializationAuthentication(privateKey: $privateKey, password: $password) {
+            ...UserAuthenticationStateResponseFragment
+        }    
+    }
+    
+    ${USER_AUTHENTICATION_STATE_RESPONSE_FRAGMENT}    
+`

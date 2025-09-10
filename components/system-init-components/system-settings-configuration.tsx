@@ -3,7 +3,7 @@ import React from "react";
 import { SystemInitializationConfigProps } from "./system-init";
 
 
-const RootUserConfiguration: React.FC<SystemInitializationConfigProps> = ({
+const InitSystemSettingsConfiguration: React.FC<SystemInitializationConfigProps> = ({
     onBack,
     onError,
     onNext,
@@ -12,8 +12,8 @@ const RootUserConfiguration: React.FC<SystemInitializationConfigProps> = ({
 }) => {
     
     return (
-        <div>root authz</div>
+        <div>readonly authz</div>
     )
 }
 
-export default RootUserConfiguration;
+export default InitSystemSettingsConfiguration;
