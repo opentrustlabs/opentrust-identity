@@ -287,6 +287,7 @@ const RootUserConfiguration: React.FC<SystemInitializationConfigProps> = ({
                     <Button
                         onClick={() => {
                             systemInitInput.rootUserCreateInput = userInput;
+                            systemInitInput.rootAuthenticationDomain = userInput.domain;
                             onNext(systemInitInput);
                             
                         }}

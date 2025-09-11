@@ -32,7 +32,6 @@ const INIT_ROOT_AUTHZ_GROUP = "INIT_ROOT_AUTHZ_GROUP";
 const INIT_ROOT_USER = "INIT_ROOT_USER";
 const INIT_ROOT_READ_ONLY_AUTHZ_GROUP = "INIT_ROOT_READ_ONLY_AUTHZ_GROUP";
 const INIT_OIDC_PROVIDER = "INIT_OIDC_PROVIDER";
-//const INIT_ROOT_CONTACT = "INIT_ROOT_CONTACT";
 const INIT_SYSTEM_SETTINGS = "INIT_SYSTEM_SETTINGS";
 const INIT_CAPTCHA_CONFIG = "INIT_CAPTCHA_CONFIG";
 const INIT_SUBMIT="INIT_SUBMIT";
@@ -46,7 +45,6 @@ const INITIALIZATION_STATES = [
     INIT_ROOT_USER,
     INIT_ROOT_READ_ONLY_AUTHZ_GROUP,
     INIT_OIDC_PROVIDER,
-    //INIT_ROOT_CONTACT,
     INIT_SYSTEM_SETTINGS,
     INIT_CAPTCHA_CONFIG,
     INIT_SUBMIT
@@ -147,7 +145,7 @@ const SystemInit: React.FC = () => {
     const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
     const [hasReadinessError, setHasReadinessError] = React.useState<boolean>(false);
     const [hasReadinessWarning, setHasReadinessWarning] = React.useState<boolean>(false);
-    const [initializationStateIndex, setInitializationStateIndex] = React.useState<number>(0);
+    const [initializationStateIndex, setInitializationStateIndex] = React.useState<number>(10);
     const [systemInitializationInput, setSystemInitializationInput] = React.useState<SystemInitializationInput>(input);
 
     const width = !responsiveBreakpoints.isMedium ? "750px" : undefined;
@@ -408,7 +406,7 @@ const SystemInit: React.FC = () => {
                 </Grid2>
             }
             {INITIALIZATION_STATES[initializationStateIndex] === INIT_SUBMIT && 
-                <Grid2 marginBottom={"16px"} maxWidth={maxWidth} container size={12} spacing={1}>
+                <Grid2 marginBottom={"16px"} maxWidth={maxWidth} width={width} container size={12} spacing={1}>
                     <InitSubmit
                         onBack={() => {
                             setInitializationStateIndex(initializationStateIndex - 1);
@@ -425,24 +423,7 @@ const SystemInit: React.FC = () => {
                 </Grid2>            
             }
 
-
         </React.Fragment>
-
-//  const INITIALIZATION_STATES = [
-//     INIT_SYSTEM_READY_CHECK,
-//     INIT_AUTHENTICATION,
-//     INIT_TENANT,
-//     INIT_CLIENT,
-//     INIT_ROOT_AUTHZ_GROUP,
-//     INIT_ROOT_USER,
-//     INIT_ROOT_READ_ONLY_AUTHZ_GROUP,
-//     INIT_OIDC_PROVIDER,
-//     INIT_ROOT_CONTACT,
-//     INIT_SYSTEM_SETTINGS,
-//     INIT_CAPTCHA_CONFIG,
-//     INIT_SUBMIT
-// ];
-
     )
 }
 

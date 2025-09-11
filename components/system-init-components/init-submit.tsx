@@ -11,6 +11,7 @@ import { useMutation } from "@apollo/client";
 import { SystemInitializationResponse, Tenant } from "@/graphql/generated/graphql-types";
 import { useRouter } from "next/navigation";
 import { QUERY_PARAM_AUTHENTICATE_TO_PORTAL, QUERY_PARAM_TENANT_ID } from "@/utils/consts";
+import { AuthSessionProps, useAuthSessionContext } from "../contexts/auth-session-context";
 
 const InitSubmit: React.FC<SystemInitializationConfigProps> = ({
     onBack,
@@ -21,6 +22,7 @@ const InitSubmit: React.FC<SystemInitializationConfigProps> = ({
 
     // CONTEXT VARIABLES
     const router = useRouter();
+    const authSessionProps: AuthSessionProps = useAuthSessionContext();
 
     // STATE VARIABLES
     const [initializationSuccessful, setInitializationSuccessful] = React.useState<boolean>(false);
@@ -40,6 +42,7 @@ const InitSubmit: React.FC<SystemInitializationConfigProps> = ({
                 if(response.tenant){
                     setRootTenant(response.tenant);
                     setInitializationSuccessful(true);
+                    authSessionProps.deleteAuthSessionData();
                 }
                 else{
                     onError("ERROR_NO_ROOT_TENANT_WAS_CREATED");
@@ -52,15 +55,16 @@ const InitSubmit: React.FC<SystemInitializationConfigProps> = ({
     });
 
     return (
-        <Typography component="div">
+        <Typography component="div" sx={{width: "100%"}}>
             <Paper
                 elevation={1}
                 sx={{ padding: "8px", border: "solid 1px lightgrey" }}
+                
             >
                 {initializationSuccessful &&
                     <React.Fragment>
                         <Grid2 container size={12} spacing={1}>
-                            <Grid2 fontWeight={"bold"} size={12} marginBottom={"16px"}>
+                            <Grid2 fontWeight={"bold"} size={12} marginBottom={"32px"}>
                                 System Initialization Successfully Completed. Click below to login
                             </Grid2>
                         </Grid2>
@@ -81,7 +85,7 @@ const InitSubmit: React.FC<SystemInitializationConfigProps> = ({
                 {!initializationSuccessful &&
                     <React.Fragment>
                         <Grid2 container size={12} spacing={1}>
-                            <Grid2 fontWeight={"bold"} size={12} marginBottom={"16px"}>
+                            <Grid2 fontWeight={"bold"} size={12} marginBottom={"32px"}>
                                 Complete System Initialization                     
                             </Grid2>
                         </Grid2>
