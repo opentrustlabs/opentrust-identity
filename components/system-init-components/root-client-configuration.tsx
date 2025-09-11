@@ -13,7 +13,6 @@ import Button from "@mui/material/Button";
 
 const RootClientConfiguration: React.FC<SystemInitializationConfigProps> = ({
     onBack,
-    onError,
     onNext,
     systemInitInput
 
@@ -21,10 +20,10 @@ const RootClientConfiguration: React.FC<SystemInitializationConfigProps> = ({
 
     // STATE VARIABLES
     const initInput: ClientCreateInput = {
-        clientName: "",
+        clientName: systemInitInput.rootClientInput.clientName,
         clientType: CLIENT_TYPE_SERVICE_ACCOUNT,
         tenantId: "",
-        clientDescription: "",
+        clientDescription: systemInitInput.rootClientInput.clientDescription,
         clientTokenTTLSeconds: DEFAULT_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS,
         enabled: true,
         maxRefreshTokenCount: null,
@@ -42,6 +41,9 @@ const RootClientConfiguration: React.FC<SystemInitializationConfigProps> = ({
                 sx={{ padding: "8px", border: "solid 1px lightgrey" }}
             >
                 <Grid2 container size={12} spacing={1}>
+                    <Grid2 fontWeight={"bold"} size={12} marginBottom={"8px"}>
+                        Configure the Root Client
+                    </Grid2>
                     <Grid2 size={12} marginBottom={"8px"}>
                         <div>Client Name (Should include your organization name and environment. Example: MyOrg PROD Root Client)</div>
                         <TextField required name="clientName" id="clientName" onChange={(evt) => { clientInput.clientName = evt?.target.value; setClientInput({ ...clientInput }) }} value={clientInput.clientName} fullWidth={true} size="small" />

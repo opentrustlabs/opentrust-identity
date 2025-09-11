@@ -59,6 +59,9 @@ const RootTenantConfiguration: React.FC<SystemInitializationConfigProps> = ({
                 sx={{ padding: "8px", border: "solid 1px lightgrey" }}
             >
                 <Grid2 container size={12} spacing={1}>
+                    <Grid2 fontWeight={"bold"} size={12} marginBottom={"8px"}>
+                        Configure the Root Tenant
+                    </Grid2>
                     <Grid2 marginBottom={"16px"}>
                         <div>Tenant Name (Should include your organization name and environment. Example: MyOrg PROD Root Tenant)</div>
                         <TextField name="tenantName" id="tenantName" onChange={(evt) => { tenantInput.tenantName = evt?.target.value; setTenantInput({ ...tenantInput }) }} value={tenantInput.tenantName} fullWidth={true} size="small" />

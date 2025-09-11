@@ -1,6 +1,6 @@
 "use client";
 import { SYSTEM_INITIALIZATION_READY_QUERY } from "@/graphql/queries/oidc-queries";
-import { useMutation, useQuery } from "@apollo/client";
+import { useQuery } from "@apollo/client";
 import { Alert, Button, Grid2, Stack, Typography } from "@mui/material";
 import React, { useContext } from "react";
 import ErrorComponent from "../error/error-component";
@@ -10,13 +10,12 @@ import { ResponsiveBreakpoints, ResponsiveContext } from "../contexts/responsive
 import RootTenantConfiguration from "./root-tenant-configuration";
 import InitAuthentication from "./init-authentication";
 import RootClientConfiguration from "./root-client-configuration";
-import RootAuthzConfiguration from "./root-authz-group-configuration";
+import InitAuthzConfiguration from "./init-authz-group-configuration";
 import RootUserConfiguration from "./root-user-configuration";
-import ReadOnlyAuthzGroupConfiguration from "./read-only-authz-group-configuration";
 import InitFederatedOIDCProviderConfiguration from "./init-federated-oidc-provider-configuration";
-import InitSystemSettingsConfiguration from "./system-settings-configuration";
+import InitSystemSettingsConfiguration from "./init-system-settings-configuration";
 import InitCaptchaConfiguration from "./init-captcha-configuration";
-import { SYSTEM_INITIALIZATION_MUTATION } from "@/graphql/mutations/oidc-mutations";
+import InitSubmit from "./init-submit";
 
 export interface SystemInitializationConfigProps {
     onNext: (updatedInput: SystemInitializationInput) => void,
@@ -171,17 +170,6 @@ const SystemInit: React.FC = () => {
         },
     });
 
-    const [systemInitializationMutation] = useMutation(SYSTEM_INITIALIZATION_MUTATION, {
-        variables: {
-            systemInitializationInput: systemInitializationInput
-        },
-        onCompleted(data) {
-            
-        },
-        onError(error) {
-            setErrorMessage(error.message);
-        }    
-    });
 
     if (error) return <ErrorComponent componentSize={"xs"} message={"Error"} />
     if (loading) return <DataLoading dataLoadingSize="xl" color={null} />
@@ -308,6 +296,7 @@ const SystemInit: React.FC = () => {
                             setErrorMessage(message)
                         }}
                         onNext={(updatedInput: SystemInitializationInput) => {
+                            setSystemInitializationInput({...updatedInput});
                             setInitializationStateIndex(initializationStateIndex + 1);
                         }}
                         systemInitInput={systemInitializationInput} 
@@ -315,88 +304,125 @@ const SystemInit: React.FC = () => {
                 </Grid2>
             }
             {INITIALIZATION_STATES[initializationStateIndex] === INIT_ROOT_AUTHZ_GROUP &&
-                <RootAuthzConfiguration
-                    onBack={() => {
-                        setInitializationStateIndex(initializationStateIndex - 1);
-                    }}
-                    onError={(message) => {
-                        setErrorMessage(message)
-                    }}
-                    onNext={(updatedInput: SystemInitializationInput) => {
-                        setInitializationStateIndex(initializationStateIndex + 1);
-                    }}
-                    systemInitInput={systemInitializationInput} 
-                />
+                <Grid2 marginBottom={"16px"} maxWidth={maxWidth} container size={12} spacing={1}>
+                    <InitAuthzConfiguration
+                        onBack={() => {
+                            setInitializationStateIndex(initializationStateIndex - 1);
+                        }}
+                        onError={(message) => {
+                            setErrorMessage(message)
+                        }}
+                        onNext={(updatedInput: SystemInitializationInput) => {
+                            setSystemInitializationInput({...updatedInput});
+                            setInitializationStateIndex(initializationStateIndex + 1);
+                        }}
+                        systemInitInput={systemInitializationInput} 
+                        isReadOnlyAuthzGroup={false}
+                    />
+                </Grid2>
             }
             {INITIALIZATION_STATES[initializationStateIndex] === INIT_ROOT_USER && 
-                <RootUserConfiguration
-                    onBack={() => {
-                        setInitializationStateIndex(initializationStateIndex - 1);
-                    }}
-                    onError={(message) => {
-                        setErrorMessage(message)
-                    }}
-                    onNext={(updatedInput: SystemInitializationInput) => {
-                        setInitializationStateIndex(initializationStateIndex + 1);
-                    }}
-                    systemInitInput={systemInitializationInput} 
-                />
+                <Grid2 marginBottom={"16px"} maxWidth={maxWidth} container size={12} spacing={1}>
+                    <RootUserConfiguration
+                        onBack={() => {
+                            setInitializationStateIndex(initializationStateIndex - 1);
+                        }}
+                        onError={(message) => {
+                            setErrorMessage(message)
+                        }}
+                        onNext={(updatedInput: SystemInitializationInput) => {
+                            setSystemInitializationInput({...updatedInput});
+                            setInitializationStateIndex(initializationStateIndex + 1);
+                        }}
+                        systemInitInput={systemInitializationInput} 
+                    />
+                </Grid2>
             }
             {INITIALIZATION_STATES[initializationStateIndex] === INIT_ROOT_READ_ONLY_AUTHZ_GROUP && 
-                <ReadOnlyAuthzGroupConfiguration
-                    onBack={() => {
-                        setInitializationStateIndex(initializationStateIndex - 1);
-                    }}
-                    onError={(message) => {
-                        setErrorMessage(message)
-                    }}
-                    onNext={(updatedInput: SystemInitializationInput) => {
-                        setInitializationStateIndex(initializationStateIndex + 1);
-                    }}
-                    systemInitInput={systemInitializationInput} 
-                />
+                <Grid2 marginBottom={"16px"} maxWidth={maxWidth} container size={12} spacing={1}>
+                    <InitAuthzConfiguration
+                        onBack={() => {
+                            setInitializationStateIndex(initializationStateIndex - 1);
+                        }}
+                        onError={(message) => {
+                            setErrorMessage(message)
+                        }}
+                        onNext={(updatedInput: SystemInitializationInput) => {
+                            setSystemInitializationInput({...updatedInput});
+                            setInitializationStateIndex(initializationStateIndex + 1);
+                        }}
+                        systemInitInput={systemInitializationInput} 
+                        isReadOnlyAuthzGroup={true}
+                    />
+                </Grid2>
             }
             {INITIALIZATION_STATES[initializationStateIndex] === INIT_OIDC_PROVIDER && 
-                <InitFederatedOIDCProviderConfiguration
-                    onBack={() => {
-                        setInitializationStateIndex(initializationStateIndex - 1);
-                    }}
-                    onError={(message) => {
-                        setErrorMessage(message)
-                    }}
-                    onNext={(updatedInput: SystemInitializationInput) => {
-                        setInitializationStateIndex(initializationStateIndex + 1);
-                    }}
-                    systemInitInput={systemInitializationInput} 
-                />
+                <Grid2 marginBottom={"16px"} maxWidth={maxWidth} container size={12} spacing={1}>
+                    <InitFederatedOIDCProviderConfiguration
+                        onBack={() => {
+                            setInitializationStateIndex(initializationStateIndex - 1);
+                        }}
+                        onError={(message) => {
+                            setErrorMessage(message)
+                        }}
+                        onNext={(updatedInput: SystemInitializationInput) => {
+                            setSystemInitializationInput({...updatedInput});
+                            setInitializationStateIndex(initializationStateIndex + 1);
+                        }}
+                        systemInitInput={systemInitializationInput} 
+                    />
+                </Grid2>
             }
             {INITIALIZATION_STATES[initializationStateIndex] === INIT_SYSTEM_SETTINGS && 
-                <InitSystemSettingsConfiguration
-                    onBack={() => {
-                        setInitializationStateIndex(initializationStateIndex - 1);
-                    }}
-                    onError={(message) => {
-                        setErrorMessage(message)
-                    }}
-                    onNext={(updatedInput: SystemInitializationInput) => {
-                        setInitializationStateIndex(initializationStateIndex + 1);
-                    }}
-                    systemInitInput={systemInitializationInput} 
-                />
+                <Grid2 marginBottom={"16px"} maxWidth={maxWidth} container size={12} spacing={1}>
+                    <InitSystemSettingsConfiguration
+                        onBack={() => {
+                            setInitializationStateIndex(initializationStateIndex - 1);
+                        }}
+                        onError={(message) => {
+                            setErrorMessage(message)
+                        }}
+                        onNext={(updatedInput: SystemInitializationInput) => {
+                            setSystemInitializationInput({...updatedInput});
+                            setInitializationStateIndex(initializationStateIndex + 1);
+                        }}
+                        systemInitInput={systemInitializationInput} 
+                    />
+                </Grid2>
             }
             {INITIALIZATION_STATES[initializationStateIndex] === INIT_CAPTCHA_CONFIG && 
-                <InitCaptchaConfiguration
-                    onBack={() => {
-                        setInitializationStateIndex(initializationStateIndex - 1);
-                    }}
-                    onError={(message) => {
-                        setErrorMessage(message)
-                    }}
-                    onNext={(updatedInput: SystemInitializationInput) => {
-                        setInitializationStateIndex(initializationStateIndex + 1);
-                    }}
-                    systemInitInput={systemInitializationInput} 
-                />
+                <Grid2 marginBottom={"16px"} maxWidth={maxWidth} container size={12} spacing={1}>
+                    <InitCaptchaConfiguration
+                        onBack={() => {
+                            setInitializationStateIndex(initializationStateIndex - 1);
+                        }}
+                        onError={(message) => {
+                            setErrorMessage(message)
+                        }}
+                        onNext={(updatedInput: SystemInitializationInput) => {
+                            setSystemInitializationInput({...updatedInput});
+                            setInitializationStateIndex(initializationStateIndex + 1);
+                        }}
+                        systemInitInput={systemInitializationInput} 
+                    />
+                </Grid2>
+            }
+            {INITIALIZATION_STATES[initializationStateIndex] === INIT_SUBMIT && 
+                <Grid2 marginBottom={"16px"} maxWidth={maxWidth} container size={12} spacing={1}>
+                    <InitSubmit
+                        onBack={() => {
+                            setInitializationStateIndex(initializationStateIndex - 1);
+                        }}
+                        onError={(message) => {
+                            setErrorMessage(message)
+                        }}
+                        onNext={(updatedInput: SystemInitializationInput) => {
+                            setSystemInitializationInput({...updatedInput});
+                            setInitializationStateIndex(initializationStateIndex + 1);
+                        }}
+                        systemInitInput={systemInitializationInput} 
+                    />
+                </Grid2>            
             }
 
 
