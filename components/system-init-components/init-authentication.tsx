@@ -37,7 +37,6 @@ const InitAuthentication: React.FC<SystemInitializationConfigProps> = ({
                 onError(response.authenticationError?.errorKey || "")
             }
             else{
-                console.log(response.accessToken);
                 if(!response.accessToken || !response.tokenExpiresAtMs){
                     onError("ERROR_NO_AUTHORIZATION_TOKEN_WAS_RETURNED_DURING_AUTHENTICATION");
                 }
