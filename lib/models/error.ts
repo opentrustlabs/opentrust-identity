@@ -1121,6 +1121,26 @@ export const ERROR_CODES: Record<string, ErrorDetail> = {
         errorCode: "EC00219",
         errorKey: "ERROR_SYSTEM_INIT_FAILED_TO_CREATE_AUTH_TOKEN",
         errorMessage: "There was a failure to create the auth token. See the logs for more details."
+    },    
+    EC00220: {
+        errorCode: "EC00220",
+        errorKey: "ERROR_SYSTEM_INIT_CUSTOM_KMS_WITHOUT_DEFINED_ENDPOINTS",
+        errorMessage: "A custom KMS implementation is missing one or more of the endpoints defined by CUSTOM_KMS_ENCRYPTION_ENDPOINT and CUSTOM_KMS_DECRYPTION_ENDPOINT."
+    },    
+    EC00221: {
+        errorCode: "EC00221",
+        errorKey: "WARNING_SYSTEM_INIT_NO_KMS_DEFINED",
+        errorMessage: "No KMS has been defined. If this is a PRODUCTION deployment, make sure that column-level or full-disc encryption is available by another means."
+    },    
+    EC00222: {
+        errorCode: "EC00222",
+        errorKey: "ERROR_SYSTEM_INIT_NOT_AUTHORIZED",
+        errorMessage: "System initialization permission denied. Either no authorization token or an invalidation authorization token was provided."
+    },    
+    EC00223: {
+        errorCode: "EC00223",
+        errorKey: "ERROR_SYSTEM_INIT_EXPIRED_AUTHORIZATION_TOKEN",
+        errorMessage: "System initialization permission denied. The authorization token has expired."
     }
 }
 
