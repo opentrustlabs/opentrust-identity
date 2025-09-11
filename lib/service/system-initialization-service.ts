@@ -1,4 +1,4 @@
-import { AuthenticationState, AuthorizationGroup, Client, Contact, ErrorDetail, FederatedOidcProvider, Scope, SigningKey, SystemInitializationInput, SystemInitializationReadyResponse, SystemInitializationResponse, SystemSettings, Tenant, User, UserAuthenticationStateResponse, UserCredential } from "@/graphql/generated/graphql-types";
+import { AuthenticationState, AuthorizationGroup, Client, Contact, ErrorDetail, FederatedOidcProvider, PortalUserProfile, Scope, SigningKey, SystemInitializationInput, SystemInitializationReadyResponse, SystemInitializationResponse, SystemSettings, Tenant, User, UserAuthenticationStateResponse, UserCredential } from "@/graphql/generated/graphql-types";
 import { DaoFactory } from "../data-sources/dao-factory";
 import ClientDao from "../dao/client-dao";
 import TenantDao from "../dao/tenant-dao";
@@ -15,12 +15,13 @@ import { logWithDetails } from "../logging/logger";
 import BaseSearchService from "./base-search-service";
 import JwtServiceUtils from "./jwt-service-utils";
 import { ALL_INTERNAL_SCOPE_NAMES_DISPLAY, CHANGE_EVENT_CLASS_AUTHORIZATION_GROUP, CHANGE_EVENT_CLASS_CLIENT, CHANGE_EVENT_CLASS_OIDC_PROVIDER, CHANGE_EVENT_CLASS_SCOPE, CHANGE_EVENT_CLASS_SIGNING_KEY, CHANGE_EVENT_CLASS_TENANT, CHANGE_EVENT_CLASS_USER, CHANGE_EVENT_TYPE_CREATE, CONTACT_TYPE_FOR_CLIENT, CONTACT_TYPE_FOR_TENANT, CUSTOM_ENCRYP_DECRYPT_SCOPE, KEY_TYPE_RSA, KEY_USE_JWT_SIGNING, LEGACY_USER_MIGRATION_SCOPE, NAME_ORDER_WESTERN, OPENTRUST_IDENTITY_VERSION, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, PRINCIPAL_TYPE_SYSTEM_INIT_USER, SCOPE_USE_IAM_MANAGEMENT, SECURITY_EVENT_WRITE_SCOPE, SIGNING_KEY_STATUS_ACTIVE, SYSTEM_INITIALIZATION_KEY_ID, TENANT_READ_ALL_SCOPE, TENANT_TYPE_ROOT_TENANT, USER_TENANT_REL_TYPE_PRIMARY, VALID_KMS_STRATEGIES } from "@/utils/consts";
-import { JWTPayload } from "jose";
+import { JWTPayload, JWTVerifyResult } from "jose";
 import { generateRandomToken, generateUserCredential, getDomainFromEmail } from "@/utils/dao-utils";
 import IdentityDao from "../dao/identity-dao";
 import { createSigningKey } from "@/utils/signing-key-utils";
 import SigningKeysDao from "../dao/signing-keys-dao";
 import { OIDCContext } from "@/graphql/graphql-context";
+import { JWTPrincipal } from "../models/principal";
 
 
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
@@ -46,7 +47,9 @@ const {
     AUTH_DOMAIN,
     MFA_ISSUER,
     MFA_ORIGIN,
-    MFA_ID
+    MFA_ID,
+    CUSTOM_KMS_ENCRYPTION_ENDPOINT,
+    CUSTOM_KMS_DECRYPTION_ENDPOINT
 } = process.env;
 
 
@@ -72,6 +75,7 @@ class SystemInitializationService extends BaseSearchService {
     }
 
     public async systemInitializationAuthentication(privateKey: string, password: string | null): Promise<UserAuthenticationStateResponse> {
+        const TOKEN_VALIDITY_PERIOD_HOURS: number = 8;
 
         const response: UserAuthenticationStateResponse = {
             userAuthenticationState: {
@@ -104,21 +108,12 @@ class SystemInitializationService extends BaseSearchService {
         };                    
         const privateKeyObject: KeyObject = createPrivateKey(privateKeyInput);
 
-        const cert = readFileSync(SYSTEM_INIT_CERTIFICATE_FILE || "");
-
-        const publicKeyInput: PublicKeyInput = {
-            key: cert,
-            encoding: "utf-8",
-            format: "pem"
-        };
-        
-        const publicKeyObject = createPublicKey(publicKeyInput);
         const principal: JWTPayload = {
             sub: randomUUID().toString(),
             iss: `${AUTH_DOMAIN}/api/`,
             aud: `${AUTH_DOMAIN}/api/`,
             iat: Date.now() / 1000,
-            exp: (Date.now() / 1000) + (2 * 60 * 60),
+            exp: (Date.now() / 1000) + (TOKEN_VALIDITY_PERIOD_HOURS * 60 * 60),
             at_hash: "",
             name: "",
             given_name: "",
@@ -140,11 +135,10 @@ class SystemInitializationService extends BaseSearchService {
             client_type: "",
             principal_type: PRINCIPAL_TYPE_SYSTEM_INIT_USER            
         }
-
         
         try{
             const jwt: string = await jwtServiceUtils.signJwtWithKey(principal, privateKeyObject, SYSTEM_INITIALIZATION_KEY_ID);
-            const p = await jwtServiceUtils.validateJwtWithCertificate(jwt, publicKeyObject);
+            const p = await this.validateJwt(jwt);
             if(!p.payload){
                 response.authenticationError = ERROR_CODES.EC00219;
                 return response;    
@@ -152,7 +146,7 @@ class SystemInitializationService extends BaseSearchService {
             else{
                 response.userAuthenticationState.authenticationState = AuthenticationState.Completed;
                 response.accessToken = jwt;
-                response.tokenExpiresAtMs = Date.now() + (2 * 60 * 60 * 1000);
+                response.tokenExpiresAtMs = Date.now() + (TOKEN_VALIDITY_PERIOD_HOURS * 60 * 60 * 1000);
                 return response;
             }
         }
@@ -177,8 +171,22 @@ class SystemInitializationService extends BaseSearchService {
             return response;
         }
 
-        if(!this.oidcContext.portalUserProfile || this.oidcContext.portalUserProfile.principalType !== PRINCIPAL_TYPE_SYSTEM_INIT_USER){
+        // To check authorization, at this point we only have the authorization token from the header, which should be a
+        // signed JWT that the systemInitializationAuthentication() method produced. The graphql.ts should NOT
+        // product a valid portalUserProfile because no user/tenant/client/etc exists at this point. So we need
+        // to parse the JWT here and validate using the certificate in the file
+        const p = await this.validateJwt(this.oidcContext.authToken);
+        if(!p.payload){
+            response.systemInitializationErrors = [ERROR_CODES.EC00222]
+        }
+        const principal: JWTPrincipal = p.payload as unknown as JWTPrincipal;
+
+        if(principal.principal_type !== PRINCIPAL_TYPE_SYSTEM_INIT_USER){
             response.systemInitializationErrors = [ERROR_CODES.EC00217];
+            return response;
+        }
+        if(principal.exp < Date.now() / 1000){
+            response.systemInitializationErrors = [ERROR_CODES.EC00223];
             return response;
         }
 
@@ -529,6 +537,22 @@ class SystemInitializationService extends BaseSearchService {
         return response;
     }
 
+    public getInitializationCertificate(): X509Certificate | null {
+        try {
+            const cert = readFileSync(SYSTEM_INIT_CERTIFICATE_FILE || "");
+            const x509Cert: X509Certificate = new X509Certificate(cert);
+            const d: Date = new Date(x509Cert.validTo);
+            if (d.getTime() < Date.now()) {
+                return null;
+            }
+            return x509Cert;
+        }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        catch (err: any) {
+            logWithDetails("error", `Error reading or parsing certificate file for initialization: ${err.message}`, {});
+            return null;
+        }
+    }
 
     protected async hasWarnings(): Promise<Array<ErrorDetail>> {
         const arr: Array<ErrorDetail> = [];
@@ -540,6 +564,9 @@ class SystemInitializationService extends BaseSearchService {
         }
         if(!SECURITY_EVENT_CALLBACK_URI){
             arr.push(ERROR_CODES.EC00216);
+        }
+        if(KMS_STRATEGY === "none"){
+            arr.push(ERROR_CODES.EC00221);
         }
 
         return arr;
@@ -601,6 +628,9 @@ class SystemInitializationService extends BaseSearchService {
         if(!KMS_STRATEGY || !VALID_KMS_STRATEGIES.includes(KMS_STRATEGY)){
             arr.push(ERROR_CODES.EC00211);
         }
+        if(KMS_STRATEGY === "custom" && (!CUSTOM_KMS_DECRYPTION_ENDPOINT || !CUSTOM_KMS_ENCRYPTION_ENDPOINT)){
+            arr.push(ERROR_CODES.EC00220);
+        }
         if(!AUTH_DOMAIN){
             arr.push(ERROR_CODES.EC00212);
         }
@@ -611,22 +641,21 @@ class SystemInitializationService extends BaseSearchService {
         return arr;
     }
 
-    public getInitializationCertificate(): X509Certificate | null {
-        try {
-            const cert = readFileSync(SYSTEM_INIT_CERTIFICATE_FILE || "");
-            const x509Cert: X509Certificate = new X509Certificate(cert);
-            const d: Date = new Date(x509Cert.validTo);
-            if (d.getTime() < Date.now()) {
-                return null;
-            }
-            return x509Cert;
-        }
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        catch (err: any) {
-            logWithDetails("error", `Error reading or parsing certificate file for initialization: ${err.message}`, {});
-            return null;
-        }
+    protected async validateJwt(jwt: string): Promise<JWTVerifyResult> {
+        const cert = readFileSync(SYSTEM_INIT_CERTIFICATE_FILE || "");
+
+        const publicKeyInput: PublicKeyInput = {
+            key: cert,
+            encoding: "utf-8",
+            format: "pem"
+        };
+        
+        const publicKeyObject = createPublicKey(publicKeyInput);
+        const p = await jwtServiceUtils.validateJwtWithCertificate(jwt, publicKeyObject);
+        return p;
     }
+
+
 }
 
 

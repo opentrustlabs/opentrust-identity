@@ -1145,3 +1145,39 @@ export const SYSTEM_INITIALIZATION_AUTHENTICATION_MUTATION = gql`
     
     ${USER_AUTHENTICATION_STATE_RESPONSE_FRAGMENT}    
 `
+
+export const SYSTEM_INITIALIZATION_MUTATION = gql(`
+    mutation initializeSystem($systemInitializationInput: SystemInitializationInput!) {
+        initializeSystem(systemInitializationInput: $systemInitializationInput) {
+            systemInitializationErrors {
+                errorCode
+                errorKey
+                errorMessage
+            }
+            tenant {
+                allowAnonymousUsers
+                allowForgotPassword
+                allowLoginByPhoneNumber
+                allowSocialLogin
+                allowUnlimitedRate
+                allowUserSelfRegistration
+                defaultRateLimit
+                defaultRateLimitPeriodMinutes
+                enabled
+                federatedAuthenticationConstraint
+                federatedauthenticationconstraintid
+                markForDelete
+                migrateLegacyUsers
+                registrationRequireCaptcha
+                registrationRequireTermsAndConditions
+                tenantDescription
+                tenantId
+                tenantName
+                tenantType
+                tenanttypeid
+                termsAndConditionsUri
+                verifyEmailOnSelfRegistration
+            }
+        }
+    }    
+`);

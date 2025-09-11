@@ -1,6 +1,6 @@
 "use client";
 import { SYSTEM_INITIALIZATION_READY_QUERY } from "@/graphql/queries/oidc-queries";
-import { useQuery } from "@apollo/client";
+import { useMutation, useQuery } from "@apollo/client";
 import { Alert, Button, Grid2, Stack, Typography } from "@mui/material";
 import React, { useContext } from "react";
 import ErrorComponent from "../error/error-component";
@@ -16,6 +16,7 @@ import ReadOnlyAuthzGroupConfiguration from "./read-only-authz-group-configurati
 import InitFederatedOIDCProviderConfiguration from "./init-federated-oidc-provider-configuration";
 import InitSystemSettingsConfiguration from "./system-settings-configuration";
 import InitCaptchaConfiguration from "./init-captcha-configuration";
+import { SYSTEM_INITIALIZATION_MUTATION } from "@/graphql/mutations/oidc-mutations";
 
 export interface SystemInitializationConfigProps {
     onNext: (updatedInput: SystemInitializationInput) => void,
@@ -150,6 +151,9 @@ const SystemInit: React.FC = () => {
     const [initializationStateIndex, setInitializationStateIndex] = React.useState<number>(0);
     const [systemInitializationInput, setSystemInitializationInput] = React.useState<SystemInitializationInput>(input);
 
+    const width = !responsiveBreakpoints.isMedium ? "750px" : undefined;
+    const maxWidth = "650px";
+
     // GRAPHQL FUNCTIONS
     const { data, loading, error } = useQuery(SYSTEM_INITIALIZATION_READY_QUERY, {
 
@@ -167,6 +171,18 @@ const SystemInit: React.FC = () => {
         },
     });
 
+    const [systemInitializationMutation] = useMutation(SYSTEM_INITIALIZATION_MUTATION, {
+        variables: {
+            systemInitializationInput: systemInitializationInput
+        },
+        onCompleted(data) {
+            
+        },
+        onError(error) {
+            setErrorMessage(error.message);
+        }    
+    });
+
     if (error) return <ErrorComponent componentSize={"xs"} message={"Error"} />
     if (loading) return <DataLoading dataLoadingSize="xl" color={null} />
 
@@ -174,18 +190,16 @@ const SystemInit: React.FC = () => {
         <React.Fragment>
             <Grid2 marginBottom={"16px"} maxWidth={"750px"} container size={12} spacing={1}>
                 {errorMessage &&
-                    <Alert onClose={() => setErrorMessage(null)} sx={{ width: !responsiveBreakpoints.isMedium ? "750px" : undefined, maxWidth: "750px" }} severity="error">
+                    <Alert onClose={() => setErrorMessage(null)} sx={{ width: width, maxWidth: maxWidth }} severity="error">
                         {errorMessage}
                     </Alert>
                 }
             </Grid2>
             {INITIALIZATION_STATES[initializationStateIndex] === INIT_SYSTEM_READY_CHECK &&
                 <Typography component="div">
-                    
-
                     {data && data.systemInitializationReady && data.systemInitializationReady.systemInitializationReadyErrors && data.systemInitializationReady.systemInitializationReadyErrors.length > 0 &&
-                        <Grid2 marginBottom={"16px"} maxWidth={"750px"} container size={12} spacing={1}>
-                            <Alert sx={{ width: !responsiveBreakpoints.isMedium ? "750px" : undefined, maxWidth: "750px", fontSize: "0.95em" }} severity="error">
+                        <Grid2 marginBottom={"16px"} maxWidth={maxWidth} container size={12} spacing={1}>
+                            <Alert sx={{width: width, maxWidth: maxWidth, fontSize: "0.95em" }} severity="error">
                                 <Grid2 marginBottom={"8px"} fontWeight={"bold"} sx={{ textDecoration: "underline" }} size={12}>
                                     The following errors were encountered during the check for initialization readiness:
                                 </Grid2>
@@ -205,8 +219,8 @@ const SystemInit: React.FC = () => {
                     }
 
                     {data && data.systemInitializationReady && data.systemInitializationReady.systemInitializationWarnings && data.systemInitializationReady.systemInitializationWarnings.length > 0 &&
-                        <Grid2 marginBottom={"16px"} maxWidth={"750px"} container size={12} spacing={1}>
-                            <Alert sx={{ width: !responsiveBreakpoints.isMedium ? "750px" : undefined, maxWidth: "750px", fontSize: "0.95em" }} severity="warning">
+                        <Grid2 marginBottom={"16px"} maxWidth={maxWidth} container size={12} spacing={1}>
+                            <Alert sx={{ width: width, maxWidth: maxWidth, fontSize: "0.95em" }} severity="warning">
                                 <Grid2 marginBottom={"8px"} fontWeight={"bold"} sx={{ textDecoration: "underline" }} size={12}>
                                     The following warnings were encountered during the check for initialization readiness:
                                 </Grid2>
@@ -226,8 +240,8 @@ const SystemInit: React.FC = () => {
                     }
 
                     {!hasReadinessError && !hasReadinessWarning &&
-                        <Grid2 marginBottom={"16px"} maxWidth={"750px"} container size={12} spacing={1}>
-                            <Alert sx={{ width: !responsiveBreakpoints.isMedium ? "750px" : undefined, maxWidth: "750px", fontSize: "0.95em" }} severity="success">
+                        <Grid2 marginBottom={"16px"} maxWidth={maxWidth} container size={12} spacing={1}>
+                            <Alert sx={{ width: width, maxWidth: maxWidth, fontSize: "0.95em" }} severity="success">
                                 <Grid2 marginBottom={"8px"} fontWeight={"bold"} sx={{ textDecoration: "underline" }} size={12}>
                                     All system initialization checks passed.
                                 </Grid2>
@@ -235,7 +249,7 @@ const SystemInit: React.FC = () => {
                             </Alert>
                         </Grid2>
                     }
-                    {hasReadinessError &&
+                    {!hasReadinessError &&
                         <Stack
                             direction={"row-reverse"}
                             sx={{ width: "100%" }}
@@ -252,50 +266,53 @@ const SystemInit: React.FC = () => {
                 </Typography>
             }
             {INITIALIZATION_STATES[initializationStateIndex] === INIT_AUTHENTICATION &&
-                <Grid2 marginBottom={"16px"} maxWidth={"750px"} container size={12} spacing={1}>
-                <InitAuthentication
-                    onBack={() => {
-                        setInitializationStateIndex(initializationStateIndex - 1);
-                    }}
-                    onError={(message) => {
-                        setErrorMessage(message)
-                    }}
-                    onNext={(updatedInput: SystemInitializationInput) => {
-                        setInitializationStateIndex(initializationStateIndex + 1);
-                    }}
-                    systemInitInput={systemInitializationInput} 
-                />
+                <Grid2 marginBottom={"16px"} maxWidth={maxWidth} container size={12} spacing={1}>
+                    <InitAuthentication
+                        onBack={() => {
+                            setInitializationStateIndex(initializationStateIndex - 1);
+                        }}
+                        onError={(message) => {
+                            setErrorMessage(message)
+                        }}
+                        onNext={() => {
+                            setInitializationStateIndex(initializationStateIndex + 1);
+                        }}
+                        systemInitInput={systemInitializationInput} 
+                    />
                 </Grid2>
             }
             {INITIALIZATION_STATES[initializationStateIndex] === INIT_TENANT &&
-                <Grid2 marginBottom={"16px"} maxWidth={"750px"} container size={12} spacing={1}>
-                <RootTenantConfiguration
-                    onBack={() => {
-                        setInitializationStateIndex(initializationStateIndex - 1);
-                    }}
-                    onError={(message) => {
-                        setErrorMessage(message)
-                    }}
-                    onNext={(updatedInput: SystemInitializationInput) => {
-                        setInitializationStateIndex(initializationStateIndex + 1);
-                    }}
-                    systemInitInput={systemInitializationInput} 
-                />
+                <Grid2 marginBottom={"16px"} maxWidth={maxWidth} container size={12} spacing={1}>
+                    <RootTenantConfiguration
+                        onBack={() => {
+                            setInitializationStateIndex(initializationStateIndex - 1);
+                        }}
+                        onError={(message) => {
+                            setErrorMessage(message)
+                        }}
+                        onNext={(updatedInput: SystemInitializationInput) => {
+                            setSystemInitializationInput({...updatedInput});
+                            setInitializationStateIndex(initializationStateIndex + 1);
+                        }}
+                        systemInitInput={systemInitializationInput} 
+                    />
                 </Grid2>
             }
             {INITIALIZATION_STATES[initializationStateIndex] === INIT_CLIENT &&
-                <RootClientConfiguration
-                    onBack={() => {
-                        setInitializationStateIndex(initializationStateIndex - 1);
-                    }}
-                    onError={(message) => {
-                        setErrorMessage(message)
-                    }}
-                    onNext={(updatedInput: SystemInitializationInput) => {
-                        setInitializationStateIndex(initializationStateIndex + 1);
-                    }}
-                    systemInitInput={systemInitializationInput} 
-                />
+                <Grid2 marginBottom={"16px"} maxWidth={maxWidth} container size={12} spacing={1}>
+                    <RootClientConfiguration
+                        onBack={() => {
+                            setInitializationStateIndex(initializationStateIndex - 1);
+                        }}
+                        onError={(message) => {
+                            setErrorMessage(message)
+                        }}
+                        onNext={(updatedInput: SystemInitializationInput) => {
+                            setInitializationStateIndex(initializationStateIndex + 1);
+                        }}
+                        systemInitInput={systemInitializationInput} 
+                    />
+                </Grid2>
             }
             {INITIALIZATION_STATES[initializationStateIndex] === INIT_ROOT_AUTHZ_GROUP &&
                 <RootAuthzConfiguration

@@ -16,7 +16,6 @@ import AuthorizationGroupDao from "../dao/authorization-group-dao";
 import Kms from "../kms/kms";
 import AuthDao from "../dao/auth-dao";
 import { logWithDetails } from "../logging/logger";
-import { sliderClasses } from "@mui/material";
 
 const SIGNING_KEY_ARRAY_CACHE_KEY = "SIGNING_KEY_ARRAY_CACHE_KEY"
 interface CachedSigningKeyData {

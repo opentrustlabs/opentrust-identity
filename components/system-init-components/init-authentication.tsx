@@ -6,6 +6,7 @@ import { PKCS8_ENCRYPTED_PRIVATE_KEY_HEADER, PKCS8_PRIVATE_KEY_HEADER } from "@/
 import { useMutation } from "@apollo/client";
 import { SYSTEM_INITIALIZATION_AUTHENTICATION_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import { AuthenticationState, UserAuthenticationStateResponse } from "@/graphql/generated/graphql-types";
+import { AuthSessionProps, useAuthSessionContext } from "../contexts/auth-session-context";
 
 
 const InitAuthentication: React.FC<SystemInitializationConfigProps> = ({
@@ -15,6 +16,10 @@ const InitAuthentication: React.FC<SystemInitializationConfigProps> = ({
     systemInitInput
 
 }) => {
+
+    // CONTEXT VARIABLES
+    const authSessionProps: AuthSessionProps = useAuthSessionContext();
+    
 
     // STATE VARIABLES
     const [privateKey, setPrivateKey] = React.useState<string>("");
@@ -33,6 +38,16 @@ const InitAuthentication: React.FC<SystemInitializationConfigProps> = ({
             }
             else{
                 console.log(response.accessToken);
+                if(!response.accessToken || !response.tokenExpiresAtMs){
+                    onError("ERROR_NO_AUTHORIZATION_TOKEN_WAS_RETURNED_DURING_AUTHENTICATION");
+                }
+                else{
+                    authSessionProps.setAuthSessionData({
+                        accessToken: response.accessToken ,
+                        expiresAtMs: response.tokenExpiresAtMs
+                    });
+                }
+                onNext(systemInitInput);
             }
         },
         onError(error) {
@@ -105,6 +120,7 @@ const InitAuthentication: React.FC<SystemInitializationConfigProps> = ({
                     onClick={() => {
                         initializationAuthenticationMutation()
                     }}
+                    disabled={privateKey === null || privateKey === ""}
                 >
                     Authenticate
                 </Button>
