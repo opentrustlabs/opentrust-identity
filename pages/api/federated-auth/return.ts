@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 
+
 export default async function handler(
 	req: NextApiRequest,
 	res: NextApiResponse
@@ -24,6 +25,20 @@ export default async function handler(
     //
     // In the error case (or in case the token redemption fails), the user will be 
     // redirected to the error page with a detailed message.
+    //
+    //
+    // *****************************************************************************
+    // During the IAM tool initialization, or when configuring a new OIDC provider
+    // for the root tenant we might need to test the provider configuration
+    // before committing or updating the provider data. In this case, a special
+    // version of the state parameter is used. It has a format of:
+    // 
+    // oidctest-base64Encoded(encrypted(JSON.toString(({ clientId, redirectUri, scope, clientSecret?, codeVerifier? })))
+    //
+    // where code verifier is optional if using client secret post for token exchange, and
+    // the client secret is optional and code verifier is required if using PKCE.
+
+    
 
     res.status(404).json(req.headers);
     
