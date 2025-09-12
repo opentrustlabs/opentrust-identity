@@ -145,7 +145,7 @@ const SystemInit: React.FC = () => {
     const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
     const [hasReadinessError, setHasReadinessError] = React.useState<boolean>(false);
     const [hasReadinessWarning, setHasReadinessWarning] = React.useState<boolean>(false);
-    const [initializationStateIndex, setInitializationStateIndex] = React.useState<number>(10);
+    const [initializationStateIndex, setInitializationStateIndex] = React.useState<number>(0);
     const [systemInitializationInput, setSystemInitializationInput] = React.useState<SystemInitializationInput>(input);
 
     const width = !responsiveBreakpoints.isMedium ? "750px" : undefined;
