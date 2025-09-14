@@ -10,7 +10,7 @@ import { PortalUserProfile, TenantLookAndFeel, User } from "@/graphql/generated/
 import { logWithDetails } from "../logging/logger";
 import { randomUUID } from "node:crypto";
 import { CustomKmsDecryptionResponseBody, CustomKmsEncryptionResponseBody, CustomKmsRequestBody } from "../kms/custom-kms";
-import { DEFAULT_HTTP_TIMEOUT_MS, GRANT_TYPE_AUTHORIZATION_CODE, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_BASIC, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_JWT, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_POST } from "@/utils/consts";
+import { CLIENT_ASSERTION_TYPE_JWT_BEARER, DEFAULT_HTTP_TIMEOUT_MS, GRANT_TYPE_AUTHORIZATION_CODE, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_BASIC, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_JWT, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_POST } from "@/utils/consts";
 import { RecaptchaResponse } from "../models/recaptcha";
 import nodemailer from "nodemailer";
 import SMTPTransport from "nodemailer/lib/smtp-transport";
@@ -198,13 +198,14 @@ class OIDCServiceUtils extends JwtServiceUtils {
         if(codeVerifier){
             params.set("code_verifier", codeVerifier);
         }
-        let authHeader: string | null = null;
+        let basicAuthHeader: string | null = null;
         if(clientAuthType === OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_BASIC && clientSecret !== null){
-            authHeader = "Basic " + base64Encode(`${clientId}:${clientSecret}`);
+            basicAuthHeader = "Basic " + base64Encode(`${clientId}:${clientSecret}`);
         }
         if(clientAuthType === OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_JWT && clientSecret !== null){
-            const bearerToken = await this.hmacSignClient(clientId, clientSecret, tokenEndpoint);
-            authHeader = "Bearer " + bearerToken;
+            const token = await this.hmacSignClient(clientId, clientSecret, tokenEndpoint);
+            params.set("client_assertion_type", CLIENT_ASSERTION_TYPE_JWT_BEARER);
+            params.set("client_assertion", token)
         }
 
         const response = await axios.post(
@@ -213,7 +214,7 @@ class OIDCServiceUtils extends JwtServiceUtils {
             {
                 headers: {
                     "Content-Type": "application/x-www-form-urlencoded",
-                    "Authorization": authHeader !== null ? authHeader : null
+                    "Authorization": basicAuthHeader !== null ? basicAuthHeader : null
                 }
             }
         );
