@@ -1,4 +1,4 @@
-import { PreAuthenticationState, AuthorizationCodeData, RefreshData, FederatedOidcAuthorizationRel, AuthorizationDeviceCodeData } from "@/graphql/generated/graphql-types";
+import { PreAuthenticationState, AuthorizationCodeData, RefreshData, FederatedOidcAuthorizationRel, AuthorizationDeviceCodeData, FederatedAuthTest } from "@/graphql/generated/graphql-types";
 import AuthDao, { AuthorizationCodeType } from "../../auth-dao";
 import PreAuthenticationStateEntity from "@/lib/entities/pre-authentication-state-entity";
 import AuthorizationCodeDataEntity from "@/lib/entities/authorization-code-data-entity";
@@ -7,6 +7,7 @@ import FederatedOIDCAuthorizationRelEntity from "@/lib/entities/federated-oidc-a
 import { Op, Sequelize } from "sequelize";
 import DBDriver from "@/lib/data-sources/sequelize-db";
 import AuthorizationDeviceCodeDataEntity from "@/lib/entities/authorization-device-code-data-entity";
+import FederatedAuthTestEntity from "@/lib/entities/federated-auth-test-entity";
 
 class DBAuthDao extends AuthDao {
 
@@ -186,6 +187,32 @@ class DBAuthDao extends AuthDao {
         return Promise.resolve();
     }
 
+    public async saveFederatedAuthTest(federatedAuthTest: FederatedAuthTest): Promise<FederatedAuthTest>{
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.federatedAuthTest.create(federatedAuthTest);
+        return federatedAuthTest;
+    }
+    
+    public async getFederatedAuthTestByState(state: string): Promise<FederatedAuthTest | null>{
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        const entity: FederatedAuthTestEntity | null = await sequelize.models.federatedAuthTest.findOne({
+            where: {
+                authState: state
+            }
+        });
+        return entity !== null ? entity.dataValues : null;
+    }
+
+    public async deleteFederatedAuthTestByState(state: string): Promise<void>{
+        const sequelize: Sequelize = await DBDriver.getConnection();
+        await sequelize.models.federatedAuthTest.destroy({
+            where: {
+                authState: state
+            }
+        });
+        return;
+    }
+
     public async deleteExpiredData(): Promise<void>{
         const sequelize: Sequelize = await DBDriver.getConnection();
         await sequelize.models.federatedOidcAuthorizationRel.destroy({
@@ -222,7 +249,14 @@ class DBAuthDao extends AuthDao {
                     [Op.lt]: Date.now()
                 }
             }
-        })
+        });
+        await sequelize.models.federatedAuthTest.destroy({
+            where: {
+                expiresAtMs: {
+                    [Op.lt]: Date.now()
+                }
+            }
+        });
 
     }
 

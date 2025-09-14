@@ -1,4 +1,4 @@
-import { AuthenticationState, AuthorizationGroup, Client, Contact, ErrorDetail, FederatedOidcProvider, PortalUserProfile, Scope, SigningKey, SystemInitializationInput, SystemInitializationReadyResponse, SystemInitializationResponse, SystemSettings, Tenant, User, UserAuthenticationStateResponse, UserCredential } from "@/graphql/generated/graphql-types";
+import { AuthenticationState, AuthorizationGroup, Client, Contact, ErrorDetail, FederatedAuthTest, FederatedOidcProvider, PortalUserProfile, Scope, SigningKey, SystemInitializationInput, SystemInitializationReadyResponse, SystemInitializationResponse, SystemSettings, Tenant, User, UserAuthenticationStateResponse, UserCredential } from "@/graphql/generated/graphql-types";
 import { DaoFactory } from "../data-sources/dao-factory";
 import ClientDao from "../dao/client-dao";
 import TenantDao from "../dao/tenant-dao";
@@ -14,14 +14,18 @@ import { ERROR_CODES } from "../models/error";
 import { logWithDetails } from "../logging/logger";
 import BaseSearchService from "./base-search-service";
 import JwtServiceUtils from "./jwt-service-utils";
-import { ALL_INTERNAL_SCOPE_NAMES_DISPLAY, CHANGE_EVENT_CLASS_AUTHORIZATION_GROUP, CHANGE_EVENT_CLASS_CLIENT, CHANGE_EVENT_CLASS_OIDC_PROVIDER, CHANGE_EVENT_CLASS_SCOPE, CHANGE_EVENT_CLASS_SIGNING_KEY, CHANGE_EVENT_CLASS_TENANT, CHANGE_EVENT_CLASS_USER, CHANGE_EVENT_TYPE_CREATE, CONTACT_TYPE_FOR_CLIENT, CONTACT_TYPE_FOR_TENANT, CUSTOM_ENCRYP_DECRYPT_SCOPE, KEY_TYPE_RSA, KEY_USE_JWT_SIGNING, LEGACY_USER_MIGRATION_SCOPE, NAME_ORDER_WESTERN, OPENTRUST_IDENTITY_VERSION, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, PRINCIPAL_TYPE_SYSTEM_INIT_USER, SCOPE_USE_IAM_MANAGEMENT, SECURITY_EVENT_WRITE_SCOPE, SIGNING_KEY_STATUS_ACTIVE, SYSTEM_INITIALIZATION_KEY_ID, TENANT_READ_ALL_SCOPE, TENANT_TYPE_ROOT_TENANT, USER_TENANT_REL_TYPE_PRIMARY, VALID_KMS_STRATEGIES } from "@/utils/consts";
+import { ALL_INTERNAL_SCOPE_NAMES_DISPLAY, CHANGE_EVENT_CLASS_AUTHORIZATION_GROUP, CHANGE_EVENT_CLASS_CLIENT, CHANGE_EVENT_CLASS_OIDC_PROVIDER, CHANGE_EVENT_CLASS_SCOPE, CHANGE_EVENT_CLASS_SIGNING_KEY, CHANGE_EVENT_CLASS_TENANT, CHANGE_EVENT_CLASS_USER, CHANGE_EVENT_TYPE_CREATE, CONTACT_TYPE_FOR_CLIENT, CONTACT_TYPE_FOR_TENANT, CUSTOM_ENCRYP_DECRYPT_SCOPE, FEDERATED_AUTH_TEST_STATE_PARAM_PREFIX, KEY_TYPE_RSA, KEY_USE_JWT_SIGNING, LEGACY_USER_MIGRATION_SCOPE, NAME_ORDER_WESTERN, OIDC_CLIENT_AUTH_TYPES, OPENTRUST_IDENTITY_VERSION, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, PRINCIPAL_TYPE_SYSTEM_INIT_USER, SCOPE_USE_IAM_MANAGEMENT, SECURITY_EVENT_WRITE_SCOPE, SIGNING_KEY_STATUS_ACTIVE, SYSTEM_INITIALIZATION_KEY_ID, TENANT_READ_ALL_SCOPE, TENANT_TYPE_ROOT_TENANT, USER_TENANT_REL_TYPE_PRIMARY, VALID_KMS_STRATEGIES } from "@/utils/consts";
 import { JWTPayload, JWTVerifyResult } from "jose";
-import { generateRandomToken, generateUserCredential, getDomainFromEmail } from "@/utils/dao-utils";
+import { generateHash, generateRandomToken, generateUserCredential, getDomainFromEmail } from "@/utils/dao-utils";
 import IdentityDao from "../dao/identity-dao";
 import { createSigningKey } from "@/utils/signing-key-utils";
 import SigningKeysDao from "../dao/signing-keys-dao";
 import { OIDCContext } from "@/graphql/graphql-context";
 import { JWTPrincipal } from "../models/principal";
+import AuthDao from "../dao/auth-dao";
+import { GraphQLError } from "graphql/error/GraphQLError";
+import OIDCServiceUtils from "./oidc-service-utils";
+import { WellknownConfig } from "../models/wellknown-config";
 
 
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
@@ -34,7 +38,9 @@ const signingKeysDao: SigningKeysDao = DaoFactory.getInstance().getSigningKeysDa
 const kms: Kms = DaoFactory.getInstance().getKms();
 const contactDao: ContactDao = DaoFactory.getInstance().getContactDao();
 const identityDao: IdentityDao = DaoFactory.getInstance().getIdentityDao();
+const authDao: AuthDao = DaoFactory.getInstance().getAuthDao();
 const jwtServiceUtils: JwtServiceUtils = new JwtServiceUtils();
+const oidcServiceUtils: OIDCServiceUtils = new OIDCServiceUtils();
 
 const {
     SYSTEM_INIT,
@@ -138,11 +144,15 @@ class SystemInitializationService extends BaseSearchService {
         
         try{
             const jwt: string = await jwtServiceUtils.signJwtWithKey(principal, privateKeyObject, SYSTEM_INITIALIZATION_KEY_ID);
-            const p = await this.validateJwt(jwt);
-            if(!p.payload){
-                response.authenticationError = ERROR_CODES.EC00219;
+            const {principal: verfiedPrincipal, errorDetail} = await this.validateJwt(jwt);
+            if(errorDetail !== null && verfiedPrincipal === null){
+                response.authenticationError = errorDetail;
                 return response;    
             }
+            // if(!p.payload){
+            //     response.authenticationError = ERROR_CODES.EC00219;
+            //     return response;    
+            // }
             else{
                 response.userAuthenticationState.authenticationState = AuthenticationState.Completed;
                 response.accessToken = jwt;
@@ -175,20 +185,24 @@ class SystemInitializationService extends BaseSearchService {
         // signed JWT that the systemInitializationAuthentication() method produced. The graphql.ts should NOT
         // product a valid portalUserProfile because no user/tenant/client/etc exists at this point. So we need
         // to parse the JWT here and validate using the certificate in the file
-        const p = await this.validateJwt(this.oidcContext.authToken);
-        if(!p.payload){
-            response.systemInitializationErrors = [ERROR_CODES.EC00222]
+        const {principal, errorDetail} = await this.validateJwt(this.oidcContext.authToken);
+        if(errorDetail !== null && principal === null){
+            response.systemInitializationErrors = [errorDetail];
+            return response;
         }
-        const principal: JWTPrincipal = p.payload as unknown as JWTPrincipal;
+        // if(!p.payload){
+        //     response.systemInitializationErrors = [ERROR_CODES.EC00222]
+        // }
+        // const principal: JWTPrincipal = p.payload as unknown as JWTPrincipal;
 
-        if(principal.principal_type !== PRINCIPAL_TYPE_SYSTEM_INIT_USER){
-            response.systemInitializationErrors = [ERROR_CODES.EC00217];
-            return response;
-        }
-        if(principal.exp < Date.now() / 1000){
-            response.systemInitializationErrors = [ERROR_CODES.EC00223];
-            return response;
-        }
+        // if(principal.principal_type !== PRINCIPAL_TYPE_SYSTEM_INIT_USER){
+        //     response.systemInitializationErrors = [ERROR_CODES.EC00217];
+        //     return response;
+        // }
+        // if(principal.exp < Date.now() / 1000){
+        //     response.systemInitializationErrors = [ERROR_CODES.EC00223];
+        //     return response;
+        // }
 
         // ************************************************************************************************
         // Create the root tenant
@@ -554,6 +568,59 @@ class SystemInitializationService extends BaseSearchService {
         }
     }
 
+    public async createFederatedAuthTest(clientId: string, clientSecret: string | null, usePkce: boolean, scope: string, wellKnownUri: string, clientAuthType: string): Promise<string> {
+        // const {errorDetail} = await this.validateJwt(this.oidcContext.authToken);
+        // if(errorDetail !== null){
+        //     throw new GraphQLError("ERROR_INVALID_TOKEN");
+        // }
+
+        if(usePkce === false && clientSecret === null){
+            throw new GraphQLError("ERROR_MISSING_CLIENT_SECRET");
+        }
+
+        if(!OIDC_CLIENT_AUTH_TYPES.includes(clientAuthType)){
+            throw new GraphQLError("ERROR_INVALID_CLIENT_AUTH_TYPE");
+        }
+        const wellKnownConfig: WellknownConfig | null = await oidcServiceUtils.getWellKnownConfig(wellKnownUri);
+        if(!wellKnownConfig){
+            throw new GraphQLError("ERROR_UNABLE_TO_RETRIEVE_OIDC_INFORMATION_FROM_WELL_KNOWN_URI");
+        }
+
+
+        const codeVerifier: string | null = usePkce ? generateRandomToken(16) : null;
+        const encryptedSecret: string | null = clientSecret !== null ? await kms.encrypt(clientSecret) : null;
+
+        const federatedAuthTest: FederatedAuthTest = {
+            authState: `${FEDERATED_AUTH_TEST_STATE_PARAM_PREFIX}${generateRandomToken(16)}`,
+            clientAuthType: clientAuthType,
+            clientId: clientId,
+            expiresAtMs: Date.now() + 60 * 60 * 1000,
+            redirectUri: `${AUTH_DOMAIN}/api/federated-auth/return`,
+            scope: scope,
+            usePkce: usePkce,
+            wellKnownUri: wellKnownUri,
+            clientSecret: encryptedSecret,
+            codeVerifier: codeVerifier
+        }
+
+        await authDao.saveFederatedAuthTest(federatedAuthTest);
+
+        const params: URLSearchParams = new URLSearchParams();
+        params.set("state", federatedAuthTest.authState);
+        params.set("redirect_uri", federatedAuthTest.redirectUri);
+        params.set("response_type", "code");
+        params.set("scope", scope);
+        params.set("client_id", clientId);
+        if(usePkce && codeVerifier){
+            params.set("code_challenge", generateHash(codeVerifier, "sha256"));
+            params.set("code_challenge_method", "S256");
+        }
+
+        const uri: string = `${wellKnownConfig.authorization_endpoint}?${params.toString()}`
+        return uri;
+
+    }
+
     protected async hasWarnings(): Promise<Array<ErrorDetail>> {
         const arr: Array<ErrorDetail> = [];
         if(!SMTP_ENABLED || SMTP_ENABLED !== "true"){
@@ -641,7 +708,7 @@ class SystemInitializationService extends BaseSearchService {
         return arr;
     }
 
-    protected async validateJwt(jwt: string): Promise<JWTVerifyResult> {
+    protected async validateJwt(jwt: string): Promise<{principal: JWTPrincipal | null, errorDetail: ErrorDetail | null}> {
         const cert = readFileSync(SYSTEM_INIT_CERTIFICATE_FILE || "");
 
         const publicKeyInput: PublicKeyInput = {
@@ -652,7 +719,25 @@ class SystemInitializationService extends BaseSearchService {
         
         const publicKeyObject = createPublicKey(publicKeyInput);
         const p = await jwtServiceUtils.validateJwtWithCertificate(jwt, publicKeyObject);
-        return p;
+         
+        if(!p.payload){
+            return {principal: null, errorDetail: ERROR_CODES.EC00222};
+            //response.systemInitializationErrors = [ERROR_CODES.EC00222]
+        }
+        const principal: JWTPrincipal = p.payload as unknown as JWTPrincipal;
+
+        if(principal.principal_type !== PRINCIPAL_TYPE_SYSTEM_INIT_USER){
+            return {principal: null, errorDetail: ERROR_CODES.EC00217};
+            // response.systemInitializationErrors = [ERROR_CODES.EC00217];
+            // return response;
+        }
+        if(principal.exp < Date.now() / 1000){
+            return {principal: null, errorDetail: ERROR_CODES.EC00223};
+            // response.systemInitializationErrors = [ERROR_CODES.EC00223];
+            // return response;
+        }
+
+        return {principal: principal, errorDetail: null};
     }
 
 

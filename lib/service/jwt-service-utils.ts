@@ -4,7 +4,7 @@ import ClientDao from "@/lib/dao/client-dao";
 import TenantDao from "@/lib/dao/tenant-dao";
 import IdentityDao from "@/lib/dao/identity-dao";
 import { OIDCTokenResponse } from "@/lib/models/token-response";
-import { JWTPayload, SignJWT, JWTVerifyResult, jwtVerify, decodeJwt, decodeProtectedHeader, ProtectedHeaderParameters } from "jose";
+import { JWTPayload, SignJWT, JWTVerifyResult, jwtVerify, decodeJwt, decodeProtectedHeader, ProtectedHeaderParameters, JWK } from "jose";
 import SigningKeysDao from "../dao/signing-keys-dao";
 import { JWTPrincipal, OIDCUserProfile, ProfileAuthorizationGroup, ProfileScope } from "../models/principal";
 import { randomUUID, createPrivateKey, PrivateKeyInput, KeyObject, createSecretKey, createPublicKey, PublicKeyInput } from "node:crypto"; 
@@ -754,6 +754,25 @@ class JwtServiceUtils {
         }
         
         const s: string = await this.signJwtWithKey(principal, cachedSigningKeyData.privateKeyObject, cachedSigningKeyData.signingKey.keyId);
+        return s;
+    }
+
+    public async hmacSignClient(clientId: string, clientSecret: string, tokenEndpoint: string): Promise<string> {
+        const principal: JWTPayload = {
+            iss: clientId,
+            sub: clientId,
+            aud: tokenEndpoint,
+            exp: Date.now() / 1000 + (15 * 60),
+            jti: randomUUID().toString()
+        }
+        
+        
+        const s: string = await new SignJWT(principal)
+            .setProtectedHeader({
+                alg: "HS256"
+            })
+            .setIssuedAt(Date.now() / 1000)
+            .sign(new TextEncoder().encode(clientSecret));
         return s;
     }
 

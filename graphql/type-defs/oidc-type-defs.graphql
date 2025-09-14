@@ -283,6 +283,7 @@ type Mutation {
     ## System initialization
     systemInitializationAuthentication(privateKey: String!, password: String): UserAuthenticationStateResponse!
     initializeSystem(systemInitializationInput: SystemInitializationInput!): SystemInitializationResponse!
+    createFederatedAuthTest(clientId: String!, clientSecret: String, usePkce: Boolean!, scope: String!, wellKnownUri: String!, clientAuthType: String!): String!
 
 }
 
@@ -1230,6 +1231,19 @@ type SystemInitializationReadyResponse {
     systemInitializationReady: Boolean!
     systemInitializationReadyErrors: [ErrorDetail!]
     systemInitializationWarnings: [ErrorDetail!]
+}
+
+type FederatedAuthTest {
+    authState: String!
+    clientId: String!
+    clientSecret: String
+    usePkce: Boolean!
+    codeVerifier: String
+    wellKnownUri: String!
+    scope: String!
+    redirectUri: String!
+    clientAuthType: String!
+    expiresAtMs: Float!
 }
 
 
