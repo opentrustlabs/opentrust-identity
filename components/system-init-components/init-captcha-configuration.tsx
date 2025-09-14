@@ -15,7 +15,6 @@ import VisibilityOffOutlinedIcon from '@mui/icons-material/VisibilityOffOutlined
 
 const InitCaptchaConfiguration: React.FC<SystemInitializationConfigProps> = ({
     onBack,
-    onError,
     onNext,
     systemInitInput
 

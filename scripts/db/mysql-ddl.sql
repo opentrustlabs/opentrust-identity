@@ -710,3 +710,16 @@ create TABLE user_authentication_history (
     PRIMARY KEY (userid, lastauthenticationatms),
     FOREIGN KEY (userid) REFERENCES user(userid)
 );
+
+create TABLE federated_auth_test (
+    authstate             VARCHAR(128) PRIMARY KEY,	
+	clientid              VARCHAR(64) NOT NULL,
+	clientsecret          VARCHAR(128),
+	usepkce               BOOLEAN NOT NULL,
+	codeverifier          VARCHAR(128),
+	wellknownuri          VARCHAR(128) NOT NULL,
+	scope                 VARCHAR(64) NOT NULL,
+	redirecturi           VARCHAR(128) NOT NULL,
+    clientauthtype        VARCHAR(32) NOT NULL,
+	expiresatms           BIGINT NOT NULL
+);

@@ -8,6 +8,10 @@ export function base64Decode(s: string): string {
     return Buffer.from(s, "base64").toString("utf-8");
 }
 
+export function base64Encode(s: string): string {
+    return Buffer.from(s, "utf-8").toString("base64");
+}
+
 /**
  * 
  * @param fileName 

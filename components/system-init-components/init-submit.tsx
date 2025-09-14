@@ -45,7 +45,7 @@ const InitSubmit: React.FC<SystemInitializationConfigProps> = ({
                     authSessionProps.deleteAuthSessionData();
                 }
                 else{
-                    onError("ERROR_NO_ROOT_TENANT_WAS_CREATED");
+                    onError("No root tenant was created. See the logs for details.");
                 }
             }
         },
