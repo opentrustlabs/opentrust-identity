@@ -569,10 +569,10 @@ class SystemInitializationService extends BaseSearchService {
     }
 
     public async createFederatedAuthTest(clientId: string, clientSecret: string | null, usePkce: boolean, scope: string, wellKnownUri: string, clientAuthType: string): Promise<string> {
-        // const {errorDetail} = await this.validateJwt(this.oidcContext.authToken);
-        // if(errorDetail !== null){
-        //     throw new GraphQLError("ERROR_INVALID_TOKEN");
-        // }
+        const {errorDetail} = await this.validateJwt(this.oidcContext.authToken);
+        if(errorDetail !== null){
+            throw new GraphQLError("ERROR_INVALID_TOKEN");
+        }
 
         if(usePkce === false && clientSecret === null){
             throw new GraphQLError("ERROR_MISSING_CLIENT_SECRET");
