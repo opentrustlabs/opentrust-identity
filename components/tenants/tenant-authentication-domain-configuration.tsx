@@ -90,6 +90,8 @@ const TenantAuthenticationDomainConfiguration: React.FC<TenantAuthenticationDoma
                 <Dialog 
                     open={deleteDialogOpen}
                     onClose={() => {setDeleteDialogOpen(false); setSelectedDomainToDelete(null);}}
+                    maxWidth="sm"
+                    fullWidth={true}
                 >
                     <DialogContent>
 
