@@ -13,34 +13,74 @@ import Checkbox from "@mui/material/Checkbox";
 import Select from "@mui/material/Select";
 import Autocomplete from "@mui/material/Autocomplete";
 import MenuItem from "@mui/material/MenuItem";
+import { Alert, Dialog, DialogActions, DialogContent } from "@mui/material";
+import { useMutation } from "@apollo/client";
+import { CREATE_FEDERATED_AUTH_TEST_MUTATION } from "@/graphql/mutations/oidc-mutations";
+import { useClipboardCopyContext } from "../contexts/clipboard-copy-context";
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 
 
 const InitFederatedOIDCProviderConfiguration: React.FC<SystemInitializationConfigProps> = ({
     onBack,
-    onError,
     onNext,
     systemInitInput
 
 }) => {
+
+    // CONTEXT VARIABLES
+    const { copyContentToClipboard } = useClipboardCopyContext();
     
     // STATE VARIABLES
     const initInput: FederatedOidcProviderCreateInput = {
-        federatedOIDCProviderName: "",
-        federatedOIDCProviderDescription: "",
+        federatedOIDCProviderName: systemInitInput.rootFederatedOIDCProviderInput?.federatedOIDCProviderName || "",
+        federatedOIDCProviderDescription: systemInitInput.rootFederatedOIDCProviderInput?.federatedOIDCProviderDescription || "",
         federatedOIDCProviderTenantId: "",
-        federatedOIDCProviderClientId: "",
-        federatedOIDCProviderClientSecret: "",
-        federatedOIDCProviderWellKnownUri: "",
+        federatedOIDCProviderClientId: systemInitInput.rootFederatedOIDCProviderInput?.federatedOIDCProviderClientId || "",
+        federatedOIDCProviderClientSecret: systemInitInput.rootFederatedOIDCProviderInput?.federatedOIDCProviderClientSecret || "",
+        federatedOIDCProviderWellKnownUri: systemInitInput.rootFederatedOIDCProviderInput?.federatedOIDCProviderWellKnownUri || "",
         refreshTokenAllowed: true,
-        usePkce: false,
+        usePkce: systemInitInput.rootFederatedOIDCProviderInput?.usePkce || false,
         federatedOIDCProviderType: FEDERATED_OIDC_PROVIDER_TYPE_ENTERPRISE,
         federatedoidcprovidertypeid: "",
-        clientAuthType: OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_POST,
+        clientAuthType: systemInitInput.rootFederatedOIDCProviderInput?.clientAuthType || OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_POST,
         clientauthtypeid: "",
-        scopes: [OIDC_OPENID_SCOPE, OIDC_PROFILE_SCOPE, OIDC_EMAIL_SCOPE, OIDC_OFFLINE_ACCESS_SCOPE],
+        scopes: systemInitInput.rootFederatedOIDCProviderInput?.scopes ||  [OIDC_OPENID_SCOPE, OIDC_PROFILE_SCOPE, OIDC_EMAIL_SCOPE, OIDC_OFFLINE_ACCESS_SCOPE],
         socialLoginProvider: ""
     };        
     const [oidcProviderInput, setOIDCProviderInput] = React.useState<FederatedOidcProviderCreateInput>(initInput);
+    const [oidcProviderTestDialogOpen, setOidcProviderTestDialogOpen] = React.useState<boolean>(false);
+    const [oidcProviderTestUri, setOidcProviderTestUri] = React.useState<string | null>(null);
+    const [providerTestErrorMessage, setProviderTestErrorMessage] = React.useState<string | null>(null);
+    const [providerTestSucceeded, setProviderTestSucceeded] = React.useState<boolean>(false);
+
+    // GRAPHQL FUNCTIONS
+    // createFederatedAuthTest(
+    //      clientAuthType: $clientAuthType, 
+    //      clientId: $clientId, 
+    //      scope: $scope, 
+    //      usePkce: $usePkce, 
+    //      wellKnownUri: $wellKnownUri, clientSecret: $clientSecret)
+    const [createFederatedAuthTestMutation] = useMutation(CREATE_FEDERATED_AUTH_TEST_MUTATION, {
+        variables: {
+            clientAuthType: oidcProviderInput.clientAuthType,
+            clientId: oidcProviderInput.federatedOIDCProviderClientId,
+            scope: oidcProviderInput.scopes.join(" "),
+            usePkce: oidcProviderInput.usePkce,
+            wellKnownUri: oidcProviderInput.federatedOIDCProviderWellKnownUri,
+            clientSecret: oidcProviderInput.federatedOIDCProviderClientSecret
+        },
+        onCompleted(data) {
+            if(data && data.createFederatedAuthTest){
+                setOidcProviderTestUri(data.createFederatedAuthTest);
+            }
+            else{
+                setProviderTestErrorMessage("There was an error creating a test URI for this provider");
+            }
+        },
+        onError(error) {
+            setProviderTestErrorMessage(error.message);
+        },
+    })
 
     // HANDLER FUNCTIONS
     const isValidInput = (): boolean => {
@@ -54,7 +94,7 @@ const InitFederatedOIDCProviderConfiguration: React.FC<SystemInitializationConfi
         if (!oidcProviderInput.federatedOIDCProviderClientId || oidcProviderInput.federatedOIDCProviderClientId === "") {
             return false;
         }
-        if (oidcProviderInput.usePkce === false && (!oidcProviderInput.clientAuthType || oidcProviderInput.federatedOIDCProviderClientSecret === OIDC_CLIENT_AUTH_TYPE_NONE)) {
+        if (oidcProviderInput.usePkce === false && (!oidcProviderInput.clientAuthType || oidcProviderInput.federatedOIDCProviderClientSecret === "")) {
             return false;
         }
         if (!oidcProviderInput.federatedOIDCProviderWellKnownUri || oidcProviderInput.federatedOIDCProviderWellKnownUri === "") {
@@ -66,6 +106,57 @@ const InitFederatedOIDCProviderConfiguration: React.FC<SystemInitializationConfi
 
     return (
         <Typography component="div">
+            {oidcProviderTestDialogOpen &&
+                <Dialog 
+                    maxWidth="sm"
+                    fullWidth={true}
+                    open={oidcProviderTestDialogOpen}                    
+                >
+                    <DialogContent>
+                        <Typography component="div">
+                        {oidcProviderTestUri &&
+                            <Grid2 size={12} container spacing={1}>
+                                <Grid2 fontWeight={"bold"} size={12}>
+                                    Copy and paste the following URI into a new browser tab or window.
+                                </Grid2>
+                                <Grid2 container spacing={1} size={12}>
+                                    <Grid2 size={11}>{oidcProviderTestUri}</Grid2>
+                                    <Grid2 size={1}>
+                                        <ContentCopyIcon 
+                                            sx={{cursor: "pointer"}}
+                                            onClick={() => {
+                                                copyContentToClipboard(oidcProviderTestUri, "Test URI copied to clipboard");
+                                            }}
+                                        />
+                                    </Grid2>
+                                </Grid2>
+                            </Grid2>
+                        }
+                        {providerTestErrorMessage &&
+                            <Alert severity="error" onClose={() => setProviderTestErrorMessage(null)}>{providerTestErrorMessage}</Alert>
+                        }
+                        </Typography>
+                    </DialogContent>
+                    <DialogActions>
+                        <Button 
+                            onClick={() => {
+                                setOidcProviderTestDialogOpen(false);
+                            }}
+                        >
+                            Test Failed
+                        </Button>
+                        <Button
+                            disabled={oidcProviderTestUri === null}
+                            onClick={() => {
+                                setOidcProviderTestDialogOpen(false);
+                                setProviderTestSucceeded(true);
+                            }}
+                        >
+                            Test Passed
+                        </Button>
+                    </DialogActions>
+                </Dialog>
+            }
             <Paper
                 elevation={1}
                 sx={{ padding: "8px", border: "solid 1px lightgrey" }}
@@ -197,15 +288,27 @@ const InitFederatedOIDCProviderConfiguration: React.FC<SystemInitializationConfi
                     />
                 </Grid2>
                 <Stack sx={{ width: "100%" }} direction={"row-reverse"}>
-                    <Button
-                        onClick={() => {                            
-                            systemInitInput.rootFederatedOIDCProviderInput = oidcProviderInput;
-                            onNext(systemInitInput);
-                        }}
-                        disabled={!isValidInput()}
-                    >
-                        Test
-                    </Button>                    
+                    {providerTestSucceeded &&
+                        <Button 
+                            onClick={() => {
+                                systemInitInput.rootFederatedOIDCProviderInput = oidcProviderInput;
+                                onNext(systemInitInput);
+                            }}
+                        >
+                            Next
+                        </Button>
+                    }
+                    {!providerTestSucceeded &&
+                        <Button
+                            onClick={() => {                            
+                                createFederatedAuthTestMutation();
+                                setOidcProviderTestDialogOpen(true);
+                            }}
+                            disabled={!isValidInput()}
+                        >
+                            Test
+                        </Button>
+                    }
                     <Button
                         onClick={() => {
                             onNext(systemInitInput);
