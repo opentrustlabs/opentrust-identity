@@ -78,7 +78,7 @@ export default async function handler(
     const oidcState: string = state as string;
     const oidcCode: string = code as string;
 
-    if(oidcState.startsWith(FEDERATED_AUTH_TEST_STATE_PARAM_PREFIX)){
+    if(oidcState && oidcState.startsWith(FEDERATED_AUTH_TEST_STATE_PARAM_PREFIX)){
         handleFederatedAuthTest(oidcState, oidcCode, res);
     }
     else{
