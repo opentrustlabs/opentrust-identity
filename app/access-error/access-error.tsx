@@ -34,6 +34,9 @@ const AccessError: React.FC = () => {
             errorMessage = "Device registration has been cancelled.";
             break;
         }
+        case "00076": {
+            errorMessage = "There was an error in authentication with a 3rd party OIDC provider. "
+        }
     }
 
     if(extendedMessage){

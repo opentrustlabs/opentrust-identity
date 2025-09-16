@@ -266,6 +266,91 @@ export const ALL_INTERNAL_SCOPE_NAMES = [
     CUSTOM_ENCRYP_DECRYPT_SCOPE
 ];
 
+export const ALL_INTERNAL_SCOPE_NAMES_DISPLAY: Array<{scopeName: string, scopeDescription: string}> = [
+    {scopeName: TENANT_CREATE_SCOPE, scopeDescription: "Create a tenant"},
+    {scopeName: TENANT_UPDATE_SCOPE, scopeDescription: "Update a tenant"},
+    {scopeName: TENANT_DELETE_SCOPE, scopeDescription: "Delete a tenant"},
+    {scopeName: TENANT_READ_SCOPE, scopeDescription: "Read and query tenants"},
+    {scopeName: TENANT_READ_ALL_SCOPE, scopeDescription: "Read only view of tenants and related information"},
+    {scopeName: CLIENT_CREATE_SCOPE, scopeDescription: "Create a client"},
+    {scopeName: CLIENT_UPDATE_SCOPE, scopeDescription: "Update a client"},
+    {scopeName: CLIENT_DELETE_SCOPE, scopeDescription: "Delete a client"},
+    {scopeName: CLIENT_READ_SCOPE, scopeDescription: "Read and query clients"},
+    {scopeName: CLIENT_SECRET_VIEW_SCOPE, scopeDescription: "View client secrets"},
+    {scopeName: SCOPE_CREATE_SCOPE, scopeDescription: "Create scope"},
+    {scopeName: SCOPE_UPDATE_SCOPE, scopeDescription: "Update scope"},
+    {scopeName: SCOPE_DELETE_SCOPE, scopeDescription: "Delete scope"},
+    {scopeName: SCOPE_READ_SCOPE, scopeDescription: "Read and query scope"},
+    {scopeName: SCOPE_TENANT_ASSIGN_SCOPE, scopeDescription: "Assign scope to tenants"},
+    {scopeName: SCOPE_TENANT_REMOVE_SCOPE, scopeDescription: "Remove scope from tennats"},
+    {scopeName: SCOPE_CLIENT_ASSIGN_SCOPE, scopeDescription: "Assign scope to clients"},
+    {scopeName: SCOPE_CLIENT_REMOVE_SCOPE, scopeDescription: "Remove scope from clients"},
+    {scopeName: SCOPE_GROUP_ASSIGN_SCOPE, scopeDescription: "Assign scope to authorization groups"},
+    {scopeName: SCOPE_GROUP_REMOVE_SCOPE, scopeDescription: "Remove scope from authorization groups"},
+    {scopeName: SCOPE_USER_ASSIGN_SCOPE, scopeDescription: "Assign scope to users"},
+    {scopeName: SCOPE_USER_REMOVE_SCOPE, scopeDescription: "Remove scope from users"},
+    {scopeName: SCOPE_CONSTRAINT_SCHEMA_CREATE_SCOPE, scopeDescription: "Create scope-constraint schemas"},
+    {scopeName: SCOPE_CONSTRAINT_SCHEMA_UPDATE_SCOPE, scopeDescription: "Update scope-constraint schemas"},
+    {scopeName: SCOPE_CONSTRAINT_SCHEMA_DELETE_SCOPE, scopeDescription: "Delete scope-constraint schemas"},
+    {scopeName: SCOPE_CONSTRAINT_SCHEMA_READ_SCOPE, scopeDescription: "Read and query scope-constraint schemas"},
+    {scopeName: ACCESS_RULE_CREATE_SCOPE, scopeDescription: "Create access rule"},
+    {scopeName: ACCESS_RULE_UPDATE_SCOPE, scopeDescription: "Update access rule"},
+    {scopeName: ACCESS_RULE_DELETE_SCOPE, scopeDescription: "Delete access rule"},
+    {scopeName: ACCESS_RULE_READ_SCOPE, scopeDescription: "Read and query access rules"},
+    {scopeName: KEY_CREATE_SCOPE, scopeDescription: "Create key"},
+    {scopeName: KEY_UPDATE_SCOPE, scopeDescription: "Update key"},
+    {scopeName: KEY_DELETE_SCOPE, scopeDescription: "Delete key"},
+    {scopeName: KEY_READ_SCOPE, scopeDescription: "Read and query keys"},
+    {scopeName: KEY_SECRET_VIEW_SCOPE, scopeDescription: "View private keys and passcodes"},
+    {scopeName: RATE_LIMIT_CREATE_SCOPE, scopeDescription: "Create rate limit"},
+    {scopeName: RATE_LIMIT_UPDATE_SCOPE, scopeDescription: "Update rate limit"},
+    {scopeName: RATE_LIMIT_DELETE_SCOPE, scopeDescription: "Delete rate limit"},
+    {scopeName: RATE_LIMIT_READ_SCOPE, scopeDescription: "Read and query rate limits"},
+    {scopeName: RATE_LIMIT_TENANT_ASSIGN_SCOPE, scopeDescription: "Assign rate limits to tenants"},
+    {scopeName: RATE_LIMIT_TENANT_REMOVE_SCOPE, scopeDescription: "Remote rate limits from tenants"},
+    {scopeName: RATE_LIMIT_TENANT_UPDATE_SCOPE, scopeDescription: "Update rate limits for tenants"},
+    {scopeName: AUTHENTICATION_GROUP_CREATE_SCOPE, scopeDescription: "Create authentication group"},
+    {scopeName: AUTHENTICATION_GROUP_UPDATE_SCOPE, scopeDescription: "Update authentication group"},
+    {scopeName: AUTHENTICATION_GROUP_DELETE_SCOPE, scopeDescription: "Delete authentication group"},
+    {scopeName: AUTHENTICATION_GROUP_READ_SCOPE, scopeDescription: "Read and query authentication groups"},
+    {scopeName: AUTHENTICATION_GROUP_CLIENT_ASSIGN_SCOPE, scopeDescription: "Assign authentication groups to clients"},
+    {scopeName: AUTHENTICATION_GROUP_CLIENT_REMOVE_SCOPE, scopeDescription: "Remove authentication groups from clients"},
+    {scopeName: AUTHENTICATION_GROUP_USER_ASSIGN_SCOPE, scopeDescription: "Assign authentication groups to users"},
+    {scopeName: AUTHENTICATION_GROUP_USER_REMOVE_SCOPE, scopeDescription: "Remove authentication groups from users"},
+    {scopeName: AUTHORIZATION_GROUP_CREATE_SCOPE, scopeDescription: "Create authorization group"},
+    {scopeName: AUTHORIZATION_GROUP_UPDATE_SCOPE, scopeDescription: "Update authorization group"},
+    {scopeName: AUTHORIZATION_GROUP_DELETE_SCOPE, scopeDescription: "Delete authorization group"},
+    {scopeName: AUTHORIZATION_GROUP_READ_SCOPE, scopeDescription: "Read and query authorization groups"},
+    {scopeName: AUTHORIZATION_GROUP_USER_ASSIGN_SCOPE, scopeDescription: "Assign authorization groups to users"},
+    {scopeName: AUTHORIZATION_GROUP_USER_REMOVE_SCOPE, scopeDescription: "Remove authorization groups from users"},
+    {scopeName: ANONYMOUS_USER_CREATE_SCOPE, scopeDescription: "Ability to issue auth tokens for anonymous users"},
+    {scopeName: USER_CREATE_SCOPE, scopeDescription: "Create user"},
+    {scopeName: USER_UPDATE_SCOPE, scopeDescription: "Update user"},
+    {scopeName: USER_DELETE_SCOPE, scopeDescription: "Delete user"},
+    {scopeName: USER_READ_SCOPE, scopeDescription: "Read and query users"},
+    {scopeName: USER_UNLOCK_SCOPE, scopeDescription: "Unlock users"},
+    {scopeName: USER_SESSION_READ_SCOPE, scopeDescription: "Read user sessions"},
+    {scopeName: USER_SESSION_DELETE_SCOPE, scopeDescription: "Delete user sessions"},
+    {scopeName: TENANT_USER_ASSIGN_SCOPE, scopeDescription: "Assign a user to a tenant"},
+    {scopeName: TENANT_USER_REMOVE_SCOPE, scopeDescription: "Remove a user from a tenant"},
+    {scopeName: MY_PROFILE_READ_SCOPE, scopeDescription: "Read my profile"},
+    {scopeName: FEDERATED_OIDC_PROVIDER_CREATE_SCOPE, scopeDescription: "Create federated OIDC provider"},
+    {scopeName: FEDERATED_OIDC_PROVIDER_UPDATE_SCOPE, scopeDescription: "Update federated OIDC provider"},
+    {scopeName: FEDERATED_OIDC_PROVIDER_DELETE_SCOPE, scopeDescription: "Delete federated OIDC provider"},
+    {scopeName: FEDERATED_OIDC_PROVIDER_READ_SCOPE, scopeDescription: "Read and query federated OIDC providers"},
+    {scopeName: FEDERATED_OIDC_PROVIDER_TENANT_ASSIGN_SCOPE, scopeDescription: "Assign federated OIDC providers to tenants"},
+    {scopeName: FEDERATED_OIDC_PROVIDER_TENANT_REMOVE_SCOPE, scopeDescription: "Remove federated OIDC providers from tenants"},
+    {scopeName: FEDERATED_OIDC_PROVIDER_SECRET_VIEW_SCOPE, scopeDescription: "View federated OIDC provider client secrets"},
+    {scopeName: CAPTCHA_CONFIG_SCOPE, scopeDescription: "Add, remove, and configure ReCaptcha"},
+    {scopeName: SYSTEM_SETTINGS_UPDATE_SCOPE, scopeDescription: "Update system settings"},
+    {scopeName: SYSTEM_SETTINGS_READ_SCOPE, scopeDescription: "Read system settings"},
+    {scopeName: JOBS_READ_SCOPE, scopeDescription: "Read the status of background jobs in the IAM portal"},
+    {scopeName: JOBS_UPDATE_SCOPE, scopeDescription: "Update the status of background jobs in the IAM portal"},
+    {scopeName: LEGACY_USER_MIGRATION_SCOPE, scopeDescription: "Ability to invoke legacy user migration endpoints"},
+    {scopeName: SECURITY_EVENT_WRITE_SCOPE, scopeDescription: "Ability to write to the security webhook endpoint"},
+    {scopeName: SECRET_ENTRY_DELEGATE_SCOPE, scopeDescription: "Allows a user to delegate the entry of a secret value to an arbitrary person"},
+    {scopeName: CUSTOM_ENCRYP_DECRYPT_SCOPE, scopeDescription: "Ability to use a custom KMS implementation"},
+];
 
 
 // These are scope values which CANNOT be assigned to any tenant or client OUTSIDE of the Root Tenant
@@ -554,6 +639,7 @@ export const CLIENT_TYPES_DISPLAY = new Map<string, string>(
     ]
 );
 
+export const PRINCIPAL_TYPE_SYSTEM_INIT_USER="SYSTEM_INIT_USER";
 export const PRINCIPAL_TYPE_SERVICE_ACCOUNT_TOKEN="SERVICE_ACCOUNT";
 export const PRINCIPAL_TYPE_END_USER="END_USER";
 export const PRINCIPAL_TYPE_ANONYMOUS_USER="ANONYMOUS_USER";
@@ -690,7 +776,7 @@ export const CHANGE_EVENT_CLASS_TENANT_ANONYMOUS_="TENANT_AUTHENTICATION_DOMAIN_
 export const CHANGE_EVENT_CLASS_TENANT_AUTHENTICATION_DOMAIN_REL="TENANT_AUTHENTICATION_DOMAIN_REL";
 export const CHANGE_EVENT_CLASS_TENANT_USER_REL="TENANT_USER_REL";
 export const CHANGE_EVENT_CLASS_TENANT_LOGIN_FAILURE_POLICY="TENANT_LOGIN_FAILURE_POLICY";
-export const CHANGE_EVENT_SYSTEM_SETTINGS="SYSTEM_SETTINGS";
+export const CHANGE_EVENT_CLASS_SYSTEM_SETTINGS="SYSTEM_SETTINGS";
 export const CHANGE_EVENT_CLASS_CLIENT="CLIENT";
 export const CHANGE_EVENT_CLASS_CLIENT_REDIRECT_URI="CLIENT_REDIRECT_URI";
 export const CHANGE_EVENT_CLASS_CLIENT_AUTHENTICATION_GROUP="CLIENT_AUTHENTICATION_GROUP";
@@ -807,13 +893,14 @@ export const HASH_PARAM_AUTH_TOKEN="_atk";
 
 export const AUTHORIZATION_LAYOUT_PAGES = [
     "/authorize/login",
-    "/authorize/forgot-password",
+    "/authorize/auth-successful",
     "/authorize/register",
     "/access-error",
     "/device",
     "/device/registered",
     "/my-profile",
-    "/secret-entry"
+    "/secret-entry",
+    "/system-init"
 ];
 
 export const PROFILE_LAYOUT_PAGES =[
@@ -886,7 +973,7 @@ export const DEFAULT_TENANT_PASSWORD_CONFIGURATION: TenantPasswordConfig = {
     requireLowerCase: true,
     requireMfa: false,
     requireNumbers: true,
-    requireSpecialCharacters: true,
+    requireSpecialCharacters: false,
     requireUpperCase: true,
     tenantId: "",
     mfaTypesRequired: "",
@@ -918,8 +1005,8 @@ export const MIN_SEARCH_PAGE_SIZE=5;
 export const MAX_SEARCH_PAGE=1000
 export const ALLOWED_OBJECT_SEARCH_SORT_FIELDS = ["name", "description", "email"];
 export const ALLOWED_SEARCH_DIRECTIONS=["asc", "desc"];
-export const SEARCH_INDEX_OBJECT_SEARCH="object_search";
-export const SEARCH_INDEX_REL_SEARCH="rel_search";
+export const SEARCH_INDEX_OBJECT_SEARCH="iam_object_search";
+export const SEARCH_INDEX_REL_SEARCH="iam_rel_search";
 
 
 
@@ -1011,3 +1098,12 @@ export const DEFAULT_HTTP_TIMEOUT_MS=60000;
 // ************************************************************************** //
 // For Version 3 of captcha, default to a score of 0.7 for bot detection
 export const DEFAULT_CAPTCHA_V3_MINIMUM_SCORE=0.7;
+
+// ************************************************************************** //
+// 
+//                  INITIALIZATION CONSTANTS
+// 
+// ************************************************************************** //
+export const SYSTEM_INITIALIZATION_KEY_ID="6b9f3310-0be9-4b5f-8f92-701109bc8f43";
+export const VALID_KMS_STRATEGIES = ["googlekms", "awskms", "azurekms", "tencentkms", "custom", "filesystem", "none"];
+export const FEDERATED_AUTH_TEST_STATE_PARAM_PREFIX="oidctest-";

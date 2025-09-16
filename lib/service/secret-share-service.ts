@@ -80,7 +80,8 @@ class SecretShareService {
             fromEmail,
             email,
             secretEntryLink,
-            tenantLookAndFeel
+            tenantLookAndFeel,
+            this.oidcContext.portalUserProfile?.preferredLanguageCode || "en"
         );
         
         return true;

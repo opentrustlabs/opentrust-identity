@@ -5,7 +5,7 @@ import TenantDao from '@/lib/dao/tenant-dao';
 import { OIDCErrorResponseBody } from '@/lib/models/error';
 import ClientAuthValidationService from '@/lib/service/client-auth-validation-service';
 import { CLIENT_TYPE_SERVICE_ACCOUNT, GRANT_TYPE_AUTHORIZATION_CODE, GRANT_TYPE_CLIENT_CREDENTIALS, GRANT_TYPE_DEVICE_CODE, GRANT_TYPE_REFRESH_TOKEN, GRANT_TYPES_SUPPORTED, OIDC_TOKEN_ERROR_AUTHORIZATION_DECLINED, OIDC_TOKEN_ERROR_AUTHORIZATION_PENDING, OIDC_TOKEN_ERROR_BAD_VERIFICATION_CODE, OIDC_TOKEN_ERROR_EXPIRED_TOKEN, OIDC_TOKEN_ERROR_INVALID_CLIENT, OIDC_TOKEN_ERROR_INVALID_GRANT, OIDC_TOKEN_ERROR_INVALID_REQUEST, OIDC_TOKEN_ERROR_UNAUTHORIZED_CLIENT, REFRESH_TOKEN_CLIENT_TYPE_DEVICE, REFRESH_TOKEN_CLIENT_TYPE_PKCE, REFRESH_TOKEN_CLIENT_TYPE_SECURE_CLIENT } from '@/utils/consts';
-import { generateHash } from '@/utils/dao-utils';
+import { base64Decode, generateHash } from '@/utils/dao-utils';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { randomUUID } from 'crypto'; 
 import JwtService from '@/lib/service/jwt-service-utils';
@@ -92,9 +92,24 @@ export default async function handler(
         device_code
     } = req.body;
 
+    // In case the client is sending in Basic auth credentials (jwt credentials
+    // are sent in the client_assertion request body parameter)
+    const authHeader: string | undefined = req.headers.authorization;
+    let basicClientSecret: string | null = null;
+    let basicClientId: string | null = null;
+    if(authHeader){
+        const basicCredentials = authHeader.replace(/Basic\s+/, "");
+        const decoded = base64Decode(basicCredentials);
+        const credentials: Array<string> = decoded.split(":");
+        if(credentials.length === 2){
+            basicClientId = credentials[0];
+            basicClientSecret = credentials[1];
+        }
+    }
+
     const tenantId = tenant_id as string;
-    const clientId = client_id ? client_id as string : null;
-    const clientSecret = client_secret ? client_secret as string : null;
+    const clientId = client_id ? client_id as string : basicClientId ? basicClientId : null;
+    const clientSecret = client_secret ? client_secret as string : basicClientSecret ? basicClientSecret : null;
     const refreshToken = refresh_token ? refresh_token as string : null;
     const oidcScope = scope ? scope as string : "";
     const redirectUri = redirect_uri ? redirect_uri as string : null;

@@ -1,4 +1,4 @@
-import { AuthorizationCodeData, AuthorizationDeviceCodeData, FederatedOidcAuthorizationRel, PreAuthenticationState, RefreshData } from "@/graphql/generated/graphql-types";
+import { AuthorizationCodeData, AuthorizationDeviceCodeData, FederatedAuthTest, FederatedOidcAuthorizationRel, PreAuthenticationState, RefreshData } from "@/graphql/generated/graphql-types";
 
 export type AuthorizationCodeType = "devicecodeid" | "usercode" | "devicecode";
 abstract class AuthDao {
@@ -40,6 +40,12 @@ abstract class AuthDao {
     abstract deleteFederatedOIDCAuthorizationRel(state: string): Promise<void>;
 
     abstract deleteExpiredData(): Promise<void>;
+
+    abstract saveFederatedAuthTest(federatedAuthTest: FederatedAuthTest): Promise<FederatedAuthTest>;
+
+    abstract getFederatedAuthTestByState(state: string): Promise<FederatedAuthTest | null>;
+
+    abstract deleteFederatedAuthTestByState(state: string): Promise<void>;
 
 }
 

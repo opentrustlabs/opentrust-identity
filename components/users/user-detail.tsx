@@ -510,7 +510,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                                 disabled={true} 
                                                 name="federatedOIDCProviderSubjectId" 
                                                 id="federatedOIDCProviderSubjectId" 
-                                                value={userInput.federatedOIDCProviderSubjectId} 
+                                                value={userInput.federatedOIDCProviderSubjectId || ""} 
                                                 fullWidth={true} size="small" 
                                             />
                                         </Grid2>

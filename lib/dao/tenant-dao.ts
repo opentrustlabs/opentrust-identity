@@ -4,7 +4,12 @@ import { TenantAnonymousUserConfiguration, TenantLoginFailurePolicy, Tenant, Ten
 abstract class TenantDao {
 
 
-    abstract getRootTenant(): Promise<Tenant>;
+    /**
+     * This should throw an error if the root tenant is not found. For system initialization,
+     * where there is no root tenant, this will be handled in a try/catch block.
+     * 
+     */
+    abstract getRootTenant(): Promise<Tenant | null>;
 
     abstract createRootTenant(tenant: Tenant): Promise<Tenant>;
 
@@ -84,7 +89,7 @@ abstract class TenantDao {
 
     abstract getSystemSettings(): Promise<SystemSettings>;
 
-    abstract updateSystemSettings(input: SystemSettingsUpdateInput): Promise<SystemSettings>;
+    abstract updateSystemSettings(systemSettings: SystemSettings): Promise<SystemSettings>;
 
 }
 

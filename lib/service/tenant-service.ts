@@ -3,7 +3,7 @@ import { OIDCContext } from "@/graphql/graphql-context";
 import TenantDao from "@/lib/dao/tenant-dao";
 import { GraphQLError } from "graphql";
 import { randomUUID } from 'crypto'; 
-import { CAPTCHA_CONFIG_SCOPE, CHANGE_EVENT_CLASS_TENANT, CHANGE_EVENT_CLASS_TENANT_ANONYMOUS_USER_CONFIGURATION, CHANGE_EVENT_CLASS_TENANT_AUTHENTICATION_DOMAIN_REL, CHANGE_EVENT_CLASS_TENANT_LEGACY_USER_MIGRATION_CONFIGURATION, CHANGE_EVENT_CLASS_TENANT_LOGIN_FAILURE_POLICY, CHANGE_EVENT_CLASS_TENANT_LOOK_AND_FEEL, CHANGE_EVENT_CLASS_TENANT_PASSWORD_CONFIGURATION, CHANGE_EVENT_TYPE_CREATE, CHANGE_EVENT_TYPE_CREATE_REL, CHANGE_EVENT_TYPE_DELETE, CHANGE_EVENT_TYPE_REMOVE_REL, CHANGE_EVENT_TYPE_UPDATE, DEFAULT_RATE_LIMIT_PERIOD_MINUTES, DEFAULT_TENANT_META_DATA, FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL, JOBS_READ_SCOPE, MFA_AUTH_TYPE_NONE, MFA_AUTH_TYPES, PASSWORD_HASHING_ALGORITHMS, PASSWORD_MAXIMUM_LENGTH, PASSWORD_MINIMUM_LENGTH, SEARCH_INDEX_OBJECT_SEARCH, SYSTEM_SETTINGS_READ_SCOPE, SYSTEM_SETTINGS_UPDATE_SCOPE, TENANT_CREATE_SCOPE, TENANT_NAME_MINIMUM_LENGTH, TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE, TENANT_TYPE_ROOT_TENANT, TENANT_TYPES, TENANT_TYPES_DISPLAY, TENANT_UPDATE_SCOPE } from "@/utils/consts";
+import { CAPTCHA_CONFIG_SCOPE, CHANGE_EVENT_CLASS_SIGNING_KEY, CHANGE_EVENT_CLASS_SYSTEM_SETTINGS, CHANGE_EVENT_CLASS_TENANT, CHANGE_EVENT_CLASS_TENANT_ANONYMOUS_USER_CONFIGURATION, CHANGE_EVENT_CLASS_TENANT_AUTHENTICATION_DOMAIN_REL, CHANGE_EVENT_CLASS_TENANT_LEGACY_USER_MIGRATION_CONFIGURATION, CHANGE_EVENT_CLASS_TENANT_LOGIN_FAILURE_POLICY, CHANGE_EVENT_CLASS_TENANT_LOOK_AND_FEEL, CHANGE_EVENT_CLASS_TENANT_PASSWORD_CONFIGURATION, CHANGE_EVENT_TYPE_CREATE, CHANGE_EVENT_TYPE_CREATE_REL, CHANGE_EVENT_TYPE_DELETE, CHANGE_EVENT_TYPE_REMOVE_REL, CHANGE_EVENT_TYPE_UPDATE, DEFAULT_RATE_LIMIT_PERIOD_MINUTES, DEFAULT_TENANT_META_DATA, FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL, JOBS_READ_SCOPE, MFA_AUTH_TYPE_NONE, MFA_AUTH_TYPES, OPENTRUST_IDENTITY_VERSION, PASSWORD_HASHING_ALGORITHMS, PASSWORD_MAXIMUM_LENGTH, PASSWORD_MINIMUM_LENGTH, SEARCH_INDEX_OBJECT_SEARCH, SYSTEM_SETTINGS_READ_SCOPE, SYSTEM_SETTINGS_UPDATE_SCOPE, TENANT_CREATE_SCOPE, TENANT_NAME_MINIMUM_LENGTH, TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE, TENANT_TYPE_ROOT_TENANT, TENANT_TYPES, TENANT_TYPES_DISPLAY, TENANT_UPDATE_SCOPE } from "@/utils/consts";
 import { getOpenSearchClient } from "@/lib/data-sources/search";
 import FederatedOIDCProviderDao from "../dao/federated-oidc-provider-dao";
 import { DaoFactory } from "../data-sources/dao-factory";
@@ -35,27 +35,11 @@ class TenantService {
     }
 
     public async getRootTenant(): Promise<Tenant> {
-        return tenantDao.getRootTenant();
-    }
-
-    public async createRootTenant(tenant: Tenant): Promise<Tenant> {
-
-        // TODO
-        // Get the root tenant first in a try/catch block. If the root
-        // tenant does not already exist, the error object should have the 
-        // message: ERROR_UNABLE_TO_FIND_A_ROOT_TENANT
-        // In that case, create a new tenant
-        // 
-        // If there is already a root tenant, then throw an error
-        //
-        // The scope should be TENANT_CREATE (derived from an RSA key pair for identity) 
-        // and the .env file should have a property called: INIT_IAM_PORTAL=true
-
-        tenant.tenantId = randomUUID().toString();
-        await tenantDao.createRootTenant(tenant);
-        await this.updateSearchIndex(tenant);
-
-        return Promise.resolve(tenant);        
+        const tenant: Tenant | null = await tenantDao.getRootTenant();
+        if(tenant === null){
+            throw new GraphQLError(ERROR_CODES.EC00035.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00035}});
+        }
+        return tenant;
     }
 
     public async updateRootTenant(tenant: Tenant): Promise<Tenant> {
@@ -813,35 +797,53 @@ class TenantService {
             throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
         }
         
-        const existingSystemSettings = await tenantDao.getSystemSettings();
-        if(existingSystemSettings.rootClientId !== systemSettingsUpdateInput.rootClientId){
-            const client: Client | null = await clientDao.getClientById(systemSettingsUpdateInput.rootClientId);
-            if(client === null){
-                throw new GraphQLError(ERROR_CODES.EC00093.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00093}});
-            }
-            const rootTenant: Tenant = await tenantDao.getRootTenant();
-            if(client.tenantId !== rootTenant.tenantId){
-                throw new GraphQLError(ERROR_CODES.EC00094.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00094}});
-            }
+        const client: Client | null = await clientDao.getClientById(systemSettingsUpdateInput.rootClientId);
+        if(client === null){
+            throw new GraphQLError(ERROR_CODES.EC00093.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00093}});
         }
+        const rootTenant: Tenant | null = await tenantDao.getRootTenant();
+        if(rootTenant === null){
+            throw new GraphQLError(ERROR_CODES.EC00035.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00035}});
+        }
+        if(client.tenantId !== rootTenant.tenantId){
+            throw new GraphQLError(ERROR_CODES.EC00094.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00094}});
+        }
+        
+
         if(systemSettingsUpdateInput.auditRecordRetentionPeriodDays){
             if(systemSettingsUpdateInput.auditRecordRetentionPeriodDays < 1){
                 throw new GraphQLError(ERROR_CODES.EC00186.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00186}});
             }
         }
 
-        const s: SystemSettings = await tenantDao.updateSystemSettings(systemSettingsUpdateInput);
+        const existingSystemSettings: SystemSettings | null = await tenantDao.getSystemSettings();
+
+        const systemSettings: SystemSettings = {
+            allowDuressPassword: systemSettingsUpdateInput.allowDuressPassword,
+            allowRecoveryEmail: systemSettingsUpdateInput.allowRecoveryEmail,
+            enablePortalAsLegacyIdp: systemSettingsUpdateInput.enablePortalAsLegacyIdp,
+            rootClientId: systemSettingsUpdateInput.rootClientId,
+            softwareVersion: OPENTRUST_IDENTITY_VERSION,
+            systemCategories: [],
+            systemId: existingSystemSettings.systemId !== "" ? existingSystemSettings.systemId : randomUUID().toString(),
+            auditRecordRetentionPeriodDays: systemSettingsUpdateInput.auditRecordRetentionPeriodDays,
+            contactEmail: systemSettingsUpdateInput.contactEmail,
+            noReplyEmail: systemSettingsUpdateInput.noReplyEmail
+        }
+        
+        await tenantDao.updateSystemSettings(systemSettings);
+                
         changeEventDao.addChangeEvent({
             objectId: existingSystemSettings.systemId,
             changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
-            changeEventClass: CHANGE_EVENT_CLASS_TENANT_LOGIN_FAILURE_POLICY,
+            changeEventClass: CHANGE_EVENT_CLASS_SYSTEM_SETTINGS,
             changeEventId: randomUUID().toString(),
             changeEventType: CHANGE_EVENT_TYPE_UPDATE,
             changeTimestamp: Date.now(),
             data: JSON.stringify(systemSettingsUpdateInput)
         });
         
-        return s;
+        return systemSettings;
     }
 
     public async getJobData(): Promise<JobData>{

@@ -3,14 +3,14 @@ import axios, { AxiosProxyConfig, AxiosResponse } from "axios";
 import { Agent } from "https";
 import { Jwks, WellknownConfig } from "@/lib/models/wellknown-config";
 import NodeCache from "node-cache";
-import { LegacyUserAuthenticationPayload, LegacyUserProfile } from "../models/principal";
+import { LegacyUserAuthenticationPayload, LegacyUserProfile, OIDCUserInfo } from "../models/principal";
 import { SecurityEvent, SecurityEventType } from "../models/security-event";
 import { OIDCContext } from "@/graphql/graphql-context";
 import { PortalUserProfile, TenantLookAndFeel, User } from "@/graphql/generated/graphql-types";
 import { logWithDetails } from "../logging/logger";
 import { randomUUID } from "node:crypto";
 import { CustomKmsDecryptionResponseBody, CustomKmsEncryptionResponseBody, CustomKmsRequestBody } from "../kms/custom-kms";
-import { DEFAULT_HTTP_TIMEOUT_MS } from "@/utils/consts";
+import { CLIENT_ASSERTION_TYPE_JWT_BEARER, DEFAULT_HTTP_TIMEOUT_MS, GRANT_TYPE_AUTHORIZATION_CODE, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_BASIC, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_JWT, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_POST } from "@/utils/consts";
 import { RecaptchaResponse } from "../models/recaptcha";
 import nodemailer from "nodemailer";
 import SMTPTransport from "nodemailer/lib/smtp-transport";
@@ -19,6 +19,10 @@ import { render } from "@react-email/render";
 import React from "react";
 import { VerifyRegistration } from "@/components/email-templates/verify-registration-template";
 import { SecretShare } from "@/components/email-templates/secret-share-template";
+import { OIDCTokenResponse } from "../models/token-response";
+import { base64Decode, base64Encode } from "@/utils/dao-utils";
+import JwtServiceUtils from "./jwt-service-utils";
+import { JWTPayload } from "jose";
 
 const {
     HTTP_TIMEOUT_MS,
@@ -35,6 +39,7 @@ const {
     HTTP_PROXY_USERNAME,
     HTTP_PROXY_PASSWORD,
     SECURITY_EVENT_CALLBACK_URI,
+    SMTP_ENABLED,
     EMAIL_SERVER_HOST,
     EMAIL_SERVER_PORT,
     EMAIL_SERVER_USERNAME,
@@ -62,38 +67,41 @@ type TransportOptions = (SMTPTransport.Options | SMTPPool.Options) & {
 
 
 
-function getEmailTransporter() {
-    if(!global.emailTransporter){
-        const transportOptions: TransportOptions = {
-            host: EMAIL_SERVER_HOST,
-            port: parseInt(EMAIL_SERVER_PORT || "587"),
-            auth: {
-                user: EMAIL_SERVER_USERNAME,
-                pass: EMAIL_SERVER_PASSWORD
-            },
-            secure: EMAIL_SERVER_USE_SECURE === "true",
-            requireTLS: EMAIL_SERVER_REQUIRE_TLS === "true",
-            debug: EMAIL_CLIENT_DEBUG_LOG === "true",
-            logger: EMAIL_CLIENT_LOG_TO_CONSOLE === "true"
-        }
+function getEmailTransporter(): nodemailer.Transporter<SMTPTransport.SentMessageInfo, SMTPTransport.Options> | undefined {
+    if(SMTP_ENABLED === "true"){
+        if(!global.emailTransporter){
+            const transportOptions: TransportOptions = {
+                host: EMAIL_SERVER_HOST,
+                port: parseInt(EMAIL_SERVER_PORT || "587"),
+                auth: {
+                    user: EMAIL_SERVER_USERNAME,
+                    pass: EMAIL_SERVER_PASSWORD
+                },
+                secure: EMAIL_SERVER_USE_SECURE === "true",
+                requireTLS: EMAIL_SERVER_REQUIRE_TLS === "true",
+                debug: EMAIL_CLIENT_DEBUG_LOG === "true",
+                logger: EMAIL_CLIENT_LOG_TO_CONSOLE === "true"
+            }
 
-        if(EMAIL_SERVER_PROXY){
-            transportOptions.proxy = EMAIL_SERVER_PROXY;
-        }
+            if(EMAIL_SERVER_PROXY){
+                transportOptions.proxy = EMAIL_SERVER_PROXY;
+            }
 
-        if(EMAIL_SERVER_USE_CONNECTION_POOL && EMAIL_SERVER_USE_CONNECTION_POOL === "true"){
-            Object.assign(
-                transportOptions, 
-                {
-                    pool: true,
-                    maxConnections: 5,
-                    maxMessages: 100
-                } satisfies SMTPPool.Options
-            );
-        };
-        global.emailTransporter = nodemailer.createTransport(transportOptions);
+            if(EMAIL_SERVER_USE_CONNECTION_POOL && EMAIL_SERVER_USE_CONNECTION_POOL === "true"){
+                Object.assign(
+                    transportOptions, 
+                    {
+                        pool: true,
+                        maxConnections: 5,
+                        maxMessages: 100
+                    } satisfies SMTPPool.Options
+                );
+            };
+            global.emailTransporter = nodemailer.createTransport(transportOptions);
+        }
+        return global.emailTransporter;
     }
-    return global.emailTransporter;
+    return undefined;
 }
 
 const proxy: AxiosProxyConfig | undefined = HTTP_CLIENT_USE_PROXY === "true" ? 
@@ -146,7 +154,7 @@ const oidcJwksCache = new NodeCache(
     }
 );
 
-class OIDCServiceUtils {
+class OIDCServiceUtils extends JwtServiceUtils {
 
     
     /**
@@ -175,6 +183,60 @@ class OIDCServiceUtils {
             logWithDetails("error", `Error getting well-known URI: ${wellKnownUri}`, {...err});            
         }
         return wellknownConfig !== undefined ? Promise.resolve(wellknownConfig) : Promise.resolve(null);
+    }
+
+    public async redeemAuthorizationCode(tokenEndpoint: string, code: string, clientId: string, clientSecret: string | null, codeVerifier: string | null, redirectUri: string, scope: string, clientAuthType: string): Promise<OIDCTokenResponse | null> {
+        const params: URLSearchParams = new URLSearchParams();
+        params.set("grant_type", GRANT_TYPE_AUTHORIZATION_CODE);
+        params.set("code", code);
+        params.set("client_id", clientId);
+        params.set("redirect_uri", redirectUri);
+        params.set("scope", scope);
+        if(clientSecret && clientAuthType === OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_POST){
+            params.set("client_secret", clientSecret);
+        }
+        if(codeVerifier){
+            params.set("code_verifier", codeVerifier);
+        }
+        let basicAuthHeader: string | null = null;
+        if(clientAuthType === OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_BASIC && clientSecret !== null){
+            basicAuthHeader = "Basic " + base64Encode(`${clientId}:${clientSecret}`);
+        }
+        if(clientAuthType === OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_JWT && clientSecret !== null){
+            const token = await this.hmacSignClient(clientId, clientSecret, tokenEndpoint);
+            params.set("client_assertion_type", CLIENT_ASSERTION_TYPE_JWT_BEARER);
+            params.set("client_assertion", token)
+        }
+
+        const response = await axios.post(
+            tokenEndpoint,
+            params.toString(),
+            {
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "Authorization": basicAuthHeader !== null ? basicAuthHeader : null
+                }
+            }
+        );
+        if(response.status !== 200){
+            return null;
+        }
+        return response.data as OIDCTokenResponse;
+    }
+
+    public async getOIDCUserInfo(userInfoEndpoint: string, authToken: string): Promise<OIDCUserInfo | null>{
+        const response = await axios.get(
+            userInfoEndpoint, {
+                headers: {
+                    "Accept": "application/json",
+                    "Authorization": `Bearer ${authToken}`
+                }
+            }
+        )
+        if(response.status !== 200){
+            return null;
+        }
+        return response.data as OIDCUserInfo;
     }
 
     /**
@@ -421,7 +483,8 @@ class OIDCServiceUtils {
     public async sendSecretEntryEmail(from: string, to: string, url: string, tenantLookAndFeel: TenantLookAndFeel, languageCode: string): Promise<void>{
         const html = await render(
             React.createElement(
-                SecretShare, {
+                SecretShare, 
+                {
                     url: url,
                     tenantLookAndFeel: tenantLookAndFeel,
                     languageCode: languageCode
@@ -433,15 +496,17 @@ class OIDCServiceUtils {
 
 
     public async sendEmail(from: string, to: string, subject: string, text?: string, html?: string): Promise<void> {
-        await getEmailTransporter().sendMail({
-            from,
-            to,
-            subject,
-            text,
-            html
-        });
+        const transporter: nodemailer.Transporter<SMTPTransport.SentMessageInfo, SMTPTransport.Options> | undefined = getEmailTransporter();
+        if(transporter){
+            await transporter.sendMail({
+                from,
+                to,
+                subject,
+                text,
+                html
+            });
+        }        
     }
-
 }
 
 export default OIDCServiceUtils;

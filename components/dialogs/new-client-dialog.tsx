@@ -179,7 +179,7 @@ const NewClientDialog: React.FC<NewClientDialogProps> = ({
                                 <Grid2 marginBottom={"16px"}>
                                     <div>Client Descripton</div>
                                     <TextField
-                                        name="tenantDescription" id="tenantDescription"
+                                        name="clientDescription" id="clientDescription"
                                         value={clientInput.clientDescription} fullWidth={true} size="small" multiline={true} rows={2}
                                         onChange={(evt) => { clientInput.clientDescription = evt?.target.value; setClientInput({ ...clientInput }) }}
                                     />

@@ -1,9 +1,15 @@
 import { readFileSync, existsSync } from "node:fs";
 import { randomBytes, hash, createHash, pbkdf2Sync, scryptSync } from "node:crypto";
 import bcrypt from "bcrypt";
+import { UserCredential } from "@/graphql/generated/graphql-types";
+import { PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS, PASSWORD_HASH_ITERATION_64K, PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS, PASSWORD_HASH_ITERATION_128K, PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS, PASSWORD_HASH_ITERATION_256K, PASSWORD_HASHING_ALGORITHM_SCRYPT_32K_ITERATIONS, PASSWORD_HASH_ITERATION_32K, PASSWORD_HASHING_ALGORITHM_SCRYPT_64K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_128K_ITERATIONS } from "./consts";
 
 export function base64Decode(s: string): string {
     return Buffer.from(s, "base64").toString("utf-8");
+}
+
+export function base64Encode(s: string): string {
+    return Buffer.from(s, "utf-8").toString("base64");
 }
 
 /**
@@ -206,3 +212,56 @@ export function hasValidLoopbackRedirectUri(uris: Array<string>, redirectUri: st
     }
     return bRetVal;
 }
+
+export function generateUserCredential(userId: string, password: string, hashAlgorithm: string): UserCredential {
+    // For the Bcrypt hashing algorithm, the salt value is included in the final salted password
+    // so we can just leave it as the empty string.
+    let salt = "";
+    let hashedPassword = "";
+
+    if (hashAlgorithm === PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS) {
+        hashedPassword = bcryptHashPassword(password, 10);
+    }
+    else if (hashAlgorithm === PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS) {
+        hashedPassword = bcryptHashPassword(password, 11);
+    }
+    else if (hashAlgorithm === PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS) {
+        hashedPassword = bcryptHashPassword(password, 12);
+    }
+    else if (hashAlgorithm === PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS) {
+        salt = generateSalt();
+        hashedPassword = sha256HashPassword(password, salt, PASSWORD_HASH_ITERATION_64K);
+    }
+    else if (hashAlgorithm === PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS) {
+        salt = generateSalt();
+        hashedPassword = sha256HashPassword(password, salt, PASSWORD_HASH_ITERATION_128K);
+    }
+    else if (hashAlgorithm === PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS) {
+        salt = generateSalt();
+        hashedPassword = pbkdf2HashPassword(password, salt, PASSWORD_HASH_ITERATION_128K);
+    }
+    else if (hashAlgorithm === PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS) {
+        salt = generateSalt();
+        hashedPassword = pbkdf2HashPassword(password, salt, PASSWORD_HASH_ITERATION_256K);
+    }
+    else if (hashAlgorithm === PASSWORD_HASHING_ALGORITHM_SCRYPT_32K_ITERATIONS) {
+        salt = generateSalt();
+        hashedPassword = scryptHashPassword(password, salt, PASSWORD_HASH_ITERATION_32K);
+    }
+    else if (hashAlgorithm === PASSWORD_HASHING_ALGORITHM_SCRYPT_64K_ITERATIONS) {
+        salt = generateSalt();
+        hashedPassword = scryptHashPassword(password, salt, PASSWORD_HASH_ITERATION_64K);
+    }
+    else if (hashAlgorithm === PASSWORD_HASHING_ALGORITHM_SCRYPT_128K_ITERATIONS) {
+        salt = generateSalt();
+        hashedPassword = scryptHashPassword(password, salt, PASSWORD_HASH_ITERATION_128K);
+    }
+
+    return {
+        dateCreated: new Date().toISOString(),
+        hashedPassword: hashedPassword,
+        salt: salt,
+        hashingAlgorithm: hashAlgorithm,
+        userId: userId
+    }
+} 

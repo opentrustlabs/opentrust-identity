@@ -1036,6 +1036,111 @@ export const ERROR_CODES: Record<string, ErrorDetail> = {
         errorCode: "EC00202",
         errorKey: "ERROR_NO_DEFAULT_RATE_LIMIT_SPECIFIED_FOR_LIMITED_API_RATE",
         errorMessage: "A rate limit value needs to be specified."
+    },
+    EC00203: {
+        errorCode: "EC00203",
+        errorKey: "ERROR_SYSTEM_INIT_FLAG_IS_NOT_SET",
+        errorMessage: "The SYSTEM_INIT flag is either not set or is not set to true."
+    },
+    EC00204: {
+        errorCode: "EC00204",
+        errorKey: "ERROR_NO_SYSTEM_INIT_CERTIFICATE_IS_CONFIGURED",
+        errorMessage: "The SYSTEM_INIT_CERTIFICATE_FILE configuration value is missing."
+    },
+    EC00205: {
+        errorCode: "EC00205",
+        errorKey: "ERROR_SYSTEM_INIT_CERTIFICATE_FILE_IS_MISSING_OR_IS_INVALID",
+        errorMessage: "The file containing the system initialization certificate is missing or does not contain a valid certificate."
+    },
+    EC00206: {
+        errorCode: "EC00206",
+        errorKey: "ERROR_SYSTEM_INIT_ROOT_TENANT_ALREADY_EXISTS",
+        errorMessage: "A root tenant already exists. No new root tenant can be created."
+    },
+    EC00207: {
+        errorCode: "EC00207",
+        errorKey: "ERROR_SYSTEM_INIT_UNKNOWN_DATABASE_ERROR",
+        errorMessage: "There was an unknown database error during system initialization checks. See the logs for details."
+    },
+    EC00208: {
+        errorCode: "EC00208",
+        errorKey: "ERROR_SYSTEM_INIT_UNABLE_TO_QUERY_SEARCH_INDEX_FOR_OBJECTS",
+        errorMessage: "There was an error querying the iam_object_search index. See the logs for details."
+    },
+    EC00209: {
+        errorCode: "EC00209",
+        errorKey: "ERROR_SYSTEM_INIT_UNABLE_TO_QUREY_SEARCH_INDEX_FOR_RELS",
+        errorMessage: "There was an error querying the iam_rel_search index. See the logs for details."
+    },
+    EC00210: {
+        errorCode: "EC00210",
+        errorKey: "ERROR_SYSTEM_INIT_UNKNOWN_SEARCH_ENGINE_ERROR",
+        errorMessage: "An unknown error occured when querying the search engine. See the logs for more details."
+    },
+    EC00211: {
+        errorCode: "EC00211",
+        errorKey: "ERROR_SYSTEM_INIT_INVALID_KMS_STRATEGY",
+        errorMessage: "An unknown or invalid KSM_STRATEGY was specified in the configuration file."
+    },
+    EC00212: {
+        errorCode: "EC00212",
+        errorKey: "ERROR_SYSTEM_INIT_MISSING_AUTH_DOMAIN",
+        errorMessage: "No AUTH_DOMAIN value is configured. See the product documentation on proper configuration."
+    },
+    EC00213: {
+        errorCode: "EC00213",
+        errorKey: "ERROR_SYSTEM_INIT_MISSING_MFA_CONFIGURATION",
+        errorMessage: "For multifactor authentication, the MFA_ISSUER, MFA_ORIGIN, and MFA_ID values need to be set."
+    },
+    EC00214: {
+        errorCode: "EC00214",
+        errorKey: "WARN_SYSTEM_INIT_NO_SMTP_CONFIGURED",
+        errorMessage: "The SMTP_ENABLED flag is either not configured or set to false. Email functionality will be disabled."
+    },
+    EC00215: {
+        errorCode: "EC00215",
+        errorKey: "WARN_SYSTEM_INIT_SMTP_ENABLED_INVALID_CONFIGURATION",
+        errorMessage: "The SMTP_ENABLED flag is set to true, but no email host or port is configured. Email functionality will be disabled."
+    },
+    EC00216: {
+        errorCode: "EC00216",
+        errorKey: "WARN_SYSTEM_INIT_NO_SECURITY_EVENT_CALLBACK_URI_DEFINED",
+        errorMessage: "No value for SECURITY_EVENT_CALLBACK_URI has been defined. Security events will only be logged to the local file system."
+    },
+    EC00217: {
+        errorCode: "EC00217",
+        errorKey: "ERROR_SYSTEM_INIT_INSUFFICIENT_PERMISSIONS_FOR_USER",
+        errorMessage: "No permissions exist for this user to perform a system initialization."
+    },
+    EC00218: {
+        errorCode: "EC00218",
+        errorKey: "ERROR_SYSTEM_INIT_PRE_REQUISITES_NOT_MET_FOR_AUTHENTICATING_USER",
+        errorMessage: "Authentication failed because the pre-requisites for system initialization were not met."
+    },    
+    EC00219: {
+        errorCode: "EC00219",
+        errorKey: "ERROR_SYSTEM_INIT_FAILED_TO_CREATE_AUTH_TOKEN",
+        errorMessage: "There was a failure to create the auth token. See the logs for more details."
+    },    
+    EC00220: {
+        errorCode: "EC00220",
+        errorKey: "ERROR_SYSTEM_INIT_CUSTOM_KMS_WITHOUT_DEFINED_ENDPOINTS",
+        errorMessage: "A custom KMS implementation is missing one or more of the endpoints defined by CUSTOM_KMS_ENCRYPTION_ENDPOINT and CUSTOM_KMS_DECRYPTION_ENDPOINT."
+    },    
+    EC00221: {
+        errorCode: "EC00221",
+        errorKey: "WARNING_SYSTEM_INIT_NO_KMS_DEFINED",
+        errorMessage: "No KMS has been defined. If this is a PRODUCTION deployment, make sure that column-level or full-disc encryption is available by another means."
+    },    
+    EC00222: {
+        errorCode: "EC00222",
+        errorKey: "ERROR_SYSTEM_INIT_NOT_AUTHORIZED",
+        errorMessage: "System initialization permission denied. Either no authorization token or an invalidation authorization token was provided."
+    },    
+    EC00223: {
+        errorCode: "EC00223",
+        errorKey: "ERROR_SYSTEM_INIT_EXPIRED_AUTHORIZATION_TOKEN",
+        errorMessage: "System initialization permission denied. The authorization token has expired."
     }
 }
 

@@ -105,12 +105,14 @@ type Query {
     getSystemSettings: SystemSettings!
     getRunningJobs: JobData!
 
+    ## System Initialization
+    systemInitializationReady: SystemInitializationReadyResponse!
+
 
 }
 
 type Mutation {
-    ## Tenants
-    createRootTenant(tenantInput: TenantCreateInput!): Tenant
+    ## Tenants    
     updateRootTenant(tenantInput: TenantUpdateInput!): Tenant
     
     createTenant(tenantInput: TenantCreateInput!): Tenant
@@ -277,6 +279,11 @@ type Mutation {
     ## Secret sharing and entry
     generateSecretShareLink(objectId: String!, secretShareObjectType: SecretShareObjectType!, email: String!): Boolean!
     enterSecretValue(otp: String!, secretValue: String!): Boolean!
+
+    ## System initialization
+    systemInitializationAuthentication(privateKey: String!, password: String): UserAuthenticationStateResponse!
+    initializeSystem(systemInitializationInput: SystemInitializationInput!): SystemInitializationResponse!
+    createFederatedAuthTest(clientId: String!, clientSecret: String, usePkce: Boolean!, scope: String!, wellKnownUri: String!, clientAuthType: String!): String!
 
 }
 
@@ -1212,6 +1219,36 @@ type SecretShare {
 
 
 ############################################################################
+###### SYSTEM INITIALIZATION ENTRY TYPES AND RESPONSES FOR MUTATATIONS #####
+############################################################################
+
+type SystemInitializationResponse {
+    tenant: Tenant
+    systemInitializationErrors: [ErrorDetail!]
+}
+
+type SystemInitializationReadyResponse {
+    systemInitializationReady: Boolean!
+    systemInitializationReadyErrors: [ErrorDetail!]
+    systemInitializationWarnings: [ErrorDetail!]
+}
+
+type FederatedAuthTest {
+    authState: String!
+    clientId: String!
+    clientSecret: String
+    usePkce: Boolean!
+    codeVerifier: String
+    wellKnownUri: String!
+    scope: String!
+    redirectUri: String!
+    clientAuthType: String!
+    expiresAtMs: Float!
+}
+
+
+
+############################################################################
 ################ INPUT TYPES AND RESPONSES FOR MUTATATIONS #################
 ############################################################################
 
@@ -1656,4 +1693,17 @@ input SystemSettingsUpdateInput {
     auditRecordRetentionPeriodDays: Int
     noReplyEmail: String
     contactEmail: String
+}
+
+input SystemInitializationInput {
+    rootTenantInput: TenantCreateInput!
+    rootClientInput: ClientCreateInput!
+    rootAuthorizationGroupInput: AuthorizationGroupCreateInput!
+    rootReadOnlyAuthorizationGroupInput: AuthorizationGroupCreateInput
+    rootUserCreateInput: UserCreateInput!
+    rootContact: ContactCreateInput!
+    rootAuthenticationDomain: String!
+    systemSettingsInput: SystemSettingsUpdateInput!
+    captchaConfigInput: CaptchaConfigInput
+    rootFederatedOIDCProviderInput: FederatedOIDCProviderCreateInput
 }

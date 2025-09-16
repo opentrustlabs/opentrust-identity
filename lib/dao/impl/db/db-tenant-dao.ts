@@ -20,25 +20,25 @@ import { ERROR_CODES } from "@/lib/models/error";
 class DBTenantDao extends TenantDao {
 
 
-    public async getRootTenant(): Promise<Tenant> {
+    /**
+     * 
+     * @returns 
+     */
+    public async getRootTenant(): Promise<Tenant | null> {
         const sequelize: Sequelize = await DBDriver.getConnection();
         const entity: TenantEntity | null = await sequelize.models.tenant.findOne({
             where: {
                 tenanttype: TENANT_TYPE_ROOT_TENANT
             }
         });
-
-        if(!entity){
-            throw new GraphQLError(ERROR_CODES.EC00035.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00035}});
-        }
-        return Promise.resolve(entity.dataValues as Tenant);
+        return Promise.resolve(entity ? entity.dataValues as Tenant : null);
     }
 
     public async createRootTenant(tenant: Tenant): Promise<Tenant> {
         tenant.tenantType = TENANT_TYPE_ROOT_TENANT;
         const sequelize: Sequelize = await DBDriver.getConnection();
         const t: TenantEntity = await sequelize.models.tenant.create(tenant);
-        return Promise.resolve(t.dataValues as Tenant);
+        return Promise.resolve(tenant);
     }
 
     public async updateRootTenant(tenant: Tenant): Promise<Tenant> {
@@ -726,34 +726,23 @@ class DBTenantDao extends TenantDao {
         return systemSettings;
 
     }
+   
     
-    public async updateSystemSettings(input: SystemSettingsUpdateInput): Promise<SystemSettings> {
+    public async updateSystemSettings(systemSettings: SystemSettings): Promise<SystemSettings> {
         const sequelize: Sequelize = await DBDriver.getConnection();
         const entity: SystemSettingsEntity | null = await sequelize.models.systemSettings.findOne();
-        let systemId: string = "";
         if(entity){
-            systemId = entity.getDataValue("systemId");
-            entity.setDataValue("allowRecoveryEmail", input.allowRecoveryEmail);
-            entity.setDataValue("allowDuressPassword", input.allowDuressPassword);
-            entity.setDataValue("rootClientId", input.rootClientId);
-            entity.setDataValue("enablePortalAsLegacyIdp", input.enablePortalAsLegacyIdp);
-            entity.setDataValue("auditRecordRetentionPeriodDays", input.auditRecordRetentionPeriodDays || DEFAULT_AUDIT_RECORD_RETENTION_PERIOD_DAYS);
-            entity.setDataValue("noReplyEmail", input.noReplyEmail);
-            entity.setDataValue("contactEmail", input.contactEmail);
-            await entity.save();
+            await sequelize.models.systemSettings.update(systemSettings, {
+                where: {
+                    systemId: systemSettings.systemId
+                }
+            });
         }
-        return {
-            systemId: systemId,
-            softwareVersion: OPENTRUST_IDENTITY_VERSION,
-            allowDuressPassword: input.allowDuressPassword,
-            allowRecoveryEmail: input.allowRecoveryEmail,
-            rootClientId: input.rootClientId,
-            enablePortalAsLegacyIdp: input.enablePortalAsLegacyIdp,
-            auditRecordRetentionPeriodDays: input.auditRecordRetentionPeriodDays,
-            noReplyEmail: input.noReplyEmail,
-            contactEmail: input.contactEmail,
-            systemCategories: []
+        else{
+            await sequelize.models.systemSettings.create(systemSettings);
         }
+        
+        return systemSettings;        
     }
 
 }

@@ -57,6 +57,7 @@ import AuthorizationDeviceCodeDataEntity from "../entities/authorization-device-
 import SecretShareEntity from "../entities/secret-share-entity";
 import UserProfileChangeEmailStateEntity from "../entities/user-profile-email-change-state-entity";
 import UserAuthenticationHistoryEntity from "../entities/user-authentication-history-entity";
+import FederatedAuthTestEntity from "../entities/federated-auth-test-entity";
 
 
 // Will need these 2 values for DB which authenticate credentials based on AD
@@ -190,6 +191,7 @@ class DBDriver {
             SecretShareEntity.initModel(global.sequelize);
             UserProfileChangeEmailStateEntity.initModel(global.sequelize);
             UserAuthenticationHistoryEntity.initModel(global.sequelize);
+            FederatedAuthTestEntity.initModel(global.sequelize);
         } 
 
         return global.sequelize;

@@ -17,7 +17,7 @@ create TABLE federated_oidc_provider(
     clientauthtype varchar(128) NOT NULL,
     federatedoidcprovidertype varchar(128) NOT NULL,
     socialloginprovider VARCHAR(128),
-    markfordelete BOOLEAN NOT NULL,
+    markfordelete BOOLEAN NOT NULL
 );
 
 create TABLE tenant (
@@ -154,6 +154,7 @@ create TABLE user_tenant_rel (
     userid VARCHAR(64) NOT NULL,
     tenantid VARCHAR(64) NOT NULL,
     enabled BOOLEAN NOT NULL,
+    reltype VARCHAR(32) NOT NULL,
     PRIMARY KEY (userid, tenantid),
     FOREIGN KEY (userid) REFERENCES user(userid),
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid)
@@ -234,8 +235,8 @@ create TABLE signing_key (
     password VARCHAR(128),
     certificate BLOB,
     publickey BLOB,
-    createdat BIGINT NOT NULL,
     expiresatms BIGINT NOT NULL,
+    createdatms BIGINT NOT NULL,
     status VARCHAR(64),
     markfordelete BOOLEAN NOT NULL,
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid)
@@ -370,10 +371,6 @@ create TABLE authorization_code_data (
     FOREIGN KEY (userid) REFERENCES user(userid)
 );
 
-enum DeviceCodeAuthorizationStatusTypes {
-    USER_AUTHENTICATED
-
-}
 
 create TABLE authorization_device_code_data (
     devicecodeid VARCHAR(64) NOT NULL PRIMARY KEY,
@@ -681,6 +678,7 @@ create TABLE system_settings (
     allowrecoveryemail BOOLEAN NOT NULL,
     allowduresspassword BOOLEAN NOT NULL,
     rootclientid VARCHAR(64) NOT NULL,
+    enableportalaslegacyidp BOOLEAN NOT NULL,
     auditrecordretentionperioddays INT,
     noreplyemail VARCHAR(64),
     contactemail VARCHAR(64),
@@ -711,4 +709,17 @@ create TABLE user_authentication_history (
     lastauthenticationatms BIGINT NOT NULL,
     PRIMARY KEY (userid, lastauthenticationatms),
     FOREIGN KEY (userid) REFERENCES user(userid)
+);
+
+create TABLE federated_auth_test (
+    authstate             VARCHAR(128) PRIMARY KEY,	
+	clientid              VARCHAR(64) NOT NULL,
+	clientsecret          VARCHAR(256),
+	usepkce               BOOLEAN NOT NULL,
+	codeverifier          VARCHAR(128),
+	wellknownuri          VARCHAR(128) NOT NULL,
+	scope                 VARCHAR(64) NOT NULL,
+	redirecturi           VARCHAR(128) NOT NULL,
+    clientauthtype        VARCHAR(32) NOT NULL,
+	expiresatms           BIGINT NOT NULL
 );

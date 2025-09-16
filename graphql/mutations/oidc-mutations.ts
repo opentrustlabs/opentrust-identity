@@ -1135,3 +1135,55 @@ export const REMOVE_CAPTCHA_CONFIG_MUTATION = gql(`
         removeCaptchaConfig
     }
 `);
+
+export const SYSTEM_INITIALIZATION_AUTHENTICATION_MUTATION = gql`
+    mutation systemInitializationAuthentication($privateKey: String!, $password: String) {
+        systemInitializationAuthentication(privateKey: $privateKey, password: $password) {
+            ...UserAuthenticationStateResponseFragment
+        }    
+    }
+    
+    ${USER_AUTHENTICATION_STATE_RESPONSE_FRAGMENT}    
+`
+
+export const SYSTEM_INITIALIZATION_MUTATION = gql(`
+    mutation initializeSystem($systemInitializationInput: SystemInitializationInput!) {
+        initializeSystem(systemInitializationInput: $systemInitializationInput) {
+            systemInitializationErrors {
+                errorCode
+                errorKey
+                errorMessage
+            }
+            tenant {
+                allowAnonymousUsers
+                allowForgotPassword
+                allowLoginByPhoneNumber
+                allowSocialLogin
+                allowUnlimitedRate
+                allowUserSelfRegistration
+                defaultRateLimit
+                defaultRateLimitPeriodMinutes
+                enabled
+                federatedAuthenticationConstraint
+                federatedauthenticationconstraintid
+                markForDelete
+                migrateLegacyUsers
+                registrationRequireCaptcha
+                registrationRequireTermsAndConditions
+                tenantDescription
+                tenantId
+                tenantName
+                tenantType
+                tenanttypeid
+                termsAndConditionsUri
+                verifyEmailOnSelfRegistration
+            }
+        }
+    }    
+`);
+
+export const CREATE_FEDERATED_AUTH_TEST_MUTATION = gql(`
+    mutation createFederatedAuthTest($clientAuthType: String!, $clientId: String!, $scope: String!, $usePkce: Boolean!, $wellKnownUri: String!, $clientSecret: String) {
+        createFederatedAuthTest(clientAuthType: $clientAuthType, clientId: $clientId, scope: $scope, usePkce: $usePkce, wellKnownUri: $wellKnownUri, clientSecret: $clientSecret)
+    }    
+`);

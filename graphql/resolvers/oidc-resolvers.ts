@@ -18,6 +18,7 @@ import I18NService from "@/lib/service/i18n-service";
 import RegisterUserService from "@/lib/service/register-user-service";
 import AuthenticateUserService from "@/lib/service/authenticate-user-service";
 import SecretShareService from "@/lib/service/secret-share-service";
+import SystemInitializationService from "@/lib/service/system-initialization-service";
 
 
 const resolvers: Resolvers = {
@@ -218,34 +219,13 @@ const resolvers: Resolvers = {
         getRunningJobs: (_: any, {}, oidcContext) => {
             const service: TenantService = new TenantService(oidcContext);
             return service.getJobData();
+        },
+        systemInitializationReady: (_: any, {}, oidcContext) => {
+            const service: SystemInitializationService = new SystemInitializationService(oidcContext);
+            return service.systemInitializationReady();
         }
     },
-    Mutation: {
-        createRootTenant: async(_: any, { tenantInput }, oidcContext) => {
-            const tenantService: TenantService = new TenantService(oidcContext);
-            let tenant: Tenant = {
-                enabled: true,
-                tenantId: "",
-                allowUnlimitedRate: tenantInput.allowUnlimitedRate,
-                tenantName: tenantInput.tenantName,
-                tenantDescription: tenantInput.tenantDescription ?? "",
-                allowUserSelfRegistration: tenantInput.allowUserSelfRegistration,
-                verifyEmailOnSelfRegistration: tenantInput.verifyEmailOnSelfRegistration,
-                federatedAuthenticationConstraint: tenantInput.federatedAuthenticationConstraint,
-                markForDelete: false,
-                tenantType: TENANT_TYPE_ROOT_TENANT,
-                allowSocialLogin: false,
-                allowAnonymousUsers: false,
-                migrateLegacyUsers: false,
-                allowLoginByPhoneNumber: false,
-                allowForgotPassword: false,
-                registrationRequireCaptcha: false,
-                registrationRequireTermsAndConditions: false,
-                termsAndConditionsUri: tenantInput.termsAndConditionsUri
-            };
-            await tenantService.createRootTenant(tenant);          
-            return tenant;
-        },
+    Mutation: {        
         updateRootTenant: async(_: any, { tenantInput }, oidcContext) => {
             const tenantService: TenantService = new TenantService(oidcContext);
             let tenant: Tenant = {
@@ -1043,6 +1023,18 @@ const resolvers: Resolvers = {
             const service: TenantService = new TenantService(oidcContext);
             await service.removeCaptchaConfig();
             return "";
+        },
+        systemInitializationAuthentication: async(_: any, {privateKey, password}, oidcContext) => {
+            const service: SystemInitializationService = new SystemInitializationService(oidcContext);
+            return service.systemInitializationAuthentication(privateKey, password || null);
+        },
+        initializeSystem: async(_: any, { systemInitializationInput }, oidcContext) => {
+            const service: SystemInitializationService = new SystemInitializationService(oidcContext);
+            return service.initializeSystem(systemInitializationInput);
+        },
+        createFederatedAuthTest: async(_: any, { clientAuthType, clientId, scope, usePkce, wellKnownUri, clientSecret}, oidcContext) => {
+            const service: SystemInitializationService = new SystemInitializationService(oidcContext);
+            return service.createFederatedAuthTest(clientId, clientSecret || null, usePkce, scope, wellKnownUri, clientAuthType);
         }
     },
     PortalUserProfile: {

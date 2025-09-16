@@ -4,7 +4,7 @@ import ClientDao from "@/lib/dao/client-dao";
 import TenantDao from "@/lib/dao/tenant-dao";
 import IdentityDao from "@/lib/dao/identity-dao";
 import { OIDCTokenResponse } from "@/lib/models/token-response";
-import { JWTPayload, SignJWT, JWTVerifyResult, jwtVerify, decodeJwt, decodeProtectedHeader, ProtectedHeaderParameters } from "jose";
+import { JWTPayload, SignJWT, JWTVerifyResult, jwtVerify, decodeJwt, decodeProtectedHeader, ProtectedHeaderParameters, JWK } from "jose";
 import SigningKeysDao from "../dao/signing-keys-dao";
 import { JWTPrincipal, OIDCUserProfile, ProfileAuthorizationGroup, ProfileScope } from "../models/principal";
 import { randomUUID, createPrivateKey, PrivateKeyInput, KeyObject, createSecretKey, createPublicKey, PublicKeyInput } from "node:crypto"; 
@@ -479,7 +479,10 @@ class JwtServiceUtils {
         if(systemSettings.rootClientId){
             const client: Client | null = await clientDao.getClientById(systemSettings.rootClientId);
             if(client !== null){
-                const tenant: Tenant = await tenantDao.getRootTenant();
+                const tenant: Tenant | null = await tenantDao.getRootTenant();
+                if(tenant === null){
+                    return null;
+                }
                 const tokenResponse = await this.signClientJwt(client, tenant);
                 if(tokenResponse && tokenResponse.oidcTokenResponse){
                     authToken = tokenResponse.oidcTokenResponse.access_token;
@@ -690,7 +693,7 @@ class JwtServiceUtils {
             if(!cachedSigningKeyData){
                 return Promise.resolve(null);
             }
-            const p: JWTVerifyResult = await jwtVerify(jwt, cachedSigningKeyData.publicKeyObject)
+            const p: JWTVerifyResult = await jwtVerify(jwt, cachedSigningKeyData.publicKeyObject);
             if(!p.payload){                
                 return Promise.resolve(null);
             }
@@ -704,6 +707,11 @@ class JwtServiceUtils {
             logWithDetails("error", `Error validating client auth JWT. ${err.message}`, {...err});
             return Promise.resolve(null);
         }        
+    }
+
+    public async validateJwtWithCertificate(jwt: string, publicKeyObject: KeyObject): Promise<JWTVerifyResult> {
+        const p: JWTVerifyResult = await jwtVerify(jwt, publicKeyObject);
+        return p;
     }
 
 
@@ -722,24 +730,49 @@ class JwtServiceUtils {
         
     }
 
+    public async signJwtWithKey(principal: JWTPayload, privateKeyObject: KeyObject, keyId: string): Promise<string> {
+        const s: string = await new SignJWT(principal)
+            .setProtectedHeader({
+                alg: "RS256",
+                kid: keyId
+            })
+            .sign(privateKeyObject);
+
+        return s;
+    }
+
     /**
      * 
      * @param principal 
      * @returns 
      */
-    protected async signJwt(principal: JWTPayload): Promise<string | null> {
-        const cachedSigningKeyData: CachedSigningKeyData | null = await this.getCachedSigningKey();
-        
+    public async signJwt(principal: JWTPayload): Promise<string | null> {
+
+        const cachedSigningKeyData: CachedSigningKeyData | null = await this.getCachedSigningKey();        
         if(!cachedSigningKeyData){
             return Promise.resolve(null);
         }
         
+        const s: string = await this.signJwtWithKey(principal, cachedSigningKeyData.privateKeyObject, cachedSigningKeyData.signingKey.keyId);
+        return s;
+    }
+
+    public async hmacSignClient(clientId: string, clientSecret: string, tokenEndpoint: string): Promise<string> {
+        const principal: JWTPayload = {
+            iss: clientId,
+            sub: clientId,
+            aud: tokenEndpoint,
+            exp: Date.now() / 1000 + (15 * 60),
+            jti: randomUUID().toString()
+        }
+        
+        
         const s: string = await new SignJWT(principal)
             .setProtectedHeader({
-                alg: "RS256",
-                kid: cachedSigningKeyData.signingKey.keyId
+                alg: "HS256"
             })
-            .sign(cachedSigningKeyData.privateKeyObject);
+            .setIssuedAt(Date.now() / 1000)
+            .sign(new TextEncoder().encode(clientSecret));
         return s;
     }
 
@@ -766,7 +799,10 @@ class JwtServiceUtils {
             }
         }
         else{
-            const rootTenant: Tenant = await tenantDao.getRootTenant();
+            const rootTenant: Tenant | null = await tenantDao.getRootTenant();
+            if(rootTenant === null){
+                return null;
+            }
             let signingKeys: Array<SigningKey> = await signingKeysDao.getSigningKeys(rootTenant.tenantId) || [];            
             const now = Date.now();
             

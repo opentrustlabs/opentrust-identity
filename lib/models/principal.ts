@@ -93,4 +93,30 @@ export interface LegacyUserAuthenticationPayload {
     password: string
 }
 
+export interface OIDCUserInfo {
+    sub: string,
+    name: string,
+    given_name: string,
+    family_name: string,
+    middle_name: string,
+    nickname: string,
+    preferred_username: string,
+    profile: string,
+    phone_number: string,
+    address: OIDCUserInfoAddress | null,
+    updated_at: string,
+    email: string,
+    email_verified: boolean,
+    locale: string | null    
+}
 
+// street address is the full street address possibly separated by newlines
+// locality is city
+// region is region or state or province
+export interface OIDCUserInfoAddress {
+    street_address: string | null,
+    locality: string | null,
+    region: string | null,
+    postal_code: string | null,
+    country: string | null
+}

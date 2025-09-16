@@ -7,7 +7,7 @@ const Page: React.FC = () => {
 
     return (
         <Suspense>
-        <AccessError />        
+            <AccessError />
         </Suspense>        
     )
 }
