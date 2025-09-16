@@ -168,7 +168,7 @@ class OIDCServiceUtils extends JwtServiceUtils {
             return Promise.resolve(wellknownConfig);
         }
         try {
-            const response: AxiosResponse = await axios.get<WellknownConfig>(wellKnownUri, {
+            const response: AxiosResponse = await axiosInstance.get<WellknownConfig>(wellKnownUri, {
                 responseEncoding: "utf-8",
                 responseType: "json"
             });

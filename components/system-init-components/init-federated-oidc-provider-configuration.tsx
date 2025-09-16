@@ -117,7 +117,8 @@ const InitFederatedOIDCProviderConfiguration: React.FC<SystemInitializationConfi
                         {oidcProviderTestUri &&
                             <Grid2 size={12} container spacing={1}>
                                 <Grid2 fontWeight={"bold"} size={12}>
-                                    Copy and paste the following URI into a new browser tab or window.
+                                    Copy and paste the following URI into a new browser tab or window and authenticate with the same
+                                    email address that you used in a previous step.
                                 </Grid2>
                                 <Grid2 container spacing={1} size={12}>
                                     <Grid2 size={11}>{oidcProviderTestUri}</Grid2>
