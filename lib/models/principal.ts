@@ -107,7 +107,7 @@ export interface OIDCUserInfo {
     updated_at: string,
     email: string,
     email_verified: boolean,
-    
+    locale: string | null    
 }
 
 // street address is the full street address possibly separated by newlines

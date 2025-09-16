@@ -54,12 +54,12 @@ export default async function handler(
     else {
         
         res.status(200).json({
-            issuer: `${AUTH_DOMAIN}/${tenantId}`,
-            authorization_endpoint: `${AUTH_DOMAIN}/${tenantId}/oidc/authorize`,
-            token_endpoint: `${AUTH_DOMAIN}/${tenantId}/oidc/token`,
-            revocation_endpoint: `${AUTH_DOMAIN}/${tenantId}/oidc/revoke`,
-            userinfo_endpoint: `${AUTH_DOMAIN}/${tenantId}/oidc/userinfo`,
-            jwks_uri: `${AUTH_DOMAIN}/${tenantId}/oidc/keys`,
+            issuer: `${AUTH_DOMAIN}/api/${tenantId}`,
+            authorization_endpoint: `${AUTH_DOMAIN}/api/${tenantId}/oidc/authorize`,
+            token_endpoint: `${AUTH_DOMAIN}/api/${tenantId}/oidc/token`,
+            revocation_endpoint: `${AUTH_DOMAIN}/api/${tenantId}/oidc/revoke`,
+            userinfo_endpoint: `${AUTH_DOMAIN}/api/${tenantId}/oidc/userinfo`,
+            jwks_uri: `${AUTH_DOMAIN}/api/${tenantId}/oidc/keys`,
             token_endpoint_auth_methods_supported: [
                 "client_secret_post",
                 "client_secret_jwt",

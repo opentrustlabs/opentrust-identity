@@ -1031,6 +1031,10 @@ const resolvers: Resolvers = {
         initializeSystem: async(_: any, { systemInitializationInput }, oidcContext) => {
             const service: SystemInitializationService = new SystemInitializationService(oidcContext);
             return service.initializeSystem(systemInitializationInput);
+        },
+        createFederatedAuthTest: async(_: any, { clientAuthType, clientId, scope, usePkce, wellKnownUri, clientSecret}, oidcContext) => {
+            const service: SystemInitializationService = new SystemInitializationService(oidcContext);
+            return service.createFederatedAuthTest(clientId, clientSecret || null, usePkce, scope, wellKnownUri, clientAuthType);
         }
     },
     PortalUserProfile: {

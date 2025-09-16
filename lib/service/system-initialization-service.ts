@@ -586,7 +586,6 @@ class SystemInitializationService extends BaseSearchService {
             throw new GraphQLError("ERROR_UNABLE_TO_RETRIEVE_OIDC_INFORMATION_FROM_WELL_KNOWN_URI");
         }
 
-
         const codeVerifier: string | null = usePkce ? generateRandomToken(16) : null;
         const encryptedSecret: string | null = clientSecret !== null ? await kms.encrypt(clientSecret) : null;
 

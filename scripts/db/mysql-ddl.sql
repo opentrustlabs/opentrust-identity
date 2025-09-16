@@ -714,7 +714,7 @@ create TABLE user_authentication_history (
 create TABLE federated_auth_test (
     authstate             VARCHAR(128) PRIMARY KEY,	
 	clientid              VARCHAR(64) NOT NULL,
-	clientsecret          VARCHAR(128),
+	clientsecret          VARCHAR(256),
 	usepkce               BOOLEAN NOT NULL,
 	codeverifier          VARCHAR(128),
 	wellknownuri          VARCHAR(128) NOT NULL,
