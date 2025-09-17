@@ -67,16 +67,20 @@ const SigningKeyDetail: React.FC<SigningKeyDetailProps> = ({ signingKey }) => {
         variables: {
             keyInput: keyUpdateInput
         },
-        onCompleted() {
+        onCompleted(data) {
             setShowMutationBackdrop(false);
             setShowMutationSnackbar(true);
             setMarkDirty(false);
+            if(data && data.updateSigningKey){
+                keyUpdateInput.keyName = data.updateSigningKey.keyName;
+                keyUpdateInput.status = data.updateSigningKey.status;
+                setKeyUpdateInput({...keyUpdateInput});
+            }
         },
         onError(error) {
             setShowMutationBackdrop(false);
             setErrorMessage(intl.formatMessage({id: error.message}));
-        },
-        refetchQueries: [ {query: SIGNING_KEY_DETAIL_QUERY, variables: {signingKeyId: signingKey.keyId}}]
+        }
     });
 
     // HANDLER FUNCTIONS
@@ -196,14 +200,14 @@ const SigningKeyDetail: React.FC<SigningKeyDetailProps> = ({ signingKey }) => {
                                         </Grid2>
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Status</div>
-                                            {signingKey.status === SIGNING_KEY_STATUS_REVOKED &&
+                                            {keyUpdateInput.status === SIGNING_KEY_STATUS_REVOKED &&
                                                 <TextField                                                     
                                                     name="keyStatus" 
                                                     id="keyStatus" 
                                                     value={keyUpdateInput.status} 
                                                     disabled={true} fullWidth={true} size="small" />
                                             }
-                                            {signingKey.status !== SIGNING_KEY_STATUS_REVOKED &&
+                                            {keyUpdateInput.status !== SIGNING_KEY_STATUS_REVOKED &&
                                                 <Select
                                                     disabled={disableInputs}
                                                     size="small"

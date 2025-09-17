@@ -7,18 +7,6 @@
 -- CREATE DATABASE IF NOT EXISTS opentrust_oidc_iam DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
 -- USE opentrust_oidc_iam;
 --
---
--- POSTGRESQL
--- ==========
--- For PostgreSQL, the process is a little more complicated. You need to create the database, then create
--- a schema, then assign permissions to the database user account. The schema creation step is to avoid the 
--- use of the default "public" schema, which in older versions of PostgreSQL had some security/permissions
--- issues.
--- 
--- CREATE DATABASE opentrust_oidc_iam
--- (Grant privileges to your database user account)
--- CREATE SCHEMA opentrust_oidc_iam_schema AUTHORIZATION (your database user account)
--- ALTER ROLE (your database user account) SET search_path = opentrust_oidc_iam_schema, public
 
 
 create TABLE federated_oidc_provider(

@@ -78,13 +78,6 @@ const SystemInit: React.FC = () => {
             tenantId: "",
             userTokenTTLSeconds: undefined
         },
-        rootContact: {
-            email: "",
-            name: undefined,
-            objectid: "",
-            objecttype: "",
-            userid: undefined
-        },
         rootTenantInput: {
             allowAnonymousUsers: false,
             allowForgotPassword: false,
