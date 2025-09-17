@@ -1061,6 +1061,12 @@ class RegisterUserService extends IdentityService {
         if (existingUser) {
             throw new GraphQLError(ERROR_CODES.EC00142.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00142}});
         }
+        if(userCreateInput.phoneNumber){
+            const userByPhone: User | null = await identityDao.getUserBy("phone", userCreateInput.phoneNumber);
+            if(userByPhone){
+                throw new GraphQLError(ERROR_CODES.EC00224.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00224}});
+            }
+        }
 
         // Check the recaptcha configuration and validate the recaptcha token
         if(isRegistration === true && tenant.registrationRequireCaptcha === true){

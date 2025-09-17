@@ -127,7 +127,7 @@ create TABLE users (
     firstname VARCHAR(128) NOT NULL,
     lastname VARCHAR(128) NOT NULL,
     middlename VARCHAR(128),
-    phonenumber VARCHAR(64) UNIQUE,
+    phonenumber VARCHAR(32),
     address VARCHAR(128),
     addressline1 VARCHAR(128),
     city VARCHAR(128),
@@ -146,6 +146,7 @@ CREATE INDEX users_domain_idx on users(domain);
 CREATE INDEX users_first_name_idx on users(firstname);
 CREATE INDEX users_last_name_idx on users(lastname);
 CREATE INDEX users_phone_number_idx on users(phonenumber);
+CREATE INDEX users_federatedoidcprovidersubjectid_idx on users(federatedoidcprovidersubjectid);
 
 create TABLE user_email_recovery (
     userid VARCHAR(64) NOT NULL,

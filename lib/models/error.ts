@@ -1141,6 +1141,11 @@ export const ERROR_CODES: Record<string, ErrorDetail> = {
         errorCode: "EC00223",
         errorKey: "ERROR_SYSTEM_INIT_EXPIRED_AUTHORIZATION_TOKEN",
         errorMessage: "System initialization permission denied. The authorization token has expired."
-    }
+    },
+    EC00224: {
+        errorCode: "EC00224",
+        errorKey: "ERROR_PHONE_NUMBER_ALREADY_IN_USE",
+        errorMessage: "Phone number is not available"
+    },
 }
 
