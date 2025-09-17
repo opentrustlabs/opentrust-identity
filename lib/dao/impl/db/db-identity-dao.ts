@@ -297,6 +297,10 @@ class DBIdentityDao extends IdentityDao {
         else if(userLookupType === "phone"){
             where.phoneNumber = value;
         }
+        else if(userLookupType === "federatedoidcproviderid"){
+            where.federatedOIDCProviderSubjectId = value;
+        }
+        
         let u: UserEntity | null = await sequelize.models.users.findOne({
             where: where
         });

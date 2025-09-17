@@ -24,11 +24,13 @@ import { logWithDetails } from "../logging/logger";
 import ChangeEventDao from "../dao/change-event-dao";
 import { randomUUID } from "crypto";
 import JwtServiceUtils from "./jwt-service-utils";
+import SearchDao from "../dao/search-dao";
+import OpenSearchDao from "../dao/impl/search/open-search-dao";
 
 
 const identityDao: IdentityDao = DaoFactory.getInstance().getIdentityDao();
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
-const searchClient: OpenSearchClient = getOpenSearchClient();
+// const searchClient: OpenSearchClient = getOpenSearchClient();
 const kms: Kms = DaoFactory.getInstance().getKms();
 const authDao: AuthDao = DaoFactory.getInstance().getAuthDao();
 const clientDao: ClientDao = DaoFactory.getInstance().getClientDao();
@@ -36,6 +38,7 @@ const federatedOIDCProviderDao: FederatedOIDCProviderDao = DaoFactory.getInstanc
 const oidcServiceUtils: OIDCServiceUtils = new OIDCServiceUtils();
 const changeEventDao: ChangeEventDao = DaoFactory.getInstance().getChangeEventDao();
 const jwtServiceUtils: JwtServiceUtils = new JwtServiceUtils();
+const searchDao: SearchDao = new OpenSearchDao();
 
 const {
     MFA_ISSUER,
@@ -168,9 +171,15 @@ class IdentityService {
             }
             
             user.domain = domain;
-            user.emailVerified = false;
-            
+            user.emailVerified = false;            
         }
+        // Did the phone number change, and if so, is it unique?
+        if(user.phoneNumber && user.phoneNumber !== existingUser.phoneNumber){
+            const userByPhone: User | null = await identityDao.getUserBy("phone", user.phoneNumber);
+            if(userByPhone){
+                throw new GraphQLError(ERROR_CODES.EC00224.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00224}});
+            }
+        }        
 
         await identityDao.updateUser(user);
 
@@ -192,7 +201,7 @@ class IdentityService {
             user.lastName !== existingUser.lastName ||
             user.enabled !== existingUser.enabled
         ) {
-            await this.updateSearchIndexUserDocuments(user);                
+            await searchDao.updateSearchIndexUserDocuments(user);                
         }
         return user;
         
@@ -305,7 +314,7 @@ class IdentityService {
                 hasUpdateRel = true;
                 userTenantRel = await identityDao.assignUserToTenant(tenantId, userId, relType);
                 // Both the owning and parent tenant ids are the same in this case
-                await this.updateRelSearchIndex(tenantId, tenantId, user);
+                await searchDao.updateRelSearchIndex(tenantId, tenantId, user);
             }
         }
         // Otherwise, there already exists one or more relationships. 
@@ -332,7 +341,7 @@ class IdentityService {
                     userTenantRel = await identityDao.assignUserToTenant(tenantId, userId, relType);
                     // The primary rel remains as the owning tenant id, which the incoming tenant id 
                     // is the parent id
-                    await this.updateRelSearchIndex(primaryRel.tenantId, tenantId, user);
+                    await searchDao.updateRelSearchIndex(primaryRel.tenantId, tenantId, user);
                 }
             }
             
@@ -349,11 +358,11 @@ class IdentityService {
                     // Assign the incoming as primary
                     userTenantRel = await identityDao.updateUserTenantRel(tenantId, userId, relType);
                     // The incoming tenant becomes the new owning tenant as well as the parent.
-                    await this.updateRelSearchIndex(tenantId, tenantId, user);
+                    await searchDao.updateRelSearchIndex(tenantId, tenantId, user);
                     // Then update the existing primary as guest
                     await identityDao.updateUserTenantRel(primaryRel.tenantId, primaryRel.userId, USER_TENANT_REL_TYPE_GUEST);
                     // The incoming tenant is the owning tenant, which the existing primary becomes just the parent
-                    await this.updateRelSearchIndex(tenantId, primaryRel.tenantId, user);
+                    await searchDao.updateRelSearchIndex(tenantId, primaryRel.tenantId, user);
                 }
             }
         }
@@ -462,7 +471,7 @@ class IdentityService {
         
         await identityDao.updateUser(user);
         await identityDao.updateRecoveryEmail(userRecoveryEmail);
-        this.updateSearchIndexUserDocuments(user);
+        searchDao.updateSearchIndexUserDocuments(user);
         return true;
 
     }
@@ -1122,109 +1131,109 @@ class IdentityService {
         return retVal;
     }
 
-    protected async updateSearchIndexUserDocuments(user: User): Promise<void> {
-        const getResponse: Get_Response = await searchClient.get({
-            id: user.userId,
-            index: SEARCH_INDEX_OBJECT_SEARCH
-        });
+    // protected async updateSearchIndexUserDocuments(user: User): Promise<void> {
+    //     const getResponse: Get_Response = await searchClient.get({
+    //         id: user.userId,
+    //         index: SEARCH_INDEX_OBJECT_SEARCH
+    //     });
         
-        if (getResponse.body) {
-            const document: ObjectSearchResultItem = getResponse.body._source as ObjectSearchResultItem;
-            document.name = user.nameOrder === NAME_ORDER_WESTERN ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`;
-            document.email = user.email;
-            document.enabled = user.enabled;
-            await searchClient.index({
-                id: user.userId,
-                index: SEARCH_INDEX_OBJECT_SEARCH,
-                body: document
-            });
-        }
+    //     if (getResponse.body) {
+    //         const document: ObjectSearchResultItem = getResponse.body._source as ObjectSearchResultItem;
+    //         document.name = user.nameOrder === NAME_ORDER_WESTERN ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`;
+    //         document.email = user.email;
+    //         document.enabled = user.enabled;
+    //         await searchClient.index({
+    //             id: user.userId,
+    //             index: SEARCH_INDEX_OBJECT_SEARCH,
+    //             body: document
+    //         });
+    //     }
         
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const updateByQueryBody: any = {
-            query: {
-                term: {
-                    childid: user.userId
-                }
-            },
-            script: {
-                source: "ctx._source.childdescription = params.email; ctx._source.childname = params.userName",
-                lang: "painless",
-                params: {
-                    email: user.email,
-                    userName: user.nameOrder === NAME_ORDER_WESTERN ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`,
-                }
-            }
-        };
+    //     // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    //     const updateByQueryBody: any = {
+    //         query: {
+    //             term: {
+    //                 childid: user.userId
+    //             }
+    //         },
+    //         script: {
+    //             source: "ctx._source.childdescription = params.email; ctx._source.childname = params.userName",
+    //             lang: "painless",
+    //             params: {
+    //                 email: user.email,
+    //                 userName: user.nameOrder === NAME_ORDER_WESTERN ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`,
+    //             }
+    //         }
+    //     };
 
-        searchClient.updateByQuery({
-            index: SEARCH_INDEX_REL_SEARCH,
-            body: updateByQueryBody,
-            requests_per_second: 100,
-            conflicts: "proceed",
-            wait_for_completion: false,
-            scroll: "240m"            
-        })
-        .then(
-            (value: UpdateByQuery_Response) => {        
+    //     searchClient.updateByQuery({
+    //         index: SEARCH_INDEX_REL_SEARCH,
+    //         body: updateByQueryBody,
+    //         requests_per_second: 100,
+    //         conflicts: "proceed",
+    //         wait_for_completion: false,
+    //         scroll: "240m"            
+    //     })
+    //     .then(
+    //         (value: UpdateByQuery_Response) => {        
                 
-                logWithDetails("info", `Update user in updateSearchIndexUserDocuments.`, {
-                    userId: user.userId, 
-                    firstName: user.firstName, 
-                    lastName: user.lastName, 
-                    statusCode: value.statusCode,
-                    aborted: value.meta.aborted,
-                    attempts: value.meta.attempts
-                });
-            }
-        )
-        .catch(
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (err: any) => {
-                logWithDetails("error", `Error in updateSearchIndexUserDocuments. ${err.message}.`, {...err, userId: user.userId, firstName: user.firstName, lastName: user.lastName});
-            }
-        );
-    }
+    //             logWithDetails("info", `Update user in updateSearchIndexUserDocuments.`, {
+    //                 userId: user.userId, 
+    //                 firstName: user.firstName, 
+    //                 lastName: user.lastName, 
+    //                 statusCode: value.statusCode,
+    //                 aborted: value.meta.aborted,
+    //                 attempts: value.meta.attempts
+    //             });
+    //         }
+    //     )
+    //     .catch(
+    //         // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    //         (err: any) => {
+    //             logWithDetails("error", `Error in updateSearchIndexUserDocuments. ${err.message}.`, {...err, userId: user.userId, firstName: user.firstName, lastName: user.lastName});
+    //         }
+    //     );
+    // }
 
-    protected async updateObjectSearchIndex(tenant: Tenant, user: User): Promise<void> {
-        const owningTenantId: string = tenant.tenantId;
-        const document: ObjectSearchResultItem = {
-            name: user.nameOrder === NAME_ORDER_WESTERN ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`,
-            description: "",
-            objectid: user.userId,
-            objecttype: SearchResultType.User,
-            owningtenantid: owningTenantId,
-            email: user.email,
-            enabled: user.enabled,
-            owningclientid: "",
-            subtype: "",
-            subtypekey: ""
-        }
+    // protected async updateObjectSearchIndex(tenant: Tenant, user: User): Promise<void> {
+    //     const owningTenantId: string = tenant.tenantId;
+    //     const document: ObjectSearchResultItem = {
+    //         name: user.nameOrder === NAME_ORDER_WESTERN ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`,
+    //         description: "",
+    //         objectid: user.userId,
+    //         objecttype: SearchResultType.User,
+    //         owningtenantid: owningTenantId,
+    //         email: user.email,
+    //         enabled: user.enabled,
+    //         owningclientid: "",
+    //         subtype: "",
+    //         subtypekey: ""
+    //     }
         
-        await searchClient.index({
-            id: user.userId,
-            index: SEARCH_INDEX_OBJECT_SEARCH,
-            body: document
-        });
-    }
+    //     await searchClient.index({
+    //         id: user.userId,
+    //         index: SEARCH_INDEX_OBJECT_SEARCH,
+    //         body: document
+    //     });
+    // }
 
-    protected async updateRelSearchIndex(owningTenantId: string, parentTenantId: string, user: User): Promise<void> {
+    // protected async updateRelSearchIndex(owningTenantId: string, parentTenantId: string, user: User): Promise<void> {
         
-        const relDocument: RelSearchResultItem = {
-            childid: user.userId,
-            childname: user.nameOrder === NAME_ORDER_WESTERN ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`,
-            childtype: SearchResultType.User,
-            owningtenantid: owningTenantId,
-            parentid: parentTenantId,
-            parenttype: SearchResultType.Tenant,
-            childdescription: user.email
-        }
-        await searchClient.index({
-            id: `${parentTenantId}::${user.userId}`,
-            index: SEARCH_INDEX_REL_SEARCH,
-            body: relDocument
-        });
-    }
+    //     const relDocument: RelSearchResultItem = {
+    //         childid: user.userId,
+    //         childname: user.nameOrder === NAME_ORDER_WESTERN ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`,
+    //         childtype: SearchResultType.User,
+    //         owningtenantid: owningTenantId,
+    //         parentid: parentTenantId,
+    //         parenttype: SearchResultType.Tenant,
+    //         childdescription: user.email
+    //     }
+    //     await searchClient.index({
+    //         id: `${parentTenantId}::${user.userId}`,
+    //         index: SEARCH_INDEX_REL_SEARCH,
+    //         body: relDocument
+    //     });
+    // }
 
     protected async generateAuthorizationCode(userId: string, preAuthToken: string): Promise<AuthorizationReturnUri> {
                 
