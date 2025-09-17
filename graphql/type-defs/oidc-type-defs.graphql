@@ -1701,7 +1701,6 @@ input SystemInitializationInput {
     rootAuthorizationGroupInput: AuthorizationGroupCreateInput!
     rootReadOnlyAuthorizationGroupInput: AuthorizationGroupCreateInput
     rootUserCreateInput: UserCreateInput!
-    rootContact: ContactCreateInput!
     rootAuthenticationDomain: String!
     systemSettingsInput: SystemSettingsUpdateInput!
     captchaConfigInput: CaptchaConfigInput

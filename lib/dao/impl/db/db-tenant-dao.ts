@@ -233,7 +233,7 @@ class DBTenantDao extends TenantDao {
         const sequelize: Sequelize = await DBDriver.getConnection();
         const entity: TenantLookAndFeelEntity | null = await sequelize.models.tenantLookAndFeel.findOne({
             where: {
-                tenantId: tenantId
+                tenantid: tenantId
             }
         });
         if(entity){

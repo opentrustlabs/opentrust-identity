@@ -318,19 +318,19 @@ class SystemInitializationService extends BaseSearchService {
         // ************************************************************************************************
         const rootTenantContact: Contact = {
             contactid: randomUUID().toString(),
-            email: systemInitializationInput.rootContact.email,
+            email: user.email,
             objectid: rootTenantId,
             objecttype: CONTACT_TYPE_FOR_TENANT,
-            name: systemInitializationInput.rootContact.name
+            name: user.nameOrder === NAME_ORDER_WESTERN ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`
         };
         await contactDao.addContact(rootTenantContact);
 
         const rootClientContact: Contact = {
             contactid: randomUUID().toString(),
-            email: systemInitializationInput.rootContact.email,
+            email: user.email,
             objectid: client.clientId,
             objecttype: CONTACT_TYPE_FOR_CLIENT,
-            name: systemInitializationInput.rootContact.name
+            name: user.nameOrder === NAME_ORDER_WESTERN ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`
         };
         await contactDao.addContact(rootClientContact);
 

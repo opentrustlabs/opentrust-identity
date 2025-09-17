@@ -249,10 +249,10 @@ create TABLE signing_key (
     tenantid VARCHAR(64) NOT NULL,
     keytype VARCHAR(64) NOT NULL,
     keyuse VARCHAR(64) NOT NULL,
-    privatekeypkcs8 BLOB NOT NULL,
+    privatekeypkcs8 BYTEA NOT NULL,
     password VARCHAR(128),
-    certificate BLOB,
-    publickey BLOB,
+    certificate BYTEA,
+    publickey BYTEA,
     expiresatms BIGINT NOT NULL,
     createdatms BIGINT NOT NULL,
     status VARCHAR(64),
@@ -280,7 +280,7 @@ create TABLE scope_access_rule_schema (
     scopeaccessruleschemaid VARCHAR(64) PRIMARY KEY,
     scopeid VARCHAR(64) NOT NULL,
     schemaversion INT NOT NULL,    
-    scopeaccessruleschema BLOB,
+    scopeaccessruleschema BYTEA,
     FOREIGN KEY (scopeid) REFERENCES scope(scopeid)
 );
 
@@ -288,7 +288,7 @@ create TABLE access_rule (
     accessruleid VARCHAR(64) PRIMARY KEY,
     accessrulename VARCHAR(128) NOT NULL,
     scopeaccessruleschemaid VARCHAR(64) NOT NULL,
-    accessruledefinition BLOB NOT NULL,
+    accessruledefinition BYTEA NOT NULL,
     FOREIGN KEY (scopeaccessruleschemaid) REFERENCES  scope_access_rule_schema(scopeaccessruleschemaid)
 );
 
@@ -467,7 +467,7 @@ create TABLE change_event (
     changeeventclass VARCHAR(128) NOT NULL,
     changetimestamp BIGINT NOT NULL,
     changedby VARCHAR(128) NOT NULL,
-    data BLOB NOT NULL,	
+    data BYTEA NOT NULL,	
     PRIMARY KEY (changeeventid, objectid)	
 );
 CREATE INDEX change_event_objectid_idx ON change_event(objectid);
@@ -486,11 +486,11 @@ create TABLE tenant_look_and_feel (
     tenantid VARCHAR(64) PRIMARY KEY,
     adminheaderbackgroundcolor VARCHAR(32),
     adminheadertextcolor VARCHAR(32),
-    adminlogo BLOB,
+    adminlogo BYTEA,
     adminheadertext VARCHAR(128),
     authenticationheaderbackgroundcolor VARCHAR(32),
     authenticationheadertextcolor VARCHAR(32),
-    authenticationlogo BLOB,
+    authenticationlogo BYTEA,
     authenticationlogouri VARCHAR(256),
     authenticationlogomimetype VARCHAR(16),
     authenticationheadertext VARCHAR(128),    

@@ -126,8 +126,8 @@ class UserEntity extends Model {
         }, 
 		{
             sequelize,
-            tableName: "user",
-            modelName: "user",
+            tableName: "users",
+            modelName: "users",
             timestamps: false
         });
     }

@@ -297,7 +297,7 @@ class DBIdentityDao extends IdentityDao {
         else if(userLookupType === "phone"){
             where.phoneNumber = value;
         }
-        let u: UserEntity | null = await sequelize.models.user.findOne({
+        let u: UserEntity | null = await sequelize.models.users.findOne({
             where: where
         });
 
@@ -310,7 +310,7 @@ class DBIdentityDao extends IdentityDao {
             });
             if(entity){
                 const userId = entity.getDataValue("userId");
-                u = await sequelize.models.user.findOne({
+                u = await sequelize.models.users.findOne({
                     where: {
                         userId: userId
                     }
@@ -351,7 +351,7 @@ class DBIdentityDao extends IdentityDao {
             this.deletePasswordResetToken(token);
             return Promise.resolve(null);
         }
-        const user: UserEntity | null = await sequelize.models.user.findOne({
+        const user: UserEntity | null = await sequelize.models.users.findOne({
             where: {userId: tokenEntity.getDataValue("userId")}
         });
         return user ? Promise.resolve(user.dataValues as User) : Promise.resolve(null);
@@ -396,7 +396,7 @@ class DBIdentityDao extends IdentityDao {
             this.deletePasswordResetToken(token);
             return Promise.resolve(null);
         }
-        const user: UserEntity | null = await sequelize.models.user.findOne({
+        const user: UserEntity | null = await sequelize.models.users.findOne({
             where: {userId: tokenEntity.getDataValue("userId")}
         });
         return user ? Promise.resolve(user.dataValues as User) : Promise.resolve(null);
@@ -451,14 +451,14 @@ class DBIdentityDao extends IdentityDao {
 
     public async createUser(user: User): Promise<User> {
         const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.user.create(user);
+        await sequelize.models.users.create(user);
         return Promise.resolve(user);
     }
 
     public async updateUser(user: User): Promise<User> {
 
         const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.user.update(user, {
+        await sequelize.models.users.update(user, {
             where: {
                 userId: user.userId
             }
@@ -596,7 +596,7 @@ class DBIdentityDao extends IdentityDao {
             }
         });
 
-        await sequelize.models.user.destroy({
+        await sequelize.models.users.destroy({
             where: {
                 userId: userId
             }
@@ -824,7 +824,7 @@ class DBIdentityDao extends IdentityDao {
 
         await sequelize.models.userProfileEmailChangeState.destroy({
             where: {
-                expiresAtMS: {
+                expiresAtMs: {
                     [Op.lt]: Date.now()
                 }
             }
