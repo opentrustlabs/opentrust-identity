@@ -821,15 +821,15 @@ class DBIdentityDao extends IdentityDao {
                 }
             }
         });
-
+        
         await sequelize.models.userProfileEmailChangeState.destroy({
             where: {
                 expiresAtMs: {
                     [Op.lt]: Date.now()
                 }
             }
-        })
-
+        });
+        
     }
 
     public async getUserRecoveryEmail(userId: string): Promise<UserRecoveryEmail | null>{

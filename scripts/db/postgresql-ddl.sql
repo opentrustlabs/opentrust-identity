@@ -1,17 +1,8 @@
--- MYSQL
--- =====
--- For MySQL the database creation process is fairly straightforward. You can just use the following
--- commands to create the database and the tables. You will need to assign the appropriate permissions
--- to the database user.
---
--- CREATE DATABASE IF NOT EXISTS opentrust_oidc_iam DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
--- USE opentrust_oidc_iam;
---
---
+
 -- POSTGRESQL
 -- ==========
--- For PostgreSQL, the process is a little more complicated. You need to create the database, then create
--- a schema, then assign permissions to the database user account. The schema creation step is to avoid the 
+-- For PostgreSQL setup, the process is a little more complicated than for MySQL. You need to create the database, 
+-- then create a schema, then assign permissions to the database user account. The schema creation step is to avoid the 
 -- use of the default "public" schema, which in older versions of PostgreSQL had some security/permissions
 -- issues.
 -- 
