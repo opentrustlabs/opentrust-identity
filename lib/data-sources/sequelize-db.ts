@@ -123,13 +123,12 @@ class DBDriver {
                 {
                     host: DB_HOST,
                     dialect: dialect,
-                    dialectModule: tedious,
                     port: parseInt(DB_PORT || "0"),
                     pool: {
                         max: parseInt(DB_MAX_POOL_SIZE || "10"),
                         min: parseInt(DB_MIN_POOL_SIZE || "4")
                     },
-                    logging: DB_ENABLE_QUERY_LOGGING === "true"
+                    logging: console.log
                 }
             );
             await global.sequelize.authenticate();

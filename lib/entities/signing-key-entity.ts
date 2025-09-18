@@ -28,10 +28,21 @@ class SigningKeyEntity extends Model {
 				field: "keyuse"
             },
             privateKeyPkcs8: {
-                type: DataTypes.BLOB,
+                type: DataTypes.BLOB("long"),
                 primaryKey: false,
                 allowNull: false,
-                field: "privatekeypkcs8"
+                field: "privatekeypkcs8",
+                set(val: string | Buffer | null){
+                    if(val === null || val === ""){
+                        this.setDataValue("privateKeyPkcs8", null);
+                    }
+                    else if(typeof val === "string"){
+                        this.setDataValue("privateKeyPkcs8", Buffer.from(val, "utf-8"));
+                    }
+                    else{
+                        this.setDataValue("privateKeyPkcs8", val);
+                    }
+                }
             },
             password: {
                 type: DataTypes.STRING,
@@ -40,16 +51,38 @@ class SigningKeyEntity extends Model {
                 field: "password"
             },
             publicKey: {
-                type: DataTypes.BLOB,
+                type: DataTypes.BLOB("long"),
                 primaryKey: false,
                 allowNull: true,
-                field: "publickey"
+                field: "publickey",
+                set(val: string | Buffer | null){
+                    if(val === null || val === ""){
+                        this.setDataValue("publicKey", null);
+                    }
+                    else if(typeof val === "string"){
+                        this.setDataValue("publicKey", Buffer.from(val, "utf-8"));
+                    }
+                    else{
+                        this.setDataValue("publicKey", val);
+                    }
+                }
             },
             certificate: {
-                type: DataTypes.BLOB,
+                type: DataTypes.BLOB("long"),
                 primaryKey: false,
                 allowNull: true,
-                field: "certificate"
+                field: "certificate",
+                set(val: string | Buffer | null){
+                    if(val === null || val === ""){
+                        this.setDataValue("certificate", null);
+                    }
+                    else if(typeof val === "string"){
+                        this.setDataValue("certificate", Buffer.from(val, "utf-8"));
+                    }
+                    else{
+                        this.setDataValue("certificate", val);
+                    }
+                }
             },
             expiresAtMs: {
                 type: DataTypes.NUMBER,

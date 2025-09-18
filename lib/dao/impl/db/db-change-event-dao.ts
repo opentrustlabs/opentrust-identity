@@ -31,7 +31,7 @@ class DBChangeEventDao extends ChangeEventDao {
         sequelize.models.changeEvent.create({
             ...changeEvent,
             data: Buffer.from(changeEvent.data, "utf-8")
-        })
+        });
         
         return changeEvent;
     }

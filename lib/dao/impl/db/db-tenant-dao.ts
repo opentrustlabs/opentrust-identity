@@ -151,14 +151,12 @@ class DBTenantDao extends TenantDao {
     }
     
     public async getAnonymousUserConfiguration(tenantId: string): Promise<TenantAnonymousUserConfiguration | null> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        console.log("checpoint 3");
+        const sequelize: Sequelize = await DBDriver.getConnection();        
         const entity: TenantAnonymousUserConfigurationEntity | null = await sequelize.models.tenantAnonymousUserConfiguration.findOne({
             where: {
                 tenantId: tenantId
             }
         });
-        console.log(entity);
         return entity ? Promise.resolve(entity.dataValues as TenantAnonymousUserConfiguration) : Promise.resolve(null);
     }
 
@@ -264,13 +262,29 @@ class DBTenantDao extends TenantDao {
 
     public async createTenantLookAndFeel(tenantLookAndFeel: TenantLookAndFeel): Promise<TenantLookAndFeel> {
         const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.tenantLookAndFeel.create(tenantLookAndFeel)
+        await sequelize.models.tenantLookAndFeel.create({
+            ...tenantLookAndFeel,
+            authenticationlogo: tenantLookAndFeel.authenticationlogo ? Buffer.from(tenantLookAndFeel.authenticationlogo, "utf-8") : null,
+            adminlogo: tenantLookAndFeel.adminlogo ? Buffer.from(tenantLookAndFeel.adminlogo, "utf-8") : null
+
+        });
         return Promise.resolve(tenantLookAndFeel);
     }
 
+    // sequelize.models.changeEvent.create({
+    //         ...changeEvent,
+    //         data: Buffer.from(changeEvent.data, "utf-8")
+    //     });
+
+
     public async updateTenantLookAndFeel(tenantLookAndFeel: TenantLookAndFeel): Promise<TenantLookAndFeel> {
         const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.tenantLookAndFeel.update(tenantLookAndFeel, {
+        await sequelize.models.tenantLookAndFeel.update({
+                ...tenantLookAndFeel,
+                authenticationlogo: tenantLookAndFeel.authenticationlogo ? Buffer.from(tenantLookAndFeel.authenticationlogo, "utf-8") : null,
+                adminlogo: tenantLookAndFeel.adminlogo ? Buffer.from(tenantLookAndFeel.adminlogo, "utf-8") : null
+            }, 
+            {
             where: {
                 tenantId: tenantLookAndFeel.tenantid
             }

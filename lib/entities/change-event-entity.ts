@@ -39,10 +39,21 @@ class ChangeEventEntity extends Model {
                 field: "changedby"
             },
             data: {
-                type: DataTypes.BLOB,
+                type: DataTypes.BLOB("long"),
                 primaryKey: false,
                 allowNull: false,
-                field: "data"
+                field: "data",
+                set(val: string | Buffer | null){
+                    if(val === null || val === ""){
+                        this.setDataValue("data", null);
+                    }
+                    else if(typeof val === "string"){
+                        this.setDataValue("publdataicKey", Buffer.from(val, "utf-8"));
+                    }
+                    else{
+                        this.setDataValue("data", val);
+                    }
+                }
             }
         }, 
 		{

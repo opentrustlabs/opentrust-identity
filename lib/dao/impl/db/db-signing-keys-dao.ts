@@ -63,12 +63,26 @@ class DBSigningKeysDao extends SigningKeysDao {
     }
 
     public async updateSigningKey(key: SigningKey): Promise<SigningKey>{
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.signingKey.update(key, {
-            where: {
-                keyId: key.keyId
+
+        // Do not update the certificate, private key, public key 
+        await SigningKeyEntity.update(
+            {
+                keyName: key.keyName,
+                markForDelete: key.markForDelete,
+                status: key.status
+            },
+            {
+                where: {
+                    keyId: key.keyId
+                }
             }
-        }); 
+        );
+        // const sequelize: Sequelize = await DBDriver.getConnection();
+        // await sequelize.models.signingKey.update(key, {
+        //     where: {
+        //         keyId: key.keyId
+        //     }
+        // }); 
         return Promise.resolve(key);
     }
 

@@ -617,10 +617,9 @@ class TenantService {
         if(!authResult.isAuthorized){
             throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
         }
-        console.log("checkpoitn 0");
+        
         const existing: TenantAnonymousUserConfiguration | null = await tenantDao.getAnonymousUserConfiguration(tenantAnonymousUserConfiguration.tenantId);
         if(existing){
-            console.log("checkpoint 1");
             changeEventDao.addChangeEvent({
                 objectId: tenantAnonymousUserConfiguration.tenantId,
                 changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
@@ -633,7 +632,6 @@ class TenantService {
             return tenantDao.updateAnonymousUserConfiguration(tenantAnonymousUserConfiguration);
         }
         else{
-            console.log("checkpoint 2");
             changeEventDao.addChangeEvent({
                 objectId: tenantAnonymousUserConfiguration.tenantId,
                 changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,

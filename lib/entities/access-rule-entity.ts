@@ -22,10 +22,21 @@ class AccessRuleEntity extends Model {
                 field: "scopeconstraintschemaid"
             },
             accessRuleDefinition: {
-                type: DataTypes.BLOB,
+                type: DataTypes.BLOB("long"),
                 primaryKey: false,
                 allowNull: false,
-				field: "accessruledefinition"
+				field: "accessruledefinition",
+                set(val: string | Buffer | null){
+                    if(val === null || val === ""){
+                        this.setDataValue("accessRuleDefinition", null);
+                    }
+                    else if(typeof val === "string"){
+                        this.setDataValue("accessRuleDefinition", Buffer.from(val, "utf-8"));
+                    }
+                    else{
+                        this.setDataValue("accessRuleDefinition", val);
+                    }
+                }
             }
         }, 
 		{

@@ -231,10 +231,10 @@ create TABLE signing_key (
     tenantid VARCHAR(64) NOT NULL,
     keytype VARCHAR(64) NOT NULL,
     keyuse VARCHAR(64) NOT NULL,
-    privatekeypkcs8 VARBINARY(8000) NOT NULL,
+    privatekeypkcs8 VARBINARY(max) NOT NULL,
     password VARCHAR(128),
-    certificate VARBINARY(8000),
-    publickey VARBINARY(8000),
+    certificate VARBINARY(max),
+    publickey VARBINARY(max),
     expiresatms BIGINT NOT NULL,
     createdatms BIGINT NOT NULL,
     status VARCHAR(64),
@@ -262,7 +262,7 @@ create TABLE scope_access_rule_schema (
     scopeaccessruleschemaid VARCHAR(64) PRIMARY KEY,
     scopeid VARCHAR(64) NOT NULL,
     schemaversion INT NOT NULL,    
-    scopeaccessruleschema VARBINARY(8000),
+    scopeaccessruleschema VARBINARY(max),
     FOREIGN KEY (scopeid) REFERENCES scope(scopeid)
 );
 
@@ -270,7 +270,7 @@ create TABLE access_rule (
     accessruleid VARCHAR(64) PRIMARY KEY,
     accessrulename VARCHAR(128) NOT NULL,
     scopeaccessruleschemaid VARCHAR(64) NOT NULL,
-    accessruledefinition VARBINARY(8000) NOT NULL,
+    accessruledefinition VARBINARY(max) NOT NULL,
     FOREIGN KEY (scopeaccessruleschemaid) REFERENCES  scope_access_rule_schema(scopeaccessruleschemaid)
 );
 
@@ -449,7 +449,7 @@ create TABLE change_event (
     changeeventclass VARCHAR(128) NOT NULL,
     changetimestamp BIGINT NOT NULL,
     changedby VARCHAR(128) NOT NULL,
-    data VARBINARY(8000) NOT NULL,	
+    data VARBINARY(max) NOT NULL,	
     PRIMARY KEY (changeeventid, objectid)	
 );
 CREATE INDEX change_event_objectid_idx ON change_event(objectid);
@@ -468,11 +468,11 @@ create TABLE tenant_look_and_feel (
     tenantid VARCHAR(64) PRIMARY KEY,
     adminheaderbackgroundcolor VARCHAR(32),
     adminheadertextcolor VARCHAR(32),
-    adminlogo VARBINARY(8000),
+    adminlogo VARBINARY(max),
     adminheadertext VARCHAR(128),
     authenticationheaderbackgroundcolor VARCHAR(32),
     authenticationheadertextcolor VARCHAR(32),
-    authenticationlogo VARBINARY(8000),
+    authenticationlogo VARBINARY(max),
     authenticationlogouri VARCHAR(256),
     authenticationlogomimetype VARCHAR(16),
     authenticationheadertext VARCHAR(128),    

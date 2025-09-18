@@ -28,10 +28,27 @@ class TenantLookAndFeelEntity extends Model {
                 field: "adminheadertextcolor"
             },
             adminlogo: {
-                type: DataTypes.BLOB,
+                type: DataTypes.BLOB("long"),
                 primaryKey: false,
                 allowNull: true,
-                field: "adminlogo"
+                field: "adminlogo",
+                // set(val: string | Buffer | null){
+                //     console.log("val of admin logo is: ")
+                //     console.log(val);
+                    
+                //     if(val === null || val === ""){
+                //         console.log("checkpoint 2.1")
+                //         this.setDataValue("adminlogo", null);
+                //     }
+                //     else if(typeof val === "string"){
+                //         console.log("checkpoint 2.2")
+                //         this.setDataValue("adminlogo", Buffer.from(val));
+                //     }
+                //     else{
+                //         console.log("checkpoint 1.3")
+                //         this.setDataValue("adminlogo", val);
+                //     }
+                // }
             },
             authenticationheaderbackgroundcolor: {
                 type: DataTypes.STRING,
@@ -52,10 +69,27 @@ class TenantLookAndFeelEntity extends Model {
                 field: "authenticationheadertextcolor"
             },
             authenticationlogo: {
-                type: DataTypes.BLOB,
+                type: DataTypes.BLOB("long"),
                 primaryKey: false,
                 allowNull: true,
-                field: "authenticationlogo"
+                field: "authenticationlogo",
+                // set(val: string | Buffer | null){
+                //     console.log("val of authentication logo is: ")
+                //     console.log(val);
+
+                //     if(val === null || val === ""){
+                //         console.log("checkpoint 1.1")
+                //         this.setDataValue("authenticationlogo", null);
+                //     }
+                //     else if(typeof val === "string"){
+                //         console.log("checkpoint 1.2")
+                //         this.setDataValue("authenticationlogo", Buffer.from(val));
+                //     }
+                //     else{
+                //         console.log("checkpoint 1.3")
+                //         this.setDataValue("authenticationlogo", val);
+                //     }
+                // }
             },
             authenticationlogouri: {
                 type: DataTypes.STRING,
