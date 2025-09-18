@@ -655,7 +655,7 @@ const resolvers: Resolvers = {
                 tenantId: tenantAnonymousUserConfigInput.tenantId,
                 tokenttlseconds: tenantAnonymousUserConfigInput.tokenttlseconds,
                 defaultcountrycode: tenantAnonymousUserConfigInput.defaultcountrycode,
-                defaultlangugecode: tenantAnonymousUserConfigInput.defaultlangugecode
+                defaultlanguagecode: tenantAnonymousUserConfigInput.defaultlanguagecode
             }
             await tenantService.setTenantAnonymousUserConfig(anonymousUserConfig);
             return anonymousUserConfig;

@@ -1,4 +1,5 @@
 import { Dialect, Sequelize } from "sequelize";
+import * as tedious from 'tedious';
 import { TenantEntity } from "../entities/tenant-entity";
 import ContactEntity from "../entities/contact-entity";
 import TenantAnonymousUserConfigurationEntity from "../entities/tenant-anonymous-user-configuration-entity";
@@ -122,16 +123,17 @@ class DBDriver {
                 {
                     host: DB_HOST,
                     dialect: dialect,
+                    dialectModule: tedious,
                     port: parseInt(DB_PORT || "0"),
                     pool: {
                         max: parseInt(DB_MAX_POOL_SIZE || "10"),
                         min: parseInt(DB_MIN_POOL_SIZE || "4")
                     },
                     logging: DB_ENABLE_QUERY_LOGGING === "true"
-                },
-                
-                
+                }
             );
+            await global.sequelize.authenticate();
+
             ContactEntity.initModel(global.sequelize);
             TenantAnonymousUserConfigurationEntity.initModel(global.sequelize);
             TenantEntity.initModel(global.sequelize);

@@ -152,11 +152,13 @@ class DBTenantDao extends TenantDao {
     
     public async getAnonymousUserConfiguration(tenantId: string): Promise<TenantAnonymousUserConfiguration | null> {
         const sequelize: Sequelize = await DBDriver.getConnection();
+        console.log("checpoint 3");
         const entity: TenantAnonymousUserConfigurationEntity | null = await sequelize.models.tenantAnonymousUserConfiguration.findOne({
             where: {
                 tenantId: tenantId
             }
         });
+        console.log(entity);
         return entity ? Promise.resolve(entity.dataValues as TenantAnonymousUserConfiguration) : Promise.resolve(null);
     }
 

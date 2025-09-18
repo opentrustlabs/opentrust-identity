@@ -342,7 +342,7 @@ type TenantSupportedClaimRel {
 type TenantAnonymousUserConfiguration {
     tenantId: String!
     defaultcountrycode: String
-    defaultlangugecode: String
+    defaultlanguagecode: String
     tokenttlseconds: Int!
 }
 
@@ -1356,7 +1356,7 @@ input PasswordConfigInput {
 input TenantAnonymousUserConfigInput {
     tenantId: String!
     defaultcountrycode: String
-    defaultlangugecode: String
+    defaultlanguagecode: String
     tokenttlseconds: Int!
 }
 

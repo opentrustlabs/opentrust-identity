@@ -99,7 +99,7 @@ export const TENANT_ANONYMOUS_USER_CONFIGURATION_MUTATION = gql(`
         setTenantAnonymousUserConfig(tenantAnonymousUserConfigInput: $tenantAnonymousUserConfigInput) {
             tenantId
             defaultcountrycode
-            defaultlangugecode 
+            defaultlanguagecode 
             tokenttlseconds
         }
     }
