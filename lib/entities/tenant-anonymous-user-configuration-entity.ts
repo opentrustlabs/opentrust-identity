@@ -15,11 +15,11 @@ class TenantAnonymousUserConfigurationEntity extends Model {
                 allowNull: true,
                 field: "defaultcountrycode"
             },
-            defaultlangugecode: {
+            defaultlanguagecode: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: true,
-                field: "defaultlangugecode"
+                field: "defaultlanguagecode"
             },
             tokenttlseconds: {
                 type: DataTypes.INTEGER,

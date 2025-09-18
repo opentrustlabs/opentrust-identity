@@ -545,7 +545,7 @@ export const TENANT_ANONYMOUS_USER_CONFIGURATION_QUERY = gql(`
         getAnonymousUserConfiguration(tenantId: $tenantId){
             tenantId 
             defaultcountrycode
-            defaultlangugecode
+            defaultlanguagecode
             tokenttlseconds
         }
     }

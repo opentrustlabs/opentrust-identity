@@ -612,35 +612,38 @@ class TenantService {
         }
     }
 
-    public async setTenantAnonymousUserConfig(tenantAnonymousUserConfigInput: TenantAnonymousUserConfiguration): Promise<TenantAnonymousUserConfiguration> {
-        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_UPDATE_SCOPE], tenantAnonymousUserConfigInput.tenantId); 
+    public async setTenantAnonymousUserConfig(tenantAnonymousUserConfiguration: TenantAnonymousUserConfiguration): Promise<TenantAnonymousUserConfiguration> {
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_UPDATE_SCOPE], tenantAnonymousUserConfiguration.tenantId); 
         if(!authResult.isAuthorized){
             throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
         }
-        const existing: TenantAnonymousUserConfiguration | null = await tenantDao.getAnonymousUserConfiguration(tenantAnonymousUserConfigInput.tenantId);
+        console.log("checkpoitn 0");
+        const existing: TenantAnonymousUserConfiguration | null = await tenantDao.getAnonymousUserConfiguration(tenantAnonymousUserConfiguration.tenantId);
         if(existing){
+            console.log("checkpoint 1");
             changeEventDao.addChangeEvent({
-                objectId: tenantAnonymousUserConfigInput.tenantId,
+                objectId: tenantAnonymousUserConfiguration.tenantId,
                 changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
                 changeEventClass: CHANGE_EVENT_CLASS_TENANT_ANONYMOUS_USER_CONFIGURATION,
                 changeEventId: randomUUID().toString(),
                 changeEventType: CHANGE_EVENT_TYPE_UPDATE,
                 changeTimestamp: Date.now(),
-                data: JSON.stringify(tenantAnonymousUserConfigInput)
+                data: JSON.stringify(tenantAnonymousUserConfiguration)
             });
-            return tenantDao.updateAnonymousUserConfiguration(tenantAnonymousUserConfigInput);
+            return tenantDao.updateAnonymousUserConfiguration(tenantAnonymousUserConfiguration);
         }
         else{
+            console.log("checkpoint 2");
             changeEventDao.addChangeEvent({
-                objectId: tenantAnonymousUserConfigInput.tenantId,
+                objectId: tenantAnonymousUserConfiguration.tenantId,
                 changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
                 changeEventClass: CHANGE_EVENT_CLASS_TENANT_ANONYMOUS_USER_CONFIGURATION,
                 changeEventId: randomUUID().toString(),
                 changeEventType: CHANGE_EVENT_TYPE_CREATE,
                 changeTimestamp: Date.now(),
-                data: JSON.stringify(tenantAnonymousUserConfigInput)
+                data: JSON.stringify(tenantAnonymousUserConfiguration)
             });
-            return tenantDao.createAnonymousUserConfiguration(tenantAnonymousUserConfigInput);
+            return tenantDao.createAnonymousUserConfiguration(tenantAnonymousUserConfiguration);
         }
     }
 

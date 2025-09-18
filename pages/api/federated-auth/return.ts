@@ -206,30 +206,43 @@ async function handleFederatedAuth(state: string, code: string, res: NextApiResp
     }
 
     let userByFederatedSubjectId: User | null = await identityDao.getUserBy("federatedoidcproviderid", userInfo.sub);    
-    let userByEmail: User | null = await identityDao.getUserBy("email", userInfo.email);
-
+    let userByEmail: User | null = await identityDao.getUserBy("email", userInfo.email);    
     let userByPhone: User | null = null;
     if(userInfo.phone_number){
         userByPhone = await identityDao.getUserBy("phone", userInfo.phone_number);
     }
+    
+    const authorizationCode: string = generateRandomToken(32, "hex");
 
     // Should be a rare error condition, but if there are user records by both email and by subject id, and they
     // are different records, then there is no clean way to reconcile these. The latest IdP data takes
-    // precedence and so we update the userBySubject with the email, rename the email for the userByEmail
-    // and 
+    // precedence and so we update the userBySubject with the email, rename the email for the userByEmail with a 
+    // "disabled" prefix and update the search indexes.
     if(userByFederatedSubjectId !== null && userByEmail !== null && userByFederatedSubjectId.userId !== userByEmail.userId){
+        userByEmail.email = `disabled.${userInfo.email}`;
+        userByEmail.enabled = false;
+        await identityDao.updateUser(userByEmail);
+        searchDao.updateSearchIndexUserDocuments(userByEmail);
 
+        userByFederatedSubjectId.email = userInfo.email;
+        await identityDao.updateUser(userByFederatedSubjectId);
+        searchDao.updateSearchIndexUserDocuments(userByFederatedSubjectId);
+        await updateUserTenantRel(tenant, userByFederatedSubjectId);
+        await identityDao.addUserAuthenticationHistory(userByFederatedSubjectId.userId, Date.now());
+        await saveAuthorizationCodeData(authorizationCode, authRel, userByFederatedSubjectId);
     }
     // Otherwise, if there are no existing records, then create a new user based on the userinfo retrieved from the 3rd party IdP
     else if(userByFederatedSubjectId === null && userByEmail === null){
-        const user: User = userInfoToUser(userInfo);
+        const newUser: User = userInfoToUser(userInfo);
         if(userByPhone === null){
-            user.phoneNumber = userInfo.phone_number;            
+            newUser.phoneNumber = userInfo.phone_number;            
         }
-        await identityDao.createUser(user);
-        await searchDao.updateObjectSearchIndex(tenant, user);
-        await searchDao.updateRelSearchIndex(tenant.tenantId, tenant.tenantId, user);
-        await identityDao.assignUserToTenant(tenant.tenantId, user.userId, USER_TENANT_REL_TYPE_PRIMARY);
+        await identityDao.createUser(newUser);
+        await searchDao.updateObjectSearchIndex(tenant, newUser);
+        await searchDao.updateRelSearchIndex(tenant.tenantId, tenant.tenantId, newUser);
+        await updateUserTenantRel(tenant, newUser);
+        await identityDao.addUserAuthenticationHistory(newUser.userId, Date.now());
+        await saveAuthorizationCodeData(authorizationCode, authRel, newUser);
     }
     
     // Otherwise, if we find the record based on the IdP ID, but no email-based
@@ -248,47 +261,29 @@ async function handleFederatedAuth(state: string, code: string, res: NextApiResp
         }
         await identityDao.updateUser(userByFederatedSubjectId);        
         searchDao.updateSearchIndexUserDocuments(userByFederatedSubjectId);
-        const rels: Array<UserTenantRel> = await identityDao.getUserTenantRelsByUserId(userByFederatedSubjectId.userId);
-        if(rels.length === 0){
-            await identityDao.assignUserToTenant(tenant.tenantId, userByFederatedSubjectId.userId, USER_TENANT_REL_TYPE_PRIMARY);
-            await searchDao.updateRelSearchIndex(tenant.tenantId, tenant.tenantId, userByFederatedSubjectId);
-        }
-        else{
-            const existingRel = rels.find(
-                (rel: UserTenantRel) => rel.tenantId = tenant.tenantId
-            );
-            if(!existingRel){
-                await identityDao.assignUserToTenant(tenant.tenantId, userByFederatedSubjectId.userId, USER_TENANT_REL_TYPE_GUEST);
-                await searchDao.updateRelSearchIndex(tenant.tenantId, tenant.tenantId, userByFederatedSubjectId);
-            }
-        }
+        await updateUserTenantRel(tenant, userByFederatedSubjectId);  
+        await identityDao.addUserAuthenticationHistory(userByFederatedSubjectId.userId, Date.now());
+        await saveAuthorizationCodeData(authorizationCode, authRel, userByFederatedSubjectId);
     }
     // Otherwise, we have found a record with the same email, but it was not previously tied
     // to a 3rd party IdP, so we just update the existing record with the IdP ID
     else if(userByFederatedSubjectId === null && userByEmail !== null){
         userByEmail.federatedOIDCProviderSubjectId = userInfo.sub;
         await identityDao.updateUser(userByEmail);
+        await saveAuthorizationCodeData(authorizationCode, authRel, userByEmail);
     }
+    
+    await authDao.deleteFederatedOIDCAuthorizationRel(state);
 
-    
-    // let user: User | null = await identityDao.getUserBy("email", userInfo.email);
-    // if(user === null){
-    //     userB = userInfoToUser(userInfo);
-    //     // Make sure that the phone number is unique. If not, then null it here to avoid
-    //     // errors later. 
-    //     if(user.phoneNumber){
-    //         const userByPhone: User | null = await identityDao.getUserBy("phone", user.phoneNumber);
-    //         if(userByPhone){
-    //             user.phoneNumber = null;
-    //         }
-    //     }
-    //     await identityDao.createUser(user);     
-    // }
-    // await identityDao.addUserAuthenticationHistory(user.userId, Date.now());   
-    
+    res.status(302).setHeader("location", `${authRel.initRedirectUri}?code=${authorizationCode}&state=${authRel.initState}`);
+    res.end();
+    return;
+}
+
+async function saveAuthorizationCodeData(authorizationCode: string, authRel: FederatedOidcAuthorizationRel, user: User): Promise<AuthorizationCodeData>{
     const authorizationCodeData: AuthorizationCodeData = {
         clientId: authRel.initClientId || "",
-        code: generateRandomToken(32, "hex"),
+        code: authorizationCode,
         expiresAtMs: Date.now() + (30 * 60 * 1000),
         redirectUri: authRel.initRedirectUri,
         scope: authRel.initScope,
@@ -298,11 +293,24 @@ async function handleFederatedAuth(state: string, code: string, res: NextApiResp
         codeChallengeMethod: authRel.initCodeChallengeMethod
     }
     await authDao.saveAuthorizationCodeData(authorizationCodeData);
-    await authDao.deleteFederatedOIDCAuthorizationRel(state);
+    return authorizationCodeData;
+}
 
-    res.status(302).setHeader("location", `${authRel.initRedirectUri}?code=${authorizationCodeData.code}&state=${authRel.initState}`);
-    res.end();
-    return;
+async function updateUserTenantRel(tenant: Tenant, user: User): Promise<void> {
+    const rels: Array<UserTenantRel> = await identityDao.getUserTenantRelsByUserId(user.userId);
+    if(rels.length === 0){
+        await identityDao.assignUserToTenant(tenant.tenantId, user.userId, USER_TENANT_REL_TYPE_PRIMARY);
+        await searchDao.updateRelSearchIndex(tenant.tenantId, tenant.tenantId, user);
+    }
+    else{
+        const existingRel = rels.find(
+            (rel: UserTenantRel) => rel.tenantId = tenant.tenantId
+        );
+        if(!existingRel){
+            await identityDao.assignUserToTenant(tenant.tenantId, user.userId, USER_TENANT_REL_TYPE_GUEST);
+            await searchDao.updateRelSearchIndex(tenant.tenantId, tenant.tenantId, user);
+        }
+    }
 }
 
 function userInfoToUser(userInfo: OIDCUserInfo): User {
