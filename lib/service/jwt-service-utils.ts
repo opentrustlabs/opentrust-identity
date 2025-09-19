@@ -476,10 +476,8 @@ class JwtServiceUtils {
     public async getAuthTokenForOutboundCalls(): Promise<string | null>{
         const systemSettings: SystemSettings = await tenantDao.getSystemSettings();
         let authToken: string | null = null;
-        if(systemSettings.rootClientId){
-            console.log("get auth token checkpoint 1")
-            const client: Client | null = await clientDao.getClientById(systemSettings.rootClientId);
-            console.log("get auth token checkpoint 2")
+        if(systemSettings.rootClientId){            
+            const client: Client | null = await clientDao.getClientById(systemSettings.rootClientId);            
             if(client !== null){
                 const tenant: Tenant | null = await tenantDao.getRootTenant();
                 if(tenant === null){

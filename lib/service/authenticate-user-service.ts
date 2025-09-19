@@ -1605,9 +1605,8 @@ class AuthenticateUserService extends IdentityService {
                 await authDao.updateAuthorizationDeviceCodeData(deviceCodeData);
             }
         }
-        console.log("checkpoint 1");
+        
         if(userAuthenticationState.authenticationState === AuthenticationState.RedirectBackToApplication){    
-            console.log("checkpoint 2");        
             try {
                 const authorizationCode: AuthorizationReturnUri = await this.generateAuthorizationCode(userAuthenticationState.userId, userAuthenticationState.preAuthToken || "");
                 response.userAuthenticationState = userAuthenticationState;
@@ -1615,13 +1614,11 @@ class AuthenticateUserService extends IdentityService {
                 userAuthenticationState.authenticationStateStatus = STATUS_COMPLETE;                
             }
             catch(err: unknown){
-                console.log("checkpoint 3");
                 const e = err as Error;
                 throw new GraphQLError(e.message);
             }            
         }
         else if(userAuthenticationState.authenticationState === AuthenticationState.RedirectToIamPortal){
-            console.log("checkpoint 4");
             try {
                 const tenant: Tenant | null = await tenantDao.getTenantById(userAuthenticationState.tenantId);
                 if(tenant === null){
@@ -1635,7 +1632,6 @@ class AuthenticateUserService extends IdentityService {
                         response.uri = "/device/registered";
                     }
                     else{
-                        console.log("checkpoint 5");
                         const jwtSigningResponse = await jwtServiceUtils.signIAMPortalUserJwt(user, tenant, this.getPortalAuthenTokenTTLSeconds(), PRINCIPAL_TYPE_IAM_PORTAL_USER);                        
                         if(!jwtSigningResponse || jwtSigningResponse.accessToken === null){
                             response.authenticationError = ERROR_CODES.EC00132;
@@ -1657,7 +1653,6 @@ class AuthenticateUserService extends IdentityService {
                         finalUserAuthenticationState.authenticationState === AuthenticationState.PostAuthnStateSendSecurityEventDuressLogon ||
                         finalUserAuthenticationState.authenticationState === AuthenticationState.PostAuthnStateSendSecurityEventDeviceRegistered
                     ){
-                        console.log("checkpoint 6");
                         finalUserAuthenticationState.authenticationStateStatus = STATUS_COMPLETE;
                         const securityEventType: SecurityEventType = 
                             finalUserAuthenticationState.authenticationState === AuthenticationState.PostAuthnStateSendSecurityEventSuccessLogon
@@ -1665,16 +1660,13 @@ class AuthenticateUserService extends IdentityService {
                                 finalUserAuthenticationState.authenticationState === AuthenticationState.PostAuthnStateSendSecurityEventDuressLogon ? 
                                 "duress_authentication" :
                                 "device_registered";
-                        console.log("checkpoint 6.1");
-                        const authToken = await jwtServiceUtils.getAuthTokenForOutboundCalls();
-                        console.log("checkpoint 6.2");
-                        oidcServiceUtils.fireSecurityEvent(securityEventType, this.oidcContext, user, jti, authToken);
-                        console.log("checkpoint 6.3");
+                        
+                        const authToken = await jwtServiceUtils.getAuthTokenForOutboundCalls();                        
+                        oidcServiceUtils.fireSecurityEvent(securityEventType, this.oidcContext, user, jti, authToken);                        
                     }
                 }
             }
             catch(err: unknown){
-                console.log("checkpoint 7");
                 const e = err as Error;            
                 throw new GraphQLError(e.message);
             }

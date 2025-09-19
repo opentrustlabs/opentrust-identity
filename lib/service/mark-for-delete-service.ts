@@ -195,7 +195,6 @@ class MarkForDeleteService {
         }
         if(markForDelete.objectType === MarkForDeleteObjectType.SigningKey){
             const k: SigningKey = object as SigningKey;
-            console.log(k);
             const u = WithAuthorizationByScopeAndTenant({
                 async performOperation() {
                     k.markForDelete = true;
