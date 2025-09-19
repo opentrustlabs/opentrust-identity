@@ -1,4 +1,4 @@
-import { Model, DataTypes, Sequelize } from 'sequelize';
+import { Model, DataTypes, Sequelize } from "@sequelize/core";
 
 class UserTenantRelEntity extends Model {
     
@@ -7,24 +7,24 @@ class UserTenantRelEntity extends Model {
             tenantId: {
                 type: DataTypes.STRING,
                 primaryKey: true,
-                field: "tenantid"
+                columnName: "tenantid"
             },
             userId: {
                 type: DataTypes.STRING,
                 primaryKey: true,
-                field: "userid"
+                columnName: "userid"
             },
             relType: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "reltype"
+                columnName: "reltype"
             },
             enabled: {
                 type: DataTypes.BOOLEAN,
                 primaryKey: false,
                 allowNull: false,
-				field: "enabled"
+				columnName: "enabled"
             }
         }, 
 		{

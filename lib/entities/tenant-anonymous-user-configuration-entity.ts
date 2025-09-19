@@ -1,4 +1,4 @@
-import { Model, DataTypes, Sequelize } from 'sequelize';
+import { Model, DataTypes, Sequelize } from "@sequelize/core";
 
 class TenantAnonymousUserConfigurationEntity extends Model {
     
@@ -7,19 +7,19 @@ class TenantAnonymousUserConfigurationEntity extends Model {
             tenantId: {
                 type: DataTypes.STRING,
                 primaryKey: true,
-                field: "tenantid"
+                columnName: "tenantid"
             },
             defaultcountrycode: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: true,
-                field: "defaultcountrycode"
+                columnName: "defaultcountrycode"
             },
             defaultlanguagecode: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: true,
-                field: "defaultlanguagecode"
+                columnName: "defaultlanguagecode"
             },
             tokenttlseconds: {
                 type: DataTypes.INTEGER,

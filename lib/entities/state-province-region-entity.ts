@@ -1,4 +1,4 @@
-import { Model, DataTypes, Sequelize } from 'sequelize';
+import { Model, DataTypes, Sequelize } from "@sequelize/core";
 
 export class StateProvinceRegionEntity extends Model {
     
@@ -7,24 +7,24 @@ export class StateProvinceRegionEntity extends Model {
             isoCountryCode: {
                 type: DataTypes.STRING,
                 primaryKey: true,
-                field: "isocountrycode"
+                columnName: "isocountrycode"
             },
             isoEntryCode: {
                 type: DataTypes.STRING,
                 primaryKey: true,
-                field: "isoentrycode"
+                columnName: "isoentrycode"
             },
             isoEntryName: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "isoentryname"
+                columnName: "isoentryname"
             },
             isoSubsetType: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "isosubsettype"
+                columnName: "isosubsettype"
             }
         }, {
             sequelize,

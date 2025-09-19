@@ -1,4 +1,4 @@
-import { Model, DataTypes, Sequelize } from 'sequelize';
+import { Model, DataTypes, Sequelize } from "@sequelize/core";
 
 class SigningKeyEntity extends Model {
     
@@ -7,31 +7,67 @@ class SigningKeyEntity extends Model {
             keyId: {
                 type: DataTypes.STRING,
                 primaryKey: true,
-                field: "keyid"
+                columnName: "keyid"
             },
             keyType: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "keytype"
+                columnName: "keytype"
             },
             keyName: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "keyname"
+                columnName: "keyname"
             },
             keyUse: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-				field: "keyuse"
+				columnName: "keyuse"
+            },            
+            password: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: true,
+                columnName: "password"
+            },            
+            expiresAtMs: {
+                type: DataTypes.BIGINT,
+                primaryKey: false,
+                allowNull: false,
+                columnName: "expiresatms"
+            },
+            createdAtMs: {
+                type: DataTypes.BIGINT,
+                primaryKey: false,
+                allowNull: false,
+                columnName: "createdatms"
+            },
+            status: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: false,
+                columnName: "status"
+            },
+            tenantId: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: true,
+                columnName: "tenantid"
+            },
+            markForDelete: {
+                type: DataTypes.BOOLEAN,
+                primaryKey: false,
+                allowNull: false,
+                columnName: "markfordelete"
             },
             privateKeyPkcs8: {
                 type: DataTypes.BLOB("long"),
                 primaryKey: false,
                 allowNull: false,
-                field: "privatekeypkcs8",
+                columnName: "privatekeypkcs8",
                 set(val: string | Buffer | null){
                     if(val === null || val === ""){
                         this.setDataValue("privateKeyPkcs8", null);
@@ -44,17 +80,11 @@ class SigningKeyEntity extends Model {
                     }
                 }
             },
-            password: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: true,
-                field: "password"
-            },
             publicKey: {
                 type: DataTypes.BLOB("long"),
                 primaryKey: false,
                 allowNull: true,
-                field: "publickey",
+                columnName: "publickey",
                 set(val: string | Buffer | null){
                     if(val === null || val === ""){
                         this.setDataValue("publicKey", null);
@@ -71,7 +101,7 @@ class SigningKeyEntity extends Model {
                 type: DataTypes.BLOB("long"),
                 primaryKey: false,
                 allowNull: true,
-                field: "certificate",
+                columnName: "certificate",
                 set(val: string | Buffer | null){
                     if(val === null || val === ""){
                         this.setDataValue("certificate", null);
@@ -83,36 +113,6 @@ class SigningKeyEntity extends Model {
                         this.setDataValue("certificate", val);
                     }
                 }
-            },
-            expiresAtMs: {
-                type: DataTypes.NUMBER,
-                primaryKey: false,
-                allowNull: false,
-                field: "expiresatms"
-            },
-            createdAtMs: {
-                type: DataTypes.NUMBER,
-                primaryKey: false,
-                allowNull: false,
-                field: "createdatms"
-            },
-            status: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                field: "status"
-            },
-            tenantId: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: true,
-                field: "tenantid"
-            },
-            markForDelete: {
-                type: DataTypes.BOOLEAN,
-                primaryKey: false,
-                allowNull: false,
-                field: "markfordelete"
             }
         }, 
 		{

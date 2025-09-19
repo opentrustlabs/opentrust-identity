@@ -18,6 +18,8 @@ import { ERROR_CODES } from "../models/error";
 import { logWithDetails } from "../logging/logger";
 import Kms from "../kms/kms";
 import { RecaptchaResponse } from "../models/recaptcha";
+import SearchDao from "../dao/search-dao";
+import OpenSearchDao from "../dao/impl/search/open-search-dao";
 
 
 const jwtServiceUtils: JwtServiceUtils = new JwtServiceUtils();
@@ -28,6 +30,7 @@ const searchClient: OpenSearchClient = getOpenSearchClient();
 const authDao: AuthDao = DaoFactory.getInstance().getAuthDao();
 const federatedOIDCProvderDao: FederatedOIDCProviderDao = DaoFactory.getInstance().getFederatedOIDCProvicerDao();
 const kms: Kms = DaoFactory.getInstance().getKms();
+const searchDao: SearchDao = new OpenSearchDao();
 
 class RegisterUserService extends IdentityService {
 
@@ -210,7 +213,7 @@ class RegisterUserService extends IdentityService {
         await identityDao.deleteEmailConfirmationToken(token);
         user.emailVerified = true;
         await identityDao.updateUser(user);
-        await this.updateSearchIndexUserDocuments(user);
+        await searchDao.updateSearchIndexUserDocuments(user);
         arrUserRegistrationState[index].registrationStateStatus = STATUS_COMPLETE;
         await identityDao.updateUserRegistrationState(arrUserRegistrationState[0]);
         const nextRegistrationState = arrUserRegistrationState[index + 1];
@@ -1193,8 +1196,8 @@ class RegisterUserService extends IdentityService {
             const tenantLookAndFeel: TenantLookAndFeel = await tenantDao.getTenantLookAndFeel(this.oidcContext.rootTenant.tenantId) || DEFAULT_TENANT_LOOK_AND_FEEL;
             oidcServiceUtils.sendEmailVerificationEmail(fromEmailAddr, user.email, name, token, tenantLookAndFeel, user.preferredLanguageCode || "en", systemSettings.contactEmail || undefined);
         }
-        await this.updateObjectSearchIndex(tenant, user);
-        await this.updateRelSearchIndex(tenant.tenantId, tenant.tenantId, user);
+        await searchDao.updateObjectSearchIndex(tenant, user);
+        await searchDao.updateRelSearchIndex(tenant.tenantId, tenant.tenantId, user);
 
         return Promise.resolve({ user: user, tenant: tenant, tenantPasswordConfig: tenantPasswordConfig });
     }
@@ -1305,7 +1308,7 @@ class RegisterUserService extends IdentityService {
             return;                
         }
         await identityDao.updateUser(user);
-        await this.updateObjectSearchIndex(tenant, user);
+        await searchDao.updateObjectSearchIndex(tenant, user);
         if(userRegistrationState.deviceCodeId){
             const deviceCodeData: AuthorizationDeviceCodeData | null = await authDao.getAuthorizationDeviceCodeData(userRegistrationState.deviceCodeId, "devicecodeid");
             if(deviceCodeData){

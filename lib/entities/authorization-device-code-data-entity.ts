@@ -1,4 +1,4 @@
-import { Model, DataTypes, Sequelize } from 'sequelize';
+import { Model, DataTypes, Sequelize } from "@sequelize/core";
 
 class AuthorizationDeviceCodeDataEntity extends Model {
     
@@ -8,55 +8,55 @@ class AuthorizationDeviceCodeDataEntity extends Model {
                 type: DataTypes.STRING,
                 primaryKey: true,
                 allowNull: false,
-                field: "devicecodeid"
+                columnName: "devicecodeid"
             },
             deviceCode: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "devicecode"
+                columnName: "devicecode"
             },            
             userCode: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "usercode"
+                columnName: "usercode"
             },
             clientId: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "clientid"
+                columnName: "clientid"
             },
             tenantId: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "tenantid"
+                columnName: "tenantid"
             },
             expiresAtMs: {
-                type: DataTypes.NUMBER,
+                type: DataTypes.BIGINT,
                 primaryKey: false,
                 allowNull: false,
-                field: "expiresatms"
+                columnName: "expiresatms"
             },
             scope: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "scope"
+                columnName: "scope"
             },
             authorizationStatus: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "authorizationstatus"
+                columnName: "authorizationstatus"
             },
             userId: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: true,
-                field: "userid"
+                columnName: "userid"
             }
         }, 
         {

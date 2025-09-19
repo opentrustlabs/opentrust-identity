@@ -1,4 +1,4 @@
-import { Model, DataTypes, Sequelize } from 'sequelize';
+import { Model, DataTypes, Sequelize } from "@sequelize/core";
 
 class TenantManagementDomainRelEntity extends Model {
     
@@ -8,12 +8,12 @@ class TenantManagementDomainRelEntity extends Model {
                 tenantId: {
                     type: DataTypes.STRING,
                     primaryKey: true,
-                    field: "tenantid"
+                    columnName: "tenantid"
                 },
                 domain: {
                     type: DataTypes.STRING,
                     primaryKey: true,
-                    field: "domain"
+                    columnName: "domain"
                 }
             },
             {

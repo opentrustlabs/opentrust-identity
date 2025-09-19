@@ -1,4 +1,4 @@
-import { Model, DataTypes, Sequelize } from 'sequelize';
+import { Model, DataTypes, Sequelize } from "@sequelize/core";
 
 class AuthorizationCodeDataEntity extends Model {
     
@@ -7,55 +7,55 @@ class AuthorizationCodeDataEntity extends Model {
             code: {
                 type: DataTypes.STRING,
                 primaryKey: true,
-                field: "code"
+                columnName: "code"
             },
             clientId: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "clientid"
+                columnName: "clientid"
             },
             tenantId: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "tenantid"
+                columnName: "tenantid"
             },
             codeChallenge: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: true,
-                field: "codechallenge"
+                columnName: "codechallenge"
             },
             codeChallengeMethod: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: true,
-                field: "codechallengemethod"
+                columnName: "codechallengemethod"
             },
             expiresAtMs: {
-                type: DataTypes.NUMBER,
+                type: DataTypes.BIGINT,
                 primaryKey: false,
                 allowNull: false,
-                field: "expiresatms"
+                columnName: "expiresatms"
             },
             redirectUri: {
                 type: DataTypes.BOOLEAN,
                 primaryKey: false,
                 allowNull: false,
-                field: "redirecturi"
+                columnName: "redirecturi"
             },
             scope: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "scope"
+                columnName: "scope"
             },
             userId: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "userid"
+                columnName: "userid"
             }
         }, 
         {

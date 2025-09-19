@@ -4,22 +4,22 @@ import ClientAuthHistoryEntity from "@/lib/entities/client-auth-history-entity";
 import ClientEntity from "@/lib/entities/client-entity";
 import ClientRedirectUriRelEntity from "@/lib/entities/client-redirect-uri-rel-entity";
 import DBDriver from "@/lib/data-sources/sequelize-db";
-import { Op, Sequelize } from "sequelize";
+import { Op } from "@sequelize/core";
 
 class DBClientDao extends ClientDao {
 
     public async getClients(tenantId?: string): Promise<Array<Client>> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
+        
         const whereClause = tenantId ? {tenantId: tenantId} : {}
-        const clientEntities: Array<ClientEntity> = await sequelize.models.client.findAll({
+        const clientEntities: Array<ClientEntity> = await (await DBDriver.getInstance().getClientEntity()).findAll({
             where: whereClause
         });
         return clientEntities.map(e => e.dataValues);
     }
 
     public async getClientById(clientId: string): Promise<Client | null> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        const clientEntity: ClientEntity | null = await sequelize.models.client.findOne({
+        
+        const clientEntity: ClientEntity | null = await (await DBDriver.getInstance().getClientEntity()).findOne({
             where: {
                 clientId: clientId
             }
@@ -34,14 +34,14 @@ class DBClientDao extends ClientDao {
     }
 
     public async createClient(client: Client): Promise<Client> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.client.create(client);
+        
+        await (await DBDriver.getInstance().getClientEntity()).create(client);
         return Promise.resolve(client);
     }
 
     public async updateClient(client: Client): Promise<Client> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.client.update(client, {
+        
+        await (await DBDriver.getInstance().getClientEntity()).update(client, {
             where: {
                 clientId: client.clientId
             }
@@ -52,63 +52,63 @@ class DBClientDao extends ClientDao {
 
     public async deleteClient(clientId: string): Promise<void> {
         
-        const sequelize: Sequelize = await DBDriver.getConnection();
         
-        await sequelize.models.clientRedirectUriRel.destroy({
+        
+        await (await DBDriver.getInstance().getClientRedirectUriRelEntity()).destroy({
             where: {
                 clientId: clientId
             }
         });
         
-        await sequelize.models.authenticationGroupClientRel.destroy({
+        await (await DBDriver.getInstance().getAuthenticationGroupClientRelEntity()).destroy({
             where: {
                 clientId: clientId
             }
         });
         
-        await sequelize.models.clientScopeRel.destroy({
+        await (await DBDriver.getInstance().getClientScopeRelEntity()).destroy({
             where: {
                 clientId: clientId
             }
         });
         
-        await sequelize.models.preAuthenticationState.destroy({
+        await (await DBDriver.getInstance().getPreAuthenticationStateEntity()).destroy({
             where: {
                 clientId: clientId
             }
         });
         
-        await sequelize.models.authorizationCodeData.destroy({
+        await (await DBDriver.getInstance().getAuthorizationCodeDataEntity()).destroy({
             where: {
                 clientId: clientId
             }
         });
         
-        await sequelize.models.refreshData.destroy({
+        await (await DBDriver.getInstance().getRefreshDataEntity()).destroy({
             where: {
                 clientId: clientId
             }
         });
         
-        await sequelize.models.federatedOidcAuthorizationRel.destroy({
+        await (await DBDriver.getInstance().getFederatedOIDCAuthorizationRelEntity()).destroy({
             where: {
                 initClientId: clientId
             }
         });
         
-        await sequelize.models.clientAuthHistory.destroy({
+        await (await DBDriver.getInstance().getClientAuthHistoryEntity()).destroy({
             where: {
                 clientId: clientId
             }
         });
         
-        await sequelize.models.contact.destroy({
+        await (await DBDriver.getInstance().getContactEntity()).destroy({
             where: {
                 objectid: clientId
             }
         });
 
-        await sequelize.models.client.destroy({
+        await (await DBDriver.getInstance().getClientEntity()).destroy({
             where: {
                 clientId: clientId
             }
@@ -117,8 +117,8 @@ class DBClientDao extends ClientDao {
 
 
     public async getClientAuthHistoryByJti(jti: string): Promise<ClientAuthHistory | null> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        const entity: ClientAuthHistoryEntity | null = await sequelize.models.clientAuthHistory.findOne({
+        
+        const entity: ClientAuthHistoryEntity | null = await (await DBDriver.getInstance().getClientAuthHistoryEntity()).findOne({
             where: {
                 jti: jti
             }
@@ -127,14 +127,14 @@ class DBClientDao extends ClientDao {
     }
 
     public async saveClientAuthHistory(clientAuthHistory: ClientAuthHistory): Promise<void> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.clientAuthHistory.create(clientAuthHistory);
+        
+        await (await DBDriver.getInstance().getClientAuthHistoryEntity()).create(clientAuthHistory);
         return Promise.resolve();
     }
 
     public async deleteClientAuthHistory(jti: string): Promise<void> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.clientAuthHistory.destroy({
+        
+        await (await DBDriver.getInstance().getClientAuthHistoryEntity()).destroy({
             where: {
                 jti: jti
             }
@@ -143,19 +143,19 @@ class DBClientDao extends ClientDao {
     }
 
     public async deleteExpiredData(): Promise<void>{
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.clientAuthHistory.destroy({
+        
+        await (await DBDriver.getInstance().getClientAuthHistoryEntity()).destroy({
             where: {
                 expiresAtSeconds: {
-                    [Op.lt]: Date.now() / 1000
+                    [Op.lt]: Math.floor(Date.now() / 1000)
                 }
             }
         });
     }
 
     public async getRedirectURIs(clientId: string): Promise<Array<string>>{
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        const resultList: Array<ClientRedirectUriRelEntity> = await sequelize.models.clientRedirectUriRel.findAll({
+        
+        const resultList: Array<ClientRedirectUriRelEntity> = await (await DBDriver.getInstance().getClientRedirectUriRelEntity()).findAll({
             where: {
                 clientId: clientId
             }
@@ -174,8 +174,8 @@ class DBClientDao extends ClientDao {
     }
 
     public async addRedirectURI(clientId: string, uri: string): Promise<string>{
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.clientRedirectUriRel.build({
+        
+        await (await DBDriver.getInstance().getClientRedirectUriRelEntity()).build({
             clientId: clientId, redirectUri: uri
         })
         .save();
@@ -184,8 +184,8 @@ class DBClientDao extends ClientDao {
     }
     
     public async removeRedirectURI(clientId: string, uri: string): Promise<void>{        
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.clientRedirectUriRel.destroy({
+        
+        await (await DBDriver.getInstance().getClientRedirectUriRelEntity()).destroy({
             where: {
                 clientId: clientId,
                 redirectUri: uri

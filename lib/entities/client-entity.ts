@@ -1,4 +1,4 @@
-import { Model, DataTypes, Sequelize } from 'sequelize';
+import { Model, DataTypes, Sequelize } from "@sequelize/core";
 
 class ClientEntity extends Model {
     
@@ -7,85 +7,85 @@ class ClientEntity extends Model {
             clientId: {
                 type: DataTypes.STRING,
                 primaryKey: true,
-                field: "clientid"
+                columnName: "clientid"
             },
             tenantId: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "tenantid"
+                columnName: "tenantid"
             },
             clientName: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "clientname"
+                columnName: "clientname"
             },
             clientDescription: {
-                type: DataTypes.BOOLEAN,
+                type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: true,
-				field: "clientdescription"
+				columnName: "clientdescription"
             },
             clientSecret: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "clientsecret"
+                columnName: "clientsecret"
             },
             clientTokenTTLSeconds: {
                 type: DataTypes.INTEGER,
                 primaryKey: false,
                 allowNull: true,
-                field: "clienttokenttlseconds"
+                columnName: "clienttokenttlseconds"
             },
             clientType: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "clienttype"
+                columnName: "clienttype"
             },
             maxRefreshTokenCount: {
                 type: DataTypes.INTEGER,
                 primaryKey: false,
                 allowNull: true,
-                field: "maxrefreshtokencount"
+                columnName: "maxrefreshtokencount"
             },
             enabled: {
                 type: DataTypes.BOOLEAN,
                 primaryKey: false,
                 allowNull: false,
-                field: "enabled"
+                columnName: "enabled"
             },
             oidcEnabled: {
                 type: DataTypes.BOOLEAN,
                 primaryKey: false,
                 allowNull: false,
-                field: "oidcenabled"
+                columnName: "oidcenabled"
             },
             pkceEnabled: {
                 type: DataTypes.BOOLEAN,
                 primaryKey: false,
                 allowNull: false,
-                field: "pkceenabled"
+                columnName: "pkceenabled"
             },
             userTokenTTLSeconds: {
                 type: DataTypes.INTEGER,
                 primaryKey: false,
                 allowNull: true,
-                field: "usertokenttlseconds"
+                columnName: "usertokenttlseconds"
             },
             markForDelete: {
                 type: DataTypes.BOOLEAN,
                 primaryKey: false,
                 allowNull: false,
-                field: "markfordelete"
+                columnName: "markfordelete"
             },
             audience: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: true,
-                field: "audience"
+                columnName: "audience"
             }
         }, 
 		{

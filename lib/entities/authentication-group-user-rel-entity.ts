@@ -1,4 +1,4 @@
-import { Model, DataTypes, Sequelize } from 'sequelize';
+import { Model, DataTypes, Sequelize } from "@sequelize/core";
 
 class AuthenticationGroupUserRelEntity extends Model {
     
@@ -7,12 +7,12 @@ class AuthenticationGroupUserRelEntity extends Model {
             authenticationGroupId: {
                 type: DataTypes.STRING,
                 primaryKey: true,
-                field: "authenticationgroupid"
+                columnName: "authenticationgroupid"
             },
             userId: {
                 type: DataTypes.STRING,
                 primaryKey: true,
-                field: "userid"
+                columnName: "userid"
             }
         }, 
 		{

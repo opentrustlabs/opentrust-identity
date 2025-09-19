@@ -1,4 +1,4 @@
-import { Model, DataTypes, Sequelize } from 'sequelize';
+import { Model, DataTypes, Sequelize } from "@sequelize/core";
 
 class UserFailedLoginEntity extends Model {
     
@@ -7,24 +7,24 @@ class UserFailedLoginEntity extends Model {
             userId: {
                 type: DataTypes.STRING,
                 primaryKey: true,
-                field: "userid"
+                columnName: "userid"
             },
             failureAtMs: {
                 type: DataTypes.BIGINT,
                 primaryKey: true,
-                field: "failureatms"
+                columnName: "failureatms"
             },
             nextLoginNotBefore: {
                 type: DataTypes.BIGINT,
                 primaryKey: false,
                 allowNull: false,
-                field: "nextloginnotbefore"
+                columnName: "nextloginnotbefore"
             },
             failureCount: {
                 type: DataTypes.INTEGER,
                 primaryKey: false,
                 allowNull: false,
-                field: "failurecount"
+                columnName: "failurecount"
             }
         }, 
 		{

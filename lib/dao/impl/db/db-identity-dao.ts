@@ -9,7 +9,7 @@ import { MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, VERIFICATION_TOKEN_T
 import UserMfaRelEntity from "@/lib/entities/user-mfa-rel-entity";
 import UserTenantRelEntity from "@/lib/entities/user-tenant-rel-entity";
 import DBDriver from "@/lib/data-sources/sequelize-db";
-import { Op, Sequelize } from "sequelize";
+import { Op } from "@sequelize/core";
 import UserFido2ChallengeEntity from "@/lib/entities/user-fido2-challenge-entity";
 import UserFido2CounterRelEntity from "@/lib/entities/user-fido2-counter-rel-entity";
 import UserAuthenticationStateEntity from "@/lib/entities/user-authentication-state-entity";
@@ -24,14 +24,12 @@ class DBIdentityDao extends IdentityDao {
 
     
     public async saveFIDOKey(userMfaRel: UserMfaRel): Promise<void> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.userMfaRel.create(userMfaRel);
+        await (await DBDriver.getInstance().getUserMfaRelEntity()).create(userMfaRel);
         return Promise.resolve();
     }
     
     public async getFIDOKey(userId: string): Promise<UserMfaRel | null> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        const entity: UserMfaRelEntity | null = await sequelize.models.userMfaRel.findOne({
+        const entity: UserMfaRelEntity | null = await (await DBDriver.getInstance().getUserMfaRelEntity()).findOne({
             where: {
                 userId: userId,
                 mfaType: MFA_AUTH_TYPE_FIDO2
@@ -46,8 +44,7 @@ class DBIdentityDao extends IdentityDao {
     }
     
     public async deleteFIDOKey(userId: string): Promise<void> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.userMfaRel.destroy({
+        await (await DBDriver.getInstance().getUserMfaRelEntity()).destroy({
             where: {
                 userId: userId,
                 mfaType: MFA_AUTH_TYPE_FIDO2
@@ -57,16 +54,14 @@ class DBIdentityDao extends IdentityDao {
     }
     
 
-    public async saveTOTP(userMfaRel: UserMfaRel): Promise<void> {
-        const sequelize: Sequelize = await DBDriver.getConnection();             
-        await sequelize.models.userMfaRel.create(userMfaRel);
+    public async saveTOTP(userMfaRel: UserMfaRel): Promise<void> {         
+        await (await DBDriver.getInstance().getUserMfaRelEntity()).create(userMfaRel);
         return Promise.resolve();
     }
 
 
     public async deleteTOTP(userId: string): Promise<void>{
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.userMfaRel.destroy({
+        await (await DBDriver.getInstance().getUserMfaRelEntity()).destroy({
             where: {
                 userId: userId,
                 mfaType: MFA_AUTH_TYPE_TIME_BASED_OTP
@@ -76,8 +71,7 @@ class DBIdentityDao extends IdentityDao {
     }
 
     public async getUserMFARels(userId: string): Promise<Array<UserMfaRel>> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        const arr: Array<UserMfaRelEntity> = await sequelize.models.userMfaRel.findAll({
+        const arr: Array<UserMfaRelEntity> = await (await DBDriver.getInstance().getUserMfaRelEntity()).findAll({
             where: {
                 userId: userId
             }
@@ -88,8 +82,7 @@ class DBIdentityDao extends IdentityDao {
     }
 
     public async getTOTP(userId: string): Promise<UserMfaRel | null>{
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        const entity: UserMfaRelEntity | null = await sequelize.models.userMfaRel.findOne({
+        const entity: UserMfaRelEntity | null = await (await DBDriver.getInstance().getUserMfaRelEntity()).findOne({
             where: {
                 userId: userId,
                 mfaType: MFA_AUTH_TYPE_TIME_BASED_OTP
@@ -103,9 +96,8 @@ class DBIdentityDao extends IdentityDao {
         }
     }
 
-    public async  getFIDO2Challenge(userId: string): Promise<Fido2Challenge | null> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        const e: UserFido2ChallengeEntity | null = await sequelize.models.userFido2Challenge.findOne({
+    public async  getFIDO2Challenge(userId: string): Promise<Fido2Challenge | null> {        
+        const e: UserFido2ChallengeEntity | null = await (await DBDriver.getInstance().getUserFido2ChallengeEntity()).findOne({
             where: {
                 userId: userId
             }
@@ -120,13 +112,11 @@ class DBIdentityDao extends IdentityDao {
     }
 
     public async  saveFIDO2Challenge(fido2Challenge: Fido2Challenge): Promise<void> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.userFido2Challenge.create(fido2Challenge);
+        await (await DBDriver.getInstance().getUserFido2ChallengeEntity()).create(fido2Challenge);
     }
 
     public async deleteFIDO2Challenge(userId: string): Promise<void> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.userFido2Challenge.destroy({
+        await (await DBDriver.getInstance().getUserFido2ChallengeEntity()).destroy({
             where: {
                 userId: userId
             }
@@ -135,8 +125,7 @@ class DBIdentityDao extends IdentityDao {
     }
 
     public async getFido2Count(userId: string): Promise<number | null> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        const e: UserFido2CounterRelEntity | null = await sequelize.models.userFido2CountrerRel.findOne({
+        const e: UserFido2CounterRelEntity | null = await (await DBDriver.getInstance().getUserFido2CounterRelEntity()).findOne({
             where: {
                 userId: userId
             }
@@ -145,8 +134,8 @@ class DBIdentityDao extends IdentityDao {
     }
 
     public async updateFido2Count(userId: string, count: number): Promise<void> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.userFido2CountrerRel.update(
+
+        await (await DBDriver.getInstance().getUserFido2CounterRelEntity()).update(
             {
                 userId: userId,
                 fido2Counter: count
@@ -161,8 +150,8 @@ class DBIdentityDao extends IdentityDao {
     }
 
     public async initFidoCount(userId: string, count: number): Promise<void> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.userFido2CountrerRel.create(
+
+        await (await DBDriver.getInstance().getUserFido2CounterRelEntity()).create(
             {
                 userId: userId,
                 fido2Counter: count
@@ -172,8 +161,7 @@ class DBIdentityDao extends IdentityDao {
     }
 
     public async deleteFido2Count(userId: string): Promise<void> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.userFido2CountrerRel.destroy({
+        await (await DBDriver.getInstance().getUserFido2CounterRelEntity()).destroy({
             where: {
                 userId: userId
             }
@@ -182,15 +170,15 @@ class DBIdentityDao extends IdentityDao {
     }
     
     public async getUserGroups(userId: string): Promise<Array<AuthorizationGroup>> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        const rels: Array<UserAuthorizationGroupRelEntity> = await sequelize.models.authorizationGroupUserRel.findAll({
+
+        const rels: Array<UserAuthorizationGroupRelEntity> = await (await DBDriver.getInstance().getAuthorizationGroupUserRelEntity()).findAll({
             where: {
                 userId: userId
             }
         });
         
         const groupIds = rels.map(r => r.getDataValue("groupId"));
-        const groups: Array<AuthorizationGroupEntity> = await sequelize.models.authorizationGroup.findAll({
+        const groups: Array<AuthorizationGroupEntity> = await (await DBDriver.getInstance().getAuthorizationGroupEntity()).findAll({
             where: {
                 groupId: { [Op.in]: groupIds}
             }
@@ -199,15 +187,15 @@ class DBIdentityDao extends IdentityDao {
     }
 
     public async getUserAuthenticationGroups(userId: string): Promise<Array<AuthenticationGroup>> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        const rels: Array<UserAuthorizationGroupRelEntity> = await sequelize.models.authenticationGroupUserRel.findAll({
+
+        const rels: Array<UserAuthorizationGroupRelEntity> = await (await DBDriver.getInstance().getAuthenticationGroupUserRelEntity()).findAll({
             where: {
                 userId: userId
             }
         });
 
         const groupIds = rels.map(r => r.getDataValue("authenticationGroupId"));
-        const authnGroups: Array<AuthenticationGroupEntity> = await sequelize.models.authenticationGroup.findAll({
+        const authnGroups: Array<AuthenticationGroupEntity> = await (await DBDriver.getInstance().getAuthenticationGroupEntity()).findAll({
             where: {
                 authenticationGroupId: {[Op.in]: groupIds}
             }
@@ -217,8 +205,8 @@ class DBIdentityDao extends IdentityDao {
     }
 
     public async getUserCredentials(userId: string): Promise<Array<UserCredential>>{
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        const arrUserCredentialEntity: Array<UserCredentialEntity> = await sequelize.models.userCredential.findAll({
+
+        const arrUserCredentialEntity: Array<UserCredentialEntity> = await (await DBDriver.getInstance().getUserCredentialEntity()).findAll({
             where: {
                 userId: userId
             },
@@ -230,8 +218,8 @@ class DBIdentityDao extends IdentityDao {
     }
 
     public async getUserCredentialForAuthentication(userId: string): Promise<UserCredential | null> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        const userCredentialEntity: UserCredentialEntity | null = await sequelize.models.userCredential.findOne({
+
+        const userCredentialEntity: UserCredentialEntity | null = await (await DBDriver.getInstance().getUserCredentialEntity()).findOne({
             where: {
                 userId: userId
             },
@@ -243,8 +231,8 @@ class DBIdentityDao extends IdentityDao {
     }
 
     public async getFailedLogins(userId: string): Promise<Array<UserFailedLogin>> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        const entities = await sequelize.models.userFailedLogin.findAll({
+
+        const entities = await (await DBDriver.getInstance().getUserFailedLoginEntity()).findAll({
             where: {userId: userId},
             order: ["failureAtMs"]
         });
@@ -256,14 +244,14 @@ class DBIdentityDao extends IdentityDao {
     }
 
     public async addFailedLogin(userFailedLogins: UserFailedLogin): Promise<void> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.userFailedLogin.create(userFailedLogins);            
+
+        await (await DBDriver.getInstance().getUserFailedLoginEntity()).create(userFailedLogins);            
         return Promise.resolve();
     }
 
     public async removeFailedLogin(userId: string, failureAtMs: number): Promise<void>{
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.userFailedLogin.destroy({
+
+        await (await DBDriver.getInstance().getUserFailedLoginEntity()).destroy({
             where: {
                 userId: userId,
                 failureAtMs: failureAtMs
@@ -273,8 +261,7 @@ class DBIdentityDao extends IdentityDao {
     }
 
     public async resetFailedLoginAttempts(userId: string): Promise<void> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.userFailedLogin.destroy({
+        await (await DBDriver.getInstance().getUserFailedLoginEntity()).destroy({
             where: {
                 userId: userId
             }
@@ -284,7 +271,6 @@ class DBIdentityDao extends IdentityDao {
 
 
     public async getUserBy(userLookupType: UserLookupType, value: string): Promise<User | null> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const where: any = {};
@@ -301,20 +287,20 @@ class DBIdentityDao extends IdentityDao {
             where.federatedOIDCProviderSubjectId = value;
         }
         
-        let u: UserEntity | null = await sequelize.models.users.findOne({
+        let u: UserEntity | null = await (await DBDriver.getInstance().getUserEntity()).findOne({
             where: where
         });
 
         // For email lookups, we can try the recovery email table too
         if(u === null && userLookupType === "email"){
-            const entity: UserEmailRecoveryEntity | null = await sequelize.models.userEmailRecovery.findOne({
+            const entity: UserEmailRecoveryEntity | null = await (await DBDriver.getInstance().getUserEmailRecoveryEntity()).findOne({
                 where: {
                     email: value
                 }
             });
             if(entity){
                 const userId = entity.getDataValue("userId");
-                u = await sequelize.models.users.findOne({
+                u = await (await DBDriver.getInstance().getUserEntity()).findOne({
                     where: {
                         userId: userId
                     }
@@ -328,8 +314,8 @@ class DBIdentityDao extends IdentityDao {
 
 
     public async savePasswordResetToken(userId: string, token: string): Promise<void> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.userVerificationToken.create({
+
+        await (await DBDriver.getInstance().getUserVerificationTokenEntity()).create({
             expiresAtMS: Date.now() + 600000,  // allow 10 minutes
             issuedAtMS:  Date.now(),
             userId: userId,
@@ -341,8 +327,8 @@ class DBIdentityDao extends IdentityDao {
     }
 
     public async getUserByPasswordResetToken(token: string): Promise<User | null> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        const tokenEntity = await sequelize.models.userVerificationToken.findOne({
+        
+        const tokenEntity = await (await DBDriver.getInstance().getUserVerificationTokenEntity()).findOne({
             where: {
                 token: token
             }
@@ -355,15 +341,15 @@ class DBIdentityDao extends IdentityDao {
             this.deletePasswordResetToken(token);
             return Promise.resolve(null);
         }
-        const user: UserEntity | null = await sequelize.models.users.findOne({
+        const user: UserEntity | null = await (await DBDriver.getInstance().getUserEntity()).findOne({
             where: {userId: tokenEntity.getDataValue("userId")}
         });
         return user ? Promise.resolve(user.dataValues as User) : Promise.resolve(null);
     }
 
     public async deletePasswordResetToken(token: string): Promise<void> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.userVerificationToken.destroy({
+        
+        await (await DBDriver.getInstance().getUserVerificationTokenEntity()).destroy({
             where: {
                 token: token
             }
@@ -373,8 +359,8 @@ class DBIdentityDao extends IdentityDao {
 
     
     public async saveEmailConfirmationToken(userId: string, token: string): Promise<void> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.userVerificationToken.create({
+        
+        await (await DBDriver.getInstance().getUserVerificationTokenEntity()).create({
             expiresAtMS: Date.now() + (60 * 60 * 1000),  // allow 60 minutes
             issuedAtMS:  Date.now(),
             userId: userId,
@@ -386,8 +372,8 @@ class DBIdentityDao extends IdentityDao {
     }
 
     public async getUserByEmailConfirmationToken(token: string): Promise<User | null> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        const tokenEntity = await sequelize.models.userVerificationToken.findOne({
+        
+        const tokenEntity = await (await DBDriver.getInstance().getUserVerificationTokenEntity()).findOne({
             where: {
                 token: token
             }
@@ -400,15 +386,14 @@ class DBIdentityDao extends IdentityDao {
             this.deletePasswordResetToken(token);
             return Promise.resolve(null);
         }
-        const user: UserEntity | null = await sequelize.models.users.findOne({
+        const user: UserEntity | null = await (await DBDriver.getInstance().getUserEntity()).findOne({
             where: {userId: tokenEntity.getDataValue("userId")}
         });
         return user ? Promise.resolve(user.dataValues as User) : Promise.resolve(null);
     }
     
     public async deleteEmailConfirmationToken(token: string): Promise<void> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.userVerificationToken.destroy({
+        await (await DBDriver.getInstance().getUserVerificationTokenEntity()).destroy({
             where: {
                 token: token
             }
@@ -418,12 +403,10 @@ class DBIdentityDao extends IdentityDao {
 
     // prohibitedPasswords
     public async passwordProhibited(password: string): Promise<boolean> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        const entity = await sequelize.models.prohibitedPasswords.findOne({
+        const entity = await (await DBDriver.getInstance().getProhibitedPasswordEntity()).findOne({
             where: {
                 password: password
-            }
-            
+            }            
         });
         if(entity){
             return Promise.resolve(true);
@@ -432,13 +415,11 @@ class DBIdentityDao extends IdentityDao {
     }
     
     public async addUserCredential(userCredential: UserCredential): Promise<void> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.userCredential.create(userCredential);        
+        await (await DBDriver.getInstance().getUserCredentialEntity()).create(userCredential);        
         return Promise.resolve();
     }
 
     public async deleteUserCredential(userId: string, dateCreated?: Date): Promise<void> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const queryParams: any = {
@@ -447,22 +428,20 @@ class DBIdentityDao extends IdentityDao {
         if(dateCreated){
             queryParams.dateCreated = dateCreated
         }
-        await sequelize.models.userCredential.destroy({
+        await (await DBDriver.getInstance().getUserCredentialEntity()).destroy({
             where: queryParams
         });
         return Promise.resolve();
     }
 
     public async createUser(user: User): Promise<User> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.users.create(user);
+        await (await DBDriver.getInstance().getUserEntity()).create(user);
         return Promise.resolve(user);
     }
 
     public async updateUser(user: User): Promise<User> {
 
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.users.update(user, {
+        await (await DBDriver.getInstance().getUserEntity()).update(user, {
             where: {
                 userId: user.userId
             }
@@ -480,127 +459,126 @@ class DBIdentityDao extends IdentityDao {
     }
 
     public async deleteUser(userId: string): Promise<void> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.userTenantRel.destroy({
+        await (await DBDriver.getInstance().getUserTenantRelEntity()).destroy({
             where: {
                 userId: userId
             }
         });
 
-        await sequelize.models.userTermsAndConditionsAccepted.destroy({
+        await (await DBDriver.getInstance().getUserTermsAndConditionsAcceptedEntity()).destroy({
             where: {
                 userId: userId
             }
         });
-        await sequelize.models.authenticationGroupUserRel.destroy({
-            where: {
-                userId: userId
-            }
-        });
-
-        await sequelize.models.authorizationGroupUserRel.destroy({
+        await (await DBDriver.getInstance().getAuthenticationGroupUserRelEntity()).destroy({
             where: {
                 userId: userId
             }
         });
 
-        await sequelize.models.userCredential.destroy({
+        await (await DBDriver.getInstance().getAuthorizationGroupUserRelEntity()).destroy({
             where: {
                 userId: userId
             }
         });
 
-        await sequelize.models.userScopeRel.destroy({
+        await (await DBDriver.getInstance().getUserCredentialEntity()).destroy({
             where: {
                 userId: userId
             }
         });
 
-        await sequelize.models.authorizationCodeData.destroy({
+        await (await DBDriver.getInstance().getUserScopeRelEntity()).destroy({
             where: {
                 userId: userId
             }
         });
 
-        await sequelize.models.refreshData.destroy({
+        await (await DBDriver.getInstance().getAuthorizationCodeDataEntity()).destroy({
             where: {
                 userId: userId
             }
         });
 
-        await sequelize.models.federatedOidcAuthorizationRel.destroy({
+        await (await DBDriver.getInstance().getRefreshDataEntity()).destroy({
             where: {
                 userId: userId
             }
         });
 
-        await sequelize.models.userFailedLogin.destroy({
+        await (await DBDriver.getInstance().getFederatedOIDCAuthorizationRelEntity()).destroy({
             where: {
                 userId: userId
             }
         });
 
-        await sequelize.models.userVerificationToken.destroy({
+        await (await DBDriver.getInstance().getUserFailedLoginEntity()).destroy({
             where: {
                 userId: userId
             }
         });
 
-        await sequelize.models.userMfaRel.destroy({
+        await (await DBDriver.getInstance().getUserVerificationTokenEntity()).destroy({
             where: {
                 userId: userId
             }
         });
 
-        await sequelize.models.userFido2CountrerRel.destroy({
+        await (await DBDriver.getInstance().getUserMfaRelEntity()).destroy({
             where: {
                 userId: userId
             }
         });
 
-        await sequelize.models.userFido2Challenge.destroy({
+        await (await DBDriver.getInstance().getUserFido2CounterRelEntity()).destroy({
             where: {
                 userId: userId
             }
         });
 
-        await sequelize.models.userAuthenticationState.destroy({
+        await (await DBDriver.getInstance().getUserFido2ChallengeEntity()).destroy({
             where: {
                 userId: userId
             }
         });
 
-        await sequelize.models.userRegistrationState.destroy({
+        await (await DBDriver.getInstance().getUserAuthenticationStateEntity()).destroy({
             where: {
                 userId: userId
             }
         });
 
-        await sequelize.models.userDuressCredential.destroy({
+        await (await DBDriver.getInstance().getUserRegistrationStateEntity()).destroy({
             where: {
                 userId: userId
             }
         });
 
-        await sequelize.models.userEmailRecovery.destroy({
+        await (await DBDriver.getInstance().getUserDuressCredentialEntity()).destroy({
             where: {
                 userId: userId
             }
         });
 
-        await sequelize.models.userProfileEmailChangeState.destroy({
+        await (await DBDriver.getInstance().getUserEmailRecoveryEntity()).destroy({
+            where: {
+                userId: userId
+            }
+        });
+
+        await (await DBDriver.getInstance().getUserProfileChangeEmailStateEntity()).destroy({
             where: {
                 userId: userId
             }
         });
         
-        await sequelize.models.userAuthenticationHistory.destroy({
+        await (await DBDriver.getInstance().getUserAuthenticationHistoryEntity()).destroy({
             where: {
                 userId: userId
             }
         });
 
-        await sequelize.models.users.destroy({
+        await (await DBDriver.getInstance().getUserEntity()).destroy({
             where: {
                 userId: userId
             }
@@ -610,26 +588,26 @@ class DBIdentityDao extends IdentityDao {
 
     
     public async assignUserToTenant(tenantId: string, userId: string, relType: string): Promise<UserTenantRel> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
+        
         const model: UserTenantRel = {
             userId: userId,
             tenantId: tenantId,
             relType: relType,
             enabled: true
         };
-        await sequelize.models.userTenantRel.create(model);        
+        await (await DBDriver.getInstance().getUserTenantRelEntity()).create(model);        
         return model;
     }
 
     public async updateUserTenantRel(tenantId: string, userId: string, relType: string): Promise<UserTenantRel> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
+        
         const model: UserTenantRel = {
             userId: userId,
             tenantId: tenantId,
             relType: relType,
             enabled: true
         };
-        await sequelize.models.userTenantRel.update(model, {
+        await (await DBDriver.getInstance().getUserTenantRelEntity()).update(model, {
             where: {
                 userId: userId,
                 tenantId: tenantId
@@ -639,8 +617,8 @@ class DBIdentityDao extends IdentityDao {
     }
 
     public async removeUserFromTenant(tenantId: string, userId: string): Promise<void> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.userTenantRel.destroy({
+        
+        await (await DBDriver.getInstance().getUserTenantRelEntity()).destroy({
             where: {
                 tenantId: tenantId,
                 userId: userId
@@ -650,8 +628,8 @@ class DBIdentityDao extends IdentityDao {
     }
 
     public async getUserTenantRel(tenantId: string, userId: string): Promise<UserTenantRel | null> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        const entity: UserTenantRelEntity | null = await sequelize.models.userTenantRel.findOne({
+        
+        const entity: UserTenantRelEntity | null = await (await DBDriver.getInstance().getUserTenantRelEntity()).findOne({
             where: {
                 tenantId: tenantId,
                 userId: userId
@@ -661,8 +639,8 @@ class DBIdentityDao extends IdentityDao {
     }
 
     public async getUserTenantRelsByUserId(userId: string): Promise<Array<UserTenantRel>> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        const list = await sequelize.models.userTenantRel.findAll({
+        
+        const list = await (await DBDriver.getInstance().getUserTenantRelEntity()).findAll({
             where: {
                 userId: userId
             }
@@ -671,16 +649,16 @@ class DBIdentityDao extends IdentityDao {
     }
 
     public async createUserAuthenticationStates(arrUserAuthenticationState: Array<UserAuthenticationState>): Promise<Array<UserAuthenticationState>> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
+        
         for(let i = 0; i < arrUserAuthenticationState.length; i++){
-            await sequelize.models.userAuthenticationState.create(arrUserAuthenticationState[i]);
+            await (await DBDriver.getInstance().getUserAuthenticationStateEntity()).create(arrUserAuthenticationState[i]);
         }
         return arrUserAuthenticationState;
     }
 
     public async getUserAuthenticationStates(authenticationSessionToken: string): Promise<Array<UserAuthenticationState>> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        const arr: Array<UserAuthenticationStateEntity> = await sequelize.models.userAuthenticationState.findAll({
+        
+        const arr: Array<UserAuthenticationStateEntity> = await (await DBDriver.getInstance().getUserAuthenticationStateEntity()).findAll({
             where: {
                 authenticationSessionToken: authenticationSessionToken
             }
@@ -689,8 +667,8 @@ class DBIdentityDao extends IdentityDao {
     }
 
     public async updateUserAuthenticationState(userAuthenticationState: UserAuthenticationState): Promise<UserAuthenticationState> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.userAuthenticationState.update(userAuthenticationState, {
+        
+        await (await DBDriver.getInstance().getUserAuthenticationStateEntity()).update(userAuthenticationState, {
             where: {
                 userId: userAuthenticationState.userId,
                 authenticationSessionToken: userAuthenticationState.authenticationSessionToken,
@@ -701,8 +679,8 @@ class DBIdentityDao extends IdentityDao {
     }
 
     public async deleteUserAuthenticationState(userAuthenticationState: UserAuthenticationState): Promise<UserAuthenticationState> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.userAuthenticationState.destroy({
+        
+        await (await DBDriver.getInstance().getUserAuthenticationStateEntity()).destroy({
             where: {
                 userId: userAuthenticationState.userId,
                 authenticationSessionToken: userAuthenticationState.authenticationSessionToken,
@@ -713,16 +691,16 @@ class DBIdentityDao extends IdentityDao {
     }
 
     public async createUserRegistrationStates(arrRegistrationState: Array<UserRegistrationState>): Promise<Array<UserRegistrationState>> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
+        
         for(let i = 0; i < arrRegistrationState.length; i++){
-            await sequelize.models.userRegistrationState.create(arrRegistrationState[i]);
+            await (await DBDriver.getInstance().getUserRegistrationStateEntity()).create(arrRegistrationState[i]);
         }
         return arrRegistrationState;
     }
 
     public async getUserRegistrationStates(registrationSessionToken: string): Promise<Array<UserRegistrationState>> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        const arr: Array<UserRegistrationStateEntity> = await sequelize.models.userRegistrationState.findAll({
+        
+        const arr: Array<UserRegistrationStateEntity> = await (await DBDriver.getInstance().getUserRegistrationStateEntity()).findAll({
             where: {
                 registrationSessionToken: registrationSessionToken
             }
@@ -731,8 +709,8 @@ class DBIdentityDao extends IdentityDao {
     }
 
     public async getUserRegistrationStatesByEmail(email: string): Promise<Array<UserRegistrationState>>{
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        const arr: Array<UserRegistrationStateEntity> = await sequelize.models.userRegistrationState.findAll({
+        
+        const arr: Array<UserRegistrationStateEntity> = await (await DBDriver.getInstance().getUserRegistrationStateEntity()).findAll({
             where: {
                 email: email
             }
@@ -741,8 +719,8 @@ class DBIdentityDao extends IdentityDao {
     }
 
     public async updateUserRegistrationState(userRegistrationState: UserRegistrationState): Promise<UserRegistrationState> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.userRegistrationState.update(userRegistrationState, {
+        
+        await (await DBDriver.getInstance().getUserRegistrationStateEntity()).update(userRegistrationState, {
             where: {
                 userId: userRegistrationState.userId,
                 registrationSessionToken: userRegistrationState.registrationSessionToken,
@@ -753,8 +731,8 @@ class DBIdentityDao extends IdentityDao {
     }
 
     public async deleteUserRegistrationState(userRegistrationState: UserRegistrationState): Promise<UserRegistrationState> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.userRegistrationState.destroy({
+        
+        await (await DBDriver.getInstance().getUserRegistrationStateEntity()).destroy({
             where: {
                 userId: userRegistrationState.userId,
                 registrationSessionToken: userRegistrationState.registrationSessionToken,
@@ -765,14 +743,14 @@ class DBIdentityDao extends IdentityDao {
     }
 
     public async addUserTermsAndConditionsAccepted(userTermsAndConditionsAccepted: UserTermsAndConditionsAccepted): Promise<UserTermsAndConditionsAccepted>{
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.userTermsAndConditionsAccepted.create(userTermsAndConditionsAccepted);
+        
+        await (await DBDriver.getInstance().getUserTermsAndConditionsAcceptedEntity()).create(userTermsAndConditionsAccepted);
         return Promise.resolve(userTermsAndConditionsAccepted);
     }
     
     public async getUserTermsAndConditionsAccepted(userId: string, tenantId: string): Promise<UserTermsAndConditionsAccepted | null>{
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        const entity: UserTermsAndConditionsAcceptedEntity | null = await sequelize.models.userTermsAndConditionsAccepted.findOne({
+        
+        const entity: UserTermsAndConditionsAcceptedEntity | null = await (await DBDriver.getInstance().getUserTermsAndConditionsAcceptedEntity()).findOne({
             where: {
                 userId: userId,
                 tenantId: tenantId
@@ -782,8 +760,7 @@ class DBIdentityDao extends IdentityDao {
     }
     
     public async deleteUserTermsAndConditionsAccepted(userId: string, tenantId: string): Promise<void>{
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.userTermsAndConditionsAccepted.destroy({
+        await (await DBDriver.getInstance().getUserTermsAndConditionsAcceptedEntity()).destroy({
             where: {
                 userId: userId,
                 tenantId: tenantId
@@ -793,8 +770,7 @@ class DBIdentityDao extends IdentityDao {
     }
 
     public async deleteExpiredData(): Promise<void> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.userRegistrationState.destroy({
+        await (await DBDriver.getInstance().getUserRegistrationStateEntity()).destroy({
             where: {
                 expiresAtMs: {
                     [Op.lt]: Date.now()
@@ -802,7 +778,7 @@ class DBIdentityDao extends IdentityDao {
             }
         });
 
-        await sequelize.models.userAuthenticationState.destroy({
+        await (await DBDriver.getInstance().getUserAuthenticationStateEntity()).destroy({
             where: {
                 expiresAtMs: {
                     [Op.lt]: Date.now()
@@ -810,7 +786,7 @@ class DBIdentityDao extends IdentityDao {
             }
         });
 
-        await sequelize.models.userFido2Challenge.destroy({
+        await (await DBDriver.getInstance().getUserFido2ChallengeEntity()).destroy({
             where: {
                 expiresAtMs: {
                     [Op.lt]: Date.now()
@@ -818,7 +794,7 @@ class DBIdentityDao extends IdentityDao {
             }
         });
 
-        await sequelize.models.userVerificationToken.destroy({
+        await (await DBDriver.getInstance().getUserVerificationTokenEntity()).destroy({
             where: {
                 expiresAtMS: {
                     [Op.lt]: Date.now()
@@ -826,7 +802,7 @@ class DBIdentityDao extends IdentityDao {
             }
         });
         
-        await sequelize.models.userProfileEmailChangeState.destroy({
+        await (await DBDriver.getInstance().getUserProfileChangeEmailStateEntity()).destroy({
             where: {
                 expiresAtMs: {
                     [Op.lt]: Date.now()
@@ -837,8 +813,8 @@ class DBIdentityDao extends IdentityDao {
     }
 
     public async getUserRecoveryEmail(userId: string): Promise<UserRecoveryEmail | null>{
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        const entity: UserEmailRecoveryEntity | null = await sequelize.models.userEmailRecovery.findOne({
+        
+        const entity: UserEmailRecoveryEntity | null = await (await DBDriver.getInstance().getUserEmailRecoveryEntity()).findOne({
             where: {
                 userId: userId
             }
@@ -847,14 +823,12 @@ class DBIdentityDao extends IdentityDao {
     }
 
     public async addRecoveryEmail(userRecoveryEmail: UserRecoveryEmail): Promise<UserRecoveryEmail>{
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.userEmailRecovery.create(userRecoveryEmail);
+        await (await DBDriver.getInstance().getUserEmailRecoveryEntity()).create(userRecoveryEmail);
         return Promise.resolve(userRecoveryEmail);
     }
 
     public async updateRecoveryEmail(userRecoveryEmail: UserRecoveryEmail): Promise<UserRecoveryEmail>{
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.userEmailRecovery.update(userRecoveryEmail, {
+        await (await DBDriver.getInstance().getUserEmailRecoveryEntity()).update(userRecoveryEmail, {
                 where: {
                     userId: userRecoveryEmail.userId
                 }
@@ -864,8 +838,7 @@ class DBIdentityDao extends IdentityDao {
     }
 
     public async deleteRecoveryEmail(userId: string): Promise<void>{
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.userEmailRecovery.destroy({
+        await (await DBDriver.getInstance().getUserEmailRecoveryEntity()).destroy({
             where: {
                 userId: userId
             }
@@ -873,14 +846,12 @@ class DBIdentityDao extends IdentityDao {
     }
 
     public async addUserDuressCredential(userCredential: UserCredential): Promise<void>{
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.userDuressCredential.create(userCredential);
+        await (await DBDriver.getInstance().getUserDuressCredentialEntity()).create(userCredential);
         return Promise.resolve();
     }
 
     public async getUserDuressCredential(userId: string): Promise<UserCredential | null> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        const entity: UserDuressCredentialEntity | null = await sequelize.models.userDuressCredential.findOne({
+        const entity: UserDuressCredentialEntity | null = await (await DBDriver.getInstance().getUserDuressCredentialEntity()).findOne({
             where: {
                 userId: userId
             }
@@ -889,8 +860,7 @@ class DBIdentityDao extends IdentityDao {
     }
 
     public async deleteUserDuressCredential(userId: string): Promise<void> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.userDuressCredential.destroy({
+        await (await DBDriver.getInstance().getUserDuressCredentialEntity()).destroy({
             where: {
                 userId: userId
             }
@@ -899,8 +869,8 @@ class DBIdentityDao extends IdentityDao {
     }
 
     public async getProfileEmailChangeStates(changeStateToken: string): Promise<Array<ProfileEmailChangeState>>{
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        const arr: Array<UserProfileChangeEmailStateEntity> = await sequelize.models.userProfileEmailChangeState.findAll({
+        
+        const arr: Array<UserProfileChangeEmailStateEntity> = await (await DBDriver.getInstance().getUserProfileChangeEmailStateEntity()).findAll({
             where: {
                 changeEmailSessionToken: changeStateToken
             }
@@ -909,16 +879,16 @@ class DBIdentityDao extends IdentityDao {
     }
     
     public async createProfileEmailChangeStates(arrEmailChangeStates: Array<ProfileEmailChangeState>): Promise<Array<ProfileEmailChangeState>>{
-        const sequelize: Sequelize = await DBDriver.getConnection();
+        
         for(let i = 0; i < arrEmailChangeStates.length; i++){
-            await sequelize.models.userProfileEmailChangeState.create(arrEmailChangeStates[i]);
+            await (await DBDriver.getInstance().getUserProfileChangeEmailStateEntity()).create(arrEmailChangeStates[i]);
         }
         return arrEmailChangeStates;
     }
     
     public async updateProfileEmailChangeState(profileEmailChangeState: ProfileEmailChangeState): Promise<ProfileEmailChangeState>{
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.userProfileEmailChangeState.update(profileEmailChangeState, {
+        
+        await (await DBDriver.getInstance().getUserProfileChangeEmailStateEntity()).update(profileEmailChangeState, {
             where: {
                 userId: profileEmailChangeState.userId,
                 emailChangeState: profileEmailChangeState.emailChangeState,
@@ -929,8 +899,8 @@ class DBIdentityDao extends IdentityDao {
     }
 
     public async deleteProfileEmailChangeState(profileEmailChangeState: ProfileEmailChangeState): Promise<void>{
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.userProfileEmailChangeState.destroy({
+        
+        await (await DBDriver.getInstance().getUserProfileChangeEmailStateEntity()).destroy({
             where: {
                 userId: profileEmailChangeState.userId,
                 emailChangeState: profileEmailChangeState.emailChangeState,
@@ -941,8 +911,8 @@ class DBIdentityDao extends IdentityDao {
     }
 
     public async addUserAuthenticationHistory(userId: string, authenticatedAtMs: number): Promise<void>{
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.userAuthenticationHistory.create({
+        
+        await (await DBDriver.getInstance().getUserAuthenticationHistoryEntity()).create({
             userId: userId,
             lastAuthenticationAtMs: authenticatedAtMs
         });

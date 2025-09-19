@@ -1,4 +1,4 @@
-import { Model, DataTypes, Sequelize } from 'sequelize';
+import { Model, DataTypes, Sequelize } from "@sequelize/core";
 
 class TenantRateLimitRelEntity extends Model {
     
@@ -7,30 +7,30 @@ class TenantRateLimitRelEntity extends Model {
             servicegroupid: {
                 type: DataTypes.STRING,
                 primaryKey: true,
-                field: "servicegroupid"
+                columnName: "servicegroupid"
             },
             tenantId: {
                 type: DataTypes.STRING,
                 primaryKey: true,
-                field: "tenantid"
+                columnName: "tenantid"
             },
             allowUnlimitedRate: {
                 type: DataTypes.BOOLEAN,
                 primaryKey: false,
                 allowNull: true,
-                field: "allowunlimitedrate"
+                columnName: "allowunlimitedrate"
             },
             rateLimit: {
                 type: DataTypes.INTEGER,
                 primaryKey: false,
                 allowNull: true,
-				field: "ratelimit"
+				columnName: "ratelimit"
             },
             rateLimitPeriodMinutes: {
                 type: DataTypes.INTEGER,
                 primaryKey: false,
                 allowNull: true,
-                field: "ratelimitperiodminutes"
+                columnName: "ratelimitperiodminutes"
             }
         }, 
 		{

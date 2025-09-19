@@ -3,14 +3,13 @@ import AuthorizationGroupDao from "../../authorization-group-dao";
 import AuthorizationGroupEntity from "@/lib/entities/authorization-group-entity";
 import AuthorizationGroupUserRelEntity from "@/lib/entities/authorization-group-user-rel-entity";
 import DBDriver from "@/lib/data-sources/sequelize-db";
-import { Op, Sequelize } from "sequelize";
+import { Op, Sequelize } from "@sequelize/core";
 
 class DBAuthorizationGroupDao extends AuthorizationGroupDao {
 
     public async getAuthorizationGroups(tenantId?: string): Promise<Array<AuthorizationGroup>> {
-        const sequelize: Sequelize = await DBDriver.getConnection(); 
         if(tenantId){
-            const entities: Array<AuthorizationGroupEntity> = await sequelize.models.authorizationGroup.findAll({
+            const entities: Array<AuthorizationGroupEntity> = await (await DBDriver.getInstance().getAuthorizationGroupEntity()).findAll({
                 where: {
                     tenantId: tenantId
                 }
@@ -18,14 +17,13 @@ class DBAuthorizationGroupDao extends AuthorizationGroupDao {
             return entities.map(e => e.dataValues);
         }
         else{
-            const entities: Array<AuthorizationGroupEntity> = await sequelize.models.authorizationGroup.findAll();
+            const entities: Array<AuthorizationGroupEntity> = await (await DBDriver.getInstance().getAuthorizationGroupEntity()).findAll();
             return entities.map(e => e.dataValues);
         }
     }  
 
     public async getDefaultAuthorizationGroups(tenantId: string): Promise<Array<AuthorizationGroup>>{
-         const sequelize: Sequelize = await DBDriver.getConnection();         
-        const entities: Array<AuthorizationGroupEntity> = await sequelize.models.authorizationGroup.findAll({
+        const entities: Array<AuthorizationGroupEntity> = await (await DBDriver.getInstance().getAuthorizationGroupEntity()).findAll({
             where: {
                 tenantId: tenantId,
                 default: true
@@ -35,9 +33,7 @@ class DBAuthorizationGroupDao extends AuthorizationGroupDao {
     }
 
     public async getAuthorizationGroupById(groupId: string): Promise<AuthorizationGroup | null> {
-        const sequelize: Sequelize = await DBDriver.getConnection(); 
-
-        const entity: AuthorizationGroupEntity | null = await sequelize.models.authorizationGroup.findOne({
+        const entity: AuthorizationGroupEntity | null = await (await DBDriver.getInstance().getAuthorizationGroupEntity()).findOne({
             where: {
                 groupId: groupId
             }
@@ -46,15 +42,13 @@ class DBAuthorizationGroupDao extends AuthorizationGroupDao {
     }
 
     public async createAuthorizationGroup(group: AuthorizationGroup): Promise<AuthorizationGroup> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.authorizationGroup.create(group);        
+        await (await DBDriver.getInstance().getAuthorizationGroupEntity()).create(group);        
         return Promise.resolve(group);
     }
 
 
     public async updateAuthorizationGroup(group: AuthorizationGroup): Promise<AuthorizationGroup> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.authorizationGroup.update(group, {
+        await (await DBDriver.getInstance().getAuthorizationGroupEntity()).update(group, {
             where: {
                 groupId: group.groupId
             }
@@ -65,7 +59,7 @@ class DBAuthorizationGroupDao extends AuthorizationGroupDao {
     public async deleteAuthorizationGroup(groupId: string): Promise<void> {
         const sequelize: Sequelize = await DBDriver.getConnection();
 
-        await sequelize.models.authorizationGroupScopeRel.destroy({
+        await (await DBDriver.getInstance().getAuthorizationGroupScopeRelEntity()).destroy({
             where: {
                 groupId: groupId
             }
@@ -74,7 +68,7 @@ class DBAuthorizationGroupDao extends AuthorizationGroupDao {
         // To delete the authnGroup/user rel records, retrieve 1000 at a time and delete by composite ids        
         let hasMoreRecords = true;
         while(hasMoreRecords){
-            const arr: Array<AuthorizationGroupUserRelEntity> = await sequelize.models.authorizationGroupUserRel.findAll({
+            const arr: Array<AuthorizationGroupUserRelEntity> = await (await DBDriver.getInstance().getAuthorizationGroupUserRelEntity()).findAll({
                 where: {
                     groupId: groupId
                 },
@@ -95,7 +89,7 @@ class DBAuthorizationGroupDao extends AuthorizationGroupDao {
             await sequelize.query(sql);
         }
         
-        await sequelize.models.authorizationGroup.destroy({
+        await (await DBDriver.getInstance().getAuthorizationGroupEntity()).destroy({
             where: {
                 groupId: groupId
             }
@@ -104,21 +98,17 @@ class DBAuthorizationGroupDao extends AuthorizationGroupDao {
 
     
     public async addUserToAuthorizationGroup(userId: string, groupId: string): Promise<AuthorizationGroupUserRel> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-
         const model: AuthorizationGroupUserRel = {
             userId: userId,
             groupId: groupId
         };
 
-        await sequelize.models.authorizationGroupUserRel.create(model);
+        await (await DBDriver.getInstance().getAuthorizationGroupUserRelEntity()).create(model);
         return Promise.resolve(model);
     }
 
     public async removeUserFromAuthorizationGroup(userId: string, groupId: string): Promise<void> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-
-        await sequelize.models.authorizationGroupUserRel.destroy({
+        await (await DBDriver.getInstance().getAuthorizationGroupUserRelEntity()).destroy({
             where: {
                 userId: userId,
                 groupId: groupId
@@ -128,9 +118,8 @@ class DBAuthorizationGroupDao extends AuthorizationGroupDao {
     }
 
     public async getUserAuthorizationGroups(userId: string): Promise<Array<AuthorizationGroup>> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
 
-        const rels = await sequelize.models.authorizationGroupUserRel.findAll({
+        const rels = await (await DBDriver.getInstance().getAuthorizationGroupUserRelEntity()).findAll({
             where: {
                 userId: userId
             }
@@ -145,7 +134,7 @@ class DBAuthorizationGroupDao extends AuthorizationGroupDao {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const filter: any = {};
         filter.groupId = { [Op.in]: inValues};
-        const authzGroups: Array<AuthorizationGroupEntity> = await sequelize.models.authorizationGroup.findAll(
+        const authzGroups: Array<AuthorizationGroupEntity> = await (await DBDriver.getInstance().getAuthorizationGroupEntity()).findAll(
             {
                 where: filter,
                 order: [

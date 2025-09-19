@@ -1,4 +1,4 @@
-import { Model, DataTypes, Sequelize } from 'sequelize';
+import { Model, DataTypes, Sequelize } from "@sequelize/core";
 
 class UserProfileChangeEmailStateEntity extends Model {
     
@@ -7,47 +7,47 @@ class UserProfileChangeEmailStateEntity extends Model {
             userId: {
                 type: DataTypes.STRING,
                 primaryKey: true,
-                field: "userid"
+                columnName: "userid"
             },
             changeEmailSessionToken: {
                 type: DataTypes.STRING,
                 primaryKey: true,
-                field: "changeemailsessiontoken"
+                columnName: "changeemailsessiontoken"
             },
             emailChangeState: {
                 type: DataTypes.STRING,
                 primaryKey: true,
-                field: "emailchangestate"
+                columnName: "emailchangestate"
             },
             email: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "email"
+                columnName: "email"
             },            
             changeOrder: {
                 type: DataTypes.INTEGER,
                 primaryKey: false,
                 allowNull: false,
-                field: "changeorder"
+                columnName: "changeorder"
             },
             changeStateStatus: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "changestatestatus"
+                columnName: "changestatestatus"
             },            
             expiresAtMs: {
                 type: DataTypes.BIGINT,
                 primaryKey: false,
                 allowNull: false,
-                field: "expiresatms"
+                columnName: "expiresatms"
             },
             isPrimaryEmail: {
                 type: DataTypes.BOOLEAN,
                 primaryKey: false,
                 allowNull: false,
-                field: "isprimaryemail"
+                columnName: "isprimaryemail"
             }
         }, 
         {

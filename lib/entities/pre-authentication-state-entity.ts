@@ -1,4 +1,4 @@
-import { Model, DataTypes, Sequelize } from 'sequelize';
+import { Model, DataTypes, Sequelize } from "@sequelize/core";
 
 class PreAuthenticationStateEntity extends Model {
     
@@ -7,67 +7,67 @@ class PreAuthenticationStateEntity extends Model {
             token: {
                 type: DataTypes.STRING,
                 primaryKey: true,
-                field: "token"
+                columnName: "token"
             },
             tenantId: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "tenantid"
+                columnName: "tenantid"
             },
             clientId: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "clientid"
+                columnName: "clientid"
             },
             codeChallenge: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: true,
-                field: "codechallenge"
+                columnName: "codechallenge"
             },
             codeChallengeMethod: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: true,
-                field: "codechallengemethod"
+                columnName: "codechallengemethod"
             },
             expiresAtMs: {
-                type: DataTypes.NUMBER,
+                type: DataTypes.BIGINT,
                 primaryKey: false,
                 allowNull: false,
-                field: "expiresatms"
+                columnName: "expiresatms"
             },
             redirectUri: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "redirecturi"
+                columnName: "redirecturi"
             },
             responseMode: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "responsemode"
+                columnName: "responsemode"
             },
             responseType: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "responsetype"
+                columnName: "responsetype"
             },
             scope: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "scope"
+                columnName: "scope"
             },
             state: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: true,
-                field: "state"
+                columnName: "state"
             }
 
         }, 

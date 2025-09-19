@@ -1,4 +1,4 @@
-import { Model, DataTypes, Sequelize } from 'sequelize';
+import { Model, DataTypes, Sequelize } from "@sequelize/core";
 
 export class MarkForDeleteEntity extends Model {
     
@@ -7,43 +7,43 @@ export class MarkForDeleteEntity extends Model {
             markForDeleteId: {
                 type: DataTypes.STRING,
                 primaryKey: true,
-                field: "markfordeleteid"
+                columnName: "markfordeleteid"
             },
             objectId: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "objectid"
+                columnName: "objectid"
             },
             objectType: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "objecttype"
+                columnName: "objecttype"
             },
             submittedBy: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "submittedby"
+                columnName: "submittedby"
             },
             submittedDate: {
                 type: DataTypes.BIGINT,
                 primaryKey: false,
                 allowNull: false,
-                field: "submitteddate"
+                columnName: "submitteddate"
             },
             startedDate: {
                 type: DataTypes.BIGINT,
                 primaryKey: false,
                 allowNull: true,
-                field: "starteddate"
+                columnName: "starteddate"
             },
             completedDate: {
                 type: DataTypes.BIGINT,
                 primaryKey: false,
                 allowNull: true,
-                field: "completeddate"
+                columnName: "completeddate"
             }
         }, {
             sequelize,

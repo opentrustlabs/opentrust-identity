@@ -1,4 +1,4 @@
-import { Model, DataTypes, Sequelize } from 'sequelize';
+import { Model, DataTypes, Sequelize } from "@sequelize/core";
 
 class UserTermsAndConditionsAcceptedEntity extends Model {
     
@@ -7,19 +7,19 @@ class UserTermsAndConditionsAcceptedEntity extends Model {
             userId: {
                 type: DataTypes.STRING,
                 primaryKey: true,
-                field: "userid"
+                columnName: "userid"
             },
             tenantId: {
                 type: DataTypes.STRING,
                 primaryKey: true,
                 allowNull: false,
-                field: "tenantid"
+                columnName: "tenantid"
             },
             acceptedAtMs: {
                 type: DataTypes.BIGINT,
                 primaryKey: false,
                 allowNull: false,
-                field: "acceptedatms"
+                columnName: "acceptedatms"
             }
         }, 
         {

@@ -1,4 +1,4 @@
-import { Model, DataTypes, Sequelize } from 'sequelize';
+import { Model, DataTypes, Sequelize } from "@sequelize/core";
 
 class UserEmailRecoveryEntity extends Model {
     
@@ -7,19 +7,19 @@ class UserEmailRecoveryEntity extends Model {
             userId: {
                 type: DataTypes.STRING,
                 primaryKey: true,
-                field: "userid"
+                columnName: "userid"
             },
             email: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "email"
+                columnName: "email"
             },
             emailVerified: {
                 type: DataTypes.BOOLEAN,
                 primaryKey: false,
                 allowNull: false,
-                field: "emailverified"
+                columnName: "emailverified"
             }
         }, 
         {
