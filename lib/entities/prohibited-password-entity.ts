@@ -1,4 +1,4 @@
-import { Model, DataTypes, Sequelize } from 'sequelize';
+import { Model, DataTypes, Sequelize } from "@sequelize/core";
 
 class ProhibitedPasswordEntity extends Model {
     
@@ -7,7 +7,7 @@ class ProhibitedPasswordEntity extends Model {
             password: {
                 type: DataTypes.STRING,
                 primaryKey: true,
-                field: "password"
+                columnName: "password"
             }
         }, 
 		{

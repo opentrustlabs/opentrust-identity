@@ -4,7 +4,7 @@ import PreAuthenticationStateEntity from "@/lib/entities/pre-authentication-stat
 import AuthorizationCodeDataEntity from "@/lib/entities/authorization-code-data-entity";
 import RefreshDataEntity from "@/lib/entities/refresh-data-entity";
 import FederatedOIDCAuthorizationRelEntity from "@/lib/entities/federated-oidc-authorization-rel-entity";
-import { Op, Sequelize } from "sequelize";
+import { Op } from "@sequelize/core";
 import DBDriver from "@/lib/data-sources/sequelize-db";
 import AuthorizationDeviceCodeDataEntity from "@/lib/entities/authorization-device-code-data-entity";
 import FederatedAuthTestEntity from "@/lib/entities/federated-auth-test-entity";
@@ -12,8 +12,8 @@ import FederatedAuthTestEntity from "@/lib/entities/federated-auth-test-entity";
 class DBAuthDao extends AuthDao {
 
     public async getRefreshDataByUserId(userId: string): Promise<Array<RefreshData>> {        
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        const arr: Array<RefreshDataEntity> = await sequelize.models.refreshData.findAll({
+
+        const arr: Array<RefreshDataEntity> = await (await DBDriver.getInstance().getRefreshDataEntity()).findAll({
             where: {
                 userId: userId
             }
@@ -22,8 +22,8 @@ class DBAuthDao extends AuthDao {
     }
 
     public async deleteRefreshData(userId: string, tenantId: string, clientId: string): Promise<void> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.refreshData.destroy({
+
+        await (await DBDriver.getInstance().getRefreshDataEntity()).destroy({
             where: {
                 userId: userId,
                 clientId: clientId,
@@ -34,14 +34,14 @@ class DBAuthDao extends AuthDao {
     }
 
     public async savePreAuthenticationState(preAuthenticationState: PreAuthenticationState): Promise<PreAuthenticationState> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.preAuthenticationState.create(preAuthenticationState);        
+
+        await (await DBDriver.getInstance().getPreAuthenticationStateEntity()).create(preAuthenticationState);        
         return Promise.resolve(preAuthenticationState);
     }
 
     public async getPreAuthenticationState(tk: string): Promise<PreAuthenticationState | null> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        const entity: PreAuthenticationStateEntity | null = await sequelize.models.preAuthenticationState.findOne({
+
+        const entity: PreAuthenticationStateEntity | null = await (await DBDriver.getInstance().getPreAuthenticationStateEntity()).findOne({
             where: {
                 token: tk
             }
@@ -51,8 +51,8 @@ class DBAuthDao extends AuthDao {
     }
 
     public async deletePreAuthenticationState(tk: string): Promise<void> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.preAuthenticationState.destroy({
+    
+        await (await DBDriver.getInstance().getPreAuthenticationStateEntity()).destroy({
             where: {
                 token: tk
             } 
@@ -61,14 +61,14 @@ class DBAuthDao extends AuthDao {
     }
 
     public async saveAuthorizationCodeData(authorizationCodeData: AuthorizationCodeData): Promise<AuthorizationCodeData> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.authorizationCodeData.create(authorizationCodeData);
+
+        await (await DBDriver.getInstance().getAuthorizationCodeDataEntity()).create(authorizationCodeData);
         return Promise.resolve(authorizationCodeData);
     }
 
     public async getAuthorizationCodeData(code: string): Promise<AuthorizationCodeData | null> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        const entity: AuthorizationCodeDataEntity | null = await sequelize.models.authorizationCodeData.findOne({
+
+        const entity: AuthorizationCodeDataEntity | null = await (await DBDriver.getInstance().getAuthorizationCodeDataEntity()).findOne({
             where: {
                 code: code
             }
@@ -77,8 +77,8 @@ class DBAuthDao extends AuthDao {
     }
 
     public async deleteAuthorizationCodeData(code: string): Promise<void> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.authorizationCodeData.destroy({
+
+        await (await DBDriver.getInstance().getAuthorizationCodeDataEntity()).destroy({
             where: {
                 code: code
             }
@@ -87,14 +87,14 @@ class DBAuthDao extends AuthDao {
     }
 
     public async saveRefreshData(refreshData: RefreshData): Promise<RefreshData> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.refreshData.create(refreshData);
+
+        await (await DBDriver.getInstance().getRefreshDataEntity()).create(refreshData);
         return Promise.resolve(refreshData);
     }
 
     public async getRefreshData(refreshToken: string): Promise<RefreshData | null> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        const entity: RefreshDataEntity | null = await sequelize.models.refreshData.findOne({
+
+        const entity: RefreshDataEntity | null = await (await DBDriver.getInstance().getRefreshDataEntity()).findOne({
             where: {
                 refreshToken: refreshToken
             }
@@ -103,8 +103,8 @@ class DBAuthDao extends AuthDao {
     }
 
     public async deleteRefreshDataByRefreshToken(refreshToken: string): Promise<void> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.refreshData.destroy({
+
+        await (await DBDriver.getInstance().getRefreshDataEntity()).destroy({
             where: {
                 refreshToken: refreshToken
             }
@@ -113,14 +113,14 @@ class DBAuthDao extends AuthDao {
     }
 
     public async saveAuthorizationDeviceCodeData(authoriationDeviceCodeData: AuthorizationDeviceCodeData): Promise<AuthorizationDeviceCodeData>{
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.authorizationDeviceCodeData.create(authoriationDeviceCodeData);
+
+        await (await DBDriver.getInstance().getAuthorizationDeviceCodeDataEntity()).create(authoriationDeviceCodeData);
         return authoriationDeviceCodeData;
     }
 
     public async updateAuthorizationDeviceCodeData(authoriationDeviceCodeData: AuthorizationDeviceCodeData): Promise<AuthorizationDeviceCodeData>{
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.authorizationDeviceCodeData.update(authoriationDeviceCodeData, {
+   
+        await (await DBDriver.getInstance().getAuthorizationDeviceCodeDataEntity()).update(authoriationDeviceCodeData, {
             where: {
                 deviceCodeId: authoriationDeviceCodeData.deviceCodeId
             }
@@ -129,7 +129,7 @@ class DBAuthDao extends AuthDao {
     }
     
     public async getAuthorizationDeviceCodeData(code: string, authorizationCodeType: AuthorizationCodeType): Promise<AuthorizationDeviceCodeData | null>{
-        const sequelize: Sequelize = await DBDriver.getConnection();
+
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const whereParams: any = {};
 
@@ -142,7 +142,7 @@ class DBAuthDao extends AuthDao {
         else{
             whereParams.deviceCodeId = code;
         }
-        const entity: AuthorizationDeviceCodeDataEntity | null = await sequelize.models.authorizationDeviceCodeData.findOne({
+        const entity: AuthorizationDeviceCodeDataEntity | null = await (await DBDriver.getInstance().getAuthorizationDeviceCodeDataEntity()).findOne({
             where: whereParams
         });
         return entity ? entity.dataValues : null;
@@ -150,8 +150,8 @@ class DBAuthDao extends AuthDao {
     }
     
     public async deleteAuthorizationDeviceCodeData(deviceCodeId: string): Promise<void>{
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.authorizationDeviceCodeData.destroy({
+
+        await (await DBDriver.getInstance().getAuthorizationDeviceCodeDataEntity()).destroy({
             where: {
                 deviceCodeId: deviceCodeId
             }
@@ -160,14 +160,14 @@ class DBAuthDao extends AuthDao {
 
     
     public async saveFederatedOIDCAuthorizationRel(federatedOIDCAuthorizationRel: FederatedOidcAuthorizationRel): Promise<FederatedOidcAuthorizationRel> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.federatedOidcAuthorizationRel.create(federatedOIDCAuthorizationRel);
+
+        await (await DBDriver.getInstance().getFederatedOIDCAuthorizationRelEntity()).create(federatedOIDCAuthorizationRel);
         return Promise.resolve(federatedOIDCAuthorizationRel);
     }
     
     public async getFederatedOIDCAuthorizationRel(state: string): Promise<FederatedOidcAuthorizationRel | null> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        const entity: FederatedOIDCAuthorizationRelEntity | null = await sequelize.models.federatedOidcAuthorizationRel.findOne(
+
+        const entity: FederatedOIDCAuthorizationRelEntity | null = await (await DBDriver.getInstance().getFederatedOIDCAuthorizationRelEntity()).findOne(
             {
                 where: {
                     state: state
@@ -178,8 +178,8 @@ class DBAuthDao extends AuthDao {
     }
 
     public async deleteFederatedOIDCAuthorizationRel(state: string): Promise<void> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.federatedOidcAuthorizationRel.destroy({
+
+        await (await DBDriver.getInstance().getFederatedOIDCAuthorizationRelEntity()).destroy({
             where: {
                 state: state
             }
@@ -188,14 +188,14 @@ class DBAuthDao extends AuthDao {
     }
 
     public async saveFederatedAuthTest(federatedAuthTest: FederatedAuthTest): Promise<FederatedAuthTest>{
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.federatedAuthTest.create(federatedAuthTest);
+
+        await (await DBDriver.getInstance().getFederatedAuthTestEntity()).create(federatedAuthTest);
         return federatedAuthTest;
     }
     
     public async getFederatedAuthTestByState(state: string): Promise<FederatedAuthTest | null>{
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        const entity: FederatedAuthTestEntity | null = await sequelize.models.federatedAuthTest.findOne({
+
+        const entity: FederatedAuthTestEntity | null = await (await DBDriver.getInstance().getFederatedAuthTestEntity()).findOne({
             where: {
                 authState: state
             }
@@ -204,8 +204,8 @@ class DBAuthDao extends AuthDao {
     }
 
     public async deleteFederatedAuthTestByState(state: string): Promise<void>{
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.federatedAuthTest.destroy({
+
+        await (await DBDriver.getInstance().getFederatedAuthTestEntity()).destroy({
             where: {
                 authState: state
             }
@@ -214,43 +214,43 @@ class DBAuthDao extends AuthDao {
     }
 
     public async deleteExpiredData(): Promise<void>{
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.federatedOidcAuthorizationRel.destroy({
+
+        await (await DBDriver.getInstance().getFederatedOIDCAuthorizationRelEntity()).destroy({
             where: {
                 expiresAtMs: {
                     [Op.lt]: Date.now()
                 }
             }
         });
-        await sequelize.models.preAuthenticationState.destroy({
+        await (await DBDriver.getInstance().getPreAuthenticationStateEntity()).destroy({
             where: {
                 expiresAtMs: {
                     [Op.lt]: Date.now()
                 }
             } 
         });
-        await sequelize.models.authorizationCodeData.destroy({
+        await (await DBDriver.getInstance().getAuthorizationCodeDataEntity()).destroy({
             where: {
                 expiresAtMs: {
                     [Op.lt]: Date.now()
                 }
             }
         }); 
-        await sequelize.models.refreshData.destroy({
+        await (await DBDriver.getInstance().getRefreshDataEntity()).destroy({
             where: {
                 expiresAtMs: {
                     [Op.lt]: Date.now()
                 }
             }
         });
-        await sequelize.models.authorizationDeviceCodeData.destroy({
+        await (await DBDriver.getInstance().getAuthorizationDeviceCodeDataEntity()).destroy({
             where: {
                 expiresAtMs: {
                     [Op.lt]: Date.now()
                 }
             }
         });
-        await sequelize.models.federatedAuthTest.destroy({
+        await (await DBDriver.getInstance().getFederatedAuthTestEntity()).destroy({
             where: {
                 expiresAtMs: {
                     [Op.lt]: Date.now()

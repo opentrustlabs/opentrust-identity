@@ -1,4 +1,4 @@
-import { Model, DataTypes, Sequelize } from 'sequelize';
+import { Model, DataTypes, Sequelize } from "@sequelize/core";
 
 class UserVerificationTokenEntity extends Model {
     
@@ -7,31 +7,31 @@ class UserVerificationTokenEntity extends Model {
             token: {
                 type: DataTypes.STRING,
                 primaryKey: true,
-                field: "token"
+                columnName: "token"
             },
             userId: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "userid"
+                columnName: "userid"
             },
             verificationType: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "verificationtype"
+                columnName: "verificationtype"
             },
             issuedAtMS: {
-                type: DataTypes.NUMBER,
+                type: DataTypes.BIGINT,
                 primaryKey: false,
                 allowNull: false,
-				field: "issuedatms"
+				columnName: "issuedatms"
             },
             expiresAtMS: {
-                type: DataTypes.NUMBER,
+                type: DataTypes.BIGINT,
                 primaryKey: false,
                 allowNull: false,
-                field: "expiresatms"
+                columnName: "expiresatms"
             }
         }, 
 		{

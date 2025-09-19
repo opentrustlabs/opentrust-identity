@@ -1,4 +1,4 @@
-import { Model, DataTypes, Sequelize } from 'sequelize';
+import { Model, DataTypes, Sequelize } from "@sequelize/core";
 
 class TenantAvailableScopeEntity extends Model {
     
@@ -7,18 +7,18 @@ class TenantAvailableScopeEntity extends Model {
             tenantId: {
                 type: DataTypes.STRING,
                 primaryKey: true,
-                field: "tenantid"
+                columnName: "tenantid"
             },
             scopeId: {
                 type: DataTypes.STRING,
                 primaryKey: true,
-                field: "scopeid"
+                columnName: "scopeid"
             },
             accessRuleId: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: true,
-                field: "accessruleid"
+                columnName: "accessruleid"
             }
         }, 
 		{

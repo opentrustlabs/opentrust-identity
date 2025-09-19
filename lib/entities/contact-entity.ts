@@ -1,4 +1,4 @@
-import { Model, DataTypes, Sequelize } from 'sequelize';
+import { Model, DataTypes, Sequelize } from "@sequelize/core";
 
 class ContactEntity extends Model {
 
@@ -7,36 +7,36 @@ class ContactEntity extends Model {
             contactid: {
                 type: DataTypes.STRING,
                 primaryKey: true,
-                field: "contactid"
+                columnName: "contactid"
             },
             objectid: {
                 type: DataTypes.STRING,
                 primaryKey: false,
-                field: "objectid",
+                columnName: "objectid",
                 allowNull: false
             },
             objecttype: {
                 type: DataTypes.STRING,
                 primaryKey: false,
-                field: "objecttype",
+                columnName: "objecttype",
                 allowNull: false
             },
             email: {
                 type: DataTypes.STRING,
                 primaryKey: false,
-                field: "email",
+                columnName: "email",
                 allowNull: false
             },
             name: {
                 type: DataTypes.STRING,
                 primaryKey: false,
-                field: "contactname",
+                columnName: "contactname",
                 allowNull: true
             },
             userid: {
                 type: DataTypes.STRING,
                 primaryKey: false,
-                field: "userid",
+                columnName: "userid",
                 allowNull: true
             }
         },

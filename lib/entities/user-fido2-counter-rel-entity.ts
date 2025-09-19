@@ -1,4 +1,4 @@
-import { Model, DataTypes, Sequelize } from 'sequelize';
+import { Model, DataTypes, Sequelize } from "@sequelize/core";
 
 class UserFido2CounterRelEntity extends Model {
 
@@ -7,12 +7,12 @@ class UserFido2CounterRelEntity extends Model {
             userId: {
                 type: DataTypes.STRING,
                 primaryKey: true,
-                field: "userid"
+                columnName: "userid"
             },
             fido2Counter: {
                 type: DataTypes.INTEGER,
                 primaryKey: true,
-                field: "fido2Counter"
+                columnName: "fido2Counter"
             }
         }, 
         {

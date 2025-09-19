@@ -17,6 +17,8 @@ import AuthenticationGroupDao from "../dao/authentication-group-dao";
 import { SecurityEventType } from "../models/security-event";
 import { ERROR_CODES } from "../models/error";
 import { logWithDetails } from "../logging/logger";
+import SearchDao from "../dao/search-dao";
+import OpenSearchDao from "../dao/impl/search/open-search-dao";
 
 
 const jwtServiceUtils: JwtServiceUtils = new JwtServiceUtils();
@@ -26,7 +28,7 @@ const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
 const authDao: AuthDao = DaoFactory.getInstance().getAuthDao();
 const federatedOIDCProviderDao: FederatedOIDCProviderDao = DaoFactory.getInstance().getFederatedOIDCProvicerDao();
 const authenticationGroupDao: AuthenticationGroupDao = DaoFactory.getInstance().getAuthenticationGroupDao();
-
+const searchDao: SearchDao = new OpenSearchDao();
 
 class AuthenticateUserService extends IdentityService {
 
@@ -963,8 +965,8 @@ class AuthenticateUserService extends IdentityService {
         const userCredential: UserCredential = generateUserCredential(user.userId, password, tenantPasswordConfig.passwordHashingAlgorithm);
         await identityDao.addUserCredential(userCredential);
         
-        await this.updateObjectSearchIndex(tenant, user);
-        await this.updateRelSearchIndex(tenant.tenantId, tenant.tenantId, user);
+        await searchDao.updateObjectSearchIndex(tenant, user);
+        await searchDao.updateRelSearchIndex(tenant.tenantId, tenant.tenantId, user);
         
         arrUserAuthenticationStates[index].authenticationStateStatus = STATUS_COMPLETE;
         await identityDao.updateUserAuthenticationState(arrUserAuthenticationStates[index]);
@@ -1603,8 +1605,9 @@ class AuthenticateUserService extends IdentityService {
                 await authDao.updateAuthorizationDeviceCodeData(deviceCodeData);
             }
         }
-        
-        if(userAuthenticationState.authenticationState === AuthenticationState.RedirectBackToApplication){            
+        console.log("checkpoint 1");
+        if(userAuthenticationState.authenticationState === AuthenticationState.RedirectBackToApplication){    
+            console.log("checkpoint 2");        
             try {
                 const authorizationCode: AuthorizationReturnUri = await this.generateAuthorizationCode(userAuthenticationState.userId, userAuthenticationState.preAuthToken || "");
                 response.userAuthenticationState = userAuthenticationState;
@@ -1612,11 +1615,13 @@ class AuthenticateUserService extends IdentityService {
                 userAuthenticationState.authenticationStateStatus = STATUS_COMPLETE;                
             }
             catch(err: unknown){
+                console.log("checkpoint 3");
                 const e = err as Error;
                 throw new GraphQLError(e.message);
             }            
         }
         else if(userAuthenticationState.authenticationState === AuthenticationState.RedirectToIamPortal){
+            console.log("checkpoint 4");
             try {
                 const tenant: Tenant | null = await tenantDao.getTenantById(userAuthenticationState.tenantId);
                 if(tenant === null){
@@ -1630,6 +1635,7 @@ class AuthenticateUserService extends IdentityService {
                         response.uri = "/device/registered";
                     }
                     else{
+                        console.log("checkpoint 5");
                         const jwtSigningResponse = await jwtServiceUtils.signIAMPortalUserJwt(user, tenant, this.getPortalAuthenTokenTTLSeconds(), PRINCIPAL_TYPE_IAM_PORTAL_USER);                        
                         if(!jwtSigningResponse || jwtSigningResponse.accessToken === null){
                             response.authenticationError = ERROR_CODES.EC00132;
@@ -1651,19 +1657,24 @@ class AuthenticateUserService extends IdentityService {
                         finalUserAuthenticationState.authenticationState === AuthenticationState.PostAuthnStateSendSecurityEventDuressLogon ||
                         finalUserAuthenticationState.authenticationState === AuthenticationState.PostAuthnStateSendSecurityEventDeviceRegistered
                     ){
+                        console.log("checkpoint 6");
                         finalUserAuthenticationState.authenticationStateStatus = STATUS_COMPLETE;
                         const securityEventType: SecurityEventType = 
                             finalUserAuthenticationState.authenticationState === AuthenticationState.PostAuthnStateSendSecurityEventSuccessLogon
                                 ? "successful_authentication" : 
                                 finalUserAuthenticationState.authenticationState === AuthenticationState.PostAuthnStateSendSecurityEventDuressLogon ? 
                                 "duress_authentication" :
-                                "device_registered"
+                                "device_registered";
+                        console.log("checkpoint 6.1");
                         const authToken = await jwtServiceUtils.getAuthTokenForOutboundCalls();
+                        console.log("checkpoint 6.2");
                         oidcServiceUtils.fireSecurityEvent(securityEventType, this.oidcContext, user, jti, authToken);
+                        console.log("checkpoint 6.3");
                     }
                 }
             }
             catch(err: unknown){
+                console.log("checkpoint 7");
                 const e = err as Error;            
                 throw new GraphQLError(e.message);
             }

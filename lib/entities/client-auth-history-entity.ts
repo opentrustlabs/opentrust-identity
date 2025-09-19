@@ -1,4 +1,4 @@
-import { Model, DataTypes, Sequelize } from 'sequelize';
+import { Model, DataTypes, Sequelize } from "@sequelize/core";
 
 class ClientAuthHistoryEntity extends Model {
     
@@ -7,25 +7,25 @@ class ClientAuthHistoryEntity extends Model {
             jti: {
                 type: DataTypes.STRING,
                 primaryKey: true,
-                field: "jti"
+                columnName: "jti"
             },
             clientId: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "clientid"
+                columnName: "clientid"
             },
             tenantId: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "tenantid"
+                columnName: "tenantid"
             },
             expiresAtSeconds: {
-                type: DataTypes.NUMBER,
+                type: DataTypes.BIGINT,
                 primaryKey: false,
                 allowNull: false,
-				field: "expiresatseconds"
+				columnName: "expiresatseconds"
             }
         }, 
 		{

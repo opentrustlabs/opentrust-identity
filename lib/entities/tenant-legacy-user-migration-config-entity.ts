@@ -1,4 +1,4 @@
-import { Model, DataTypes, Sequelize } from 'sequelize';
+import { Model, DataTypes, Sequelize } from "@sequelize/core";
 
 class TenantLegacyUserMigrationConfigEntity extends Model {
     
@@ -7,25 +7,25 @@ class TenantLegacyUserMigrationConfigEntity extends Model {
             tenantId: {
                 type: DataTypes.STRING,
                 primaryKey: true,
-                field: "tenantid"
+                columnName: "tenantid"
             },
             authenticationUri: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "authenticationuri"
+                columnName: "authenticationuri"
             },
             userProfileUri: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "userprofileuri"
+                columnName: "userprofileuri"
             },
             usernameCheckUri: {
                 type: DataTypes.BOOLEAN,
                 primaryKey: false,
                 allowNull: false,
-                field: "usernamecheckuri"
+                columnName: "usernamecheckuri"
             }
         }, 
         {

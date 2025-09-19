@@ -1107,3 +1107,11 @@ export const DEFAULT_CAPTCHA_V3_MINIMUM_SCORE=0.7;
 export const SYSTEM_INITIALIZATION_KEY_ID="6b9f3310-0be9-4b5f-8f92-701109bc8f43";
 export const VALID_KMS_STRATEGIES = ["googlekms", "awskms", "azurekms", "tencentkms", "custom", "filesystem", "none"];
 export const FEDERATED_AUTH_TEST_STATE_PARAM_PREFIX="oidctest-";
+
+
+// ************************************************************************** //
+// 
+//                  DATABASE-RELATED CONSTANTS
+// 
+// ************************************************************************** //
+export const RDB_SUPPORTED_DIALECTS: Array<string> = ["mysql", "postgres", "mssql"];

@@ -1,4 +1,4 @@
-import { Model, DataTypes, Sequelize } from 'sequelize';
+import { Model, DataTypes, Sequelize } from "@sequelize/core";
 
 class UserScopeRelEntity extends Model {
 
@@ -7,17 +7,17 @@ class UserScopeRelEntity extends Model {
             userId: {
                 type: DataTypes.STRING,
                 primaryKey: true,
-                field: "userid"
+                columnName: "userid"
             },
             scopeId: {
                 type: DataTypes.STRING,
                 primaryKey: true,
-                field: "scopeid"
+                columnName: "scopeid"
             },
             tenantId: {
                 type: DataTypes.STRING,
                 primaryKey: true,
-                field: "tenantid"
+                columnName: "tenantid"
             }
         }, 
         {

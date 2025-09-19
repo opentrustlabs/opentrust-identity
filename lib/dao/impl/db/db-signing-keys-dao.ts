@@ -3,19 +3,19 @@ import SigningKeysDao from "../../signing-keys-dao";
 import SigningKeyEntity from "@/lib/entities/signing-key-entity";
 import { SIGNING_KEY_STATUS_REVOKED } from "@/utils/consts";
 import DBDriver from "@/lib/data-sources/sequelize-db";
-import { Sequelize } from "sequelize";
 
 class DBSigningKeysDao extends SigningKeysDao {
 
     
     public async getSigningKeys(tenantId?: string): Promise<Array<SigningKey>> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
+        
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const queryParams: any = {};
         if(tenantId){
             queryParams.tenantid = tenantId;
         }
-        const entities: Array<SigningKeyEntity> = await sequelize.models.signingKey.findAll({
+        // @ts-ignore
+        const entities: Array<SigningKeyEntity> = await (await DBDriver.getInstance().getSigningKeyEntity()).findAll({
             where: queryParams,
             order: [
                 ["keyName", "ASC"]
@@ -25,8 +25,8 @@ class DBSigningKeysDao extends SigningKeysDao {
     }
 
     public async getSigningKeyById(keyId: string): Promise<SigningKey | null> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        const entity: SigningKeyEntity | null = await sequelize.models.signingKey.findOne({
+
+        const entity: SigningKeyEntity | null = await (await DBDriver.getInstance().getSigningKeyEntity()).findOne({
             where: {
                 keyId: keyId
             }
@@ -57,15 +57,15 @@ class DBSigningKeysDao extends SigningKeysDao {
     }
 
     public async createSigningKey(key: SigningKey): Promise<SigningKey> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.signingKey.create(key);        
+        
+        await (await DBDriver.getInstance().getSigningKeyEntity()).create(key);
         return Promise.resolve(key);
     }
 
     public async updateSigningKey(key: SigningKey): Promise<SigningKey>{
 
         // Do not update the certificate, private key, public key 
-        await SigningKeyEntity.update(
+        await (await DBDriver.getInstance().getSigningKeyEntity()).update(
             {
                 keyName: key.keyName,
                 markForDelete: key.markForDelete,
@@ -90,8 +90,8 @@ class DBSigningKeysDao extends SigningKeysDao {
         const key: SigningKey | null = await this.getSigningKeyById(keyId);
         if(key){
             key.status = SIGNING_KEY_STATUS_REVOKED;
-            const sequelize: Sequelize = await DBDriver.getConnection();
-            await sequelize.models.signingKey.update(key, {
+                        
+            await (await DBDriver.getInstance().getSigningKeyEntity()).update(key, {
                 where: {
                     keyId: key.keyId
                 }
@@ -100,15 +100,14 @@ class DBSigningKeysDao extends SigningKeysDao {
         return Promise.resolve();
     }
 
-    public async deleteSigningKey(keyId: string): Promise<void> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.contact.destroy({
+    public async deleteSigningKey(keyId: string): Promise<void> {        
+        
+        await (await DBDriver.getInstance().getContactEntity()).destroy({
             where: {
                 objectid: keyId
             }
         });
-
-        await sequelize.models.signingKey.destroy({
+        await (await DBDriver.getInstance().getSigningKeyEntity()).destroy({
             where: {
                 keyId: keyId
             }

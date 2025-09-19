@@ -1,4 +1,4 @@
-import { Model, DataTypes, Sequelize } from 'sequelize';
+import { Model, DataTypes, Sequelize } from "@sequelize/core";
 
 class CaptchaConfigEntity extends Model {
     
@@ -7,43 +7,43 @@ class CaptchaConfigEntity extends Model {
             alias: {
                 type: DataTypes.STRING,
                 primaryKey: true,
-                field: "alias"
+                columnName: "alias"
             },
             projectId: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: true,
-                field: "projectid"
+                columnName: "projectid"
             },
             siteKey: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "sitekey"
+                columnName: "sitekey"
             },
             apiKey: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "apikey"
+                columnName: "apikey"
             },
             minScoreThreshold: {
                 type: DataTypes.FLOAT,
                 primaryKey: false,
                 allowNull: true,
-                field: "minscorethreshold"
+                columnName: "minscorethreshold"
             },
             useCaptchaV3: {
                 type: DataTypes.BOOLEAN,
                 primaryKey: false,
                 allowNull: false,
-                field: "userecaptchav3"
+                columnName: "userecaptchav3"
             },
             useEnterpriseCaptcha: {
                 type: DataTypes.BOOLEAN,
                 primaryKey: false,
                 allowNull: false,
-                field: "useenterprisecaptcha"
+                columnName: "useenterprisecaptcha"
             }
         }, 
         {

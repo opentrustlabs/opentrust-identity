@@ -3,18 +3,18 @@ import FederatedOIDCProviderDao from "../../federated-oidc-provider-dao";
 import FederatedOIDCProviderTenantRelEntity from "@/lib/entities/federated-oidc-provider-tenant-rel-entity";
 import FederatedOIDCProviderDomainRelEntity from "@/lib/entities/federated-oidc-provider-domain-rel-entity";
 import DBDriver from "@/lib/data-sources/sequelize-db";
-import { Op, Sequelize } from "sequelize";
+import { Op } from "@sequelize/core";
 import FederatedOIDCProviderEntity from "@/lib/entities/federated-oidc-provider-entity";
 
 
 class DBFederatedOIDCProviderDao extends FederatedOIDCProviderDao {
 
     public async getFederatedOidcProviders(tenantId?: string): Promise<Array<FederatedOidcProvider>> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
+        
         const b: Array<FederatedOidcProviderTenantRel> = tenantId ? await this.getFederatedOidcProviderTenantRels(tenantId) : [];
 
         const t: Array<FederatedOIDCProviderEntity> = tenantId ?
-             await sequelize.models.federatedOidcProvider.findAll({
+             await (await DBDriver.getInstance().getFederatedOIDCProviderEntity()).findAll({
                 where: {
                     federatedOIDCProviderId: {[Op.in] : b.map(e => e.federatedOIDCProviderId)}
                 },
@@ -23,7 +23,7 @@ class DBFederatedOIDCProviderDao extends FederatedOIDCProviderDao {
                 ]
              }) 
              :
-             await sequelize.models.federatedOidcProvider.findAll({
+             await (await DBDriver.getInstance().getFederatedOIDCProviderEntity()).findAll({
                 order: [
                     ["federatedOIDCProviderName", "ASC"]
                 ]
@@ -37,10 +37,10 @@ class DBFederatedOIDCProviderDao extends FederatedOIDCProviderDao {
     }
 
     public async getFederatedOidcProviderById(federatedOIDCProviderId: string): Promise<FederatedOidcProvider | null> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
+        
 
         // federatedOidcProvider
-        const e: FederatedOIDCProviderEntity | null = await sequelize.models.federatedOidcProvider.findOne({
+        const e: FederatedOIDCProviderEntity | null = await (await DBDriver.getInstance().getFederatedOIDCProviderEntity()).findOne({
             where: {
                 federatedOIDCProviderId: federatedOIDCProviderId
             }
@@ -56,16 +56,15 @@ class DBFederatedOIDCProviderDao extends FederatedOIDCProviderDao {
 
 
     public async createFederatedOidcProvider(federatedOIDCProvider: FederatedOidcProvider): Promise<FederatedOidcProvider> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.federatedOidcProvider.create(federatedOIDCProvider);        
+        
+        await (await DBDriver.getInstance().getFederatedOIDCProviderEntity()).create(federatedOIDCProvider);        
         return Promise.resolve(federatedOIDCProvider);
     }
 
 
     public async updateFederatedOidcProvider(federatedOIDCProvider: FederatedOidcProvider): Promise<FederatedOidcProvider> {
         
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.federatedOidcProvider.update(federatedOIDCProvider, {
+        await (await DBDriver.getInstance().getFederatedOIDCProviderEntity()).update(federatedOIDCProvider, {
             where: {
                 federatedOIDCProviderId: federatedOIDCProvider.federatedOIDCProviderId
             }
@@ -75,7 +74,7 @@ class DBFederatedOIDCProviderDao extends FederatedOIDCProviderDao {
 
 
     public async getFederatedOidcProviderTenantRels(tenantId?: string, federatedOIDCProviderId?: string): Promise<Array<FederatedOidcProviderTenantRel>> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
+        
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const whereClause: any = {};
         if(tenantId){
@@ -84,16 +83,16 @@ class DBFederatedOIDCProviderDao extends FederatedOIDCProviderDao {
         if(federatedOIDCProviderId){
             whereClause.federatedOIDCProviderId = federatedOIDCProviderId;
         }
-        const a: Array<FederatedOIDCProviderTenantRelEntity> = await sequelize.models.federatedOidcProviderTenantRel.findAll({
+        const a: Array<FederatedOIDCProviderTenantRelEntity> = await (await DBDriver.getInstance().getFederatedOIDCProviderTenantRelEntity()).findAll({
             where: whereClause
         });
         return a.map((entity: FederatedOIDCProviderTenantRelEntity) => entity.dataValues);        
     }
 
     public async getFederatedOidcProviderByDomain(domain: string): Promise<FederatedOidcProvider | null> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
+        
 
-        const federatedOIDCProviderDomainRelEntity: FederatedOIDCProviderDomainRelEntity | null = await sequelize.models.federatedOidcProviderDomainRel.findOne({
+        const federatedOIDCProviderDomainRelEntity: FederatedOIDCProviderDomainRelEntity | null = await (await DBDriver.getInstance().getFederatedOIDCProviderDomainRelEntity()).findOne({
             where:{
                 domain: domain
             }
@@ -102,7 +101,7 @@ class DBFederatedOIDCProviderDao extends FederatedOIDCProviderDao {
             return Promise.resolve(null);
         }
         
-        const federatedOIDCProviderEntity: FederatedOIDCProviderEntity | null = await sequelize.models.federatedOidcProvider.findOne({
+        const federatedOIDCProviderEntity: FederatedOIDCProviderEntity | null = await (await DBDriver.getInstance().getFederatedOIDCProviderEntity()).findOne({
                 where: {
                     federatedOIDCProviderId: federatedOIDCProviderDomainRelEntity.getDataValue("federatedOIDCProviderId")
                 }
@@ -116,8 +115,8 @@ class DBFederatedOIDCProviderDao extends FederatedOIDCProviderDao {
     }
 
     public async assignFederatedOidcProviderToTenant(federatedOIDCProviderId: string, tenantId: string): Promise<FederatedOidcProviderTenantRel> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        const federatedOidcProviderTenantRel: FederatedOIDCProviderTenantRelEntity = await sequelize.models.federatedOidcProviderTenantRel.build({
+        
+        const federatedOidcProviderTenantRel: FederatedOIDCProviderTenantRelEntity = await (await DBDriver.getInstance().getFederatedOIDCProviderTenantRelEntity()).build({
             tenantId,
             federatedOIDCProviderId
         }).save();        
@@ -126,8 +125,8 @@ class DBFederatedOIDCProviderDao extends FederatedOIDCProviderDao {
     }
 
     public async removeFederatedOidcProviderFromTenant(federatedOIDCProviderId: string, tenantId: string): Promise<FederatedOidcProviderTenantRel> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.federatedOidcProviderTenantRel.destroy({
+        
+        await (await DBDriver.getInstance().getFederatedOIDCProviderTenantRelEntity()).destroy({
             where: {
                 tenantId,
                 federatedOIDCProviderId
@@ -142,7 +141,7 @@ class DBFederatedOIDCProviderDao extends FederatedOIDCProviderDao {
     }
 
     public async getFederatedOidcProviderDomainRels(federatedOIDCProviderId: string | null, domain: string | null): Promise<Array<FederatedOidcProviderDomainRel>> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
+        
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const params: any = {};
@@ -152,7 +151,7 @@ class DBFederatedOIDCProviderDao extends FederatedOIDCProviderDao {
         if(domain){
             params.domain = domain
         }
-        const entities: Array<FederatedOIDCProviderDomainRelEntity> = await sequelize.models.federatedOidcProviderDomainRel.findAll({
+        const entities: Array<FederatedOIDCProviderDomainRelEntity> = await (await DBDriver.getInstance().getFederatedOIDCProviderDomainRelEntity()).findAll({
             where: params
         }); 
             
@@ -164,20 +163,20 @@ class DBFederatedOIDCProviderDao extends FederatedOIDCProviderDao {
     }
 
     public async assignFederatedOidcProviderToDomain(federatedOIDCProviderId: string, domain: string): Promise<FederatedOidcProviderDomainRel> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
+        
 
         const federatedOIDCProviderDomainRel: FederatedOidcProviderDomainRel = {
             federatedOIDCProviderId: federatedOIDCProviderId,
             domain: domain
         };
-        await sequelize.models.federatedOidcProviderDomainRel.create(federatedOIDCProviderDomainRel);
+        await (await DBDriver.getInstance().getFederatedOIDCProviderDomainRelEntity()).create(federatedOIDCProviderDomainRel);
         return Promise.resolve(federatedOIDCProviderDomainRel);
 
     }
 
     public async removeFederatedOidcProviderFromDomain(federatedOIDCProviderId: string, domain: string): Promise<FederatedOidcProviderDomainRel> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.federatedOidcProviderDomainRel.destroy({
+        
+        await (await DBDriver.getInstance().getFederatedOIDCProviderDomainRelEntity()).destroy({
             where: {
                 federatedOIDCProviderId,
                 domain
@@ -195,27 +194,27 @@ class DBFederatedOIDCProviderDao extends FederatedOIDCProviderDao {
      * @param federatedOIDCProviderId 
      */
     public async deleteFederatedOidcProvider(federatedOIDCProviderId: string): Promise<void> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
+        
 
-        await sequelize.models.federatedOidcAuthorizationRel.destroy({
+        await (await DBDriver.getInstance().getFederatedOIDCAuthorizationRelEntity()).destroy({
             where: {
                 federatedOIDCProviderId: federatedOIDCProviderId
             }
         });
 
-        await sequelize.models.federatedOidcProviderTenantRel.destroy({
+        await (await DBDriver.getInstance().getFederatedOIDCProviderTenantRelEntity()).destroy({
             where: {
                 federatedOIDCProviderId: federatedOIDCProviderId
             }
         });
 
-        await sequelize.models.federatedOidcProviderDomainRel.destroy({
+        await (await DBDriver.getInstance().getFederatedOIDCProviderDomainRelEntity()).destroy({
             where: {
                 federatedOIDCProviderId: federatedOIDCProviderId
             }
         });
         
-        await sequelize.models.federatedOidcProvider.destroy({
+        await (await DBDriver.getInstance().getFederatedOIDCProviderEntity()).destroy({
             where: {
                 federatedOIDCProviderId
             }

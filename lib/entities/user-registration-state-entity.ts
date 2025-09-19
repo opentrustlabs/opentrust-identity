@@ -1,4 +1,4 @@
-import { Model, DataTypes, Sequelize } from 'sequelize';
+import { Model, DataTypes, Sequelize } from "@sequelize/core";
 
 class UserRegistrationStateEntity extends Model {
     
@@ -7,59 +7,59 @@ class UserRegistrationStateEntity extends Model {
             userId: {
                 type: DataTypes.STRING,
                 primaryKey: true,
-                field: "userid"
+                columnName: "userid"
             },
             email: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "email"
+                columnName: "email"
             },
             tenantId: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "tenantid"
+                columnName: "tenantid"
             },
             registrationSessionToken: {
                 type: DataTypes.STRING,
                 primaryKey: true,
-                field: "registrationsessiontoken"
+                columnName: "registrationsessiontoken"
             },
             registrationState: {
                 type: DataTypes.STRING,
                 primaryKey: true,
-                field: "registrationstate"
+                columnName: "registrationstate"
             },
             registrationStateOrder: {
                 type: DataTypes.INTEGER,
                 primaryKey: false,
                 allowNull: false,
-                field: "registrationstateorder"
+                columnName: "registrationstateorder"
             },
             registrationStateStatus: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "registrationstatestatus"
+                columnName: "registrationstatestatus"
             },
             preAuthToken: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: true,
-                field: "preauthtoken"
+                columnName: "preauthtoken"
             },
             expiresAtMs: {
                 type: DataTypes.BIGINT,
                 primaryKey: false,
                 allowNull: false,
-                field: "expiresatms"
+                columnName: "expiresatms"
             },
             deviceCodeId: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: true,
-                field: "devicecodeid"
+                columnName: "devicecodeid"
             }
         }, 
         {

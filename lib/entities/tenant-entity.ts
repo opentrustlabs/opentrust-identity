@@ -1,4 +1,4 @@
-import { Model, DataTypes, Sequelize } from 'sequelize';
+import { Model, DataTypes, Sequelize } from "@sequelize/core";;
 
 export class TenantEntity extends Model {
     
@@ -7,19 +7,19 @@ export class TenantEntity extends Model {
             tenantId: {
                 type: DataTypes.STRING,
                 primaryKey: true,
-                field: "tenantid"
+                columnName: "tenantid"
             },
             tenantName: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "tenantname"
+                columnName: "tenantname"
             },
             tenantDescription: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: true,
-                field: "tenantdescription"
+                columnName: "tenantdescription"
             },
             enabled: {
                 type: DataTypes.BOOLEAN,
@@ -30,97 +30,97 @@ export class TenantEntity extends Model {
                 type: DataTypes.BOOLEAN,
                 primaryKey: false,
                 allowNull: false,
-                field: "allowunlimitedrate"
+                columnName: "allowunlimitedrate"
             },
             allowUserSelfRegistration: {
                 type: DataTypes.BOOLEAN,
                 primaryKey: false,
                 allowNull: false,
-                field: "allowuserselfregistration"
+                columnName: "allowuserselfregistration"
             },
             allowAnonymousUsers: {
                 type: DataTypes.BOOLEAN,
                 primaryKey: false,
                 allowNull: false,
-                field: "allowanonymoususers"
+                columnName: "allowanonymoususers"
             },
             allowSocialLogin: {
                 type: DataTypes.BOOLEAN,
                 primaryKey: false,
                 allowNull: false,
-                field: "allowsociallogin"
+                columnName: "allowsociallogin"
             },
             verifyEmailOnSelfRegistration: {
                 type: DataTypes.BOOLEAN,
                 primaryKey: false,
                 allowNull: false,
-                field: "verifyemailonselfregistration"
+                columnName: "verifyemailonselfregistration"
             },
             federatedAuthenticationConstraint: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "federatedauthenticationconstraint"
+                columnName: "federatedauthenticationconstraint"
             },
             markForDelete: {
                 type: DataTypes.BOOLEAN,
                 primaryKey: false,
                 allowNull: false,
-                field: "markfordelete"
+                columnName: "markfordelete"
             },
             tenantType: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "tenanttype"
+                columnName: "tenanttype"
             },
             migrateLegacyUsers: {
                 type: DataTypes.BOOLEAN,
                 primaryKey: false,
                 allowNull: false,
-                field: "migratelegacyusers"
+                columnName: "migratelegacyusers"
             },
             allowLoginByPhoneNumber: {
                 type: DataTypes.BOOLEAN,
                 primaryKey: false,
                 allowNull: false,
-                field: "allowloginbyphonenumber"
+                columnName: "allowloginbyphonenumber"
             },
             allowForgotPassword: {
                 type: DataTypes.BOOLEAN,
                 primaryKey: false,
                 allowNull: false,
-                field: "allowforgotpassword"
+                columnName: "allowforgotpassword"
             },
             defaultRateLimit: {
                 type: DataTypes.INTEGER,
                 primaryKey: false,
                 allowNull: true,
-                field: "defaultratelimit"
+                columnName: "defaultratelimit"
             },
             defaultRateLimitPeriodMinutes: {
                 type: DataTypes.INTEGER,
                 primaryKey: false,
                 allowNull: true,
-                field: "defaultratelimitperiodminutes"
+                columnName: "defaultratelimitperiodminutes"
             },
             registrationRequireCaptcha: {
                 type: DataTypes.BOOLEAN,
                 primaryKey: false,
                 allowNull: false,
-                field: "registrationrequirecaptcha"
+                columnName: "registrationrequirecaptcha"
             },
             registrationRequireTermsAndConditions: {
                 type: DataTypes.BOOLEAN,
                 primaryKey: false,
                 allowNull: false,
-                field: "registrationrequiretermsandconditions"
+                columnName: "registrationrequiretermsandconditions"
             },
             termsAndConditionsUri: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: true,
-                field: "termsandconditionsuri"
+                columnName: "termsandconditionsuri"
             }
         }, {
             sequelize,

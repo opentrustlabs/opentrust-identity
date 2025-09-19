@@ -1,4 +1,4 @@
-import { Model, DataTypes, Sequelize } from 'sequelize';
+import { Model, DataTypes, Sequelize } from "@sequelize/core";
 
 class TenantLookAndFeelEntity extends Model {
     
@@ -7,31 +7,62 @@ class TenantLookAndFeelEntity extends Model {
             tenantid: {
                 type: DataTypes.STRING,
                 primaryKey: true,
-                field: "tenantid"
+                columnName: "tenantid"
             },
             adminheaderbackgroundcolor: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: true,
-                field: "adminheaderbackgroundcolor"
+                columnName: "adminheaderbackgroundcolor"
             },
             adminheadertext: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: true,
-                field: "adminheadertext"
+                columnName: "adminheadertext"
             },
             adminheadertextcolor: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: true,
-                field: "adminheadertextcolor"
+                columnName: "adminheadertextcolor"
+            },            
+            authenticationheaderbackgroundcolor: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: true,
+                columnName: "authenticationheaderbackgroundcolor"
+            },
+            authenticationheadertext: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: true,
+                columnName: "authenticationheadertext"
+            },
+            authenticationheadertextcolor: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: true,
+                columnName: "authenticationheadertextcolor"
+            },
+           
+            authenticationlogouri: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: true,
+                columnName: "authenticationlogouri"
+            },
+            authenticationlogomimetype: {
+                type: DataTypes.STRING,
+                primaryKey: false,
+                allowNull: true,
+                columnName: "authenticationlogomimetype"
             },
             adminlogo: {
                 type: DataTypes.BLOB("long"),
                 primaryKey: false,
                 allowNull: true,
-                field: "adminlogo",
+                columnName: "adminlogo",
                 // set(val: string | Buffer | null){
                 //     console.log("val of admin logo is: ")
                 //     console.log(val);
@@ -50,29 +81,11 @@ class TenantLookAndFeelEntity extends Model {
                 //     }
                 // }
             },
-            authenticationheaderbackgroundcolor: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: true,
-                field: "authenticationheaderbackgroundcolor"
-            },
-            authenticationheadertext: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: true,
-                field: "authenticationheadertext"
-            },
-            authenticationheadertextcolor: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: true,
-                field: "authenticationheadertextcolor"
-            },
-            authenticationlogo: {
+             authenticationlogo: {
                 type: DataTypes.BLOB("long"),
                 primaryKey: false,
                 allowNull: true,
-                field: "authenticationlogo",
+                columnName: "authenticationlogo",
                 // set(val: string | Buffer | null){
                 //     console.log("val of authentication logo is: ")
                 //     console.log(val);
@@ -90,18 +103,6 @@ class TenantLookAndFeelEntity extends Model {
                 //         this.setDataValue("authenticationlogo", val);
                 //     }
                 // }
-            },
-            authenticationlogouri: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: true,
-                field: "authenticationlogouri"
-            },
-            authenticationlogomimetype: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: true,
-                field: "authenticationlogomimetype"
             }
         }, {
             sequelize,
