@@ -211,7 +211,7 @@ class DBIdentityDao extends IdentityDao {
                 userId: userId
             },
             order: [
-                ["dateCreated", "DESC"]
+                ["dateCreatedMs", "DESC"]
             ]
         });
         return arrUserCredentialEntity.map( (e: UserCredentialEntity) => e.dataValues);
@@ -224,7 +224,7 @@ class DBIdentityDao extends IdentityDao {
                 userId: userId
             },
             order: [
-                ["dateCreated", "DESC"]
+                ["dateCreatedMs", "DESC"]
             ]
         });
         return userCredentialEntity ? Promise.resolve(userCredentialEntity.dataValues) : Promise.resolve(null);
@@ -419,14 +419,14 @@ class DBIdentityDao extends IdentityDao {
         return Promise.resolve();
     }
 
-    public async deleteUserCredential(userId: string, dateCreated?: Date): Promise<void> {
+    public async deleteUserCredential(userId: string, dateCreatedMs?: number): Promise<void> {
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const queryParams: any = {
             userId: userId
         };
-        if(dateCreated){
-            queryParams.dateCreated = dateCreated
+        if(dateCreatedMs){
+            queryParams.dateCreatedMs = dateCreatedMs
         }
         await (await DBDriver.getInstance().getUserCredentialEntity()).destroy({
             where: queryParams

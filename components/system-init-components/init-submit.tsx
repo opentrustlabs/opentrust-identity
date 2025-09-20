@@ -12,6 +12,8 @@ import { SystemInitializationResponse, Tenant } from "@/graphql/generated/graphq
 import { useRouter } from "next/navigation";
 import { QUERY_PARAM_AUTHENTICATE_TO_PORTAL, QUERY_PARAM_TENANT_ID } from "@/utils/consts";
 import { AuthSessionProps, useAuthSessionContext } from "../contexts/auth-session-context";
+import Backdrop from "@mui/material/Backdrop";
+import CircularProgress from "@mui/material/CircularProgress";
 
 const InitSubmit: React.FC<SystemInitializationConfigProps> = ({
     onBack,
@@ -27,6 +29,7 @@ const InitSubmit: React.FC<SystemInitializationConfigProps> = ({
     // STATE VARIABLES
     const [initializationSuccessful, setInitializationSuccessful] = React.useState<boolean>(false);
     const [rootTenant, setRootTenant] = React.useState<Tenant | null>(null);
+    const [showMutationBackdrop, setShowMutationBackdrop] = React.useState<boolean>(false);
 
     // GRAPHQL FUNCTIONS
     const [systemInitializationMutation] = useMutation(SYSTEM_INITIALIZATION_MUTATION, {
@@ -34,6 +37,7 @@ const InitSubmit: React.FC<SystemInitializationConfigProps> = ({
             systemInitializationInput: systemInitInput
         },
         onCompleted(data) {
+            setShowMutationBackdrop(false);
             const response: SystemInitializationResponse = data.initializeSystem as SystemInitializationResponse;
             if(response.systemInitializationErrors && response.systemInitializationErrors.length > 0){
                 onError(response.systemInitializationErrors[0].errorKey);
@@ -50,6 +54,7 @@ const InitSubmit: React.FC<SystemInitializationConfigProps> = ({
             }
         },
         onError(error) {
+            setShowMutationBackdrop(false);
             onError(error.message);
         }    
     });
@@ -58,8 +63,7 @@ const InitSubmit: React.FC<SystemInitializationConfigProps> = ({
         <Typography component="div" sx={{width: "100%"}}>
             <Paper
                 elevation={1}
-                sx={{ padding: "8px", border: "solid 1px lightgrey" }}
-                
+                sx={{ padding: "8px", border: "solid 1px lightgrey" }}                
             >
                 {initializationSuccessful &&
                     <React.Fragment>
@@ -92,6 +96,7 @@ const InitSubmit: React.FC<SystemInitializationConfigProps> = ({
                         <Stack sx={{ width: "100%" }} direction={"row-reverse"}>
                             <Button
                                 onClick={() => {
+                                    setShowMutationBackdrop(true);
                                     systemInitializationMutation();
                                 }}
                             >
@@ -108,6 +113,13 @@ const InitSubmit: React.FC<SystemInitializationConfigProps> = ({
                     </React.Fragment>
                 }
             </Paper>
+            <Backdrop
+                sx={{ color: '#fff'}}
+                open={showMutationBackdrop}
+                onClick={() => setShowMutationBackdrop(false)}
+            >
+                <CircularProgress color="info" />
+            </Backdrop>
         </Typography>
     )
 }

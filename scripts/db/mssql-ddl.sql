@@ -4,8 +4,8 @@
 
 create TABLE federated_oidc_provider(
     federatedoidcproviderid VARCHAR(64) PRIMARY KEY,
-    federatedoidcprovidername VARCHAR(128) NOT NULL,
-    federatedoidcproviderdescription VARCHAR(256),
+    federatedoidcprovidername NVARCHAR(128) NOT NULL,
+    federatedoidcproviderdescription NVARCHAR(256),
     federatedoidcprovidertenantid VARCHAR(64),
     federatedoidcproviderclientid varchar(128) NOT NULL,
     federatedoidcproviderclientsecret varchar(256),
@@ -21,8 +21,8 @@ create TABLE federated_oidc_provider(
 
 create TABLE tenant (
     tenantid VARCHAR(64) PRIMARY KEY,
-    tenantname VARCHAR(128) NOT NULL,
-    tenantdescription VARCHAR(256),
+    tenantname NVARCHAR(128) NOT NULL,
+    tenantdescription NVARCHAR(256),
     enabled BIT NOT NULL,
     allowunlimitedrate BIT NOT NULL,
     allowuserselfregistration BIT NOT NULL,
@@ -89,9 +89,9 @@ CREATE INDEX federated_oidc_provider_domain_rel_domain_idx ON federated_oidc_pro
 create TABLE client (
     clientid VARCHAR(64) PRIMARY KEY,
     tenantid VARCHAR(64) NOT NULL,
-    clientsecret varchar(256) NOT NULL,
-    clientname varchar (128) NOT NULL,
-    clientdescription VARCHAR(256),
+    clientsecret VARCHAR(256) NOT NULL,
+    clientname NVARCHAR(128) NOT NULL,
+    clientdescription NVARCHAR(256),
     enabled BIT NOT NULL,
     oidcenabled BIT NOT NULL,
     pkceenabled BIT NOT NULL,
@@ -114,16 +114,16 @@ create TABLE client_redirect_uri_rel (
 create TABLE users (
     userid VARCHAR(64) PRIMARY KEY,
     federatedoidcprovidersubjectid VARCHAR(128),
-    email VARCHAR(128) UNIQUE NOT NULL,
+    email NVARCHAR(128) UNIQUE NOT NULL,
     emailverified BIT NOT NULL,
-    domain VARCHAR(128) NOT NULL,
-    firstname VARCHAR(128) NOT NULL,
-    lastname VARCHAR(128) NOT NULL,
-    middlename VARCHAR(128),
+    domain NVARCHAR(128) NOT NULL,
+    firstname NVARCHAR(128) NOT NULL,
+    lastname NVARCHAR(128) NOT NULL,
+    middlename NVARCHAR(128),
     phonenumber VARCHAR(32),
-    address VARCHAR(128),
-    addressline1 VARCHAR(128),
-    city VARCHAR(128),
+    address NVARCHAR(128),
+    addressline1 NVARCHAR(128),
+    city NVARCHAR(128),
     postalcode VARCHAR(32),
     stateregionprovince VARCHAR(64),
     countrycode VARCHAR(8),
@@ -172,8 +172,8 @@ create TABLE user_terms_and_conditions_accepted (
 create TABLE authentication_group (
     authenticationgroupid VARCHAR(64) PRIMARY KEY,
     tenantid VARCHAR(64) NOT NULL,
-    authenticationgroupname VARCHAR(128) NOT NULL,
-    authenticationgroupdescription VARCHAR(256),
+    authenticationgroupname NVARCHAR(128) NOT NULL,
+    authenticationgroupdescription NVARCHAR(256),
     defaultgroup BIT NOT NULL,
     markfordelete BIT NOT NULL,
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid)
@@ -198,8 +198,8 @@ create TABLE authentication_group_user_rel (
 create TABLE authorization_group (
     groupid VARCHAR(64) PRIMARY KEY,
     tenantid VARCHAR(64) NOT NULL,
-    groupname VARCHAR(128) NOT NULL,
-    groupdescription VARCHAR(256),
+    groupname NVARCHAR(128) NOT NULL,
+    groupdescription NVARCHAR(256),
     defaultgroup BIT NOT NULL,
     allowforanonymoususers BIT NOT NULL,
     markfordelete BIT NOT NULL,
@@ -219,33 +219,33 @@ create TABLE user_credential (
     salt varchar(256) NOT NULL,
     hashedpassword VARCHAR(256) NOT NULL,
     hashingalgorithm VARCHAR(128) NOT NULL,
-    datecreated DATETIME2 NOT NULL,
-    PRIMARY KEY (userid, datecreated),
+    datecreatedms BIGINT NOT NULL,
+    PRIMARY KEY (userid, datecreatedms),
     FOREIGN KEY (userid) REFERENCES users(userid)
 );
-CREATE INDEX user_credential_date_created_idx ON user_credential(datecreated);
+CREATE INDEX user_credential_date_createdms_idx ON user_credential(datecreatedms);
 
 create TABLE signing_key (
     keyid VARCHAR(64) PRIMARY KEY,
-    keyname VARCHAR(128) NOT NULL,
+    keyname NVARCHAR(128) NOT NULL,
     tenantid VARCHAR(64) NOT NULL,
     keytype VARCHAR(64) NOT NULL,
-    keyuse VARCHAR(64) NOT NULL,
-    privatekeypkcs8 VARBINARY(max) NOT NULL,
-    password VARCHAR(128),
-    certificate VARBINARY(max),
-    publickey VARBINARY(max),
+    keyuse VARCHAR(64) NOT NULL,    
+    keypassword VARCHAR(128),    
     expiresatms BIGINT NOT NULL,
     createdatms BIGINT NOT NULL,
-    status VARCHAR(64),
+    keystatus VARCHAR(64),
     markfordelete BIT NOT NULL,
+    privatekeypkcs8 VARCHAR(8000) NOT NULL,
+    keycertificate VARCHAR(8000),
+    publickey VARCHAR(8000),
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid)
 );
 
 create TABLE rate_limit_service_group (
     servicegroupid VARCHAR(64) PRIMARY KEY,
-    servicegroupname VARCHAR(128) NOT NULL,
-    servicegroupdescription VARCHAR(256),
+    servicegroupname NVARCHAR(128) NOT NULL,
+    servicegroupdescription NVARCHAR(256),
     markfordelete BIT NOT NULL 
 );
 CREATE INDEX rate_limit_service_group_servicegroupname_idx on rate_limit_service_group(servicegroupname);
@@ -253,7 +253,7 @@ CREATE INDEX rate_limit_service_group_servicegroupname_idx on rate_limit_service
 create TABLE scope (
     scopeid VARCHAR(64) PRIMARY KEY,
     scopename VARCHAR(128) UNIQUE NOT NULL,
-    scopedescription VARCHAR(256) NOT NULL,
+    scopedescription NVARCHAR(256) NOT NULL,
     scopeuse VARCHAR(64) NOT NULL,
     markfordelete BIT NOT NULL
 );
@@ -268,7 +268,7 @@ create TABLE scope_access_rule_schema (
 
 create TABLE access_rule (
     accessruleid VARCHAR(64) PRIMARY KEY,
-    accessrulename VARCHAR(128) NOT NULL,
+    accessrulename NVARCHAR(128) NOT NULL,
     scopeaccessruleschemaid VARCHAR(64) NOT NULL,
     accessruledefinition VARBINARY(max) NOT NULL,
     FOREIGN KEY (scopeaccessruleschemaid) REFERENCES  scope_access_rule_schema(scopeaccessruleschemaid)
@@ -284,7 +284,7 @@ create TABLE rate_limit_service_group_scope_rel (
 
 create TABLE rate_limit (
     ratelimitid VARCHAR(64) PRIMARY KEY,
-    ratelimitname VARCHAR(128) NOT NULL,
+    ratelimitname NVARCHAR(128) NOT NULL,
     servicegroupid VARCHAR(64) NOT NULL,
     FOREIGN KEY (servicegroupid) REFERENCES rate_limit_service_group(servicegroupid)
 );
@@ -467,15 +467,14 @@ create TABLE tenant_anonymous_user_configuration (
 create TABLE tenant_look_and_feel (
     tenantid VARCHAR(64) PRIMARY KEY,
     adminheaderbackgroundcolor VARCHAR(32),
-    adminheadertextcolor VARCHAR(32),
-    adminlogo VARBINARY(max),
+    adminheadertextcolor VARCHAR(32),    
     adminheadertext VARCHAR(128),
     authenticationheaderbackgroundcolor VARCHAR(32),
-    authenticationheadertextcolor VARCHAR(32),
-    authenticationlogo VARBINARY(max),
+    authenticationheadertextcolor VARCHAR(32),    
     authenticationlogouri VARCHAR(256),
     authenticationlogomimetype VARCHAR(16),
-    authenticationheadertext VARCHAR(128),    
+    authenticationheadertext VARCHAR(128),
+    authenticationlogo VARBINARY(max),
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid)
 );
 
@@ -492,7 +491,7 @@ create TABLE contact (
     objectid VARCHAR(64) NOT NULL,
     objecttype VARCHAR(64) NOT NULL,
     email VARCHAR(128) NOT NULL,
-    contactname VARCHAR(128),
+    contactname NVARCHAR(128),
     userid VARCHAR(64)
 );
 CREATE INDEX contact_objectid_idx ON contact(objectid);
@@ -690,7 +689,7 @@ create TABLE user_duress_credential (
     salt varchar(256) NOT NULL,
     hashedpassword VARCHAR(256) NOT NULL,
     hashingalgorithm VARCHAR(128) NOT NULL,
-    datecreated TIMESTAMP NOT NULL,
+    datecreatedms BIGINT NOT NULL,
     PRIMARY KEY (userid),
     FOREIGN KEY (userid) REFERENCES users(userid)
 );

@@ -416,10 +416,10 @@ class SystemInitializationService {
             keyUse: KEY_USE_JWT_SIGNING,            
             markForDelete: false,
             privateKeyPkcs8: privateKey,
-            status: SIGNING_KEY_STATUS_ACTIVE,
+            keyStatus: SIGNING_KEY_STATUS_ACTIVE,
             tenantId: tenant.tenantId,
-            certificate: certificate,
-            password: encrypted
+            keyCertificate: certificate,
+            keyPassword: encrypted
         }
         await signingKeysDao.createSigningKey(key);
 

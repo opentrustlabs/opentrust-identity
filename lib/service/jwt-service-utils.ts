@@ -820,8 +820,8 @@ class JwtServiceUtils {
                 const key: SigningKey = signingKeys[i];
                 
                 let passphrase: string | undefined = undefined;
-                if(key.password){
-                    passphrase = await kms.decrypt(key.password) || undefined;
+                if(key.keyPassword){
+                    passphrase = await kms.decrypt(key.keyPassword) || undefined;
                 }
                 const privateKeyInput: PrivateKeyInput = {
                     key: key.privateKeyPkcs8,
@@ -832,7 +832,7 @@ class JwtServiceUtils {
                 const privateKeyObject: KeyObject = createPrivateKey(privateKeyInput);
 
                 const publicKeyInput: PublicKeyInput = {
-                    key: key.certificate ? key.certificate : key.publicKey ? key.publicKey : "",
+                    key: key.keyCertificate ? key.keyCertificate : key.publicKey ? key.publicKey : "",
                     encoding: "utf-8",
                     format: "pem"
                 };

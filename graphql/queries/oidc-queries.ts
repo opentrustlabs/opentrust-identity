@@ -33,7 +33,6 @@ export const TENANT_META_DATA_QUERY = gql(`
                 tenantid
                 adminheaderbackgroundcolor
                 adminheadertextcolor
-                adminlogo
                 adminheadertext
                 authenticationheaderbackgroundcolor
                 authenticationheadertextcolor
@@ -442,11 +441,11 @@ export const SIGNING_KEY_DETAIL_QUERY = gql(`
             keyTypeId
             keyUse
             privateKeyPkcs8
-            password
-            certificate
+            keyPassword
+            keyCertificate
             publicKey
             expiresAtMs
-            status
+            keyStatus
             statusId
             markForDelete
         }
@@ -557,7 +556,6 @@ export const TENANT_LOOK_AND_FEEL_QUERY = gql(`
             tenantid
             adminheaderbackgroundcolor
             adminheadertextcolor
-            adminlogo
             adminheadertext
             authenticationheaderbackgroundcolor
             authenticationheadertextcolor

@@ -236,8 +236,6 @@ class DBTenantDao extends TenantDao {
                 adminheaderbackgroundcolor: entity.getDataValue("adminheaderbackgroundcolor"),
                 adminheadertext: entity.getDataValue("adminheadertext"),
                 adminheadertextcolor: entity.getDataValue("adminheadertextcolor"),
-                adminlogo: entity.getDataValue("adminlogo") ? 
-                    Buffer.from(entity.getDataValue("adminlogo")).toString("utf-8") : "",
                 authenticationheaderbackgroundcolor: entity.getDataValue("authenticationheaderbackgroundcolor"),
                 authenticationheadertext: entity.getDataValue("authenticationheadertext"),
                 authenticationheadertextcolor: entity.getDataValue("authenticationheadertextcolor"),
@@ -258,7 +256,6 @@ class DBTenantDao extends TenantDao {
         
         await (await DBDriver.getInstance().getTenantLookAndFeelEntity()).create({
             ...tenantLookAndFeel,
-            adminlogo: tenantLookAndFeel.adminlogo ? Buffer.from(tenantLookAndFeel.adminlogo, "utf-8") : null,
             authenticationlogo: tenantLookAndFeel.authenticationlogo ? Buffer.from(tenantLookAndFeel.authenticationlogo, "utf-8") : null
             
 
@@ -271,7 +268,6 @@ class DBTenantDao extends TenantDao {
 
         await (await DBDriver.getInstance().getTenantLookAndFeelEntity()).update({
                 ...tenantLookAndFeel,
-                adminlogo: tenantLookAndFeel.adminlogo ? Buffer.from(tenantLookAndFeel.adminlogo, "utf-8") : null,
                 authenticationlogo: tenantLookAndFeel.authenticationlogo ? Buffer.from(tenantLookAndFeel.authenticationlogo, "utf-8") : null
             }, 
             {

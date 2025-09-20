@@ -27,11 +27,11 @@ class SigningKeyEntity extends Model {
                 allowNull: false,
 				columnName: "keyuse"
             },            
-            password: {
+            keyPassword: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: true,
-                columnName: "password"
+                columnName: "keypassword"
             },            
             expiresAtMs: {
                 type: DataTypes.BIGINT,
@@ -45,11 +45,11 @@ class SigningKeyEntity extends Model {
                 allowNull: false,
                 columnName: "createdatms"
             },
-            status: {
+            keyStatus: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                columnName: "status"
+                columnName: "keystatus"
             },
             tenantId: {
                 type: DataTypes.STRING,
@@ -64,55 +64,22 @@ class SigningKeyEntity extends Model {
                 columnName: "markfordelete"
             },
             privateKeyPkcs8: {
-                type: DataTypes.BLOB("long"),
+                type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
                 columnName: "privatekeypkcs8",
-                set(val: string | Buffer | null){
-                    if(val === null || val === ""){
-                        this.setDataValue("privateKeyPkcs8", null);
-                    }
-                    else if(typeof val === "string"){
-                        this.setDataValue("privateKeyPkcs8", Buffer.from(val, "utf-8"));
-                    }
-                    else{
-                        this.setDataValue("privateKeyPkcs8", val);
-                    }
-                }
             },
             publicKey: {
-                type: DataTypes.BLOB("long"),
+                type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: true,
                 columnName: "publickey",
-                set(val: string | Buffer | null){
-                    if(val === null || val === ""){
-                        this.setDataValue("publicKey", null);
-                    }
-                    else if(typeof val === "string"){
-                        this.setDataValue("publicKey", Buffer.from(val, "utf-8"));
-                    }
-                    else{
-                        this.setDataValue("publicKey", val);
-                    }
-                }
             },
-            certificate: {
-                type: DataTypes.BLOB("long"),
+            keyCertificate: {
+                type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: true,
-                columnName: "certificate",
-                set(val: string | Buffer | null){
-                    if(val === null || val === ""){
-                        this.setDataValue("certificate", null);
-                    }
-                    else if(typeof val === "string"){
-                        this.setDataValue("certificate", Buffer.from(val, "utf-8"));
-                    }
-                    else{
-                        this.setDataValue("certificate", val);
-                    }
-                }
+                columnName: "keycertificate"
             }
         }, 
 		{

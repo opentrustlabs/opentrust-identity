@@ -57,30 +57,7 @@ class TenantLookAndFeelEntity extends Model {
                 primaryKey: false,
                 allowNull: true,
                 columnName: "authenticationlogomimetype"
-            },
-            adminlogo: {
-                type: DataTypes.BLOB("long"),
-                primaryKey: false,
-                allowNull: true,
-                columnName: "adminlogo",
-                // set(val: string | Buffer | null){
-                //     console.log("val of admin logo is: ")
-                //     console.log(val);
-                    
-                //     if(val === null || val === ""){
-                //         console.log("checkpoint 2.1")
-                //         this.setDataValue("adminlogo", null);
-                //     }
-                //     else if(typeof val === "string"){
-                //         console.log("checkpoint 2.2")
-                //         this.setDataValue("adminlogo", Buffer.from(val));
-                //     }
-                //     else{
-                //         console.log("checkpoint 1.3")
-                //         this.setDataValue("adminlogo", val);
-                //     }
-                // }
-            },
+            },            
              authenticationlogo: {
                 type: DataTypes.BLOB("long"),
                 primaryKey: false,

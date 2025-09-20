@@ -919,7 +919,6 @@ export const DEFAULT_TENANT_LOOK_AND_FEEL: TenantLookAndFeel = {
     tenantid: "",
     adminheaderbackgroundcolor: "",
     adminheadertextcolor: "white",
-    adminlogo: null,
     adminheadertext: "",
     authenticationheaderbackgroundcolor: "#1976d2",
     authenticationheadertextcolor: "white",

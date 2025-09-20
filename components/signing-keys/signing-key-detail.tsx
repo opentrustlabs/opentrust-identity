@@ -48,7 +48,7 @@ const SigningKeyDetail: React.FC<SigningKeyDetailProps> = ({ signingKey }) => {
     const [markDirty, setMarkDirty] = React.useState<boolean>(false);
     const initInput: SigningKeyUpdateInput = {
         keyId: signingKey.keyId,
-        status: signingKey.status,
+        status: signingKey.keyStatus,
         keyName: signingKey.keyName,
         keyUse: signingKey.keyUse
     };
@@ -339,7 +339,7 @@ const SigningKeyDetail: React.FC<SigningKeyDetailProps> = ({ signingKey }) => {
                                     <Grid2 size={{xs: 12, sm: 2, md: 2, lg: 2, xl: 2}} sx={{textDecoration: breakPoints.isSmall ? "underline": "none"}}>
                                         <Grid2 container>
                                             <Grid2 size={9}>
-                                                {signingKey.certificate &&
+                                                {signingKey.keyCertificate &&
                                                     <>Certificate</>
                                                 }
                                                 {signingKey.publicKey &&
@@ -350,8 +350,8 @@ const SigningKeyDetail: React.FC<SigningKeyDetailProps> = ({ signingKey }) => {
                                                 <ContentCopyIcon 
                                                     sx={{cursor: "pointer"}}
                                                     onClick={() => {
-                                                        const textToCopy: string = signingKey.certificate ? signingKey.certificate : signingKey.publicKey ? signingKey.publicKey : "";
-                                                        const message = signingKey.certificate ? "Certificate copied to clipboard" : signingKey.publicKey ? "Public key copied to clipboard" : "No data to copy";
+                                                        const textToCopy: string = signingKey.keyCertificate ? signingKey.keyCertificate : signingKey.publicKey ? signingKey.publicKey : "";
+                                                        const message = signingKey.keyCertificate ? "Certificate copied to clipboard" : signingKey.publicKey ? "Public key copied to clipboard" : "No data to copy";
                                                         copyContentToClipboard(textToCopy, message);
                                                     }}
                                                 />
@@ -359,7 +359,7 @@ const SigningKeyDetail: React.FC<SigningKeyDetailProps> = ({ signingKey }) => {
                                         </Grid2>                                                                              
                                     </Grid2>
                                     <Grid2 size={{xs: 12, sm: 10, md: 10, lg: 10, xl: 10}}>
-                                        <pre style={{fontSize: breakPoints.isSmall ? "0.8em" : "1.0em"}}>{signingKey.certificate ? signingKey.certificate : signingKey.publicKey}</pre>
+                                        <pre style={{fontSize: breakPoints.isSmall ? "0.8em" : "1.0em"}}>{signingKey.keyCertificate ? signingKey.keyCertificate : signingKey.publicKey}</pre>
                                     </Grid2>                                    
                                 </Grid2>
                             </Paper>                            

@@ -226,26 +226,26 @@ create TABLE user_credential (
     salt varchar(256) NOT NULL,
     hashedpassword VARCHAR(256) NOT NULL,
     hashingalgorithm VARCHAR(128) NOT NULL,
-    datecreated TIMESTAMP NOT NULL,
-    PRIMARY KEY (userid, datecreated),
+    datecreatedms BIGINT NOT NULL,
+    PRIMARY KEY (userid, datecreatedms),
     FOREIGN KEY (userid) REFERENCES users(userid)    
 );
-CREATE INDEX user_credential_date_created_idx ON user_credential(datecreated);
+CREATE INDEX user_credential_datecreatedms_idx ON user_credential(datecreatedms);
 
 create TABLE signing_key (
     keyid VARCHAR(64) PRIMARY KEY,
     keyname VARCHAR(128) NOT NULL,
     tenantid VARCHAR(64) NOT NULL,
     keytype VARCHAR(64) NOT NULL,
-    keyuse VARCHAR(64) NOT NULL,
-    privatekeypkcs8 BLOB NOT NULL,
-    password VARCHAR(128),
-    certificate BLOB,
-    publickey BLOB,
+    keyuse VARCHAR(64) NOT NULL,    
+    keypassword VARCHAR(128),    
     expiresatms BIGINT NOT NULL,
     createdatms BIGINT NOT NULL,
-    status VARCHAR(64),
+    keystatus VARCHAR(64),
     markfordelete BOOLEAN NOT NULL,
+    privatekeypkcs8 VARCHAR(8000) NOT NULL,
+    keycertificate VARCHAR(8000),
+    publickey VARCHAR(8000),
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid)
 );
 
@@ -475,14 +475,13 @@ create TABLE tenant_look_and_feel (
     tenantid VARCHAR(64) PRIMARY KEY,
     adminheaderbackgroundcolor VARCHAR(32),
     adminheadertextcolor VARCHAR(32),
-    adminlogo BLOB,
     adminheadertext VARCHAR(128),
     authenticationheaderbackgroundcolor VARCHAR(32),
-    authenticationheadertextcolor VARCHAR(32),
-    authenticationlogo BLOB,
+    authenticationheadertextcolor VARCHAR(32),    
     authenticationlogouri VARCHAR(256),
     authenticationlogomimetype VARCHAR(16),
-    authenticationheadertext VARCHAR(128),    
+    authenticationheadertext VARCHAR(128),
+    authenticationlogo BLOB,
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid)
 );
 
@@ -697,7 +696,7 @@ create TABLE user_duress_credential (
     salt varchar(256) NOT NULL,
     hashedpassword VARCHAR(256) NOT NULL,
     hashingalgorithm VARCHAR(128) NOT NULL,
-    datecreated TIMESTAMP NOT NULL,
+    datecreatedms BIGINT NOT NULL,
     PRIMARY KEY (userid),
     FOREIGN KEY (userid) REFERENCES users(userid)
 );

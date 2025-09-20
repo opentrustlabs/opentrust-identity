@@ -357,11 +357,11 @@ const resolvers: Resolvers = {
                 keyUse: keyInput.keyUse,
                 keyName: keyInput.keyName,
                 keyId: "",
-                certificate: keyInput.certificate,
+                keyCertificate: keyInput.keyCertificate,
                 privateKeyPkcs8: keyInput.privateKeyPkcs8,
-                password: keyInput.password,
+                keyPassword: keyInput.keyPassword,
                 expiresAtMs: keyInput.expiresAtMs ? keyInput.expiresAtMs : Date.now() + (120 * 24 * 60 * 60 * 1000), // see service impl for parsing of certificate value
-                status: SIGNING_KEY_STATUS_ACTIVE,
+                keyStatus: SIGNING_KEY_STATUS_ACTIVE,
                 keyTypeId: "",
                 publicKey: keyInput.publicKey,
                 statusId: "",
@@ -384,11 +384,11 @@ const resolvers: Resolvers = {
                 keyUse: "",
                 keyName: keyInput.keyName || "",
                 keyId: keyInput.keyId,
-                certificate: "",
+                keyCertificate: "",
                 privateKeyPkcs8: "",
-                password: "",
+                keyPassword: "",
                 expiresAtMs: 0,
-                status: keyInput.status,
+                keyStatus: keyInput.status,
                 keyTypeId: "",
                 publicKey: "",
                 statusId: "",
@@ -677,7 +677,6 @@ const resolvers: Resolvers = {
                 adminheaderbackgroundcolor: tenantLookAndFeelInput.adminheaderbackgroundcolor,
                 adminheadertext: tenantLookAndFeelInput.adminheadertext,
                 adminheadertextcolor: tenantLookAndFeelInput.adminheadertextcolor,
-                adminlogo: tenantLookAndFeelInput.adminlogo,
                 authenticationlogouri: tenantLookAndFeelInput.authenticationlogouri
             }
             await tenantService.setTenantLookAndFeel(tenantLookAndFeel);

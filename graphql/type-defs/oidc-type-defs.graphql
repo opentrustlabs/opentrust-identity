@@ -569,7 +569,7 @@ type UserCredential {
     salt: String!
     hashedPassword: String!
     hashingAlgorithm: String!
-    dateCreated: String!    
+    dateCreatedMs: Float!    
 }
 
 type SigningKey {
@@ -580,12 +580,12 @@ type SigningKey {
     keyTypeId: String
     keyUse: String!
     privateKeyPkcs8: String!
-    password: String
-    certificate: String
+    keyPassword: String
+    keyCertificate: String
     publicKey: String
     expiresAtMs: Float!
     createdAtMs: Float!
-    status: String!
+    keyStatus: String!
     statusId: String
     markForDelete: Boolean!
 }
@@ -825,7 +825,6 @@ type TenantLookAndFeel {
     tenantid: String!
     adminheaderbackgroundcolor: String
     adminheadertextcolor: String
-    adminlogo: String
     adminheadertext: String
     authenticationheaderbackgroundcolor: String
     authenticationheadertextcolor: String
@@ -1422,7 +1421,6 @@ input TenantLookAndFeelInput {
     tenantid: String!
     adminheaderbackgroundcolor: String
     adminheadertextcolor: String
-    adminlogo: String
     adminheadertext: String
     authenticationheaderbackgroundcolor: String
     authenticationheadertextcolor: String
@@ -1471,8 +1469,8 @@ input SigningKeyCreateInput {
     keyName: String!
     keyUse: String!
     privateKeyPkcs8: String!
-    password: String
-    certificate: String
+    keyPassword: String
+    keyCertificate: String
     publicKey: String
     expiresAtMs: Float
 }

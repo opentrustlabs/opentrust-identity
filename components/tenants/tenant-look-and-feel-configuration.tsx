@@ -45,7 +45,6 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
         tenantid: tenantId,
         adminheaderbackgroundcolor: "",
         adminheadertextcolor: "",
-        adminlogo: "",
         adminheadertext: "",
         authenticationheaderbackgroundcolor: DEFAULT_BACKGROUND_COLOR,
         authenticationheadertextcolor: DEFAULT_TEXT_COLOR,

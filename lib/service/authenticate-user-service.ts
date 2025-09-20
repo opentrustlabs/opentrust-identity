@@ -1687,9 +1687,8 @@ class AuthenticateUserService extends IdentityService {
                 in milliseconds, we want the distance between now and the time that the user last created a password.
                 if this exceeds the number of milliseconds for the password rotation period, then return true.
             */
-            const datePasswordLastChanged: Date = new Date(userCredential.dateCreated);
             const now: number = Date.now();
-            const timeDiffSinceLastPasswordChangeInMs: number = now - datePasswordLastChanged.getTime();
+            const timeDiffSinceLastPasswordChangeInMs: number = now - userCredential.dateCreatedMs;
             const timeDiffForRotationInMs = tenantPasswordConfig.passwordRotationPeriodDays * 24 * 60 * 60 * 1000;
             
             if(timeDiffSinceLastPasswordChangeInMs > timeDiffForRotationInMs){

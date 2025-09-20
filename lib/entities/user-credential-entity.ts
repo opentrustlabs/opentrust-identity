@@ -9,10 +9,10 @@ class UserCredentialEntity extends Model {
                 primaryKey: true,
                 columnName: "userid"
             },
-            dateCreated: {
-                type: DataTypes.DATE,
+            dateCreatedMs: {
+                type: DataTypes.BIGINT,
                 primaryKey: true,
-                columnName: "datecreated"
+                columnName: "datecreatedms"
             },
             hashedPassword: {
                 type: DataTypes.STRING,
