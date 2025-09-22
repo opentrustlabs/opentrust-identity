@@ -322,7 +322,7 @@ export const SIGNING_KEY_UPDATE_MUTATION = gql(`
             keyId
             keyName
             keyType
-            status
+            keyStatus
         }
     }
 `);
