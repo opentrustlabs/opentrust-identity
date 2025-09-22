@@ -46,7 +46,7 @@ class FederatedOIDCProviderEntity extends Model {
                 columnName: "federatedoidcproviderwellknownuri"
             },
             refreshTokenAllowed: {
-                type: DataTypes.STRING,
+                type: DataTypes.BOOLEAN,
                 primaryKey: false,
                 allowNull: false,
                 columnName: "refreshtokenallowed"

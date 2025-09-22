@@ -73,7 +73,7 @@ const SigningKeyDetail: React.FC<SigningKeyDetailProps> = ({ signingKey }) => {
             setMarkDirty(false);
             if(data && data.updateSigningKey){
                 keyUpdateInput.keyName = data.updateSigningKey.keyName;
-                keyUpdateInput.status = data.updateSigningKey.status;
+                keyUpdateInput.status = data.updateSigningKey.keyStatus;
                 setKeyUpdateInput({...keyUpdateInput});
             }
         },

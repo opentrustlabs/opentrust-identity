@@ -272,7 +272,7 @@ class DBTenantDao extends TenantDao {
             }, 
             {
             where: {
-                tenantId: tenantLookAndFeel.tenantid
+                tenantid: tenantLookAndFeel.tenantid
             }
         });
         return Promise.resolve(tenantLookAndFeel);

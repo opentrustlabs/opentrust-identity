@@ -49,7 +49,7 @@ class DBSigningKeysDao extends SigningKeysDao {
             {
                 keyName: key.keyName,
                 markForDelete: key.markForDelete,
-                status: key.keyStatus
+                keyStatus: key.keyStatus
             },
             {
                 where: {
