@@ -243,9 +243,9 @@ create TABLE signing_key (
     createdatms BIGINT NOT NULL,
     keystatus VARCHAR(64),
     markfordelete BOOLEAN NOT NULL,
-    privatekeypkcs8 VARCHAR(8000) NOT NULL,
-    keycertificate VARCHAR(8000),
-    publickey VARCHAR(8000),
+    privatekeypkcs8 TEXT NOT NULL,
+    keycertificate TEXT,
+    publickey TEXT,
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid)
 );
 

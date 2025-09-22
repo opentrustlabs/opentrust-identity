@@ -64,19 +64,19 @@ class SigningKeyEntity extends Model {
                 columnName: "markfordelete"
             },
             privateKeyPkcs8: {
-                type: DataTypes.STRING,
+                type: DataTypes.STRING(8000),
                 primaryKey: false,
                 allowNull: false,
                 columnName: "privatekeypkcs8",
             },
             publicKey: {
-                type: DataTypes.STRING,
+                type: DataTypes.STRING(8000),
                 primaryKey: false,
                 allowNull: true,
                 columnName: "publickey",
             },
             keyCertificate: {
-                type: DataTypes.STRING,
+                type: DataTypes.STRING(8000),
                 primaryKey: false,
                 allowNull: true,
                 columnName: "keycertificate"
