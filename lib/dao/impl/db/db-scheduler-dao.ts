@@ -1,7 +1,7 @@
 import { SchedulerLock } from "@/graphql/generated/graphql-types";
 import SchedulerDao from "../../scheduler-dao";
 import DBDriver from "@/lib/data-sources/sequelize-db";
-import { Op, Sequelize } from "@sequelize/core";
+import { Op } from "@sequelize/core";
 import SchedulerLockEntity from "@/lib/entities/scheduler-lock-entity";
 
 class DBSchedulerDao extends SchedulerDao {
