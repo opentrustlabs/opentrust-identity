@@ -20,9 +20,8 @@ import React from "react";
 import { VerifyRegistration } from "@/components/email-templates/verify-registration-template";
 import { SecretShare } from "@/components/email-templates/secret-share-template";
 import { OIDCTokenResponse } from "../models/token-response";
-import { base64Decode, base64Encode } from "@/utils/dao-utils";
+import { base64Encode } from "@/utils/dao-utils";
 import JwtServiceUtils from "./jwt-service-utils";
-import { JWTPayload } from "jose";
 
 const {
     HTTP_TIMEOUT_MS,
