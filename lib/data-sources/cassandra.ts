@@ -1,6 +1,6 @@
 
 import cassandra from "cassandra-driver";
-import { TENANT_MODEL_OPTIONS } from "../cassandra-mappings/mappings";
+import { TENANT_MODEL } from "../cassandra-mappings/mappings";
 import { logWithDetails } from "../logging/logger";
 
 
@@ -47,7 +47,7 @@ class CassandraDriver {
                 client,
                 {
                     models: {
-                        ...TENANT_MODEL_OPTIONS
+                        ...TENANT_MODEL
                     }
                 }
             );
