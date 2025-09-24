@@ -82,7 +82,7 @@ export const AUTHENTICATION_GROUP_CLIENT_REL_MODEL:  {[key: string]: cassandra.m
 
 export const AUTHENTICATION_GROUP_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
     "authentication_group": {
-        tables: ["authentication_group"],
+        tables: ["authentication_group", "authentication_group_by_tenant"],
         columns: {
             "authenticationgroupid": "authenticationGroupId",
 			"tenantid": "tenantId",
@@ -123,7 +123,7 @@ export const AUTHORIZATION_CODE_DATA_MODEL:  {[key: string]: cassandra.mapping.M
 
 export const AUTHORIZATION_DEVICE_CODE_DATA_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
     "authorization_device_code_data": {
-        tables: ["authorization_device_code_data"],
+        tables: ["authorization_device_code_data", "authorization_device_code_data_by_device_code", "authorization_device_code_data_by_user_code"],
         columns: {
             "devicecodeid": "deviceCodeId",
 			"devicecode": "deviceCode",

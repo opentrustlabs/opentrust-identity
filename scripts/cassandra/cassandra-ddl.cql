@@ -267,6 +267,16 @@ create TABLE authentication_group (
     markfordelete BOOLEAN
 );
 
+create TABLE authentication_group_by_tenant (
+    authenticationgroupid UUID,
+    tenantid UUID,
+    authenticationgroupname TEXT,
+    authenticationgroupdescription TEXT,
+    defaultgroup BOOLEAN,
+    markfordelete BOOLEAN,
+    PRIMARY KEY (tenantid, authenticationgroupid)
+);
+
 create TABLE authentication_group_client_rel (
     authenticationgroupid UUID,
     clientid TEXT,
@@ -435,7 +445,7 @@ create TABLE authorization_code_data (
 
 
 create TABLE authorization_device_code_data (
-    devicecodeid TEXT PRIMARY KEY,
+    devicecodeid TEXT,
     devicecode TEXT,    
     usercode TEXT,
     tenantid UUID,
@@ -443,7 +453,34 @@ create TABLE authorization_device_code_data (
     scope TEXT,
     expiresatms BIGINT,
     authorizationstatus TEXT,
-    userid UUID
+    userid UUID,
+    PRIMARY KEY (devicecodeid)
+);
+
+create TABLE authorization_device_code_data_by_device_code (
+    devicecodeid TEXT,
+    devicecode TEXT,    
+    usercode TEXT,
+    tenantid UUID,
+    clientid UUID,
+    scope TEXT,
+    expiresatms BIGINT,
+    authorizationstatus TEXT,
+    userid UUID,
+    PRIMARY KEY (devicecode)
+);
+
+create TABLE authorization_device_code_data_by_user_code (
+    devicecodeid TEXT,
+    devicecode TEXT,    
+    usercode TEXT,
+    tenantid UUID,
+    clientid UUID,
+    scope TEXT,
+    expiresatms BIGINT,
+    authorizationstatus TEXT,
+    userid UUID,
+    PRIMARY KEY (usercode)
 );
 
 
