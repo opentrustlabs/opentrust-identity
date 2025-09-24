@@ -62,10 +62,6 @@ const resolvers: Resolvers = {
         getTenantMetaData: (_: any, { tenantId }, oidcContext: any ) => {
             const tenantService: TenantService = new TenantService(oidcContext);
             return tenantService.getTenantMetaData(tenantId);
-        },
-        getClients: (_, { tenantId }, oidcContext) => {
-            const clientService: ClientService = new ClientService(oidcContext);
-            return clientService.getClients(tenantId || undefined);
         },        
         getClientById: (_: any, { clientId }, oidcContext: any) => {
             const clientService: ClientService = new ClientService(oidcContext);
