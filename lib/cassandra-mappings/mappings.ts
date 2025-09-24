@@ -430,7 +430,7 @@ export const RATE_LIMIT_SERVICE_GROUP_MODEL:  {[key: string]: cassandra.mapping.
 
 export const REFRESH_DATA_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
     "refresh_data": {
-        tables: ["refresh_data"],
+        tables: ["refresh_data", "refresh_data_by_user_id"],
         columns: {
             "refreshtoken": "refreshToken",
 			"tenantid": "tenantId",

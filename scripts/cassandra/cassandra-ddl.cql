@@ -108,7 +108,7 @@ create TABLE federated_oidc_provider_domain_rel (
 
 
 create TABLE client (
-    clientid UUID PRIMARY KEY,
+    clientid UUID,
     tenantid UUID,
     clientsecret TEXT,
     clientname TEXT,
@@ -121,7 +121,8 @@ create TABLE client (
     clienttokenttlseconds INT,
     maxrefreshtokencount INT,
     markfordelete BOOLEAN,
-    audience TEXT
+    audience TEXT,
+    PRIMARY KEY (clientid, tenantid)
 );
 
 create TABLE client_by_tenant (
@@ -446,10 +447,8 @@ create TABLE authorization_device_code_data (
 );
 
 
-
-
 create TABLE refresh_data (
-    refreshtoken TEXT PRIMARY KEY,
+    refreshtoken TEXT,
     redirecturi TEXT,
     tenantid UUID,
     clientid UUID,
@@ -459,10 +458,24 @@ create TABLE refresh_data (
     refreshcount INT,
     codechallenge TEXT,
     codechallengemethod TEXT,
-    expiresatms BIGINT
+    expiresatms BIGINT,
+    PRIMARY KEY (refreshtoken, userid)
 );
 
-
+create TABLE refresh_data_by_user_id (
+    refreshtoken TEXT,
+    redirecturi TEXT,
+    tenantid UUID,
+    clientid UUID,
+    userid UUID,
+    scope TEXT,
+    refreshtokenclienttype TEXT,
+    refreshcount INT,
+    codechallenge TEXT,
+    codechallengemethod TEXT,
+    expiresatms BIGINT,
+    PRIMARY KEY (userid, refreshtoken)
+);
 
 
 create TABLE federated_oidc_authorization_rel (

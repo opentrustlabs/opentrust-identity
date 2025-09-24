@@ -6,7 +6,25 @@ import cassandra from "cassandra-driver";
 class CassandraClientDao extends ClientDao {
     
     public async getClients(tenantId?: string, clientIds?: Array<string>): Promise<Array<Client>> {
-        throw new Error("Method not implemented.");
+        
+        if(clientIds){
+            const mapper = await CassandraDriver.getInstance().getModelMapper("client");
+            const resultList = await mapper.find({
+                clientId: cassandra.mapping.q.in_(clientIds)
+            });
+            return resultList.toArray();
+        }
+        else if(tenantId){
+            const mapper = await CassandraDriver.getInstance().getModelMapper("client");
+            const resultList = await mapper.find({
+                tenantId: tenantId
+            });
+            return resultList.toArray();
+        }
+        else {
+            return []
+        }
+
     }
 
     public async getClientById(clientId: string): Promise<Client | null> {

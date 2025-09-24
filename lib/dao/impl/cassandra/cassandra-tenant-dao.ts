@@ -253,7 +253,7 @@ class CassandraTenantDao extends TenantDao {
 
     public async removeAllAuthStateFromTenant(): Promise<void> {
         // NO OP
-        // Most of the the auth state data in Cassandra is managed via a TTL set on each
+        // The auth state data in Cassandra is managed via a TTL set on each
         // record when the data is inserted. 
     }
 

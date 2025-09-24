@@ -83,18 +83,6 @@ export const TENANT_META_DATA_QUERY = gql(`
     }
 `);
 
-export const CLIENTS_QUERY = gql(`
-    query getClients ($tenantId: String) {
-        getClients (tenantId: $tenantId){
-            tenantId
-            clientId            
-            clientName
-            clientDescription
-            enabled            
-            clientType
-        }
-    }    
-`);
 
 export const LOGIN_USERNAME_HANDLER_QUERY = gql(`
     query getLoginUserNameHandler($username: String!, $tenantId: String, $preauthToken: String) {

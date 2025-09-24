@@ -22,7 +22,6 @@ type Query {
     getTenantLoginFailurePolicy(tenantId: String!): TenantLoginFailurePolicy
 
     ## Clients
-    getClients(tenantId: String): [Client!]!
     getClientById(clientId: String!): Client
     getRedirectURIs(clientId: String!): [String!]!
 
