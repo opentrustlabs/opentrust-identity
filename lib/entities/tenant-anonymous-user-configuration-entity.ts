@@ -24,7 +24,8 @@ class TenantAnonymousUserConfigurationEntity extends Model {
             tokenttlseconds: {
                 type: DataTypes.INTEGER,
                 primaryKey: false,
-                allowNull: true
+                allowNull: true,
+                columnName: "tokenttlseconds"
             }
         },
         {            

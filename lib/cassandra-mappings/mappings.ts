@@ -30,8 +30,36 @@ export const TENANT_MODEL: {[key: string]: cassandra.mapping.ModelOptions} = {
     }
 };
 
+export const ROOT_TENANT_MODEL: {[key: string]: cassandra.mapping.ModelOptions} = {
+    "root_tenant": {
+        tables: ["root_tenant"],
+        columns: {
+            "tenantid": "tenantId",
+            "tenantname": "tenantName",
+            "tenantdescription": "tenantDescription",
+            "enabled": "enabled",
+            "allowunlimitedrate": "allowUnlimitedRate",
+            "allowuserselfregistration": "allowUserSelfRegistration",
+            "allowsociallogin": "allowSocialLogin",
+            "allowanonymoususers": "allowAnonymousUsers",
+            "verifyemailonselfregistration": "verifyEmailOnSelfRegistration",
+            "federatedauthenticationconstraint": "federatedAuthenticationConstraint",
+            "markfordelete": "markForDelete",
+            "tenanttype": "tenantType",
+            "migratelegacyusers": "migrateLegacyUsers",
+            "allowloginbyphonenumber": "allowLoginByPhoneNumber",
+            "allowforgotpassword": "allowForgotPassword",
+            "defaultratelimit": "defaultRateLimit",
+            "defaultratelimitperiodminutes": "defaultRateLimitPeriodMinutes",
+            "registrationrequiretermsandconditions": "registrationRequireTermsAndConditions",
+            "termsandconditionsuri": "termsAndConditionsUri",
+            "registrationrequirecaptcha": "registrationRequireCaptcha"
+        }
+    }
+};
+
 export const ACCESS_RULE_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
-    "": {
+    "access_rule": {
         tables: ["access_rule"],
         columns: {
             "accessruleid": "accessRuleId",
@@ -43,8 +71,8 @@ export const ACCESS_RULE_MODEL:  {[key: string]: cassandra.mapping.ModelOptions}
 };
 
 export const AUTHENTICATION_GROUP_CLIENT_REL_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
-    "": {
-        tables: ["authentication_group_client_rel"],
+    "authentication_group_client_rel": {
+        tables: ["authentication_group_client_rel", "authentication_group_client_rel_by_client"],
         columns: {
             "authenticationgroupid": "authenticationGroupId",
 			"clientid": "clientId"
@@ -53,7 +81,7 @@ export const AUTHENTICATION_GROUP_CLIENT_REL_MODEL:  {[key: string]: cassandra.m
 };
 
 export const AUTHENTICATION_GROUP_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
-    "": {
+    "authentication_group": {
         tables: ["authentication_group"],
         columns: {
             "authenticationgroupid": "authenticationGroupId",
@@ -67,7 +95,7 @@ export const AUTHENTICATION_GROUP_MODEL:  {[key: string]: cassandra.mapping.Mode
 };
 
 export const AUTHENTICATION_GROUP_USER_REL_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
-    "": {
+    "authentication_group_user_rel": {
         tables: ["authentication_group_user_rel"],
         columns: {
             "authenticationgroupid": "authenticationGroupId",
@@ -77,7 +105,7 @@ export const AUTHENTICATION_GROUP_USER_REL_MODEL:  {[key: string]: cassandra.map
 };
 
 export const AUTHORIZATION_CODE_DATA_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
-    "": {
+    "authorization_code_data": {
         tables: ["authorization_code_data"],
         columns: {
             "code": "code",
@@ -94,7 +122,7 @@ export const AUTHORIZATION_CODE_DATA_MODEL:  {[key: string]: cassandra.mapping.M
 };
 
 export const AUTHORIZATION_DEVICE_CODE_DATA_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
-    "": {
+    "authorization_device_code_data": {
         tables: ["authorization_device_code_data"],
         columns: {
             "devicecodeid": "deviceCodeId",
@@ -111,7 +139,7 @@ export const AUTHORIZATION_DEVICE_CODE_DATA_MODEL:  {[key: string]: cassandra.ma
 };
 
 export const AUTHORIZATION_GROUP_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
-    "": {
+    "authorization_group": {
         tables: ["authorization_group"],
         columns: {
             "groupid": "groupId",
@@ -126,7 +154,7 @@ export const AUTHORIZATION_GROUP_MODEL:  {[key: string]: cassandra.mapping.Model
 };
 
 export const AUTHORIZATION_GROUP_SCOPE_REL_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
-    "": {
+    "authorization_group_scope_rel": {
         tables: ["authorization_group_scope_rel"],
         columns: {
             "groupid": "groupId",
@@ -137,7 +165,7 @@ export const AUTHORIZATION_GROUP_SCOPE_REL_MODEL:  {[key: string]: cassandra.map
 };
 
 export const AUTHORIZATION_GROUP_USER_REL_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
-    "": {
+    "authorization_group_user_rel": {
         tables: ["authorization_group_user_rel"],
         columns: {
             "groupid": "groupId",
@@ -147,7 +175,7 @@ export const AUTHORIZATION_GROUP_USER_REL_MODEL:  {[key: string]: cassandra.mapp
 };
 
 export const CAPTCHA_CONFIG_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
-    "": {
+    "captcha_config": {
         tables: ["captcha_config"],
         columns: {
             "alias": "alias",
@@ -162,7 +190,7 @@ export const CAPTCHA_CONFIG_MODEL:  {[key: string]: cassandra.mapping.ModelOptio
 };
 
 export const CHANGE_EVENT_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
-    "": {
+    "change_event": {
         tables: ["change_event"],
         columns: {
             "changeeventid": "changeEventId",
@@ -178,7 +206,7 @@ export const CHANGE_EVENT_MODEL:  {[key: string]: cassandra.mapping.ModelOptions
 
 
 export const CLIENT_AUTH_HISTORY_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
-    "": {
+    "client_auth_history": {
         tables: ["client_auth_history"],
         columns: {
             "jti": "jti",
@@ -191,8 +219,8 @@ export const CLIENT_AUTH_HISTORY_MODEL:  {[key: string]: cassandra.mapping.Model
 
 
 export const CLIENT_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
-    "": {
-        tables: ["client"],
+    "client": {
+        tables: ["client", "client_by_tenant"],
         columns: {
             "clientid": "clientId",
 			"tenantid": "tenantId",
@@ -213,7 +241,7 @@ export const CLIENT_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
 };
 
 export const CLIENT_REDIRECT_URI_REL_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
-    "": {
+    "client_redirect_uri_rel": {
         tables: ["client_redirect_uri_rel"],
         columns: {
             "clientid": "clientId",
@@ -223,7 +251,7 @@ export const CLIENT_REDIRECT_URI_REL_MODEL:  {[key: string]: cassandra.mapping.M
 };
 
 export const CLIENT_SCOPE_REL_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
-    "": {
+    "client_scope_rel": {
         tables: ["client_scope_rel"],
         columns: {
             "tenantid": "tenantId",
@@ -234,8 +262,8 @@ export const CLIENT_SCOPE_REL_MODEL:  {[key: string]: cassandra.mapping.ModelOpt
 };
 
 export const CONTACT_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
-    "": {
-        tables: ["contact"],
+    "contact": {
+        tables: ["contact", "contact_by_object_id"],
         columns: {
             "contactid": "contactid",
 			"objectid": "objectid",
@@ -248,7 +276,7 @@ export const CONTACT_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
 };
 
 export const DELETION_STATUS_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
-    "": {
+    "deletion_status": {
         tables: ["deletion_status"],
         columns: {
             "markfordeleteid": "markForDeleteId",
@@ -260,7 +288,7 @@ export const DELETION_STATUS_MODEL:  {[key: string]: cassandra.mapping.ModelOpti
 };
 
 export const FEDERATED_AUTH_TEST_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
-    "": {
+    "federated_auth_test": {
         tables: ["federated_auth_test"],
         columns: {
             "authstate": "authState",
@@ -278,7 +306,7 @@ export const FEDERATED_AUTH_TEST_MODEL:  {[key: string]: cassandra.mapping.Model
 };
 
 export const FEDERATED_OIDC_AUTHORIZATION_REL_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
-    "": {
+    "federated_oidc_authorization_rel": {
         tables: ["federated_oidc_authorization_rel"],
         columns: {
             "state": "state",
@@ -303,7 +331,7 @@ export const FEDERATED_OIDC_AUTHORIZATION_REL_MODEL:  {[key: string]: cassandra.
 };
 
 export const FEDERATED_OIDC_PROVIDER_DOMAIN_REL_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
-    "": {
+    "federated_oidc_provider_domain_rel": {
         tables: ["federated_oidc_provider_domain_rel"],
         columns: {
             "federatedoidcproviderid": "federatedOIDCProviderId",
@@ -314,7 +342,7 @@ export const FEDERATED_OIDC_PROVIDER_DOMAIN_REL_MODEL:  {[key: string]: cassandr
 
 
 export const FEDERATED_OIDC_PROVIDER_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
-    "": {
+    "federated_oidc_provider": {
         tables: ["federated_oidc_provider"],
         columns: {
             "federatedoidcproviderid": "federatedOIDCProviderId",
@@ -336,7 +364,7 @@ export const FEDERATED_OIDC_PROVIDER_MODEL:  {[key: string]: cassandra.mapping.M
 };
 
 export const FEDERATED_OIDC_PROVIDER_TENANT_REL_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
-    "": {
+    "federated_oidc_provider_tenant_rel": {
         tables: ["federated_oidc_provider_tenant_rel"],
         columns: {
             "tenantid": "tenantId",
@@ -346,7 +374,7 @@ export const FEDERATED_OIDC_PROVIDER_TENANT_REL_MODEL:  {[key: string]: cassandr
 };
 
 export const MARK_FOR_DELETE_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
-    "": {
+    "mark_for_delete": {
         tables: ["mark_for_delete"],
         columns: {
             "markfordeleteid": "markForDeleteId",
@@ -361,7 +389,7 @@ export const MARK_FOR_DELETE_MODEL:  {[key: string]: cassandra.mapping.ModelOpti
 };
 
 export const PRE_AUTHENTICATION_STATE_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
-    "": {
+    "pre_authentication_state": {
         tables: ["pre_authentication_state"],
         columns: {
             "pastoken": "token",
@@ -380,7 +408,7 @@ export const PRE_AUTHENTICATION_STATE_MODEL:  {[key: string]: cassandra.mapping.
 };
 
 export const PROHIBITED_PASSWORD_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
-    "": {
+    "prohibited_passwords": {
         tables: ["prohibited_passwords"],
         columns: {
             "password": "password"
@@ -389,7 +417,7 @@ export const PROHIBITED_PASSWORD_MODEL:  {[key: string]: cassandra.mapping.Model
 };
 
 export const RATE_LIMIT_SERVICE_GROUP_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
-    "": {
+    "rate_limit_service_group": {
         tables: ["rate_limit_service_group"],
         columns: {
             "servicegroupid": "servicegroupid",
@@ -401,7 +429,7 @@ export const RATE_LIMIT_SERVICE_GROUP_MODEL:  {[key: string]: cassandra.mapping.
 };
 
 export const REFRESH_DATA_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
-    "": {
+    "refresh_data": {
         tables: ["refresh_data"],
         columns: {
             "refreshtoken": "refreshToken",
@@ -420,7 +448,7 @@ export const REFRESH_DATA_MODEL:  {[key: string]: cassandra.mapping.ModelOptions
 };
 
 export const SCHEDULER_LOCK_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
-    "": {
+    "scheduler_lock": {
         tables: ["scheduler_lock"],
         columns: {
             "lockname": "lockName",
@@ -432,7 +460,7 @@ export const SCHEDULER_LOCK_MODEL:  {[key: string]: cassandra.mapping.ModelOptio
 };
 
 export const SCOPE_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
-    "": {
+    "scope": {
         tables: ["scope"],
         columns: {
             "scopeid": "scopeId",
@@ -445,7 +473,7 @@ export const SCOPE_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
 };
 
 export const SECRET_SHARE_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
-    "": {
+    "secret_share": {
         tables: ["secret_share"],
         columns: {
             "secretshareid": "secretShareId",
@@ -458,7 +486,7 @@ export const SECRET_SHARE_MODEL:  {[key: string]: cassandra.mapping.ModelOptions
 };
 
 export const SIGNING_KEY_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
-    "": {
+    "signing_key": {
         tables: ["signing_key"],
         columns: {
             "keyid": "keyId",
@@ -479,7 +507,7 @@ export const SIGNING_KEY_MODEL:  {[key: string]: cassandra.mapping.ModelOptions}
 };
 
 export const STATE_PROVINCE_REGION_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
-    "": {
+    "state_province_region": {
         tables: ["state_province_region"],
         columns: {
             "isocountrycode": "isoCountryCode",
@@ -491,7 +519,7 @@ export const STATE_PROVINCE_REGION_MODEL:  {[key: string]: cassandra.mapping.Mod
 };
 
 export const SYSTEM_SETTINGS_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
-    "": {
+    "system_settings": {
         tables: ["system_settings"],
         columns: {
             "systemid": "systemId",
@@ -507,7 +535,7 @@ export const SYSTEM_SETTINGS_MODEL:  {[key: string]: cassandra.mapping.ModelOpti
 };
 
 export const TENANT_ANONYMOUS_USER_CONFIGURATION_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
-    "": {
+    "tenant_anonymous_user_configuration": {
         tables: ["tenant_anonymous_user_configuration"],
         columns: {
             "tenantid": "tenantId",
@@ -519,7 +547,7 @@ export const TENANT_ANONYMOUS_USER_CONFIGURATION_MODEL:  {[key: string]: cassand
 };
 
 export const TENANT_AVAILABLE_SCOPE_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
-    "": {
+    "tenant_available_scope": {
         tables: ["tenant_available_scope"],
         columns: {
             "tenantid": "tenantId",
@@ -530,7 +558,7 @@ export const TENANT_AVAILABLE_SCOPE_MODEL:  {[key: string]: cassandra.mapping.Mo
 };
 
 export const TENANT_LEGACY_USER_MIGRATION_CONFIG_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
-    "": {
+    "tenant_legacy_user_migration_config": {
         tables: ["tenant_legacy_user_migration_config"],
         columns: {
             "tenantid": "tenantId",
@@ -542,7 +570,7 @@ export const TENANT_LEGACY_USER_MIGRATION_CONFIG_MODEL:  {[key: string]: cassand
 };
 
 export const TENANT_LOGIN_FAILURE_POLICY_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
-    "": {
+    "tenant_login_failure_policy": {
         tables: ["tenant_login_failure_policy"],
         columns: {
             "tenantid": "tenantId",
@@ -555,7 +583,7 @@ export const TENANT_LOGIN_FAILURE_POLICY_MODEL:  {[key: string]: cassandra.mappi
 };
 
 export const TENANT_LOOK_AND_FEEL_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
-    "": {
+    "tenant_look_and_feel": {
         tables: ["tenant_look_and_feel"],
         columns: {
             "tenantid": "tenantid",
@@ -573,8 +601,8 @@ export const TENANT_LOOK_AND_FEEL_MODEL:  {[key: string]: cassandra.mapping.Mode
 };
 
 export const TENANT_MANAGEMENT_DOMAIN_REL_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
-    "": {
-        tables: ["tenant_management_domain_rel"],
+    "tenant_management_domain_rel": {
+        tables: ["tenant_management_domain_rel", "tenant_management_domain_rel_by_domain"],
         columns: {
             "tenantid": "tenantId",
 			"domain": "domain"
@@ -583,7 +611,7 @@ export const TENANT_MANAGEMENT_DOMAIN_REL_MODEL:  {[key: string]: cassandra.mapp
 };
 
 export const TENANT_PASSWORD_CONFIG_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
-    "": {
+    "tenant_password_config": {
         tables: ["tenant_password_config"],
         columns: {
             "tenantid": "tenantId",
@@ -605,7 +633,7 @@ export const TENANT_PASSWORD_CONFIG_MODEL:  {[key: string]: cassandra.mapping.Mo
 };
 
 export const TENANT_RATE_LIMIT_REL_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
-    "": {
+    "tenant_rate_limit_rel": {
         tables: ["tenant_rate_limit_rel"],
         columns: {
 			"servicegroupid": "servicegroupid",
@@ -620,7 +648,7 @@ export const TENANT_RATE_LIMIT_REL_MODEL:  {[key: string]: cassandra.mapping.Mod
 
 
 export const TENANT_RESTRICTED_AUTHENTICATION_DOMAIN_REL_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
-    "": {
+    "tenant_restricted_authentication_domain_rel": {
         tables: ["tenant_restricted_authentication_domain_rel"],
         columns: {
 			"tenantid": "tenantId",
@@ -630,7 +658,7 @@ export const TENANT_RESTRICTED_AUTHENTICATION_DOMAIN_REL_MODEL:  {[key: string]:
 };
 
 export const USER_AUTHENTICATION_HISTORY_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
-    "": {
+    "user_authentication_history": {
         tables: ["user_authentication_history"],
         columns: {
 			"userid": "userId",
@@ -640,7 +668,7 @@ export const USER_AUTHENTICATION_HISTORY_MODEL:  {[key: string]: cassandra.mappi
 };
 
 export const USER_AUTHENTICATION_STATE_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
-    "": {
+    "user_authentication_state": {
         tables: ["user_authentication_state", "user_authentication_state_by_session_token"],
         columns: {
 			"userid": "userId",
@@ -658,7 +686,7 @@ export const USER_AUTHENTICATION_STATE_MODEL:  {[key: string]: cassandra.mapping
 };
 
 export const USER_CREDENTIAL_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
-    "": {
+    "user_credential": {
         tables: ["user_credential"],
         columns: {
             "userid": "userId",
@@ -671,7 +699,7 @@ export const USER_CREDENTIAL_MODEL:  {[key: string]: cassandra.mapping.ModelOpti
 };
 
 export const USER_DURESS_CREDENTIAL_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
-    "": {
+    "user_duress_credential": {
         tables: ["user_duress_credential"],
         columns: {
             "userid": "userId",
@@ -684,7 +712,7 @@ export const USER_DURESS_CREDENTIAL_MODEL:  {[key: string]: cassandra.mapping.Mo
 };
 
 export const USER_EMAIL_RECOVERY_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
-    "": {
+    "user_email_recovery": {
         tables: ["user_email_recovery", "user_email_recovery_by_email"],
         columns: {
             "userid": "userId",
@@ -695,7 +723,7 @@ export const USER_EMAIL_RECOVERY_MODEL:  {[key: string]: cassandra.mapping.Model
 };
 
 export const USERS_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
-    "": {
+    "users": {
         tables: ["users", "users_by_email"],
         columns: {
             "userid": "userId",
@@ -723,7 +751,7 @@ export const USERS_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
 };
 
 export const USERS_BY_PHONE_NUMBER_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
-    "": {
+    "users_by_phone_number": {
         tables: ["users_by_phone_number"],
         columns: {
             "userid": "userId",
@@ -751,7 +779,7 @@ export const USERS_BY_PHONE_NUMBER_MODEL:  {[key: string]: cassandra.mapping.Mod
 };
 
 export const USER_FAILED_LOGIN_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
-    "": {
+    "user_failed_login": {
         tables: ["user_failed_login"],
         columns: {
             "userid": "userId",
@@ -764,7 +792,7 @@ export const USER_FAILED_LOGIN_MODEL:  {[key: string]: cassandra.mapping.ModelOp
 
 
 export const USER_FIDO2_CHALLENGE_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
-    "": {
+    "user_fido2_challenge": {
         tables: ["user_fido2_challenge"],
         columns: {
             "userid": "userId",
@@ -776,7 +804,7 @@ export const USER_FIDO2_CHALLENGE_MODEL:  {[key: string]: cassandra.mapping.Mode
 };
 
 export const USER_FIDO2_COUNTER_REL_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
-    "": {
+    "user_fido2_counter_rel": {
         tables: ["user_fido2_counter_rel"],
         columns: {
             "userid": "userId",
@@ -786,7 +814,7 @@ export const USER_FIDO2_COUNTER_REL_MODEL:  {[key: string]: cassandra.mapping.Mo
 };
 
 export const USER_MFA_REL_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
-    "": {
+    "user_mfa_rel": {
         tables: ["user_mfa_rel"],
         columns: {
             "userid": "userId",
@@ -804,8 +832,8 @@ export const USER_MFA_REL_MODEL:  {[key: string]: cassandra.mapping.ModelOptions
 };
 
 export const USER_PROFILE_EMAIL_CHANGE_STATE_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
-    "": {
-        tables: ["user_profile_email_change_state"],
+    "user_profile_email_change_state": {
+        tables: ["user_profile_email_change_state", "user_profile_email_change_state_by_session_token"],
         columns: {
             "userid": "userId",
 			"changeemailsessiontoken": "changeEmailSessionToken",
@@ -820,7 +848,7 @@ export const USER_PROFILE_EMAIL_CHANGE_STATE_MODEL:  {[key: string]: cassandra.m
 };
 
 export const USER_REGISTRATION_STATE_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
-    "": {
+    "user_registration_state": {
         tables: ["user_registration_state", "user_registration_state_by_email", "user_registration_state_by_session_token"],
         columns: {
             "userid": "userId",
@@ -838,7 +866,7 @@ export const USER_REGISTRATION_STATE_MODEL:  {[key: string]: cassandra.mapping.M
 };
 
 export const USER_SCOPE_REL_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
-    "": {
+    "user_scope_rel": {
         tables: ["user_scope_rel"],
         columns: {
             "userid": "userId",
@@ -849,7 +877,7 @@ export const USER_SCOPE_REL_MODEL:  {[key: string]: cassandra.mapping.ModelOptio
 };
 
 export const USER_TENANT_REL_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
-    "": {
+    "user_tenant_rel": {
         tables: ["user_tenant_rel", "user_tenant_rel_by_tenant"],
         columns: {
             "tenantid": "tenantId",
@@ -861,7 +889,7 @@ export const USER_TENANT_REL_MODEL:  {[key: string]: cassandra.mapping.ModelOpti
 };
 
 export const USER_TERMS_AND_CONDITIONS_ACCEPTED_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
-    "": {
+    "user_terms_and_conditions_accepted": {
         tables: ["user_terms_and_conditions_accepted"],
         columns: {
             "userid": "userId",
@@ -872,7 +900,7 @@ export const USER_TERMS_AND_CONDITIONS_ACCEPTED_MODEL:  {[key: string]: cassandr
 };
 
 export const USER_VERIFICATION_TOKEN_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
-    "": {
+    "user_verification_token": {
         tables: ["user_verification_token"],
         columns: {
             "uvtoken": "token",

@@ -42,6 +42,30 @@ create TABLE tenant (
     PRIMARY KEY(tenantid)
 );
 
+create TABLE root_tenant (
+    tenantid UUID,
+    tenantname TEXT,
+    tenantdescription TEXT,
+    enabled BOOLEAN,
+    allowunlimitedrate BOOLEAN,
+    allowuserselfregistration BOOLEAN,
+    allowanonymoususers BOOLEAN,
+    allowsociallogin BOOLEAN,
+    verifyemailonselfregistration BOOLEAN,
+    federatedauthenticationconstraint TEXT,
+    markfordelete BOOLEAN,
+    tenanttype TEXT,
+    migratelegacyusers BOOLEAN,
+    allowloginbyphonenumber BOOLEAN,
+    allowforgotpassword BOOLEAN,
+    defaultratelimit INT,
+    defaultratelimitperiodminutes INT,
+    registrationrequiretermsandconditions BOOLEAN,
+    termsandconditionsuri TEXT,
+    registrationrequirecaptcha BOOLEAN,
+    PRIMARY KEY(tenantid)
+);
+
 create TABLE tenant_login_failure_policy (
     tenantid UUID PRIMARY KEY,
     loginfailurepolicytype TEXT,
@@ -54,6 +78,12 @@ create TABLE tenant_management_domain_rel (
     tenantid UUID,
     domain TEXT,
     PRIMARY KEY (tenantid, domain)
+);
+
+create TABLE tenant_management_domain_rel_by_domain (
+    tenantid UUID,
+    domain TEXT,
+    PRIMARY KEY (domain, tenantid)
 );
 
 
@@ -93,6 +123,25 @@ create TABLE client (
     markfordelete BOOLEAN,
     audience TEXT
 );
+
+create TABLE client_by_tenant (
+    clientid UUID,
+    tenantid UUID,
+    clientsecret TEXT,
+    clientname TEXT,
+    clientdescription TEXT,
+    enabled BOOLEAN,
+    oidcenabled BOOLEAN,
+    pkceenabled BOOLEAN,
+    clienttype TEXT,
+    usertokenttlseconds INT,
+    clienttokenttlseconds INT,
+    maxrefreshtokencount INT,
+    markfordelete BOOLEAN,
+    audience TEXT,
+	PRIMARY KEY (tenantid, clientid)
+);
+
 
 create TABLE client_redirect_uri_rel (
     clientid UUID,
@@ -223,6 +272,12 @@ create TABLE authentication_group_client_rel (
     PRIMARY KEY (authenticationgroupid, clientid)
 );
 
+create TABLE authentication_group_client_rel_by_client (
+    authenticationgroupid UUID,
+    clientid TEXT,
+    PRIMARY KEY (clientid, authenticationgroupid)
+);
+
 create TABLE authentication_group_user_rel (
     authenticationgroupid UUID,
     userid UUID,
@@ -334,14 +389,14 @@ create TABLE client_scope_rel (
     scopeid UUID,
     tenantid UUID,
     clientid UUID,
-    PRIMARY KEY (scopeid, tenantid, clientid)
+    PRIMARY KEY (clientid, scopeid, tenantid)
 );
 
 create TABLE authorization_group_scope_rel (
     scopeid UUID,
     tenantid UUID,
     groupid UUID,
-    PRIMARY KEY (scopeid, tenantid, groupid)
+    PRIMARY KEY (groupid, scopeid, tenantid)
 );
 
 create TABLE user_scope_rel (
@@ -479,16 +534,24 @@ create TABLE footer_link (
 );
 
 create TABLE contact (
-    contactid UUID PRIMARY KEY,
+    contactid UUID,
     objectid UUID,
     objecttype TEXT,
     email TEXT,
     contactname TEXT,
-    userid UUID
+    userid UUID,
+    PRIMARY KEY (contactid, objectid)
 );
 
-
-
+create TABLE contact_by_object_id (
+    contactid UUID,
+    objectid UUID,
+    objecttype TEXT,
+    email TEXT,
+    contactname TEXT,
+    userid UUID,
+    PRIMARY KEY (objectid, contactid)
+);
 
 
 create TABLE scheduler_lock (

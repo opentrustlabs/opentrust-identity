@@ -27,7 +27,7 @@ class DBTenantDao extends TenantDao {
         const tenantEntity: typeof TenantEntity = await DBDriver.getInstance().getTenantEntity();        
         const entity: TenantEntity | null = await tenantEntity.findOne({
             where: {
-                tenanttype: TENANT_TYPE_ROOT_TENANT
+                tenantType: TENANT_TYPE_ROOT_TENANT
             }
         });
         return Promise.resolve(entity ? entity.dataValues as Tenant : null);
@@ -36,7 +36,7 @@ class DBTenantDao extends TenantDao {
     public async createRootTenant(tenant: Tenant): Promise<Tenant> {
         tenant.tenantType = TENANT_TYPE_ROOT_TENANT;
         const tenantEntity: typeof TenantEntity = await DBDriver.getInstance().getTenantEntity();    
-        const t: TenantEntity = await tenantEntity.create(tenant);
+        await tenantEntity.create(tenant);
         return Promise.resolve(tenant);
     }
 
@@ -47,7 +47,7 @@ class DBTenantDao extends TenantDao {
         return Promise.resolve(tenant);
     }
 
-    public async getTenants(tenantIds?: Array<string>): Promise<Array<Tenant>> {
+    public async getTenants(tenantIds: Array<string>): Promise<Array<Tenant>> {
         const tenantEntity: typeof TenantEntity = await DBDriver.getInstance().getTenantEntity();    
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -411,7 +411,6 @@ class DBTenantDao extends TenantDao {
     }
 
     public async removeAllAuthStateFromTenant(tenantId: string): Promise<void>{
-        const sequelize: Sequelize = await DBDriver.getConnection();
         
         await (await DBDriver.getInstance().getPreAuthenticationStateEntity()).destroy({
             where: {
@@ -543,173 +542,8 @@ class DBTenantDao extends TenantDao {
         }
         systemSettings.systemCategories.push(dbCategory);
 
-
-        // KMS Settings
-        const kmsCategory: SystemCategory = {
-            categoryEntries: [],
-            categoryName: "Key Management Settings"
-        }
-        const {KMS_STRATEGY, FS_BASED_DATA_DIR} = process.env;
-        if(KMS_STRATEGY === "filesystem"){
-            kmsCategory.categoryEntries.push({
-                categoryKey: "KMS Provider",
-                categoryValue: "Filesystem"
-            });
-            kmsCategory.categoryEntries.push({
-                categoryKey: "Keys data directory",
-                categoryValue: FS_BASED_DATA_DIR || ""
-            });
-        }
-        systemSettings.systemCategories.push(kmsCategory);
-
-        // MFA settings
-        const mfaSettings: SystemCategory = {
-            categoryEntries: [],
-            categoryName: "MFA Settings"
-        }
-        const {MFA_ISSUER, MFA_ORIGIN, MFA_ID} = process.env;
-        mfaSettings.categoryEntries.push({
-            categoryKey: "MFA Issuer",
-            categoryValue: MFA_ISSUER || ""
-        });
-        mfaSettings.categoryEntries.push({
-            categoryKey: "MFA Origin",
-            categoryValue: MFA_ORIGIN || ""
-        });
-        mfaSettings.categoryEntries.push({
-            categoryKey: "MFA ID",
-            categoryValue: MFA_ID || ""
-        });
-        systemSettings.systemCategories.push(mfaSettings);
-
-        // Search settings
-        const searchSettings: SystemCategory = {
-            categoryEntries: [],
-            categoryName: "Search Engine Settings"
-        }
-        const {OPENSEARCH_HOST, OPENSEARCH_PORT, TRUST_STORE_PATH} = process.env;
-        searchSettings.categoryEntries.push({
-            categoryKey: "Opensearch Host",
-            categoryValue: OPENSEARCH_HOST || ""
-        });
-        searchSettings.categoryEntries.push({
-            categoryKey: "Opensearch Port",
-            categoryValue: OPENSEARCH_PORT || ""
-        });
-        searchSettings.categoryEntries.push({
-            categoryKey: "Opensearch Truststore Path",
-            categoryValue: TRUST_STORE_PATH || ""
-        });
-        systemSettings.systemCategories.push(searchSettings);
-
-        
-        // Auth domain settings 
-        const authDomainCategory: SystemCategory = {
-            categoryEntries: [],
-            categoryName: "Portal Authorization Settings"
-        }
-        const {PORTAL_AUTH_TOKEN_TTL_HOURS, AUTH_DOMAIN, SECURITY_EVENT_CALLBACK_URI} = process.env;
-        authDomainCategory.categoryEntries.push({
-            categoryKey: "Authorization Domain",
-            categoryValue: AUTH_DOMAIN || ""
-        });
-        authDomainCategory.categoryEntries.push({
-            categoryKey: "Token TTL in Hours",
-            categoryValue: PORTAL_AUTH_TOKEN_TTL_HOURS || ""
-        });
-        authDomainCategory.categoryEntries.push({
-            categoryKey: "Security Event Webhook URI",
-            categoryValue: SECURITY_EVENT_CALLBACK_URI || ""
-        });
-        systemSettings.systemCategories.push(authDomainCategory);
-
-        // GraphQL Settings
-        const graphqlSettingCategory: SystemCategory = {
-            categoryEntries: [],
-            categoryName: "GraphQL Settings"
-        };
-        const {ALLOW_GRAPHQL_INTROSPECTION, ALLOW_GRAPHQL_ERROR_STACK_TRACES} = process.env;
-        graphqlSettingCategory.categoryEntries.push({
-            categoryKey: "Allow GraphQL Introspection",
-            categoryValue: ALLOW_GRAPHQL_INTROSPECTION || "false"
-        });
-        graphqlSettingCategory.categoryEntries.push({
-            categoryKey: "Allow GraphQL Error Stack Traces",
-            categoryValue: ALLOW_GRAPHQL_ERROR_STACK_TRACES || "false"
-        });
-        systemSettings.systemCategories.push(graphqlSettingCategory);
-
-        // Logging Settings
-        const loggingSettingsCategory: SystemCategory = {
-            categoryEntries: [],
-            categoryName: "Logging Settings"
-        };
-        const {LOG_FILE_DIRECTORY, LOG_TO_STD_OUT, LOG_LEVEL} = process.env;
-        loggingSettingsCategory.categoryEntries.push({
-            categoryKey: "Log file directory",
-            categoryValue: LOG_FILE_DIRECTORY || "Not Configured"
-        });
-        loggingSettingsCategory.categoryEntries.push({
-            categoryKey: "Log to STDOUT",
-            categoryValue: LOG_TO_STD_OUT || "false"
-        });
-        loggingSettingsCategory.categoryEntries.push({
-            categoryKey: "Log level",
-            categoryValue: LOG_LEVEL || "Not Configured"
-        });
-        systemSettings.systemCategories.push(loggingSettingsCategory);
-
-        // HTTP Client Settings
-        const httpClientSettingsCategory: SystemCategory = {
-            categoryEntries: [],
-            categoryName: "HTTP Client Settings"
-        };
-        const {
-            HTTP_TIMEOUT_MS, MTLS_USE_PKI_IDENTITY, MTLS_PKI_IDENTITY_PRIVATE_KEY_FILE, MTLS_PKI_IDENTITY_CERTIFICATE_FILE, 
-            MTLS_PKI_IDENTITY_TRUST_STORE_FILE, HTTP_CLIENT_USE_PROXY, HTTP_PROXY_PROTOCOL, HTTP_PROXY_HOST, 
-            HTTP_PROXY_PORT, HTTP_PROXY_USE_AUTHENTICATION 
-        } = process.env;
-        httpClientSettingsCategory.categoryEntries.push({
-            categoryKey: "Request Timeout (milliseconds)",
-            categoryValue: HTTP_TIMEOUT_MS || DEFAULT_HTTP_TIMEOUT_MS.toString()
-        });
-        httpClientSettingsCategory.categoryEntries.push({
-            categoryKey: "Use mTLS",
-            categoryValue: MTLS_USE_PKI_IDENTITY || "false"
-        });
-        httpClientSettingsCategory.categoryEntries.push({
-            categoryKey: "Private Key File",
-            categoryValue: MTLS_PKI_IDENTITY_PRIVATE_KEY_FILE || "Not Configured"
-        });
-        httpClientSettingsCategory.categoryEntries.push({
-            categoryKey: "Certificate File",
-            categoryValue: MTLS_PKI_IDENTITY_CERTIFICATE_FILE || "Not Configured"
-        });
-        httpClientSettingsCategory.categoryEntries.push({
-            categoryKey: "Trust Store File",
-            categoryValue: MTLS_PKI_IDENTITY_TRUST_STORE_FILE || "Not Configured"
-        });
-        httpClientSettingsCategory.categoryEntries.push({
-            categoryKey: "Use Proxy",
-            categoryValue: HTTP_CLIENT_USE_PROXY || "false"
-        });
-        httpClientSettingsCategory.categoryEntries.push({
-            categoryKey: "Proxy Protocol",
-            categoryValue: HTTP_PROXY_PROTOCOL || "Not Configured"
-        });
-        httpClientSettingsCategory.categoryEntries.push({
-            categoryKey: "Proxy Host",
-            categoryValue: HTTP_PROXY_HOST || "Not Configured"
-        });
-        httpClientSettingsCategory.categoryEntries.push({
-            categoryKey: "Proxy Port",
-            categoryValue: HTTP_PROXY_PORT || "Not Configured"
-        });
-        httpClientSettingsCategory.categoryEntries.push({
-            categoryKey: "Use Proxy Authentication",
-            categoryValue: HTTP_PROXY_USE_AUTHENTICATION || "false"
-        });        
-        systemSettings.systemCategories.push(httpClientSettingsCategory);
+        const envSystemSettings = this.getEnvironmentSystemSettings();
+        systemSettings.systemCategories.push(...envSystemSettings);        
 
         return systemSettings;
 
