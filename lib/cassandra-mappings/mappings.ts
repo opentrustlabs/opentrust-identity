@@ -332,7 +332,7 @@ export const FEDERATED_OIDC_AUTHORIZATION_REL_MODEL:  {[key: string]: cassandra.
 
 export const FEDERATED_OIDC_PROVIDER_DOMAIN_REL_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
     "federated_oidc_provider_domain_rel": {
-        tables: ["federated_oidc_provider_domain_rel"],
+        tables: ["federated_oidc_provider_domain_rel", "federated_oidc_provider_domain_rel_by_domain"],
         columns: {
             "federatedoidcproviderid": "federatedOIDCProviderId",
 			"domain": "domain"
@@ -365,7 +365,7 @@ export const FEDERATED_OIDC_PROVIDER_MODEL:  {[key: string]: cassandra.mapping.M
 
 export const FEDERATED_OIDC_PROVIDER_TENANT_REL_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
     "federated_oidc_provider_tenant_rel": {
-        tables: ["federated_oidc_provider_tenant_rel"],
+        tables: ["federated_oidc_provider_tenant_rel", "federated_oidc_provider_tenant_rel_by_tenant"],
         columns: {
             "tenantid": "tenantId",
 			"federatedoidcproviderid": "federatedOIDCProviderId"
@@ -449,7 +449,7 @@ export const REFRESH_DATA_MODEL:  {[key: string]: cassandra.mapping.ModelOptions
 
 export const SCHEDULER_LOCK_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
     "scheduler_lock": {
-        tables: ["scheduler_lock"],
+        tables: ["scheduler_lock", "scheduler_lock_by_instance_id"],
         columns: {
             "lockname": "lockName",
 			"lockinstanceid": "lockInstanceId",
@@ -634,7 +634,7 @@ export const TENANT_PASSWORD_CONFIG_MODEL:  {[key: string]: cassandra.mapping.Mo
 
 export const TENANT_RATE_LIMIT_REL_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
     "tenant_rate_limit_rel": {
-        tables: ["tenant_rate_limit_rel"],
+        tables: ["tenant_rate_limit_rel", "tenant_rate_limit_rel_by_tenant"],
         columns: {
 			"servicegroupid": "servicegroupid",
 			"tenantid": "tenantId",

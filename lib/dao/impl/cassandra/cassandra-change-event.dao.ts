@@ -23,7 +23,7 @@ class CassandraChangeEventDao extends ChangeEventDao {
         }
         
         const changeEventMapper = await CassandraDriver.getInstance().getModelMapper("change_event");
-        await changeEventMapper.insert(changeEvent);
+        await changeEventMapper.insert(changeEvent, {ttl: ttlSeconds});
         return changeEvent;
     }
 

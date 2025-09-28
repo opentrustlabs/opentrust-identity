@@ -10,7 +10,7 @@ create TABLE federated_oidc_provider(
     federatedoidcproviderclientsecret TEXT,
     federatedoidcproviderwellknownuri TEXT,
     refreshtokenallowed BOOLEAN,
-    scopes TEXT,
+    scopes LIST<TEXT>,
     usepkce BOOLEAN,
     clientauthtype TEXT,
     federatedoidcprovidertype TEXT,
@@ -100,10 +100,22 @@ create TABLE federated_oidc_provider_tenant_rel (
     PRIMARY KEY (federatedoidcproviderid, tenantid)
 );
 
+create TABLE federated_oidc_provider_tenant_rel_by_tenant (
+    federatedoidcproviderid UUID,
+    tenantid UUID,
+    PRIMARY KEY (tenantid, federatedoidcproviderid)
+);
+
 create TABLE federated_oidc_provider_domain_rel (
     federatedoidcproviderid UUID,
     domain TEXT,
     PRIMARY KEY (federatedoidcproviderid, domain)
+);
+
+create TABLE federated_oidc_provider_domain_rel_by_domain (
+    federatedoidcproviderid UUID,
+    domain TEXT,
+    PRIMARY KEY (domain, federatedoidcproviderid)
 );
 
 
@@ -407,6 +419,15 @@ create TABLE tenant_rate_limit_rel (
     PRIMARY KEY (servicegroupid, tenantid)
 );
 
+create TABLE tenant_rate_limit_rel_by_tenant (
+    servicegroupid UUID,
+    tenantid UUID,
+    allowunlimitedrate BOOLEAN,
+    ratelimit INT,
+    ratelimitperiodminutes INT,
+    PRIMARY KEY (tenantid, servicegroupid)
+);
+
 create TABLE tenant_available_scope (
     tenantid UUID,
     scopeid UUID,
@@ -638,6 +659,14 @@ create TABLE scheduler_lock (
     lockstarttimems BIGINT,
     lockexpiresatms BIGINT,
     PRIMARY KEY (lockname, lockinstanceid)
+);
+
+create TABLE scheduler_lock_by_instance_id (
+    lockname TEXT,
+    lockinstanceid UUID,
+    lockstarttimems BIGINT,
+    lockexpiresatms BIGINT,
+    PRIMARY KEY (lockinstanceid, lockname)
 );
 
 create TABLE tenant_password_config (
