@@ -1,5 +1,7 @@
-import { Client, Tenant } from '@/graphql/generated/graphql-types';
+import { AuthenticationGroup, Client, Tenant } from '@/graphql/generated/graphql-types';
+import AuthenticationGroupDao from '@/lib/dao/authentication-group-dao';
 import ClientDao from '@/lib/dao/client-dao';
+import CassandraAuthenticationGroupDao from '@/lib/dao/impl/cassandra/cassandra-authentication-group-dao';
 import CassandraClientDao from '@/lib/dao/impl/cassandra/cassandra-client-dao';
 import CassandraTenantDao from '@/lib/dao/impl/cassandra/cassandra-tenant-dao'
 import TenantDao from '@/lib/dao/tenant-dao';
@@ -10,37 +12,29 @@ import { randomUUID } from 'node:crypto';
 
 const tenantDao: TenantDao = new CassandraTenantDao();
 const clientDao: ClientDao = new CassandraClientDao();
+const authenticationGroupDao: AuthenticationGroupDao = new CassandraAuthenticationGroupDao();
 
 export default async function handler(
     req: NextApiRequest,
     res: NextApiResponse
 ) {
 
-    console.log(req.headers);
+    // const authnGroup: AuthenticationGroup = {
+    //     authenticationGroupId: randomUUID().toString(),
+    //     authenticationGroupName: "Test Authn Group",
+    //     defaultGroup: false,
+    //     markForDelete: false,
+    //     tenantId: randomUUID().toString(),
+    //     authenticationGroupDescription: "Test Group Description"
+    // };
 
-    const a = await tenantDao.getTenants(["58203718-2396-4d77-974a-cee7582b0121"]);
-    console.log(a);
+    // await authenticationGroupDao.createAuthenticationGroup(authnGroup);
+    // await authenticationGroupDao.assignAuthenticationGroupToClient(authnGroup.authenticationGroupId, randomUUID().toString());
+    // await authenticationGroupDao.assignUserToAuthenticationGroup(randomUUID().toString(), authnGroup.authenticationGroupId);
 
-    const client: Client = {
-        clientId: randomUUID().toString(),
-        clientName: `Test Client - ${randomUUID().toString()}`,
-        clientSecret: "df72889374982793874lkjsdlkjf",
-        clientType: "SERVIICES",
-        enabled: true,
-        markForDelete: false,
-        oidcEnabled: true,
-        pkceEnabled: false,
-        tenantId: "58203718-2396-4d77-974a-cee7582b0121",
-        clientDescription: "Testing Cassandra I/O",
-        clientTokenTTLSeconds: 600,
-        maxRefreshTokenCount: 250,
-        userTokenTTLSeconds: 84400
-    }
+    const g = await authenticationGroupDao.getAuthenticationGroupById("3d7af4a2-cc35-47f6-9eed-72bed8da025b");
 
-    await clientDao.createClient(client);
+    await authenticationGroupDao.deleteAuthenticationGroup("3d7af4a2-cc35-47f6-9eed-72bed8da025b");
 
-    const t: Tenant | null = await tenantDao.getTenantById("58203718-2396-4d77-974a-cee7582b0121");
-    const t2: Tenant | null = await tenantDao.getTenantById("58203718-2396-4d77-974a-cee7582b0122");
-
-    return res.json({tenantList: a, client: client, t: t, t2: t2});
+    return res.json({group: g});
 }

@@ -96,7 +96,7 @@ export const AUTHENTICATION_GROUP_MODEL:  {[key: string]: cassandra.mapping.Mode
 
 export const AUTHENTICATION_GROUP_USER_REL_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
     "authentication_group_user_rel": {
-        tables: ["authentication_group_user_rel"],
+        tables: ["authentication_group_user_rel", "authentication_group_user_rel_by_user"],
         columns: {
             "authenticationgroupid": "authenticationGroupId",
 			"userid": "userId"
@@ -140,7 +140,7 @@ export const AUTHORIZATION_DEVICE_CODE_DATA_MODEL:  {[key: string]: cassandra.ma
 
 export const AUTHORIZATION_GROUP_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
     "authorization_group": {
-        tables: ["authorization_group"],
+        tables: ["authorization_group", "authorization_group_by_tenant"],
         columns: {
             "groupid": "groupId",
 			"groupname": "groupName",
@@ -191,7 +191,7 @@ export const CAPTCHA_CONFIG_MODEL:  {[key: string]: cassandra.mapping.ModelOptio
 
 export const CHANGE_EVENT_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
     "change_event": {
-        tables: ["change_event"],
+        tables: ["change_event", "change_event_by_object_id"],
         columns: {
             "changeeventid": "changeEventId",
 			"objectid": "objectId",

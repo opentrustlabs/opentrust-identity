@@ -6,7 +6,33 @@ import cassandra from "cassandra-driver";
 class CassandraAuthenticationGroupDao extends AuthenticationGroupDao {
 
     public async getAuthenticationGroups(tenantId?: string, clientId?: string, userId?: string): Promise<Array<AuthenticationGroup>> {
-        throw new Error("Method not implemented.");
+        if(tenantId){
+             const mapper = await CassandraDriver.getInstance().getModelMapper("authentication_group");
+             return (await mapper.find({tenantId: tenantId})).toArray();
+        }
+        else if(clientId){
+            const mapper = await CassandraDriver.getInstance().getModelMapper("authentication_group_client_rel");
+            const arr: Array<AuthenticationGroupClientRel> = (await mapper.find({clientId: clientId})).toArray();
+            const ids = arr.map((rel: AuthenticationGroupClientRel) => rel.authenticationGroupId);
+            const clientMapper = await CassandraDriver.getInstance().getModelMapper("authentication_group");
+            const results = await clientMapper.find({
+                clientId: cassandra.mapping.q.in_(ids)
+            });
+            return results.toArray();
+        }
+        else if(userId){
+            const mapper = await CassandraDriver.getInstance().getModelMapper("authentication_group_user_rel");
+            const arr: Array<AuthenticationGroupUserRel> = (await mapper.find({userId: userId})).toArray();
+            const ids = arr.map((rel: AuthenticationGroupUserRel) => rel.userId);
+            const userMapper = await CassandraDriver.getInstance().getModelMapper("authentication_group");
+            const results = await userMapper.find({
+                clientId: cassandra.mapping.q.in_(ids)
+            });
+            return results.toArray();
+        }
+        else {
+            return [];
+        }
     }
 
     public async getDefaultAuthenticationGroups(tenantId: string): Promise<Array<AuthenticationGroup>> {
@@ -34,7 +60,48 @@ class CassandraAuthenticationGroupDao extends AuthenticationGroupDao {
     }
 
     public async deleteAuthenticationGroup(authenticationGroupId: string): Promise<void> {
-        throw new Error("Method not implemented.");
+        //  1.  Remove the client/authn group rel
+        
+        const authnGroupClientRelMapper = await CassandraDriver.getInstance().getModelMapper("authentication_group_client_rel");
+        const rels: Array<AuthenticationGroupClientRel> = (await authnGroupClientRelMapper.find({authenticationGroupId: authenticationGroupId})).toArray();
+        for(let i = 0; i < rels.length; i++){
+            await authnGroupClientRelMapper.remove({
+                authenticationGroupId: authenticationGroupId,
+                clientId: rels[i].clientId
+            });
+        }
+        
+        
+
+        //  2.  Remove the authn/user rels, but in a loop of 1000 at a time
+        let hasMoreRecords: boolean = true;
+        const authnGroupUserRelMapper = await CassandraDriver.getInstance().getModelMapper("authentication_group_user_rel");
+        while(hasMoreRecords){
+            const results = await authnGroupUserRelMapper.findAll({limit: 1000});
+            const arr: Array<AuthenticationGroupUserRel> = results.toArray();
+            for(let i = 0; i < arr.length; i++){
+                authnGroupUserRelMapper.remove({
+                    userId: arr[i].userId,
+                    authenticationGroupId: arr[i].authenticationGroupId
+                });
+            }
+            hasMoreRecords = arr.length === 1000;
+        }
+
+        //  3.  Finally delete the group itself.
+        const authnGroupMapper = await CassandraDriver.getInstance().getModelMapper("authentication_group");
+        const g: AuthenticationGroup = await authnGroupMapper.get({
+            authenticationGroupId: authenticationGroupId
+        });
+
+        if(g){
+            await authnGroupMapper.remove({
+                authenticationGroupId: authenticationGroupId,
+                tenantId: g.tenantId
+            });
+        }
+
+
     }
 
     public async assignAuthenticationGroupToClient(authenticationGroupId: string, clientId: string): Promise<AuthenticationGroupClientRel> {

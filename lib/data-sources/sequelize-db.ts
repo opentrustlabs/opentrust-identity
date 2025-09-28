@@ -180,9 +180,7 @@ class DBDriver {
         return DBDriver.instance.tenantAnonymousUserConfigurationEntity;
     }
     public  async getTenantEntity(): Promise<typeof TenantEntity> {
-        console.log("checkpoint 1");
-        if (!DBDriver.instance.tenantEntity) {
-            console.log("checkpoint 2");
+        if (!DBDriver.instance.tenantEntity) {            
             const sequelize = await DBDriver.getConnection();
             DBDriver.instance.tenantEntity = TenantEntity.initModel(sequelize);
         }

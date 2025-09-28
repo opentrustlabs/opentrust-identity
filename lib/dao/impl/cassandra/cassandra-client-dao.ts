@@ -52,9 +52,11 @@ class CassandraClientDao extends ClientDao {
         const resultList: cassandra.mapping.Result<AuthenticationGroupClientRel> = await agcrMapper.find({clientId: clientId});
         const arr: Array<AuthenticationGroupClientRel> = resultList.toArray();
         for(let i = 0; i < arr.length; i++){
-            await agcrMapper.remove({clientId: arr[i].clientId, authenticationGroupId: arr[i].authenticationGroupId});
+            await agcrMapper.remove({
+                clientId: arr[i].clientId,
+                authenticationGroupId: arr[i].authenticationGroupId
+            });
         }
-
 
         const csrMapper = await CassandraDriver.getInstance().getModelMapper("client_scope_rel");
         await csrMapper.remove({clientId: clientId});
@@ -64,11 +66,23 @@ class CassandraClientDao extends ClientDao {
         const contactResults: cassandra.mapping.Result<Contact> = await cMapper.find({objectid: clientId});
         const cArr: Array<Contact> = contactResults.toArray();
         for(let i = 0; i < cArr.length; i++){
-            await cMapper.remove({objectid: cArr[i].objectid, contactid: cArr[i].contactid});
+            await cMapper.remove({
+                objectid: cArr[i].objectid, 
+                contactid: cArr[i].contactid
+            });
         }
 
         const mapper = await CassandraDriver.getInstance().getModelMapper("client");
-        await mapper.remove({clientId: clientId});
+        const client: Client = await mapper.get({
+            clientId: clientId
+        });
+        if(client){
+            await mapper.remove({
+                clientId: clientId,
+                tenantId: client.tenantId
+            });
+        }
+        
 
     }
 

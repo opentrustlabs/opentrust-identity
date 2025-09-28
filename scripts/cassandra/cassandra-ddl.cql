@@ -295,6 +295,12 @@ create TABLE authentication_group_user_rel (
     PRIMARY KEY (authenticationgroupid, userid)
 );
 
+create TABLE authentication_group_user_rel_by_user (
+    authenticationgroupid UUID,
+    userid UUID,
+    PRIMARY KEY (userid, authenticationgroupid)
+);
+
 create TABLE authorization_group (
     groupid UUID PRIMARY KEY,
     tenantid UUID,
@@ -305,11 +311,23 @@ create TABLE authorization_group (
     markfordelete BOOLEAN
 );
 
+create TABLE authorization_group_by_tenant (
+    groupid UUID,
+    tenantid UUID,
+    groupname TEXT,
+    groupdescription TEXT,
+    defaultgroup BOOLEAN,
+    allowforanonymoususers BOOLEAN,
+    markfordelete BOOLEAN,
+    PRIMARY KEY (tenantid, groupid)
+);
+
 create TABLE authorization_group_user_rel (
     userid UUID,
     groupid UUID,
     PRIMARY KEY (userid, groupid)
 );
+
 
 create TABLE user_credential (
     userid UUID,
@@ -553,6 +571,16 @@ create TABLE change_event (
     PRIMARY KEY (changeeventid, objectid)	
 );
 
+create TABLE change_event_by_object_id (
+    changeeventid UUID,
+    objectid UUID,    
+    changeeventtype TEXT,
+    changeeventclass TEXT,
+    changetimestamp BIGINT,
+    changedby TEXT,
+    data BLOB,	
+    PRIMARY KEY (objectid, changeeventid)
+);
 
 
 create TABLE tenant_anonymous_user_configuration (
