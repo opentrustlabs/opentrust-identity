@@ -60,7 +60,9 @@ import {
     USER_SCOPE_REL_MODEL,
     USER_TENANT_REL_MODEL,
     USER_TERMS_AND_CONDITIONS_ACCEPTED_MODEL,
-    USER_VERIFICATION_TOKEN_MODEL
+    USER_VERIFICATION_TOKEN_MODEL,
+    USERS_BY_FEDERATED_OIDC_ID_MODEL,
+    USERS_BY_EMAIL_MODEL
 } from "../cassandra-mappings/mappings";
 import { logWithDetails } from "../logging/logger";
 
@@ -157,6 +159,8 @@ class CassandraDriver {
                         ...USER_DURESS_CREDENTIAL_MODEL,
                         ...USER_EMAIL_RECOVERY_MODEL,
                         ...USERS_MODEL,
+                        ...USERS_BY_EMAIL_MODEL,
+                        ...USERS_BY_FEDERATED_OIDC_ID_MODEL,
                         ...USERS_BY_PHONE_NUMBER_MODEL,
                         ...USER_FAILED_LOGIN_MODEL,
                         ...USER_FIDO2_CHALLENGE_MODEL,

@@ -1,78 +1,248 @@
 import { Scope, TenantAvailableScope, ClientScopeRel, AuthorizationGroupScopeRel, UserScopeRel } from "@/graphql/generated/graphql-types";
 import ScopeDao from "../../scope-dao";
+import CassandraDriver from "@/lib/data-sources/cassandra";
+import cassandra, { auth } from "cassandra-driver";
 
 class CassandraScopeDao extends ScopeDao {
 
+
     public async getScope(tenantId?: string, scopeIds?: Array<string>): Promise<Array<Scope>> {
-        throw new Error("Method not implemented.");
+        let ids: Array<string> = [];
+        if(tenantId){
+            const availScope: Array<TenantAvailableScope> = await this.getTenantAvailableScope(tenantId);
+            ids = availScope.map(
+                (avl: TenantAvailableScope) => avl.scopeId
+            )
+        }
+        else if(scopeIds){
+            ids = scopeIds;
+        }
+        const mapper = await CassandraDriver.getInstance().getModelMapper("scope");
+        const results = await mapper.find({
+            scopeId: cassandra.mapping.q.in_(ids)
+        });
+        return results.toArray();
     }
 
     public async getScopeById(scopeId: string): Promise<Scope | null> {
-        throw new Error("Method not implemented.");
+        const mapper = await CassandraDriver.getInstance().getModelMapper("scope");
+        return mapper.get({
+            scopeId: scopeId
+        })
     }
 
     public async getScopeByScopeName(scopeName: string): Promise<Scope | null> {
-        throw new Error("Method not implemented.");
+        const mapper = await CassandraDriver.getInstance().getModelMapper("scope");
+        return mapper.get({
+            scopeName: scopeName
+        })
     }
 
     public async createScope(scope: Scope): Promise<Scope> {
-        throw new Error("Method not implemented.");
+        const mapper = await CassandraDriver.getInstance().getModelMapper("scope");
+        await mapper.insert(scope);
+        return scope;
     }
 
     public async updateScope(scope: Scope): Promise<Scope> {
-        throw new Error("Method not implemented.");
+        const mapper = await CassandraDriver.getInstance().getModelMapper("scope");
+        await mapper.update(scope);
+        return scope;
     }
 
     public async deleteScope(scopeId: string): Promise<void> {
-        throw new Error("Method not implemented.");
-    }
+        const arrTenantScopeRel = await this.getTenantAvailableScope(undefined, scopeId);
+        for(let i = 0; i < arrTenantScopeRel.length; i++){
+            await this.removeScopeFromTenant(arrTenantScopeRel[i].tenantId, arrTenantScopeRel[i].scopeId);
+        }
 
-    public async getTenantAvailableScope(tenantId?: string, scopeId?: string): Promise<Array<TenantAvailableScope>> {
-        throw new Error("Method not implemented.");
-    }
+        const scope: Scope | null = await this.getScopeById(scopeId);
+        if(scope){
+            const mapper = await CassandraDriver.getInstance().getModelMapper("scope");
+            await mapper.remove({
+                scopeId: scopeId,
+                scopeName: scope.scopeName
+            });
+        }
 
-    public async assignScopeToTenant(tenantId: string, scopeId: string, accessRuleId?: string): Promise<TenantAvailableScope> {
-        throw new Error("Method not implemented.");
     }
 
     public async removeScopeFromTenant(tenantId: string, scopeId: string): Promise<void> {
-        throw new Error("Method not implemented.");
+
+        // Need to remove all of the scope from the users, clients, and authz groups too
+        const clientScopeMapper = await CassandraDriver.getInstance().getModelMapper("client_scope_rel");
+        const clientScopeRelResults = await clientScopeMapper.find({
+            tenantId: tenantId,
+            scopeId: scopeId
+        });
+        const clientScopeRels: Array<ClientScopeRel> = clientScopeRelResults.toArray();
+        for(let i = 0; i < clientScopeRels.length; i++){
+            clientScopeMapper.remove({
+                clientId: clientScopeRels[i].clientId,
+                tenantId: tenantId,
+                scopeId: scopeId
+            });
+        }
+
+        const authzScopeMapper = await CassandraDriver.getInstance().getModelMapper("authorization_group_scope_rel");
+        const authzScopeRelResults = await authzScopeMapper.find({
+            tenantId: tenantId,
+            scopeId: scopeId
+        });
+        const authzScopeRels: Array<AuthorizationGroupScopeRel> = authzScopeRelResults.toArray();
+        for(let i = 0; i < authzScopeRels.length; i++){
+            authzScopeMapper.remove({
+                tenantId: tenantId,
+                scopeId: scopeId,
+                groupId: authzScopeRels[i].groupId
+            });
+        }
+        
+        const userScopeMapper = await CassandraDriver.getInstance().getModelMapper("user_scope_rel");
+        const userScopeRelResults = await userScopeMapper.find({
+            tenantId: tenantId,
+            scopeId: scopeId
+        });
+        const userScopeRels: Array<UserScopeRel> = userScopeRelResults.toArray();
+        for(let i = 0; i < userScopeRels.length; i++){
+            userScopeMapper.remove({
+                tenantId: tenantId,
+                scopeId: scopeId,
+                userId: userScopeRels[i].userId
+            });
+        }
+        
+        const mapper = await CassandraDriver.getInstance().getModelMapper("tenant_available_scope");
+        await mapper.remove({
+            tenantId: tenantId,
+            scopeId: scopeId
+        });        
+        
+        return Promise.resolve();
     }
 
+    public async getTenantAvailableScope(tenantId?: string, scopeId?: string): Promise<Array<TenantAvailableScope>> {
+        const mapper = await CassandraDriver.getInstance().getModelMapper("tenant_available_scope");
+        
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const queryParams: any = {};
+        if(tenantId){
+            queryParams.tenantId = tenantId
+        }
+        if(scopeId){
+            queryParams.scopeId = scopeId
+        }
+        const results = await mapper.find(queryParams);
+        return results.toArray();
+    }
+
+    public async assignScopeToTenant(tenantId: string, scopeId: string, accessRuleId?: string): Promise<TenantAvailableScope> {
+        const mapper = await CassandraDriver.getInstance().getModelMapper("tenant_available_scope");
+        const tenantAvailableScope: TenantAvailableScope = {
+            tenantId: tenantId,
+            scopeId: scopeId,
+            accessRuleId: accessRuleId
+        };
+        await mapper.insert(tenantAvailableScope);
+        return tenantAvailableScope;
+    }
+
+    // public async removeScopeFromTenant(tenantId: string, scopeId: string): Promise<void> {
+    //     const mapper = await CassandraDriver.getInstance().getModelMapper("tenant_available_scope");
+    //     await mapper.remove({
+    //         tenantId: tenantId,
+    //         scopeId: scopeId
+    //     });
+    //     return;
+    // }
+
     public async getClientScopeRels(clientId: string): Promise<Array<ClientScopeRel>> {
-        throw new Error("Method not implemented.");
+        const mapper = await CassandraDriver.getInstance().getModelMapper("client_scope_rel");
+        const results = await mapper.find({
+            clientId: clientId
+        });
+        return results.toArray();
     }
 
     public async assignScopeToClient(tenantId: string, clientId: string, scopeId: string): Promise<ClientScopeRel> {
-        throw new Error("Method not implemented.");
+        const mapper = await CassandraDriver.getInstance().getModelMapper("client_scope_rel");
+        const clientScopeRel: ClientScopeRel = {
+            clientId: clientId,
+            tenantId: tenantId,
+            scopeId: scopeId
+        };
+        await mapper.insert(clientScopeRel);
+        return clientScopeRel;
     }
 
     public async removeScopeFromClient(tenantId: string, clientId: string, scopeId: string): Promise<void> {
-        throw new Error("Method not implemented.");
+        const mapper = await CassandraDriver.getInstance().getModelMapper("client_scope_rel");
+        await mapper.remove({
+            clientId: clientId,
+            tenantId: tenantId,
+            scopeId: scopeId
+        });
+        return;
     }
 
     public async getAuthorizationGroupScopeRels(authorizationGroupId: string): Promise<Array<AuthorizationGroupScopeRel>> {
-        throw new Error("Method not implemented.");
+        const mapper = await CassandraDriver.getInstance().getModelMapper("authorization_group_scope_rel");
+        const results = await mapper.find({
+            groupId: authorizationGroupId
+        });
+        return results.toArray();
     }
 
     public async assignScopeToAuthorizationGroup(tenantId: string, authorizationGroupId: string, scopeId: string): Promise<AuthorizationGroupScopeRel> {
-        throw new Error("Method not implemented.");
+        const mapper = await CassandraDriver.getInstance().getModelMapper("authorization_group_scope_rel");
+        const authorizationGroupScopeRel: AuthorizationGroupScopeRel = {
+            groupId: authorizationGroupId,
+            tenantId: tenantId,
+            scopeId: scopeId
+        };
+        await mapper.insert(authorizationGroupScopeRel);
+        return authorizationGroupScopeRel;
+
     }
 
     public async removeScopeFromAuthorizationGroup(tenantId: string, authorizationGroupId: string, scopeId: string): Promise<void> {
-        throw new Error("Method not implemented.");
+        const mapper = await CassandraDriver.getInstance().getModelMapper("authorization_group_scope_rel");
+        await mapper.remove({
+            groupId: authorizationGroupId,
+            tenantId: tenantId,
+            scopeId: scopeId
+        });
+        return;
     }
 
     public async getUserScopeRels(userId: string, tenantId: string): Promise<Array<UserScopeRel>> {
-        throw new Error("Method not implemented.");
+        const mapper = await CassandraDriver.getInstance().getModelMapper("user_scope_rel");
+        const results = await mapper.find({
+            userId: userId,
+            tenantId: tenantId
+        });
+        return results.toArray();
     }
 
     public async assignScopeToUser(tenantId: string, userId: string, scopeId: string): Promise<UserScopeRel> {
-        throw new Error("Method not implemented.");
+        const mapper = await CassandraDriver.getInstance().getModelMapper("user_scope_rel");
+        const userScopeRel: UserScopeRel = {
+            userId: userId,
+            tenantId: tenantId,
+            scopeId: scopeId
+        };
+        await mapper.insert(userScopeRel);
+        return userScopeRel;
     }
 
     public async removeScopeFromUser(tenantId: string, userId: string, scopeId: string): Promise<void> {
-        throw new Error("Method not implemented.");
+        const mapper = await CassandraDriver.getInstance().getModelMapper("user_scope_rel");
+        await mapper.remove({
+            tenantId: tenantId,
+            userId: userId,
+            scopeId: scopeId
+        });
+        return;
     }
 
 }

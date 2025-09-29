@@ -3,11 +3,6 @@ import { AuthenticationGroup, User, AuthorizationGroup, UserFailedLogin, UserTen
 export type UserLookupType = "id" | "email" | "phone" | "federatedoidcproviderid";
 abstract class IdentityDao {
 
-    
-    abstract getUserGroups(userId: string): Promise<Array<AuthorizationGroup>>;
-
-    abstract getUserAuthenticationGroups(userId: string): Promise<Array<AuthenticationGroup>>;
-
     abstract getFailedLogins(userId: string): Promise<Array<UserFailedLogin>>;
 
     abstract addFailedLogin(userFailedLogins: UserFailedLogin): Promise<void>;
