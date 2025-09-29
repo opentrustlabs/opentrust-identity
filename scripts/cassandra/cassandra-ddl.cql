@@ -233,6 +233,31 @@ create TABLE users_by_phone_number (
     PRIMARY KEY (phonenumber)
 );
 
+create TABLE users_by_federated_oidc_id (
+    userid UUID,
+    federatedoidcprovidersubjectid TEXT,
+    email TEXT,
+    emailverified BOOLEAN,
+    domain TEXT,
+    firstname TEXT,
+    lastname TEXT,
+    middlename TEXT,
+    phonenumber TEXT,
+    address TEXT,
+    addressline1 TEXT,
+    city TEXT,
+    postalcode TEXT,
+    stateregionprovince TEXT,
+    countrycode TEXT,
+    preferredlanguagecode TEXT,
+    locked BOOLEAN,
+    enabled BOOLEAN,
+    nameorder TEXT,
+    markfordelete BOOLEAN,
+    PRIMARY KEY (federatedoidcprovidersubjectid)
+);
+
+
 create TABLE user_email_recovery (
     userid UUID,
     email TEXT,
@@ -353,7 +378,7 @@ WITH CLUSTERING ORDER BY (datecreatedms DESC);
 
 
 create TABLE signing_key (
-    keyid UUID PRIMARY KEY,
+    keyid UUID,
     keyname TEXT,
     tenantid UUID,
     keytype TEXT,
@@ -365,7 +390,25 @@ create TABLE signing_key (
     markfordelete BOOLEAN,
     privatekeypkcs8 TEXT,
     keycertificate TEXT,
-    publickey TEXT
+    publickey TEXT,
+    PRIMARY KEY (keyid, tenantid)
+);
+
+create TABLE signing_key_by_tenant (
+    keyid UUID,
+    keyname TEXT,
+    tenantid UUID,
+    keytype TEXT,
+    keyuse TEXT,    
+    keypassword TEXT,    
+    expiresatms BIGINT,
+    createdatms BIGINT,
+    keystatus TEXT,
+    markfordelete BOOLEAN,
+    privatekeypkcs8 TEXT,
+    keycertificate TEXT,
+    publickey TEXT,
+    PRIMARY KEY (tenantid, keyid)
 );
 
 create TABLE rate_limit_service_group (
@@ -377,11 +420,21 @@ create TABLE rate_limit_service_group (
 
 
 create TABLE scope (
-    scopeid UUID PRIMARY KEY,
+    scopeid UUID,
     scopename TEXT,
     scopedescription TEXT,
     scopeuse TEXT,
-    markfordelete BOOLEAN 
+    markfordelete BOOLEAN,
+    PRIMARY KEY (scopeid, scopename)
+);
+
+create TABLE scope_by_scope_name (
+    scopeid UUID,
+    scopename TEXT,
+    scopedescription TEXT,
+    scopeuse TEXT,
+    markfordelete BOOLEAN,
+    PRIMARY KEY (scopename, scopeid)
 );
 
 create TABLE scope_access_rule_schema (
@@ -435,11 +488,25 @@ create TABLE tenant_available_scope (
     PRIMARY KEY (tenantid, scopeid)
 );
 
+create TABLE tenant_available_scope_by_scope (
+    tenantid UUID,
+    scopeid UUID,
+    accessruleid UUID,
+    PRIMARY KEY (scopeid, tenantid)
+);
+
 create TABLE client_scope_rel (
     scopeid UUID,
     tenantid UUID,
     clientid UUID,
     PRIMARY KEY (clientid, scopeid, tenantid)
+);
+
+create TABLE client_scope_rel_by_tenant (
+    scopeid UUID,
+    tenantid UUID,
+    clientid UUID,
+    PRIMARY KEY (tenantid, scopeid, clientid)
 );
 
 create TABLE authorization_group_scope_rel (
@@ -449,11 +516,25 @@ create TABLE authorization_group_scope_rel (
     PRIMARY KEY (groupid, scopeid, tenantid)
 );
 
+create TABLE authorization_group_scope_rel_by_tenant (
+    scopeid UUID,
+    tenantid UUID,
+    groupid UUID,
+    PRIMARY KEY (tenantid, scopeid, groupid)
+);
+
 create TABLE user_scope_rel (
     userid UUID,
     tenantid UUID,
     scopeid UUID,
     PRIMARY KEY (userid, tenantid, scopeid)    
+);
+
+create TABLE user_scope_rel_by_tenant (
+    userid UUID,
+    tenantid UUID,
+    scopeid UUID,
+    PRIMARY KEY (tenantid, scopeid, userid)    
 );
 
 create TABLE pre_authentication_state (
@@ -588,7 +669,7 @@ create TABLE change_event (
     changeeventclass TEXT,
     changetimestamp BIGINT,
     changedby TEXT,
-    data BLOB,	
+    data TEXT,	
     PRIMARY KEY (changeeventid, objectid)	
 );
 
@@ -599,7 +680,7 @@ create TABLE change_event_by_object_id (
     changeeventclass TEXT,
     changetimestamp BIGINT,
     changedby TEXT,
-    data BLOB,	
+    data TEXT,	
     PRIMARY KEY (objectid, changeeventid)
 );
 
@@ -897,11 +978,21 @@ create TABLE user_duress_credential (
 );
 
 create TABLE secret_share (
-    secretshareid UUID PRIMARY KEY,
+    secretshareid UUID,
     objectid TEXT,
     objectype TEXT,
     otp TEXT,
-    expiresatms BIGINT
+    expiresatms BIGINT,
+    PRIMARY KEY (secretshareid, otp)
+);
+
+create TABLE secret_share_by_otp (
+    secretshareid UUID,
+    objectid TEXT,
+    objectype TEXT,
+    otp TEXT,
+    expiresatms BIGINT,
+    PRIMARY KEY (otp, secretshareid)
 );
 
 

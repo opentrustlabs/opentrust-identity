@@ -1,8 +1,5 @@
-import { User, AuthenticationGroup, AuthorizationGroup, UserTenantRel, UserCredential, UserMfaRel, Fido2Challenge, UserAuthenticationState, UserRegistrationState, UserFailedLogin, UserTermsAndConditionsAccepted, UserRecoveryEmail, ProfileEmailChangeState } from "@/graphql/generated/graphql-types";
+import { User, UserTenantRel, UserCredential, UserMfaRel, Fido2Challenge, UserAuthenticationState, UserRegistrationState, UserFailedLogin, UserTermsAndConditionsAccepted, UserRecoveryEmail, ProfileEmailChangeState } from "@/graphql/generated/graphql-types";
 import IdentityDao, { UserLookupType } from "../../identity-dao";
-import UserAuthorizationGroupRelEntity from "@/lib/entities/authorization-group-user-rel-entity";
-import AuthorizationGroupEntity from "@/lib/entities/authorization-group-entity";
-import AuthenticationGroupEntity from "@/lib/entities/authentication-group-entity";
 import UserEntity from "@/lib/entities/user-entity";
 import UserCredentialEntity from "@/lib/entities/user-credential-entity";
 import { MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, VERIFICATION_TOKEN_TYPE_PASSWORD_RESET, VERIFICATION_TOKEN_TYPE_VALIDATE_EMAIL } from "@/utils/consts";
@@ -167,41 +164,6 @@ class DBIdentityDao extends IdentityDao {
             }
         });
         return Promise.resolve();
-    }
-    
-    public async getUserGroups(userId: string): Promise<Array<AuthorizationGroup>> {
-
-        const rels: Array<UserAuthorizationGroupRelEntity> = await (await DBDriver.getInstance().getAuthorizationGroupUserRelEntity()).findAll({
-            where: {
-                userId: userId
-            }
-        });
-        
-        const groupIds = rels.map(r => r.getDataValue("groupId"));
-        const groups: Array<AuthorizationGroupEntity> = await (await DBDriver.getInstance().getAuthorizationGroupEntity()).findAll({
-            where: {
-                groupId: { [Op.in]: groupIds}
-            }
-        });
-        return groups.map((entity: AuthenticationGroupEntity) => entity.dataValues);
-    }
-
-    public async getUserAuthenticationGroups(userId: string): Promise<Array<AuthenticationGroup>> {
-
-        const rels: Array<UserAuthorizationGroupRelEntity> = await (await DBDriver.getInstance().getAuthenticationGroupUserRelEntity()).findAll({
-            where: {
-                userId: userId
-            }
-        });
-
-        const groupIds = rels.map(r => r.getDataValue("authenticationGroupId"));
-        const authnGroups: Array<AuthenticationGroupEntity> = await (await DBDriver.getInstance().getAuthenticationGroupEntity()).findAll({
-            where: {
-                authenticationGroupId: {[Op.in]: groupIds}
-            }
-        });
-        
-        return authnGroups.map((entity: AuthenticationGroupEntity) => entity.dataValues);
     }
 
     public async getUserCredentials(userId: string): Promise<Array<UserCredential>>{

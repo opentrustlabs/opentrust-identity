@@ -155,7 +155,7 @@ export const AUTHORIZATION_GROUP_MODEL:  {[key: string]: cassandra.mapping.Model
 
 export const AUTHORIZATION_GROUP_SCOPE_REL_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
     "authorization_group_scope_rel": {
-        tables: ["authorization_group_scope_rel"],
+        tables: ["authorization_group_scope_rel", "authorization_group_scope_rel_by_tenant"],
         columns: {
             "groupid": "groupId",
 			"scopeid": "scopeId",
@@ -188,6 +188,7 @@ export const CAPTCHA_CONFIG_MODEL:  {[key: string]: cassandra.mapping.ModelOptio
         }
     }
 };
+
 
 export const CHANGE_EVENT_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
     "change_event": {
@@ -252,7 +253,7 @@ export const CLIENT_REDIRECT_URI_REL_MODEL:  {[key: string]: cassandra.mapping.M
 
 export const CLIENT_SCOPE_REL_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
     "client_scope_rel": {
-        tables: ["client_scope_rel"],
+        tables: ["client_scope_rel", "client_scope_rel_by_tenant"],
         columns: {
             "tenantid": "tenantId",
 			"clientid": "clientId",
@@ -461,7 +462,7 @@ export const SCHEDULER_LOCK_MODEL:  {[key: string]: cassandra.mapping.ModelOptio
 
 export const SCOPE_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
     "scope": {
-        tables: ["scope"],
+        tables: ["scope", "scope_by_scope_name"],
         columns: {
             "scopeid": "scopeId",
 			"scopename": "scopeName",
@@ -474,7 +475,7 @@ export const SCOPE_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
 
 export const SECRET_SHARE_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
     "secret_share": {
-        tables: ["secret_share"],
+        tables: ["secret_share", "secret_share_by_otp"],
         columns: {
             "secretshareid": "secretShareId",
 			"objectid": "objectId",
@@ -487,7 +488,7 @@ export const SECRET_SHARE_MODEL:  {[key: string]: cassandra.mapping.ModelOptions
 
 export const SIGNING_KEY_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
     "signing_key": {
-        tables: ["signing_key"],
+        tables: ["signing_key", "signing_key_by_tenant"],
         columns: {
             "keyid": "keyId",
 			"keytype": "keyType",
@@ -548,7 +549,7 @@ export const TENANT_ANONYMOUS_USER_CONFIGURATION_MODEL:  {[key: string]: cassand
 
 export const TENANT_AVAILABLE_SCOPE_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
     "tenant_available_scope": {
-        tables: ["tenant_available_scope"],
+        tables: ["tenant_available_scope", "tenant_available_scope_by_scope"],
         columns: {
             "tenantid": "tenantId",
 			"scopeid": "scopeId",
@@ -724,7 +725,63 @@ export const USER_EMAIL_RECOVERY_MODEL:  {[key: string]: cassandra.mapping.Model
 
 export const USERS_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
     "users": {
-        tables: ["users", "users_by_email"],
+        tables: ["users"],
+        columns: {
+            "userid": "userId",
+			"address": "address",
+			"addressline1": "addressLine1",
+			"city": "city",
+			"postalcode": "postalCode",
+			"stateregionprovince": "stateRegionProvince",
+			"countrycode": "countryCode",
+			"domain": "domain",
+			"email": "email",
+			"emailverified": "emailVerified",
+			"enabled": "enabled",
+			"federatedoidcprovidersubjectid": "federatedOIDCProviderSubjectId",
+			"firstname": "firstName",
+			"lastname": "lastName",
+			"locked": "locked",
+			"middlename": "middleName",
+			"nameorder": "nameOrder",
+			"phonenumber": "phoneNumber",
+			"preferredlanguagecode": "preferredLanguageCode",
+			"markfordelete": "markForDelete"
+        }
+    }
+};
+
+export const USERS_BY_EMAIL_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
+    "users_by_email": {
+        tables: ["users_by_email"],
+        columns: {
+            "userid": "userId",
+			"address": "address",
+			"addressline1": "addressLine1",
+			"city": "city",
+			"postalcode": "postalCode",
+			"stateregionprovince": "stateRegionProvince",
+			"countrycode": "countryCode",
+			"domain": "domain",
+			"email": "email",
+			"emailverified": "emailVerified",
+			"enabled": "enabled",
+			"federatedoidcprovidersubjectid": "federatedOIDCProviderSubjectId",
+			"firstname": "firstName",
+			"lastname": "lastName",
+			"locked": "locked",
+			"middlename": "middleName",
+			"nameorder": "nameOrder",
+			"phonenumber": "phoneNumber",
+			"preferredlanguagecode": "preferredLanguageCode",
+			"markfordelete": "markForDelete"
+        }
+    }
+};
+
+export const USERS_BY_FEDERATED_OIDC_ID_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
+    "users_by_federated_oidc_id": {
+        tables: ["users_by_federated_oidc_id"],
         columns: {
             "userid": "userId",
 			"address": "address",
@@ -867,7 +924,7 @@ export const USER_REGISTRATION_STATE_MODEL:  {[key: string]: cassandra.mapping.M
 
 export const USER_SCOPE_REL_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
     "user_scope_rel": {
-        tables: ["user_scope_rel"],
+        tables: ["user_scope_rel", "user_scope_rel_by_tenant"],
         columns: {
             "userid": "userId",
 			"scopeid": "scopeId",
