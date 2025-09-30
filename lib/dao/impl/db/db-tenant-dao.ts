@@ -18,19 +18,28 @@ import SystemSettingsEntity from "@/lib/entities/system-settings-entity";
 
 class DBTenantDao extends TenantDao {
 
-
     /**
      * 
      * @returns 
      */
     public async getRootTenant(): Promise<Tenant | null> {
-        const tenantEntity: typeof TenantEntity = await DBDriver.getInstance().getTenantEntity();        
-        const entity: TenantEntity | null = await tenantEntity.findOne({
-            where: {
-                tenantType: TENANT_TYPE_ROOT_TENANT
+
+        const tenant: Tenant | null = this.getRootTenantFromCache();
+        if(tenant === null){
+            const tenantEntity: typeof TenantEntity = await DBDriver.getInstance().getTenantEntity();        
+            const entity: TenantEntity | null = await tenantEntity.findOne({
+                where: {
+                    tenantType: TENANT_TYPE_ROOT_TENANT
+                }
+            });
+            if(entity){
+                const root: Tenant = entity.dataValues
+                this.setRootTenantOnCache(root);
+                return root;
             }
-        });
-        return Promise.resolve(entity ? entity.dataValues as Tenant : null);
+            return null;            
+        }
+        return tenant;         
     }
 
     public async createRootTenant(tenant: Tenant): Promise<Tenant> {

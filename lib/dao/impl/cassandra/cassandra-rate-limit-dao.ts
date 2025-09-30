@@ -34,22 +34,30 @@ class CassandraRateLimitDao extends RateLimitDao {
             (rel: TenantRateLimitRel) => rel.tenantId
         );
 
-        const tenantMapper = await CassandraDriver.getInstance().getModelMapper("tenant");
-        const tenantResults = await tenantMapper.find({
-            tenantId: cassandra.mapping.q.in_(tenantIds)
-        });
-        const tenants: Array<Tenant> = tenantResults.toArray();
+        let tenants: Array<Tenant> = [];
+
+        if(tenantIds.length > 0){
+            const tenantMapper = await CassandraDriver.getInstance().getModelMapper("tenant");        
+            const tenantResults = await tenantMapper.find({
+                tenantId: cassandra.mapping.q.in_(tenantIds)
+            });
+            tenants = tenantResults.toArray();
+        }
+        
 
         // *******************************************
+        let serviceGroups: Array<RateLimitServiceGroup> = [];
         const serviceGroupIds = arr.map(
             (rel: TenantRateLimitRel) => rel.servicegroupid
         );
-        const serviceGroupMapper = await CassandraDriver.getInstance().getModelMapper("rate_limit_service_group");
-        const serviceGroupResults = await serviceGroupMapper.find({
-            servicegroupid: cassandra.mapping.q.in_(serviceGroupIds)
-        });
-        const serviceGroups: Array<RateLimitServiceGroup> = serviceGroupResults.toArray();
-        
+        if(serviceGroupIds.length > 0){
+            const serviceGroupMapper = await CassandraDriver.getInstance().getModelMapper("rate_limit_service_group");
+            const serviceGroupResults = await serviceGroupMapper.find({
+                servicegroupid: cassandra.mapping.q.in_(serviceGroupIds)
+            });
+            serviceGroups = serviceGroupResults.toArray();
+        }
+                
 
         const arrRetVal: Array<TenantRateLimitRelView> = [];
         arr.forEach(

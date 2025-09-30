@@ -22,7 +22,13 @@ class CassandraSigningKeysDao extends SigningKeysDao {
 
     public async getSigningKeyById(keyId: string): Promise<SigningKey | null> {
         const mapper = await CassandraDriver.getInstance().getModelMapper("signing_key");
-        return mapper.get({keyId: types.Uuid.fromString(keyId)});
+        const results: Array<SigningKey> = (await mapper.find({keyId: keyId}, {limit: 1})).toArray();
+        if(results && results.length > 0){
+            return results[0];
+        }
+        else{
+            return null;
+        }        
     }
 
     public async createSigningKey(key: SigningKey): Promise<SigningKey> {

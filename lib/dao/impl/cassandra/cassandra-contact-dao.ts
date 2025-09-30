@@ -8,7 +8,7 @@ class CassandraContactDao extends ContactDao {
     public async getContacts(objectId: string): Promise<Array<Contact>> {
         const mapper = await CassandraDriver.getInstance().getModelMapper("contact");
         const results = await mapper.find({
-            objectId: objectId
+            objectid: objectId
         });
         return results.toArray();
     }

@@ -2,18 +2,31 @@ import { FederatedOidcProvider, FederatedOidcProviderTenantRel, FederatedOidcPro
 import FederatedOIDCProviderDao from "../../federated-oidc-provider-dao";
 import CassandraDriver from "@/lib/data-sources/cassandra";
 import { types } from "cassandra-driver";
-
+import cassandra from "cassandra-driver";
 class CassandraFederatedOIDCProviderDao extends FederatedOIDCProviderDao {
 
     public async getFederatedOidcProviders(tenantId?: string): Promise<Array<FederatedOidcProvider>> {
-        const mapper = await CassandraDriver.getInstance().getModelMapper("federated_oidc_provider");
         if(tenantId){
-            const results = await mapper.find({
+            const mapper = await CassandraDriver.getInstance().getModelMapper("federated_oidc_provider_tenant_rel");
+            const results: Array<FederatedOidcProviderTenantRel> = (await mapper.find({
                 tenantId: tenantId
-            });
-            return results.toArray();
+            })).toArray();
+            if(results && results.length > 0){
+                const providerMapper = await CassandraDriver.getInstance().getModelMapper("federated_oidc_provider");
+                const ids = results.map(
+                    (rel: FederatedOidcProviderTenantRel) => rel.federatedOIDCProviderId
+                )
+                const retVal: Array<FederatedOidcProvider> = (await providerMapper.find({
+                    federatedOIDCProviderId: cassandra.mapping.q.in_(ids)
+                })).toArray();
+                return retVal;
+            }
+            else{
+                return []
+            }
         }
         else{
+            const mapper = await CassandraDriver.getInstance().getModelMapper("federated_oidc_provider");
             const results = await mapper.findAll();
             return results.toArray();
         }

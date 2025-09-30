@@ -6,13 +6,25 @@ import { types } from "cassandra-driver";
 import { DEFAULT_AUDIT_RECORD_RETENTION_PERIOD_DAYS, OPENTRUST_IDENTITY_VERSION, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 
 
+
 class CassandraTenantDao extends TenantDao {
 
     
     public async getRootTenant(): Promise<Tenant | null> {
-        const mapper = await CassandraDriver.getInstance().getModelMapper("root_tenant");
-        const t: cassandra.mapping.Result<Tenant | null> = await mapper.findAll();
-        return t.first() || null;
+        const tenant: Tenant | null = this.getRootTenantFromCache();
+        if(tenant === null){
+            const mapper = await CassandraDriver.getInstance().getModelMapper("root_tenant");
+            const arr: Array<Tenant> = (await mapper.findAll()).toArray();
+            if(arr && arr.length > 0){
+                const root: Tenant = arr[0];
+                this.setRootTenantOnCache(root);
+                return root;
+            }
+            else{
+                return null;
+            }
+        }
+        return tenant;        
     }
 
     public async createRootTenant(tenant: Tenant): Promise<Tenant> {
@@ -49,15 +61,12 @@ class CassandraTenantDao extends TenantDao {
     public async getTenantById(tenantId: string): Promise<Tenant | null> {
         const mapper = await CassandraDriver.getInstance().getModelMapper("tenant");
         const id = types.Uuid.fromString(tenantId);
-        console.log("tenant by id: " + tenantId);
         const result = await mapper.get({tenantId: id});
         return result ? result as Tenant : null; 
     }
 
     public async getTenantLookAndFeel(tenantId: string): Promise<TenantLookAndFeel | null> {
-        const mapper = await CassandraDriver.getInstance().getModelMapper("tenant_look_and_feel");
-        console.log("tenantId is : " + tenantId);
-        console.log('Tenant ID raw:', JSON.stringify(tenantId), typeof tenantId, tenantId.length);
+        const mapper = await CassandraDriver.getInstance().getModelMapper("tenant_look_and_feel");        
         const id = types.Uuid.fromString(tenantId);
         return mapper.get({tenantid: id});
     }

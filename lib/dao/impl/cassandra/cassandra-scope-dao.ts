@@ -9,6 +9,7 @@ class CassandraScopeDao extends ScopeDao {
 
     public async getScope(tenantId?: string, scopeIds?: Array<string>): Promise<Array<Scope>> {
         let ids: Array<string> = [];
+        
         if(tenantId){
             const availScope: Array<TenantAvailableScope> = await this.getTenantAvailableScope(tenantId);
             ids = availScope.map(
@@ -19,10 +20,16 @@ class CassandraScopeDao extends ScopeDao {
             ids = scopeIds;
         }
         const mapper = await CassandraDriver.getInstance().getModelMapper("scope");
-        const results = await mapper.find({
-            scopeId: cassandra.mapping.q.in_(ids)
-        });
-        return results.toArray();
+        if(ids.length > 0){
+            const results = await mapper.find({
+                scopeId: cassandra.mapping.q.in_(ids)
+            });
+            return results.toArray();
+        }
+        else{
+            const results = await mapper.findAll();
+            return results.toArray();
+        }
     }
 
     public async getScopeById(scopeId: string): Promise<Scope | null> {

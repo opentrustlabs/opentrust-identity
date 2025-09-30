@@ -29,9 +29,13 @@ class CassandraAuthorizationGroupDao extends AuthorizationGroupDao {
 
     public async getAuthorizationGroupById(groupId: string): Promise<AuthorizationGroup | null> {
         const mapper = await CassandraDriver.getInstance().getModelMapper("authorization_group");
-        return mapper.get({
-            groupId: types.Uuid.fromString(groupId)
-        });
+        const results: Array<AuthorizationGroup> = (await mapper.find({groupId: groupId}, {limit: 1})).toArray();
+        if(results && results.length > 0){
+            return results[0];
+        }
+        else{
+            return null;
+        }
     }
 
     public async createAuthorizationGroup(group: AuthorizationGroup): Promise<AuthorizationGroup> {
@@ -79,7 +83,7 @@ class CassandraAuthorizationGroupDao extends AuthorizationGroupDao {
 
         const groupMapper = await CassandraDriver.getInstance().getModelMapper("authorization_group");
 
-        const group: AuthorizationGroup | null = await groupMapper.get({groupId: authzGroupUuid});
+        const group: AuthorizationGroup | null = await this.getAuthorizationGroupById(groupId);
         if(group){
             groupMapper.remove({
                 tenantId: types.Uuid.fromString(group.tenantId),

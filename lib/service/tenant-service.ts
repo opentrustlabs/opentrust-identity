@@ -342,31 +342,26 @@ class TenantService {
    
 
     public async getTenantMetaData(tenantId: string): Promise<TenantMetaData | null> {        
-        console.log("checkpoint 1");
+
         const tenant: Tenant | null = await tenantDao.getTenantById(tenantId);
         if(!tenant){
             throw new GraphQLError(ERROR_CODES.EC00008.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00008}});
         }
-        console.log("checkpoint 2");
         
         // Tenant look and feel can be over-ridden by tenant. If none is defined for a tenant, then
         // use the root tenant by default.
         let tenantLookAndFeel: TenantLookAndFeel | null = await tenantDao.getTenantLookAndFeel(tenantId);
-        console.log(this.oidcContext.rootTenant);
         if(tenantLookAndFeel === null && tenantId !== this.oidcContext.rootTenant.tenantId){
             tenantLookAndFeel = await tenantDao.getTenantLookAndFeel(this.oidcContext.rootTenant.tenantId);
         }
-        console.log("checkpoint 3");
 
         const systemSettings: SystemSettings = await tenantDao.getSystemSettings();
-        console.log("checkpoint 4");
         // clear out the details of the system settings. Details are only for admin users with sufficient permissions
         // to view and update
         systemSettings.systemCategories = [];
         
         
         let socialProviders: Array<FederatedOidcProvider> = await federatedOIDCProviderDao.getFederatedOidcProviders(tenantId);
-        console.log("checkpoint 5");
         socialProviders.forEach(
             (p: FederatedOidcProvider) => {
                 p.federatedOIDCProviderClientSecret = "";
@@ -380,7 +375,6 @@ class TenantService {
         );
 
         const captchaConfig: CaptchaConfig | null = await tenantDao.getCaptchaConfig();
-        console.log("checkpoint 6");
         const recaptchaMetaData: RecaptchaMetaData | null = captchaConfig ? 
             {
                 recaptchaSiteKey: captchaConfig.siteKey,

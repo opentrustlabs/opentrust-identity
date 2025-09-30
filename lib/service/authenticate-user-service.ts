@@ -1661,7 +1661,8 @@ class AuthenticateUserService extends IdentityService {
                                 "duress_authentication" :
                                 "device_registered";
                         
-                        const authToken = await jwtServiceUtils.getAuthTokenForOutboundCalls();                        
+                        
+                        const authToken = await jwtServiceUtils.getAuthTokenForOutboundCalls(); 
                         oidcServiceUtils.fireSecurityEvent(securityEventType, this.oidcContext, user, jti, authToken);                        
                     }
                 }

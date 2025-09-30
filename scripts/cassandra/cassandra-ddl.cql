@@ -296,12 +296,13 @@ create TABLE user_terms_and_conditions_accepted (
 );
 
 create TABLE authentication_group (
-    authenticationgroupid UUID PRIMARY KEY,
+    authenticationgroupid UUID,
     tenantid UUID,
     authenticationgroupname TEXT,
     authenticationgroupdescription TEXT,
     defaultgroup BOOLEAN,
-    markfordelete BOOLEAN
+    markfordelete BOOLEAN,
+    PRIMARY KEY (authenticationgroupid, tenantid)
 );
 
 create TABLE authentication_group_by_tenant (
@@ -339,13 +340,14 @@ create TABLE authentication_group_user_rel_by_user (
 );
 
 create TABLE authorization_group (
-    groupid UUID PRIMARY KEY,
+    groupid UUID,
     tenantid UUID,
     groupname TEXT,
     groupdescription TEXT,
     defaultgroup BOOLEAN,
     allowforanonymoususers BOOLEAN,
-    markfordelete BOOLEAN
+    markfordelete BOOLEAN,
+    PRIMARY KEY (groupid, tenantid)
 );
 
 create TABLE authorization_group_by_tenant (

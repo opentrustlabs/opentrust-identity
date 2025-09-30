@@ -5,7 +5,12 @@ export const TENANT_MODEL: {[key: string]: cassandra.mapping.ModelOptions} = {
     "tenant": {
         tables: ["tenant"],
         columns: {
-            "tenantid": "tenantId",
+            "tenantid": {
+                name: "tenantId",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                }
+            },
             "tenantname": "tenantName",
             "tenantdescription": "tenantDescription",
             "enabled": "enabled",
@@ -33,7 +38,12 @@ export const ROOT_TENANT_MODEL: {[key: string]: cassandra.mapping.ModelOptions} 
     "root_tenant": {
         tables: ["root_tenant"],
         columns: {
-            "tenantid": "tenantId",
+            "tenantid": {
+                name: "tenantId",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                }
+            },
             "tenantname": "tenantName",
             "tenantdescription": "tenantDescription",
             "enabled": "enabled",
@@ -73,8 +83,18 @@ export const AUTHENTICATION_GROUP_CLIENT_REL_MODEL:  {[key: string]: cassandra.m
     "authentication_group_client_rel": {
         tables: ["authentication_group_client_rel", "authentication_group_client_rel_by_client"],
         columns: {
-            "authenticationgroupid": "authenticationGroupId",
-			"clientid": "clientId"
+            "authenticationgroupid": {
+                name: "authenticationGroupId",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                }
+            },
+			"clientid": {
+                name: "clientId",
+                toModel(columnValue) {
+                    return columnValue.toString()
+                }
+            }
         }
     }
 };
@@ -83,8 +103,18 @@ export const AUTHENTICATION_GROUP_MODEL:  {[key: string]: cassandra.mapping.Mode
     "authentication_group": {
         tables: ["authentication_group", "authentication_group_by_tenant"],
         columns: {
-            "authenticationgroupid": "authenticationGroupId",
-			"tenantid": "tenantId",
+            "authenticationgroupid": {
+                name: "authenticationGroupId",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                }
+            },
+			"tenantid": {
+                name: "tenantId",
+                toModel(columnValue) {
+                    return columnValue.toString()
+                }
+            },
 			"authenticationgroupname": "authenticationGroupName",
 			"authenticationgroupdescription": "authenticationGroupDescription",
 			"defaultgroup": "defaultGroup",
@@ -97,8 +127,18 @@ export const AUTHENTICATION_GROUP_USER_REL_MODEL:  {[key: string]: cassandra.map
     "authentication_group_user_rel": {
         tables: ["authentication_group_user_rel", "authentication_group_user_rel_by_user"],
         columns: {
-            "authenticationgroupid": "authenticationGroupId",
-			"userid": "userId"
+            "authenticationgroupid": {
+                name: "authenticationGroupId",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                }
+            },
+			"userid": {
+                name: "userId",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                }
+            }
         }
     }
 };
@@ -108,14 +148,29 @@ export const AUTHORIZATION_CODE_DATA_MODEL:  {[key: string]: cassandra.mapping.M
         tables: ["authorization_code_data"],
         columns: {
             "code": "code",
-			"clientid": "clientId",
-			"tenantid": "tenantId",
+			"clientid": {
+                name: "clientId",
+                toModel(columnValue) {
+                    return columnValue.toString()
+                }
+            },
+			"tenantid": {
+                name: "tenantId",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                }
+            },
 			"codechallenge": "codeChallenge",
 			"codechallengemethod": "codeChallengeMethod",
 			"expiresatms": "expiresAtMs",
 			"redirecturi": "redirectUri",
 			"scope": "scope",
-			"userid": "userId"
+			"userid": {
+                name: "userId",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                }
+            }
         }
     }
 };
@@ -127,12 +182,27 @@ export const AUTHORIZATION_DEVICE_CODE_DATA_MODEL:  {[key: string]: cassandra.ma
             "devicecodeid": "deviceCodeId",
 			"devicecode": "deviceCode",
 			"usercode": "userCode",
-			"clientid": "clientId",
-			"tenantid": "tenantId",
+			"clientid": {
+                name: "clientId",
+                toModel(columnValue) {
+                    return columnValue.toString()
+                }
+            },
+			"tenantid": {
+                name: "tenantId",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                }
+            },
 			"expiresatms": "expiresAtMs",
 			"scope": "scope",
 			"authorizationstatus": "authorizationStatus",
-			"userid": "userId"
+			"userid": {
+                name: "userId",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                }
+            }
         }
     }
 };
@@ -141,10 +211,20 @@ export const AUTHORIZATION_GROUP_MODEL:  {[key: string]: cassandra.mapping.Model
     "authorization_group": {
         tables: ["authorization_group", "authorization_group_by_tenant"],
         columns: {
-            "groupid": "groupId",
+            "groupid": {
+                name: "groupId",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                }
+            },
 			"groupname": "groupName",
 			"groupdescription": "groupDescription",
-			"tenantid": "tenantId",
+			"tenantid": {
+                name: "tenantId",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                }
+            },
 			"defaultgroup": "default",
 			"allowforanonymoususers": "allowForAnonymousUsers",
 			"markfordelete": "markForDelete"
@@ -156,9 +236,24 @@ export const AUTHORIZATION_GROUP_SCOPE_REL_MODEL:  {[key: string]: cassandra.map
     "authorization_group_scope_rel": {
         tables: ["authorization_group_scope_rel", "authorization_group_scope_rel_by_tenant"],
         columns: {
-            "groupid": "groupId",
-			"scopeid": "scopeId",
-			"tenantid": "tenantId"
+            "groupid": {
+                name: "groupId",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                }
+            },
+			"scopeid": {
+                name: "scopeId",
+                toModel(columnValue) {
+                    return columnValue.toString()
+                }
+            },
+			"tenantid": {
+                name: "tenantId",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                }
+            }
         }
     }
 };
@@ -167,8 +262,18 @@ export const AUTHORIZATION_GROUP_USER_REL_MODEL:  {[key: string]: cassandra.mapp
     "authorization_group_user_rel": {
         tables: ["authorization_group_user_rel"],
         columns: {
-            "groupid": "groupId",
-			"userid": "userId"
+            "groupid": {
+                name: "groupId",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                }
+            },
+			"userid": {
+                name: "userId",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                }
+            }
         }
     }
 };
@@ -210,8 +315,18 @@ export const CLIENT_AUTH_HISTORY_MODEL:  {[key: string]: cassandra.mapping.Model
         tables: ["client_auth_history"],
         columns: {
             "jti": "jti",
-			"clientid": "clientId",
-			"tenantid": "tenantId",
+			"clientid": {
+                name: "clientId",
+                toModel(columnValue) {
+                    return columnValue.toString()
+                }
+            },
+			"tenantid": {
+                name: "tenantId",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                }
+            },
 			"expiresatseconds": "expiresAtSeconds"
         }
     }
@@ -222,8 +337,18 @@ export const CLIENT_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
     "client": {
         tables: ["client", "client_by_tenant"],
         columns: {
-            "clientid": "clientId",
-			"tenantid": "tenantId",
+            "clientid": {
+                name: "clientId",
+                toModel(columnValue) {
+                    return columnValue.toString()
+                }
+            },
+			"tenantid": {
+                name: "tenantId",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                }
+            },
 			"clientname": "clientName",
 			"clientdescription": "clientDescription",
 			"clientsecret": "clientSecret",
@@ -244,7 +369,12 @@ export const CLIENT_REDIRECT_URI_REL_MODEL:  {[key: string]: cassandra.mapping.M
     "client_redirect_uri_rel": {
         tables: ["client_redirect_uri_rel"],
         columns: {
-            "clientid": "clientId",
+            "clientid": {
+                name: "clientId",
+                toModel(columnValue) {
+                    return columnValue.toString()
+                }
+            },
 			"redirecturi": "redirectUri"
         }
     }
@@ -254,9 +384,24 @@ export const CLIENT_SCOPE_REL_MODEL:  {[key: string]: cassandra.mapping.ModelOpt
     "client_scope_rel": {
         tables: ["client_scope_rel", "client_scope_rel_by_tenant"],
         columns: {
-            "tenantid": "tenantId",
-			"clientid": "clientId",
-			"scopeid": "scopeId"
+            "tenantid": {
+                name: "tenantId",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                }
+            },
+			"clientid": {
+                name: "clientId",
+                toModel(columnValue) {
+                    return columnValue.toString()
+                }
+            },
+			"scopeid": {
+                name: "scopeId",
+                toModel(columnValue) {
+                    return columnValue.toString()
+                }
+            }
         }
     }
 };
@@ -312,12 +457,27 @@ export const FEDERATED_OIDC_AUTHORIZATION_REL_MODEL:  {[key: string]: cassandra.
             "state": "state",
 			"federatedoidcauthorizationreltype": "federatedOIDCAuthorizationRelType",
 			"email": "email",
-			"userid": "userId",
+			"userid": {
+                name: "userId",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                }
+            },
 			"codeverifier": "codeVerifier",
 			"codechallengemethod": "codechallengemethod",
 			"expiresatms": "expiresAtMs",
-			"federatedoidcproviderid": "federatedOIDCProviderId",
-			"initclientid": "initClientId",
+			"federatedoidcproviderid": {
+                name: "federatedOIDCProviderId",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                }
+            },
+			"initclientid": {
+                name: "initClientId",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                }
+            },
 			"initcodechallenge": "initCodeChallenge",
 			"initcodechallengemethod": "initCodeChallengeMethod",
 			"initredirecturi": "initRedirectUri",
@@ -325,7 +485,12 @@ export const FEDERATED_OIDC_AUTHORIZATION_REL_MODEL:  {[key: string]: cassandra.
 			"initresponsetype": "initResponseType",
 			"initscope": "initScope",
 			"initstate": "initState",
-			"inittenantid": "initTenantId"
+			"inittenantid": {
+                name: "initTenantId",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                }
+            }
         }
     }
 };
@@ -334,7 +499,12 @@ export const FEDERATED_OIDC_PROVIDER_DOMAIN_REL_MODEL:  {[key: string]: cassandr
     "federated_oidc_provider_domain_rel": {
         tables: ["federated_oidc_provider_domain_rel", "federated_oidc_provider_domain_rel_by_domain"],
         columns: {
-            "federatedoidcproviderid": "federatedOIDCProviderId",
+            "federatedoidcproviderid": {
+                name: "federatedOIDCProviderId",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                }
+            },
 			"domain": "domain"
         }
     }
@@ -345,7 +515,12 @@ export const FEDERATED_OIDC_PROVIDER_MODEL:  {[key: string]: cassandra.mapping.M
     "federated_oidc_provider": {
         tables: ["federated_oidc_provider"],
         columns: {
-            "federatedoidcproviderid": "federatedOIDCProviderId",
+            "federatedoidcproviderid": {
+                name: "federatedOIDCProviderId",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                }
+            },
 			"federatedoidcprovidername": "federatedOIDCProviderName",
 			"federatedoidcproviderdescription": "federatedOIDCProviderDescription",
 			"federatedoidcprovidertenantid": "federatedOIDCProviderTenantId",
@@ -367,8 +542,18 @@ export const FEDERATED_OIDC_PROVIDER_TENANT_REL_MODEL:  {[key: string]: cassandr
     "federated_oidc_provider_tenant_rel": {
         tables: ["federated_oidc_provider_tenant_rel", "federated_oidc_provider_tenant_rel_by_tenant"],
         columns: {
-            "tenantid": "tenantId",
-			"federatedoidcproviderid": "federatedOIDCProviderId"
+            "tenantid": {
+                name: "tenantId",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                }
+            },
+			"federatedoidcproviderid": {
+                name: "federatedOIDCProviderId",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                }
+            }
         }
     }
 };
@@ -393,8 +578,18 @@ export const PRE_AUTHENTICATION_STATE_MODEL:  {[key: string]: cassandra.mapping.
         tables: ["pre_authentication_state"],
         columns: {
             "pastoken": "token",
-			"tenantid": "tenantId",
-			"clientid": "clientId",
+			"tenantid": {
+                name: "tenantId",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                }
+            },
+			"clientid": {
+                name: "clientId",
+                toModel(columnValue) {
+                    return columnValue.toString()
+                }
+            },
 			"codechallenge": "codeChallenge",
 			"codechallengemethod": "codeChallengeMethod",
 			"expiresatms": "expiresAtMs",
@@ -420,7 +615,12 @@ export const RATE_LIMIT_SERVICE_GROUP_MODEL:  {[key: string]: cassandra.mapping.
     "rate_limit_service_group": {
         tables: ["rate_limit_service_group"],
         columns: {
-            "servicegroupid": "servicegroupid",
+            "servicegroupid": {
+                name: "servicegroupid",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                }
+            },
 			"servicegroupname": "servicegroupname",
 			"servicegroupdescription": "servicegroupdescription",
 			"markfordelete": "markForDelete"
@@ -433,9 +633,24 @@ export const REFRESH_DATA_MODEL:  {[key: string]: cassandra.mapping.ModelOptions
         tables: ["refresh_data", "refresh_data_by_user_id"],
         columns: {
             "refreshtoken": "refreshToken",
-			"tenantid": "tenantId",
-			"userid": "userId",
-			"clientid": "clientId",
+			"tenantid": {
+                name: "tenantId",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                }
+            },
+			"userid": {
+                name: "userId",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                }
+            },
+			"clientid": {
+                name: "clientId",
+                toModel(columnValue) {
+                    return columnValue.toString()
+                }
+            },
 			"redirecturi": "redirecturi",
 			"refreshcount": "refreshCount",
 			"refreshtokenclienttype": "refreshTokenClientType",
@@ -463,7 +678,12 @@ export const SCOPE_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
     "scope": {
         tables: ["scope", "scope_by_scope_name"],
         columns: {
-            "scopeid": "scopeId",
+            "scopeid": {
+                name: "scopeId",
+                toModel(columnValue) {
+                    return columnValue.toString()
+                }
+            },
 			"scopename": "scopeName",
 			"scopedescription": "scopeDescription",
 			"scopeuse": "scopeUse",
@@ -489,7 +709,12 @@ export const SIGNING_KEY_MODEL:  {[key: string]: cassandra.mapping.ModelOptions}
     "signing_key": {
         tables: ["signing_key", "signing_key_by_tenant"],
         columns: {
-            "keyid": "keyId",
+            "keyid": {
+                name: "keyId",
+                toModel(columnValue) {
+                    return columnValue.toString()
+                }
+            },
 			"keytype": "keyType",
 			"keyname": "keyName",
 			"keyuse": "keyUse",
@@ -497,7 +722,12 @@ export const SIGNING_KEY_MODEL:  {[key: string]: cassandra.mapping.ModelOptions}
 			"expiresatms": "expiresAtMs",
 			"createdatms": "createdAtMs",
 			"keystatus": "keyStatus",
-			"tenantid": "tenantId",
+			"tenantid": {
+                name: "tenantId",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                }
+            },
 			"markfordelete": "markForDelete",
 			"privatekeypkcs8": "privateKeyPkcs8",
 			"publickey": "publicKey",
@@ -522,10 +752,20 @@ export const SYSTEM_SETTINGS_MODEL:  {[key: string]: cassandra.mapping.ModelOpti
     "system_settings": {
         tables: ["system_settings"],
         columns: {
-            "systemid": "systemId",
+            "systemid": {
+                name: "systemId",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                }
+            },
 			"allowrecoveryemail": "allowRecoveryEmail",
 			"allowduresspassword": "allowDuressPassword",
-			"rootclientid": "rootClientId",
+			"rootclientid": {
+                name: "rootClientId",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                }
+            },
 			"enableportalaslegacyidp": "enablePortalAsLegacyIdp",
 			"auditrecordretentionperioddays": "auditRecordRetentionPeriodDays",
 			"noreplyemail": "noReplyEmail",
@@ -538,7 +778,12 @@ export const TENANT_ANONYMOUS_USER_CONFIGURATION_MODEL:  {[key: string]: cassand
     "tenant_anonymous_user_configuration": {
         tables: ["tenant_anonymous_user_configuration"],
         columns: {
-            "tenantid": "tenantId",
+            "tenantid": {
+                name: "tenantId",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                }
+            },
 			"defaultcountrycode": "defaultcountrycode",
 			"defaultlanguagecode": "defaultlanguagecode",
             "tokenttlseconds": "tokenttlseconds"
@@ -550,8 +795,18 @@ export const TENANT_AVAILABLE_SCOPE_MODEL:  {[key: string]: cassandra.mapping.Mo
     "tenant_available_scope": {
         tables: ["tenant_available_scope", "tenant_available_scope_by_scope"],
         columns: {
-            "tenantid": "tenantId",
-			"scopeid": "scopeId",
+            "tenantid": {
+                name: "tenantId",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                }
+            },
+			"scopeid": {
+                name: "scopeId",
+                toModel(columnValue) {
+                    return columnValue.toString()
+                }
+            },
 			"accessruleid": "accessRuleId"
         }
     }
@@ -561,7 +816,12 @@ export const TENANT_LEGACY_USER_MIGRATION_CONFIG_MODEL:  {[key: string]: cassand
     "tenant_legacy_user_migration_config": {
         tables: ["tenant_legacy_user_migration_config"],
         columns: {
-            "tenantid": "tenantId",
+            "tenantid": {
+                name: "tenantId",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                }
+            },
 			"authenticationuri": "authenticationUri",
 			"userprofileuri": "userProfileUri",
 			"usernamecheckuri": "usernameCheckUri"
@@ -573,7 +833,12 @@ export const TENANT_LOGIN_FAILURE_POLICY_MODEL:  {[key: string]: cassandra.mappi
     "tenant_login_failure_policy": {
         tables: ["tenant_login_failure_policy"],
         columns: {
-            "tenantid": "tenantId",
+            "tenantid": {
+                name: "tenantId",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                }
+            },
 			"loginfailurepolicytype": "loginFailurePolicyType",
 			"failurethreshold": "failureThreshold",
 			"pausedurationminutes": "pauseDurationMinutes",
@@ -586,7 +851,12 @@ export const TENANT_LOOK_AND_FEEL_MODEL:  {[key: string]: cassandra.mapping.Mode
     "tenant_look_and_feel": {
         tables: ["tenant_look_and_feel"],
         columns: {
-            "tenantid": "tenantid",
+            "tenantid": {
+                name: "tenantId",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                }
+            },
 			"adminheaderbackgroundcolor": "adminheaderbackgroundcolor",
 			"adminheadertext": "adminheadertext",
 			"adminheadertextcolor": "adminheadertextcolor",
@@ -604,7 +874,12 @@ export const TENANT_MANAGEMENT_DOMAIN_REL_MODEL:  {[key: string]: cassandra.mapp
     "tenant_management_domain_rel": {
         tables: ["tenant_management_domain_rel", "tenant_management_domain_rel_by_domain"],
         columns: {
-            "tenantid": "tenantId",
+            "tenantid": {
+                name: "tenantId",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                }
+            },
 			"domain": "domain"
         }
     }
@@ -614,7 +889,12 @@ export const TENANT_PASSWORD_CONFIG_MODEL:  {[key: string]: cassandra.mapping.Mo
     "tenant_password_config": {
         tables: ["tenant_password_config"],
         columns: {
-            "tenantid": "tenantId",
+            "tenantid": {
+                name: "tenantId",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                }
+            },
 			"passwordhashingalgorithm": "passwordHashingAlgorithm",
 			"passwordmaxlength": "passwordMaxLength",
 			"passwordminlength": "passwordMinLength",
@@ -636,8 +916,18 @@ export const TENANT_RATE_LIMIT_REL_MODEL:  {[key: string]: cassandra.mapping.Mod
     "tenant_rate_limit_rel": {
         tables: ["tenant_rate_limit_rel", "tenant_rate_limit_rel_by_tenant"],
         columns: {
-			"servicegroupid": "servicegroupid",
-			"tenantid": "tenantId",
+			"servicegroupid": {
+                name: "servicegroupid",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                }
+            },
+			"tenantid": {
+                name: "tenantId",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                }
+            },
 			"allowunlimitedrate": "allowUnlimitedRate",
 			"ratelimit": "rateLimit",
 			"ratelimitperiodminutes": "rateLimitPeriodMinutes"
@@ -651,7 +941,12 @@ export const TENANT_RESTRICTED_AUTHENTICATION_DOMAIN_REL_MODEL:  {[key: string]:
     "tenant_restricted_authentication_domain_rel": {
         tables: ["tenant_restricted_authentication_domain_rel"],
         columns: {
-			"tenantid": "tenantId",
+			"tenantid": {
+                name: "tenantId",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                }
+            },
 			"domain": "domain"
         }
     }
@@ -661,7 +956,12 @@ export const USER_AUTHENTICATION_HISTORY_MODEL:  {[key: string]: cassandra.mappi
     "user_authentication_history": {
         tables: ["user_authentication_history"],
         columns: {
-			"userid": "userId",
+			"userid": {
+                name: "userId",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                }
+            },
 			"lastauthenticationatms": "lastAuthenticationAtMs"
         }
     }
@@ -671,8 +971,18 @@ export const USER_AUTHENTICATION_STATE_MODEL:  {[key: string]: cassandra.mapping
     "user_authentication_state": {
         tables: ["user_authentication_state"],
         columns: {
-			"userid": "userId",
-			"tenantid": "tenantId",
+			"userid": {
+                name: "userId",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                }
+            },
+			"tenantid": {
+                name: "tenantId",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                }
+            },
 			"authenticationsessiontoken": "authenticationSessionToken",
 			"authenticationstate": "authenticationState",
 			"authenticationstateorder": "authenticationStateOrder",
@@ -689,7 +999,12 @@ export const USER_CREDENTIAL_MODEL:  {[key: string]: cassandra.mapping.ModelOpti
     "user_credential": {
         tables: ["user_credential"],
         columns: {
-            "userid": "userId",
+            "userid": {
+                name: "userId",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                }
+            },
 			"datecreatedms": "dateCreatedMs",
 			"hashedpassword": "hashedPassword",
 			"hashingalgorithm": "hashingAlgorithm",
@@ -702,7 +1017,12 @@ export const USER_DURESS_CREDENTIAL_MODEL:  {[key: string]: cassandra.mapping.Mo
     "user_duress_credential": {
         tables: ["user_duress_credential"],
         columns: {
-            "userid": "userId",
+            "userid": {
+                name: "userId",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                }
+            },
 			"datecreatedms": "dateCreatedMs",
 			"hashedpassword": "hashedPassword",
 			"hashingalgorithm": "hashingAlgorithm",
@@ -715,7 +1035,12 @@ export const USER_EMAIL_RECOVERY_MODEL:  {[key: string]: cassandra.mapping.Model
     "user_email_recovery": {
         tables: ["user_email_recovery", "user_email_recovery_by_email"],
         columns: {
-            "userid": "userId",
+            "userid": {
+                name: "userId",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                }
+            },
 			"email": "email",
 			"emailverified": "emailVerified"
         }
@@ -726,7 +1051,12 @@ export const USERS_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
     "users": {
         tables: ["users"],
         columns: {
-            "userid": "userId",
+            "userid": {
+                name: "userId",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                }
+            },
 			"address": "address",
 			"addressline1": "addressLine1",
 			"city": "city",
@@ -754,7 +1084,12 @@ export const USERS_BY_EMAIL_MODEL:  {[key: string]: cassandra.mapping.ModelOptio
     "users_by_email": {
         tables: ["users_by_email"],
         columns: {
-            "userid": "userId",
+            "userid": {
+                name: "userId",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                }
+            },
 			"address": "address",
 			"addressline1": "addressLine1",
 			"city": "city",
@@ -782,7 +1117,12 @@ export const USERS_BY_FEDERATED_OIDC_ID_MODEL:  {[key: string]: cassandra.mappin
     "users_by_federated_oidc_id": {
         tables: ["users_by_federated_oidc_id"],
         columns: {
-            "userid": "userId",
+            "userid": {
+                name: "userId",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                }
+            },
 			"address": "address",
 			"addressline1": "addressLine1",
 			"city": "city",
@@ -810,7 +1150,12 @@ export const USERS_BY_PHONE_NUMBER_MODEL:  {[key: string]: cassandra.mapping.Mod
     "users_by_phone_number": {
         tables: ["users_by_phone_number"],
         columns: {
-            "userid": "userId",
+            "userid": {
+                name: "userId",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                }
+            },
 			"address": "address",
 			"addressline1": "addressLine1",
 			"city": "city",
@@ -838,7 +1183,12 @@ export const USER_FAILED_LOGIN_MODEL:  {[key: string]: cassandra.mapping.ModelOp
     "user_failed_login": {
         tables: ["user_failed_login"],
         columns: {
-            "userid": "userId",
+            "userid": {
+                name: "userId",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                }
+            },
 			"failureatms": "failureAtMs",
 			"nextloginnotbefore": "nextLoginNotBefore",
 			"failurecount": "failureCount"
@@ -851,7 +1201,12 @@ export const USER_FIDO2_CHALLENGE_MODEL:  {[key: string]: cassandra.mapping.Mode
     "user_fido2_challenge": {
         tables: ["user_fido2_challenge"],
         columns: {
-            "userid": "userId",
+            "userid": {
+                name: "userId",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                }
+            },
 			"challenge": "challenge",
 			"issuedatms": "issuedAtMs",
 			"expiresatms": "expiresAtMs"
@@ -863,7 +1218,12 @@ export const USER_FIDO2_COUNTER_REL_MODEL:  {[key: string]: cassandra.mapping.Mo
     "user_fido2_counter_rel": {
         tables: ["user_fido2_counter_rel"],
         columns: {
-            "userid": "userId",
+            "userid": {
+                name: "userId",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                }
+            },
 			"fido2Counter": "fido2Counter"
         }
     }
@@ -873,7 +1233,12 @@ export const USER_MFA_REL_MODEL:  {[key: string]: cassandra.mapping.ModelOptions
     "user_mfa_rel": {
         tables: ["user_mfa_rel"],
         columns: {
-            "userid": "userId",
+            "userid": {
+                name: "userId",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                }
+            },
 			"mfatype": "mfaType",
 			"primarymfa": "primaryMfa",
 			"totpsecret": "totpSecret",
@@ -891,7 +1256,12 @@ export const USER_PROFILE_EMAIL_CHANGE_STATE_MODEL:  {[key: string]: cassandra.m
     "user_profile_email_change_state": {
         tables: ["user_profile_email_change_state", "user_profile_email_change_state_by_session_token"],
         columns: {
-            "userid": "userId",
+            "userid": {
+                name: "userId",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                }
+            },
 			"changeemailsessiontoken": "changeEmailSessionToken",
 			"emailchangestate": "emailChangeState",
 			"email": "email",
@@ -907,9 +1277,19 @@ export const USER_REGISTRATION_STATE_MODEL:  {[key: string]: cassandra.mapping.M
     "user_registration_state": {
         tables: ["user_registration_state", "user_registration_state_by_email"],
         columns: {
-            "userid": "userId",
+            "userid": {
+                name: "userId",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                }
+            },
 			"email": "email",
-			"tenantid": "tenantId",
+			"tenantid": {
+                name: "tenantId",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                }
+            },
 			"registrationsessiontoken": "registrationSessionToken",
 			"registrationstate": "registrationState",
 			"registrationstateorder": "registrationStateOrder",
@@ -925,9 +1305,24 @@ export const USER_SCOPE_REL_MODEL:  {[key: string]: cassandra.mapping.ModelOptio
     "user_scope_rel": {
         tables: ["user_scope_rel", "user_scope_rel_by_tenant"],
         columns: {
-            "userid": "userId",
-			"scopeid": "scopeId",
-			"tenantid": "tenantId"
+            "userid": {
+                name: "userId",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                }
+            },
+			"scopeid": {
+                name: "scopeId",
+                toModel(columnValue) {
+                    return columnValue.toString()
+                }
+            },
+			"tenantid": {
+                name: "tenantId",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                }
+            }
         }
     }
 };
@@ -936,8 +1331,18 @@ export const USER_TENANT_REL_MODEL:  {[key: string]: cassandra.mapping.ModelOpti
     "user_tenant_rel": {
         tables: ["user_tenant_rel", "user_tenant_rel_by_tenant"],
         columns: {
-            "tenantid": "tenantId",
-			"userid": "userId",
+            "tenantid": {
+                name: "tenantId",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                }
+            },
+			"userid": {
+                name: "userId",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                }
+            },
 			"reltype": "relType",
 			"enabled": "enabled",
         }
@@ -948,8 +1353,18 @@ export const USER_TERMS_AND_CONDITIONS_ACCEPTED_MODEL:  {[key: string]: cassandr
     "user_terms_and_conditions_accepted": {
         tables: ["user_terms_and_conditions_accepted"],
         columns: {
-            "userid": "userId",
-			"tenantid": "tenantId",
+            "userid": {
+                name: "userId",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                }
+            },
+			"tenantid": {
+                name: "tenantId",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                }
+            },
 			"acceptedatms": "acceptedAtMs"
         }
     }
@@ -960,11 +1375,17 @@ export const USER_VERIFICATION_TOKEN_MODEL:  {[key: string]: cassandra.mapping.M
         tables: ["user_verification_token"],
         columns: {
             "uvtoken": "token",
-			"userid": "userId",
+			"userid": {
+                name: "userId",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                }
+            },
 			"verificationtype": "verificationType",
 			"issuedatms": "issuedAtMS",
 			"expiresatms": "expiresAtMS"
         }
     }
 };
+
 

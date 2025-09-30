@@ -45,7 +45,13 @@ class CassandraAuthenticationGroupDao extends AuthenticationGroupDao {
 
     public async getAuthenticationGroupById(authenticationGroupId: string): Promise<AuthenticationGroup | null> {
         const mapper = await CassandraDriver.getInstance().getModelMapper("authentication_group");
-        return mapper.get({authenticationGroupId: types.Uuid.fromString(authenticationGroupId)});
+        const results: Array<AuthenticationGroup> = (await mapper.find({authenticationGroupId: authenticationGroupId}, {limit: 1})).toArray();
+        if(results && results.length > 0){
+            return results[0];
+        }
+        else{
+            return null;
+        }        
     }
 
     public async createAuthenticationGroup(authenticationGroup: AuthenticationGroup): Promise<AuthenticationGroup> {
@@ -90,12 +96,10 @@ class CassandraAuthenticationGroupDao extends AuthenticationGroupDao {
         }
 
         //  3.  Finally delete the group itself.
-        const authnGroupMapper = await CassandraDriver.getInstance().getModelMapper("authentication_group");
-        const g: AuthenticationGroup = await authnGroupMapper.get({
-            authenticationGroupId: types.Uuid.fromString(authenticationGroupId)
-        });
-
+        
+        const g: AuthenticationGroup | null = await this.getAuthenticationGroupById(authenticationGroupId);
         if(g){
+            const authnGroupMapper = await CassandraDriver.getInstance().getModelMapper("authentication_group");
             await authnGroupMapper.remove({
                 authenticationGroupId: authnGroupUuid,
                 tenantId: types.Uuid.fromString(g.tenantId)

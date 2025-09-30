@@ -29,8 +29,15 @@ class CassandraClientDao extends ClientDao {
     }
 
     public async getClientById(clientId: string): Promise<Client | null> {
+
         const mapper = await CassandraDriver.getInstance().getModelMapper("client");
-        return mapper.get({clientId: types.Uuid.fromString(clientId)});
+        const results: Array<Client> = (await mapper.find({clientId: clientId}, {limit: 1})).toArray();
+        if(results && results.length > 0){
+            return results[0];
+        }
+        else{
+            return null;
+        }
     }
     
     public async createClient(client: Client): Promise<Client> {

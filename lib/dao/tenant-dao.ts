@@ -1,9 +1,27 @@
 import { TenantAnonymousUserConfiguration, TenantLoginFailurePolicy, Tenant, TenantLegacyUserMigrationConfig, TenantLookAndFeel, TenantManagementDomainRel, TenantPasswordConfig, TenantRestrictedAuthenticationDomainRel, CaptchaConfig, SystemSettings, SystemCategory } from "@/graphql/generated/graphql-types";
 import { DEFAULT_HTTP_TIMEOUT_MS } from "@/utils/consts";
-
+import NodeCache from "node-cache";
 
 abstract class TenantDao {
 
+    rootTenantCache = new NodeCache({
+        stdTTL: 900, // 15 minutes
+        useClones: false,
+        checkperiod: 1800, 
+    });
+
+    public getRootTenantFromCache(): Tenant | null {
+        if(this.rootTenantCache.has("root_tenant")){
+            return this.rootTenantCache.get("root_tenant") as Tenant;
+        }
+        else {
+            return null;
+        }
+    }
+
+    public setRootTenantOnCache(tenant: Tenant){
+        this.rootTenantCache.set("root_tenant", tenant);
+    }
 
     /**
      * This should throw an error if the root tenant is not found. For system initialization,
