@@ -1,7 +1,8 @@
-import { AuthorizationGroup, AuthorizationGroupUserRel } from "@/graphql/generated/graphql-types";
+import { AuthorizationGroup, AuthorizationGroupScopeRel, AuthorizationGroupUserRel } from "@/graphql/generated/graphql-types";
 import AuthorizationGroupDao from "../../authorization-group-dao";
 import CassandraDriver from "@/lib/data-sources/cassandra";
 import cassandra from "cassandra-driver";
+import { types } from "cassandra-driver";
 
 class CassandraAuthorizationGroupDao extends AuthorizationGroupDao {
 
@@ -29,7 +30,7 @@ class CassandraAuthorizationGroupDao extends AuthorizationGroupDao {
     public async getAuthorizationGroupById(groupId: string): Promise<AuthorizationGroup | null> {
         const mapper = await CassandraDriver.getInstance().getModelMapper("authorization_group");
         return mapper.get({
-            groupId: groupId
+            groupId: types.Uuid.fromString(groupId)
         });
     }
 
@@ -48,7 +49,20 @@ class CassandraAuthorizationGroupDao extends AuthorizationGroupDao {
     public async deleteAuthorizationGroup(groupId: string): Promise<void> {
 
         const scopeMapper = await CassandraDriver.getInstance().getModelMapper("authorization_group_scope_rel");
-        await scopeMapper.remove({groupId: groupId});
+
+        const authzGroupUuid = types.Uuid.fromString(groupId);
+
+        const scopeResults: Array<AuthorizationGroupScopeRel> = (await scopeMapper.find({
+            groupId: groupId
+        })).toArray();
+
+        for(let i = 0; i < scopeResults.length; i++){
+            scopeMapper.remove({
+                groupId: authzGroupUuid,
+                tenantId: types.Uuid.fromString(scopeResults[i].tenantId),
+                scopeId: types.Uuid.fromString(scopeResults[i].scopeId)
+            });
+        }
 
         const groupUserRelMapper = await CassandraDriver.getInstance().getModelMapper("authorization_group_user_rel");
         let hasMore: boolean = true;
@@ -56,19 +70,20 @@ class CassandraAuthorizationGroupDao extends AuthorizationGroupDao {
             const results: Array<AuthorizationGroupUserRel> = (await groupUserRelMapper.find({groupId: groupId}, {limit: 1000})).toArray()
             for(let i = 0; i < results.length; i++){
                 groupUserRelMapper.remove({
-                    userId: results[i].userId,
-                    groupId: results[i].groupId
+                    userId: types.Uuid.fromString(results[i].userId),
+                    groupId: authzGroupUuid
                 })
             }
             hasMore = results.length === 1000;
         }
 
         const groupMapper = await CassandraDriver.getInstance().getModelMapper("authorization_group");
-        const group: AuthorizationGroup | null = await groupMapper.get({groupId: groupId});
+
+        const group: AuthorizationGroup | null = await groupMapper.get({groupId: authzGroupUuid});
         if(group){
             groupMapper.remove({
-                tenantId: group.tenantId,
-                groupId: group.groupId
+                tenantId: types.Uuid.fromString(group.tenantId),
+                groupId: authzGroupUuid
             });
         }       
         
@@ -87,8 +102,8 @@ class CassandraAuthorizationGroupDao extends AuthorizationGroupDao {
     public async removeUserFromAuthorizationGroup(userId: string, groupId: string): Promise<void> {
         const mapper = await CassandraDriver.getInstance().getModelMapper("authorization_group_user_rel");
         await mapper.remove({
-            userId: userId,
-            groupId: groupId
+            userId: types.Uuid.fromString(userId),
+            groupId: types.Uuid.fromString(groupId)
         })
     }
 

@@ -191,6 +191,7 @@ class SystemInitializationService {
             response.systemInitializationErrors = [errorDetail];
             return response;
         }
+        console.log("checkpoint 1");
 
         // ************************************************************************************************
         // Create the root tenant
@@ -216,6 +217,7 @@ class SystemInitializationService {
             verifyEmailOnSelfRegistration: systemInitializationInput.rootTenantInput.verifyEmailOnSelfRegistration
         };
         await tenantDao.createRootTenant(tenant);
+        console.log("checkpoint 2");
 
         // ************************************************************************************************
         // Create the root client
@@ -244,6 +246,7 @@ class SystemInitializationService {
         }        
         client.clientSecret = encryptedClientSecret;
         await clientDao.createClient(client);
+        console.log("checkpoint 3");
 
         // ************************************************************************************************
         // Create the root authorization group and optionally a read-only authz group
@@ -258,6 +261,7 @@ class SystemInitializationService {
             groupDescription: systemInitializationInput.rootAuthorizationGroupInput.groupDescription
         };
         await authorizationGroupDao.createAuthorizationGroup(rootAuthzGroup);
+        console.log("checkpoint 4");
 
         let readOnlyAuthzGroup: AuthorizationGroup | null = null;
         if(systemInitializationInput.rootReadOnlyAuthorizationGroupInput){
@@ -271,6 +275,7 @@ class SystemInitializationService {
                 tenantId: rootTenantId
             }
             await authorizationGroupDao.createAuthorizationGroup(readOnlyAuthzGroup);
+            console.log("checkpoint 5");
         };
 
         // ************************************************************************************************
@@ -293,6 +298,7 @@ class SystemInitializationService {
             middleName: systemInitializationInput.rootUserCreateInput.middleName,
             phoneNumber: systemInitializationInput.rootUserCreateInput.phoneNumber
         };
+        console.log("checkpoint 6");
         await identityDao.createUser(user);        
         const userCredential: UserCredential = generateUserCredential(user.userId, systemInitializationInput.rootUserCreateInput.password, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS);
         await identityDao.addUserCredential(userCredential);
@@ -675,6 +681,7 @@ class SystemInitializationService {
                 arr.push(ERROR_CODES.EC00209);
             }
         }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         catch(err: any){
             logWithDetails("error", `Error querying search index for initialization: ${err.message}`, {});
             arr.push(ERROR_CODES.EC00210);

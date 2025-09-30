@@ -2,6 +2,7 @@ import { Tenant, TenantLookAndFeel, TenantManagementDomainRel, TenantAnonymousUs
 import TenantDao from "../../tenant-dao";
 import CassandraDriver from "@/lib/data-sources/cassandra";
 import cassandra from "cassandra-driver";
+import { types } from "cassandra-driver";
 import { DEFAULT_AUDIT_RECORD_RETENTION_PERIOD_DAYS, OPENTRUST_IDENTITY_VERSION, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 
 
@@ -15,13 +16,13 @@ class CassandraTenantDao extends TenantDao {
     }
 
     public async createRootTenant(tenant: Tenant): Promise<Tenant> {
-        tenant.tenantType = TENANT_TYPE_ROOT_TENANT;
+        tenant.tenantType = TENANT_TYPE_ROOT_TENANT;        
         const rootTenantMapper = await CassandraDriver.getInstance().getModelMapper("root_tenant");
         await rootTenantMapper.insert(tenant);
-
+        
         const tenantMapper = await CassandraDriver.getInstance().getModelMapper("tenant");
         await tenantMapper.insert(tenant);
-
+        
         return tenant;
     }
 
@@ -47,14 +48,18 @@ class CassandraTenantDao extends TenantDao {
 
     public async getTenantById(tenantId: string): Promise<Tenant | null> {
         const mapper = await CassandraDriver.getInstance().getModelMapper("tenant");
-        const result = await mapper.get({tenantId: tenantId});        
+        const id = types.Uuid.fromString(tenantId);
+        console.log("tenant by id: " + tenantId);
+        const result = await mapper.get({tenantId: id});
         return result ? result as Tenant : null; 
     }
 
-
     public async getTenantLookAndFeel(tenantId: string): Promise<TenantLookAndFeel | null> {
         const mapper = await CassandraDriver.getInstance().getModelMapper("tenant_look_and_feel");
-        return mapper.get({tenantId: tenantId});
+        console.log("tenantId is : " + tenantId);
+        console.log('Tenant ID raw:', JSON.stringify(tenantId), typeof tenantId, tenantId.length);
+        const id = types.Uuid.fromString(tenantId);
+        return mapper.get({tenantid: id});
     }
 
     public async createTenant(tenant: Tenant): Promise<Tenant | null> {
@@ -73,13 +78,24 @@ class CassandraTenantDao extends TenantDao {
 
     public async deleteTenant(tenantId: string): Promise<void> {
         const tenantMapper = await CassandraDriver.getInstance().getModelMapper("tenant");
-        await tenantMapper.remove({tenantId: tenantId});
+        const id = types.Uuid.fromString(tenantId);
+        await tenantMapper.remove({tenantId: id});
         return;
     }
 
 
     public async getDomainTenantManagementRels(tenantId?: string, domain?: string): Promise<Array<TenantManagementDomainRel>> {
-        throw new Error("Method not implemented.");
+        const mapper = await CassandraDriver.getInstance().getModelMapper("tenant_management_domain_rel");
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const queryParams: any = {};
+        if(tenantId){
+            queryParams.tenantId = tenantId;
+        }
+        if(domain){
+            queryParams.domain = domain;
+        }
+        const results = await mapper.find(queryParams);
+        return results.toArray();        
     }
 
     public async addDomainToTenantManagement(tenantId: string, domain: string): Promise<TenantManagementDomainRel | null> {
@@ -95,7 +111,7 @@ class CassandraTenantDao extends TenantDao {
     public async removeDomainFromTenantManagement(tenantId: string, domain: string): Promise<TenantManagementDomainRel | null> {
         const mapper = await CassandraDriver.getInstance().getModelMapper("tenant_management_domain_rel");
         await mapper.remove({
-            tenantId: tenantId,
+            tenantId: types.Uuid.fromString(tenantId),
             domain: domain
         });
         return {
@@ -106,7 +122,8 @@ class CassandraTenantDao extends TenantDao {
 
     public async getAnonymousUserConfiguration(tenantId: string): Promise<TenantAnonymousUserConfiguration | null> {
         const mapper = await CassandraDriver.getInstance().getModelMapper("tenant_anonymous_user_configuration");
-        const c: TenantAnonymousUserConfiguration | null = await mapper.get({tenantId: tenantId});
+        const id = types.Uuid.fromString(tenantId);
+        const c: TenantAnonymousUserConfiguration | null = await mapper.get({tenantId: id});
         return c;
     }
 
@@ -125,7 +142,8 @@ class CassandraTenantDao extends TenantDao {
 
     public async deleteAnonymousUserConfiguration(tenantId: string): Promise<void> {
         const mapper = await CassandraDriver.getInstance().getModelMapper("tenant_anonymous_user_configuration");
-        await mapper.remove({tenantId: tenantId})
+        const id = types.Uuid.fromString(tenantId);
+        await mapper.remove({tenantId: id})
     }
 
     public async createTenantLookAndFeel(tenantLookAndFeel: TenantLookAndFeel): Promise<TenantLookAndFeel> {
@@ -142,7 +160,8 @@ class CassandraTenantDao extends TenantDao {
     
     public async deleteTenantLookAndFeel(tenantId: string): Promise<void> {
         const mapper = await CassandraDriver.getInstance().getModelMapper("tenant_look_and_feel");
-        await mapper.remove({tenantid: tenantId});
+        const id = types.Uuid.fromString(tenantId);
+        await mapper.remove({tenantid: id});
         return;
     }
 
@@ -160,18 +179,21 @@ class CassandraTenantDao extends TenantDao {
 
     public async getTenantPasswordConfig(tenantId: string): Promise<TenantPasswordConfig | null> {
         const mapper = await CassandraDriver.getInstance().getModelMapper("tenant_password_config");
-        return mapper.get({tenantId: tenantId});
+        const id = types.Uuid.fromString(tenantId);
+        return mapper.get({tenantId: id});
     }
 
     public async removePasswordConfigFromTenant(tenantId: string): Promise<void> {
         const mapper = await CassandraDriver.getInstance().getModelMapper("tenant_password_config");
-        await mapper.remove({tenantId: tenantId});
+        const id = types.Uuid.fromString(tenantId);
+        await mapper.remove({tenantId: id});
         return;
     }
 
     public async getLoginFailurePolicy(tenantId: string): Promise<TenantLoginFailurePolicy | null> {
         const mapper = await CassandraDriver.getInstance().getModelMapper("tenant_login_failure_policy");
-        return mapper.get({tenantId: tenantId});
+        const id = types.Uuid.fromString(tenantId);
+        return mapper.get({tenantId: id});
     }
 
     public async createLoginFailurePolicy(loginFailurePolicy: TenantLoginFailurePolicy): Promise<TenantLoginFailurePolicy> {
@@ -188,13 +210,15 @@ class CassandraTenantDao extends TenantDao {
 
     public async removeLoginFailurePolicy(tenantId: string): Promise<void> {
         const mapper = await CassandraDriver.getInstance().getModelMapper("tenant_login_failure_policy");
-        await mapper.remove({tenantId: tenantId});
+        const id = types.Uuid.fromString(tenantId);
+        await mapper.remove({tenantId: id});
         return;
     }
 
     public async getLegacyUserMigrationConfiguration(tenantId: string): Promise<TenantLegacyUserMigrationConfig | null> {
         const mapper = await CassandraDriver.getInstance().getModelMapper("tenant_legacy_user_migration_config");
-        return mapper.get({tenantId: tenantId});
+        const id = types.Uuid.fromString(tenantId);
+        return mapper.get({tenantId: id});
     }
 
     public async createTenantLegacyUserMigrationConfiguration(tenantLegacyUserMigrationConfig: TenantLegacyUserMigrationConfig): Promise<TenantLegacyUserMigrationConfig | null> {
@@ -211,7 +235,8 @@ class CassandraTenantDao extends TenantDao {
 
     public async removeLegacyUserMigrationConfiguration(tenantId: string): Promise<void> {
         const mapper = await CassandraDriver.getInstance().getModelMapper("tenant_legacy_user_migration_config");
-        await mapper.remove({tenantId: tenantId});
+        const id = types.Uuid.fromString(tenantId);
+        await mapper.remove({tenantId: id});
         return;
     }
 
@@ -233,19 +258,22 @@ class CassandraTenantDao extends TenantDao {
 
     public async removeDomainFromTenantRestrictedAuthentication(tenantId: string, domain: string): Promise<void> {
         const mapper = await CassandraDriver.getInstance().getModelMapper("tenant_restricted_authentication_domain_rel");
-        await mapper.remove({tenantId: tenantId, domain: domain});
+        const id = types.Uuid.fromString(tenantId);
+        await mapper.remove({tenantId: id, domain: domain});
         return;
     }
 
     public async removeAllUsersFromTenant(tenantId: string): Promise<void> {
         const mapper = await CassandraDriver.getInstance().getModelMapper("user_tenant_rel");
 
+        const tenantUuid = types.Uuid.fromString(tenantId);
         let hasMore: boolean = true;
         while(hasMore === true){
             const resultList: cassandra.mapping.Result<UserTenantRel> = await mapper.find({tenantId: tenantId}, {}, {fetchSize: 2000});
             const arr: Array<UserTenantRel> = resultList.toArray();
             for(let i = 0; i < arr.length; i++){
-                await mapper.remove({usreId: arr[i].userId, tenantId: arr[i].tenantId});
+                const userUuid = types.Uuid.fromString(tenantId);                
+                await mapper.remove({userId: userUuid, tenantId: tenantUuid});
             }
             hasMore = arr.length === 2000;
         }

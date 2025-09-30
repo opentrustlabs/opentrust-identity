@@ -579,7 +579,7 @@ class OpenSearchDao implements SearchDao {
             objecttype: SearchResultType.Key,
             owningtenantid: key.tenantId,
             email: "",
-            enabled: key.status === SIGNING_KEY_STATUS_ACTIVE,
+            enabled: key.keyStatus === SIGNING_KEY_STATUS_ACTIVE,
             owningclientid: "",
             subtype: key.keyType,
             subtypekey: key.keyType

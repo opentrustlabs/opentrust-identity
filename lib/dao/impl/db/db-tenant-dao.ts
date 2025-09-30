@@ -1,6 +1,6 @@
-import { Tenant, TenantManagementDomainRel, TenantAnonymousUserConfiguration, TenantLookAndFeel, TenantPasswordConfig, TenantLoginFailurePolicy, TenantLegacyUserMigrationConfig, TenantRestrictedAuthenticationDomainRel, CaptchaConfig, SystemSettings, SystemSettingsUpdateInput, SystemCategory } from "@/graphql/generated/graphql-types";
+import { Tenant, TenantManagementDomainRel, TenantAnonymousUserConfiguration, TenantLookAndFeel, TenantPasswordConfig, TenantLoginFailurePolicy, TenantLegacyUserMigrationConfig, TenantRestrictedAuthenticationDomainRel, CaptchaConfig, SystemSettings, SystemCategory } from "@/graphql/generated/graphql-types";
 import TenantDao from "../../tenant-dao";
-import { DEFAULT_AUDIT_RECORD_RETENTION_PERIOD_DAYS, DEFAULT_HTTP_TIMEOUT_MS, OPENTRUST_IDENTITY_VERSION, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
+import { DEFAULT_AUDIT_RECORD_RETENTION_PERIOD_DAYS, OPENTRUST_IDENTITY_VERSION, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import TenantManagementDomainRelEntity from "@/lib/entities/tenant-management-domain-rel-entity";
 import TenantAnonymousUserConfigurationEntity from "@/lib/entities/tenant-anonymous-user-configuration-entity";
 import TenantPasswordConfigEntity from "@/lib/entities/tenant-password-config-entity";
@@ -550,8 +550,7 @@ class DBTenantDao extends TenantDao {
     }
    
     
-    public async updateSystemSettings(systemSettings: SystemSettings): Promise<SystemSettings> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
+    public async updateSystemSettings(systemSettings: SystemSettings): Promise<SystemSettings> {        
         const entity: SystemSettingsEntity | null = await (await DBDriver.getInstance().getSystemSettingsEntity()).findOne();
         if(entity){
             await (await DBDriver.getInstance().getSystemSettingsEntity()).update(systemSettings, {

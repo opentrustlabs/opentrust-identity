@@ -1,17 +1,17 @@
-import { AuthenticationGroup, Client, Tenant } from '@/graphql/generated/graphql-types';
+// import { AuthenticationGroup, Client, Tenant } from '@/graphql/generated/graphql-types';
 import AuthenticationGroupDao from '@/lib/dao/authentication-group-dao';
-import ClientDao from '@/lib/dao/client-dao';
+// import ClientDao from '@/lib/dao/client-dao';
 import CassandraAuthenticationGroupDao from '@/lib/dao/impl/cassandra/cassandra-authentication-group-dao';
-import CassandraClientDao from '@/lib/dao/impl/cassandra/cassandra-client-dao';
-import CassandraTenantDao from '@/lib/dao/impl/cassandra/cassandra-tenant-dao'
-import TenantDao from '@/lib/dao/tenant-dao';
+// import CassandraClientDao from '@/lib/dao/impl/cassandra/cassandra-client-dao';
+// import CassandraTenantDao from '@/lib/dao/impl/cassandra/cassandra-tenant-dao'
+// import TenantDao from '@/lib/dao/tenant-dao';
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { randomUUID } from 'node:crypto';
+// import { randomUUID } from 'node:crypto';
 
 
 
-const tenantDao: TenantDao = new CassandraTenantDao();
-const clientDao: ClientDao = new CassandraClientDao();
+// const tenantDao: TenantDao = new CassandraTenantDao();
+// const clientDao: ClientDao = new CassandraClientDao();
 const authenticationGroupDao: AuthenticationGroupDao = new CassandraAuthenticationGroupDao();
 
 export default async function handler(

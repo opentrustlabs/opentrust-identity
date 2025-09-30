@@ -2,6 +2,7 @@ import { RateLimitServiceGroup, TenantRateLimitRelView, TenantRateLimitRel, Tena
 import RateLimitDao from "../../rate-limit-dao";
 import CassandraDriver from "@/lib/data-sources/cassandra";
 import cassandra from "cassandra-driver";
+import { types } from "cassandra-driver";
 
 class CassandraRateLimitDao extends RateLimitDao {
 
@@ -23,7 +24,7 @@ class CassandraRateLimitDao extends RateLimitDao {
     public async getRateLimitServiceGroupById(serviceGroupId: string): Promise<RateLimitServiceGroup | null> {
         const mapper = await CassandraDriver.getInstance().getModelMapper("rate_limit_service_group");
         return mapper.get({
-            servicegroupid: serviceGroupId
+            servicegroupid: types.Uuid.fromString(serviceGroupId)
         });
     }
 
@@ -109,16 +110,18 @@ class CassandraRateLimitDao extends RateLimitDao {
     public async deleteRateLimitServiceGroup(serviceGroupId: string): Promise<void> {
         const rateLimitTenantRelMapper = await CassandraDriver.getInstance().getModelMapper("tenant_rate_limit_rel");
         const arr: Array<TenantRateLimitRel> = await this.getRateLimitTenantRel(null, serviceGroupId);
+
+        const serviceGroupUuid = types.Uuid.fromString(serviceGroupId);
         for(let i = 0; i < arr.length; i++){
             rateLimitTenantRelMapper.remove({
-                servicegroupid: arr[i].servicegroupid,
-                tenantId: arr[i].tenantId
+                servicegroupid: serviceGroupUuid,
+                tenantId: types.Uuid.fromString(arr[i].tenantId)
             });
         }
 
         const serviceGroupMapper = await CassandraDriver.getInstance().getModelMapper("rate_limit_service_group");
         await serviceGroupMapper.remove({
-            servicegroupid: serviceGroupId
+            servicegroupid: serviceGroupUuid
         });
 
         return;
@@ -170,8 +173,8 @@ class CassandraRateLimitDao extends RateLimitDao {
     public async removeRateLimitFromTenant(tenantId: string, serviceGroupId: string): Promise<void> {
         const mapper = await CassandraDriver.getInstance().getModelMapper("tenant_rate_limit_rel");
         await mapper.remove({
-            tenantId: tenantId,
-            servicegroupid: serviceGroupId
+            tenantId: types.Uuid.fromString(tenantId),
+            servicegroupid: types.Uuid.fromString(serviceGroupId)
         });
         return;
     }

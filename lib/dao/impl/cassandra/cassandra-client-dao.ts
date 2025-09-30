@@ -2,6 +2,7 @@ import { AuthenticationGroupClientRel, Client, ClientAuthHistory, Contact } from
 import ClientDao from "../../client-dao";
 import CassandraDriver from "@/lib/data-sources/cassandra";
 import cassandra from "cassandra-driver";
+import { types } from "cassandra-driver";
 
 class CassandraClientDao extends ClientDao {
     
@@ -29,7 +30,7 @@ class CassandraClientDao extends ClientDao {
 
     public async getClientById(clientId: string): Promise<Client | null> {
         const mapper = await CassandraDriver.getInstance().getModelMapper("client");
-        return mapper.get({clientId: clientId});
+        return mapper.get({clientId: types.Uuid.fromString(clientId)});
     }
     
     public async createClient(client: Client): Promise<Client> {
@@ -46,15 +47,17 @@ class CassandraClientDao extends ClientDao {
 
     public async deleteClient(clientId: string): Promise<void> {
         const cruMapper = await CassandraDriver.getInstance().getModelMapper("client_redirect_uri_rel");
-        await cruMapper.remove({clientId: clientId});
+
+        const clientUuid = types.Uuid.fromString(clientId);
+        await cruMapper.remove({clientId: clientUuid});
 
         const agcrMapper = await CassandraDriver.getInstance().getModelMapper("authentication_group_client_rel");
         const resultList: cassandra.mapping.Result<AuthenticationGroupClientRel> = await agcrMapper.find({clientId: clientId});
         const arr: Array<AuthenticationGroupClientRel> = resultList.toArray();
         for(let i = 0; i < arr.length; i++){
             await agcrMapper.remove({
-                clientId: arr[i].clientId,
-                authenticationGroupId: arr[i].authenticationGroupId
+                clientId: clientUuid,
+                authenticationGroupId: types.Uuid.fromString(arr[i].authenticationGroupId)
             });
         }
 
@@ -67,19 +70,19 @@ class CassandraClientDao extends ClientDao {
         const cArr: Array<Contact> = contactResults.toArray();
         for(let i = 0; i < cArr.length; i++){
             await cMapper.remove({
-                objectid: cArr[i].objectid, 
-                contactid: cArr[i].contactid
+                objectid: clientUuid, 
+                contactid: types.Uuid.fromString(cArr[i].contactid)
             });
         }
 
         const mapper = await CassandraDriver.getInstance().getModelMapper("client");
         const client: Client = await mapper.get({
-            clientId: clientId
+            clientId: types.Uuid.fromString(clientId)
         });
         if(client){
             await mapper.remove({
-                clientId: clientId,
-                tenantId: client.tenantId
+                clientId: clientUuid,
+                tenantId: types.Uuid.fromString(client.tenantId)
             });
         }
         
@@ -107,7 +110,7 @@ class CassandraClientDao extends ClientDao {
     public async removeRedirectURI(clientId: string, uri: string): Promise<void> {
         const mapper = await CassandraDriver.getInstance().getModelMapper("client_redirect_uri_rel");
         await mapper.remove({
-            clientId: clientId,
+            clientId: types.Uuid.fromString(clientId),
             redirectUri: uri
         });
     }

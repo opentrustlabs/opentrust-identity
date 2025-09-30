@@ -1,7 +1,8 @@
 import { Scope, TenantAvailableScope, ClientScopeRel, AuthorizationGroupScopeRel, UserScopeRel } from "@/graphql/generated/graphql-types";
 import ScopeDao from "../../scope-dao";
 import CassandraDriver from "@/lib/data-sources/cassandra";
-import cassandra, { auth } from "cassandra-driver";
+import cassandra from "cassandra-driver";
+import { types } from "cassandra-driver";
 
 class CassandraScopeDao extends ScopeDao {
 
@@ -26,16 +27,20 @@ class CassandraScopeDao extends ScopeDao {
 
     public async getScopeById(scopeId: string): Promise<Scope | null> {
         const mapper = await CassandraDriver.getInstance().getModelMapper("scope");
-        return mapper.get({
-            scopeId: scopeId
-        })
+        const results: Array<Scope> = (await mapper.find({scopeId: scopeId}, {limit: 1})).toArray();
+        if(results && results.length > 0){
+            return results[0];
+        }
+        return null;        
     }
 
     public async getScopeByScopeName(scopeName: string): Promise<Scope | null> {
         const mapper = await CassandraDriver.getInstance().getModelMapper("scope");
-        return mapper.get({
-            scopeName: scopeName
-        })
+        const results: Array<Scope> = (await mapper.find({scopeName: scopeName}, {limit: 1})).toArray();
+        if(results && results.length > 0){
+            return results[0];
+        }
+        return null;
     }
 
     public async createScope(scope: Scope): Promise<Scope> {
@@ -60,7 +65,7 @@ class CassandraScopeDao extends ScopeDao {
         if(scope){
             const mapper = await CassandraDriver.getInstance().getModelMapper("scope");
             await mapper.remove({
-                scopeId: scopeId,
+                scopeId: types.Uuid.fromString(scopeId),
                 scopeName: scope.scopeName
             });
         }
@@ -76,11 +81,15 @@ class CassandraScopeDao extends ScopeDao {
             scopeId: scopeId
         });
         const clientScopeRels: Array<ClientScopeRel> = clientScopeRelResults.toArray();
+
+        const tenantUuid = types.Uuid.fromString(tenantId);
+        const scopeUuid = types.Uuid.fromString(scopeId);
+
         for(let i = 0; i < clientScopeRels.length; i++){
             clientScopeMapper.remove({
-                clientId: clientScopeRels[i].clientId,
-                tenantId: tenantId,
-                scopeId: scopeId
+                clientId: types.Uuid.fromString(clientScopeRels[i].clientId),
+                tenantId: tenantUuid,
+                scopeId: scopeUuid
             });
         }
 
@@ -92,9 +101,9 @@ class CassandraScopeDao extends ScopeDao {
         const authzScopeRels: Array<AuthorizationGroupScopeRel> = authzScopeRelResults.toArray();
         for(let i = 0; i < authzScopeRels.length; i++){
             authzScopeMapper.remove({
-                tenantId: tenantId,
-                scopeId: scopeId,
-                groupId: authzScopeRels[i].groupId
+                tenantId: tenantUuid,
+                scopeId: scopeUuid,
+                groupId: types.Uuid.fromString(authzScopeRels[i].groupId)
             });
         }
         
@@ -106,16 +115,16 @@ class CassandraScopeDao extends ScopeDao {
         const userScopeRels: Array<UserScopeRel> = userScopeRelResults.toArray();
         for(let i = 0; i < userScopeRels.length; i++){
             userScopeMapper.remove({
-                tenantId: tenantId,
-                scopeId: scopeId,
-                userId: userScopeRels[i].userId
+                tenantId: tenantUuid,
+                scopeId: scopeUuid,
+                userId: types.Uuid.fromString(userScopeRels[i].userId)
             });
         }
         
         const mapper = await CassandraDriver.getInstance().getModelMapper("tenant_available_scope");
         await mapper.remove({
-            tenantId: tenantId,
-            scopeId: scopeId
+            tenantId: tenantUuid,
+            scopeId: scopeUuid
         });        
         
         return Promise.resolve();
@@ -147,16 +156,7 @@ class CassandraScopeDao extends ScopeDao {
         return tenantAvailableScope;
     }
 
-    // public async removeScopeFromTenant(tenantId: string, scopeId: string): Promise<void> {
-    //     const mapper = await CassandraDriver.getInstance().getModelMapper("tenant_available_scope");
-    //     await mapper.remove({
-    //         tenantId: tenantId,
-    //         scopeId: scopeId
-    //     });
-    //     return;
-    // }
-
-    public async getClientScopeRels(clientId: string): Promise<Array<ClientScopeRel>> {
+      public async getClientScopeRels(clientId: string): Promise<Array<ClientScopeRel>> {
         const mapper = await CassandraDriver.getInstance().getModelMapper("client_scope_rel");
         const results = await mapper.find({
             clientId: clientId
@@ -178,9 +178,9 @@ class CassandraScopeDao extends ScopeDao {
     public async removeScopeFromClient(tenantId: string, clientId: string, scopeId: string): Promise<void> {
         const mapper = await CassandraDriver.getInstance().getModelMapper("client_scope_rel");
         await mapper.remove({
-            clientId: clientId,
-            tenantId: tenantId,
-            scopeId: scopeId
+            clientId: types.Uuid.fromString(clientId),
+            tenantId: types.Uuid.fromString(tenantId),
+            scopeId: types.Uuid.fromString(scopeId)
         });
         return;
     }
@@ -208,9 +208,9 @@ class CassandraScopeDao extends ScopeDao {
     public async removeScopeFromAuthorizationGroup(tenantId: string, authorizationGroupId: string, scopeId: string): Promise<void> {
         const mapper = await CassandraDriver.getInstance().getModelMapper("authorization_group_scope_rel");
         await mapper.remove({
-            groupId: authorizationGroupId,
-            tenantId: tenantId,
-            scopeId: scopeId
+            groupId: types.Uuid.fromString(authorizationGroupId),
+            tenantId: types.Uuid.fromString(tenantId),
+            scopeId: types.Uuid.fromString(scopeId)
         });
         return;
     }
@@ -238,9 +238,9 @@ class CassandraScopeDao extends ScopeDao {
     public async removeScopeFromUser(tenantId: string, userId: string, scopeId: string): Promise<void> {
         const mapper = await CassandraDriver.getInstance().getModelMapper("user_scope_rel");
         await mapper.remove({
-            tenantId: tenantId,
-            userId: userId,
-            scopeId: scopeId
+            tenantId: types.Uuid.fromString(tenantId),
+            userId: types.Uuid.fromString(userId),
+            scopeId: types.Uuid.fromString(scopeId)
         });
         return;
     }

@@ -1,7 +1,7 @@
 import { SigningKey } from "@/graphql/generated/graphql-types";
 import SigningKeysDao from "../../signing-keys-dao";
 import CassandraDriver from "@/lib/data-sources/cassandra";
-
+import { types } from "cassandra-driver";
 
 class CassandraSigningKeysDao extends SigningKeysDao {
 
@@ -22,7 +22,7 @@ class CassandraSigningKeysDao extends SigningKeysDao {
 
     public async getSigningKeyById(keyId: string): Promise<SigningKey | null> {
         const mapper = await CassandraDriver.getInstance().getModelMapper("signing_key");
-        return mapper.get({keyId: keyId});
+        return mapper.get({keyId: types.Uuid.fromString(keyId)});
     }
 
     public async createSigningKey(key: SigningKey): Promise<SigningKey> {
@@ -42,8 +42,8 @@ class CassandraSigningKeysDao extends SigningKeysDao {
         if(key){
             const mapper = await CassandraDriver.getInstance().getModelMapper("signing_key");
             await mapper.remove({
-                keyId: key.keyId,
-                tenantId: key.tenantId
+                keyId: types.Uuid.fromString(key.keyId),
+                tenantId: types.Uuid.fromString(key.tenantId)
             });
         }
         return;

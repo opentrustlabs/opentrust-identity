@@ -1,6 +1,7 @@
 import { Contact } from "@/graphql/generated/graphql-types";
 import ContactDao from "../../contact-dao";
 import CassandraDriver from "@/lib/data-sources/cassandra";
+import { types } from "cassandra-driver";
 
 class CassandraContactDao extends ContactDao {
 
@@ -14,7 +15,7 @@ class CassandraContactDao extends ContactDao {
 
     public async getContactById(contactId: string): Promise<Contact | null> {
         const mapper = await CassandraDriver.getInstance().getModelMapper("contact");
-        return mapper.get({contactId: contactId});        
+        return mapper.get({contactId: types.Uuid.fromString(contactId)});
     }
 
     public async addContact(contact: Contact): Promise<Contact> {
@@ -26,7 +27,7 @@ class CassandraContactDao extends ContactDao {
     public async removeContact(contactId: string): Promise<void> {
         const mapper = await CassandraDriver.getInstance().getModelMapper("contact");
         await mapper.remove({
-            contactId: contactId
+            contactId: types.Uuid.fromString(contactId)
         })
         return;
     }

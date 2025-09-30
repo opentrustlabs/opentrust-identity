@@ -14,7 +14,6 @@ import ContactConfiguration from "../contacts/contact-configuration";
 import TenantHighlight from "../tenants/tenant-highlight";
 import { useMutation } from "@apollo/client";
 import { SIGNING_KEY_UPDATE_MUTATION } from "@/graphql/mutations/oidc-mutations";
-import { SIGNING_KEY_DETAIL_QUERY } from "@/graphql/queries/oidc-queries";
 import { formatISODateFromMs } from "@/utils/date-utils";
 import { useClipboardCopyContext } from "../contexts/clipboard-copy-context";
 import SecretViewerDialog from "../dialogs/secret-viewer-dialog";

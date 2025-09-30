@@ -1,4 +1,4 @@
-import { TenantAnonymousUserConfiguration, TenantLoginFailurePolicy, Tenant, TenantLegacyUserMigrationConfig, TenantLookAndFeel, TenantManagementDomainRel, TenantPasswordConfig, TenantRestrictedAuthenticationDomainRel, CaptchaConfig, SystemSettings, SystemSettingsUpdateInput, SystemCategory } from "@/graphql/generated/graphql-types";
+import { TenantAnonymousUserConfiguration, TenantLoginFailurePolicy, Tenant, TenantLegacyUserMigrationConfig, TenantLookAndFeel, TenantManagementDomainRel, TenantPasswordConfig, TenantRestrictedAuthenticationDomainRel, CaptchaConfig, SystemSettings, SystemCategory } from "@/graphql/generated/graphql-types";
 import { DEFAULT_HTTP_TIMEOUT_MS } from "@/utils/consts";
 
 

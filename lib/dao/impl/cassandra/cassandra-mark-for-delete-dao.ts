@@ -1,7 +1,7 @@
 import { MarkForDelete, DeletionStatus } from "@/graphql/generated/graphql-types";
 import MarkForDeleteDao from "../../mark-for-delete-dao";
 import CassandraDriver from "@/lib/data-sources/cassandra";
-
+import { types } from "cassandra-driver";
 
 class CassandraMarkForDeleteDao extends MarkForDeleteDao {
 
@@ -14,7 +14,7 @@ class CassandraMarkForDeleteDao extends MarkForDeleteDao {
     public async getMarkForDeleteById(markForDeleteId: string): Promise<MarkForDelete | null> {
         const mapper = await CassandraDriver.getInstance().getModelMapper("mark_for_delete");
         return mapper.get({
-            markForDeleteId: markForDeleteId
+            markForDeleteId: types.Uuid.fromString(markForDeleteId)
         });
     }
 
@@ -31,7 +31,7 @@ class CassandraMarkForDeleteDao extends MarkForDeleteDao {
             const m: MarkForDelete = results[i];
             if(! (m.completedDate === null || m.completedDate === undefined) ){
                 mapper.remove({
-                    markForDeleteId: m.markForDeleteId
+                    markForDeleteId: types.Uuid.fromString(m.markForDeleteId)
                 });
             }
         }
@@ -66,14 +66,16 @@ class CassandraMarkForDeleteDao extends MarkForDeleteDao {
 
     public async getDeletionStatus(markForDeleteId: string): Promise<Array<DeletionStatus>> {
         const mapper = await CassandraDriver.getInstance().getModelMapper("deletion_status");
-        return mapper.get({markForDeleteId: markForDeleteId});
+        return mapper.get({markForDeleteId: types.Uuid.fromString(markForDeleteId)});
     }
 
     public async startStep(markForDeleteId: string, step: string): Promise<void> {
+        console.log(`${markForDeleteId} : ${step}`);
         throw new Error("Method not implemented.");
     }
 
     public async completeStep(markForDeleteId: string, step: string): Promise<void> {
+        console.log(`${markForDeleteId} : ${step}`);
         throw new Error("Method not implemented.");
     }
 

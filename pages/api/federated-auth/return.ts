@@ -205,8 +205,8 @@ async function handleFederatedAuth(state: string, code: string, res: NextApiResp
         return;
     }
 
-    let userByFederatedSubjectId: User | null = await identityDao.getUserBy("federatedoidcproviderid", userInfo.sub);    
-    let userByEmail: User | null = await identityDao.getUserBy("email", userInfo.email);    
+    const userByFederatedSubjectId: User | null = await identityDao.getUserBy("federatedoidcproviderid", userInfo.sub);    
+    const userByEmail: User | null = await identityDao.getUserBy("email", userInfo.email);    
     let userByPhone: User | null = null;
     if(userInfo.phone_number){
         userByPhone = await identityDao.getUserBy("phone", userInfo.phone_number);
@@ -250,7 +250,7 @@ async function handleFederatedAuth(state: string, code: string, res: NextApiResp
     // userinfo
     else if(userByFederatedSubjectId !== null && userByEmail === null){
         userByFederatedSubjectId.email = userInfo.email;
-        userByFederatedSubjectId.domain = getDomainFromEmail(userInfo.email),
+        userByFederatedSubjectId.domain = getDomainFromEmail(userInfo.email);
         userByFederatedSubjectId.emailVerified = userInfo.email_verified;
         userByFederatedSubjectId.firstName = userInfo.given_name;
         userByFederatedSubjectId.lastName = userInfo.family_name;

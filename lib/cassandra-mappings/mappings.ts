@@ -1,7 +1,6 @@
 import cassandra from "cassandra-driver";
 
 
-export const TENANT_MODEL_NAME = "tenant";
 export const TENANT_MODEL: {[key: string]: cassandra.mapping.ModelOptions} = {
     "tenant": {
         tables: ["tenant"],
