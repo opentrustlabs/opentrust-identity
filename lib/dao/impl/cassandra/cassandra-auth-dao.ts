@@ -1,6 +1,7 @@
 import { PreAuthenticationState, AuthorizationCodeData, RefreshData, AuthorizationDeviceCodeData, FederatedOidcAuthorizationRel, FederatedAuthTest } from "@/graphql/generated/graphql-types";
 import AuthDao, { AuthorizationCodeType } from "../../auth-dao";
 import CassandraDriver from "@/lib/data-sources/cassandra";
+import { types } from "cassandra-driver";
 
 
 class CassandraAuthDao extends AuthDao {
@@ -61,7 +62,7 @@ class CassandraAuthDao extends AuthDao {
 
     public async getRefreshDataByUserId(userId: string): Promise<Array<RefreshData>> {
         const mapper = await CassandraDriver.getInstance().getModelMapper("refresh_data");
-        return mapper.get({userId: userId});
+        return mapper.get({userId: types.Uuid.fromString(userId)});
     }
 
     public async deleteRefreshData(userId: string, tenantId: string, clientId: string): Promise<void> {

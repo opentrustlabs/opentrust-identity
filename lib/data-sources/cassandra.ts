@@ -2,6 +2,7 @@
 import cassandra from "cassandra-driver";
 import { 
     TENANT_MODEL,
+    ROOT_TENANT_MODEL,
     ACCESS_RULE_MODEL,
     AUTHENTICATION_GROUP_CLIENT_REL_MODEL,
     AUTHENTICATION_GROUP_MODEL,
@@ -78,6 +79,8 @@ const {
 declare global {
     // eslint-disable-next-line no-var
     var cassandraClient: cassandra.Client | undefined;
+    
+    // eslint-disable-next-line no-var
     var mapper:  cassandra.mapping.Mapper | undefined;
 }
 
@@ -111,6 +114,7 @@ class CassandraDriver {
                 {
                     models: {
                         ...TENANT_MODEL,
+                        ...ROOT_TENANT_MODEL,
                         ...ACCESS_RULE_MODEL,
                         ...AUTHENTICATION_GROUP_CLIENT_REL_MODEL,
                         ...AUTHENTICATION_GROUP_MODEL,

@@ -1,7 +1,6 @@
 import { AccessRule } from "@/graphql/generated/graphql-types";
 import AccessRuleDao from "../../access-rule-dao";
 import DBDriver from "@/lib/data-sources/sequelize-db";
-import { Sequelize } from "@sequelize/core";
 import AccessRuleEntity from "@/lib/entities/access-rule-entity";
 
 class DBAccessRuleDao extends AccessRuleDao {

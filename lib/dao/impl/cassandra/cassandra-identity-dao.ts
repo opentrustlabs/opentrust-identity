@@ -1,6 +1,7 @@
 import { UserFailedLogin, UserMfaRel, Fido2Challenge, User, UserCredential, UserTenantRel, UserAuthenticationState, UserRegistrationState, ProfileEmailChangeState, UserTermsAndConditionsAccepted, UserRecoveryEmail } from "@/graphql/generated/graphql-types";
 import IdentityDao, { UserLookupType } from "../../identity-dao";
 import CassandraDriver from "@/lib/data-sources/cassandra";
+import { types } from "cassandra-driver";
 import { MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, VERIFICATION_TOKEN_TYPE_PASSWORD_RESET, VERIFICATION_TOKEN_TYPE_VALIDATE_EMAIL } from "@/utils/consts";
 
 
@@ -24,7 +25,7 @@ class CassandraIdentityDao extends IdentityDao {
     public async removeFailedLogin(userId: string, failureAtMs: number): Promise<void> {
         const mapper = await CassandraDriver.getInstance().getModelMapper("user_failed_login");
         await mapper.remove({
-            userId: userId,
+            userId: types.Uuid.fromString(userId),
             failureAtMs: failureAtMs
         });
         return;
@@ -36,7 +37,7 @@ class CassandraIdentityDao extends IdentityDao {
             const mapper = await CassandraDriver.getInstance().getModelMapper("user_failed_login");
             for(let i = 0; i < failedLogins.length; i++){
                 await mapper.remove({
-                    userId: userId,
+                    userId: types.Uuid.fromString(userId),
                     failureAtMs: failedLogins[i].failureAtMs
                 })
             }
@@ -52,7 +53,7 @@ class CassandraIdentityDao extends IdentityDao {
     public async deleteTOTP(userId: string): Promise<void> {
         const mapper = await CassandraDriver.getInstance().getModelMapper("user_mfa_rel");
         await mapper.remove({
-            userId: userId,
+            userId: types.Uuid.fromString(userId),
             mfaType: MFA_AUTH_TYPE_TIME_BASED_OTP
         });
         return;
@@ -61,7 +62,7 @@ class CassandraIdentityDao extends IdentityDao {
     public async getTOTP(userId: string): Promise<UserMfaRel | null> {
         const mapper = await CassandraDriver.getInstance().getModelMapper("user_mfa_rel");
         return mapper.get({
-            userId: userId,
+            userId: types.Uuid.fromString(userId),
             mfaType: MFA_AUTH_TYPE_TIME_BASED_OTP
         });
     }
@@ -74,7 +75,7 @@ class CassandraIdentityDao extends IdentityDao {
     public async getFIDOKey(userId: string): Promise<UserMfaRel | null> {
         const mapper = await CassandraDriver.getInstance().getModelMapper("user_mfa_rel");
         return mapper.get({
-            userId: userId,
+            userId: types.Uuid.fromString(userId),
             mfaType: MFA_AUTH_TYPE_FIDO2
         });
     }
@@ -82,7 +83,7 @@ class CassandraIdentityDao extends IdentityDao {
     public async deleteFIDOKey(userId: string): Promise<void> {
         const mapper = await CassandraDriver.getInstance().getModelMapper("user_mfa_rel");
         await mapper.remove({
-            userId: userId,
+            userId: types.Uuid.fromString(userId),
             mfaType: MFA_AUTH_TYPE_FIDO2
         });
         return;
@@ -91,7 +92,7 @@ class CassandraIdentityDao extends IdentityDao {
     public async getFIDO2Challenge(userId: string): Promise<Fido2Challenge | null> {
         const mapper = await CassandraDriver.getInstance().getModelMapper("user_fido2_challenge");
         return mapper.get({
-            userId: userId
+            userId: types.Uuid.fromString(userId)
         });
     }
 
@@ -105,7 +106,7 @@ class CassandraIdentityDao extends IdentityDao {
     public async deleteFIDO2Challenge(userId: string): Promise<void> {
         const mapper = await CassandraDriver.getInstance().getModelMapper("user_fido2_challenge");
         await mapper.remove({
-            userId: userId
+            userId: types.Uuid.fromString(userId)
         });
     }
 
@@ -119,7 +120,7 @@ class CassandraIdentityDao extends IdentityDao {
 
     public async getFido2Count(userId: string): Promise<number | null> {
         const mapper = await CassandraDriver.getInstance().getModelMapper("user_fido2_counter_rel");
-        const result: {userId: string, fido2Counter: number} | null = await mapper.get({userId: userId});
+        const result: {userId: string, fido2Counter: number} | null = await mapper.get({userId: types.Uuid.fromString(userId)});
         if(result){
             return result.fido2Counter;
         }
@@ -149,7 +150,7 @@ class CassandraIdentityDao extends IdentityDao {
     public async deleteFido2Count(userId: string): Promise<void> {
         const mapper = await CassandraDriver.getInstance().getModelMapper("user_fido2_counter_rel");
         await mapper.remove({
-            userId: userId
+            userId: types.Uuid.fromString(userId)
         });
         return;
     }
@@ -162,9 +163,9 @@ class CassandraIdentityDao extends IdentityDao {
             });
         }
         else if(userLookupType === "id"){
-            const mapper = await CassandraDriver.getInstance().getModelMapper("users_by_email");            
+            const mapper = await CassandraDriver.getInstance().getModelMapper("users");            
             return mapper.get({
-                userId: value
+                userId: types.Uuid.fromString(value)
             });
         }
         else if(userLookupType === "federatedoidcproviderid"){
@@ -268,7 +269,7 @@ class CassandraIdentityDao extends IdentityDao {
         const mapper = await CassandraDriver.getInstance().getModelMapper("user_credential");
         if(dateCreatedMs){
             await mapper.remove({
-                userId: userId,
+                userId: types.Uuid.fromString(userId),
                 dateCreatedMs: dateCreatedMs
             });
         }
@@ -276,7 +277,7 @@ class CassandraIdentityDao extends IdentityDao {
             const arr: Array<UserCredential> = await this.getUserCredentials(userId);
             for(let i = 0; i < arr.length; i++){
                 await mapper.remove({
-                    userId: userId,
+                    userId: types.Uuid.fromString(userId),
                     dateCreatedMs: arr[i].dateCreatedMs
                 });
             }
@@ -346,7 +347,8 @@ class CassandraIdentityDao extends IdentityDao {
     }
 
     public async deleteUser(userId: string): Promise<void> {
-        throw new Error("Method not implemented.");
+        // TODO
+        console.log(userId);
     }
 
     public async passwordProhibited(password: string): Promise<boolean> {
@@ -389,8 +391,8 @@ class CassandraIdentityDao extends IdentityDao {
     public async removeUserFromTenant(tenantId: string, userId: string): Promise<void> {
         const mapper =  await CassandraDriver.getInstance().getModelMapper("user_tenant_rel");
         await mapper.remove({
-            tenantId: tenantId,
-            userId: userId
+            tenantId: types.Uuid.fromString(tenantId),
+            userId: types.Uuid.fromString(userId)
         });
         return;
     }
@@ -398,8 +400,8 @@ class CassandraIdentityDao extends IdentityDao {
     public async getUserTenantRel(tenantId: string, userId: string): Promise<UserTenantRel | null> {
         const mapper =  await CassandraDriver.getInstance().getModelMapper("user_tenant_rel");
         return mapper.get({
-            tenantId: tenantId,
-            userId: userId
+            tenantId: types.Uuid.fromString(tenantId),
+            userId: types.Uuid.fromString(userId)
         });        
     }
 
@@ -488,18 +490,22 @@ class CassandraIdentityDao extends IdentityDao {
     }
 
     public async getProfileEmailChangeStates(changeStateToken: string): Promise<Array<ProfileEmailChangeState>> {
+        console.log(changeStateToken);
         throw new Error("Method not implemented.");
     }
 
     public async createProfileEmailChangeStates(arrEmailChangeStates: Array<ProfileEmailChangeState>): Promise<Array<ProfileEmailChangeState>> {
+        console.log(arrEmailChangeStates);
         throw new Error("Method not implemented.");
     }
 
     public async updateProfileEmailChangeState(profileEmailChangeState: ProfileEmailChangeState): Promise<ProfileEmailChangeState> {
+        console.log(profileEmailChangeState);
         throw new Error("Method not implemented.");
     }
 
     public async deleteProfileEmailChangeState(profileEmailChangeState: ProfileEmailChangeState): Promise<void> {
+        console.log(profileEmailChangeState);
         throw new Error("Method not implemented.");
     }
 
@@ -517,16 +523,16 @@ class CassandraIdentityDao extends IdentityDao {
     public async getUserTermsAndConditionsAccepted(userId: string, tenantId: string): Promise<UserTermsAndConditionsAccepted | null> {
         const mapper =  await CassandraDriver.getInstance().getModelMapper("user_terms_and_conditions_accepted");
         return mapper.get({
-            tenantId: tenantId,
-            userId: userId
+            tenantId: types.Uuid.fromString(tenantId),
+            userId: types.Uuid.fromString(userId)
         });
     }
 
     public async deleteUserTermsAndConditionsAccepted(userId: string, tenantId: string): Promise<void> {
         const mapper =  await CassandraDriver.getInstance().getModelMapper("user_terms_and_conditions_accepted");
         await mapper.remove({
-            tenantId: tenantId,
-            userId: userId
+            tenantId: types.Uuid.fromString(tenantId),
+            userId: types.Uuid.fromString(userId)
         });
         return;
     }
@@ -562,7 +568,7 @@ class CassandraIdentityDao extends IdentityDao {
         if(userRecoveryEmail){
             const mapper =  await CassandraDriver.getInstance().getModelMapper("user_email_recovery");
             await mapper.remove({
-                userId: userId,
+                userId: types.Uuid.fromString(userId),
                 email: userRecoveryEmail.email
             });
         }
@@ -570,7 +576,7 @@ class CassandraIdentityDao extends IdentityDao {
     }
 
     public async addUserDuressCredential(userCredential: UserCredential): Promise<void> {
-        const mapper =  await CassandraDriver.getInstance().getModelMapper("user_duress_credential");
+        const mapper = await CassandraDriver.getInstance().getModelMapper("user_duress_credential");
         await mapper.insert(userCredential);
         return;
     }
@@ -578,14 +584,14 @@ class CassandraIdentityDao extends IdentityDao {
     public async getUserDuressCredential(userId: string): Promise<UserCredential | null> {
         const mapper =  await CassandraDriver.getInstance().getModelMapper("user_duress_credential");
         return mapper.get({
-            userId: userId
+            userId: types.Uuid.fromString(userId)
         })
     }
 
     public async deleteUserDuressCredential(userId: string): Promise<void> {
         const mapper =  await CassandraDriver.getInstance().getModelMapper("user_duress_credential");
         await mapper.remove({
-            userId: userId
+            userId: types.Uuid.fromString(userId)
         })
     }
 
@@ -630,7 +636,7 @@ class CassandraIdentityDao extends IdentityDao {
             const userId: string = result.userId;
             const userMapper = await CassandraDriver.getInstance().getModelMapper("users");
             const user: User | null = await userMapper.get({
-                userId: userId
+                userId: types.Uuid.fromString(userId)
             });
             return user;
         }

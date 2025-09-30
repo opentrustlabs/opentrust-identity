@@ -6,7 +6,7 @@ import { TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import TenantDetail from "@/components/tenants/tenant-detail";
 import SearchResultListLayout from "@/components/layout/search-result-list-layout";
 import { SearchResultType } from "@/graphql/generated/graphql-types";
-import LandingPage from "@/components/layout/landing-page";
+// import LandingPage from "@/components/layout/landing-page";
 
 
 const TenantLandingPage: React.FC = () => {

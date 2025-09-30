@@ -14,7 +14,7 @@ class DBSigningKeysDao extends SigningKeysDao {
         if(tenantId){
             queryParams.tenantid = tenantId;
         }
-        // @ts-ignore
+        
         const entities: Array<SigningKeyEntity> = await (await DBDriver.getInstance().getSigningKeyEntity()).findAll({
             where: queryParams,
             order: [

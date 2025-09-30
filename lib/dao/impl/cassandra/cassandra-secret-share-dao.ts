@@ -1,24 +1,15 @@
 import { SecretShare } from "@/graphql/generated/graphql-types";
 import SecretShareDao, { SecretShareLookupType } from "../../secret-share-dao";
 import CassandraDriver from "@/lib/data-sources/cassandra";
-
+import { types } from "cassandra-driver";
 
 class CassandraSecretShareDao extends SecretShareDao {
-
-    /*
-    "secretshareid": "secretShareId",
-			"objectid": "objectId",
-			"objectype": "secretShareObjectType",
-			"otp": "otp",
-			"expiresatms": "expiresAtMs"
-        }
-    */
 
     public async getSecretShareBy(value: string, type: SecretShareLookupType): Promise<SecretShare | null> {
         const mapper = await CassandraDriver.getInstance().getModelMapper("secret_share");
         if(type === "id"){
             return mapper.get({
-                secretShareId: value
+                secretShareId: types.Uuid.fromString(value)
             })
         }
         else {
@@ -40,7 +31,7 @@ class CassandraSecretShareDao extends SecretShareDao {
         if(secretShare){
             const mapper = await CassandraDriver.getInstance().getModelMapper("secret_share");
             await mapper.remove({
-                secretShareId: secretShareId,
+                secretShareId: types.Uuid.fromString(secretShareId),
                 otp: secretShare.otp
             });
         }

@@ -1,7 +1,7 @@
 import { FederatedOidcProvider, FederatedOidcProviderTenantRel, FederatedOidcProviderDomainRel } from "@/graphql/generated/graphql-types";
 import FederatedOIDCProviderDao from "../../federated-oidc-provider-dao";
 import CassandraDriver from "@/lib/data-sources/cassandra";
-
+import { types } from "cassandra-driver";
 
 class CassandraFederatedOIDCProviderDao extends FederatedOIDCProviderDao {
 
@@ -21,7 +21,7 @@ class CassandraFederatedOIDCProviderDao extends FederatedOIDCProviderDao {
 
     public async getFederatedOidcProviderById(federatedOIDCProviderId: string): Promise<FederatedOidcProvider | null> {
         const mapper = await CassandraDriver.getInstance().getModelMapper("federated_oidc_provider");
-        return mapper.get({federatedOIDCProviderId: federatedOIDCProviderId});
+        return mapper.get({federatedOIDCProviderId: types.Uuid.fromString(federatedOIDCProviderId)});
     }
 
 
@@ -76,8 +76,8 @@ class CassandraFederatedOIDCProviderDao extends FederatedOIDCProviderDao {
     public async removeFederatedOidcProviderFromTenant(federatedOIDCProviderId: string, tenantId: string): Promise<FederatedOidcProviderTenantRel> {
         const mapper = await CassandraDriver.getInstance().getModelMapper("federated_oidc_provider_tenant_rel");
         await mapper.remove({
-            federatedOIDCProviderId: federatedOIDCProviderId,
-            tenantId: tenantId
+            federatedOIDCProviderId: types.Uuid.fromString(federatedOIDCProviderId),
+            tenantId: types.Uuid.fromString(tenantId)
         });
         return {
             federatedOIDCProviderId: federatedOIDCProviderId,
@@ -113,7 +113,7 @@ class CassandraFederatedOIDCProviderDao extends FederatedOIDCProviderDao {
         const mapper = await CassandraDriver.getInstance().getModelMapper("federated_oidc_provider_domain_rel");
         await mapper.remove({
             domain: domain,
-            federatedOIDCProviderId: federatedOIDCProviderId
+            federatedOIDCProviderId: types.Uuid.fromString(federatedOIDCProviderId)
         });
         return {
             domain: domain,
@@ -124,10 +124,12 @@ class CassandraFederatedOIDCProviderDao extends FederatedOIDCProviderDao {
     public async deleteFederatedOidcProvider(federatedOIDCProviderId: string): Promise<void> {
         const tenantRelMapper = await CassandraDriver.getInstance().getModelMapper("federated_oidc_provider_tenant_rel");
         const arrTenantRel: Array<FederatedOidcProviderTenantRel> = await this.getFederatedOidcProviderTenantRels(undefined, federatedOIDCProviderId);
+
+        const oidcUuid = types.Uuid.fromString(federatedOIDCProviderId);
         for(let i = 0; i < arrTenantRel.length; i++){
             tenantRelMapper.remove({
-                tenantId: arrTenantRel[i].tenantId,
-                federatedOIDCProviderId: arrTenantRel[i].federatedOIDCProviderId
+                tenantId: types.Uuid.fromString(arrTenantRel[i].tenantId),
+                federatedOIDCProviderId: oidcUuid
             });
         }
 
@@ -136,13 +138,13 @@ class CassandraFederatedOIDCProviderDao extends FederatedOIDCProviderDao {
         for(let i = 0; i < arrDomainRel.length; i++){
             domainRelMapper.remove({
                 domain: arrDomainRel[i].domain,
-                federatedOIDCProviderId: arrDomainRel[i].federatedOIDCProviderId
+                federatedOIDCProviderId: oidcUuid
             });
         }
 
         const federatedOidcMapper = await CassandraDriver.getInstance().getModelMapper("federated_oidc_provider");
         federatedOidcMapper.remove({
-            federatedOIDCProviderId: federatedOIDCProviderId
+            federatedOIDCProviderId: oidcUuid
         });
 
 
