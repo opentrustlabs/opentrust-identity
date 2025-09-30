@@ -864,22 +864,9 @@ create TABLE user_authentication_state (
     expiresatms BIGINT,
     returntouri TEXT,
     devicecodeid TEXT,
-    PRIMARY KEY (userid, authenticationsessiontoken, authenticationstate)    
+    PRIMARY KEY (authenticationsessiontoken, authenticationstate)    
 );
 
-create TABLE user_authentication_state_by_session_token (
-    userid UUID,
-    tenantid UUID,
-    authenticationsessiontoken TEXT,    
-    authenticationstate TEXT,
-    authenticationstateorder INT,
-    authenticationstatestatus TEXT,
-    preauthtoken TEXT,
-    expiresatms BIGINT,
-    returntouri TEXT,
-    devicecodeid TEXT,
-    PRIMARY KEY (authenticationsessiontoken)    
-);
 
 create TABLE user_registration_state (
     userid UUID,
@@ -892,7 +879,7 @@ create TABLE user_registration_state (
     preauthtoken TEXT,
     expiresatms BIGINT,
     devicecodeid TEXT,
-    PRIMARY KEY (userid, registrationsessiontoken, registrationstate)
+    PRIMARY KEY (registrationsessiontoken, registrationstate, email)
 );
 
 create TABLE user_registration_state_by_email (
@@ -906,22 +893,9 @@ create TABLE user_registration_state_by_email (
     preauthtoken TEXT,
     expiresatms BIGINT,
     devicecodeid TEXT,
-    PRIMARY KEY (email)
+    PRIMARY KEY (email, registrationsessiontoken, registrationstate)
 );
 
-create TABLE user_registration_state_by_session_token (
-    userid UUID,
-    email TEXT,
-    tenantid UUID,
-    registrationsessiontoken TEXT,    
-    registrationstate TEXT,
-    registrationstateorder INT,
-    registrationstatestatus TEXT,
-    preauthtoken TEXT,
-    expiresatms BIGINT,
-    devicecodeid TEXT,
-    PRIMARY KEY (registrationsessiontoken)
-);
 
 create TABLE user_profile_email_change_state (
     userid UUID,

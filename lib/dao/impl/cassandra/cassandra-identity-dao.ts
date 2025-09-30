@@ -1,7 +1,7 @@
 import { UserFailedLogin, UserMfaRel, Fido2Challenge, User, UserCredential, UserTenantRel, UserAuthenticationState, UserRegistrationState, ProfileEmailChangeState, UserTermsAndConditionsAccepted, UserRecoveryEmail } from "@/graphql/generated/graphql-types";
 import IdentityDao, { UserLookupType } from "../../identity-dao";
 import CassandraDriver from "@/lib/data-sources/cassandra";
-import { MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP } from "@/utils/consts";
+import { MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, VERIFICATION_TOKEN_TYPE_PASSWORD_RESET, VERIFICATION_TOKEN_TYPE_VALIDATE_EMAIL } from "@/utils/consts";
 
 
 class CassandraIdentityDao extends IdentityDao {
@@ -185,56 +185,164 @@ class CassandraIdentityDao extends IdentityDao {
 
     }
 
-    public async savePasswordResetToken(userId: string, token: string): Promise<void> {
-        throw new Error("Method not implemented.");
+    public async savePasswordResetToken(userId: string, token: string): Promise<void> {        
+        await this.saveUserVerificationToken(userId, token, VERIFICATION_TOKEN_TYPE_PASSWORD_RESET, 10);
+        return; 
     }
 
     public async getUserByPasswordResetToken(token: string): Promise<User | null> {
-        throw new Error("Method not implemented.");
+        return this.getUserByUserVerificationToken(token);
     }
 
     public async deletePasswordResetToken(token: string): Promise<void> {
-        throw new Error("Method not implemented.");
+        await this.deleteUserVerificationToken(token);
     }
 
     public async saveEmailConfirmationToken(userId: string, token: string): Promise<void> {
-        throw new Error("Method not implemented.");
+        await this.saveUserVerificationToken(userId, token, VERIFICATION_TOKEN_TYPE_VALIDATE_EMAIL, 60);
+        return;
     }
 
     public async getUserByEmailConfirmationToken(token: string): Promise<User | null> {
-        throw new Error("Method not implemented.");
+        return this.getUserByUserVerificationToken(token);
     }
 
     public async deleteEmailConfirmationToken(token: string): Promise<void> {
-        throw new Error("Method not implemented.");
+        await this.deleteUserVerificationToken(token);
     }
 
+    
     public async createUser(user: User): Promise<User> {
-        throw new Error("Method not implemented.");
+        const userMapper = await CassandraDriver.getInstance().getModelMapper("users");
+        await userMapper.insert(user);
+        const userByEmailMapper = await CassandraDriver.getInstance().getModelMapper("users_by_email");
+        await userByEmailMapper.insert(user);
+        if(user.phoneNumber && user.phoneNumber.length > 0){
+            const userByPhoneMapper = await CassandraDriver.getInstance().getModelMapper("users_by_phone_number");
+            await userByPhoneMapper.insert(user);                
+        }
+        if(user.federatedOIDCProviderSubjectId && user.federatedOIDCProviderSubjectId.length > 0){
+            const usersByOidcMapper = await CassandraDriver.getInstance().getModelMapper("users_by_federated_oidc_id");
+            await usersByOidcMapper.insert(user);
+        }
+        return user;
     }
 
+    /**
+     * Note that data in the user_credential table is stored with the column datecreatedatms ordered
+     * descending
+     * @param userId 
+     * @returns 
+     */
     public async getUserCredentials(userId: string): Promise<Array<UserCredential>> {
-        throw new Error("Method not implemented.");
+        const mapper = await CassandraDriver.getInstance().getModelMapper("user_credential");
+        const results = await mapper.find({
+            userId: userId
+        });
+        return results.toArray();
     }
 
+    /**
+     * Note that data in the user_credential table is stored with the column datecreatedatms ordered
+     * descending.
+     * @param userId 
+     * @returns 
+     */
     public async getUserCredentialForAuthentication(userId: string): Promise<UserCredential | null> {
-        throw new Error("Method not implemented.");
+        const arr: Array<UserCredential> = await this.getUserCredentials(userId);
+        if(arr.length > 0){
+            return arr[0];
+        }
+        else{
+            return null;
+        }
     }
 
     public async addUserCredential(userCredential: UserCredential): Promise<void> {
-        throw new Error("Method not implemented.");
+        const mapper = await CassandraDriver.getInstance().getModelMapper("user_credential");
+        await mapper.insert(userCredential);
+        return;
     }
 
     public async deleteUserCredential(userId: string, dateCreatedMs?: number): Promise<void> {
-        throw new Error("Method not implemented.");
+        const mapper = await CassandraDriver.getInstance().getModelMapper("user_credential");
+        if(dateCreatedMs){
+            await mapper.remove({
+                userId: userId,
+                dateCreatedMs: dateCreatedMs
+            });
+        }
+        else{
+            const arr: Array<UserCredential> = await this.getUserCredentials(userId);
+            for(let i = 0; i < arr.length; i++){
+                await mapper.remove({
+                    userId: userId,
+                    dateCreatedMs: arr[i].dateCreatedMs
+                });
+            }
+        }
+        return;
     }
 
     public async updateUser(user: User): Promise<User> {
-        throw new Error("Method not implemented.");
+
+        const userMapper = await CassandraDriver.getInstance().getModelMapper("users");
+        const existingUser: User | null = await this.getUserBy("id", user.userId);
+        if(existingUser === null){
+            return user;
+        }
+        
+        await userMapper.update(user);
+        
+        const userByEmailMapper = await CassandraDriver.getInstance().getModelMapper("users_by_email");
+        // Did the user's email change? If so, delete the old record and insert a new one
+        if(existingUser.email !== user.email){
+            await userByEmailMapper.remove({
+                email: existingUser.email
+            });
+            await userByEmailMapper.insert(user);
+        }
+        else {
+            await userByEmailMapper.update(user);
+        }
+
+        const userByPhoneMapper = await CassandraDriver.getInstance().getModelMapper("users_by_phone_number");
+        // Did the user's phone number change? If so, delete the old record and insert a new one
+        if(user.phoneNumber && user.phoneNumber.length > 0){
+             if(existingUser.phoneNumber && existingUser.phoneNumber.length > 0 && user.phoneNumber !== existingUser.phoneNumber){
+                await userByPhoneMapper.remove({
+                    phoneNumber: existingUser.phoneNumber
+                });
+                await userByPhoneMapper.insert(user);
+             }
+             else{
+                await userByPhoneMapper.update(user);
+             }
+        }
+
+        const usersByOidcMapper = await CassandraDriver.getInstance().getModelMapper("users_by_federated_oidc_id");
+        // Did the user's federated oidc provider change? If so, delete the old record and insert a new one
+        if(user.federatedOIDCProviderSubjectId && user.federatedOIDCProviderSubjectId.length > 0){
+            if(existingUser.federatedOIDCProviderSubjectId && existingUser.federatedOIDCProviderSubjectId.length > 0 && user.federatedOIDCProviderSubjectId !== existingUser.federatedOIDCProviderSubjectId){
+                await usersByOidcMapper.remove({
+                    federatedOIDCProviderSubjectId: existingUser.federatedOIDCProviderSubjectId
+                });
+                await usersByOidcMapper.insert(user);
+            }
+            else {
+                await usersByOidcMapper.update(user);
+            }
+        }
+        return user;
     }
 
     public async unlockUser(userId: string): Promise<void> {
-        throw new Error("Method not implemented.");
+        const user: User | null = await this.getUserBy("id", userId);
+        if(user){
+            user.locked = false;
+            await this.updateUser(user);
+        }
+        return;
     }
 
     public async deleteUser(userId: string): Promise<void> {
@@ -242,63 +350,141 @@ class CassandraIdentityDao extends IdentityDao {
     }
 
     public async passwordProhibited(password: string): Promise<boolean> {
-        throw new Error("Method not implemented.");
+        const mapper =  await CassandraDriver.getInstance().getModelMapper("prohibited_passwords");
+        const result = await mapper.get({
+            password: password
+        });
+        if(result){
+            return true;
+        }
+        else{
+            return false;
+        }
     }
 
     public async assignUserToTenant(tenantId: string, userId: string, relType: string): Promise<UserTenantRel> {
-        throw new Error("Method not implemented.");
+        const mapper =  await CassandraDriver.getInstance().getModelMapper("user_tenant_rel");
+        const userTenantRel: UserTenantRel = {
+            enabled: true,
+            relType: relType,
+            tenantId: tenantId,
+            userId: userId
+        }
+        await mapper.insert(userTenantRel);
+        return userTenantRel;
     }
 
     public async updateUserTenantRel(tenantId: string, userId: string, relType: string): Promise<UserTenantRel> {
-        throw new Error("Method not implemented.");
+        const mapper =  await CassandraDriver.getInstance().getModelMapper("user_tenant_rel");
+        const userTenantRel: UserTenantRel = {
+            enabled: true,
+            relType: relType,
+            tenantId: tenantId,
+            userId: userId
+        }
+        await mapper.update(userTenantRel);
+        return userTenantRel;
     }
 
     public async removeUserFromTenant(tenantId: string, userId: string): Promise<void> {
-        throw new Error("Method not implemented.");
+        const mapper =  await CassandraDriver.getInstance().getModelMapper("user_tenant_rel");
+        await mapper.remove({
+            tenantId: tenantId,
+            userId: userId
+        });
+        return;
     }
 
     public async getUserTenantRel(tenantId: string, userId: string): Promise<UserTenantRel | null> {
-        throw new Error("Method not implemented.");
+        const mapper =  await CassandraDriver.getInstance().getModelMapper("user_tenant_rel");
+        return mapper.get({
+            tenantId: tenantId,
+            userId: userId
+        });        
     }
 
     public async getUserTenantRelsByUserId(userId: string): Promise<Array<UserTenantRel>> {
-        throw new Error("Method not implemented.");
+        const mapper =  await CassandraDriver.getInstance().getModelMapper("user_tenant_rel");
+        const results = await mapper.find({
+            userId: userId
+        });
+        return results.toArray();
     }
 
     public async createUserAuthenticationStates(arrUserAuthenticationState: Array<UserAuthenticationState>): Promise<Array<UserAuthenticationState>> {
-        throw new Error("Method not implemented.");
+        const mapper =  await CassandraDriver.getInstance().getModelMapper("user_authentication_state");
+        const ttlSeconds = Math.floor( (arrUserAuthenticationState[0].expiresAtMs - Date.now()) / 1000);
+        for(let i = 0; i < arrUserAuthenticationState.length; i++){
+            await mapper.insert(arrUserAuthenticationState[i], {ttl: ttlSeconds});
+        }
+        return arrUserAuthenticationState;
     }
 
+  
     public async getUserAuthenticationStates(authenticationSessionToken: string): Promise<Array<UserAuthenticationState>> {
-        throw new Error("Method not implemented.");
+        const mapper =  await CassandraDriver.getInstance().getModelMapper("user_authentication_state");
+        const results = await mapper.find({
+            authenticationSessionToken: authenticationSessionToken
+        });
+        return results.toArray();
     }
 
     public async updateUserAuthenticationState(userAuthenticationState: UserAuthenticationState): Promise<UserAuthenticationState> {
-        throw new Error("Method not implemented.");
+        const mapper =  await CassandraDriver.getInstance().getModelMapper("user_authentication_state");
+        const ttlSeconds = Math.floor( (userAuthenticationState.expiresAtMs - Date.now()) / 1000);
+        await mapper.update(userAuthenticationState, {ttl: ttlSeconds});
+        return userAuthenticationState;
     }
 
     public async deleteUserAuthenticationState(userAuthenticationState: UserAuthenticationState): Promise<UserAuthenticationState> {
-        throw new Error("Method not implemented.");
+        const mapper =  await CassandraDriver.getInstance().getModelMapper("user_authentication_state");
+        await mapper.remove({
+            authenticationSessionToken: userAuthenticationState.authenticationSessionToken,
+            authenticationState: userAuthenticationState.authenticationState
+        });
+        return userAuthenticationState;
     }
 
     public async createUserRegistrationStates(arrRegistrationState: Array<UserRegistrationState>): Promise<Array<UserRegistrationState>> {
-        throw new Error("Method not implemented.");
+        const mapper =  await CassandraDriver.getInstance().getModelMapper("user_registration_state");
+        const ttlSeconds = Math.floor( (arrRegistrationState[0].expiresAtMs - Date.now()) / 1000);
+        for(let i = 0; i < arrRegistrationState.length; i++){
+            await mapper.insert(arrRegistrationState[i], {ttl: ttlSeconds});
+        }
+        return arrRegistrationState;
     }
 
     public async getUserRegistrationStates(registrationSessionToken: string): Promise<Array<UserRegistrationState>> {
-        throw new Error("Method not implemented.");
+        const mapper =  await CassandraDriver.getInstance().getModelMapper("user_registration_state");
+        const results = await mapper.find({
+            registrationSessionToken: registrationSessionToken
+        });
+        return results.toArray();
     }
 
     public async getUserRegistrationStatesByEmail(email: string): Promise<Array<UserRegistrationState>> {
-        throw new Error("Method not implemented.");
+        const mapper =  await CassandraDriver.getInstance().getModelMapper("user_registration_state");
+        const results = await mapper.find({
+            email: email
+        });
+        return results.toArray();
     }
 
     public async updateUserRegistrationState(userRegistrationState: UserRegistrationState): Promise<UserRegistrationState> {
-        throw new Error("Method not implemented.");
+        const mapper =  await CassandraDriver.getInstance().getModelMapper("user_registration_state");
+        const ttlSeconds = Math.floor( (userRegistrationState.expiresAtMs - Date.now()) / 1000);
+        await mapper.update(userRegistrationState, {ttl: ttlSeconds});
+        return userRegistrationState;
     }
 
     public async deleteUserRegistrationState(userRegistrationState: UserRegistrationState): Promise<UserRegistrationState> {
-        throw new Error("Method not implemented.");
+        const mapper =  await CassandraDriver.getInstance().getModelMapper("user_registration_state");
+        await mapper.remove({
+            email: userRegistrationState.email,
+            registrationSessionToken: userRegistrationState.registrationSessionToken,
+            registrationState: userRegistrationState.registrationState
+        });
+        return userRegistrationState;
     }
 
     public async getProfileEmailChangeStates(changeStateToken: string): Promise<Array<ProfileEmailChangeState>> {
@@ -318,51 +504,147 @@ class CassandraIdentityDao extends IdentityDao {
     }
 
     public async deleteExpiredData(): Promise<void> {
-        throw new Error("Method not implemented.");
+        // NO OP
+        // All data with an expiration is inserted and updated with a TTL value.
     }
 
     public async addUserTermsAndConditionsAccepted(userTermsAndConditionsAccepted: UserTermsAndConditionsAccepted): Promise<UserTermsAndConditionsAccepted> {
-        throw new Error("Method not implemented.");
+        const mapper =  await CassandraDriver.getInstance().getModelMapper("user_terms_and_conditions_accepted");
+        await mapper.insert(userTermsAndConditionsAccepted);
+        return userTermsAndConditionsAccepted;
     }
 
     public async getUserTermsAndConditionsAccepted(userId: string, tenantId: string): Promise<UserTermsAndConditionsAccepted | null> {
-        throw new Error("Method not implemented.");
+        const mapper =  await CassandraDriver.getInstance().getModelMapper("user_terms_and_conditions_accepted");
+        return mapper.get({
+            tenantId: tenantId,
+            userId: userId
+        });
     }
 
     public async deleteUserTermsAndConditionsAccepted(userId: string, tenantId: string): Promise<void> {
-        throw new Error("Method not implemented.");
+        const mapper =  await CassandraDriver.getInstance().getModelMapper("user_terms_and_conditions_accepted");
+        await mapper.remove({
+            tenantId: tenantId,
+            userId: userId
+        });
+        return;
     }
 
     public async getUserRecoveryEmail(userId: string): Promise<UserRecoveryEmail | null> {
-        throw new Error("Method not implemented.");
+        const mapper =  await CassandraDriver.getInstance().getModelMapper("user_email_recovery");
+        const results = await mapper.find({
+            userId: userId
+        });
+        const arr: Array<UserRecoveryEmail> = results.toArray();
+        if(arr.length > 0){
+            return arr[0];
+        }
+        else{
+            return null;
+        }
     }
 
     public async addRecoveryEmail(userRecoveryEmail: UserRecoveryEmail): Promise<UserRecoveryEmail> {
-        throw new Error("Method not implemented.");
+        const mapper =  await CassandraDriver.getInstance().getModelMapper("user_email_recovery");
+        await mapper.insert(userRecoveryEmail);
+        return userRecoveryEmail;
     }
 
     public async updateRecoveryEmail(userRecoveryEmail: UserRecoveryEmail): Promise<UserRecoveryEmail> {
-        throw new Error("Method not implemented.");
+        const mapper =  await CassandraDriver.getInstance().getModelMapper("user_email_recovery");
+        await mapper.update(userRecoveryEmail);
+        return userRecoveryEmail;
     }
 
     public async deleteRecoveryEmail(userId: string): Promise<void> {
-        throw new Error("Method not implemented.");
+        const userRecoveryEmail: UserRecoveryEmail | null = await this.getUserRecoveryEmail(userId);
+        if(userRecoveryEmail){
+            const mapper =  await CassandraDriver.getInstance().getModelMapper("user_email_recovery");
+            await mapper.remove({
+                userId: userId,
+                email: userRecoveryEmail.email
+            });
+        }
+        return;
     }
 
     public async addUserDuressCredential(userCredential: UserCredential): Promise<void> {
-        throw new Error("Method not implemented.");
+        const mapper =  await CassandraDriver.getInstance().getModelMapper("user_duress_credential");
+        await mapper.insert(userCredential);
+        return;
     }
 
     public async getUserDuressCredential(userId: string): Promise<UserCredential | null> {
-        throw new Error("Method not implemented.");
+        const mapper =  await CassandraDriver.getInstance().getModelMapper("user_duress_credential");
+        return mapper.get({
+            userId: userId
+        })
     }
 
     public async deleteUserDuressCredential(userId: string): Promise<void> {
-        throw new Error("Method not implemented.");
+        const mapper =  await CassandraDriver.getInstance().getModelMapper("user_duress_credential");
+        await mapper.remove({
+            userId: userId
+        })
     }
 
-    public async addUserAuthenticationHistory(userId: string, authenticatedAtMs: number): Promise<void> {
-        throw new Error("Method not implemented.");
+    public async addUserAuthenticationHistory(userId: string, authenticatedAtMs: number): Promise<void> {        
+        const mapper =  await CassandraDriver.getInstance().getModelMapper("user_authentication_history");
+        await mapper.insert({
+            userId: userId,
+            lastAuthenticationAtMs: authenticatedAtMs
+        });
+        return;
+    }
+
+
+
+    protected async saveUserVerificationToken(userId: string, token: string, verificationType: string, ttlMinutes: number): Promise<void> {
+        const mapper = await CassandraDriver.getInstance().getModelMapper("user_verification_token"); 
+        
+        // Token TTL: 10 minutes
+        const expiresAtMs = Date.now() + (ttlMinutes * 60 * 1000);
+        const ttlSeconds = ttlMinutes * 60; 
+        await mapper.insert(
+            {
+                expiresAtMS: expiresAtMs,
+                issuedAtMS:  Date.now(),
+                userId: userId,
+                token: token,
+                verificationType: verificationType
+            },
+            {
+                ttl: ttlSeconds
+            }
+        );
+        return; 
+    }
+
+    protected async getUserByUserVerificationToken(token: string): Promise<User | null> {
+        const mapper = await CassandraDriver.getInstance().getModelMapper("user_verification_token");
+        const result = await mapper.get({
+            token: token
+        });
+        if(result){
+            const userId: string = result.userId;
+            const userMapper = await CassandraDriver.getInstance().getModelMapper("users");
+            const user: User | null = await userMapper.get({
+                userId: userId
+            });
+            return user;
+        }
+        else{
+            return null;
+        }
+    }
+
+    protected async deleteUserVerificationToken(token: string){
+        const mapper = await CassandraDriver.getInstance().getModelMapper("user_verification_token");
+        await mapper.remove({
+            token: token
+        });
+        return;
     }
 
 }

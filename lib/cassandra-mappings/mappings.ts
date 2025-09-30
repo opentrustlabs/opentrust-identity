@@ -670,7 +670,7 @@ export const USER_AUTHENTICATION_HISTORY_MODEL:  {[key: string]: cassandra.mappi
 
 export const USER_AUTHENTICATION_STATE_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
     "user_authentication_state": {
-        tables: ["user_authentication_state", "user_authentication_state_by_session_token"],
+        tables: ["user_authentication_state"],
         columns: {
 			"userid": "userId",
 			"tenantid": "tenantId",
@@ -906,7 +906,7 @@ export const USER_PROFILE_EMAIL_CHANGE_STATE_MODEL:  {[key: string]: cassandra.m
 
 export const USER_REGISTRATION_STATE_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
     "user_registration_state": {
-        tables: ["user_registration_state", "user_registration_state_by_email", "user_registration_state_by_session_token"],
+        tables: ["user_registration_state", "user_registration_state_by_email"],
         columns: {
             "userid": "userId",
 			"email": "email",
