@@ -117,11 +117,16 @@ class CassandraAuthorizationGroupDao extends AuthorizationGroupDao {
         const ids = results.map(
             (rel: AuthorizationGroupUserRel) => rel.groupId
         );
-        const groupMapper = await CassandraDriver.getInstance().getModelMapper("authorization_group");
-        const groups = await groupMapper.find({
-            groupId: cassandra.mapping.q.in_(ids)
-        });
-        return groups.toArray();
+        if(ids.length > 0){
+            const groupMapper = await CassandraDriver.getInstance().getModelMapper("authorization_group");
+            const groups = await groupMapper.find({
+                groupId: cassandra.mapping.q.in_(ids)
+            });
+            return groups.toArray();
+        }
+        else{
+            return [];
+        }        
     }
 
 }

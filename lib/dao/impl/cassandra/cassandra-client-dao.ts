@@ -8,7 +8,7 @@ class CassandraClientDao extends ClientDao {
     
     public async getClients(tenantId?: string, clientIds?: Array<string>): Promise<Array<Client>> {
         
-        if(clientIds){
+        if(clientIds && clientIds.length > 0){
             const mapper = await CassandraDriver.getInstance().getModelMapper("client");
             const resultList = await mapper.find({
                 clientId: cassandra.mapping.q.in_(clientIds)
