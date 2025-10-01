@@ -3,10 +3,12 @@ import AuthenticationGroupDao from "../../authentication-group-dao";
 import CassandraDriver from "@/lib/data-sources/cassandra";
 import cassandra from "cassandra-driver";
 import { types } from "cassandra-driver";
+import client from "@/components/apollo-client/apollo-client";
 
 class CassandraAuthenticationGroupDao extends AuthenticationGroupDao {
 
     public async getAuthenticationGroups(tenantId?: string, clientId?: string, userId?: string): Promise<Array<AuthenticationGroup>> {
+
         if(tenantId){
              const mapper = await CassandraDriver.getInstance().getModelMapper("authentication_group");
              return (await mapper.find({tenantId: tenantId})).toArray();
@@ -15,21 +17,31 @@ class CassandraAuthenticationGroupDao extends AuthenticationGroupDao {
             const mapper = await CassandraDriver.getInstance().getModelMapper("authentication_group_client_rel");
             const arr: Array<AuthenticationGroupClientRel> = (await mapper.find({clientId: clientId})).toArray();
             const ids = arr.map((rel: AuthenticationGroupClientRel) => rel.authenticationGroupId);
-            const clientMapper = await CassandraDriver.getInstance().getModelMapper("authentication_group");
-            const results = await clientMapper.find({
-                clientId: cassandra.mapping.q.in_(ids)
-            });
-            return results.toArray();
+            if(ids.length > 0){
+                const clientMapper = await CassandraDriver.getInstance().getModelMapper("authentication_group");
+                const results = await clientMapper.find({
+                    authenticationGroupId: cassandra.mapping.q.in_(ids)
+                });
+                return results.toArray();
+            }
+            else{
+                return [];
+            }
         }
         else if(userId){
             const mapper = await CassandraDriver.getInstance().getModelMapper("authentication_group_user_rel");
             const arr: Array<AuthenticationGroupUserRel> = (await mapper.find({userId: userId})).toArray();
-            const ids = arr.map((rel: AuthenticationGroupUserRel) => rel.userId);
-            const userMapper = await CassandraDriver.getInstance().getModelMapper("authentication_group");
-            const results = await userMapper.find({
-                clientId: cassandra.mapping.q.in_(ids)
-            });
-            return results.toArray();
+            const ids = arr.map((rel: AuthenticationGroupUserRel) => rel.authenticationGroupId);
+            if(ids.length > 0){
+                const userMapper = await CassandraDriver.getInstance().getModelMapper("authentication_group");
+                const results = await userMapper.find({
+                    authenticationGroupId: cassandra.mapping.q.in_(ids)
+                });
+                return results.toArray();
+            }
+            else {
+                return [];
+            }
         }
         else {
             return [];

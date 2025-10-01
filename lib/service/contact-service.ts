@@ -79,6 +79,7 @@ class ContactService {
     }
 
     public async addContact(contact: Contact): Promise<Contact> {
+                
         let scopeRequired: string = "";
         let tenantId: string = "";
         if(contact.objecttype === CONTACT_TYPE_FOR_TENANT){

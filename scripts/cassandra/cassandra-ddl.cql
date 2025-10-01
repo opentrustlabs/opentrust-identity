@@ -317,13 +317,13 @@ create TABLE authentication_group_by_tenant (
 
 create TABLE authentication_group_client_rel (
     authenticationgroupid UUID,
-    clientid TEXT,
+    clientid UUID,
     PRIMARY KEY (authenticationgroupid, clientid)
 );
 
 create TABLE authentication_group_client_rel_by_client (
     authenticationgroupid UUID,
-    clientid TEXT,
+    clientid UUID,
     PRIMARY KEY (clientid, authenticationgroupid)
 );
 
@@ -721,7 +721,7 @@ create TABLE contact (
     objecttype TEXT,
     email TEXT,
     contactname TEXT,
-    userid UUID,
+    userid TEXT,
     PRIMARY KEY (contactid, objectid)
 );
 
@@ -731,7 +731,7 @@ create TABLE contact_by_object_id (
     objecttype TEXT,
     email TEXT,
     contactname TEXT,
-    userid UUID,
+    userid TEXT,
     PRIMARY KEY (objectid, contactid)
 );
 

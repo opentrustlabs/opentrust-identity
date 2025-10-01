@@ -62,7 +62,8 @@ class CassandraAuthDao extends AuthDao {
 
     public async getRefreshDataByUserId(userId: string): Promise<Array<RefreshData>> {
         const mapper = await CassandraDriver.getInstance().getModelMapper("refresh_data");
-        return mapper.get({userId: types.Uuid.fromString(userId)});
+        const results = (await mapper.find({userId: userId})).toArray();
+        return results;
     }
 
     public async deleteRefreshData(userId: string, tenantId: string, clientId: string): Promise<void> {

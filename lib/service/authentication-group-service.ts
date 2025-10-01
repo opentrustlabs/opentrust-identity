@@ -75,6 +75,7 @@ class AuthenticationGroupService {
             if(!isAuthorized){
                 throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});
             }
+
             const arr: Array<AuthenticationGroup> = await authenticationGroupDao.getAuthenticationGroups(tenantId, clientId, userId);
             return arr.filter(
                 (g: AuthenticationGroup) => g.tenantId === matchingRel.tenantId
@@ -243,6 +244,7 @@ class AuthenticationGroupService {
 
     public async removeAuthenticationGroupFromClient(authenticationGroupId: string, clientId: string): Promise<void> {
         const authnGroup: AuthenticationGroup | null = await authenticationGroupDao.getAuthenticationGroupById(authenticationGroupId);
+
         if(authnGroup){
             const {isAuthorized, errorDetail} = authorizeByScopeAndTenant(this.oidcContext, AUTHENTICATION_GROUP_CLIENT_REMOVE_SCOPE, authnGroup.tenantId);
             if(!isAuthorized){
@@ -259,7 +261,6 @@ class AuthenticationGroupService {
                 data: JSON.stringify({authenticationGroupId, clientId})
             });
         }
-        
 
         return Promise.resolve();
     }
