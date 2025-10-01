@@ -11,10 +11,15 @@ class CassandraRateLimitDao extends RateLimitDao {
         if(tenantId){
             const arr: Array<TenantRateLimitRel> = await this.getRateLimitTenantRel(tenantId, null);
             const ids = arr.map((rel: TenantRateLimitRel) => rel.servicegroupid);
-            const results = await mapper.find({
-                servicegroupid: cassandra.mapping.q.in_(ids)
-            });
-            return results.toArray();
+            if(ids.length > 0){
+                const results = await mapper.find({
+                    servicegroupid: cassandra.mapping.q.in_(ids)
+                });
+                return results.toArray();
+            }
+            else{
+                return [];
+            }
         }
         else{
             return (await mapper.findAll()).toArray();

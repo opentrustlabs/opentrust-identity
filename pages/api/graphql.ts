@@ -103,11 +103,10 @@ async function getOIDCContext(req: NextApiRequest): Promise<OIDCContext> {
     let portalUserProfile: PortalUserProfile | null = null;
  
     if(bearerToken){
-        jwt = bearerToken.replace(/Bearer\s+/, "");
-
+        jwt = bearerToken.replace(/Bearer\s+/, ""); 
         const p = await jwtServiceUtils.getPortalUserProfile(jwt);
-        if(p){
-            portalUserProfile = p;
+         if(p){
+             portalUserProfile = p;
         }
     }
 
@@ -115,7 +114,7 @@ async function getOIDCContext(req: NextApiRequest): Promise<OIDCContext> {
     const geoLocation: string = req.headers[HTTP_HEADER_X_GEO_LOCATION] as string || ""
 
     const rootTenant: Tenant | null = await tenantDao.getRootTenant();
-
+ 
     const context: OIDCContext = {
         authToken: jwt || "",
         portalUserProfile: portalUserProfile,

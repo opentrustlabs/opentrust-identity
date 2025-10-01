@@ -50,12 +50,17 @@ class CassandraTenantDao extends TenantDao {
     }
 
     public async getTenants(tenantIds: Array<string>): Promise<Array<Tenant>> {
-        const mapper = await CassandraDriver.getInstance().getModelMapper("tenant");
-        const results = await mapper.find({
-            tenantId: cassandra.mapping.q.in_(tenantIds)
-        });
-        const a = results.toArray();
-        return a;
+        if(tenantIds.length > 0){
+            const mapper = await CassandraDriver.getInstance().getModelMapper("tenant");
+            const results = await mapper.find({
+                tenantId: cassandra.mapping.q.in_(tenantIds)
+            });
+            const a = results.toArray();
+            return a;
+        }
+        else{
+            return [];
+        }
     }
 
     public async getTenantById(tenantId: string): Promise<Tenant | null> {

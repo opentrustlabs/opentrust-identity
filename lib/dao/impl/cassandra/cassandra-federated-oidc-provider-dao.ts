@@ -16,10 +16,15 @@ class CassandraFederatedOIDCProviderDao extends FederatedOIDCProviderDao {
                 const ids = results.map(
                     (rel: FederatedOidcProviderTenantRel) => rel.federatedOIDCProviderId
                 )
-                const retVal: Array<FederatedOidcProvider> = (await providerMapper.find({
-                    federatedOIDCProviderId: cassandra.mapping.q.in_(ids)
-                })).toArray();
-                return retVal;
+                if(ids.length > 0){
+                    const retVal: Array<FederatedOidcProvider> = (await providerMapper.find({
+                        federatedOIDCProviderId: cassandra.mapping.q.in_(ids)
+                    })).toArray();
+                    return retVal;
+                }
+                else{
+                    return [];
+                }
             }
             else{
                 return []
