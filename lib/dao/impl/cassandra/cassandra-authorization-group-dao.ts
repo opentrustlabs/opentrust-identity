@@ -52,10 +52,9 @@ class CassandraAuthorizationGroupDao extends AuthorizationGroupDao {
 
     public async deleteAuthorizationGroup(groupId: string): Promise<void> {
 
-        const scopeMapper = await CassandraDriver.getInstance().getModelMapper("authorization_group_scope_rel");
-
         const authzGroupUuid = types.Uuid.fromString(groupId);
 
+        const scopeMapper = await CassandraDriver.getInstance().getModelMapper("authorization_group_scope_rel");
         const scopeResults: Array<AuthorizationGroupScopeRel> = (await scopeMapper.find({
             groupId: groupId
         })).toArray();
@@ -81,7 +80,7 @@ class CassandraAuthorizationGroupDao extends AuthorizationGroupDao {
             hasMore = results.length === 1000;
         }
 
-        const groupMapper = await CassandraDriver.getInstance().getModelMapper("authorization_group");
+        const groupMapper = await CassandraDriver.getInstance().getModelMapper("authorization_group");        
 
         const group: AuthorizationGroup | null = await this.getAuthorizationGroupById(groupId);
         if(group){

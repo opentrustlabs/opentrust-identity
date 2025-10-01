@@ -15,7 +15,13 @@ class CassandraContactDao extends ContactDao {
 
     public async getContactById(contactId: string): Promise<Contact | null> {
         const mapper = await CassandraDriver.getInstance().getModelMapper("contact");
-        return mapper.get({contactId: types.Uuid.fromString(contactId)});
+        const result: Array<Contact> =  (await mapper.find({contactid: types.Uuid.fromString(contactId)}, {limit: 1})).toArray();
+        if(result.length > 0){
+            return result[0];
+        }
+        else{
+            return null;
+        }
     }
 
     public async addContact(contact: Contact): Promise<Contact> {
@@ -25,10 +31,14 @@ class CassandraContactDao extends ContactDao {
     }
 
     public async removeContact(contactId: string): Promise<void> {
-        const mapper = await CassandraDriver.getInstance().getModelMapper("contact");
-        await mapper.remove({
-            contactId: types.Uuid.fromString(contactId)
-        })
+        const contact: Contact | null = await this.getContactById(contactId);
+        if(contact){            
+            const mapper = await CassandraDriver.getInstance().getModelMapper("contact");            
+            await mapper.remove({
+                contactid: types.Uuid.fromString(contactId),
+                objectid: types.Uuid.fromString(contact.objectid)
+            });
+        }
         return;
     }
 

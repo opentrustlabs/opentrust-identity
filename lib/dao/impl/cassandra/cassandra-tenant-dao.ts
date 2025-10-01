@@ -71,9 +71,10 @@ class CassandraTenantDao extends TenantDao {
     }
 
     public async getTenantLookAndFeel(tenantId: string): Promise<TenantLookAndFeel | null> {
-        const mapper = await CassandraDriver.getInstance().getModelMapper("tenant_look_and_feel");        
+        const mapper = await CassandraDriver.getInstance().getModelMapper("tenant_look_and_feel");
         const id = types.Uuid.fromString(tenantId);
-        return mapper.get({tenantid: id});
+        const result = await mapper.get({tenantid: id});
+        return result;
     }
 
     public async createTenant(tenant: Tenant): Promise<Tenant | null> {

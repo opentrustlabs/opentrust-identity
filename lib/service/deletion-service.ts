@@ -102,6 +102,8 @@ class DeletionService {
             return;
         }
         try{
+            // If this is the lock record that was just created, then start
+            // the deletion process.
             if(arr[0].lockInstanceId === schedulerLock.lockInstanceId){
                 m.startedDate = Date.now();
                 await markForDeleteDao.updateMarkForDelete(m);
@@ -142,16 +144,21 @@ class DeletionService {
                         this.deleteTenant(m.objectId, onFinishedCallback);
                         break;
                     default:
+                        // If we do not have a valid object type then remove the lock record
+                        onFinishedCallback.onFinished();
                         break;
                 }
-
+            }
+            // Otherwise just delete the record that was created
+            else {
+                schedulerDao.deleteSchedulerLock(schedulerLock.lockInstanceId);
             }
         }
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         catch(err: any){
+            schedulerDao.deleteSchedulerLock(schedulerLock.lockInstanceId);
             logWithDetails("error", `Error deleting marked-for-delete records. ${err.message}.`, {...err, ...m});
-        }
-        await schedulerDao.deleteSchedulerLock(schedulerLock.lockInstanceId);
+        }       
         
     }
 
@@ -171,7 +178,7 @@ class DeletionService {
     protected async deleteAuthorizationGroup(groupId: string, callback: CompletionCallback): Promise<void> {
         try{
             await authorizationGroupDao.deleteAuthorizationGroup(groupId);
-            await this.deleteObjectSearchRecord(groupId);
+            await this.deleteObjectSearchRecord(groupId);            
             this.deleteRelSearchRecords(groupId);
             callback.onFinished();
         }

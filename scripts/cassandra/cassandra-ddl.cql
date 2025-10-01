@@ -364,6 +364,12 @@ create TABLE authorization_group_by_tenant (
 create TABLE authorization_group_user_rel (
     userid UUID,
     groupid UUID,
+    PRIMARY KEY (groupid, userid)
+);
+
+create TABLE authorization_group_user_rel_by_user (
+    userid UUID,
+    groupid UUID,
     PRIMARY KEY (userid, groupid)
 );
 
@@ -908,20 +914,9 @@ create TABLE user_profile_email_change_state (
     changestatestatus TEXT,
     expiresatms BIGINT,
     isprimaryemail BOOLEAN,
-    PRIMARY KEY (userid, changeemailsessiontoken, emailchangestate)
+    PRIMARY KEY (changeemailsessiontoken, emailchangestate)
 );
 
-create TABLE user_profile_email_change_state_by_session_token (
-    userid UUID,
-    email TEXT,
-    emailchangestate TEXT,
-    changeemailsessiontoken TEXT,
-    changeorder INT,
-    changestatestatus TEXT,
-    expiresatms BIGINT,
-    isprimaryemail BOOLEAN,
-    PRIMARY KEY (changeemailsessiontoken)
-);
 
 create TABLE captcha_config (
     alias TEXT PRIMARY KEY,

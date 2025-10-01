@@ -1,8 +1,9 @@
-import { UserFailedLogin, UserMfaRel, Fido2Challenge, User, UserCredential, UserTenantRel, UserAuthenticationState, UserRegistrationState, ProfileEmailChangeState, UserTermsAndConditionsAccepted, UserRecoveryEmail } from "@/graphql/generated/graphql-types";
+import { UserFailedLogin, UserMfaRel, Fido2Challenge, User, UserCredential, UserTenantRel, UserAuthenticationState, UserRegistrationState, ProfileEmailChangeState, UserTermsAndConditionsAccepted, UserRecoveryEmail, AuthenticationGroupUserRel, AuthorizationGroupUserRel, UserScopeRel } from "@/graphql/generated/graphql-types";
 import IdentityDao, { UserLookupType } from "../../identity-dao";
 import CassandraDriver from "@/lib/data-sources/cassandra";
 import { types } from "cassandra-driver";
 import { MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, VERIFICATION_TOKEN_TYPE_PASSWORD_RESET, VERIFICATION_TOKEN_TYPE_VALIDATE_EMAIL } from "@/utils/consts";
+
 
 
 class CassandraIdentityDao extends IdentityDao {
@@ -347,8 +348,102 @@ class CassandraIdentityDao extends IdentityDao {
     }
 
     public async deleteUser(userId: string): Promise<void> {
-        // TODO
-        console.log(userId);
+
+        const user: User | null = await this.getUserBy("id", userId);
+        if(user === null){
+            return;
+        }
+
+        const tenantRels: Array<UserTenantRel> = await this.getUserTenantRelsByUserId(userId);
+        for(let i = 0; i < tenantRels.length; i++){
+            await this.removeUserFromTenant(tenantRels[i].tenantId, userId);
+        }
+
+        const userUuid = types.Uuid.fromString(userId);
+        const termsMapper =  await CassandraDriver.getInstance().getModelMapper("user_terms_and_conditions_accepted");        
+        const termsAccepted: Array<UserTermsAndConditionsAccepted> = (await termsMapper.find({userId: userId})).toArray();
+        for(let i = 0; i < termsAccepted.length; i++){
+            await termsMapper.remove({
+                userId: userUuid,
+                tenantId: types.Uuid.fromString(termsAccepted[i].tenantId)
+            });
+        }
+
+        const authnGroupsMapper = await CassandraDriver.getInstance().getModelMapper("authentication_group_user_rel");
+        const authnGroups: Array<AuthenticationGroupUserRel> = (await authnGroupsMapper.find({userId: userId})).toArray();
+        for(let i = 0; i < authnGroups.length; i++){
+            await authnGroupsMapper.remove({
+                userId: userUuid,
+                authenticationGroupId: types.Uuid.fromString(authnGroups[i].authenticationGroupId)
+            });
+        }
+
+        const authzGroupsMapper = await CassandraDriver.getInstance().getModelMapper("authorization_group_user_rel");
+        const authzGroups: Array<AuthorizationGroupUserRel> = (await authzGroupsMapper.find({userId: userId})).toArray();
+        for(let i = 0; i < authzGroups.length; i++){
+            await authzGroupsMapper.remove({
+                userId: userUuid,
+                groupId: types.Uuid.fromString(authzGroups[i].groupId)
+            });
+        }
+
+        const userCredentials: Array<UserCredential> = await this.getUserCredentials(userId);
+        const userCredMapper = await CassandraDriver.getInstance().getModelMapper("user_credential");
+        for(let i = 0; i < userCredentials.length; i++){
+            await userCredMapper.remove({
+                userId: userUuid,
+                dateCreatedMs: userCredentials[i].dateCreatedMs
+            });
+        }
+       
+        const userScopeMapper = await CassandraDriver.getInstance().getModelMapper("user_scope_rel");
+        const userScopes: Array<UserScopeRel> = (await userScopeMapper.find({userId: userId})).toArray();
+        for(let i = 0; i < userScopes.length; i++){
+            await userScopeMapper.remove({
+                userId: userUuid,
+                tenantId: types.Uuid.fromString(userScopes[i].tenantId),
+                scopeId: types.Uuid.fromString(userScopes[i].scopeId)
+            });
+        }
+
+        const cassandraClient = await CassandraDriver.getClient();
+        await cassandraClient.execute(
+            "DELETE FROM user_authentication_history WHERE userid = ?",
+            [userUuid],
+            {prepare: true}
+        );
+                
+        await this.deleteTOTP(userId);
+        await this.deleteFIDOKey(userId);
+        await this.deleteFido2Count(userId);
+        await this.deleteUserDuressCredential(userId);
+        await this.resetFailedLoginAttempts(userId);
+        await this.deleteRecoveryEmail(userId);
+
+        const userMapper = await CassandraDriver.getInstance().getModelMapper("users");
+        await userMapper.remove({
+            userId: userUuid
+        });
+
+        const userByEmailMapper = await CassandraDriver.getInstance().getModelMapper("users_by_email");
+        await userByEmailMapper.remove({
+            email: user.email
+        });
+
+        if(user.federatedOIDCProviderSubjectId){
+            const userByOidcIdMapper = await CassandraDriver.getInstance().getModelMapper("users_by_federated_oidc_id");
+            await userByOidcIdMapper.remove({
+                federatedOIDCProviderSubjectId: user.federatedOIDCProviderSubjectId
+            });
+        }
+        if(user.phoneNumber){
+            const userByPhoneMapper = await CassandraDriver.getInstance().getModelMapper("users_by_phone_number");
+            await userByPhoneMapper.remove({
+                phoneNumber: user.phoneNumber
+            });
+        }
+      
+
     }
 
     public async passwordProhibited(password: string): Promise<boolean> {
@@ -490,23 +585,38 @@ class CassandraIdentityDao extends IdentityDao {
     }
 
     public async getProfileEmailChangeStates(changeStateToken: string): Promise<Array<ProfileEmailChangeState>> {
-        console.log(changeStateToken);
-        throw new Error("Method not implemented.");
+        const mapper = await CassandraDriver.getInstance().getModelMapper("user_profile_email_change_state");
+        const results: Array<ProfileEmailChangeState> = (await mapper.find({changeEmailSessionToken: changeStateToken})).toArray();
+        return results;
     }
 
     public async createProfileEmailChangeStates(arrEmailChangeStates: Array<ProfileEmailChangeState>): Promise<Array<ProfileEmailChangeState>> {
-        console.log(arrEmailChangeStates);
-        throw new Error("Method not implemented.");
+        const mapper = await CassandraDriver.getInstance().getModelMapper("user_profile_email_change_state");
+
+        const ttlSeconds = arrEmailChangeStates.length > 0 ? 
+                            Math.floor ( (arrEmailChangeStates[0].expiresAtMs - Date.now()) / 1000 ) :
+                            300;
+
+        for(let i = 0; i < arrEmailChangeStates.length; i++){
+            await mapper.insert(arrEmailChangeStates[i], {ttl: ttlSeconds});
+        }
+        return arrEmailChangeStates
     }
 
     public async updateProfileEmailChangeState(profileEmailChangeState: ProfileEmailChangeState): Promise<ProfileEmailChangeState> {
-        console.log(profileEmailChangeState);
-        throw new Error("Method not implemented.");
+        const mapper = await CassandraDriver.getInstance().getModelMapper("user_profile_email_change_state");
+        const ttlSeconds = Math.floor ( (profileEmailChangeState.expiresAtMs - Date.now()) / 1000 );
+        await mapper.update(profileEmailChangeState, {ttl: ttlSeconds});
+        return profileEmailChangeState;
     }
 
     public async deleteProfileEmailChangeState(profileEmailChangeState: ProfileEmailChangeState): Promise<void> {
-        console.log(profileEmailChangeState);
-        throw new Error("Method not implemented.");
+        const mapper = await CassandraDriver.getInstance().getModelMapper("user_profile_email_change_state");
+        await mapper.remove({
+            changeEmailSessionToken: profileEmailChangeState.changeEmailSessionToken,
+            emailChangeState: profileEmailChangeState.emailChangeState
+        });
+        return;
     }
 
     public async deleteExpiredData(): Promise<void> {

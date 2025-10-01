@@ -265,7 +265,7 @@ export const AUTHORIZATION_GROUP_SCOPE_REL_MODEL:  {[key: string]: cassandra.map
 
 export const AUTHORIZATION_GROUP_USER_REL_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
     "authorization_group_user_rel": {
-        tables: ["authorization_group_user_rel"],
+        tables: ["authorization_group_user_rel", "authorization_group_user_rel_by_user"],
         columns: {
             "groupid": {
                 name: "groupId",
@@ -902,7 +902,7 @@ export const TENANT_LOOK_AND_FEEL_MODEL:  {[key: string]: cassandra.mapping.Mode
         tables: ["tenant_look_and_feel"],
         columns: {
             "tenantid": {
-                name: "tenantId",
+                name: "tenantid",
                 toModel(columnValue) {
                     return columnValue.toString();
                 }
@@ -915,7 +915,15 @@ export const TENANT_LOOK_AND_FEEL_MODEL:  {[key: string]: cassandra.mapping.Mode
 			"authenticationheadertextcolor": "authenticationheadertextcolor",
 			"authenticationlogouri": "authenticationlogouri",
 			"authenticationlogomimetype": "authenticationlogomimetype",
-			"authenticationlogo": "authenticationlogo"
+			"authenticationlogo": {
+                name: "authenticationlogo",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                },
+                fromModel(modelValue: string) {
+                    return Buffer.from(modelValue);
+                }
+            }
         }
     }
 };
@@ -1304,7 +1312,7 @@ export const USER_MFA_REL_MODEL:  {[key: string]: cassandra.mapping.ModelOptions
 
 export const USER_PROFILE_EMAIL_CHANGE_STATE_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
     "user_profile_email_change_state": {
-        tables: ["user_profile_email_change_state", "user_profile_email_change_state_by_session_token"],
+        tables: ["user_profile_email_change_state"],
         columns: {
             "userid": {
                 name: "userId",
