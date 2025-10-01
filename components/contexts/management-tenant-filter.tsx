@@ -108,7 +108,7 @@ const ManagementTenantFilter: React.FC<LayoutProps> = ({
         }
     }, [profile, tenantIdFromPath, needsRedirect, redirectUri, router]);
 
-    
+    const [metadataRetrieved, setMetadataRetrieved] = React.useState<boolean>(false);
 
     // GRAPHQL QUERIES
     const {data, loading } = useQuery(TENANT_META_DATA_QUERY, {
@@ -123,6 +123,7 @@ const ManagementTenantFilter: React.FC<LayoutProps> = ({
             }
             else{
                 tenantBean.setTenantMetaData(data.getTenantMetaData);
+                setMetadataRetrieved(true);
             }
         },
         onError(error) {
@@ -131,7 +132,7 @@ const ManagementTenantFilter: React.FC<LayoutProps> = ({
     });
 
     if(!needsRedirect && loading) return <div><DataLoading dataLoadingSize={"xl"} color={null}  /></div>
-    else if(!needsRedirect && data) return <>{children}</>    
+    else if(!needsRedirect && data && metadataRetrieved) return <>{children}</>    
     else return <></>
     
 }
