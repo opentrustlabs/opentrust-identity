@@ -8,14 +8,26 @@ class CassandraSecretShareDao extends SecretShareDao {
     public async getSecretShareBy(value: string, type: SecretShareLookupType): Promise<SecretShare | null> {
         const mapper = await CassandraDriver.getInstance().getModelMapper("secret_share");
         if(type === "id"){
-            return mapper.get({
-                secretShareId: types.Uuid.fromString(value)
-            })
+            const results = (await mapper.find({
+                secretShareId: value
+            })).toArray();
+            if(results.length > 0){
+                return results[0];
+            }
+            else{
+                return null;
+            }
         }
         else {
-            return mapper.get({
+            const results = (await mapper.find({
                 otp: value
-            })
+            })).toArray();
+            if(results.length > 0){
+                return results[0];
+            }
+            else{
+                return null;
+            }
         }
     }
 

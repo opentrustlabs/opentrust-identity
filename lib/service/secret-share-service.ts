@@ -94,11 +94,13 @@ class SecretShareService {
         if(secretShare === null){
             throw new GraphQLError(ERROR_CODES.EC00047.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00047}});
         }
+        
         if(secretShare.expiresAtMs < Date.now()){
             // Delete it and throw an error
             await secretShareDao.deleteSecretShare(secretShare.secretShareId);
             throw new GraphQLError(ERROR_CODES.EC00048.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00048}});
         }
+
         const provider: FederatedOidcProvider | null = await federatedOIDCProvderDao.getFederatedOidcProviderById(secretShare.objectId);
         if(provider === null){
             throw new GraphQLError(ERROR_CODES.EC00023.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00023}});

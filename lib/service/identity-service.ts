@@ -212,7 +212,6 @@ class IdentityService {
         }
 
         const arr: Array<RefreshData> = await authDao.getRefreshDataByUserId(userId);
-
         const retArr: Array<UserSession> = [];
         for(let i = 0; i < arr.length; i++){
             const r: RefreshData = arr[i];

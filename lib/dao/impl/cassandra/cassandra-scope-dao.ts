@@ -8,28 +8,42 @@ class CassandraScopeDao extends ScopeDao {
 
 
     public async getScope(tenantId?: string, scopeIds?: Array<string>): Promise<Array<Scope>> {
-        let ids: Array<string> = [];
         
+        let scopes: Array<Scope> = [];
+        const mapper = await CassandraDriver.getInstance().getModelMapper("scope");
         if(tenantId){
             const availScope: Array<TenantAvailableScope> = await this.getTenantAvailableScope(tenantId);
-            ids = availScope.map(
+            const ids = availScope.map(
                 (avl: TenantAvailableScope) => avl.scopeId
-            )
+            );
+            if(ids.length > 0){
+                const results = await mapper.find({
+                    scopeId: cassandra.mapping.q.in_(ids)
+                });
+                scopes = results.toArray();
+            }
+            else{
+                scopes = [];
+            }
         }
         else if(scopeIds){
-            ids = scopeIds;
-        }
-        const mapper = await CassandraDriver.getInstance().getModelMapper("scope");
-        if(ids.length > 0){
-            const results = await mapper.find({
-                scopeId: cassandra.mapping.q.in_(ids)
-            });
-            return results.toArray();
+            if(scopeIds.length > 0){
+                const results = await mapper.find({
+                    scopeId: cassandra.mapping.q.in_(scopeIds)
+                });
+                scopes = results.toArray();
+            }
+            else{
+                scopes = [];
+            }
         }
         else{
             const results = await mapper.findAll();
-            return results.toArray();
+            scopes = results.toArray();
         }
+        return scopes.sort(
+            (a: Scope, b: Scope) => a.scopeName.localeCompare(b.scopeName)
+        );
     }
 
     public async getScopeById(scopeId: string): Promise<Scope | null> {
@@ -148,7 +162,9 @@ class CassandraScopeDao extends ScopeDao {
         if(scopeId){
             queryParams.scopeId = scopeId
         }
+
         const results = await mapper.find(queryParams);
+        const a = results.toArray();
         return results.toArray();
     }
 

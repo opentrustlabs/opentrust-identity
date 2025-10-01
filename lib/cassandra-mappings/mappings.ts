@@ -71,7 +71,12 @@ export const ACCESS_RULE_MODEL:  {[key: string]: cassandra.mapping.ModelOptions}
     "access_rule": {
         tables: ["access_rule"],
         columns: {
-            "accessruleid": "accessRuleId",
+            "accessruleid": {
+                name: "accessRuleId",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                }
+            },
 			"accessrulename": "accessRuleName",
 			"scopeconstraintschemaid": "scopeAccessRuleSchemaId",
 			"accessruledefinition": "accessRuleDefinition"
@@ -298,8 +303,18 @@ export const CHANGE_EVENT_MODEL:  {[key: string]: cassandra.mapping.ModelOptions
     "change_event": {
         tables: ["change_event", "change_event_by_object_id"],
         columns: {
-            "changeeventid": "changeEventId",
-			"objectid": "objectId",
+            "changeeventid": {
+                name: "changeEventId",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                }
+            },
+			"objectid": {
+                name: "objectId",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                }
+            },
 			"changeeventclass": "changeEventClass",
 			"changeeventtype": "changeEventType",
 			"changetimestamp": "changeTimestamp",
@@ -410,8 +425,18 @@ export const CONTACT_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
     "contact": {
         tables: ["contact", "contact_by_object_id"],
         columns: {
-            "contactid": "contactid",
-			"objectid": "objectid",
+            "contactid": {
+                name: "contactid",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                }
+            },
+			"objectid": {
+                name: "objectid",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                }
+            },
 			"objecttype": "objecttype",
 			"email": "email",
 			"contactname": "name",
@@ -424,7 +449,12 @@ export const DELETION_STATUS_MODEL:  {[key: string]: cassandra.mapping.ModelOpti
     "deletion_status": {
         tables: ["deletion_status"],
         columns: {
-            "markfordeleteid": "markForDeleteId",
+            "markfordeleteid": {
+                name: "markForDeleteId",
+                toModel(columnValue) {
+                    return columnValue.toString()
+                }
+            },
 			"step": "step",
 			"startedat": "startedAt",
 			"completedat": "completedAt"
@@ -562,8 +592,18 @@ export const MARK_FOR_DELETE_MODEL:  {[key: string]: cassandra.mapping.ModelOpti
     "mark_for_delete": {
         tables: ["mark_for_delete"],
         columns: {
-            "markfordeleteid": "markForDeleteId",
-			"objectid": "objectId",
+            "markfordeleteid": {
+                name: "markForDeleteId",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                }
+            },
+			"objectid": {
+                name: "objectId",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                }
+            },
 			"objecttype": "objectType",
 			"submittedby": "submittedBy",
 			"submitteddate": "submittedDate",
@@ -667,7 +707,12 @@ export const SCHEDULER_LOCK_MODEL:  {[key: string]: cassandra.mapping.ModelOptio
         tables: ["scheduler_lock", "scheduler_lock_by_instance_id"],
         columns: {
             "lockname": "lockName",
-			"lockinstanceid": "lockInstanceId",
+			"lockinstanceid": {
+                name: "lockInstanceId",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                }
+            },
 			"lockstarttimems": "lockStartTimeMS",
 			"lockexpiresatms": "lockExpiresAtMS"
         }
@@ -696,7 +741,12 @@ export const SECRET_SHARE_MODEL:  {[key: string]: cassandra.mapping.ModelOptions
     "secret_share": {
         tables: ["secret_share", "secret_share_by_otp"],
         columns: {
-            "secretshareid": "secretShareId",
+            "secretshareid": {
+                name: "secretShareId",
+                toModel(columnValue) {
+                    return columnValue.toString();
+                }
+            },
 			"objectid": "objectId",
 			"objectype": "secretShareObjectType",
 			"otp": "otp",
