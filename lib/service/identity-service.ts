@@ -98,6 +98,12 @@ class IdentityService {
     
     public async updateUser(user: User): Promise<User> {
 
+        // Always lower-case the email and format the phone number if it exists
+        user.email = this.formatEmail(user.email);
+        if(user.phoneNumber){
+            user.phoneNumber = this.formatPhoneNumber(user.phoneNumber)
+        }
+
         // If the user is making the update request on their own behalf, they still need user.update scope
         if(user.userId === this.oidcContext.portalUserProfile?.userId){
             const isAuthorized: boolean = containsScope(USER_UPDATE_SCOPE, this.oidcContext.portalUserProfile.scope);
@@ -1125,110 +1131,7 @@ class IdentityService {
 
         return retVal;
     }
-
-    // protected async updateSearchIndexUserDocuments(user: User): Promise<void> {
-    //     const getResponse: Get_Response = await searchClient.get({
-    //         id: user.userId,
-    //         index: SEARCH_INDEX_OBJECT_SEARCH
-    //     });
-        
-    //     if (getResponse.body) {
-    //         const document: ObjectSearchResultItem = getResponse.body._source as ObjectSearchResultItem;
-    //         document.name = user.nameOrder === NAME_ORDER_WESTERN ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`;
-    //         document.email = user.email;
-    //         document.enabled = user.enabled;
-    //         await searchClient.index({
-    //             id: user.userId,
-    //             index: SEARCH_INDEX_OBJECT_SEARCH,
-    //             body: document
-    //         });
-    //     }
-        
-    //     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    //     const updateByQueryBody: any = {
-    //         query: {
-    //             term: {
-    //                 childid: user.userId
-    //             }
-    //         },
-    //         script: {
-    //             source: "ctx._source.childdescription = params.email; ctx._source.childname = params.userName",
-    //             lang: "painless",
-    //             params: {
-    //                 email: user.email,
-    //                 userName: user.nameOrder === NAME_ORDER_WESTERN ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`,
-    //             }
-    //         }
-    //     };
-
-    //     searchClient.updateByQuery({
-    //         index: SEARCH_INDEX_REL_SEARCH,
-    //         body: updateByQueryBody,
-    //         requests_per_second: 100,
-    //         conflicts: "proceed",
-    //         wait_for_completion: false,
-    //         scroll: "240m"            
-    //     })
-    //     .then(
-    //         (value: UpdateByQuery_Response) => {        
-                
-    //             logWithDetails("info", `Update user in updateSearchIndexUserDocuments.`, {
-    //                 userId: user.userId, 
-    //                 firstName: user.firstName, 
-    //                 lastName: user.lastName, 
-    //                 statusCode: value.statusCode,
-    //                 aborted: value.meta.aborted,
-    //                 attempts: value.meta.attempts
-    //             });
-    //         }
-    //     )
-    //     .catch(
-    //         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    //         (err: any) => {
-    //             logWithDetails("error", `Error in updateSearchIndexUserDocuments. ${err.message}.`, {...err, userId: user.userId, firstName: user.firstName, lastName: user.lastName});
-    //         }
-    //     );
-    // }
-
-    // protected async updateObjectSearchIndex(tenant: Tenant, user: User): Promise<void> {
-    //     const owningTenantId: string = tenant.tenantId;
-    //     const document: ObjectSearchResultItem = {
-    //         name: user.nameOrder === NAME_ORDER_WESTERN ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`,
-    //         description: "",
-    //         objectid: user.userId,
-    //         objecttype: SearchResultType.User,
-    //         owningtenantid: owningTenantId,
-    //         email: user.email,
-    //         enabled: user.enabled,
-    //         owningclientid: "",
-    //         subtype: "",
-    //         subtypekey: ""
-    //     }
-        
-    //     await searchClient.index({
-    //         id: user.userId,
-    //         index: SEARCH_INDEX_OBJECT_SEARCH,
-    //         body: document
-    //     });
-    // }
-
-    // protected async updateRelSearchIndex(owningTenantId: string, parentTenantId: string, user: User): Promise<void> {
-        
-    //     const relDocument: RelSearchResultItem = {
-    //         childid: user.userId,
-    //         childname: user.nameOrder === NAME_ORDER_WESTERN ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`,
-    //         childtype: SearchResultType.User,
-    //         owningtenantid: owningTenantId,
-    //         parentid: parentTenantId,
-    //         parenttype: SearchResultType.Tenant,
-    //         childdescription: user.email
-    //     }
-    //     await searchClient.index({
-    //         id: `${parentTenantId}::${user.userId}`,
-    //         index: SEARCH_INDEX_REL_SEARCH,
-    //         body: relDocument
-    //     });
-    // }
+ 
 
     protected async generateAuthorizationCode(userId: string, preAuthToken: string): Promise<AuthorizationReturnUri> {
                 
@@ -1271,7 +1174,15 @@ class IdentityService {
         return PORTAL_AUTH_TOKEN_TTL_SECONDS;
     }
 
+    protected formatEmail(email: string): string {
+        return email.toLowerCase();
+    }
+    protected formatPhoneNumber(phoneNumber: string): string {
+        const s = phoneNumber.replace(/\D/g, "");
+        return `+${s}`;
+    }
 
+    
 }
 
 export default IdentityService;

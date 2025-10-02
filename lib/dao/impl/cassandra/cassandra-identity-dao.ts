@@ -158,10 +158,26 @@ class CassandraIdentityDao extends IdentityDao {
 
     public async getUserBy(userLookupType: UserLookupType, value: string): Promise<User | null> {
         if(userLookupType === "email"){
-            const mapper = await CassandraDriver.getInstance().getModelMapper("users_by_email");            
-            return mapper.get({
+            const mapper = await CassandraDriver.getInstance().getModelMapper("users_by_email");
+            const result: User | null = await mapper.get({
                 email: value
             });
+            // Also try to lookup the user by recovery email, if it exists
+            if(result === null){
+                const recoveryEmailMapper = await CassandraDriver.getInstance().getModelMapper("user_email_recovery");
+                const results: Array<{userId: string, email: string, emailVerified: boolean}> = 
+                            (await recoveryEmailMapper.find({email: value}, {limit: 1})).toArray();
+                if(results.length > 0){
+                    const {userId} = results[0];
+                    return this.getUserBy("id", userId);
+                }   
+                else{
+                    return null;
+                }
+            }
+            else{
+                return result;
+            }
         }
         else if(userLookupType === "id"){
             const mapper = await CassandraDriver.getInstance().getModelMapper("users");            

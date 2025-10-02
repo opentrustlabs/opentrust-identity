@@ -59,11 +59,11 @@ class AuthenticateUserService extends IdentityService {
 
         // 1.   If the user is coming from a 3rd party site for authentication
         if(preAuthToken || deviceCodeId){
-            return this.authenticateExternalUserNameHandler(email, preAuthToken, deviceCodeId);
+            return this.authenticateExternalUserNameHandler(this.formatEmail(email), preAuthToken, deviceCodeId);
         }
         // Otherwise they are trying to log directly into the IAM portal itself.
         else{
-            return this.authenticatePortalUserNameHandler(email, tenantId, returnToUri);
+            return this.authenticatePortalUserNameHandler(this.formatEmail(email), tenantId, returnToUri);
             
         }        
     }
@@ -842,13 +842,14 @@ class AuthenticateUserService extends IdentityService {
     public async authenticateUser(username: string, password: string, tenantId: string, authenticationSessionToken: string, preAuthToken: string | null): Promise<UserAuthenticationStateResponse>{
         const response: UserAuthenticationStateResponse = this.initUserAuthenticationStateResponse(authenticationSessionToken, tenantId, preAuthToken);
 
+
         const arrUserAuthenticationStates: Array<UserAuthenticationState> = await this.getSortedAuthenticationStates(authenticationSessionToken);
         const index: number = await this.validateAuthenticationStep(arrUserAuthenticationStates, response, AuthenticationState.EnterPassword);
         if(index < 0){
             return Promise.resolve(response);
         }
         
-        const user: User | null = await identityDao.getUserBy("email", username);
+        const user: User | null = await identityDao.getUserBy("email", this.formatEmail(username));
         if(!user){
             throw new GraphQLError(ERROR_CODES.EC00013.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00013}});
         }
@@ -894,9 +895,10 @@ class AuthenticateUserService extends IdentityService {
 
     }
 
-    public async authenticateUserAndMigrate(username: string, password: string, tenantId: string, authenticationSessionToken: string, preAuthToken: string | null): Promise<UserAuthenticationStateResponse> {
+    public async authenticateUserAndMigrate(usernameInput: string, password: string, tenantId: string, authenticationSessionToken: string, preAuthToken: string | null): Promise<UserAuthenticationStateResponse> {
         const response: UserAuthenticationStateResponse = this.initUserAuthenticationStateResponse(authenticationSessionToken, tenantId, preAuthToken);
 
+        const username: string = this.formatEmail(usernameInput);
         const arrUserAuthenticationStates: Array<UserAuthenticationState> = await this.getSortedAuthenticationStates(authenticationSessionToken);
         const index: number = await this.validateAuthenticationStep(arrUserAuthenticationStates, response, AuthenticationState.EnterPasswordAndMigrateUser);
         if(index < 0){

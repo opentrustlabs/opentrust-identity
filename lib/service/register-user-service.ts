@@ -45,6 +45,12 @@ class RegisterUserService extends IdentityService {
     // ##########################################################################
 
     public async createUser(userCreateInput: UserCreateInput, tenantId: string): Promise<User> {
+
+        // Always lower-case the email and format the phone number if it exists
+        userCreateInput.email = this.formatEmail(userCreateInput.email);
+        if(userCreateInput.phoneNumber){
+            userCreateInput.phoneNumber = this.formatPhoneNumber(userCreateInput.phoneNumber)
+        }
         const { user } = await this._createUser(userCreateInput, tenantId, false);
         return user;
     }
@@ -57,7 +63,14 @@ class RegisterUserService extends IdentityService {
          * @returns 
          */    
     public async registerUser(userCreateInput: UserCreateInput, tenantId: string, preAuthToken: string | null, deviceCodeId: string | null, recaptchaToken: string | null): Promise<UserRegistrationStateResponse>{
-            
+        
+        // Always lower-case the email and format the phone number if it exists
+        // Always lower-case the email and format the phone number if it exists
+        userCreateInput.email = this.formatEmail(userCreateInput.email);
+        if(userCreateInput.phoneNumber){
+            userCreateInput.phoneNumber = this.formatPhoneNumber(userCreateInput.phoneNumber)
+        }
+
         // Need to check to see if there is an active registration session happening with the
         // user, based on their email. If so, then return error if the session has not expired.
         // Otherwise, delete the old registration session, any user and relationships that were
@@ -1040,9 +1053,6 @@ class RegisterUserService extends IdentityService {
      * @returns 
      */
     protected async _createUser(userCreateInput: UserCreateInput, tenantId: string, isRegistration: boolean, recaptchaToken?: string): Promise<{ user: User, tenant: Tenant, tenantPasswordConfig: TenantPasswordConfig }> {
-
-        // Always need to make sure that we lower-case the email for consistency purposes.
-        userCreateInput.email = userCreateInput.email.toLowerCase();
 
         const tenant: Tenant | null = await tenantDao.getTenantById(tenantId);
         if (!tenant) {
