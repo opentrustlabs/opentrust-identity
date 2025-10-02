@@ -1,4 +1,4 @@
-import { Model, DataTypes, Sequelize } from 'sequelize';
+import { Model, DataTypes, Sequelize } from "@sequelize/core";
 
 class RefreshDataEntity extends Model {
     
@@ -7,67 +7,67 @@ class RefreshDataEntity extends Model {
             refreshToken: {
                 type: DataTypes.STRING,
                 primaryKey: true,
-                field: "refreshtoken"
+                columnName: "refreshtoken"
             },
             tenantId: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "tenantid"
+                columnName: "tenantid"
             },
             userId: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "userid"
+                columnName: "userid"
             },
             clientId: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-				field: "clientid"
+				columnName: "clientid"
             },
             redirecturi: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "redirecturi"
+                columnName: "redirecturi"
             },
             refreshCount: {
-                type: DataTypes.NUMBER,
+                type: DataTypes.BIGINT,
                 primaryKey: false,
                 allowNull: false,
-                field: "refreshcount"
+                columnName: "refreshcount"
             },
             refreshTokenClientType: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "refreshtokenclienttype"
+                columnName: "refreshtokenclienttype"
             },
             scope: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "scope"
+                columnName: "scope"
             },
             codeChallenge: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: true,
-                field: "codechallenge"
+                columnName: "codechallenge"
             },
             codeChallengeMethod: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: true,
-                field: "codechallengemethod"
+                columnName: "codechallengemethod"
             },
             expiresAtMs: {
                 type: DataTypes.BIGINT,
                 primaryKey: false,
                 allowNull: false,
-                field: "expiresatms"
+                columnName: "expiresatms"
             }
         }, {
             sequelize,

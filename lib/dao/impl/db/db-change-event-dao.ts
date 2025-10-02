@@ -2,15 +2,16 @@ import { ChangeEvent, SystemSettings } from "@/graphql/generated/graphql-types";
 import ChangeEventDao from "../../change-event-dao";
 import ChangeEventEntity from "@/lib/entities/change-event-entity";
 import DBDriver from "@/lib/data-sources/sequelize-db";
-import { Op, Sequelize } from "sequelize";
+import { Op } from "@sequelize/core";
 import SystemSettingsEntity from "@/lib/entities/system-settings-entity";
 import { DEFAULT_AUDIT_RECORD_RETENTION_PERIOD_DAYS } from "@/utils/consts";
 
 class DBChangeEventDao extends ChangeEventDao {
 
     public async getChangeEventHistory(objectId: string): Promise<Array<ChangeEvent>> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        const entities: Array<ChangeEventEntity> | null = await sequelize.models.changeEvent.findAll({
+        
+        
+        const entities: Array<ChangeEventEntity> = await (await DBDriver.getInstance().getChangeEventEntity()).findAll({
             where: {
                 objectId: objectId
             },
@@ -27,18 +28,19 @@ class DBChangeEventDao extends ChangeEventDao {
     }
 
     public async addChangeEvent(changeEvent: ChangeEvent): Promise<ChangeEvent>{
-        const sequelize: Sequelize = await DBDriver.getConnection();        
-        sequelize.models.changeEvent.create({
+        
+        
+        (await DBDriver.getInstance().getChangeEventEntity()).create({
             ...changeEvent,
             data: Buffer.from(changeEvent.data, "utf-8")
-        })
+        });
         
         return changeEvent;
     }
 
     public async deleteExpiredData(): Promise<void> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        const systemSettingsEntity: SystemSettingsEntity | null = await sequelize.models.systemSettings.findOne();
+
+        const systemSettingsEntity: SystemSettingsEntity | null = await (await DBDriver.getInstance().getChangeEventEntity()).findOne();
         let periodDays: number = DEFAULT_AUDIT_RECORD_RETENTION_PERIOD_DAYS;
         if(systemSettingsEntity !== null){
             const systemSettings: SystemSettings = systemSettingsEntity.dataValues;
@@ -53,7 +55,7 @@ class DBChangeEventDao extends ChangeEventDao {
         // To delete the change records, retrieve 1000 at a time and delete with in clause     
         let hasMoreRecords = true;
         while(hasMoreRecords){
-            const arr: Array<ChangeEventEntity> = await sequelize.models.changeEvent.findAll({
+            const arr: Array<ChangeEventEntity> = await (await DBDriver.getInstance().getChangeEventEntity()).findAll({
                 where: {
                     changeTimestamp: {
                         [Op.lt]: timestampMs
@@ -72,7 +74,7 @@ class DBChangeEventDao extends ChangeEventDao {
                     (v: ChangeEventEntity) => v.getDataValue("changeEventId")
                 );
             
-            await sequelize.models.changeEvent.destroy({
+            await (await DBDriver.getInstance().getChangeEventEntity()).destroy({
                 where: {
                     changeEventId: {
                         [Op.in]: ids

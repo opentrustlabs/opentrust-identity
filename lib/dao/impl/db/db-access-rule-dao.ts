@@ -1,21 +1,19 @@
 import { AccessRule } from "@/graphql/generated/graphql-types";
 import AccessRuleDao from "../../access-rule-dao";
 import DBDriver from "@/lib/data-sources/sequelize-db";
-import { Sequelize } from "sequelize";
 import AccessRuleEntity from "@/lib/entities/access-rule-entity";
 
 class DBAccessRuleDao extends AccessRuleDao {
 
     public async getAccessRules(tenantId?: string): Promise<Array<AccessRule>> {
 
-        const sequelize: Sequelize = await DBDriver.getConnection();
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const whereParams: any = {};
         if(tenantId){
             whereParams.tenantId = tenantId
         };
 
-        const arr: Array<AccessRuleEntity> = await sequelize.models.accessRule.findAll({
+        const arr: Array<AccessRuleEntity> = await (await DBDriver.getInstance().getAccessRuleEntity()).findAll({
             where: whereParams
         });
 
@@ -27,8 +25,8 @@ class DBAccessRuleDao extends AccessRuleDao {
     }
 
     public async getAccessRuleById(accessRuleId: string): Promise<AccessRule | null> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        const entity: AccessRuleEntity | null = await sequelize.models.accessRule.findOne({
+
+        const entity: AccessRuleEntity | null = await (await DBDriver.getInstance().getAccessRuleEntity()).findOne({
             where: {
                 accessRuleId: accessRuleId
             }
@@ -40,14 +38,14 @@ class DBAccessRuleDao extends AccessRuleDao {
     }
 
     public async createAccessRule(accessRule: AccessRule): Promise<AccessRule> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.accessRule.create(accessRule);        
+
+        await (await DBDriver.getInstance().getAccessRuleEntity()).create(accessRule);        
         return Promise.resolve(accessRule);
     }
 
     public async updateAccessRule(accessRule: AccessRule): Promise<AccessRule> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.accessRule.update(accessRule, {
+
+        await (await DBDriver.getInstance().getAccessRuleEntity()).update(accessRule, {
             where: {
                 accessRuleId: accessRule.accessRuleId
             }

@@ -88,9 +88,10 @@ const TenantManagementDomainConfiguration: React.FC<TenantManagementDomainConfig
                 <Dialog
                     open={deleteDialogOpen}
                     onClose={() => { setDeleteDialogOpen(false); setSelectedDomainToDelete(null); }}
+                    maxWidth="sm"
+                    fullWidth={true}
                 >
                     <DialogContent>
-
                         <Typography ><span>Confirm removal of domain: </span> <span style={{ fontWeight: "bold" }}>{selectedDomainToDelete}</span></Typography>
                     </DialogContent>
                     <DialogActions>

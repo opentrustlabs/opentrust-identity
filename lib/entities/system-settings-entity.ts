@@ -1,4 +1,4 @@
-import { Model, DataTypes, Sequelize } from 'sequelize';
+import { Model, DataTypes, Sequelize } from "@sequelize/core";
 
 class SystemSettingsEntity extends Model {
     
@@ -7,49 +7,49 @@ class SystemSettingsEntity extends Model {
             systemId: {
                 type: DataTypes.STRING,
                 primaryKey: true,
-                field: "systemid"
+                columnName: "systemid"
             },
             allowRecoveryEmail: {
                 type: DataTypes.BOOLEAN,
                 primaryKey: false,
                 allowNull: false,
-                field: "allowrecoveryemail"
+                columnName: "allowrecoveryemail"
             },
             allowDuressPassword: {
                 type: DataTypes.BOOLEAN,
                 primaryKey: false,
                 allowNull: false,
-                field: "allowduresspassword"
+                columnName: "allowduresspassword"
             },
             rootClientId: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "rootclientid"
+                columnName: "rootclientid"
             },
             enablePortalAsLegacyIdp: {
                 type: DataTypes.BOOLEAN,
                 primaryKey: false,
                 allowNull: false,
-                field: "enableportalaslegacyidp"
+                columnName: "enableportalaslegacyidp"
             },
             auditRecordRetentionPeriodDays: {
                 type: DataTypes.INTEGER,
                 primaryKey: false,
                 allowNull: true,
-                field: "auditrecordretentionperioddays"
+                columnName: "auditrecordretentionperioddays"
             },
             noReplyEmail: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: true,
-                field: "noreplyemail"
+                columnName: "noreplyemail"
             },
             contactEmail: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: true,
-                field: "contactemail"
+                columnName: "contactemail"
             },
         }, 
         {

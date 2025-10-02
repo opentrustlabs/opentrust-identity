@@ -78,13 +78,6 @@ const SystemInit: React.FC = () => {
             tenantId: "",
             userTokenTTLSeconds: undefined
         },
-        rootContact: {
-            email: "",
-            name: undefined,
-            objectid: "",
-            objecttype: "",
-            userid: undefined
-        },
         rootTenantInput: {
             allowAnonymousUsers: false,
             allowForgotPassword: false,
@@ -144,7 +137,7 @@ const SystemInit: React.FC = () => {
     // STATE VARIABLES
     const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
     const [hasReadinessError, setHasReadinessError] = React.useState<boolean>(false);
-    const [hasReadinessWarning, setHasReadinessWarning] = React.useState<boolean>(false);
+    const [hasReadinessWarning, setHasReadinessWarning] = React.useState<boolean>(false);        
     const [initializationStateIndex, setInitializationStateIndex] = React.useState<number>(0);
     const [systemInitializationInput, setSystemInitializationInput] = React.useState<SystemInitializationInput>(input);
 
@@ -414,7 +407,7 @@ const SystemInit: React.FC = () => {
                         onError={(message) => {
                             setErrorMessage(message)
                         }}
-                        onNext={(updatedInput: SystemInitializationInput) => {
+                        onNext={(updatedInput: SystemInitializationInput) => {                            
                             setSystemInitializationInput({...updatedInput});
                             setInitializationStateIndex(initializationStateIndex + 1);
                         }}
@@ -422,7 +415,6 @@ const SystemInit: React.FC = () => {
                     />
                 </Grid2>            
             }
-
         </React.Fragment>
     )
 }

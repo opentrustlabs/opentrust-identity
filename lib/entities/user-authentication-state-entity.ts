@@ -1,4 +1,4 @@
-import { Model, DataTypes, Sequelize } from 'sequelize';
+import { Model, DataTypes, Sequelize } from "@sequelize/core";
 
 class UserAuthenticationStateEntity extends Model {
     
@@ -7,59 +7,59 @@ class UserAuthenticationStateEntity extends Model {
             userId: {
                 type: DataTypes.STRING,
                 primaryKey: true,
-                field: "userid"
+                columnName: "userid"
             },
             tenantId: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "tenantid"
+                columnName: "tenantid"
             },
             authenticationSessionToken: {
                 type: DataTypes.STRING,
                 primaryKey: true,
-                field: "authenticationsessiontoken"
+                columnName: "authenticationsessiontoken"
             },
             authenticationState: {
                 type: DataTypes.STRING,
                 primaryKey: true,
-                field: "authenticationstate"
+                columnName: "authenticationstate"
             },
             authenticationStateOrder: {
                 type: DataTypes.INTEGER,
                 primaryKey: false,
                 allowNull: false,
-                field: "authenticationstateorder"
+                columnName: "authenticationstateorder"
             },
             authenticationStateStatus: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "authenticationstatestatus"
+                columnName: "authenticationstatestatus"
             },
             preAuthToken: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: true,
-                field: "preauthtoken"
+                columnName: "preauthtoken"
             },
             expiresAtMs: {
                 type: DataTypes.BIGINT,
                 primaryKey: false,
                 allowNull: false,
-                field: "expiresatms"
+                columnName: "expiresatms"
             },
             returnToUri: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: true,
-                field: "returntouri"
+                columnName: "returntouri"
             },
             deviceCodeId: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: true,
-                field: "devicecodeid"
+                columnName: "devicecodeid"
             }
         }, 
         {

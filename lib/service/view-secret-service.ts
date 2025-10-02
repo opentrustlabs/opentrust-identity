@@ -63,8 +63,8 @@ class ViewSecretService {
                 if(!isAuthorized){
                     throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});
                 }
-                if(signingKey.password){
-                    decrypted = await kms.decrypt(signingKey.password);
+                if(signingKey.keyPassword){
+                    decrypted = await kms.decrypt(signingKey.keyPassword);
                 }
             }
         }

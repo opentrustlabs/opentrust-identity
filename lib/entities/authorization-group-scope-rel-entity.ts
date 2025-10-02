@@ -1,4 +1,4 @@
-import { Model, DataTypes, Sequelize } from 'sequelize';
+import { Model, DataTypes, Sequelize } from "@sequelize/core";
 
 class AuthorizationGroupScopeRelEntity extends Model {
 
@@ -7,17 +7,17 @@ class AuthorizationGroupScopeRelEntity extends Model {
             groupId: {
                 type: DataTypes.STRING,
                 primaryKey: true,
-                field: "groupid"
+                columnName: "groupid"
             },
             scopeId: {
                 type: DataTypes.STRING,
                 primaryKey: true,
-                field: "scopeid"
+                columnName: "scopeid"
             },
             tenantId: {
                 type: DataTypes.STRING,
                 primaryKey: true,
-                field: "tenantid"
+                columnName: "tenantid"
             }
         }, 
         {

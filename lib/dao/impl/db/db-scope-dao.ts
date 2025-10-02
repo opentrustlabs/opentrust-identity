@@ -3,7 +3,7 @@ import ScopeDao from "../../scope-dao";
 import ScopeEntity from "@/lib/entities/scope-entity";
 import TenantAvailableScopeEntity from "@/lib/entities/tenant-available-scope-entity";
 import DBDriver from "@/lib/data-sources/sequelize-db";
-import { Op, Sequelize } from "sequelize";
+import { Op } from "@sequelize/core";
 import AuthorizationGroupScopeRelEntity from "@/lib/entities/authorization-group-scope-rel-entity";
 import UserScopeRelEntity from "@/lib/entities/user-scope-rel-entity";
 import ClientScopeRelEntity from "@/lib/entities/client-scope-rel-entity";
@@ -15,8 +15,8 @@ class DBScopeDao extends ScopeDao {
     }
 
     public async getClientScopeRels(clientId: string): Promise<Array<ClientScopeRel>> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        const arr: Array<ClientScopeRelEntity> = await sequelize.models.clientScopeRel.findAll({
+        
+        const arr: Array<ClientScopeRelEntity> = await (await DBDriver.getInstance().getClientScopeRelEntity()).findAll({
             where: {
                 clientId: clientId
             }
@@ -27,8 +27,7 @@ class DBScopeDao extends ScopeDao {
     }
 
     public async getAuthorizationGroupScopeRels(authorizationGroupId: string): Promise<Array<AuthorizationGroupScopeRel>> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        const arr: Array<AuthorizationGroupScopeRelEntity> = await sequelize.models.authorizationGroupScopeRel.findAll({
+        const arr: Array<AuthorizationGroupScopeRelEntity> = await (await DBDriver.getInstance().getAuthorizationGroupScopeRelEntity()).findAll({
             where: {
                 groupId: authorizationGroupId
             }
@@ -37,20 +36,18 @@ class DBScopeDao extends ScopeDao {
             (e: AuthorizationGroupScopeRelEntity) => e.dataValues
         );
     }
-    public async assignScopeToAuthorizationGroup(tenantId: string, authorizationGroupId: string, scopeId: string): Promise<AuthorizationGroupScopeRel> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
+    public async assignScopeToAuthorizationGroup(tenantId: string, authorizationGroupId: string, scopeId: string): Promise<AuthorizationGroupScopeRel> {        
         const authorizationGroupScopeRel: AuthorizationGroupScopeRel = {
             groupId: authorizationGroupId,
             scopeId: scopeId,
             tenantId: tenantId
         }
-        await sequelize.models.authorizationGroupScopeRel.create(authorizationGroupScopeRel);
+        await (await DBDriver.getInstance().getAuthorizationGroupScopeRelEntity()).create(authorizationGroupScopeRel);
         return authorizationGroupScopeRel;
     }
 
     public async removeScopeFromAuthorizationGroup(tenantId: string, authorizationGroupId: string, scopeId: string): Promise<void> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.authorizationGroupScopeRel.destroy({
+        await (await DBDriver.getInstance().getAuthorizationGroupScopeRelEntity()).destroy({
             where: {
                 groupId: authorizationGroupId,
                 scopeId: scopeId,
@@ -61,8 +58,7 @@ class DBScopeDao extends ScopeDao {
     }
 
     public async getUserScopeRels(userId: string, tenantId: string): Promise<Array<UserScopeRel>> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        const arr: Array<UserScopeRelEntity> = await sequelize.models.userScopeRel.findAll({
+        const arr: Array<UserScopeRelEntity> = await (await DBDriver.getInstance().getUserScopeRelEntity()).findAll({
             where: {
                 userId: userId,
                 tenantId: tenantId
@@ -75,19 +71,17 @@ class DBScopeDao extends ScopeDao {
 
 
     public async assignScopeToUser(tenantId: string, userId: string, scopeId: string): Promise<UserScopeRel> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
         const userScopeRel: UserScopeRel = {
             scopeId: scopeId,
             tenantId: tenantId,
             userId: userId
         }
-        await sequelize.models.userScopeRel.create(userScopeRel);
+        await (await DBDriver.getInstance().getUserScopeRelEntity()).create(userScopeRel);
         return userScopeRel;
         
     }
     public async removeScopeFromUser(tenantId: string, userId: string, scopeId: string): Promise<void> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.userScopeRel.destroy({
+        await (await DBDriver.getInstance().getUserScopeRelEntity()).destroy({
             where: {
                 userId: userId,
                 tenantId: tenantId,
@@ -98,12 +92,11 @@ class DBScopeDao extends ScopeDao {
         return Promise.resolve();
     }
 
-    public async getScope(tenantId?: string, scopeIds?: Array<string>): Promise<Array<Scope>> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
+    public async getScope(tenantId?: string, scopeIds?: Array<string>): Promise<Array<Scope>> {        
         if(tenantId){            
             const rels = await this.getTenantScopeRel(tenantId);
             const scopeIds = rels.map(r => r.scopeId);
-            const resultList: Array<ScopeEntity> = await sequelize.models.scope.findAll({
+            const resultList: Array<ScopeEntity> = await (await DBDriver.getInstance().getScopeEntity()).findAll({
                 where: {
                     scopeId: {[Op.in]: scopeIds}
                 },
@@ -114,7 +107,7 @@ class DBScopeDao extends ScopeDao {
             return resultList.map(e => e.dataValues);
         }
         else if(scopeIds){
-            const resultList: Array<ScopeEntity> = await sequelize.models.scope.findAll({
+            const resultList: Array<ScopeEntity> = await (await DBDriver.getInstance().getScopeEntity()).findAll({
                 where: {
                     scopeId: {[Op.in]: scopeIds}
                 },
@@ -125,7 +118,7 @@ class DBScopeDao extends ScopeDao {
             return resultList.map(e => e.dataValues);
         }
         else{
-            const resultList: Array<ScopeEntity> = await sequelize.models.scope.findAll({
+            const resultList: Array<ScopeEntity> = await (await DBDriver.getInstance().getScopeEntity()).findAll({
                 order: [
                     ["scopeName", "ASC"]
                 ]
@@ -135,8 +128,7 @@ class DBScopeDao extends ScopeDao {
     }
 
     public async getScopeById(scopeId: string): Promise<Scope | null> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        const entity: ScopeEntity | null = await sequelize.models.scope.findOne({
+        const entity: ScopeEntity | null = await (await DBDriver.getInstance().getScopeEntity()).findOne({
             where: {scopeId: scopeId}
         });
 
@@ -144,23 +136,20 @@ class DBScopeDao extends ScopeDao {
     }
 
     public async getScopeByScopeName(scopeName: string): Promise<Scope | null> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        const entity: ScopeEntity | null = await sequelize.models.scope.findOne({
+        const entity: ScopeEntity | null = await (await DBDriver.getInstance().getScopeEntity()).findOne({
             where: {scopeName: scopeName}
         });
 
         return entity ? Promise.resolve(entity.dataValues as Scope) : Promise.resolve(null);
     }
 
-    public async createScope(scope: Scope): Promise<Scope> {
-        const sequelize: Sequelize = await DBDriver.getConnection();        
-        await sequelize.models.scope.create(scope);
+    public async createScope(scope: Scope): Promise<Scope> {      
+        await (await DBDriver.getInstance().getScopeEntity()).create(scope);
         return Promise.resolve(scope);
     }
 
     public async updateScope(scope: Scope): Promise<Scope> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.scope.update(scope, {
+        await (await DBDriver.getInstance().getScopeEntity()).update(scope, {
             where: {
                 scopeId: scope.scopeId
             }
@@ -169,12 +158,11 @@ class DBScopeDao extends ScopeDao {
     }
 
     public async deleteScope(scopeId: string): Promise<void> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
         const arr: Array<TenantAvailableScope> = await this.getTenantScopeRel(undefined, scopeId);
         for(let i = 0; i < arr.length; i++){
             await this.removeScopeFromTenant(arr[i].tenantId, scopeId);
         }
-        await sequelize.models.scope.destroy({
+        await (await DBDriver.getInstance().getScopeEntity()).destroy({
             where: {
                 scopeId: scopeId
             }
@@ -184,7 +172,6 @@ class DBScopeDao extends ScopeDao {
     }
 
     public async getTenantScopeRel(tenantId?: string, scopeId?: string): Promise<Array<TenantAvailableScope>> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
         
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const params: any = {};
@@ -195,51 +182,48 @@ class DBScopeDao extends ScopeDao {
             params.scopeId = scopeId;
         }
         if(tenantId || scopeId){
-            const entities: Array<TenantAvailableScopeEntity> = await sequelize.models.tenantAvailableScope.findAll({
+            const entities: Array<TenantAvailableScopeEntity> = await (await DBDriver.getInstance().getTenantAvailableScopeEntity()).findAll({
                 where: params
             });
             return entities.map(e => e.dataValues);
         }
         else{
-            const entities: Array<TenantAvailableScopeEntity> = await sequelize.models.tenantAvailableScope.findAll();
+            const entities: Array<TenantAvailableScopeEntity> = await (await DBDriver.getInstance().getTenantAvailableScopeEntity()).findAll();
             return entities.map(e => e.dataValues);
         }
     }
 
     public async assignScopeToTenant(tenantId: string, scopeId: string, accessRuleId?: string): Promise<TenantAvailableScope> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-
         const model: TenantAvailableScope = {tenantId, scopeId, accessRuleId };
-        await sequelize.models.tenantAvailableScope.create(model);
+        await (await DBDriver.getInstance().getTenantAvailableScopeEntity()).create(model);
         return Promise.resolve(model);
     }
 
     public async removeScopeFromTenant(tenantId: string, scopeId: string): Promise<void> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
 
         // Need to remove all of the scope from the users, clients, and authz groups too                
-        await sequelize.models.clientScopeRel.destroy({
+        await (await DBDriver.getInstance().getClientScopeRelEntity()).destroy({
             where: {
                 tenantId: tenantId,
                 scopeId: scopeId
             }
         });
 
-        await sequelize.models.authorizationGroupScopeRel.destroy({
+        await (await DBDriver.getInstance().getAuthorizationGroupScopeRelEntity()).destroy({
             where: {        
                 scopeId: scopeId,
                 tenantId: tenantId
             }
         });
 
-        await sequelize.models.userScopeRel.destroy({
+        await (await DBDriver.getInstance().getUserScopeRelEntity()).destroy({
             where: {
                 tenantId: tenantId,
                 scopeId: scopeId
             }
         });	
 
-        await sequelize.models.tenantAvailableScope.destroy({
+        await (await DBDriver.getInstance().getTenantAvailableScopeEntity()).destroy({
             where: {
                 tenantId: tenantId,
                 scopeId: scopeId
@@ -251,21 +235,19 @@ class DBScopeDao extends ScopeDao {
 
     // clientScopeRel
     public async assignScopeToClient(tenantId: string, clientId: string, scopeId: string): Promise<ClientScopeRel> {
-        const sequelize: Sequelize = await DBDriver.getConnection();      
 
         const model: ClientScopeRel ={
             tenantId: tenantId,
             scopeId: scopeId,
             clientId: clientId
         };
-        await sequelize.models.clientScopeRel.create(model);
+        await (await DBDriver.getInstance().getClientScopeRelEntity()).create(model);
         return Promise.resolve(model);
     }
 
     public async removeScopeFromClient(tenantId: string, clientId: string, scopeId: string): Promise<void> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
         
-        await sequelize.models.clientScopeRel.destroy({
+        await (await DBDriver.getInstance().getClientScopeRelEntity()).destroy({
             where: {
                 tenantId: tenantId,
                 clientId: clientId,

@@ -62,10 +62,6 @@ const resolvers: Resolvers = {
         getTenantMetaData: (_: any, { tenantId }, oidcContext: any ) => {
             const tenantService: TenantService = new TenantService(oidcContext);
             return tenantService.getTenantMetaData(tenantId);
-        },
-        getClients: (_, { tenantId }, oidcContext) => {
-            const clientService: ClientService = new ClientService(oidcContext);
-            return clientService.getClients(tenantId || undefined);
         },        
         getClientById: (_: any, { clientId }, oidcContext: any) => {
             const clientService: ClientService = new ClientService(oidcContext);
@@ -357,11 +353,11 @@ const resolvers: Resolvers = {
                 keyUse: keyInput.keyUse,
                 keyName: keyInput.keyName,
                 keyId: "",
-                certificate: keyInput.certificate,
+                keyCertificate: keyInput.keyCertificate,
                 privateKeyPkcs8: keyInput.privateKeyPkcs8,
-                password: keyInput.password,
+                keyPassword: keyInput.keyPassword,
                 expiresAtMs: keyInput.expiresAtMs ? keyInput.expiresAtMs : Date.now() + (120 * 24 * 60 * 60 * 1000), // see service impl for parsing of certificate value
-                status: SIGNING_KEY_STATUS_ACTIVE,
+                keyStatus: SIGNING_KEY_STATUS_ACTIVE,
                 keyTypeId: "",
                 publicKey: keyInput.publicKey,
                 statusId: "",
@@ -384,11 +380,11 @@ const resolvers: Resolvers = {
                 keyUse: "",
                 keyName: keyInput.keyName || "",
                 keyId: keyInput.keyId,
-                certificate: "",
+                keyCertificate: "",
                 privateKeyPkcs8: "",
-                password: "",
+                keyPassword: "",
                 expiresAtMs: 0,
-                status: keyInput.status,
+                keyStatus: keyInput.status,
                 keyTypeId: "",
                 publicKey: "",
                 statusId: "",
@@ -655,7 +651,7 @@ const resolvers: Resolvers = {
                 tenantId: tenantAnonymousUserConfigInput.tenantId,
                 tokenttlseconds: tenantAnonymousUserConfigInput.tokenttlseconds,
                 defaultcountrycode: tenantAnonymousUserConfigInput.defaultcountrycode,
-                defaultlangugecode: tenantAnonymousUserConfigInput.defaultlangugecode
+                defaultlanguagecode: tenantAnonymousUserConfigInput.defaultlanguagecode
             }
             await tenantService.setTenantAnonymousUserConfig(anonymousUserConfig);
             return anonymousUserConfig;
@@ -677,7 +673,6 @@ const resolvers: Resolvers = {
                 adminheaderbackgroundcolor: tenantLookAndFeelInput.adminheaderbackgroundcolor,
                 adminheadertext: tenantLookAndFeelInput.adminheadertext,
                 adminheadertextcolor: tenantLookAndFeelInput.adminheadertextcolor,
-                adminlogo: tenantLookAndFeelInput.adminlogo,
                 authenticationlogouri: tenantLookAndFeelInput.authenticationlogouri
             }
             await tenantService.setTenantLookAndFeel(tenantLookAndFeel);

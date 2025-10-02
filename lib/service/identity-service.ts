@@ -1,15 +1,12 @@
 import { OIDCContext } from "@/graphql/graphql-context";
 import * as OTPAuth from "otpauth";
 import IdentityDao from "../dao/identity-dao";
-import { Client, Fido2AuthenticationChallengeResponse, Fido2Challenge, Fido2RegistrationChallengeResponse, Fido2KeyRegistrationInput, ObjectSearchResultItem, RefreshData, RelSearchResultItem, SearchResultType, Tenant, TenantPasswordConfig, TotpResponse, User, UserCredential, UserMfaRel, UserSession, UserTenantRel, UserTenantRelView, Fido2KeyAuthenticationInput, FederatedOidcProvider, FederatedOidcAuthorizationRel, FederatedOidcAuthorizationRelType, AuthorizationCodeData, PreAuthenticationState, AuthorizationReturnUri, UserRegistrationState, RegistrationState, AuthenticationState, UserAuthenticationState, UserRecoveryEmail, ErrorDetail } from "@/graphql/generated/graphql-types";
+import { Client, Fido2AuthenticationChallengeResponse, Fido2Challenge, Fido2RegistrationChallengeResponse, Fido2KeyRegistrationInput, RefreshData, Tenant, TenantPasswordConfig, TotpResponse, User, UserCredential, UserMfaRel, UserSession, UserTenantRel, UserTenantRelView, Fido2KeyAuthenticationInput, FederatedOidcProvider, FederatedOidcAuthorizationRel, FederatedOidcAuthorizationRelType, AuthorizationCodeData, PreAuthenticationState, AuthorizationReturnUri, UserRegistrationState, RegistrationState, AuthenticationState, UserAuthenticationState, UserRecoveryEmail, ErrorDetail } from "@/graphql/generated/graphql-types";
 import { DaoFactory } from "../data-sources/dao-factory";
 import TenantDao from "../dao/tenant-dao";
 import { GraphQLError } from "graphql/error";
-import { CHANGE_EVENT_CLASS_TENANT_USER_REL, CHANGE_EVENT_CLASS_USER, CHANGE_EVENT_CLASS_USER_UNLOCKED, CHANGE_EVENT_TYPE_CREATE, CHANGE_EVENT_TYPE_CREATE_REL, CHANGE_EVENT_TYPE_REMOVE_REL, CHANGE_EVENT_TYPE_UPDATE, DEFAULT_PORTAL_AUTH_TOKEN_TTL_HOURS, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, NAME_ORDER_WESTERN, PASSWORD_HASH_ITERATION_128K, PASSWORD_HASH_ITERATION_256K, PASSWORD_HASH_ITERATION_32K, PASSWORD_HASH_ITERATION_64K, PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_32K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_64K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, SESSION_TOKEN_TYPE_AUTHENTICATION, SESSION_TOKEN_TYPE_REGISTRATION, TENANT_READ_ALL_SCOPE, TENANT_USER_ASSIGN_SCOPE, TENANT_USER_REMOVE_SCOPE, TOTP_HASH_ALGORITHM_SHA1, USER_READ_SCOPE, USER_SESSION_DELETE_SCOPE, USER_SESSION_READ_SCOPE, USER_TENANT_REL_TYPE_GUEST, USER_TENANT_REL_TYPE_PRIMARY, USER_UNLOCK_SCOPE, USER_UPDATE_SCOPE } from "@/utils/consts";
+import { CHANGE_EVENT_CLASS_TENANT_USER_REL, CHANGE_EVENT_CLASS_USER, CHANGE_EVENT_CLASS_USER_UNLOCKED, CHANGE_EVENT_TYPE_CREATE, CHANGE_EVENT_TYPE_CREATE_REL, CHANGE_EVENT_TYPE_REMOVE_REL, CHANGE_EVENT_TYPE_UPDATE, DEFAULT_PORTAL_AUTH_TOKEN_TTL_HOURS, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, NAME_ORDER_WESTERN, PASSWORD_HASH_ITERATION_128K, PASSWORD_HASH_ITERATION_256K, PASSWORD_HASH_ITERATION_32K, PASSWORD_HASH_ITERATION_64K, PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_32K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_64K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS, SESSION_TOKEN_TYPE_AUTHENTICATION, SESSION_TOKEN_TYPE_REGISTRATION, TENANT_READ_ALL_SCOPE, TENANT_USER_ASSIGN_SCOPE, TENANT_USER_REMOVE_SCOPE, TOTP_HASH_ALGORITHM_SHA1, USER_READ_SCOPE, USER_SESSION_DELETE_SCOPE, USER_SESSION_READ_SCOPE, USER_TENANT_REL_TYPE_GUEST, USER_TENANT_REL_TYPE_PRIMARY, USER_UNLOCK_SCOPE, USER_UPDATE_SCOPE } from "@/utils/consts";
 import { sha256HashPassword, pbkdf2HashPassword, scryptHashPassword, generateRandomToken, generateCodeVerifierAndChallenge, bcryptValidatePassword } from "@/utils/dao-utils";
-import { Client as OpenSearchClient } from "@opensearch-project/opensearch";
-import { getOpenSearchClient } from "../data-sources/search";
-import { Get_Response, UpdateByQuery_Response } from "@opensearch-project/opensearch/api/index.js";
 import Kms from "../kms/kms";
 import AuthDao from "../dao/auth-dao";
 import ClientDao from "../dao/client-dao";
@@ -20,15 +17,16 @@ import { WellknownConfig } from "../models/wellknown-config";
 import { authorizeByScopeAndTenant, containsScope, ServiceAuthorizationWrapper } from "@/utils/authz-utils";
 import { ERROR_CODES } from "../models/error";
 import FederatedOIDCProviderDao from "../dao/federated-oidc-provider-dao";
-import { logWithDetails } from "../logging/logger";
 import ChangeEventDao from "../dao/change-event-dao";
 import { randomUUID } from "crypto";
 import JwtServiceUtils from "./jwt-service-utils";
+import SearchDao from "../dao/search-dao";
+import OpenSearchDao from "../dao/impl/search/open-search-dao";
 
 
 const identityDao: IdentityDao = DaoFactory.getInstance().getIdentityDao();
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
-const searchClient: OpenSearchClient = getOpenSearchClient();
+// const searchClient: OpenSearchClient = getOpenSearchClient();
 const kms: Kms = DaoFactory.getInstance().getKms();
 const authDao: AuthDao = DaoFactory.getInstance().getAuthDao();
 const clientDao: ClientDao = DaoFactory.getInstance().getClientDao();
@@ -36,6 +34,7 @@ const federatedOIDCProviderDao: FederatedOIDCProviderDao = DaoFactory.getInstanc
 const oidcServiceUtils: OIDCServiceUtils = new OIDCServiceUtils();
 const changeEventDao: ChangeEventDao = DaoFactory.getInstance().getChangeEventDao();
 const jwtServiceUtils: JwtServiceUtils = new JwtServiceUtils();
+const searchDao: SearchDao = new OpenSearchDao();
 
 const {
     MFA_ISSUER,
@@ -98,6 +97,12 @@ class IdentityService {
 
     
     public async updateUser(user: User): Promise<User> {
+
+        // Always lower-case the email and format the phone number if it exists
+        user.email = this.formatEmail(user.email);
+        if(user.phoneNumber){
+            user.phoneNumber = this.formatPhoneNumber(user.phoneNumber)
+        }
 
         // If the user is making the update request on their own behalf, they still need user.update scope
         if(user.userId === this.oidcContext.portalUserProfile?.userId){
@@ -168,9 +173,15 @@ class IdentityService {
             }
             
             user.domain = domain;
-            user.emailVerified = false;
-            
+            user.emailVerified = false;            
         }
+        // Did the phone number change, and if so, is it unique?
+        if(user.phoneNumber && user.phoneNumber !== existingUser.phoneNumber){
+            const userByPhone: User | null = await identityDao.getUserBy("phone", user.phoneNumber);
+            if(userByPhone){
+                throw new GraphQLError(ERROR_CODES.EC00224.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00224}});
+            }
+        }        
 
         await identityDao.updateUser(user);
 
@@ -192,7 +203,7 @@ class IdentityService {
             user.lastName !== existingUser.lastName ||
             user.enabled !== existingUser.enabled
         ) {
-            await this.updateSearchIndexUserDocuments(user);                
+            await searchDao.updateSearchIndexUserDocuments(user);                
         }
         return user;
         
@@ -207,7 +218,6 @@ class IdentityService {
         }
 
         const arr: Array<RefreshData> = await authDao.getRefreshDataByUserId(userId);
-
         const retArr: Array<UserSession> = [];
         for(let i = 0; i < arr.length; i++){
             const r: RefreshData = arr[i];
@@ -305,7 +315,7 @@ class IdentityService {
                 hasUpdateRel = true;
                 userTenantRel = await identityDao.assignUserToTenant(tenantId, userId, relType);
                 // Both the owning and parent tenant ids are the same in this case
-                await this.updateRelSearchIndex(tenantId, tenantId, user);
+                await searchDao.updateRelSearchIndex(tenantId, tenantId, user);
             }
         }
         // Otherwise, there already exists one or more relationships. 
@@ -332,7 +342,7 @@ class IdentityService {
                     userTenantRel = await identityDao.assignUserToTenant(tenantId, userId, relType);
                     // The primary rel remains as the owning tenant id, which the incoming tenant id 
                     // is the parent id
-                    await this.updateRelSearchIndex(primaryRel.tenantId, tenantId, user);
+                    await searchDao.updateRelSearchIndex(primaryRel.tenantId, tenantId, user);
                 }
             }
             
@@ -349,11 +359,11 @@ class IdentityService {
                     // Assign the incoming as primary
                     userTenantRel = await identityDao.updateUserTenantRel(tenantId, userId, relType);
                     // The incoming tenant becomes the new owning tenant as well as the parent.
-                    await this.updateRelSearchIndex(tenantId, tenantId, user);
+                    await searchDao.updateRelSearchIndex(tenantId, tenantId, user);
                     // Then update the existing primary as guest
                     await identityDao.updateUserTenantRel(primaryRel.tenantId, primaryRel.userId, USER_TENANT_REL_TYPE_GUEST);
                     // The incoming tenant is the owning tenant, which the existing primary becomes just the parent
-                    await this.updateRelSearchIndex(tenantId, primaryRel.tenantId, user);
+                    await searchDao.updateRelSearchIndex(tenantId, primaryRel.tenantId, user);
                 }
             }
         }
@@ -462,7 +472,7 @@ class IdentityService {
         
         await identityDao.updateUser(user);
         await identityDao.updateRecoveryEmail(userRecoveryEmail);
-        this.updateSearchIndexUserDocuments(user);
+        searchDao.updateSearchIndexUserDocuments(user);
         return true;
 
     }
@@ -1121,110 +1131,7 @@ class IdentityService {
 
         return retVal;
     }
-
-    protected async updateSearchIndexUserDocuments(user: User): Promise<void> {
-        const getResponse: Get_Response = await searchClient.get({
-            id: user.userId,
-            index: SEARCH_INDEX_OBJECT_SEARCH
-        });
-        
-        if (getResponse.body) {
-            const document: ObjectSearchResultItem = getResponse.body._source as ObjectSearchResultItem;
-            document.name = user.nameOrder === NAME_ORDER_WESTERN ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`;
-            document.email = user.email;
-            document.enabled = user.enabled;
-            await searchClient.index({
-                id: user.userId,
-                index: SEARCH_INDEX_OBJECT_SEARCH,
-                body: document
-            });
-        }
-        
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const updateByQueryBody: any = {
-            query: {
-                term: {
-                    childid: user.userId
-                }
-            },
-            script: {
-                source: "ctx._source.childdescription = params.email; ctx._source.childname = params.userName",
-                lang: "painless",
-                params: {
-                    email: user.email,
-                    userName: user.nameOrder === NAME_ORDER_WESTERN ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`,
-                }
-            }
-        };
-
-        searchClient.updateByQuery({
-            index: SEARCH_INDEX_REL_SEARCH,
-            body: updateByQueryBody,
-            requests_per_second: 100,
-            conflicts: "proceed",
-            wait_for_completion: false,
-            scroll: "240m"            
-        })
-        .then(
-            (value: UpdateByQuery_Response) => {        
-                
-                logWithDetails("info", `Update user in updateSearchIndexUserDocuments.`, {
-                    userId: user.userId, 
-                    firstName: user.firstName, 
-                    lastName: user.lastName, 
-                    statusCode: value.statusCode,
-                    aborted: value.meta.aborted,
-                    attempts: value.meta.attempts
-                });
-            }
-        )
-        .catch(
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (err: any) => {
-                logWithDetails("error", `Error in updateSearchIndexUserDocuments. ${err.message}.`, {...err, userId: user.userId, firstName: user.firstName, lastName: user.lastName});
-            }
-        );
-    }
-
-    protected async updateObjectSearchIndex(tenant: Tenant, user: User): Promise<void> {
-        const owningTenantId: string = tenant.tenantId;
-        const document: ObjectSearchResultItem = {
-            name: user.nameOrder === NAME_ORDER_WESTERN ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`,
-            description: "",
-            objectid: user.userId,
-            objecttype: SearchResultType.User,
-            owningtenantid: owningTenantId,
-            email: user.email,
-            enabled: user.enabled,
-            owningclientid: "",
-            subtype: "",
-            subtypekey: ""
-        }
-        
-        await searchClient.index({
-            id: user.userId,
-            index: SEARCH_INDEX_OBJECT_SEARCH,
-            body: document
-        });
-    }
-
-    protected async updateRelSearchIndex(owningTenantId: string, parentTenantId: string, user: User): Promise<void> {
-        
-        const relDocument: RelSearchResultItem = {
-            childid: user.userId,
-            childname: user.nameOrder === NAME_ORDER_WESTERN ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`,
-            childtype: SearchResultType.User,
-            owningtenantid: owningTenantId,
-            parentid: parentTenantId,
-            parenttype: SearchResultType.Tenant,
-            childdescription: user.email
-        }
-        await searchClient.index({
-            id: `${parentTenantId}::${user.userId}`,
-            index: SEARCH_INDEX_REL_SEARCH,
-            body: relDocument
-        });
-    }
+ 
 
     protected async generateAuthorizationCode(userId: string, preAuthToken: string): Promise<AuthorizationReturnUri> {
                 
@@ -1267,7 +1174,15 @@ class IdentityService {
         return PORTAL_AUTH_TOKEN_TTL_SECONDS;
     }
 
+    protected formatEmail(email: string): string {
+        return email.toLowerCase();
+    }
+    protected formatPhoneNumber(phoneNumber: string): string {
+        const s = phoneNumber.replace(/\D/g, "");
+        return `+${s}`;
+    }
 
+    
 }
 
 export default IdentityService;

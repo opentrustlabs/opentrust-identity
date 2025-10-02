@@ -18,6 +18,8 @@ import { ERROR_CODES } from "../models/error";
 import { logWithDetails } from "../logging/logger";
 import Kms from "../kms/kms";
 import { RecaptchaResponse } from "../models/recaptcha";
+import SearchDao from "../dao/search-dao";
+import OpenSearchDao from "../dao/impl/search/open-search-dao";
 
 
 const jwtServiceUtils: JwtServiceUtils = new JwtServiceUtils();
@@ -28,6 +30,7 @@ const searchClient: OpenSearchClient = getOpenSearchClient();
 const authDao: AuthDao = DaoFactory.getInstance().getAuthDao();
 const federatedOIDCProvderDao: FederatedOIDCProviderDao = DaoFactory.getInstance().getFederatedOIDCProvicerDao();
 const kms: Kms = DaoFactory.getInstance().getKms();
+const searchDao: SearchDao = new OpenSearchDao();
 
 class RegisterUserService extends IdentityService {
 
@@ -42,6 +45,12 @@ class RegisterUserService extends IdentityService {
     // ##########################################################################
 
     public async createUser(userCreateInput: UserCreateInput, tenantId: string): Promise<User> {
+
+        // Always lower-case the email and format the phone number if it exists
+        userCreateInput.email = this.formatEmail(userCreateInput.email);
+        if(userCreateInput.phoneNumber){
+            userCreateInput.phoneNumber = this.formatPhoneNumber(userCreateInput.phoneNumber)
+        }
         const { user } = await this._createUser(userCreateInput, tenantId, false);
         return user;
     }
@@ -54,7 +63,14 @@ class RegisterUserService extends IdentityService {
          * @returns 
          */    
     public async registerUser(userCreateInput: UserCreateInput, tenantId: string, preAuthToken: string | null, deviceCodeId: string | null, recaptchaToken: string | null): Promise<UserRegistrationStateResponse>{
-            
+        
+        // Always lower-case the email and format the phone number if it exists
+        // Always lower-case the email and format the phone number if it exists
+        userCreateInput.email = this.formatEmail(userCreateInput.email);
+        if(userCreateInput.phoneNumber){
+            userCreateInput.phoneNumber = this.formatPhoneNumber(userCreateInput.phoneNumber)
+        }
+
         // Need to check to see if there is an active registration session happening with the
         // user, based on their email. If so, then return error if the session has not expired.
         // Otherwise, delete the old registration session, any user and relationships that were
@@ -210,7 +226,7 @@ class RegisterUserService extends IdentityService {
         await identityDao.deleteEmailConfirmationToken(token);
         user.emailVerified = true;
         await identityDao.updateUser(user);
-        await this.updateSearchIndexUserDocuments(user);
+        await searchDao.updateSearchIndexUserDocuments(user);
         arrUserRegistrationState[index].registrationStateStatus = STATUS_COMPLETE;
         await identityDao.updateUserRegistrationState(arrUserRegistrationState[0]);
         const nextRegistrationState = arrUserRegistrationState[index + 1];
@@ -1038,9 +1054,6 @@ class RegisterUserService extends IdentityService {
      */
     protected async _createUser(userCreateInput: UserCreateInput, tenantId: string, isRegistration: boolean, recaptchaToken?: string): Promise<{ user: User, tenant: Tenant, tenantPasswordConfig: TenantPasswordConfig }> {
 
-        // Always need to make sure that we lower-case the email for consistency purposes.
-        userCreateInput.email = userCreateInput.email.toLowerCase();
-
         const tenant: Tenant | null = await tenantDao.getTenantById(tenantId);
         if (!tenant) {
             throw new GraphQLError(ERROR_CODES.EC00008.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00008}});
@@ -1060,6 +1073,12 @@ class RegisterUserService extends IdentityService {
         const existingUser: User | null = await identityDao.getUserBy("email", userCreateInput.email);
         if (existingUser) {
             throw new GraphQLError(ERROR_CODES.EC00142.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00142}});
+        }
+        if(userCreateInput.phoneNumber){
+            const userByPhone: User | null = await identityDao.getUserBy("phone", userCreateInput.phoneNumber);
+            if(userByPhone){
+                throw new GraphQLError(ERROR_CODES.EC00224.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00224}});
+            }
         }
 
         // Check the recaptcha configuration and validate the recaptcha token
@@ -1187,8 +1206,8 @@ class RegisterUserService extends IdentityService {
             const tenantLookAndFeel: TenantLookAndFeel = await tenantDao.getTenantLookAndFeel(this.oidcContext.rootTenant.tenantId) || DEFAULT_TENANT_LOOK_AND_FEEL;
             oidcServiceUtils.sendEmailVerificationEmail(fromEmailAddr, user.email, name, token, tenantLookAndFeel, user.preferredLanguageCode || "en", systemSettings.contactEmail || undefined);
         }
-        await this.updateObjectSearchIndex(tenant, user);
-        await this.updateRelSearchIndex(tenant.tenantId, tenant.tenantId, user);
+        await searchDao.updateObjectSearchIndex(tenant, user);
+        await searchDao.updateRelSearchIndex(tenant.tenantId, tenant.tenantId, user);
 
         return Promise.resolve({ user: user, tenant: tenant, tenantPasswordConfig: tenantPasswordConfig });
     }
@@ -1299,7 +1318,7 @@ class RegisterUserService extends IdentityService {
             return;                
         }
         await identityDao.updateUser(user);
-        await this.updateObjectSearchIndex(tenant, user);
+        await searchDao.updateObjectSearchIndex(tenant, user);
         if(userRegistrationState.deviceCodeId){
             const deviceCodeData: AuthorizationDeviceCodeData | null = await authDao.getAuthorizationDeviceCodeData(userRegistrationState.deviceCodeId, "devicecodeid");
             if(deviceCodeData){

@@ -47,6 +47,8 @@ const TenantSelector: React.FC<TenantSelectorProps> = ({
                 sortField: "name"
             }
         },
+        fetchPolicy: "network-only",
+        nextFetchPolicy: "network-only",
         skip: (filterTerm.length === 1 || filterTerm.length === 2)
     });
 

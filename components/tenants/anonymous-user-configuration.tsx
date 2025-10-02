@@ -13,6 +13,7 @@ import { COUNTRY_CODES, CountryCodeDef, LANGUAGE_CODES, LanguageCodeDef } from "
 import { getDefaultCountryCodeDef, getDefaultLanguageCodeDef } from "@/utils/client-utils";
 import DetailSectionActionHandler from "../layout/detail-section-action-handler";
 import { useIntl } from 'react-intl';
+import Alert from "@mui/material/Alert";
 
 
 export interface AnonymousUserConfigurationProps {
@@ -37,7 +38,7 @@ const AnonymousUserConfiguration: React.FC<AnonymousUserConfigurationProps> = ({
 
     const initInput: TenantAnonymousUserConfigInput = {
         defaultcountrycode: "",
-        defaultlangugecode: "",
+        defaultlanguagecode: "",
         tokenttlseconds: 0,
         tenantId: tenant.tenantId
     }
@@ -59,7 +60,7 @@ const AnonymousUserConfiguration: React.FC<AnonymousUserConfigurationProps> = ({
             if (data && data.getLegacyUserMigrationConfiguration) {
                 const config: TenantAnonymousUserConfiguration = data.getLegacyUserMigrationConfiguration as TenantAnonymousUserConfiguration;
                 initInput.defaultcountrycode = config.defaultcountrycode;
-                initInput.defaultlangugecode = config.defaultlangugecode;
+                initInput.defaultlanguagecode = config.defaultlanguagecode;
                 initInput.tokenttlseconds = config.tokenttlseconds ? config.tokenttlseconds : 0;
             }
             setTenantAnonymousUserConfigInput({ ...initInput });
@@ -92,7 +93,7 @@ const AnonymousUserConfiguration: React.FC<AnonymousUserConfigurationProps> = ({
             <Grid2 container size={12} spacing={2}>
                 {errorMessage &&
                     <Grid2 marginBottom={"16px"} size={12} >
-                        <div>{errorMessage}</div>
+                        <Alert severity="error" onClose={() => setErrorMessage(null)}>{errorMessage}</Alert>
                     </Grid2>
                 }
                 {!allowAnonymousUsers &&
@@ -141,10 +142,10 @@ const AnonymousUserConfiguration: React.FC<AnonymousUserConfigurationProps> = ({
                                         }
                                     )
                                 }
-                                value={allowAnonymousUsers ? getDefaultLanguageCodeDef(tenantAnonymousUserConfigInput.defaultlangugecode || "") : { id: "", label: "" }}                                
+                                value={allowAnonymousUsers ? getDefaultLanguageCodeDef(tenantAnonymousUserConfigInput.defaultlanguagecode || "") : { id: "", label: "" }}                                
                                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                 onChange={(_, value: any) => {
-                                    tenantAnonymousUserConfigInput.defaultlangugecode = value ? value.id : "";
+                                    tenantAnonymousUserConfigInput.defaultlanguagecode = value ? value.id : "";
                                     setTenantAnonymousUserConfigInput({ ...tenantAnonymousUserConfigInput });
                                     setMarkDirty(true);
                                 }}

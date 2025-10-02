@@ -216,7 +216,7 @@ const ScopeDetail: React.FC<ScopeDetailProps> = ({ scope }) => {
                                         updateScopeMutation();
                                     }}
                                     markDirty={markDirty}
-                                    disableSubmit={scope.scopeUse === SCOPE_USE_IAM_MANAGEMENT}
+                                    disableSubmit={scope.scopeUse === SCOPE_USE_IAM_MANAGEMENT}                                    
                                 />
                             </Paper>
                         </Grid2>
@@ -292,13 +292,14 @@ const ScopeDetail: React.FC<ScopeDetailProps> = ({ scope }) => {
                                             scopeUse={scope.scopeUse}
                                             onUpdateStart={() => {
                                                 setShowMutationBackdrop(true);
-                                            } } 
+                                            }} 
                                             onUpdateEnd={(success: boolean) => {
                                                 setShowMutationBackdrop(false);
                                                 if(success){
                                                     setShowMutationSnackbar(true);
                                                 }
-                                            } }
+                                            }}
+                                            isExclusiveInternalScope={ROOT_TENANT_EXCLUSIVE_INTERNAL_SCOPE_NAMES.includes(scope.scopeName) }
                                         />
                                     </AccordionDetails>
                                 </Accordion>

@@ -1,4 +1,4 @@
-import { Model, DataTypes, Sequelize } from 'sequelize';
+import { Model, DataTypes, Sequelize } from "@sequelize/core";
 
 class UserEntity extends Model {
     
@@ -7,127 +7,127 @@ class UserEntity extends Model {
             userId: {
                 type: DataTypes.STRING,
                 primaryKey: true,
-                field: "userid"
+                columnName: "userid"
             },
             address: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: true,
-                field: "address"
+                columnName: "address"
             },
             addressLine1: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: true,
-                field: "addressline1"
+                columnName: "addressline1"
             },
             city: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: true,
-				field: "city"
+				columnName: "city"
             },
             postalCode: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: true,
-                field: "postalcode"
+                columnName: "postalcode"
             },
             stateRegionProvince: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: true,
-                field: "stateregionprovince"
+                columnName: "stateregionprovince"
             },
             countryCode: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: true,
-                field: "countrycode"
+                columnName: "countrycode"
             },
             domain: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "domain"
+                columnName: "domain"
             },
             email: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "email"
+                columnName: "email"
             },
             emailVerified: {
                 type: DataTypes.BOOLEAN,
                 primaryKey: false,
                 allowNull: false,
-                field: "emailverified"
+                columnName: "emailverified"
             },
             enabled: {
                 type: DataTypes.BOOLEAN,
                 primaryKey: false,
                 allowNull: false,
-                field: "enabled"
+                columnName: "enabled"
             },
             federatedOIDCProviderSubjectId: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: true,
-                field: "federatedoidcprovidersubjectid"
+                columnName: "federatedoidcprovidersubjectid"
             },
             firstName: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "firstname"
+                columnName: "firstname"
             },
             lastName: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "lastname"
+                columnName: "lastname"
             },
             locked: {
                 type: DataTypes.BOOLEAN,
                 primaryKey: false,
                 allowNull: false,
-                field: "locked"
+                columnName: "locked"
             },
             middleName: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: true,
-                field: "middlename"
+                columnName: "middlename"
             },
             nameOrder: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "nameorder"
+                columnName: "nameorder"
             },
             phoneNumber: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: true,
-                field: "phonenumber"
+                columnName: "phonenumber"
             },
             preferredLanguageCode: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: true,
-                field: "preferredlanguagecode"
+                columnName: "preferredlanguagecode"
             },
             markForDelete: {
                 type: DataTypes.BOOLEAN,
                 primaryKey: false,
                 allowNull: false,
-                field: "markfordelete"
+                columnName: "markfordelete"
             }
         }, 
 		{
             sequelize,
-            tableName: "user",
-            modelName: "user",
+            tableName: "users",
+            modelName: "users",
             timestamps: false
         });
     }

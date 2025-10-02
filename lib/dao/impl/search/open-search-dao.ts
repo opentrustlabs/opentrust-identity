@@ -1,14 +1,16 @@
-import { Client as SearchClient } from "@opensearch-project/opensearch";
-import { SearchInput, SearchResultType, ObjectSearchResults, SearchFilterInput, SearchFilterInputObjectType, ObjectSearchResultItem, RelSearchInput, RelSearchResults, RelSearchResultItem, Tenant, Client, AuthorizationGroup, FederatedOidcProvider, SigningKey, User, Scope } from "@/graphql/generated/graphql-types";
+import { getOpenSearchClient } from "@/lib/data-sources/search";
+import SearchDao from "../../search-dao";
+import { Client as OpenSearchClient } from "@opensearch-project/opensearch";
+import { Tenant, User, ObjectSearchResultItem, SearchResultType, RelSearchResultItem, AuthorizationGroup, FederatedOidcProvider, Scope, SigningKey, Client, RelSearchResults, RelSearchInput, ObjectSearchResults, SearchFilterInput, SearchFilterInputObjectType, SearchInput } from "@/graphql/generated/graphql-types";
 import { CLIENT_TYPES_DISPLAY, FEDERATED_OIDC_PROVIDER_TYPES_DISPLAY, NAME_ORDER_EASTERN, NAME_ORDER_WESTERN, SCOPE_USE_DISPLAY, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, SIGNING_KEY_STATUS_ACTIVE, TENANT_TYPES_DISPLAY } from "@/utils/consts";
-import { Search_Response } from "@opensearch-project/opensearch/api/index.js";
-import { getOpenSearchClient } from "../data-sources/search";
+import { Get_Response, Search_Response, UpdateByQuery_Response } from "@opensearch-project/opensearch/api/index.js";
+import { logWithDetails } from "@/lib/logging/logger";
 
-const searchClient: SearchClient = getOpenSearchClient();
+const searchClient: OpenSearchClient = getOpenSearchClient();
 
-class BaseSearchService {
+class OpenSearchDao implements SearchDao {
 
-    protected async _objectSearch(searchInput: SearchInput, searchResultsTypesToOmit: Array<SearchResultType>): Promise<ObjectSearchResults> {
+    public async objectSearch(searchInput: SearchInput, searchResultsTypesToOmit: Array<SearchResultType>): Promise<ObjectSearchResults> {
         // Build the BOOLEAN query, both in cases where there is a search term and where
         // there is not. We will almost always need to some kind of filters, whether for
         // object type (tenant vs client vs user vs oidc provider vs ...) or for the
@@ -161,7 +163,7 @@ class BaseSearchService {
         return searchResults;
     }
 
-    protected async _relSearch(relSearchInput: RelSearchInput, searchResultsTypesToOmit: Array<SearchResultType>): Promise<RelSearchResults> {
+    public async relSearch(relSearchInput: RelSearchInput, searchResultsTypesToOmit: Array<SearchResultType>): Promise<RelSearchResults> {
 
         // Start the timer
         const start = Date.now();
@@ -315,7 +317,147 @@ class BaseSearchService {
 
     }
 
-    protected async indexTenant(tenant: Tenant, rootTenant: Tenant){
+    public async getObjectSearchByIds(ids: Array<string>): Promise<Array<ObjectSearchResultItem>>{
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const query: any = {
+            ids: {
+                values: ids
+            }
+        }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const searchBody: any = {
+            from: 0,
+            size: ids.length,
+            query: query            
+        }
+
+        // Default result list is am empty array
+        const items: Array<ObjectSearchResultItem> = [];
+
+        const searchResponse: Search_Response = await searchClient.search({
+            index: SEARCH_INDEX_OBJECT_SEARCH,
+            body: searchBody
+        });
+
+        searchResponse.body.hits.hits.forEach(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (hit: any) => {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const source: any = hit._source;
+                items.push(source);
+            }
+        );
+        return items;
+
+    }
+
+
+    public async updateObjectSearchIndex(tenant: Tenant, user: User): Promise<void> {
+        const owningTenantId: string = tenant.tenantId;
+        const document: ObjectSearchResultItem = {
+            name: user.nameOrder === NAME_ORDER_WESTERN ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`,
+            description: "",
+            objectid: user.userId,
+            objecttype: SearchResultType.User,
+            owningtenantid: owningTenantId,
+            email: user.email,
+            enabled: user.enabled,
+            owningclientid: "",
+            subtype: "",
+            subtypekey: ""
+        }
+        
+        await searchClient.index({
+            id: user.userId,
+            index: SEARCH_INDEX_OBJECT_SEARCH,
+            body: document
+        });
+    }
+
+    public async updateRelSearchIndex(owningTenantId: string, parentTenantId: string, user: User): Promise<void> {
+        
+        const relDocument: RelSearchResultItem = {
+            childid: user.userId,
+            childname: user.nameOrder === NAME_ORDER_WESTERN ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`,
+            childtype: SearchResultType.User,
+            owningtenantid: owningTenantId,
+            parentid: parentTenantId,
+            parenttype: SearchResultType.Tenant,
+            childdescription: user.email
+        }
+        await searchClient.index({
+            id: `${parentTenantId}::${user.userId}`,
+            index: SEARCH_INDEX_REL_SEARCH,
+            body: relDocument
+        });
+    }
+
+    public async updateSearchIndexUserDocuments(user: User): Promise<void> {
+        const getResponse: Get_Response = await searchClient.get({
+            id: user.userId,
+            index: SEARCH_INDEX_OBJECT_SEARCH
+        });
+        
+        if (getResponse.body) {
+            const document: ObjectSearchResultItem = getResponse.body._source as ObjectSearchResultItem;
+            document.name = user.nameOrder === NAME_ORDER_WESTERN ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`;
+            document.email = user.email;
+            document.enabled = user.enabled;
+            await searchClient.index({
+                id: user.userId,
+                index: SEARCH_INDEX_OBJECT_SEARCH,
+                body: document
+            });
+        }
+        
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const updateByQueryBody: any = {
+            query: {
+                term: {
+                    childid: user.userId
+                }
+            },
+            script: {
+                source: "ctx._source.childdescription = params.email; ctx._source.childname = params.userName",
+                lang: "painless",
+                params: {
+                    email: user.email,
+                    userName: user.nameOrder === NAME_ORDER_WESTERN ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`,
+                }
+            }
+        };
+
+        searchClient.updateByQuery({
+            index: SEARCH_INDEX_REL_SEARCH,
+            body: updateByQueryBody,
+            requests_per_second: 100,
+            conflicts: "proceed",
+            wait_for_completion: false,
+            scroll: "240m"            
+        })
+        .then(
+            (value: UpdateByQuery_Response) => {        
+                
+                logWithDetails("info", `Update user in updateSearchIndexUserDocuments.`, {
+                    userId: user.userId, 
+                    firstName: user.firstName, 
+                    lastName: user.lastName, 
+                    statusCode: value.statusCode,
+                    aborted: value.meta.aborted,
+                    attempts: value.meta.attempts
+                });
+            }
+        )
+        .catch(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (err: any) => {
+                logWithDetails("error", `Error in updateSearchIndexUserDocuments. ${err.message}.`, {...err, userId: user.userId, firstName: user.firstName, lastName: user.lastName});
+            }
+        );
+    }
+
+    public async indexTenant(tenant: Tenant, rootTenant: Tenant){
         const document: ObjectSearchResultItem = {
             name: tenant.tenantName,
             description: tenant.tenantDescription,
@@ -336,7 +478,7 @@ class BaseSearchService {
         });
     }
 
-    protected async indexClient(client: Client) {
+    public async indexClient(client: Client) {
         const document: ObjectSearchResultItem = {
             name: client.clientName,
             description: client.clientDescription,
@@ -372,7 +514,7 @@ class BaseSearchService {
         });	
     }
 
-    protected async indexAuthorizationGroup(group: AuthorizationGroup){
+    public async indexAuthorizationGroup(group: AuthorizationGroup){
         const document: ObjectSearchResultItem = {
             name: group.groupName,
             description: group.groupDescription,
@@ -408,7 +550,7 @@ class BaseSearchService {
         });
     }
 
-    protected async indexFederatedOIDCProvider(federatedOIDCProvider: FederatedOidcProvider){
+    public async indexFederatedOIDCProvider(federatedOIDCProvider: FederatedOidcProvider){
         	const document: ObjectSearchResultItem = {
             name: federatedOIDCProvider.federatedOIDCProviderName,
             description: federatedOIDCProvider.federatedOIDCProviderDescription,
@@ -429,7 +571,7 @@ class BaseSearchService {
         }); 
     }
 
-    protected async indexSigningKey(key: SigningKey){
+    public async indexSigningKey(key: SigningKey){
         const document: ObjectSearchResultItem = {
             name: key.keyName,
             description: key.keyUse,
@@ -437,7 +579,7 @@ class BaseSearchService {
             objecttype: SearchResultType.Key,
             owningtenantid: key.tenantId,
             email: "",
-            enabled: key.status === SIGNING_KEY_STATUS_ACTIVE,
+            enabled: key.keyStatus === SIGNING_KEY_STATUS_ACTIVE,
             owningclientid: "",
             subtype: key.keyType,
             subtypekey: key.keyType
@@ -464,7 +606,7 @@ class BaseSearchService {
         });
     }
 
-    protected async indexUser(user: User, owningTenantId: string, parentTenantId: string, authzGroup: AuthorizationGroup){        
+    public async indexUser(user: User, owningTenantId: string, parentTenantId: string, authzGroup: AuthorizationGroup | null){        
         const document: ObjectSearchResultItem = {
             name: user.nameOrder === NAME_ORDER_WESTERN ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`,
             description: "",
@@ -500,24 +642,26 @@ class BaseSearchService {
             body: relDocument
         });
 
-        const authzGroupUserRel: RelSearchResultItem = {
-            childid: user.userId,
-            childname: user.nameOrder === NAME_ORDER_EASTERN ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`,
-            childtype: SearchResultType.User,
-            owningtenantid: authzGroup.tenantId,
-            parentid: authzGroup.groupId,
-            parenttype: SearchResultType.AuthorizationGroup,
-            childdescription: user.email
+        if(authzGroup){
+            const authzGroupUserRel: RelSearchResultItem = {
+                childid: user.userId,
+                childname: user.nameOrder === NAME_ORDER_EASTERN ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`,
+                childtype: SearchResultType.User,
+                owningtenantid: authzGroup.tenantId,
+                parentid: authzGroup.groupId,
+                parenttype: SearchResultType.AuthorizationGroup,
+                childdescription: user.email
+            }
+            await searchClient.index({
+                id: `${authzGroup.groupId}::${user.userId}`,
+                index: SEARCH_INDEX_REL_SEARCH,
+                body: authzGroupUserRel,
+                refresh: "wait_for"
+            });
         }
-        await searchClient.index({
-            id: `${authzGroup.groupId}::${user.userId}`,
-            index: SEARCH_INDEX_REL_SEARCH,
-            body: authzGroupUserRel,
-            refresh: "wait_for"
-        });
     }
 
-    protected async indexScope(scope: Scope, tenantId: string){
+    public async indexScope(scope: Scope, tenantId: string){
         const document: ObjectSearchResultItem = {
             name: scope.scopeName,
             description: scope.scopeDescription,
@@ -550,10 +694,7 @@ class BaseSearchService {
             index: SEARCH_INDEX_REL_SEARCH,
             body: relSearchDocument
         });
-        
-    }
-
-
+    }    
 }
 
-export default BaseSearchService;
+export default OpenSearchDao;

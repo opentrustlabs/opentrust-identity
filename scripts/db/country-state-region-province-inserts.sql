@@ -1262,7 +1262,10 @@ VALUES
 ('DZ', 'Province', 'DZ-29', 'Mascara'),
 ('DZ', 'Province', 'DZ-30', 'Ouargla'),
 ('DZ', 'Province', 'DZ-31', 'Oran'),
-('DZ', 'Province', 'DZ-32', 'El Bayadh'),
+('DZ', 'Province', 'DZ-32', 'El Bayadh');
+
+INSERT INTO state_province_region(isocountrycode, isosubsettype, isoentrycode, isoentryname) 
+VALUES
 ('DZ', 'Province', 'DZ-33', 'Illizi'),
 ('DZ', 'Province', 'DZ-34', 'Bordj Bou Arréridj'),
 ('DZ', 'Province', 'DZ-35', 'Boumerdès'),
@@ -2262,7 +2265,10 @@ VALUES
 ('IN', 'Union territory', 'IN-DH', 'Dādra and Nagar Haveli and Damān and Diu'),
 ('IN', 'Union territory', 'IN-DL', 'Delhi'),
 ('IN', 'Union territory', 'IN-JK', 'Jammu and Kashmīr'),
-('IN', 'Union territory', 'IN-LA', 'Ladākh'),
+('IN', 'Union territory', 'IN-LA', 'Ladākh');
+
+INSERT INTO state_province_region(isocountrycode, isosubsettype, isoentrycode, isoentryname) 
+VALUES
 ('IN', 'Union territory', 'IN-LD', 'Lakshadweep'),
 ('IN', 'Union territory', 'IN-PY', 'Puducherry'),
 ('IQ', 'Governorate', 'IQ-AN', 'Al Anbār'),
@@ -3261,7 +3267,10 @@ VALUES
 ('MK', 'Municipality', 'MK-809', 'Kisela Voda †'),
 ('MK', 'Municipality', 'MK-810', 'Petrovec'),
 ('MK', 'Municipality', 'MK-811', 'Saraj †'),
-('MK', 'Municipality', 'MK-812', 'Sopište'),
+('MK', 'Municipality', 'MK-812', 'Sopište');
+
+INSERT INTO state_province_region(isocountrycode, isosubsettype, isoentrycode, isoentryname) 
+VALUES
 ('MK', 'Municipality', 'MK-813', 'Studeničani'),
 ('MK', 'Municipality', 'MK-814', 'Centar †'),
 ('MK', 'Municipality', 'MK-815', 'Čair †'),
@@ -4261,7 +4270,10 @@ VALUES
 ('SI', 'Municipality', 'SI-088', 'Osilnica'),
 ('SI', 'Municipality', 'SI-089', 'Pesnica'),
 ('SI', 'Municipality', 'SI-090', 'Piran'),
-('SI', 'Municipality', 'SI-091', 'Pivka'),
+('SI', 'Municipality', 'SI-091', 'Pivka');
+
+INSERT INTO state_province_region(isocountrycode, isosubsettype, isoentrycode, isoentryname) 
+VALUES
 ('SI', 'Municipality', 'SI-092', 'Podčetrtek'),
 ('SI', 'Municipality', 'SI-093', 'Podvelka'),
 ('SI', 'Municipality', 'SI-094', 'Postojna'),
@@ -5261,7 +5273,10 @@ VALUES
 ('KR', 'Special self-governing city', 'KR-50', 'Sejong'),
 ('LA', 'Prefecture', 'LA-VT', 'Viangchan'),
 ('MD', 'Autonomous territorial unit', 'MD-GA', 'Găgăuzia, Unitatea teritorială autonomă (UTAG)'),
-('MD', 'Territorial unit', 'MD-SN', 'Stînga Nistrului, unitatea teritorială din'),
+('MD', 'Territorial unit', 'MD-SN', 'Stînga Nistrului, unitatea teritorială din');
+
+INSERT INTO state_province_region(isocountrycode, isosubsettype, isoentrycode, isoentryname) 
+VALUES
 ('ML', 'District', 'ML-BKO', 'Bamako'),
 ('MM', 'Union territory', 'MM-18', 'Nay Pyi Taw'),
 ('MN', 'Capital city', 'MN-1', 'Ulaanbaatar'),

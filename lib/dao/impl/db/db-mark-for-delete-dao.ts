@@ -1,6 +1,6 @@
 import { MarkForDelete, DeletionStatus } from "@/graphql/generated/graphql-types";
 import MarkForDeleteDao from "../../mark-for-delete-dao";
-import { Op, Sequelize } from "sequelize";
+import { Op } from "@sequelize/core";
 import DBDriver from "@/lib/data-sources/sequelize-db";
 import { MarkForDeleteEntity } from "@/lib/entities/mark-for-delete-entity";
 import { DeletionStatusEntity } from "@/lib/entities/deletion-status-entity";
@@ -9,14 +9,13 @@ import { DeletionStatusEntity } from "@/lib/entities/deletion-status-entity";
 class DBMarkForDeleteDao extends MarkForDeleteDao {
 
     public async markForDelete(markForDelete: MarkForDelete): Promise<MarkForDelete> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.markForDelete.create(markForDelete);
+        
+        await (await DBDriver.getInstance().getMarkForDeleteEntity()).create(markForDelete);
         return Promise.resolve(markForDelete);
     }
 
     public async getMarkForDeleteById(markForDeleteId: string): Promise<MarkForDelete | null> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        const entity: MarkForDeleteEntity | null = await sequelize.models.markForDelete.findByPk(markForDeleteId);
+        const entity: MarkForDeleteEntity | null = await (await DBDriver.getInstance().getMarkForDeleteEntity()).findByPk(markForDeleteId);
         if(entity){
             return Promise.resolve(entity.dataValues as MarkForDelete);
         }
@@ -24,8 +23,7 @@ class DBMarkForDeleteDao extends MarkForDeleteDao {
     }
 
     public async updateMarkForDelete(deleteInput: MarkForDelete): Promise<MarkForDelete>{
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.markForDelete.update(deleteInput, {
+        await (await DBDriver.getInstance().getMarkForDeleteEntity()).update(deleteInput, {
             where: {
                 markForDeleteId: deleteInput.markForDeleteId
             }
@@ -34,8 +32,7 @@ class DBMarkForDeleteDao extends MarkForDeleteDao {
     }
     
     public async getLatestMarkForDeleteRecords(limit: number): Promise<Array<MarkForDelete>>{
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        const arr: Array<MarkForDeleteEntity> | null = await sequelize.models.markForDelete.findAll({
+        const arr: Array<MarkForDeleteEntity> | null = await (await DBDriver.getInstance().getMarkForDeleteEntity()).findAll({
             limit: limit,
             order: ["submittedDate"]
         });
@@ -43,8 +40,7 @@ class DBMarkForDeleteDao extends MarkForDeleteDao {
     }
 
     public async getDeletionStatus(markForDeleteId: string): Promise<Array<DeletionStatus>> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        const arr: Array<DeletionStatusEntity> = await sequelize.models.deletionStatus.findAll({
+        const arr: Array<DeletionStatusEntity> = await (await DBDriver.getInstance().getDeletionStatusEntity()).findAll({
             where: {
                 markForDeleteId: markForDeleteId
             }
@@ -53,8 +49,7 @@ class DBMarkForDeleteDao extends MarkForDeleteDao {
     }
 
     public async deleteCompletedRecords(): Promise<void> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.markForDelete.destroy({
+        await (await DBDriver.getInstance().getMarkForDeleteEntity()).destroy({
             where: {
                 completedDate: {
                     [Op.not]: null
@@ -70,8 +65,7 @@ class DBMarkForDeleteDao extends MarkForDeleteDao {
      * operations by setting the started date back to null.
      */
     public async resetStalledJobs(): Promise<void> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        const stalledJobs: Array<MarkForDeleteEntity> = await sequelize.models.markForDelete.findAll({
+        const stalledJobs: Array<MarkForDeleteEntity> = await (await DBDriver.getInstance().getMarkForDeleteEntity()).findAll({
             where: {
                 completedDate: null,
                 startedDate: {

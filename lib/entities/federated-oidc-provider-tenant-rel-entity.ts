@@ -1,4 +1,4 @@
-import { Model, DataTypes, Sequelize } from 'sequelize';
+import { Model, DataTypes, Sequelize } from "@sequelize/core";
 
 class FederatedOIDCProviderTenantRelEntity extends Model {
     
@@ -7,12 +7,12 @@ class FederatedOIDCProviderTenantRelEntity extends Model {
             tenantId: {
                 type: DataTypes.STRING,
                 primaryKey: true,
-                field: "tenantid"
+                columnName: "tenantid"
             },
             federatedOIDCProviderId: {
                 type: DataTypes.STRING,
                 primaryKey: true,
-                field: "federatedoidcproviderid"
+                columnName: "federatedoidcproviderid"
             }
         }, 
 		{

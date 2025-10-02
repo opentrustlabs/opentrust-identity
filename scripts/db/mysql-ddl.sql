@@ -1,7 +1,13 @@
+-- MYSQL
+-- =====
+-- For MySQL the database creation process is fairly straightforward. You can just use the following
+-- commands to create the database and the tables. You will need to assign the appropriate permissions
+-- to the database user.
+--
+-- CREATE DATABASE IF NOT EXISTS opentrust_oidc_iam DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
+-- USE opentrust_oidc_iam;
+--
 
-CREATE DATABASE IF NOT EXISTS OPEN_CERTS_OIDC_IAM DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
-
-USE OPEN_CERTS_OIDC_IAM;
 
 create TABLE federated_oidc_provider(
     federatedoidcproviderid VARCHAR(64) PRIMARY KEY,
@@ -112,7 +118,7 @@ create TABLE client_redirect_uri_rel (
     FOREIGN KEY (clientid) REFERENCES client(clientid)
 );
 
-create TABLE user (
+create TABLE users (
     userid VARCHAR(64) PRIMARY KEY,
     federatedoidcprovidersubjectid VARCHAR(128),
     email VARCHAR(128) UNIQUE NOT NULL,
@@ -121,7 +127,7 @@ create TABLE user (
     firstname VARCHAR(128) NOT NULL,
     lastname VARCHAR(128) NOT NULL,
     middlename VARCHAR(128),
-    phonenumber VARCHAR(64) UNIQUE,
+    phonenumber VARCHAR(32),
     address VARCHAR(128),
     addressline1 VARCHAR(128),
     city VARCHAR(128),
@@ -135,18 +141,19 @@ create TABLE user (
     markfordelete BOOLEAN NOT NULL
 );
 
-CREATE INDEX user_email_idx on user(email);
-CREATE INDEX user_domain_idx on user(domain);
-CREATE INDEX user_first_name_idx on user(firstname);
-CREATE INDEX user_last_name_idx on user(lastname);
-CREATE INDEX user_phone_number_idx on user(phonenumber);
+CREATE INDEX users_email_idx on users(email);
+CREATE INDEX users_domain_idx on users(domain);
+CREATE INDEX users_first_name_idx on users(firstname);
+CREATE INDEX users_last_name_idx on users(lastname);
+CREATE INDEX users_phone_number_idx on users(phonenumber);
+CREATE INDEX users_federatedoidcprovidersubjectid_idx on users(federatedoidcprovidersubjectid);
 
 create TABLE user_email_recovery (
     userid VARCHAR(64) NOT NULL,
     email VARCHAR(128) UNIQUE NOT NULL,
     emailverified BOOLEAN NOT NULL,
     PRIMARY KEY (userid),
-    FOREIGN KEY (userid) REFERENCES user(userid)
+    FOREIGN KEY (userid) REFERENCES users(userid)
 );
 CREATE INDEX user_email_recovery_email_idx on user_email_recovery(email);
 
@@ -156,7 +163,7 @@ create TABLE user_tenant_rel (
     enabled BOOLEAN NOT NULL,
     reltype VARCHAR(32) NOT NULL,
     PRIMARY KEY (userid, tenantid),
-    FOREIGN KEY (userid) REFERENCES user(userid),
+    FOREIGN KEY (userid) REFERENCES users(userid),
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid)
 );
 
@@ -165,7 +172,7 @@ create TABLE user_terms_and_conditions_accepted (
     tenantid VARCHAR(64) NOT NULL,
     acceptedatms BIGINT NOT NULL,
     PRIMARY KEY (userid, tenantid),
-    FOREIGN KEY (userid) REFERENCES user(userid),
+    FOREIGN KEY (userid) REFERENCES users(userid),
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid)
 );
 
@@ -192,7 +199,7 @@ create TABLE authentication_group_user_rel (
     userid VARCHAR(64) NOT NULL,
     PRIMARY KEY (authenticationgroupid, userid),
     FOREIGN KEY (authenticationgroupid) REFERENCES authentication_group(authenticationgroupid),
-    FOREIGN KEY (userid) REFERENCES user(userid)
+    FOREIGN KEY (userid) REFERENCES users(userid)
 );
 
 create TABLE authorization_group (
@@ -210,7 +217,7 @@ create TABLE authorization_group_user_rel (
     userid VARCHAR(64) NOT NULL,
     groupid VARCHAR(64) NOT NULL,
     PRIMARY KEY (userid, groupid),
-    FOREIGN KEY (userid) REFERENCES user(userid),
+    FOREIGN KEY (userid) REFERENCES users(userid),
     FOREIGN KEY (groupid) REFERENCES authorization_group(groupid) 
 );
 
@@ -219,26 +226,26 @@ create TABLE user_credential (
     salt varchar(256) NOT NULL,
     hashedpassword VARCHAR(256) NOT NULL,
     hashingalgorithm VARCHAR(128) NOT NULL,
-    datecreated TIMESTAMP NOT NULL,
-    PRIMARY KEY (userid, datecreated),
-    FOREIGN KEY (userid) REFERENCES user(userid)    
+    datecreatedms BIGINT NOT NULL,
+    PRIMARY KEY (userid, datecreatedms),
+    FOREIGN KEY (userid) REFERENCES users(userid)    
 );
-CREATE INDEX user_credential_date_created_idx ON user_credential(datecreated);
+CREATE INDEX user_credential_datecreatedms_idx ON user_credential(datecreatedms);
 
 create TABLE signing_key (
     keyid VARCHAR(64) PRIMARY KEY,
     keyname VARCHAR(128) NOT NULL,
     tenantid VARCHAR(64) NOT NULL,
     keytype VARCHAR(64) NOT NULL,
-    keyuse VARCHAR(64) NOT NULL,
-    privatekeypkcs8 BLOB NOT NULL,
-    password VARCHAR(128),
-    certificate BLOB,
-    publickey BLOB,
+    keyuse VARCHAR(64) NOT NULL,    
+    keypassword VARCHAR(128),    
     expiresatms BIGINT NOT NULL,
     createdatms BIGINT NOT NULL,
-    status VARCHAR(64),
+    keystatus VARCHAR(64),
     markfordelete BOOLEAN NOT NULL,
+    privatekeypkcs8 TEXT NOT NULL,
+    keycertificate TEXT,
+    publickey TEXT,
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid)
 );
 
@@ -335,7 +342,7 @@ create TABLE user_scope_rel (
     tenantid VARCHAR(64) NOT NULL,
     scopeid VARCHAR(64) NOT NULL,
     PRIMARY KEY (userid, tenantid, scopeid),
-    FOREIGN KEY (userid) REFERENCES user(userid),
+    FOREIGN KEY (userid) REFERENCES users(userid),
     FOREIGN KEY (tenantid, scopeid) REFERENCES tenant_available_scope(tenantid, scopeid),
     FOREIGN KEY (scopeid) REFERENCES scope(scopeid)
 );
@@ -368,7 +375,7 @@ create TABLE authorization_code_data (
     expiresatms BIGINT NOT NULL,
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid),
     FOREIGN KEY (clientid) REFERENCES client(clientid),
-    FOREIGN KEY (userid) REFERENCES user(userid)
+    FOREIGN KEY (userid) REFERENCES users(userid)
 );
 
 
@@ -403,7 +410,7 @@ create TABLE refresh_data (
     expiresatms BIGINT NOT NULL,
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid),
     FOREIGN KEY (clientid) REFERENCES client(clientid),
-    FOREIGN KEY (userid) REFERENCES user(userid)
+    FOREIGN KEY (userid) REFERENCES users(userid)
 );
 CREATE INDEX refresh_data_user_id_idx ON refresh_data(userid);
 CREATE INDEX refresh_data_client_id_idx ON refresh_data(clientid);
@@ -430,7 +437,7 @@ create TABLE federated_oidc_authorization_rel (
     FOREIGN KEY (inittenantid) REFERENCES tenant(tenantid),
     FOREIGN KEY (initclientid) REFERENCES client(clientid),
     FOREIGN KEY (federatedoidcproviderid) REFERENCES federated_oidc_provider(federatedoidcproviderid),
-    FOREIGN KEY (userid) REFERENCES user(userid)
+    FOREIGN KEY (userid) REFERENCES users(userid)
 );
 
 create TABLE client_auth_history (
@@ -468,14 +475,13 @@ create TABLE tenant_look_and_feel (
     tenantid VARCHAR(64) PRIMARY KEY,
     adminheaderbackgroundcolor VARCHAR(32),
     adminheadertextcolor VARCHAR(32),
-    adminlogo BLOB,
     adminheadertext VARCHAR(128),
     authenticationheaderbackgroundcolor VARCHAR(32),
-    authenticationheadertextcolor VARCHAR(32),
-    authenticationlogo BLOB,
+    authenticationheadertextcolor VARCHAR(32),    
     authenticationlogouri VARCHAR(256),
     authenticationlogomimetype VARCHAR(16),
-    authenticationheadertext VARCHAR(128),    
+    authenticationheadertext VARCHAR(128),
+    authenticationlogo BLOB,
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid)
 );
 
@@ -537,7 +543,7 @@ create TABLE user_failed_login (
     nextloginnotbefore BIGINT NOT NULL,
     failurecount INT NOT NULL,
     PRIMARY KEY (userid, failureatms),
-    FOREIGN KEY (userid) REFERENCES user(userid)
+    FOREIGN KEY (userid) REFERENCES users(userid)
 );
 
 create TABLE user_verification_token (
@@ -546,7 +552,7 @@ create TABLE user_verification_token (
     verificationtype VARCHAR(64) NOT NULL,
     issuedatms BIGINT NOT NULL,
     expiresatms BIGINT NOT NULL,
-    FOREIGN KEY (userid) REFERENCES user(userid)
+    FOREIGN KEY (userid) REFERENCES users(userid)
 );
 
 create TABLE user_mfa_rel (
@@ -561,13 +567,13 @@ create TABLE user_mfa_rel (
     fido2transports VARCHAR(1024),
     fido2keysupportscounters BOOLEAN,
     PRIMARY KEY (userid, mfatype),
-    FOREIGN KEY (userid) REFERENCES user(userid)
+    FOREIGN KEY (userid) REFERENCES users(userid)
 );
 
 create TABLE user_fido2_counter_rel (
     userid VARCHAR(64) PRIMARY KEY,
     fido2counter BIGINT,
-    FOREIGN KEY (userid) REFERENCES user(userid)
+    FOREIGN KEY (userid) REFERENCES users(userid)
 );
 
 create TABLE user_fido2_challenge (
@@ -575,7 +581,7 @@ create TABLE user_fido2_challenge (
     challenge VARCHAR(2048) NOT NULL,
     issuedatms BIGINT NOT NULL,
     expiresatms BIGINT NOT NULL,
-    FOREIGN KEY (userid) REFERENCES user(userid)
+    FOREIGN KEY (userid) REFERENCES users(userid)
 );
 
 create TABLE tenant_legacy_user_migration_config (
@@ -630,7 +636,7 @@ create TABLE user_authentication_state (
     returntouri VARCHAR(256),
     devicecodeid VARCHAR(64),
     PRIMARY KEY (userid, authenticationsessiontoken, authenticationstate),
-    FOREIGN KEY (userid) REFERENCES user(userid),
+    FOREIGN KEY (userid) REFERENCES users(userid),
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid) 
 );
 
@@ -646,7 +652,7 @@ create TABLE user_registration_state (
     expiresatms BIGINT NOT NULL,
     devicecodeid VARCHAR(64),
     PRIMARY KEY (userid, registrationsessiontoken, registrationstate),
-    FOREIGN KEY (userid) REFERENCES user(userid),
+    FOREIGN KEY (userid) REFERENCES users(userid),
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid) 
 );
 
@@ -660,7 +666,7 @@ create TABLE user_profile_email_change_state (
     expiresatms BIGINT NOT NULL,
     isprimaryemail BOOLEAN NOT NULL,
     PRIMARY KEY (userid, changeemailsessiontoken, emailchangestate),
-    FOREIGN KEY (userid) REFERENCES user(userid) 
+    FOREIGN KEY (userid) REFERENCES users(userid) 
 );
 
 create TABLE captcha_config (
@@ -690,9 +696,9 @@ create TABLE user_duress_credential (
     salt varchar(256) NOT NULL,
     hashedpassword VARCHAR(256) NOT NULL,
     hashingalgorithm VARCHAR(128) NOT NULL,
-    datecreated TIMESTAMP NOT NULL,
+    datecreatedms BIGINT NOT NULL,
     PRIMARY KEY (userid),
-    FOREIGN KEY (userid) REFERENCES user(userid)
+    FOREIGN KEY (userid) REFERENCES users(userid)
 );
 
 create TABLE secret_share (
@@ -708,7 +714,7 @@ create TABLE user_authentication_history (
     userid VARCHAR(64) NOT NULL,
     lastauthenticationatms BIGINT NOT NULL,
     PRIMARY KEY (userid, lastauthenticationatms),
-    FOREIGN KEY (userid) REFERENCES user(userid)
+    FOREIGN KEY (userid) REFERENCES users(userid)
 );
 
 create TABLE federated_auth_test (

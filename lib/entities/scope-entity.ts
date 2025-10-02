@@ -1,4 +1,4 @@
-import { Model, DataTypes, Sequelize } from 'sequelize';
+import { Model, DataTypes, Sequelize } from "@sequelize/core";
 
 class ScopeEntity extends Model {
     
@@ -7,31 +7,31 @@ class ScopeEntity extends Model {
             scopeId: {
                 type: DataTypes.STRING,
                 primaryKey: true,
-                field: "scopeid"
+                columnName: "scopeid"
             },
             scopeName: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "scopename"
+                columnName: "scopename"
             },
             scopeDescription: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "scopedescription"
+                columnName: "scopedescription"
             },
             scopeUse: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "scopeuse"
+                columnName: "scopeuse"
             },
             markForDelete: {
                 type: DataTypes.BOOLEAN,
                 primaryKey: false,
                 allowNull: false,
-                field: "markfordelete"
+                columnName: "markfordelete"
             }
         }, 
 		{

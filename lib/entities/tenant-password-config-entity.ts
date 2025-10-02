@@ -1,4 +1,4 @@
-import { Model, DataTypes, Sequelize } from 'sequelize';
+import { Model, DataTypes, Sequelize } from "@sequelize/core";
 
 class TenantPasswordConfigEntity extends Model {
     
@@ -7,85 +7,85 @@ class TenantPasswordConfigEntity extends Model {
             tenantId: {
                 type: DataTypes.STRING,
                 primaryKey: true,
-                field: "tenantid"
+                columnName: "tenantid"
             },
             passwordHashingAlgorithm: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "passwordhashingalgorithm"
+                columnName: "passwordhashingalgorithm"
             },
             passwordMaxLength: {
                 type: DataTypes.INTEGER,
                 primaryKey: false,
                 allowNull: false,
-                field: "passwordmaxlength"
+                columnName: "passwordmaxlength"
             },
             passwordMinLength: {
                 type: DataTypes.INTEGER,
                 primaryKey: false,
                 allowNull: false,
-                field: "passwordminlength"
+                columnName: "passwordminlength"
             },
             requireLowerCase: {
                 type: DataTypes.BOOLEAN,
                 primaryKey: false,
                 allowNull: false,
-                field: "requirelowercase"
+                columnName: "requirelowercase"
             },
             requireNumbers: {
                 type: DataTypes.BOOLEAN,
                 primaryKey: false,
                 allowNull: false,
-                field: "requirenumbers"
+                columnName: "requirenumbers"
             },
             requireSpecialCharacters: {
                 type: DataTypes.BOOLEAN,
                 primaryKey: false,
                 allowNull: false,
-                field: "requirespecialcharacters"
+                columnName: "requirespecialcharacters"
             },
             requireUpperCase: {
                 type: DataTypes.BOOLEAN,
                 primaryKey: false,
                 allowNull: false,
-                field: "requireuppercase"
+                columnName: "requireuppercase"
             },
             specialCharactersAllowed: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: true,
-                field: "specialcharactersallowed"
+                columnName: "specialcharactersallowed"
             },
             requireMfa: {
                 type: DataTypes.BOOLEAN,
                 primaryKey: false,
                 allowNull: false,
-                field: "requiremfa"
+                columnName: "requiremfa"
             },
             mfaTypesRequired: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: true,
-                field: "mfatypesrequired"
+                columnName: "mfatypesrequired"
             },
             maxRepeatingCharacterLength: {
                 type: DataTypes.INTEGER,
                 primaryKey: false,
                 allowNull: true,
-                field: "maxrepeatingcharacterlength"
+                columnName: "maxrepeatingcharacterlength"
             },
             passwordRotationPeriodDays: {
                 type: DataTypes.INTEGER,
                 primaryKey: false,
                 allowNull: true,
-                field: "passwordrotationperioddays"
+                columnName: "passwordrotationperioddays"
             },
             passwordHistoryPeriod: {
                 type: DataTypes.INTEGER,
                 primaryKey: false,
                 allowNull: true,
-                field: "passwordhistoryperiod"
+                columnName: "passwordhistoryperiod"
             }
         }, {
             sequelize,

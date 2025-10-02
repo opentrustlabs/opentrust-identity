@@ -3,20 +3,19 @@ import RateLimitDao from "../../rate-limit-dao";
 import TenantRateLimitRelEntity from "@/lib/entities/tenant-rate-limit-rel-entity";
 import RateLimitServiceGroupEntity from "@/lib/entities/rate-limit-service-group-entity";
 import DBDriver from "@/lib/data-sources/sequelize-db";
-import { Op, Sequelize } from "sequelize";
+import { Op, Sequelize } from "@sequelize/core";
 
 class DBRateLimitDao extends RateLimitDao {
 
 
     // rateLimitServiceGroup
     public async getRateLimitServiceGroups(tenantId: string | null): Promise<Array<RateLimitServiceGroup>> {
-        const sequelize: Sequelize = await DBDriver.getConnection();        
-
+        
         if(tenantId){
             const rels: Array<TenantRateLimitRel> = await this.getRateLimitTenantRel(tenantId, null);
             const ids: Array<string> = rels.map((r: TenantRateLimitRel) => r.servicegroupid);
 
-            const arr: Array<RateLimitServiceGroupEntity> = await sequelize.models.rateLimitServiceGroup.findAll({
+            const arr: Array<RateLimitServiceGroupEntity> = await (await DBDriver.getInstance().getRateLimitServiceGroupEntity()).findAll({
                 where: {
                     servicegroupid: { [Op.in]: ids}
                 },
@@ -27,7 +26,7 @@ class DBRateLimitDao extends RateLimitDao {
             return arr.map((entity: RateLimitServiceGroupEntity) => entity.dataValues);
         }
         else{
-            const arr: Array<RateLimitServiceGroupEntity> = await sequelize.models.rateLimitServiceGroup.findAll({
+            const arr: Array<RateLimitServiceGroupEntity> = await (await DBDriver.getInstance().getRateLimitServiceGroupEntity()).findAll({
                 order: [
                     ["servicegroupname", "ASC"]
                 ]
@@ -37,8 +36,7 @@ class DBRateLimitDao extends RateLimitDao {
     }
 
     public async getRateLimitServiceGroupById(serviceGroupId: string): Promise<RateLimitServiceGroup | null> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        const r: RateLimitServiceGroupEntity | null = await sequelize.models.rateLimitServiceGroup.findByPk(serviceGroupId);
+        const r: RateLimitServiceGroupEntity | null = await (await DBDriver.getInstance().getRateLimitServiceGroupEntity()).findByPk(serviceGroupId);
         return r ? Promise.resolve(r.dataValues as RateLimitServiceGroup) : Promise.resolve(null);
     }
 
@@ -92,15 +90,13 @@ class DBRateLimitDao extends RateLimitDao {
 
     
     public async createRateLimitServiceGroup(rateLimitServiceGroup: RateLimitServiceGroup): Promise<RateLimitServiceGroup> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.rateLimitServiceGroup.create(rateLimitServiceGroup);        
+        await (await DBDriver.getInstance().getRateLimitServiceGroupEntity()).create(rateLimitServiceGroup);        
         return Promise.resolve(rateLimitServiceGroup);
         
     }
 
     public async updateRateLimitServiceGroup(rateLimitServiceGroup: RateLimitServiceGroup): Promise<RateLimitServiceGroup> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.rateLimitServiceGroup.update(rateLimitServiceGroup, {
+        await (await DBDriver.getInstance().getRateLimitServiceGroupEntity()).update(rateLimitServiceGroup, {
             where: {
                 servicegroupid: rateLimitServiceGroup.servicegroupid
             }
@@ -109,14 +105,13 @@ class DBRateLimitDao extends RateLimitDao {
     }
 
     public async deleteRateLimitServiceGroup(serviceGroupId: string): Promise<void> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.tenantRateLimitRel.destroy({
+        await (await DBDriver.getInstance().getTenantRateLimitRelEntity()).destroy({
             where: {
                 servicegroupid: serviceGroupId
             }
         });
 
-        await sequelize.models.rateLimitServiceGroup.destroy({
+        await (await DBDriver.getInstance().getRateLimitServiceGroupEntity()).destroy({
             where: {
                 servicegroupid: serviceGroupId
             }
@@ -127,7 +122,6 @@ class DBRateLimitDao extends RateLimitDao {
 
     
     public async getRateLimitTenantRel(tenantId: string | null, rateLimitServiceGroupId: string | null): Promise<Array<TenantRateLimitRel>> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const where: any = {};
@@ -137,7 +131,7 @@ class DBRateLimitDao extends RateLimitDao {
         if(rateLimitServiceGroupId){
             where.servicegroupid = rateLimitServiceGroupId
         }
-        const entities: Array<TenantRateLimitRelEntity> = await sequelize.models.tenantRateLimitRel.findAll({
+        const entities: Array<TenantRateLimitRelEntity> = await (await DBDriver.getInstance().getTenantRateLimitRelEntity()).findAll({
             where: where
         });
         const retVal = entities.map(
@@ -157,7 +151,7 @@ class DBRateLimitDao extends RateLimitDao {
     }
 
     public async assignRateLimitToTenant(tenantId: string, serviceGroupId: string, allowUnlimited: boolean, limit: number, rateLimitPeriodMinutes: number): Promise<TenantRateLimitRel> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
+
         const tenantRateLimitRel: TenantRateLimitRel = {
             servicegroupid: serviceGroupId,
             allowUnlimitedRate: allowUnlimited,
@@ -165,13 +159,13 @@ class DBRateLimitDao extends RateLimitDao {
             rateLimit: limit,
             rateLimitPeriodMinutes
         };
-        await sequelize.models.tenantRateLimitRel.create(tenantRateLimitRel);
+        await (await DBDriver.getInstance().getTenantRateLimitRelEntity()).create(tenantRateLimitRel);
         
         return Promise.resolve(tenantRateLimitRel);
     }
     
     public async updateRateLimitForTenant(tenantId: string, serviceGroupId: string, allowUnlimited: boolean, limit: number, rateLimitPeriodMinutes: number): Promise<TenantRateLimitRel> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
+
         const tenantRateLimitRel: TenantRateLimitRel = {
             servicegroupid: serviceGroupId,
             allowUnlimitedRate: allowUnlimited,
@@ -179,7 +173,7 @@ class DBRateLimitDao extends RateLimitDao {
             rateLimit: limit,
             rateLimitPeriodMinutes
         };
-        await sequelize.models.tenantRateLimitRel.update(tenantRateLimitRel, {
+        await (await DBDriver.getInstance().getTenantRateLimitRelEntity()).update(tenantRateLimitRel, {
             where: {
                 servicegroupid: serviceGroupId,
                 tenantId: tenantId
@@ -189,9 +183,8 @@ class DBRateLimitDao extends RateLimitDao {
     }
 
     public async removeRateLimitFromTenant(tenantId: string, serviceGroupId: string): Promise<void> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
 
-        await sequelize.models.tenantRateLimitRel.destroy({
+        await (await DBDriver.getInstance().getTenantRateLimitRelEntity()).destroy({
             where: {
                 tenantId: tenantId,
                 servicegroupid: serviceGroupId

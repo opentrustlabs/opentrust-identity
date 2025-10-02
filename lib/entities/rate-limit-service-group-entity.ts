@@ -1,4 +1,4 @@
-import { Model, DataTypes, Sequelize } from 'sequelize';
+import { Model, DataTypes, Sequelize } from "@sequelize/core";
 
 class RateLimitServiceGroupEntity extends Model {
     
@@ -7,25 +7,25 @@ class RateLimitServiceGroupEntity extends Model {
             servicegroupid: {
                 type: DataTypes.STRING,
                 primaryKey: true,
-                field: "servicegroupid"
+                columnName: "servicegroupid"
             },
             servicegroupname: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "servicegroupname"
+                columnName: "servicegroupname"
             },
             servicegroupdescription: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: true,
-                field: "servicegroupdescription"
+                columnName: "servicegroupdescription"
             },
             markForDelete: {
                 type: DataTypes.BOOLEAN,
                 primaryKey: false,
                 allowNull: false,
-                field: "markfordelete"
+                columnName: "markfordelete"
             }
         }, 
 		{

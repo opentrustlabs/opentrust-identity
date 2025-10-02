@@ -1,4 +1,4 @@
-import { Model, DataTypes, Sequelize } from 'sequelize';
+import { Model, DataTypes, Sequelize } from "@sequelize/core";
 
 class ChangeEventEntity extends Model {
     
@@ -7,42 +7,53 @@ class ChangeEventEntity extends Model {
             changeEventId: {
                 type: DataTypes.STRING,
                 primaryKey: true,
-                field: "changeeventid"
+                columnName: "changeeventid"
             },
             objectId: {
                 type: DataTypes.STRING,
                 primaryKey: true,
-                field: "objectid"
+                columnName: "objectid"
             },
             changeEventClass: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-				field: "changeeventclass"
+				columnName: "changeeventclass"
             },
             changeEventType: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "changeeventtype"
+                columnName: "changeeventtype"
             },
             changeTimestamp: {
-                type: DataTypes.NUMBER,
+                type: DataTypes.BIGINT,
                 primaryKey: false,
                 allowNull: false,
-                field: "changetimestamp"
+                columnName: "changetimestamp"
             },
             changedBy: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "changedby"
+                columnName: "changedby"
             },
             data: {
-                type: DataTypes.BLOB,
+                type: DataTypes.BLOB("long"),
                 primaryKey: false,
                 allowNull: false,
-                field: "data"
+                columnName: "data",
+                set(val: string | Buffer | null){
+                    if(val === null || val === ""){
+                        this.setDataValue("data", null);
+                    }
+                    else if(typeof val === "string"){
+                        this.setDataValue("publdataicKey", Buffer.from(val, "utf-8"));
+                    }
+                    else{
+                        this.setDataValue("data", val);
+                    }
+                }
             }
         }, 
 		{

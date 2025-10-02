@@ -50,11 +50,13 @@ export interface TenantDetailProps {
 const TenantDetail: React.FC<TenantDetailProps> = ({ tenantId }) => {
 
 
+    const skip: boolean = tenantId === null || tenantId === undefined || tenantId === "";
+
     // GRAPHQL FUNCTIONS
     const { data, loading, error } = useQuery(
         TENANT_DETAIL_QUERY,
         {
-            skip: tenantId === null || tenantId === undefined,
+            skip: skip,
             variables: {
                 tenantId: tenantId
             }
@@ -63,7 +65,7 @@ const TenantDetail: React.FC<TenantDetailProps> = ({ tenantId }) => {
 
     if (loading) return <DataLoading dataLoadingSize="xl" color={null} />
     if (error) return <ErrorComponent message={error.message} componentSize='lg' />
-    if (data && data.getTenantById === null) return <ErrorComponent message={"Tenant Not Found"} componentSize='lg' />
+    if (skip === true || (data && data.getTenantById === null)) return <ErrorComponent message={"Tenant Not Found"} componentSize='lg' />
 
     return <InnerComponent tenant={data.getTenantById} />
 }

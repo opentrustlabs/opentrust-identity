@@ -99,7 +99,7 @@ export const TENANT_ANONYMOUS_USER_CONFIGURATION_MUTATION = gql(`
         setTenantAnonymousUserConfig(tenantAnonymousUserConfigInput: $tenantAnonymousUserConfigInput) {
             tenantId
             defaultcountrycode
-            defaultlangugecode 
+            defaultlanguagecode 
             tokenttlseconds
         }
     }
@@ -111,7 +111,6 @@ export const TENANT_LOOK_AND_FEEL_MUTATION = gql(`
             tenantid
             adminheaderbackgroundcolor
             adminheadertextcolor
-            adminlogo
             adminheadertext
             authenticationheaderbackgroundcolor
             authenticationheadertextcolor
@@ -323,7 +322,7 @@ export const SIGNING_KEY_UPDATE_MUTATION = gql(`
             keyId
             keyName
             keyType
-            status
+            keyStatus
         }
     }
 `);

@@ -1,4 +1,4 @@
-import { Model, DataTypes, Sequelize } from 'sequelize';
+import { Model, DataTypes, Sequelize } from "@sequelize/core";
 
 
 class TenantLoginFailurePolicyEntity extends Model {
@@ -8,31 +8,31 @@ class TenantLoginFailurePolicyEntity extends Model {
             tenantId: {
                 type: DataTypes.STRING,
                 primaryKey: true,
-                field: "tenantid"
+                columnName: "tenantid"
             },
             loginFailurePolicyType: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "loginfailurepolicytype"
+                columnName: "loginfailurepolicytype"
             },
             failureThreshold: {
                 type: DataTypes.INTEGER,
                 primaryKey: false,
                 allowNull: false,
-                field: "failurethreshold"
+                columnName: "failurethreshold"
             },
             pauseDurationMinutes: {
                 type: DataTypes.INTEGER,
                 primaryKey: false,
                 allowNull: true,
-                field: "pausedurationminutes"
+                columnName: "pausedurationminutes"
             },
             maximumLoginFailures: {
                 type: DataTypes.INTEGER,
                 primaryKey: false,
                 allowNull: true,
-                field: "maximumloginfailures"
+                columnName: "maximumloginfailures"
             }
         }, {
             sequelize,

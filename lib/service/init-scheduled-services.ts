@@ -87,7 +87,7 @@ async function createNewJwtSigningKey(){
                 shouldCreateKey = true;
             }
             // If the newest key is inactive, then create a new one
-            else if(keysArray[0].status === SIGNING_KEY_STATUS_REVOKED){
+            else if(keysArray[0].keyStatus === SIGNING_KEY_STATUS_REVOKED){
                 shouldCreateKey = true;
             }
             // If the newest key was not created within the last 90 days, then create a new one

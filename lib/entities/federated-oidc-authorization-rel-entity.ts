@@ -1,4 +1,4 @@
-import { Model, DataTypes, Sequelize } from 'sequelize';
+import { Model, DataTypes, Sequelize } from "@sequelize/core";
 
 class FederatedOIDCAuthorizationRelEntity extends Model {
     
@@ -7,103 +7,103 @@ class FederatedOIDCAuthorizationRelEntity extends Model {
             state: {
                 type: DataTypes.STRING,
                 primaryKey: true,
-                field: "state"
+                columnName: "state"
             },
             federatedOIDCAuthorizationRelType: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "federatedoidcauthorizationreltype"
+                columnName: "federatedoidcauthorizationreltype"
             },
             email: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: true,
-                field: "email"
+                columnName: "email"
             },
             userId: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: true,
-                field: "userid"
+                columnName: "userid"
             },
             codeVerifier: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: true,
-                field: "codeverifier"
+                columnName: "codeverifier"
             },
             codechallengemethod: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: true,
-                field: "codechallengemethod"
+                columnName: "codechallengemethod"
             },
             expiresAtMs: {
-                type: DataTypes.NUMBER,
+                type: DataTypes.BIGINT,
                 primaryKey: false,
                 allowNull: false,
-				field: "expiresatms"
+				columnName: "expiresatms"
             },
             federatedOIDCProviderId: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "federatedoidcproviderid"
+                columnName: "federatedoidcproviderid"
             },
             initClientId: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: true,
-                field: "initclientid"
+                columnName: "initclientid"
             },
             initCodeChallenge: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: true,
-                field: "initcodechallenge"
+                columnName: "initcodechallenge"
             },
             initCodeChallengeMethod: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: true,
-                field: "initcodechallengemethod"
+                columnName: "initcodechallengemethod"
             },
             initRedirectUri: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "initredirecturi"
+                columnName: "initredirecturi"
             },
             initResponseMode: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "initresponsemode"
+                columnName: "initresponsemode"
             },
             initResponseType: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "initresponsetype"
+                columnName: "initresponsetype"
             },
             initScope: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "initscope"
+                columnName: "initscope"
             },
             initState: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "initstate"
+                columnName: "initstate"
             },
             initTenantId: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "inittenantid"
+                columnName: "inittenantid"
             }
         }, 
 		{

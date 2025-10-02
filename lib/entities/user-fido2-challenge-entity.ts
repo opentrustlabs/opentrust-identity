@@ -1,4 +1,4 @@
-import { Model, DataTypes, Sequelize } from 'sequelize';
+import { Model, DataTypes, Sequelize } from "@sequelize/core";
 
 class UserFido2ChallengeEntity extends Model {
     
@@ -7,25 +7,25 @@ class UserFido2ChallengeEntity extends Model {
             userId: {
                 type: DataTypes.STRING,
                 primaryKey: true,
-                field: "userid"
+                columnName: "userid"
             },
             challenge: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "challenge"
+                columnName: "challenge"
             },
             issuedAtMs: {
-                type: DataTypes.NUMBER,
+                type: DataTypes.BIGINT,
                 primaryKey: false,
                 allowNull: false,
-                field: "issuedatms"
+                columnName: "issuedatms"
             },
             expiresAtMs: {
-                type: DataTypes.NUMBER,
+                type: DataTypes.BIGINT,
                 primaryKey: false,
                 allowNull: false,
-				field: "expiresatms"
+				columnName: "expiresatms"
             }
         }, 
 		{

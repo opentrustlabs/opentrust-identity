@@ -14,7 +14,6 @@ import ContactConfiguration from "../contacts/contact-configuration";
 import TenantHighlight from "../tenants/tenant-highlight";
 import { useMutation } from "@apollo/client";
 import { SIGNING_KEY_UPDATE_MUTATION } from "@/graphql/mutations/oidc-mutations";
-import { SIGNING_KEY_DETAIL_QUERY } from "@/graphql/queries/oidc-queries";
 import { formatISODateFromMs } from "@/utils/date-utils";
 import { useClipboardCopyContext } from "../contexts/clipboard-copy-context";
 import SecretViewerDialog from "../dialogs/secret-viewer-dialog";
@@ -48,7 +47,7 @@ const SigningKeyDetail: React.FC<SigningKeyDetailProps> = ({ signingKey }) => {
     const [markDirty, setMarkDirty] = React.useState<boolean>(false);
     const initInput: SigningKeyUpdateInput = {
         keyId: signingKey.keyId,
-        status: signingKey.status,
+        status: signingKey.keyStatus,
         keyName: signingKey.keyName,
         keyUse: signingKey.keyUse
     };
@@ -67,16 +66,20 @@ const SigningKeyDetail: React.FC<SigningKeyDetailProps> = ({ signingKey }) => {
         variables: {
             keyInput: keyUpdateInput
         },
-        onCompleted() {
+        onCompleted(data) {
             setShowMutationBackdrop(false);
             setShowMutationSnackbar(true);
             setMarkDirty(false);
+            if(data && data.updateSigningKey){
+                keyUpdateInput.keyName = data.updateSigningKey.keyName;
+                keyUpdateInput.status = data.updateSigningKey.keyStatus;
+                setKeyUpdateInput({...keyUpdateInput});
+            }
         },
         onError(error) {
             setShowMutationBackdrop(false);
             setErrorMessage(intl.formatMessage({id: error.message}));
-        },
-        refetchQueries: [ {query: SIGNING_KEY_DETAIL_QUERY, variables: {signingKeyId: signingKey.keyId}}]
+        }
     });
 
     // HANDLER FUNCTIONS
@@ -196,14 +199,14 @@ const SigningKeyDetail: React.FC<SigningKeyDetailProps> = ({ signingKey }) => {
                                         </Grid2>
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Status</div>
-                                            {signingKey.status === SIGNING_KEY_STATUS_REVOKED &&
+                                            {keyUpdateInput.status === SIGNING_KEY_STATUS_REVOKED &&
                                                 <TextField                                                     
                                                     name="keyStatus" 
                                                     id="keyStatus" 
                                                     value={keyUpdateInput.status} 
                                                     disabled={true} fullWidth={true} size="small" />
                                             }
-                                            {signingKey.status !== SIGNING_KEY_STATUS_REVOKED &&
+                                            {keyUpdateInput.status !== SIGNING_KEY_STATUS_REVOKED &&
                                                 <Select
                                                     disabled={disableInputs}
                                                     size="small"
@@ -335,7 +338,7 @@ const SigningKeyDetail: React.FC<SigningKeyDetailProps> = ({ signingKey }) => {
                                     <Grid2 size={{xs: 12, sm: 2, md: 2, lg: 2, xl: 2}} sx={{textDecoration: breakPoints.isSmall ? "underline": "none"}}>
                                         <Grid2 container>
                                             <Grid2 size={9}>
-                                                {signingKey.certificate &&
+                                                {signingKey.keyCertificate &&
                                                     <>Certificate</>
                                                 }
                                                 {signingKey.publicKey &&
@@ -346,8 +349,8 @@ const SigningKeyDetail: React.FC<SigningKeyDetailProps> = ({ signingKey }) => {
                                                 <ContentCopyIcon 
                                                     sx={{cursor: "pointer"}}
                                                     onClick={() => {
-                                                        const textToCopy: string = signingKey.certificate ? signingKey.certificate : signingKey.publicKey ? signingKey.publicKey : "";
-                                                        const message = signingKey.certificate ? "Certificate copied to clipboard" : signingKey.publicKey ? "Public key copied to clipboard" : "No data to copy";
+                                                        const textToCopy: string = signingKey.keyCertificate ? signingKey.keyCertificate : signingKey.publicKey ? signingKey.publicKey : "";
+                                                        const message = signingKey.keyCertificate ? "Certificate copied to clipboard" : signingKey.publicKey ? "Public key copied to clipboard" : "No data to copy";
                                                         copyContentToClipboard(textToCopy, message);
                                                     }}
                                                 />
@@ -355,7 +358,7 @@ const SigningKeyDetail: React.FC<SigningKeyDetailProps> = ({ signingKey }) => {
                                         </Grid2>                                                                              
                                     </Grid2>
                                     <Grid2 size={{xs: 12, sm: 10, md: 10, lg: 10, xl: 10}}>
-                                        <pre style={{fontSize: breakPoints.isSmall ? "0.8em" : "1.0em"}}>{signingKey.certificate ? signingKey.certificate : signingKey.publicKey}</pre>
+                                        <pre style={{fontSize: breakPoints.isSmall ? "0.8em" : "1.0em"}}>{signingKey.keyCertificate ? signingKey.keyCertificate : signingKey.publicKey}</pre>
                                     </Grid2>                                    
                                 </Grid2>
                             </Paper>                            

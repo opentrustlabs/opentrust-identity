@@ -1,4 +1,4 @@
-import { Model, DataTypes, Sequelize } from 'sequelize';
+import { Model, DataTypes, Sequelize } from "@sequelize/core";
 
 export class DeletionStatusEntity extends Model {
     
@@ -7,25 +7,25 @@ export class DeletionStatusEntity extends Model {
             markForDeleteId: {
                 type: DataTypes.STRING,
                 primaryKey: true,
-                field: "markfordeleteid"
+                columnName: "markfordeleteid"
             },
             step: {
                 type: DataTypes.STRING,
                 primaryKey: true,
                 allowNull: false,
-                field: "step"
+                columnName: "step"
             },
             startedAt: {
                 type: DataTypes.BIGINT,
                 primaryKey: false,
                 allowNull: false,
-                field: "startedat"
+                columnName: "startedat"
             },
             completedAt: {
                 type: DataTypes.BIGINT,
                 primaryKey: false,
                 allowNull: false,
-                field: "completedat"
+                columnName: "completedat"
             }
         }, {
             sequelize,

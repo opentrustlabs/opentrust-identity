@@ -33,33 +33,33 @@ class ClientService {
     }
 
 
-    public async getClients(tenantId?: string): Promise<Array<Client>> {
-        const getData = ServiceAuthorizationWrapper(
-            {
-                preProcess: async function(oidcContext, ...args) {
-                    if (oidcContext.portalUserProfile?.managementAccessTenantId !== oidcContext.rootTenant.tenantId) {
-                        return [oidcContext.portalUserProfile?.managementAccessTenantId || ""];
-                    }
-                    return [args];
-                },
-                performOperation: async function(_, ...args) {
-                    const clients: Array<Client> = await clientDao.getClients(...args);
-                    return clients;
-                },
-                postProcess: async function(_, result) {
-                    if(result){
-                        result.forEach(
-                            (c: Client) => c.clientSecret = ""
-                        );                        
-                    }
-                    return result;
-                },
-            }
-        );
+    // public async getClients(tenantId?: string): Promise<Array<Client>> {
+    //     const getData = ServiceAuthorizationWrapper(
+    //         {
+    //             preProcess: async function(oidcContext, ...args) {
+    //                 if (oidcContext.portalUserProfile?.managementAccessTenantId !== oidcContext.rootTenant.tenantId) {
+    //                     return [oidcContext.portalUserProfile?.managementAccessTenantId || ""];
+    //                 }
+    //                 return [args];
+    //             },
+    //             performOperation: async function(_, ...args) {
+    //                 const clients: Array<Client> = await clientDao.getClients(...args);
+    //                 return clients;
+    //             },
+    //             postProcess: async function(_, result) {
+    //                 if(result){
+    //                     result.forEach(
+    //                         (c: Client) => c.clientSecret = ""
+    //                     );                        
+    //                 }
+    //                 return result;
+    //             },
+    //         }
+    //     );
 
-        const clients = await getData(this.oidcContext, [CLIENT_READ_SCOPE, TENANT_READ_ALL_SCOPE], tenantId);
-        return clients || [];
-    }
+    //     const clients = await getData(this.oidcContext, [CLIENT_READ_SCOPE, TENANT_READ_ALL_SCOPE], tenantId);
+    //     return clients || [];
+    // }
     
 
     public async getClientById(clientId: string): Promise<Client | null> {

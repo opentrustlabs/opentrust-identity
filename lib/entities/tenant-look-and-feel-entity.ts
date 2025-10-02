@@ -1,4 +1,4 @@
-import { Model, DataTypes, Sequelize } from 'sequelize';
+import { Model, DataTypes, Sequelize } from "@sequelize/core";
 
 class TenantLookAndFeelEntity extends Model {
     
@@ -7,67 +7,79 @@ class TenantLookAndFeelEntity extends Model {
             tenantid: {
                 type: DataTypes.STRING,
                 primaryKey: true,
-                field: "tenantid"
+                columnName: "tenantid"
             },
             adminheaderbackgroundcolor: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: true,
-                field: "adminheaderbackgroundcolor"
+                columnName: "adminheaderbackgroundcolor"
             },
             adminheadertext: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: true,
-                field: "adminheadertext"
+                columnName: "adminheadertext"
             },
             adminheadertextcolor: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: true,
-                field: "adminheadertextcolor"
-            },
-            adminlogo: {
-                type: DataTypes.BLOB,
-                primaryKey: false,
-                allowNull: true,
-                field: "adminlogo"
-            },
+                columnName: "adminheadertextcolor"
+            },            
             authenticationheaderbackgroundcolor: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: true,
-                field: "authenticationheaderbackgroundcolor"
+                columnName: "authenticationheaderbackgroundcolor"
             },
             authenticationheadertext: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: true,
-                field: "authenticationheadertext"
+                columnName: "authenticationheadertext"
             },
             authenticationheadertextcolor: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: true,
-                field: "authenticationheadertextcolor"
+                columnName: "authenticationheadertextcolor"
             },
-            authenticationlogo: {
-                type: DataTypes.BLOB,
-                primaryKey: false,
-                allowNull: true,
-                field: "authenticationlogo"
-            },
+           
             authenticationlogouri: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: true,
-                field: "authenticationlogouri"
+                columnName: "authenticationlogouri"
             },
             authenticationlogomimetype: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: true,
-                field: "authenticationlogomimetype"
+                columnName: "authenticationlogomimetype"
+            },            
+             authenticationlogo: {
+                type: DataTypes.BLOB("long"),
+                primaryKey: false,
+                allowNull: true,
+                columnName: "authenticationlogo",
+                // set(val: string | Buffer | null){
+                //     console.log("val of authentication logo is: ")
+                //     console.log(val);
+
+                //     if(val === null || val === ""){
+                //         console.log("checkpoint 1.1")
+                //         this.setDataValue("authenticationlogo", null);
+                //     }
+                //     else if(typeof val === "string"){
+                //         console.log("checkpoint 1.2")
+                //         this.setDataValue("authenticationlogo", Buffer.from(val));
+                //     }
+                //     else{
+                //         console.log("checkpoint 1.3")
+                //         this.setDataValue("authenticationlogo", val);
+                //     }
+                // }
             }
         }, {
             sequelize,

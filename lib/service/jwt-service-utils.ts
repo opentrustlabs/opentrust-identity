@@ -4,7 +4,7 @@ import ClientDao from "@/lib/dao/client-dao";
 import TenantDao from "@/lib/dao/tenant-dao";
 import IdentityDao from "@/lib/dao/identity-dao";
 import { OIDCTokenResponse } from "@/lib/models/token-response";
-import { JWTPayload, SignJWT, JWTVerifyResult, jwtVerify, decodeJwt, decodeProtectedHeader, ProtectedHeaderParameters, JWK } from "jose";
+import { JWTPayload, SignJWT, JWTVerifyResult, jwtVerify, decodeJwt, decodeProtectedHeader, ProtectedHeaderParameters } from "jose";
 import SigningKeysDao from "../dao/signing-keys-dao";
 import { JWTPrincipal, OIDCUserProfile, ProfileAuthorizationGroup, ProfileScope } from "../models/principal";
 import { randomUUID, createPrivateKey, PrivateKeyInput, KeyObject, createSecretKey, createPublicKey, PublicKeyInput } from "node:crypto"; 
@@ -311,7 +311,7 @@ class JwtServiceUtils {
             user = await identityDao.getUserBy("id", principal.sub);
             if(user === null){
                 return null;
-            }            
+            }
             const arrScope: Array<Scope> = principal.principal_type === PRINCIPAL_TYPE_IAM_PORTAL_USER ? await this.getScopes(user.userId, principal.tenant_id) : [];
             profile = {
                 domain: getDomainFromEmail(principal.email),
@@ -476,8 +476,8 @@ class JwtServiceUtils {
     public async getAuthTokenForOutboundCalls(): Promise<string | null>{
         const systemSettings: SystemSettings = await tenantDao.getSystemSettings();
         let authToken: string | null = null;
-        if(systemSettings.rootClientId){
-            const client: Client | null = await clientDao.getClientById(systemSettings.rootClientId);
+        if(systemSettings.rootClientId){      
+            const client: Client | null = await clientDao.getClientById(systemSettings.rootClientId);            
             if(client !== null){
                 const tenant: Tenant | null = await tenantDao.getRootTenant();
                 if(tenant === null){
@@ -820,8 +820,8 @@ class JwtServiceUtils {
                 const key: SigningKey = signingKeys[i];
                 
                 let passphrase: string | undefined = undefined;
-                if(key.password){
-                    passphrase = await kms.decrypt(key.password) || undefined;
+                if(key.keyPassword){
+                    passphrase = await kms.decrypt(key.keyPassword) || undefined;
                 }
                 const privateKeyInput: PrivateKeyInput = {
                     key: key.privateKeyPkcs8,
@@ -832,7 +832,7 @@ class JwtServiceUtils {
                 const privateKeyObject: KeyObject = createPrivateKey(privateKeyInput);
 
                 const publicKeyInput: PublicKeyInput = {
-                    key: key.certificate ? key.certificate : key.publicKey ? key.publicKey : "",
+                    key: key.keyCertificate ? key.keyCertificate : key.publicKey ? key.publicKey : "",
                     encoding: "utf-8",
                     format: "pem"
                 };

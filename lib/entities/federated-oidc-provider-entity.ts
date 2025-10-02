@@ -1,4 +1,4 @@
-import { Model, DataTypes, Sequelize } from 'sequelize';
+import { Model, DataTypes, Sequelize } from "@sequelize/core";
 
 class FederatedOIDCProviderEntity extends Model {
     
@@ -7,55 +7,55 @@ class FederatedOIDCProviderEntity extends Model {
             federatedOIDCProviderId: {
                 type: DataTypes.STRING,
                 primaryKey: true,
-                field: "federatedoidcproviderid"
+                columnName: "federatedoidcproviderid"
             },
             federatedOIDCProviderName: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "federatedoidcprovidername"
+                columnName: "federatedoidcprovidername"
             },
             federatedOIDCProviderDescription: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: true,
-                field: "federatedoidcproviderdescription"
+                columnName: "federatedoidcproviderdescription"
             },
             federatedOIDCProviderTenantId: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: true,
-				field: "federatedoidcprovidertenantid"
+				columnName: "federatedoidcprovidertenantid"
             },
             federatedOIDCProviderClientId: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "federatedoidcproviderclientid"
+                columnName: "federatedoidcproviderclientid"
             },
             federatedOIDCProviderClientSecret: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: true,
-                field: "federatedoidcproviderclientsecret"
+                columnName: "federatedoidcproviderclientsecret"
             },
             federatedOIDCProviderWellKnownUri: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "federatedoidcproviderwellknownuri"
+                columnName: "federatedoidcproviderwellknownuri"
             },
             refreshTokenAllowed: {
-                type: DataTypes.STRING,
+                type: DataTypes.BOOLEAN,
                 primaryKey: false,
                 allowNull: false,
-                field: "refreshtokenallowed"
+                columnName: "refreshtokenallowed"
             },
             scopes: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: true,
-                field: "scopes",
+                columnName: "scopes",
                 get() {
                     const s = this.getDataValue("scopes");
                     return s ? s.split(",") : [];
@@ -76,31 +76,31 @@ class FederatedOIDCProviderEntity extends Model {
                 type: DataTypes.BOOLEAN,
                 primaryKey: false,
                 allowNull: true,
-                field: "usepkce"
+                columnName: "usepkce"
             },
             clientAuthType: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "clientauthtype"
+                columnName: "clientauthtype"
             },
             federatedOIDCProviderType: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "federatedoidcprovidertype"
+                columnName: "federatedoidcprovidertype"
             },
             socialLoginProvider: {
-                type: DataTypes.BOOLEAN,
+                type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: true,
-                field: "socialloginprovider"
+                columnName: "socialloginprovider"
             },
             markForDelete: {
                 type: DataTypes.BOOLEAN,
                 primaryKey: false,
                 allowNull: false,
-                field: "markfordelete"
+                columnName: "markfordelete"
             }
         }, 
 		{

@@ -34,8 +34,8 @@ const NewBroughtMyOwnSigningKeyDialog: React.FC<NewSigningKeyDialogProps> = ({
         keyName: "",
         keyUse: "",
         privateKeyPkcs8: "",
-        password: "",
-        certificate: "",
+        keyPassword: "",
+        keyCertificate: "",
         publicKey: "",
         expiresAtMs: 0
     }
@@ -89,7 +89,7 @@ const NewBroughtMyOwnSigningKeyDialog: React.FC<NewSigningKeyDialogProps> = ({
                         ){
                             signingKeyInput.privateKeyPkcs8 = privateKey;
                             if(privateKey.startsWith(PKCS8_PRIVATE_KEY_HEADER)){
-                                signingKeyInput.password = "";
+                                signingKeyInput.keyPassword = "";
                             }
                             setSigningKeyInput({...signingKeyInput});                            
                         }                        
@@ -121,12 +121,12 @@ const NewBroughtMyOwnSigningKeyDialog: React.FC<NewSigningKeyDialogProps> = ({
                         const publicKeyOrCert: string = result.toString();
                         if(publicKeyOrCert.startsWith(PKCS8_PUBLIC_KEY_HEADER)) {
                             signingKeyInput.publicKey = publicKeyOrCert;
-                            signingKeyInput.certificate = "";
+                            signingKeyInput.keyCertificate = "";
                             setSigningKeyInput({...signingKeyInput});
 
                         } 
                         else if(publicKeyOrCert.startsWith(CERTIFICATE_HEADER)) {
-                            signingKeyInput.certificate = publicKeyOrCert;
+                            signingKeyInput.keyCertificate = publicKeyOrCert;
                             signingKeyInput.publicKey = "";
                             setSigningKeyInput({...signingKeyInput});
                         }
@@ -152,15 +152,15 @@ const NewBroughtMyOwnSigningKeyDialog: React.FC<NewSigningKeyDialogProps> = ({
         if(signingKey.privateKeyPkcs8 === ""){
             return false;
         }
-        if(signingKey.certificate === "" && signingKey.publicKey === ""){
+        if(signingKey.keyCertificate === "" && signingKey.publicKey === ""){
             return false;
         }
         if(signingKey.privateKeyPkcs8.startsWith(PKCS8_ENCRYPTED_PRIVATE_KEY_HEADER)){
-            if(!signingKey.password){
+            if(!signingKey.keyPassword){
                 return false;
             }
             else{
-                if(signingKey.password.length < MIN_PRIVATE_KEY_PASSWORD_LENGTH){
+                if(signingKey.keyPassword.length < MIN_PRIVATE_KEY_PASSWORD_LENGTH){
                     return false;
                 }
             }         
@@ -258,10 +258,10 @@ const NewBroughtMyOwnSigningKeyDialog: React.FC<NewSigningKeyDialogProps> = ({
                                         name="keyPassphrase" 
                                         id="keyPassphrase"
                                         onChange={(evt) => { 
-                                            signingKeyInput.password = evt?.target.value; 
+                                            signingKeyInput.keyPassword = evt?.target.value; 
                                             setSigningKeyInput({ ...signingKeyInput }); 
                                         }}
-                                        value={signingKeyInput.password}
+                                        value={signingKeyInput.keyPassword}
                                         fullWidth={true}                                    
                                         size="small" 
                                         type="password"

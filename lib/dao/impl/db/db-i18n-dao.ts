@@ -1,6 +1,5 @@
 import { StateProvinceRegion } from "@/graphql/generated/graphql-types";
 import I18NDao from "../../i18n-dao";
-import { Sequelize } from "sequelize";
 import DBDriver from "@/lib/data-sources/sequelize-db";
 import { StateProvinceRegionEntity } from "@/lib/entities/state-province-region-entity";
 
@@ -10,8 +9,7 @@ class DBI18NDao extends I18NDao {
 
 
     public async getStateProvinceRegions(countryCode: string): Promise<Array<StateProvinceRegion>> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        const arr: Array<StateProvinceRegionEntity> = await sequelize.models.stateProvinceRegion.findAll({
+        const arr: Array<StateProvinceRegionEntity> = await (await DBDriver.getInstance().getStateProvinceRegionEntity()).findAll({
             where: {
                 isoCountryCode: countryCode
             }, 

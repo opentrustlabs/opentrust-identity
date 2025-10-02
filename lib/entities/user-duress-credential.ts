@@ -1,4 +1,4 @@
-import { Model, DataTypes, Sequelize } from 'sequelize';
+import { Model, DataTypes, Sequelize } from "@sequelize/core";
 
 class UserDuressCredentialEntity extends Model {
     
@@ -7,30 +7,30 @@ class UserDuressCredentialEntity extends Model {
             userId: {
                 type: DataTypes.STRING,
                 primaryKey: true,
-                field: "userid"
+                columnName: "userid"
             },
-            dateCreated: {
-                type: DataTypes.DATE,
+            dateCreatedMs: {
+                type: DataTypes.BIGINT,
                 primaryKey: false,
-                field: "datecreated"
+                columnName: "datecreatedms"
             },
             hashedPassword: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "hashedpassword"
+                columnName: "hashedpassword"
             },
             hashingAlgorithm: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "hashingalgorithm"
+                columnName: "hashingalgorithm"
             },
             salt: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "salt"
+                columnName: "salt"
             }
         }, 
         {

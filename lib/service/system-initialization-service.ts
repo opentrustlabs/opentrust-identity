@@ -1,4 +1,4 @@
-import { AuthenticationState, AuthorizationGroup, Client, Contact, ErrorDetail, FederatedAuthTest, FederatedOidcProvider, PortalUserProfile, Scope, SigningKey, SystemInitializationInput, SystemInitializationReadyResponse, SystemInitializationResponse, SystemSettings, Tenant, User, UserAuthenticationStateResponse, UserCredential } from "@/graphql/generated/graphql-types";
+import { AuthenticationState, AuthorizationGroup, Client, Contact, ErrorDetail, FederatedAuthTest, FederatedOidcProvider, Scope, SigningKey, SystemInitializationInput, SystemInitializationReadyResponse, SystemInitializationResponse, SystemSettings, Tenant, User, UserAuthenticationStateResponse, UserCredential } from "@/graphql/generated/graphql-types";
 import { DaoFactory } from "../data-sources/dao-factory";
 import ClientDao from "../dao/client-dao";
 import TenantDao from "../dao/tenant-dao";
@@ -12,10 +12,9 @@ import { readFileSync } from "node:fs";
 import { createPrivateKey, createPublicKey, KeyObject, PrivateKeyInput, PublicKeyInput, randomUUID, X509Certificate } from "node:crypto";
 import { ERROR_CODES } from "../models/error";
 import { logWithDetails } from "../logging/logger";
-import BaseSearchService from "./base-search-service";
 import JwtServiceUtils from "./jwt-service-utils";
 import { ALL_INTERNAL_SCOPE_NAMES_DISPLAY, CHANGE_EVENT_CLASS_AUTHORIZATION_GROUP, CHANGE_EVENT_CLASS_CLIENT, CHANGE_EVENT_CLASS_OIDC_PROVIDER, CHANGE_EVENT_CLASS_SCOPE, CHANGE_EVENT_CLASS_SIGNING_KEY, CHANGE_EVENT_CLASS_TENANT, CHANGE_EVENT_CLASS_USER, CHANGE_EVENT_TYPE_CREATE, CONTACT_TYPE_FOR_CLIENT, CONTACT_TYPE_FOR_TENANT, CUSTOM_ENCRYP_DECRYPT_SCOPE, FEDERATED_AUTH_TEST_STATE_PARAM_PREFIX, KEY_TYPE_RSA, KEY_USE_JWT_SIGNING, LEGACY_USER_MIGRATION_SCOPE, NAME_ORDER_WESTERN, OIDC_CLIENT_AUTH_TYPES, OPENTRUST_IDENTITY_VERSION, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, PRINCIPAL_TYPE_SYSTEM_INIT_USER, SCOPE_USE_IAM_MANAGEMENT, SECURITY_EVENT_WRITE_SCOPE, SIGNING_KEY_STATUS_ACTIVE, SYSTEM_INITIALIZATION_KEY_ID, TENANT_READ_ALL_SCOPE, TENANT_TYPE_ROOT_TENANT, USER_TENANT_REL_TYPE_PRIMARY, VALID_KMS_STRATEGIES } from "@/utils/consts";
-import { JWTPayload, JWTVerifyResult } from "jose";
+import { JWTPayload } from "jose";
 import { generateHash, generateRandomToken, generateUserCredential, getDomainFromEmail } from "@/utils/dao-utils";
 import IdentityDao from "../dao/identity-dao";
 import { createSigningKey } from "@/utils/signing-key-utils";
@@ -26,6 +25,8 @@ import AuthDao from "../dao/auth-dao";
 import { GraphQLError } from "graphql/error/GraphQLError";
 import OIDCServiceUtils from "./oidc-service-utils";
 import { WellknownConfig } from "../models/wellknown-config";
+import OpenSearchDao from "../dao/impl/search/open-search-dao";
+import SearchDao from "../dao/search-dao";
 
 
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
@@ -41,6 +42,7 @@ const identityDao: IdentityDao = DaoFactory.getInstance().getIdentityDao();
 const authDao: AuthDao = DaoFactory.getInstance().getAuthDao();
 const jwtServiceUtils: JwtServiceUtils = new JwtServiceUtils();
 const oidcServiceUtils: OIDCServiceUtils = new OIDCServiceUtils();
+const searchDao: SearchDao = new OpenSearchDao();
 
 const {
     SYSTEM_INIT,
@@ -59,12 +61,11 @@ const {
 } = process.env;
 
 
-class SystemInitializationService extends BaseSearchService {
+class SystemInitializationService {
 
     oidcContext: OIDCContext; 
     
     constructor(oidcContext: OIDCContext){
-        super()
         this.oidcContext = oidcContext;
     }
 
@@ -190,19 +191,6 @@ class SystemInitializationService extends BaseSearchService {
             response.systemInitializationErrors = [errorDetail];
             return response;
         }
-        // if(!p.payload){
-        //     response.systemInitializationErrors = [ERROR_CODES.EC00222]
-        // }
-        // const principal: JWTPrincipal = p.payload as unknown as JWTPrincipal;
-
-        // if(principal.principal_type !== PRINCIPAL_TYPE_SYSTEM_INIT_USER){
-        //     response.systemInitializationErrors = [ERROR_CODES.EC00217];
-        //     return response;
-        // }
-        // if(principal.exp < Date.now() / 1000){
-        //     response.systemInitializationErrors = [ERROR_CODES.EC00223];
-        //     return response;
-        // }
 
         // ************************************************************************************************
         // Create the root tenant
@@ -305,6 +293,7 @@ class SystemInitializationService extends BaseSearchService {
             middleName: systemInitializationInput.rootUserCreateInput.middleName,
             phoneNumber: systemInitializationInput.rootUserCreateInput.phoneNumber
         };
+        
         await identityDao.createUser(user);        
         const userCredential: UserCredential = generateUserCredential(user.userId, systemInitializationInput.rootUserCreateInput.password, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS);
         await identityDao.addUserCredential(userCredential);
@@ -318,19 +307,19 @@ class SystemInitializationService extends BaseSearchService {
         // ************************************************************************************************
         const rootTenantContact: Contact = {
             contactid: randomUUID().toString(),
-            email: systemInitializationInput.rootContact.email,
+            email: user.email,
             objectid: rootTenantId,
             objecttype: CONTACT_TYPE_FOR_TENANT,
-            name: systemInitializationInput.rootContact.name
+            name: user.nameOrder === NAME_ORDER_WESTERN ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`
         };
         await contactDao.addContact(rootTenantContact);
 
         const rootClientContact: Contact = {
             contactid: randomUUID().toString(),
-            email: systemInitializationInput.rootContact.email,
+            email: user.email,
             objectid: client.clientId,
             objecttype: CONTACT_TYPE_FOR_CLIENT,
-            name: systemInitializationInput.rootContact.name
+            name: user.nameOrder === NAME_ORDER_WESTERN ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`
         };
         await contactDao.addContact(rootClientContact);
 
@@ -428,10 +417,10 @@ class SystemInitializationService extends BaseSearchService {
             keyUse: KEY_USE_JWT_SIGNING,            
             markForDelete: false,
             privateKeyPkcs8: privateKey,
-            status: SIGNING_KEY_STATUS_ACTIVE,
+            keyStatus: SIGNING_KEY_STATUS_ACTIVE,
             tenantId: tenant.tenantId,
-            certificate: certificate,
-            password: encrypted
+            keyCertificate: certificate,
+            keyPassword: encrypted
         }
         await signingKeysDao.createSigningKey(key);
 
@@ -439,20 +428,20 @@ class SystemInitializationService extends BaseSearchService {
         // ************************************************************************************************
         // Index all of the documents
         // ************************************************************************************************
-        await this.indexTenant(tenant, tenant);
-        await this.indexClient(client);
-        await this.indexAuthorizationGroup(rootAuthzGroup);
-        await this.indexSigningKey(key);
+        await searchDao.indexTenant(tenant, tenant);
+        await searchDao.indexClient(client);
+        await searchDao.indexAuthorizationGroup(rootAuthzGroup);
+        await searchDao.indexSigningKey(key);
         
-        await this.indexUser(user, tenant.tenantId, tenant.tenantId, rootAuthzGroup);
+        await searchDao.indexUser(user, tenant.tenantId, tenant.tenantId, rootAuthzGroup);
         for(let i = 0; i < scopes.length; i++){
-            await this.indexScope(scopes[i], tenant.tenantId);
+            await searchDao.indexScope(scopes[i], tenant.tenantId);
         }
         if(readOnlyAuthzGroup){
-            await this.indexAuthorizationGroup(readOnlyAuthzGroup);
+            await searchDao.indexAuthorizationGroup(readOnlyAuthzGroup);
         }
         if(federatedOIDCProvider){
-            await this.indexFederatedOIDCProvider(federatedOIDCProvider);
+            await searchDao.indexFederatedOIDCProvider(federatedOIDCProvider);
         }
         
         // ************************************************************************************************
@@ -666,7 +655,7 @@ class SystemInitializationService extends BaseSearchService {
         }
 
         try {
-            const objectSearchResults = await this._objectSearch(
+            const objectSearchResults = await searchDao.objectSearch(
                 {
                     page: 1,
                     perPage: 10
@@ -676,7 +665,7 @@ class SystemInitializationService extends BaseSearchService {
             if(!objectSearchResults){
                 arr.push(ERROR_CODES.EC00208);
             }
-            const relSearch = await this._relSearch(
+            const relSearch = await searchDao.relSearch(
                 {
                     page: 1,
                     perPage: 10
@@ -687,10 +676,12 @@ class SystemInitializationService extends BaseSearchService {
                 arr.push(ERROR_CODES.EC00209);
             }
         }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         catch(err: any){
             logWithDetails("error", `Error querying search index for initialization: ${err.message}`, {});
             arr.push(ERROR_CODES.EC00210);
         }
+
         if(!KMS_STRATEGY || !VALID_KMS_STRATEGIES.includes(KMS_STRATEGY)){
             arr.push(ERROR_CODES.EC00211);
         }

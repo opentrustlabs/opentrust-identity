@@ -17,6 +17,8 @@ import AuthenticationGroupDao from "../dao/authentication-group-dao";
 import { SecurityEventType } from "../models/security-event";
 import { ERROR_CODES } from "../models/error";
 import { logWithDetails } from "../logging/logger";
+import SearchDao from "../dao/search-dao";
+import OpenSearchDao from "../dao/impl/search/open-search-dao";
 
 
 const jwtServiceUtils: JwtServiceUtils = new JwtServiceUtils();
@@ -26,7 +28,7 @@ const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
 const authDao: AuthDao = DaoFactory.getInstance().getAuthDao();
 const federatedOIDCProviderDao: FederatedOIDCProviderDao = DaoFactory.getInstance().getFederatedOIDCProvicerDao();
 const authenticationGroupDao: AuthenticationGroupDao = DaoFactory.getInstance().getAuthenticationGroupDao();
-
+const searchDao: SearchDao = new OpenSearchDao();
 
 class AuthenticateUserService extends IdentityService {
 
@@ -57,11 +59,11 @@ class AuthenticateUserService extends IdentityService {
 
         // 1.   If the user is coming from a 3rd party site for authentication
         if(preAuthToken || deviceCodeId){
-            return this.authenticateExternalUserNameHandler(email, preAuthToken, deviceCodeId);
+            return this.authenticateExternalUserNameHandler(this.formatEmail(email), preAuthToken, deviceCodeId);
         }
         // Otherwise they are trying to log directly into the IAM portal itself.
         else{
-            return this.authenticatePortalUserNameHandler(email, tenantId, returnToUri);
+            return this.authenticatePortalUserNameHandler(this.formatEmail(email), tenantId, returnToUri);
             
         }        
     }
@@ -840,13 +842,14 @@ class AuthenticateUserService extends IdentityService {
     public async authenticateUser(username: string, password: string, tenantId: string, authenticationSessionToken: string, preAuthToken: string | null): Promise<UserAuthenticationStateResponse>{
         const response: UserAuthenticationStateResponse = this.initUserAuthenticationStateResponse(authenticationSessionToken, tenantId, preAuthToken);
 
+
         const arrUserAuthenticationStates: Array<UserAuthenticationState> = await this.getSortedAuthenticationStates(authenticationSessionToken);
         const index: number = await this.validateAuthenticationStep(arrUserAuthenticationStates, response, AuthenticationState.EnterPassword);
         if(index < 0){
             return Promise.resolve(response);
         }
         
-        const user: User | null = await identityDao.getUserBy("email", username);
+        const user: User | null = await identityDao.getUserBy("email", this.formatEmail(username));
         if(!user){
             throw new GraphQLError(ERROR_CODES.EC00013.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00013}});
         }
@@ -892,9 +895,10 @@ class AuthenticateUserService extends IdentityService {
 
     }
 
-    public async authenticateUserAndMigrate(username: string, password: string, tenantId: string, authenticationSessionToken: string, preAuthToken: string | null): Promise<UserAuthenticationStateResponse> {
+    public async authenticateUserAndMigrate(usernameInput: string, password: string, tenantId: string, authenticationSessionToken: string, preAuthToken: string | null): Promise<UserAuthenticationStateResponse> {
         const response: UserAuthenticationStateResponse = this.initUserAuthenticationStateResponse(authenticationSessionToken, tenantId, preAuthToken);
 
+        const username: string = this.formatEmail(usernameInput);
         const arrUserAuthenticationStates: Array<UserAuthenticationState> = await this.getSortedAuthenticationStates(authenticationSessionToken);
         const index: number = await this.validateAuthenticationStep(arrUserAuthenticationStates, response, AuthenticationState.EnterPasswordAndMigrateUser);
         if(index < 0){
@@ -963,8 +967,8 @@ class AuthenticateUserService extends IdentityService {
         const userCredential: UserCredential = generateUserCredential(user.userId, password, tenantPasswordConfig.passwordHashingAlgorithm);
         await identityDao.addUserCredential(userCredential);
         
-        await this.updateObjectSearchIndex(tenant, user);
-        await this.updateRelSearchIndex(tenant.tenantId, tenant.tenantId, user);
+        await searchDao.updateObjectSearchIndex(tenant, user);
+        await searchDao.updateRelSearchIndex(tenant.tenantId, tenant.tenantId, user);
         
         arrUserAuthenticationStates[index].authenticationStateStatus = STATUS_COMPLETE;
         await identityDao.updateUserAuthenticationState(arrUserAuthenticationStates[index]);
@@ -1604,7 +1608,7 @@ class AuthenticateUserService extends IdentityService {
             }
         }
         
-        if(userAuthenticationState.authenticationState === AuthenticationState.RedirectBackToApplication){            
+        if(userAuthenticationState.authenticationState === AuthenticationState.RedirectBackToApplication){    
             try {
                 const authorizationCode: AuthorizationReturnUri = await this.generateAuthorizationCode(userAuthenticationState.userId, userAuthenticationState.preAuthToken || "");
                 response.userAuthenticationState = userAuthenticationState;
@@ -1657,9 +1661,11 @@ class AuthenticateUserService extends IdentityService {
                                 ? "successful_authentication" : 
                                 finalUserAuthenticationState.authenticationState === AuthenticationState.PostAuthnStateSendSecurityEventDuressLogon ? 
                                 "duress_authentication" :
-                                "device_registered"
-                        const authToken = await jwtServiceUtils.getAuthTokenForOutboundCalls();
-                        oidcServiceUtils.fireSecurityEvent(securityEventType, this.oidcContext, user, jti, authToken);
+                                "device_registered";
+                        
+                        
+                        const authToken = await jwtServiceUtils.getAuthTokenForOutboundCalls(); 
+                        oidcServiceUtils.fireSecurityEvent(securityEventType, this.oidcContext, user, jti, authToken);                        
                     }
                 }
             }
@@ -1684,9 +1690,8 @@ class AuthenticateUserService extends IdentityService {
                 in milliseconds, we want the distance between now and the time that the user last created a password.
                 if this exceeds the number of milliseconds for the password rotation period, then return true.
             */
-            const datePasswordLastChanged: Date = new Date(userCredential.dateCreated);
             const now: number = Date.now();
-            const timeDiffSinceLastPasswordChangeInMs: number = now - datePasswordLastChanged.getTime();
+            const timeDiffSinceLastPasswordChangeInMs: number = now - userCredential.dateCreatedMs;
             const timeDiffForRotationInMs = tenantPasswordConfig.passwordRotationPeriodDays * 24 * 60 * 60 * 1000;
             
             if(timeDiffSinceLastPasswordChangeInMs > timeDiffForRotationInMs){

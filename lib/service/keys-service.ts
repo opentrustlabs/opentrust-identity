@@ -47,7 +47,7 @@ class SigningKeysService {
                     if(result){
                         result.forEach(
                             (k: SigningKey) => {
-                                k.password = "";
+                                k.keyPassword = "";
                                 k.privateKeyPkcs8 = "";
                             }
                         );
@@ -83,13 +83,13 @@ class SigningKeysService {
         if(!key.privateKeyPkcs8 || key.privateKeyPkcs8 === ""){
             throw new GraphQLError(ERROR_CODES.EC00051.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00051}});
         }
-        if(key.certificate === "" && key.publicKey === ""){
+        if(key.keyCertificate === "" && key.publicKey === ""){
             throw new GraphQLError(ERROR_CODES.EC00052.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00052}});
         }
-        if(key.password === "" && key.privateKeyPkcs8.startsWith(PKCS8_ENCRYPTED_PRIVATE_KEY_HEADER)){
+        if(key.keyPassword === "" && key.privateKeyPkcs8.startsWith(PKCS8_ENCRYPTED_PRIVATE_KEY_HEADER)){
             throw new GraphQLError(ERROR_CODES.EC00053.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00053}});
         }
-        if(key.password && key.password !== "" && key.password.length < MIN_PRIVATE_KEY_PASSWORD_LENGTH){
+        if(key.keyPassword && key.keyPassword !== "" && key.keyPassword.length < MIN_PRIVATE_KEY_PASSWORD_LENGTH){
             throw new GraphQLError(ERROR_CODES.EC00054.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00054}});
         }
 
@@ -107,26 +107,26 @@ class SigningKeysService {
                 throw new GraphQLError(ERROR_CODES.EC00057.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00057}});
             }
         }
-        if(key.certificate && key.certificate.length > 0){
-            const x509Cert: X509Certificate = new X509Certificate(key.certificate);            
+        if(key.keyCertificate && key.keyCertificate.length > 0){
+            const x509Cert: X509Certificate = new X509Certificate(key.keyCertificate);            
             const d: Date = new Date(x509Cert.validTo);
             key.expiresAtMs = d.getTime();
         }
         
-        const plainText = key.password && key.password !== "" ? key.password : key.privateKeyPkcs8;
+        const plainText = key.keyPassword && key.keyPassword !== "" ? key.keyPassword : key.privateKeyPkcs8;
         const encrypted: string | null = await kms.encrypt(plainText);
         if(encrypted === null){
             throw new GraphQLError(ERROR_CODES.EC00058.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00058}});
         }
-        if(key.password && key.password !== ""){
-            key.password = encrypted
+        if(key.keyPassword && key.keyPassword !== ""){
+            key.keyPassword = encrypted
         }
         else{
             key.privateKeyPkcs8 = encrypted;
         }
         
         key.keyId = randomUUID().toString();
-        key.status = SIGNING_KEY_STATUS_ACTIVE;
+        key.keyStatus = SIGNING_KEY_STATUS_ACTIVE;
 
         await signingKeysDao.createSigningKey(key);
         await this.updateSearchIndex(key);
@@ -195,10 +195,10 @@ class SigningKeysService {
             keyUse: keyInput.keyUse,
             markForDelete: false,
             privateKeyPkcs8: privateKey,
-            status: SIGNING_KEY_STATUS_ACTIVE,
+            keyStatus: SIGNING_KEY_STATUS_ACTIVE,
             tenantId: keyInput.tenantId,
-            certificate: certificate,
-            password: encrypted
+            keyCertificate: certificate,
+            keyPassword: encrypted
         }
         await signingKeysDao.createSigningKey(key);
         await this.updateSearchIndex(key);
@@ -226,7 +226,7 @@ class SigningKeysService {
 
     public async updateSigningKey(key: SigningKey): Promise<SigningKey> {
         
-        if( ! (key.status === SIGNING_KEY_STATUS_REVOKED || key.status === SIGNING_KEY_STATUS_ACTIVE)) {
+        if( ! (key.keyStatus === SIGNING_KEY_STATUS_REVOKED || key.keyStatus === SIGNING_KEY_STATUS_ACTIVE)) {
             throw new GraphQLError(ERROR_CODES.EC00062.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00062}});
         }
         const existingKey: SigningKey | null = await signingKeysDao.getSigningKeyById(key.keyId);
@@ -239,12 +239,12 @@ class SigningKeysService {
             throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
         }
 
-        if(existingKey.status === SIGNING_KEY_STATUS_REVOKED){
+        if(existingKey.keyStatus === SIGNING_KEY_STATUS_REVOKED){
             throw new GraphQLError(ERROR_CODES.EC00063.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00063}});
         }
         
         existingKey.keyName = key.keyName;
-        existingKey.status = key.status;
+        existingKey.keyStatus = key.keyStatus;
 
         await signingKeysDao.updateSigningKey(existingKey);
         await this.updateSearchIndex(existingKey);
@@ -288,8 +288,8 @@ class SigningKeysService {
                         // private key or a plain text private key requires special permissions.
 
                         // A non-empty password means that an encrypted private key was supplied
-                        if(result.password && result.password !== ""){
-                            result.password = ""
+                        if(result.keyPassword && result.keyPassword !== ""){
+                            result.keyPassword = ""
                         }
                         // else a plain text password was supplied.
                         else{
@@ -315,7 +315,7 @@ class SigningKeysService {
             objecttype: SearchResultType.Key,
             owningtenantid: key.tenantId,
             email: "",
-            enabled: key.status === SIGNING_KEY_STATUS_ACTIVE,
+            enabled: key.keyStatus === SIGNING_KEY_STATUS_ACTIVE,
             owningclientid: "",
             subtype: key.keyType,
             subtypekey: key.keyType

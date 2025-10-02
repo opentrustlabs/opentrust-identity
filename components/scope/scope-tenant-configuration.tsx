@@ -29,15 +29,17 @@ import { useIntl } from 'react-intl';
 export interface ScopeTenantConfigurationProps {
     scopeId: string,
     scopeUse: string,
-    onUpdateStart: () => void;
-    onUpdateEnd: (success: boolean) => void;
+    onUpdateStart: () => void,
+    onUpdateEnd: (success: boolean) => void,
+    isExclusiveInternalScope?: boolean
 };
 
 const ScopeTenantConfiguration: React.FC<ScopeTenantConfigurationProps> = ({
     scopeId,
     scopeUse,
     onUpdateEnd,
-    onUpdateStart
+    onUpdateStart,
+    isExclusiveInternalScope
 }) => {
 
     // CONTEXT VARIABLES    
@@ -197,7 +199,7 @@ const ScopeTenantConfiguration: React.FC<ScopeTenantConfigurationProps> = ({
                     </DialogActions>
                 </Dialog>
             }
-            {canAddRel &&
+            {canAddRel && isExclusiveInternalScope !== true &&
                 <Grid2 marginBottom={"32px"} marginTop={"16px"} spacing={2} container size={12}>
                     <Grid2 size={12} display={"inline-flex"} alignItems="center" alignContent={"center"}>
                         <AddBoxIcon
@@ -208,6 +210,7 @@ const ScopeTenantConfiguration: React.FC<ScopeTenantConfigurationProps> = ({
                     </Grid2>
                 </Grid2>
             }
+            {!isExclusiveInternalScope &&
             <Grid2 marginBottom={"32px"} marginTop={"16px"} spacing={2} container size={12}>
                 <Grid2 size={12} display={"inline-flex"} alignItems="center" alignContent={"center"}>
                     <TextField
@@ -239,6 +242,7 @@ const ScopeTenantConfiguration: React.FC<ScopeTenantConfigurationProps> = ({
                     />
                 </Grid2>
             </Grid2>
+            }
             <Grid2 marginBottom={"8px"} marginTop={"16px"} spacing={1} container size={12} fontWeight={"bold"}>
                         <Grid2 size={6} >Tenant Name</Grid2>
                         <Grid2 size={5} >Tenant Type</Grid2>

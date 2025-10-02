@@ -1,4 +1,4 @@
-import { Model, DataTypes, Sequelize } from 'sequelize';
+import { Model, DataTypes, Sequelize } from "@sequelize/core";
 
 class FederatedAuthTestEntity extends Model {
     
@@ -7,61 +7,61 @@ class FederatedAuthTestEntity extends Model {
             authState: {
                 type: DataTypes.STRING,
                 primaryKey: true,
-                field: "authstate"
+                columnName: "authstate"
             },
             clientId: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "clientid"
+                columnName: "clientid"
             },
             clientSecret: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: true,
-                field: "clientsecret"
+                columnName: "clientsecret"
             },
             usePkce: {
                 type: DataTypes.BOOLEAN,
                 primaryKey: false,
                 allowNull: false,
-                field: "usepkce"
+                columnName: "usepkce"
             },
             codeVerifier: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: true,
-                field: "codeverifier"
+                columnName: "codeverifier"
             },
             wellKnownUri: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "wellknownuri"
+                columnName: "wellknownuri"
             },
             scope: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "scope"
+                columnName: "scope"
             },
             redirectUri: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "redirecturi"
+                columnName: "redirecturi"
             },
             clientAuthType: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "clientauthtype"
+                columnName: "clientauthtype"
             },
             expiresAtMs: {
                 type: DataTypes.BIGINT,
                 primaryKey: false,
                 allowNull: false,
-                field: "expiresatms"
+                columnName: "expiresatms"
             }
         }, 
         {

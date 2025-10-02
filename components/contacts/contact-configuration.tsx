@@ -123,6 +123,8 @@ const ContactConfiguration: React.FC<ContactConfigurationProps> = ({
                 <Dialog 
                     open={removeDialogOpen}
                     onClose={() => {setRemoveDialogOpen(false); setContactToRemove(null);}}
+                    maxWidth="sm"
+                    fullWidth={true}
                 >
                     <DialogContent>                        
                         <Typography ><span>Confirm removal of contact: </span> <span style={{fontWeight: "bold"}}>{contactToRemove?.email}</span></Typography>

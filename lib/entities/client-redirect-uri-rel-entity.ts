@@ -1,4 +1,4 @@
-import { Model, DataTypes, Sequelize } from 'sequelize';
+import { Model, DataTypes, Sequelize } from "@sequelize/core";
 
 class ClientRedirectUriRelEntity extends Model {
     
@@ -7,12 +7,12 @@ class ClientRedirectUriRelEntity extends Model {
             clientId: {
                 type: DataTypes.STRING,
                 primaryKey: true,
-                field: "clientid"
+                columnName: "clientid"
             },
             redirectUri: {
                 type: DataTypes.STRING,
                 primaryKey: true,
-                field: "redirecturi"
+                columnName: "redirecturi"
             }
         }, 
 		{

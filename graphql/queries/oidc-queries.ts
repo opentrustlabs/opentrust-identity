@@ -33,7 +33,6 @@ export const TENANT_META_DATA_QUERY = gql(`
                 tenantid
                 adminheaderbackgroundcolor
                 adminheadertextcolor
-                adminlogo
                 adminheadertext
                 authenticationheaderbackgroundcolor
                 authenticationheadertextcolor
@@ -84,18 +83,6 @@ export const TENANT_META_DATA_QUERY = gql(`
     }
 `);
 
-export const CLIENTS_QUERY = gql(`
-    query getClients ($tenantId: String) {
-        getClients (tenantId: $tenantId){
-            tenantId
-            clientId            
-            clientName
-            clientDescription
-            enabled            
-            clientType
-        }
-    }    
-`);
 
 export const LOGIN_USERNAME_HANDLER_QUERY = gql(`
     query getLoginUserNameHandler($username: String!, $tenantId: String, $preauthToken: String) {
@@ -442,11 +429,11 @@ export const SIGNING_KEY_DETAIL_QUERY = gql(`
             keyTypeId
             keyUse
             privateKeyPkcs8
-            password
-            certificate
+            keyPassword
+            keyCertificate
             publicKey
             expiresAtMs
-            status
+            keyStatus
             statusId
             markForDelete
         }
@@ -545,7 +532,7 @@ export const TENANT_ANONYMOUS_USER_CONFIGURATION_QUERY = gql(`
         getAnonymousUserConfiguration(tenantId: $tenantId){
             tenantId 
             defaultcountrycode
-            defaultlangugecode
+            defaultlanguagecode
             tokenttlseconds
         }
     }
@@ -557,7 +544,6 @@ export const TENANT_LOOK_AND_FEEL_QUERY = gql(`
             tenantid
             adminheaderbackgroundcolor
             adminheadertextcolor
-            adminlogo
             adminheadertext
             authenticationheaderbackgroundcolor
             authenticationheadertextcolor

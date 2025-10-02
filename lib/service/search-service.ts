@@ -1,13 +1,12 @@
-import { LookaheadResult, ObjectSearchResults, SearchFilterInput, SearchFilterInputObjectType, SearchInput, ObjectSearchResultItem, RelSearchResults, RelSearchInput, RelSearchResultItem, SearchResultType, LookaheadItem, ErrorDetail } from "@/graphql/generated/graphql-types";
+import { LookaheadResult, ObjectSearchResults, SearchInput, ObjectSearchResultItem, RelSearchResults, RelSearchInput, RelSearchResultItem, SearchResultType, LookaheadItem, ErrorDetail } from "@/graphql/generated/graphql-types";
 import { OIDCContext } from "@/graphql/graphql-context";
-import { getOpenSearchClient } from "../data-sources/search";
-import { Client } from "@opensearch-project/opensearch";
-import { Search_Response } from "@opensearch-project/opensearch/api/index.js";
-import { ALLOWED_OBJECT_SEARCH_SORT_FIELDS, ALLOWED_SEARCH_DIRECTIONS, AUTHENTICATION_GROUP_READ_SCOPE, AUTHORIZATION_GROUP_READ_SCOPE, CLIENT_READ_SCOPE, FEDERATED_OIDC_PROVIDER_READ_SCOPE, KEY_READ_SCOPE, MAX_SEARCH_PAGE, MAX_SEARCH_PAGE_SIZE, MIN_SEARCH_PAGE_SIZE, RATE_LIMIT_READ_SCOPE, SCOPE_READ_SCOPE, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE, USER_READ_SCOPE } from "@/utils/consts";
+import { ALLOWED_OBJECT_SEARCH_SORT_FIELDS, ALLOWED_SEARCH_DIRECTIONS, AUTHENTICATION_GROUP_READ_SCOPE, AUTHORIZATION_GROUP_READ_SCOPE, CLIENT_READ_SCOPE, FEDERATED_OIDC_PROVIDER_READ_SCOPE, KEY_READ_SCOPE, MAX_SEARCH_PAGE, MAX_SEARCH_PAGE_SIZE, MIN_SEARCH_PAGE_SIZE, RATE_LIMIT_READ_SCOPE, SCOPE_READ_SCOPE, TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE, USER_READ_SCOPE } from "@/utils/consts";
 import { containsScope } from "@/utils/authz-utils";
 import { GraphQLError } from "graphql";
 import { ERROR_CODES } from "../models/error";
-import BaseSearchService from "./base-search-service";
+import SearchDao from "../dao/search-dao";
+import OpenSearchDao from "../dao/impl/search/open-search-dao";
+
 
 
 // The opensearch javascript client api documentation and boolean query documentation: 
@@ -35,14 +34,13 @@ const MAP_SEARCH_RESULT_TYPE_TO_SCOPE: Map<SearchResultType, string> = new Map([
 ]);
 
 
-const client: Client = getOpenSearchClient();
+const searchDao: SearchDao = new OpenSearchDao();
 
-class SearchService extends BaseSearchService {
+class SearchService {
 
     oidcContext: OIDCContext;
 
     constructor(oidcContext: OIDCContext){
-        super();
         this.oidcContext = oidcContext;
     }
 
@@ -92,12 +90,12 @@ class SearchService extends BaseSearchService {
                 sortField: "childname",
                 childtype: searchInput.resultType
             }
-            const relSearchResults: RelSearchResults = await this._relSearch(relSearchInput, searchResultsTypesToOmit);
+            const relSearchResults: RelSearchResults = await searchDao.relSearch(relSearchInput, searchResultsTypesToOmit);
             
             const ids: Array<string> = relSearchResults.resultlist.map(
                 (item: RelSearchResultItem) => item.childid
             )
-            const items = await this._getObjectSearchByIds(ids);            
+            const items = await searchDao.getObjectSearchByIds(ids);
             const searchResults: ObjectSearchResults = {
                 endtime: relSearchResults.endtime,
                 page: page,
@@ -110,7 +108,7 @@ class SearchService extends BaseSearchService {
             return searchResults;
         }
         else{
-            return this._objectSearch(searchInput, searchResultsTypesToOmit);
+            return searchDao.objectSearch(searchInput, searchResultsTypesToOmit);
         }
     }
     
@@ -142,7 +140,7 @@ class SearchService extends BaseSearchService {
         relSearchInput.sortDirection = sortDirection;
         relSearchInput.sortField = sortField;        
 
-        return this._relSearch(relSearchInput, searchResultsTypesToOmit);          
+        return searchDao.relSearch(relSearchInput, searchResultsTypesToOmit);          
 
     }
 
@@ -183,45 +181,43 @@ class SearchService extends BaseSearchService {
                 }
             )
         }
-
-
         return Promise.resolve(retVal);
     }
 
-    protected async _getObjectSearchByIds(ids: Array<string>): Promise<Array<ObjectSearchResultItem>>{
+    // protected async _getObjectSearchByIds(ids: Array<string>): Promise<Array<ObjectSearchResultItem>>{
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const query: any = {
-            ids: {
-                values: ids
-            }
-        }
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const searchBody: any = {
-            from: 0,
-            size: ids.length,
-            query: query            
-        }
+    //     // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    //     const query: any = {
+    //         ids: {
+    //             values: ids
+    //         }
+    //     }
+    //     // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    //     const searchBody: any = {
+    //         from: 0,
+    //         size: ids.length,
+    //         query: query            
+    //     }
 
-        // Default result list is am empty array
-        const items: Array<ObjectSearchResultItem> = [];
+    //     // Default result list is am empty array
+    //     const items: Array<ObjectSearchResultItem> = [];
 
-        const searchResponse: Search_Response = await client.search({
-            index: SEARCH_INDEX_OBJECT_SEARCH,
-            body: searchBody
-        });
+    //     const searchResponse: Search_Response = await searchDao.search({
+    //         index: SEARCH_INDEX_OBJECT_SEARCH,
+    //         body: searchBody
+    //     });
 
-        searchResponse.body.hits.hits.forEach(
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (hit: any) => {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const source: any = hit._source;
-                items.push(source);
-            }
-        );
-        return items;
+    //     searchResponse.body.hits.hits.forEach(
+    //         // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    //         (hit: any) => {
+    //             // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    //             const source: any = hit._source;
+    //             items.push(source);
+    //         }
+    //     );
+    //     return items;
 
-    }
+    // }
 
     
     protected validatePermissions(resultType: SearchResultType | null): {isPermitted: boolean, errorDetail: ErrorDetail} {

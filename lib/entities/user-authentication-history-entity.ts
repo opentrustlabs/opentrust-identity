@@ -1,4 +1,4 @@
-import { Model, DataTypes, Sequelize } from 'sequelize';
+import { Model, DataTypes, Sequelize } from "@sequelize/core";
 
 class UserAuthenticationHistoryEntity extends Model {
     
@@ -7,12 +7,12 @@ class UserAuthenticationHistoryEntity extends Model {
             userId: {
                 type: DataTypes.STRING,
                 primaryKey: true,
-                field: "userid"
+                columnName: "userid"
             },
             lastAuthenticationAtMs: {
-                type: DataTypes.STRING,
+                type: DataTypes.BIGINT,
                 primaryKey: true,
-                field: "lastauthenticationatms"
+                columnName: "lastauthenticationatms"
             }
         }, 
         {

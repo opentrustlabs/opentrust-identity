@@ -1,4 +1,4 @@
-import { Model, DataTypes, Sequelize } from 'sequelize';
+import { Model, DataTypes, Sequelize } from "@sequelize/core";
 
 export class SchedulerLockEntity extends Model {
     
@@ -7,24 +7,24 @@ export class SchedulerLockEntity extends Model {
             lockName: {
                 type: DataTypes.STRING,
                 primaryKey: true,
-                field: "lockname"
+                columnName: "lockname"
             },
             lockInstanceId: {
                 type: DataTypes.STRING,
                 primaryKey: true,
-                field: "lockinstanceid"
+                columnName: "lockinstanceid"
             },
             lockStartTimeMS: {
                 type: DataTypes.BIGINT,
                 primaryKey: false,
                 allowNull: false,
-                field: "lockstarttimems"
+                columnName: "lockstarttimems"
             },
             lockExpiresAtMS: {
                 type: DataTypes.BIGINT,
                 primaryKey: false,
                 allowNull: false,
-                field: "lockexpiresatms"
+                columnName: "lockexpiresatms"
             }
         }, {
             sequelize,

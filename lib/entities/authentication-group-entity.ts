@@ -1,4 +1,4 @@
-import { Model, DataTypes, Sequelize } from 'sequelize';
+import { Model, DataTypes, Sequelize } from "@sequelize/core";
 
 class AuthenticationGroupEntity extends Model {
     
@@ -7,37 +7,37 @@ class AuthenticationGroupEntity extends Model {
             authenticationGroupId: {
                 type: DataTypes.STRING,
                 primaryKey: true,
-                field: "authenticationgroupid"
+                columnName: "authenticationgroupid"
             },
             tenantId: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "tenantid"
+                columnName: "tenantid"
             },
             authenticationGroupName: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "authenticationgroupname"
+                columnName: "authenticationgroupname"
             },
             authenticationGroupDescription: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: true,
-				field: "authenticationgroupdescription"
+				columnName: "authenticationgroupdescription"
             },
             defaultGroup: {
                 type: DataTypes.BOOLEAN,
                 primaryKey: false,
                 allowNull: false,
-                field: "defaultgroup"
+                columnName: "defaultgroup"
             },
             markForDelete: {
                 type: DataTypes.BOOLEAN,
                 primaryKey: false,
                 allowNull: false,
-                field: "markfordelete"
+                columnName: "markfordelete"
             }
         }, 
 		{

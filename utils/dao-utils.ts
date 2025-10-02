@@ -258,7 +258,7 @@ export function generateUserCredential(userId: string, password: string, hashAlg
     }
 
     return {
-        dateCreated: new Date().toISOString(),
+        dateCreatedMs: Date.now(),
         hashedPassword: hashedPassword,
         salt: salt,
         hashingAlgorithm: hashAlgorithm,

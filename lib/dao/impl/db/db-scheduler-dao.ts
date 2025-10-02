@@ -1,14 +1,14 @@
 import { SchedulerLock } from "@/graphql/generated/graphql-types";
 import SchedulerDao from "../../scheduler-dao";
 import DBDriver from "@/lib/data-sources/sequelize-db";
-import { Op, Sequelize } from "sequelize";
+import { Op } from "@sequelize/core";
 import SchedulerLockEntity from "@/lib/entities/scheduler-lock-entity";
 
 class DBSchedulerDao extends SchedulerDao {
 
     public async getSchedulerLocks(limit: number): Promise<Array<SchedulerLock>>{
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        const arr: Array<SchedulerLockEntity> = await sequelize.models.schedulerLock.findAll({            
+        
+        const arr: Array<SchedulerLockEntity> = await (await DBDriver.getInstance().getSchedulerLockEntity()).findAll({            
             order: ["lockStartTimeMS"],
             limit: limit
         });
@@ -16,8 +16,8 @@ class DBSchedulerDao extends SchedulerDao {
     }
 
     public async getSchedulerLocksByName(lockName: string): Promise<Array<SchedulerLock>> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        const arr: Array<SchedulerLockEntity> = await sequelize.models.schedulerLock.findAll({
+        
+        const arr: Array<SchedulerLockEntity> = await (await DBDriver.getInstance().getSchedulerLockEntity()).findAll({
             where: {
                 lockName: lockName
             },
@@ -27,8 +27,8 @@ class DBSchedulerDao extends SchedulerDao {
     }
 
     public async getSchedulerLockByInstanceId(lockInstanceId: string): Promise<SchedulerLock | null>{
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        const e: SchedulerLockEntity | null = await sequelize.models.schedulerLock.findOne({
+        
+        const e: SchedulerLockEntity | null = await (await DBDriver.getInstance().getSchedulerLockEntity()).findOne({
             where: {
                 lockInstanceId: lockInstanceId
             }
@@ -37,14 +37,14 @@ class DBSchedulerDao extends SchedulerDao {
     }
 
     public async createSchedulerLock(lock: SchedulerLock): Promise<SchedulerLock> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.schedulerLock.create(lock);
+        
+        await (await DBDriver.getInstance().getSchedulerLockEntity()).create(lock);
         return lock;
     }
 
     public async updateSchedulerLock(lock: SchedulerLock): Promise<SchedulerLock> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.schedulerLock.update(lock, {
+        
+        await (await DBDriver.getInstance().getSchedulerLockEntity()).update(lock, {
             where: {
                 lockInstanceId: lock.lockInstanceId,
                 lockName: lock.lockName
@@ -54,8 +54,8 @@ class DBSchedulerDao extends SchedulerDao {
     }
 
     public async deleteSchedulerLock(lockInstanceId: string): Promise<void> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.schedulerLock.destroy({
+
+        await (await DBDriver.getInstance().getSchedulerLockEntity()).destroy({
             where: {
                 lockInstanceId: lockInstanceId
             }
@@ -64,8 +64,8 @@ class DBSchedulerDao extends SchedulerDao {
     }
 
     public async deleteExpiredData(): Promise<void> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.schedulerLock.destroy({
+
+        await (await DBDriver.getInstance().getSchedulerLockEntity()).destroy({
             where: {
                 lockExpiresAtMS: {
                     [Op.lt]: Date.now()

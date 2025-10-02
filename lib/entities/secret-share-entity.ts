@@ -1,4 +1,4 @@
-import { Model, DataTypes, Sequelize } from 'sequelize';
+import { Model, DataTypes, Sequelize } from "@sequelize/core";
 
 class SecretShareEntity extends Model {
     
@@ -7,31 +7,31 @@ class SecretShareEntity extends Model {
             secretShareId: {
                 type: DataTypes.STRING,
                 primaryKey: true,
-                field: "secretshareid"
+                columnName: "secretshareid"
             },
             objectId: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "objectid"
+                columnName: "objectid"
             },
             secretShareObjectType: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "objectype"
+                columnName: "objectype"
             },
             otp: {
                 type: DataTypes.STRING,
                 primaryKey: false,
                 allowNull: false,
-                field: "otp"
+                columnName: "otp"
             },
             expiresAtMs: {
                 type: DataTypes.BIGINT,
                 primaryKey: false,
                 allowNull: false,
-                field: "expiresatms"
+                columnName: "expiresatms"
             }
         }, 
         {

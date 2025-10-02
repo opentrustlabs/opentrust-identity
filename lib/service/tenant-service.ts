@@ -3,18 +3,19 @@ import { OIDCContext } from "@/graphql/graphql-context";
 import TenantDao from "@/lib/dao/tenant-dao";
 import { GraphQLError } from "graphql";
 import { randomUUID } from 'crypto'; 
-import { CAPTCHA_CONFIG_SCOPE, CHANGE_EVENT_CLASS_SIGNING_KEY, CHANGE_EVENT_CLASS_SYSTEM_SETTINGS, CHANGE_EVENT_CLASS_TENANT, CHANGE_EVENT_CLASS_TENANT_ANONYMOUS_USER_CONFIGURATION, CHANGE_EVENT_CLASS_TENANT_AUTHENTICATION_DOMAIN_REL, CHANGE_EVENT_CLASS_TENANT_LEGACY_USER_MIGRATION_CONFIGURATION, CHANGE_EVENT_CLASS_TENANT_LOGIN_FAILURE_POLICY, CHANGE_EVENT_CLASS_TENANT_LOOK_AND_FEEL, CHANGE_EVENT_CLASS_TENANT_PASSWORD_CONFIGURATION, CHANGE_EVENT_TYPE_CREATE, CHANGE_EVENT_TYPE_CREATE_REL, CHANGE_EVENT_TYPE_DELETE, CHANGE_EVENT_TYPE_REMOVE_REL, CHANGE_EVENT_TYPE_UPDATE, DEFAULT_RATE_LIMIT_PERIOD_MINUTES, DEFAULT_TENANT_META_DATA, FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL, JOBS_READ_SCOPE, MFA_AUTH_TYPE_NONE, MFA_AUTH_TYPES, OPENTRUST_IDENTITY_VERSION, PASSWORD_HASHING_ALGORITHMS, PASSWORD_MAXIMUM_LENGTH, PASSWORD_MINIMUM_LENGTH, SEARCH_INDEX_OBJECT_SEARCH, SYSTEM_SETTINGS_READ_SCOPE, SYSTEM_SETTINGS_UPDATE_SCOPE, TENANT_CREATE_SCOPE, TENANT_NAME_MINIMUM_LENGTH, TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE, TENANT_TYPE_ROOT_TENANT, TENANT_TYPES, TENANT_TYPES_DISPLAY, TENANT_UPDATE_SCOPE } from "@/utils/consts";
+import { CAPTCHA_CONFIG_SCOPE, CHANGE_EVENT_CLASS_SYSTEM_SETTINGS, CHANGE_EVENT_CLASS_TENANT, CHANGE_EVENT_CLASS_TENANT_ANONYMOUS_USER_CONFIGURATION, CHANGE_EVENT_CLASS_TENANT_AUTHENTICATION_DOMAIN_REL, CHANGE_EVENT_CLASS_TENANT_LEGACY_USER_MIGRATION_CONFIGURATION, CHANGE_EVENT_CLASS_TENANT_LOGIN_FAILURE_POLICY, CHANGE_EVENT_CLASS_TENANT_LOOK_AND_FEEL, CHANGE_EVENT_CLASS_TENANT_PASSWORD_CONFIGURATION, CHANGE_EVENT_TYPE_CREATE, CHANGE_EVENT_TYPE_CREATE_REL, CHANGE_EVENT_TYPE_DELETE, CHANGE_EVENT_TYPE_REMOVE_REL, CHANGE_EVENT_TYPE_UPDATE, DEFAULT_RATE_LIMIT_PERIOD_MINUTES, DEFAULT_TENANT_META_DATA, FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL, JOBS_READ_SCOPE, MFA_AUTH_TYPE_NONE, MFA_AUTH_TYPES, OPENTRUST_IDENTITY_VERSION, PASSWORD_HASHING_ALGORITHMS, PASSWORD_MAXIMUM_LENGTH, PASSWORD_MINIMUM_LENGTH, SEARCH_INDEX_OBJECT_SEARCH, SYSTEM_SETTINGS_READ_SCOPE, SYSTEM_SETTINGS_UPDATE_SCOPE, TENANT_CREATE_SCOPE, TENANT_NAME_MINIMUM_LENGTH, TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE, TENANT_TYPE_ROOT_TENANT, TENANT_TYPES, TENANT_TYPES_DISPLAY, TENANT_UPDATE_SCOPE } from "@/utils/consts";
 import { getOpenSearchClient } from "@/lib/data-sources/search";
 import FederatedOIDCProviderDao from "../dao/federated-oidc-provider-dao";
 import { DaoFactory } from "../data-sources/dao-factory";
 import ScopeDao from "../dao/scope-dao";
-import { authorizeByScopeAndTenant, containsScope, ServiceAuthorizationWrapper } from "@/utils/authz-utils";
+import { authorizeByScopeAndTenant, ServiceAuthorizationWrapper } from "@/utils/authz-utils";
 import MarkForDeleteDao from "../dao/mark-for-delete-dao";
 import SchedulerDao from "../dao/scheduler-dao";
 import ClientDao from "../dao/client-dao";
 import { ERROR_CODES } from "../models/error";
 import ChangeEventDao from "../dao/change-event-dao";
 import Kms from "../kms/kms";
+import { logWithDetails } from "../logging/logger";
 
 const searchClient = getOpenSearchClient();
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
@@ -86,8 +87,10 @@ class TenantService {
                 (id: string) => id === this.oidcContext.portalUserProfile?.managementAccessTenantId
             );
         }        
-
-        return tenantDao.getTenants(tenantFilterIds);    
+        if(tenantFilterIds && tenantFilterIds.length > 0){
+            return tenantDao.getTenants(tenantFilterIds);
+        }
+        return [];
     }
 
     public async getTenantById(tenantId: string): Promise<Tenant | null> {
@@ -201,7 +204,10 @@ class TenantService {
                     isValidUrl = true;
                 }
             }
-            catch(_){
+
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            catch(err: any){
+                logWithDetails("error", `Error validating terms and conditions URI: ${err.message}`, {});
                 isValidUrl = false;
             }
             if(isValidUrl === false){
@@ -335,7 +341,8 @@ class TenantService {
     }
    
 
-    public async getTenantMetaData(tenantId: string): Promise<TenantMetaData | null> {
+    public async getTenantMetaData(tenantId: string): Promise<TenantMetaData | null> {        
+
         const tenant: Tenant | null = await tenantDao.getTenantById(tenantId);
         if(!tenant){
             throw new GraphQLError(ERROR_CODES.EC00008.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00008}});
@@ -612,35 +619,36 @@ class TenantService {
         }
     }
 
-    public async setTenantAnonymousUserConfig(tenantAnonymousUserConfigInput: TenantAnonymousUserConfiguration): Promise<TenantAnonymousUserConfiguration> {
-        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_UPDATE_SCOPE], tenantAnonymousUserConfigInput.tenantId); 
+    public async setTenantAnonymousUserConfig(tenantAnonymousUserConfiguration: TenantAnonymousUserConfiguration): Promise<TenantAnonymousUserConfiguration> {
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_UPDATE_SCOPE], tenantAnonymousUserConfiguration.tenantId); 
         if(!authResult.isAuthorized){
             throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
         }
-        const existing: TenantAnonymousUserConfiguration | null = await tenantDao.getAnonymousUserConfiguration(tenantAnonymousUserConfigInput.tenantId);
+        
+        const existing: TenantAnonymousUserConfiguration | null = await tenantDao.getAnonymousUserConfiguration(tenantAnonymousUserConfiguration.tenantId);
         if(existing){
             changeEventDao.addChangeEvent({
-                objectId: tenantAnonymousUserConfigInput.tenantId,
+                objectId: tenantAnonymousUserConfiguration.tenantId,
                 changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
                 changeEventClass: CHANGE_EVENT_CLASS_TENANT_ANONYMOUS_USER_CONFIGURATION,
                 changeEventId: randomUUID().toString(),
                 changeEventType: CHANGE_EVENT_TYPE_UPDATE,
                 changeTimestamp: Date.now(),
-                data: JSON.stringify(tenantAnonymousUserConfigInput)
+                data: JSON.stringify(tenantAnonymousUserConfiguration)
             });
-            return tenantDao.updateAnonymousUserConfiguration(tenantAnonymousUserConfigInput);
+            return tenantDao.updateAnonymousUserConfiguration(tenantAnonymousUserConfiguration);
         }
         else{
             changeEventDao.addChangeEvent({
-                objectId: tenantAnonymousUserConfigInput.tenantId,
+                objectId: tenantAnonymousUserConfiguration.tenantId,
                 changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
                 changeEventClass: CHANGE_EVENT_CLASS_TENANT_ANONYMOUS_USER_CONFIGURATION,
                 changeEventId: randomUUID().toString(),
                 changeEventType: CHANGE_EVENT_TYPE_CREATE,
                 changeTimestamp: Date.now(),
-                data: JSON.stringify(tenantAnonymousUserConfigInput)
+                data: JSON.stringify(tenantAnonymousUserConfiguration)
             });
-            return tenantDao.createAnonymousUserConfiguration(tenantAnonymousUserConfigInput);
+            return tenantDao.createAnonymousUserConfiguration(tenantAnonymousUserConfiguration);
         }
     }
 

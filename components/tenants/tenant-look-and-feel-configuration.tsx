@@ -12,7 +12,6 @@ import TextField from "@mui/material/TextField";
 import ColorizeIcon from '@mui/icons-material/Colorize';
 import { Alert, Dialog, DialogActions, DialogContent, DialogTitle, Divider, Stack, Typography } from "@mui/material";
 import { DEFAULT_BACKGROUND_COLOR, DEFAULT_TEXT_COLOR, TENANT_UPDATE_SCOPE } from "@/utils/consts";
-import { ResponsiveBreakpoints, ResponsiveContext } from "../contexts/responsive-context";
 import { HexColorPicker } from "react-colorful";
 import DeleteForeverOutlinedIcon from '@mui/icons-material/DeleteForeverOutlined';
 import DetailSectionActionHandler from "../layout/detail-section-action-handler";
@@ -36,7 +35,6 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
 
 
     // CONTEXT VARIABLES
-    const breakPoints: ResponsiveBreakpoints = useContext(ResponsiveContext);
     const intl = useIntl();
     const authContextProps: AuthContextProps = useContext(AuthContext);
     const profile: PortalUserProfile | null = authContextProps.portalUserProfile;
@@ -45,7 +43,6 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
         tenantid: tenantId,
         adminheaderbackgroundcolor: "",
         adminheadertextcolor: "",
-        adminlogo: "",
         adminheadertext: "",
         authenticationheaderbackgroundcolor: DEFAULT_BACKGROUND_COLOR,
         authenticationheadertextcolor: DEFAULT_TEXT_COLOR,

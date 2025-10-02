@@ -1,7 +1,6 @@
-import { Tenant, TenantManagementDomainRel, TenantAnonymousUserConfiguration, TenantLookAndFeel, TenantPasswordConfig, TenantLoginFailurePolicy, TenantLegacyUserMigrationConfig, TenantRestrictedAuthenticationDomainRel, CaptchaConfig, SystemSettings, SystemSettingsUpdateInput, SystemCategory } from "@/graphql/generated/graphql-types";
+import { Tenant, TenantManagementDomainRel, TenantAnonymousUserConfiguration, TenantLookAndFeel, TenantPasswordConfig, TenantLoginFailurePolicy, TenantLegacyUserMigrationConfig, TenantRestrictedAuthenticationDomainRel, CaptchaConfig, SystemSettings, SystemCategory } from "@/graphql/generated/graphql-types";
 import TenantDao from "../../tenant-dao";
-import { DEFAULT_AUDIT_RECORD_RETENTION_PERIOD_DAYS, DEFAULT_HTTP_TIMEOUT_MS, OPENTRUST_IDENTITY_VERSION, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
-import { GraphQLError } from "graphql";
+import { DEFAULT_AUDIT_RECORD_RETENTION_PERIOD_DAYS, OPENTRUST_IDENTITY_VERSION, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import TenantManagementDomainRelEntity from "@/lib/entities/tenant-management-domain-rel-entity";
 import TenantAnonymousUserConfigurationEntity from "@/lib/entities/tenant-anonymous-user-configuration-entity";
 import TenantPasswordConfigEntity from "@/lib/entities/tenant-password-config-entity";
@@ -9,47 +8,56 @@ import TenantLookAndFeelEntity from "@/lib/entities/tenant-look-and-feel-entity"
 import TenantLegacyUserMigrationConfigEntity from "@/lib/entities/tenant-legacy-user-migration-config-entity";
 import TenantRestrictedAuthenticationDomainRelEntity from "@/lib/entities/tenant-restricted-authentication-domain-rel-entity";
 import DBDriver from "@/lib/data-sources/sequelize-db";
-import { Op, Sequelize } from "sequelize";
+import { Op, Sequelize } from "@sequelize/core";
 import { TenantEntity } from "@/lib/entities/tenant-entity";
 import TenantLoginFailurePolicyEntity from "@/lib/entities/tenant-login-failure-policy-entity";
 import UserTenantRelEntity from "@/lib/entities/user-tenant-rel-entity";
 import CaptchaConfigEntity from "@/lib/entities/captcha-config-entity";
 import SystemSettingsEntity from "@/lib/entities/system-settings-entity";
-import { ERROR_CODES } from "@/lib/models/error";
+
 
 class DBTenantDao extends TenantDao {
-
 
     /**
      * 
      * @returns 
      */
     public async getRootTenant(): Promise<Tenant | null> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        const entity: TenantEntity | null = await sequelize.models.tenant.findOne({
-            where: {
-                tenanttype: TENANT_TYPE_ROOT_TENANT
+
+        const tenant: Tenant | null = this.getRootTenantFromCache();
+        if(tenant === null){
+            const tenantEntity: typeof TenantEntity = await DBDriver.getInstance().getTenantEntity();        
+            const entity: TenantEntity | null = await tenantEntity.findOne({
+                where: {
+                    tenantType: TENANT_TYPE_ROOT_TENANT
+                }
+            });
+            if(entity){
+                const root: Tenant = entity.dataValues
+                this.setRootTenantOnCache(root);
+                return root;
             }
-        });
-        return Promise.resolve(entity ? entity.dataValues as Tenant : null);
+            return null;            
+        }
+        return tenant;         
     }
 
     public async createRootTenant(tenant: Tenant): Promise<Tenant> {
         tenant.tenantType = TENANT_TYPE_ROOT_TENANT;
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        const t: TenantEntity = await sequelize.models.tenant.create(tenant);
+        const tenantEntity: typeof TenantEntity = await DBDriver.getInstance().getTenantEntity();    
+        await tenantEntity.create(tenant);
         return Promise.resolve(tenant);
     }
 
     public async updateRootTenant(tenant: Tenant): Promise<Tenant> {
         tenant.tenantType = TENANT_TYPE_ROOT_TENANT;
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.tenant.update(tenant, {where: {tenantId: tenant.tenantId}});        
+        const tenantEntity: typeof TenantEntity = await DBDriver.getInstance().getTenantEntity();    
+        await tenantEntity.update(tenant, {where: {tenantId: tenant.tenantId}});        
         return Promise.resolve(tenant);
     }
 
-    public async getTenants(tenantIds?: Array<string>): Promise<Array<Tenant>> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
+    public async getTenants(tenantIds: Array<string>): Promise<Array<Tenant>> {
+        const tenantEntity: typeof TenantEntity = await DBDriver.getInstance().getTenantEntity();    
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const filter: any = {};
@@ -57,7 +65,7 @@ class DBTenantDao extends TenantDao {
             filter.tenantId = { [Op.in]: tenantIds};
         }       
         
-        const arr: Array<TenantEntity> = await sequelize.models.tenant.findAll({
+        const arr: Array<TenantEntity> = await tenantEntity.findAll({
             where: filter,
             order: [
                 ["tenantName", "ASC"]
@@ -67,14 +75,14 @@ class DBTenantDao extends TenantDao {
     }
 
     public async getTenantById(tenantId: string): Promise<Tenant | null> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        const tenantEntity: TenantEntity | null = await sequelize.models.tenant.findOne({
+        const tenantEntity: typeof TenantEntity = await DBDriver.getInstance().getTenantEntity();    
+        const entity: TenantEntity | null = await tenantEntity.findOne({
             where: {
                 tenantId: tenantId
             }
         });
-        if(tenantEntity){
-            return Promise.resolve(tenantEntity.dataValues as Tenant);
+        if(entity){
+            return Promise.resolve(entity.dataValues as Tenant);
         }
         else{
             return Promise.resolve(null);
@@ -82,20 +90,20 @@ class DBTenantDao extends TenantDao {
     }
 
     public async createTenant(tenant: Tenant): Promise<Tenant | null> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.tenant.create(tenant);
+        const tenantEntity: typeof TenantEntity = await DBDriver.getInstance().getTenantEntity();    
+        await tenantEntity.create(tenant);
         return tenant;
     }
 
     public async updateTenant(tenant: Tenant): Promise<Tenant> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.tenant.update(tenant, {where: {tenantId: tenant.tenantId}});
+        const tenantEntity: typeof TenantEntity = await DBDriver.getInstance().getTenantEntity();    
+        await tenantEntity.update(tenant, {where: {tenantId: tenant.tenantId}});
         return Promise.resolve(tenant);    
     }
 
     public async deleteTenant(tenantId: string): Promise<void> {        
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.tenant.destroy({
+        const tenantEntity: typeof TenantEntity = await DBDriver.getInstance().getTenantEntity();    
+        await tenantEntity.destroy({
             where: {
                 tenantId: tenantId
             }
@@ -115,9 +123,8 @@ class DBTenantDao extends TenantDao {
         if(domain){
             queryParams.domain = domain;
         }
-
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        const tenantManagementDomainRelEntities: Array<TenantManagementDomainRelEntity> | null = await sequelize.models.tenantManagementDomainRel.findAll({
+        const mndRelEntity: typeof TenantManagementDomainRelEntity = await DBDriver.getInstance().getTenantManagementDomainRelEntity();
+        const tenantManagementDomainRelEntities: Array<TenantManagementDomainRelEntity> | null = await mndRelEntity.findAll({
             where: queryParams
         });
 
@@ -125,12 +132,12 @@ class DBTenantDao extends TenantDao {
     }
 
     public async addDomainToTenantManagement(tenantId: string, domain: string): Promise<TenantManagementDomainRel | null> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
+        const mndRelEntity: typeof TenantManagementDomainRelEntity = await DBDriver.getInstance().getTenantManagementDomainRelEntity();
         const tenantManagementDomainRel: TenantManagementDomainRel = {
             tenantId: tenantId,
             domain: domain
         };
-        await sequelize.models.tenantManagementDomainRel.create(tenantManagementDomainRel)
+        await mndRelEntity.create(tenantManagementDomainRel)
         return Promise.resolve(tenantManagementDomainRel);
     }
 
@@ -139,8 +146,8 @@ class DBTenantDao extends TenantDao {
             tenantId: tenantId,
             domain: domain
         };
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.tenantManagementDomainRel.destroy({
+        const mndRelEntity: typeof TenantManagementDomainRelEntity = await DBDriver.getInstance().getTenantManagementDomainRelEntity();
+        await mndRelEntity.destroy({
             where: {
                 tenantId: tenantId,
                 domain: domain
@@ -151,8 +158,8 @@ class DBTenantDao extends TenantDao {
     }
     
     public async getAnonymousUserConfiguration(tenantId: string): Promise<TenantAnonymousUserConfiguration | null> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        const entity: TenantAnonymousUserConfigurationEntity | null = await sequelize.models.tenantAnonymousUserConfiguration.findOne({
+        const tenantAnonUserConfigEntity: typeof TenantAnonymousUserConfigurationEntity = await DBDriver.getInstance().getTenantAnonymousUserConfigurationEntity();      
+        const entity: TenantAnonymousUserConfigurationEntity | null = await tenantAnonUserConfigEntity.findOne({
             where: {
                 tenantId: tenantId
             }
@@ -161,15 +168,15 @@ class DBTenantDao extends TenantDao {
     }
 
     public async createAnonymousUserConfiguration(anonymousUserConfiguration: TenantAnonymousUserConfiguration): Promise<TenantAnonymousUserConfiguration> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.tenantAnonymousUserConfiguration.create(anonymousUserConfiguration);        
+        const tenantAnonUserConfigEntity: typeof TenantAnonymousUserConfigurationEntity = await DBDriver.getInstance().getTenantAnonymousUserConfigurationEntity();  
+        await tenantAnonUserConfigEntity.create(anonymousUserConfiguration);        
         return Promise.resolve(anonymousUserConfiguration);
     }
 
     public async updateAnonymousUserConfiguration(anonymousUserConfiguration: TenantAnonymousUserConfiguration): Promise<TenantAnonymousUserConfiguration> {
 
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.tenantAnonymousUserConfiguration.update(anonymousUserConfiguration, {
+        const tenantAnonUserConfigEntity: typeof TenantAnonymousUserConfigurationEntity = await DBDriver.getInstance().getTenantAnonymousUserConfigurationEntity(); 
+        await tenantAnonUserConfigEntity.update(anonymousUserConfiguration, {
             where: {
                 tenantId: anonymousUserConfiguration.tenantId
             }
@@ -178,8 +185,8 @@ class DBTenantDao extends TenantDao {
     }
 
     public async deleteAnonymousUserConfiguration(tenantId: string): Promise<void> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.tenantAnonymousUserConfiguration.destroy({
+        const tenantAnonUserConfigEntity: typeof TenantAnonymousUserConfigurationEntity = await DBDriver.getInstance().getTenantAnonymousUserConfigurationEntity(); 
+        await tenantAnonUserConfigEntity.destroy({
             where: {
                 tenantId: tenantId
             }
@@ -187,9 +194,8 @@ class DBTenantDao extends TenantDao {
         return Promise.resolve();
     }
 
-    public async getTenantPasswordConfig(tenantId: string): Promise<TenantPasswordConfig | null> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        const tenantPasswordConfigEntity: TenantPasswordConfigEntity | null = await sequelize.models.tenantPasswordConfig.findOne({
+    public async getTenantPasswordConfig(tenantId: string): Promise<TenantPasswordConfig | null> {        
+        const tenantPasswordConfigEntity: TenantPasswordConfigEntity | null = await (await DBDriver.getInstance().getTenantPasswordConfigEntity()).findOne({
             where: {
                 tenantId: tenantId
             }
@@ -203,15 +209,13 @@ class DBTenantDao extends TenantDao {
         }        
     }
 
-    public async assignPasswordConfigToTenant(tenantPasswordConfig: TenantPasswordConfig): Promise<TenantPasswordConfig> {                
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.tenantPasswordConfig.create(tenantPasswordConfig);        
+    public async assignPasswordConfigToTenant(tenantPasswordConfig: TenantPasswordConfig): Promise<TenantPasswordConfig> {                        
+        await (await DBDriver.getInstance().getTenantPasswordConfigEntity()).create(tenantPasswordConfig);        
         return Promise.resolve(tenantPasswordConfig);
     }
 
     public async updatePasswordConfig(tenantPasswordConfig: TenantPasswordConfig): Promise<TenantPasswordConfig> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.tenantPasswordConfig.update(tenantPasswordConfig, {
+        await (await DBDriver.getInstance().getTenantPasswordConfigEntity()).update(tenantPasswordConfig, {
             where: {
                 tenantId: tenantPasswordConfig.tenantId
             }
@@ -220,8 +224,7 @@ class DBTenantDao extends TenantDao {
     }
 
     public async removePasswordConfigFromTenant(tenantId: string): Promise<void> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.tenantPasswordConfig.destroy({
+        await (await DBDriver.getInstance().getTenantPasswordConfigEntity()).destroy({
             where: {
                 tenantId: tenantId
             }
@@ -230,10 +233,10 @@ class DBTenantDao extends TenantDao {
     }
 
     public async getTenantLookAndFeel(tenantId: string): Promise<TenantLookAndFeel | null> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        const entity: TenantLookAndFeelEntity | null = await sequelize.models.tenantLookAndFeel.findOne({
+        
+        const entity: TenantLookAndFeelEntity | null = await (await DBDriver.getInstance().getTenantLookAndFeelEntity()).findOne({
             where: {
-                tenantId: tenantId
+                tenantid: tenantId
             }
         });
         if(entity){
@@ -242,8 +245,6 @@ class DBTenantDao extends TenantDao {
                 adminheaderbackgroundcolor: entity.getDataValue("adminheaderbackgroundcolor"),
                 adminheadertext: entity.getDataValue("adminheadertext"),
                 adminheadertextcolor: entity.getDataValue("adminheadertextcolor"),
-                adminlogo: entity.getDataValue("adminlogo") ? 
-                    Buffer.from(entity.getDataValue("adminlogo")).toString("utf-8") : "",
                 authenticationheaderbackgroundcolor: entity.getDataValue("authenticationheaderbackgroundcolor"),
                 authenticationheadertext: entity.getDataValue("authenticationheadertext"),
                 authenticationheadertextcolor: entity.getDataValue("authenticationheadertextcolor"),
@@ -261,24 +262,33 @@ class DBTenantDao extends TenantDao {
     }
 
     public async createTenantLookAndFeel(tenantLookAndFeel: TenantLookAndFeel): Promise<TenantLookAndFeel> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.tenantLookAndFeel.create(tenantLookAndFeel)
+        
+        await (await DBDriver.getInstance().getTenantLookAndFeelEntity()).create({
+            ...tenantLookAndFeel,
+            authenticationlogo: tenantLookAndFeel.authenticationlogo ? Buffer.from(tenantLookAndFeel.authenticationlogo, "utf-8") : null
+            
+
+        });
         return Promise.resolve(tenantLookAndFeel);
     }
 
+
     public async updateTenantLookAndFeel(tenantLookAndFeel: TenantLookAndFeel): Promise<TenantLookAndFeel> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.tenantLookAndFeel.update(tenantLookAndFeel, {
+
+        await (await DBDriver.getInstance().getTenantLookAndFeelEntity()).update({
+                ...tenantLookAndFeel,
+                authenticationlogo: tenantLookAndFeel.authenticationlogo ? Buffer.from(tenantLookAndFeel.authenticationlogo, "utf-8") : null
+            }, 
+            {
             where: {
-                tenantId: tenantLookAndFeel.tenantid
+                tenantid: tenantLookAndFeel.tenantid
             }
         });
         return Promise.resolve(tenantLookAndFeel);
     }
 
     public async deleteTenantLookAndFeel(tenantId: string): Promise<void> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.tenantLookAndFeel.destroy({
+        await (await DBDriver.getInstance().getTenantLookAndFeelEntity()).destroy({
             where: {
                 tenantId: tenantId
             }
@@ -286,21 +296,9 @@ class DBTenantDao extends TenantDao {
         return Promise.resolve();
     }
 
-    public async getLegacyUserMigrationConfiguration(tenantId: string): Promise<TenantLegacyUserMigrationConfig | null> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        const entity: TenantLegacyUserMigrationConfigEntity | null = await sequelize.models.tenantLegacyUserMigrationConfig.findOne({
-            where: {
-                tenantId: tenantId
-            }
-        });
-
-        return entity ? Promise.resolve(entity.dataValues as TenantLegacyUserMigrationConfig) : Promise.resolve(null);
-    }
-
     
     public async getDomainsForTenantRestrictedAuthentication(tenantId: string): Promise<Array<TenantRestrictedAuthenticationDomainRel>> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        const entities: Array<TenantRestrictedAuthenticationDomainRelEntity> = await sequelize.models.tenantRestrictedAuthenticationDomainRel.findAll({
+        const entities: Array<TenantRestrictedAuthenticationDomainRelEntity> = await (await DBDriver.getInstance().getTenantRestrictedAuthenticationDomainRelEntity()).findAll({
             where: {
                 tenantId: tenantId
             }
@@ -309,18 +307,16 @@ class DBTenantDao extends TenantDao {
     }
 
     public async addDomainToTenantRestrictedAuthentication(tenantId: string, domain: string): Promise<TenantRestrictedAuthenticationDomainRel> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
         const tenantRestrictedAuthenticationDomainRel: TenantRestrictedAuthenticationDomainRel = {
             tenantId,
             domain
         }
-        await sequelize.models.tenantRestrictedAuthenticationDomainRel.create(tenantRestrictedAuthenticationDomainRel)
+        await (await DBDriver.getInstance().getTenantRestrictedAuthenticationDomainRelEntity()).create(tenantRestrictedAuthenticationDomainRel)
         return Promise.resolve(tenantRestrictedAuthenticationDomainRel);
     }
 
     public async removeDomainFromTenantRestrictedAuthentication(tenantId: string, domain: string): Promise<void> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.tenantRestrictedAuthenticationDomainRel.destroy({
+        await (await DBDriver.getInstance().getTenantRestrictedAuthenticationDomainRelEntity()).destroy({
             where: {
                 tenantId: tenantId,
                 domain: domain
@@ -330,8 +326,7 @@ class DBTenantDao extends TenantDao {
     }
 
     public async getLoginFailurePolicy(tenantId: string): Promise<TenantLoginFailurePolicy | null>{
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        const entity: TenantLoginFailurePolicyEntity | null = await sequelize.models.tenantLoginFailurePolicy.findOne({
+        const entity: TenantLoginFailurePolicyEntity | null = await (await DBDriver.getInstance().getTenantLoginFailurePolicyEntity()).findOne({
             where: {
                 tenantId: tenantId
             }
@@ -340,14 +335,12 @@ class DBTenantDao extends TenantDao {
     }
 
     public async createLoginFailurePolicy(loginFailurePolicy: TenantLoginFailurePolicy): Promise<TenantLoginFailurePolicy> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.tenantLoginFailurePolicy.create(loginFailurePolicy);
+        await (await DBDriver.getInstance().getTenantLoginFailurePolicyEntity()).create(loginFailurePolicy);
         return loginFailurePolicy;
     }
 
     public async updateLoginFailurePolicy(loginFailurePolicy: TenantLoginFailurePolicy): Promise<TenantLoginFailurePolicy> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.tenantLoginFailurePolicy.update(loginFailurePolicy, {
+        await (await DBDriver.getInstance().getTenantLoginFailurePolicyEntity()).update(loginFailurePolicy, {
             where: {
                 tenantId: loginFailurePolicy.tenantId
             }
@@ -356,8 +349,7 @@ class DBTenantDao extends TenantDao {
     }
 
     public async removeLoginFailurePolicy(tenantId: string): Promise<void> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.tenantLoginFailurePolicy.destroy({
+        await (await DBDriver.getInstance().getTenantLoginFailurePolicyEntity()).destroy({
             where: {
                 tenantId: tenantId
             }
@@ -365,9 +357,18 @@ class DBTenantDao extends TenantDao {
         return Promise.resolve();
     }
 
+    public async getLegacyUserMigrationConfiguration(tenantId: string): Promise<TenantLegacyUserMigrationConfig | null> {        
+        const entity: TenantLegacyUserMigrationConfigEntity | null = await (await DBDriver.getInstance().getTenantLegacyUserMigrationConfigEntity()).findOne({
+            where: {
+                tenantId: tenantId
+            }
+        });
+
+        return entity ? Promise.resolve(entity.dataValues as TenantLegacyUserMigrationConfig) : Promise.resolve(null);
+    }
+
     public async removeLegacyUserMigrationConfiguration(tenantId: string): Promise<void> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.tenantLegacyUserMigrationConfig.destroy({
+        await (await DBDriver.getInstance().getTenantLegacyUserMigrationConfigEntity()).destroy({
             where: {
                 tenantId: tenantId
             }
@@ -376,8 +377,7 @@ class DBTenantDao extends TenantDao {
     }
 
     public async updateTenantLegacyUserMigrationConfiguration(tenantLegacyUserMigrationConfig: TenantLegacyUserMigrationConfig): Promise<TenantLegacyUserMigrationConfig | null> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.tenantLegacyUserMigrationConfig.update(tenantLegacyUserMigrationConfig, {
+        await (await DBDriver.getInstance().getTenantLegacyUserMigrationConfigEntity()).update(tenantLegacyUserMigrationConfig, {
             where: {
                 tenantId: tenantLegacyUserMigrationConfig.tenantId
             }
@@ -386,8 +386,7 @@ class DBTenantDao extends TenantDao {
     }
 
     public async createTenantLegacyUserMigrationConfiguration(tenantLegacyUserMigrationConfig: TenantLegacyUserMigrationConfig): Promise<TenantLegacyUserMigrationConfig | null> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.tenantLegacyUserMigrationConfig.create(tenantLegacyUserMigrationConfig);
+        await (await DBDriver.getInstance().getTenantLegacyUserMigrationConfigEntity()).create(tenantLegacyUserMigrationConfig);
         return tenantLegacyUserMigrationConfig;
     }
 
@@ -397,7 +396,8 @@ class DBTenantDao extends TenantDao {
         // To delete the authnGroup/user rel records, retrieve 1000 at a time and delete by composite ids        
         let hasMoreRecords = true;
         while(hasMoreRecords){
-            const arr: Array<UserTenantRelEntity> = await sequelize.models.userTenantRel.findAll({
+            
+            const arr: Array<UserTenantRelEntity> = await (await DBDriver.getInstance().getUserTenantRelEntity()).findAll({
                 where: {
                     tenantId: tenantId
                 },
@@ -420,45 +420,44 @@ class DBTenantDao extends TenantDao {
     }
 
     public async removeAllAuthStateFromTenant(tenantId: string): Promise<void>{
-        const sequelize: Sequelize = await DBDriver.getConnection();
         
-        await sequelize.models.preAuthenticationState.destroy({
+        await (await DBDriver.getInstance().getPreAuthenticationStateEntity()).destroy({
             where: {
                 tenantId: tenantId
             } 
         });
 
-        await sequelize.models.authorizationCodeData.destroy({
+        await (await DBDriver.getInstance().getAuthorizationCodeDataEntity()).destroy({
             where: {
                 tenantId: tenantId
             }
         });
 
-        await sequelize.models.refreshData.destroy({
+        await (await DBDriver.getInstance().getRefreshDataEntity()).destroy({
             where: {
                 tenantId: tenantId
             }
         });
 
-        await sequelize.models.federatedOidcAuthorizationRel.destroy({
+        await (await DBDriver.getInstance().getFederatedOIDCAuthorizationRelEntity()).destroy({
             where: {
                 initTenantId: tenantId
             }
         });
 
-        await sequelize.models.clientAuthHistory.destroy({
+        await (await DBDriver.getInstance().getClientAuthHistoryEntity()).destroy({
             where: {
                 tenantId: tenantId
             }
         });
 
-        await sequelize.models.userAuthenticationState.destroy({
+        await (await DBDriver.getInstance().getUserAuthenticationStateEntity()).destroy({
             where: {
 
             }
         });
 
-        await sequelize.models.userRegistrationState.destroy({
+        await (await DBDriver.getInstance().getUserRegistrationStateEntity()).destroy({
             where: {
                 tenantId: tenantId
             }
@@ -468,8 +467,7 @@ class DBTenantDao extends TenantDao {
     }
 
     public async getCaptchaConfig(): Promise<CaptchaConfig | null>{
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        const arr: Array<CaptchaConfigEntity> | null = await sequelize.models.captchaConfig.findAll();
+        const arr: Array<CaptchaConfigEntity> | null = await (await DBDriver.getInstance().getCaptchaConfigEntity()).findAll();
         if(arr.length === 0){
             return null;
         }
@@ -479,20 +477,17 @@ class DBTenantDao extends TenantDao {
     }
 
     public async setCaptchaConfig(captchaConfig: CaptchaConfig): Promise<CaptchaConfig>{
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.captchaConfig.truncate();
-        await sequelize.models.captchaConfig.create(captchaConfig);        
+        await (await DBDriver.getInstance().getCaptchaConfigEntity()).truncate();
+        await (await DBDriver.getInstance().getCaptchaConfigEntity()).create(captchaConfig);        
         return captchaConfig;
     }
 
     public async removeCaptchaConfig(): Promise<void>{
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        await sequelize.models.captchaConfig.truncate();
+        await (await DBDriver.getInstance().getCaptchaConfigEntity()).truncate();
     }
 
     public async getSystemSettings(): Promise<SystemSettings> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        
+                
         const systemSettings: SystemSettings = {
             systemId: "",
             allowRecoveryEmail: false,
@@ -503,7 +498,8 @@ class DBTenantDao extends TenantDao {
             softwareVersion: OPENTRUST_IDENTITY_VERSION,
             systemCategories: []
         }
-        const systemSettingsEntity: SystemSettingsEntity | null = await sequelize.models.systemSettings.findOne();
+        
+        const systemSettingsEntity: SystemSettingsEntity | null = await (await DBDriver.getInstance().getSystemSettingsEntity()).findOne();
 
         if(systemSettingsEntity){            
             const first: SystemSettings = systemSettingsEntity.dataValues;
@@ -555,191 +551,25 @@ class DBTenantDao extends TenantDao {
         }
         systemSettings.systemCategories.push(dbCategory);
 
-
-        // KMS Settings
-        const kmsCategory: SystemCategory = {
-            categoryEntries: [],
-            categoryName: "Key Management Settings"
-        }
-        const {KMS_STRATEGY, FS_BASED_DATA_DIR} = process.env;
-        if(KMS_STRATEGY === "filesystem"){
-            kmsCategory.categoryEntries.push({
-                categoryKey: "KMS Provider",
-                categoryValue: "Filesystem"
-            });
-            kmsCategory.categoryEntries.push({
-                categoryKey: "Keys data directory",
-                categoryValue: FS_BASED_DATA_DIR || ""
-            });
-        }
-        systemSettings.systemCategories.push(kmsCategory);
-
-        // MFA settings
-        const mfaSettings: SystemCategory = {
-            categoryEntries: [],
-            categoryName: "MFA Settings"
-        }
-        const {MFA_ISSUER, MFA_ORIGIN, MFA_ID} = process.env;
-        mfaSettings.categoryEntries.push({
-            categoryKey: "MFA Issuer",
-            categoryValue: MFA_ISSUER || ""
-        });
-        mfaSettings.categoryEntries.push({
-            categoryKey: "MFA Origin",
-            categoryValue: MFA_ORIGIN || ""
-        });
-        mfaSettings.categoryEntries.push({
-            categoryKey: "MFA ID",
-            categoryValue: MFA_ID || ""
-        });
-        systemSettings.systemCategories.push(mfaSettings);
-
-        // Search settings
-        const searchSettings: SystemCategory = {
-            categoryEntries: [],
-            categoryName: "Search Engine Settings"
-        }
-        const {OPENSEARCH_HOST, OPENSEARCH_PORT, TRUST_STORE_PATH} = process.env;
-        searchSettings.categoryEntries.push({
-            categoryKey: "Opensearch Host",
-            categoryValue: OPENSEARCH_HOST || ""
-        });
-        searchSettings.categoryEntries.push({
-            categoryKey: "Opensearch Port",
-            categoryValue: OPENSEARCH_PORT || ""
-        });
-        searchSettings.categoryEntries.push({
-            categoryKey: "Opensearch Truststore Path",
-            categoryValue: TRUST_STORE_PATH || ""
-        });
-        systemSettings.systemCategories.push(searchSettings);
-
-        
-        // Auth domain settings 
-        const authDomainCategory: SystemCategory = {
-            categoryEntries: [],
-            categoryName: "Portal Authorization Settings"
-        }
-        const {PORTAL_AUTH_TOKEN_TTL_HOURS, AUTH_DOMAIN, SECURITY_EVENT_CALLBACK_URI} = process.env;
-        authDomainCategory.categoryEntries.push({
-            categoryKey: "Authorization Domain",
-            categoryValue: AUTH_DOMAIN || ""
-        });
-        authDomainCategory.categoryEntries.push({
-            categoryKey: "Token TTL in Hours",
-            categoryValue: PORTAL_AUTH_TOKEN_TTL_HOURS || ""
-        });
-        authDomainCategory.categoryEntries.push({
-            categoryKey: "Security Event Webhook URI",
-            categoryValue: SECURITY_EVENT_CALLBACK_URI || ""
-        });
-        systemSettings.systemCategories.push(authDomainCategory);
-
-        // GraphQL Settings
-        const graphqlSettingCategory: SystemCategory = {
-            categoryEntries: [],
-            categoryName: "GraphQL Settings"
-        };
-        const {ALLOW_GRAPHQL_INTROSPECTION, ALLOW_GRAPHQL_ERROR_STACK_TRACES} = process.env;
-        graphqlSettingCategory.categoryEntries.push({
-            categoryKey: "Allow GraphQL Introspection",
-            categoryValue: ALLOW_GRAPHQL_INTROSPECTION || "false"
-        });
-        graphqlSettingCategory.categoryEntries.push({
-            categoryKey: "Allow GraphQL Error Stack Traces",
-            categoryValue: ALLOW_GRAPHQL_ERROR_STACK_TRACES || "false"
-        });
-        systemSettings.systemCategories.push(graphqlSettingCategory);
-
-        // Logging Settings
-        const loggingSettingsCategory: SystemCategory = {
-            categoryEntries: [],
-            categoryName: "Logging Settings"
-        };
-        const {LOG_FILE_DIRECTORY, LOG_TO_STD_OUT, LOG_LEVEL} = process.env;
-        loggingSettingsCategory.categoryEntries.push({
-            categoryKey: "Log file directory",
-            categoryValue: LOG_FILE_DIRECTORY || "Not Configured"
-        });
-        loggingSettingsCategory.categoryEntries.push({
-            categoryKey: "Log to STDOUT",
-            categoryValue: LOG_TO_STD_OUT || "false"
-        });
-        loggingSettingsCategory.categoryEntries.push({
-            categoryKey: "Log level",
-            categoryValue: LOG_LEVEL || "Not Configured"
-        });
-        systemSettings.systemCategories.push(loggingSettingsCategory);
-
-        // HTTP Client Settings
-        const httpClientSettingsCategory: SystemCategory = {
-            categoryEntries: [],
-            categoryName: "HTTP Client Settings"
-        };
-        const {
-            HTTP_TIMEOUT_MS, MTLS_USE_PKI_IDENTITY, MTLS_PKI_IDENTITY_PRIVATE_KEY_FILE, MTLS_PKI_IDENTITY_CERTIFICATE_FILE, 
-            MTLS_PKI_IDENTITY_TRUST_STORE_FILE, HTTP_CLIENT_USE_PROXY, HTTP_PROXY_PROTOCOL, HTTP_PROXY_HOST, 
-            HTTP_PROXY_PORT, HTTP_PROXY_USE_AUTHENTICATION 
-        } = process.env;
-        httpClientSettingsCategory.categoryEntries.push({
-            categoryKey: "Request Timeout (milliseconds)",
-            categoryValue: HTTP_TIMEOUT_MS || DEFAULT_HTTP_TIMEOUT_MS.toString()
-        });
-        httpClientSettingsCategory.categoryEntries.push({
-            categoryKey: "Use mTLS",
-            categoryValue: MTLS_USE_PKI_IDENTITY || "false"
-        });
-        httpClientSettingsCategory.categoryEntries.push({
-            categoryKey: "Private Key File",
-            categoryValue: MTLS_PKI_IDENTITY_PRIVATE_KEY_FILE || "Not Configured"
-        });
-        httpClientSettingsCategory.categoryEntries.push({
-            categoryKey: "Certificate File",
-            categoryValue: MTLS_PKI_IDENTITY_CERTIFICATE_FILE || "Not Configured"
-        });
-        httpClientSettingsCategory.categoryEntries.push({
-            categoryKey: "Trust Store File",
-            categoryValue: MTLS_PKI_IDENTITY_TRUST_STORE_FILE || "Not Configured"
-        });
-        httpClientSettingsCategory.categoryEntries.push({
-            categoryKey: "Use Proxy",
-            categoryValue: HTTP_CLIENT_USE_PROXY || "false"
-        });
-        httpClientSettingsCategory.categoryEntries.push({
-            categoryKey: "Proxy Protocol",
-            categoryValue: HTTP_PROXY_PROTOCOL || "Not Configured"
-        });
-        httpClientSettingsCategory.categoryEntries.push({
-            categoryKey: "Proxy Host",
-            categoryValue: HTTP_PROXY_HOST || "Not Configured"
-        });
-        httpClientSettingsCategory.categoryEntries.push({
-            categoryKey: "Proxy Port",
-            categoryValue: HTTP_PROXY_PORT || "Not Configured"
-        });
-        httpClientSettingsCategory.categoryEntries.push({
-            categoryKey: "Use Proxy Authentication",
-            categoryValue: HTTP_PROXY_USE_AUTHENTICATION || "false"
-        });        
-        systemSettings.systemCategories.push(httpClientSettingsCategory);
+        const envSystemSettings = this.getEnvironmentSystemSettings();
+        systemSettings.systemCategories.push(...envSystemSettings);        
 
         return systemSettings;
 
     }
    
     
-    public async updateSystemSettings(systemSettings: SystemSettings): Promise<SystemSettings> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        const entity: SystemSettingsEntity | null = await sequelize.models.systemSettings.findOne();
+    public async updateSystemSettings(systemSettings: SystemSettings): Promise<SystemSettings> {        
+        const entity: SystemSettingsEntity | null = await (await DBDriver.getInstance().getSystemSettingsEntity()).findOne();
         if(entity){
-            await sequelize.models.systemSettings.update(systemSettings, {
+            await (await DBDriver.getInstance().getSystemSettingsEntity()).update(systemSettings, {
                 where: {
                     systemId: systemSettings.systemId
                 }
             });
         }
         else{
-            await sequelize.models.systemSettings.create(systemSettings);
+            await (await DBDriver.getInstance().getSystemSettingsEntity()).create(systemSettings);
         }
         
         return systemSettings;        
