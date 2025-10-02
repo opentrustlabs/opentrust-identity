@@ -22,6 +22,7 @@ import { SecretShare } from "@/components/email-templates/secret-share-template"
 import { OIDCTokenResponse } from "../models/token-response";
 import { base64Encode } from "@/utils/dao-utils";
 import JwtServiceUtils from "./jwt-service-utils";
+import { SmsMessageBody } from "../models/sms";
 
 const {
     HTTP_TIMEOUT_MS,
@@ -48,7 +49,8 @@ const {
     EMAIL_SERVER_USE_SECURE,
     EMAIL_SERVER_REQUIRE_TLS,
     EMAIL_CLIENT_LOG_TO_CONSOLE,
-    EMAIL_CLIENT_DEBUG_LOG
+    EMAIL_CLIENT_DEBUG_LOG,
+    SMS_SERVICE_WRAPPER_URI
 } = process.env;
 
 declare global {
@@ -184,6 +186,7 @@ class OIDCServiceUtils extends JwtServiceUtils {
         return wellknownConfig !== undefined ? Promise.resolve(wellknownConfig) : Promise.resolve(null);
     }
 
+    
     public async redeemAuthorizationCode(tokenEndpoint: string, code: string, clientId: string, clientSecret: string | null, codeVerifier: string | null, redirectUri: string, scope: string, clientAuthType: string): Promise<OIDCTokenResponse | null> {
         const params: URLSearchParams = new URLSearchParams();
         params.set("grant_type", GRANT_TYPE_AUTHORIZATION_CODE);
@@ -307,6 +310,27 @@ class OIDCServiceUtils extends JwtServiceUtils {
         }
         else{
             return false;
+        }
+    }
+
+    public async sendSms(smsMessageBody: SmsMessageBody, authToken: string): Promise<void>{
+        if(!SMS_SERVICE_WRAPPER_URI || SMS_SERVICE_WRAPPER_URI === ""){
+            logWithDetails("error", "No SMS Service Wrapper URI was configured", {});
+        }
+        else{
+            const response: AxiosResponse = await axiosInstance.post(SMS_SERVICE_WRAPPER_URI, smsMessageBody, {
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${authToken}`
+                }
+            });
+            if(response.status !== 201){
+                logWithDetails(
+                    "error", 
+                    "Error: SMS Service Wrapper returned a status code that was not 201", 
+                    {status: response.status, statusText: response.statusText, data: response.data ? JSON.stringify(response.data) : null}
+                )
+            }
         }
     }
 
