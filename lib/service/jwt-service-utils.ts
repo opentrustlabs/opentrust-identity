@@ -283,7 +283,7 @@ class JwtServiceUtils {
         let profile: PortalUserProfile | null = null;
         if(principal.principal_type === PRINCIPAL_TYPE_SERVICE_ACCOUNT_TOKEN){
             client = await clientDao.getClientById(principal.sub);
-            if(client === null){
+            if(client === null || client.enabled === false || client.markForDelete === true){
                 return null;
             }
             const arrScopes = await this.getClientScopes(client.clientId);            
@@ -309,7 +309,7 @@ class JwtServiceUtils {
         }
         else if(principal.principal_type === PRINCIPAL_TYPE_END_USER || principal.principal_type === PRINCIPAL_TYPE_IAM_PORTAL_USER){
             user = await identityDao.getUserBy("id", principal.sub);
-            if(user === null){
+            if(user === null || user.enabled === false || user.markForDelete === true){
                 return null;
             }
             const arrScope: Array<Scope> = principal.principal_type === PRINCIPAL_TYPE_IAM_PORTAL_USER ? await this.getScopes(user.userId, principal.tenant_id) : [];
@@ -354,14 +354,14 @@ class JwtServiceUtils {
      * @param ttlInSeconds 
      * @returns 
      */
-    public async signIAMPortalUserJwt(user: User, tenant: Tenant, ttlInSeconds: number, tokenType: string): Promise<{accessToken: string | null, principal: JWTPayload} | null> {
+    public async signIAMPortalUserJwt(user: User, tenant: Tenant, ttlInSeconds: number, tokenType: string, client?: Client): Promise<{accessToken: string | null, principal: JWTPayload} | null> {
         const now = Date.now();
         const principal: JWTPayload = {
             sub: user.userId,
             iss: `${AUTH_DOMAIN}/api/${tenant.tenantId}`,
             aud: `${AUTH_DOMAIN}/api`,
-            iat: now / 1000,
-            exp: ( now / 1000 ) + ttlInSeconds,
+            iat: Math.floor(now / 1000),
+            exp: Math.floor( now / 1000 ) + ttlInSeconds,
             at_hash: "",
             name: user.nameOrder === NAME_ORDER_WESTERN ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`,
             given_name: user.firstName,
@@ -378,9 +378,9 @@ class JwtServiceUtils {
             jti: randomUUID().toString(),
             tenant_id: tenant.tenantId,
             tenant_name: tenant.tenantName,
-            client_id: "",
-            client_name: "",
-            client_type: "",
+            client_id: client ? client.clientId : "",
+            client_name: client ? client.clientName : "",
+            client_type: client ? client.clientType : "",
             principal_type: tokenType
         };
         const s: string | null = await this.signJwt(principal);
@@ -396,15 +396,15 @@ class JwtServiceUtils {
      */
     public async signUserJwt(userId: string, clientId: string, tenantId: string): Promise<{oidcTokenResponse: OIDCTokenResponse, principal: JWTPayload} | null>{
         const user: User | null = await identityDao.getUserBy("id", userId);
-        if(!user){
+        if(!user || user.enabled === false || user.markForDelete === true || user.locked === true){
             return Promise.resolve(null);
         }
         const client: Client | null = await clientDao.getClientById(clientId);
-        if(!client || client.enabled !== true){
+        if(!client || client.enabled !== true || client.markForDelete === true){
             return Promise.resolve(null);
         }
         const tenant: Tenant | null = await tenantDao.getTenantById(tenantId);
-        if(!tenant || tenant.enabled !== true){
+        if(!tenant || tenant.enabled !== true || tenant.markForDelete === true){
             return Promise.resolve(null);
         }
 
@@ -413,8 +413,8 @@ class JwtServiceUtils {
             sub: user.userId,
             iss: `${AUTH_DOMAIN}/api/${tenantId}`,
             aud: client.clientId,
-            iat: now / 1000,
-            exp: client.userTokenTTLSeconds ? ( now / 1000 ) + client.userTokenTTLSeconds : ( now / 1000 ) + DEFAULT_END_USER_TOKEN_TTL_SECONDS,
+            iat: Math.floor(now / 1000),
+            exp: client.userTokenTTLSeconds ? Math.floor( now / 1000 ) + client.userTokenTTLSeconds : Math.floor( now / 1000 ) + DEFAULT_END_USER_TOKEN_TTL_SECONDS,
             at_hash: "",
             name: user.nameOrder === NAME_ORDER_WESTERN ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`,
             given_name: user.firstName,
@@ -504,8 +504,8 @@ class JwtServiceUtils {
             sub: client.clientId,
             iss: `${AUTH_DOMAIN}/api/${tenant.tenantId}`,
             aud: client.clientId,
-            iat: now / 1000,
-            exp: client.clientTokenTTLSeconds ? ( now / 1000 ) + client.clientTokenTTLSeconds : ( now / 1000 ) + DEFAULT_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS,
+            iat: Math.floor(now / 1000),
+            exp: client.clientTokenTTLSeconds ? Math.floor( now / 1000 ) + client.clientTokenTTLSeconds : Math.floor( now / 1000 ) + DEFAULT_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS,
             at_hash: "",
             name: client.clientName,
             given_name: "",
@@ -762,7 +762,7 @@ class JwtServiceUtils {
             iss: clientId,
             sub: clientId,
             aud: tokenEndpoint,
-            exp: Date.now() / 1000 + (15 * 60),
+            exp: Math.floor(Date.now() / 1000) + (15 * 60),
             jti: randomUUID().toString()
         }
         
