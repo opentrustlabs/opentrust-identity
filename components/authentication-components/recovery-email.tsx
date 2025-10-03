@@ -64,23 +64,6 @@ const RecoveryEmailConfiguration: React.FC<RegistrationComponentsProps> = ({
                 spacing={2}
             >
                 <Button
-                    onClick={() => {
-                        onUpdateStart();
-                        registerAddRecoveryEmail({
-                            variables: {
-                                userId: initialUserRegistrationState.userId,
-                                registrationSessionToken: initialUserRegistrationState.registrationSessionToken,
-                                preAuthToken: initialUserRegistrationState.preAuthToken,
-                                skip: true,
-                                recoveryEmail: null
-                            }
-                        });
-                    }}
-                >
-                    {intl.formatMessage({id: "SKIP"})}
-                </Button>
-
-                <Button
                     disabled={email.length < 5 || email.indexOf("@") < 2}
                     onClick={() => {
                         onUpdateStart();
@@ -96,6 +79,22 @@ const RecoveryEmailConfiguration: React.FC<RegistrationComponentsProps> = ({
                     }}
                 >
                     {intl.formatMessage({id: "ADD"})}
+                </Button>
+                <Button
+                    onClick={() => {
+                        onUpdateStart();
+                        registerAddRecoveryEmail({
+                            variables: {
+                                userId: initialUserRegistrationState.userId,
+                                registrationSessionToken: initialUserRegistrationState.registrationSessionToken,
+                                preAuthToken: initialUserRegistrationState.preAuthToken,
+                                skip: true,
+                                recoveryEmail: null
+                            }
+                        });
+                    }}
+                >
+                    {intl.formatMessage({id: "SKIP"})}
                 </Button>
                 <Button
                     onClick={() => onRegistrationCancelled()}

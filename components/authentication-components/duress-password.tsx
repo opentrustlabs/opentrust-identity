@@ -42,7 +42,6 @@ const DuressPasswordConfiguration: React.FC<DuressPasswordConfigurationProps> = 
     
 
     // REGISTER_ADD_DURESS_PASSWORD = gql`
-    //     mutation registerAddDuressPassword($userId: String!, $password: String, $skip: Boolean!, $registrationSessionToken: String!, $preAuthToken: String)
     const [registerAddDuressPassword] = useMutation(REGISTER_ADD_DURESS_PASSWORD, {
         onCompleted(data) {
             const response: UserRegistrationStateResponse = data.registerAddDuressPassword as UserRegistrationStateResponse;
@@ -167,23 +166,6 @@ const DuressPasswordConfiguration: React.FC<DuressPasswordConfigurationProps> = 
                 direction={"row-reverse"}
                 spacing={2}
             >
-                <Button
-                    onClick={() => {
-                        onUpdateStart();                        
-                        registerAddDuressPassword({
-                            variables: {
-                                userId: initialUserRegistrationState.userId,
-                                registrationSessionToken: initialUserRegistrationState.registrationSessionToken,
-                                preAuthToken: initialUserRegistrationState.preAuthToken,
-                                skip: true,
-                                password: null
-                            }
-                        });
-                    }}
-                >
-                    {intl.formatMessage({id: "SKIP"})}
-                </Button>
-
                 <Button                    
                     onClick={() => {
                         onUpdateStart();
@@ -199,6 +181,22 @@ const DuressPasswordConfiguration: React.FC<DuressPasswordConfigurationProps> = 
                     }}
                 >
                     {intl.formatMessage({id: "ADD"})}
+                </Button>
+                <Button
+                    onClick={() => {
+                        onUpdateStart();                        
+                        registerAddDuressPassword({
+                            variables: {
+                                userId: initialUserRegistrationState.userId,
+                                registrationSessionToken: initialUserRegistrationState.registrationSessionToken,
+                                preAuthToken: initialUserRegistrationState.preAuthToken,
+                                skip: true,
+                                password: null
+                            }
+                        });
+                    }}
+                >
+                    {intl.formatMessage({id: "SKIP"})}
                 </Button>
                 <Button
                     onClick={() => onRegistrationCancelled()}

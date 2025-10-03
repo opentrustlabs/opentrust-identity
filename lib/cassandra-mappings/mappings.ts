@@ -1282,7 +1282,7 @@ export const USER_FIDO2_COUNTER_REL_MODEL:  {[key: string]: cassandra.mapping.Mo
                     return columnValue.toString();
                 }
             },
-			"fido2Counter": "fido2Counter"
+			"fido2counter": "fido2Counter"
         }
     }
 };
