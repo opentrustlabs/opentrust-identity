@@ -94,7 +94,7 @@ export default async function handler(
                 langCode = tenantAnonymousUserConfiguration.defaultlanguagecode;
             }
             else{
-                langCode === "en";
+                langCode = "en";
             }
         }
     }
@@ -103,7 +103,7 @@ export default async function handler(
             langCode = tenantAnonymousUserConfiguration.defaultlanguagecode;
         }
         else{
-            langCode === "en";
+            langCode = "en";
         }
     }
 
@@ -114,7 +114,7 @@ export default async function handler(
                 cc = tenantAnonymousUserConfiguration.defaultcountrycode;
             }
             else{
-                cc === "US";
+                cc = "US";
             }
         }
     }
@@ -123,7 +123,7 @@ export default async function handler(
             cc = tenantAnonymousUserConfiguration.defaultcountrycode;
         }
         else{
-            cc === "US";
+            cc = "US";
         }
     }
 

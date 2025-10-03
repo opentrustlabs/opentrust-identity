@@ -233,13 +233,11 @@ const RegisterInnerComponent: React.FC = () => {
                 else {
                     if(response.userRegistrationState.registrationState === RegistrationState.RedirectToIamPortal){
                         if(response.accessToken){
-                            authSessionProps.setAuthSessionData({accessToken: response.accessToken, expiresAtMs: response.tokenExpiresAtMs || 0});                            
+                            authSessionProps.setAuthSessionData({accessToken: response.accessToken, expiresAtMs: response.tokenExpiresAtMs || 0}); 
+                            authContextProps.forceProfileRefetch();
                         }
                     }
                     router.push(response.uri);
-                    if(response.userRegistrationState.registrationState === RegistrationState.RedirectToIamPortal){
-                        authContextProps.forceProfileRefetch();
-                    }
                 }
             }
             else {

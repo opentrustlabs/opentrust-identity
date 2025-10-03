@@ -1,8 +1,6 @@
 import { PreAuthenticationState, AuthorizationCodeData, RefreshData, AuthorizationDeviceCodeData, FederatedOidcAuthorizationRel, FederatedAuthTest } from "@/graphql/generated/graphql-types";
 import AuthDao, { AuthorizationCodeType } from "../../auth-dao";
 import CassandraDriver from "@/lib/data-sources/cassandra";
-import { types } from "cassandra-driver";
-
 
 class CassandraAuthDao extends AuthDao {
     

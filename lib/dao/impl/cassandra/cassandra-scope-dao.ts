@@ -162,9 +162,7 @@ class CassandraScopeDao extends ScopeDao {
         if(scopeId){
             queryParams.scopeId = scopeId
         }
-
         const results = await mapper.find(queryParams);
-        const a = results.toArray();
         return results.toArray();
     }
 
