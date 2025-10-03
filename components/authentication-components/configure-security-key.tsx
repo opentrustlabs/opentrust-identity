@@ -355,6 +355,15 @@ const RegistrationConfigureSecurityKey: React.FC<RegistrationComponentsProps> = 
                 direction={"row-reverse"}
                 spacing={2}
             >
+                <Button
+                    variant="contained"
+                    onClick={() => {
+                        setShowMutationBackdrop(true);
+                        createFido2RegistrationChallenge();
+                    }}
+                >
+                    {intl.formatMessage({id: "CONFIGURE_KEY"})}
+                </Button>
                 {initialUserRegistrationState.registrationState === RegistrationState.ConfigureSecurityKeyOptional &&
                     <Button
                         variant="contained"
@@ -372,16 +381,7 @@ const RegistrationConfigureSecurityKey: React.FC<RegistrationComponentsProps> = 
                     >
                         {intl.formatMessage({id: "SKIP"})}
                     </Button>
-                }
-                <Button
-                    variant="contained"
-                    onClick={() => {
-                        setShowMutationBackdrop(true);
-                        createFido2RegistrationChallenge();
-                    }}
-                >
-                    {intl.formatMessage({id: "CONFIGURE_KEY"})}
-                </Button>
+                }                
                 <Button
                     variant="contained"
                     onClick={() => onRegistrationCancelled()}

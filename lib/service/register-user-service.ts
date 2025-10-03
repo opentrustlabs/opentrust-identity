@@ -358,7 +358,8 @@ class RegisterUserService extends IdentityService {
 
     }
 
-    public async registerAddRecoveryEmail(userId: string, recoveryEmail: string | null, registrationSessionToken: string, preAuthToken: string | null, skip: boolean): Promise<UserRegistrationStateResponse>{
+    public async registerAddRecoveryEmail(userId: string, email: string | null, registrationSessionToken: string, preAuthToken: string | null, skip: boolean): Promise<UserRegistrationStateResponse>{
+        
         const arrUserRegistrationState: Array<UserRegistrationState> = await this.getSortedRegistartionStates(registrationSessionToken);
         const response: UserRegistrationStateResponse = {
             userRegistrationState: {
@@ -402,10 +403,18 @@ class RegisterUserService extends IdentityService {
             }
         }
         else{
-            if(recoveryEmail === null || recoveryEmail === ""){
+            const user: User | null = await identityDao.getUserBy("id", userId);
+            const tenant: Tenant | null = await tenantDao.getTenantById(arrUserRegistrationState[index].tenantId);
+            if(user === null || tenant === null){
+                return response;
+            }
+            
+            if(email === null || email === ""){
                 response.registrationError = ERROR_CODES.EC00140;
                 return response;
             }
+            
+            const recoveryEmail = this.formatEmail(email);
             const recoveryEmailValidationResult = await this.validateRecoveryEmail(userId, recoveryEmail);
             if(recoveryEmailValidationResult.isValid === false){
                 response.registrationError = recoveryEmailValidationResult.errorDetail;
@@ -413,6 +422,10 @@ class RegisterUserService extends IdentityService {
             }
 
             await identityDao.addRecoveryEmail({userId: arrUserRegistrationState[index].userId, email: recoveryEmail, emailVerified: false});
+            if(tenant.verifyEmailOnSelfRegistration === true){
+                this.sentEmailValidationToken(user, recoveryEmail);
+            }
+
             arrUserRegistrationState[index].registrationStateStatus = STATUS_COMPLETE;
             await identityDao.updateUserRegistrationState(arrUserRegistrationState[index]);
 
@@ -450,13 +463,27 @@ class RegisterUserService extends IdentityService {
             uri: null
         };
         
-        const index = skip ? 
-                        await this.validateRegistrationStep(arrUserRegistrationState, response, RegistrationState.ConfigureTotpOptional) :
-                        await this.validateRegistrationStep(arrUserRegistrationState, response, RegistrationState.ConfigureTotpRequired);
-        
+        let index: number = -1;
+        // If the user has elected to skip this step, then it must be an optional step and should be validated as such
+        if(skip === true){
+            index = await this.validateRegistrationStep(arrUserRegistrationState, response, RegistrationState.ConfigureTotpOptional);            
+        }
+        // Otherwise this could either be a required step or an optional step that the user is selecting.
+        // If either one is >= 0 then use it as the index.
+        else {        
+            const idxOptional = await this.validateRegistrationStep(arrUserRegistrationState, response, RegistrationState.ConfigureTotpOptional);
+            const idxRequired = await this.validateRegistrationStep(arrUserRegistrationState, response, RegistrationState.ConfigureTotpRequired);
+            if(idxOptional >= 0){
+                index = idxOptional;
+            }
+            else if(idxRequired >= 0){
+                index = idxRequired;
+            }
+        }
         if(index < 0){
             return response;
-        }
+        }        
+        
         if(skip === true){
             // Then we can mark this as complete, as well as the validation step, which we do not need,
             // and go to the step after. Since configuration and validation could be the last steps
@@ -553,10 +580,24 @@ class RegisterUserService extends IdentityService {
         };
 
         const arrUserRegistrationState: Array<UserRegistrationState> = await this.getSortedRegistartionStates(registrationSessionToken);
-        const index = skip ? 
-                        await this.validateRegistrationStep(arrUserRegistrationState, response, RegistrationState.ConfigureSecurityKeyOptional) :
-                        await this.validateRegistrationStep(arrUserRegistrationState, response, RegistrationState.ConfigureSecurityKeyRequired);
 
+        let index: number = -1;
+        // If the user has elected to skip this step, then it must be an optional step and should be validated as such
+        if(skip === true){
+            index = await this.validateRegistrationStep(arrUserRegistrationState, response, RegistrationState.ConfigureSecurityKeyOptional);
+        }
+        // Otherwise this could either be a required step or an optional step that the user is selecting.
+        // If either one is >= 0 then use it as the index.
+        else{
+            const idxOptional = await this.validateRegistrationStep(arrUserRegistrationState, response, RegistrationState.ConfigureSecurityKeyOptional);
+            const idxRequired = await this.validateRegistrationStep(arrUserRegistrationState, response, RegistrationState.ConfigureSecurityKeyRequired);
+            if(idxOptional >= 0){
+                index = idxOptional;
+            }
+            else if(idxRequired >= 0){
+                index = idxRequired;
+            }
+        }
         if(index < 0){            
             return Promise.resolve(response);
         }
@@ -731,8 +772,9 @@ class RegisterUserService extends IdentityService {
 
     }
 
-    public async profileAddRecoveryEmail(recoveryEmail: string): Promise<ProfileEmailChangeResponse> {   
+    public async profileAddRecoveryEmail(email: string): Promise<ProfileEmailChangeResponse> {   
 
+        const recoveryEmail = this.formatEmail(email);
         const response: ProfileEmailChangeResponse = {
             profileEmailChangeState: {
                 changeEmailSessionToken: "",
@@ -1190,21 +1232,7 @@ class RegisterUserService extends IdentityService {
         await identityDao.addUserCredential(userCredential);
 
         if (isRegistration && tenant.verifyEmailOnSelfRegistration) {
-            const token: string = generateRandomToken(8, "hex").toUpperCase();
-            await identityDao.saveEmailConfirmationToken(user.userId, token);
-            
-            // Send an email to the user with the token value.        
-            let fromEmailAddr: string = "";
-            const systemSettings = await tenantDao.getSystemSettings();
-            if(systemSettings && systemSettings.noReplyEmail){
-                fromEmailAddr = systemSettings.noReplyEmail;
-            }
-            else{
-                fromEmailAddr = this.oidcContext.rootTenant.tenantName.toLowerCase().replaceAll(" ", "") + ".com";
-            }
-            const name = user.nameOrder === NAME_ORDER_WESTERN ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`;
-            const tenantLookAndFeel: TenantLookAndFeel = await tenantDao.getTenantLookAndFeel(this.oidcContext.rootTenant.tenantId) || DEFAULT_TENANT_LOOK_AND_FEEL;
-            oidcServiceUtils.sendEmailVerificationEmail(fromEmailAddr, user.email, name, token, tenantLookAndFeel, user.preferredLanguageCode || "en", systemSettings.contactEmail || undefined);
+            this.sentEmailValidationToken(user, user.email);            
         }
         await searchDao.updateObjectSearchIndex(tenant, user);
         await searchDao.updateRelSearchIndex(tenant.tenantId, tenant.tenantId, user);
@@ -1212,6 +1240,23 @@ class RegisterUserService extends IdentityService {
         return Promise.resolve({ user: user, tenant: tenant, tenantPasswordConfig: tenantPasswordConfig });
     }
 
+    protected async sentEmailValidationToken(user: User, to: string): Promise<void> {
+        const token: string = generateRandomToken(8, "hex").toUpperCase();
+        await identityDao.saveEmailConfirmationToken(user.userId, token);
+        
+        // Send an email to the user with the token value.        
+        let fromEmailAddr: string = "";
+        const systemSettings = await tenantDao.getSystemSettings();
+        if(systemSettings && systemSettings.noReplyEmail){
+            fromEmailAddr = systemSettings.noReplyEmail;
+        }
+        else{
+            fromEmailAddr = "no-reply@" + this.oidcContext.rootTenant.tenantName.toLowerCase().replaceAll(" ", "") + ".com";
+        }
+        const name = user.nameOrder === NAME_ORDER_WESTERN ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`;
+        const tenantLookAndFeel: TenantLookAndFeel = await tenantDao.getTenantLookAndFeel(this.oidcContext.rootTenant.tenantId) || DEFAULT_TENANT_LOOK_AND_FEEL;
+        oidcServiceUtils.sendEmailVerificationEmail(fromEmailAddr, to, name, token, tenantLookAndFeel, user.preferredLanguageCode || "en", systemSettings.contactEmail || undefined);
+    }
        
     /**
      * returns the index of the 

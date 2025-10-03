@@ -229,6 +229,22 @@ const RegistrationConfigureTotp: React.FC<RegistrationComponentsProps> = ({
                         direction={"row-reverse"}
                         spacing={2}
                     >
+                        <Button
+                            variant="contained"
+                            onClick={() => {
+                                setShowMutationBackdrop(true);
+                                registerConfigureTOTP({
+                                    variables: {
+                                        userId: initialUserRegistrationState.userId,
+                                        registrationSessionToken: initialUserRegistrationState.registrationSessionToken,
+                                        preAuthToken: initialUserRegistrationState.preAuthToken,
+                                        skip: false
+                                    }
+                                });
+                            }}
+                        >
+                            {intl.formatMessage({id: "CONFIGURE"})}
+                        </Button>
                         {initialUserRegistrationState.registrationState === RegistrationState.ConfigureTotpOptional &&
                             <Button
                                 variant="contained"
@@ -246,23 +262,7 @@ const RegistrationConfigureTotp: React.FC<RegistrationComponentsProps> = ({
                             >
                                 {intl.formatMessage({id: "SKIP"})}
                             </Button>
-                        }
-                        <Button
-                            variant="contained"
-                            onClick={() => {
-                                setShowMutationBackdrop(true);
-                                registerConfigureTOTP({
-                                    variables: {
-                                        userId: initialUserRegistrationState.userId,
-                                        registrationSessionToken: initialUserRegistrationState.registrationSessionToken,
-                                        preAuthToken: initialUserRegistrationState.preAuthToken,
-                                        skip: false
-                                    }
-                                });
-                            }}
-                        >
-                            {intl.formatMessage({id: "CONFIGURE"})}
-                        </Button>
+                        }                        
                         <Button
                             variant="contained"
                             onClick={() => onRegistrationCancelled()}

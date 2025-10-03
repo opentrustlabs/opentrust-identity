@@ -862,7 +862,7 @@ class IdentityService {
             fido2Transports: fido2KeyRegistrationInput.response.transports.join(",")
         }
 
-        await identityDao.saveFIDOKey(userMfaRel);        
+        await identityDao.saveFIDOKey(userMfaRel); 
         await identityDao.initFidoCount(userId, count);
         return Promise.resolve(userMfaRel);
 

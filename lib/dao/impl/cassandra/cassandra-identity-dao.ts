@@ -122,7 +122,7 @@ class CassandraIdentityDao extends IdentityDao {
     public async getFido2Count(userId: string): Promise<number | null> {
         const mapper = await CassandraDriver.getInstance().getModelMapper("user_fido2_counter_rel");
         const result: {userId: string, fido2Counter: number} | null = await mapper.get({userId: types.Uuid.fromString(userId)});
-        if(result){
+        if(result && result.fido2Counter){
             return result.fido2Counter;
         }
         else{
