@@ -1,60 +1,54 @@
-import { Model, DataTypes, Sequelize } from "@sequelize/core";
+import { EntitySchema } from 'typeorm';
 
-class AuthorizationGroupEntity extends Model {
-    
-    static initModel(sequelize: Sequelize): typeof AuthorizationGroupEntity {
-        return AuthorizationGroupEntity.init({
-            groupId: {
-                type: DataTypes.STRING,
-                primaryKey: true,
-                columnName: "groupid"
-            },
-            groupName: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "groupname"
-            },
-            groupDescription: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "groupdescription"
-            },
-            tenantId: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-				columnName: "tenantid"
-            },
-            default: {
-                type: DataTypes.BOOLEAN,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "defaultgroup"
-            },
-            allowForAnonymousUsers: {
-                type: DataTypes.BOOLEAN,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "allowforanonymoususers"
-            },
-            markForDelete: {
-                type: DataTypes.BOOLEAN,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "markfordelete"
-            }
-        }, 
-		{
-            sequelize,
-            tableName: "authorization_group",
-            modelName: "authorizationGroup",
-            timestamps: false
-        });
-    }
-}
+const AuthorizationGroupEntity = new EntitySchema({
 
+    columns: {
+        groupId: {
+            type: String,
+            primary: true,
+            name: "groupid"
+        },
+        groupName: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "groupname"
+        },
+        groupDescription: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "groupdescription"
+        },
+        tenantId: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "tenantid"
+        },
+        default: {
+            type: "boolean",
+            primary: false,
+            nullable: false,
+            name: "defaultgroup"
+        },
+        allowForAnonymousUsers: {
+            type: "boolean",
+            primary: false,
+            nullable: false,
+            name: "allowforanonymoususers"
+        },
+        markForDelete: {
+            type: "boolean",
+            primary: false,
+            nullable: false,
+            name: "markfordelete"
+        }
+    },
 
+    tableName: "authorization_group",
+    name: "authorizationGroup",
+
+});
 
 export default AuthorizationGroupEntity;

@@ -1,75 +1,73 @@
-import { Model, DataTypes, Sequelize } from "@sequelize/core";
+import { EntitySchema } from 'typeorm';
 
-class UserRegistrationStateEntity extends Model {
-    
-    static initModel(sequelize: Sequelize): typeof UserRegistrationStateEntity {
-        return UserRegistrationStateEntity.init({
-            userId: {
-                type: DataTypes.STRING,
-                primaryKey: true,
-                columnName: "userid"
-            },
-            email: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "email"
-            },
-            tenantId: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "tenantid"
-            },
-            registrationSessionToken: {
-                type: DataTypes.STRING,
-                primaryKey: true,
-                columnName: "registrationsessiontoken"
-            },
-            registrationState: {
-                type: DataTypes.STRING,
-                primaryKey: true,
-                columnName: "registrationstate"
-            },
-            registrationStateOrder: {
-                type: DataTypes.INTEGER,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "registrationstateorder"
-            },
-            registrationStateStatus: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "registrationstatestatus"
-            },
-            preAuthToken: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "preauthtoken"
-            },
-            expiresAtMs: {
-                type: DataTypes.BIGINT,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "expiresatms"
-            },
-            deviceCodeId: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "devicecodeid"
-            }
-        }, 
-        {
-            sequelize,
-            tableName: "user_registration_state",
-            modelName: "userRegistrationState",
-            timestamps: false
-        });
-    }
-}
+const UserRegistrationStateEntity = new EntitySchema({
+
+
+    columns: {
+        userId: {
+            type: String,
+            primary: true,
+            name: "userid"
+        },
+        email: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "email"
+        },
+        tenantId: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "tenantid"
+        },
+        registrationSessionToken: {
+            type: String,
+            primary: true,
+            name: "registrationsessiontoken"
+        },
+        registrationState: {
+            type: String,
+            primary: true,
+            name: "registrationstate"
+        },
+        registrationStateOrder: {
+            type: "int",
+            primary: false,
+            nullable: false,
+            name: "registrationstateorder"
+        },
+        registrationStateStatus: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "registrationstatestatus"
+        },
+        preAuthToken: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "preauthtoken"
+        },
+        expiresAtMs: {
+            type: "bigint",
+            primary: false,
+            nullable: false,
+            name: "expiresatms"
+        },
+        deviceCodeId: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "devicecodeid"
+        }
+    },
+
+    tableName: "user_registration_state",
+    name: "userRegistrationState",
+
+});
+
 
 
 export default UserRegistrationStateEntity;

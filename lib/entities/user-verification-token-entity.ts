@@ -1,46 +1,47 @@
-import { Model, DataTypes, Sequelize } from "@sequelize/core";
+import { EntitySchema } from 'typeorm';
 
-class UserVerificationTokenEntity extends Model {
-    
-    static initModel(sequelize: Sequelize): typeof UserVerificationTokenEntity {
-        return UserVerificationTokenEntity.init({
-            token: {
-                type: DataTypes.STRING,
-                primaryKey: true,
-                columnName: "token"
-            },
-            userId: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "userid"
-            },
-            verificationType: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "verificationtype"
-            },
-            issuedAtMS: {
-                type: DataTypes.BIGINT,
-                primaryKey: false,
-                allowNull: false,
-				columnName: "issuedatms"
-            },
-            expiresAtMS: {
-                type: DataTypes.BIGINT,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "expiresatms"
-            }
-        }, 
-		{
-            sequelize,
-            tableName: "user_verification_token",
-            modelName: "userVerificationToken",
-            timestamps: false
-        });
-    }
+export interface UserVerificationToken {
+    token: string,
+    userId: string,
+    verificationType: string,
+    issuedAtMS: number,
+    expiresAtMS: number
 }
+
+const UserVerificationTokenEntity  = new EntitySchema({
+    tableName: "user_verification_token",
+    name: "userVerificationToken",
+    columns: {
+        token: {
+            type: String,
+            primary: true,
+            name: "token"
+        },
+        userId: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "userid"
+        },
+        verificationType: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "verificationtype"
+        },
+        issuedAtMS: {
+            type: "bigint",
+            primary: false,
+            nullable: false,
+            name: "issuedatms"
+        },
+        expiresAtMS: {
+            type: "bigint",
+            primary: false,
+            nullable: false,
+            name: "expiresatms"
+        }
+    }
+});
 
 export default UserVerificationTokenEntity;

@@ -1,33 +1,30 @@
-import { Model, DataTypes, Sequelize } from "@sequelize/core";
+import { EntitySchema } from 'typeorm';
 
-class ClientScopeRelEntity extends Model {
-    
-    static initModel(sequelize: Sequelize): typeof ClientScopeRelEntity {
-        return ClientScopeRelEntity.init({
-            tenantId: {
-                type: DataTypes.STRING,
-                primaryKey: true,
-                columnName: "tenantid"
-            },
-            clientId: {
-                type: DataTypes.STRING,
-                primaryKey: true,
-                columnName: "clientid"
-            },
-            scopeId: {
-                type: DataTypes.STRING,
-                primaryKey: true,
-                columnName: "scopeid"
-            }
-        }, 
-		{
-            sequelize,
-            tableName: "client_scope_rel",
-            modelName: "clientScopeRel",
-            timestamps: false
-        });
-    }
-}
+const ClientScopeRelEntity = new EntitySchema({
+
+
+    columns: {
+        tenantId: {
+            type: String,
+            primary: true,
+            name: "tenantid"
+        },
+        clientId: {
+            type: String,
+            primary: true,
+            name: "clientid"
+        },
+        scopeId: {
+            type: String,
+            primary: true,
+            name: "scopeid"
+        }
+    },
+
+    tableName: "client_scope_rel",
+    name: "clientScopeRel",
+
+});
 
 
 export default ClientScopeRelEntity;

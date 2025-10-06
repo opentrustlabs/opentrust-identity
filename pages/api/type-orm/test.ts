@@ -1,9 +1,6 @@
 import { User } from '@/graphql/generated/graphql-types';
-import { randomUUID } from 'crypto';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { DataSource, EntitySchema, ObjectLiteral, Repository } from 'typeorm';
-import { isIn } from 'validator';
-
+import { DataSource, EntitySchema, Repository } from 'typeorm';
 
 
 const MyUserEntity = new EntitySchema({
@@ -192,6 +189,14 @@ export default async function handler(
         await dataSource.initialize();
         isInitialized = true;
     }
+
+    const repo2= dataSource.getRepository(MyUserEntity);
+
+    const u = await repo2.findOne({
+        where: {
+            userId: ""
+        }
+    });
 
     const repo: Repository<User> = dataSource.getRepository("users");
     const results: User | null = await repo.findOne({

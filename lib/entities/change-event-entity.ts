@@ -1,69 +1,55 @@
-import { Model, DataTypes, Sequelize } from "@sequelize/core";
+import { EntitySchema } from 'typeorm';
 
-class ChangeEventEntity extends Model {
-    
-    static initModel(sequelize: Sequelize): typeof ChangeEventEntity {
-        return ChangeEventEntity.init({
-            changeEventId: {
-                type: DataTypes.STRING,
-                primaryKey: true,
-                columnName: "changeeventid"
-            },
-            objectId: {
-                type: DataTypes.STRING,
-                primaryKey: true,
-                columnName: "objectid"
-            },
-            changeEventClass: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-				columnName: "changeeventclass"
-            },
-            changeEventType: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "changeeventtype"
-            },
-            changeTimestamp: {
-                type: DataTypes.BIGINT,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "changetimestamp"
-            },
-            changedBy: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "changedby"
-            },
-            data: {
-                type: DataTypes.BLOB("long"),
-                primaryKey: false,
-                allowNull: false,
-                columnName: "data",
-                set(val: string | Buffer | null){
-                    if(val === null || val === ""){
-                        this.setDataValue("data", null);
-                    }
-                    else if(typeof val === "string"){
-                        this.setDataValue("publdataicKey", Buffer.from(val, "utf-8"));
-                    }
-                    else{
-                        this.setDataValue("data", val);
-                    }
-                }
-            }
-        }, 
-		{
-            sequelize,
-            tableName: "change_event",
-            modelName: "changeEvent",
-            timestamps: false
-        });
-    }
-}
+const CaptchaConfigEntity = new EntitySchema({
+
+    columns: {
+        alias: {
+            type: String,
+            primary: true,
+            name: "alias"
+        },
+        projectId: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "projectid"
+        },
+        siteKey: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "sitekey"
+        },
+        apiKey: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "apikey"
+        },
+        minScoreThreshold: {
+            type: "float",
+            primary: false,
+            nullable: true,
+            name: "minscorethreshold"
+        },
+        useCaptchaV3: {
+            type: "boolean",
+            primary: false,
+            nullable: false,
+            name: "userecaptchav3"
+        },
+        useEnterpriseCaptcha: {
+            type: "boolean",
+            primary: false,
+            nullable: false,
+            name: "useenterprisecaptcha"
+        }
+    },
+
+    tableName: "captcha_config",
+    name: "captchaConfig",
+
+});
 
 
-export default ChangeEventEntity;
+export default CaptchaConfigEntity;

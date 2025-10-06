@@ -1,47 +1,45 @@
-import { Model, DataTypes, Sequelize } from "@sequelize/core";
+import { EntitySchema } from 'typeorm';
 
-class ScopeEntity extends Model {
-    
-    static initModel(sequelize: Sequelize): typeof ScopeEntity {
-        return ScopeEntity.init({
-            scopeId: {
-                type: DataTypes.STRING,
-                primaryKey: true,
-                columnName: "scopeid"
-            },
-            scopeName: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "scopename"
-            },
-            scopeDescription: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "scopedescription"
-            },
-            scopeUse: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "scopeuse"
-            },
-            markForDelete: {
-                type: DataTypes.BOOLEAN,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "markfordelete"
-            }
-        }, 
-		{
-            sequelize,
-            tableName: "scope",
-            modelName: "scope",
-            timestamps: false
-        });
-    }
-}
+const ScopeEntity = new EntitySchema({
+
+
+    columns: {
+        scopeId: {
+            type: String,
+            primary: true,
+            name: "scopeid"
+        },
+        scopeName: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "scopename"
+        },
+        scopeDescription: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "scopedescription"
+        },
+        scopeUse: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "scopeuse"
+        },
+        markForDelete: {
+            type: "boolean",
+            primary: false,
+            nullable: false,
+            name: "markfordelete"
+        }
+    },
+
+    tableName: "scope",
+    name: "scope",
+
+});
 
 
 export default ScopeEntity;
+

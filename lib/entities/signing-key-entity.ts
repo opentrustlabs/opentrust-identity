@@ -1,95 +1,93 @@
-import { Model, DataTypes, Sequelize } from "@sequelize/core";
+import { EntitySchema } from 'typeorm';
 
-class SigningKeyEntity extends Model {
-    
-    static initModel(sequelize: Sequelize): typeof SigningKeyEntity {
-        return SigningKeyEntity.init({
-            keyId: {
-                type: DataTypes.STRING,
-                primaryKey: true,
-                columnName: "keyid"
-            },
-            keyType: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "keytype"
-            },
-            keyName: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "keyname"
-            },
-            keyUse: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-				columnName: "keyuse"
-            },            
-            keyPassword: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "keypassword"
-            },            
-            expiresAtMs: {
-                type: DataTypes.BIGINT,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "expiresatms"
-            },
-            createdAtMs: {
-                type: DataTypes.BIGINT,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "createdatms"
-            },
-            keyStatus: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "keystatus"
-            },
-            tenantId: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "tenantid"
-            },
-            markForDelete: {
-                type: DataTypes.BOOLEAN,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "markfordelete"
-            },
-            privateKeyPkcs8: {
-                type: DataTypes.STRING(8000),
-                primaryKey: false,
-                allowNull: false,
-                columnName: "privatekeypkcs8",
-            },
-            publicKey: {
-                type: DataTypes.STRING(8000),
-                primaryKey: false,
-                allowNull: true,
-                columnName: "publickey",
-            },
-            keyCertificate: {
-                type: DataTypes.STRING(8000),
-                primaryKey: false,
-                allowNull: true,
-                columnName: "keycertificate"
-            }
-        }, 
-		{
-            sequelize,
-            tableName: "signing_key",
-            modelName: "signingKey",
-            timestamps: false
-        });
-    }
-}
+const SigningKeyEntity = new EntitySchema({
+
+
+    columns: {
+        keyId: {
+            type: String,
+            primary: true,
+            name: "keyid"
+        },
+        keyType: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "keytype"
+        },
+        keyName: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "keyname"
+        },
+        keyUse: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "keyuse"
+        },
+        keyPassword: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "keypassword"
+        },
+        expiresAtMs: {
+            type: "bigint",
+            primary: false,
+            nullable: false,
+            name: "expiresatms"
+        },
+        createdAtMs: {
+            type: "bigint",
+            primary: false,
+            nullable: false,
+            name: "createdatms"
+        },
+        keyStatus: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "keystatus"
+        },
+        tenantId: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "tenantid"
+        },
+        markForDelete: {
+            type: "boolean",
+            primary: false,
+            nullable: false,
+            name: "markfordelete"
+        },
+        privateKeyPkcs8: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "privatekeypkcs8",
+        },
+        publicKey: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "publickey",
+        },
+        keyCertificate: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "keycertificate"
+        }
+    },
+
+    tableName: "signing_key",
+    name: "signingKey",
+
+});
+
 
 
 export default SigningKeyEntity;

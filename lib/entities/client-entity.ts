@@ -1,101 +1,98 @@
-import { Model, DataTypes, Sequelize } from "@sequelize/core";
+import { EntitySchema } from 'typeorm';
 
-class ClientEntity extends Model {
+const ClientEntity = new EntitySchema({
     
-    static initModel(sequelize: Sequelize): typeof ClientEntity {
-        return ClientEntity.init({
+    
+        columns: {
             clientId: {
-                type: DataTypes.STRING,
-                primaryKey: true,
-                columnName: "clientid"
+                type: String,
+                primary: true,
+                name: "clientid"
             },
             tenantId: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "tenantid"
+                type: String,
+                primary: false,
+                nullable: false,
+                name: "tenantid"
             },
             clientName: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "clientname"
+                type: String,
+                primary: false,
+                nullable: false,
+                name: "clientname"
             },
             clientDescription: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: true,
-				columnName: "clientdescription"
+                type: String,
+                primary: false,
+                nullable: true,
+				name: "clientdescription"
             },
             clientSecret: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "clientsecret"
+                type: String,
+                primary: false,
+                nullable: false,
+                name: "clientsecret"
             },
             clientTokenTTLSeconds: {
-                type: DataTypes.INTEGER,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "clienttokenttlseconds"
+                type: "int",
+                primary: false,
+                nullable: true,
+                name: "clienttokenttlseconds"
             },
             clientType: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "clienttype"
+                type: String,
+                primary: false,
+                nullable: false,
+                name: "clienttype"
             },
             maxRefreshTokenCount: {
-                type: DataTypes.INTEGER,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "maxrefreshtokencount"
+                type: "int",
+                primary: false,
+                nullable: true,
+                name: "maxrefreshtokencount"
             },
             enabled: {
-                type: DataTypes.BOOLEAN,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "enabled"
+                type: "boolean",
+                primary: false,
+                nullable: false,
+                name: "enabled"
             },
             oidcEnabled: {
-                type: DataTypes.BOOLEAN,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "oidcenabled"
+                type: "boolean",
+                primary: false,
+                nullable: false,
+                name: "oidcenabled"
             },
             pkceEnabled: {
-                type: DataTypes.BOOLEAN,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "pkceenabled"
+                type: "boolean",
+                primary: false,
+                nullable: false,
+                name: "pkceenabled"
             },
             userTokenTTLSeconds: {
-                type: DataTypes.INTEGER,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "usertokenttlseconds"
+                type: "int",
+                primary: false,
+                nullable: true,
+                name: "usertokenttlseconds"
             },
             markForDelete: {
-                type: DataTypes.BOOLEAN,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "markfordelete"
+                type: "boolean",
+                primary: false,
+                nullable: false,
+                name: "markfordelete"
             },
             audience: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "audience"
+                type: String,
+                primary: false,
+                nullable: true,
+                name: "audience"
             }
         }, 
-		{
-            sequelize,
+		
             tableName: "client",
-            modelName: "client",
-            timestamps: false
+            name: "client",
+            
         });
-    }
-}
 
 
 export default ClientEntity;

@@ -1,33 +1,31 @@
-import { Model, DataTypes, Sequelize } from "@sequelize/core";
+import { EntitySchema } from 'typeorm';
 
-class TenantAvailableScopeEntity extends Model {
-    
-    static initModel(sequelize: Sequelize): typeof TenantAvailableScopeEntity {
-        return TenantAvailableScopeEntity.init({
-            tenantId: {
-                type: DataTypes.STRING,
-                primaryKey: true,
-                columnName: "tenantid"
-            },
-            scopeId: {
-                type: DataTypes.STRING,
-                primaryKey: true,
-                columnName: "scopeid"
-            },
-            accessRuleId: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "accessruleid"
-            }
-        }, 
-		{
-            sequelize,
-            tableName: "tenant_available_scope",
-            modelName: "tenantAvailableScope",
-            timestamps: false
-        });
-    }
-}
+const TenantAvailableScopeEntity = new EntitySchema({
+
+
+    columns: {
+        tenantId: {
+            type: String,
+            primary: true,
+            name: "tenantid"
+        },
+        scopeId: {
+            type: String,
+            primary: true,
+            name: "scopeid"
+        },
+        accessRuleId: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "accessruleid"
+        }
+    },
+
+    tableName: "tenant_available_scope",
+    name: "tenantAvailableScope",
+
+});
+
 
 export default TenantAvailableScopeEntity;

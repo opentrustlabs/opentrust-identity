@@ -3,6 +3,8 @@ import { randomBytes, hash, createHash, pbkdf2Sync, scryptSync } from "node:cryp
 import bcrypt from "bcrypt";
 import { UserCredential } from "@/graphql/generated/graphql-types";
 import { PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS, PASSWORD_HASH_ITERATION_64K, PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS, PASSWORD_HASH_ITERATION_128K, PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS, PASSWORD_HASH_ITERATION_256K, PASSWORD_HASHING_ALGORITHM_SCRYPT_32K_ITERATIONS, PASSWORD_HASH_ITERATION_32K, PASSWORD_HASHING_ALGORITHM_SCRYPT_64K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_128K_ITERATIONS } from "./consts";
+import { ValueTransformer } from "typeorm";
+
 
 export function base64Decode(s: string): string {
     return Buffer.from(s, "base64").toString("utf-8");
@@ -265,3 +267,44 @@ export function generateUserCredential(userId: string, password: string, hashAlg
         userId: userId
     }
 } 
+
+// postgres | mysql | oracle | mssql
+type BlobType = "blob" | "bytea" | "varbinary"
+export function getBlobTypeForDriver(dbType: string): BlobType {
+    switch (dbType) {
+        case "mysql":
+        case "mariadb":
+            return "blob"; // or "longblob" if you expect very large data
+        case "postgres":
+            return "bytea";
+        case "mssql":
+            return "varbinary"; // use { length: "MAX" } if needed
+        case "oracle":
+            return "blob";
+        case "sqlite":
+        case "better-sqlite3":
+            return "blob";
+        default:
+            throw new Error(`Unsupported database type for BLOB: ${dbType}`);
+    }
+}
+
+
+
+/**
+ * Converts between string and binary (Buffer) for BLOB-like columns.
+ * 
+ * @param encoding - Optional encoding ("utf8" by default)
+ */
+export function stringToBlobTransformer(encoding: BufferEncoding = "utf8"): ValueTransformer {
+    return {
+        to(value: string | null): Buffer | null {
+            if (value == null) return null;
+            return Buffer.from(value, encoding);
+        },
+        from(value: Buffer | null): string | null {
+            if (value == null) return null;
+            return value.toString(encoding);
+        },
+    };
+}

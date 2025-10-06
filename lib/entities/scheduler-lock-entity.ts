@@ -1,38 +1,35 @@
-import { Model, DataTypes, Sequelize } from "@sequelize/core";
+import { EntitySchema } from 'typeorm';
 
-export class SchedulerLockEntity extends Model {
-    
-    static initModel(sequelize: Sequelize): typeof SchedulerLockEntity {
-        return SchedulerLockEntity.init({
-            lockName: {
-                type: DataTypes.STRING,
-                primaryKey: true,
-                columnName: "lockname"
-            },
-            lockInstanceId: {
-                type: DataTypes.STRING,
-                primaryKey: true,
-                columnName: "lockinstanceid"
-            },
-            lockStartTimeMS: {
-                type: DataTypes.BIGINT,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "lockstarttimems"
-            },
-            lockExpiresAtMS: {
-                type: DataTypes.BIGINT,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "lockexpiresatms"
-            }
-        }, {
-            sequelize,
-            tableName: "scheduler_lock",
-            modelName: "schedulerLock",
-            timestamps: false
-        })
-    }
-}
+export const SchedulerLockEntity = new EntitySchema({
+
+
+    columns: {
+        lockName: {
+            type: String,
+            primary: true,
+            name: "lockname"
+        },
+        lockInstanceId: {
+            type: String,
+            primary: true,
+            name: "lockinstanceid"
+        },
+        lockStartTimeMS: {
+            type: "bigint",
+            primary: false,
+            nullable: false,
+            name: "lockstarttimems"
+        },
+        lockExpiresAtMS: {
+            type: "bigint",
+            primary: false,
+            nullable: false,
+            name: "lockexpiresatms"
+        }
+    },
+    tableName: "scheduler_lock",
+    name: "schedulerLock",
+
+});
 
 export default SchedulerLockEntity;

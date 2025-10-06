@@ -1,71 +1,66 @@
-import { Model, DataTypes, Sequelize } from "@sequelize/core";
+import { EntitySchema } from 'typeorm';
 
-class AuthorizationCodeDataEntity extends Model {
-    
-    static initModel(sequelize: Sequelize): typeof AuthorizationCodeDataEntity {
-        return AuthorizationCodeDataEntity.init({
-            code: {
-                type: DataTypes.STRING,
-                primaryKey: true,
-                columnName: "code"
-            },
-            clientId: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "clientid"
-            },
-            tenantId: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "tenantid"
-            },
-            codeChallenge: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "codechallenge"
-            },
-            codeChallengeMethod: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "codechallengemethod"
-            },
-            expiresAtMs: {
-                type: DataTypes.BIGINT,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "expiresatms"
-            },
-            redirectUri: {
-                type: DataTypes.BOOLEAN,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "redirecturi"
-            },
-            scope: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "scope"
-            },
-            userId: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "userid"
-            }
-        }, 
-        {
-            sequelize,
-            tableName: "authorization_code_data",
-            modelName: "authorizationCodeData",
-            timestamps: false
-        });
+const AuthorizationCodeDataEntity = new EntitySchema({
+    tableName: "authorization_code_data",
+    name: "authorizationCodeData",
+
+    columns: {
+        code: {
+            type: String,
+            primary: true,
+            name: "code"
+        },
+        clientId: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "clientid"
+        },
+        tenantId: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "tenantid"
+        },
+        codeChallenge: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "codechallenge"
+        },
+        codeChallengeMethod: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "codechallengemethod"
+        },
+        expiresAtMs: {
+            type: "bigint",
+            primary: false,
+            nullable: false,
+            name: "expiresatms"
+        },
+        redirectUri: {
+            type: "boolean",
+            primary: false,
+            nullable: false,
+            name: "redirecturi"
+        },
+        scope: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "scope"
+        },
+        userId: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "userid"
+        }
     }
-}
+});
+
 
 
 export default AuthorizationCodeDataEntity;

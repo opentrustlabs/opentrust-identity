@@ -1,28 +1,32 @@
-import { Model, DataTypes, Sequelize } from "@sequelize/core";
+import { EntitySchema } from 'typeorm';
 
-class UserFido2CounterRelEntity extends Model {
-
-    static initModel(sequelize: Sequelize): typeof UserFido2CounterRelEntity {
-        return UserFido2CounterRelEntity.init({
-            userId: {
-                type: DataTypes.STRING,
-                primaryKey: true,
-                columnName: "userid"
-            },
-            fido2Counter: {
-                type: DataTypes.INTEGER,
-                primaryKey: true,
-                columnName: "fido2Counter"
-            }
-        }, 
-        {
-            sequelize,
-            tableName: "user_fido2_counter_rel",
-            modelName: "userFido2CountrerRel",
-            timestamps: false
-        });
-    }
+export interface UserFido2CounterRel {
+    userId: string,
+    fido2Counter: number
 }
 
+const UserFido2CounterRelEntity = new EntitySchema({
+
+
+    columns: {
+        userId: {
+            type: String,
+            primary: true,
+            name: "userid"
+        },
+        fido2Counter: {
+            type: "int",
+            primary: true,
+            name: "fido2Counter"
+        }
+    },
+
+    tableName: "user_fido2_counter_rel",
+    name: "userFido2CountrerRel",
+
+});
+
+
 export default UserFido2CounterRelEntity;
+
 

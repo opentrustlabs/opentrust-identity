@@ -1,115 +1,121 @@
-import { Model, DataTypes, Sequelize } from "@sequelize/core";
+import { isArray } from '@apollo/client/utilities';
+import { EntitySchema } from 'typeorm';
 
-class FederatedOIDCProviderEntity extends Model {
-    
-    static initModel(sequelize: Sequelize): typeof FederatedOIDCProviderEntity {
-        return FederatedOIDCProviderEntity.init({
-            federatedOIDCProviderId: {
-                type: DataTypes.STRING,
-                primaryKey: true,
-                columnName: "federatedoidcproviderid"
-            },
-            federatedOIDCProviderName: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "federatedoidcprovidername"
-            },
-            federatedOIDCProviderDescription: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "federatedoidcproviderdescription"
-            },
-            federatedOIDCProviderTenantId: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: true,
-				columnName: "federatedoidcprovidertenantid"
-            },
-            federatedOIDCProviderClientId: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "federatedoidcproviderclientid"
-            },
-            federatedOIDCProviderClientSecret: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "federatedoidcproviderclientsecret"
-            },
-            federatedOIDCProviderWellKnownUri: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "federatedoidcproviderwellknownuri"
-            },
-            refreshTokenAllowed: {
-                type: DataTypes.BOOLEAN,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "refreshtokenallowed"
-            },
-            scopes: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "scopes",
-                get() {
-                    const s = this.getDataValue("scopes");
-                    return s ? s.split(",") : [];
+const FederatedOIDCProviderEntity = new EntitySchema({
+
+    tableName: "federated_oidc_provider",
+    name: "federatedOidcProvider",
+    columns: {
+        federatedOIDCProviderId: {
+            type: String,
+            primary: true,
+            name: "federatedoidcproviderid"
+        },
+        federatedOIDCProviderName: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "federatedoidcprovidername"
+        },
+        federatedOIDCProviderDescription: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "federatedoidcproviderdescription"
+        },
+        federatedOIDCProviderTenantId: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "federatedoidcprovidertenantid"
+        },
+        federatedOIDCProviderClientId: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "federatedoidcproviderclientid"
+        },
+        federatedOIDCProviderClientSecret: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "federatedoidcproviderclientsecret"
+        },
+        federatedOIDCProviderWellKnownUri: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "federatedoidcproviderwellknownuri"
+        },
+        refreshTokenAllowed: {
+            type: "boolean",
+            primary: false,
+            nullable: false,
+            name: "refreshtokenallowed"
+        },
+        scopes: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "scopes",
+            transformer: {
+                to(value) {
+                    if (value) {
+                        if (Array.isArray(value)) {
+                            return value.join(",");
+                        }
+                        else {
+                            return value;
+                        }
+                    }
+                    else {
+                        return ""
+                    }
                 },
-                set(val: string[] | string | null) {                    
-                    if(val === null){
-                        this.setDataValue("scopes", "");
+                from(value) {
+                    if (value && value.length > 0) {
+                        return value.split(",");
                     }
-                    else if(Array.isArray(val)){
-                        this.setDataValue("scopes", val.join(","));
+                    else {
+                        return value;
                     }
-                    else{
-                        this.setDataValue("scopes", val);
-                    }
-                }
-            },
-            usePkce: {
-                type: DataTypes.BOOLEAN,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "usepkce"
-            },
-            clientAuthType: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "clientauthtype"
-            },
-            federatedOIDCProviderType: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "federatedoidcprovidertype"
-            },
-            socialLoginProvider: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "socialloginprovider"
-            },
-            markForDelete: {
-                type: DataTypes.BOOLEAN,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "markfordelete"
+                },
             }
-        }, 
-		{
-            sequelize,
-            tableName: "federated_oidc_provider",
-            modelName: "federatedOidcProvider",
-            timestamps: false
-        });
-    }
-}
+        },
+        usePkce: {
+            type: "boolean",
+            primary: false,
+            nullable: true,
+            name: "usepkce"
+        },
+        clientAuthType: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "clientauthtype"
+        },
+        federatedOIDCProviderType: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "federatedoidcprovidertype"
+        },
+        socialLoginProvider: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "socialloginprovider"
+        },
+        markForDelete: {
+            type: "boolean",
+            primary: false,
+            nullable: false,
+            name: "markfordelete"
+        }
+    },
+
+
+
+});
 
 export default FederatedOIDCProviderEntity;

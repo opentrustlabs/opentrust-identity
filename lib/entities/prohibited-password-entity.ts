@@ -1,22 +1,24 @@
-import { Model, DataTypes, Sequelize } from "@sequelize/core";
+import { EntitySchema } from 'typeorm';
 
-class ProhibitedPasswordEntity extends Model {
-    
-    static initModel(sequelize: Sequelize): typeof ProhibitedPasswordEntity {
-        return ProhibitedPasswordEntity.init({
-            password: {
-                type: DataTypes.STRING,
-                primaryKey: true,
-                columnName: "password"
-            }
-        }, 
-		{
-            sequelize,
-            tableName: "prohibited_passwords",
-            modelName: "prohibitedPasswords",
-            timestamps: false
-        });
-    }
+
+export interface ProhibitedPassword {
+    password: string
 }
+
+const ProhibitedPasswordEntity = new EntitySchema({
+
+
+    columns: {
+        password: {
+            type: String,
+            primary: true,
+            name: "password"
+        }
+    },
+
+    tableName: "prohibited_passwords",
+    name: "prohibitedPasswords",
+
+});
 
 export default ProhibitedPasswordEntity;

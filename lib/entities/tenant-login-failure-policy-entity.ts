@@ -1,46 +1,44 @@
-import { Model, DataTypes, Sequelize } from "@sequelize/core";
+import { EntitySchema } from 'typeorm';
 
 
-class TenantLoginFailurePolicyEntity extends Model {
+const TenantLoginFailurePolicyEntity = new EntitySchema({
 
-    static initModel(sequelize: Sequelize): typeof TenantLoginFailurePolicyEntity {
-        return TenantLoginFailurePolicyEntity.init({
-            tenantId: {
-                type: DataTypes.STRING,
-                primaryKey: true,
-                columnName: "tenantid"
-            },
-            loginFailurePolicyType: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "loginfailurepolicytype"
-            },
-            failureThreshold: {
-                type: DataTypes.INTEGER,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "failurethreshold"
-            },
-            pauseDurationMinutes: {
-                type: DataTypes.INTEGER,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "pausedurationminutes"
-            },
-            maximumLoginFailures: {
-                type: DataTypes.INTEGER,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "maximumloginfailures"
-            }
-        }, {
-            sequelize,
-            tableName: "tenant_login_failure_policy",
-            modelName: "tenantLoginFailurePolicy",
-            timestamps: false
-        })
-    }
-}
+
+    columns: {
+        tenantId: {
+            type: String,
+            primary: true,
+            name: "tenantid"
+        },
+        loginFailurePolicyType: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "loginfailurepolicytype"
+        },
+        failureThreshold: {
+            type: "int",
+            primary: false,
+            nullable: false,
+            name: "failurethreshold"
+        },
+        pauseDurationMinutes: {
+            type: "int",
+            primary: false,
+            nullable: true,
+            name: "pausedurationminutes"
+        },
+        maximumLoginFailures: {
+            type: "int",
+            primary: false,
+            nullable: true,
+            name: "maximumloginfailures"
+        }
+    },
+    tableName: "tenant_login_failure_policy",
+    name: "tenantLoginFailurePolicy",
+
+})
+
 
 export default TenantLoginFailurePolicyEntity;

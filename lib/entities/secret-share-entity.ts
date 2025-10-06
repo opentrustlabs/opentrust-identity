@@ -1,47 +1,45 @@
-import { Model, DataTypes, Sequelize } from "@sequelize/core";
+import { EntitySchema } from 'typeorm';
 
-class SecretShareEntity extends Model {
-    
-    static initModel(sequelize: Sequelize): typeof SecretShareEntity {
-        return SecretShareEntity.init({
-            secretShareId: {
-                type: DataTypes.STRING,
-                primaryKey: true,
-                columnName: "secretshareid"
-            },
-            objectId: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "objectid"
-            },
-            secretShareObjectType: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "objectype"
-            },
-            otp: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "otp"
-            },
-            expiresAtMs: {
-                type: DataTypes.BIGINT,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "expiresatms"
-            }
-        }, 
-        {
-            sequelize,
-            tableName: "secret_share",
-            modelName: "secretShare",
-            timestamps: false
-        });
-    }
-}
+const SecretShareEntity = new EntitySchema({
+
+
+    columns: {
+        secretShareId: {
+            type: String,
+            primary: true,
+            name: "secretshareid"
+        },
+        objectId: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "objectid"
+        },
+        secretShareObjectType: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "objectype"
+        },
+        otp: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "otp"
+        },
+        expiresAtMs: {
+            type: "bigint",
+            primary: false,
+            nullable: false,
+            name: "expiresatms"
+        }
+    },
+
+    tableName: "secret_share",
+    name: "secretShare",
+
+});
+
 
 
 export default SecretShareEntity;

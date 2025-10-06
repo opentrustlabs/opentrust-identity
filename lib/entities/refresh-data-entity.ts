@@ -1,81 +1,78 @@
-import { Model, DataTypes, Sequelize } from "@sequelize/core";
+import { EntitySchema } from 'typeorm';
 
-class RefreshDataEntity extends Model {
-    
-    static initModel(sequelize: Sequelize): typeof RefreshDataEntity {
-        return RefreshDataEntity.init({
-            refreshToken: {
-                type: DataTypes.STRING,
-                primaryKey: true,
-                columnName: "refreshtoken"
-            },
-            tenantId: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "tenantid"
-            },
-            userId: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "userid"
-            },
-            clientId: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-				columnName: "clientid"
-            },
-            redirecturi: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "redirecturi"
-            },
-            refreshCount: {
-                type: DataTypes.BIGINT,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "refreshcount"
-            },
-            refreshTokenClientType: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "refreshtokenclienttype"
-            },
-            scope: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "scope"
-            },
-            codeChallenge: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "codechallenge"
-            },
-            codeChallengeMethod: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "codechallengemethod"
-            },
-            expiresAtMs: {
-                type: DataTypes.BIGINT,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "expiresatms"
-            }
-        }, {
-            sequelize,
-            tableName: "refresh_data",
-            modelName: "refreshData",
-            timestamps: false
-        });
-    }
-}
+const RefreshDataEntity = new EntitySchema({
 
-export default RefreshDataEntity
+
+    columns: {
+        refreshToken: {
+            type: String,
+            primary: true,
+            name: "refreshtoken"
+        },
+        tenantId: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "tenantid"
+        },
+        userId: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "userid"
+        },
+        clientId: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "clientid"
+        },
+        redirecturi: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "redirecturi"
+        },
+        refreshCount: {
+            type: "bigint",
+            primary: false,
+            nullable: false,
+            name: "refreshcount"
+        },
+        refreshTokenClientType: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "refreshtokenclienttype"
+        },
+        scope: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "scope"
+        },
+        codeChallenge: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "codechallenge"
+        },
+        codeChallengeMethod: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "codechallengemethod"
+        },
+        expiresAtMs: {
+            type: "bigint",
+            primary: false,
+            nullable: false,
+            name: "expiresatms"
+        }
+    },
+    tableName: "refresh_data",
+    name: "refreshData",
+
+});
+
+export default RefreshDataEntity;

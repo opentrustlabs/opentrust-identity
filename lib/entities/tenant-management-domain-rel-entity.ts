@@ -1,29 +1,22 @@
-import { Model, DataTypes, Sequelize } from "@sequelize/core";
+import { EntitySchema } from 'typeorm';
 
-class TenantManagementDomainRelEntity extends Model {
-    
-    static initModel(sequelize: Sequelize): typeof TenantManagementDomainRelEntity {
-        return TenantManagementDomainRelEntity.init(
-            {
-                tenantId: {
-                    type: DataTypes.STRING,
-                    primaryKey: true,
-                    columnName: "tenantid"
-                },
-                domain: {
-                    type: DataTypes.STRING,
-                    primaryKey: true,
-                    columnName: "domain"
-                }
-            },
-            {
-                sequelize: sequelize,
-                tableName: "tenant_management_domain_rel",
-                modelName: "tenantManagementDomainRel",
-                timestamps: false
-            }
-        );
+const TenantManagementDomainRelEntity = new EntitySchema({
+
+    tableName: "tenant_management_domain_rel",
+    name: "tenantManagementDomainRel",
+    columns: {
+        tenantId: {
+            type: String,
+            primary: true,
+            name: "tenantid"
+        },
+        domain: {
+            type: String,
+            primary: true,
+            name: "domain"
+        }
+
     }
-}
+});
 
 export default TenantManagementDomainRelEntity;

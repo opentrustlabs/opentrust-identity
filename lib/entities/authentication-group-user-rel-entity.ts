@@ -1,27 +1,22 @@
-import { Model, DataTypes, Sequelize } from "@sequelize/core";
+import { EntitySchema } from 'typeorm';
 
-class AuthenticationGroupUserRelEntity extends Model {
-    
-    static initModel(sequelize: Sequelize): typeof AuthenticationGroupUserRelEntity {
-        return AuthenticationGroupUserRelEntity.init({
-            authenticationGroupId: {
-                type: DataTypes.STRING,
-                primaryKey: true,
-                columnName: "authenticationgroupid"
-            },
-            userId: {
-                type: DataTypes.STRING,
-                primaryKey: true,
-                columnName: "userid"
-            }
-        }, 
-		{
-            sequelize,
-            tableName: "authentication_group_user_rel",
-            modelName: "authenticationGroupUserRel",
-            timestamps: false
-        });
+const AuthenticationGroupUserRelEntity = new EntitySchema({
+    tableName: "authentication_group_user_rel",
+    name: "authenticationGroupUserRel",
+    columns: {
+
+        authenticationGroupId: {
+            type: String,
+            primary: true,
+            name: "authenticationgroupid"
+        },
+        userId: {
+            type: String,
+            primary: true,
+            name: "userid"
+        }
     }
-}
+});
+
 
 export default AuthenticationGroupUserRelEntity;

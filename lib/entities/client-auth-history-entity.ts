@@ -1,41 +1,38 @@
-import { Model, DataTypes, Sequelize } from "@sequelize/core";
+import { EntitySchema } from 'typeorm';
 
-class ClientAuthHistoryEntity extends Model {
-    
-    static initModel(sequelize: Sequelize): typeof ClientAuthHistoryEntity {
-        return ClientAuthHistoryEntity.init({
-            jti: {
-                type: DataTypes.STRING,
-                primaryKey: true,
-                columnName: "jti"
-            },
-            clientId: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "clientid"
-            },
-            tenantId: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "tenantid"
-            },
-            expiresAtSeconds: {
-                type: DataTypes.BIGINT,
-                primaryKey: false,
-                allowNull: false,
-				columnName: "expiresatseconds"
-            }
-        }, 
-		{
-            sequelize,
-            tableName: "client_auth_history",
-            modelName: "clientAuthHistory",
-            timestamps: false
-        });
-    }
-}
+const ClientAuthHistoryEntity = new EntitySchema({
+
+
+    columns: {
+        jti: {
+            type: String,
+            primary: true,
+            name: "jti"
+        },
+        clientId: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "clientid"
+        },
+        tenantId: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "tenantid"
+        },
+        expiresAtSeconds: {
+            type: "bigint",
+            primary: false,
+            nullable: false,
+            name: "expiresatseconds"
+        }
+    },
+
+    tableName: "client_auth_history",
+    name: "clientAuthHistory",
+
+});
 
 
 export default ClientAuthHistoryEntity;

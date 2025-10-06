@@ -1,37 +1,36 @@
-import { Model, DataTypes, Sequelize } from "@sequelize/core";
+import { EntitySchema } from 'typeorm';
 
-export class DeletionStatusEntity extends Model {
-    
-    static initModel(sequelize: Sequelize): typeof DeletionStatusEntity {
-        return DeletionStatusEntity.init({
-            markForDeleteId: {
-                type: DataTypes.STRING,
-                primaryKey: true,
-                columnName: "markfordeleteid"
-            },
-            step: {
-                type: DataTypes.STRING,
-                primaryKey: true,
-                allowNull: false,
-                columnName: "step"
-            },
-            startedAt: {
-                type: DataTypes.BIGINT,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "startedat"
-            },
-            completedAt: {
-                type: DataTypes.BIGINT,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "completedat"
-            }
-        }, {
-            sequelize,
-            tableName: "deletion_status",
-            modelName: "deletionStatus",
-            timestamps: false
-        })
-    }
-}
+export const DeletionStatusEntity = new EntitySchema({
+
+
+    columns: {
+        markForDeleteId: {
+            type: String,
+            primary: true,
+            name: "markfordeleteid"
+        },
+        step: {
+            type: String,
+            primary: true,
+            nullable: false,
+            name: "step"
+        },
+        startedAt: {
+            type: "bigint",
+            primary: false,
+            nullable: false,
+            name: "startedat"
+        },
+        completedAt: {
+            type: "bigint",
+            primary: false,
+            nullable: false,
+            name: "completedat"
+        }
+    },
+    tableName: "deletion_status",
+    name: "deletionStatus",
+
+});
+
+export default DeletionStatusEntity;

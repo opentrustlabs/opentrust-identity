@@ -1,41 +1,47 @@
-import { Model, DataTypes, Sequelize } from "@sequelize/core";
+import { EntitySchema } from 'typeorm';
 
-class UserFido2ChallengeEntity extends Model {
-    
-    static initModel(sequelize: Sequelize): typeof UserFido2ChallengeEntity {
-        return UserFido2ChallengeEntity.init({
-            userId: {
-                type: DataTypes.STRING,
-                primaryKey: true,
-                columnName: "userid"
-            },
-            challenge: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "challenge"
-            },
-            issuedAtMs: {
-                type: DataTypes.BIGINT,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "issuedatms"
-            },
-            expiresAtMs: {
-                type: DataTypes.BIGINT,
-                primaryKey: false,
-                allowNull: false,
-				columnName: "expiresatms"
-            }
-        }, 
-		{
-            sequelize,
-            tableName: "user_fido2_challenge",
-            modelName: "userFido2Challenge",
-            timestamps: false
-        });
-    }
+
+export interface UserFido2Challenge {
+    userId: string,
+    challenge: string,
+    issuedAtMs: number,
+    expiresAtMs: number
 }
+
+const UserFido2ChallengeEntity = new EntitySchema({
+
+
+    columns: {
+        userId: {
+            type: String,
+            primary: true,
+            name: "userid"
+        },
+        challenge: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "challenge"
+        },
+        issuedAtMs: {
+            type: "bigint",
+            primary: false,
+            nullable: false,
+            name: "issuedatms"
+        },
+        expiresAtMs: {
+            type: "bigint",
+            primary: false,
+            nullable: false,
+            name: "expiresatms"
+        }
+    },
+
+    tableName: "user_fido2_challenge",
+    name: "userFido2Challenge",
+
+});
+
 
 
 export default UserFido2ChallengeEntity;

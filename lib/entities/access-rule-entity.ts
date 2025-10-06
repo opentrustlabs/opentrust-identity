@@ -1,52 +1,42 @@
-import { Model, DataTypes, Sequelize } from "@sequelize/core";
+import { getBlobTypeForDriver, stringToBlobTransformer } from '@/utils/dao-utils';
+import { EntitySchema } from 'typeorm';
 
-class AccessRuleEntity extends Model {
-    
-    static initModel(sequelize: Sequelize): typeof AccessRuleEntity {
-        return AccessRuleEntity.init({
-            accessRuleId: {
-                type: DataTypes.STRING,
-                primaryKey: true,
-                columnName: "accessruleid"
-            },
-            accessRuleName: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "accessrulename"
-            },
-            scopeAccessRuleSchemaId: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "scopeconstraintschemaid"
-            },
-            accessRuleDefinition: {
-                type: DataTypes.BLOB("long"),
-                primaryKey: false,
-                allowNull: false,
-				columnName: "accessruledefinition",
-                set(val: string | Buffer | null){
-                    if(val === null || val === ""){
-                        this.setDataValue("accessRuleDefinition", null);
-                    }
-                    else if(typeof val === "string"){
-                        this.setDataValue("accessRuleDefinition", Buffer.from(val, "utf-8"));
-                    }
-                    else{
-                        this.setDataValue("accessRuleDefinition", val);
-                    }
-                }
-            }
-        }, 
-		{
-            sequelize,
-            tableName: "access_rule",
-            modelName: "accessRule",
-            timestamps: false
-        });
-    }
-}
+const {
+    RDB_DIALECT
+} = process.env;
+
+const blobType = getBlobTypeForDriver(RDB_DIALECT || "");
+
+const AccessRuleEntity = new EntitySchema({
+    tableName: "access_rule",
+    name: "accessRule",    
+    columns: {
+        accessRuleId: {
+            type: String,
+            primary: true,
+            name: "accessruleid"
+        },
+        accessRuleName: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "accessrulename"
+        },
+        scopeAccessRuleSchemaId: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "scopeconstraintschemaid"
+        },
+        accessRuleDefinition: {
+            type: blobType,
+            primary: false,
+            nullable: false,
+            name: "accessruledefinition",
+            transformer: stringToBlobTransformer()
+        }
+    } 
+});
 
 
 export default AccessRuleEntity;

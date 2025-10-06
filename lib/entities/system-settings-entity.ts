@@ -1,65 +1,63 @@
-import { Model, DataTypes, Sequelize } from "@sequelize/core";
+import { EntitySchema } from 'typeorm';
 
-class SystemSettingsEntity extends Model {
-    
-    static initModel(sequelize: Sequelize): typeof SystemSettingsEntity {
-        return SystemSettingsEntity.init({
-            systemId: {
-                type: DataTypes.STRING,
-                primaryKey: true,
-                columnName: "systemid"
-            },
-            allowRecoveryEmail: {
-                type: DataTypes.BOOLEAN,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "allowrecoveryemail"
-            },
-            allowDuressPassword: {
-                type: DataTypes.BOOLEAN,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "allowduresspassword"
-            },
-            rootClientId: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "rootclientid"
-            },
-            enablePortalAsLegacyIdp: {
-                type: DataTypes.BOOLEAN,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "enableportalaslegacyidp"
-            },
-            auditRecordRetentionPeriodDays: {
-                type: DataTypes.INTEGER,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "auditrecordretentionperioddays"
-            },
-            noReplyEmail: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "noreplyemail"
-            },
-            contactEmail: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "contactemail"
-            },
-        }, 
-        {
-            sequelize,
-            tableName: "system_settings",
-            modelName: "systemSettings",
-            timestamps: false
-        });
-    }
-}
+const SystemSettingsEntity = new EntitySchema({
+
+
+    columns: {
+        systemId: {
+            type: String,
+            primary: true,
+            name: "systemid"
+        },
+        allowRecoveryEmail: {
+            type: "boolean",
+            primary: false,
+            nullable: false,
+            name: "allowrecoveryemail"
+        },
+        allowDuressPassword: {
+            type: "boolean",
+            primary: false,
+            nullable: false,
+            name: "allowduresspassword"
+        },
+        rootClientId: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "rootclientid"
+        },
+        enablePortalAsLegacyIdp: {
+            type: "boolean",
+            primary: false,
+            nullable: false,
+            name: "enableportalaslegacyidp"
+        },
+        auditRecordRetentionPeriodDays: {
+            type: "int",
+            primary: false,
+            nullable: true,
+            name: "auditrecordretentionperioddays"
+        },
+        noReplyEmail: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "noreplyemail"
+        },
+        contactEmail: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "contactemail"
+        },
+    },
+
+    tableName: "system_settings",
+    name: "systemSettings",
+
+});
+
 
 
 export default SystemSettingsEntity;

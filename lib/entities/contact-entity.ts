@@ -1,55 +1,47 @@
-import { Model, DataTypes, Sequelize } from "@sequelize/core";
+import { EntitySchema } from 'typeorm';
 
-class ContactEntity extends Model {
+const ContactEntity = new EntitySchema({
 
-    static initModel(sequelize: Sequelize) {
-        return ContactEntity.init({
-            contactid: {
-                type: DataTypes.STRING,
-                primaryKey: true,
-                columnName: "contactid"
-            },
-            objectid: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                columnName: "objectid",
-                allowNull: false
-            },
-            objecttype: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                columnName: "objecttype",
-                allowNull: false
-            },
-            email: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                columnName: "email",
-                allowNull: false
-            },
-            name: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                columnName: "contactname",
-                allowNull: true
-            },
-            userid: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                columnName: "userid",
-                allowNull: true
-            }
+
+    columns: {
+        contactid: {
+            type: String,
+            primary: true,
+            name: "contactid"
         },
-        {
-            sequelize: sequelize,
-            tableName: "contact",
-            modelName: "contact",
-            timestamps: false
+        objectid: {
+            type: String,
+            primary: false,
+            name: "objectid",
+            nullable: false
+        },
+        objecttype: {
+            type: String,
+            primary: false,
+            name: "objecttype",
+            nullable: false
+        },
+        email: {
+            type: String,
+            primary: false,
+            name: "email",
+            nullable: false
+        },
+        name: {
+            type: String,
+            primary: false,
+            name: "contactname",
+            nullable: true
+        },
+        userid: {
+            type: String,
+            primary: false,
+            name: "userid",
+            nullable: true
         }
-    );
-    }
-    __typename?: "Contact";
-
-}
+    },
+    tableName: "contact",
+    name: "contact",
+});
 
 export default ContactEntity;

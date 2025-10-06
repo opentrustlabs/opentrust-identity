@@ -1,133 +1,132 @@
-import { Model, DataTypes, Sequelize } from "@sequelize/core";;
+import { EntitySchema } from 'typeorm';
 
-export class TenantEntity extends Model {
-    
-    static initModel(sequelize: Sequelize): typeof TenantEntity {
-        return TenantEntity.init({
-            tenantId: {
-                type: DataTypes.STRING,
-                primaryKey: true,
-                columnName: "tenantid"
-            },
-            tenantName: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "tenantname"
-            },
-            tenantDescription: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "tenantdescription"
-            },
-            enabled: {
-                type: DataTypes.BOOLEAN,
-                primaryKey: false,
-                allowNull: false
-            },
-            allowUnlimitedRate: {
-                type: DataTypes.BOOLEAN,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "allowunlimitedrate"
-            },
-            allowUserSelfRegistration: {
-                type: DataTypes.BOOLEAN,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "allowuserselfregistration"
-            },
-            allowAnonymousUsers: {
-                type: DataTypes.BOOLEAN,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "allowanonymoususers"
-            },
-            allowSocialLogin: {
-                type: DataTypes.BOOLEAN,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "allowsociallogin"
-            },
-            verifyEmailOnSelfRegistration: {
-                type: DataTypes.BOOLEAN,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "verifyemailonselfregistration"
-            },
-            federatedAuthenticationConstraint: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "federatedauthenticationconstraint"
-            },
-            markForDelete: {
-                type: DataTypes.BOOLEAN,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "markfordelete"
-            },
-            tenantType: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "tenanttype"
-            },
-            migrateLegacyUsers: {
-                type: DataTypes.BOOLEAN,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "migratelegacyusers"
-            },
-            allowLoginByPhoneNumber: {
-                type: DataTypes.BOOLEAN,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "allowloginbyphonenumber"
-            },
-            allowForgotPassword: {
-                type: DataTypes.BOOLEAN,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "allowforgotpassword"
-            },
-            defaultRateLimit: {
-                type: DataTypes.INTEGER,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "defaultratelimit"
-            },
-            defaultRateLimitPeriodMinutes: {
-                type: DataTypes.INTEGER,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "defaultratelimitperiodminutes"
-            },
-            registrationRequireCaptcha: {
-                type: DataTypes.BOOLEAN,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "registrationrequirecaptcha"
-            },
-            registrationRequireTermsAndConditions: {
-                type: DataTypes.BOOLEAN,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "registrationrequiretermsandconditions"
-            },
-            termsAndConditionsUri: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "termsandconditionsuri"
-            }
-        }, {
-            sequelize,
-            tableName: "tenant",
-            modelName: "tenant",
-            timestamps: false
-        })
-    }
+export const TenantEntity = new EntitySchema({
+    tableName: "tenant",
+    name: "tenant",
 
-}
+    columns: {
+        tenantId: {
+            type: String,
+            primary: true,
+            name: "tenantid"
+        },
+        tenantName: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "tenantname"
+        },
+        tenantDescription: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "tenantdescription"
+        },
+        enabled: {
+            type: "boolean",
+            primary: false,
+            nullable: false
+        },
+        allowUnlimitedRate: {
+            type: "boolean",
+            primary: false,
+            nullable: false,
+            name: "allowunlimitedrate"
+        },
+        allowUserSelfRegistration: {
+            type: "boolean",
+            primary: false,
+            nullable: false,
+            name: "allowuserselfregistration"
+        },
+        allowAnonymousUsers: {
+            type: "boolean",
+            primary: false,
+            nullable: false,
+            name: "allowanonymoususers"
+        },
+        allowSocialLogin: {
+            type: "boolean",
+            primary: false,
+            nullable: false,
+            name: "allowsociallogin"
+        },
+        verifyEmailOnSelfRegistration: {
+            type: "boolean",
+            primary: false,
+            nullable: false,
+            name: "verifyemailonselfregistration"
+        },
+        federatedAuthenticationConstraint: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "federatedauthenticationconstraint"
+        },
+        markForDelete: {
+            type: "boolean",
+            primary: false,
+            nullable: false,
+            name: "markfordelete"
+        },
+        tenantType: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "tenanttype"
+        },
+        migrateLegacyUsers: {
+            type: "boolean",
+            primary: false,
+            nullable: false,
+            name: "migratelegacyusers"
+        },
+        allowLoginByPhoneNumber: {
+            type: "boolean",
+            primary: false,
+            nullable: false,
+            name: "allowloginbyphonenumber"
+        },
+        allowForgotPassword: {
+            type: "boolean",
+            primary: false,
+            nullable: false,
+            name: "allowforgotpassword"
+        },
+        defaultRateLimit: {
+            type: "int",
+            primary: false,
+            nullable: true,
+            name: "defaultratelimit"
+        },
+        defaultRateLimitPeriodMinutes: {
+            type: "int",
+            primary: false,
+            nullable: true,
+            name: "defaultratelimitperiodminutes"
+        },
+        registrationRequireCaptcha: {
+            type: "boolean",
+            primary: false,
+            nullable: false,
+            name: "registrationrequirecaptcha"
+        },
+        registrationRequireTermsAndConditions: {
+            type: "boolean",
+            primary: false,
+            nullable: false,
+            name: "registrationrequiretermsandconditions"
+        },
+        termsAndConditionsUri: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "termsandconditionsuri"
+        }
+    },
+
+
+});
+
+export default TenantEntity;
+

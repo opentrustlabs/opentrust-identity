@@ -1,32 +1,30 @@
-import { Model, DataTypes, Sequelize } from "@sequelize/core";
+import { EntitySchema } from 'typeorm';
 
-class AuthorizationGroupScopeRelEntity extends Model {
+const AuthorizationGroupScopeRelEntity = new EntitySchema({
 
-    static initModel(sequelize: Sequelize): typeof AuthorizationGroupScopeRelEntity {
-        return AuthorizationGroupScopeRelEntity.init({
-            groupId: {
-                type: DataTypes.STRING,
-                primaryKey: true,
-                columnName: "groupid"
-            },
-            scopeId: {
-                type: DataTypes.STRING,
-                primaryKey: true,
-                columnName: "scopeid"
-            },
-            tenantId: {
-                type: DataTypes.STRING,
-                primaryKey: true,
-                columnName: "tenantid"
-            }
-        }, 
-        {
-            sequelize,
-            tableName: "authorization_group_scope_rel",
-            modelName: "authorizationGroupScopeRel",
-            timestamps: false
-        });
-    }    
-}
+
+    columns: {
+        groupId: {
+            type: String,
+            primary: true,
+            name: "groupid"
+        },
+        scopeId: {
+            type: String,
+            primary: true,
+            name: "scopeid"
+        },
+        tenantId: {
+            type: String,
+            primary: true,
+            name: "tenantid"
+        }
+    },
+
+    tableName: "authorization_group_scope_rel",
+    name: "authorizationGroupScopeRel",
+
+});
+
 
 export default AuthorizationGroupScopeRelEntity;

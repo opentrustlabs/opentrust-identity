@@ -1,28 +1,32 @@
-import { Model, DataTypes, Sequelize } from "@sequelize/core";
+import { EntitySchema } from 'typeorm';
 
-class UserAuthenticationHistoryEntity extends Model {
-    
-    static initModel(sequelize: Sequelize): typeof UserAuthenticationHistoryEntity {
-        return UserAuthenticationHistoryEntity.init({
-            userId: {
-                type: DataTypes.STRING,
-                primaryKey: true,
-                columnName: "userid"
-            },
-            lastAuthenticationAtMs: {
-                type: DataTypes.BIGINT,
-                primaryKey: true,
-                columnName: "lastauthenticationatms"
-            }
-        }, 
-        {
-            sequelize,
-            tableName: "user_authentication_history",
-            modelName: "userAuthenticationHistory",
-            timestamps: false
-        });
-    }
+
+export interface UserAuthenticationHistory {
+    userId: string,
+    lastAuthenticationAtMs: number
 }
+
+const UserAuthenticationHistoryEntity = new EntitySchema({
+
+
+    columns: {
+        userId: {
+            type: String,
+            primary: true,
+            name: "userid"
+        },
+        lastAuthenticationAtMs: {
+            type: "bigint",
+            primary: true,
+            name: "lastauthenticationatms"
+        }
+    },
+
+    tableName: "user_authentication_history",
+    name: "userAuthenticationHistory",
+
+});
+
 
 
 export default UserAuthenticationHistoryEntity;
