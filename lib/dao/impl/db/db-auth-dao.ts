@@ -1,6 +1,7 @@
 import { PreAuthenticationState, AuthorizationCodeData, RefreshData, FederatedOidcAuthorizationRel, AuthorizationDeviceCodeData, FederatedAuthTest } from "@/graphql/generated/graphql-types";
 import AuthDao, { AuthorizationCodeType } from "../../auth-dao";
 import RDBDriver from "@/lib/data-sources/rdb";
+import { LessThan } from "typeorm";
 
 class DBAuthDao extends AuthDao {
 
@@ -203,47 +204,34 @@ class DBAuthDao extends AuthDao {
 
     public async deleteExpiredData(): Promise<void>{
 
-        await (await DBDriver.getInstance().getFederatedOIDCAuthorizationRelEntity()).destroy({
-            where: {
-                expiresAtMs: {
-                    [Op.lt]: Date.now()
-                }
-            }
+        const oidcAuthRelRepo = await RDBDriver.getInstance().getFederatedOIDCAuthorizationRelRepository();
+        await oidcAuthRelRepo.delete({
+            expiresAtMs: LessThan(Date.now())
         });
-        await (await DBDriver.getInstance().getPreAuthenticationStateEntity()).destroy({
-            where: {
-                expiresAtMs: {
-                    [Op.lt]: Date.now()
-                }
-            } 
+
+        const preauthStateRepo = await RDBDriver.getInstance().getPreAuthenticationStateRepository();
+        await preauthStateRepo.delete({
+            expiresAtMs: LessThan(Date.now())
         });
-        await (await DBDriver.getInstance().getAuthorizationCodeDataEntity()).destroy({
-            where: {
-                expiresAtMs: {
-                    [Op.lt]: Date.now()
-                }
-            }
-        }); 
-        await (await DBDriver.getInstance().getRefreshDataEntity()).destroy({
-            where: {
-                expiresAtMs: {
-                    [Op.lt]: Date.now()
-                }
-            }
+        
+        const authCodeDataRepo = await RDBDriver.getInstance().getAuthorizationCodeDataRepository();
+        await authCodeDataRepo.delete({
+            expiresAtMs: LessThan(Date.now())
         });
-        await (await DBDriver.getInstance().getAuthorizationDeviceCodeDataEntity()).destroy({
-            where: {
-                expiresAtMs: {
-                    [Op.lt]: Date.now()
-                }
-            }
+        
+        const refreshDataRepo = await RDBDriver.getInstance().getRefreshDataRepository();
+        await refreshDataRepo.delete({
+            expiresAtMs: LessThan(Date.now())
         });
-        await (await DBDriver.getInstance().getFederatedAuthTestEntity()).destroy({
-            where: {
-                expiresAtMs: {
-                    [Op.lt]: Date.now()
-                }
-            }
+        
+        const authDeviceCodeRepo = await RDBDriver.getInstance().getAuthorizationDeviceCodeDataRepository();
+        await authDeviceCodeRepo.delete({
+            expiresAtMs: LessThan(Date.now())
+        });
+        
+        const federatedAuthTestRepo = await RDBDriver.getInstance().getFederatedAuthTestRepository();
+        await federatedAuthTestRepo.delete({
+            expiresAtMs: LessThan(Date.now())
         });
 
     }

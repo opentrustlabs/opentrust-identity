@@ -1,27 +1,22 @@
 import { StateProvinceRegion } from "@/graphql/generated/graphql-types";
 import I18NDao from "../../i18n-dao";
-import DBDriver from "@/lib/data-sources/sequelize-db";
-import { StateProvinceRegionEntity } from "@/lib/entities/state-province-region-entity";
-
-
+import RDBDriver from "@/lib/data-sources/rdb";
 
 class DBI18NDao extends I18NDao {
 
 
     public async getStateProvinceRegions(countryCode: string): Promise<Array<StateProvinceRegion>> {
-        const arr: Array<StateProvinceRegionEntity> = await (await DBDriver.getInstance().getStateProvinceRegionEntity()).findAll({
+        const stateProvinceRegionRepo = await RDBDriver.getInstance().getStateProvinceRegionRepository();
+        const arr = await stateProvinceRegionRepo.find({
             where: {
                 isoCountryCode: countryCode
-            }, 
-            order: [
-                ["isoEntryName", "ASC"]
-            ]
+            },
+            order: {
+                isoEntryName: "ASC"
+            }
         });
-        return arr.map(
-            (e: StateProvinceRegionEntity) => e.dataValues
-        )
+        return arr;
     }
-
 }
 
 export default DBI18NDao;

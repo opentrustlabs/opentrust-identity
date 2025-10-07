@@ -1,77 +1,94 @@
 import { RateLimitServiceGroup, TenantRateLimitRel, TenantRateLimitRelView } from "@/graphql/generated/graphql-types";
 import RateLimitDao from "../../rate-limit-dao";
+import RDBDriver from "@/lib/data-sources/rdb";
+import { DataSource, In } from "typeorm";
 import TenantRateLimitRelEntity from "@/lib/entities/tenant-rate-limit-rel-entity";
-import RateLimitServiceGroupEntity from "@/lib/entities/rate-limit-service-group-entity";
-import DBDriver from "@/lib/data-sources/sequelize-db";
-import { Op, Sequelize } from "@sequelize/core";
+import TenantEntity from "@/lib/entities/tenant-entity";
 
 class DBRateLimitDao extends RateLimitDao {
 
 
     // rateLimitServiceGroup
     public async getRateLimitServiceGroups(tenantId: string | null): Promise<Array<RateLimitServiceGroup>> {
+        const rateLimitServiceGroupRepo = await RDBDriver.getInstance().getRateLimitServiceGroupRepository();
         
         if(tenantId){
             const rels: Array<TenantRateLimitRel> = await this.getRateLimitTenantRel(tenantId, null);
             const ids: Array<string> = rels.map((r: TenantRateLimitRel) => r.servicegroupid);
-
-            const arr: Array<RateLimitServiceGroupEntity> = await (await DBDriver.getInstance().getRateLimitServiceGroupEntity()).findAll({
+            const arr = await rateLimitServiceGroupRepo.find({
                 where: {
-                    servicegroupid: { [Op.in]: ids}
+                    servicegroupid: In(ids)
                 },
-                order: [
-                    ["servicegroupname", "ASC"]
-                ]            
+                order: {
+                    servicegroupname: "ASC"
+                }
             });
-            return arr.map((entity: RateLimitServiceGroupEntity) => entity.dataValues);
+            return arr;
         }
         else{
-            const arr: Array<RateLimitServiceGroupEntity> = await (await DBDriver.getInstance().getRateLimitServiceGroupEntity()).findAll({
-                order: [
-                    ["servicegroupname", "ASC"]
-                ]
+            const arr = await rateLimitServiceGroupRepo.find({
+                order: {
+                    servicegroupname: "ASC"
+                }
             });
-            return arr.map((entity: RateLimitServiceGroupEntity) => entity.dataValues);
+            return arr;
         }
     }
 
     public async getRateLimitServiceGroupById(serviceGroupId: string): Promise<RateLimitServiceGroup | null> {
-        const r: RateLimitServiceGroupEntity | null = await (await DBDriver.getInstance().getRateLimitServiceGroupEntity()).findByPk(serviceGroupId);
-        return r ? Promise.resolve(r.dataValues as RateLimitServiceGroup) : Promise.resolve(null);
+        const rateLimitServiceGroupRepo = await RDBDriver.getInstance().getRateLimitServiceGroupRepository();
+        const result = await rateLimitServiceGroupRepo.findOne({
+            where: {
+                servicegroupid: serviceGroupId
+            }
+        });
+        return result;
     }
 
     public async getRateLimitTenantRelViews(rateLimitServiceGroupId: string | null, tenantId: string | null): Promise<Array<TenantRateLimitRelView>> {
-        const sequelize: Sequelize = await DBDriver.getConnection();
-        const whereClauses = [];
+
+        const d: DataSource = await RDBDriver.getConnection();
+        let q = d
+            .createQueryBuilder(TenantRateLimitRelEntity, "tenantRateLimitRel")
+            .innerJoin("tenant", "tenant", "tenant.tenantId = tenantRateLimitRel.tenantId")
+            .innerJoin("rate_limit_service_group", "rateLimitServiceGroup", "rateLimitServiceGroup.servicegroupid = tenantRateLimitRel.servicegroupid");
+        
+        
+
+
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const whereClauses: Array<{queryString: string, vars: any}> = [];
+        
         const bindVars: any = {};
         if(rateLimitServiceGroupId){
-            whereClauses.push("tenant_rate_limit_rel.servicegroupid = $servicegroupid");
-            bindVars.servicegroupid = rateLimitServiceGroupId;
+            whereClauses.push({
+                queryString: "tenantRateLimitRel.servicegroupid = :servicegroupid",
+                vars: {servicegroupid: rateLimitServiceGroupId}
+            });
         }
         if(tenantId){
-            whereClauses.push("tenant.tenantid = $tenantid");
-            bindVars.tenantid = tenantId;
+            whereClauses.push({
+                queryString: "tenant.tenantId = :tenantId",
+                vars: {tenantId: tenantId}
+            });
         }
-        let where = "";
         if(whereClauses.length > 0){
-            where = `WHERE ${whereClauses.join(" AND ")}`
-        }
-
-        const [resultList] = await sequelize.query(
-            "select tenant_rate_limit_rel.*, tenant.tenantname, rate_limit_service_group.servicegroupname " +
-            "    FROM tenant_rate_limit_rel " + 
-            "    INNER JOIN tenant ON tenant_rate_limit_rel.tenantid = tenant.tenantid " +
-            "    INNER JOIN rate_limit_service_group ON tenant_rate_limit_rel.servicegroupid = rate_limit_service_group.servicegroupid " + 
-            where +
-            "    ORDER BY tenant.tenantname ASC, rate_limit_service_group.servicegroupname ASC ",
-            {
-                bind: bindVars
+            const first = whereClauses[0];            
+            q = q.where(first.queryString, first.vars);
+            if(whereClauses.length > 1){
+                const second = whereClauses[1];
+                q = q.andWhere(second.queryString, second.vars);
             }
-        );
+        }
+        q = q.select([
+            "tenantRateLimitRel.*",
+            "tenant.tenantName",
+            "rateLimitServiceGroup.servicegroupname"
+        ]);
+
+        const rawResults = await q.getRawMany();
         
-        
-        return resultList.map(            
+        return rawResults.map(            
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (item: any) => {
                 const view: TenantRateLimitRelView = {
@@ -90,31 +107,33 @@ class DBRateLimitDao extends RateLimitDao {
 
     
     public async createRateLimitServiceGroup(rateLimitServiceGroup: RateLimitServiceGroup): Promise<RateLimitServiceGroup> {
-        await (await DBDriver.getInstance().getRateLimitServiceGroupEntity()).create(rateLimitServiceGroup);        
+        const rateLimitServiceGroupRepo = await RDBDriver.getInstance().getRateLimitServiceGroupRepository();
+        await rateLimitServiceGroupRepo.insert(rateLimitServiceGroup);
         return Promise.resolve(rateLimitServiceGroup);
         
     }
 
     public async updateRateLimitServiceGroup(rateLimitServiceGroup: RateLimitServiceGroup): Promise<RateLimitServiceGroup> {
-        await (await DBDriver.getInstance().getRateLimitServiceGroupEntity()).update(rateLimitServiceGroup, {
-            where: {
+        const rateLimitServiceGroupRepo = await RDBDriver.getInstance().getRateLimitServiceGroupRepository();
+        await rateLimitServiceGroupRepo.update(
+            {
                 servicegroupid: rateLimitServiceGroup.servicegroupid
-            }
-        });
+            },
+            rateLimitServiceGroup
+        );
         return Promise.resolve(rateLimitServiceGroup);
     }
 
     public async deleteRateLimitServiceGroup(serviceGroupId: string): Promise<void> {
-        await (await DBDriver.getInstance().getTenantRateLimitRelEntity()).destroy({
-            where: {
-                servicegroupid: serviceGroupId
-            }
+
+        const serviceGroupTenantRelRepo = await RDBDriver.getInstance().getTenantRateLimitRelRepository();
+        await serviceGroupTenantRelRepo.delete({
+            servicegroupid: serviceGroupId
         });
 
-        await (await DBDriver.getInstance().getRateLimitServiceGroupEntity()).destroy({
-            where: {
-                servicegroupid: serviceGroupId
-            }
+        const rateLimitServiceGroupRepo = await RDBDriver.getInstance().getRateLimitServiceGroupRepository();
+        await rateLimitServiceGroupRepo.delete({
+            servicegroupid: serviceGroupId
         });
 
         return Promise.resolve();
@@ -131,17 +150,19 @@ class DBRateLimitDao extends RateLimitDao {
         if(rateLimitServiceGroupId){
             where.servicegroupid = rateLimitServiceGroupId
         }
-        const entities: Array<TenantRateLimitRelEntity> = await (await DBDriver.getInstance().getTenantRateLimitRelEntity()).findAll({
+        const serviceGroupTenantRelRepo = await RDBDriver.getInstance().getTenantRateLimitRelRepository();
+        const results = await serviceGroupTenantRelRepo.find({
             where: where
         });
-        const retVal = entities.map(
-            (entity: TenantRateLimitRelEntity) => {
+        
+        const retVal = results.map(
+            (entity: TenantRateLimitRel) => {
                 return {
-                    allowUnlimitedRate: entity.getDataValue("allowUnlimitedRate"),
-                    rateLimit: entity.getDataValue("rateLimit"),
-                    rateLimitPeriodMinutes: entity.getDataValue("rateLimitPeriodMinutes"),
-                    servicegroupid: entity.getDataValue("servicegroupid"),
-                    tenantId: entity.getDataValue("tenantId"),
+                    allowUnlimitedRate: entity.allowUnlimitedRate,
+                    rateLimit: entity.rateLimit,
+                    rateLimitPeriodMinutes: entity.rateLimitPeriodMinutes,
+                    servicegroupid: entity.servicegroupid,
+                    tenantId: entity.tenantId,
                     tenantName: ""
                 }
             }
@@ -152,6 +173,7 @@ class DBRateLimitDao extends RateLimitDao {
 
     public async assignRateLimitToTenant(tenantId: string, serviceGroupId: string, allowUnlimited: boolean, limit: number, rateLimitPeriodMinutes: number): Promise<TenantRateLimitRel> {
 
+        const serviceGroupTenantRelRepo = await RDBDriver.getInstance().getTenantRateLimitRelRepository();
         const tenantRateLimitRel: TenantRateLimitRel = {
             servicegroupid: serviceGroupId,
             allowUnlimitedRate: allowUnlimited,
@@ -159,13 +181,12 @@ class DBRateLimitDao extends RateLimitDao {
             rateLimit: limit,
             rateLimitPeriodMinutes
         };
-        await (await DBDriver.getInstance().getTenantRateLimitRelEntity()).create(tenantRateLimitRel);
-        
+        await serviceGroupTenantRelRepo.insert(tenantRateLimitRel);        
         return Promise.resolve(tenantRateLimitRel);
     }
     
     public async updateRateLimitForTenant(tenantId: string, serviceGroupId: string, allowUnlimited: boolean, limit: number, rateLimitPeriodMinutes: number): Promise<TenantRateLimitRel> {
-
+        const serviceGroupTenantRelRepo = await RDBDriver.getInstance().getTenantRateLimitRelRepository();
         const tenantRateLimitRel: TenantRateLimitRel = {
             servicegroupid: serviceGroupId,
             allowUnlimitedRate: allowUnlimited,
@@ -173,22 +194,20 @@ class DBRateLimitDao extends RateLimitDao {
             rateLimit: limit,
             rateLimitPeriodMinutes
         };
-        await (await DBDriver.getInstance().getTenantRateLimitRelEntity()).update(tenantRateLimitRel, {
-            where: {
-                servicegroupid: serviceGroupId,
-                tenantId: tenantId
-            }
-        });
+        await serviceGroupTenantRelRepo.update(
+            {
+                servicegroupid: serviceGroupId
+            },
+            tenantRateLimitRel
+        );
         return Promise.resolve(tenantRateLimitRel);
     }
 
     public async removeRateLimitFromTenant(tenantId: string, serviceGroupId: string): Promise<void> {
-
-        await (await DBDriver.getInstance().getTenantRateLimitRelEntity()).destroy({
-            where: {
-                tenantId: tenantId,
-                servicegroupid: serviceGroupId
-            }
+        const serviceGroupTenantRelRepo = await RDBDriver.getInstance().getTenantRateLimitRelRepository();
+        await serviceGroupTenantRelRepo.delete({
+            tenantId: tenantId,
+            servicegroupid: serviceGroupId
         });
         return Promise.resolve();
     }    

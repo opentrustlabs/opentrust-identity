@@ -1,55 +1,60 @@
 import { EntitySchema } from 'typeorm';
+import { getBlobTypeForDriver, stringToBlobTransformer } from '@/utils/dao-utils';
 
-const CaptchaConfigEntity = new EntitySchema({
+const {
+    RDB_DIALECT
+} = process.env;
 
+const blobType = getBlobTypeForDriver(RDB_DIALECT || "");
+
+const ChangeEventEntity = new EntitySchema({
+
+    tableName: "change_event",
+    name: "changeEvent",
     columns: {
-        alias: {
+        changeEventId: {
             type: String,
             primary: true,
-            name: "alias"
+            name: "changeeventid"
         },
-        projectId: {
+        objectId: {
             type: String,
-            primary: false,
-            nullable: true,
-            name: "projectid"
+            primary: true,
+            name: "objectid"
         },
-        siteKey: {
-            type: String,
-            primary: false,
-            nullable: false,
-            name: "sitekey"
-        },
-        apiKey: {
+        changeEventconst: {
             type: String,
             primary: false,
             nullable: false,
-            name: "apikey"
+            name: "changeeventconst"
         },
-        minScoreThreshold: {
-            type: "float",
-            primary: false,
-            nullable: true,
-            name: "minscorethreshold"
-        },
-        useCaptchaV3: {
-            type: "boolean",
+        changeEventType: {
+            type: String,
             primary: false,
             nullable: false,
-            name: "userecaptchav3"
+            name: "changeeventtype"
         },
-        useEnterpriseCaptcha: {
-            type: "boolean",
+        changeTimestamp: {
+            type: "bigint",
             primary: false,
             nullable: false,
-            name: "useenterprisecaptcha"
+            name: "changetimestamp"
+        },
+        changedBy: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "changedby"
+        },
+        data: {
+            type: blobType,
+            primary: false,
+            nullable: false,
+            name: "accessruledefinition",
+            transformer: stringToBlobTransformer()
         }
-    },
-
-    tableName: "captcha_config",
-    name: "captchaConfig",
-
+    }
 });
 
 
-export default CaptchaConfigEntity;
+export default ChangeEventEntity;
