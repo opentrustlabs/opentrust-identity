@@ -78,6 +78,11 @@ class DBAuthorizationGroupDao extends AuthorizationGroupDao {
                 },
                 take: 1000
             });
+            if(userRels.length === 0){
+                hasMoreRecords = false;
+                break;
+            }
+
             const conditions = userRels.map(
                 (rel: AuthorizationGroupUserRel) => {
                     return {
@@ -119,13 +124,7 @@ class DBAuthorizationGroupDao extends AuthorizationGroupDao {
                         }
                     )
                 )
-                .execute();
-
-            
-            if(userRels.length < 1000){
-                hasMoreRecords = false;
-                break;
-            }
+                .execute();            
         }
         
         const authzGroupRepo = await RDBDriver.getInstance().getAuthorizationGroupRepository();

@@ -126,6 +126,10 @@ class DBAuthenticationGroupDao extends AuthenticationGroupDao {
                 },
                 take: 1000
             });
+            if(userRels.length === 0){
+                hasMoreRecords = false;
+                break;
+            } 
             const conditions = userRels.map(
                 (rel: AuthenticationGroupUserRel) => {
                     return {
@@ -168,11 +172,7 @@ class DBAuthenticationGroupDao extends AuthenticationGroupDao {
                     )
                 )
                 .execute();
-           
-            if(userRels.length < 1000){
-                hasMoreRecords = false;
-                break;
-            }            
+                       
         }
 
         const authnGroupRepo = await RDBDriver.getInstance().getAuthenticationGroupRepository();
