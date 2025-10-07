@@ -54,12 +54,12 @@ import UserEmailRecoveryEntity, { UserEmailRecovery } from "../entities/user-ema
 import SystemSettingsEntity from "../entities/system-settings-entity";
 import AuthorizationDeviceCodeDataEntity from "../entities/authorization-device-code-data-entity";
 import SecretShareEntity from "../entities/secret-share-entity";
-import UserProfileChangeEmailStateEntity, { UserProfileChangeEmailState } from "../entities/user-profile-email-change-state-entity";
+import UserProfileChangeEmailStateEntity from "../entities/user-profile-email-change-state-entity";
 import UserAuthenticationHistoryEntity, { UserAuthenticationHistory } from "../entities/user-authentication-history-entity";
 import FederatedAuthTestEntity from "../entities/federated-auth-test-entity";
 import { RDB_SUPPORTED_DIALECTS } from "@/utils/consts";
 import { DataSource, Repository } from "typeorm";
-import { AccessRule, AuthenticationGroup, AuthenticationGroupClientRel, AuthenticationGroupUserRel, AuthorizationCodeData, AuthorizationDeviceCodeData, AuthorizationGroup, AuthorizationGroupScopeRel, AuthorizationGroupUserRel, CaptchaConfig, ChangeEvent, Client, ClientAuthHistory, ClientScopeRel, Contact, DeletionStatus, FederatedAuthTest, FederatedOidcAuthorizationRel, FederatedOidcProvider, FederatedOidcProviderDomainRel, FederatedOidcProviderTenantRel, MarkForDelete, PreAuthenticationState, RateLimitServiceGroup, RefreshData, SchedulerLock, Scope, SecretShare, SigningKey, StateProvinceRegion, SystemSettings, Tenant, TenantAnonymousUserConfiguration, TenantAvailableScope, TenantLegacyUserMigrationConfig, TenantLoginFailurePolicy, TenantLookAndFeel, TenantManagementDomainRel, TenantPasswordConfig, TenantRateLimitRel, TenantRestrictedAuthenticationDomainRel, User, UserAuthenticationState, UserCredential, UserFailedLogin, UserMfaRel, UserRegistrationState, UserScopeRel, UserTenantRel, UserTermsAndConditionsAccepted } from "@/graphql/generated/graphql-types";
+import { AccessRule, AuthenticationGroup, AuthenticationGroupClientRel, AuthenticationGroupUserRel, AuthorizationCodeData, AuthorizationDeviceCodeData, AuthorizationGroup, AuthorizationGroupScopeRel, AuthorizationGroupUserRel, CaptchaConfig, ChangeEvent, Client, ClientAuthHistory, ClientScopeRel, Contact, DeletionStatus, FederatedAuthTest, FederatedOidcAuthorizationRel, FederatedOidcProvider, FederatedOidcProviderDomainRel, FederatedOidcProviderTenantRel, MarkForDelete, PreAuthenticationState, ProfileEmailChangeState, RateLimitServiceGroup, RefreshData, SchedulerLock, Scope, SecretShare, SigningKey, StateProvinceRegion, SystemSettings, Tenant, TenantAnonymousUserConfiguration, TenantAvailableScope, TenantLegacyUserMigrationConfig, TenantLoginFailurePolicy, TenantLookAndFeel, TenantManagementDomainRel, TenantPasswordConfig, TenantRateLimitRel, TenantRestrictedAuthenticationDomainRel, User, UserAuthenticationState, UserCredential, UserFailedLogin, UserMfaRel, UserRegistrationState, UserScopeRel, UserTenantRel, UserTermsAndConditionsAccepted } from "@/graphql/generated/graphql-types";
 
 
 
@@ -206,7 +206,7 @@ class RDBDriver {
     userEmailRecoveryRepository: Repository<UserEmailRecovery>;
     authorizationDeviceCodeDataRepository: Repository<AuthorizationDeviceCodeData>;
     secretShareRepository: Repository<SecretShare>;
-    userProfileChangeEmailStateRepository: Repository<UserProfileChangeEmailState>;
+    userProfileChangeEmailStateRepository: Repository<ProfileEmailChangeState>;
     userAuthenticationHistoryRepository: Repository<UserAuthenticationHistory>;
     federatedAuthTestRepository: Repository<FederatedAuthTest>;
     contactRepository: Repository<Contact>;
@@ -723,7 +723,7 @@ public async getUserCredentialRepository(): Promise<Repository<UserCredential>> 
         }
         return RDBDriver.instance.secretShareRepository;
     }
-    public async getUserProfileChangeEmailStateRepository(): Promise<Repository<UserProfileChangeEmailState>> {
+    public async getUserProfileChangeEmailStateRepository(): Promise<Repository<ProfileEmailChangeState>> {
         if (!RDBDriver.instance.userProfileChangeEmailStateRepository) {
             const driver = await RDBDriver.getConnection();
             RDBDriver.instance.userProfileChangeEmailStateRepository = driver.getRepository("userProfileChangeEmailState");

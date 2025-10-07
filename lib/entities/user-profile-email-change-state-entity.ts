@@ -1,17 +1,6 @@
 import { EntitySchema } from 'typeorm';
 
 
-export interface UserProfileChangeEmailState {
-    userId: string,
-    changeEmailSessionToken: string,
-    emailChangeState: string,
-    email: string,
-    changeOrder: number,
-    changeStateStatus: string,
-    expiresAtMs: number,
-    isPrimaryEmail: boolean
-}
-
 const UserProfileChangeEmailStateEntity = new EntitySchema({
 
 
