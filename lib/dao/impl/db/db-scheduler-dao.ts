@@ -1,76 +1,74 @@
 import { SchedulerLock } from "@/graphql/generated/graphql-types";
 import SchedulerDao from "../../scheduler-dao";
-import DBDriver from "@/lib/data-sources/sequelize-db";
-import { Op } from "@sequelize/core";
-import SchedulerLockEntity from "@/lib/entities/scheduler-lock-entity";
+import RDBDriver from "@/lib/data-sources/rdb";
+import { LessThan } from "typeorm";
 
 class DBSchedulerDao extends SchedulerDao {
 
     public async getSchedulerLocks(limit: number): Promise<Array<SchedulerLock>>{
-        
-        const arr: Array<SchedulerLockEntity> = await (await DBDriver.getInstance().getSchedulerLockEntity()).findAll({            
-            order: ["lockStartTimeMS"],
-            limit: limit
+        const schedulerRepo = await RDBDriver.getInstance().getSchedulerLockRepository();
+        const arr = await schedulerRepo.find({
+            order: {
+                lockStartTimeMS: "ASC"
+            },
+            take: limit
         });
-        return arr.map((entity: SchedulerLockEntity) => entity.dataValues);
+        return arr;
     }
 
     public async getSchedulerLocksByName(lockName: string): Promise<Array<SchedulerLock>> {
-        
-        const arr: Array<SchedulerLockEntity> = await (await DBDriver.getInstance().getSchedulerLockEntity()).findAll({
+        const schedulerRepo = await RDBDriver.getInstance().getSchedulerLockRepository();
+        const arr = await schedulerRepo.find({
             where: {
                 lockName: lockName
             },
-            order: ["lockStartTimeMS"]
+            order: {
+                lockStartTimeMS: "ASC"
+            }
         });
-        return arr.map((entity: SchedulerLockEntity) => entity.dataValues);
+        return arr;
     }
 
     public async getSchedulerLockByInstanceId(lockInstanceId: string): Promise<SchedulerLock | null>{
-        
-        const e: SchedulerLockEntity | null = await (await DBDriver.getInstance().getSchedulerLockEntity()).findOne({
+        const schedulerRepo = await RDBDriver.getInstance().getSchedulerLockRepository();
+        const result = await schedulerRepo.findOne({
             where: {
                 lockInstanceId: lockInstanceId
             }
         });
-        return e ? e.dataValues as SchedulerLock : null;
+        return result;
     }
 
     public async createSchedulerLock(lock: SchedulerLock): Promise<SchedulerLock> {
-        
-        await (await DBDriver.getInstance().getSchedulerLockEntity()).create(lock);
+        const schedulerRepo = await RDBDriver.getInstance().getSchedulerLockRepository();
+        await schedulerRepo.insert(lock);
         return lock;
     }
 
     public async updateSchedulerLock(lock: SchedulerLock): Promise<SchedulerLock> {
-        
-        await (await DBDriver.getInstance().getSchedulerLockEntity()).update(lock, {
-            where: {
+        const schedulerRepo = await RDBDriver.getInstance().getSchedulerLockRepository();
+        await schedulerRepo.update(
+            {
                 lockInstanceId: lock.lockInstanceId,
                 lockName: lock.lockName
-            }
-        });
+            },
+            lock
+        );
         return lock;
     }
 
     public async deleteSchedulerLock(lockInstanceId: string): Promise<void> {
-
-        await (await DBDriver.getInstance().getSchedulerLockEntity()).destroy({
-            where: {
-                lockInstanceId: lockInstanceId
-            }
+        const schedulerRepo = await RDBDriver.getInstance().getSchedulerLockRepository();
+        await schedulerRepo.delete({
+            lockInstanceId: lockInstanceId
         });
         return Promise.resolve();
     }
 
     public async deleteExpiredData(): Promise<void> {
-
-        await (await DBDriver.getInstance().getSchedulerLockEntity()).destroy({
-            where: {
-                lockExpiresAtMS: {
-                    [Op.lt]: Date.now()
-                }
-            }
+        const schedulerRepo = await RDBDriver.getInstance().getSchedulerLockRepository();
+        await schedulerRepo.delete({
+            lockExpiresAtMS: LessThan(Date.now())
         });
     }
     

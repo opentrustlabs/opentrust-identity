@@ -1,8 +1,7 @@
 import { EntitySchema } from 'typeorm';
 
 const ClientAuthHistoryEntity = new EntitySchema({
-
-
+    
     columns: {
         jti: {
             type: String,
