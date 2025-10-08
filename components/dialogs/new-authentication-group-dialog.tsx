@@ -104,8 +104,8 @@ const NewAuthenticationGroupDialog: React.FC<NewAuthenticationGroupDialogProps> 
                                 />
                             </Grid2>
                             <Grid2 size={12} container marginBottom={"8px"}>
-                                <Grid2 alignContent={"center"} size={10}>Default</Grid2>
-                                <Grid2 size={2}>
+                                <Grid2 alignContent={"center"} size={11}>Default</Grid2>
+                                <Grid2 size={1}>
                                     <Checkbox 
                                         checked={authnGroupInput.defaultGroup}
                                         onChange={(_, checked) => {authnGroupInput.defaultGroup = checked; setAuthnGroupInput({...authnGroupInput})}}
