@@ -11,7 +11,7 @@ class DBSigningKeysDao extends SigningKeysDao {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const queryParams: any = {};
         if(tenantId){
-            queryParams.tenantid = tenantId;
+            queryParams.tenantId = tenantId;
         }
         
         const signingKeysRepo = await RDBDriver.getInstance().getSigningKeyRepository();

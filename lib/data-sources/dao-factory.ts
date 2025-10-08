@@ -109,7 +109,7 @@ class DaoFactory {
         if(DaoFactory.instance.changeEventDao){
             return DaoFactory.instance.changeEventDao;
         }
-        if(daoStrategy === "filesystem"){
+        if(daoStrategy === "rdb"){
             DaoFactory.instance.changeEventDao = new DBChangeEventDao();
             return DaoFactory.instance.changeEventDao;
         }
@@ -118,7 +118,7 @@ class DaoFactory {
             return DaoFactory.instance.changeEventDao;
         }
         else {
-            throw new Error("ERROR_KMS_STRATEGY_NOT_IMPLEMENTED");
+            throw new Error("ERROR_DAO_STRATEGY_NOT_DEFINED");
         }
     }
 
@@ -387,7 +387,7 @@ class DaoFactory {
             return DaoFactory.instance.secretShareDao;
         }
         else {
-            throw new Error("ERROR_KMS_STRATEGY_NOT_IMPLEMENTED");
+            throw new Error("ERROR_DAO_STRATEGY_NOT_DEFINED");
         }
     }
 

@@ -418,7 +418,7 @@ class RDBDriver {
     public async getFederatedOIDCAuthorizationRelRepository(): Promise<Repository<FederatedOidcAuthorizationRel>> {
         if (!RDBDriver.instance.federatedOIDCAuthorizationRelRepository) {
             const driver = await RDBDriver.getConnection();
-            RDBDriver.instance.federatedOIDCAuthorizationRelRepository = driver.getRepository("federatedOIDCAuthorizationRel");
+            RDBDriver.instance.federatedOIDCAuthorizationRelRepository = driver.getRepository("federatedOidcAuthorizationRel");
         }
         return RDBDriver.instance.federatedOIDCAuthorizationRelRepository;
     }
@@ -495,21 +495,21 @@ class RDBDriver {
     public async getFederatedOIDCProviderTenantRelRepository(): Promise<Repository<FederatedOidcProviderTenantRel>> {
         if (!RDBDriver.instance.federatedOIDCProviderTenantRelRepository) {
             const driver = await RDBDriver.getConnection();
-            RDBDriver.instance.federatedOIDCProviderTenantRelRepository = driver.getRepository("federatedOIDCProviderTenantRel");
+            RDBDriver.instance.federatedOIDCProviderTenantRelRepository = driver.getRepository("federatedOidcProviderTenantRel");
         }
         return RDBDriver.instance.federatedOIDCProviderTenantRelRepository;
     }
     public async getFederatedOIDCProviderRepository(): Promise<Repository<FederatedOidcProvider>> {
         if (!RDBDriver.instance.federatedOIDCProviderRepository) {
             const driver = await RDBDriver.getConnection();
-            RDBDriver.instance.federatedOIDCProviderRepository = driver.getRepository("federatedOIDCProvider");
+            RDBDriver.instance.federatedOIDCProviderRepository = driver.getRepository("federatedOidcProvider");
         }
         return RDBDriver.instance.federatedOIDCProviderRepository;
     }
     public async getFederatedOIDCProviderDomainRelRepository(): Promise<Repository<FederatedOidcProviderDomainRel>> {
         if (!RDBDriver.instance.federatedOIDCProviderDomainRelRepository) {
             const driver = await RDBDriver.getConnection();
-            RDBDriver.instance.federatedOIDCProviderDomainRelRepository = driver.getRepository("federatedOIDCProviderDomainRel");
+            RDBDriver.instance.federatedOIDCProviderDomainRelRepository = driver.getRepository("federatedOidcProviderDomainRel");
         }
         return RDBDriver.instance.federatedOIDCProviderDomainRelRepository;
     }
@@ -726,7 +726,7 @@ public async getUserCredentialRepository(): Promise<Repository<UserCredential>> 
     public async getUserProfileChangeEmailStateRepository(): Promise<Repository<ProfileEmailChangeState>> {
         if (!RDBDriver.instance.userProfileChangeEmailStateRepository) {
             const driver = await RDBDriver.getConnection();
-            RDBDriver.instance.userProfileChangeEmailStateRepository = driver.getRepository("userProfileChangeEmailState");
+            RDBDriver.instance.userProfileChangeEmailStateRepository = driver.getRepository("userProfileEmailChangeState");
         }
         return RDBDriver.instance.userProfileChangeEmailStateRepository;
     }

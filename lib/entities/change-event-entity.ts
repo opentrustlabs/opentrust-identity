@@ -22,11 +22,11 @@ const ChangeEventEntity = new EntitySchema({
             primary: true,
             name: "objectid"
         },
-        changeEventconst: {
+        changeEventClass: {
             type: String,
             primary: false,
             nullable: false,
-            name: "changeeventconst"
+            name: "changeeventclass"
         },
         changeEventType: {
             type: String,
@@ -50,7 +50,7 @@ const ChangeEventEntity = new EntitySchema({
             type: blobType,
             primary: false,
             nullable: false,
-            name: "accessruledefinition",
+            name: "data",
             transformer: stringToBlobTransformer()
         }
     }

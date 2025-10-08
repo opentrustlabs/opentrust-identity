@@ -1,4 +1,3 @@
-import { isArray } from '@apollo/client/utilities';
 import { EntitySchema } from 'typeorm';
 
 const FederatedOIDCProviderEntity = new EntitySchema({
