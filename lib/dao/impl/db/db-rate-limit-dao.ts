@@ -59,7 +59,6 @@ class DBRateLimitDao extends RateLimitDao {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const whereClauses: Array<{queryString: string, vars: any}> = [];
         
-        const bindVars: any = {};
         if(rateLimitServiceGroupId){
             whereClauses.push({
                 queryString: "tenantRateLimitRel.servicegroupid = :servicegroupid",
@@ -82,10 +81,10 @@ class DBRateLimitDao extends RateLimitDao {
         }
         q = q.select([
             "tenantRateLimitRel.*",
-            "tenant.tenantName",
-            "rateLimitServiceGroup.servicegroupname"
+            "tenant.tenantName as tenantname",
+            "rateLimitServiceGroup.servicegroupname as servicegroupname"
         ]);
-
+        q = q.orderBy("tenantname", "ASC");
         const rawResults = await q.getRawMany();
         
         return rawResults.map(            
@@ -196,7 +195,8 @@ class DBRateLimitDao extends RateLimitDao {
         };
         await serviceGroupTenantRelRepo.update(
             {
-                servicegroupid: serviceGroupId
+                servicegroupid: serviceGroupId,
+                tenantId: tenantId
             },
             tenantRateLimitRel
         );

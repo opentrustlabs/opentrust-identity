@@ -804,7 +804,6 @@ class TenantService {
         if(!authResult.isAuthorized){
             throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
         }
-        
         const client: Client | null = await clientDao.getClientById(systemSettingsUpdateInput.rootClientId);
         if(client === null){
             throw new GraphQLError(ERROR_CODES.EC00093.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00093}});
@@ -817,7 +816,6 @@ class TenantService {
             throw new GraphQLError(ERROR_CODES.EC00094.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00094}});
         }
         
-
         if(systemSettingsUpdateInput.auditRecordRetentionPeriodDays){
             if(systemSettingsUpdateInput.auditRecordRetentionPeriodDays < 1){
                 throw new GraphQLError(ERROR_CODES.EC00186.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00186}});
@@ -850,7 +848,6 @@ class TenantService {
             changeTimestamp: Date.now(),
             data: JSON.stringify(systemSettingsUpdateInput)
         });
-        
         return systemSettings;
     }
 

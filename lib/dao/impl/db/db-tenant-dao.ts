@@ -580,17 +580,38 @@ class DBTenantDao extends TenantDao {
     public async updateSystemSettings(systemSettings: SystemSettings): Promise<SystemSettings> {
         const systemSettingsRepo = await RDBDriver.getInstance().getSystemSettingsRepository();
 
-        const arr: Array<SystemSettings> = await systemSettingsRepo.find();
-        if(arr && arr.length > 0){            
+        const arr = await systemSettingsRepo.find();
+        if(arr && arr.length > 0){         
             await systemSettingsRepo.update(
                 {
                     systemId: systemSettings.systemId
-                }, 
-                systemSettings
+                },
+                {
+                    systemId: systemSettings.systemId,
+                    allowRecoveryEmail: systemSettings.allowRecoveryEmail,
+                    allowDuressPassword: systemSettings.allowDuressPassword,
+                    rootClientId: systemSettings.rootClientId,
+                    enablePortalAsLegacyIdp: systemSettings.enablePortalAsLegacyIdp,
+                    auditRecordRetentionPeriodDays: systemSettings.auditRecordRetentionPeriodDays ? systemSettings.auditRecordRetentionPeriodDays : DEFAULT_AUDIT_RECORD_RETENTION_PERIOD_DAYS,
+                    contactEmail: systemSettings.contactEmail,
+                    noReplyEmail: systemSettings.noReplyEmail,
+                } 
             );
         }
         else{
-            await systemSettingsRepo.insert(systemSettings);
+            await systemSettingsRepo.insert(
+                {
+                    systemId: systemSettings.systemId,
+                    allowRecoveryEmail: systemSettings.allowRecoveryEmail,
+                    allowDuressPassword: systemSettings.allowDuressPassword,
+                    rootClientId: systemSettings.rootClientId,
+                    enablePortalAsLegacyIdp: systemSettings.enablePortalAsLegacyIdp,
+                    auditRecordRetentionPeriodDays: systemSettings.auditRecordRetentionPeriodDays ? systemSettings.auditRecordRetentionPeriodDays : DEFAULT_AUDIT_RECORD_RETENTION_PERIOD_DAYS,
+                    contactEmail: systemSettings.contactEmail,
+                    noReplyEmail: systemSettings.noReplyEmail,
+                } 
+            );
+            
         }        
         return systemSettings;        
     }
