@@ -1,5 +1,9 @@
 import { EntitySchema } from 'typeorm';
+import { getBigIntTypeForDriver } from '@/utils/dao-utils';
 
+const {
+    RDB_DIALECT
+} = process.env;
 
 export interface UserDuressCredential {
     userId: string,
@@ -10,8 +14,6 @@ export interface UserDuressCredential {
 }
 
 const UserDuressCredentialEntity = new EntitySchema({
-
-
     columns: {
         userId: {
             type: String,
@@ -19,7 +21,7 @@ const UserDuressCredentialEntity = new EntitySchema({
             name: "userid"
         },
         dateCreatedMs: {
-            type: "bigint",
+            type: getBigIntTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             name: "datecreatedms"
         },

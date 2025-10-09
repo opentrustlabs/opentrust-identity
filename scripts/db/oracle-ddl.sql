@@ -14,36 +14,36 @@ create TABLE federated_oidc_provider(
     federatedoidcproviderclientid VARCHAR2(128) NOT NULL,
     federatedoidcproviderclientsecret VARCHAR2(256),
     federatedoidcproviderwellknownuri VARCHAR2(512) NOT NULL,
-    refreshtokenallowed BOOLEAN NOT NULL,
+    refreshtokenallowed NUMBER(1) NOT NULL,
     scopes VARCHAR2(256),
-    usepkce BOOLEAN NOT NULL,
+    usepkce NUMBER(1) NOT NULL,
     clientauthtype VARCHAR2(128) NOT NULL,
     federatedoidcprovidertype VARCHAR2(128) NOT NULL,
     socialloginprovider VARCHAR2(128),
-    markfordelete BOOLEAN NOT NULL
+    markfordelete NUMBER(1) NOT NULL
 );
 
 create TABLE tenant (
     tenantid VARCHAR2(64) PRIMARY KEY,
     tenantname VARCHAR2(128) NOT NULL,
     tenantdescription VARCHAR2(256),
-    enabled BOOLEAN NOT NULL,
-    allowunlimitedrate BOOLEAN NOT NULL,
-    allowuserselfregistration BOOLEAN NOT NULL,
-    allowanonymoususers BOOLEAN NOT NULL,
-    allowsociallogin BOOLEAN NOT NULL,
-    verifyemailonselfregistration BOOLEAN NOT NULL,
+    enabled NUMBER(1) NOT NULL,
+    allowunlimitedrate NUMBER(1) NOT NULL,
+    allowuserselfregistration NUMBER(1) NOT NULL,
+    allowanonymoususers NUMBER(1) NOT NULL,
+    allowsociallogin NUMBER(1) NOT NULL,
+    verifyemailonselfregistration NUMBER(1) NOT NULL,
     federatedauthenticationconstraint VARCHAR2(128) NOT NULL,
-    markfordelete BOOLEAN NOT NULL,
+    markfordelete NUMBER(1) NOT NULL,
     tenanttype VARCHAR2(128) NOT NULL,
-    migratelegacyusers BOOLEAN NOT NULL,
-    allowloginbyphonenumber BOOLEAN NOT NULL,
-    allowforgotpassword BOOLEAN NOT NULL,
+    migratelegacyusers NUMBER(1) NOT NULL,
+    allowloginbyphonenumber NUMBER(1) NOT NULL,
+    allowforgotpassword NUMBER(1) NOT NULL,
     defaultratelimit INT,
     defaultratelimitperiodminutes INT,
-    registrationrequiretermsandconditions BOOLEAN NOT NULL,
+    registrationrequiretermsandconditions NUMBER(1) NOT NULL,
     termsandconditionsuri VARCHAR2(256),
-    registrationrequirecaptcha BOOLEAN NOT NULL
+    registrationrequirecaptcha NUMBER(1) NOT NULL
 );
 CREATE INDEX tenant_tenant_type_idx ON tenant(tenanttype);
 
@@ -71,7 +71,6 @@ create TABLE tenant_restricted_authentication_domain_rel (
     PRIMARY KEY (tenantid, domain),
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid)
 );
-CREATE INDEX tenant_restricted_authentication_domain_rel_domain_idx ON tenant_restricted_authentication_domain_rel (domain);
 
 
 create TABLE federated_oidc_provider_tenant_rel (
@@ -88,7 +87,6 @@ create TABLE federated_oidc_provider_domain_rel (
     PRIMARY KEY (federatedoidcproviderid, domain),
     FOREIGN KEY (federatedoidcproviderid) REFERENCES federated_oidc_provider(federatedoidcproviderid)
 );
-CREATE INDEX federated_oidc_provider_domain_rel_domain_idx ON federated_oidc_provider_domain_rel(domain);
 
 create TABLE client (
     clientid VARCHAR2(64) PRIMARY KEY,
@@ -96,14 +94,14 @@ create TABLE client (
     clientsecret VARCHAR2(256) NOT NULL,
     clientname varchar (128) NOT NULL,
     clientdescription VARCHAR2(256),
-    enabled BOOLEAN NOT NULL,
-    oidcenabled BOOLEAN NOT NULL,
-    pkceenabled BOOLEAN NOT NULL,
+    enabled NUMBER(1) NOT NULL,
+    oidcenabled NUMBER(1) NOT NULL,
+    pkceenabled NUMBER(1) NOT NULL,
     clienttype VARCHAR2(128) NOT NULL,
     usertokenttlseconds INT,
     clienttokenttlseconds INT,
     maxrefreshtokencount INT,
-    markfordelete BOOLEAN NOT NULL,
+    markfordelete NUMBER(1) NOT NULL,
     audience VARCHAR2(256),
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid)
 );
@@ -119,7 +117,7 @@ create TABLE users (
     userid VARCHAR2(64) PRIMARY KEY,
     federatedoidcprovidersubjectid VARCHAR2(128),
     email VARCHAR2(128) UNIQUE NOT NULL,
-    emailverified BOOLEAN NOT NULL,
+    emailverified NUMBER(1) NOT NULL,
     domain VARCHAR2(128) NOT NULL,
     firstname VARCHAR2(128) NOT NULL,
     lastname VARCHAR2(128) NOT NULL,
@@ -132,13 +130,12 @@ create TABLE users (
     stateregionprovince VARCHAR2(64),
     countrycode VARCHAR2(8),
     preferredlanguagecode VARCHAR2(8),
-    locked BOOLEAN,
-    enabled BOOLEAN NOT NULL,
+    locked NUMBER(1),
+    enabled NUMBER(1) NOT NULL,
     nameorder VARCHAR2(64) NOT NULL,
-    markfordelete BOOLEAN NOT NULL
+    markfordelete NUMBER(1) NOT NULL
 );
 
-CREATE INDEX users_email_idx on users(email);
 CREATE INDEX users_domain_idx on users(domain);
 CREATE INDEX users_first_name_idx on users(firstname);
 CREATE INDEX users_last_name_idx on users(lastname);
@@ -148,16 +145,16 @@ CREATE INDEX users_federatedoidcprovidersubjectid_idx on users(federatedoidcprov
 create TABLE user_email_recovery (
     userid VARCHAR2(64) NOT NULL,
     email VARCHAR2(128) UNIQUE NOT NULL,
-    emailverified BOOLEAN NOT NULL,
+    emailverified NUMBER(1) NOT NULL,
     PRIMARY KEY (userid),
     FOREIGN KEY (userid) REFERENCES users(userid)
 );
-CREATE INDEX user_email_recovery_email_idx on user_email_recovery(email);
+
 
 create TABLE user_tenant_rel (
     userid VARCHAR2(64) NOT NULL,
     tenantid VARCHAR2(64) NOT NULL,
-    enabled BOOLEAN NOT NULL,
+    enabled NUMBER(1) NOT NULL,
     reltype VARCHAR2(32) NOT NULL,
     PRIMARY KEY (userid, tenantid),
     FOREIGN KEY (userid) REFERENCES users(userid),
@@ -178,8 +175,8 @@ create TABLE authentication_group (
     tenantid VARCHAR2(64) NOT NULL,
     authenticationgroupname VARCHAR2(128) NOT NULL,
     authenticationgroupdescription VARCHAR2(256),
-    defaultgroup BOOLEAN NOT NULL,
-    markfordelete BOOLEAN NOT NULL,
+    defaultgroup NUMBER(1) NOT NULL,
+    markfordelete NUMBER(1) NOT NULL,
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid)
 );
 
@@ -204,9 +201,9 @@ create TABLE authorization_group (
     tenantid VARCHAR2(64) NOT NULL,
     groupname VARCHAR2(128) NOT NULL,
     groupdescription VARCHAR2(256),
-    defaultgroup BOOLEAN NOT NULL,
-    allowforanonymoususers BOOLEAN NOT NULL,
-    markfordelete BOOLEAN NOT NULL,
+    defaultgroup NUMBER(1) NOT NULL,
+    allowforanonymoususers NUMBER(1) NOT NULL,
+    markfordelete NUMBER(1) NOT NULL,
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid) 
 );
 
@@ -220,7 +217,7 @@ create TABLE authorization_group_user_rel (
 
 create TABLE user_credential (
     userid VARCHAR2(64) NOT NULL,
-    salt VARCHAR2(256) NOT NULL,
+    salt VARCHAR2(256),
     hashedpassword VARCHAR2(256) NOT NULL,
     hashingalgorithm VARCHAR2(128) NOT NULL,
     datecreatedms NUMBER NOT NULL,
@@ -239,10 +236,10 @@ create TABLE signing_key (
     expiresatms NUMBER NOT NULL,
     createdatms NUMBER NOT NULL,
     keystatus VARCHAR2(64),
-    markfordelete BOOLEAN NOT NULL,
-    privatekeypkcs8 VARCHAR2(8000) NOT NULL,
-    keycertificate VARCHAR2(8000),
-    publickey VARCHAR2(8000),
+    markfordelete NUMBER(1) NOT NULL,
+    privatekeypkcs8 CLOB NOT NULL,
+    keycertificate CLOB,
+    publickey CLOB,
     FOREIGN KEY (tenantid) REFERENCES tenant(tenantid)
 );
 
@@ -250,7 +247,7 @@ create TABLE rate_limit_service_group (
     servicegroupid VARCHAR2(64) PRIMARY KEY,
     servicegroupname VARCHAR2(128) NOT NULL,
     servicegroupdescription VARCHAR2(256),
-    markfordelete BOOLEAN NOT NULL 
+    markfordelete NUMBER(1) NOT NULL 
 );
 CREATE INDEX rate_limit_service_group_servicegroupname_idx on rate_limit_service_group(servicegroupname);
 
@@ -259,7 +256,7 @@ create TABLE scope (
     scopename VARCHAR2(128) UNIQUE NOT NULL,
     scopedescription VARCHAR2(256) NOT NULL,
     scopeuse VARCHAR2(64) NOT NULL,
-    markfordelete BOOLEAN NOT NULL
+    markfordelete NUMBER(1) NOT NULL
 );
 
 create TABLE scope_access_rule_schema (
@@ -296,7 +293,7 @@ create TABLE rate_limit (
 create TABLE tenant_rate_limit_rel (
     servicegroupid VARCHAR2(64) NOT NULL,
     tenantid VARCHAR2(64) NOT NULL,
-    allowunlimitedrate BOOLEAN NOT NULL,
+    allowunlimitedrate NUMBER(1) NOT NULL,
     ratelimit INT,
     ratelimitperiodminutes INT,
     PRIMARY KEY (servicegroupid, tenantid),
@@ -516,12 +513,12 @@ create TABLE tenant_password_config (
     passwordminlength INT NOT NULL,
     passwordmaxlength INT NOT NULL,
     passwordhashingalgorithm VARCHAR2(128) NOT NULL,
-    requireuppercase BOOLEAN NOT NULL,
-	requirelowercase BOOLEAN NOT NULL,
-	requirenumbers BOOLEAN NOT NULL,
-	requirespecialcharacters BOOLEAN NOT NULL,
+    requireuppercase NUMBER(1) NOT NULL,
+	requirelowercase NUMBER(1) NOT NULL,
+	requirenumbers NUMBER(1) NOT NULL,
+	requirespecialcharacters NUMBER(1) NOT NULL,
 	specialcharactersallowed VARCHAR2(64),
-    requiremfa BOOLEAN NOT NULL,
+    requiremfa NUMBER(1) NOT NULL,
     mfatypesrequired VARCHAR2(128),
     maxrepeatingcharacterlength INT,
     passwordrotationperioddays INT,
@@ -554,7 +551,7 @@ create TABLE user_verification_token (
 
 create TABLE user_mfa_rel (
     userid VARCHAR2(64) NOT NULL,
-    primarymfa BOOLEAN NOT NULL,
+    primarymfa NUMBER(1) NOT NULL,
     mfatype VARCHAR2(64) NOT NULL,
     totpsecret VARCHAR2(1024),
     totphashalgorithm VARCHAR2(32),
@@ -562,7 +559,7 @@ create TABLE user_mfa_rel (
     fido2credentialid VARCHAR2(1024),
     fido2publickeyalgorithm INT,
     fido2transports VARCHAR2(1024),
-    fido2keysupportscounters BOOLEAN,
+    fido2keysupportscounters NUMBER(1),
     PRIMARY KEY (userid, mfatype),
     FOREIGN KEY (userid) REFERENCES users(userid)
 );
@@ -661,7 +658,7 @@ create TABLE user_profile_email_change_state (
     changeorder INT NOT NULL,
     changestatestatus VARCHAR2(32) NOT NULL,
     expiresatms NUMBER NOT NULL,
-    isprimaryemail BOOLEAN NOT NULL,
+    isprimaryemail NUMBER(1) NOT NULL,
     PRIMARY KEY (userid, changeemailsessiontoken, emailchangestate),
     FOREIGN KEY (userid) REFERENCES users(userid) 
 );
@@ -672,16 +669,16 @@ create TABLE captcha_config (
     sitekey VARCHAR2(256) NOT NULL,
     apikey VARCHAR2(256) NOT NULL,
     minscorethreshold FLOAT,
-    userecaptchav3 BOOLEAN NOT NULL,
-    useenterprisecaptcha BOOLEAN NOT NULL
+    userecaptchav3 NUMBER(1) NOT NULL,
+    useenterprisecaptcha NUMBER(1) NOT NULL
 );
 
 create TABLE system_settings (
     systemid VARCHAR2(64) PRIMARY KEY,
-    allowrecoveryemail BOOLEAN NOT NULL,
-    allowduresspassword BOOLEAN NOT NULL,
+    allowrecoveryemail NUMBER(1) NOT NULL,
+    allowduresspassword NUMBER(1) NOT NULL,
     rootclientid VARCHAR2(64) NOT NULL,
-    enableportalaslegacyidp BOOLEAN NOT NULL,
+    enableportalaslegacyidp NUMBER(1) NOT NULL,
     auditrecordretentionperioddays INT,
     noreplyemail VARCHAR2(64),
     contactemail VARCHAR2(64),
@@ -690,7 +687,7 @@ create TABLE system_settings (
 
 create TABLE user_duress_credential (
     userid VARCHAR2(64) NOT NULL,
-    salt VARCHAR2(256) NOT NULL,
+    salt VARCHAR2(256),
     hashedpassword VARCHAR2(256) NOT NULL,
     hashingalgorithm VARCHAR2(128) NOT NULL,
     datecreatedms NUMBER NOT NULL,
@@ -718,7 +715,7 @@ create TABLE federated_auth_test (
     authstate             VARCHAR2(128) PRIMARY KEY,	
 	clientid              VARCHAR2(64) NOT NULL,
 	clientsecret          VARCHAR2(256),
-	usepkce               BOOLEAN NOT NULL,
+	usepkce               NUMBER(1) NOT NULL,
 	codeverifier          VARCHAR2(128),
 	wellknownuri          VARCHAR2(128) NOT NULL,
 	scope                 VARCHAR2(64) NOT NULL,

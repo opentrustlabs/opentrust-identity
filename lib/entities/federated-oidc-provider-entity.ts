@@ -1,4 +1,9 @@
 import { EntitySchema } from 'typeorm';
+import { BooleanTransformer, getBooleanTypeForDriver } from '@/utils/dao-utils';
+
+const {
+    RDB_DIALECT
+} = process.env;
 
 const FederatedOIDCProviderEntity = new EntitySchema({
 
@@ -47,10 +52,11 @@ const FederatedOIDCProviderEntity = new EntitySchema({
             name: "federatedoidcproviderwellknownuri"
         },
         refreshTokenAllowed: {
-            type: "boolean",
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: false,
-            name: "refreshtokenallowed"
+            name: "refreshtokenallowed",
+            transformer: BooleanTransformer
         },
         scopes: {
             type: String,
@@ -82,10 +88,11 @@ const FederatedOIDCProviderEntity = new EntitySchema({
             }
         },
         usePkce: {
-            type: "boolean",
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: true,
-            name: "usepkce"
+            name: "usepkce",
+            transformer: BooleanTransformer
         },
         clientAuthType: {
             type: String,
@@ -106,10 +113,11 @@ const FederatedOIDCProviderEntity = new EntitySchema({
             name: "socialloginprovider"
         },
         markForDelete: {
-            type: "boolean",
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: false,
-            name: "markfordelete"
+            name: "markfordelete",
+            transformer: BooleanTransformer
         }
     },
 

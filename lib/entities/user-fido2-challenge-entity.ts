@@ -1,5 +1,9 @@
 import { EntitySchema } from 'typeorm';
+import { getBigIntTypeForDriver } from '@/utils/dao-utils';
 
+const {
+    RDB_DIALECT
+} = process.env;
 
 export interface UserFido2Challenge {
     userId: string,
@@ -9,8 +13,6 @@ export interface UserFido2Challenge {
 }
 
 const UserFido2ChallengeEntity = new EntitySchema({
-
-
     columns: {
         userId: {
             type: String,
@@ -24,13 +26,13 @@ const UserFido2ChallengeEntity = new EntitySchema({
             name: "challenge"
         },
         issuedAtMs: {
-            type: "bigint",
+            type: getBigIntTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: false,
             name: "issuedatms"
         },
         expiresAtMs: {
-            type: "bigint",
+            type: getBigIntTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: false,
             name: "expiresatms"

@@ -1,5 +1,9 @@
 import { EntitySchema } from 'typeorm';
+import { getIntTypeForDriver } from '@/utils/dao-utils';
 
+const {
+    RDB_DIALECT
+} = process.env;
 
 const TenantLoginFailurePolicyEntity = new EntitySchema({
 
@@ -17,19 +21,19 @@ const TenantLoginFailurePolicyEntity = new EntitySchema({
             name: "loginfailurepolicytype"
         },
         failureThreshold: {
-            type: "int",
+            type: getIntTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: false,
             name: "failurethreshold"
         },
         pauseDurationMinutes: {
-            type: "int",
+            type: getIntTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: true,
             name: "pausedurationminutes"
         },
         maximumLoginFailures: {
-            type: "int",
+            type: getIntTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: true,
             name: "maximumloginfailures"

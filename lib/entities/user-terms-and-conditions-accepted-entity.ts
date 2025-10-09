@@ -1,8 +1,11 @@
 import { EntitySchema } from 'typeorm';
+import { getBigIntTypeForDriver } from '@/utils/dao-utils';
+
+const {
+    RDB_DIALECT
+} = process.env;
 
 const UserTermsAndConditionsAcceptedEntity = new EntitySchema({
-
-
     columns: {
         userId: {
             type: String,
@@ -16,7 +19,7 @@ const UserTermsAndConditionsAcceptedEntity = new EntitySchema({
             name: "tenantid"
         },
         acceptedAtMs: {
-            type: "bigint",
+            type: getBigIntTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: false,
             name: "acceptedatms"

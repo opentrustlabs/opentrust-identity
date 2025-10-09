@@ -1,9 +1,13 @@
 import { EntitySchema } from 'typeorm';
+import { getBigIntTypeForDriver } from '@/utils/dao-utils';
+
+const {
+    RDB_DIALECT
+} = process.env;
 
 const AuthorizationCodeDataEntity = new EntitySchema({
     tableName: "authorization_code_data",
     name: "authorizationCodeData",
-
     columns: {
         code: {
             type: String,
@@ -35,13 +39,13 @@ const AuthorizationCodeDataEntity = new EntitySchema({
             name: "codechallengemethod"
         },
         expiresAtMs: {
-            type: "bigint",
+            type: getBigIntTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: false,
             name: "expiresatms"
         },
         redirectUri: {
-            type: "boolean",
+            type: String,
             primary: false,
             nullable: false,
             name: "redirecturi"

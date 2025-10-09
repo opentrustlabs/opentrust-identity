@@ -1,4 +1,9 @@
 import { EntitySchema } from 'typeorm';
+import { getBigIntTypeForDriver } from '@/utils/dao-utils';
+
+const {
+    RDB_DIALECT
+} = process.env;
 
 const ClientAuthHistoryEntity = new EntitySchema({
     
@@ -21,7 +26,7 @@ const ClientAuthHistoryEntity = new EntitySchema({
             name: "tenantid"
         },
         expiresAtSeconds: {
-            type: "bigint",
+            type: getBigIntTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: false,
             name: "expiresatseconds"

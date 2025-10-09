@@ -1,8 +1,11 @@
 import { EntitySchema } from 'typeorm';
+import { getBigIntTypeForDriver } from '@/utils/dao-utils';
+
+const {
+    RDB_DIALECT
+} = process.env;
 
 const PreAuthenticationStateEntity = new EntitySchema({
-
-
     columns: {
         token: {
             type: String,
@@ -34,7 +37,7 @@ const PreAuthenticationStateEntity = new EntitySchema({
             name: "codechallengemethod"
         },
         expiresAtMs: {
-            type: "bigint",
+            type: getBigIntTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: false,
             name: "expiresatms"

@@ -1,4 +1,9 @@
 import { EntitySchema } from 'typeorm';
+import { getBigIntTypeForDriver } from '@/utils/dao-utils';
+
+const {
+    RDB_DIALECT
+} = process.env;
 
 const AuthorizationDeviceCodeDataEntity = new EntitySchema({
 
@@ -34,7 +39,7 @@ const AuthorizationDeviceCodeDataEntity = new EntitySchema({
             name: "tenantid"
         },
         expiresAtMs: {
-            type: "bigint",
+            type: getBigIntTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: false,
             name: "expiresatms"

@@ -1,4 +1,9 @@
 import { EntitySchema } from 'typeorm';
+import { getBigIntTypeForDriver } from '@/utils/dao-utils';
+
+const {
+    RDB_DIALECT
+} = process.env;
 
 export interface UserVerificationToken {
     token: string,
@@ -30,13 +35,13 @@ const UserVerificationTokenEntity  = new EntitySchema({
             name: "verificationtype"
         },
         issuedAtMS: {
-            type: "bigint",
+            type: getBigIntTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: false,
             name: "issuedatms"
         },
         expiresAtMS: {
-            type: "bigint",
+            type: getBigIntTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: false,
             name: "expiresatms"

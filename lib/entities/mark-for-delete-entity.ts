@@ -1,8 +1,11 @@
 import { EntitySchema } from 'typeorm';
+import { getBigIntTypeForDriver } from '@/utils/dao-utils';
+
+const {
+    RDB_DIALECT
+} = process.env;
 
 export const MarkForDeleteEntity = new EntitySchema({
-
-
     columns: {
         markForDeleteId: {
             type: String,
@@ -28,19 +31,19 @@ export const MarkForDeleteEntity = new EntitySchema({
             name: "submittedby"
         },
         submittedDate: {
-            type: "bigint",
+            type: getBigIntTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: false,
             name: "submitteddate"
         },
         startedDate: {
-            type: "bigint",
+            type: getBigIntTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: true,
             name: "starteddate"
         },
         completedDate: {
-            type: "bigint",
+            type: getBigIntTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: true,
             name: "completeddate"

@@ -1,4 +1,9 @@
 import { EntitySchema } from 'typeorm';
+import {  getIntTypeForDriver } from '@/utils/dao-utils';
+
+const {
+    RDB_DIALECT
+} = process.env;
 
 export interface UserFido2CounterRel {
     userId: string,
@@ -15,7 +20,7 @@ const UserFido2CounterRelEntity = new EntitySchema({
             name: "userid"
         },
         fido2Counter: {
-            type: "int",
+            type: getIntTypeForDriver(RDB_DIALECT || ""),
             primary: true,
             name: "fido2Counter"
         }

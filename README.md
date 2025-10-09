@@ -32,7 +32,7 @@ PUT   /iam_object_search
 
 with the contents of the file at `/scripts/object-search-ddl.json`
 
-You can also create an index with a different name than `object_search` (for example `object_search_09_22_2025`) and then create
+You can also create an index with a different name than `iam_object_search` (for example `object_search_09_22_2025`) and then create
 an alias to the index `object_search`. For example
 
 ```JSON
@@ -72,7 +72,7 @@ PUT  /iam_rel_search
 
 with the contents of the file at `/scripts/rel-search-ddl.json`
 
-You can also create an index with a different name than `rel` (for example `rel_search_09_22_2025`) and then create
+You can also create an index with a different name than `/iam_rel_search` (for example `rel_search_09_22_2025`) and then create
 an alias to the index `rel_search`.
 
 ```JSON

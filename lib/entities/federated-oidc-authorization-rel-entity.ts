@@ -1,8 +1,11 @@
 import { EntitySchema } from 'typeorm';
+import { getBigIntTypeForDriver } from '@/utils/dao-utils';
+
+const {
+    RDB_DIALECT
+} = process.env;
 
 const FederatedOIDCAuthorizationRelEntity = new EntitySchema({
-
-
     columns: {
         state: {
             type: String,
@@ -40,7 +43,7 @@ const FederatedOIDCAuthorizationRelEntity = new EntitySchema({
             name: "codechallengemethod"
         },
         expiresAtMs: {
-            type: "bigint",
+            type: getBigIntTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: false,
             name: "expiresatms"

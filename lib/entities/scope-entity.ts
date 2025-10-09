@@ -1,7 +1,11 @@
 import { EntitySchema } from 'typeorm';
+import { BooleanTransformer, getBooleanTypeForDriver } from '@/utils/dao-utils';
+
+const {
+    RDB_DIALECT
+} = process.env;
 
 const ScopeEntity = new EntitySchema({
-
 
     columns: {
         scopeId: {
@@ -28,10 +32,11 @@ const ScopeEntity = new EntitySchema({
             name: "scopeuse"
         },
         markForDelete: {
-            type: "boolean",
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: false,
-            name: "markfordelete"
+            name: "markfordelete",
+            transformer: BooleanTransformer
         }
     },
 

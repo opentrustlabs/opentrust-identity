@@ -58,10 +58,25 @@ import UserProfileChangeEmailStateEntity from "../entities/user-profile-email-ch
 import UserAuthenticationHistoryEntity, { UserAuthenticationHistory } from "../entities/user-authentication-history-entity";
 import FederatedAuthTestEntity from "../entities/federated-auth-test-entity";
 import { RDB_SUPPORTED_DIALECTS } from "@/utils/consts";
-import { DataSource, Repository } from "typeorm";
+import { DataSource, DefaultNamingStrategy, NamingStrategyInterface, Repository } from "typeorm";
 import { AccessRule, AuthenticationGroup, AuthenticationGroupClientRel, AuthenticationGroupUserRel, AuthorizationCodeData, AuthorizationDeviceCodeData, AuthorizationGroup, AuthorizationGroupScopeRel, AuthorizationGroupUserRel, CaptchaConfig, ChangeEvent, Client, ClientAuthHistory, ClientScopeRel, Contact, DeletionStatus, FederatedAuthTest, FederatedOidcAuthorizationRel, FederatedOidcProvider, FederatedOidcProviderDomainRel, FederatedOidcProviderTenantRel, MarkForDelete, PreAuthenticationState, ProfileEmailChangeState, RateLimitServiceGroup, RefreshData, SchedulerLock, Scope, SecretShare, SigningKey, StateProvinceRegion, SystemSettings, Tenant, TenantAnonymousUserConfiguration, TenantAvailableScope, TenantLegacyUserMigrationConfig, TenantLoginFailurePolicy, TenantLookAndFeel, TenantManagementDomainRel, TenantPasswordConfig, TenantRateLimitRel, TenantRestrictedAuthenticationDomainRel, User, UserAuthenticationState, UserCredential, UserFailedLogin, UserMfaRel, UserRegistrationState, UserScopeRel, UserTenantRel, UserTermsAndConditionsAccepted } from "@/graphql/generated/graphql-types";
 
+class OracleUpperNamingStrategy
+    extends DefaultNamingStrategy
+    implements NamingStrategyInterface {
+        tableName(className: string, customName: string): string {
+            console.log("className: " + className + ", customName: " + customName);
+            const retVal =  (customName || className).toUpperCase();
+            console.log(retVal)
+            return retVal;
+        }
 
+        columnName(propertyName: string, customName: string): string {
+            return (customName || propertyName).toUpperCase();
+        }
+
+        
+}
 
 const {
     DB_USER,
@@ -76,7 +91,9 @@ const {
     // Will need these 2 values for DB which authenticate credentials based on AD
     // For MSSQL Server
     DB_USER_DOMAIN,
-    DB_AUTH_SCHEME
+    DB_AUTH_SCHEME,
+    DB_ORACLE_SERVICE_NAME,
+    // DB_ORACLE_USER_EXTERNAL_AUTH
 } = process.env;
 
 
@@ -223,6 +240,7 @@ class RDBDriver {
         return RDBDriver.instance;
     }
 
+
     /**
      * 
      */
@@ -253,6 +271,33 @@ class RDBDriver {
                     logger: "simple-console"
                 });
                 
+            }
+            else if(RDB_DIALECT === "oracle"){
+                dataSource = new DataSource({                    
+                    type: "oracle",
+                    // host: DB_HOST,
+                    // port: parseInt(DB_PORT || "0"),
+                    // If using AD for authentication then do not
+                    // specify username and password. Instead, specify
+                    // externalAuth: true in the extras{} definition below.
+                    namingStrategy: new OracleUpperNamingStrategy(),                    
+                    username: DB_USER,
+                    password: DB_PASSWORD,
+                    // database: DB_NAME,
+                    entities: entities,
+                    connectString: `${DB_HOST}:${DB_PORT}/${DB_ORACLE_SERVICE_NAME}`,
+                    extra: {             
+                        // ######## Oracle pool options
+                        poolMax: 10,
+                        poolMin: 4
+                        // ######## If using AD for authentication
+                        // externalAuth: true
+                    },                    
+                    logging: DB_ENABLE_QUERY_LOGGING === "true",
+                    logger: "simple-console"
+                });
+                
+
             }
             else if (RDB_DIALECT === "mysql") {
                 dataSource = new DataSource({                    
@@ -323,6 +368,7 @@ class RDBDriver {
             }
             global.dataSource = dataSource;
             await global.dataSource.initialize();
+            console.log(dataSource.entityMetadatas.map(m => m.name));
         }
         return global.dataSource;
     }
@@ -513,7 +559,7 @@ class RDBDriver {
         }
         return RDBDriver.instance.federatedOIDCProviderDomainRelRepository;
     }
-public async getUserCredentialRepository(): Promise<Repository<UserCredential>> {
+    public async getUserCredentialRepository(): Promise<Repository<UserCredential>> {
         if (!RDBDriver.instance.userCredentialRepository) {
             const driver = await RDBDriver.getConnection();
             RDBDriver.instance.userCredentialRepository = driver.getRepository("userCredential");

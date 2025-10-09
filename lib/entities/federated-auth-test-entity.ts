@@ -1,7 +1,11 @@
 import { EntitySchema } from 'typeorm';
+import { BooleanTransformer, getBooleanTypeForDriver, getBigIntTypeForDriver } from '@/utils/dao-utils';
+
+const {
+    RDB_DIALECT
+} = process.env;
 
 const FederatedAuthTestEntity = new EntitySchema({
-
 
     columns: {
         authState: {
@@ -22,10 +26,11 @@ const FederatedAuthTestEntity = new EntitySchema({
             name: "clientsecret"
         },
         usePkce: {
-            type: "boolean",
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: false,
-            name: "usepkce"
+            name: "usepkce",
+            transformer: BooleanTransformer
         },
         codeVerifier: {
             type: String,
@@ -58,7 +63,7 @@ const FederatedAuthTestEntity = new EntitySchema({
             name: "clientauthtype"
         },
         expiresAtMs: {
-            type: "bigint",
+            type: getBigIntTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: false,
             name: "expiresatms"

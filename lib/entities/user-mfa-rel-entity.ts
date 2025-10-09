@@ -1,8 +1,11 @@
 import { EntitySchema } from 'typeorm';
+import { BooleanTransformer, getBooleanTypeForDriver, getIntTypeForDriver } from '@/utils/dao-utils';
+
+const {
+    RDB_DIALECT
+} = process.env;
 
 const UserMfaRelEntity = new EntitySchema({
-
-
     columns: {
         userId: {
             type: String,
@@ -15,10 +18,11 @@ const UserMfaRelEntity = new EntitySchema({
             name: "mfatype"
         },
         primaryMfa: {
-            type: "boolean",
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: false,
-            name: "primarymfa"
+            name: "primarymfa",
+            transformer: BooleanTransformer
         },
         totpSecret: {
             type: String,
@@ -45,7 +49,7 @@ const UserMfaRelEntity = new EntitySchema({
             name: "fido2credentialid"
         },
         fido2PublicKeyAlgorithm: {
-            type: "int",
+            type: getIntTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: true,
             name: "fido2publickeyalgorithm"
@@ -57,10 +61,11 @@ const UserMfaRelEntity = new EntitySchema({
             name: "fido2transports"
         },
         fido2KeySupportsCounters: {
-            type: "boolean",
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: true,
-            name: "fido2keysupportscounters"
+            name: "fido2keysupportscounters",
+            transformer: BooleanTransformer
         }
     },
 

@@ -1,4 +1,9 @@
 import { EntitySchema } from 'typeorm';
+import { getBigIntTypeForDriver, getIntTypeForDriver } from '@/utils/dao-utils';
+
+const {
+    RDB_DIALECT
+} = process.env;
 
 export interface UserFailedLogin {
     userId: string,
@@ -8,8 +13,6 @@ export interface UserFailedLogin {
 }
 
 const UserFailedLoginEntity = new EntitySchema({
-
-
     columns: {
         userId: {
             type: String,
@@ -17,18 +20,18 @@ const UserFailedLoginEntity = new EntitySchema({
             name: "userid"
         },
         failureAtMs: {
-            type: "bigint",
+            type: getBigIntTypeForDriver(RDB_DIALECT || ""),
             primary: true,
             name: "failureatms"
         },
         nextLoginNotBefore: {
-            type: "bigint",
+            type: getBigIntTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: false,
             name: "nextloginnotbefore"
         },
         failureCount: {
-            type: "int",
+            type: getIntTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: false,
             name: "failurecount"

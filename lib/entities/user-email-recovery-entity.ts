@@ -1,4 +1,9 @@
 import { EntitySchema } from 'typeorm';
+import { BooleanTransformer, getBooleanTypeForDriver } from '@/utils/dao-utils';
+
+const {
+    RDB_DIALECT
+} = process.env;
 
 export interface UserEmailRecovery {
     userId: string,
@@ -22,10 +27,11 @@ const UserEmailRecoveryEntity = new EntitySchema({
             name: "email"
         },
         emailVerified: {
-            type: "boolean",
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: false,
-            name: "emailverified"
+            name: "emailverified",
+            transformer: BooleanTransformer
         }
     },
 

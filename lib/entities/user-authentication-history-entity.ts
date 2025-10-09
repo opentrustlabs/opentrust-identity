@@ -1,5 +1,9 @@
 import { EntitySchema } from 'typeorm';
+import { getBigIntTypeForDriver } from '@/utils/dao-utils';
 
+const {
+    RDB_DIALECT
+} = process.env;
 
 export interface UserAuthenticationHistory {
     userId: string,
@@ -7,8 +11,6 @@ export interface UserAuthenticationHistory {
 }
 
 const UserAuthenticationHistoryEntity = new EntitySchema({
-
-
     columns: {
         userId: {
             type: String,
@@ -16,7 +18,7 @@ const UserAuthenticationHistoryEntity = new EntitySchema({
             name: "userid"
         },
         lastAuthenticationAtMs: {
-            type: "bigint",
+            type: getBigIntTypeForDriver(RDB_DIALECT || ""),
             primary: true,
             name: "lastauthenticationatms"
         }

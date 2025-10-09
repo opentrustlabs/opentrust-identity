@@ -1,98 +1,105 @@
 import { EntitySchema } from 'typeorm';
+import { BooleanTransformer, getBooleanTypeForDriver, getIntTypeForDriver } from '@/utils/dao-utils';
+
+const {
+    RDB_DIALECT
+} = process.env;
 
 const ClientEntity = new EntitySchema({
-    
-    
-        columns: {
-            clientId: {
-                type: String,
-                primary: true,
-                name: "clientid"
-            },
-            tenantId: {
-                type: String,
-                primary: false,
-                nullable: false,
-                name: "tenantid"
-            },
-            clientName: {
-                type: String,
-                primary: false,
-                nullable: false,
-                name: "clientname"
-            },
-            clientDescription: {
-                type: String,
-                primary: false,
-                nullable: true,
-				name: "clientdescription"
-            },
-            clientSecret: {
-                type: String,
-                primary: false,
-                nullable: false,
-                name: "clientsecret"
-            },
-            clientTokenTTLSeconds: {
-                type: "int",
-                primary: false,
-                nullable: true,
-                name: "clienttokenttlseconds"
-            },
-            clientType: {
-                type: String,
-                primary: false,
-                nullable: false,
-                name: "clienttype"
-            },
-            maxRefreshTokenCount: {
-                type: "int",
-                primary: false,
-                nullable: true,
-                name: "maxrefreshtokencount"
-            },
-            enabled: {
-                type: "boolean",
-                primary: false,
-                nullable: false,
-                name: "enabled"
-            },
-            oidcEnabled: {
-                type: "boolean",
-                primary: false,
-                nullable: false,
-                name: "oidcenabled"
-            },
-            pkceEnabled: {
-                type: "boolean",
-                primary: false,
-                nullable: false,
-                name: "pkceenabled"
-            },
-            userTokenTTLSeconds: {
-                type: "int",
-                primary: false,
-                nullable: true,
-                name: "usertokenttlseconds"
-            },
-            markForDelete: {
-                type: "boolean",
-                primary: false,
-                nullable: false,
-                name: "markfordelete"
-            },
-            audience: {
-                type: String,
-                primary: false,
-                nullable: true,
-                name: "audience"
-            }
-        }, 
-		
-            tableName: "client",
-            name: "client",
-            
-        });
+
+    tableName: "client",
+    name: "client",
+    columns: {
+        clientId: {
+            type: String,
+            primary: true,
+            name: "clientid"
+        },
+        tenantId: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "tenantid"
+        },
+        clientName: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "clientname"
+        },
+        clientDescription: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "clientdescription"
+        },
+        clientSecret: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "clientsecret"
+        },
+        clientTokenTTLSeconds: {
+            type: getIntTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: true,
+            name: "clienttokenttlseconds"
+        },
+        clientType: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "clienttype"
+        },
+        maxRefreshTokenCount: {
+            type: getIntTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: true,
+            name: "maxrefreshtokencount"
+        },
+        enabled: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "enabled",
+            transformer: BooleanTransformer
+        },
+        oidcEnabled: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "oidcenabled",
+            transformer: BooleanTransformer
+        },
+        pkceEnabled: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "pkceenabled",
+            transformer: BooleanTransformer
+        },
+        userTokenTTLSeconds: {
+            type: getIntTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: true,
+            name: "usertokenttlseconds"
+        },
+        markForDelete: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "markfordelete",
+            transformer: BooleanTransformer
+        },
+        audience: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "audience"
+        }
+    },
+
+});
 
 
 export default ClientEntity;

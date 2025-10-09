@@ -23,7 +23,7 @@ const TenantLegacyUserMigrationConfigEntity = new EntitySchema({
             name: "userprofileuri"
         },
         usernameCheckUri: {
-            type: "boolean",
+            type: String,
             primary: false,
             nullable: false,
             name: "usernamecheckuri"

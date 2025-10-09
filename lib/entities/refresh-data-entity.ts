@@ -1,8 +1,11 @@
 import { EntitySchema } from 'typeorm';
+import { getBigIntTypeForDriver } from '@/utils/dao-utils';
+
+const {
+    RDB_DIALECT
+} = process.env;
 
 const RefreshDataEntity = new EntitySchema({
-
-
     columns: {
         refreshToken: {
             type: String,
@@ -34,7 +37,7 @@ const RefreshDataEntity = new EntitySchema({
             name: "redirecturi"
         },
         refreshCount: {
-            type: "bigint",
+            type: getBigIntTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: false,
             name: "refreshcount"
@@ -64,7 +67,7 @@ const RefreshDataEntity = new EntitySchema({
             name: "codechallengemethod"
         },
         expiresAtMs: {
-            type: "bigint",
+            type: getBigIntTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: false,
             name: "expiresatms"

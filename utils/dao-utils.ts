@@ -308,3 +308,75 @@ export function stringToBlobTransformer(encoding: BufferEncoding = "utf8"): Valu
         },
     };
 }
+
+export type BooleanType = "number" | "boolean"
+export function getBooleanTypeForDriver(dbType: string): BooleanType {
+    switch (dbType) {
+        case "mysql":
+        case "mariadb":
+        case "postgres":
+        case "mssql":
+        case "sqlite":
+        case "better-sqlite3":
+            return "boolean"; // or "longblob" if you expect very large data
+        case "oracle":
+            return "number";
+        default:
+            throw new Error(`Unsupported database type for boolean: ${dbType}`);
+    }
+}
+
+export const BooleanTransformer: ValueTransformer = {
+    // Converts from JS → DB
+    to: (value: boolean | null) => {
+        if (value === null || value === undefined) return null;
+        return value ? 1 : 0; // Stored as 1 or 0 in DBs that lack native boolean
+    },
+    // Converts from DB → JS
+    from: (value: any) => {
+        if (value === null || value === undefined) return null;
+
+        // PostgreSQL returns boolean directly
+        if (typeof value === "boolean") return value;
+
+        // MySQL/MSSQL may return numbers or strings
+        if (typeof value === "number") return value === 1;
+        if (typeof value === "string") return value === "1" || value.toUpperCase() === "TRUE";
+
+        return false;
+    }
+};
+
+export type BigIntType = "bigint" | "number";
+export function getBigIntTypeForDriver(dbType: string): BigIntType{
+    switch (dbType) {
+        case "mysql":
+        case "mariadb":
+        case "postgres":
+        case "mssql":
+        case "sqlite":
+        case "better-sqlite3":
+            return "bigint"; // or "longblob" if you expect very large data
+        case "oracle":
+            return "number";
+        default:
+            throw new Error(`Unsupported database type for bigint: ${dbType}`);
+    }
+}
+
+export type IntType = "int" | "number";
+export function getIntTypeForDriver(dbType: string): IntType {
+switch (dbType) {
+        case "mysql":
+        case "mariadb":
+        case "postgres":
+        case "mssql":
+        case "sqlite":
+        case "better-sqlite3":
+            return "int"; // or "longblob" if you expect very large data
+        case "oracle":
+            return "number";
+        default:
+            throw new Error(`Unsupported database type for int: ${dbType}`);
+    }
+}

@@ -1,4 +1,10 @@
 import { EntitySchema } from 'typeorm';
+import { BooleanTransformer, getBooleanTypeForDriver } from '@/utils/dao-utils';
+
+const {
+    RDB_DIALECT
+} = process.env;
+
 
 const AuthorizationGroupEntity = new EntitySchema({
 
@@ -27,22 +33,25 @@ const AuthorizationGroupEntity = new EntitySchema({
             name: "tenantid"
         },
         default: {
-            type: "boolean",
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: false,
-            name: "defaultgroup"
+            name: "defaultgroup",
+            transformer: BooleanTransformer
         },
         allowForAnonymousUsers: {
-            type: "boolean",
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: false,
-            name: "allowforanonymoususers"
+            name: "allowforanonymoususers",
+            transformer: BooleanTransformer
         },
         markForDelete: {
-            type: "boolean",
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: false,
-            name: "markfordelete"
+            name: "markfordelete",
+            transformer: BooleanTransformer
         }
     },
 

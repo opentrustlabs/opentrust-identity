@@ -1121,4 +1121,4 @@ export const FEDERATED_AUTH_TEST_STATE_PARAM_PREFIX="oidctest-";
 //                  DATABASE-RELATED CONSTANTS
 // 
 // ************************************************************************** //
-export const RDB_SUPPORTED_DIALECTS: Array<string> = ["mysql", "postgres", "mssql"];
+export const RDB_SUPPORTED_DIALECTS: Array<string> = ["mysql", "postgres", "mssql", "oracle"];

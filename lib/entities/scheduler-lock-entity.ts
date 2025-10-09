@@ -1,8 +1,11 @@
 import { EntitySchema } from 'typeorm';
+import { getBigIntTypeForDriver } from '@/utils/dao-utils';
+
+const {
+    RDB_DIALECT
+} = process.env;
 
 export const SchedulerLockEntity = new EntitySchema({
-
-
     columns: {
         lockName: {
             type: String,
@@ -15,13 +18,13 @@ export const SchedulerLockEntity = new EntitySchema({
             name: "lockinstanceid"
         },
         lockStartTimeMS: {
-            type: "bigint",
+            type: getBigIntTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: false,
             name: "lockstarttimems"
         },
         lockExpiresAtMS: {
-            type: "bigint",
+            type: getBigIntTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: false,
             name: "lockexpiresatms"

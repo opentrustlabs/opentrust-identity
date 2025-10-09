@@ -1,8 +1,11 @@
 import { EntitySchema } from 'typeorm';
+import { BooleanTransformer, getBooleanTypeForDriver, getIntTypeForDriver } from '@/utils/dao-utils';
+
+const {
+    RDB_DIALECT
+} = process.env;
 
 const TenantRateLimitRelEntity = new EntitySchema({
-
-
     columns: {
         servicegroupid: {
             type: String,
@@ -15,19 +18,20 @@ const TenantRateLimitRelEntity = new EntitySchema({
             name: "tenantid"
         },
         allowUnlimitedRate: {
-            type: "boolean",
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: true,
-            name: "allowunlimitedrate"
+            name: "allowunlimitedrate",
+            transformer: BooleanTransformer
         },
         rateLimit: {
-            type: "int",
+            type: getIntTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: true,
             name: "ratelimit"
         },
         rateLimitPeriodMinutes: {
-            type: "int",
+            type: getIntTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: true,
             name: "ratelimitperiodminutes"

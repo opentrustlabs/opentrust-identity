@@ -1,5 +1,5 @@
 import { EntitySchema } from 'typeorm';
-import { getBlobTypeForDriver, stringToBlobTransformer } from '@/utils/dao-utils';
+import { getBlobTypeForDriver, stringToBlobTransformer, getBigIntTypeForDriver } from '@/utils/dao-utils';
 
 const {
     RDB_DIALECT
@@ -35,7 +35,7 @@ const ChangeEventEntity = new EntitySchema({
             name: "changeeventtype"
         },
         changeTimestamp: {
-            type: "bigint",
+            type: getBigIntTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: false,
             name: "changetimestamp"

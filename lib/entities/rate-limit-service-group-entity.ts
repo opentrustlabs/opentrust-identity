@@ -1,4 +1,9 @@
 import { EntitySchema } from 'typeorm';
+import { BooleanTransformer, getBooleanTypeForDriver } from '@/utils/dao-utils';
+
+const {
+    RDB_DIALECT
+} = process.env;
 
 const RateLimitServiceGroupEntity = new EntitySchema({
 
@@ -22,10 +27,11 @@ const RateLimitServiceGroupEntity = new EntitySchema({
             name: "servicegroupdescription"
         },
         markForDelete: {
-            type: "boolean",
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: false,
-            name: "markfordelete"
+            name: "markfordelete",
+            transformer: BooleanTransformer
         }
     },
 

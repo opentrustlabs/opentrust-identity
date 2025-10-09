@@ -1,8 +1,11 @@
 import { EntitySchema } from 'typeorm';
+import { BooleanTransformer, getBooleanTypeForDriver, getIntTypeForDriver } from '@/utils/dao-utils';
+
+const {
+    RDB_DIALECT
+} = process.env;
 
 const TenantPasswordConfigEntity = new EntitySchema({
-
-
     columns: {
         tenantId: {
             type: String,
@@ -16,40 +19,44 @@ const TenantPasswordConfigEntity = new EntitySchema({
             name: "passwordhashingalgorithm"
         },
         passwordMaxLength: {
-            type: "int",
+            type: getIntTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: false,
             name: "passwordmaxlength"
         },
         passwordMinLength: {
-            type: "int",
+            type: getIntTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: false,
             name: "passwordminlength"
         },
         requireLowerCase: {
-            type: "boolean",
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: false,
-            name: "requirelowercase"
+            name: "requirelowercase",
+            transformer: BooleanTransformer
         },
         requireNumbers: {
-            type: "boolean",
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: false,
-            name: "requirenumbers"
+            name: "requirenumbers",
+            transformer: BooleanTransformer
         },
         requireSpecialCharacters: {
-            type: "boolean",
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: false,
-            name: "requirespecialcharacters"
+            name: "requirespecialcharacters",
+            transformer: BooleanTransformer
         },
         requireUpperCase: {
-            type: "boolean",
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: false,
-            name: "requireuppercase"
+            name: "requireuppercase",
+            transformer: BooleanTransformer
         },
         specialCharactersAllowed: {
             type: String,
@@ -58,10 +65,11 @@ const TenantPasswordConfigEntity = new EntitySchema({
             name: "specialcharactersallowed"
         },
         requireMfa: {
-            type: "boolean",
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: false,
-            name: "requiremfa"
+            name: "requiremfa",
+            transformer: BooleanTransformer
         },
         mfaTypesRequired: {
             type: String,
@@ -70,19 +78,19 @@ const TenantPasswordConfigEntity = new EntitySchema({
             name: "mfatypesrequired"
         },
         maxRepeatingCharacterLength: {
-            type: "int",
+            type: getIntTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: true,
             name: "maxrepeatingcharacterlength"
         },
         passwordRotationPeriodDays: {
-            type: "int",
+            type: getIntTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: true,
             name: "passwordrotationperioddays"
         },
         passwordHistoryPeriod: {
-            type: "int",
+            type: getIntTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: true,
             name: "passwordhistoryperiod"

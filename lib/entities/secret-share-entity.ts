@@ -1,8 +1,11 @@
 import { EntitySchema } from 'typeorm';
+import { getBigIntTypeForDriver } from '@/utils/dao-utils';
+
+const {
+    RDB_DIALECT
+} = process.env;
 
 const SecretShareEntity = new EntitySchema({
-
-
     columns: {
         secretShareId: {
             type: String,
@@ -28,7 +31,7 @@ const SecretShareEntity = new EntitySchema({
             name: "otp"
         },
         expiresAtMs: {
-            type: "bigint",
+            type: getBigIntTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: false,
             name: "expiresatms"

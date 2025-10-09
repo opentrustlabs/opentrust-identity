@@ -1,4 +1,9 @@
 import { EntitySchema } from 'typeorm';
+import { BooleanTransformer, getBooleanTypeForDriver, getIntTypeForDriver } from '@/utils/dao-utils';
+
+const {
+    RDB_DIALECT
+} = process.env;
 
 export const TenantEntity = new EntitySchema({
     tableName: "tenant",
@@ -23,39 +28,44 @@ export const TenantEntity = new EntitySchema({
             name: "tenantdescription"
         },
         enabled: {
-            type: "boolean",
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
             primary: false,
-            nullable: false
+            nullable: false,
+            transformer: BooleanTransformer
         },
         allowUnlimitedRate: {
-            type: "boolean",
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: false,
-            name: "allowunlimitedrate"
+            name: "allowunlimitedrate",
+            transformer: BooleanTransformer
         },
         allowUserSelfRegistration: {
-            type: "boolean",
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: false,
-            name: "allowuserselfregistration"
+            name: "allowuserselfregistration",
+            transformer: BooleanTransformer
         },
         allowAnonymousUsers: {
-            type: "boolean",
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: false,
-            name: "allowanonymoususers"
+            name: "allowanonymoususers",
+            transformer: BooleanTransformer
         },
         allowSocialLogin: {
-            type: "boolean",
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: false,
             name: "allowsociallogin"
         },
         verifyEmailOnSelfRegistration: {
-            type: "boolean",
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: false,
-            name: "verifyemailonselfregistration"
+            name: "verifyemailonselfregistration",
+            transformer: BooleanTransformer
         },
         federatedAuthenticationConstraint: {
             type: String,
@@ -64,10 +74,11 @@ export const TenantEntity = new EntitySchema({
             name: "federatedauthenticationconstraint"
         },
         markForDelete: {
-            type: "boolean",
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: false,
-            name: "markfordelete"
+            name: "markfordelete",
+            transformer: BooleanTransformer
         },
         tenantType: {
             type: String,
@@ -76,46 +87,51 @@ export const TenantEntity = new EntitySchema({
             name: "tenanttype"
         },
         migrateLegacyUsers: {
-            type: "boolean",
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: false,
-            name: "migratelegacyusers"
+            name: "migratelegacyusers",
+            transformer: BooleanTransformer
         },
         allowLoginByPhoneNumber: {
-            type: "boolean",
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: false,
-            name: "allowloginbyphonenumber"
+            name: "allowloginbyphonenumber",
+            transformer: BooleanTransformer
         },
         allowForgotPassword: {
-            type: "boolean",
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: false,
-            name: "allowforgotpassword"
+            name: "allowforgotpassword",
+            transformer: BooleanTransformer
         },
         defaultRateLimit: {
-            type: "int",
+            type: getIntTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: true,
             name: "defaultratelimit"
         },
         defaultRateLimitPeriodMinutes: {
-            type: "int",
+            type: getIntTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: true,
             name: "defaultratelimitperiodminutes"
         },
         registrationRequireCaptcha: {
-            type: "boolean",
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: false,
-            name: "registrationrequirecaptcha"
+            name: "registrationrequirecaptcha",
+            transformer: BooleanTransformer
         },
         registrationRequireTermsAndConditions: {
-            type: "boolean",
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: false,
-            name: "registrationrequiretermsandconditions"
+            name: "registrationrequiretermsandconditions",
+            transformer: BooleanTransformer
         },
         termsAndConditionsUri: {
             type: String,

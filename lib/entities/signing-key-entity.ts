@@ -1,4 +1,10 @@
 import { EntitySchema } from 'typeorm';
+import { BooleanTransformer, getBooleanTypeForDriver, getBigIntTypeForDriver } from '@/utils/dao-utils';
+
+const {
+    RDB_DIALECT
+} = process.env;
+
 
 const SigningKeyEntity = new EntitySchema({
 
@@ -34,13 +40,13 @@ const SigningKeyEntity = new EntitySchema({
             name: "keypassword"
         },
         expiresAtMs: {
-            type: "bigint",
+            type: getBigIntTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: false,
             name: "expiresatms"
         },
         createdAtMs: {
-            type: "bigint",
+            type: getBigIntTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: false,
             name: "createdatms"
@@ -58,28 +64,32 @@ const SigningKeyEntity = new EntitySchema({
             name: "tenantid"
         },
         markForDelete: {
-            type: "boolean",
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: false,
-            name: "markfordelete"
+            name: "markfordelete",
+            transformer: BooleanTransformer
         },
         privateKeyPkcs8: {
-            type: String,
+            type: RDB_DIALECT === "oracle" ? "clob" : String,
             primary: false,
             nullable: false,
             name: "privatekeypkcs8",
+            length: RDB_DIALECT !== "oracle" ? 8000 : undefined
         },
         publicKey: {
-            type: String,
+            type: RDB_DIALECT === "oracle" ? "clob" : String,
             primary: false,
             nullable: true,
             name: "publickey",
+            length: RDB_DIALECT !== "oracle" ? 8000 : undefined
         },
         keyCertificate: {
-            type: String,
+            type: RDB_DIALECT === "oracle" ? "clob" : String,
             primary: false,
             nullable: true,
-            name: "keycertificate"
+            name: "keycertificate",
+            length: RDB_DIALECT !== "oracle" ? 8000 : undefined
         }
     },
 

@@ -1,7 +1,11 @@
 import { EntitySchema } from 'typeorm';
+import { BooleanTransformer, getBooleanTypeForDriver, getIntTypeForDriver } from '@/utils/dao-utils';
+
+const {
+    RDB_DIALECT
+} = process.env;
 
 const SystemSettingsEntity = new EntitySchema({
-
 
     columns: {
         systemId: {
@@ -10,16 +14,18 @@ const SystemSettingsEntity = new EntitySchema({
             name: "systemid"
         },
         allowRecoveryEmail: {
-            type: "boolean",
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: false,
-            name: "allowrecoveryemail"
+            name: "allowrecoveryemail",
+            transformer: BooleanTransformer
         },
         allowDuressPassword: {
-            type: "boolean",
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: false,
-            name: "allowduresspassword"
+            name: "allowduresspassword",
+            transformer: BooleanTransformer
         },
         rootClientId: {
             type: String,
@@ -28,13 +34,14 @@ const SystemSettingsEntity = new EntitySchema({
             name: "rootclientid"
         },
         enablePortalAsLegacyIdp: {
-            type: "boolean",
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: false,
-            name: "enableportalaslegacyidp"
+            name: "enableportalaslegacyidp",
+            transformer: BooleanTransformer
         },
         auditRecordRetentionPeriodDays: {
-            type: "int",
+            type: getIntTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: true,
             name: "auditrecordretentionperioddays"

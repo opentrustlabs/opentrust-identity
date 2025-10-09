@@ -1,4 +1,9 @@
 import { EntitySchema } from 'typeorm';
+import { BooleanTransformer, getBooleanTypeForDriver } from '@/utils/dao-utils';
+
+const {
+    RDB_DIALECT
+} = process.env;
 
 const CaptchaConfigEntity = new EntitySchema({
 
@@ -34,16 +39,18 @@ const CaptchaConfigEntity = new EntitySchema({
             name: "minscorethreshold"
         },
         useCaptchaV3: {
-            type: "boolean",
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: false,
-            name: "userecaptchav3"
+            name: "userecaptchav3",
+            transformer: BooleanTransformer
         },
         useEnterpriseCaptcha: {
-            type: "boolean",
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: false,
-            name: "useenterprisecaptcha"
+            name: "useenterprisecaptcha",
+            transformer: BooleanTransformer
         }
     },
 

@@ -1,9 +1,11 @@
 import { EntitySchema } from 'typeorm';
+import { BooleanTransformer, getBooleanTypeForDriver, getIntTypeForDriver, getBigIntTypeForDriver } from '@/utils/dao-utils';
 
+const {
+    RDB_DIALECT
+} = process.env;
 
 const UserProfileChangeEmailStateEntity = new EntitySchema({
-
-
     columns: {
         userId: {
             type: String,
@@ -27,7 +29,7 @@ const UserProfileChangeEmailStateEntity = new EntitySchema({
             name: "email"
         },
         changeOrder: {
-            type: "int",
+            type: getIntTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: false,
             name: "changeorder"
@@ -39,16 +41,17 @@ const UserProfileChangeEmailStateEntity = new EntitySchema({
             name: "changestatestatus"
         },
         expiresAtMs: {
-            type: "bigint",
+            type: getBigIntTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: false,
             name: "expiresatms"
         },
         isPrimaryEmail: {
-            type: "boolean",
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: false,
-            name: "isprimaryemail"
+            name: "isprimaryemail",
+            transformer: BooleanTransformer
         }
     },
 

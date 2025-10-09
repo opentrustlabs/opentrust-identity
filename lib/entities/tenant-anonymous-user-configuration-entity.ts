@@ -1,4 +1,9 @@
 import { EntitySchema } from 'typeorm';
+import { getIntTypeForDriver } from '@/utils/dao-utils';
+
+const {
+    RDB_DIALECT
+} = process.env;
 
 const TenantAnonymousUserConfigurationEntity = new EntitySchema({
 
@@ -23,7 +28,7 @@ const TenantAnonymousUserConfigurationEntity = new EntitySchema({
             name: "defaultlanguagecode"
         },
         tokenttlseconds: {
-            type: "int",
+            type: getIntTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: true,
             name: "tokenttlseconds"

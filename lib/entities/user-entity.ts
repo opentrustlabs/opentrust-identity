@@ -1,4 +1,9 @@
 import { EntitySchema } from 'typeorm';
+import { BooleanTransformer, getBooleanTypeForDriver } from '@/utils/dao-utils';
+
+const {
+    RDB_DIALECT
+} = process.env;
 
 const UserEntity = new EntitySchema({
     name: "users",
@@ -59,16 +64,18 @@ const UserEntity = new EntitySchema({
             name: "email"
         },
         emailVerified: {
-            type: "boolean",
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: false,
-            name: "emailverified"
+            name: "emailverified",
+            transformer: BooleanTransformer
         },
         enabled: {
-            type: "boolean",
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: false,
-            name: "enabled"
+            name: "enabled",
+            transformer: BooleanTransformer
         },
         federatedOIDCProviderSubjectId: {
             type: String,
@@ -89,10 +96,11 @@ const UserEntity = new EntitySchema({
             name: "lastname"
         },
         locked: {
-            type: "boolean",
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: false,
-            name: "locked"
+            name: "locked",
+            transformer: BooleanTransformer
         },
         middleName: {
             type: String,
@@ -119,10 +127,11 @@ const UserEntity = new EntitySchema({
             name: "preferredlanguagecode"
         },
         markForDelete: {
-            type: "boolean",
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: false,
-            name: "markfordelete"
+            name: "markfordelete",
+            transformer: BooleanTransformer
         }
     }
 });

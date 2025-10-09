@@ -1,8 +1,11 @@
 import { EntitySchema } from 'typeorm';
+import { BooleanTransformer, getBooleanTypeForDriver } from '@/utils/dao-utils';
+
+const {
+    RDB_DIALECT
+} = process.env;
 
 const UserTenantRelEntity = new EntitySchema({
-
-
     columns: {
         tenantId: {
             type: String,
@@ -21,10 +24,11 @@ const UserTenantRelEntity = new EntitySchema({
             name: "reltype"
         },
         enabled: {
-            type: "boolean",
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: false,
-            name: "enabled"
+            name: "enabled",
+            transformer: BooleanTransformer
         }
     },
 

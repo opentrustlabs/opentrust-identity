@@ -1,8 +1,11 @@
 import { EntitySchema } from 'typeorm';
+import { getBigIntTypeForDriver, getIntTypeForDriver } from '@/utils/dao-utils';
+
+const {
+    RDB_DIALECT
+} = process.env;
 
 const UserRegistrationStateEntity = new EntitySchema({
-
-
     columns: {
         userId: {
             type: String,
@@ -32,7 +35,7 @@ const UserRegistrationStateEntity = new EntitySchema({
             name: "registrationstate"
         },
         registrationStateOrder: {
-            type: "int",
+            type: getIntTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: false,
             name: "registrationstateorder"
@@ -50,7 +53,7 @@ const UserRegistrationStateEntity = new EntitySchema({
             name: "preauthtoken"
         },
         expiresAtMs: {
-            type: "bigint",
+            type: getBigIntTypeForDriver(RDB_DIALECT || ""),
             primary: false,
             nullable: false,
             name: "expiresatms"
