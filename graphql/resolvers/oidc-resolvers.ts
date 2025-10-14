@@ -219,6 +219,10 @@ const resolvers: Resolvers = {
         systemInitializationReady: (_: any, {}, oidcContext) => {
             const service: SystemInitializationService = new SystemInitializationService(oidcContext);
             return service.systemInitializationReady();
+        },
+        getAnonymousUserConfiguration: (_: any, { tenantId }, oidcContext) => {
+            const service: TenantService = new TenantService(oidcContext);
+            return service.getAnonymousUserConfiguration(tenantId);
         }
     },
     Mutation: {        

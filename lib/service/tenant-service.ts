@@ -619,6 +619,15 @@ class TenantService {
         }
     }
 
+    public async getAnonymousUserConfiguration(tenantId: string): Promise<TenantAnonymousUserConfiguration | null> {
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE], tenantId);
+        if(!authResult.isAuthorized){
+            throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
+        }
+        const existing: TenantAnonymousUserConfiguration | null = await tenantDao.getAnonymousUserConfiguration(tenantId);
+        return existing;
+    }
+
     public async setTenantAnonymousUserConfig(tenantAnonymousUserConfiguration: TenantAnonymousUserConfiguration): Promise<TenantAnonymousUserConfiguration> {
         const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_UPDATE_SCOPE], tenantAnonymousUserConfiguration.tenantId); 
         if(!authResult.isAuthorized){

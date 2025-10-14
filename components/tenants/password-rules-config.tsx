@@ -44,7 +44,7 @@ const PasswordRulesConfiguration: React.FC<PasswordRulesConfigurationProps> = ({
     const [passwordConfigInput, setPasswordConfigInput] = React.useState<PasswordConfigInput>(initInput);
     const [revertToInput, setRevertToInput] = React.useState<PasswordConfigInput>(initInput);
     const [hasSystemDefaultPasswordRules, setHasSystemDefaultPasswordRules] = React.useState<boolean>(false);
-    const [showConfirmRestorePasswordDefaultDialog, setShowConfirmRestorePasswordDefaultDialog] = React.useState<boolean>(false)
+    const [showConfirmRestorePasswordDefaultDialog, setShowConfirmRestorePasswordDefaultDialog] = React.useState<boolean>(false);
     
 
     // GRAPHQL FUNCTIONS

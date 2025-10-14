@@ -7,13 +7,18 @@ import { TenantAnonymousUserConfiguration, Tenant, TenantAnonymousUserConfigInpu
 import Grid2 from "@mui/material/Grid2";
 import TextField from "@mui/material/TextField";
 import { TENANT_ANONYMOUS_USER_CONFIGURATION_QUERY } from "@/graphql/queries/oidc-queries";
-import { TENANT_ANONYMOUS_USER_CONFIGURATION_MUTATION } from "@/graphql/mutations/oidc-mutations";
+import { REMOVE_TENANT_ANONYMOUS_USER_CONFIGURATION_MUTATION, TENANT_ANONYMOUS_USER_CONFIGURATION_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import Autocomplete from "@mui/material/Autocomplete";
 import { COUNTRY_CODES, CountryCodeDef, LANGUAGE_CODES, LanguageCodeDef } from "@/utils/i18n";
 import { getDefaultCountryCodeDef, getDefaultLanguageCodeDef } from "@/utils/client-utils";
 import DetailSectionActionHandler from "../layout/detail-section-action-handler";
 import { useIntl } from 'react-intl';
 import Alert from "@mui/material/Alert";
+import Dialog from "@mui/material/Dialog";
+import DialogContent from "@mui/material/DialogContent";
+import Typography from "@mui/material/Typography";
+import DialogActions from "@mui/material/DialogActions";
+import Button from "@mui/material/Button";
 
 
 export interface AnonymousUserConfigurationProps {
@@ -46,25 +51,27 @@ const AnonymousUserConfiguration: React.FC<AnonymousUserConfigurationProps> = ({
     // STATE VARIABLES
     const [markDirty, setMarkDirty] = React.useState<boolean>(false);
     const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
-    const [tenantAnonymousUserConfigInput, setTenantAnonymousUserConfigInput] = React.useState<TenantAnonymousUserConfigInput | null>(null);
-    //const [revertToInput, setRevertToInput] = React.useState<TenantLegacyUserMigrationConfigInput | null>(null);
-
+    const [tenantAnonymousUserConfigInput, setTenantAnonymousUserConfigInput] = React.useState<TenantAnonymousUserConfigInput>(initInput);
+    const [revertToInput, setRevertToInput] = React.useState<TenantAnonymousUserConfigInput>(initInput);
+    const [showConfirmRemoveAnonymousUserConfiguration, setShowConfirmRemoveAnonymousUserConfiguration] = React.useState<boolean>(false);
+    const [hasAnonymousUserConfiguration, setHasAnonymousUserConfiguration] = React.useState<boolean>(false);
 
     // GRAPHQL FUNCTIONS
     // data may be null, so present some sensible defaults
-    const { loading, error } = useQuery(TENANT_ANONYMOUS_USER_CONFIGURATION_QUERY, {
+    const { loading, error, refetch } = useQuery(TENANT_ANONYMOUS_USER_CONFIGURATION_QUERY, {
         variables: {
             tenantId: tenant.tenantId
         },
         onCompleted(data) {
-            if (data && data.getLegacyUserMigrationConfiguration) {
-                const config: TenantAnonymousUserConfiguration = data.getLegacyUserMigrationConfiguration as TenantAnonymousUserConfiguration;
+            if (data && data.getAnonymousUserConfiguration) {
+                const config: TenantAnonymousUserConfiguration = data.getAnonymousUserConfiguration as TenantAnonymousUserConfiguration;
                 initInput.defaultcountrycode = config.defaultcountrycode;
                 initInput.defaultlanguagecode = config.defaultlanguagecode;
                 initInput.tokenttlseconds = config.tokenttlseconds ? config.tokenttlseconds : 0;
-            }
-            setTenantAnonymousUserConfigInput({ ...initInput });
-            // setRevertToInput({...initInput});
+                setTenantAnonymousUserConfigInput({ ...initInput });
+                setRevertToInput({...initInput});
+                setHasAnonymousUserConfiguration(true);
+            }            
         },
     });
 
@@ -72,16 +79,51 @@ const AnonymousUserConfiguration: React.FC<AnonymousUserConfigurationProps> = ({
         variables: {
             tenantAnonymousUserConfigInput: tenantAnonymousUserConfigInput
         },
-        onCompleted() {
+        onCompleted(data) {
             onUpdateEnd(true);
             setMarkDirty(false);
+            if(data && data.setTenantAnonymousUserConfig){
+                const input: TenantAnonymousUserConfigInput = {
+                    tenantId: tenant.tenantId,
+                    tokenttlseconds: data.setTenantAnonymousUserConfig.tokenttlseconds,
+                    defaultcountrycode: data.setTenantAnonymousUserConfig.defaultcountrycode,
+                    defaultlanguagecode: data.setTenantAnonymousUserConfig.defaultlanguagecode
+                };
+                setTenantAnonymousUserConfigInput(input);
+                setRevertToInput(input);
+            }
+            if(hasAnonymousUserConfiguration === false){
+                setHasAnonymousUserConfiguration(true);
+            }
         },
         onError(error) {
             onUpdateEnd(false);
             setErrorMessage(intl.formatMessage({id: error.message}));
-            //setShowReset(true);
         }
     });
+
+    const [removeTenantAnonymousUserConfiguration] = useMutation(REMOVE_TENANT_ANONYMOUS_USER_CONFIGURATION_MUTATION, {
+        variables: {
+            tenantId: tenant.tenantId
+        },
+        onCompleted() {
+            onUpdateEnd(true);
+            setMarkDirty(false);
+            const input: TenantAnonymousUserConfigInput = {
+                tenantId: tenant.tenantId,
+                tokenttlseconds: 0,
+                defaultcountrycode: null,
+                defaultlanguagecode: null
+            };
+            setTenantAnonymousUserConfigInput(input);
+            setRevertToInput(input);
+            setHasAnonymousUserConfiguration(false);
+        },
+        onError(error) {
+            onUpdateEnd(false);
+            setErrorMessage(intl.formatMessage({id: error.message}));
+        }
+    })
 
 
     if (loading) return <DataLoading dataLoadingSize="md" color={null} />
@@ -90,6 +132,36 @@ const AnonymousUserConfiguration: React.FC<AnonymousUserConfigurationProps> = ({
     if (tenantAnonymousUserConfigInput) return (
 
         <>
+            {showConfirmRemoveAnonymousUserConfiguration &&
+                <Dialog
+                    open={showConfirmRemoveAnonymousUserConfiguration}
+                    maxWidth="sm"
+                    fullWidth={true}
+                >
+                    <DialogContent>
+                        <Typography>
+                            Confirm that you want to restore the system default settings for password rules:
+                        </Typography>
+                    </DialogContent>
+                    <DialogActions>
+                        <Button
+                            onClick={() => setShowConfirmRemoveAnonymousUserConfiguration(false)}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            onClick={() => {
+                                setShowConfirmRemoveAnonymousUserConfiguration(false);
+                                onUpdateStart();
+                                removeTenantAnonymousUserConfiguration();
+                            }}
+                        >
+                            Confirm
+                        </Button>
+                    </DialogActions>
+                </Dialog>
+            }
+
             <Grid2 container size={12} spacing={2}>
                 {errorMessage &&
                     <Grid2 marginBottom={"16px"} size={12} >
@@ -167,7 +239,7 @@ const AnonymousUserConfiguration: React.FC<AnonymousUserConfigurationProps> = ({
             {allowAnonymousUsers &&
                 <DetailSectionActionHandler
                     onDiscardClickedHandler={() => {
-                        setTenantAnonymousUserConfigInput({ ...initInput });
+                        setTenantAnonymousUserConfigInput({ ...revertToInput });
                         setMarkDirty(false);
                     }}
                     onUpdateClickedHandler={() => {
@@ -175,6 +247,12 @@ const AnonymousUserConfiguration: React.FC<AnonymousUserConfigurationProps> = ({
                         mutateAnonymousUserConfiguration();
                     }}
                     markDirty={markDirty}
+                    enableRestoreDefault={hasAnonymousUserConfiguration === true}
+                    restoreDefaultHandler={() => {
+                        setShowConfirmRemoveAnonymousUserConfiguration(true);
+                    }}
+                    tooltipTitle="Remove Anonymous User Configuration Values"
+
                 />
             }
 
