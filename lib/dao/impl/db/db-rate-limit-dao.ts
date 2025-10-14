@@ -55,7 +55,6 @@ class DBRateLimitDao extends RateLimitDao {
         
         
 
-
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const whereClauses: Array<{queryString: string, vars: any}> = [];
         
