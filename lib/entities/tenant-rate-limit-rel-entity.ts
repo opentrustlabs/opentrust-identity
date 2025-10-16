@@ -1,45 +1,47 @@
-import { Model, DataTypes, Sequelize } from "@sequelize/core";
+import { EntitySchema } from 'typeorm';
+import { BooleanTransformer, getBooleanTypeForDriver, getIntTypeForDriver } from '@/utils/dao-utils';
 
-class TenantRateLimitRelEntity extends Model {
-    
-    static initModel(sequelize: Sequelize): typeof TenantRateLimitRelEntity {
-        return TenantRateLimitRelEntity.init({
-            servicegroupid: {
-                type: DataTypes.STRING,
-                primaryKey: true,
-                columnName: "servicegroupid"
-            },
-            tenantId: {
-                type: DataTypes.STRING,
-                primaryKey: true,
-                columnName: "tenantid"
-            },
-            allowUnlimitedRate: {
-                type: DataTypes.BOOLEAN,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "allowunlimitedrate"
-            },
-            rateLimit: {
-                type: DataTypes.INTEGER,
-                primaryKey: false,
-                allowNull: true,
-				columnName: "ratelimit"
-            },
-            rateLimitPeriodMinutes: {
-                type: DataTypes.INTEGER,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "ratelimitperiodminutes"
-            }
-        }, 
-		{
-            sequelize,
-            tableName: "tenant_rate_limit_rel",
-            modelName: "tenantRateLimitRel",
-            timestamps: false
-        });
-    }
-}
+const {
+    RDB_DIALECT
+} = process.env;
 
-export default TenantRateLimitRelEntity
+const TenantRateLimitRelEntity = new EntitySchema({
+    columns: {
+        servicegroupid: {
+            type: String,
+            primary: true,
+            name: "servicegroupid"
+        },
+        tenantId: {
+            type: String,
+            primary: true,
+            name: "tenantid"
+        },
+        allowUnlimitedRate: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: true,
+            name: "allowunlimitedrate",
+            transformer: BooleanTransformer
+        },
+        rateLimit: {
+            type: getIntTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: true,
+            name: "ratelimit"
+        },
+        rateLimitPeriodMinutes: {
+            type: getIntTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: true,
+            name: "ratelimitperiodminutes"
+        }
+    },
+
+    tableName: "tenant_rate_limit_rel",
+    name: "tenantRateLimitRel",
+
+});
+
+
+export default TenantRateLimitRelEntity;

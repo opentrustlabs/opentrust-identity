@@ -1,95 +1,103 @@
-import { Model, DataTypes, Sequelize } from "@sequelize/core";
+import { EntitySchema } from 'typeorm';
+import { BooleanTransformer, getBooleanTypeForDriver, getBigIntTypeForDriver } from '@/utils/dao-utils';
 
-class SigningKeyEntity extends Model {
-    
-    static initModel(sequelize: Sequelize): typeof SigningKeyEntity {
-        return SigningKeyEntity.init({
-            keyId: {
-                type: DataTypes.STRING,
-                primaryKey: true,
-                columnName: "keyid"
-            },
-            keyType: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "keytype"
-            },
-            keyName: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "keyname"
-            },
-            keyUse: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-				columnName: "keyuse"
-            },            
-            keyPassword: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "keypassword"
-            },            
-            expiresAtMs: {
-                type: DataTypes.BIGINT,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "expiresatms"
-            },
-            createdAtMs: {
-                type: DataTypes.BIGINT,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "createdatms"
-            },
-            keyStatus: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "keystatus"
-            },
-            tenantId: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "tenantid"
-            },
-            markForDelete: {
-                type: DataTypes.BOOLEAN,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "markfordelete"
-            },
-            privateKeyPkcs8: {
-                type: DataTypes.STRING(8000),
-                primaryKey: false,
-                allowNull: false,
-                columnName: "privatekeypkcs8",
-            },
-            publicKey: {
-                type: DataTypes.STRING(8000),
-                primaryKey: false,
-                allowNull: true,
-                columnName: "publickey",
-            },
-            keyCertificate: {
-                type: DataTypes.STRING(8000),
-                primaryKey: false,
-                allowNull: true,
-                columnName: "keycertificate"
-            }
-        }, 
-		{
-            sequelize,
-            tableName: "signing_key",
-            modelName: "signingKey",
-            timestamps: false
-        });
-    }
-}
+const {
+    RDB_DIALECT
+} = process.env;
+
+
+const SigningKeyEntity = new EntitySchema({
+
+
+    columns: {
+        keyId: {
+            type: String,
+            primary: true,
+            name: "keyid"
+        },
+        keyType: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "keytype"
+        },
+        keyName: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "keyname"
+        },
+        keyUse: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "keyuse"
+        },
+        keyPassword: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "keypassword"
+        },
+        expiresAtMs: {
+            type: getBigIntTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "expiresatms"
+        },
+        createdAtMs: {
+            type: getBigIntTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "createdatms"
+        },
+        keyStatus: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "keystatus"
+        },
+        tenantId: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "tenantid"
+        },
+        markForDelete: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "markfordelete",
+            transformer: BooleanTransformer
+        },
+        privateKeyPkcs8: {
+            type: RDB_DIALECT === "oracle" ? "clob" : String,
+            primary: false,
+            nullable: false,
+            name: "privatekeypkcs8",
+            length: RDB_DIALECT !== "oracle" ? 8000 : undefined
+        },
+        publicKey: {
+            type: RDB_DIALECT === "oracle" ? "clob" : String,
+            primary: false,
+            nullable: true,
+            name: "publickey",
+            length: RDB_DIALECT !== "oracle" ? 8000 : undefined
+        },
+        keyCertificate: {
+            type: RDB_DIALECT === "oracle" ? "clob" : String,
+            primary: false,
+            nullable: true,
+            name: "keycertificate",
+            length: RDB_DIALECT !== "oracle" ? 8000 : undefined
+        }
+    },
+
+    tableName: "signing_key",
+    name: "signingKey",
+
+});
+
 
 
 export default SigningKeyEntity;

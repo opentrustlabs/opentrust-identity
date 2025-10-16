@@ -210,6 +210,9 @@ export const SECRET_ENTRY_DELEGATE_SCOPE="secret.entry.delegate";
 // Allows a client to invoke custom encryption/decryption services
 // This is for implementations which use a KMS_STRATEGY of "custom"
 export const CUSTOM_ENCRYP_DECRYPT_SCOPE="custom.encryptdecrypt";
+// Allows a client to call a SMS-wrapper service for sending
+// SMS message using whatever service the organization has
+export const SMS_SEND_SCOPE="sms.send";
 
 
 export const SCOPE_USE_IAM_MANAGEMENT="IAM_MANAGEMENT";
@@ -263,7 +266,9 @@ export const ALL_INTERNAL_SCOPE_NAMES = [
     // Secret entry
     SECRET_ENTRY_DELEGATE_SCOPE,
     // Custom encryption/decryption
-    CUSTOM_ENCRYP_DECRYPT_SCOPE
+    CUSTOM_ENCRYP_DECRYPT_SCOPE,
+    // SMS sending
+    SMS_SEND_SCOPE
 ];
 
 export const ALL_INTERNAL_SCOPE_NAMES_DISPLAY: Array<{scopeName: string, scopeDescription: string}> = [
@@ -350,6 +355,7 @@ export const ALL_INTERNAL_SCOPE_NAMES_DISPLAY: Array<{scopeName: string, scopeDe
     {scopeName: SECURITY_EVENT_WRITE_SCOPE, scopeDescription: "Ability to write to the security webhook endpoint"},
     {scopeName: SECRET_ENTRY_DELEGATE_SCOPE, scopeDescription: "Allows a user to delegate the entry of a secret value to an arbitrary person"},
     {scopeName: CUSTOM_ENCRYP_DECRYPT_SCOPE, scopeDescription: "Ability to use a custom KMS implementation"},
+    {scopeName: SMS_SEND_SCOPE, scopeDescription: "Ability to send SMS through a wrapper service"}
 ];
 
 
@@ -378,7 +384,9 @@ export const ROOT_TENANT_EXCLUSIVE_INTERNAL_SCOPE_NAMES = [
     // Secret entry
     SECRET_ENTRY_DELEGATE_SCOPE,
     // Custom encryption/decryption
-    CUSTOM_ENCRYP_DECRYPT_SCOPE
+    CUSTOM_ENCRYP_DECRYPT_SCOPE,
+    // SMS
+    SMS_SEND_SCOPE
 ];
 
 // These are the scope values which can be used WITHIN a non-root tenant. So actions such as 
@@ -1113,4 +1121,4 @@ export const FEDERATED_AUTH_TEST_STATE_PARAM_PREFIX="oidctest-";
 //                  DATABASE-RELATED CONSTANTS
 // 
 // ************************************************************************** //
-export const RDB_SUPPORTED_DIALECTS: Array<string> = ["mysql", "postgres", "mssql"];
+export const RDB_SUPPORTED_DIALECTS: Array<string> = ["mysql", "postgres", "mssql", "oracle"];

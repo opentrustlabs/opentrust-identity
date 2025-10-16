@@ -19,7 +19,7 @@ const logToStdOut: boolean = LOG_TO_STD_OUT && LOG_TO_STD_OUT === "true" ? true 
 const logLevel: string = LOG_LEVEL && ALLOWED_LOG_LEVELS.includes(LOG_LEVEL) ? LOG_LEVEL : "info";
 
 export interface LogAttributes {
-    [key: string]: string | number | boolean | GraphQLFormattedError | SecurityEvent | null;
+    [key: string]: string | number | boolean | GraphQLFormattedError | SecurityEvent | Array<string> | null;
 }
 
 export interface LogRecord {

@@ -70,7 +70,7 @@ import { logWithDetails } from "../logging/logger";
 
 const {
     CASSANDRA_CONTACT_POINTS,
-    CASSANDRA_KEY_SPACE,
+    CASSANDRA_KEYSPACE,
     CASSANDRA_LOCAL_DATA_CENTER,
     CASSANDRA_USERNAME,
     CASSANDRA_PASSWORD
@@ -101,7 +101,7 @@ class CassandraDriver {
         return CassandraDriver.instance;
     }
 
-    public async getModelMapper(modelName: string): Promise<cassandra.mapping.ModelMapper> {
+    public async getModelMapper(name: string): Promise<cassandra.mapping.ModelMapper> {
         const m: cassandra.mapping.Mapper = await CassandraDriver.getMapper();
         return m.forModel(modelName);
     }
@@ -190,7 +190,7 @@ class CassandraDriver {
             global.cassandraClient = new cassandra.Client({
                 contactPoints: CASSANDRA_CONTACT_POINTS?.split(","),
                 localDataCenter: CASSANDRA_LOCAL_DATA_CENTER,
-                keyspace: CASSANDRA_KEY_SPACE,
+                keyspace: CASSANDRA_KEYSPACE || "opentrust_oidc_iam",
                 authProvider: authProvider
             });           
             try{

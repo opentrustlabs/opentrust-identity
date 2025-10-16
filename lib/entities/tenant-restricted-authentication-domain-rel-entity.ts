@@ -1,28 +1,26 @@
-import { Model, DataTypes, Sequelize } from "@sequelize/core";
+import { EntitySchema } from 'typeorm';
 
-class TenantRestrictedAuthenticationDomainRelEntity extends Model {
-    
-    static initModel(sequelize: Sequelize): typeof TenantRestrictedAuthenticationDomainRelEntity {
-        return TenantRestrictedAuthenticationDomainRelEntity.init({
-            tenantId: {
-                type: DataTypes.STRING,
-                primaryKey: true,
-                columnName: "tenantid"
-            },
-            domain: {
-                type: DataTypes.STRING,
-                primaryKey: true,
-                columnName: "domain"
-            }
-        }, 
-        {
-            sequelize,
-            tableName: "tenant_restricted_authentication_domain_rel",
-            modelName: "tenantRestrictedAuthenticationDomainRel",
-            timestamps: false
-        });
-    }
-}
+const TenantRestrictedAuthenticationDomainRelEntity = new EntitySchema({
+
+
+    columns: {
+        tenantId: {
+            type: String,
+            primary: true,
+            name: "tenantid"
+        },
+        domain: {
+            type: String,
+            primary: true,
+            name: "domain"
+        }
+    },
+
+    tableName: "tenant_restricted_authentication_domain_rel",
+    name: "tenantRestrictedAuthenticationDomainRel",
+
+});
+
 
 
 export default TenantRestrictedAuthenticationDomainRelEntity;

@@ -1,76 +1,79 @@
-import { Model, DataTypes, Sequelize } from "@sequelize/core";
+import { EntitySchema } from 'typeorm';
+import { BooleanTransformer, getBooleanTypeForDriver, getIntTypeForDriver } from '@/utils/dao-utils';
 
-class UserMfaRelEntity extends Model {
-    
-    static initModel(sequelize: Sequelize): typeof UserMfaRelEntity {
-        return UserMfaRelEntity.init({
-            userId: {
-                type: DataTypes.STRING,
-                primaryKey: true,
-                columnName: "userid"
-            },
-            mfaType: {
-                type: DataTypes.STRING,
-                primaryKey: true,
-                columnName: "mfatype"
-            },
-            primaryMfa: {
-                type: DataTypes.BOOLEAN,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "primarymfa"
-            },
-            totpSecret: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: true,
-				columnName: "totpsecret"
-            },
-            totpHashAlgorithm: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "totphashalgorithm"
-            },
-            fido2PublicKey: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "fido2publickey"
-            },
-            fido2CredentialId: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "fido2credentialid"
-            },
-            fido2PublicKeyAlgorithm: {
-                type: DataTypes.INTEGER,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "fido2publickeyalgorithm"
-            },
-            fido2Transports: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "fido2transports"
-            },
-            fido2KeySupportsCounters: {
-                type: DataTypes.BOOLEAN,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "fido2keysupportscounters"
-            }
-        }, 
-		{
-            sequelize,
-            tableName: "user_mfa_rel",
-            modelName: "userMfaRel",
-            timestamps: false
-        });
-    }
-}
+const {
+    RDB_DIALECT
+} = process.env;
+
+const UserMfaRelEntity = new EntitySchema({
+    columns: {
+        userId: {
+            type: String,
+            primary: true,
+            name: "userid"
+        },
+        mfaType: {
+            type: String,
+            primary: true,
+            name: "mfatype"
+        },
+        primaryMfa: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "primarymfa",
+            transformer: BooleanTransformer
+        },
+        totpSecret: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "totpsecret"
+        },
+        totpHashAlgorithm: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "totphashalgorithm"
+        },
+        fido2PublicKey: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "fido2publickey"
+        },
+        fido2CredentialId: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "fido2credentialid"
+        },
+        fido2PublicKeyAlgorithm: {
+            type: getIntTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: true,
+            name: "fido2publickeyalgorithm"
+        },
+        fido2Transports: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "fido2transports"
+        },
+        fido2KeySupportsCounters: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: true,
+            name: "fido2keysupportscounters",
+            transformer: BooleanTransformer
+        }
+    },
+
+    tableName: "user_mfa_rel",
+    name: "userMfaRel",
+
+});
+
 
 
 export default UserMfaRelEntity;

@@ -1,40 +1,36 @@
-import { Model, DataTypes, Sequelize } from "@sequelize/core";
+import { EntitySchema } from 'typeorm';
 
-class TenantLegacyUserMigrationConfigEntity extends Model {
-    
-    static initModel(sequelize: Sequelize): typeof TenantLegacyUserMigrationConfigEntity {
-        return TenantLegacyUserMigrationConfigEntity.init({
-            tenantId: {
-                type: DataTypes.STRING,
-                primaryKey: true,
-                columnName: "tenantid"
-            },
-            authenticationUri: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "authenticationuri"
-            },
-            userProfileUri: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "userprofileuri"
-            },
-            usernameCheckUri: {
-                type: DataTypes.BOOLEAN,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "usernamecheckuri"
-            }
-        }, 
-        {
-            sequelize,
-            tableName: "tenant_legacy_user_migration_config",
-            modelName: "tenantLegacyUserMigrationConfig",
-            timestamps: false
-    });
-}}
+const TenantLegacyUserMigrationConfigEntity = new EntitySchema({
+
+    tableName: "tenant_legacy_user_migration_config",
+    name: "tenantLegacyUserMigrationConfig",
+    columns: {
+        tenantId: {
+            type: String,
+            primary: true,
+            name: "tenantid"
+        },
+        authenticationUri: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "authenticationuri"
+        },
+        userProfileUri: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "userprofileuri"
+        },
+        usernameCheckUri: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "usernamecheckuri"
+        }
+    }
+});
+
 
 
 export default TenantLegacyUserMigrationConfigEntity;

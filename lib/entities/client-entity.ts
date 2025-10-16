@@ -1,101 +1,105 @@
-import { Model, DataTypes, Sequelize } from "@sequelize/core";
+import { EntitySchema } from 'typeorm';
+import { BooleanTransformer, getBooleanTypeForDriver, getIntTypeForDriver } from '@/utils/dao-utils';
 
-class ClientEntity extends Model {
-    
-    static initModel(sequelize: Sequelize): typeof ClientEntity {
-        return ClientEntity.init({
-            clientId: {
-                type: DataTypes.STRING,
-                primaryKey: true,
-                columnName: "clientid"
-            },
-            tenantId: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "tenantid"
-            },
-            clientName: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "clientname"
-            },
-            clientDescription: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: true,
-				columnName: "clientdescription"
-            },
-            clientSecret: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "clientsecret"
-            },
-            clientTokenTTLSeconds: {
-                type: DataTypes.INTEGER,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "clienttokenttlseconds"
-            },
-            clientType: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "clienttype"
-            },
-            maxRefreshTokenCount: {
-                type: DataTypes.INTEGER,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "maxrefreshtokencount"
-            },
-            enabled: {
-                type: DataTypes.BOOLEAN,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "enabled"
-            },
-            oidcEnabled: {
-                type: DataTypes.BOOLEAN,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "oidcenabled"
-            },
-            pkceEnabled: {
-                type: DataTypes.BOOLEAN,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "pkceenabled"
-            },
-            userTokenTTLSeconds: {
-                type: DataTypes.INTEGER,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "usertokenttlseconds"
-            },
-            markForDelete: {
-                type: DataTypes.BOOLEAN,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "markfordelete"
-            },
-            audience: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "audience"
-            }
-        }, 
-		{
-            sequelize,
-            tableName: "client",
-            modelName: "client",
-            timestamps: false
-        });
-    }
-}
+const {
+    RDB_DIALECT
+} = process.env;
+
+const ClientEntity = new EntitySchema({
+
+    tableName: "client",
+    name: "client",
+    columns: {
+        clientId: {
+            type: String,
+            primary: true,
+            name: "clientid"
+        },
+        tenantId: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "tenantid"
+        },
+        clientName: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "clientname"
+        },
+        clientDescription: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "clientdescription"
+        },
+        clientSecret: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "clientsecret"
+        },
+        clientTokenTTLSeconds: {
+            type: getIntTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: true,
+            name: "clienttokenttlseconds"
+        },
+        clientType: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "clienttype"
+        },
+        maxRefreshTokenCount: {
+            type: getIntTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: true,
+            name: "maxrefreshtokencount"
+        },
+        enabled: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "enabled",
+            transformer: BooleanTransformer
+        },
+        oidcEnabled: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "oidcenabled",
+            transformer: BooleanTransformer
+        },
+        pkceEnabled: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "pkceenabled",
+            transformer: BooleanTransformer
+        },
+        userTokenTTLSeconds: {
+            type: getIntTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: true,
+            name: "usertokenttlseconds"
+        },
+        markForDelete: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "markfordelete",
+            transformer: BooleanTransformer
+        },
+        audience: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "audience"
+        }
+    },
+
+});
 
 
 export default ClientEntity;

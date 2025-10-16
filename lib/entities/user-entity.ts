@@ -1,137 +1,139 @@
-import { Model, DataTypes, Sequelize } from "@sequelize/core";
+import { EntitySchema } from 'typeorm';
+import { BooleanTransformer, getBooleanTypeForDriver } from '@/utils/dao-utils';
 
-class UserEntity extends Model {
-    
-    static initModel(sequelize: Sequelize): typeof UserEntity {
-        return UserEntity.init({
-            userId: {
-                type: DataTypes.STRING,
-                primaryKey: true,
-                columnName: "userid"
-            },
-            address: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "address"
-            },
-            addressLine1: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "addressline1"
-            },
-            city: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: true,
-				columnName: "city"
-            },
-            postalCode: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "postalcode"
-            },
-            stateRegionProvince: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "stateregionprovince"
-            },
-            countryCode: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "countrycode"
-            },
-            domain: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "domain"
-            },
-            email: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "email"
-            },
-            emailVerified: {
-                type: DataTypes.BOOLEAN,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "emailverified"
-            },
-            enabled: {
-                type: DataTypes.BOOLEAN,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "enabled"
-            },
-            federatedOIDCProviderSubjectId: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "federatedoidcprovidersubjectid"
-            },
-            firstName: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "firstname"
-            },
-            lastName: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "lastname"
-            },
-            locked: {
-                type: DataTypes.BOOLEAN,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "locked"
-            },
-            middleName: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "middlename"
-            },
-            nameOrder: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "nameorder"
-            },
-            phoneNumber: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "phonenumber"
-            },
-            preferredLanguageCode: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "preferredlanguagecode"
-            },
-            markForDelete: {
-                type: DataTypes.BOOLEAN,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "markfordelete"
-            }
-        }, 
-		{
-            sequelize,
-            tableName: "users",
-            modelName: "users",
-            timestamps: false
-        });
+const {
+    RDB_DIALECT
+} = process.env;
+
+const UserEntity = new EntitySchema({
+    name: "users",
+    tableName: "users",
+    columns: {
+        userId: {
+            type: String,
+            primary: true,
+            name: "userid"
+
+        },
+        address: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "address"
+        },
+        addressLine1: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "addressline1"
+        },
+        city: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "city"
+        },
+        postalCode: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "postalcode"
+        },
+        stateRegionProvince: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "stateregionprovince"
+        },
+        countryCode: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "countrycode"
+        },
+        domain: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "domain"
+        },
+        email: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "email"
+        },
+        emailVerified: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "emailverified",
+            transformer: BooleanTransformer
+        },
+        enabled: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "enabled",
+            transformer: BooleanTransformer
+        },
+        federatedOIDCProviderSubjectId: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "federatedoidcprovidersubjectid"
+        },
+        firstName: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "firstname"
+        },
+        lastName: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "lastname"
+        },
+        locked: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "locked",
+            transformer: BooleanTransformer
+        },
+        middleName: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "middlename"
+        },
+        nameOrder: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "nameorder"
+        },
+        phoneNumber: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "phonenumber"
+        },
+        preferredLanguageCode: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "preferredlanguagecode"
+        },
+        markForDelete: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "markfordelete",
+            transformer: BooleanTransformer
+        }
     }
-}
-
+});
 
 export default UserEntity;

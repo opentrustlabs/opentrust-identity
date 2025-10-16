@@ -1,72 +1,75 @@
-import { Model, DataTypes, Sequelize } from "@sequelize/core";
+import { EntitySchema } from 'typeorm';
+import { getBigIntTypeForDriver } from '@/utils/dao-utils';
 
-class AuthorizationDeviceCodeDataEntity extends Model {
-    
-    static initModel(sequelize: Sequelize): typeof AuthorizationDeviceCodeDataEntity {
-        return AuthorizationDeviceCodeDataEntity.init({
-            deviceCodeId: {
-                type: DataTypes.STRING,
-                primaryKey: true,
-                allowNull: false,
-                columnName: "devicecodeid"
-            },
-            deviceCode: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "devicecode"
-            },            
-            userCode: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "usercode"
-            },
-            clientId: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "clientid"
-            },
-            tenantId: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "tenantid"
-            },
-            expiresAtMs: {
-                type: DataTypes.BIGINT,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "expiresatms"
-            },
-            scope: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "scope"
-            },
-            authorizationStatus: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "authorizationstatus"
-            },
-            userId: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "userid"
-            }
-        }, 
-        {
-            sequelize,
-            tableName: "authorization_device_code_data",
-            modelName: "authorizationDeviceCodeData",
-            timestamps: false
-        });
-    }
-}
+const {
+    RDB_DIALECT
+} = process.env;
+
+const AuthorizationDeviceCodeDataEntity = new EntitySchema({
+
+    columns: {
+        deviceCodeId: {
+            type: String,
+            primary: true,
+            nullable: false,
+            name: "devicecodeid"
+        },
+        deviceCode: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "devicecode"
+        },
+        userCode: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "usercode"
+        },
+        clientId: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "clientid"
+        },
+        tenantId: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "tenantid"
+        },
+        expiresAtMs: {
+            type: getBigIntTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "expiresatms"
+        },
+        scope: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "scope"
+        },
+        authorizationStatus: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "authorizationstatus"
+        },
+        userId: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "userid"
+        }
+    },
+
+    tableName: "authorization_device_code_data",
+    name: "authorizationDeviceCodeData",
+
+
+});
+
 
 
 export default AuthorizationDeviceCodeDataEntity;

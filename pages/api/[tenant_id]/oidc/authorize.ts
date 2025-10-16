@@ -34,21 +34,7 @@ export default async function handler(
 		code_challenge_method,
 		response_type,
 		response_mode } = req.query;
-        
-    // https://api.sigmaaldrich.com/auth/v1/openid/keys
-    // https://login.microsoftonline.com/common/discovery/v2.0/keys
-    // https://login.microsoftonline.com/common/v2.0/.well-known/openid-configuration
-    // const wellKnownConfig = await oidcServiceClient.getWellKnownConfig("https://login.microsoftonline.com/common/v2.0/.well-known/openid-configuration");
-    // const wellKnownConfig = await oidcServiceClient.getWellKnownConfig("https://api.sigmaaldrich.com/auth/.well-known/openid-configuration");
-    // console.log(JSON.stringify(wellKnownConfig));
-    // const msKeys: Jwks | null = await oidcServiceClient.getJwksKeys("https://login.microsoftonline.com/common/discovery/v2.0/keys");
-    // console.log(msKeys);
-    // if(msKeys){
-    //     console.log(msKeys.keys[0].x5c[0]);
-    // }
 
-    // const sialKeys = await oidcServiceClient.getJwksKeys("https://api.sigmaaldrich.com/auth/v1/openid/keys");
-    // console.log(sialKeys);
 
 	const tenantId = tenant_id as string;
 	const clientId = client_id as string;

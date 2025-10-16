@@ -1,35 +1,45 @@
-import { Model, DataTypes, Sequelize } from "@sequelize/core";
+import { EntitySchema } from 'typeorm';
+import { BooleanTransformer, getBooleanTypeForDriver } from '@/utils/dao-utils';
 
-class UserEmailRecoveryEntity extends Model {
-    
-    static initModel(sequelize: Sequelize): typeof UserEmailRecoveryEntity {
-        return UserEmailRecoveryEntity.init({
-            userId: {
-                type: DataTypes.STRING,
-                primaryKey: true,
-                columnName: "userid"
-            },
-            email: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "email"
-            },
-            emailVerified: {
-                type: DataTypes.BOOLEAN,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "emailverified"
-            }
-        }, 
-        {
-            sequelize,
-            tableName: "user_email_recovery",
-            modelName: "userEmailRecovery",
-            timestamps: false
-        });
-    }
+const {
+    RDB_DIALECT
+} = process.env;
+
+export interface UserEmailRecovery {
+    userId: string,
+    email: string,
+    emailVerified: boolean
 }
+
+const UserEmailRecoveryEntity = new EntitySchema({
+
+
+    columns: {
+        userId: {
+            type: String,
+            primary: true,
+            name: "userid"
+        },
+        email: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "email"
+        },
+        emailVerified: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "emailverified",
+            transformer: BooleanTransformer
+        }
+    },
+
+    tableName: "user_email_recovery",
+    name: "userEmailRecovery",
+
+});
+
 
 
 export default UserEmailRecoveryEntity;

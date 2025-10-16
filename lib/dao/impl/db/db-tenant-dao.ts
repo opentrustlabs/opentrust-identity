@@ -1,19 +1,8 @@
-import { Tenant, TenantManagementDomainRel, TenantAnonymousUserConfiguration, TenantLookAndFeel, TenantPasswordConfig, TenantLoginFailurePolicy, TenantLegacyUserMigrationConfig, TenantRestrictedAuthenticationDomainRel, CaptchaConfig, SystemSettings, SystemCategory } from "@/graphql/generated/graphql-types";
+import { Tenant, TenantManagementDomainRel, TenantAnonymousUserConfiguration, TenantLookAndFeel, TenantPasswordConfig, TenantLoginFailurePolicy, TenantLegacyUserMigrationConfig, TenantRestrictedAuthenticationDomainRel, CaptchaConfig, SystemSettings, SystemCategory, UserTenantRel, RefreshData, ClientAuthHistory } from "@/graphql/generated/graphql-types";
 import TenantDao from "../../tenant-dao";
 import { DEFAULT_AUDIT_RECORD_RETENTION_PERIOD_DAYS, OPENTRUST_IDENTITY_VERSION, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
-import TenantManagementDomainRelEntity from "@/lib/entities/tenant-management-domain-rel-entity";
-import TenantAnonymousUserConfigurationEntity from "@/lib/entities/tenant-anonymous-user-configuration-entity";
-import TenantPasswordConfigEntity from "@/lib/entities/tenant-password-config-entity";
-import TenantLookAndFeelEntity from "@/lib/entities/tenant-look-and-feel-entity";
-import TenantLegacyUserMigrationConfigEntity from "@/lib/entities/tenant-legacy-user-migration-config-entity";
-import TenantRestrictedAuthenticationDomainRelEntity from "@/lib/entities/tenant-restricted-authentication-domain-rel-entity";
-import DBDriver from "@/lib/data-sources/sequelize-db";
-import { Op, Sequelize } from "@sequelize/core";
-import { TenantEntity } from "@/lib/entities/tenant-entity";
-import TenantLoginFailurePolicyEntity from "@/lib/entities/tenant-login-failure-policy-entity";
-import UserTenantRelEntity from "@/lib/entities/user-tenant-rel-entity";
-import CaptchaConfigEntity from "@/lib/entities/captcha-config-entity";
-import SystemSettingsEntity from "@/lib/entities/system-settings-entity";
+import RDBDriver from "@/lib/data-sources/rdb";
+import { Brackets, In } from "typeorm";
 
 
 class DBTenantDao extends TenantDao {
@@ -26,16 +15,15 @@ class DBTenantDao extends TenantDao {
 
         const tenant: Tenant | null = this.getRootTenantFromCache();
         if(tenant === null){
-            const tenantEntity: typeof TenantEntity = await DBDriver.getInstance().getTenantEntity();        
-            const entity: TenantEntity | null = await tenantEntity.findOne({
+            const tenantRepo = await RDBDriver.getInstance().getTenantRepository();
+            const entity = await tenantRepo.findOne({
                 where: {
                     tenantType: TENANT_TYPE_ROOT_TENANT
                 }
             });
-            if(entity){
-                const root: Tenant = entity.dataValues
-                this.setRootTenantOnCache(root);
-                return root;
+            if(entity){                
+                this.setRootTenantOnCache(entity);
+                return entity;
             }
             return null;            
         }
@@ -44,71 +32,69 @@ class DBTenantDao extends TenantDao {
 
     public async createRootTenant(tenant: Tenant): Promise<Tenant> {
         tenant.tenantType = TENANT_TYPE_ROOT_TENANT;
-        const tenantEntity: typeof TenantEntity = await DBDriver.getInstance().getTenantEntity();    
-        await tenantEntity.create(tenant);
+        const tenantRepo = await RDBDriver.getInstance().getTenantRepository();
+        await tenantRepo.insert(tenant);
         return Promise.resolve(tenant);
     }
 
     public async updateRootTenant(tenant: Tenant): Promise<Tenant> {
         tenant.tenantType = TENANT_TYPE_ROOT_TENANT;
-        const tenantEntity: typeof TenantEntity = await DBDriver.getInstance().getTenantEntity();    
-        await tenantEntity.update(tenant, {where: {tenantId: tenant.tenantId}});        
+        const tenantRepo = await RDBDriver.getInstance().getTenantRepository();
+        await tenantRepo.update(
+            {
+                tenantId: tenant.tenantId
+            },
+            tenant
+        );
         return Promise.resolve(tenant);
     }
 
     public async getTenants(tenantIds: Array<string>): Promise<Array<Tenant>> {
-        const tenantEntity: typeof TenantEntity = await DBDriver.getInstance().getTenantEntity();    
-
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const filter: any = {};
-        if(tenantIds){
-            filter.tenantId = { [Op.in]: tenantIds};
-        }       
-        
-        const arr: Array<TenantEntity> = await tenantEntity.findAll({
-            where: filter,
-            order: [
-                ["tenantName", "ASC"]
-            ]          
+        const tenantRepo = await RDBDriver.getInstance().getTenantRepository();
+ 
+        const arr = await tenantRepo.find({
+            where: {
+                tenantId: In(tenantIds)
+            },
+            order: {
+                tenantName: "ASC"
+            }
         });
-        return Promise.resolve(arr.map(e => e.dataValues));
+        return arr;
     }
 
     public async getTenantById(tenantId: string): Promise<Tenant | null> {
-        const tenantEntity: typeof TenantEntity = await DBDriver.getInstance().getTenantEntity();    
-        const entity: TenantEntity | null = await tenantEntity.findOne({
+        const tenantRepo = await RDBDriver.getInstance().getTenantRepository();
+        const result = await tenantRepo.findOne({
             where: {
                 tenantId: tenantId
             }
         });
-        if(entity){
-            return Promise.resolve(entity.dataValues as Tenant);
-        }
-        else{
-            return Promise.resolve(null);
-        }
+        return result;
     }
 
     public async createTenant(tenant: Tenant): Promise<Tenant | null> {
-        const tenantEntity: typeof TenantEntity = await DBDriver.getInstance().getTenantEntity();    
-        await tenantEntity.create(tenant);
+        const tenantRepo = await RDBDriver.getInstance().getTenantRepository();
+        await tenantRepo.insert(tenant);
         return tenant;
     }
 
     public async updateTenant(tenant: Tenant): Promise<Tenant> {
-        const tenantEntity: typeof TenantEntity = await DBDriver.getInstance().getTenantEntity();    
-        await tenantEntity.update(tenant, {where: {tenantId: tenant.tenantId}});
+        const tenantRepo = await RDBDriver.getInstance().getTenantRepository();
+        await tenantRepo.update(
+            {
+                tenantId: tenant.tenantId
+            },
+            tenant
+        )
         return Promise.resolve(tenant);    
     }
 
     public async deleteTenant(tenantId: string): Promise<void> {        
-        const tenantEntity: typeof TenantEntity = await DBDriver.getInstance().getTenantEntity();    
-        await tenantEntity.destroy({
-            where: {
-                tenantId: tenantId
-            }
+        const tenantRepo = await RDBDriver.getInstance().getTenantRepository();
+        await tenantRepo.delete({
+            tenantId: tenantId
         });
-
         return Promise.resolve();        
     }
 
@@ -123,21 +109,20 @@ class DBTenantDao extends TenantDao {
         if(domain){
             queryParams.domain = domain;
         }
-        const mndRelEntity: typeof TenantManagementDomainRelEntity = await DBDriver.getInstance().getTenantManagementDomainRelEntity();
-        const tenantManagementDomainRelEntities: Array<TenantManagementDomainRelEntity> | null = await mndRelEntity.findAll({
+        const tenantManagementDomainRelRepo = await RDBDriver.getInstance().getTenantManagementDomainRelRepository();
+        const tenantManagementDomainRelEntities = await tenantManagementDomainRelRepo.find({
             where: queryParams
         });
-
-        return tenantManagementDomainRelEntities.map((entity) => entity.dataValues);
+        return tenantManagementDomainRelEntities;
     }
 
     public async addDomainToTenantManagement(tenantId: string, domain: string): Promise<TenantManagementDomainRel | null> {
-        const mndRelEntity: typeof TenantManagementDomainRelEntity = await DBDriver.getInstance().getTenantManagementDomainRelEntity();
+        const tenantManagementDomainRelRepo = await RDBDriver.getInstance().getTenantManagementDomainRelRepository();
         const tenantManagementDomainRel: TenantManagementDomainRel = {
             tenantId: tenantId,
             domain: domain
         };
-        await mndRelEntity.create(tenantManagementDomainRel)
+        await tenantManagementDomainRelRepo.insert(tenantManagementDomainRel)
         return Promise.resolve(tenantManagementDomainRel);
     }
 
@@ -146,344 +131,376 @@ class DBTenantDao extends TenantDao {
             tenantId: tenantId,
             domain: domain
         };
-        const mndRelEntity: typeof TenantManagementDomainRelEntity = await DBDriver.getInstance().getTenantManagementDomainRelEntity();
-        await mndRelEntity.destroy({
-            where: {
-                tenantId: tenantId,
-                domain: domain
-            }
-        });
-        
+        const tenantManagementDomainRelRepo = await RDBDriver.getInstance().getTenantManagementDomainRelRepository();
+        await tenantManagementDomainRelRepo.delete({
+            tenantId: tenantId,
+            domain: domain
+        });        
         return Promise.resolve(model);
     }
     
     public async getAnonymousUserConfiguration(tenantId: string): Promise<TenantAnonymousUserConfiguration | null> {
-        const tenantAnonUserConfigEntity: typeof TenantAnonymousUserConfigurationEntity = await DBDriver.getInstance().getTenantAnonymousUserConfigurationEntity();      
-        const entity: TenantAnonymousUserConfigurationEntity | null = await tenantAnonUserConfigEntity.findOne({
+        const tenantAnonUserRepo = await RDBDriver.getInstance().getTenantAnonymousUserConfigurationRepository();
+        const entity: TenantAnonymousUserConfiguration | null = await tenantAnonUserRepo.findOne({
             where: {
                 tenantId: tenantId
             }
         });
-        return entity ? Promise.resolve(entity.dataValues as TenantAnonymousUserConfiguration) : Promise.resolve(null);
+        return entity;
     }
 
     public async createAnonymousUserConfiguration(anonymousUserConfiguration: TenantAnonymousUserConfiguration): Promise<TenantAnonymousUserConfiguration> {
-        const tenantAnonUserConfigEntity: typeof TenantAnonymousUserConfigurationEntity = await DBDriver.getInstance().getTenantAnonymousUserConfigurationEntity();  
-        await tenantAnonUserConfigEntity.create(anonymousUserConfiguration);        
+        const tenantAnonUserRepo = await RDBDriver.getInstance().getTenantAnonymousUserConfigurationRepository();
+        await tenantAnonUserRepo.insert(anonymousUserConfiguration);        
         return Promise.resolve(anonymousUserConfiguration);
     }
 
     public async updateAnonymousUserConfiguration(anonymousUserConfiguration: TenantAnonymousUserConfiguration): Promise<TenantAnonymousUserConfiguration> {
-
-        const tenantAnonUserConfigEntity: typeof TenantAnonymousUserConfigurationEntity = await DBDriver.getInstance().getTenantAnonymousUserConfigurationEntity(); 
-        await tenantAnonUserConfigEntity.update(anonymousUserConfiguration, {
-            where: {
+        const tenantAnonUserRepo = await RDBDriver.getInstance().getTenantAnonymousUserConfigurationRepository();
+        await tenantAnonUserRepo.update(
+            {
                 tenantId: anonymousUserConfiguration.tenantId
-            }
-        });
+            },
+            anonymousUserConfiguration
+        );
         return Promise.resolve(anonymousUserConfiguration);
     }
 
     public async deleteAnonymousUserConfiguration(tenantId: string): Promise<void> {
-        const tenantAnonUserConfigEntity: typeof TenantAnonymousUserConfigurationEntity = await DBDriver.getInstance().getTenantAnonymousUserConfigurationEntity(); 
-        await tenantAnonUserConfigEntity.destroy({
-            where: {
-                tenantId: tenantId
-            }
+        const tenantAnonUserRepo = await RDBDriver.getInstance().getTenantAnonymousUserConfigurationRepository();
+        await tenantAnonUserRepo.delete({
+            tenantId: tenantId
         });
         return Promise.resolve();
     }
 
-    public async getTenantPasswordConfig(tenantId: string): Promise<TenantPasswordConfig | null> {        
-        const tenantPasswordConfigEntity: TenantPasswordConfigEntity | null = await (await DBDriver.getInstance().getTenantPasswordConfigEntity()).findOne({
+    public async getTenantPasswordConfig(tenantId: string): Promise<TenantPasswordConfig | null> {
+        const tenantPasswordConfigRepo = await RDBDriver.getInstance().getTenantPasswordConfigRepository();
+        const tenantPasswordConfigEntity = await tenantPasswordConfigRepo.findOne({
             where: {
                 tenantId: tenantId
             }
-        })
-
-        if(tenantPasswordConfigEntity){
-            return tenantPasswordConfigEntity.dataValues as TenantPasswordConfig;
-        }
-        else{
-            return null;
-        }        
+        });
+        return tenantPasswordConfigEntity;      
     }
 
-    public async assignPasswordConfigToTenant(tenantPasswordConfig: TenantPasswordConfig): Promise<TenantPasswordConfig> {                        
-        await (await DBDriver.getInstance().getTenantPasswordConfigEntity()).create(tenantPasswordConfig);        
+    public async assignPasswordConfigToTenant(tenantPasswordConfig: TenantPasswordConfig): Promise<TenantPasswordConfig> {
+        const tenantPasswordConfigRepo = await RDBDriver.getInstance().getTenantPasswordConfigRepository();
+        await tenantPasswordConfigRepo.insert(tenantPasswordConfig);        
         return Promise.resolve(tenantPasswordConfig);
     }
 
     public async updatePasswordConfig(tenantPasswordConfig: TenantPasswordConfig): Promise<TenantPasswordConfig> {
-        await (await DBDriver.getInstance().getTenantPasswordConfigEntity()).update(tenantPasswordConfig, {
-            where: {
+        const tenantPasswordConfigRepo = await RDBDriver.getInstance().getTenantPasswordConfigRepository();
+        await tenantPasswordConfigRepo.update(
+            {
                 tenantId: tenantPasswordConfig.tenantId
-            }
-        });
+            },
+            tenantPasswordConfig
+        );
         return Promise.resolve(tenantPasswordConfig);
     }
 
     public async removePasswordConfigFromTenant(tenantId: string): Promise<void> {
-        await (await DBDriver.getInstance().getTenantPasswordConfigEntity()).destroy({
-            where: {
-                tenantId: tenantId
-            }
+        const tenantPasswordConfigRepo = await RDBDriver.getInstance().getTenantPasswordConfigRepository();
+        await tenantPasswordConfigRepo.delete({
+            tenantId: tenantId
         });        
         return Promise.resolve();
     }
 
     public async getTenantLookAndFeel(tenantId: string): Promise<TenantLookAndFeel | null> {
-        
-        const entity: TenantLookAndFeelEntity | null = await (await DBDriver.getInstance().getTenantLookAndFeelEntity()).findOne({
+        const tenantLookAndFeelRepo = await RDBDriver.getInstance().getTenantLookAndFeelRepository();
+        const entity = await tenantLookAndFeelRepo.findOne({
             where: {
                 tenantid: tenantId
             }
         });
-        if(entity){
-            const tenantLookAndFeel: TenantLookAndFeel = {
-                tenantid: entity.getDataValue("tenantid"),
-                adminheaderbackgroundcolor: entity.getDataValue("adminheaderbackgroundcolor"),
-                adminheadertext: entity.getDataValue("adminheadertext"),
-                adminheadertextcolor: entity.getDataValue("adminheadertextcolor"),
-                authenticationheaderbackgroundcolor: entity.getDataValue("authenticationheaderbackgroundcolor"),
-                authenticationheadertext: entity.getDataValue("authenticationheadertext"),
-                authenticationheadertextcolor: entity.getDataValue("authenticationheadertextcolor"),
-                authenticationlogo: entity.getDataValue("authenticationlogo") ?
-                    Buffer.from(entity.getDataValue("authenticationlogo")).toString("utf-8") : "",
-                authenticationlogouri: entity.getDataValue("authenticationlogouri"),
-                authenticationlogomimetype: entity.getDataValue("authenticationlogomimetype")
-            }
-            return Promise.resolve(tenantLookAndFeel);
-        }
-        else{
-            return Promise.resolve(null);
-        }
-
+        return entity;
     }
 
     public async createTenantLookAndFeel(tenantLookAndFeel: TenantLookAndFeel): Promise<TenantLookAndFeel> {
-        
-        await (await DBDriver.getInstance().getTenantLookAndFeelEntity()).create({
-            ...tenantLookAndFeel,
-            authenticationlogo: tenantLookAndFeel.authenticationlogo ? Buffer.from(tenantLookAndFeel.authenticationlogo, "utf-8") : null
-            
-
-        });
+        const tenantLookAndFeelRepo = await RDBDriver.getInstance().getTenantLookAndFeelRepository();
+        await tenantLookAndFeelRepo.insert(tenantLookAndFeel);
         return Promise.resolve(tenantLookAndFeel);
     }
 
 
     public async updateTenantLookAndFeel(tenantLookAndFeel: TenantLookAndFeel): Promise<TenantLookAndFeel> {
-
-        await (await DBDriver.getInstance().getTenantLookAndFeelEntity()).update({
-                ...tenantLookAndFeel,
-                authenticationlogo: tenantLookAndFeel.authenticationlogo ? Buffer.from(tenantLookAndFeel.authenticationlogo, "utf-8") : null
-            }, 
+        const tenantLookAndFeelRepo = await RDBDriver.getInstance().getTenantLookAndFeelRepository();
+        await tenantLookAndFeelRepo.update(
             {
-            where: {
                 tenantid: tenantLookAndFeel.tenantid
-            }
-        });
+            },
+            tenantLookAndFeel
+        );
         return Promise.resolve(tenantLookAndFeel);
     }
 
     public async deleteTenantLookAndFeel(tenantId: string): Promise<void> {
-        await (await DBDriver.getInstance().getTenantLookAndFeelEntity()).destroy({
-            where: {
-                tenantId: tenantId
-            }
+        const tenantLookAndFeelRepo = await RDBDriver.getInstance().getTenantLookAndFeelRepository();
+        await tenantLookAndFeelRepo.delete({
+            tenantid: tenantId
         })
         return Promise.resolve();
     }
 
     
     public async getDomainsForTenantRestrictedAuthentication(tenantId: string): Promise<Array<TenantRestrictedAuthenticationDomainRel>> {
-        const entities: Array<TenantRestrictedAuthenticationDomainRelEntity> = await (await DBDriver.getInstance().getTenantRestrictedAuthenticationDomainRelEntity()).findAll({
+        const tenantRestrictedDomainRelRepository = await RDBDriver.getInstance().getTenantRestrictedAuthenticationDomainRelRepository();
+        const entities = await tenantRestrictedDomainRelRepository.find({
             where: {
                 tenantId: tenantId
             }
         });        
-        return entities.map((entity) => entity.dataValues);
+        return entities;
     }
 
     public async addDomainToTenantRestrictedAuthentication(tenantId: string, domain: string): Promise<TenantRestrictedAuthenticationDomainRel> {
+        const tenantRestrictedDomainRelRepository = await RDBDriver.getInstance().getTenantRestrictedAuthenticationDomainRelRepository();
         const tenantRestrictedAuthenticationDomainRel: TenantRestrictedAuthenticationDomainRel = {
             tenantId,
             domain
         }
-        await (await DBDriver.getInstance().getTenantRestrictedAuthenticationDomainRelEntity()).create(tenantRestrictedAuthenticationDomainRel)
+        await tenantRestrictedDomainRelRepository.insert(tenantRestrictedAuthenticationDomainRel)
         return Promise.resolve(tenantRestrictedAuthenticationDomainRel);
     }
 
     public async removeDomainFromTenantRestrictedAuthentication(tenantId: string, domain: string): Promise<void> {
-        await (await DBDriver.getInstance().getTenantRestrictedAuthenticationDomainRelEntity()).destroy({
-            where: {
-                tenantId: tenantId,
-                domain: domain
-            }
+        const tenantRestrictedDomainRelRepository = await RDBDriver.getInstance().getTenantRestrictedAuthenticationDomainRelRepository();
+        await tenantRestrictedDomainRelRepository.delete({
+            tenantId: tenantId,
+            domain: domain
         })
         return Promise.resolve();
     }
 
     public async getLoginFailurePolicy(tenantId: string): Promise<TenantLoginFailurePolicy | null>{
-        const entity: TenantLoginFailurePolicyEntity | null = await (await DBDriver.getInstance().getTenantLoginFailurePolicyEntity()).findOne({
+        const loginFailureRepo = await RDBDriver.getInstance().getTenantLoginFailurePolicyRepository();
+        const entity = await loginFailureRepo.findOne({
             where: {
                 tenantId: tenantId
             }
         });
-        return entity ? Promise.resolve(entity.dataValues) : Promise.resolve(null);
+        return entity;
     }
 
     public async createLoginFailurePolicy(loginFailurePolicy: TenantLoginFailurePolicy): Promise<TenantLoginFailurePolicy> {
-        await (await DBDriver.getInstance().getTenantLoginFailurePolicyEntity()).create(loginFailurePolicy);
+        const loginFailureRepo = await RDBDriver.getInstance().getTenantLoginFailurePolicyRepository();
+        await loginFailureRepo.insert(loginFailurePolicy);
         return loginFailurePolicy;
     }
 
     public async updateLoginFailurePolicy(loginFailurePolicy: TenantLoginFailurePolicy): Promise<TenantLoginFailurePolicy> {
-        await (await DBDriver.getInstance().getTenantLoginFailurePolicyEntity()).update(loginFailurePolicy, {
-            where: {
+        const loginFailureRepo = await RDBDriver.getInstance().getTenantLoginFailurePolicyRepository();
+        await loginFailureRepo.update(
+            {
                 tenantId: loginFailurePolicy.tenantId
-            }
-        });
+            }, 
+            loginFailurePolicy
+        );
         return Promise.resolve(loginFailurePolicy);
     }
 
     public async removeLoginFailurePolicy(tenantId: string): Promise<void> {
-        await (await DBDriver.getInstance().getTenantLoginFailurePolicyEntity()).destroy({
-            where: {
-                tenantId: tenantId
-            }
+        const loginFailureRepo = await RDBDriver.getInstance().getTenantLoginFailurePolicyRepository();
+        await loginFailureRepo.delete({
+            tenantId: tenantId
         });
         return Promise.resolve();
     }
 
-    public async getLegacyUserMigrationConfiguration(tenantId: string): Promise<TenantLegacyUserMigrationConfig | null> {        
-        const entity: TenantLegacyUserMigrationConfigEntity | null = await (await DBDriver.getInstance().getTenantLegacyUserMigrationConfigEntity()).findOne({
+    public async getLegacyUserMigrationConfiguration(tenantId: string): Promise<TenantLegacyUserMigrationConfig | null> {
+        const tenantLegacyUserRepo = await RDBDriver.getInstance().getTenantLegacyUserMigrationConfigRepository();
+        const entity = tenantLegacyUserRepo.findOne({
             where: {
                 tenantId: tenantId
             }
         });
-
-        return entity ? Promise.resolve(entity.dataValues as TenantLegacyUserMigrationConfig) : Promise.resolve(null);
+        return entity;
     }
 
     public async removeLegacyUserMigrationConfiguration(tenantId: string): Promise<void> {
-        await (await DBDriver.getInstance().getTenantLegacyUserMigrationConfigEntity()).destroy({
-            where: {
-                tenantId: tenantId
-            }
+        const tenantLegacyUserRepo = await RDBDriver.getInstance().getTenantLegacyUserMigrationConfigRepository();
+        await tenantLegacyUserRepo.delete({
+            tenantId: tenantId
         })
         return Promise.resolve();
     }
 
     public async updateTenantLegacyUserMigrationConfiguration(tenantLegacyUserMigrationConfig: TenantLegacyUserMigrationConfig): Promise<TenantLegacyUserMigrationConfig | null> {
-        await (await DBDriver.getInstance().getTenantLegacyUserMigrationConfigEntity()).update(tenantLegacyUserMigrationConfig, {
-            where: {
+        const tenantLegacyUserRepo = await RDBDriver.getInstance().getTenantLegacyUserMigrationConfigRepository();
+        await tenantLegacyUserRepo.update(
+            {
                 tenantId: tenantLegacyUserMigrationConfig.tenantId
-            }
-        });
+            },tenantLegacyUserMigrationConfig
+        );
         return Promise.resolve(tenantLegacyUserMigrationConfig);
     }
 
     public async createTenantLegacyUserMigrationConfiguration(tenantLegacyUserMigrationConfig: TenantLegacyUserMigrationConfig): Promise<TenantLegacyUserMigrationConfig | null> {
-        await (await DBDriver.getInstance().getTenantLegacyUserMigrationConfigEntity()).create(tenantLegacyUserMigrationConfig);
+        const tenantLegacyUserRepo = await RDBDriver.getInstance().getTenantLegacyUserMigrationConfigRepository();
+        await tenantLegacyUserRepo.insert(tenantLegacyUserMigrationConfig);
         return tenantLegacyUserMigrationConfig;
     }
 
     public async removeAllUsersFromTenant(tenantId: string): Promise<void>{
-        const sequelize: Sequelize = await DBDriver.getConnection();
-
+        
+        const userTenantRelRepo = await RDBDriver.getInstance().getUserTenantRelRepository();
         // To delete the authnGroup/user rel records, retrieve 1000 at a time and delete by composite ids        
         let hasMoreRecords = true;
         while(hasMoreRecords){
-            
-            const arr: Array<UserTenantRelEntity> = await (await DBDriver.getInstance().getUserTenantRelEntity()).findAll({
+            const arr: Array<UserTenantRel> = await userTenantRelRepo.find({
                 where: {
                     tenantId: tenantId
                 },
-                limit: 1000
+                take: 1000
             });
+
             if(arr.length === 0){
                 hasMoreRecords = false;
                 break;
             }
-            
+           
             // sequelize does not support deletion in bulk using composite keys, so must do this manually...
-            const tuples = arr
-                .map(
-                    (v: UserTenantRelEntity) => `(${sequelize.escape(v.getDataValue("tenantId"))}, ${sequelize.escape(v.getDataValue("userId"))})`
+            const conditions = arr.map(
+                (rel: UserTenantRel) => {
+                    return {
+                        userId: rel.userId,
+                        tenantId: rel.tenantId
+                    }
+                }
+            );
+
+            await userTenantRelRepo
+                .createQueryBuilder()
+                .delete()
+                .from("userTenantRel")
+                .where(
+                    new Brackets(
+                        qb => {
+                            conditions.forEach(
+                                (condition, index) => {
+                                    if(index === 0){
+                                        qb.where(
+                                            "tenantId = :tenantId_0 AND userId = : userId_0",
+                                            {
+                                                ["tenantId_0"]: condition.tenantId,
+                                                ["userId_0"]: condition.userId
+                                            }
+                                        )
+                                    }
+                                    else{
+                                        qb.orWhere(
+                                            `tenantId = :tenantId_${index} AND userId = :userId_${index}`,
+                                            {
+                                                [`tenantId_${index}`]: condition.tenantId,
+                                                [`userId_${index}`]: condition.userId
+                                            }
+                                        )
+                                    }
+                                }
+                            )
+                        }
+                    )
                 )
-                .join(", ");
-            const sql = `DELETE FROM user_tenant_rel WHERE (tenantid, userid) IN (${tuples})`;
-            await sequelize.query(sql);
+                .execute();            
         }
     }
 
     public async removeAllAuthStateFromTenant(tenantId: string): Promise<void>{
+        const preAuthStateRepo = await RDBDriver.getInstance().getPreAuthenticationStateRepository()
+        await preAuthStateRepo.delete({
+            tenantId: tenantId
+        });
+
+        const authCodeDataRepo = await RDBDriver.getInstance().getAuthorizationCodeDataRepository();
+        await authCodeDataRepo.delete({
+            tenantId: tenantId
+        });
+
+
+        const refreshDataRepo = await RDBDriver.getInstance().getRefreshDataRepository();
+        let hasMoreRefreshData: boolean = true;
+        while(hasMoreRefreshData){
+            const arr: Array<RefreshData> = await refreshDataRepo.find({
+                where: {
+                    tenantId: tenantId
+                },
+                take: 1000
+            });
+            if(arr.length === 0){
+                hasMoreRefreshData = false;
+                break;
+            }
+            const ids: Array<string> = arr.map(
+                (d: RefreshData) => d.refreshToken
+            );
+            await refreshDataRepo.delete({
+                refreshToken: In(ids)
+            });
+        }
         
-        await (await DBDriver.getInstance().getPreAuthenticationStateEntity()).destroy({
-            where: {
-                tenantId: tenantId
-            } 
+        const federatedOIDCAuthRelRepo = await RDBDriver.getInstance().getFederatedOIDCAuthorizationRelRepository();
+        await federatedOIDCAuthRelRepo.delete({
+            initTenantId: tenantId
+        });
+        
+
+        const clientAuthHistoryRepo = await RDBDriver.getInstance().getClientAuthHistoryRepository();
+        let hasMoreAuthHistory: boolean = true;
+        while(hasMoreAuthHistory){
+            const arr: Array<ClientAuthHistory> = await clientAuthHistoryRepo.find({
+                where: {
+                    tenantId: tenantId
+                }
+            });
+            if(arr.length === 0){
+                hasMoreAuthHistory = false;
+                break;
+            }
+            const arrJtis: Array<string> = arr.map(
+                (h: ClientAuthHistory) => h.jti
+            );
+            await clientAuthHistoryRepo.delete({
+                jti: In(arrJtis)
+            });
+        }
+        
+        const userAuthStateRepo = await RDBDriver.getInstance().getUserAuthenticationStateRepository();
+        await userAuthStateRepo.delete({
+            tenantId: tenantId
         });
 
-        await (await DBDriver.getInstance().getAuthorizationCodeDataEntity()).destroy({
-            where: {
-                tenantId: tenantId
-            }
-        });
-
-        await (await DBDriver.getInstance().getRefreshDataEntity()).destroy({
-            where: {
-                tenantId: tenantId
-            }
-        });
-
-        await (await DBDriver.getInstance().getFederatedOIDCAuthorizationRelEntity()).destroy({
-            where: {
-                initTenantId: tenantId
-            }
-        });
-
-        await (await DBDriver.getInstance().getClientAuthHistoryEntity()).destroy({
-            where: {
-                tenantId: tenantId
-            }
-        });
-
-        await (await DBDriver.getInstance().getUserAuthenticationStateEntity()).destroy({
-            where: {
-
-            }
-        });
-
-        await (await DBDriver.getInstance().getUserRegistrationStateEntity()).destroy({
-            where: {
-                tenantId: tenantId
-            }
+        const userRegistrationStateRepo = await RDBDriver.getInstance().getUserRegistrationStateRepository();
+        await userRegistrationStateRepo.delete({
+            tenantId: tenantId
         });
 
         return Promise.resolve();
     }
 
     public async getCaptchaConfig(): Promise<CaptchaConfig | null>{
-        const arr: Array<CaptchaConfigEntity> | null = await (await DBDriver.getInstance().getCaptchaConfigEntity()).findAll();
+        const captchaConfigRepo = await RDBDriver.getInstance().getCaptchaConfigRepository();
+        const arr = await captchaConfigRepo.find();        
         if(arr.length === 0){
             return null;
         }
         else{
-            return arr[0].dataValues;
+            return arr[0];
         }
     }
 
     public async setCaptchaConfig(captchaConfig: CaptchaConfig): Promise<CaptchaConfig>{
-        await (await DBDriver.getInstance().getCaptchaConfigEntity()).truncate();
-        await (await DBDriver.getInstance().getCaptchaConfigEntity()).create(captchaConfig);        
+        const captchaConfigRepo = await RDBDriver.getInstance().getCaptchaConfigRepository();
+        await captchaConfigRepo.clear();
+        await captchaConfigRepo.insert(captchaConfig);
         return captchaConfig;
     }
 
     public async removeCaptchaConfig(): Promise<void>{
-        await (await DBDriver.getInstance().getCaptchaConfigEntity()).truncate();
+        const captchaConfigRepo = await RDBDriver.getInstance().getCaptchaConfigRepository();
+        await captchaConfigRepo.clear();
     }
 
     public async getSystemSettings(): Promise<SystemSettings> {
@@ -499,10 +516,11 @@ class DBTenantDao extends TenantDao {
             systemCategories: []
         }
         
-        const systemSettingsEntity: SystemSettingsEntity | null = await (await DBDriver.getInstance().getSystemSettingsEntity()).findOne();
+        const systemSettingsRepo = await RDBDriver.getInstance().getSystemSettingsRepository();
+        const arrSystemSettings: Array<SystemSettings> = await systemSettingsRepo.find();        
 
-        if(systemSettingsEntity){            
-            const first: SystemSettings = systemSettingsEntity.dataValues;
+        if(arrSystemSettings && arrSystemSettings.length > 0){            
+            const first: SystemSettings = arrSystemSettings[0];
             systemSettings.systemId = first.systemId
             systemSettings.allowRecoveryEmail = first.allowRecoveryEmail;
             systemSettings.allowDuressPassword = first.allowDuressPassword;
@@ -559,19 +577,42 @@ class DBTenantDao extends TenantDao {
     }
    
     
-    public async updateSystemSettings(systemSettings: SystemSettings): Promise<SystemSettings> {        
-        const entity: SystemSettingsEntity | null = await (await DBDriver.getInstance().getSystemSettingsEntity()).findOne();
-        if(entity){
-            await (await DBDriver.getInstance().getSystemSettingsEntity()).update(systemSettings, {
-                where: {
+    public async updateSystemSettings(systemSettings: SystemSettings): Promise<SystemSettings> {
+        const systemSettingsRepo = await RDBDriver.getInstance().getSystemSettingsRepository();
+
+        const arr = await systemSettingsRepo.find();
+        if(arr && arr.length > 0){         
+            await systemSettingsRepo.update(
+                {
                     systemId: systemSettings.systemId
-                }
-            });
+                },
+                {
+                    systemId: systemSettings.systemId,
+                    allowRecoveryEmail: systemSettings.allowRecoveryEmail,
+                    allowDuressPassword: systemSettings.allowDuressPassword,
+                    rootClientId: systemSettings.rootClientId,
+                    enablePortalAsLegacyIdp: systemSettings.enablePortalAsLegacyIdp,
+                    auditRecordRetentionPeriodDays: systemSettings.auditRecordRetentionPeriodDays ? systemSettings.auditRecordRetentionPeriodDays : DEFAULT_AUDIT_RECORD_RETENTION_PERIOD_DAYS,
+                    contactEmail: systemSettings.contactEmail,
+                    noReplyEmail: systemSettings.noReplyEmail,
+                } 
+            );
         }
         else{
-            await (await DBDriver.getInstance().getSystemSettingsEntity()).create(systemSettings);
-        }
-        
+            await systemSettingsRepo.insert(
+                {
+                    systemId: systemSettings.systemId,
+                    allowRecoveryEmail: systemSettings.allowRecoveryEmail,
+                    allowDuressPassword: systemSettings.allowDuressPassword,
+                    rootClientId: systemSettings.rootClientId,
+                    enablePortalAsLegacyIdp: systemSettings.enablePortalAsLegacyIdp,
+                    auditRecordRetentionPeriodDays: systemSettings.auditRecordRetentionPeriodDays ? systemSettings.auditRecordRetentionPeriodDays : DEFAULT_AUDIT_RECORD_RETENTION_PERIOD_DAYS,
+                    contactEmail: systemSettings.contactEmail,
+                    noReplyEmail: systemSettings.noReplyEmail,
+                } 
+            );
+            
+        }        
         return systemSettings;        
     }
 

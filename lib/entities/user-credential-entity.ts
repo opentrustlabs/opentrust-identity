@@ -1,46 +1,47 @@
-import { Model, DataTypes, Sequelize } from "@sequelize/core";
+import { EntitySchema } from 'typeorm';
+import { getBigIntTypeForDriver } from '@/utils/dao-utils';
 
-class UserCredentialEntity extends Model {
-    
-    static initModel(sequelize: Sequelize): typeof UserCredentialEntity {
-        return UserCredentialEntity.init({
-            userId: {
-                type: DataTypes.STRING,
-                primaryKey: true,
-                columnName: "userid"
-            },
-            dateCreatedMs: {
-                type: DataTypes.BIGINT,
-                primaryKey: true,
-                columnName: "datecreatedms"
-            },
-            hashedPassword: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "hashedpassword"
-            },
-            hashingAlgorithm: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-				columnName: "hashingalgorithm"
-            },
-            salt: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "salt"
-            }
-        }, 
-		{
-            sequelize,
-            tableName: "user_credential",
-            modelName: "userCredential",
-            timestamps: false
-        });
-    }
-}
+const {
+    RDB_DIALECT
+} = process.env;
+
+const UserCredentialEntity = new EntitySchema({
+    columns: {
+        userId: {
+            type: String,
+            primary: true,
+            name: "userid"
+        },
+        dateCreatedMs: {
+            type: getBigIntTypeForDriver(RDB_DIALECT || ""),
+            primary: true,
+            name: "datecreatedms"
+        },
+        hashedPassword: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "hashedpassword"
+        },
+        hashingAlgorithm: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "hashingalgorithm"
+        },
+        salt: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "salt"
+        }
+    },
+
+    tableName: "user_credential",
+    name: "userCredential",
+
+});
+
 
 
 export default UserCredentialEntity;

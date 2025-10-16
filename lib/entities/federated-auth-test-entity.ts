@@ -1,76 +1,78 @@
-import { Model, DataTypes, Sequelize } from "@sequelize/core";
+import { EntitySchema } from 'typeorm';
+import { BooleanTransformer, getBooleanTypeForDriver, getBigIntTypeForDriver } from '@/utils/dao-utils';
 
-class FederatedAuthTestEntity extends Model {
-    
-    static initModel(sequelize: Sequelize): typeof FederatedAuthTestEntity {
-        return FederatedAuthTestEntity.init({
-            authState: {
-                type: DataTypes.STRING,
-                primaryKey: true,
-                columnName: "authstate"
-            },
-            clientId: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "clientid"
-            },
-            clientSecret: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "clientsecret"
-            },
-            usePkce: {
-                type: DataTypes.BOOLEAN,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "usepkce"
-            },
-            codeVerifier: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "codeverifier"
-            },
-            wellKnownUri: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "wellknownuri"
-            },
-            scope: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "scope"
-            },
-            redirectUri: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "redirecturi"
-            },
-            clientAuthType: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "clientauthtype"
-            },
-            expiresAtMs: {
-                type: DataTypes.BIGINT,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "expiresatms"
-            }
-        }, 
-        {
-            sequelize,
-            tableName: "federated_auth_test",
-            modelName: "federatedAuthTest",
-            timestamps: false
-        });
-    }
-}
+const {
+    RDB_DIALECT
+} = process.env;
+
+const FederatedAuthTestEntity = new EntitySchema({
+
+    columns: {
+        authState: {
+            type: String,
+            primary: true,
+            name: "authstate"
+        },
+        clientId: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "clientid"
+        },
+        clientSecret: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "clientsecret"
+        },
+        usePkce: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "usepkce",
+            transformer: BooleanTransformer
+        },
+        codeVerifier: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "codeverifier"
+        },
+        wellKnownUri: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "wellknownuri"
+        },
+        scope: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "scope"
+        },
+        redirectUri: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "redirecturi"
+        },
+        clientAuthType: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "clientauthtype"
+        },
+        expiresAtMs: {
+            type: getBigIntTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "expiresatms"
+        }
+    },
+
+    tableName: "federated_auth_test",
+    name: "federatedAuthTest",
+
+});
 
 export default FederatedAuthTestEntity;

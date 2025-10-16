@@ -1,8 +1,7 @@
 import { SigningKey } from "@/graphql/generated/graphql-types";
 import SigningKeysDao from "../../signing-keys-dao";
-import SigningKeyEntity from "@/lib/entities/signing-key-entity";
 import { SIGNING_KEY_STATUS_REVOKED } from "@/utils/consts";
-import DBDriver from "@/lib/data-sources/sequelize-db";
+import RDBDriver from "@/lib/data-sources/rdb";
 
 class DBSigningKeysDao extends SigningKeysDao {
 
@@ -12,79 +11,78 @@ class DBSigningKeysDao extends SigningKeysDao {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const queryParams: any = {};
         if(tenantId){
-            queryParams.tenantid = tenantId;
+            queryParams.tenantId = tenantId;
         }
         
-        const entities: Array<SigningKeyEntity> = await (await DBDriver.getInstance().getSigningKeyEntity()).findAll({
+        const signingKeysRepo = await RDBDriver.getInstance().getSigningKeyRepository();
+        const results = await signingKeysRepo.find({
             where: queryParams,
-            order: [
-                ["keyName", "ASC"]
-            ]
+            order: {
+                keyName: "ASC"
+            }
         });
-        return Promise.resolve(entities.map(m => m.dataValues));
+        return results;
     }
 
     public async getSigningKeyById(keyId: string): Promise<SigningKey | null> {
-
-        const entity: SigningKeyEntity | null = await (await DBDriver.getInstance().getSigningKeyEntity()).findOne({
+        const signingKeysRepo = await RDBDriver.getInstance().getSigningKeyRepository();
+        const result = await signingKeysRepo.findOne({
             where: {
                 keyId: keyId
             }
         });
-
-        return entity ? Promise.resolve(entity.dataValues) : Promise.resolve(null);
+        return result;
     }
  
 
     public async createSigningKey(key: SigningKey): Promise<SigningKey> {
-        
-        await (await DBDriver.getInstance().getSigningKeyEntity()).create(key);
+        const signingKeysRepo = await RDBDriver.getInstance().getSigningKeyRepository();
+        await signingKeysRepo.insert(key);
         return Promise.resolve(key);
     }
 
     public async updateSigningKey(key: SigningKey): Promise<SigningKey>{
-
+        const signingKeysRepo = await RDBDriver.getInstance().getSigningKeyRepository();
         // Do not update the certificate, private key, public key 
-        await (await DBDriver.getInstance().getSigningKeyEntity()).update(
+        await signingKeysRepo.update(
+            {
+                keyId: key.keyId
+            },
             {
                 keyName: key.keyName,
                 markForDelete: key.markForDelete,
                 keyStatus: key.keyStatus
-            },
-            {
-                where: {
-                    keyId: key.keyId
-                }
             }
         );
         return Promise.resolve(key);
     }
 
     public async revokeSigningKey(keyId: string): Promise<void> {
+        
         const key: SigningKey | null = await this.getSigningKeyById(keyId);
         if(key){
             key.keyStatus = SIGNING_KEY_STATUS_REVOKED;
-                        
-            await (await DBDriver.getInstance().getSigningKeyEntity()).update(key, {
-                where: {
+            const signingKeysRepo = await RDBDriver.getInstance().getSigningKeyRepository();
+            await signingKeysRepo.update(
+                {
                     keyId: key.keyId
-                }
-            }); 
+                },
+                key
+            );
         }
         return Promise.resolve();
     }
 
     public async deleteSigningKey(keyId: string): Promise<void> {        
         
-        await (await DBDriver.getInstance().getContactEntity()).destroy({
-            where: {
-                objectid: keyId
-            }
+        const contactRepo = await RDBDriver.getInstance().getContactRepository();
+        await contactRepo.delete({
+            objectid: keyId
         });
-        await (await DBDriver.getInstance().getSigningKeyEntity()).destroy({
-            where: {
-                keyId: keyId
-            }
+
+        const signingKeysRepo = await RDBDriver.getInstance().getSigningKeyRepository();
+        await signingKeysRepo.delete({
+            keyId: keyId
         });
         return Promise.resolve();
     }

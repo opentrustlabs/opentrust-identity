@@ -1,40 +1,43 @@
-import { Model, DataTypes, Sequelize } from "@sequelize/core";
+import { EntitySchema } from 'typeorm';
+import { BooleanTransformer, getBooleanTypeForDriver } from '@/utils/dao-utils';
 
-class RateLimitServiceGroupEntity extends Model {
-    
-    static initModel(sequelize: Sequelize): typeof RateLimitServiceGroupEntity {
-        return RateLimitServiceGroupEntity.init({
-            servicegroupid: {
-                type: DataTypes.STRING,
-                primaryKey: true,
-                columnName: "servicegroupid"
-            },
-            servicegroupname: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "servicegroupname"
-            },
-            servicegroupdescription: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "servicegroupdescription"
-            },
-            markForDelete: {
-                type: DataTypes.BOOLEAN,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "markfordelete"
-            }
-        }, 
-		{
-            sequelize,
-            tableName: "rate_limit_service_group",
-            modelName: "rateLimitServiceGroup",
-            timestamps: false
-        });
-    }
-}
+const {
+    RDB_DIALECT
+} = process.env;
+
+const RateLimitServiceGroupEntity = new EntitySchema({
+
+
+    columns: {
+        servicegroupid: {
+            type: String,
+            primary: true,
+            name: "servicegroupid"
+        },
+        servicegroupname: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "servicegroupname"
+        },
+        servicegroupdescription: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "servicegroupdescription"
+        },
+        markForDelete: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "markfordelete",
+            transformer: BooleanTransformer
+        }
+    },
+
+    tableName: "rate_limit_service_group",
+    name: "rateLimitServiceGroup",
+
+});
 
 export default RateLimitServiceGroupEntity;

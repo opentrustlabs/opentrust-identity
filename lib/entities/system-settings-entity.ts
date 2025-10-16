@@ -1,65 +1,70 @@
-import { Model, DataTypes, Sequelize } from "@sequelize/core";
+import { EntitySchema } from 'typeorm';
+import { BooleanTransformer, getBooleanTypeForDriver, getIntTypeForDriver } from '@/utils/dao-utils';
 
-class SystemSettingsEntity extends Model {
-    
-    static initModel(sequelize: Sequelize): typeof SystemSettingsEntity {
-        return SystemSettingsEntity.init({
-            systemId: {
-                type: DataTypes.STRING,
-                primaryKey: true,
-                columnName: "systemid"
-            },
-            allowRecoveryEmail: {
-                type: DataTypes.BOOLEAN,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "allowrecoveryemail"
-            },
-            allowDuressPassword: {
-                type: DataTypes.BOOLEAN,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "allowduresspassword"
-            },
-            rootClientId: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "rootclientid"
-            },
-            enablePortalAsLegacyIdp: {
-                type: DataTypes.BOOLEAN,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "enableportalaslegacyidp"
-            },
-            auditRecordRetentionPeriodDays: {
-                type: DataTypes.INTEGER,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "auditrecordretentionperioddays"
-            },
-            noReplyEmail: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "noreplyemail"
-            },
-            contactEmail: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "contactemail"
-            },
-        }, 
-        {
-            sequelize,
-            tableName: "system_settings",
-            modelName: "systemSettings",
-            timestamps: false
-        });
-    }
-}
+const {
+    RDB_DIALECT
+} = process.env;
+
+const SystemSettingsEntity = new EntitySchema({
+
+    columns: {
+        systemId: {
+            type: String,
+            primary: true,
+            name: "systemid"
+        },
+        allowRecoveryEmail: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "allowrecoveryemail",
+            transformer: BooleanTransformer
+        },
+        allowDuressPassword: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "allowduresspassword",
+            transformer: BooleanTransformer
+        },
+        rootClientId: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "rootclientid"
+        },
+        enablePortalAsLegacyIdp: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "enableportalaslegacyidp",
+            transformer: BooleanTransformer
+        },
+        auditRecordRetentionPeriodDays: {
+            type: getIntTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: true,
+            name: "auditrecordretentionperioddays"
+        },
+        noReplyEmail: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "noreplyemail"
+        },
+        contactEmail: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "contactemail"
+        },
+    },
+
+    tableName: "system_settings",
+    name: "systemSettings",
+
+});
+
 
 
 export default SystemSettingsEntity;

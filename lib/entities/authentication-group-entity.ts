@@ -1,53 +1,54 @@
-import { Model, DataTypes, Sequelize } from "@sequelize/core";
+import { EntitySchema } from 'typeorm';
+import { BooleanTransformer, getBooleanTypeForDriver } from '@/utils/dao-utils';
 
-class AuthenticationGroupEntity extends Model {
-    
-    static initModel(sequelize: Sequelize): typeof AuthenticationGroupEntity {
-        return AuthenticationGroupEntity.init({
-            authenticationGroupId: {
-                type: DataTypes.STRING,
-                primaryKey: true,
-                columnName: "authenticationgroupid"
-            },
-            tenantId: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "tenantid"
-            },
-            authenticationGroupName: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "authenticationgroupname"
-            },
-            authenticationGroupDescription: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: true,
-				columnName: "authenticationgroupdescription"
-            },
-            defaultGroup: {
-                type: DataTypes.BOOLEAN,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "defaultgroup"
-            },
-            markForDelete: {
-                type: DataTypes.BOOLEAN,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "markfordelete"
-            }
-        }, 
-		{
-            sequelize,
-            tableName: "authentication_group",
-            modelName: "authenticationGroup",
-            timestamps: false
-        });
+const {
+    RDB_DIALECT
+} = process.env;
+
+const AuthenticationGroupEntity = new EntitySchema({
+
+    tableName: "authentication_group",
+    name: "authenticationGroup",
+    columns: {
+        authenticationGroupId: {
+            type: String,
+            primary: true,
+            name: "authenticationgroupid"
+        },
+        tenantId: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "tenantid"
+        },
+        authenticationGroupName: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "authenticationgroupname"
+        },
+        authenticationGroupDescription: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "authenticationgroupdescription"
+        },
+        defaultGroup: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "defaultgroup",
+            transformer: BooleanTransformer
+        },
+        markForDelete: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "markfordelete",
+            transformer: BooleanTransformer
+        }
     }
-}
+});
 
 
 

@@ -1,93 +1,83 @@
-import { Model, DataTypes, Sequelize } from "@sequelize/core";
+import { EntitySchema } from 'typeorm';
+import { getBlobTypeForDriver, stringToBlobTransformer } from '@/utils/dao-utils';
 
-class TenantLookAndFeelEntity extends Model {
-    
-    static initModel(sequelize: Sequelize): typeof TenantLookAndFeelEntity {
-        return TenantLookAndFeelEntity.init({
-            tenantid: {
-                type: DataTypes.STRING,
-                primaryKey: true,
-                columnName: "tenantid"
-            },
-            adminheaderbackgroundcolor: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "adminheaderbackgroundcolor"
-            },
-            adminheadertext: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "adminheadertext"
-            },
-            adminheadertextcolor: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "adminheadertextcolor"
-            },            
-            authenticationheaderbackgroundcolor: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "authenticationheaderbackgroundcolor"
-            },
-            authenticationheadertext: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "authenticationheadertext"
-            },
-            authenticationheadertextcolor: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "authenticationheadertextcolor"
-            },
-           
-            authenticationlogouri: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "authenticationlogouri"
-            },
-            authenticationlogomimetype: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "authenticationlogomimetype"
-            },            
-             authenticationlogo: {
-                type: DataTypes.BLOB("long"),
-                primaryKey: false,
-                allowNull: true,
-                columnName: "authenticationlogo",
-                // set(val: string | Buffer | null){
-                //     console.log("val of authentication logo is: ")
-                //     console.log(val);
+const {
+    RDB_DIALECT
+} = process.env;
 
-                //     if(val === null || val === ""){
-                //         console.log("checkpoint 1.1")
-                //         this.setDataValue("authenticationlogo", null);
-                //     }
-                //     else if(typeof val === "string"){
-                //         console.log("checkpoint 1.2")
-                //         this.setDataValue("authenticationlogo", Buffer.from(val));
-                //     }
-                //     else{
-                //         console.log("checkpoint 1.3")
-                //         this.setDataValue("authenticationlogo", val);
-                //     }
-                // }
-            }
-        }, {
-            sequelize,
-            tableName: "tenant_look_and_feel",
-            modelName: "tenantLookAndFeel",
-            timestamps: false
-        });
-    }
-}
+const blobType = getBlobTypeForDriver(RDB_DIALECT || "");
+
+
+const TenantLookAndFeelEntity = new EntitySchema({
+
+
+    columns: {
+        tenantid: {
+            type: String,
+            primary: true,
+            name: "tenantid"
+        },
+        adminheaderbackgroundcolor: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "adminheaderbackgroundcolor"
+        },
+        adminheadertext: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "adminheadertext"
+        },
+        adminheadertextcolor: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "adminheadertextcolor"
+        },
+        authenticationheaderbackgroundcolor: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "authenticationheaderbackgroundcolor"
+        },
+        authenticationheadertext: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "authenticationheadertext"
+        },
+        authenticationheadertextcolor: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "authenticationheadertextcolor"
+        },
+
+        authenticationlogouri: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "authenticationlogouri"
+        },
+        authenticationlogomimetype: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "authenticationlogomimetype"
+        },
+        authenticationlogo: {
+            type: blobType,
+            primary: false,
+            nullable: true,
+            name: "authenticationlogo",
+            transformer: stringToBlobTransformer()
+        }
+    },
+    tableName: "tenant_look_and_feel",
+    name: "tenantLookAndFeel",
+
+});
+
 
 export default TenantLookAndFeelEntity;

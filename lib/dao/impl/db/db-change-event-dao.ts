@@ -1,103 +1,70 @@
 import { ChangeEvent, SystemSettings } from "@/graphql/generated/graphql-types";
 import ChangeEventDao from "../../change-event-dao";
-import ChangeEventEntity from "@/lib/entities/change-event-entity";
-import DBDriver from "@/lib/data-sources/sequelize-db";
-import { Op } from "@sequelize/core";
-import SystemSettingsEntity from "@/lib/entities/system-settings-entity";
 import { DEFAULT_AUDIT_RECORD_RETENTION_PERIOD_DAYS } from "@/utils/consts";
+import RDBDriver from "@/lib/data-sources/rdb";
+import { In, LessThan } from "typeorm";
 
 class DBChangeEventDao extends ChangeEventDao {
 
     public async getChangeEventHistory(objectId: string): Promise<Array<ChangeEvent>> {
-        
-        
-        const entities: Array<ChangeEventEntity> = await (await DBDriver.getInstance().getChangeEventEntity()).findAll({
+
+        const changeEventRepo = await RDBDriver.getInstance().getChangeEventRepository();
+        const results = await changeEventRepo.find({
             where: {
                 objectId: objectId
             },
-            order: [
-                ["changeTimestamp", "DESC"]
-            ]
+            order: {
+                changeTimestamp: "DESC"
+            }
         });
-
-        const models: Array<ChangeEvent> = entities.map(
-            (entity: ChangeEventEntity) => this.entityToModel(entity)
-        );
-        
-        return Promise.resolve(models);
+        return results;        
     }
 
     public async addChangeEvent(changeEvent: ChangeEvent): Promise<ChangeEvent>{
-        
-        
-        (await DBDriver.getInstance().getChangeEventEntity()).create({
-            ...changeEvent,
-            data: Buffer.from(changeEvent.data, "utf-8")
-        });
-        
+        const changeEventRepo = await RDBDriver.getInstance().getChangeEventRepository();
+        await changeEventRepo.insert(changeEvent);
         return changeEvent;
     }
 
     public async deleteExpiredData(): Promise<void> {
-
-        const systemSettingsEntity: SystemSettingsEntity | null = await (await DBDriver.getInstance().getChangeEventEntity()).findOne();
+        const systemSettingsRepo = await RDBDriver.getInstance().getSystemSettingsRepository();
+        const arrSystemSettings: Array<SystemSettings> = await systemSettingsRepo.find();        
         let periodDays: number = DEFAULT_AUDIT_RECORD_RETENTION_PERIOD_DAYS;
-        if(systemSettingsEntity !== null){
-            const systemSettings: SystemSettings = systemSettingsEntity.dataValues;
+        if(arrSystemSettings !== null && arrSystemSettings.length > 0){
+            const systemSettings: SystemSettings = arrSystemSettings[0];
             if(systemSettings.auditRecordRetentionPeriodDays){
                 periodDays = systemSettings.auditRecordRetentionPeriodDays;
             }
         }
 
+        
+        // To delete the change records, retrieve 1000 at a time and delete with in clause
         const timestampMs: number = periodDays * 24 * 60 * 60 * 1000;
-
-        // Sequelize does not support deletion in bulk with limits, so must do this manually...
-        // To delete the change records, retrieve 1000 at a time and delete with in clause     
+        const changeEventRepo = await RDBDriver.getInstance().getChangeEventRepository();
         let hasMoreRecords = true;
         while(hasMoreRecords){
-            const arr: Array<ChangeEventEntity> = await (await DBDriver.getInstance().getChangeEventEntity()).findAll({
+            const arr: Array<ChangeEvent> = await changeEventRepo.find({
                 where: {
-                    changeTimestamp: {
-                        [Op.lt]: timestampMs
-                    }
+                    changeTimestamp: LessThan(timestampMs)
                 },
-                limit: 1000
+                take: 1000
             });
-            
+
             if(arr.length === 0){
                 hasMoreRecords = false;
                 break;
             }
-            
+
             const ids = arr
                 .map(
-                    (v: ChangeEventEntity) => v.getDataValue("changeEventId")
+                    (v: ChangeEvent) => v.changeEventId
                 );
             
-            await (await DBDriver.getInstance().getChangeEventEntity()).destroy({
-                where: {
-                    changeEventId: {
-                        [Op.in]: ids
-                    }
-                }
+            await changeEventRepo.delete({
+                changeEventId: In(ids)
             });
         }
     }
-
-
-    protected entityToModel(entity: ChangeEventEntity): ChangeEvent {
-        const model: ChangeEvent = {
-            changeEventClass: entity.getDataValue("changeEventClass"),
-            changeEventId: entity.getDataValue("changeEventId"),
-            changeEventType: entity.getDataValue("changeEventType"),
-            changeTimestamp: entity.getDataValue("changeTimestamp"),
-            changedBy: entity.getDataValue("changedBy"),
-            data: Buffer.from(entity.getDataValue("data")).toString("utf-8"),
-            objectId: entity.getDataValue("objectId"),
-        }
-        return model;
-    }
-
 
 
 }

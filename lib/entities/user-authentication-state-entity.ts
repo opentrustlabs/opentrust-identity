@@ -1,75 +1,74 @@
-import { Model, DataTypes, Sequelize } from "@sequelize/core";
+import { EntitySchema } from 'typeorm';
+import { getBigIntTypeForDriver, getIntTypeForDriver } from '@/utils/dao-utils';
 
-class UserAuthenticationStateEntity extends Model {
-    
-    static initModel(sequelize: Sequelize): typeof UserAuthenticationStateEntity {
-        return UserAuthenticationStateEntity.init({
-            userId: {
-                type: DataTypes.STRING,
-                primaryKey: true,
-                columnName: "userid"
-            },
-            tenantId: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "tenantid"
-            },
-            authenticationSessionToken: {
-                type: DataTypes.STRING,
-                primaryKey: true,
-                columnName: "authenticationsessiontoken"
-            },
-            authenticationState: {
-                type: DataTypes.STRING,
-                primaryKey: true,
-                columnName: "authenticationstate"
-            },
-            authenticationStateOrder: {
-                type: DataTypes.INTEGER,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "authenticationstateorder"
-            },
-            authenticationStateStatus: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "authenticationstatestatus"
-            },
-            preAuthToken: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "preauthtoken"
-            },
-            expiresAtMs: {
-                type: DataTypes.BIGINT,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "expiresatms"
-            },
-            returnToUri: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "returntouri"
-            },
-            deviceCodeId: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "devicecodeid"
-            }
-        }, 
-        {
-            sequelize,
-            tableName: "user_authentication_state",
-            modelName: "userAuthenticationState",
-            timestamps: false
-        });
+const {
+    RDB_DIALECT
+} = process.env;
+
+const UserAuthenticationStateEntity = new EntitySchema({
+
+    tableName: "user_authentication_state",
+    name: "userAuthenticationState",
+    columns: {
+        userId: {
+            type: String,
+            primary: true,
+            name: "userid"
+        },
+        tenantId: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "tenantid"
+        },
+        authenticationSessionToken: {
+            type: String,
+            primary: true,
+            name: "authenticationsessiontoken"
+        },
+        authenticationState: {
+            type: String,
+            primary: true,
+            name: "authenticationstate"
+        },
+        authenticationStateOrder: {
+            type: getIntTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "authenticationstateorder"
+        },
+        authenticationStateStatus: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "authenticationstatestatus"
+        },
+        preAuthToken: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "preauthtoken"
+        },
+        expiresAtMs: {
+            type: getBigIntTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "expiresatms"
+        },
+        returnToUri: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "returntouri"
+        },
+        deviceCodeId: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "devicecodeid"
+        }
     }
-}
+});
 
 
 export default UserAuthenticationStateEntity;

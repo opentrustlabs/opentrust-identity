@@ -1,133 +1,148 @@
-import { Model, DataTypes, Sequelize } from "@sequelize/core";;
+import { EntitySchema } from 'typeorm';
+import { BooleanTransformer, getBooleanTypeForDriver, getIntTypeForDriver } from '@/utils/dao-utils';
 
-export class TenantEntity extends Model {
-    
-    static initModel(sequelize: Sequelize): typeof TenantEntity {
-        return TenantEntity.init({
-            tenantId: {
-                type: DataTypes.STRING,
-                primaryKey: true,
-                columnName: "tenantid"
-            },
-            tenantName: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "tenantname"
-            },
-            tenantDescription: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "tenantdescription"
-            },
-            enabled: {
-                type: DataTypes.BOOLEAN,
-                primaryKey: false,
-                allowNull: false
-            },
-            allowUnlimitedRate: {
-                type: DataTypes.BOOLEAN,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "allowunlimitedrate"
-            },
-            allowUserSelfRegistration: {
-                type: DataTypes.BOOLEAN,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "allowuserselfregistration"
-            },
-            allowAnonymousUsers: {
-                type: DataTypes.BOOLEAN,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "allowanonymoususers"
-            },
-            allowSocialLogin: {
-                type: DataTypes.BOOLEAN,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "allowsociallogin"
-            },
-            verifyEmailOnSelfRegistration: {
-                type: DataTypes.BOOLEAN,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "verifyemailonselfregistration"
-            },
-            federatedAuthenticationConstraint: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "federatedauthenticationconstraint"
-            },
-            markForDelete: {
-                type: DataTypes.BOOLEAN,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "markfordelete"
-            },
-            tenantType: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "tenanttype"
-            },
-            migrateLegacyUsers: {
-                type: DataTypes.BOOLEAN,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "migratelegacyusers"
-            },
-            allowLoginByPhoneNumber: {
-                type: DataTypes.BOOLEAN,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "allowloginbyphonenumber"
-            },
-            allowForgotPassword: {
-                type: DataTypes.BOOLEAN,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "allowforgotpassword"
-            },
-            defaultRateLimit: {
-                type: DataTypes.INTEGER,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "defaultratelimit"
-            },
-            defaultRateLimitPeriodMinutes: {
-                type: DataTypes.INTEGER,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "defaultratelimitperiodminutes"
-            },
-            registrationRequireCaptcha: {
-                type: DataTypes.BOOLEAN,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "registrationrequirecaptcha"
-            },
-            registrationRequireTermsAndConditions: {
-                type: DataTypes.BOOLEAN,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "registrationrequiretermsandconditions"
-            },
-            termsAndConditionsUri: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "termsandconditionsuri"
-            }
-        }, {
-            sequelize,
-            tableName: "tenant",
-            modelName: "tenant",
-            timestamps: false
-        })
-    }
+const {
+    RDB_DIALECT
+} = process.env;
 
-}
+export const TenantEntity = new EntitySchema({
+    tableName: "tenant",
+    name: "tenant",
+
+    columns: {
+        tenantId: {
+            type: String,
+            primary: true,
+            name: "tenantid"
+        },
+        tenantName: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "tenantname"
+        },
+        tenantDescription: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "tenantdescription"
+        },
+        enabled: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            transformer: BooleanTransformer
+        },
+        allowUnlimitedRate: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "allowunlimitedrate",
+            transformer: BooleanTransformer
+        },
+        allowUserSelfRegistration: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "allowuserselfregistration",
+            transformer: BooleanTransformer
+        },
+        allowAnonymousUsers: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "allowanonymoususers",
+            transformer: BooleanTransformer
+        },
+        allowSocialLogin: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "allowsociallogin"
+        },
+        verifyEmailOnSelfRegistration: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "verifyemailonselfregistration",
+            transformer: BooleanTransformer
+        },
+        federatedAuthenticationConstraint: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "federatedauthenticationconstraint"
+        },
+        markForDelete: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "markfordelete",
+            transformer: BooleanTransformer
+        },
+        tenantType: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "tenanttype"
+        },
+        migrateLegacyUsers: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "migratelegacyusers",
+            transformer: BooleanTransformer
+        },
+        allowLoginByPhoneNumber: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "allowloginbyphonenumber",
+            transformer: BooleanTransformer
+        },
+        allowForgotPassword: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "allowforgotpassword",
+            transformer: BooleanTransformer
+        },
+        defaultRateLimit: {
+            type: getIntTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: true,
+            name: "defaultratelimit"
+        },
+        defaultRateLimitPeriodMinutes: {
+            type: getIntTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: true,
+            name: "defaultratelimitperiodminutes"
+        },
+        registrationRequireCaptcha: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "registrationrequirecaptcha",
+            transformer: BooleanTransformer
+        },
+        registrationRequireTermsAndConditions: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "registrationrequiretermsandconditions",
+            transformer: BooleanTransformer
+        },
+        termsAndConditionsUri: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "termsandconditionsuri"
+        }
+    },
+
+
+});
+
+export default TenantEntity;
+

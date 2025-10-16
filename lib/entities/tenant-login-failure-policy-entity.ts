@@ -1,46 +1,48 @@
-import { Model, DataTypes, Sequelize } from "@sequelize/core";
+import { EntitySchema } from 'typeorm';
+import { getIntTypeForDriver } from '@/utils/dao-utils';
+
+const {
+    RDB_DIALECT
+} = process.env;
+
+const TenantLoginFailurePolicyEntity = new EntitySchema({
 
 
-class TenantLoginFailurePolicyEntity extends Model {
+    columns: {
+        tenantId: {
+            type: String,
+            primary: true,
+            name: "tenantid"
+        },
+        loginFailurePolicyType: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "loginfailurepolicytype"
+        },
+        failureThreshold: {
+            type: getIntTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "failurethreshold"
+        },
+        pauseDurationMinutes: {
+            type: getIntTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: true,
+            name: "pausedurationminutes"
+        },
+        maximumLoginFailures: {
+            type: getIntTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: true,
+            name: "maximumloginfailures"
+        }
+    },
+    tableName: "tenant_login_failure_policy",
+    name: "tenantLoginFailurePolicy",
 
-    static initModel(sequelize: Sequelize): typeof TenantLoginFailurePolicyEntity {
-        return TenantLoginFailurePolicyEntity.init({
-            tenantId: {
-                type: DataTypes.STRING,
-                primaryKey: true,
-                columnName: "tenantid"
-            },
-            loginFailurePolicyType: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "loginfailurepolicytype"
-            },
-            failureThreshold: {
-                type: DataTypes.INTEGER,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "failurethreshold"
-            },
-            pauseDurationMinutes: {
-                type: DataTypes.INTEGER,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "pausedurationminutes"
-            },
-            maximumLoginFailures: {
-                type: DataTypes.INTEGER,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "maximumloginfailures"
-            }
-        }, {
-            sequelize,
-            tableName: "tenant_login_failure_policy",
-            modelName: "tenantLoginFailurePolicy",
-            timestamps: false
-        })
-    }
-}
+})
+
 
 export default TenantLoginFailurePolicyEntity;

@@ -102,8 +102,8 @@ const NewAuthorizationGroupDialog: React.FC<NewAuthorizationGroupDialogProps> = 
                                 />
                             </Grid2>
                             <Grid2 size={12} container marginBottom={"8px"}>
-                                <Grid2 alignContent={"center"} size={10}>Default</Grid2>
-                                <Grid2 size={2}>
+                                <Grid2 alignContent={"center"} size={11}>Default</Grid2>
+                                <Grid2 size={1}>
                                     <Checkbox 
                                         name="default"
                                         checked={authzGroupInput.default}
@@ -112,8 +112,8 @@ const NewAuthorizationGroupDialog: React.FC<NewAuthorizationGroupDialogProps> = 
                                 </Grid2>
                             </Grid2>
                             <Grid2 size={12} container marginBottom={"8px"}>
-                                <Grid2 alignContent={"center"} size={10}>Allow for anonymous users</Grid2>
-                                <Grid2 size={2}>
+                                <Grid2 alignContent={"center"} size={11}>Allow for anonymous users</Grid2>
+                                <Grid2 size={1}>
                                     <Checkbox 
                                         name="allowForAnonymous"
                                         checked={authzGroupInput.allowForAnonymousUsers}

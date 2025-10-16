@@ -1,100 +1,106 @@
-import { Model, DataTypes, Sequelize } from "@sequelize/core";
+import { EntitySchema } from 'typeorm';
+import { BooleanTransformer, getBooleanTypeForDriver, getIntTypeForDriver } from '@/utils/dao-utils';
 
-class TenantPasswordConfigEntity extends Model {
-    
-    static initModel(sequelize: Sequelize): typeof TenantPasswordConfigEntity {
-        return TenantPasswordConfigEntity.init({
-            tenantId: {
-                type: DataTypes.STRING,
-                primaryKey: true,
-                columnName: "tenantid"
-            },
-            passwordHashingAlgorithm: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "passwordhashingalgorithm"
-            },
-            passwordMaxLength: {
-                type: DataTypes.INTEGER,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "passwordmaxlength"
-            },
-            passwordMinLength: {
-                type: DataTypes.INTEGER,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "passwordminlength"
-            },
-            requireLowerCase: {
-                type: DataTypes.BOOLEAN,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "requirelowercase"
-            },
-            requireNumbers: {
-                type: DataTypes.BOOLEAN,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "requirenumbers"
-            },
-            requireSpecialCharacters: {
-                type: DataTypes.BOOLEAN,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "requirespecialcharacters"
-            },
-            requireUpperCase: {
-                type: DataTypes.BOOLEAN,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "requireuppercase"
-            },
-            specialCharactersAllowed: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "specialcharactersallowed"
-            },
-            requireMfa: {
-                type: DataTypes.BOOLEAN,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "requiremfa"
-            },
-            mfaTypesRequired: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "mfatypesrequired"
-            },
-            maxRepeatingCharacterLength: {
-                type: DataTypes.INTEGER,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "maxrepeatingcharacterlength"
-            },
-            passwordRotationPeriodDays: {
-                type: DataTypes.INTEGER,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "passwordrotationperioddays"
-            },
-            passwordHistoryPeriod: {
-                type: DataTypes.INTEGER,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "passwordhistoryperiod"
-            }
-        }, {
-            sequelize,
-            tableName: "tenant_password_config",
-            modelName: "tenantPasswordConfig",
-            timestamps: false
-        })
-    }
-}    
-    
+const {
+    RDB_DIALECT
+} = process.env;
+
+const TenantPasswordConfigEntity = new EntitySchema({
+    columns: {
+        tenantId: {
+            type: String,
+            primary: true,
+            name: "tenantid"
+        },
+        passwordHashingAlgorithm: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "passwordhashingalgorithm"
+        },
+        passwordMaxLength: {
+            type: getIntTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "passwordmaxlength"
+        },
+        passwordMinLength: {
+            type: getIntTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "passwordminlength"
+        },
+        requireLowerCase: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "requirelowercase",
+            transformer: BooleanTransformer
+        },
+        requireNumbers: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "requirenumbers",
+            transformer: BooleanTransformer
+        },
+        requireSpecialCharacters: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "requirespecialcharacters",
+            transformer: BooleanTransformer
+        },
+        requireUpperCase: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "requireuppercase",
+            transformer: BooleanTransformer
+        },
+        specialCharactersAllowed: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "specialcharactersallowed"
+        },
+        requireMfa: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "requiremfa",
+            transformer: BooleanTransformer
+        },
+        mfaTypesRequired: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "mfatypesrequired"
+        },
+        maxRepeatingCharacterLength: {
+            type: getIntTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: true,
+            name: "maxrepeatingcharacterlength"
+        },
+        passwordRotationPeriodDays: {
+            type: getIntTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: true,
+            name: "passwordrotationperioddays"
+        },
+        passwordHistoryPeriod: {
+            type: getIntTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: true,
+            name: "passwordhistoryperiod"
+        }
+    },
+    tableName: "tenant_password_config",
+    name: "tenantPasswordConfig",
+
+})
+
+
 
 export default TenantPasswordConfigEntity;

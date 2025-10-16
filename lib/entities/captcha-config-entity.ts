@@ -1,58 +1,63 @@
-import { Model, DataTypes, Sequelize } from "@sequelize/core";
+import { EntitySchema } from 'typeorm';
+import { BooleanTransformer, getBooleanTypeForDriver } from '@/utils/dao-utils';
 
-class CaptchaConfigEntity extends Model {
-    
-    static initModel(sequelize: Sequelize): typeof CaptchaConfigEntity {
-        return CaptchaConfigEntity.init({
-            alias: {
-                type: DataTypes.STRING,
-                primaryKey: true,
-                columnName: "alias"
-            },
-            projectId: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "projectid"
-            },
-            siteKey: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "sitekey"
-            },
-            apiKey: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "apikey"
-            },
-            minScoreThreshold: {
-                type: DataTypes.FLOAT,
-                primaryKey: false,
-                allowNull: true,
-                columnName: "minscorethreshold"
-            },
-            useCaptchaV3: {
-                type: DataTypes.BOOLEAN,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "userecaptchav3"
-            },
-            useEnterpriseCaptcha: {
-                type: DataTypes.BOOLEAN,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "useenterprisecaptcha"
-            }
-        }, 
-        {
-            sequelize,
-            tableName: "captcha_config",
-            modelName: "captchaConfig",
-            timestamps: false
-        });
-    }
-}
+const {
+    RDB_DIALECT
+} = process.env;
+
+const CaptchaConfigEntity = new EntitySchema({
+
+
+    columns: {
+        alias: {
+            type: String,
+            primary: true,
+            name: "alias"
+        },
+        projectId: {
+            type: String,
+            primary: false,
+            nullable: true,
+            name: "projectid"
+        },
+        siteKey: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "sitekey"
+        },
+        apiKey: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "apikey"
+        },
+        minScoreThreshold: {
+            type: "float",
+            primary: false,
+            nullable: true,
+            name: "minscorethreshold"
+        },
+        useCaptchaV3: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "userecaptchav3",
+            transformer: BooleanTransformer
+        },
+        useEnterpriseCaptcha: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "useenterprisecaptcha",
+            transformer: BooleanTransformer
+        }
+    },
+
+    tableName: "captcha_config",
+    name: "captchaConfig",
+
+});
+
 
 export default CaptchaConfigEntity;

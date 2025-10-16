@@ -3,7 +3,6 @@ import AuthenticationGroupDao from "../../authentication-group-dao";
 import CassandraDriver from "@/lib/data-sources/cassandra";
 import cassandra from "cassandra-driver";
 import { types } from "cassandra-driver";
-import client from "@/components/apollo-client/apollo-client";
 
 class CassandraAuthenticationGroupDao extends AuthenticationGroupDao {
 

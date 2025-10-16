@@ -105,6 +105,12 @@ export const TENANT_ANONYMOUS_USER_CONFIGURATION_MUTATION = gql(`
     }
 `);
 
+export const REMOVE_TENANT_ANONYMOUS_USER_CONFIGURATION_MUTATION = gql(`
+    mutation removeTenantAnonymousUserConfig($tenantId: String!) {
+        removeTenantAnonymousUserConfig(tenantId: $tenantId)
+    }
+`);
+
 export const TENANT_LOOK_AND_FEEL_MUTATION = gql(`
     mutation setTenantLookAndFeel($tenantLookAndFeelInput: TenantLookAndFeelInput!) {
         setTenantLookAndFeel(tenantLookAndFeelInput: $tenantLookAndFeelInput) {

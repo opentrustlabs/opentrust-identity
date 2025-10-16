@@ -1,63 +1,65 @@
-import { Model, DataTypes, Sequelize } from "@sequelize/core";
+import { EntitySchema } from 'typeorm';
+import { BooleanTransformer, getBooleanTypeForDriver, getIntTypeForDriver, getBigIntTypeForDriver } from '@/utils/dao-utils';
 
-class UserProfileChangeEmailStateEntity extends Model {
-    
-    static initModel(sequelize: Sequelize): typeof UserProfileChangeEmailStateEntity {
-        return UserProfileChangeEmailStateEntity.init({
-            userId: {
-                type: DataTypes.STRING,
-                primaryKey: true,
-                columnName: "userid"
-            },
-            changeEmailSessionToken: {
-                type: DataTypes.STRING,
-                primaryKey: true,
-                columnName: "changeemailsessiontoken"
-            },
-            emailChangeState: {
-                type: DataTypes.STRING,
-                primaryKey: true,
-                columnName: "emailchangestate"
-            },
-            email: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "email"
-            },            
-            changeOrder: {
-                type: DataTypes.INTEGER,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "changeorder"
-            },
-            changeStateStatus: {
-                type: DataTypes.STRING,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "changestatestatus"
-            },            
-            expiresAtMs: {
-                type: DataTypes.BIGINT,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "expiresatms"
-            },
-            isPrimaryEmail: {
-                type: DataTypes.BOOLEAN,
-                primaryKey: false,
-                allowNull: false,
-                columnName: "isprimaryemail"
-            }
-        }, 
-        {
-            sequelize,
-            tableName: "user_profile_email_change_state",
-            modelName: "userProfileEmailChangeState",
-            timestamps: false
-        });
-    }
-}
+const {
+    RDB_DIALECT
+} = process.env;
+
+const UserProfileChangeEmailStateEntity = new EntitySchema({
+    columns: {
+        userId: {
+            type: String,
+            primary: true,
+            name: "userid"
+        },
+        changeEmailSessionToken: {
+            type: String,
+            primary: true,
+            name: "changeemailsessiontoken"
+        },
+        emailChangeState: {
+            type: String,
+            primary: true,
+            name: "emailchangestate"
+        },
+        email: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "email"
+        },
+        changeOrder: {
+            type: getIntTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "changeorder"
+        },
+        changeStateStatus: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "changestatestatus"
+        },
+        expiresAtMs: {
+            type: getBigIntTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "expiresatms"
+        },
+        isPrimaryEmail: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "isprimaryemail",
+            transformer: BooleanTransformer
+        }
+    },
+
+    tableName: "user_profile_email_change_state",
+    name: "userProfileEmailChangeState",
+
+});
+
 
 
 export default UserProfileChangeEmailStateEntity;

@@ -1,60 +1,63 @@
 import { MarkForDelete, DeletionStatus } from "@/graphql/generated/graphql-types";
 import MarkForDeleteDao from "../../mark-for-delete-dao";
-import { Op } from "@sequelize/core";
-import DBDriver from "@/lib/data-sources/sequelize-db";
-import { MarkForDeleteEntity } from "@/lib/entities/mark-for-delete-entity";
-import { DeletionStatusEntity } from "@/lib/entities/deletion-status-entity";
-
+import RDBDriver from "@/lib/data-sources/rdb";
+import { And, IsNull, LessThan, Not } from "typeorm";
 
 class DBMarkForDeleteDao extends MarkForDeleteDao {
 
     public async markForDelete(markForDelete: MarkForDelete): Promise<MarkForDelete> {
-        
-        await (await DBDriver.getInstance().getMarkForDeleteEntity()).create(markForDelete);
+        const markForDeleteRepo = await RDBDriver.getInstance().getMarkForDeleteRepository();
+        await markForDeleteRepo.insert(markForDelete);
         return Promise.resolve(markForDelete);
     }
 
     public async getMarkForDeleteById(markForDeleteId: string): Promise<MarkForDelete | null> {
-        const entity: MarkForDeleteEntity | null = await (await DBDriver.getInstance().getMarkForDeleteEntity()).findByPk(markForDeleteId);
-        if(entity){
-            return Promise.resolve(entity.dataValues as MarkForDelete);
-        }
-        return Promise.resolve(null);
-    }
-
-    public async updateMarkForDelete(deleteInput: MarkForDelete): Promise<MarkForDelete>{
-        await (await DBDriver.getInstance().getMarkForDeleteEntity()).update(deleteInput, {
-            where: {
-                markForDeleteId: deleteInput.markForDeleteId
-            }
-        });
-        return deleteInput;
-    }
-    
-    public async getLatestMarkForDeleteRecords(limit: number): Promise<Array<MarkForDelete>>{
-        const arr: Array<MarkForDeleteEntity> | null = await (await DBDriver.getInstance().getMarkForDeleteEntity()).findAll({
-            limit: limit,
-            order: ["submittedDate"]
-        });
-        return arr.map( (e) => e.dataValues);
-    }
-
-    public async getDeletionStatus(markForDeleteId: string): Promise<Array<DeletionStatus>> {
-        const arr: Array<DeletionStatusEntity> = await (await DBDriver.getInstance().getDeletionStatusEntity()).findAll({
+        const markForDeleteRepo = await RDBDriver.getInstance().getMarkForDeleteRepository();
+        const result = await markForDeleteRepo.findOne({
             where: {
                 markForDeleteId: markForDeleteId
             }
         });
-        return arr.map((entity: DeletionStatusEntity) => entity.dataValues);        
+        return result;
+    }
+
+    public async updateMarkForDelete(deleteInput: MarkForDelete): Promise<MarkForDelete>{
+        const markForDeleteRepo = await RDBDriver.getInstance().getMarkForDeleteRepository();
+        await markForDeleteRepo.update(
+            {
+                markForDeleteId: deleteInput.markForDeleteId
+            },
+            deleteInput
+        );        
+        return deleteInput;
+    }
+    
+    public async getLatestMarkForDeleteRecords(limit: number): Promise<Array<MarkForDelete>>{
+        const markForDeleteRepo = await RDBDriver.getInstance().getMarkForDeleteRepository();
+        const arr = await markForDeleteRepo.find({
+            take: limit,
+            order: {
+                submittedDate: "ASC"
+            }
+        });
+        return arr;
+    }
+
+    public async getDeletionStatus(markForDeleteId: string): Promise<Array<DeletionStatus>> {
+
+        const deletionStatusRepo = await RDBDriver.getInstance().getDeletionStatusRepository();
+        const arr = await deletionStatusRepo.find({
+            where: {
+                markForDeleteId: markForDeleteId
+            }
+        });
+        return arr;
     }
 
     public async deleteCompletedRecords(): Promise<void> {
-        await (await DBDriver.getInstance().getMarkForDeleteEntity()).destroy({
-            where: {
-                completedDate: {
-                    [Op.not]: null
-                }
-            }
+        const markForDeleteRepo = await RDBDriver.getInstance().getMarkForDeleteRepository();
+        await markForDeleteRepo.delete({
+            completedDate: Not(IsNull())
         });
         return Promise.resolve();
     }
@@ -65,19 +68,21 @@ class DBMarkForDeleteDao extends MarkForDeleteDao {
      * operations by setting the started date back to null.
      */
     public async resetStalledJobs(): Promise<void> {
-        const stalledJobs: Array<MarkForDeleteEntity> = await (await DBDriver.getInstance().getMarkForDeleteEntity()).findAll({
+        const markForDeleteRepo = await RDBDriver.getInstance().getMarkForDeleteRepository();
+        const stalledJobs: Array<MarkForDelete> = await markForDeleteRepo.find({
             where: {
-                completedDate: null,
-                startedDate: {
-                    [Op.ne]: null,
-                    [Op.lt]: Date.now() - (24 * 60 * 60 * 1000)
-                }
-            },
-            limit: 200
+                startedDate: And(Not(IsNull()), LessThan(Date.now() - (24 * 60 * 60 * 1000))),
+                completedDate: IsNull()
+            }
         });
         for(let i = 0; i < stalledJobs.length; i++){
-            stalledJobs[i].setDataValue("startedDate", null);
-            stalledJobs[i].save()
+            stalledJobs[i].startedDate = null;
+            await markForDeleteRepo.update(
+                {
+                    markForDeleteId: stalledJobs[i].markForDeleteId
+                },
+                stalledJobs[i]
+            );
         }
         return Promise.resolve();
     }

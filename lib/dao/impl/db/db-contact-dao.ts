@@ -1,44 +1,40 @@
 import { Contact } from "@/graphql/generated/graphql-types";
 import ContactDao from "../../contact-dao";
-import DBDriver from "@/lib/data-sources/sequelize-db";
-import ContactEntity from "@/lib/entities/contact-entity";
+import RDBDriver from "@/lib/data-sources/rdb";
 
 class DBContactDao extends ContactDao {
 
     public async getContacts(objectId: string): Promise<Array<Contact>>{
-
-        const arr: Array<ContactEntity> = await (await DBDriver.getInstance().getContactEntity()).findAll({
+        const contactRepo = await RDBDriver.getInstance().getContactRepository();
+        const arr = await contactRepo.find({
             where: {
                 objectid: objectId
             }
         });
-        return arr.map((e: ContactEntity) => e.dataValues);
+        return arr;
     }
 
     public async getContactById(contactId: string): Promise<Contact | null>{
-
-        const entity: ContactEntity | null = await (await DBDriver.getInstance().getContactEntity()).findOne({
+        const contactRepo = await RDBDriver.getInstance().getContactRepository();
+        const result = await contactRepo.findOne({
             where: {
                 contactid: contactId
             }
         });
-        return entity ? entity.dataValues : null;
+        return result;
     }
 
     public async addContact(contact: Contact): Promise<Contact> {
-
-        await (await DBDriver.getInstance().getContactEntity()).create(contact);
+        const contactRepo = await RDBDriver.getInstance().getContactRepository();
+        await contactRepo.insert(contact);
         return Promise.resolve(contact);
     }
 
     public async removeContact(contactId: string): Promise<void> {
-
-        await (await DBDriver.getInstance().getContactEntity()).destroy({
-            where: {
-                contactid: contactId
-            }
+        const contactRepo = await RDBDriver.getInstance().getContactRepository();
+        await contactRepo.delete({
+            contactid: contactId
         });
-        
         return Promise.resolve();
     }
 
