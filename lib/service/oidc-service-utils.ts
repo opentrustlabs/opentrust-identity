@@ -131,7 +131,8 @@ const agent: Agent | null = MTLS_USE_PKI_IDENTITY === "true" ?
     ) :     
     new Agent({        
         timeout: HTTP_TIMEOUT_MS ? parseInt(HTTP_TIMEOUT_MS) : DEFAULT_HTTP_TIMEOUT_MS,
-        ca: TRUST_STORE_FILE ? readFileSync(TRUST_STORE_FILE) : undefined
+        ca: TRUST_STORE_FILE ? readFileSync(TRUST_STORE_FILE) : undefined,
+        rejectUnauthorized: true
     });
 
 
