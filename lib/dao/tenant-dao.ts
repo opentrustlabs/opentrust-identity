@@ -157,7 +157,7 @@ abstract class TenantDao {
             categoryEntries: [],
             categoryName: "Search Engine Settings"
         }
-        const {OPENSEARCH_HOST, OPENSEARCH_PORT, TRUST_STORE_PATH} = process.env;
+        const {OPENSEARCH_HOST, OPENSEARCH_PORT, TRUST_STORE_FILE } = process.env;
         searchSettings.categoryEntries.push({
             categoryKey: "Opensearch Host",
             categoryValue: OPENSEARCH_HOST || ""
@@ -168,7 +168,7 @@ abstract class TenantDao {
         });
         searchSettings.categoryEntries.push({
             categoryKey: "Opensearch Truststore Path",
-            categoryValue: TRUST_STORE_PATH || ""
+            categoryValue: TRUST_STORE_FILE || ""
         });
         systemCategories.push(searchSettings);
 
@@ -236,7 +236,7 @@ abstract class TenantDao {
         };
         const {
             HTTP_TIMEOUT_MS, MTLS_USE_PKI_IDENTITY, MTLS_PKI_IDENTITY_PRIVATE_KEY_FILE, MTLS_PKI_IDENTITY_CERTIFICATE_FILE, 
-            MTLS_PKI_IDENTITY_TRUST_STORE_FILE, HTTP_CLIENT_USE_PROXY, HTTP_PROXY_PROTOCOL, HTTP_PROXY_HOST, 
+            HTTP_CLIENT_USE_PROXY, HTTP_PROXY_PROTOCOL, HTTP_PROXY_HOST, 
             HTTP_PROXY_PORT, HTTP_PROXY_USE_AUTHENTICATION 
         } = process.env;
         httpClientSettingsCategory.categoryEntries.push({
@@ -257,7 +257,7 @@ abstract class TenantDao {
         });
         httpClientSettingsCategory.categoryEntries.push({
             categoryKey: "Trust Store File",
-            categoryValue: MTLS_PKI_IDENTITY_TRUST_STORE_FILE || "Not Configured"
+            categoryValue: TRUST_STORE_FILE || "Not Configured"
         });
         httpClientSettingsCategory.categoryEntries.push({
             categoryKey: "Use Proxy",

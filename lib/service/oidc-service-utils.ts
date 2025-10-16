@@ -30,7 +30,7 @@ const {
     MTLS_PKI_IDENTITY_PRIVATE_KEY_FILE,
     MTLS_PKI_IDENTITY_CERTIFICATE_FILE,
     MTLS_PKI_IDENTITY_PRIVATE_KEY_PASSWORD,
-    MTLS_PKI_IDENTITY_TRUST_STORE_FILE,
+    TRUST_STORE_FILE,
     HTTP_CLIENT_USE_PROXY,
     HTTP_PROXY_PROTOCOL,
     HTTP_PROXY_HOST,
@@ -118,18 +118,20 @@ const proxy: AxiosProxyConfig | undefined = HTTP_CLIENT_USE_PROXY === "true" ?
     } :
     undefined;
 
-const agent: Agent | null = MTLS_USE_PKI_IDENTITY === "true" ? new Agent(
+const agent: Agent | null = MTLS_USE_PKI_IDENTITY === "true" ? 
+    new Agent(
         {
             key: MTLS_PKI_IDENTITY_PRIVATE_KEY_FILE ? readFileSync(MTLS_PKI_IDENTITY_PRIVATE_KEY_FILE) : "",
             cert: MTLS_PKI_IDENTITY_CERTIFICATE_FILE ? readFileSync(MTLS_PKI_IDENTITY_CERTIFICATE_FILE) : "",
-            ca: MTLS_PKI_IDENTITY_TRUST_STORE_FILE ? readFileSync(MTLS_PKI_IDENTITY_TRUST_STORE_FILE) : undefined,
+            ca: TRUST_STORE_FILE ? readFileSync(TRUST_STORE_FILE) : undefined,
             passphrase: MTLS_PKI_IDENTITY_PRIVATE_KEY_PASSWORD,            
             rejectUnauthorized: true,
             timeout: HTTP_TIMEOUT_MS ? parseInt(HTTP_TIMEOUT_MS) : DEFAULT_HTTP_TIMEOUT_MS
         }
     ) :     
     new Agent({        
-        timeout: HTTP_TIMEOUT_MS ? parseInt(HTTP_TIMEOUT_MS) : DEFAULT_HTTP_TIMEOUT_MS
+        timeout: HTTP_TIMEOUT_MS ? parseInt(HTTP_TIMEOUT_MS) : DEFAULT_HTTP_TIMEOUT_MS,
+        ca: TRUST_STORE_FILE ? readFileSync(TRUST_STORE_FILE) : undefined
     });
 
 
@@ -210,7 +212,7 @@ class OIDCServiceUtils extends JwtServiceUtils {
             params.set("client_assertion", token)
         }
 
-        const response = await axios.post(
+        const response = await axiosInstance.post(
             tokenEndpoint,
             params.toString(),
             {
@@ -227,7 +229,7 @@ class OIDCServiceUtils extends JwtServiceUtils {
     }
 
     public async getOIDCUserInfo(userInfoEndpoint: string, authToken: string): Promise<OIDCUserInfo | null>{
-        const response = await axios.get(
+        const response = await axiosInstance.get(
             userInfoEndpoint, {
                 headers: {
                     "Accept": "application/json",
@@ -469,7 +471,7 @@ class OIDCServiceUtils extends JwtServiceUtils {
             success: false
         }
         try{
-            const response = await axios.post("https://www.google.com/recaptcha/api/siteverify", 
+            const response = await axiosInstance.post("https://www.google.com/recaptcha/api/siteverify", 
                 `secret=${apiKey}&response=${recaptchaToken}`,
                 {
                     headers: {
