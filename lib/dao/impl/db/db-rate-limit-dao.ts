@@ -1,9 +1,7 @@
-import { RateLimitServiceGroup, TenantRateLimitRel, TenantRateLimitRelView } from "@/graphql/generated/graphql-types";
+import { RateLimitServiceGroup, Tenant, TenantRateLimitRel, TenantRateLimitRelView } from "@/graphql/generated/graphql-types";
 import RateLimitDao from "../../rate-limit-dao";
 import RDBDriver from "@/lib/data-sources/rdb";
-import { DataSource, In } from "typeorm";
-import TenantRateLimitRelEntity from "@/lib/entities/tenant-rate-limit-rel-entity";
-import TenantEntity from "@/lib/entities/tenant-entity";
+import { In } from "typeorm";
 
 class DBRateLimitDao extends RateLimitDao {
 
@@ -47,60 +45,50 @@ class DBRateLimitDao extends RateLimitDao {
 
     public async getRateLimitTenantRelViews(rateLimitServiceGroupId: string | null, tenantId: string | null): Promise<Array<TenantRateLimitRelView>> {
 
-        const d: DataSource = await RDBDriver.getConnection();
-        let q = d
-            .createQueryBuilder(TenantRateLimitRelEntity, "tenantRateLimitRel")
-            .innerJoin("tenant", "tenant", "tenant.tenantId = tenantRateLimitRel.tenantId")
-            .innerJoin("rate_limit_service_group", "rateLimitServiceGroup", "rateLimitServiceGroup.servicegroupid = tenantRateLimitRel.servicegroupid");
-        
-        
+        const retVal: Array<TenantRateLimitRelView> = [];
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const whereClauses: Array<{queryString: string, vars: any}> = [];
-        
-        if(rateLimitServiceGroupId){
-            whereClauses.push({
-                queryString: "tenantRateLimitRel.servicegroupid = :servicegroupid",
-                vars: {servicegroupid: rateLimitServiceGroupId}
-            });
-        }
-        if(tenantId){
-            whereClauses.push({
-                queryString: "tenant.tenantId = :tenantId",
-                vars: {tenantId: tenantId}
-            });
-        }
-        if(whereClauses.length > 0){
-            const first = whereClauses[0];            
-            q = q.where(first.queryString, first.vars);
-            if(whereClauses.length > 1){
-                const second = whereClauses[1];
-                q = q.andWhere(second.queryString, second.vars);
-            }
-        }
-        q = q.select([
-            "tenantRateLimitRel.*",
-            "tenant.tenantName as tenantname",
-            "rateLimitServiceGroup.servicegroupname as servicegroupname"
-        ]);
-        q = q.orderBy("tenantname", "ASC");
-        const rawResults = await q.getRawMany();
-        
-        return rawResults.map(            
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (item: any) => {
-                const view: TenantRateLimitRelView = {
-                    servicegroupid: item.servicegroupid,
-                    servicegroupname: item.servicegroupname,
-                    tenantId: item.tenantid,
-                    tenantName: item.tenantname,
-                    allowUnlimitedRate: item.allowunlimitedrate,
-                    rateLimit: item.ratelimit,
-                    rateLimitPeriodMinutes: item.ratelimitperiodminutes
+        const arr: Array<TenantRateLimitRel> = await this.getRateLimitTenantRel(tenantId, rateLimitServiceGroupId);
+        if(arr.length > 0){
+
+            // Need this round-about approach because TypeORM does not play well with Oracle using
+            // .createQueryBuilder() and .innerJoin(), so we must do this the hard way.
+
+            const tenantIds: Array<string> = arr.map((rel: TenantRateLimitRel) => rel.tenantId);
+            const serviceGroupIds: Array<string> = arr.map((rel: TenantRateLimitRel) => rel.servicegroupid);
+
+            const tenantRepo = await RDBDriver.getInstance().getTenantRepository();
+
+            const tenants: Array<Tenant> = await tenantRepo.find({
+                where: {
+                    tenantId: In(tenantIds)
                 }
-                return view;
-            }
-        );        
+            });
+
+            const serviceGroupRepo = await RDBDriver.getInstance().getRateLimitServiceGroupRepository();
+            const serviceGroups: Array<RateLimitServiceGroup> = await serviceGroupRepo.find({
+                where: {
+                    servicegroupid: In(serviceGroupIds)
+                }
+            });
+            
+            arr.forEach(
+                (rel: TenantRateLimitRel) => {
+                    const tenant = this.findMatchingTenant(tenants, rel.tenantId);
+                    const serviceGroup = this.findMatchingServiceGroup(serviceGroups, rel.servicegroupid);
+                    const view: TenantRateLimitRelView = {
+                        servicegroupid: rel.servicegroupid,
+                        servicegroupname: serviceGroup ? serviceGroup.servicegroupname : "",
+                        tenantId: rel.tenantId,
+                        tenantName: tenant ? tenant.tenantName : "",
+                        allowUnlimitedRate: rel.allowUnlimitedRate,
+                        rateLimit: rel.rateLimit,
+                        rateLimitPeriodMinutes: rel.rateLimitPeriodMinutes
+                    }
+                    retVal.push(view);
+                }
+            );
+        }
+        return retVal;              
     }
 
     
@@ -209,7 +197,21 @@ class DBRateLimitDao extends RateLimitDao {
             servicegroupid: serviceGroupId
         });
         return Promise.resolve();
-    }    
+    }
+
+    protected findMatchingTenant(tenants: Array<Tenant>, tenantId: string): Tenant | null {
+        const t: Tenant | undefined = tenants.find(
+            (ten: Tenant) => ten.tenantId === tenantId
+        );
+        return t || null;
+    }
+
+    protected findMatchingServiceGroup(serviceGroups: Array<RateLimitServiceGroup>, serviceGroupId: string): RateLimitServiceGroup | null {
+        const s: RateLimitServiceGroup | undefined = serviceGroups.find(
+            (g: RateLimitServiceGroup) => g.servicegroupid === serviceGroupId
+        );
+        return s || null;
+    }
 }
 
 export default DBRateLimitDao;

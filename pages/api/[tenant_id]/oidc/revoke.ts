@@ -81,10 +81,6 @@ export default async function handler(
         client_secret
     } = req.body;
 
-    // TODO
-    // Inspect the authorization header to see if there is a bearer or basic
-    // authz value.
-
     // If no token, then fail.
     if(!token){
         res.status(403).end();

@@ -65,9 +65,7 @@ class OracleUpperNamingStrategy
     extends DefaultNamingStrategy
     implements NamingStrategyInterface {
         tableName(className: string, customName: string): string {
-            console.log("className: " + className + ", customName: " + customName);
             const retVal =  (customName || className).toUpperCase();
-            console.log(retVal)
             return retVal;
         }
 
@@ -368,7 +366,6 @@ class RDBDriver {
             }
             global.dataSource = dataSource;
             await global.dataSource.initialize();
-            console.log(dataSource.entityMetadatas.map(m => m.name));
         }
         return global.dataSource;
     }

@@ -54,11 +54,20 @@ class TenantService {
             throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});
         }
 
-        // TODO
-        // If the tenant.allowSocialLogin is set to false, then delete any OIDC
-        // provider with a provider type of "SOCIAL"
         await tenantDao.updateRootTenant(tenant);
         await this.updateSearchIndex(tenant);
+
+        // There should NOT be social login providers attached to the root tenant, but
+        // just in case, if there are and the tenant has set allow social login to false
+        // then we should remove those relationships
+        if(tenant.allowSocialLogin === false){
+            const socialProviders: Array<FederatedOidcProviderTenantRel> = await federatedOIDCProviderDao.getFederatedOidcProviderTenantRels(tenant.tenantId);
+            if(socialProviders.length > 0){
+                for(let i = 0; i < socialProviders.length; i++){
+                    await federatedOIDCProviderDao.removeFederatedOidcProviderFromTenant(socialProviders[i].federatedOIDCProviderId, socialProviders[i].tenantId);
+                }
+            }            
+        }
         return Promise.resolve(tenant);
     }
         
@@ -250,13 +259,20 @@ class TenantService {
         const {valid, errorDetail} = await this.validateTenantInput(tenant, false);
         if(!valid){
             throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});
-        }
-        
-        // TODO
-        // If the tenant.allowSocialLogin is set to false, then delete any OIDC
-        // provider with a provider type of "SOCIAL"
+        }                
         await tenantDao.updateTenant(tenant);
         await this.updateSearchIndex(tenant);
+
+        // If there are social providers attached to the tenant, and the tenant has set allow social login to false
+        // then we should remove those relationships
+        if(tenant.allowSocialLogin === false){
+            const socialProviders: Array<FederatedOidcProviderTenantRel> = await federatedOIDCProviderDao.getFederatedOidcProviderTenantRels(tenant.tenantId);
+            if(socialProviders.length > 0){
+                for(let i = 0; i < socialProviders.length; i++){
+                    await federatedOIDCProviderDao.removeFederatedOidcProviderFromTenant(socialProviders[i].federatedOIDCProviderId, socialProviders[i].tenantId);
+                }
+            }            
+        }
 
         changeEventDao.addChangeEvent({
             objectId: tenant.tenantId,
