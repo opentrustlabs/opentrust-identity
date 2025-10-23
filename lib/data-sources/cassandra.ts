@@ -103,7 +103,7 @@ class CassandraDriver {
 
     public async getModelMapper(name: string): Promise<cassandra.mapping.ModelMapper> {
         const m: cassandra.mapping.Mapper = await CassandraDriver.getMapper();
-        return m.forModel(modelName);
+        return m.forModel(name);
     }
 
     public static async getMapper(): Promise<cassandra.mapping.Mapper> {        
