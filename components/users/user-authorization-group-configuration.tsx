@@ -191,7 +191,7 @@ const UserAuthorizationGroupConfiguration: React.FC<UserAuthorizationGroupConfig
             <Typography component={"div"} fontWeight={"bold"} >
                 {errorMessage &&
                     <Grid2 marginBottom={"24px"} marginTop={"16px"} spacing={2} container size={12}>
-                        <Alert severity="error" onClose={() => setErrorMessage(null)}>{errorMessage}</Alert>
+                        <Alert sx={{width: "100%"}} severity="error" onClose={() => setErrorMessage(null)}>{errorMessage}</Alert>
                     </Grid2>
                 }
                 {canAddRel &&                

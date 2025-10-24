@@ -78,24 +78,32 @@ class TenantService {
         }
 
         let tenantFilterIds: Array<string> | undefined = undefined;
+        let tenantIdFilter: string | undefined = undefined;
+        // Need to add a tenant id to the various queries for related oidc providers or scope so we do not
+        // bring back too many records
+        if(this.oidcContext.portalUserProfile?.managementAccessTenantId !== this.oidcContext.rootTenant.tenantId){
+            tenantIdFilter = this.oidcContext.portalUserProfile?.managementAccessTenantId || undefined;            
+        }
 
         if(federatedOIDCProviderId){
-            const r: Array<FederatedOidcProviderTenantRel> = await federatedOIDCProviderDao.getFederatedOidcProviderTenantRels(undefined, federatedOIDCProviderId);
+            const r: Array<FederatedOidcProviderTenantRel> = await federatedOIDCProviderDao.getFederatedOidcProviderTenantRels(tenantIdFilter, federatedOIDCProviderId);
             tenantFilterIds = r.map((rel: FederatedOidcProviderTenantRel) => rel.tenantId);
         }
         else if(tenantIds){
-            tenantFilterIds = tenantIds;
+            if(this.oidcContext.portalUserProfile?.managementAccessTenantId === this.oidcContext.rootTenant.tenantId){
+                tenantFilterIds = tenantIds;
+            }
+            else{
+                tenantFilterIds = tenantIds.filter(
+                    (id: string) => id === this.oidcContext.portalUserProfile?.managementAccessTenantId
+                );
+            }
         }
         else if(scopeId){
-            const s: Array<TenantAvailableScope> = await scopeDao.getTenantAvailableScope(undefined, scopeId);
+            const s: Array<TenantAvailableScope> = await scopeDao.getTenantAvailableScope(tenantIdFilter, scopeId);
             tenantFilterIds = s.map((e: TenantAvailableScope) => e.tenantId);
         }
-
-        if(this.oidcContext.portalUserProfile?.managementAccessTenantId !== this.oidcContext.rootTenant.tenantId){
-            tenantFilterIds = tenantFilterIds?.filter(
-                (id: string) => id === this.oidcContext.portalUserProfile?.managementAccessTenantId
-            );
-        }        
+      
         if(tenantFilterIds && tenantFilterIds.length > 0){
             return tenantDao.getTenants(tenantFilterIds);
         }

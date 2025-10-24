@@ -352,5 +352,7 @@
     "ENTER_SECRET": "Voer het geheime e-mailadres in",
     "USE_THE_FOLLOWING_CODE_TO_CONFIRM_YOUR_EMAIL": "Gebruik de volgende code om uw e-mailadres te bevestigen",
     "UNAUTHORIZED_REGISTRATION": "Als u dit e-mailadres niet heeft geregistreerd, meld dit dan",
-    "REPORT_UNAUTHORIZED_REGISTRATION": "Meld ongeautoriseerde registratie"
+    "REPORT_UNAUTHORIZED_REGISTRATION": "Meld ongeautoriseerde registratie",
+    "ERROR_CANNOT_ASSIGN_A_USER_TO_A_DEFAULT_AUTHN_GROUP": "A user cannot be assigned to a default authentication group.",
+    "ERROR_CANNOT_ASSIGN_A_USER_TO_A_DEFAULT_AUTHZ_GROUP": "A user cannot be assigned to a default authorization group."
 }

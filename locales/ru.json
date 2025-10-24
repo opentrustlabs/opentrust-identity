@@ -352,5 +352,7 @@
     "ENTER_SECRET": "Введите секретное значение.",
     "USE_THE_FOLLOWING_CODE_TO_CONFIRM_YOUR_EMAIL": "Используйте следующий код для подтверждения адреса электронной почты.",
     "UNAUTHORIZED_REGISTRATION": "Если вы не регистрировали этот адрес электронной почты, сообщите об этом.",
-    "REPORT_UNAUTHORIZED_REGISTRATION": "Сообщить о несанкционированной регистрации."
+    "REPORT_UNAUTHORIZED_REGISTRATION": "Сообщить о несанкционированной регистрации.",
+    "ERROR_CANNOT_ASSIGN_A_USER_TO_A_DEFAULT_AUTHN_GROUP": "A user cannot be assigned to a default authentication group.",
+    "ERROR_CANNOT_ASSIGN_A_USER_TO_A_DEFAULT_AUTHZ_GROUP": "A user cannot be assigned to a default authorization group."
 }

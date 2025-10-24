@@ -352,5 +352,7 @@
     "ENTER_SECRET": "Zadejte tajný kód",
     "USE_THE_FOLLOWING_CODE_TO_CONFIRM_YOUR_EMAIL": "Použijte následující kód k potvrzení vaší e-mailové adresy",
     "UNAUTHORIZED_REGISTRATION": "Pokud jste tuto e-mailovou adresu nezaregistrovali, nahlaste ji prosím",
-    "REPORT_UNAUTHORIZED_REGISTRATION": "Nahlásit neoprávněnou registraci"
+    "REPORT_UNAUTHORIZED_REGISTRATION": "Nahlásit neoprávněnou registraci",
+    "ERROR_CANNOT_ASSIGN_A_USER_TO_A_DEFAULT_AUTHN_GROUP": "A user cannot be assigned to a default authentication group.",
+    "ERROR_CANNOT_ASSIGN_A_USER_TO_A_DEFAULT_AUTHZ_GROUP": "A user cannot be assigned to a default authorization group."
 }

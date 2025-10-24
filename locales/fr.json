@@ -352,5 +352,7 @@
     "ENTER_SECRET": "Saisir le code secret.",
     "USE_THE_FOLLOWING_CODE_TO_CONFIRM_YOUR_EMAIL": "Utilisez le code suivant pour confirmer votre adresse e-mail.",
     "UNAUTHORIZED_REGISTRATION": "Si vous n'avez pas enregistré cette adresse e-mail, veuillez la signaler.",
-    "REPORT_UNAUTHORIZED_REGISTRATION": "Signaler une inscription non autorisée."
+    "REPORT_UNAUTHORIZED_REGISTRATION": "Signaler une inscription non autorisée.",
+    "ERROR_CANNOT_ASSIGN_A_USER_TO_A_DEFAULT_AUTHN_GROUP": "A user cannot be assigned to a default authentication group.",
+    "ERROR_CANNOT_ASSIGN_A_USER_TO_A_DEFAULT_AUTHZ_GROUP": "A user cannot be assigned to a default authorization group."
 }

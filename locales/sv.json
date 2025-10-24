@@ -352,5 +352,7 @@
     "ENTER_SECRET": "Ange hemlighet",
     "USE_THE_FOLLOWING_CODE_TO_CONFIRM_YOUR_EMAIL": "Använd följande kod för att bekräfta din e-postadress",
     "UNAUTHORIZED_REGISTRATION": "Om du inte registrerade den här e-postadressen, vänligen rapportera den",
-    "REPORT_UNAUTHORIZED_REGISTRATION": "Rapportera obehörig registrering"
+    "REPORT_UNAUTHORIZED_REGISTRATION": "Rapportera obehörig registrering",
+    "ERROR_CANNOT_ASSIGN_A_USER_TO_A_DEFAULT_AUTHN_GROUP": "A user cannot be assigned to a default authentication group.",
+    "ERROR_CANNOT_ASSIGN_A_USER_TO_A_DEFAULT_AUTHZ_GROUP": "A user cannot be assigned to a default authorization group."
 }
