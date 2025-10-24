@@ -90,36 +90,39 @@ const UserTenantConfiguration: React.FC<UserTenantConfigurationProps> = ({
                         <Alert onClose={() => setErrorMessage(null)} severity="error">{errorMessage}</Alert>
                     </Grid2>
                 }
-                <Grid2 container size={12} spacing={1} marginTop={"16px"} marginBottom={"16px"} >
-                    {data.getUserTenantRels.length === 1 &&
-                        <Grid2 size={8}>Tenant Name</Grid2>
-                    }
-                    {data.getUserTenantRels.length > 1 &&
-                        <Grid2 container size={8}>
-                            <Grid2 size={1.4}></Grid2>
-                            <Grid2 size={6.6}>Tenant Name</Grid2>
-                        </Grid2>
-                    }                    
+                <Grid2 container size={12} spacing={1} marginTop={"16px"} marginBottom={"16px"} >                    
+                    
+                        <Grid2 size={1}></Grid2>
+                        <Grid2 size={7}>Tenant Name</Grid2>
+                    
+                                        
                     <Grid2 size={3}>Membership Type</Grid2>
                     <Grid2 size={1}></Grid2>                                                                                        
                 </Grid2>
             </Typography>
             <Divider />
+            {data && data.getUserTenantRels.length === 0 &&
+                <Typography component={"div"} fontSize={"0.9em"} >
+                    <Grid2 marginTop={"16px"} display={"flex"} justifyContent={"center"}>
+                        <div>This user does not belong to any tenants.</div>
+                    </Grid2>
+                </Typography>
+            }
             {data.getUserTenantRels.map(                                            
                 (userTenantRelView: UserTenantRelView) => (
                     <Typography key={`${userTenantRelView.tenantId}`} component={"div"} fontSize={"0.9em"} >
                         <Divider></Divider>                        
                         <Grid2 margin={"8px 0px 8px 0px"} container size={12} spacing={1}>
-                            {data.getUserTenantRels.length === 1 &&
+                            {/* {data.getUserTenantRels.length === 1 &&
                                 <Grid2 size={8}>
                                     <Link target="_blank" href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/tenants/${userTenantRelView.tenantId}`}>
                                         {userTenantRelView.tenantName}
                                     </Link>
                                 </Grid2>
-                            }
-                            {data.getUserTenantRels.length > 1 &&
-                                <Grid2 container size={8}>
-                                    <Grid2 size={1.4}>
+                            } */}
+                            {data.getUserTenantRels.length > 0 &&
+                                <>
+                                    <Grid2 size={1}>
                                         {userTenantRelView.relType === USER_TENANT_REL_TYPE_GUEST &&
                                             <Tooltip title={"Assign as primary tenant"}
                                             >
@@ -142,12 +145,12 @@ const UserTenantConfiguration: React.FC<UserTenantConfigurationProps> = ({
                                             <GradeIcon sx={{color: DEFAULT_BACKGROUND_COLOR}}  />
                                         }                                       
                                     </Grid2>
-                                    <Grid2 size={6.6}>
+                                    <Grid2 size={7}>
                                         <Link target="_blank" href={`/${tenantBean.getTenantMetaData().tenant.tenantId}/tenants/${userTenantRelView.tenantId}`}>
                                             {userTenantRelView.tenantName}
                                         </Link>
                                     </Grid2>
-                                </Grid2>
+                                </>
                             }
                             <Grid2 size={3}>{USER_TENANT_REL_TYPES_DISPLAY.get(userTenantRelView.relType)}</Grid2>
                             <Grid2 minHeight={"26px"} size={1}>

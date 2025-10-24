@@ -303,9 +303,9 @@ const AuthorizationGroupsAssignDialog: React.FC<AuthorizationGroupAssignDialogPr
                 resultType: SearchResultType.AuthorizationGroup
             }
         },
-        skip: !data,
-        // fetchPolicy: "no-cache",
-        // nextFetchPolicy: "no-cache"
+        skip: !data || (data.getUserTenantRels && data.getUserTenantRels.length === 0),
+        fetchPolicy: "no-cache",
+        nextFetchPolicy: "no-cache"
     });
 
 
