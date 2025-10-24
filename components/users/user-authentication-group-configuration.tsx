@@ -69,7 +69,7 @@ const UserAuthenticationGroupConfiguration: React.FC<UserAuthenticationGroupConf
             setShowAddDialog(false);
             setGroupToAdd(null);
         },
-        onError(error) {
+        onError(error) {            
             onUpdateEnd(false);
             setShowAddDialog(false);
             setErrorMessage(intl.formatMessage({id: error.message}));
@@ -194,7 +194,7 @@ const UserAuthenticationGroupConfiguration: React.FC<UserAuthenticationGroupConf
             <Typography component={"div"} fontWeight={"bold"} >
                 {errorMessage &&
                     <Grid2 marginBottom={"24px"} marginTop={"16px"} spacing={2} container size={12}>
-                        <Alert severity="error" onClose={() => setErrorMessage(null)}>{errorMessage}</Alert>
+                        <Alert sx={{width: "100%"}} severity="error" onClose={() => setErrorMessage(null)}>{errorMessage}</Alert>
                     </Grid2>
                 }
                 {canAddRel &&

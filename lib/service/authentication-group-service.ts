@@ -272,7 +272,7 @@ class AuthenticationGroupService {
         if(!user){
             throw new GraphQLError(ERROR_CODES.EC00013.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00013 }});
         }
-        // 2.   Does the authn group exist
+        // 2.   Does the authn group exist.
         const authnGroup: AuthenticationGroup | null = await authenticationGroupDao.getAuthenticationGroupById(authenticationGroupId);
         if(!authnGroup){
             throw new GraphQLError(ERROR_CODES.EC00010.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00010 }});
@@ -286,6 +286,11 @@ class AuthenticationGroupService {
         const {isAuthorized, errorDetail} = authorizeByScopeAndTenant(this.oidcContext, AUTHENTICATION_GROUP_USER_ASSIGN_SCOPE, userTenantRel.tenantId);
         if(!isAuthorized){
             throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});
+        }
+
+        // 4.   Is this a default Authn group? If so, then do not allow assignment
+        if(authnGroup.defaultGroup === true){
+            throw new GraphQLError(ERROR_CODES.EC00225.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00225}});
         }
 
         const r: AuthenticationGroupUserRel = await authenticationGroupDao.assignUserToAuthenticationGroup(userId, authenticationGroupId);

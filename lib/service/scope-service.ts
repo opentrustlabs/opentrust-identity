@@ -90,11 +90,10 @@ class ScopeService {
         return [];
     }
 
-    public async getScopeById(scopeId: string): Promise<Scope | null> {
-        // Only members of the root tenant are allowed to view scope details
-        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_READ_ALL_SCOPE, SCOPE_READ_SCOPE], null);
+    public async getScopeById(scopeId: string): Promise<Scope | null> {        
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_READ_ALL_SCOPE, SCOPE_READ_SCOPE], this.oidcContext.portalUserProfile?.managementAccessTenantId || null);
         if(!authResult.isAuthorized){
-            throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
+            throw new GraphQLError(ERROR_CODES.EC00066.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00066}});
         }        
         return scopeDao.getScopeById(scopeId);
     }

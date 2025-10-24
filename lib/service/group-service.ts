@@ -200,6 +200,10 @@ class GroupService {
             throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});
         }
 
+        if(authzGroup.default === true){
+            throw new GraphQLError(ERROR_CODES.EC00226.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00226}});
+        }
+
         const r: AuthorizationGroupUserRel = await groupDao.addUserToAuthorizationGroup(userId, groupId);
 
         const document: RelSearchResultItem = {

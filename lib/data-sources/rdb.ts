@@ -587,7 +587,7 @@ class RDBDriver {
     public async getProhibitedPasswordRepository(): Promise<Repository<ProhibitedPassword>> {
         if (!RDBDriver.instance.prohibitedPasswordRepository) {
             const driver = await RDBDriver.getConnection();
-            RDBDriver.instance.prohibitedPasswordRepository = driver.getRepository("prohibitedPassword");
+            RDBDriver.instance.prohibitedPasswordRepository = driver.getRepository("prohibitedPasswords");
         }
         return RDBDriver.instance.prohibitedPasswordRepository;
     }
