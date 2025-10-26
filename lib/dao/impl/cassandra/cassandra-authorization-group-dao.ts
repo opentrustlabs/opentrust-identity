@@ -80,8 +80,7 @@ class CassandraAuthorizationGroupDao extends AuthorizationGroupDao {
             hasMore = results.length === 1000;
         }
 
-        const groupMapper = await CassandraDriver.getInstance().getModelMapper("authorization_group");        
-
+        const groupMapper = await CassandraDriver.getInstance().getModelMapper("authorization_group");
         const group: AuthorizationGroup | null = await this.getAuthorizationGroupById(groupId);
         if(group){
             groupMapper.remove({
@@ -90,6 +89,22 @@ class CassandraAuthorizationGroupDao extends AuthorizationGroupDao {
             });
         }       
         
+    }
+
+    public async deleteUserAuthorizationGroupRels(groupId: string): Promise<void> {
+        const authzGroupUuid = types.Uuid.fromString(groupId);
+        const groupUserRelMapper = await CassandraDriver.getInstance().getModelMapper("authorization_group_user_rel");
+        let hasMore: boolean = true;
+        while(hasMore){
+            const results: Array<AuthorizationGroupUserRel> = (await groupUserRelMapper.find({groupId: groupId}, {limit: 1000})).toArray()
+            for(let i = 0; i < results.length; i++){
+                groupUserRelMapper.remove({
+                    userId: types.Uuid.fromString(results[i].userId),
+                    groupId: authzGroupUuid
+                })
+            }
+            hasMore = results.length === 1000;
+        }
     }
 
     public async addUserToAuthorizationGroup(userId: string, groupId: string): Promise<AuthorizationGroupUserRel> {

@@ -62,13 +62,25 @@ class DBAuthorizationGroupDao extends AuthorizationGroupDao {
 
     public async deleteAuthorizationGroup(groupId: string): Promise<void> {
 
+        // 1.   Delete the scope/group rels
         const authzGroupScopeRelRepo = await RDBDriver.getInstance().getAuthorizationGroupScopeRelRepository();
         await authzGroupScopeRelRepo.delete({
             groupId: groupId
         });
 
+        // 2.   Delete the user/group rels
+        await this.deleteUserAuthorizationGroupRels(groupId);        
         
-        // To delete the authnGroup/user rel records, retrieve 1000 at a time and delete by composite ids        
+        // 3.   Finally delete the group itself.
+        const authzGroupRepo = await RDBDriver.getInstance().getAuthorizationGroupRepository();
+        await authzGroupRepo.delete({
+            groupId: groupId
+        });
+        
+    }
+
+    public async deleteUserAuthorizationGroupRels(groupId: string): Promise<void> {
+        // To delete the authnGroup/user rel records, retrieve 1000 at a time and delete by composite ids
         let hasMoreRecords = true;
         const authzGroupUserRelRepo = await RDBDriver.getInstance().getAuthorizationGroupUserRelRepository();
         while(hasMoreRecords){            
@@ -126,12 +138,6 @@ class DBAuthorizationGroupDao extends AuthorizationGroupDao {
                 )
                 .execute();            
         }
-        
-        const authzGroupRepo = await RDBDriver.getInstance().getAuthorizationGroupRepository();
-        await authzGroupRepo.delete({
-            groupId: groupId
-        });
-        
     }
 
     

@@ -122,6 +122,10 @@ class GroupService {
             throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});
         }
 
+        // If the incoming authz group is set to default, but previous it had been set to NOT be the default, then
+        // we need to remove all of the authz/group rels after the db and search index have been updated.
+        const needToDeleteUserGroupRels: boolean = group.default === true && existingGroup.default === false;
+
         existingGroup.groupName = group.groupName;
         existingGroup.default = group.default;
         existingGroup.groupDescription = group.groupDescription;
@@ -136,6 +140,12 @@ class GroupService {
             changeTimestamp: Date.now(),
             data: JSON.stringify({...group})
         });
+
+        if(needToDeleteUserGroupRels === true){
+            // No need to wait on this since it may contain 1000s of relationships.
+            groupDao.deleteUserAuthorizationGroupRels(group.groupId);
+        }
+
         return Promise.resolve(existingGroup);
     }
 

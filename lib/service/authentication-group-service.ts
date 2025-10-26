@@ -150,6 +150,10 @@ class AuthenticationGroupService {
             throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});
         }
 
+        // If the incoming authn group is set to default, but previous it had been set to NOT be the default, then
+        // we need to remove all of the authn/group rels after the db and search index have been updated.
+        const needToDeleteUserGroupRels: boolean = authenticationGroup.defaultGroup === true && existingAuthenticationGroup.defaultGroup === false;
+
         existingAuthenticationGroup.authenticationGroupDescription = authenticationGroup.authenticationGroupDescription;
         existingAuthenticationGroup.authenticationGroupName = authenticationGroup.authenticationGroupName;
 
@@ -165,6 +169,11 @@ class AuthenticationGroupService {
             data: JSON.stringify({...existingAuthenticationGroup})
         });
 
+        if(needToDeleteUserGroupRels === true){
+            // No need to wait on the deletion since it may be 1000s of records
+            authenticationGroupDao.deleteUserAuthenticationGroupRels(authenticationGroup.authenticationGroupId);
+        }
+        
         return Promise.resolve(existingAuthenticationGroup);
     }
 
