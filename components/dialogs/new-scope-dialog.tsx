@@ -2,11 +2,11 @@
 import { ScopeCreateInput } from "@/graphql/generated/graphql-types";
 import { SCOPE_CREATE_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import { useMutation } from "@apollo/client";
-import { Alert, Button, DialogActions, DialogContent, DialogTitle, Grid2, MenuItem, Select, Stack, TextField, Typography } from "@mui/material";
+import { Alert, Button, DialogActions, DialogContent, DialogTitle, Grid2, Stack, TextField, Typography } from "@mui/material";
 import React, { useContext } from "react";
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
 import { useRouter } from 'next/navigation';
-import { SCOPE_USE_APPLICATION_MANAGEMENT, SCOPE_USE_DISPLAY, SCOPE_USE_IAM_MANAGEMENT } from "@/utils/consts";
+import { SCOPE_USE_APPLICATION_MANAGEMENT, SCOPE_USE_DISPLAY } from "@/utils/consts";
 import { useIntl } from 'react-intl';
 
 export interface NewScopeDialogProps {
@@ -27,7 +27,7 @@ const NewScopeDialog: React.FC<NewScopeDialogProps> = ({
         scopeName: "",
         scopeDescription: "",
         scopeAccessRuleSchemaId: "",
-        scopeUse: SCOPE_USE_IAM_MANAGEMENT
+        scopeUse: SCOPE_USE_APPLICATION_MANAGEMENT
     }
 
     // HOOKS
@@ -98,25 +98,12 @@ const NewScopeDialog: React.FC<NewScopeDialogProps> = ({
                                 />
                             </Grid2>
                             <Grid2 marginBottom={"16px"}>                                
-                                <div>Scope Use</div>
-                                <Select
-                                    fullWidth={true}
-                                    value={scopeCreateInput.scopeUse}
-                                    name="scopeUse" id="scopeUse"
-                                    onChange={(evt) => {
-                                        scopeCreateInput.scopeUse = evt.target.value;
-                                        setScopeCreateInput({...scopeCreateInput});
-                                    }}
-                                >
-                                    <MenuItem value={SCOPE_USE_IAM_MANAGEMENT}>{SCOPE_USE_DISPLAY.get(SCOPE_USE_IAM_MANAGEMENT)}</MenuItem>
-                                    <MenuItem value={SCOPE_USE_APPLICATION_MANAGEMENT}>{SCOPE_USE_DISPLAY.get(SCOPE_USE_APPLICATION_MANAGEMENT)}</MenuItem>
-                                    
-                                </Select>
-                                {/* <TextField name="scopeUse" id="scopeUse" 
+                                <div>Scope Use</div>                                
+                                <TextField name="scopeUse" id="scopeUse" 
                                     value={SCOPE_USE_DISPLAY.get(SCOPE_USE_APPLICATION_MANAGEMENT)} 
                                     disabled={true}
                                     fullWidth={true} size="small"
-                                /> */}
+                                />
                             </Grid2>
                         </Grid2>
                     </Grid2>

@@ -111,11 +111,24 @@ class DBAuthenticationGroupDao extends AuthenticationGroupDao {
 
     public async deleteAuthenticationGroup(authenticationGroupId: string): Promise<void> {
         
+        // 1.   Delete the authn/client rels
         const authnGroupClientRelRepo = await RDBDriver.getInstance().getAuthenticationGroupClientRelRepository();
         await authnGroupClientRelRepo.delete({
             authenticationGroupId: authenticationGroupId
         });
         
+        // 2.   Delete the authn/user rels
+        await this.deleteUserAuthenticationGroupRels(authenticationGroupId);
+
+        // 3.   Finally delete the authn group itself
+        const authnGroupRepo = await RDBDriver.getInstance().getAuthenticationGroupRepository();
+        await authnGroupRepo.delete({
+            authenticationGroupId: authenticationGroupId
+        });
+                
+    }
+
+    public async deleteUserAuthenticationGroupRels(authenticationGroupId: string): Promise<void>{
         // To delete the authnGroup/user rel records, retrieve 1000 at a time and delete by composite ids   
         const authnGroupUserRelRepo = await RDBDriver.getInstance().getAuthenticationGroupUserRelRepository();     
         let hasMoreRecords = true;
@@ -171,15 +184,8 @@ class DBAuthenticationGroupDao extends AuthenticationGroupDao {
                         }
                     )
                 )
-                .execute();
-                       
+                .execute();                       
         }
-
-        const authnGroupRepo = await RDBDriver.getInstance().getAuthenticationGroupRepository();
-        await authnGroupRepo.delete({
-            authenticationGroupId: authenticationGroupId
-        });
-                
     }
 
     public async assignAuthenticationGroupToClient(authenticationGroupId: string, clientId: string): Promise<AuthenticationGroupClientRel> {

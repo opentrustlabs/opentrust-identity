@@ -417,6 +417,16 @@ export const USER_UPDATE_MUTATION = gql(`
     }
 `);
 
+export const USER_TENANT_REL_ASSIGN_MUTATION = gql(`
+    mutation assignUserToTenant($tenantId: String!, $userId: String!, $relType: String!) {
+        assignUserToTenant(tenantId: $tenantId, userId: $userId, relType: $relType){
+            userId
+            tenantId
+            relType
+        }
+    }
+`);
+
 export const USER_TENANT_REL_UPDATE_MUTATION = gql(`
     mutation updateUserTenantRel($tenantId: String!, $userId: String!, $relType: String!) {
         updateUserTenantRel(tenantId: $tenantId, userId: $userId, relType: $relType) {

@@ -69,7 +69,7 @@ const UserAuthenticationGroupConfiguration: React.FC<UserAuthenticationGroupConf
             setShowAddDialog(false);
             setGroupToAdd(null);
         },
-        onError(error) {
+        onError(error) {            
             onUpdateEnd(false);
             setShowAddDialog(false);
             setErrorMessage(intl.formatMessage({id: error.message}));
@@ -194,7 +194,7 @@ const UserAuthenticationGroupConfiguration: React.FC<UserAuthenticationGroupConf
             <Typography component={"div"} fontWeight={"bold"} >
                 {errorMessage &&
                     <Grid2 marginBottom={"24px"} marginTop={"16px"} spacing={2} container size={12}>
-                        <Alert severity="error" onClose={() => setErrorMessage(null)}>{errorMessage}</Alert>
+                        <Alert sx={{width: "100%"}} severity="error" onClose={() => setErrorMessage(null)}>{errorMessage}</Alert>
                     </Grid2>
                 }
                 {canAddRel &&
@@ -290,7 +290,10 @@ const AuthenticationGroupsAssignDialog: React.FC<AuthenticationGroupAssignDialog
     const {data} = useQuery(USER_TENANT_RELS_QUERY, {
         variables: {
             userId: userId
-        }
+        },
+        onCompleted(data) {
+            console.log(data);
+        },
     });
 
     const { data: searchData, loading: searchLoading, previousData: searchPreviousData } = useQuery(SEARCH_QUERY, {
@@ -303,9 +306,9 @@ const AuthenticationGroupsAssignDialog: React.FC<AuthenticationGroupAssignDialog
                 resultType: SearchResultType.AuthenticationGroup
             }
         },
-        skip: !data,
-        // fetchPolicy: "no-cache",
-        // nextFetchPolicy: "no-cache"
+        skip: !data || (data.getUserTenantRels && data.getUserTenantRels.length === 0),
+        fetchPolicy: "no-cache",
+        nextFetchPolicy: "no-cache"
     });
 
 
@@ -369,12 +372,12 @@ const AuthenticationGroupsAssignDialog: React.FC<AuthenticationGroupAssignDialog
             
             {!searchLoading && r.total < 1 &&
                 <Typography component={"div"} >
-                    <Grid2 margin={"8px 0px 8px 0px"} textAlign={"center"} size={12} spacing={1}>
+                    <Grid2 margin={"8px 0px 0px 0px"} textAlign={"center"} size={12} spacing={1}>
                         No groups to display
                     </Grid2>
                 </Typography>
             }
-            <Grid2 minHeight={"4vh"} sx={{ marginTop: "16px", padding: "8px" }} size={12}>
+            <Grid2 minHeight={"4vh"} sx={{ marginTop: "8px", padding: "8px" }} size={12}>
                 {r.resultlist.map(
                     (item: ObjectSearchResultItem) => (
                         <React.Fragment key={`${item.objectid}`}>

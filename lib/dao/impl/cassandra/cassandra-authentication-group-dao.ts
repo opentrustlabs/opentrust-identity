@@ -78,10 +78,9 @@ class CassandraAuthenticationGroupDao extends AuthenticationGroupDao {
     }
 
     public async deleteAuthenticationGroup(authenticationGroupId: string): Promise<void> {
-        //  1.  Remove the client/authn group rel
-        
-        const authnGroupUuid = types.Uuid.fromString(authenticationGroupId);
 
+        //  1.  Remove the client/authn group rel        
+        const authnGroupUuid = types.Uuid.fromString(authenticationGroupId);
         const authnGroupClientRelMapper = await CassandraDriver.getInstance().getModelMapper("authentication_group_client_rel");
         const rels: Array<AuthenticationGroupClientRel> = (await authnGroupClientRelMapper.find({authenticationGroupId: authenticationGroupId})).toArray();
         for(let i = 0; i < rels.length; i++){
@@ -91,7 +90,23 @@ class CassandraAuthenticationGroupDao extends AuthenticationGroupDao {
             });
         }        
 
-        //  2.  Remove the authn/user rels, but in a loop of 1000 at a time
+        //  2.  Remove the authn/user rels
+        await this.deleteUserAuthenticationGroupRels(authenticationGroupId);
+
+        //  3.  Finally delete the group itself.        
+        const g: AuthenticationGroup | null = await this.getAuthenticationGroupById(authenticationGroupId);
+        if(g){
+            const authnGroupMapper = await CassandraDriver.getInstance().getModelMapper("authentication_group");
+            await authnGroupMapper.remove({
+                authenticationGroupId: authnGroupUuid,
+                tenantId: types.Uuid.fromString(g.tenantId)
+            });
+        }
+    }
+
+     public async deleteUserAuthenticationGroupRels(authenticationGroupId: string): Promise<void>{
+        //  2.  Remove the authn/user rels in a loop of 1000 at a time
+        const authnGroupUuid = types.Uuid.fromString(authenticationGroupId);
         let hasMoreRecords: boolean = true;
         const authnGroupUserRelMapper = await CassandraDriver.getInstance().getModelMapper("authentication_group_user_rel");
         while(hasMoreRecords){
@@ -105,20 +120,7 @@ class CassandraAuthenticationGroupDao extends AuthenticationGroupDao {
             }
             hasMoreRecords = arr.length === 1000;
         }
-
-        //  3.  Finally delete the group itself.
-        
-        const g: AuthenticationGroup | null = await this.getAuthenticationGroupById(authenticationGroupId);
-        if(g){
-            const authnGroupMapper = await CassandraDriver.getInstance().getModelMapper("authentication_group");
-            await authnGroupMapper.remove({
-                authenticationGroupId: authnGroupUuid,
-                tenantId: types.Uuid.fromString(g.tenantId)
-            });
-        }
-
-
-    }
+     }
 
     public async assignAuthenticationGroupToClient(authenticationGroupId: string, clientId: string): Promise<AuthenticationGroupClientRel> {
         const mapper = await CassandraDriver.getInstance().getModelMapper("authentication_group_client_rel");

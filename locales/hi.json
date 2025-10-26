@@ -352,5 +352,8 @@
     "ENTER_SECRET": "गुप्त मान दर्ज करें",
     "USE_THE_FOLLOWING_CODE_TO_CONFIRM_YOUR_EMAIL": "अपना ईमेल पता सत्यापित करने के लिए निम्नलिखित कोड का उपयोग करें",
     "UNAUTHORIZED_REGISTRATION": "यदि आपने यह ईमेल पता पंजीकृत नहीं किया है, तो कृपया इसकी रिपोर्ट करें",
-    "REPORT_UNAUTHORIZED_REGISTRATION": "अनधिकृत पंजीकरण की रिपोर्ट करें"
+    "REPORT_UNAUTHORIZED_REGISTRATION": "अनधिकृत पंजीकरण की रिपोर्ट करें",
+    "ERROR_CANNOT_ASSIGN_A_USER_TO_A_DEFAULT_AUTHN_GROUP": "A user cannot be assigned to a default authentication group.",
+    "ERROR_CANNOT_ASSIGN_A_USER_TO_A_DEFAULT_AUTHZ_GROUP": "A user cannot be assigned to a default authorization group.",
+    "ERROR_RESTRICTED_AUTHENTICATION_DOMAINS_FOR_TENANT": "The tenant has restricted its authentication to domains that do not include this user."
 }

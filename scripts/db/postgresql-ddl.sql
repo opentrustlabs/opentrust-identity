@@ -7,7 +7,10 @@
 -- issues.
 -- 
 -- CREATE DATABASE opentrust_oidc_iam
+-- CREATE USER myuser WITH ENCRYPTED PASSWORD 'mypassword';-- 
 -- (Grant privileges to your database user account)
+-- GRANT ALL PRIVILEGES ON DATABASE mydb TO myuser;
+-- (Make sure you are in the correct database when you issue the CREATE SCHEMA command)
 -- CREATE SCHEMA opentrust_oidc_iam_schema AUTHORIZATION (your database user account)
 -- ALTER ROLE (your database user account) SET search_path = opentrust_oidc_iam_schema, public
 

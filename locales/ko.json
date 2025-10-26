@@ -352,5 +352,8 @@
     "ENTER_SECRET": "비밀번호를 입력하세요.",
     "USE_THE_FOLLOWING_CODE_TO_CONFIRM_YOUR_EMAIL": "다음 코드를 사용하여 이메일 주소를 확인하세요.",
     "UNAUTHORIZED_REGISTRATION": "이 이메일 주소를 등록하지 않으셨다면 신고해 주세요.",
-    "REPORT_UNAUTHORIZED_REGISTRATION": "무단 등록 신고"
+    "REPORT_UNAUTHORIZED_REGISTRATION": "무단 등록 신고",
+    "ERROR_CANNOT_ASSIGN_A_USER_TO_A_DEFAULT_AUTHN_GROUP": "A user cannot be assigned to a default authentication group.",
+    "ERROR_CANNOT_ASSIGN_A_USER_TO_A_DEFAULT_AUTHZ_GROUP": "A user cannot be assigned to a default authorization group.",
+    "ERROR_RESTRICTED_AUTHENTICATION_DOMAINS_FOR_TENANT": "The tenant has restricted its authentication to domains that do not include this user."
 }

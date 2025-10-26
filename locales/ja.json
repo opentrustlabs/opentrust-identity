@@ -352,5 +352,8 @@
     "ENTER_SECRET": "シークレットを入力してください",
     "USE_THE_FOLLOWING_CODE_TO_CONFIRM_YOUR_EMAIL": "以下のコードを使用してメールアドレスを確認してください",
     "UNAUTHORIZED_REGISTRATION": "このメールアドレスを登録していない場合は、ご報告ください",
-    "REPORT_UNAUTHORIZED_REGISTRATION": "不正な登録を報告する"
+    "REPORT_UNAUTHORIZED_REGISTRATION": "不正な登録を報告する",
+    "ERROR_CANNOT_ASSIGN_A_USER_TO_A_DEFAULT_AUTHN_GROUP": "A user cannot be assigned to a default authentication group.",
+    "ERROR_CANNOT_ASSIGN_A_USER_TO_A_DEFAULT_AUTHZ_GROUP": "A user cannot be assigned to a default authorization group.",
+    "ERROR_RESTRICTED_AUTHENTICATION_DOMAINS_FOR_TENANT": "The tenant has restricted its authentication to domains that do not include this user."
 }

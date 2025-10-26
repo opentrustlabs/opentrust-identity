@@ -78,6 +78,7 @@ class DeletionService {
     }
 
     public async deleteMarkForDeleteRecords(): Promise<void> {
+        
         const arrMarkForDelete: Array<MarkForDelete> = await markForDeleteDao.getLatestMarkForDeleteRecords(20);
         // Find the first record that does not have a start date value and try to get a lock
         // on it. 
@@ -276,7 +277,7 @@ class DeletionService {
             const clients: Array<Client> = await clientDao.getClients(tenantId);
             for(let i = 0; i < clients.length; i++){
                 await this.deleteClient(clients[i].clientId, noOpCompletionCallback);
-            }
+            }            
 
             const authenticationGroups: Array<AuthenticationGroup> = await authenticationGroupDao.getAuthenticationGroups(tenantId);
             for(let i = 0; i < authenticationGroups.length; i++){
