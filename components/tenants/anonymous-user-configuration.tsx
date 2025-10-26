@@ -58,7 +58,7 @@ const AnonymousUserConfiguration: React.FC<AnonymousUserConfigurationProps> = ({
 
     // GRAPHQL FUNCTIONS
     // data may be null, so present some sensible defaults
-    const { loading, error, refetch } = useQuery(TENANT_ANONYMOUS_USER_CONFIGURATION_QUERY, {
+    const { loading, error } = useQuery(TENANT_ANONYMOUS_USER_CONFIGURATION_QUERY, {
         variables: {
             tenantId: tenant.tenantId
         },

@@ -352,5 +352,8 @@
     "ENTER_SECRET": "Inserisci il segreto",
     "USE_THE_FOLLOWING_CODE_TO_CONFIRM_YOUR_EMAIL": "Utilizza il seguente codice per confermare il tuo indirizzo email",
     "UNAUTHORIZED_REGISTRATION": "Se non hai registrato questo indirizzo email, segnalalo",
-    "REPORT_UNAUTHORIZED_REGISTRATION": "Segnala una registrazione non autorizzata"
+    "REPORT_UNAUTHORIZED_REGISTRATION": "Segnala una registrazione non autorizzata",
+    "ERROR_CANNOT_ASSIGN_A_USER_TO_A_DEFAULT_AUTHN_GROUP": "A user cannot be assigned to a default authentication group.",
+    "ERROR_CANNOT_ASSIGN_A_USER_TO_A_DEFAULT_AUTHZ_GROUP": "A user cannot be assigned to a default authorization group.",
+    "ERROR_RESTRICTED_AUTHENTICATION_DOMAINS_FOR_TENANT": "The tenant has restricted its authentication to domains that do not include this user."
 }

@@ -1,4 +1,10 @@
 
+-- If using a single node cluster for testing, use the following to create the keyspace. 
+-- CREATE KEYSPACE opentrust_oidc_iam WITH REPLICATION = { 'class' : 'SimpleStrategy', 'replication_factor' : 1 };
+--
+-- If using a multi-node cluster, then use the following:
+-- CREATE KEYSPACE opentrust_oidc_iam WITH REPLICATION = { 'class' : 'NetworkTopologyStrategy', 'datacenter1' : 3, 'datacenter2' : 3, 'datacenter3': 3, ... };
+
 
 
 create TABLE federated_oidc_provider(

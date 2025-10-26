@@ -352,5 +352,8 @@
     "ENTER_SECRET": "輸入金鑰",
     "USE_THE_FOLLOWING_CODE_TO_CONFIRM_YOUR_EMAIL": "使用以下程式碼確認您的電子郵件地址",
     "UNAUTHORIZED_REGISTRATION": "如果您未註冊此電子郵件地址，請檢舉",
-    "REPORT_UNAUTHORIZED_REGISTRATION": "檢舉未經授權的註冊"
+    "REPORT_UNAUTHORIZED_REGISTRATION": "檢舉未經授權的註冊",
+    "ERROR_CANNOT_ASSIGN_A_USER_TO_A_DEFAULT_AUTHN_GROUP": "A user cannot be assigned to a default authentication group.",
+    "ERROR_CANNOT_ASSIGN_A_USER_TO_A_DEFAULT_AUTHZ_GROUP": "A user cannot be assigned to a default authorization group.",
+    "ERROR_RESTRICTED_AUTHENTICATION_DOMAINS_FOR_TENANT": "The tenant has restricted its authentication to domains that do not include this user."
 }

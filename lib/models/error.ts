@@ -1147,5 +1147,21 @@ export const ERROR_CODES: Record<string, ErrorDetail> = {
         errorKey: "ERROR_PHONE_NUMBER_ALREADY_IN_USE",
         errorMessage: "Phone number is not available"
     },
+    EC00225: {
+        errorCode: "EC00225",
+        errorKey: "ERROR_CANNOT_ASSIGN_A_USER_TO_A_DEFAULT_AUTHN_GROUP",
+        errorMessage: "A user cannot be assigned to a default authentication group"
+    },
+    EC00226: {
+        errorCode: "EC00226",
+        errorKey: "ERROR_CANNOT_ASSIGN_A_USER_TO_A_DEFAULT_AUTHZ_GROUP",
+        errorMessage: "A user cannot be assigned to a default authorization group."
+    },
+    EC00227: {
+        errorCode: "EC00227",
+        errorKey: "ERROR_RESTRICTED_AUTHENTICATION_DOMAINS_FOR_TENANT",
+        errorMessage: "The tenant has restricted its authentication to domains that do not include this user."
+        
+    }
 }
 

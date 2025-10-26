@@ -362,7 +362,6 @@ class DBTenantDao extends TenantDao {
                 break;
             }
            
-            // sequelize does not support deletion in bulk using composite keys, so must do this manually...
             const conditions = arr.map(
                 (rel: UserTenantRel) => {
                     return {
@@ -383,7 +382,7 @@ class DBTenantDao extends TenantDao {
                                 (condition, index) => {
                                     if(index === 0){
                                         qb.where(
-                                            "tenantId = :tenantId_0 AND userId = : userId_0",
+                                            "tenantId = :tenantId_0 AND userId = :userId_0",
                                             {
                                                 ["tenantId_0"]: condition.tenantId,
                                                 ["userId_0"]: condition.userId

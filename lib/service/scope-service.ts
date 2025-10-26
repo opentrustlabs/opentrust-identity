@@ -7,7 +7,7 @@ import TenantDao from "../dao/tenant-dao";
 import ClientDao from "../dao/client-dao";
 import AccessRuleDao from "../dao/access-rule-dao";
 import { DaoFactory } from "../data-sources/dao-factory";
-import { CHANGE_EVENT_CLASS_AUTHORIZATION_GROUP_TENANT_SCOPE_REL, CHANGE_EVENT_CLASS_CLIENT_TENANT_SCOPE_REL, CHANGE_EVENT_CLASS_SCOPE, CHANGE_EVENT_CLASS_TENANT_SCOPE_REL, CHANGE_EVENT_CLASS_USER_TENANT_SCOPE_REL, CHANGE_EVENT_TYPE_CREATE, CHANGE_EVENT_TYPE_CREATE_REL, CHANGE_EVENT_TYPE_REMOVE_REL, CHANGE_EVENT_TYPE_UPDATE, CLIENT_TYPE_IDENTITY, ROOT_TENANT_EXCLUSIVE_INTERNAL_SCOPE_NAMES, SCOPE_CLIENT_ASSIGN_SCOPE, SCOPE_CLIENT_REMOVE_SCOPE, SCOPE_CREATE_SCOPE, SCOPE_GROUP_ASSIGN_SCOPE, SCOPE_GROUP_REMOVE_SCOPE, SCOPE_READ_SCOPE, SCOPE_TENANT_ASSIGN_SCOPE, SCOPE_TENANT_REMOVE_SCOPE, SCOPE_UPDATE_SCOPE, SCOPE_USE_DISPLAY, SCOPE_USE_IAM_MANAGEMENT, SCOPE_USER_ASSIGN_SCOPE, SCOPE_USER_REMOVE_SCOPE, SCOPE_USES, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_READ_ALL_SCOPE, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
+import { CHANGE_EVENT_CLASS_AUTHORIZATION_GROUP_TENANT_SCOPE_REL, CHANGE_EVENT_CLASS_CLIENT_TENANT_SCOPE_REL, CHANGE_EVENT_CLASS_SCOPE, CHANGE_EVENT_CLASS_TENANT_SCOPE_REL, CHANGE_EVENT_CLASS_USER_TENANT_SCOPE_REL, CHANGE_EVENT_TYPE_CREATE, CHANGE_EVENT_TYPE_CREATE_REL, CHANGE_EVENT_TYPE_REMOVE_REL, CHANGE_EVENT_TYPE_UPDATE, CLIENT_TYPE_IDENTITY, ROOT_TENANT_EXCLUSIVE_INTERNAL_SCOPE_NAMES, SCOPE_CLIENT_ASSIGN_SCOPE, SCOPE_CLIENT_REMOVE_SCOPE, SCOPE_CREATE_SCOPE, SCOPE_GROUP_ASSIGN_SCOPE, SCOPE_GROUP_REMOVE_SCOPE, SCOPE_READ_SCOPE, SCOPE_TENANT_ASSIGN_SCOPE, SCOPE_TENANT_REMOVE_SCOPE, SCOPE_UPDATE_SCOPE, SCOPE_USE_APPLICATION_MANAGEMENT, SCOPE_USE_DISPLAY, SCOPE_USE_IAM_MANAGEMENT, SCOPE_USER_ASSIGN_SCOPE, SCOPE_USER_REMOVE_SCOPE, SCOPE_USES, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, TENANT_READ_ALL_SCOPE, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import { getOpenSearchClient } from "../data-sources/search";
 import AuthorizationGroupDao from "../dao/authorization-group-dao";
 import IdentityDao from "../dao/identity-dao";
@@ -90,11 +90,10 @@ class ScopeService {
         return [];
     }
 
-    public async getScopeById(scopeId: string): Promise<Scope | null> {
-        // Only members of the root tenant are allowed to view scope details
-        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_READ_ALL_SCOPE, SCOPE_READ_SCOPE], null);
+    public async getScopeById(scopeId: string): Promise<Scope | null> {        
+        const authResult = authorizeByScopeAndTenant(this.oidcContext, [TENANT_READ_ALL_SCOPE, SCOPE_READ_SCOPE], this.oidcContext.portalUserProfile?.managementAccessTenantId || null);
         if(!authResult.isAuthorized){
-            throw new GraphQLError(authResult.errorDetail.errorCode, {extensions: {errorDetail: authResult.errorDetail}});
+            throw new GraphQLError(ERROR_CODES.EC00066.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00066}});
         }        
         return scopeDao.getScopeById(scopeId);
     }
@@ -109,9 +108,9 @@ class ScopeService {
         // Only allow scope uses of Application Management to be
         // created. All IAM Management scope values are fixed at
         // initialization of the IAM tool
-        // if(scope.scopeUse !== SCOPE_USE_APPLICATION_MANAGEMENT){
-        //     throw new GraphQLError("ERROR_INVALID_SCOPE_USAGE_FOR_CREATION")
-        // }
+        if(scope.scopeUse !== SCOPE_USE_APPLICATION_MANAGEMENT){
+            throw new GraphQLError(ERROR_CODES.EC00068.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00068}})
+        }
         if(!SCOPE_USES.includes(scope.scopeUse)){
             throw new GraphQLError(ERROR_CODES.EC00068.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00068}});
         }

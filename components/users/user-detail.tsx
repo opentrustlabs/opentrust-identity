@@ -661,18 +661,30 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                         </div>
                                     </AccordionSummary>
                                     <AccordionDetails>
-                                        <UserAuthorizationGroupConfiguration
-                                            userId={user.userId}
-                                            onUpdateEnd={(success: boolean) => {
-                                                setShowMutationBackdrop(false);
-                                                if(success){
-                                                    setShowMutationSnackbar(true);
-                                                }
-                                            }}
-                                            onUpdateStart={() => {
-                                                setShowMutationBackdrop(true);
-                                            }}    
-                                        />
+                                        {!userTenantRels &&
+                                            <div></div>
+                                        }
+                                        {userTenantRels && userTenantRels.length === 0 &&
+                                            <Typography component={"div"}>
+                                                <Grid2  display={"flex"} justifyContent={"center"}>
+                                                    <div>This user does not belong to any tenants and so no authorization group can be assigned.</div>
+                                                </Grid2>
+                                            </Typography>
+                                        }
+                                        {userTenantRels && userTenantRels.length > 0 && 
+                                            <UserAuthorizationGroupConfiguration
+                                                userId={user.userId}
+                                                onUpdateEnd={(success: boolean) => {
+                                                    setShowMutationBackdrop(false);
+                                                    if(success){
+                                                        setShowMutationSnackbar(true);
+                                                    }
+                                                }}
+                                                onUpdateStart={() => {
+                                                    setShowMutationBackdrop(true);
+                                                }}    
+                                            />
+                                        }
                                     </AccordionDetails>                                
                                 </Accordion>
                             }
@@ -689,20 +701,32 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                         <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
                                             <PeopleIcon /><div style={{marginLeft: "8px"}}>Authentication Groups</div>
                                         </div>
-                                    </AccordionSummary>
+                                    </AccordionSummary>                                    
                                     <AccordionDetails>
-                                        <UserAuthenticationGroupConfiguration
-                                            userId={user.userId}
-                                            onUpdateEnd={(success: boolean) => {
-                                                setShowMutationBackdrop(false);
-                                                if(success){
-                                                    setShowMutationSnackbar(true);
-                                                }
-                                            }}
-                                            onUpdateStart={() => {
-                                                setShowMutationBackdrop(true);
-                                            }} 
-                                        />                                    
+                                        {!userTenantRels &&
+                                            <div></div>
+                                        }
+                                        {userTenantRels && userTenantRels.length === 0 &&
+                                            <Typography component={"div"}>
+                                                <Grid2  display={"flex"} justifyContent={"center"}>
+                                                    <div>This user does not belong to any tenants and so no authentication group can be assigned.</div>
+                                                </Grid2>
+                                            </Typography>
+                                        }
+                                        {userTenantRels && userTenantRels.length > 0 && 
+                                            <UserAuthenticationGroupConfiguration
+                                                userId={user.userId}
+                                                onUpdateEnd={(success: boolean) => {
+                                                    setShowMutationBackdrop(false);
+                                                    if(success){
+                                                        setShowMutationSnackbar(true);
+                                                    }
+                                                }}
+                                                onUpdateStart={() => {
+                                                    setShowMutationBackdrop(true);
+                                                }} 
+                                            />
+                                        }
                                     </AccordionDetails>
                                 </Accordion>
                             }
@@ -721,7 +745,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                             <SettingsApplicationsIcon /><div style={{marginLeft: "8px"}}>Tenant Memberships</div>
                                         </div>
                                     </AccordionSummary>
-                                    <AccordionDetails>
+                                    <AccordionDetails>                                        
                                         <UserTenantConfiguration
                                             onLoadCompleted={(tenants: Array<UserTenantRelView>) => {
                                                 setUserTenantRels(tenants);
@@ -736,7 +760,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                             onUpdateStart={() => {
                                                 setShowMutationBackdrop(true);
                                             }}
-                                        />                                        
+                                        />                                                                      
                                     </AccordionDetails>
                                 </Accordion>
                             }
@@ -759,7 +783,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
                                             <AccordionDetails>
                                                 <Typography component={"div"}>
                                                     <Grid2  display={"flex"} justifyContent={"center"}>
-                                                        <div>This user does not belong to any tenants and so no scope can be assigned to this user</div>
+                                                        <div>This user does not belong to any tenants and so no scope can be assigned.</div>
                                                     </Grid2>
                                                 </Typography>
                                             </AccordionDetails>
