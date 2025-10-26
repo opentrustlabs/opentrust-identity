@@ -354,5 +354,6 @@
     "UNAUTHORIZED_REGISTRATION": "Om du inte registrerade den här e-postadressen, vänligen rapportera den",
     "REPORT_UNAUTHORIZED_REGISTRATION": "Rapportera obehörig registrering",
     "ERROR_CANNOT_ASSIGN_A_USER_TO_A_DEFAULT_AUTHN_GROUP": "A user cannot be assigned to a default authentication group.",
-    "ERROR_CANNOT_ASSIGN_A_USER_TO_A_DEFAULT_AUTHZ_GROUP": "A user cannot be assigned to a default authorization group."
+    "ERROR_CANNOT_ASSIGN_A_USER_TO_A_DEFAULT_AUTHZ_GROUP": "A user cannot be assigned to a default authorization group.",
+    "ERROR_RESTRICTED_AUTHENTICATION_DOMAINS_FOR_TENANT": "The tenant has restricted its authentication to domains that do not include this user."
 }
