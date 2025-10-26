@@ -15,6 +15,8 @@ abstract class AuthenticationGroupDao {
         abstract updateAuthenticationGroup(authenticationGroup: AuthenticationGroup): Promise<AuthenticationGroup>;
     
         abstract deleteAuthenticationGroup(authenticationGroupId: string): Promise<void>;
+
+        abstract deleteUserAuthenticationGroupRels(authenticationGroupId: string): Promise<void>;
     
         abstract assignAuthenticationGroupToClient(authenticationGroupId: string, clientId: string): Promise<AuthenticationGroupClientRel>;
     
