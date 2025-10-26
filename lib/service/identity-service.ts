@@ -1,7 +1,7 @@
 import { OIDCContext } from "@/graphql/graphql-context";
 import * as OTPAuth from "otpauth";
 import IdentityDao from "../dao/identity-dao";
-import { Client, Fido2AuthenticationChallengeResponse, Fido2Challenge, Fido2RegistrationChallengeResponse, Fido2KeyRegistrationInput, RefreshData, Tenant, TenantPasswordConfig, TotpResponse, User, UserCredential, UserMfaRel, UserSession, UserTenantRel, UserTenantRelView, Fido2KeyAuthenticationInput, FederatedOidcProvider, FederatedOidcAuthorizationRel, FederatedOidcAuthorizationRelType, AuthorizationCodeData, PreAuthenticationState, AuthorizationReturnUri, UserRegistrationState, RegistrationState, AuthenticationState, UserAuthenticationState, UserRecoveryEmail, ErrorDetail } from "@/graphql/generated/graphql-types";
+import { Client, Fido2AuthenticationChallengeResponse, Fido2Challenge, Fido2RegistrationChallengeResponse, Fido2KeyRegistrationInput, RefreshData, Tenant, TenantPasswordConfig, TotpResponse, User, UserCredential, UserMfaRel, UserSession, UserTenantRel, UserTenantRelView, Fido2KeyAuthenticationInput, FederatedOidcProvider, FederatedOidcAuthorizationRel, FederatedOidcAuthorizationRelType, AuthorizationCodeData, PreAuthenticationState, AuthorizationReturnUri, UserRegistrationState, RegistrationState, AuthenticationState, UserAuthenticationState, UserRecoveryEmail, ErrorDetail, TenantRestrictedAuthenticationDomainRel } from "@/graphql/generated/graphql-types";
 import { DaoFactory } from "../data-sources/dao-factory";
 import TenantDao from "../dao/tenant-dao";
 import { GraphQLError } from "graphql/error";
@@ -22,6 +22,7 @@ import { randomUUID } from "crypto";
 import JwtServiceUtils from "./jwt-service-utils";
 import SearchDao from "../dao/search-dao";
 import OpenSearchDao from "../dao/impl/search/open-search-dao";
+import TenantRestrictedAuthenticationDomainRelEntity from "../entities/tenant-restricted-authentication-domain-rel-entity";
 
 
 const identityDao: IdentityDao = DaoFactory.getInstance().getIdentityDao();
@@ -302,6 +303,19 @@ class IdentityService {
         if(!user){
             throw new GraphQLError(ERROR_CODES.EC00013.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00013}});
         }
+
+        // Does the tenant restrict which domains can be used for authentication?
+        const restrictedDomains: Array<TenantRestrictedAuthenticationDomainRel> = await tenantDao.getDomainsForTenantRestrictedAuthentication(tenantId);
+        if(restrictedDomains.length > 0){
+            const restrictedDomainRel: TenantRestrictedAuthenticationDomainRel | undefined = restrictedDomains.find(
+                (rel: TenantRestrictedAuthenticationDomainRel) => rel.domain === user.domain
+            );
+            // If we found that the user's domain did not match any restricted domain, then error.
+            if(restrictedDomainRel === undefined){
+                throw new GraphQLError(ERROR_CODES.EC00227.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00227}});
+            }
+        }
+
 
         const rels: Array<UserTenantRel> = await identityDao.getUserTenantRelsByUserId(userId);
         // If there is not an existing relationship, then it MUST be a PRIMARY relationship.

@@ -1156,6 +1156,12 @@ export const ERROR_CODES: Record<string, ErrorDetail> = {
         errorCode: "EC00226",
         errorKey: "ERROR_CANNOT_ASSIGN_A_USER_TO_A_DEFAULT_AUTHZ_GROUP",
         errorMessage: "A user cannot be assigned to a default authorization group."
+    },
+    EC00227: {
+        errorCode: "EC00227",
+        errorKey: "ERROR_RESTRICTED_AUTHENTICATION_DOMAINS_FOR_TENANT",
+        errorMessage: "The tenant has restricted its authentication to domains that do not include this user."
+        
     }
 }
 
