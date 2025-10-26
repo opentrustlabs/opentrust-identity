@@ -117,7 +117,7 @@ const UserSessionDetails: React.FC<UserSessionDetailsProps> = ({
                 </Dialog>
             }
             {data && data.getUserSessions && data.getUserSessions.length === 0 &&
-                <Grid2 margin={"8px 0px"} justifyContent={"center"} display={"flex"} size={12}>No user sessions</Grid2>
+                <Grid2 fontWeight={"bold"} margin={"24px 0px 8px 0px"} justifyContent={"center"} display={"flex"} size={12}>No user sessions</Grid2>
             }
             {data && data.getUserSessions && data.getUserSessions.length > 0 &&
                 <React.Fragment>

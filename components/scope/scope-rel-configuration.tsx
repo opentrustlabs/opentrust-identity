@@ -279,7 +279,7 @@ const ScopeRelConfiguration: React.FC<ScopeRelConfigurationProps> = ({
             <Divider />
             {arrScope.length === 0 &&
                 <Grid2 marginTop={"16px"}  spacing={2} container size={12} textAlign={"center"} >    
-                    <Grid2 margin={"8px 0px 8px 0px"} textAlign={"center"} size={12} spacing={1}>
+                    <Grid2 fontWeight={"bold"} margin={"8px 0px 8px 0px"} textAlign={"center"} size={12} spacing={1}>
                         No scope assigned to {scopeRelType === ScopeRelType.USER ? "user" : scopeRelType === ScopeRelType.CLIENT ? "client" : "authorization group"}
                     </Grid2>
                 </Grid2>
@@ -327,14 +327,17 @@ const ScopeRelConfiguration: React.FC<ScopeRelConfigurationProps> = ({
                     )}
                 </Grid2>
             }
-            <TablePagination
-                component={"div"}
-                page={page - 1}
-                rowsPerPage={10}
-                count={arrScope.length}
-                onPageChange={handlePageChange}
-                rowsPerPageOptions={[]}
-            />
+            {arrScope.length > 0 &&
+                <TablePagination
+                    component={"div"}
+                    page={page - 1}
+                    rowsPerPage={10}
+                    count={arrScope.length}
+                    onPageChange={handlePageChange}
+                    rowsPerPageOptions={[]}
+                />
+            }
+            
 
         </Typography>
     )
