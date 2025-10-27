@@ -235,7 +235,7 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
                                         />
                                     </Grid2>
                                     <Grid2 size={11}>
-                                        Enable Portal as Legacy IdP (Note, if enabled, some IdP features will not be available):
+                                        Enable Portal as Legacy IdP:
                                     </Grid2>
                                     <Grid2 size={1}>
                                         <Checkbox
@@ -339,7 +339,7 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
                                         {systemCategory.categoryEntries.map(
                                             (categoryEntry: CategoryEntry) => (
                                                 <Grid2 size={12} paddingTop={"2px"} container key={categoryEntry.categoryKey}>
-                                                    <Grid2 sx={{overflowWrap: "break-word"}} size={6}>
+                                                    <Grid2 sx={{overflowWrap: "break-word"}} paddingRight={"2px"} size={6}>
                                                         {categoryEntry.categoryKey}
                                                     </Grid2>
                                                     <Grid2 sx={{overflowWrap: "break-word"}} size={6}>
@@ -557,7 +557,7 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
                                         {systemCategory.categoryEntries.map(
                                             (categoryEntry: CategoryEntry) => (
                                                 <Grid2 size={12} paddingTop={"2px"} container key={categoryEntry.categoryKey}>
-                                                    <Grid2 sx={{overflowWrap: "break-word"}} size={6}>
+                                                    <Grid2 sx={{overflowWrap: "break-word"}} paddingRight={"2px"} size={6}>
                                                         {categoryEntry.categoryKey}
                                                     </Grid2>
                                                     <Grid2 sx={{overflowWrap: "break-word"}} size={6}>
