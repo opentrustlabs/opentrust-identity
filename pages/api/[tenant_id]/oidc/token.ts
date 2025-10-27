@@ -60,7 +60,7 @@ export default async function handler(
         }
         return res.status(405).json(error);
     }
-    if(!contentType && ! (contentType?.toLocaleUpperCase() === "application/x-www-form-urlencoded")){
+    if(!contentType || contentType.toLowerCase() !== "application/x-www-form-urlencoded"){
         const error: OIDCErrorResponseBody = {
             error: OIDC_TOKEN_ERROR_INVALID_REQUEST,
             error_code: "0000714",
