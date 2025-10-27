@@ -6,7 +6,7 @@ import IdentityDao from "@/lib/dao/identity-dao";
 import { OIDCTokenResponse } from "@/lib/models/token-response";
 import { JWTPayload, SignJWT, JWTVerifyResult, jwtVerify, decodeJwt, decodeProtectedHeader, ProtectedHeaderParameters } from "jose";
 import SigningKeysDao from "../dao/signing-keys-dao";
-import { JWTPrincipal, OIDCUserProfile, ProfileAuthorizationGroup, ProfileScope } from "../models/principal";
+import { JWTPrincipal, MyUserProfile, ProfileAuthorizationGroup, ProfileScope } from "../models/principal";
 import { randomUUID, createPrivateKey, PrivateKeyInput, KeyObject, createSecretKey, createPublicKey, PublicKeyInput } from "node:crypto"; 
 import NodeCache from "node-cache";
 import { CLIENT_SECRET_ENCODING, CLIENT_TYPE_DEVICE, CLIENT_TYPE_USER_DELEGATED_PERMISSIONS, DEFAULT_END_USER_TOKEN_TTL_SECONDS, DEFAULT_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS, KEY_USE_JWT_SIGNING, NAME_ORDER_WESTERN, PRINCIPAL_TYPE_ANONYMOUS_USER, PRINCIPAL_TYPE_END_USER, PRINCIPAL_TYPE_IAM_PORTAL_USER, PRINCIPAL_TYPE_SERVICE_ACCOUNT_TOKEN } from "@/utils/consts";
@@ -61,7 +61,7 @@ class JwtServiceUtils {
     });
 
     /**
-     * The OIDCUserProfile object is returned for external clients calling the /api/users/me endpoint
+     * The MyUserProfile object is returned for external clients calling the /api/users/me endpoint
      * to get additional information about the user beyond what the OIDC user profile. This can be used
      * both for user-based JWTs and for client-based JWTs.
      * 
@@ -74,7 +74,7 @@ class JwtServiceUtils {
      * @param includeAuthorizationGroups 
      * @returns 
      */
-    public async getOIDCUserProfile(jwt: string, includeScope: boolean, includeAuthorizationGroups: boolean): Promise<OIDCUserProfile | null> {
+    public async getMyUserProfile(jwt: string, includeScope: boolean, includeAuthorizationGroups: boolean): Promise<MyUserProfile | null> {
         
         let principal: JWTPrincipal | null = null;
         const p = await this.validateJwt(jwt);
@@ -91,7 +91,7 @@ class JwtServiceUtils {
         if(client === null){
             return null;
         }
-        let oidcUserProfile: OIDCUserProfile | null = null;
+        let oidcUserProfile: MyUserProfile | null = null;
         if(principal.principal_type === PRINCIPAL_TYPE_SERVICE_ACCOUNT_TOKEN){
             
             const arrScopes = includeScope ? await this.getClientScopes(client.clientId) : [];
@@ -123,7 +123,7 @@ class JwtServiceUtils {
                 clientId: principal.client_id,
                 clientName: principal.client_name,
                 authorizationGroups: [],
-                address: principal.address,
+                address: null,
                 federatedOIDCProviderSubjectId: null,
                 middleName: null,
                 phoneNumber: null,
@@ -165,7 +165,7 @@ class JwtServiceUtils {
                 clientId: principal.client_id,
                 clientName: principal.client_name,
                 authorizationGroups: [],
-                address: principal.address,
+                address: null,
                 federatedOIDCProviderSubjectId: null,
                 middleName: null,
                 phoneNumber: null,
@@ -239,7 +239,7 @@ class JwtServiceUtils {
                 clientId: principal.client_id,
                 clientName: principal.client_name,
                 authorizationGroups: arrProfileAuthzGroups,
-                address: principal.address,
+                address: user.address || null,
                 federatedOIDCProviderSubjectId: user.federatedOIDCProviderSubjectId || null,
                 middleName: user.middleName || null,
                 phoneNumber: user.phoneNumber || null,
@@ -257,7 +257,7 @@ class JwtServiceUtils {
     }
 
     /**
-     * The PortalUserProfile object is for internal IAM use, not for external consumption like the OIDCUserProfile object.
+     * The PortalUserProfile object is for internal IAM use, not for external consumption like the MyUserProfile object.
      * A 
      * @param jwt 
      * @returns 
