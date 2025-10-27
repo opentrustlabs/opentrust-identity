@@ -13,7 +13,7 @@ import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
 import AddBoxIcon from '@mui/icons-material/AddBox';
 import { UserTenantRelView, PortalUserProfile, UserTenantRel } from "@/graphql/generated/graphql-types";
 import { DEFAULT_BACKGROUND_COLOR, TENANT_USER_ASSIGN_SCOPE, TENANT_USER_REMOVE_SCOPE, USER_TENANT_REL_TYPE_GUEST, USER_TENANT_REL_TYPE_PRIMARY, USER_TENANT_REL_TYPES_DISPLAY } from "@/utils/consts";
-import { Alert, Dialog, DialogTitle, Tooltip } from "@mui/material";
+import { Alert, Dialog, Tooltip } from "@mui/material";
 import { USER_TENANT_REL_ASSIGN_MUTATION, USER_TENANT_REL_REMOVE_MUTATION, USER_TENANT_REL_UPDATE_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
 import Link from "next/link";
