@@ -123,7 +123,7 @@ export default async function handler(
 		return;
 	}
     const uris = await clientDao.getRedirectURIs(clientId) || [];    
-	if (!( redirectUri || uris.includes(redirectUri) || hasValidLoopbackRedirectUri(uris, redirectUri)) ) {
+	if (!( uris.includes(redirectUri) || hasValidLoopbackRedirectUri(uris, redirectUri)) ) {
 		res.status(302).setHeader("location", `/authorize/login?tenant_id=${tenantId}&client_id=${clientId}&state=${oidcState}&error=unauthorized_client&error_description=ERROR_INVALID_REDIRECT_URI&redirect_uri=${redirectUri}&scope=${oidcScope}&response_type=${responseType}&response_mode=${responseMode}`);
 		res.end();
 		return;
