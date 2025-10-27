@@ -3,7 +3,7 @@ import axios, { AxiosProxyConfig, AxiosResponse } from "axios";
 import { Agent } from "https";
 import { Jwks, WellknownConfig } from "@/lib/models/wellknown-config";
 import NodeCache from "node-cache";
-import { LegacyUserAuthenticationPayload, LegacyUserProfile, OIDCUserInfo } from "../models/principal";
+import { LegacyUserAuthenticationPayload, LegacyUserProfile, FederatedOIDCUserInfo } from "../models/principal";
 import { SecurityEvent, SecurityEventType } from "../models/security-event";
 import { OIDCContext } from "@/graphql/graphql-context";
 import { PortalUserProfile, TenantLookAndFeel, User } from "@/graphql/generated/graphql-types";
@@ -229,7 +229,7 @@ class OIDCServiceUtils extends JwtServiceUtils {
         return response.data as OIDCTokenResponse;
     }
 
-    public async getOIDCUserInfo(userInfoEndpoint: string, authToken: string): Promise<OIDCUserInfo | null>{
+    public async getFederatedOIDCUserInfo(userInfoEndpoint: string, authToken: string): Promise<FederatedOIDCUserInfo | null>{
         const response = await axiosInstance.get(
             userInfoEndpoint, {
                 headers: {
@@ -241,7 +241,7 @@ class OIDCServiceUtils extends JwtServiceUtils {
         if(response.status !== 200){
             return null;
         }
-        return response.data as OIDCUserInfo;
+        return response.data as FederatedOIDCUserInfo;
     }
 
     /**

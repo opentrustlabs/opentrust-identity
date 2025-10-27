@@ -7,7 +7,7 @@ import SearchDao from '@/lib/dao/search-dao';
 import TenantDao from '@/lib/dao/tenant-dao';
 import { DaoFactory } from '@/lib/data-sources/dao-factory';
 import Kms from '@/lib/kms/kms';
-import { OIDCUserInfo } from '@/lib/models/principal';
+import { FederatedOIDCUserInfo } from '@/lib/models/principal';
 import { OIDCTokenResponse } from '@/lib/models/token-response';
 import { WellknownConfig } from '@/lib/models/wellknown-config';
 import OIDCServiceUtils from '@/lib/service/oidc-service-utils';
@@ -130,7 +130,7 @@ async function handleFederatedAuthTest(state: string, code: string, res: NextApi
         return;
     }
 
-    const userInfo: OIDCUserInfo | null = await oidcServiceUtils.getOIDCUserInfo(wellKnownConfig.userinfo_endpoint, tokenResponse.access_token);
+    const userInfo: FederatedOIDCUserInfo | null = await oidcServiceUtils.getFederatedOIDCUserInfo(wellKnownConfig.userinfo_endpoint, tokenResponse.access_token);
     if(userInfo === null || userInfo.email === null){
         res.status(302).setHeader("location", `/access-error?access_error_code=00076&extended_message=${"The user information for testing the OIDC provider cannot be obtained."}`);
         res.end();
@@ -198,7 +198,7 @@ async function handleFederatedAuth(state: string, code: string, res: NextApiResp
         return;
     }
     
-    const userInfo: OIDCUserInfo | null = await oidcServiceUtils.getOIDCUserInfo(wellKnownConfig.userinfo_endpoint, tokenResponse.access_token);
+    const userInfo: FederatedOIDCUserInfo | null = await oidcServiceUtils.getFederatedOIDCUserInfo(wellKnownConfig.userinfo_endpoint, tokenResponse.access_token);
     if(userInfo === null || userInfo.email === null){
         res.status(302).setHeader("location", `/access-error?access_error_code=00076&extended_message=${"The user information from the federated OIDC provider cannot be obtained or insufficient scope for retrieving email was provided."}`);
         res.end();
@@ -315,7 +315,7 @@ async function updateUserTenantRel(tenant: Tenant, user: User): Promise<void> {
     }
 }
 
-function userInfoToUser(userInfo: OIDCUserInfo): User {
+function userInfoToUser(userInfo: FederatedOIDCUserInfo): User {
     let langCode = "en";
     let countryCode = "US";
     if(userInfo.locale){
@@ -328,7 +328,7 @@ function userInfoToUser(userInfo: OIDCUserInfo): User {
     const user: User = {
         domain: getDomainFromEmail(userInfo.email),
         email: userInfo.email,
-        emailVerified: userInfo.email_verified,
+        emailVerified: userInfo.email_verified || false,
         enabled: true,
         firstName: userInfo.given_name,
         lastName: userInfo.family_name,

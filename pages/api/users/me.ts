@@ -1,11 +1,11 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next'
 import JwtServiceUtils from '@/lib/service/jwt-service-utils';
-import { OIDCUserProfile } from '@/lib/models/principal';
+import { MyUserProfile } from '@/lib/models/principal';
 
 const jwtServiceUtils: JwtServiceUtils = new JwtServiceUtils();
 
-// Will return a OIDCUserProfile or error
+// Will return a MyUserProfile or error
 
 export default async function handler(
     req: NextApiRequest,
@@ -54,7 +54,7 @@ export default async function handler(
         }
     }
 
-    const profile: OIDCUserProfile | null = await jwtServiceUtils.getOIDCUserProfile(jwt || "", includeScope, includeGroups);
+    const profile: MyUserProfile | null = await jwtServiceUtils.getMyUserProfile(jwt || "", includeScope, includeGroups);
     if(profile === null){
         res.status(403).json({ error: "ERROR_INVALID_AUTHORIZATION_HEADER_FORMAT" });
         res.end();
