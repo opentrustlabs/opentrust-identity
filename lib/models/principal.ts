@@ -60,6 +60,7 @@ export interface JWTPrincipal {
     address: string,
     updated_at: string,
     email: string,
+    email_verified: boolean,
     country_code: string,
     language_code: string,
     jwt_id: string,

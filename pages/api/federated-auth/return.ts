@@ -205,6 +205,8 @@ async function handleFederatedAuth(state: string, code: string, res: NextApiResp
         return;
     }
 
+    console.log(userInfo);
+
     const userByFederatedSubjectId: User | null = await identityDao.getUserBy("federatedoidcproviderid", userInfo.sub);    
     const userByEmail: User | null = await identityDao.getUserBy("email", userInfo.email);    
     let userByPhone: User | null = null;
