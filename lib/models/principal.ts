@@ -11,7 +11,13 @@ export interface ProfileAuthorizationGroup {
     groupName: string
 }
 
-export interface OIDCUserProfile {
+/**
+ * MyUserProfile is the profile used external for clients who are calling
+ * the /user/me endpoint. It contains most of the standard JWT claims set
+ * (in camel-case properties) plus scope and authorization groups if requested
+ * via http query parameters.
+ */
+export interface MyUserProfile {
     userId: string,
     federatedOIDCProviderSubjectId: string | null,
     email: string,
@@ -42,6 +48,11 @@ export interface OIDCUserProfile {
 };
 
 
+/**
+ * JWTPrincipal is the object that is used to sign JWTs and the object which is
+ * returned for the OIDC user infor endpoint. It contains the basic
+ * JWT claims set plus some additional information about the tenant and c.ient.
+ */
 export interface JWTPrincipal {
     sub: string,
     iss: string,
@@ -57,7 +68,7 @@ export interface JWTPrincipal {
     preferred_username: string,
     profile: string,
     phone_number: string,
-    address: string,
+    address: OIDCUserInfoAddress | null,
     updated_at: string,
     email: string,
     email_verified: boolean,
@@ -72,6 +83,10 @@ export interface JWTPrincipal {
     principal_type: string
 }
 
+/**
+ * For deployments which have an legacy or existing IAM or other authentication mechanism,
+ * this is the profile object that is retrieved after successful authentication.
+ */
 export interface LegacyUserProfile {
     email: string
     emailVerified: boolean,
@@ -94,8 +109,19 @@ export interface LegacyUserAuthenticationPayload {
     password: string
 }
 
-export interface OIDCUserInfo {
+/**
+ * For federated OIDC providers, the IAM tool will call the user profile endpoint
+ * with the recently-issued auth token. This is just about the bare minimum that 
+ * should be returned. There are a few other fields such as birthdate, website,
+ * zoneinfo, and gender, which this IAM tool does not support.
+ */
+export interface FederatedOIDCUserInfo {
     sub: string,
+    iss: string,
+    aud: string,
+    iat: number,
+    exp: number,
+    at_hash: string,
     name: string,
     given_name: string,
     family_name: string,
@@ -115,6 +141,7 @@ export interface OIDCUserInfo {
 // locality is city
 // region is region or state or province
 export interface OIDCUserInfoAddress {
+    formatted: string | null,
     street_address: string | null,
     locality: string | null,
     region: string | null,

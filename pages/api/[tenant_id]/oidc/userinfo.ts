@@ -1,16 +1,7 @@
-// import { Tenant, Client, FederatedOidcProvider, FederatedOidcAuthorizationRel, PreAuthenticationState } from '@/graphql/generated/graphql-types';
-// import AuthDao from '@/lib/dao/auth-dao';
-// import ClientDao from '@/lib/dao/client-dao';
-// import FederatedOIDCProviderDao from '@/lib/dao/federated-oidc-provider-dao';
-// import TenantDao from '@/lib/dao/tenant-dao';
-// import { DaoFactory } from '@/lib/data-sources/dao-factory';
 import { OIDCErrorResponseBody } from '@/lib/models/error';
 import { JWTPrincipal } from '@/lib/models/principal';
-// import { WellknownConfig } from '@/lib/models/wellknown-config';
 import JwtServiceUtils from '@/lib/service/jwt-service-utils';
-// import OIDCServiceClient from '@/lib/service/oidc-service-utils';
 import { OIDC_TOKEN_ERROR_INVALID_REQUEST } from '@/utils/consts';
-//import { generateCodeVerifierAndChallenge, generateRandomToken} from '@/utils/dao-utils';
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { randomUUID } from 'node:crypto';
 
