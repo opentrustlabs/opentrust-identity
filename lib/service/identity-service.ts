@@ -22,7 +22,6 @@ import { randomUUID } from "crypto";
 import JwtServiceUtils from "./jwt-service-utils";
 import SearchDao from "../dao/search-dao";
 import OpenSearchDao from "../dao/impl/search/open-search-dao";
-import TenantRestrictedAuthenticationDomainRelEntity from "../entities/tenant-restricted-authentication-domain-rel-entity";
 
 
 const identityDao: IdentityDao = DaoFactory.getInstance().getIdentityDao();
