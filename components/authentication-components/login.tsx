@@ -31,6 +31,7 @@ import SelectLanguage from "./select-language";
 import { GET_AUTHORIZATION_SCOPE_APPROVAL_DATA_QUERY } from "@/graphql/queries/oidc-queries";
 import LanguageIcon from '@mui/icons-material/Language';
 import { useIntl } from 'react-intl';
+import { ValidateEmailOnAuthentication } from "./validate-email";
 
 
 const MIN_USERNAME_LENGTH = 6;
@@ -858,6 +859,22 @@ const Login: React.FC<LoginProps>= ({
                     }
                     {userAuthenticationState.authenticationState === AuthenticationState.ValidatePasswordResetToken &&
                         <ValidatePasswordResetToken
+                            initialUserAuthenticationState={userAuthenticationState}
+                            onAuthenticationCancelled={() => {
+                                handleCancelAuthentication(userAuthenticationState);
+                            }}
+                            onUpdateEnd={(userAuthenticationStateResponse, errorMessage) => {
+                                setShowMutationBackdrop(false);
+                                handleUserAuthenticationResponse(userAuthenticationStateResponse, errorMessage);
+                            }}
+                            onUpdateStart={() => {
+                                setErrorMessage(null);
+                                setShowMutationBackdrop(true)
+                            }}
+                        />
+                    }
+                    {userAuthenticationState.authenticationState === AuthenticationState.ValidateEmail &&
+                        <ValidateEmailOnAuthentication
                             initialUserAuthenticationState={userAuthenticationState}
                             onAuthenticationCancelled={() => {
                                 handleCancelAuthentication(userAuthenticationState);

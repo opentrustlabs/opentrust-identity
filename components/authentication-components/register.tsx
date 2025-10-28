@@ -20,7 +20,7 @@ import ArrowDropUpOutlinedIcon from '@mui/icons-material/ArrowDropUpOutlined';
 import { validatePasswordFormat } from "@/utils/password-utils";
 import { CANCEL_REGISTRATION, REGISTER_USER_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
-import ValidateEmailOnRegistration from "./validate-email-on-registration";
+import { ValidateEmailOnRegistration } from "./validate-email";
 import { RegistrationConfigureTotp } from "./configure-totp";
 import { RegistrationValidateTotp } from "./validate-totp";
 import { RegistrationValidateSecurityKey } from "./validate-security-key";

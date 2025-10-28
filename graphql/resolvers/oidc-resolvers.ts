@@ -777,7 +777,8 @@ const resolvers: Resolvers = {
                 postalCode: userInput.postalCode,
                 preferredLanguageCode: userInput.preferredLanguageCode,
                 stateRegionProvince: userInput.stateRegionProvince,
-                markForDelete: false
+                markForDelete: false,
+                forcePasswordResetAfterAuthentication: false
             }
             await service.updateUser(user);
             return user;
@@ -911,6 +912,10 @@ const resolvers: Resolvers = {
         authenticateValidatePasswordResetToken: async(_: any, { token, authenticationSessionToken, preAuthToken }, oidcContext) => {
             const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);
             return service.authenticateValidatePasswordResetToken(token, authenticationSessionToken, preAuthToken || null);
+        },
+        authenticateVerifyEmailAddress: async(_: any, { userId, token, authenticationSessionToken, preAuthToken}, oidcContext) => {
+            const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);
+            return service.authenticateVerifyEmailAddress(userId, token, authenticationSessionToken, preAuthToken || null);
         },
         cancelAuthentication: async(_: any, { authenticationSessionToken, preAuthToken}, oidcContext) => {
             const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);

@@ -842,6 +842,16 @@ export const AUTHENTICATE_VALIDATE_PASSWORD_RESET_TOKEN = gql`
     ${USER_AUTHENTICATION_STATE_RESPONSE_FRAGMENT}
 `;
 
+export const AUTHENTICATE_VALIDATE_EMAIL_MUTATION = gql`
+    mutation authenticateVerifyEmailAddress($userId: String!, $token: String!, $authenticationSessionToken: String!, $preAuthToken: String){
+        authenticateVerifyEmailAddress(userId: $userId, token: $token, authenticationSessionToken: $authenticationSessionToken, preAuthToken: $preAuthToken){
+            ...UserAuthenticationStateResponseFragment
+        }
+    }
+
+    ${USER_AUTHENTICATION_STATE_RESPONSE_FRAGMENT}
+`;
+
 export const CANCEL_AUTHENTICATION = gql`
     mutation cancelAuthentication($userId: String!, $authenticationSessionToken: String!, $preAuthToken: String){
         cancelAuthentication(userId: $userId, authenticationSessionToken: $authenticationSessionToken, preAuthToken: $preAuthToken) {

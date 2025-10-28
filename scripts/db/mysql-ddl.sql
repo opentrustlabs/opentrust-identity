@@ -138,7 +138,8 @@ create TABLE users (
     locked BOOLEAN,
     enabled BOOLEAN NOT NULL,
     nameorder VARCHAR(64) NOT NULL,
-    markfordelete BOOLEAN NOT NULL
+    markfordelete BOOLEAN NOT NULL,
+    forcepasswordresetafterauthentication BOOLEAN NOT NULL DEFAULT false
 );
 
 CREATE INDEX users_email_idx on users(email);
