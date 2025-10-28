@@ -21,13 +21,13 @@ const UserFido2CounterRelEntity = new EntitySchema({
         },
         fido2Counter: {
             type: getIntTypeForDriver(RDB_DIALECT || ""),
-            primary: true,
-            name: "fido2Counter"
+            primary: false,
+            name: "fido2counter"
         }
     },
 
     tableName: "user_fido2_counter_rel",
-    name: "userFido2CountrerRel",
+    name: "userFido2CounterRel",
 
 });
 
