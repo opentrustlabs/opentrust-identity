@@ -1,4 +1,4 @@
-import { AuthorizationCodeData, FederatedAuthTest, FederatedOidcAuthorizationRel, FederatedOidcProvider, Tenant, User, UserTenantRel } from '@/graphql/generated/graphql-types';
+import { AuthorizationCodeData, FederatedAuthTest, FederatedOidcAuthorizationRel, FederatedOidcAuthorizationRelType, FederatedOidcProvider, Tenant, User, UserTenantRel } from '@/graphql/generated/graphql-types';
 import AuthDao from '@/lib/dao/auth-dao';
 import FederatedOIDCProviderDao from '@/lib/dao/federated-oidc-provider-dao';
 import IdentityDao from '@/lib/dao/identity-dao';
@@ -10,8 +10,9 @@ import Kms from '@/lib/kms/kms';
 import { FederatedOIDCUserInfo } from '@/lib/models/principal';
 import { OIDCTokenResponse } from '@/lib/models/token-response';
 import { WellknownConfig } from '@/lib/models/wellknown-config';
+import JwtServiceUtils from '@/lib/service/jwt-service-utils';
 import OIDCServiceUtils from '@/lib/service/oidc-service-utils';
-import { FEDERATED_AUTH_TEST_STATE_PARAM_PREFIX, NAME_ORDER_WESTERN, USER_TENANT_REL_TYPE_GUEST, USER_TENANT_REL_TYPE_PRIMARY } from '@/utils/consts';
+import { DEFAULT_PORTAL_AUTH_TOKEN_TTL_HOURS, FEDERATED_AUTH_TEST_STATE_PARAM_PREFIX, FEDERATED_OIDC_PROVIDER_RETURN_URI_PATH, NAME_ORDER_WESTERN, PRINCIPAL_TYPE_IAM_PORTAL_USER, USER_TENANT_REL_TYPE_GUEST, USER_TENANT_REL_TYPE_PRIMARY } from '@/utils/consts';
 import { generateRandomToken, getDomainFromEmail } from '@/utils/dao-utils';
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { randomUUID } from 'node:crypto';
@@ -22,11 +23,14 @@ const identityDao: IdentityDao = DaoFactory.getInstance().getIdentityDao();
 const federatedOIDCProviderDao: FederatedOIDCProviderDao = DaoFactory.getInstance().getFederatedOIDCProvicerDao();
 const kms: Kms = DaoFactory.getInstance().getKms();
 const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
-const oidcServiceUtils: OIDCServiceUtils = new OIDCServiceUtils();
 const searchDao: SearchDao = new OpenSearchDao();
 
+const oidcServiceUtils: OIDCServiceUtils = new OIDCServiceUtils();
+const jwtServiceUtils: JwtServiceUtils = new JwtServiceUtils();
+
 const {
-    AUTH_DOMAIN
+    AUTH_DOMAIN,
+    PORTAL_AUTH_TOKEN_TTL_HOURS
 } = process.env;
 
 
@@ -188,7 +192,7 @@ async function handleFederatedAuth(state: string, code: string, res: NextApiResp
         oidcProvider.federatedOIDCProviderClientId,
         decryptedSecret,
         authRel.codeVerifier || null,
-        `${AUTH_DOMAIN}/api/federated-auth/return`,
+        `${AUTH_DOMAIN}${FEDERATED_OIDC_PROVIDER_RETURN_URI_PATH}`,
         oidcProvider.scopes.join(" "),
         oidcProvider.clientAuthType        
     );
@@ -205,7 +209,7 @@ async function handleFederatedAuth(state: string, code: string, res: NextApiResp
         return;
     }
 
-    console.log(userInfo);
+    let canonicalUser: User | null = null;
 
     const userByFederatedSubjectId: User | null = await identityDao.getUserBy("federatedoidcproviderid", userInfo.sub);    
     const userByEmail: User | null = await identityDao.getUserBy("email", userInfo.email);    
@@ -213,9 +217,7 @@ async function handleFederatedAuth(state: string, code: string, res: NextApiResp
     if(userInfo.phone_number){
         userByPhone = await identityDao.getUserBy("phone", userInfo.phone_number);
     }
-    
-    const authorizationCode: string = generateRandomToken(32, "hex");
-
+        
     // Should be a rare error condition, but if there are user records by both email and by subject id, and they
     // are different records, then there is no clean way to reconcile these. The latest IdP data takes
     // precedence and so we update the userBySubject with the email, rename the email for the userByEmail with a 
@@ -231,7 +233,12 @@ async function handleFederatedAuth(state: string, code: string, res: NextApiResp
         searchDao.updateSearchIndexUserDocuments(userByFederatedSubjectId);
         await updateUserTenantRel(tenant, userByFederatedSubjectId);
         await identityDao.addUserAuthenticationHistory(userByFederatedSubjectId.userId, Date.now());
-        await saveAuthorizationCodeData(authorizationCode, authRel, userByFederatedSubjectId);
+        canonicalUser = userByFederatedSubjectId;
+        //await saveAuthorizationCodeData(authorizationCode, authRel, userByFederatedSubjectId);
+    }
+    else if(userByFederatedSubjectId !== null && userByEmail !== null && userByFederatedSubjectId.userId === userByEmail.userId){
+        await identityDao.addUserAuthenticationHistory(userByEmail.userId, Date.now());
+        canonicalUser = userByEmail;
     }
     // Otherwise, if there are no existing records, then create a new user based on the userinfo retrieved from the 3rd party IdP
     else if(userByFederatedSubjectId === null && userByEmail === null){
@@ -244,7 +251,10 @@ async function handleFederatedAuth(state: string, code: string, res: NextApiResp
         await searchDao.updateRelSearchIndex(tenant.tenantId, tenant.tenantId, newUser);
         await updateUserTenantRel(tenant, newUser);
         await identityDao.addUserAuthenticationHistory(newUser.userId, Date.now());
-        await saveAuthorizationCodeData(authorizationCode, authRel, newUser);
+        canonicalUser = newUser;
+        // if(authRel.federatedOIDCAuthorizationRelType === FederatedOidcAuthorizationRelType.AuthorizationRelTypeClientAuth){
+        //     await saveAuthorizationCodeData(authorizationCode, authRel, newUser);
+        // }
     }
     
     // Otherwise, if we find the record based on the IdP ID, but no email-based
@@ -253,7 +263,7 @@ async function handleFederatedAuth(state: string, code: string, res: NextApiResp
     else if(userByFederatedSubjectId !== null && userByEmail === null){
         userByFederatedSubjectId.email = userInfo.email;
         userByFederatedSubjectId.domain = getDomainFromEmail(userInfo.email);
-        userByFederatedSubjectId.emailVerified = userInfo.email_verified;
+        userByFederatedSubjectId.emailVerified = userInfo.email_verified || false;
         userByFederatedSubjectId.firstName = userInfo.given_name;
         userByFederatedSubjectId.lastName = userInfo.family_name;
         userByFederatedSubjectId.middleName = userInfo.middle_name;
@@ -265,19 +275,41 @@ async function handleFederatedAuth(state: string, code: string, res: NextApiResp
         searchDao.updateSearchIndexUserDocuments(userByFederatedSubjectId);
         await updateUserTenantRel(tenant, userByFederatedSubjectId);  
         await identityDao.addUserAuthenticationHistory(userByFederatedSubjectId.userId, Date.now());
-        await saveAuthorizationCodeData(authorizationCode, authRel, userByFederatedSubjectId);
+        canonicalUser = userByFederatedSubjectId;
+        // if(authRel.federatedOIDCAuthorizationRelType === FederatedOidcAuthorizationRelType.AuthorizationRelTypeClientAuth){
+        //     await saveAuthorizationCodeData(authorizationCode, authRel, userByFederatedSubjectId);
+        // }
     }
     // Otherwise, we have found a record with the same email, but it was not previously tied
     // to a 3rd party IdP, so we just update the existing record with the IdP ID
     else if(userByFederatedSubjectId === null && userByEmail !== null){
         userByEmail.federatedOIDCProviderSubjectId = userInfo.sub;
         await identityDao.updateUser(userByEmail);
-        await saveAuthorizationCodeData(authorizationCode, authRel, userByEmail);
+        await identityDao.addUserAuthenticationHistory(userByEmail.userId, Date.now());
+        canonicalUser = userByEmail;
+        // if(authRel.federatedOIDCAuthorizationRelType === FederatedOidcAuthorizationRelType.AuthorizationRelTypeClientAuth){
+        //     await saveAuthorizationCodeData(authorizationCode, authRel, userByEmail);
+        // }
+    }
+
+    await authDao.deleteFederatedOIDCAuthorizationRel(state);
+    
+    if(canonicalUser){
+        const authorizationCode: string = generateRandomToken(32, "hex");
+        if(authRel.federatedOIDCAuthorizationRelType === FederatedOidcAuthorizationRelType.AuthorizationRelTypeClientAuth){
+            await saveAuthorizationCodeData(authorizationCode, authRel, canonicalUser);
+            res.status(302).setHeader("location", `${authRel.initRedirectUri}?code=${authorizationCode}&state=${authRel.initState}`);
+        }
+        else{
+            const ttlSeconds = PORTAL_AUTH_TOKEN_TTL_HOURS ? parseInt(PORTAL_AUTH_TOKEN_TTL_HOURS) * 60 * 60 : DEFAULT_PORTAL_AUTH_TOKEN_TTL_HOURS * 60 * 60;
+            const result = await jwtServiceUtils.signIAMPortalUserJwt(canonicalUser, tenant, ttlSeconds, PRINCIPAL_TYPE_IAM_PORTAL_USER)
+            res.status(302).setHeader("location", `/authorize/federated-auth/return#access_token=${result?.accessToken}&token_ttl_ms=${ttlSeconds * 1000}`);
+        }
+    }
+    else{
+        res.status(302).setHeader("location", `/access-error?access_error_code=00076&extended_message=${"The user information from the federated OIDC provider cannot be obtained or insufficient scope for retrieving email was provided."}`);
     }
     
-    await authDao.deleteFederatedOIDCAuthorizationRel(state);
-
-    res.status(302).setHeader("location", `${authRel.initRedirectUri}?code=${authorizationCode}&state=${authRel.initState}`);
     res.end();
     return;
 }

@@ -290,10 +290,7 @@ const AuthenticationGroupsAssignDialog: React.FC<AuthenticationGroupAssignDialog
     const {data} = useQuery(USER_TENANT_RELS_QUERY, {
         variables: {
             userId: userId
-        },
-        onCompleted(data) {
-            console.log(data);
-        },
+        }
     });
 
     const { data: searchData, loading: searchLoading, previousData: searchPreviousData } = useQuery(SEARCH_QUERY, {
@@ -377,7 +374,7 @@ const AuthenticationGroupsAssignDialog: React.FC<AuthenticationGroupAssignDialog
                     </Grid2>
                 </Typography>
             }
-            <Grid2 minHeight={"4vh"} sx={{ marginTop: "8px", padding: "8px" }} size={12}>
+            <Grid2 minHeight={"4vh"} sx={{ marginTop: "16px", padding: "8px" }} size={12}>
                 {r.resultlist.map(
                     (item: ObjectSearchResultItem) => (
                         <React.Fragment key={`${item.objectid}`}>

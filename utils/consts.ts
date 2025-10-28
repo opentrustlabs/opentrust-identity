@@ -903,6 +903,7 @@ export const AUTHORIZATION_LAYOUT_PAGES = [
     "/authorize/login",
     "/authorize/auth-successful",
     "/authorize/register",
+    "/authorize/federated-auth/return",
     "/access-error",
     "/device",
     "/device/registered",
@@ -914,6 +915,8 @@ export const AUTHORIZATION_LAYOUT_PAGES = [
 export const PROFILE_LAYOUT_PAGES =[
     "/my-profile"
 ];
+
+export const FEDERATED_OIDC_PROVIDER_RETURN_URI_PATH = "/api/federated-auth/return";
 
 
 

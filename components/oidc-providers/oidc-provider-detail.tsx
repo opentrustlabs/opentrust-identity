@@ -3,7 +3,7 @@ import { FederatedOidcProvider, FederatedOidcProviderUpdateInput, MarkForDeleteO
 import Typography from "@mui/material/Typography";
 import React, { useContext } from "react";
 import BreadcrumbComponent from "../breadcrumbs/breadcrumbs";
-import { FEDERATED_OIDC_PROVIDER_DELETE_SCOPE, FEDERATED_OIDC_PROVIDER_SECRET_VIEW_SCOPE, FEDERATED_OIDC_PROVIDER_TYPE_ENTERPRISE, FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL, FEDERATED_OIDC_PROVIDER_TYPES_DISPLAY, FEDERATED_OIDC_PROVIDER_UPDATE_SCOPE, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_BASIC, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_JWT, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_POST, OIDC_CLIENT_AUTH_TYPE_DISPLAY, OIDC_CLIENT_AUTH_TYPE_NONE, OIDC_EMAIL_SCOPE, OIDC_OFFLINE_ACCESS_SCOPE, OIDC_OPENID_SCOPE, OIDC_PROFILE_SCOPE, SECRET_ENTRY_DELEGATE_SCOPE, SOCIAL_OIDC_PROVIDERS, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
+import { FEDERATED_OIDC_PROVIDER_DELETE_SCOPE, FEDERATED_OIDC_PROVIDER_RETURN_URI_PATH, FEDERATED_OIDC_PROVIDER_SECRET_VIEW_SCOPE, FEDERATED_OIDC_PROVIDER_TYPE_ENTERPRISE, FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL, FEDERATED_OIDC_PROVIDER_TYPES_DISPLAY, FEDERATED_OIDC_PROVIDER_UPDATE_SCOPE, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_BASIC, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_JWT, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_POST, OIDC_CLIENT_AUTH_TYPE_DISPLAY, OIDC_CLIENT_AUTH_TYPE_NONE, OIDC_EMAIL_SCOPE, OIDC_OFFLINE_ACCESS_SCOPE, OIDC_OPENID_SCOPE, OIDC_PROFILE_SCOPE, SECRET_ENTRY_DELEGATE_SCOPE, SOCIAL_OIDC_PROVIDERS, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
 import { DetailPageContainer, DetailPageMainContentContainer, DetailPageRightNavContainer } from "../layout/detail-page-container";
 import Grid2 from "@mui/material/Grid2";
@@ -414,13 +414,13 @@ const FederatedOIDCProviderDetail: React.FC<FederatedOIDCProviderDetailProps> = 
                                             <div style={{textDecoration: "underline"}}>Redirect URI (to be configured with the provider)</div>
                                             <Grid2 marginTop={"8px"} container display={"inline-flex"} size={12}>
                                                 <Grid2 size={11}>
-                                                    {`${location.protocol}//${location.host}/api/federated-auth/return`}
+                                                    {`${location.protocol}//${location.host}${FEDERATED_OIDC_PROVIDER_RETURN_URI_PATH}`}
                                                 </Grid2>
                                                 <Grid2 size={1}>
                                                     <ContentCopyIcon 
                                                         sx={{cursor: "pointer"}}
                                                         onClick={() => {
-                                                            copyContentToClipboard(`${location.protocol}//${location.host}/api/federated-auth/return`, "Redirect URI copied to clipboard");
+                                                            copyContentToClipboard(`${location.protocol}//${location.host}${FEDERATED_OIDC_PROVIDER_RETURN_URI_PATH}`, "Redirect URI copied to clipboard");
                                                         }}
                                                     />
                                                 </Grid2>

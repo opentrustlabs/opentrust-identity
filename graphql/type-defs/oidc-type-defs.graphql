@@ -256,7 +256,7 @@ type Mutation {
     assignFederatedOIDCProviderToTenant(federatedOIDCProviderId: String!, tenantId: String!): FederatedOIDCProviderTenantRel!
     removeFederatedOIDCProviderFromTenant(federatedOIDCProviderId: String!, tenantId: String!): FederatedOIDCProviderTenantRel!
     assignFederatedOIDCProviderToDomain(federatedOIDCProviderId: String!, domain: String!): FederatedOIDCProviderDomainRel!
-    removeFederatedOIDCProviderFromDomain(federatedOIDCProviderId: String!, domain: String!): FederatedOIDCProviderDomainRel!
+    removeFederatedOIDCProviderFromDomain(federatedOIDCProviderId: String!, domain: String!): FederatedOIDCProviderDomainRel!    
 
     ## Scheduler locks
     deleteSchedulerLock(instanceId: String!): String!
@@ -278,6 +278,9 @@ type Mutation {
     ## Secret sharing and entry
     generateSecretShareLink(objectId: String!, secretShareObjectType: SecretShareObjectType!, email: String!): Boolean!
     enterSecretValue(otp: String!, secretValue: String!): Boolean!
+
+    ## Federated OIDC return handler
+    handleFederatedOIDCProviderReturn(state: String!, code: String!): FederatedOIDCProviderReturnResponse!
 
     ## System initialization
     systemInitializationAuthentication(privateKey: String!, password: String): UserAuthenticationStateResponse!
@@ -1244,7 +1247,12 @@ type FederatedAuthTest {
     expiresAtMs: Float!
 }
 
-
+type FederatedOIDCProviderReturnResponse {
+    redirectUri: String!
+    accessToken: String
+    tokenExpiresAtMs: Float
+    authenticationState: AuthenticationState!
+}
 
 ############################################################################
 ################ INPUT TYPES AND RESPONSES FOR MUTATATIONS #################
