@@ -1202,3 +1202,14 @@ export const CREATE_FEDERATED_AUTH_TEST_MUTATION = gql(`
         createFederatedAuthTest(clientAuthType: $clientAuthType, clientId: $clientId, scope: $scope, usePkce: $usePkce, wellKnownUri: $wellKnownUri, clientSecret: $clientSecret)
     }    
 `);
+
+export const HANDLE_FEDERATED_OIDC_PROVIDER_RETURN_MUTATION = gql(`
+    mutation handleFederatedOIDCProviderReturn($state: String!, $code: String!){
+        handleFederatedOIDCProviderReturn(state: $state, code: $code) {
+            redirectUri
+            accessToken
+            tokenExpiresAtMs
+            authenticationState
+        }
+    }
+`);

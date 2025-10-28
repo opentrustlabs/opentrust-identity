@@ -91,7 +91,7 @@ class JwtServiceUtils {
         if(client === null){
             return null;
         }
-        let oidcUserProfile: MyUserProfile | null = null;
+        let myUserProfile: MyUserProfile | null = null;
         if(principal.principal_type === PRINCIPAL_TYPE_SERVICE_ACCOUNT_TOKEN){
             
             const arrScopes = includeScope ? await this.getClientScopes(client.clientId) : [];
@@ -105,7 +105,7 @@ class JwtServiceUtils {
                     return profileScope
                 }
             )
-            oidcUserProfile = {
+            myUserProfile = {
                 domain: "",
                 email: "",
                 emailVerified: true,
@@ -147,7 +147,7 @@ class JwtServiceUtils {
                     return profileScope
                 }
             )
-            oidcUserProfile = {
+            myUserProfile = {
                 domain: "",
                 email: "",
                 emailVerified: false,
@@ -221,10 +221,10 @@ class JwtServiceUtils {
                     return portalGroup;                    
                 }
             );
-            oidcUserProfile = {
+            myUserProfile = {
                 domain: getDomainFromEmail(principal.email),
                 email: principal.email,
-                emailVerified: principal.email_verified,
+                emailVerified: principal.email_verified || false,
                 enabled: true,
                 firstName: principal.given_name,
                 lastName: principal.family_name,
@@ -252,7 +252,7 @@ class JwtServiceUtils {
             }
         }            
         
-        return oidcUserProfile;
+        return myUserProfile;
         
     }
 
@@ -304,7 +304,12 @@ class JwtServiceUtils {
                 preferredLanguageCode: principal.language_code,
                 managementAccessTenantId: principal.tenant_id,
                 principalType: principal.principal_type,
-                expiresAtMs: principal.exp * 1000
+                expiresAtMs: principal.exp * 1000,
+                address: null,
+                addressLine1: null,
+                city: null,
+                stateRegionProvince: null,
+                postalCode: null
             }
         }
         else if(principal.principal_type === PRINCIPAL_TYPE_END_USER || principal.principal_type === PRINCIPAL_TYPE_IAM_PORTAL_USER){
@@ -316,7 +321,7 @@ class JwtServiceUtils {
             profile = {
                 domain: getDomainFromEmail(principal.email),
                 email: principal.email,
-                emailVerified: principal.email_verified,
+                emailVerified: principal.email_verified || false,
                 enabled: true,
                 firstName: principal.given_name,
                 lastName: principal.family_name,
@@ -371,7 +376,14 @@ class JwtServiceUtils {
             preferred_username: "",
             profile: "",
             phone_number: user.phoneNumber,
-            address: user.address,            
+            address: {
+                formatted: "",
+                street_address: user.address,
+                locality: user.city,
+                region: user.stateRegionProvince,
+                postal_code: user.postalCode,
+                country: user.countryCode
+            },
             email: user.email,
             email_verified: user.emailVerified,
             country_code: user.countryCode,
@@ -425,7 +437,14 @@ class JwtServiceUtils {
             preferred_username: "",
             profile: "",
             phone_number: user.phoneNumber,
-            address: user.address,
+            address: {
+                formatted: "",
+                street_address: user.address,
+                locality: user.city,
+                region: user.stateRegionProvince,
+                postal_code: user.postalCode,
+                country: user.countryCode
+            },
             email: user.email,
             email_verified: user.emailVerified,
             country_code: user.countryCode,
@@ -461,7 +480,7 @@ class JwtServiceUtils {
             access_token: accessToken !== null ? accessToken : idToken,
             token_type: "Bearer",
             refresh_token: generateRefreshToken ? generateRandomToken(32) : null,
-            expires_in: client.userTokenTTLSeconds ? ( now / 1000 ) + client.userTokenTTLSeconds : ( now / 1000 ) + DEFAULT_END_USER_TOKEN_TTL_SECONDS,
+            expires_in: client.userTokenTTLSeconds ? Math.floor( now / 1000 ) + client.userTokenTTLSeconds : Math.floor( now / 1000 ) + DEFAULT_END_USER_TOKEN_TTL_SECONDS,
             id_token: idToken
         }
         
@@ -517,7 +536,7 @@ class JwtServiceUtils {
             preferred_username: "",
             profile: "",
             phone_number: "",
-            address: "",
+            address: null,
             updated_at: "",
             email: "",
             email_verified: true,
@@ -541,7 +560,7 @@ class JwtServiceUtils {
             access_token: s,
             token_type: "Bearer",
             refresh_token: null,
-            expires_in: client.clientTokenTTLSeconds ? ( now / 1000 ) + client.clientTokenTTLSeconds : ( now / 1000 ) + DEFAULT_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS,
+            expires_in: client.clientTokenTTLSeconds ? Math.floor( now / 1000 ) + client.clientTokenTTLSeconds : Math.floor( now / 1000 ) + DEFAULT_SERVICE_ACCOUNT_TOKEN_TTL_SECONDS,
             id_token: s
         }
         
