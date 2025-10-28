@@ -377,7 +377,8 @@ function userInfoToUser(userInfo: FederatedOIDCUserInfo): User {
         stateRegionProvince: userInfo.address?.region,
         postalCode: userInfo.address?.postal_code,
         city: userInfo.address?.locality,
-        preferredLanguageCode: langCode
+        preferredLanguageCode: langCode,
+        forcePasswordResetAfterAuthentication: false
     }
     return user;
 }

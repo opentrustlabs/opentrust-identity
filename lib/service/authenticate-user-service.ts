@@ -63,8 +63,7 @@ class AuthenticateUserService extends IdentityService {
         }
         // Otherwise they are trying to log directly into the IAM portal itself.
         else{
-            return this.authenticatePortalUserNameHandler(this.formatEmail(email), tenantId, returnToUri);
-            
+            return this.authenticatePortalUserNameHandler(this.formatEmail(email), tenantId, returnToUri);            
         }        
     }
 
@@ -437,6 +436,11 @@ class AuthenticateUserService extends IdentityService {
             else{
                 stateOrder.push(AuthenticationState.EnterPasswordAndMigrateUser);
             }
+            // If the user has not verified their email, but the tenant requires email verification
+            if(user && user.emailVerified === false && tenant.verifyEmailOnSelfRegistration === true){
+                stateOrder.push(AuthenticationState.ValidateEmail);
+            }
+            
             const passwordConfig: TenantPasswordConfig = await tenantDao.getTenantPasswordConfig(tenantId) || DEFAULT_TENANT_PASSWORD_CONFIGURATION;
             
             let requiredMfaTypes: Array<string> = [];
@@ -474,11 +478,19 @@ class AuthenticateUserService extends IdentityService {
                 stateOrder.push(AuthenticationState.ConfigureSecurityKey);
                 stateOrder.push(AuthenticationState.ValidateSecurityKey);
             }
-            // Finally, once all the user verification steps have been completed, do we need
-            // to rotate the password before we send the user back to the 3rd party app?            
-            if(!canMigrateUser && userCredential && this.requirePasswordRotation(userCredential, passwordConfig)){
+            
+            // Does the user have to enter a new password (for example, because their account
+            // was created via a script or there was a breach of passwords?) OR
+            // do we need to rotate the password because there is a time limit on passwords?
+            if(
+                (user && user.forcePasswordResetAfterAuthentication === true) ||
+                (!canMigrateUser && userCredential &&  this.requirePasswordRotation(userCredential, passwordConfig))
+            ){
                 stateOrder.push(AuthenticationState.RotatePassword);
             }
+            // if(!canMigrateUser && userCredential && this.requirePasswordRotation(userCredential, passwordConfig)){
+            //     stateOrder.push(AuthenticationState.RotatePassword);
+            // }
             if(preAuthToken){
                 stateOrder.push(AuthenticationState.RedirectBackToApplication);
             }
@@ -516,7 +528,8 @@ class AuthenticateUserService extends IdentityService {
                     locked: true,
                     markForDelete: true,                        
                     nameOrder: "",
-                    userId: userId
+                    userId: userId,
+                    forcePasswordResetAfterAuthentication: false
                 }
                 await identityDao.createUser(u);
             }
@@ -738,7 +751,10 @@ class AuthenticateUserService extends IdentityService {
                 else{
                     stateOrder.push(AuthenticationState.EnterPasswordAndMigrateUser);
                 }
-
+                // If the user has not verified their email, but the tenant requires email verification
+                if(user && user.emailVerified === false && tenantsToProcess[0].verifyEmailOnSelfRegistration === true){
+                    stateOrder.push(AuthenticationState.ValidateEmail);                    
+                }
                 // If the user has configured totp, always use it first
                 if(userMfaRelTotp){
                     stateOrder.push(AuthenticationState.ValidateTotp);
@@ -763,11 +779,16 @@ class AuthenticateUserService extends IdentityService {
                 if(userTermsAndConditionsAccepted === null && tenantsToProcess[0].registrationRequireTermsAndConditions === true){
                     stateOrder.push(AuthenticationState.AcceptTermsAndConditions);
                 }
-                // Finally, once all the user verification steps have been completed, do we need
-                // to rotate the password before we send the user back to the 3rd party app?                
-                if(userCredential &&  this.requirePasswordRotation(userCredential, passwordConfig)){
+                // Does the user have to enter a new password (for example, because their account
+                // was created via a script or there was a breach of passwords?) OR
+                // do we need to rotate the password because there is a time limit on passwords?
+                if(
+                    (user && user.forcePasswordResetAfterAuthentication === true) ||
+                    (userCredential &&  this.requirePasswordRotation(userCredential, passwordConfig))
+                ){
                     stateOrder.push(AuthenticationState.RotatePassword);
                 }
+                
                 stateOrder.push(AuthenticationState.RedirectToIamPortal);
 
                 // Finally, send a security event message to a web hook, if configured, or log it. This final event
@@ -797,7 +818,8 @@ class AuthenticateUserService extends IdentityService {
                         locked: true,
                         markForDelete: true,                        
                         nameOrder: "",
-                        userId: userId
+                        userId: userId,
+                        forcePasswordResetAfterAuthentication: false
                     }
                     await identityDao.createUser(u);
                 }
@@ -883,7 +905,13 @@ class AuthenticateUserService extends IdentityService {
             const passwordConfig = await this.determineTenantPasswordConfig(nextUserAuthenticationState.userId, nextUserAuthenticationState.tenantId);
             response.passwordConfig = passwordConfig;
         }
-                
+
+        // Note that the email validation is coded above to occur always after the password entry step. If that
+        // ordering ever changes, then this block will need to be moved to the appropriate place.
+        if(nextUserAuthenticationState.authenticationState === AuthenticationState.ValidateEmail){
+            this.sentEmailValidationToken(user, user.email);
+        }
+
         if(nextUserAuthenticationState.authenticationState === AuthenticationState.RedirectBackToApplication || nextUserAuthenticationState.authenticationState === AuthenticationState.RedirectToIamPortal){
             await this.handleAuthenticationCompletion(user, nextUserAuthenticationState, arrUserAuthenticationStates, response);
         }
@@ -958,6 +986,7 @@ class AuthenticateUserService extends IdentityService {
         user.preferredLanguageCode = legacyProfile.preferredLanguageCode;
         user.federatedOIDCProviderSubjectId = "";
         user.markForDelete = false;
+        user.forcePasswordResetAfterAuthentication = false;
         
         const tenantPasswordConfig: TenantPasswordConfig = await tenantDao.getTenantPasswordConfig(arrUserAuthenticationStates[index].tenantId) || DEFAULT_TENANT_PASSWORD_CONFIGURATION;
 
@@ -987,6 +1016,43 @@ class AuthenticateUserService extends IdentityService {
         return response;
     }
 
+    public async authenticateVerifyEmailAddress(userId: string, token: string, authenticationSessionToken: string, preAuthToken: string | null): Promise<UserAuthenticationStateResponse> {
+        const response: UserAuthenticationStateResponse = this.initUserAuthenticationStateResponse(authenticationSessionToken, "", preAuthToken);
+        
+        // 1. Is this the correct step of the authentication process?
+        const arrUserAuthenticationStates: Array<UserAuthenticationState> = await this.getSortedAuthenticationStates(authenticationSessionToken);
+        const index: number = await this.validateAuthenticationStep(arrUserAuthenticationStates, response, AuthenticationState.ValidateEmail);
+        if(index < 0){
+            return Promise.resolve(response);
+        }
+        
+        // Does the user exist and have credentials?
+        const user: User | null = await identityDao.getUserBy("id", userId);
+        if(user === null){
+            response.authenticationError = ERROR_CODES.EC00013;
+            return response;
+        }
+
+        const validationError: ErrorDetail | null = await this.validateEmailToken(userId, token);
+        if(validationError){
+            response.userAuthenticationState.authenticationState = AuthenticationState.Error;
+            response.authenticationError = validationError;
+            return Promise.resolve(response);
+        }
+
+        arrUserAuthenticationStates[index].authenticationStateStatus = STATUS_COMPLETE;
+        await identityDao.updateUserAuthenticationState(arrUserAuthenticationStates[index]);
+        
+        const nextUserAuthenticationState = arrUserAuthenticationStates[index + 1];
+        if(nextUserAuthenticationState.authenticationState === AuthenticationState.RedirectBackToApplication || nextUserAuthenticationState.authenticationState === AuthenticationState.RedirectToIamPortal){
+            await this.handleAuthenticationCompletion(user, nextUserAuthenticationState, arrUserAuthenticationStates, response);
+        }
+        else{
+            response.userAuthenticationState = nextUserAuthenticationState;
+        }
+        return response;
+
+    }
 
     public async authenticateRotatePassword(userId: string, newPassword: string, authenticationSessionToken: string, preAuthToken: string | null): Promise<UserAuthenticationStateResponse>{
         const response: UserAuthenticationStateResponse = this.initUserAuthenticationStateResponse(authenticationSessionToken, "", preAuthToken);
@@ -1051,6 +1117,12 @@ class AuthenticateUserService extends IdentityService {
 
         const cred: UserCredential = generateUserCredential(userId, newPassword, tenantPasswordConfig.passwordHashingAlgorithm);
         await identityDao.addUserCredential(cred);
+
+        // If the user previously had their forcePasswordReset flag set, then unset it.
+        if(user.forcePasswordResetAfterAuthentication === true){
+            user.forcePasswordResetAfterAuthentication = false;
+            await identityDao.updateUser(user);
+        }
 
         arrUserAuthenticationStates[index].authenticationStateStatus = STATUS_COMPLETE;
         await identityDao.updateUserAuthenticationState(arrUserAuthenticationStates[index]);

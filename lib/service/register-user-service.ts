@@ -5,7 +5,7 @@ import { DaoFactory } from "../data-sources/dao-factory";
 import TenantDao from "../dao/tenant-dao";
 import { GraphQLError } from "graphql/error";
 import { randomUUID } from "crypto";
-import { DEFAULT_TENANT_PASSWORD_CONFIGURATION, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, OIDC_AUTHORIZATION_ERROR_ACCESS_DENIED, QUERY_PARAM_AUTHENTICATE_TO_PORTAL, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, STATUS_COMPLETE, STATUS_INCOMPLETE, PRINCIPAL_TYPE_IAM_PORTAL_USER, DEFAULT_CAPTCHA_V3_MINIMUM_SCORE, NAME_ORDER_WESTERN, DEFAULT_TENANT_LOOK_AND_FEEL } from "@/utils/consts";
+import { DEFAULT_TENANT_PASSWORD_CONFIGURATION, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, OIDC_AUTHORIZATION_ERROR_ACCESS_DENIED, QUERY_PARAM_AUTHENTICATE_TO_PORTAL, SEARCH_INDEX_OBJECT_SEARCH, SEARCH_INDEX_REL_SEARCH, STATUS_COMPLETE, STATUS_INCOMPLETE, PRINCIPAL_TYPE_IAM_PORTAL_USER, DEFAULT_CAPTCHA_V3_MINIMUM_SCORE, NAME_ORDER_WESTERN, DEFAULT_TENANT_LOOK_AND_FEEL, USER_CREATE_SCOPE, PRINCIPAL_TYPE_SERVICE_ACCOUNT_TOKEN } from "@/utils/consts";
 import {  generateRandomToken, generateUserCredential, getDomainFromEmail } from "@/utils/dao-utils";
 import { Client as OpenSearchClient } from "@opensearch-project/opensearch";
 import { getOpenSearchClient } from "../data-sources/search";
@@ -20,6 +20,7 @@ import Kms from "../kms/kms";
 import { RecaptchaResponse } from "../models/recaptcha";
 import SearchDao from "../dao/search-dao";
 import OpenSearchDao from "../dao/impl/search/open-search-dao";
+import { authorizeByScopeAndTenant, containsScope } from "@/utils/authz-utils";
 
 
 const jwtServiceUtils: JwtServiceUtils = new JwtServiceUtils();
@@ -51,6 +52,40 @@ class RegisterUserService extends IdentityService {
         if(userCreateInput.phoneNumber){
             userCreateInput.phoneNumber = this.formatPhoneNumber(userCreateInput.phoneNumber)
         }
+
+        // Who is allowed to create a user and how? 
+        // 1.   A service client with a scope of user.create
+        // 2.   If the service client does not belong to the root tenant, then it must 
+        //      belong to the same tenant in the method argument
+        // 3.   The tenant MUST have restricted authentication domains, and the domain 
+        //      of the user must match one of those domains.
+        if(!this.oidcContext.portalUserProfile){
+            throw new GraphQLError(ERROR_CODES.EC00003.errorMessage, {extensions: {errorDetail: ERROR_CODES.EC00003}});
+        }
+        if(this.oidcContext.portalUserProfile.principalType !== PRINCIPAL_TYPE_SERVICE_ACCOUNT_TOKEN){
+            throw new GraphQLError(ERROR_CODES.EC00003.errorMessage, {extensions: {errorDetail: ERROR_CODES.EC00003}});
+        }
+        if(!containsScope(USER_CREATE_SCOPE, this.oidcContext.portalUserProfile.scope)){
+            throw new GraphQLError(ERROR_CODES.EC00003.errorMessage, {extensions: {errorDetail: ERROR_CODES.EC00003}});
+        }
+        if(this.oidcContext.portalUserProfile.tenantId !== this.oidcContext.rootTenant.tenantId){
+            if(this.oidcContext.portalUserProfile.tenantId !== tenantId){
+                throw new GraphQLError(ERROR_CODES.EC00003.errorMessage, {extensions: {errorDetail: ERROR_CODES.EC00003}});
+            }
+        }
+
+        const tenantRestrictedDomanRels: Array<TenantRestrictedAuthenticationDomainRel> = await tenantDao.getDomainsForTenantRestrictedAuthentication(tenantId);
+        if(tenantRestrictedDomanRels.length === 0){
+            throw new GraphQLError(ERROR_CODES.EC00003.errorMessage, {extensions: {errorDetail: ERROR_CODES.EC00003}});
+        }
+        const domain = getDomainFromEmail(userCreateInput.email);
+        const rel: TenantRestrictedAuthenticationDomainRel | undefined = tenantRestrictedDomanRels.find(
+            (r: TenantRestrictedAuthenticationDomainRel) => r.domain === domain
+        );
+        if(rel === undefined){
+            throw new GraphQLError(ERROR_CODES.EC00003.errorMessage, {extensions: {errorDetail: ERROR_CODES.EC00003}});
+        }
+
         const { user } = await this._createUser(userCreateInput, tenantId, false);
         return user;
     }
@@ -206,27 +241,13 @@ class RegisterUserService extends IdentityService {
             return Promise.resolve(response);
         }        
 
-        const user: User | null = await identityDao.getUserByEmailConfirmationToken(token);
-        if(user === null){
-            await identityDao.deleteEmailConfirmationToken(token);
+        const validationError: ErrorDetail | null = await this.validateEmailToken(userId, token);
+        if(validationError){
             response.userRegistrationState.registrationState = RegistrationState.Error;
-            response.registrationError = ERROR_CODES.EC00134;
+            response.registrationError = validationError;
             return Promise.resolve(response);
         }
-               
-        if(user.userId !== userId){
-            response.userRegistrationState.registrationState = RegistrationState.Error;
-            response.registrationError = ERROR_CODES.EC00135;
-            return Promise.resolve(response);
-        }
-
-        // For the one-time token, need to delete it in success case and
-        // update the user profile and this registration state to a status
-        // of complete and set the next state as the return value.
-        await identityDao.deleteEmailConfirmationToken(token);
-        user.emailVerified = true;
-        await identityDao.updateUser(user);
-        await searchDao.updateSearchIndexUserDocuments(user);
+        
         arrUserRegistrationState[index].registrationStateStatus = STATUS_COMPLETE;
         await identityDao.updateUserRegistrationState(arrUserRegistrationState[0]);
         const nextRegistrationState = arrUserRegistrationState[index + 1];
@@ -1188,13 +1209,9 @@ class RegisterUserService extends IdentityService {
         }
 
 
-        let userEnabled = true;
-        let emailVerified = true;
-        if (isRegistration && tenant.verifyEmailOnSelfRegistration) {
-            userEnabled = false;
-            emailVerified = false;
-        }
-
+        let userEnabled = isRegistration ? false : true;
+        let emailVerified = false;
+        
         const user: User = {
             domain: domain,
             email: userCreateInput.email,
@@ -1215,7 +1232,8 @@ class RegisterUserService extends IdentityService {
             phoneNumber: userCreateInput.phoneNumber,
             preferredLanguageCode: userCreateInput.preferredLanguageCode,
             federatedOIDCProviderSubjectId: userCreateInput.federatedOIDCProviderSubjectId,
-            markForDelete: false
+            markForDelete: false,
+            forcePasswordResetAfterAuthentication: isRegistration ? false : true
         }
 
         await identityDao.createUser(user);
@@ -1238,24 +1256,6 @@ class RegisterUserService extends IdentityService {
         await searchDao.updateRelSearchIndex(tenant.tenantId, tenant.tenantId, user);
 
         return Promise.resolve({ user: user, tenant: tenant, tenantPasswordConfig: tenantPasswordConfig });
-    }
-
-    protected async sentEmailValidationToken(user: User, to: string): Promise<void> {
-        const token: string = generateRandomToken(8, "hex").toUpperCase();
-        await identityDao.saveEmailConfirmationToken(user.userId, token);
-        
-        // Send an email to the user with the token value.        
-        let fromEmailAddr: string = "";
-        const systemSettings = await tenantDao.getSystemSettings();
-        if(systemSettings && systemSettings.noReplyEmail){
-            fromEmailAddr = systemSettings.noReplyEmail;
-        }
-        else{
-            fromEmailAddr = "no-reply@" + this.oidcContext.rootTenant.tenantName.toLowerCase().replaceAll(" ", "") + ".com";
-        }
-        const name = user.nameOrder === NAME_ORDER_WESTERN ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`;
-        const tenantLookAndFeel: TenantLookAndFeel = await tenantDao.getTenantLookAndFeel(this.oidcContext.rootTenant.tenantId) || DEFAULT_TENANT_LOOK_AND_FEEL;
-        oidcServiceUtils.sendEmailVerificationEmail(fromEmailAddr, to, name, token, tenantLookAndFeel, user.preferredLanguageCode || "en", systemSettings.contactEmail || undefined);
     }
        
     /**

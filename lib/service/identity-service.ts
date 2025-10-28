@@ -1,11 +1,11 @@
 import { OIDCContext } from "@/graphql/graphql-context";
 import * as OTPAuth from "otpauth";
 import IdentityDao from "../dao/identity-dao";
-import { Client, Fido2AuthenticationChallengeResponse, Fido2Challenge, Fido2RegistrationChallengeResponse, Fido2KeyRegistrationInput, RefreshData, Tenant, TenantPasswordConfig, TotpResponse, User, UserCredential, UserMfaRel, UserSession, UserTenantRel, UserTenantRelView, Fido2KeyAuthenticationInput, FederatedOidcProvider, FederatedOidcAuthorizationRel, FederatedOidcAuthorizationRelType, AuthorizationCodeData, PreAuthenticationState, AuthorizationReturnUri, UserRegistrationState, RegistrationState, AuthenticationState, UserAuthenticationState, UserRecoveryEmail, ErrorDetail, TenantRestrictedAuthenticationDomainRel } from "@/graphql/generated/graphql-types";
+import { Client, Fido2AuthenticationChallengeResponse, Fido2Challenge, Fido2RegistrationChallengeResponse, Fido2KeyRegistrationInput, RefreshData, Tenant, TenantPasswordConfig, TotpResponse, User, UserCredential, UserMfaRel, UserSession, UserTenantRel, UserTenantRelView, Fido2KeyAuthenticationInput, FederatedOidcProvider, FederatedOidcAuthorizationRel, FederatedOidcAuthorizationRelType, AuthorizationCodeData, PreAuthenticationState, AuthorizationReturnUri, UserRegistrationState, RegistrationState, AuthenticationState, UserAuthenticationState, UserRecoveryEmail, ErrorDetail, TenantRestrictedAuthenticationDomainRel, TenantLookAndFeel } from "@/graphql/generated/graphql-types";
 import { DaoFactory } from "../data-sources/dao-factory";
 import TenantDao from "../dao/tenant-dao";
 import { GraphQLError } from "graphql/error";
-import { CHANGE_EVENT_CLASS_TENANT_USER_REL, CHANGE_EVENT_CLASS_USER, CHANGE_EVENT_CLASS_USER_UNLOCKED, CHANGE_EVENT_TYPE_CREATE, CHANGE_EVENT_TYPE_CREATE_REL, CHANGE_EVENT_TYPE_REMOVE_REL, CHANGE_EVENT_TYPE_UPDATE, DEFAULT_PORTAL_AUTH_TOKEN_TTL_HOURS, FEDERATED_OIDC_PROVIDER_RETURN_URI_PATH, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, NAME_ORDER_WESTERN, PASSWORD_HASH_ITERATION_128K, PASSWORD_HASH_ITERATION_256K, PASSWORD_HASH_ITERATION_32K, PASSWORD_HASH_ITERATION_64K, PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_32K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_64K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS, SESSION_TOKEN_TYPE_AUTHENTICATION, SESSION_TOKEN_TYPE_REGISTRATION, TENANT_READ_ALL_SCOPE, TENANT_USER_ASSIGN_SCOPE, TENANT_USER_REMOVE_SCOPE, TOTP_HASH_ALGORITHM_SHA1, USER_READ_SCOPE, USER_SESSION_DELETE_SCOPE, USER_SESSION_READ_SCOPE, USER_TENANT_REL_TYPE_GUEST, USER_TENANT_REL_TYPE_PRIMARY, USER_UNLOCK_SCOPE, USER_UPDATE_SCOPE } from "@/utils/consts";
+import { CHANGE_EVENT_CLASS_TENANT_USER_REL, CHANGE_EVENT_CLASS_USER, CHANGE_EVENT_CLASS_USER_UNLOCKED, CHANGE_EVENT_TYPE_CREATE, CHANGE_EVENT_TYPE_CREATE_REL, CHANGE_EVENT_TYPE_REMOVE_REL, CHANGE_EVENT_TYPE_UPDATE, DEFAULT_PORTAL_AUTH_TOKEN_TTL_HOURS, DEFAULT_TENANT_LOOK_AND_FEEL, FEDERATED_OIDC_PROVIDER_RETURN_URI_PATH, MFA_AUTH_TYPE_FIDO2, MFA_AUTH_TYPE_TIME_BASED_OTP, NAME_ORDER_WESTERN, PASSWORD_HASH_ITERATION_128K, PASSWORD_HASH_ITERATION_256K, PASSWORD_HASH_ITERATION_32K, PASSWORD_HASH_ITERATION_64K, PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_32K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_64K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS, SESSION_TOKEN_TYPE_AUTHENTICATION, SESSION_TOKEN_TYPE_REGISTRATION, TENANT_READ_ALL_SCOPE, TENANT_USER_ASSIGN_SCOPE, TENANT_USER_REMOVE_SCOPE, TOTP_HASH_ALGORITHM_SHA1, USER_READ_SCOPE, USER_SESSION_DELETE_SCOPE, USER_SESSION_READ_SCOPE, USER_TENANT_REL_TYPE_GUEST, USER_TENANT_REL_TYPE_PRIMARY, USER_UNLOCK_SCOPE, USER_UPDATE_SCOPE } from "@/utils/consts";
 import { sha256HashPassword, pbkdf2HashPassword, scryptHashPassword, generateRandomToken, generateCodeVerifierAndChallenge, bcryptValidatePassword } from "@/utils/dao-utils";
 import Kms from "../kms/kms";
 import AuthDao from "../dao/auth-dao";
@@ -181,8 +181,12 @@ class IdentityService {
             if(userByPhone){
                 throw new GraphQLError(ERROR_CODES.EC00224.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00224}});
             }
-        }        
+        }
 
+        // Only the user themselves can reset this value by actually enter a new password during 
+        // authentication.
+        user.forcePasswordResetAfterAuthentication = existingUser.forcePasswordResetAfterAuthentication;
+        
         await identityDao.updateUser(user);
 
         changeEventDao.addChangeEvent({
@@ -1181,6 +1185,46 @@ class IdentityService {
             state: preAuthenticationState.state
         }
         return response;
+    }
+
+    protected async validateEmailToken(userId: string, token: string): Promise<ErrorDetail | null> {
+        const user: User | null = await identityDao.getUserByEmailConfirmationToken(token);
+        if(user === null){
+            await identityDao.deleteEmailConfirmationToken(token);            
+            return ERROR_CODES.EC00134;            
+        }
+                
+        if(user.userId !== userId){            
+            return ERROR_CODES.EC00135;
+        }
+
+        // For the one-time token, need to delete it in success case and
+        // update the user profile and this registration state to a status
+        // of complete and set the next state as the return value.
+        await identityDao.deleteEmailConfirmationToken(token);
+        user.emailVerified = true;
+        await identityDao.updateUser(user);
+        // No need to wait on the search index updates
+        searchDao.updateSearchIndexUserDocuments(user);
+        return null;
+    }
+
+    protected async sentEmailValidationToken(user: User, to: string): Promise<void> {
+        const token: string = generateRandomToken(8, "hex").toUpperCase();
+        await identityDao.saveEmailConfirmationToken(user.userId, token);
+        
+        // Send an email to the user with the token value.        
+        let fromEmailAddr: string = "";
+        const systemSettings = await tenantDao.getSystemSettings();
+        if(systemSettings && systemSettings.noReplyEmail){
+            fromEmailAddr = systemSettings.noReplyEmail;
+        }
+        else{
+            fromEmailAddr = "no-reply@" + this.oidcContext.rootTenant.tenantName.toLowerCase().replaceAll(" ", "") + ".com";
+        }
+        const name = user.nameOrder === NAME_ORDER_WESTERN ? `${user.firstName} ${user.lastName}` : `${user.lastName} ${user.firstName}`;
+        const tenantLookAndFeel: TenantLookAndFeel = await tenantDao.getTenantLookAndFeel(this.oidcContext.rootTenant.tenantId) || DEFAULT_TENANT_LOOK_AND_FEEL;
+        oidcServiceUtils.sendEmailVerificationEmail(fromEmailAddr, to, name, token, tenantLookAndFeel, user.preferredLanguageCode || "en", systemSettings.contactEmail || undefined);
     }
 
     protected getPortalAuthenTokenTTLSeconds(): number {
