@@ -191,6 +191,7 @@ class OIDCServiceUtils extends JwtServiceUtils {
 
     
     public async redeemAuthorizationCode(tokenEndpoint: string, code: string, clientId: string, clientSecret: string | null, codeVerifier: string | null, redirectUri: string, scope: string, clientAuthType: string): Promise<OIDCTokenResponse | null> {
+
         const params: URLSearchParams = new URLSearchParams();
         params.set("grant_type", GRANT_TYPE_AUTHORIZATION_CODE);
         params.set("code", code);
@@ -223,6 +224,7 @@ class OIDCServiceUtils extends JwtServiceUtils {
                 }
             }
         );
+
         if(response.status !== 200){
             return null;
         }
@@ -230,6 +232,7 @@ class OIDCServiceUtils extends JwtServiceUtils {
     }
 
     public async getFederatedOIDCUserInfo(userInfoEndpoint: string, authToken: string): Promise<FederatedOIDCUserInfo | null>{
+        
         const response = await axiosInstance.get(
             userInfoEndpoint, {
                 headers: {
@@ -237,10 +240,10 @@ class OIDCServiceUtils extends JwtServiceUtils {
                     "Authorization": `Bearer ${authToken}`
                 }
             }
-        )
+        );        
         if(response.status !== 200){
             return null;
-        }
+        }        
         return response.data as FederatedOIDCUserInfo;
     }
 
