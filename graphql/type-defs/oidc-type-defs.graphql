@@ -279,9 +279,6 @@ type Mutation {
     generateSecretShareLink(objectId: String!, secretShareObjectType: SecretShareObjectType!, email: String!): Boolean!
     enterSecretValue(otp: String!, secretValue: String!): Boolean!
 
-    ## Federated OIDC return handler
-    handleFederatedOIDCProviderReturn(state: String!, code: String!): FederatedOIDCProviderReturnResponse!
-
     ## System initialization
     systemInitializationAuthentication(privateKey: String!, password: String): UserAuthenticationStateResponse!
     initializeSystem(systemInitializationInput: SystemInitializationInput!): SystemInitializationResponse!
@@ -1247,12 +1244,6 @@ type FederatedAuthTest {
     expiresAtMs: Float!
 }
 
-type FederatedOIDCProviderReturnResponse {
-    redirectUri: String!
-    accessToken: String
-    tokenExpiresAtMs: Float
-    authenticationState: AuthenticationState!
-}
 
 ############################################################################
 ################ INPUT TYPES AND RESPONSES FOR MUTATATIONS #################

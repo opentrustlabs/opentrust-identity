@@ -1034,10 +1034,6 @@ const resolvers: Resolvers = {
         createFederatedAuthTest: async(_: any, { clientAuthType, clientId, scope, usePkce, wellKnownUri, clientSecret}, oidcContext) => {
             const service: SystemInitializationService = new SystemInitializationService(oidcContext);
             return service.createFederatedAuthTest(clientId, clientSecret || null, usePkce, scope, wellKnownUri, clientAuthType);
-        },
-        handleFederatedOIDCProviderReturn: async(_: any, { state, code }, oidcContext) => {
-            const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);
-            return service.handleFederatedOIDCProviderReturn(state, code);
         }
     },
     PortalUserProfile: {
