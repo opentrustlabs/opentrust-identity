@@ -34,7 +34,7 @@ type Query {
     getUserRecoveryEmail(userId: String!): UserRecoveryEmail
 
     ## For tenant management and access
-    me: PortalUserProfile
+    me(isMyProfileView: Boolean): PortalUserProfile
     
     ## Keys
     getSigningKeys(tenantId: String): [SigningKey!]!
@@ -173,6 +173,7 @@ type Mutation {
     authenticateValidateSecurityKey(userId: String!, fido2KeyAuthenticationInput: Fido2KeyAuthenticationInput!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
     authenticateValidatePasswordResetToken(token: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
     authenticateAcceptTermsAndConditions(accepted: Boolean!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
+    authenticateVerifyEmailAddress(userId: String!, token: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
     cancelAuthentication(userId: String!, authenticationSessionToken: String!, preAuthToken: String): UserAuthenticationStateResponse!
 
 
@@ -497,6 +498,7 @@ type User {
     enabled: Boolean!
     nameOrder: String!
     markForDelete: Boolean!
+    forcePasswordResetAfterAuthentication: Boolean!
     recoveryEmail: UserRecoveryEmail
 }
 
@@ -900,6 +902,7 @@ enum AuthenticationState {
     POST_AUTHN_STATE_SEND_SECURITY_EVENT_DEVICE_REGISTERED
     ENTER_EMAIL
     ENTER_USER_CODE
+    VALIDATE_EMAIL
 }
 
 type ErrorDetail {

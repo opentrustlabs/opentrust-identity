@@ -1,6 +1,7 @@
 "use client";
-import React, { createContext, ReactNode, useEffect } from "react";
+import React, { createContext, ReactNode, useContext, useEffect } from "react";
 import { AuthSessionProps, useAuthSessionContext } from "./auth-session-context";
+import { AuthContext, AuthContextProps } from "./auth-context";
 
 export interface ProfilePreProcessorProviderProps {
     children: ReactNode
@@ -12,6 +13,7 @@ const ProfilePreProcessorContext = createContext<string>("");
 const ProfilePreProcessorContextProvider: React.FC<ProfilePreProcessorProviderProps> = ({children}) => {
     
     const authSessionProps: AuthSessionProps = useAuthSessionContext();
+    const authContextProps: AuthContextProps = useContext(AuthContext);
     
     // We have only defined ONE value to be placed into the fragment of the URI. If
     // we ever define more than one, then we will need to add a genuine parser
@@ -31,9 +33,10 @@ const ProfilePreProcessorContextProvider: React.FC<ProfilePreProcessorProviderPr
                     authSessionProps.setAuthSessionData(
                         {
                             accessToken: accessToken,
-                            expiresAtMs: Date.now() 
+                            expiresAtMs: Date.now() + (60 * 60 * 1000)
                         }
-                    )
+                    );
+                    authContextProps.forceProfileRefetch();
                 }
             }
         }        

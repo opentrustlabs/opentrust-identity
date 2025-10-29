@@ -132,6 +132,13 @@ const UserEntity = new EntitySchema({
             nullable: false,
             name: "markfordelete",
             transformer: BooleanTransformer
+        },
+        forcePasswordResetAfterAuthentication: {
+            type: getBooleanTypeForDriver(RDB_DIALECT || ""),
+            primary: false,
+            nullable: false,
+            name: "forcepasswordresetafterauthentication",
+            transformer: BooleanTransformer
         }
     }
 });

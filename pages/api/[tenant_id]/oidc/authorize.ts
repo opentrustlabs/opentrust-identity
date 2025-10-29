@@ -22,8 +22,6 @@ export default async function handler(
 	res: NextApiResponse
 ) {
 
-    
-
 	const {
 		tenant_id,
 		client_id,

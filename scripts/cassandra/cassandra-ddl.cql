@@ -188,7 +188,8 @@ create TABLE users (
     locked BOOLEAN,
     enabled BOOLEAN,
     nameorder TEXT,
-    markfordelete BOOLEAN 
+    markfordelete BOOLEAN,
+    forcepasswordresetafterauthentication BOOLEAN
 );
 
 create TABLE users_by_email (

@@ -133,7 +133,8 @@ create TABLE users (
     locked NUMBER(1),
     enabled NUMBER(1) NOT NULL,
     nameorder VARCHAR2(64) NOT NULL,
-    markfordelete NUMBER(1) NOT NULL
+    markfordelete NUMBER(1) NOT NULL,
+    forcepasswordresetafterauthentication NUMBER(1) DEFAULT 0 NOT NULL
 );
 
 CREATE INDEX users_domain_idx on users(domain);

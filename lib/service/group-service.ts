@@ -125,7 +125,7 @@ class GroupService {
         // If the incoming authz group is set to default, but previous it had been set to NOT be the default, then
         // we need to remove all of the authz/group rels after the db and search index have been updated.
         const needToDeleteUserGroupRels: boolean = group.default === true && existingGroup.default === false;
-
+        
         existingGroup.groupName = group.groupName;
         existingGroup.default = group.default;
         existingGroup.groupDescription = group.groupDescription;

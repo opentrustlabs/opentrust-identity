@@ -1133,7 +1133,8 @@ export const USERS_MODEL:  {[key: string]: cassandra.mapping.ModelOptions} = {
 			"nameorder": "nameOrder",
 			"phonenumber": "phoneNumber",
 			"preferredlanguagecode": "preferredLanguageCode",
-			"markfordelete": "markForDelete"
+			"markfordelete": "markForDelete",
+            "forcepasswordresetafterauthentication": "forcePasswordResetAfterAuthentication"
         }
     }
 };
