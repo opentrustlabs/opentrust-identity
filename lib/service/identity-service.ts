@@ -1107,16 +1107,14 @@ class IdentityService {
     public async me(isMyProfileView: boolean | null): Promise<PortalUserProfile | null> {
         
         if(!this.oidcContext.portalUserProfile){
-            //return null;
-            return this.oidcContext.portalUserProfile;
+            return null;
         }
         else if(isMyProfileView === null || isMyProfileView === false){
             if(this.oidcContext.portalUserProfile.principalType === PRINCIPAL_TYPE_IAM_PORTAL_USER || this.oidcContext.portalUserProfile.principalType === PRINCIPAL_TYPE_SERVICE_ACCOUNT_TOKEN){
                 return this.oidcContext.portalUserProfile;
             }
             else{
-                //return null;            
-                return this.oidcContext.portalUserProfile;
+                return null;                            
             }
         }
         else{            
@@ -1124,8 +1122,7 @@ class IdentityService {
                 return this.oidcContext.portalUserProfile;
             }
             else{
-                //return null;
-                return this.oidcContext.portalUserProfile;
+                return null;
             }
         }
     }
