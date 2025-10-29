@@ -110,20 +110,25 @@ export default function RootLayout({
                             <ClipboardCopyContextProvider>
                                 <AuthenSessionContextProvider>
                                     <ApolloProvider client={client}>
-                                        {isProfileLayoutPage &&
+                                        {/* {isProfileLayoutPage &&
                                             <ProfilePreProcessorContextProvider>
                                                 <TenantContextProvider>
                                                     <AuthenticationLayout>{children}</AuthenticationLayout>
                                                 </TenantContextProvider>                                            
                                             </ProfilePreProcessorContextProvider>
-                                        }
-                                        {!isProfileLayoutPage &&
+                                        } */}
+                                        
                                             <AuthContextProvider>
                                                 <TenantContextProvider>
-                                                    {isAuthenticationLayoutPage &&                                                         
+                                                    {isProfileLayoutPage &&
+                                                        <ProfilePreProcessorContextProvider>
+                                                            <AuthenticationLayout>{children}</AuthenticationLayout>
+                                                        </ProfilePreProcessorContextProvider>
+                                                    }
+                                                    {!isProfileLayoutPage && isAuthenticationLayoutPage &&                                                         
                                                         <AuthenticationLayout>{children}</AuthenticationLayout>                                                        
                                                     }
-                                                    {!isAuthenticationLayoutPage &&                                        
+                                                    {!isProfileLayoutPage && !isAuthenticationLayoutPage &&
                                                         <ManagementTenantFilter>
                                                             <ThemeProvider theme={theme}>
                                                                 <ManagementLayout>{children}</ManagementLayout>
@@ -132,7 +137,7 @@ export default function RootLayout({
                                                     }
                                                 </TenantContextProvider>
                                             </AuthContextProvider>
-                                        }
+                                        
                                     </ApolloProvider>
                                 </AuthenSessionContextProvider>
                             </ClipboardCopyContextProvider>

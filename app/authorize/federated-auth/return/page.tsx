@@ -43,7 +43,7 @@ const Session: React.FC = () => {
                 router.push(`/${tenantId}`);
             }                
         }        
-    }, [authSessionProps]);
+    }, [router, authContextProps, authSessionProps]);
 
     
     return (

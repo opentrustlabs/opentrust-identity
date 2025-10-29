@@ -20,7 +20,6 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import MailOutlineOutlinedIcon from '@mui/icons-material/MailOutlineOutlined';
 import DeleteForeverOutlinedIcon from '@mui/icons-material/DeleteForeverOutlined';
 import { DELETE_RECOVERY_EMAIL_MUTATION, FIDO_KEY_DELETION_MUTATION, SWAP_PRIMARY_AND_RECOVERY_EMAIL_MUTATION, TOPT_DELETION_MUTATION, USER_UPDATE_MUTATION } from "@/graphql/mutations/oidc-mutations";
-// import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { containsScope } from "@/utils/authz-utils";
 import EmailEdit, { StateTransition } from "./email-edit";

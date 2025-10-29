@@ -20,7 +20,7 @@ import Kms from "../kms/kms";
 import { RecaptchaResponse } from "../models/recaptcha";
 import SearchDao from "../dao/search-dao";
 import OpenSearchDao from "../dao/impl/search/open-search-dao";
-import { authorizeByScopeAndTenant, containsScope } from "@/utils/authz-utils";
+import { containsScope } from "@/utils/authz-utils";
 
 
 const jwtServiceUtils: JwtServiceUtils = new JwtServiceUtils();
@@ -1208,9 +1208,8 @@ class RegisterUserService extends IdentityService {
             }
         }
 
-
-        let userEnabled = isRegistration ? false : true;
-        let emailVerified = false;
+        const userEnabled = isRegistration ? false : true;
+        const emailVerified = false;
         
         const user: User = {
             domain: domain,

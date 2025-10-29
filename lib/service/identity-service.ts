@@ -1105,15 +1105,18 @@ class IdentityService {
      * 
      */
     public async me(isMyProfileView: boolean | null): Promise<PortalUserProfile | null> {
+        
         if(!this.oidcContext.portalUserProfile){
-            return null;
+            //return null;
+            return this.oidcContext.portalUserProfile;
         }
         else if(isMyProfileView === null || isMyProfileView === false){
             if(this.oidcContext.portalUserProfile.principalType === PRINCIPAL_TYPE_IAM_PORTAL_USER || this.oidcContext.portalUserProfile.principalType === PRINCIPAL_TYPE_SERVICE_ACCOUNT_TOKEN){
                 return this.oidcContext.portalUserProfile;
             }
             else{
-                return null;            
+                //return null;            
+                return this.oidcContext.portalUserProfile;
             }
         }
         else{            
@@ -1121,7 +1124,8 @@ class IdentityService {
                 return this.oidcContext.portalUserProfile;
             }
             else{
-                return null;
+                //return null;
+                return this.oidcContext.portalUserProfile;
             }
         }
     }
@@ -1130,7 +1134,7 @@ class IdentityService {
 
         const state: string = generateRandomToken(32, "hex");
         const federatedOIDCAuthorizationRel: FederatedOidcAuthorizationRel = {
-            federatedOIDCAuthorizationRelType: FederatedOidcAuthorizationRelType.AuthorizationRelTypePortalAuth,
+            federatedOIDCAuthorizationRelType: preAuthenticationState ? FederatedOidcAuthorizationRelType.AuthorizationRelTypeClientAuth : FederatedOidcAuthorizationRelType.AuthorizationRelTypePortalAuth,
             email: email,
             userId: userId,
             expiresAtMs: Date.now() + 15 /* minutes */ * 60 /* seconds/min  */ * 1000 /* ms/sec */,
