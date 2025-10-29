@@ -325,7 +325,7 @@ class JwtServiceUtils {
                 enabled: true,
                 firstName: principal.given_name,
                 lastName: principal.family_name,
-                locked: false,
+                locked: user.locked,
                 nameOrder: user.nameOrder,
                 scope: arrScope,
                 tenantId: principal.tenant_id,
