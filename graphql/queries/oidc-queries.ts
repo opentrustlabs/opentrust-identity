@@ -107,8 +107,8 @@ export const LOGIN_USERNAME_HANDLER_QUERY = gql(`
 `);
 
 export const ME_QUERY = gql(`
-    query me {
-        me {
+    query me($isMyProfileView: Boolean) {
+        me (isMyProfileView: $isMyProfileView) {
             userId
             federatedOIDCProviderSubjectId
             email

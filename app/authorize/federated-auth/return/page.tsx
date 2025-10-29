@@ -1,6 +1,7 @@
 "use client";
 import { AuthContext, AuthContextProps } from "@/components/contexts/auth-context";
 import { AuthSessionProps, useAuthSessionContext } from "@/components/contexts/auth-session-context";
+import { HASH_PARAM_AUTH_TOKEN, HASH_PARAM_TENANT_ID, HASH_PARAM_TOKEN_TTL } from "@/utils/consts";
 import { useRouter } from "next/navigation";
 import React, { useContext, useEffect } from "react";
 
@@ -17,28 +18,32 @@ const Session: React.FC = () => {
     //      HASH_PARAM_AUTH_TOKEN
     useEffect(() => {        
         if(typeof window !== "undefined"){
-            const authHashKVPair = window.location.hash;
-            const kvPairs = authHashKVPair.split("&");
-            if(kvPairs.length === 2){
-                const accessToken = kvPairs[0].split("=")[1];
-                const ttlMs = kvPairs[1].split("=")[1];
-            
-                if(accessToken){
-                    // No need to parse the token to determine the expiration. If the token
-                    // is not valid, then all of the upstream GraphQL queries and mutations
-                    // will fail.
-                    authSessionProps.setAuthSessionData(
-                        {
-                            accessToken: accessToken,
-                            expiresAtMs: Date.now() + parseInt(ttlMs)
-                        }
-                    );
-                    authContextProps.forceProfileRefetch();
-                }
+            let hashParams = window.location.hash;
+            if(hashParams.length > 0){
+                hashParams = hashParams.substring(1);
             }
-            router.push("/");
+            const searchParams: URLSearchParams = new URLSearchParams(hashParams);
+            const accessToken = searchParams.get(HASH_PARAM_AUTH_TOKEN);
+            const tokenTtl = searchParams.get(HASH_PARAM_TOKEN_TTL);
+            const tenantId = searchParams.get(HASH_PARAM_TENANT_ID);            
+            if(!accessToken || !tokenTtl || !tenantId){
+                router.push(`/access-error?access_error_code=00076&extended_message=${"Invalid authentication parameters were supplied."}`);
+            }
+            else{
+                // No need to parse the token to determine the expiration. If the token
+                // is not valid, then all of the upstream GraphQL queries and mutations
+                // will fail.
+                authSessionProps.setAuthSessionData(
+                    {
+                        accessToken: accessToken,
+                        expiresAtMs: Date.now() + parseInt(tokenTtl)
+                    }
+                );
+                authContextProps.forceProfileRefetch();
+                router.push(`/${tenantId}`);
+            }                
         }        
-    }, [authSessionProps]);
+    }, [router, authContextProps, authSessionProps]);
 
     
     return (

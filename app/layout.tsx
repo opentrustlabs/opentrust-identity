@@ -16,7 +16,7 @@ import { createTheme } from '@mui/material/styles';
 import { ThemeProvider } from '@mui/material/styles';
 import { ClipboardCopyContextProvider } from "@/components/contexts/clipboard-copy-context";
 import { AuthenSessionContextProvider } from "@/components/contexts/auth-session-context";
-//import ProfilePreProcessorContextProvider from "@/components/contexts/my-profile-preprocessor";
+import ProfilePreProcessorContextProvider from "@/components/contexts/my-profile-preprocessor";
 import { InternationalizationContextProvider } from "@/components/contexts/internationalization-context";
 
 
@@ -103,7 +103,7 @@ export default function RootLayout({
 
     return (
         <html lang="en">
-            <body suppressHydrationWarning className={`${geistSans.variable} ${geistMono.variable}`}>                
+            <body suppressHydrationWarning className={`${geistSans.variable} ${geistMono.variable}`}>
                 <ResponsiveContextProvider>
                     <InternationalizationContextProvider>
                         <PageTitleContextProvider>
@@ -117,13 +117,18 @@ export default function RootLayout({
                                                 </TenantContextProvider>                                            
                                             </ProfilePreProcessorContextProvider>
                                         } */}
-                                        {!isProfileLayoutPage &&
+                                        
                                             <AuthContextProvider>
                                                 <TenantContextProvider>
-                                                    {isAuthenticationLayoutPage &&                                                         
+                                                    {isProfileLayoutPage &&
+                                                        <ProfilePreProcessorContextProvider>
+                                                            <AuthenticationLayout>{children}</AuthenticationLayout>
+                                                        </ProfilePreProcessorContextProvider>
+                                                    }
+                                                    {!isProfileLayoutPage && isAuthenticationLayoutPage &&                                                         
                                                         <AuthenticationLayout>{children}</AuthenticationLayout>                                                        
                                                     }
-                                                    {!isAuthenticationLayoutPage &&                                        
+                                                    {!isProfileLayoutPage && !isAuthenticationLayoutPage &&
                                                         <ManagementTenantFilter>
                                                             <ThemeProvider theme={theme}>
                                                                 <ManagementLayout>{children}</ManagementLayout>
@@ -132,7 +137,7 @@ export default function RootLayout({
                                                     }
                                                 </TenantContextProvider>
                                             </AuthContextProvider>
-                                        }
+                                        
                                     </ApolloProvider>
                                 </AuthenSessionContextProvider>
                             </ClipboardCopyContextProvider>

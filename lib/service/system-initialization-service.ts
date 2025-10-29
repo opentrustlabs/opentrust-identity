@@ -291,7 +291,8 @@ class SystemInitializationService {
             preferredLanguageCode: systemInitializationInput.rootUserCreateInput.preferredLanguageCode,
             countryCode: systemInitializationInput.rootUserCreateInput.countryCode,
             middleName: systemInitializationInput.rootUserCreateInput.middleName,
-            phoneNumber: systemInitializationInput.rootUserCreateInput.phoneNumber
+            phoneNumber: systemInitializationInput.rootUserCreateInput.phoneNumber,
+            forcePasswordResetAfterAuthentication: false
         };
         
         await identityDao.createUser(user);        

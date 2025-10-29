@@ -23,8 +23,9 @@ import SystemInitializationService from "@/lib/service/system-initialization-ser
 
 const resolvers: Resolvers = {
     Query: {
-        me: (_, __, oidcContext) => {            
-            return oidcContext.portalUserProfile;
+        me: (_, { isMyProfileView }, oidcContext) => {            
+            const identityService: IdentityService = new IdentityService(oidcContext);
+            return identityService.me(isMyProfileView || null);            
         },
         getUserById: (_, { userId }, oidcContext) => {
             const identityService: IdentityService = new IdentityService(oidcContext);
@@ -777,7 +778,8 @@ const resolvers: Resolvers = {
                 postalCode: userInput.postalCode,
                 preferredLanguageCode: userInput.preferredLanguageCode,
                 stateRegionProvince: userInput.stateRegionProvince,
-                markForDelete: false
+                markForDelete: false,
+                forcePasswordResetAfterAuthentication: false
             }
             await service.updateUser(user);
             return user;
@@ -911,6 +913,10 @@ const resolvers: Resolvers = {
         authenticateValidatePasswordResetToken: async(_: any, { token, authenticationSessionToken, preAuthToken }, oidcContext) => {
             const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);
             return service.authenticateValidatePasswordResetToken(token, authenticationSessionToken, preAuthToken || null);
+        },
+        authenticateVerifyEmailAddress: async(_: any, { userId, token, authenticationSessionToken, preAuthToken}, oidcContext) => {
+            const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);
+            return service.authenticateVerifyEmailAddress(userId, token, authenticationSessionToken, preAuthToken || null);
         },
         cancelAuthentication: async(_: any, { authenticationSessionToken, preAuthToken}, oidcContext) => {
             const service: AuthenticateUserService = new AuthenticateUserService(oidcContext);

@@ -131,7 +131,8 @@ create TABLE users (
     locked BIT,
     enabled BIT NOT NULL,
     nameorder VARCHAR(64) NOT NULL,
-    markfordelete BIT NOT NULL
+    markfordelete BIT NOT NULL,
+    forcepasswordresetafterauthentication BIT NOT NULL DEFAULT 0
 );
 
 CREATE INDEX users_email_idx on users(email);

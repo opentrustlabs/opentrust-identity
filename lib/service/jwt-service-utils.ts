@@ -317,7 +317,7 @@ class JwtServiceUtils {
             if(user === null || user.enabled === false || user.markForDelete === true){
                 return null;
             }
-            const arrScope: Array<Scope> = principal.principal_type === PRINCIPAL_TYPE_IAM_PORTAL_USER ? await this.getScopes(user.userId, principal.tenant_id) : [];
+            const arrScope: Array<Scope> = await this.getScopes(user.userId, principal.tenant_id);
             profile = {
                 domain: getDomainFromEmail(principal.email),
                 email: principal.email,
@@ -325,7 +325,7 @@ class JwtServiceUtils {
                 enabled: true,
                 firstName: principal.given_name,
                 lastName: principal.family_name,
-                locked: false,
+                locked: user.locked,
                 nameOrder: user.nameOrder,
                 scope: arrScope,
                 tenantId: principal.tenant_id,
@@ -333,7 +333,7 @@ class JwtServiceUtils {
                 userId: principal.sub,
                 countryCode: principal.country_code,
                 preferredLanguageCode: principal.language_code,
-                managementAccessTenantId: principal.tenant_id,
+                managementAccessTenantId: principal.principal_type === PRINCIPAL_TYPE_IAM_PORTAL_USER ? principal.tenant_id : null,
                 principalType: principal.principal_type,
                 expiresAtMs: principal.exp * 1000,
                 address: user.address,

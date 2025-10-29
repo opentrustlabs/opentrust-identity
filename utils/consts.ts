@@ -897,6 +897,8 @@ export const QUERY_PARAM_SECRET_ENTRY_OTP="_seotp";
 export const QUERY_PARAM_ERROR="error";
 export const QUERY_PARAM_ERROR_DESCRIPTION="error_description";
 export const HASH_PARAM_AUTH_TOKEN="_atk";
+export const HASH_PARAM_TOKEN_TTL="_ttl";
+export const HASH_PARAM_TENANT_ID="_tid";
 
 
 export const AUTHORIZATION_LAYOUT_PAGES = [

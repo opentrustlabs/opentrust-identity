@@ -152,7 +152,8 @@ export default async function handler(
         federatedOIDCProviderSubjectId: "",
         middleName: "",
         phoneNumber: "",
-        postalCode: ""
+        postalCode: "",
+        forcePasswordResetAfterAuthentication: false
     };
 
     const client: Client | null = await clientDao.getClientById(profile.userId);
