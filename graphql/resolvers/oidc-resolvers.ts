@@ -23,8 +23,9 @@ import SystemInitializationService from "@/lib/service/system-initialization-ser
 
 const resolvers: Resolvers = {
     Query: {
-        me: (_, __, oidcContext) => {            
-            return oidcContext.portalUserProfile;
+        me: (_, { isMyProfileView }, oidcContext) => {            
+            const identityService: IdentityService = new IdentityService(oidcContext);
+            return identityService.me(isMyProfileView || null);            
         },
         getUserById: (_, { userId }, oidcContext) => {
             const identityService: IdentityService = new IdentityService(oidcContext);

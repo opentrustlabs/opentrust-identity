@@ -317,7 +317,7 @@ class JwtServiceUtils {
             if(user === null || user.enabled === false || user.markForDelete === true){
                 return null;
             }
-            const arrScope: Array<Scope> = principal.principal_type === PRINCIPAL_TYPE_IAM_PORTAL_USER ? await this.getScopes(user.userId, principal.tenant_id) : [];
+            const arrScope: Array<Scope> = await this.getScopes(user.userId, principal.tenant_id);
             profile = {
                 domain: getDomainFromEmail(principal.email),
                 email: principal.email,
