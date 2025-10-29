@@ -12,7 +12,7 @@ import { OIDCTokenResponse } from '@/lib/models/token-response';
 import { WellknownConfig } from '@/lib/models/wellknown-config';
 import JwtServiceUtils from '@/lib/service/jwt-service-utils';
 import OIDCServiceUtils from '@/lib/service/oidc-service-utils';
-import { DEFAULT_PORTAL_AUTH_TOKEN_TTL_HOURS, FEDERATED_AUTH_TEST_STATE_PARAM_PREFIX, FEDERATED_OIDC_PROVIDER_RETURN_URI_PATH, NAME_ORDER_WESTERN, PRINCIPAL_TYPE_IAM_PORTAL_USER, USER_TENANT_REL_TYPE_GUEST, USER_TENANT_REL_TYPE_PRIMARY } from '@/utils/consts';
+import { DEFAULT_PORTAL_AUTH_TOKEN_TTL_HOURS, FEDERATED_AUTH_TEST_STATE_PARAM_PREFIX, FEDERATED_OIDC_PROVIDER_RETURN_URI_PATH, HASH_PARAM_AUTH_TOKEN, HASH_PARAM_TENANT_ID, HASH_PARAM_TOKEN_TTL, NAME_ORDER_WESTERN, PRINCIPAL_TYPE_IAM_PORTAL_USER, USER_TENANT_REL_TYPE_GUEST, USER_TENANT_REL_TYPE_PRIMARY } from '@/utils/consts';
 import { generateRandomToken, getDomainFromEmail } from '@/utils/dao-utils';
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { randomUUID } from 'node:crypto';
@@ -303,7 +303,7 @@ async function handleFederatedAuth(state: string, code: string, res: NextApiResp
         else{
             const ttlSeconds = PORTAL_AUTH_TOKEN_TTL_HOURS ? parseInt(PORTAL_AUTH_TOKEN_TTL_HOURS) * 60 * 60 : DEFAULT_PORTAL_AUTH_TOKEN_TTL_HOURS * 60 * 60;
             const result = await jwtServiceUtils.signIAMPortalUserJwt(canonicalUser, tenant, ttlSeconds, PRINCIPAL_TYPE_IAM_PORTAL_USER)
-            res.status(302).setHeader("location", `/authorize/federated-auth/return#access_token=${result?.accessToken}&token_ttl_ms=${ttlSeconds * 1000}`);
+            res.status(302).setHeader("location", `/authorize/federated-auth/return#${HASH_PARAM_AUTH_TOKEN}=${result?.accessToken}&${HASH_PARAM_TOKEN_TTL}=${ttlSeconds * 1000}&${HASH_PARAM_TENANT_ID}=${tenant.tenantId}`);
         }
     }
     else{

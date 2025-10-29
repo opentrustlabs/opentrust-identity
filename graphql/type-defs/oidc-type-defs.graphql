@@ -34,7 +34,7 @@ type Query {
     getUserRecoveryEmail(userId: String!): UserRecoveryEmail
 
     ## For tenant management and access
-    me: PortalUserProfile
+    me(isMyProfileView: Boolean): PortalUserProfile
     
     ## Keys
     getSigningKeys(tenantId: String): [SigningKey!]!
