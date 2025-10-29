@@ -414,7 +414,7 @@ const MyProfile: React.FC = () => {
                         <React.Fragment>                            
                             {profileIs3rdPartyControlled &&
                                 <Alert severity="info">
-                                    Your profile is managed through a 3rd party identity provider. You can only make limited changes
+                                    Your profile is managed through a 3rd party identity provider. You cannot make changes
                                     to your profile on this page.
                                 </Alert>
                             }
@@ -550,7 +550,7 @@ const MyProfile: React.FC = () => {
                                             }
                                         </Grid2>
                                     </Grid2>
-                                    {!recoveryEmail && tenantBean.getTenantMetaData().systemSettings.allowRecoveryEmail === true &&
+                                    {!recoveryEmail && tenantBean.getTenantMetaData().systemSettings.allowRecoveryEmail === true && !profileIs3rdPartyControlled &&
                                         <Grid2 marginTop={"24px"} marginBottom={"24px"} container spacing={1}>
                                             <Grid2  size={11}>
                                                 <span style={{backgroundColor: "#1976d2", color: "white", padding: "5px 16px", borderRadius: "16px" }}>

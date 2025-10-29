@@ -333,7 +333,7 @@ class JwtServiceUtils {
                 userId: principal.sub,
                 countryCode: principal.country_code,
                 preferredLanguageCode: principal.language_code,
-                managementAccessTenantId: principal.tenant_id,
+                managementAccessTenantId: principal.principal_type === PRINCIPAL_TYPE_IAM_PORTAL_USER ? principal.tenant_id : null,
                 principalType: principal.principal_type,
                 expiresAtMs: principal.exp * 1000,
                 address: user.address,
