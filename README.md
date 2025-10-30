@@ -2,9 +2,11 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Introduction
 
-This is an IAM tool that implements the OIDC specification. It also contains features for managing tenants, clients,
+OpenTrust Identity is an IAM tool that implements the OIDC specification. It also contains features for managing tenants, clients,
 asymmetric keys, authorization groups, authentication groups, rate limits (aka throttling), federating with 3rd party
-OIDC providers such as Azure AD (or Entra ID as it is now known) or Okta, and access control.
+OIDC providers such as Azure AD (or Entra ID as it is now known) or Okta, and access control. It supports
+multi-factor authentication using time-based one-time-passwords and hardware security keys such as Yubikey or Titan
+or any key which supports the FIDO2 standard.
 
 Most open source IAM tools only support relational databases, and among those, frequently only
 the open source databases. This makes it difficult, if not impossible, for many organizations to adopt
@@ -26,8 +28,10 @@ Support for Mongo, Aurora, Spanner, and Cockroach is part of future development 
 ### The software stack
 
 Node v20 or higher
+
 Opensearch v3.x
-Your choice of data stores:
+
+Your choice of databases:
 - Oracle (developed on v23 but other versions should work)
 - MSSQL 
 - MySQL
@@ -83,8 +87,9 @@ Future development of this tool will include support for the following KMSs
 ##### 3. Security Event Callback Service
 
 The first question is: What is a security event? Technically, it is broad category of events, which could include
-breaches of security, access control denied, or any type of anomaly that you might want to take action on. For the
-purposes of this IAM tool, security events are the following:
+breaches of security, access control denied, or any type of anomaly that you might want to take action on (such
+as user who normally logs in from Chicago suddenly logging in from Moscow). For the purposes of this 
+IAM tool, security events are the following:
 
 - User has registered (`user_registered`)
 - User account is locked due to too many failed login attempts  (`account_locked`)
@@ -112,16 +117,42 @@ not mean that the event will actionable in real time. The logged data may take t
 filesystem to Kibana or Splunk (or some other tool) and to show up on a dashboard which may (or more
 likely, will not) be monitored on a continuous basis. 
 
-There is curently, at the time of writing in October 2025, a working group that is developing a framework
-for handling security events. It is called "OpenID Shared Signals", and is not yet ratified.
+If you decide that you need to take real-time action on certain security events, then you will need to 
+develop a service which will listen for these events and relay them to the appropriate parties.
 
+There is curently, at the time of writing in October 2025, a working group that has developed a framework
+for handling security events. It is called "OpenID Shared Signals". The framework has been approved and
+the specification is here:
 
+https://openid.net/specs/openid-sharedsignals-framework-1_0.html
+
+__However__, there are a number of security events which this tool emits and which the framework does NOT yet support.
+These include viewing secret values or logging in using a duress password, both of which might trigger external
+actions. For that reason, this tool does support the "Shared Signals" framework. If future work on the "Shared
+Signals" framework includes greater customization of security events, then this decision will be revisited.
 
 This tool has a simple implementation of the security event handler which you can use if you are developing on localhost.
 Set the envrironment variable as follows:
 
 ```bash
 SECURITY_EVENT_CALLBACK_URI=http://localhost:3000/api/security-events/handler
+```
+
+##### 4. SMS Service Wrapper
+
+This tool does not yet support SMS (for features such as verifying phone numbers or sending one-time passcodes for
+password reset), although it is on the roadmap. The issue with SMS is the great variety of SMS providers,
+each with its own API and authorization. This tool will not support any particular provider, but if an SMS 
+provider is available in your organization, and you want to enable SMS in this tool when the feature is
+ready, then you will need to write a wrapper service around your SMS provider. 
+
+The payload for the SMS service can be found in the file `/lib/models/sms.ts`.
+
+This tool has a simple implementation of the SMS handler which you can use if you are developing on localhost.
+Set the environment variable as follows:
+
+```bash
+SMS_SERVICE_WRAPPER_URI=http://localhost:3000/api/sms-service/handler
 ```
 
 
@@ -164,7 +195,7 @@ For the `iam_object_search` index
 
 with the contents of the file at `/scripts/object-search-ddl.json`
 
-To create an alias
+To create or remove an alias:
 
 ```JSON
 POST _aliases
@@ -204,6 +235,8 @@ For the `iam_rel_search` index:
 (or better:  `PUT   /iam_rel_search_MM_DD_YYYY` )
 
 with the contents of the file at `/scripts/rel-search-ddl.json`
+
+To create or remove an alias:
 
 ```JSON
 POST _aliases
