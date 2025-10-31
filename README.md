@@ -2,10 +2,11 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Introduction
 
-OpenTrust Identity is an IAM tool that implements the OIDC specification. It also contains features for managing tenants, clients,
-asymmetric keys, authorization groups, authentication groups, rate limits (aka throttling), federating with 3rd party
-OIDC providers such as Azure AD (or Entra ID as it is now known) or Okta, and access control. It supports
-multi-factor authentication using time-based one-time-passwords and hardware security keys such as Yubikey or Titan
+OpenTrust Identity is an IAM tool that implements the OIDC specification. It also contains features 
+for managing tenants, clients, asymmetric keys, authorization groups, authentication groups, 
+rate limits (aka throttling), federating with 3rd party OIDC providers such as Azure AD (or Entra ID 
+as it is now known) or Okta, and access control. It supports multi-factor authentication using 
+time-based one-time-passwords and hardware security keys such as Yubikey or Titan
 or any key which supports the FIDO2 standard.
 
 Most open source IAM tools only support relational databases, and among those, frequently only
@@ -24,8 +25,57 @@ This tool is designed to support a variety of backend data stores, both SQL and 
 
 Support for Mongo, Aurora, Spanner, and Cockroach is part of the future development of this tool.
 
+#### Protocols Supported
 
-### The software stack
+This IAM tool ONLY supports OIDC. It does not support plain OAuth2 for federated authentication
+or SAML 2.0. 
+
+For plain OAuth2 and federated authentication, there is no guarantee of a user profile 
+endpoint, keys for validation of tokens, ability to revoke a token or any other type of information
+that available with an OIDC provider with their well-known meta-data endpoint, and implementations
+of the OAuth2 protocol can vary widely.
+
+For SAML 2.0, there are 2 limiting factors. The first is that the information interchange language is
+XML (and if this was 2006 that would be fine - we would all be doing SOAP with XML). The second 
+is that you must manually manage the certificates that are used to verfiy SAML tokens. Admittedly,
+some SAML providers may provide a service to retrieve certificates dynamically, but this is not
+part of the specification and cannot be guaranteed.
+
+
+#### Audience for this tool
+
+Most organizations already have some kind of enterprise IdP or IAM. These tools are typically large, complex,
+scalable, robust, full-featured, and __expensive__. They are designed with the enterprise in 
+mind - that is, access to your organization email, internal networks, internal applications 
+and systems - but are less suited to the development of customer-facing applications (either
+B2C or B2B). 
+
+For small-to-medium-sized organizations, which do not have a large, dedicated development
+and administrative staff, and which do not want to re-invent identity and access management, this 
+tool may prove to be useful. The reason is because development philosophies have changed
+over the last decade or so. It is no longer an acceptable practice to just write a bunch
+of web pages backed by a data store or a search engine and then call it a day. 
+
+There has been a considerable push for API-First development. Whether that API is RESTful,
+GraphQL, JSON/RCP, or something else, is entirely up the system architects and designers
+(and, to a lesser extent, whatever is fashionable lately). But with an API-First design, 
+it removes the burden from the development team of having to develop every single application,
+and spreads it around to whoever has the time and money to do that development. And
+those teams can be both inside and outside the organization.
+
+Then the problem of access control becomes paramount. Exposing your APIs to 3rd parties means
+having strict controls over who can do what:
+
+- What API services are in scope for the client.
+- Can the client invoke the service on behalf of itself or only on behalf of delegated users.
+- Are the client and delegated users rate-limted in the number of service calls they can make.
+- Is there a restricted list of users who are allowed to authenticate using the client.
+- For abusive clients and users, can their sessions be revoked and their accounts disabled easily.
+
+This IAM tool provides those features, in addition to other common IAM functions. 
+
+
+#### The software stack
 
 Node v20 or higher
 
@@ -33,9 +83,9 @@ Opensearch v3.x
 
 Your choice of databases:
 - Oracle (developed on v23 but other versions should work)
-- MSSQL 
-- MySQL
-- PostgreSQL
+- MSSQL (developed on Microsoft SQL Server 2022 (RTM) - 16.0.1000.6)
+- MySQL (developed on v8.0.43)
+- PostgreSQL (developed on v16.10)
 - Cassandra v5.x
 
 
@@ -67,7 +117,7 @@ Currently, this tool supports the following configuration for KMS:
 - custom
 
 Use `none` for local development or for cases where you have column-level encryption available in your database (such
-as TDE with Oracle).
+as Oracle with TDE).
 
 Use `filesystem` for local development ONLY. Using it any other environment is absolutely NOT recommended. See the file
 at `/lib/kms/fs-based-kms.ts` for details about what the contents of the key file should be.
@@ -86,7 +136,7 @@ Future development of this tool will include support for the following KMSs
 
 ##### 3. Security Event Callback Service
 
-First, a question: What is a security event? Technically, it is broad category of events, which could include
+First: What is a security event? Technically, it is broad category of events, which could include
 breaches of security, access control denied, or any type of anomaly that you might want to take action on (such
 as user who normally logs in from Chicago suddenly logging in from Moscow). For the purposes of this 
 IAM tool, security events are the following:
@@ -106,7 +156,7 @@ IAM tool, security events are the following:
 - A user has viewed a private key (`private_key_viewed`)
 - A user has viewed the password for an encrypted private key (`private_key_password_viewed`)
 - A user has viewed the ReCaptcha API key (`recaptcha_api_key_viewed`)
-- A user has benerated a link for allowing an external user to set the client secret for a federated OIDC provider (`secret_share_link_generated`)
+- A user has generated a link for allowing an external user to set the client secret for a federated OIDC provider (`secret_share_link_generated`)
 
 These are all defined in the file: `/lib/models/security-events.ts`
 
@@ -126,7 +176,7 @@ the specification is here:
 
 https://openid.net/specs/openid-sharedsignals-framework-1_0.html
 
-__However__, there are a number of security events which this tool emits and which the framework does NOT yet support.
+__However__, there are a number of security events which this IAM tool emits and which the framework does NOT yet support.
 These include viewing secret values or logging in using a duress password, both of which might trigger external
 actions. For that reason, this tool does support the "Shared Signals" framework. If future work on the "Shared
 Signals" framework includes greater customization of security events, then this decision will be revisited.
@@ -142,7 +192,7 @@ SECURITY_EVENT_CALLBACK_URI=http://localhost:3000/api/security-events/handler
 
 This tool does not yet support SMS (for features such as verifying phone numbers or sending one-time passcodes for
 password reset), although it is on the roadmap. The issue with SMS is the great variety of SMS providers,
-each with its own API and authorization. This tool will not support any particular provider, but if an SMS 
+each with its own API and authorization. This tool is not intended support any particular provider, but if an SMS 
 provider is available in your organization, and you want to enable SMS in this tool when the feature is
 ready, then you will need to write a wrapper service around your SMS provider. 
 
@@ -179,7 +229,7 @@ The JSON payloads for the 2 Opensearch indexes are under `/scripts/search`
 !!!!!!!!!!!!!  IMPORTANT  !!!!!!!!!!!!!!!!!!
 
 The first important thing to note about Opensearch is that is has quite a few strict rules about
-who can create indexes or create aliases on indexes, and who is allow to create, read, update, and
+who can create indexes or create aliases on indexes, and who is allowed to create, read, update, and
 delete data from those indexes. While it is outside the scope of this tool, you want to make 
 sure you configure users who have the appropriate permissions for their use.
 
@@ -313,8 +363,8 @@ And if you are running a PCI compliant application, then "Requirement 2" contain
 > and other vendor default settings to compromise systems. These passwords and settings 
 > are well known and are easily determined via public information.
 
-So one obvious solution, then, is not to include any default credentials. But that means that we need another way to 
-identify a user who can initialize the system. One way to do that is via asymmetric keys. The identifier is in
+So one obvious solution, then, is NOT to include any default credentials. But that means that we need another way to 
+identify a user who can initialize the system. One way to do that is via asymmetric keys. The identifier is in a
 public certificate, while the private key remains in the possession of the person who is performing the initialization. 
 
 At a high level, a certificate is deployed on the server(s) along with a flag indicating that the system
@@ -335,7 +385,7 @@ The `SYSTEM_INIT_CERTIFICATE_FILE` should contain the certificate that matches t
 by the person performing the initialization.
 
 If your system is already initialized, the `SYSTEM_INIT` variable can be omitted or set to false. If omitted
-or set to false, the `SYSTEM_INIT_CERTIFICATE_FILE` variable is ignored.
+or set to false or the system is already initialized, the `SYSTEM_INIT_CERTIFICATE_FILE` variable is ignored.
 
 The certificate does not need to be signed by a CA - it can be a self-signed certificate. The important thing
 is that the private key remains only in the possession of the person performing initialization. If you 
@@ -343,7 +393,7 @@ do not have a local CA, you can generate a self-signed certificate using OpenSSL
 command:
 
 ```bash
-openssl req -x509 -newkey rsa:2048 -nodes -keyout initialization.key -out initialization.crt -days 365
+openssl req -x509 -newkey rsa:2048 -nodes -keyout initialization.key -out initialization.crt -days 2
 ```
 
 To start initialization, open your browser to:
@@ -357,12 +407,12 @@ several checks:
 - Is there already a Root Tenant
 - Is the search engine reachable and are the indexes available
 - Is a KMS strategy defined
-- Is the auth domain and are the MFA variables defined
-- Is there a SMTP server defined
+- Is the auth domain defined and are the MFA variables defined
+- Is there an SMTP server defined
 - Is there a security event callback URI defined
 
-If you are missing the last 2 of these, the system will generate warnings, but allow you proceed. If the others
-fail their checks then the system cannot be initialized.
+If you are missing the last 2 of these, the system will generate warnings, but allow you proceed. If the other
+checks fail then the system cannot be initialized.
 
 You will configure, in order:
 
@@ -393,7 +443,4 @@ A member of the Root Tenant is in a privileged position relative to the other te
 tenant is restricted to data within their tenant and the IAM management scope to which they are 
 assigned. However, a member of the Root Tenant is only restricted by the IAM management scope to 
 which they are assigned, which is applied to ALL tenants. 
-
-
-## Audience for this tool
 
