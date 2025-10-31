@@ -22,7 +22,7 @@ This tool is designed to support a variety of backend data stores, both SQL and 
 - PostgreSQL
 - Cassandra
 
-Support for Mongo, Aurora, Spanner, and Cockroach is part of future development of this tool.
+Support for Mongo, Aurora, Spanner, and Cockroach is part of the future development of this tool.
 
 
 ### The software stack
@@ -76,7 +76,7 @@ Use `custom` if you have some kind of vault for secret values (and you do not ha
 At the moment, this tool does not support specific vaults such as HashiCorp. For the custom implementation, 
 you will need to create 2 HTTP endpoints which will be used to encrypt and decrypt the data. These endpoints will essentially
 be wrappers around whatever vault you are using. The details on the payload and responses for encryption 
-and decryption are in the file `/lib/kms/custom-kms.ts`.  The 
+and decryption are in the file `/lib/kms/custom-kms.ts`. 
 
 Future development of this tool will include support for the following KMSs
 - AWS
@@ -86,7 +86,7 @@ Future development of this tool will include support for the following KMSs
 
 ##### 3. Security Event Callback Service
 
-The first question is: What is a security event? Technically, it is broad category of events, which could include
+First, a question: What is a security event? Technically, it is broad category of events, which could include
 breaches of security, access control denied, or any type of anomaly that you might want to take action on (such
 as user who normally logs in from Chicago suddenly logging in from Moscow). For the purposes of this 
 IAM tool, security events are the following:
@@ -195,7 +195,7 @@ For the `iam_object_search` index
 
 with the contents of the file at `/scripts/object-search-ddl.json`
 
-To create or remove an alias:
+To create an alias:
 
 ```JSON
 POST _aliases
@@ -267,6 +267,14 @@ POST _aliases
 }
 ```
 
+##### 4. Configure the .env file
+
+You will need to configure your .env file for local or development or deployment. There is an example file `env.example` at the root of 
+this project. Please read it carefully since it contains several caveats about using mTLS and proxy configuration for
+outbound HTTP and SMTP calls. 
+
+
+##### 5. Start the server
 
 ```bash
 npm run dev
@@ -278,22 +286,114 @@ pnpm dev
 bun dev
 ```
 
-You will need to configure your .env file for local testing or development. There is an example file `env.example` at the root of 
-this project. 
+##### 6. Initialize the IAM tool with the Root Tenant and all ancillary data.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+There is only one way to initialize the IAM tool, regardless if you are on a local development machine or deploying to 
+a higher environment, and it does NOT involve default credentials of admin/admin. With over 30 years of PKI we can do better. 
 
+While the process that will be described for initialization may seem a little convoluted, from a security standpoint there 
+is actually a reasonably good explanation for it. We can start with the OWASP Top 10. Here is what it has to say:
 
+> Default credentials preconfigured on hardware devices or software applications by manufacturers or 
+> vendors are often left unchanged by users or administrators, creating a security vulnerability.
 
+(Source here: https://owasp.org/www-project-top-10-infrastructure-security-risks/docs/2024/ISR07_2024-Insecure_Authentication_Methods_and_Default_Credentials)
 
+The CWE has something similar to say (source here: https://cwe.mitre.org/data/definitions/1392.html)
 
-##### One-liner for the initialization process. This will generate a private key and certificate for use in initializaing the IdP
+> It is common practice for products to be designed to use default keys, passwords, or 
+> other mechanisms for authentication. The rationale is to simplify the manufacturing process 
+> or the system administrator's task of installation and deployment into an enterprise. 
+> However, if admins do not change the defaults, it is easier for attackers to bypass 
+> authentication quickly across multiple organizations.
+
+And if you are running a PCI compliant application, then "Requirement 2" contains this statement:
+
+> Malicious individuals, both external and internal to an entity, often use default passwords 
+> and other vendor default settings to compromise systems. These passwords and settings 
+> are well known and are easily determined via public information.
+
+So one obvious solution, then, is not to include any default credentials. But that means that we need another way to 
+identify a user who can initialize the system. One way to do that is via asymmetric keys. The identifier is in
+public certificate, while the private key remains in the possession of the person who is performing the initialization. 
+
+At a high level, a certificate is deployed on the server(s) along with a flag indicating that the system
+should be initialized. The person who is performing the initialization will upload their private key,
+which will be used to sign a JWT. That JWT will be verified by the certificate. Only 1 person has the key,
+the admin team (or devops team), which should NOT include the person performing initialization,
+has access to the server configuration. Once initialization is complete, it cannot be re-performed, unless
+all of the data is truncated from the database and the property environment variables are set.
+
+The environment variables that need to be set for system initialization are the following:
+
+```bash
+SYSTEM_INIT=true
+SYSTEM_INIT_CERTIFICATE_FILE=/path/to/system/initialization/certificate/initialization.crt
+```
+
+The `SYSTEM_INIT_CERTIFICATE_FILE` should contain the certificate that matches the private key generated
+by the person performing the initialization.
+
+If your system is already initialized, the `SYSTEM_INIT` variable can be omitted or set to false. If omitted
+or set to false, the `SYSTEM_INIT_CERTIFICATE_FILE` variable is ignored.
+
+The certificate does not need to be signed by a CA - it can be a self-signed certificate. The important thing
+is that the private key remains only in the possession of the person performing initialization. If you 
+do not have a local CA, you can generate a self-signed certificate using OpenSSL with the following
+command:
 
 ```bash
 openssl req -x509 -newkey rsa:2048 -nodes -keyout initialization.key -out initialization.crt -days 365
 ```
 
-#### To create the 2 search indexes in OpenSearch, use the following HTTP calls:
+To start initialization, open your browser to:
+
+> http(s)://mydomain:port/system-init
+
+You will be prompted to upload your private key first. Then the initialization process will perform
+several checks:
+
+- Is the database reachable and is the schema deployed
+- Is there already a Root Tenant
+- Is the search engine reachable and are the indexes available
+- Is a KMS strategy defined
+- Is the auth domain and are the MFA variables defined
+- Is there a SMTP server defined
+- Is there a security event callback URI defined
+
+If you are missing the last 2 of these, the system will generate warnings, but allow you proceed. If the others
+fail their checks then the system cannot be initialized.
+
+You will configure, in order:
+
+- Root Tenant - Required
+- Root Client - Required (This is used for outbound messages to other internal systems such as the security event URI or SMS URI)
+- Root Admin Authorization Group - Required
+- A Root User - Required (This is the user performing the initialization)
+- A Read-Only Default Authorization Group - Optional (But useful if you want people in your organization to have read access to the tool)
+- A federated OIDC provider for your organization - Optional (But should be created if your organization uses Azure AD or Okta or similar for SSO)
+- Global System Settings - Required
+- ReCaptcha - Optional
+
+Once initialization is complete, you will be prompted to log in with the credentials you provided or with the
+federated OIDC provider you configured.
+
+##### A Brief Explanation of the Root Tenant and Tenant Permissions
+
+The Root Tenant is created during system initialization. While this IAM tool can support an arbitrary number
+of tenants, there is only one Root Tenant. It is the tenant to which your organization belongs and to which
+authentication is limited to users from the same domain(s) as your organization. 
+
+All scope for IAM management is assigned to the Root Tenant. However, some limited amount of IAM management scope
+can be assigned to other tenants if, for example, you want create tenants for some of your customers
+and they want to be able to manage their own clients, authorization groups, and authentication groups within
+their tenant.
+
+A member of the Root Tenant is in a privileged position relative to the other tenants. A member of a non-root
+tenant is restricted to data within their tenant and the IAM management scope to which they are 
+assigned. However, a member of the Root Tenant is only restricted by the IAM management scope to 
+which they are assigned, which is applied to ALL tenants. 
 
 
+## Audience for this tool
 
