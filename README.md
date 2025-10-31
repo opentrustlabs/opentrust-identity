@@ -231,7 +231,7 @@ The JSON payloads for the 2 Opensearch indexes are under `/scripts/search`
 The first important thing to note about Opensearch is that is has quite a few strict rules about
 who can create indexes or create aliases on indexes, and who is allowed to create, read, update, and
 delete data from those indexes. While it is outside the scope of this tool, you want to make 
-sure you configure users who have the appropriate permissions for their use.
+sure you configure your Opensearch users to have the appropriate permissions for their use.
 
 The second important thing to note about Opensearch is that creating the initial index using 
 a date stamp and then creating an alias is generally the approach you should take. You will 
@@ -372,7 +372,7 @@ should be initialized. The person who is performing the initialization will uplo
 which will be used to sign a JWT. That JWT will be verified by the certificate. Only 1 person has the key,
 the admin team (or devops team), which should NOT include the person performing initialization,
 has access to the server configuration. Once initialization is complete, it cannot be re-performed, unless
-all of the data is truncated from the database and the property environment variables are set.
+all of the data is truncated from the database and the proper environment variables are set.
 
 The environment variables that need to be set for system initialization are the following:
 
