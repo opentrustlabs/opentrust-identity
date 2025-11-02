@@ -72,7 +72,8 @@ having strict controls over who can do what:
 - Is there a restricted list of users who are allowed to authenticate using the client.
 - For abusive clients and users, can their sessions be revoked and their accounts disabled easily.
 
-This IAM tool provides those features, in addition to other common IAM functions. 
+And the rush to build AI applications has only exacerbated these problems. This IAM tool 
+provides features for managing access to your API, in addition to other common IAM functions. 
 
 One potentially overlooked problem of commercial SaaS IAM providers is the question of:
 Whose data is it? Do you own your data? Can you easily access the raw data? Can you 
