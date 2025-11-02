@@ -379,11 +379,11 @@ So one obvious solution, then, is NOT to include any default credentials. But th
 identify a user who can initialize the system. One way to do that is via asymmetric keys. The identifier is in a
 public certificate, while the private key remains in the possession of the person who is performing the initialization. 
 
-At a high level, a certificate is deployed on the server(s) along with a flag indicating that the system
+To describe the process at a high level, a certificate is deployed on the server(s) along with a flag indicating that the system
 should be initialized. The person who is performing the initialization will upload their private key,
 which will be used to sign a JWT. That JWT will be verified by the certificate. Only 1 person has the key,
 the admin team (or devops team), which should NOT include the person performing initialization,
-has access to the server configuration. Once initialization is complete, it cannot be re-performed, unless
+has access to the server configuration. Once initialization is complete it cannot be re-performed, unless
 all of the data is truncated from the database and the proper environment variables are set.
 
 The environment variables that need to be set for system initialization are the following:
@@ -400,7 +400,7 @@ If your system is already initialized, the `SYSTEM_INIT` variable can be omitted
 or set to false or the system is already initialized, the `SYSTEM_INIT_CERTIFICATE_FILE` variable is ignored.
 
 The certificate does not need to be signed by a CA - it can be a self-signed certificate. The important thing
-is that the private key remains only in the possession of the person performing initialization. If you 
+is that the private key remain only in the possession of the person performing initialization. If you 
 do not have a local CA, you can generate a self-signed certificate using OpenSSL with the following
 command:
 
@@ -419,7 +419,7 @@ several checks:
 - Is there already a Root Tenant
 - Is the search engine reachable and are the indexes available
 - Is a KMS strategy defined
-- Is the auth domain defined and are the MFA variables defined
+- Is the auth domain defined and are the multi-factor-authentication variables defined
 - Is there an SMTP server defined
 - Is there a security event callback URI defined
 
