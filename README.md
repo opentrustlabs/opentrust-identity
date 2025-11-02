@@ -376,15 +376,18 @@ And if you are running a PCI compliant application, then "Requirement 2" contain
 > are well known and are easily determined via public information.
 
 So one obvious solution, then, is NOT to include any default credentials. But that means that we need another way to 
-identify a user who can initialize the system. One way to do that is via asymmetric keys. The identifier is in a
+identify a user who can initialize the system. One way to do that is via asymmetric keys - the identifier is in a
 public certificate, while the private key remains in the possession of the person who is performing the initialization. 
 
-To describe the process at a high level, a certificate is deployed on the server(s) along with a flag indicating that the system
-should be initialized. The person who is performing the initialization will upload their private key,
-which will be used to sign a JWT. That JWT will be verified by the certificate. Only 1 person has the key,
-the admin team (or devops team), which should NOT include the person performing initialization,
+To describe the process at a high level, a certificate is deployed on the server(s) along with a 
+flag indicating that the system should be initialized. During initialization, the person who is 
+performing the initialization will upload their private key, which will be used to sign a JWT. 
+That JWT will be verified by the certificate that was deployed to the server. Only 1 person has the key,
+the web admin team (or devops team), which should NOT include the person performing initialization,
 has access to the server configuration. Once initialization is complete it cannot be re-performed, unless
 all of the data is truncated from the database and the proper environment variables are set.
+After the initialization is complete, the web admin team (or devops team) should remove the
+environment settings for initialization and restart the server.
 
 The environment variables that need to be set for system initialization are the following:
 
