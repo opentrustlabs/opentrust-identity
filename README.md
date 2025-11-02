@@ -74,8 +74,20 @@ having strict controls over who can do what:
 
 This IAM tool provides those features, in addition to other common IAM functions. 
 
+One potentially overlooked problem of commercial SaaS IAM providers is the question of:
+Whose data is it? Do you own your data? Can you easily access the raw data? Can you 
+perform your own analytics on the data? Can you migrate the data to a different
+system if you had to? What happens to your data if the SaaS provider goes out of business?
+With proprietary or commercial solutions your options may be severly limited. Open source
+tools at least provide you with the ability to manage your own data. It comes with a cost,
+of course, which is that you are now responsible for managing your database, search
+engine, web servers, application servers, email servers, and so on. This should not be an 
+insurmountable challenge for even small-to-medium-sized organizations, but it is
+an acknowledgement that free and open source tools have a total cost of ownership that
+needs to be considered when making a selection.
 
-#### The software stack
+
+### The software stack
 
 Node v20 or higher
 
