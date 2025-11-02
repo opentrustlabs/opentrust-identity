@@ -32,7 +32,7 @@ or SAML 2.0.
 
 For plain OAuth2 and federated authentication, there is no guarantee of a user profile 
 endpoint, keys for validation of tokens, ability to revoke a token or any other type of information
-that available with an OIDC provider with their well-known meta-data endpoint, and implementations
+that is readily available with an OIDC provider with their well-known meta-data endpoint. Implementations
 of the OAuth2 protocol can vary widely.
 
 For SAML 2.0, there are 2 limiting factors. The first is that the information interchange language is
@@ -78,6 +78,7 @@ One potentially overlooked problem of commercial SaaS IAM providers is the quest
 Whose data is it? Do you own your data? Can you easily access the raw data? Can you 
 perform your own analytics on the data? Can you migrate the data to a different
 system if you had to? What happens to your data if the SaaS provider goes out of business?
+
 With proprietary or commercial solutions your options may be severly limited. Open source
 tools at least provide you with the ability to manage your own data. It comes with a cost,
 of course, which is that you are now responsible for managing your database, search
