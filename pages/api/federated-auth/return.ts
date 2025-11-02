@@ -252,9 +252,6 @@ async function handleFederatedAuth(state: string, code: string, res: NextApiResp
         await updateUserTenantRel(tenant, newUser);
         await identityDao.addUserAuthenticationHistory(newUser.userId, Date.now());
         canonicalUser = newUser;
-        // if(authRel.federatedOIDCAuthorizationRelType === FederatedOidcAuthorizationRelType.AuthorizationRelTypeClientAuth){
-        //     await saveAuthorizationCodeData(authorizationCode, authRel, newUser);
-        // }
     }
     
     // Otherwise, if we find the record based on the IdP ID, but no email-based
@@ -276,9 +273,6 @@ async function handleFederatedAuth(state: string, code: string, res: NextApiResp
         await updateUserTenantRel(tenant, userByFederatedSubjectId);  
         await identityDao.addUserAuthenticationHistory(userByFederatedSubjectId.userId, Date.now());
         canonicalUser = userByFederatedSubjectId;
-        // if(authRel.federatedOIDCAuthorizationRelType === FederatedOidcAuthorizationRelType.AuthorizationRelTypeClientAuth){
-        //     await saveAuthorizationCodeData(authorizationCode, authRel, userByFederatedSubjectId);
-        // }
     }
     // Otherwise, we have found a record with the same email, but it was not previously tied
     // to a 3rd party IdP, so we just update the existing record with the IdP ID
@@ -287,9 +281,6 @@ async function handleFederatedAuth(state: string, code: string, res: NextApiResp
         await identityDao.updateUser(userByEmail);
         await identityDao.addUserAuthenticationHistory(userByEmail.userId, Date.now());
         canonicalUser = userByEmail;
-        // if(authRel.federatedOIDCAuthorizationRelType === FederatedOidcAuthorizationRelType.AuthorizationRelTypeClientAuth){
-        //     await saveAuthorizationCodeData(authorizationCode, authRel, userByEmail);
-        // }
     }
 
     await authDao.deleteFederatedOIDCAuthorizationRel(state);
