@@ -75,8 +75,8 @@ having strict controls over who can do what:
 And the rush to build AI applications has only exacerbated these problems. This IAM tool 
 provides features for managing access to your API, in addition to other common IAM functions. 
 
-One potentially overlooked problem of commercial SaaS IAM providers is the question of:
-Whose data is it? Do you own your data? Can you easily access the raw data? Can you 
+One potentially overlooked problem of commercial SaaS IAM providers is the question of
+whose data is it? Do you own your data? Can you easily access the raw data? Can you 
 perform your own analytics on the data? Can you migrate the data to a different
 system if you had to? What happens to your data if the SaaS provider goes out of business?
 

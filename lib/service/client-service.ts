@@ -16,15 +16,15 @@ import { ERROR_CODES } from "../models/error";
 import ChangeEventDao from "../dao/change-event-dao";
 import AuthDao from "../dao/auth-dao";
 
-const clientDao: ClientDao = DaoFactory.getInstance().getClientDao();
-const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
-const searchClient = getOpenSearchClient();
-const kms: Kms = DaoFactory.getInstance().getKms();
-const scopeDao: ScopeDao = DaoFactory.getInstance().getScopeDao();
-const changeEventDao: ChangeEventDao = DaoFactory.getInstance().getChangeEventDao();
-const authDao: AuthDao = DaoFactory.getInstance().getAuthDao();
-
 class ClientService {
+
+    static clientDao: ClientDao = DaoFactory.getInstance().getClientDao();
+    static tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
+    static searchClient = getOpenSearchClient();
+    static kms: Kms = DaoFactory.getInstance().getKms();
+    static scopeDao: ScopeDao = DaoFactory.getInstance().getScopeDao();
+    static changeEventDao: ChangeEventDao = DaoFactory.getInstance().getChangeEventDao();
+    static authDao: AuthDao = DaoFactory.getInstance().getAuthDao();
 
     oidcContext: OIDCContext;
 
@@ -67,7 +67,7 @@ class ClientService {
         const getData = ServiceAuthorizationWrapper<any[], Client | null>(
             {
                 performOperation: async function(): Promise<Client | null> {
-                    const client = await clientDao.getClientById(clientId);                       
+                    const client = await ClientService.clientDao.getClientById(clientId);                       
                     return client;
                 },
                 additionalConstraintCheck: async function(oidcContext, result: Client | null): Promise<{ isAuthorized: boolean; errorDetail: ErrorDetail}> {
@@ -90,7 +90,7 @@ class ClientService {
     }
 
     public async createClient(client: Client): Promise<Client> {
-        const tenant: Tenant | null = await tenantDao.getTenantById(client.tenantId);
+        const tenant: Tenant | null = await ClientService.tenantDao.getTenantById(client.tenantId);
         if(!tenant){
             throw new GraphQLError(ERROR_CODES.EC00008.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00008}});
         }
@@ -115,18 +115,18 @@ class ClientService {
 
         client.clientId = randomUUID().toString();
         const clientSecret = generateRandomToken(24, "hex");
-        const encryptedClientSecret = await kms.encrypt(clientSecret);
+        const encryptedClientSecret = await ClientService.kms.encrypt(clientSecret);
         if(encryptedClientSecret === null){
             throw new GraphQLError(ERROR_CODES.EC00032.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00032}});
         }        
         client.clientSecret = encryptedClientSecret;
 
-        await clientDao.createClient(client);
+        await ClientService.clientDao.createClient(client);
         await this.updateSearchIndex(client);
         // Now we need to set the actual client secret back on the object that
         // we are going to return so that the user can copy it somewhere.
         client.clientSecret = clientSecret;
-        changeEventDao.addChangeEvent({
+        ClientService.changeEventDao.addChangeEvent({
             objectId: client.clientId,
             changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
             changeEventClass: CHANGE_EVENT_CLASS_CLIENT,
@@ -140,7 +140,7 @@ class ClientService {
     }
 
     public async updateClient(client: Client): Promise<Client> {
-        const clientToUpdate: Client | null = await clientDao.getClientById(client.clientId);
+        const clientToUpdate: Client | null = await ClientService.clientDao.getClientById(client.clientId);
         
         if(!clientToUpdate){
             throw new GraphQLError(ERROR_CODES.EC00011.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00011}});
@@ -163,9 +163,9 @@ class ClientService {
 
         // If the client type has changed, then delete the scope values assigned to the client
         if(clientToUpdate.clientType !== client.clientType){
-            const rels: Array<ClientScopeRel> = await scopeDao.getClientScopeRels(client.clientId);
+            const rels: Array<ClientScopeRel> = await ClientService.scopeDao.getClientScopeRels(client.clientId);
             for(let i = 0; i < rels.length; i++){
-                scopeDao.removeScopeFromClient(rels[i].tenantId, rels[i].clientId, rels[i].scopeId);
+                ClientService.scopeDao.removeScopeFromClient(rels[i].tenantId, rels[i].clientId, rels[i].scopeId);
             }
         }
         
@@ -183,9 +183,9 @@ class ClientService {
         clientToUpdate.userTokenTTLSeconds = client.userTokenTTLSeconds;
         clientToUpdate.audience = client.audience;
 
-        await clientDao.updateClient(clientToUpdate);
+        await ClientService.clientDao.updateClient(clientToUpdate);
         await this.updateSearchIndex(clientToUpdate);
-        changeEventDao.addChangeEvent({
+        ClientService.changeEventDao.addChangeEvent({
             objectId: client.clientId,
             changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
             changeEventClass: CHANGE_EVENT_CLASS_CLIENT,
@@ -213,7 +213,7 @@ class ClientService {
             subtypekey: client.clientType
         }
         
-        await searchClient.index({
+        await ClientService.searchClient.index({
             id: client.clientId,
             index: SEARCH_INDEX_OBJECT_SEARCH,
             body: document
@@ -228,7 +228,7 @@ class ClientService {
             parenttype: SearchResultType.Tenant,
             childdescription: client.clientDescription
         }
-        await searchClient.index({
+        await ClientService.searchClient.index({
             id: `${client.tenantId}::${client.clientId}`,
             index: SEARCH_INDEX_REL_SEARCH,
             body: relSearch
@@ -237,19 +237,19 @@ class ClientService {
     }
 
     public async getRedirectURIs(clientId: string): Promise<Array<string>>{
-        const client: Client | null = await clientDao.getClientById(clientId);
+        const client: Client | null = await ClientService.clientDao.getClientById(clientId);
         if(client){
             const {isAuthorized, errorDetail} = authorizeByScopeAndTenant(this.oidcContext, [CLIENT_READ_SCOPE, TENANT_READ_ALL_SCOPE], client.tenantId);
             if(!isAuthorized){
                 throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});
             }
-            return clientDao.getRedirectURIs(clientId);
+            return ClientService.clientDao.getRedirectURIs(clientId);
         }
         return [];        
     }
 
     public async addRedirectURI(clientId: string, uri: string): Promise<string>{
-        const client: Client | null = await clientDao.getClientById(clientId);
+        const client: Client | null = await ClientService.clientDao.getClientById(clientId);
         if(!client){
             throw new GraphQLError(ERROR_CODES.EC00031.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00031}});
         }
@@ -264,7 +264,7 @@ class ClientService {
         if(!isAuthorized){
             throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});
         }
-        changeEventDao.addChangeEvent({
+        ClientService.changeEventDao.addChangeEvent({
             objectId: clientId,
             changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
             changeEventClass: CHANGE_EVENT_CLASS_CLIENT_REDIRECT_URI,
@@ -275,11 +275,11 @@ class ClientService {
         });
         
         
-        return clientDao.addRedirectURI(clientId, uri);
+        return ClientService.clientDao.addRedirectURI(clientId, uri);
     }
 
     public async removeRedirectURI(clientId: string, uri: string): Promise<void>{
-        const client: Client | null = await clientDao.getClientById(clientId);
+        const client: Client | null = await ClientService.clientDao.getClientById(clientId);
         if(!client){
             throw new GraphQLError(ERROR_CODES.EC00031.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00031}});
         }
@@ -287,7 +287,7 @@ class ClientService {
         if(!isAuthorized){
             throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});
         }
-        changeEventDao.addChangeEvent({
+        ClientService.changeEventDao.addChangeEvent({
             objectId: clientId,
             changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
             changeEventClass: CHANGE_EVENT_CLASS_CLIENT_REDIRECT_URI,
@@ -296,7 +296,7 @@ class ClientService {
             changeTimestamp: Date.now(),
             data: JSON.stringify({clientId, uri})
         });
-        return clientDao.removeRedirectURI(clientId, uri);
+        return ClientService.clientDao.removeRedirectURI(clientId, uri);
     }
 
     public async getAuthorizationScopeApprovalData(preAuthToken: string): Promise<AuthorizationScopeApprovalData>{        
@@ -306,19 +306,19 @@ class ClientService {
             requestedScope: [],
             requiresUserApproval: false
         };
-        const preAuthenticationState: PreAuthenticationState | null = await authDao.getPreAuthenticationState(preAuthToken);        
+        const preAuthenticationState: PreAuthenticationState | null = await ClientService.authDao.getPreAuthenticationState(preAuthToken);        
         if(preAuthenticationState === null){
             return approvalData;
         }
         
-        const client: Client | null = await clientDao.getClientById(preAuthenticationState.clientId);
+        const client: Client | null = await ClientService.clientDao.getClientById(preAuthenticationState.clientId);
         if(client === null){            
             return approvalData;
         }
         
-        const clientScopes: Array<ClientScopeRel> = await scopeDao.getClientScopeRels(client.clientId);
+        const clientScopes: Array<ClientScopeRel> = await ClientService.scopeDao.getClientScopeRels(client.clientId);
         const ids: Array<string> = clientScopes.map( (rel: ClientScopeRel) => rel.scopeId);
-        const scopes = await scopeDao.getScope(undefined, ids);
+        const scopes = await ClientService.scopeDao.getScope(undefined, ids);
         approvalData.clientId = client.clientId;
         approvalData.clientName = client.clientName;
         approvalData.requestedScope = scopes;

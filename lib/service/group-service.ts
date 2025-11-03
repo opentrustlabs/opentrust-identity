@@ -14,13 +14,13 @@ import { ERROR_CODES } from "../models/error";
 import ChangeEventDao from "../dao/change-event-dao";
 
 
-const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
-const groupDao: GroupDao = DaoFactory.getInstance().getAuthorizationGroupDao();
-const searchClient: Client = getOpenSearchClient();
-const identityDao: IdentityDao = DaoFactory.getInstance().getIdentityDao();
-const changeEventDao: ChangeEventDao = DaoFactory.getInstance().getChangeEventDao();
-
 class GroupService {
+
+    static tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
+    static groupDao: GroupDao = DaoFactory.getInstance().getAuthorizationGroupDao();
+    static searchClient: Client = getOpenSearchClient();
+    static identityDao: IdentityDao = DaoFactory.getInstance().getIdentityDao();
+    static changeEventDao: ChangeEventDao = DaoFactory.getInstance().getChangeEventDao();
 
     oidcContext: OIDCContext;
 
@@ -49,7 +49,7 @@ class GroupService {
                     return [tenantId];
                 },
                 async performOperation(_, ...args): Promise<Array<AuthorizationGroup>> {
-                    const groups = await groupDao.getAuthorizationGroups(...args);
+                    const groups = await GroupService.groupDao.getAuthorizationGroups(...args);
                     return groups;
                 }
             }
@@ -63,7 +63,7 @@ class GroupService {
         const getData = ServiceAuthorizationWrapper(
             {
                 async performOperation(_, groupId): Promise<AuthorizationGroup | null> {
-                    const result = await groupDao.getAuthorizationGroupById(groupId);
+                    const result = await GroupService.groupDao.getAuthorizationGroupById(groupId);
                     return result;
                 },
                 async additionalConstraintCheck(oidcContext: OIDCContext, result: AuthorizationGroup | null) {
@@ -87,7 +87,7 @@ class GroupService {
             throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});
         }
 
-        const tenant: Tenant | null = await tenantDao.getTenantById(group.tenantId);
+        const tenant: Tenant | null = await GroupService.tenantDao.getTenantById(group.tenantId);
         if(!tenant){
             throw new GraphQLError(ERROR_CODES.EC00008.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00008}});
         }
@@ -97,9 +97,9 @@ class GroupService {
         
         group.groupId = randomUUID().toString();
 
-        await groupDao.createAuthorizationGroup(group);
+        await GroupService.groupDao.createAuthorizationGroup(group);
         await this.updateSearchIndex(group);
-        changeEventDao.addChangeEvent({
+        GroupService.changeEventDao.addChangeEvent({
             objectId: group.groupId,
             changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
             changeEventClass: CHANGE_EVENT_CLASS_AUTHORIZATION_GROUP,
@@ -113,7 +113,7 @@ class GroupService {
 
     public async updateGroup(group: AuthorizationGroup): Promise<AuthorizationGroup> {
         
-        const existingGroup: AuthorizationGroup | null = await groupDao.getAuthorizationGroupById(group.groupId);
+        const existingGroup: AuthorizationGroup | null = await GroupService.groupDao.getAuthorizationGroupById(group.groupId);
         if(!existingGroup){
             throw new GraphQLError(ERROR_CODES.EC00028.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00028}});
         }
@@ -129,9 +129,9 @@ class GroupService {
         existingGroup.groupName = group.groupName;
         existingGroup.default = group.default;
         existingGroup.groupDescription = group.groupDescription;
-        await groupDao.updateAuthorizationGroup(existingGroup);
+        await GroupService.groupDao.updateAuthorizationGroup(existingGroup);
         await this.updateSearchIndex(existingGroup);
-        changeEventDao.addChangeEvent({
+        GroupService.changeEventDao.addChangeEvent({
             objectId: group.groupId,
             changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
             changeEventClass: CHANGE_EVENT_CLASS_AUTHORIZATION_GROUP,
@@ -143,7 +143,7 @@ class GroupService {
 
         if(needToDeleteUserGroupRels === true){
             // No need to wait on this since it may contain 1000s of relationships.
-            groupDao.deleteUserAuthorizationGroupRels(group.groupId);
+           GroupService.groupDao.deleteUserAuthorizationGroupRels(group.groupId);
         }
 
         return Promise.resolve(existingGroup);
@@ -163,7 +163,7 @@ class GroupService {
             subtypekey: ""            
         }
         
-        await searchClient.index({
+        await GroupService.searchClient.index({
             id: group.groupId,
             index: SEARCH_INDEX_OBJECT_SEARCH,
             body: document
@@ -178,7 +178,7 @@ class GroupService {
             parenttype: SearchResultType.Tenant,
             childdescription: group.groupDescription
         }
-        await searchClient.index({
+        await GroupService.searchClient.index({
             id: `${group.tenantId}::${group.groupId}`,
             index: SEARCH_INDEX_REL_SEARCH,
             body: relSearch
@@ -187,19 +187,19 @@ class GroupService {
     
 
     public async addUserToGroup(userId: string, groupId: string): Promise<AuthorizationGroupUserRel> {
-        const user: User | null = await identityDao.getUserBy("id", userId);
+        const user: User | null = await GroupService.identityDao.getUserBy("id", userId);
         // Checks:
         // 1.   Does the user exist
         if(!user){
             throw new GraphQLError(ERROR_CODES.EC00013.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00013}});
         }
         // 2.   Does the authz group exist
-        const authzGroup: AuthorizationGroup | null = await groupDao.getAuthorizationGroupById(groupId);
+        const authzGroup: AuthorizationGroup | null = await GroupService.groupDao.getAuthorizationGroupById(groupId);
         if(!authzGroup){
             throw new GraphQLError(ERROR_CODES.EC00028.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00028}});
         }
         // 3.   Is the user a member of the tenant?
-        const userTenantRel: UserTenantRel | null = await identityDao.getUserTenantRel(authzGroup.tenantId, userId);
+        const userTenantRel: UserTenantRel | null = await GroupService.identityDao.getUserTenantRel(authzGroup.tenantId, userId);
         if(!userTenantRel){
             throw new GraphQLError(ERROR_CODES.EC00029.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00029}});
         }
@@ -214,7 +214,7 @@ class GroupService {
             throw new GraphQLError(ERROR_CODES.EC00226.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00226}});
         }
 
-        const r: AuthorizationGroupUserRel = await groupDao.addUserToAuthorizationGroup(userId, groupId);
+        const r: AuthorizationGroupUserRel = await GroupService.groupDao.addUserToAuthorizationGroup(userId, groupId);
 
         const document: RelSearchResultItem = {
             childid: user.userId,
@@ -225,14 +225,14 @@ class GroupService {
             parenttype: SearchResultType.AuthorizationGroup,
             childdescription: user.email
         }
-        await searchClient.index({
+        await GroupService.searchClient.index({
             id: `${groupId}::${userId}`,
             index: SEARCH_INDEX_REL_SEARCH,
             body: document,
             refresh: "wait_for"
         });
 
-        changeEventDao.addChangeEvent({
+        GroupService.changeEventDao.addChangeEvent({
             objectId: groupId,
             changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
             changeEventClass: CHANGE_EVENT_CLASS_AUTHORIZATION_GROUP_USER_REL,
@@ -247,22 +247,22 @@ class GroupService {
     }
     
     public async removeUserFromGroup(userId: string, groupId: string): Promise<void> {
-        const authzGroup: AuthorizationGroup | null = await groupDao.getAuthorizationGroupById(groupId);
+        const authzGroup: AuthorizationGroup | null = await GroupService.groupDao.getAuthorizationGroupById(groupId);
         if(authzGroup){
             const {isAuthorized, errorDetail} = authorizeByScopeAndTenant(this.oidcContext, AUTHORIZATION_GROUP_USER_REMOVE_SCOPE, authzGroup.tenantId);
             if(!isAuthorized){
                 throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});
             }
 
-            await groupDao.removeUserFromAuthorizationGroup(userId, groupId);        
-            await searchClient.delete({
+            await GroupService.groupDao.removeUserFromAuthorizationGroup(userId, groupId);        
+            await GroupService.searchClient.delete({
                 id: `${groupId}::${userId}`,
                 index: SEARCH_INDEX_REL_SEARCH,
                 refresh: "wait_for"
             });  
         }
 
-        changeEventDao.addChangeEvent({
+        GroupService.changeEventDao.addChangeEvent({
             objectId: groupId,
             changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
             changeEventClass: CHANGE_EVENT_CLASS_AUTHORIZATION_GROUP_USER_REL,
@@ -280,7 +280,7 @@ class GroupService {
         const getData = ServiceAuthorizationWrapper(
             {
                 performOperation: async function (): Promise<Array<AuthorizationGroup>>  {
-                    const groups: Array<AuthorizationGroup> = await groupDao.getUserAuthorizationGroups(userId);
+                    const groups: Array<AuthorizationGroup> = await GroupService.groupDao.getUserAuthorizationGroups(userId);
                     return groups;
                 }, 
                 postProcess: async function(oidcContext: OIDCContext, result: Array<AuthorizationGroup> | null) {
