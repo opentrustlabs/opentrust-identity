@@ -4,7 +4,7 @@
  */
 
 import { AuthenticationGroup, AuthorizationGroup, Client, PortalUserProfile, Scope, Tenant, User, UserCredential, UserMfaRel } from '@/graphql/generated/graphql-types';
-import { ALL_INTERNAL_SCOPE_NAMES_DISPLAY, NAME_ORDER_WESTERN, PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS, PRINCIPAL_TYPE_IAM_PORTAL_USER, SCOPE_USE_IAM_MANAGEMENT, TENANT_TYPE_ROOT_TENANT } from '@/utils/consts';
+import { ALL_INTERNAL_SCOPE_NAMES_DISPLAY, CLIENT_TYPE_IDENTITY, NAME_ORDER_WESTERN, PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS, PRINCIPAL_TYPE_IAM_PORTAL_USER, SCOPE_USE_IAM_MANAGEMENT, TENANT_TYPE_ROOT_TENANT } from '@/utils/consts';
 import { v4 as uuidv4 } from 'uuid';
 
 /**
@@ -88,18 +88,21 @@ export function createMockRootTenant(overrides?: Partial<any>) {
 /**
  * Creates a mock Client object
  */
-export function createMockClient(overrides?: Partial<Client>) {
+export function createMockClient(overrides?: Partial<Client>): Client {
   return {    
     clientId: `client-${uuidv4()}`,
     clientSecret: 'secret',
     tenantId: uuidv4(),
     name: 'Test Client',
     enabled: true,
-    confidential: true,
-    createdDate: new Date(),
-    modifiedDate: new Date(),
+    clientType: CLIENT_TYPE_IDENTITY,
+    markForDelete: false,
+    oidcEnabled: true,
+    pkceEnabled: false,
+    clientDescription: "Test Client Description",
+    clientName: "Test Client",
     ...overrides,
-  };
+  } as Client;
 }
 
 /**

@@ -13,13 +13,13 @@ import { ERROR_CODES } from "../models/error";
 import ChangeEventDao from "../dao/change-event-dao";
 
 
-const tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
-const clientDao: ClientDao = DaoFactory.getInstance().getClientDao();
-const keyDao: SigningKeysDao = DaoFactory.getInstance().getSigningKeysDao();
-const contactDao: ContactDao = DaoFactory.getInstance().getContactDao();
-const changeEventDao: ChangeEventDao = DaoFactory.getInstance().getChangeEventDao();
-
 class ContactService {
+
+    static tenantDao: TenantDao = DaoFactory.getInstance().getTenantDao();
+    static clientDao: ClientDao = DaoFactory.getInstance().getClientDao();
+    static keyDao: SigningKeysDao = DaoFactory.getInstance().getSigningKeysDao();
+    static contactDao: ContactDao = DaoFactory.getInstance().getContactDao();
+    static changeEventDao: ChangeEventDao = DaoFactory.getInstance().getChangeEventDao();
 
     oidcContext: OIDCContext;
 
@@ -31,7 +31,7 @@ class ContactService {
         const getData = ServiceAuthorizationWrapper(
             {
                 async performOperation() {
-                    return contactDao.getContacts(objectId);
+                    return ContactService.contactDao.getContacts(objectId);
                 },
                 async additionalConstraintCheck(oidcContext: OIDCContext, result: Array<Contact> | null): Promise<{ isAuthorized: boolean, errorDetail: ErrorDetail, result: Array<Contact> | null }> {
                     if (result && result.length > 0) {
@@ -41,7 +41,7 @@ class ContactService {
                         let scopeRequired: string = "";
                         let tenantId: string = "";
                         if (contact.objecttype === CONTACT_TYPE_FOR_TENANT) {
-                            const tenant: Tenant | null = await tenantDao.getTenantById(contact.objectid);
+                            const tenant: Tenant | null = await ContactService.tenantDao.getTenantById(contact.objectid);
                             if (!tenant) {
                                 throw new GraphQLError(ERROR_CODES.EC00008.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00008}});
                             }
@@ -49,7 +49,7 @@ class ContactService {
                             scopeRequired = TENANT_READ_SCOPE;
                         }
                         else if (contact.objecttype === CONTACT_TYPE_FOR_CLIENT) {
-                            const client: Client | null = await clientDao.getClientById(contact.objectid);
+                            const client: Client | null = await ContactService.clientDao.getClientById(contact.objectid);
                             if (!client) {
                                 throw new GraphQLError(ERROR_CODES.EC00011.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00011}});
                             }
@@ -57,7 +57,7 @@ class ContactService {
                             scopeRequired = CLIENT_READ_SCOPE;
                         }
                         else if (contact.objecttype === CONTACT_TYPE_FOR_SIGNING_KEY) {
-                            const key: SigningKey | null = await keyDao.getSigningKeyById(contact.objectid);
+                            const key: SigningKey | null = await ContactService.keyDao.getSigningKeyById(contact.objectid);
                             if(!key) {
                                 throw new GraphQLError(ERROR_CODES.EC00015.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00015}});
                             }
@@ -83,7 +83,7 @@ class ContactService {
         let scopeRequired: string = "";
         let tenantId: string = "";
         if(contact.objecttype === CONTACT_TYPE_FOR_TENANT){
-            const tenant: Tenant | null = await tenantDao.getTenantById(contact.objectid);
+            const tenant: Tenant | null = await ContactService.tenantDao.getTenantById(contact.objectid);
             if(!tenant){
                 throw new GraphQLError(ERROR_CODES.EC00008.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00008}});
             }
@@ -91,7 +91,7 @@ class ContactService {
             scopeRequired = TENANT_UPDATE_SCOPE;
         }
         else if(contact.objecttype === CONTACT_TYPE_FOR_CLIENT){
-            const client: Client | null = await clientDao.getClientById(contact.objectid);
+            const client: Client | null = await ContactService.clientDao.getClientById(contact.objectid);
             if(!client){
                 throw new GraphQLError(ERROR_CODES.EC00011.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00011}});
             }
@@ -99,7 +99,7 @@ class ContactService {
             scopeRequired = CLIENT_UPDATE_SCOPE;
         }
         else if(contact.objecttype === CONTACT_TYPE_FOR_SIGNING_KEY){
-            const key: SigningKey | null = await keyDao.getSigningKeyById(contact.objectid);
+            const key: SigningKey | null = await ContactService.keyDao.getSigningKeyById(contact.objectid);
             if(!key){
                 throw new GraphQLError(ERROR_CODES.EC00015.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00015}});
             }
@@ -119,8 +119,8 @@ class ContactService {
         }
 
         contact.contactid = randomUUID().toString();
-        await contactDao.addContact(contact);
-        changeEventDao.addChangeEvent({
+        await ContactService.contactDao.addContact(contact);
+        ContactService.changeEventDao.addChangeEvent({
             objectId: contact.contactid,
             changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
             changeEventClass: CHANGE_EVENT_CLASS_CONTACT,
@@ -133,7 +133,7 @@ class ContactService {
     }
 
     public async removeContact(contactId: string): Promise<void> {
-        const contact: Contact | null = await contactDao.getContactById(contactId);
+        const contact: Contact | null = await ContactService.contactDao.getContactById(contactId);
         if(contact){
             let scopeRequired: string = "";
             let tenantId: string = "";
@@ -142,7 +142,7 @@ class ContactService {
                 scopeRequired = TENANT_UPDATE_SCOPE;
             }
             else if(contact.objecttype === CONTACT_TYPE_FOR_CLIENT){
-                const client: Client | null = await clientDao.getClientById(contact.objectid);
+                const client: Client | null = await ContactService.clientDao.getClientById(contact.objectid);
                 if(!client){
                     throw new GraphQLError(ERROR_CODES.EC00011.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00011}});
                 }
@@ -150,7 +150,7 @@ class ContactService {
                 scopeRequired = CLIENT_UPDATE_SCOPE;
             }
             else if(contact.objecttype === CONTACT_TYPE_FOR_SIGNING_KEY){
-                const key: SigningKey | null = await keyDao.getSigningKeyById(contact.objectid);
+                const key: SigningKey | null = await ContactService.keyDao.getSigningKeyById(contact.objectid);
                 if(!key){
                     throw new GraphQLError(ERROR_CODES.EC00015.errorCode, {extensions: {errorDetail: ERROR_CODES.EC00015}});
                 }
@@ -161,8 +161,8 @@ class ContactService {
             if(!isAuthorized){
                 throw new GraphQLError(errorDetail.errorCode, {extensions: {errorDetail}});
             }
-            await contactDao.removeContact(contactId);
-            changeEventDao.addChangeEvent({
+            await ContactService.contactDao.removeContact(contactId);
+            ContactService.changeEventDao.addChangeEvent({
                 objectId: contact.contactid,
                 changedBy: `${this.oidcContext.portalUserProfile?.firstName} ${this.oidcContext.portalUserProfile?.lastName}`,
                 changeEventClass: CHANGE_EVENT_CLASS_CONTACT,
