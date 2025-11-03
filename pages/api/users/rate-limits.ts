@@ -3,7 +3,7 @@ import JwtServiceUtils from '@/lib/service/jwt-service-utils';
 import { MyUserProfile } from '@/lib/models/principal';
 import { DaoFactory } from '@/lib/data-sources/dao-factory';
 import TenantDao from '@/lib/dao/tenant-dao';
-import { RateLimit, Tenant, TenantRateLimitRel, TenantRateLimitRelView } from '@/graphql/generated/graphql-types';
+import { Tenant, TenantRateLimitRelView } from '@/graphql/generated/graphql-types';
 import RateLimitDao from '@/lib/dao/rate-limit-dao';
 
 const jwtServiceUtils: JwtServiceUtils = new JwtServiceUtils();

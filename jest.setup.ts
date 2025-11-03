@@ -1,5 +1,6 @@
 // Learn more: https://github.com/testing-library/jest-dom
 import '@testing-library/jest-dom';
+import { jest, beforeAll, afterAll, afterEach } from '@jest/globals';
 
 // Polyfill setImmediate for opensearch client
 if (typeof global.setImmediate === 'undefined') {
@@ -8,7 +9,7 @@ if (typeof global.setImmediate === 'undefined') {
 }
 
 // Mock environment variables
-process.env.NODE_ENV = 'test';
+(process.env as any).NODE_ENV = 'test';
 
 // Suppress console errors in tests (optional - remove if you want to see all errors)
 const originalError = console.error;
@@ -64,7 +65,7 @@ global.ResizeObserver = class ResizeObserver {
 } as any;
 
 // Mock fetch if needed
-global.fetch = jest.fn();
+global.fetch = jest.fn() as any;
 
 // Reset mocks after each test
 afterEach(() => {

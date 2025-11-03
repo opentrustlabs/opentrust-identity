@@ -40,7 +40,7 @@ const ProfilePreProcessorContextProvider: React.FC<ProfilePreProcessorProviderPr
                 }
             }
         }        
-    }, [authSessionProps]);
+    }, [authSessionProps, authContextProps]);
 
 
     return (
