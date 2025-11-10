@@ -131,10 +131,7 @@ const FederatedOIDCProviderEntity = new EntitySchema({
             nullable: false,
             name: "federatedoidcprovidersubjecttype"
         }
-    },
-
-
-
+    }
 });
 
 export default FederatedOIDCProviderEntity;
