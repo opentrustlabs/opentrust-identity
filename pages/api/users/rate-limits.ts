@@ -3,7 +3,7 @@ import JwtServiceUtils from '@/lib/service/jwt-service-utils';
 import { MyUserProfile } from '@/lib/models/principal';
 import { DaoFactory } from '@/lib/data-sources/dao-factory';
 import TenantDao from '@/lib/dao/tenant-dao';
-import { RateLimit, Tenant, TenantRateLimitRel, TenantRateLimitRelView } from '@/graphql/generated/graphql-types';
+import { Client, RateLimit, Tenant, TenantRateLimitRel, TenantRateLimitRelView } from '@/graphql/generated/graphql-types';
 import RateLimitDao from '@/lib/dao/rate-limit-dao';
 
 const jwtServiceUtils: JwtServiceUtils = new JwtServiceUtils();
@@ -48,14 +48,14 @@ export default async function handler(
         return;
     }
 
-    const profile: MyUserProfile | null = await jwtServiceUtils.getMyUserProfile(jwt || "", false, false);
-    if(profile === null){
+    const result: {myUserProfile: MyUserProfile} | null = await jwtServiceUtils.getMyUserProfile(jwt || "", false, false);
+    if(result === null){
         res.status(403).json({ error: "ERROR_INVALID_AUTHORIZATION_HEADER_FORMAT" });
         res.end();
         return;
     }
     
-    const tenant: Tenant | null = await tenantDao.getTenantById(profile.tenantId);
+    const tenant: Tenant | null = await tenantDao.getTenantById(result.myUserProfile.tenantId);
     if(tenant === null){
         res.status(403).json({ error: "ERROR_INVALID_TENANT" });
         res.end();

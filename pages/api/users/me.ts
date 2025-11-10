@@ -1,9 +1,18 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next'
 import JwtServiceUtils from '@/lib/service/jwt-service-utils';
-import { MyUserProfile } from '@/lib/models/principal';
+import { MyUserProfile, ProfileScope } from '@/lib/models/principal';
+import { containsScope } from '@/utils/authz-utils';
+import { CLIENT_TYPE_IDENTITY, MY_PROFILE_READ_SCOPE, PRINCIPAL_TYPE_ANONYMOUS_USER, PRINCIPAL_TYPE_END_USER } from '@/utils/consts';
+import { Client, Scope } from '@/graphql/generated/graphql-types';
+import { DaoFactory } from '@/lib/data-sources/dao-factory';
+import ClientDao from '@/lib/dao/client-dao';
+import { Profile } from '@opensearch-project/opensearch/api/_types/_core.search.js';
 
+
+const clientDao: ClientDao = DaoFactory.getInstance().getClientDao();
 const jwtServiceUtils: JwtServiceUtils = new JwtServiceUtils();
+
 
 // Will return a MyUserProfile or error
 
@@ -40,28 +49,37 @@ export default async function handler(
         return;
     }
 
-    const { include } = req.query;
-    let includeScope = false;
-    let includeGroups = false;
-    if(Array.isArray(include)){
-        for(let i = 0; i < include.length; i++){
-            if(include[i] === "scope"){
-                includeScope = true;
-            }
-            if(include[i] === "groups"){
-                includeGroups = true;
-            }
-        }
-    }
 
-    const profile: MyUserProfile | null = await jwtServiceUtils.getMyUserProfile(jwt || "", includeScope, includeGroups);
-    if(profile === null){
-        res.status(403).json({ error: "ERROR_INVALID_AUTHORIZATION_HEADER_FORMAT" });
+    const result: {client: Client, myUserProfile: MyUserProfile} | null = await jwtServiceUtils.getMyUserProfile(jwt || "", true, true);
+
+    if(result === null || result.myUserProfile === null){
+        res.status(403).json({ error: "ERROR_INVALID_USER" });
         res.end();
         return;
     }
+
+    if(result.myUserProfile.principalType === PRINCIPAL_TYPE_ANONYMOUS_USER || result.myUserProfile.principalType === PRINCIPAL_TYPE_END_USER){
+        if(result.client.clientType !== CLIENT_TYPE_IDENTITY){
+            const s: ProfileScope | undefined = result.myUserProfile.scope.find(
+                (v: ProfileScope) => v.scopeName === MY_PROFILE_READ_SCOPE
+            );
+            if(s === undefined){
+                res.status(403).json({ error: "ERROR_INSUFFICIENT_SCOPE_TO_VIEW_PROFILE"});
+                res.end();
+                return;
+            }
+            else{
+                res.status(200).json(result.myUserProfile);
+                return;        
+            }
+        }
+        else{
+            res.status(200).json(result.myUserProfile);
+            return;    
+        }
+    }
     else {
-        res.status(200).json(profile);
+        res.status(200).json(result.myUserProfile);
         return;
     }   
 }

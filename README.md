@@ -469,43 +469,43 @@ no common or public tenants.
 ###### Discovery endpoint
 
 ```bash
-/api/\{tenant_id\}/.well-known/openid-configuration
+/api/{tenant_id}/.well-known/openid-configuration
 ```
 
 ###### Authorization endpoint
 
 ```bash
-/api/\{tenant_id\}/oidc/authorize
+/api/{tenant_id}/oidc/authorize
 ```
 
 ###### JWKS endpoint
 
 ```bash
-/api/\{tenant_id\}/oidc/keys
+/api/{tenant_id}/oidc/keys
 ```
 
 ###### Token endpoint
 
 ```bash
-/api/\{tenant_id\}/oidc/token
+/api/{tenant_id}/oidc/token
 ```
 
 ###### User info endpoint
 
 ```bash
-/api/\{tenant_id\}/oidc/userinfo
+/api/{tenant_id}/oidc/userinfo
 ```
 
 ###### Revocation endpoint
 
 ```bash
-/api/\{tenant_id\}/oidc/revoke
+/api/{tenant_id}/oidc/revoke
 ```
 
 ###### Device code endpoint
 
 ```bash
-/api/\{tenant_id\}/oidc/devicecode
+/api/{tenant_id}/oidc/devicecode
 ```
 
 In addition to the standard OIDC endpoints there are several utility endpoints which clients can invoke.
@@ -513,15 +513,15 @@ In addition to the standard OIDC endpoints there are several utility endpoints w
 ###### My Profile endpoint
 
 ```bash
-/api/users/me?include\=scope&include\=groups
+/api/users/me
 ```
 
-Where the `include` parameters are both optional, if you want a full list of the scope values
-or authorization groups that the profile contains.
-
-This endpoint is meant to supplemnt the standard OIDC userinfo endpoint, and contains more information
+This `GET` endpoint is meant to supplemnt the standard OIDC userinfo endpoint, and contains more information
 about either the end user or the service client which is represented by the access token (which should
 be provided as a Bearer Authorization header). 
+
+Use this endpoint if you want a full list of the scope values or authorization groups that the 
+profile contains.
 
 For service accounts, no special scope is required. For end user accounts, the client which was used
 for OIDC authentication either needs to be of type IDENTITY or needs to have a delegated scope of
@@ -533,7 +533,7 @@ for OIDC authentication either needs to be of type IDENTITY or needs to have a d
 /api/users/anonymous
 ```
 
-This is for tenants which may have B2C functionality, and which have enabled anonymous users so that 
+This is for tenants which may have some type of B2C functionality, and which have enabled anonymous users so that 
 authentication is NOT required to browse the site. 
 
 The method is `POST` with a content type of `x-www-form-urlencoded` and an optional payload with the following
@@ -547,9 +547,14 @@ language_code=ISO-language-code
 If the parameters are omitted, this defaults to the country and language configured for the tenant.
 
 Clients need to be assigned the scope 
-`"anonymous.user.create`.
+`anonymous.user.create`.
 
 ###### Rate limits
 
-If you are implementing any type of throttling for your tenants, this endpoint will return
-all of the rate limits that have been configured.
+```bash
+/api/users/rate-limits
+```
+
+If you are implementing any type of throttling for your tenants, this `GET` endpoint will return
+all of the rate limits that have been configured for the tenant. This will be applied to
+both service accounts and end users.

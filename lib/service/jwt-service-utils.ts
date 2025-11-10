@@ -74,7 +74,7 @@ class JwtServiceUtils {
      * @param includeAuthorizationGroups 
      * @returns 
      */
-    public async getMyUserProfile(jwt: string, includeScope: boolean, includeAuthorizationGroups: boolean): Promise<MyUserProfile | null> {
+    public async getMyUserProfile(jwt: string, includeScope: boolean, includeAuthorizationGroups: boolean): Promise<{client: Client, myUserProfile: MyUserProfile} | null> {
         
         let principal: JWTPrincipal | null = null;
         const p = await this.validateJwt(jwt);
@@ -87,7 +87,7 @@ class JwtServiceUtils {
         }
         
         let user: User | null = null;
-        const client: Client | null = await clientDao.getClientById(principal.sub);
+        const client: Client | null = await clientDao.getClientById(principal.client_id);
         if(client === null){
             return null;
         }
@@ -117,7 +117,7 @@ class JwtServiceUtils {
                 scope: arrProfileScopes,
                 tenantId: principal.tenant_id,
                 tenantName: principal.tenant_name,
-                userId: principal.sub,
+                userId: principal.client_id,
                 countryCode: principal.country_code,
                 preferredLanguageCode: principal.language_code,
                 clientId: principal.client_id,
@@ -252,7 +252,7 @@ class JwtServiceUtils {
             }
         }            
         
-        return myUserProfile;
+        return {client: client, myUserProfile: myUserProfile};
         
     }
 
