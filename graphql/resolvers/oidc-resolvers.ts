@@ -569,7 +569,9 @@ const resolvers: Resolvers = {
                 scopes: oidcProviderInput.scopes,
                 federatedOIDCProviderType: oidcProviderInput.federatedOIDCProviderType,
                 socialLoginProvider: oidcProviderInput.socialLoginProvider,
-                markForDelete: false
+                markForDelete: false,
+                federatedOIDCProviderResponseType: oidcProviderInput.federatedOIDCProviderResponseType,
+                federatedOIDCProviderSubjectType: oidcProviderInput.federatedOIDCProviderSubjectType
             };
             const providerService: FederatedOIDCProviderService = new FederatedOIDCProviderService(oidcContext);
             await providerService.createFederatedOIDCProvider(oidcProvider);
@@ -590,7 +592,9 @@ const resolvers: Resolvers = {
                 scopes: oidcProviderInput.scopes,
                 federatedOIDCProviderType: oidcProviderInput.federatedOIDCProviderType,
                 socialLoginProvider: oidcProviderInput.socialLoginProvider,
-                markForDelete: false
+                markForDelete: false,
+                federatedOIDCProviderResponseType: oidcProviderInput.federatedOIDCProviderResponseType,
+                federatedOIDCProviderSubjectType: oidcProviderInput.federatedOIDCProviderSubjectType
             };
             const providerService: FederatedOIDCProviderService = new FederatedOIDCProviderService(oidcContext);
             await providerService.updateFederatedOIDCProvider(oidcProvider);
@@ -1037,9 +1041,9 @@ const resolvers: Resolvers = {
             const service: SystemInitializationService = new SystemInitializationService(oidcContext);
             return service.initializeSystem(systemInitializationInput);
         },
-        createFederatedAuthTest: async(_: any, { clientAuthType, clientId, scope, usePkce, wellKnownUri, clientSecret}, oidcContext) => {
+        createFederatedAuthTest: async(_: any, { clientAuthType, clientId, scope, usePkce, wellKnownUri, clientSecret, responseType}, oidcContext) => {
             const service: SystemInitializationService = new SystemInitializationService(oidcContext);
-            return service.createFederatedAuthTest(clientId, clientSecret || null, usePkce, scope, wellKnownUri, clientAuthType);
+            return service.createFederatedAuthTest(clientId, clientSecret || null, usePkce, scope, wellKnownUri, clientAuthType, responseType);
         }
     },
     PortalUserProfile: {

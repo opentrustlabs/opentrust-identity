@@ -21,7 +21,9 @@ create TABLE federated_oidc_provider(
     clientauthtype TEXT,
     federatedoidcprovidertype TEXT,
     socialloginprovider TEXT,
-    markfordelete BOOLEAN 
+    markfordelete BOOLEAN,
+    federatedoidcproviderresponsetype TEXT,
+    federatedoidcprovidersubjecttype TEXT
 );
 
 create TABLE tenant (

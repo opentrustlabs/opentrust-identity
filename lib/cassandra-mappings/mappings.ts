@@ -563,8 +563,10 @@ export const FEDERATED_OIDC_PROVIDER_MODEL:  {[key: string]: cassandra.mapping.M
 			"clientauthtype": "clientAuthType",
 			"federatedoidcprovidertype": "federatedOIDCProviderType",
 			"socialloginprovider": "socialLoginProvider",
-			"markfordelete": "markForDelete"
-        }
+			"markfordelete": "markForDelete",
+            "federatedoidcproviderresponsetype": "federatedOIDCProviderResponseType",
+            "federatedoidcprovidersubjecttype": "federatedOIDCProviderSubjectType"
+        }        
     }
 };
 

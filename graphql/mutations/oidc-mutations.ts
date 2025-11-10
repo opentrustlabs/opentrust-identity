@@ -1208,8 +1208,8 @@ export const SYSTEM_INITIALIZATION_MUTATION = gql(`
 `);
 
 export const CREATE_FEDERATED_AUTH_TEST_MUTATION = gql(`
-    mutation createFederatedAuthTest($clientAuthType: String!, $clientId: String!, $scope: String!, $usePkce: Boolean!, $wellKnownUri: String!, $clientSecret: String) {
-        createFederatedAuthTest(clientAuthType: $clientAuthType, clientId: $clientId, scope: $scope, usePkce: $usePkce, wellKnownUri: $wellKnownUri, clientSecret: $clientSecret)
+    mutation createFederatedAuthTest($clientAuthType: String!, $clientId: String!, $scope: String!, $usePkce: Boolean!, $wellKnownUri: String!, $clientSecret: String, $responseType: String) {
+        createFederatedAuthTest(clientAuthType: $clientAuthType, clientId: $clientId, scope: $scope, usePkce: $usePkce, wellKnownUri: $wellKnownUri, clientSecret: $clientSecret, responseType: $responseType)
     }    
 `);
 

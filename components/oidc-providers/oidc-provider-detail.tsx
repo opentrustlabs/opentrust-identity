@@ -3,7 +3,7 @@ import { FederatedOidcProvider, FederatedOidcProviderUpdateInput, MarkForDeleteO
 import Typography from "@mui/material/Typography";
 import React, { useContext } from "react";
 import BreadcrumbComponent from "../breadcrumbs/breadcrumbs";
-import { FEDERATED_OIDC_PROVIDER_DELETE_SCOPE, FEDERATED_OIDC_PROVIDER_RETURN_URI_PATH, FEDERATED_OIDC_PROVIDER_SECRET_VIEW_SCOPE, FEDERATED_OIDC_PROVIDER_TYPE_ENTERPRISE, FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL, FEDERATED_OIDC_PROVIDER_TYPES_DISPLAY, FEDERATED_OIDC_PROVIDER_UPDATE_SCOPE, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_BASIC, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_JWT, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_POST, OIDC_CLIENT_AUTH_TYPE_DISPLAY, OIDC_CLIENT_AUTH_TYPE_NONE, OIDC_EMAIL_SCOPE, OIDC_OFFLINE_ACCESS_SCOPE, OIDC_OPENID_SCOPE, OIDC_PROFILE_SCOPE, SECRET_ENTRY_DELEGATE_SCOPE, SOCIAL_OIDC_PROVIDERS, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
+import { FEDERATED_OIDC_PROVIDER_DELETE_SCOPE, FEDERATED_OIDC_PROVIDER_RETURN_URI_PATH, FEDERATED_OIDC_PROVIDER_SECRET_VIEW_SCOPE, FEDERATED_OIDC_PROVIDER_SUBJECT_TYPES, FEDERATED_OIDC_PROVIDER_TYPE_ENTERPRISE, FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL, FEDERATED_OIDC_PROVIDER_TYPES_DISPLAY, FEDERATED_OIDC_PROVIDER_UPDATE_SCOPE, FEDERATED_OIDC_RESPONSE_TYPES, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_BASIC, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_JWT, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_POST, OIDC_CLIENT_AUTH_TYPE_DISPLAY, OIDC_CLIENT_AUTH_TYPE_NONE, OIDC_EMAIL_SCOPE, OIDC_OFFLINE_ACCESS_SCOPE, OIDC_OPENID_SCOPE, OIDC_PROFILE_SCOPE, SECRET_ENTRY_DELEGATE_SCOPE, SOCIAL_OIDC_PROVIDERS, TENANT_TYPE_ROOT_TENANT } from "@/utils/consts";
 import { TenantMetaDataBean, TenantContext } from "../contexts/tenant-context";
 import { DetailPageContainer, DetailPageMainContentContainer, DetailPageRightNavContainer } from "../layout/detail-page-container";
 import Grid2 from "@mui/material/Grid2";
@@ -64,7 +64,9 @@ const FederatedOIDCProviderDetail: React.FC<FederatedOIDCProviderDetailProps> = 
         usePkce: federatedOIDCProvider.usePkce,
         federatedOIDCProviderDescription: federatedOIDCProvider.federatedOIDCProviderDescription,
         socialLoginProvider: federatedOIDCProvider.socialLoginProvider,
-        federatedOIDCProviderClientSecret: ""
+        federatedOIDCProviderClientSecret: "",
+        federatedOIDCProviderResponseType: federatedOIDCProvider.federatedOIDCProviderResponseType,
+        federatedOIDCProviderSubjectType: federatedOIDCProvider.federatedOIDCProviderSubjectType
     };    
     const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
     const [oidcProviderInput, setOIDCProviderInput] = React.useState<FederatedOidcProviderUpdateInput>(initInput);
@@ -399,17 +401,6 @@ const FederatedOIDCProviderDetail: React.FC<FederatedOIDCProviderDetailProps> = 
                                                 }
                                             </Grid2>
                                         </Grid2>
-                                    </Grid2>
-                                    <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>    
-                                                                          
-                                        <Grid2 marginBottom={"16px"}>
-                                            <div>Well Known URI</div>
-                                            <TextField name="providerWellKnownUri" id="providerWellKnownUri"
-                                                disabled={disableInputs}
-                                                value={oidcProviderInput.federatedOIDCProviderWellKnownUri}
-                                                onChange={(evt) => { oidcProviderInput.federatedOIDCProviderWellKnownUri = evt.target.value; setOIDCProviderInput({ ...oidcProviderInput }); setMarkDirty(true); }}
-                                                fullWidth={true} size="small" />
-                                        </Grid2>
                                         <Grid2 marginBottom={"16px"}>
                                             <div style={{textDecoration: "underline"}}>Redirect URI (to be configured with the provider)</div>
                                             <Grid2 marginTop={"8px"} container display={"inline-flex"} size={12}>
@@ -425,7 +416,18 @@ const FederatedOIDCProviderDetail: React.FC<FederatedOIDCProviderDetailProps> = 
                                                     />
                                                 </Grid2>
                                             </Grid2>
-                                        </Grid2>  
+                                        </Grid2> 
+                                        
+                                    </Grid2>
+                                    <Grid2 size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }}>    
+                                         <Grid2 marginBottom={"16px"}>
+                                            <div>Well Known URI</div>
+                                            <TextField name="providerWellKnownUri" id="providerWellKnownUri"
+                                                disabled={disableInputs}
+                                                value={oidcProviderInput.federatedOIDCProviderWellKnownUri}
+                                                onChange={(evt) => { oidcProviderInput.federatedOIDCProviderWellKnownUri = evt.target.value; setOIDCProviderInput({ ...oidcProviderInput }); setMarkDirty(true); }}
+                                                fullWidth={true} size="small" />
+                                        </Grid2>
                                         <Grid2 marginBottom={"16px"}>
                                             <div>Authentication Type</div>
                                             <Select
@@ -440,6 +442,38 @@ const FederatedOIDCProviderDetail: React.FC<FederatedOIDCProviderDetailProps> = 
                                                 <MenuItem value={OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_JWT} >{OIDC_CLIENT_AUTH_TYPE_DISPLAY.get(OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_JWT)}</MenuItem>
                                                 <MenuItem value={OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_BASIC} >{OIDC_CLIENT_AUTH_TYPE_DISPLAY.get(OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_BASIC)}</MenuItem>
                                                 <MenuItem disabled={oidcProviderInput.usePkce === false} value={OIDC_CLIENT_AUTH_TYPE_NONE} >{OIDC_CLIENT_AUTH_TYPE_DISPLAY.get(OIDC_CLIENT_AUTH_TYPE_NONE)}</MenuItem>
+                                            </Select>
+                                        </Grid2>
+                                        <Grid2 marginBottom={"16px"}>
+                                            <div>Response Type</div>
+                                            <Select
+                                                size="small"
+                                                fullWidth={true}
+                                                value={oidcProviderInput.federatedOIDCProviderResponseType}
+                                                name="responseType"
+                                                onChange={(evt) => { oidcProviderInput.federatedOIDCProviderResponseType = evt.target.value; setOIDCProviderInput({ ...oidcProviderInput }); setMarkDirty(true);}}
+                                            >
+                                                {FEDERATED_OIDC_RESPONSE_TYPES.map(
+                                                    (type: string) => (
+                                                        <MenuItem value={type} >{type}</MenuItem>
+                                                    )
+                                                )}
+                                            </Select>
+                                        </Grid2>
+                                        <Grid2 marginBottom={"16px"}>
+                                            <div>Subject Type</div>
+                                            <Select
+                                                size="small"
+                                                fullWidth={true}
+                                                value={oidcProviderInput.federatedOIDCProviderSubjectType}
+                                                name="subjectType"
+                                                onChange={(evt) => { oidcProviderInput.federatedOIDCProviderSubjectType = evt.target.value; setOIDCProviderInput({ ...oidcProviderInput }); setMarkDirty(true);}}
+                                            >
+                                                {FEDERATED_OIDC_PROVIDER_SUBJECT_TYPES.map(
+                                                    (type: string) => (
+                                                        <MenuItem value={type} >{type}</MenuItem>
+                                                    )
+                                                )}
                                             </Select>
                                         </Grid2>
                                         <Grid2 marginBottom={"16px"}>

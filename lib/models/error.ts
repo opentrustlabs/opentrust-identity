@@ -1160,8 +1160,17 @@ export const ERROR_CODES: Record<string, ErrorDetail> = {
     EC00227: {
         errorCode: "EC00227",
         errorKey: "ERROR_RESTRICTED_AUTHENTICATION_DOMAINS_FOR_TENANT",
-        errorMessage: "The tenant has restricted its authentication to domains that do not include this user."
-        
+        errorMessage: "The tenant has restricted its authentication to domains that do not include this user."        
+    },
+    EC00228: {
+        errorCode: "EC00228",
+        errorKey: "ERROR_INVALID_FEDERATED_OIDC_PROVIDER_RESPONSE_TYPE",
+        errorMessage: "The federated OIDC provider response type is invalid."        
+    },
+    EC00229: {
+        errorCode: "EC00229",
+        errorKey: "ERROR_INVALID_FEDDERATED_OIDC_PROVIDER_SUBJECT_TYPE",
+        errorMessage: "The federated OIDC provider subject type is invalid."        
     }
 }
 

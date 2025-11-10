@@ -1,6 +1,6 @@
 {
-  "name": "open-certs-oidc",
-  "version": "0.1.0",
+  "name": "open-trust-identity",
+  "version": "0.9.1",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",

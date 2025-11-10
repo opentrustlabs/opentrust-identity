@@ -2,15 +2,9 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import JwtServiceUtils from '@/lib/service/jwt-service-utils';
 import { MyUserProfile, ProfileScope } from '@/lib/models/principal';
-import { containsScope } from '@/utils/authz-utils';
 import { CLIENT_TYPE_IDENTITY, MY_PROFILE_READ_SCOPE, PRINCIPAL_TYPE_ANONYMOUS_USER, PRINCIPAL_TYPE_END_USER } from '@/utils/consts';
-import { Client, Scope } from '@/graphql/generated/graphql-types';
-import { DaoFactory } from '@/lib/data-sources/dao-factory';
-import ClientDao from '@/lib/dao/client-dao';
-import { Profile } from '@opensearch-project/opensearch/api/_types/_core.search.js';
+import { Client } from '@/graphql/generated/graphql-types';
 
-
-const clientDao: ClientDao = DaoFactory.getInstance().getClientDao();
 const jwtServiceUtils: JwtServiceUtils = new JwtServiceUtils();
 
 
