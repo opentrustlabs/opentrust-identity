@@ -461,3 +461,95 @@ tenant is restricted to data within their tenant and the IAM management scope to
 assigned. However, a member of the Root Tenant is only restricted by the IAM management scope to 
 which they are assigned, which is applied to ALL tenants. 
 
+#### The OIDC Endpoints
+
+All of the OIDC endpoints are relative to a tenant ID. This includes the root tenant. At the moment, there are
+no common or public tenants. 
+
+###### Discovery endpoint
+
+```bash
+/api/\{tenant_id\}/.well-known/openid-configuration
+```
+
+###### Authorization endpoint
+
+```bash
+/api/\{tenant_id\}/oidc/authorize
+```
+
+###### JWKS endpoint
+
+```bash
+/api/\{tenant_id\}/oidc/keys
+```
+
+###### Token endpoint
+
+```bash
+/api/\{tenant_id\}/oidc/token
+```
+
+###### User info endpoint
+
+```bash
+/api/\{tenant_id\}/oidc/userinfo
+```
+
+###### Revocation endpoint
+
+```bash
+/api/\{tenant_id\}/oidc/revoke
+```
+
+###### Device code endpoint
+
+```bash
+/api/\{tenant_id\}/oidc/devicecode
+```
+
+In addition to the standard OIDC endpoints there are several utility endpoints which clients can invoke.
+
+###### My Profile endpoint
+
+```bash
+/api/users/me?include\=scope&include\=groups
+```
+
+Where the `include` parameters are both optional, if you want a full list of the scope values
+or authorization groups that the profile contains.
+
+This endpoint is meant to supplemnt the standard OIDC userinfo endpoint, and contains more information
+about either the end user or the service client which is represented by the access token (which should
+be provided as a Bearer Authorization header). 
+
+For service accounts, no special scope is required. For end user accounts, the client which was used
+for OIDC authentication either needs to be of type IDENTITY or needs to have a delegated scope of
+`user.profile.read`.
+
+###### Create an anonymous user
+
+```bash
+/api/users/anonymous
+```
+
+This is for tenants which may have B2C functionality, and which have enabled anonymous users so that 
+authentication is NOT required to browse the site. 
+
+The method is `POST` with a content type of `x-www-form-urlencoded` and an optional payload with the following
+parameters
+
+```bash
+country_code=ISO-country-code
+language_code=ISO-language-code
+```
+
+If the parameters are omitted, this defaults to the country and language configured for the tenant.
+
+Clients need to be assigned the scope 
+`"anonymous.user.create`.
+
+###### Rate limits
+
+If you are implementing any type of throttling for your tenants, this endpoint will return
+all of the rate limits that have been configured.
