@@ -8,7 +8,7 @@ import TextField from "@mui/material/TextField";
 import Stack from "@mui/material/Stack";
 import Button from "@mui/material/Button";
 import { FederatedOidcProviderCreateInput } from "@/graphql/generated/graphql-types";
-import { FEDERATED_OIDC_PROVIDER_TYPE_ENTERPRISE, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_POST, OIDC_OPENID_SCOPE, OIDC_PROFILE_SCOPE, OIDC_EMAIL_SCOPE, OIDC_OFFLINE_ACCESS_SCOPE, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_BASIC, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_JWT, OIDC_CLIENT_AUTH_TYPE_DISPLAY, OIDC_CLIENT_AUTH_TYPE_NONE, FEDERATED_OIDC_RESPONSE_TYPES, FEDERATED_OIDC_PROVIDER_SUBJECT_TYPES, FEDERATED_OIDC_RESPONSE_TYPE_CODE, FEDERATED_OIDC_PROVIDER_SUBJECT_TYPE_PUBLIC } from "@/utils/consts";
+import { FEDERATED_OIDC_PROVIDER_TYPE_ENTERPRISE, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_POST, OIDC_OPENID_SCOPE, OIDC_PROFILE_SCOPE, OIDC_EMAIL_SCOPE, OIDC_OFFLINE_ACCESS_SCOPE, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_BASIC, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_JWT, OIDC_CLIENT_AUTH_TYPE_DISPLAY, OIDC_CLIENT_AUTH_TYPE_NONE, FEDERATED_OIDC_RESPONSE_TYPE_CODE, FEDERATED_OIDC_PROVIDER_SUBJECT_TYPE_PUBLIC } from "@/utils/consts";
 import Checkbox from "@mui/material/Checkbox";
 import Select from "@mui/material/Select";
 import Autocomplete from "@mui/material/Autocomplete";
@@ -56,12 +56,6 @@ const InitFederatedOIDCProviderConfiguration: React.FC<SystemInitializationConfi
     const [providerTestSucceeded, setProviderTestSucceeded] = React.useState<boolean>(false);
 
     // GRAPHQL FUNCTIONS
-    // createFederatedAuthTest(
-    //      clientAuthType: $clientAuthType, 
-    //      clientId: $clientId, 
-    //      scope: $scope, 
-    //      usePkce: $usePkce, 
-    //      wellKnownUri: $wellKnownUri, clientSecret: $clientSecret)
     const [createFederatedAuthTestMutation] = useMutation(CREATE_FEDERATED_AUTH_TEST_MUTATION, {
         variables: {
             clientAuthType: oidcProviderInput.clientAuthType,
@@ -167,8 +161,20 @@ const InitFederatedOIDCProviderConfiguration: React.FC<SystemInitializationConfi
             >
                 <Grid2 container size={12} spacing={1}>
                     <Grid2 fontWeight={"bold"} size={12} marginBottom={"8px"}>
-                        Optional - Configure your enterprise OIDC provider if you want to use SSO to access the IAM tool. 
-                        This will require a test to make sure SSO works.
+                        <div style={{marginBottom: "8px"}}>
+                            Optional - Configure your enterprise OIDC provider if you want to use SSO to access the IAM tool. 
+                            This will require a test to make sure SSO works. Make sure that the federated OIDC provider supports 
+                            the following (which can be found from their discovery URI)
+                        </div>                                                             
+                        <pre>
+                            <ol>
+                                <li>userinfo_endpoint</li>
+                                <li>response_type=code</li>
+                                <li>response_mode=query</li> 
+                                <li>scopes_supported of openid, profile, email</li>                                           
+                                <li>claims_supported of email, family_name, given_name</li>
+                            </ol>
+                        </pre>                          
                     </Grid2>
                 </Grid2>
                 <Grid2 marginBottom={"8px"}>
@@ -260,7 +266,7 @@ const InitFederatedOIDCProviderConfiguration: React.FC<SystemInitializationConfi
                         />
                     </Grid2>
                 </Grid2>
-                <Grid2 marginBottom={"8px"}>
+                {/* <Grid2 marginBottom={"8px"}>
                     <div>Response Type</div>
                     <Select
                         size="small"
@@ -291,7 +297,7 @@ const InitFederatedOIDCProviderConfiguration: React.FC<SystemInitializationConfi
                             )
                         )}
                     </Select>
-                </Grid2>
+                </Grid2> */}
                 <Grid2 marginBottom={"16px"}>
                     <div>Scope</div>
                     <Autocomplete

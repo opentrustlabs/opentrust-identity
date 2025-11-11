@@ -281,7 +281,7 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
                                         />                                        
                                     </Grid2>
                                     <Grid2 marginBlock={"8px"} size={12}>
-                                        <div>No-Reply Email (Optional, but recommended)</div>
+                                        <div>No-Reply Email</div>
                                         <TextField
                                             size="small"
                                             fullWidth={true}
@@ -295,7 +295,7 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
                                     </Grid2>
 
                                     <Grid2 marginBlock={"8px"} size={12}>
-                                        <div>Contact Email (Optional, but recommended)</div>
+                                        <div>Contact Email</div>
                                         <TextField
                                             size="small"
                                             fullWidth={true}
@@ -324,7 +324,7 @@ const SystemSettingsDetail: React.FC<SystemSettingsDetailProps> = ({
                                                     })
                                                 }}
                                                 markDirty={markDirty}
-                                                disableSubmit={false}                                            
+                                                disableSubmit={false}                                                
                                             />
                                         </Grid2>
                                     }                                    
