@@ -4,7 +4,7 @@ import React, { useContext, useEffect, useState } from "react";
 import { Backdrop, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, Divider, Grid2, Paper, Stack, TextField, Typography } from "@mui/material";
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { DEFAULT_TENANT_META_DATA, PASSWORD_MINIMUM_LENGTH, QUERY_PARAM_ERROR, QUERY_PARAM_ERROR_DESCRIPTION, QUERY_PARAM_PREAUTHN_TOKEN, QUERY_PARAM_REDIRECT_URI, QUERY_PARAM_RETURN_URI, QUERY_PARAM_TENANT_ID, SOCIAL_OIDC_PROVIDER_APPLE, SOCIAL_OIDC_PROVIDER_FACEBOOK, SOCIAL_OIDC_PROVIDER_GOOGLE, SOCIAL_OIDC_PROVIDER_LINKEDIN, SOCIAL_OIDC_PROVIDER_SALESFORCE } from "@/utils/consts";
+import { DEFAULT_TENANT_META_DATA, PASSWORD_MINIMUM_LENGTH, QUERY_PARAM_ERROR, QUERY_PARAM_ERROR_DESCRIPTION, QUERY_PARAM_PREAUTHN_TOKEN, QUERY_PARAM_REDIRECT_URI, QUERY_PARAM_RETURN_URI, QUERY_PARAM_TENANT_ID, SOCIAL_OIDC_PROVIDER_GOOGLE, SOCIAL_OIDC_PROVIDER_LINKEDIN, SOCIAL_OIDC_PROVIDER_SALESFORCE } from "@/utils/consts";
 import { useMutation, useQuery } from "@apollo/client";
 import { UserAuthenticationStateResponse, TenantSelectorData, AuthenticationState, UserAuthenticationState, TenantPasswordConfig, FederatedOidcProvider, AuthorizationScopeApprovalData, Scope } from "@/graphql/generated/graphql-types";
 import Alert from '@mui/material/Alert';
@@ -342,15 +342,9 @@ const Login: React.FC<LoginProps>= ({
         if (provider.socialLoginProvider === SOCIAL_OIDC_PROVIDER_GOOGLE) {
             return <img alt="google logo" src="/google.png" width={"25px"} />
         }
-        else if (provider.socialLoginProvider === SOCIAL_OIDC_PROVIDER_FACEBOOK) {
-            return <img alt="facebook logo" src="/facebook.png" width={"25px"} />
-        }
         else if (provider.socialLoginProvider === SOCIAL_OIDC_PROVIDER_LINKEDIN) {
             return <img alt="linkedin logo" src="/linkedin.png" width={"25px"} />
-        }
-        else if (provider.socialLoginProvider === SOCIAL_OIDC_PROVIDER_APPLE) {
-            return <img alt="apple logo" src="/apple.png" width={"25px"} />
-        }
+        }        
         else if (provider.socialLoginProvider === SOCIAL_OIDC_PROVIDER_SALESFORCE) {
             return <img alt="salesforce logo" src="/salesforce.png" width={"25px"} />
         }

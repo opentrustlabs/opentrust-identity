@@ -883,14 +883,19 @@ export const FEDERATED_OIDC_PROVIDER_TYPES_DISPLAY = new Map<string, string>(
     ]
 );
 
+
+// The following social providers do NOT implement the OIDC specification
+// completely. There are known issues with the lack of userinfo endpoints,
+// missing claims for first name, last name, etc, and lack of support for
+// the response_type of "code", which means using the implicit grant flow
+// which has been deprecated. These may be support social identity providers
+// within this IAM tool at some point, however.
+// export const SOCIAL_OIDC_PROVIDER_FACEBOOK="Facebook";
+// export const SOCIAL_OIDC_PROVIDER_APPLE="Apple";
 export const SOCIAL_OIDC_PROVIDER_GOOGLE="Google";
-export const SOCIAL_OIDC_PROVIDER_FACEBOOK="Facebook";
-export const SOCIAL_OIDC_PROVIDER_APPLE="Apple";
 export const SOCIAL_OIDC_PROVIDER_LINKEDIN="LinkedIn";
 export const SOCIAL_OIDC_PROVIDER_SALESFORCE="Salesforce"
 export const SOCIAL_OIDC_PROVIDERS = [
-    SOCIAL_OIDC_PROVIDER_APPLE,
-    SOCIAL_OIDC_PROVIDER_FACEBOOK,
     SOCIAL_OIDC_PROVIDER_GOOGLE,
     SOCIAL_OIDC_PROVIDER_LINKEDIN,
     SOCIAL_OIDC_PROVIDER_SALESFORCE
