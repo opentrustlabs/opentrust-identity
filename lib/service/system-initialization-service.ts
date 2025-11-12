@@ -13,7 +13,7 @@ import { createPrivateKey, createPublicKey, KeyObject, PrivateKeyInput, PublicKe
 import { ERROR_CODES } from "../models/error";
 import { logWithDetails } from "../logging/logger";
 import JwtServiceUtils from "./jwt-service-utils";
-import { ALL_INTERNAL_SCOPE_NAMES_DISPLAY, CHANGE_EVENT_CLASS_AUTHORIZATION_GROUP, CHANGE_EVENT_CLASS_CLIENT, CHANGE_EVENT_CLASS_OIDC_PROVIDER, CHANGE_EVENT_CLASS_SCOPE, CHANGE_EVENT_CLASS_SIGNING_KEY, CHANGE_EVENT_CLASS_TENANT, CHANGE_EVENT_CLASS_USER, CHANGE_EVENT_TYPE_CREATE, CONTACT_TYPE_FOR_CLIENT, CONTACT_TYPE_FOR_TENANT, CUSTOM_ENCRYP_DECRYPT_SCOPE, FEDERATED_AUTH_TEST_STATE_PARAM_PREFIX, FEDERATED_OIDC_PROVIDER_RETURN_URI_PATH, KEY_TYPE_RSA, KEY_USE_JWT_SIGNING, LEGACY_USER_MIGRATION_SCOPE, NAME_ORDER_WESTERN, OIDC_CLIENT_AUTH_TYPES, OPENTRUST_IDENTITY_VERSION, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, PRINCIPAL_TYPE_SYSTEM_INIT_USER, SCOPE_USE_IAM_MANAGEMENT, SECURITY_EVENT_WRITE_SCOPE, SIGNING_KEY_STATUS_ACTIVE, SMS_SEND_SCOPE, SYSTEM_INITIALIZATION_KEY_ID, TENANT_READ_ALL_SCOPE, TENANT_TYPE_ROOT_TENANT, USER_TENANT_REL_TYPE_PRIMARY, VALID_KMS_STRATEGIES } from "@/utils/consts";
+import { ALL_INTERNAL_SCOPE_NAMES_DISPLAY, CHANGE_EVENT_CLASS_AUTHORIZATION_GROUP, CHANGE_EVENT_CLASS_CLIENT, CHANGE_EVENT_CLASS_OIDC_PROVIDER, CHANGE_EVENT_CLASS_SCOPE, CHANGE_EVENT_CLASS_SIGNING_KEY, CHANGE_EVENT_CLASS_TENANT, CHANGE_EVENT_CLASS_USER, CHANGE_EVENT_TYPE_CREATE, CONTACT_TYPE_FOR_CLIENT, CONTACT_TYPE_FOR_TENANT, CUSTOM_ENCRYP_DECRYPT_SCOPE, FEDERATED_AUTH_TEST_STATE_PARAM_PREFIX, FEDERATED_OIDC_PROVIDER_RETURN_URI_PATH, FEDERATED_OIDC_RESPONSE_TYPES, KEY_TYPE_RSA, KEY_USE_JWT_SIGNING, LEGACY_USER_MIGRATION_SCOPE, NAME_ORDER_WESTERN, OIDC_CLIENT_AUTH_TYPES, OPENTRUST_IDENTITY_VERSION, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, PRINCIPAL_TYPE_SYSTEM_INIT_USER, SCOPE_USE_IAM_MANAGEMENT, SECURITY_EVENT_WRITE_SCOPE, SIGNING_KEY_STATUS_ACTIVE, SMS_SEND_SCOPE, SYSTEM_INITIALIZATION_KEY_ID, TENANT_READ_ALL_SCOPE, TENANT_TYPE_ROOT_TENANT, USER_TENANT_REL_TYPE_PRIMARY, VALID_KMS_STRATEGIES } from "@/utils/consts";
 import { JWTPayload } from "jose";
 import { generateHash, generateRandomToken, generateUserCredential, getDomainFromEmail } from "@/utils/dao-utils";
 import IdentityDao from "../dao/identity-dao";
@@ -367,7 +367,9 @@ class SystemInitializationService {
                 usePkce: systemInitializationInput.rootFederatedOIDCProviderInput.usePkce,
                 federatedOIDCProviderClientSecret: systemInitializationInput.rootFederatedOIDCProviderInput.federatedOIDCProviderClientSecret,
                 federatedOIDCProviderDescription: systemInitializationInput.rootFederatedOIDCProviderInput.federatedOIDCProviderDescription,
-                federatedOIDCProviderTenantId: systemInitializationInput.rootFederatedOIDCProviderInput.federatedOIDCProviderTenantId
+                federatedOIDCProviderTenantId: systemInitializationInput.rootFederatedOIDCProviderInput.federatedOIDCProviderTenantId,
+                federatedOIDCProviderResponseType: systemInitializationInput.rootFederatedOIDCProviderInput.federatedOIDCProviderResponseType,
+                federatedOIDCProviderSubjectType: systemInitializationInput.rootFederatedOIDCProviderInput.federatedOIDCProviderSubjectType
             }
             await federatedOIDCProviderDao.createFederatedOidcProvider(federatedOIDCProvider);
             await federatedOIDCProviderDao.assignFederatedOidcProviderToDomain(federatedOIDCProvider.federatedOIDCProviderId, systemInitializationInput.rootAuthenticationDomain);
@@ -558,7 +560,7 @@ class SystemInitializationService {
         }
     }
 
-    public async createFederatedAuthTest(clientId: string, clientSecret: string | null, usePkce: boolean, scope: string, wellKnownUri: string, clientAuthType: string): Promise<string> {
+    public async createFederatedAuthTest(clientId: string, clientSecret: string | null, usePkce: boolean, scope: string, wellKnownUri: string, clientAuthType: string, responseType: string): Promise<string> {
         const {errorDetail} = await this.validateJwt(this.oidcContext.authToken);
         if(errorDetail !== null){
             throw new GraphQLError("ERROR_INVALID_TOKEN");
@@ -567,10 +569,13 @@ class SystemInitializationService {
         if(usePkce === false && clientSecret === null){
             throw new GraphQLError("ERROR_MISSING_CLIENT_SECRET");
         }
-
         if(!OIDC_CLIENT_AUTH_TYPES.includes(clientAuthType)){
             throw new GraphQLError("ERROR_INVALID_CLIENT_AUTH_TYPE");
         }
+        if(!FEDERATED_OIDC_RESPONSE_TYPES.includes(responseType)){
+            throw new GraphQLError("ERROR_INVALID_RESPONSE_TYPE");
+        }
+
         const wellKnownConfig: WellknownConfig | null = await oidcServiceUtils.getWellKnownConfig(wellKnownUri);
         if(!wellKnownConfig){
             throw new GraphQLError("ERROR_UNABLE_TO_RETRIEVE_OIDC_INFORMATION_FROM_WELL_KNOWN_URI");
@@ -597,7 +602,7 @@ class SystemInitializationService {
         const params: URLSearchParams = new URLSearchParams();
         params.set("state", federatedAuthTest.authState);
         params.set("redirect_uri", federatedAuthTest.redirectUri);
-        params.set("response_type", "code");
+        params.set("response_type", responseType);
         params.set("scope", scope);
         params.set("client_id", clientId);
         if(usePkce && codeVerifier){

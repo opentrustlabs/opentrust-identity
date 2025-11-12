@@ -61,9 +61,9 @@ export default async function handler(
             userinfo_endpoint: `${AUTH_DOMAIN}/api/${tenantId}/oidc/userinfo`,
             jwks_uri: `${AUTH_DOMAIN}/api/${tenantId}/oidc/keys`,
             token_endpoint_auth_methods_supported: [
+                "client_secret_basic",
                 "client_secret_post",
-                "client_secret_jwt",
-                "none"
+                "client_secret_jwt"                
             ],
             response_modes_supported: [
                 "query",
@@ -78,18 +78,15 @@ export default async function handler(
                 "aud",
                 "iat",
                 "exp",
-                "at_hash",
                 "name",
                 "given_name",
                 "family_name",
                 "middle_name",
-                "nickname",
-                "preferred_username",
-                "profile",
                 "phone_number",
                 "address",
                 "updated_at",
                 "email",
+                "email_verified",
                 "country_code"
             ],
             claims_parameter_supported: false,

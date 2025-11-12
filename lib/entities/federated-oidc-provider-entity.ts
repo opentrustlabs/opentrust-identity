@@ -118,11 +118,20 @@ const FederatedOIDCProviderEntity = new EntitySchema({
             nullable: false,
             name: "markfordelete",
             transformer: BooleanTransformer
+        },
+        federatedOIDCProviderResponseType: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "federatedoidcproviderresponsetype"
+        },
+        federatedOIDCProviderSubjectType: {
+            type: String,
+            primary: false,
+            nullable: false,
+            name: "federatedoidcprovidersubjecttype"
         }
-    },
-
-
-
+    }
 });
 
 export default FederatedOIDCProviderEntity;

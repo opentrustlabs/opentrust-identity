@@ -1134,7 +1134,7 @@ class IdentityService {
             federatedOIDCAuthorizationRelType: preAuthenticationState ? FederatedOidcAuthorizationRelType.AuthorizationRelTypeClientAuth : FederatedOidcAuthorizationRelType.AuthorizationRelTypePortalAuth,
             email: email,
             userId: userId,
-            expiresAtMs: Date.now() + 15 /* minutes */ * 60 /* seconds/min  */ * 1000 /* ms/sec */,
+            expiresAtMs: Date.now() + 30 /* minutes */ * 60 /* seconds/min  */ * 1000 /* ms/sec */,
             federatedOIDCProviderId: provider.federatedOIDCProviderId,
             initRedirectUri: preAuthenticationState ? preAuthenticationState.redirectUri : "",
             initResponseMode: preAuthenticationState? preAuthenticationState.responseMode : "" ,
@@ -1170,7 +1170,7 @@ class IdentityService {
         const scopeParameter = provider.scopes.join("%20");
 
         const codeChallengeQueryParams = provider.usePkce ? `&code_challenge=${challenge}&code_challenge_method=S256` : "";
-        const authnUri = `${wellKnownConfig.authorization_endpoint}?client_id=${provider.federatedOIDCProviderClientId}&state=${federatedOIDCAuthorizationRel.state}&response_type=code&response_mode=query&redirect_uri=${AUTH_DOMAIN}${FEDERATED_OIDC_PROVIDER_RETURN_URI_PATH}&scope=${scopeParameter}${codeChallengeQueryParams}`;
+        const authnUri = `${wellKnownConfig.authorization_endpoint}?client_id=${provider.federatedOIDCProviderClientId}&state=${federatedOIDCAuthorizationRel.state}&response_type=${provider.federatedOIDCProviderResponseType}&response_mode=query&redirect_uri=${AUTH_DOMAIN}${FEDERATED_OIDC_PROVIDER_RETURN_URI_PATH}&scope=${scopeParameter}${codeChallengeQueryParams}`;
         retVal.authorizationEndpoint = authnUri;
 
         return retVal;

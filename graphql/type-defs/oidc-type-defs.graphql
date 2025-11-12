@@ -283,7 +283,7 @@ type Mutation {
     ## System initialization
     systemInitializationAuthentication(privateKey: String!, password: String): UserAuthenticationStateResponse!
     initializeSystem(systemInitializationInput: SystemInitializationInput!): SystemInitializationResponse!
-    createFederatedAuthTest(clientId: String!, clientSecret: String, usePkce: Boolean!, scope: String!, wellKnownUri: String!, clientAuthType: String!): String!
+    createFederatedAuthTest(clientId: String!, clientSecret: String, usePkce: Boolean!, scope: String!, wellKnownUri: String!, clientAuthType: String!, responseType: String!): String!
 
 }
 
@@ -376,7 +376,9 @@ type FederatedOIDCProvider {
     clientauthtypeid: String
     federatedOIDCProviderType: String!
     federatedoidcprovidertypeid: String
-    socialLoginProvider: String
+    socialLoginProvider: String,
+    federatedOIDCProviderResponseType: String!
+    federatedOIDCProviderSubjectType: String!
     markForDelete: Boolean!
 }
 
@@ -1306,6 +1308,8 @@ input FederatedOIDCProviderCreateInput {
     clientauthtypeid: String
     scopes: [String!]!
     socialLoginProvider: String
+    federatedOIDCProviderResponseType: String!
+    federatedOIDCProviderSubjectType: String!
 }
 
 input FederatedOIDCProviderUpdateInput {
@@ -1324,6 +1328,8 @@ input FederatedOIDCProviderUpdateInput {
     clientauthtypeid: String
     scopes: [String!]!
     socialLoginProvider: String
+    federatedOIDCProviderResponseType: String!
+    federatedOIDCProviderSubjectType: String!
 }
 
 

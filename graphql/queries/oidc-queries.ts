@@ -400,6 +400,8 @@ export const FEDERATED_OIDC_PROVIDER_DETAIL_QUERY = gql(`
             federatedoidcprovidertypeid
             socialLoginProvider
             markForDelete
+            federatedOIDCProviderResponseType
+            federatedOIDCProviderSubjectType
         }
     }
 `);

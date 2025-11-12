@@ -217,7 +217,17 @@ async function handleFederatedAuth(state: string, code: string, res: NextApiResp
     if(userInfo.phone_number){
         userByPhone = await identityDao.getUserBy("phone", userInfo.phone_number);
     }
-        
+    
+    // Need to consider IdPs which may use "pairwise" subject types, as opposed to "public" subject types.
+    // With "pairwise" subject types, a different subject ID is issued on a per-client basis so that relying
+    // parties cannot correlate users across their applications (at least, not by their ID). 
+    // This only really matters for federated OIDC providers if the client IDs are changed in the configuration
+    // of the provider, which should happen only infrequently. In that case, the subject ID will change, but
+    // the email will not, but the user record will have an incorrect subject id which will need to be updated.
+
+    // Handle different cases from the user profile calls and user lookup queries.
+    // 
+    // 1.
     // Should be a rare error condition, but if there are user records by both email and by subject id, and they
     // are different records, then there is no clean way to reconcile these. The latest IdP data takes
     // precedence and so we update the userBySubject with the email, rename the email for the userByEmail with a 
@@ -234,13 +244,15 @@ async function handleFederatedAuth(state: string, code: string, res: NextApiResp
         await updateUserTenantRel(tenant, userByFederatedSubjectId);
         await identityDao.addUserAuthenticationHistory(userByFederatedSubjectId.userId, Date.now());
         canonicalUser = userByFederatedSubjectId;
-        //await saveAuthorizationCodeData(authorizationCode, authRel, userByFederatedSubjectId);
     }
+    // 2.
+    // The "everything is ok" case.
     else if(userByFederatedSubjectId !== null && userByEmail !== null && userByFederatedSubjectId.userId === userByEmail.userId){
         await identityDao.addUserAuthenticationHistory(userByEmail.userId, Date.now());
         canonicalUser = userByEmail;
     }
-    // Otherwise, if there are no existing records, then create a new user based on the userinfo retrieved from the 3rd party IdP
+    // 3.
+    // There are no users matching anything. Create a new user based on the userinfo retrieved from the 3rd party IdP
     else if(userByFederatedSubjectId === null && userByEmail === null){
         const newUser: User = userInfoToUser(userInfo);
         if(userByPhone === null){
@@ -253,10 +265,9 @@ async function handleFederatedAuth(state: string, code: string, res: NextApiResp
         await identityDao.addUserAuthenticationHistory(newUser.userId, Date.now());
         canonicalUser = newUser;
     }
-    
-    // Otherwise, if we find the record based on the IdP ID, but no email-based
-    // record, then we update the existing record with the information from the 
-    // userinfo
+    // 4.
+    // If we find the record based on the IdP ID, but no email-based record, then we update
+    // the existing record with the information from the userinfo
     else if(userByFederatedSubjectId !== null && userByEmail === null){
         userByFederatedSubjectId.email = userInfo.email;
         userByFederatedSubjectId.domain = getDomainFromEmail(userInfo.email);
@@ -274,8 +285,11 @@ async function handleFederatedAuth(state: string, code: string, res: NextApiResp
         await identityDao.addUserAuthenticationHistory(userByFederatedSubjectId.userId, Date.now());
         canonicalUser = userByFederatedSubjectId;
     }
-    // Otherwise, we have found a record with the same email, but it was not previously tied
-    // to a 3rd party IdP, so we just update the existing record with the IdP ID
+    // 5. 
+    // We have found a record with the same email, but it was not previously tied
+    // to a 3rd party IdP, OR it was tied to a DIFFERENT 3rd party IdP OR tied to a DIFFERENT
+    // subject ID in the same IdP (that is, if the IdP uses the "pairwise" subject type) so we 
+    // just update the existing record with the new IdP ID.
     else if(userByFederatedSubjectId === null && userByEmail !== null){
         userByEmail.federatedOIDCProviderSubjectId = userInfo.sub;
         await identityDao.updateUser(userByEmail);

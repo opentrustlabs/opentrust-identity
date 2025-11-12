@@ -117,7 +117,10 @@ const InitSystemSettingsConfiguration: React.FC<SystemInitializationConfigProps>
                             systemInitInput.systemSettingsInput = systemSettingsUpdateInput;
                             onNext(systemInitInput);
                         }}
-                        disabled={false}
+                        disabled={
+                            systemSettingsUpdateInput.noReplyEmail === null || systemSettingsUpdateInput.noReplyEmail === "" ||
+                            systemSettingsUpdateInput.contactEmail === null || systemSettingsUpdateInput.contactEmail === ""
+                        }
                     >
                         Next
                     </Button>                    

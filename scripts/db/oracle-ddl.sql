@@ -20,7 +20,9 @@ create TABLE federated_oidc_provider(
     clientauthtype VARCHAR2(128) NOT NULL,
     federatedoidcprovidertype VARCHAR2(128) NOT NULL,
     socialloginprovider VARCHAR2(128),
-    markfordelete NUMBER(1) NOT NULL
+    markfordelete NUMBER(1) NOT NULL,
+    federatedoidcproviderresponsetype VARCHAR2(64) NOT NULL,
+    federatedoidcprovidersubjecttype VARCHAR2(32) NOT NULL
 );
 
 create TABLE tenant (

@@ -75,8 +75,8 @@ having strict controls over who can do what:
 And the rush to build AI applications has only exacerbated these problems. This IAM tool 
 provides features for managing access to your API, in addition to other common IAM functions. 
 
-One potentially overlooked problem of commercial SaaS IAM providers is the question of:
-Whose data is it? Do you own your data? Can you easily access the raw data? Can you 
+One potentially overlooked problem of commercial SaaS IAM providers is the question of
+whose data is it? Do you own your data? Can you easily access the raw data? Can you 
 perform your own analytics on the data? Can you migrate the data to a different
 system if you had to? What happens to your data if the SaaS provider goes out of business?
 
@@ -108,8 +108,8 @@ And if you are running the tool in a non-local development environment, you will
 Nginx (any recent version will be sufficient)
 
 (Note: The reason Nginx is required for non-local development environments is because NextJS does NOT support
-TLS connections for anything but localhost. Their recommendation is to use Nginx as the reverse proxy or deploy
-on Vercel. For Nginx, there is an example configuration file `example.nginx.conf` at the root of this project.)
+TLS connections for anything but development on localhost. Their recommendation is to use Nginx as the reverse proxy or deploy
+on Vercel. If you choose to use Nginx, there is an example configuration file `example.nginx.conf` at the root of this project.)
 
 There are several things you should have, especially if you are in a non-local development environment.
 
@@ -371,7 +371,7 @@ The CWE has something similar to say (source here: https://cwe.mitre.org/data/de
 > However, if admins do not change the defaults, it is easier for attackers to bypass 
 > authentication quickly across multiple organizations.
 
-And if you are running a PCI compliant application, then "Requirement 2" contains this statement:
+And if you are running a PCI compliant application, "Requirement 2" contains this statement:
 
 > Malicious individuals, both external and internal to an entity, often use default passwords 
 > and other vendor default settings to compromise systems. These passwords and settings 
@@ -384,12 +384,13 @@ public certificate, while the private key remains in the possession of the perso
 To describe the process at a high level, a certificate is deployed on the server(s) along with a 
 flag indicating that the system should be initialized. During initialization, the person who is 
 performing the initialization will upload their private key, which will be used to sign a JWT. 
-That JWT will be verified by the certificate that was deployed to the server. Only 1 person has the key,
-the web admin team (or devops team), which should NOT include the person performing initialization,
-has access to the server configuration. Once initialization is complete it cannot be re-performed, unless
-all of the data is truncated from the database and the proper environment variables are set.
-After the initialization is complete, the web admin team (or devops team) should remove the
-environment settings for initialization and restart the server.
+That JWT will be verified by the certificate that was deployed to the server. 
+
+In this scenario, only 1 person has the key, the web admin team (or devops team), which should 
+NOT include the person performing initialization, has access to the server configuration. Once 
+initialization is complete it cannot be re-performed, unless all of the data is truncated from the 
+database and the proper environment variables are set. After the initialization is complete, the web 
+admin team (or devops team) should remove the environment settings for initialization and restart the server.
 
 The environment variables that need to be set for system initialization are the following:
 
@@ -461,3 +462,100 @@ tenant is restricted to data within their tenant and the IAM management scope to
 assigned. However, a member of the Root Tenant is only restricted by the IAM management scope to 
 which they are assigned, which is applied to ALL tenants. 
 
+#### The OIDC Endpoints
+
+All of the OIDC endpoints are relative to a tenant ID. This includes the root tenant. At the moment, there are
+no common or public tenants. 
+
+###### Discovery endpoint
+
+```bash
+/api/{tenant_id}/.well-known/openid-configuration
+```
+
+###### Authorization endpoint
+
+```bash
+/api/{tenant_id}/oidc/authorize
+```
+
+###### JWKS endpoint
+
+```bash
+/api/{tenant_id}/oidc/keys
+```
+
+###### Token endpoint
+
+```bash
+/api/{tenant_id}/oidc/token
+```
+
+###### User info endpoint
+
+```bash
+/api/{tenant_id}/oidc/userinfo
+```
+
+###### Revocation endpoint
+
+```bash
+/api/{tenant_id}/oidc/revoke
+```
+
+###### Device code endpoint
+
+```bash
+/api/{tenant_id}/oidc/devicecode
+```
+
+In addition to the standard OIDC endpoints there are several utility endpoints which clients can invoke.
+
+###### My Profile endpoint
+
+```bash
+/api/users/me
+```
+
+This `GET` endpoint is meant to supplemnt the standard OIDC userinfo endpoint, and contains more information
+about either the end user or the service client which is represented by the access token (which should
+be provided as a Bearer Authorization header). 
+
+Use this endpoint if you want a full list of the scope values or authorization groups that the 
+profile contains.
+
+For service accounts, no special scope is required. For end user accounts, the client which was used
+for OIDC authentication either needs to be of type IDENTITY or needs to have a delegated scope of
+`user.profile.read`.
+
+###### Create an anonymous user
+
+```bash
+/api/users/anonymous
+```
+
+This is for tenants which may have some type of B2C functionality, and which have enabled anonymous users so that 
+authentication is NOT required to browse the site. 
+
+The method is `POST` with a content type of `x-www-form-urlencoded` and an optional payload with the following
+parameters
+
+```bash
+country_code=ISO-country-code
+language_code=ISO-language-code
+```
+
+If the parameters are omitted, this defaults to the country and language configured for the tenant.
+
+Clients need to be assigned the scope 
+`anonymous.user.create`.
+
+###### Rate limits
+
+```bash
+/api/users/rate-limits
+```
+
+If you are implementing any type of throttling for your tenants, this `GET` endpoint will return
+all of the rate limits that have been configured for the tenant. This will be applied to
+both service accounts and end users.

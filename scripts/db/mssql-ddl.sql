@@ -7,16 +7,18 @@ create TABLE federated_oidc_provider(
     federatedoidcprovidername NVARCHAR(128) NOT NULL,
     federatedoidcproviderdescription NVARCHAR(256),
     federatedoidcprovidertenantid VARCHAR(64),
-    federatedoidcproviderclientid varchar(128) NOT NULL,
-    federatedoidcproviderclientsecret varchar(256),
-    federatedoidcproviderwellknownuri varchar(512) NOT NULL,
+    federatedoidcproviderclientid VARCHAR(128) NOT NULL,
+    federatedoidcproviderclientsecret VARCHAR(256),
+    federatedoidcproviderwellknownuri VARCHAR(512) NOT NULL,
     refreshtokenallowed BIT NOT NULL,
-    scopes varchar(256),
+    scopes VARCHAR(256),
     usepkce BIT NOT NULL,
-    clientauthtype varchar(128) NOT NULL,
-    federatedoidcprovidertype varchar(128) NOT NULL,
+    clientauthtype VARCHAR(128) NOT NULL,
+    federatedoidcprovidertype VARCHAR(128) NOT NULL,
     socialloginprovider VARCHAR(128),
-    markfordelete BIT NOT NULL
+    markfordelete BIT NOT NULL,
+    federatedoidcproviderresponsetype VARCHAR(64) NOT NULL,
+    federatedoidcprovidersubjecttype VARCHAR(32) NOT NULL
 );
 
 create TABLE tenant (

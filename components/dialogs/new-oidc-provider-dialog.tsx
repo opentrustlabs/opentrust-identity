@@ -1,7 +1,7 @@
 "use client";
 import { FederatedOidcProviderCreateInput } from "@/graphql/generated/graphql-types";
 import { FEDERATED_OIDC_PROVIDER_CREATE_MUTATION } from "@/graphql/mutations/oidc-mutations";
-import { FEDERATED_OIDC_PROVIDER_TYPE_ENTERPRISE, FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL, FEDERATED_OIDC_PROVIDER_TYPES_DISPLAY, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_BASIC, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_JWT, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_POST, OIDC_CLIENT_AUTH_TYPE_DISPLAY, OIDC_CLIENT_AUTH_TYPE_NONE, OIDC_EMAIL_SCOPE, OIDC_OFFLINE_ACCESS_SCOPE, OIDC_OPENID_SCOPE, OIDC_PROFILE_SCOPE, SOCIAL_OIDC_PROVIDERS } from "@/utils/consts";
+import { FEDERATED_OIDC_PROVIDER_SUBJECT_TYPE_PUBLIC, FEDERATED_OIDC_PROVIDER_TYPE_ENTERPRISE, FEDERATED_OIDC_PROVIDER_TYPE_SOCIAL, FEDERATED_OIDC_PROVIDER_TYPES_DISPLAY, FEDERATED_OIDC_RESPONSE_TYPE_CODE, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_BASIC, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_JWT, OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_POST, OIDC_CLIENT_AUTH_TYPE_DISPLAY, OIDC_CLIENT_AUTH_TYPE_NONE, OIDC_EMAIL_SCOPE, OIDC_OFFLINE_ACCESS_SCOPE, OIDC_OPENID_SCOPE, OIDC_PROFILE_SCOPE, SOCIAL_OIDC_PROVIDERS } from "@/utils/consts";
 import { useMutation } from "@apollo/client";
 import { Alert, Autocomplete, Button, Checkbox, DialogActions, DialogContent, Grid2, MenuItem, Select, Stack, TextField, Typography } from "@mui/material";
 import React, { useContext } from "react";
@@ -41,7 +41,9 @@ const NewOIDCProviderDialog: React.FC<NewOIDCProviderDialogProps> = ({
         clientAuthType: OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_POST,
         clientauthtypeid: "",
         scopes: [OIDC_OPENID_SCOPE, OIDC_PROFILE_SCOPE, OIDC_EMAIL_SCOPE, OIDC_OFFLINE_ACCESS_SCOPE],
-        socialLoginProvider: ""
+        socialLoginProvider: "",
+        federatedOIDCProviderResponseType: FEDERATED_OIDC_RESPONSE_TYPE_CODE,
+        federatedOIDCProviderSubjectType: FEDERATED_OIDC_PROVIDER_SUBJECT_TYPE_PUBLIC
     }
 
     // HOOKS
@@ -118,6 +120,20 @@ const NewOIDCProviderDialog: React.FC<NewOIDCProviderDialogProps> = ({
                                     </Stack>
                                 </Grid2>
                             }
+                            <Grid2 size={12} marginBottom={"8px"}>
+                                <Alert severity="info" sx={{width: "100%"}}>
+                                    <div style={{marginBottom: "8px"}}>Make sure that the federated OIDC provider supports the following (which can be found from their discovery URI) </div>
+                                    <pre>
+                                        <ol>
+                                            <li>userinfo_endpoint</li>
+                                            <li>response_type=code</li>
+                                            <li>response_mode=query</li>
+                                            <li>scopes_supported of openid, profile, email</li>
+                                            <li>claims_supported of email, family_name, given_name</li>
+                                        </ol>
+                                    </pre>                                    
+                                </Alert>
+                            </Grid2>
                             <Grid2 marginBottom={"8px"}>
                                 <div>Provider Name</div>
                                 <TextField
@@ -236,9 +252,9 @@ const NewOIDCProviderDialog: React.FC<NewOIDCProviderDialogProps> = ({
                                     <MenuItem value={OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_BASIC} >{OIDC_CLIENT_AUTH_TYPE_DISPLAY.get(OIDC_CLIENT_AUTH_TYPE_CLIENT_SECRET_BASIC)}</MenuItem>
                                     <MenuItem disabled={oidcProviderInput.usePkce === false} value={OIDC_CLIENT_AUTH_TYPE_NONE} >{OIDC_CLIENT_AUTH_TYPE_DISPLAY.get(OIDC_CLIENT_AUTH_TYPE_NONE)}</MenuItem>
                                 </Select>
-                            </Grid2>
+                            </Grid2>                            
                             <Grid2 marginBottom={"8px"}>
-                                <div>Provider Client Secret (Not required if using PCKE or you want IdP owner to enter the secret)</div>
+                                <div>Provider Client Secret (Not required if using PCKE or you want the IdP owner to enter the secret)</div>
                                 <TextField type="password" name="clientSecret" id="clientSecret"
                                     value={oidcProviderInput.federatedOIDCProviderClientSecret}
                                     onChange={(evt) => { oidcProviderInput.federatedOIDCProviderClientSecret = evt.target.value; setOIDCProviderInput({ ...oidcProviderInput }); }}

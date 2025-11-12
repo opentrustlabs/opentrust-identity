@@ -84,6 +84,29 @@ export const OIDC_AUTHORIZATION_ERROR_UNSUPPORTED_RESPONSE_TYPE="unsupported_res
 export const OIDC_AUTHORIZATION_ERROR_INVALID_SCOPE = "invalid_scope";
 export const OIDC_AUTHORIZATION_ERROR_UNAUTHORIZED_CLIENT="unauthorized_client";
 
+export const FEDERATED_OIDC_RESPONSE_TYPE_CODE="code";
+export const FEDERATED_OIDC_RESPONSE_TYPE_ID_TOKEN="id_token";
+export const FEDERATED_OIDC_RESPONSE_TYPE_ID_TOKEN_TOKEN="id_token token";
+export const FEDERATED_OIDC_RESPONSE_TYPE_CODE_ID_TOKEN="code id_token";
+export const FEDERATED_OIDC_RESPONSE_TYPE_CODE_TOKEN="code token";
+export const FEDERATED_OIDC_RESPONSE_TYPE_CODE_ID_TOKEN_TOKEN="code id_token token";
+
+export const FEDERATED_OIDC_RESPONSE_TYPES: Array<string> = [
+    FEDERATED_OIDC_RESPONSE_TYPE_CODE,
+    FEDERATED_OIDC_RESPONSE_TYPE_ID_TOKEN,
+    FEDERATED_OIDC_RESPONSE_TYPE_ID_TOKEN_TOKEN,
+    FEDERATED_OIDC_RESPONSE_TYPE_CODE_ID_TOKEN,
+    FEDERATED_OIDC_RESPONSE_TYPE_CODE_TOKEN,
+    FEDERATED_OIDC_RESPONSE_TYPE_CODE_ID_TOKEN_TOKEN
+];
+
+export const FEDERATED_OIDC_PROVIDER_SUBJECT_TYPE_PAIRWISE="pairwise";
+export const FEDERATED_OIDC_PROVIDER_SUBJECT_TYPE_PUBLIC="public";
+export const FEDERATED_OIDC_PROVIDER_SUBJECT_TYPES: Array<string> = [
+    FEDERATED_OIDC_PROVIDER_SUBJECT_TYPE_PAIRWISE,
+    FEDERATED_OIDC_PROVIDER_SUBJECT_TYPE_PUBLIC
+]
+
 
 
 // ************************************************************************** //
@@ -860,14 +883,19 @@ export const FEDERATED_OIDC_PROVIDER_TYPES_DISPLAY = new Map<string, string>(
     ]
 );
 
+
+// The following social providers do NOT implement the OIDC specification
+// completely. There are known issues with the lack of userinfo endpoints,
+// missing claims for first name, last name, etc, and lack of support for
+// the response_type of "code", which means using the implicit grant flow
+// which has been deprecated. These may be support social identity providers
+// within this IAM tool at some point, however.
+// export const SOCIAL_OIDC_PROVIDER_FACEBOOK="Facebook";
+// export const SOCIAL_OIDC_PROVIDER_APPLE="Apple";
 export const SOCIAL_OIDC_PROVIDER_GOOGLE="Google";
-export const SOCIAL_OIDC_PROVIDER_FACEBOOK="Facebook";
-export const SOCIAL_OIDC_PROVIDER_APPLE="Apple";
 export const SOCIAL_OIDC_PROVIDER_LINKEDIN="LinkedIn";
 export const SOCIAL_OIDC_PROVIDER_SALESFORCE="Salesforce"
 export const SOCIAL_OIDC_PROVIDERS = [
-    SOCIAL_OIDC_PROVIDER_APPLE,
-    SOCIAL_OIDC_PROVIDER_FACEBOOK,
     SOCIAL_OIDC_PROVIDER_GOOGLE,
     SOCIAL_OIDC_PROVIDER_LINKEDIN,
     SOCIAL_OIDC_PROVIDER_SALESFORCE

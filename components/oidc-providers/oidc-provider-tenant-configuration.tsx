@@ -115,6 +115,8 @@ const FederatedOIDCProviderTenantConfiguration: React.FC<FederatedOIDCProviderTe
                 <Dialog
                     open={showRemoveDialog}
                     onClose={() => setShowRemoveDialog(false)}
+                    maxWidth="sm"
+                    fullWidth={true}
                 >
                     <DialogContent>
                         <Typography component={"div"}>
