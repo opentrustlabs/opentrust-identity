@@ -534,7 +534,7 @@ for OIDC authentication either needs to be of type IDENTITY or needs to have a d
 /api/users/anonymous
 ```
 
-This is for tenants which may have some type of B2C functionality, and which have enabled anonymous users so that 
+This is for tenants which may have some type of B2C functionality, and which have enabled anonymous users, so that 
 authentication is NOT required to browse the site. 
 
 The method is `POST` with a content type of `x-www-form-urlencoded` and an optional payload with the following
@@ -557,5 +557,5 @@ Clients need to be assigned the scope
 ```
 
 If you are implementing any type of throttling for your tenants, this `GET` endpoint will return
-all of the rate limits that have been configured for the tenant. This will be applied to
+all of the rate limits that have been configured for the tenant. These are applicable to
 both service accounts and end users.
