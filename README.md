@@ -67,12 +67,13 @@ Then the problem of access control becomes paramount. Exposing your APIs to 3rd 
 having strict controls over who can do what:
 
 - What API services are in scope for the client.
+- How are users in the 3rd party applications going to authenticate in order to access those services.
 - Can the client invoke the service on behalf of itself or only on behalf of delegated users.
 - Are the client and delegated users rate-limted in the number of service calls they can make.
 - Is there a restricted list of users who are allowed to authenticate using the client.
 - For abusive clients and users, can their sessions be revoked and their accounts disabled easily.
 
-And the rush to build AI applications has only exacerbated these problems. This IAM tool 
+The rush to build AI applications has only exacerbated these problems. This IAM tool 
 provides features for managing access to your API, in addition to other common IAM functions. 
 
 One potentially overlooked problem of commercial SaaS IAM providers is the question of
@@ -192,7 +193,7 @@ https://openid.net/specs/openid-sharedsignals-framework-1_0.html
 
 __However__, there are a number of security events which this IAM tool emits and which the framework does NOT yet support.
 These include viewing secret values or logging in using a duress password, both of which might trigger external
-actions. For that reason, this tool does support the "Shared Signals" framework. If future work on the "Shared
+actions. For that reason, this tool does NOT support the "Shared Signals" framework. If future work on the "Shared
 Signals" framework includes greater customization of security events, then this decision will be revisited.
 
 This tool has a simple implementation of the security event handler which you can use if you are developing on localhost.
@@ -344,10 +345,6 @@ outbound HTTP and SMTP calls.
 npm run dev
 # or
 yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
 ##### 6. Initialize the IAM tool with the Root Tenant and all ancillary data.
@@ -386,8 +383,8 @@ flag indicating that the system should be initialized. During initialization, th
 performing the initialization will upload their private key, which will be used to sign a JWT. 
 That JWT will be verified by the certificate that was deployed to the server. 
 
-In this scenario, only 1 person has the key, the web admin team (or devops team), which should 
-NOT include the person performing initialization, has access to the server configuration. Once 
+In this scenario, only 1 person has the key. The web admin team (or devops team), which should 
+NOT include the person performing initialization, has access to the server configuration. And once 
 initialization is complete it cannot be re-performed, unless all of the data is truncated from the 
 database and the proper environment variables are set. After the initialization is complete, the web 
 admin team (or devops team) should remove the environment settings for initialization and restart the server.
