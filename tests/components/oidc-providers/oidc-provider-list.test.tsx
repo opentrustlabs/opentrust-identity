@@ -118,9 +118,13 @@ describe('FederatedOIDCProviderList - Medium Screen Layout', () => {
     it('should display provider types on medium screens', () => {
         renderWithProviders(mockSearchResults, true);
 
-        mockProviders.forEach(provider => {
-            expect(screen.getByText(provider.subtype!)).toBeInTheDocument();
-        });
+        // Check for Social type (1 provider)
+        const socialElements = screen.getAllByText('Social');
+        expect(socialElements.length).toBeGreaterThan(0);
+
+        // Check for Enterprise type (2 providers)
+        const enterpriseElements = screen.getAllByText('Enterprise');
+        expect(enterpriseElements.length).toBe(2);
     });
 
     it('should display expand icons for all providers on medium screens', () => {
@@ -241,9 +245,13 @@ describe('FederatedOIDCProviderList - Large Screen Layout', () => {
     it('should display all provider types on large screens', () => {
         renderWithProviders(mockSearchResults, false);
 
-        mockProviders.forEach(provider => {
-            expect(screen.getByText(provider.subtype!)).toBeInTheDocument();
-        });
+        // Check for Social type (1 provider)
+        const socialElements = screen.getAllByText('Social');
+        expect(socialElements.length).toBeGreaterThan(0);
+
+        // Check for Enterprise type (2 providers)
+        const enterpriseElements = screen.getAllByText('Enterprise');
+        expect(enterpriseElements.length).toBe(2);
     });
 
     it('should display all provider object IDs on large screens', () => {
@@ -411,33 +419,29 @@ describe('FederatedOIDCProviderList - Provider Types Display', () => {
     it('should display Social type providers on medium screens', () => {
         renderWithProviders(mockSearchResults, true);
 
-        const socialProvider = mockProviders.find(p => p.subtype === 'Social');
-        expect(screen.getByText(socialProvider!.subtype!)).toBeInTheDocument();
+        const socialElements = screen.getAllByText('Social');
+        expect(socialElements.length).toBe(1);
     });
 
     it('should display Enterprise type providers on medium screens', () => {
         renderWithProviders(mockSearchResults, true);
 
-        const enterpriseProviders = mockProviders.filter(p => p.subtype === 'Enterprise');
-        enterpriseProviders.forEach(provider => {
-            expect(screen.getByText(provider.subtype!)).toBeInTheDocument();
-        });
+        const enterpriseElements = screen.getAllByText('Enterprise');
+        expect(enterpriseElements.length).toBe(2);
     });
 
     it('should display Social type providers on large screens', () => {
         renderWithProviders(mockSearchResults, false);
 
-        const socialProvider = mockProviders.find(p => p.subtype === 'Social');
-        expect(screen.getByText(socialProvider!.subtype!)).toBeInTheDocument();
+        const socialElements = screen.getAllByText('Social');
+        expect(socialElements.length).toBe(1);
     });
 
     it('should display Enterprise type providers on large screens', () => {
         renderWithProviders(mockSearchResults, false);
 
-        const enterpriseProviders = mockProviders.filter(p => p.subtype === 'Enterprise');
-        enterpriseProviders.forEach(provider => {
-            expect(screen.getByText(provider.subtype!)).toBeInTheDocument();
-        });
+        const enterpriseElements = screen.getAllByText('Enterprise');
+        expect(enterpriseElements.length).toBe(2);
     });
 });
 
