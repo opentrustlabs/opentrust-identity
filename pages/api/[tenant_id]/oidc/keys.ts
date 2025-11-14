@@ -3,7 +3,6 @@ import SigningKeysDao from '@/lib/dao/signing-keys-dao';
 import TenantDao from '@/lib/dao/tenant-dao';
 import { DaoFactory } from '@/lib/data-sources/dao-factory';
 import { KEY_USE_JWT_SIGNING, SIGNING_KEY_STATUS_REVOKED } from '@/utils/consts';
-import { exportJWK } from 'jose';
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { createPublicKey, X509Certificate } from 'node:crypto';
 
