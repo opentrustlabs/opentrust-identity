@@ -247,8 +247,11 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
                     }}
                 >
                     <Stack direction={"row"}>
-                        {tenantLookAndFeelInput.authenticationlogo &&                         
-                            <div style={{height: "45px", marginRight: "16px"}} dangerouslySetInnerHTML={{__html: tenantLookAndFeelInput.authenticationlogo}}></div>
+                        {tenantLookAndFeelInput.authenticationlogo &&
+                            <div>
+                            {/* <div style={{height: "45px", marginRight: "16px"}} dangerouslySetInnerHTML={{__html: tenantLookAndFeelInput.authenticationlogo}}></div> */}
+                            <img style={{height: "45px"}} src={`data:image/svg+xml;base64,${btoa(tenantLookAndFeelInput.authenticationlogo)}`}></img>
+                            </div>
                         }
                         {tenantLookAndFeelInput.authenticationlogouri &&                        
                             <div style={{marginRight: "16px"}}>
