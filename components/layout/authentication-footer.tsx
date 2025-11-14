@@ -27,20 +27,7 @@ const AuthenticationFooter: React.FC<AuthenticationFooterProps> = ({
             <Container
                 maxWidth="xl"
             >
-                <div style={{fontSize: "0.8em", padding: "8px"}}>
-                    {tenantMetaData.tenant.allowSocialLogin &&
-                        <div style={{alignItems: "center", justifyItems: "center"}}>
-                            <div style={{textDecoration: "underline", marginBottom: "4px"}}>Social Media Icons Curtesy of</div>
-                            <div>
-                                <a className="undecorated" href="https://www.flaticon.com/free-icons/google" title="google icons">Google icons created by Freepik - Flaticon</a>, 
-                                <a className="undecorated" href="https://www.flaticon.com/free-icons/facebook" title="facebook icons">Facebook icons created by Freepik - Flaticon</a>, 
-                                <a className="undecorated" href="https://www.flaticon.com/free-icons/linkedin" title="linkedin icons">Linkedin icons created by riajulislam - Flaticon</a>, 
-                                <a className="undecorated" href="https://www.flaticon.com/free-icons/logos" title="logos icons">Logos icons created by Freepik - Flaticon</a>,
-                                <a className="undecorated" href="https://www.flaticon.com/free-icons/salesforce" title="salesforce icons">Salesforce icons created by Freepik - Flaticon</a>
-                            </div>
-                        </div>
-                        
-                    }
+                <div style={{fontSize: "0.8em", padding: "8px"}}>                    
                 </div>
             </Container>
         </div>
