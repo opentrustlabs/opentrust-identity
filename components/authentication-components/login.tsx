@@ -340,16 +340,16 @@ const Login: React.FC<LoginProps>= ({
 
     const getIconForSocialProvider = (provider: FederatedOidcProvider) => {
         if (provider.socialLoginProvider === SOCIAL_OIDC_PROVIDER_GOOGLE) {
-            return <img alt="google logo" src="/google.png" width={"25px"} />
+            return <img alt="google logo" src="/google.png" height={"25px"} />
         }
         else if (provider.socialLoginProvider === SOCIAL_OIDC_PROVIDER_LINKEDIN) {
-            return <img alt="linkedin logo" src="/linkedin.png" width={"25px"} />
+            return <img alt="linkedin logo" src="/linkedin.png" height={"25px"} />
         }        
         else if (provider.socialLoginProvider === SOCIAL_OIDC_PROVIDER_SALESFORCE) {
-            return <img alt="salesforce logo" src="/salesforce.png" width={"25px"} />
+            return <img alt="salesforce logo" src="/salesforce.png" height={"25px"} />
         }
         else {
-            return <Skeleton height={"25px"} width={"25px"} />
+            return <Skeleton height={"35px"} width={"35px"} />
         }
     }
 
