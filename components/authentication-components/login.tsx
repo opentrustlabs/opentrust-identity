@@ -340,16 +340,16 @@ const Login: React.FC<LoginProps>= ({
 
     const getIconForSocialProvider = (provider: FederatedOidcProvider) => {
         if (provider.socialLoginProvider === SOCIAL_OIDC_PROVIDER_GOOGLE) {
-            return <img alt="google logo" src="/google.png" height={"25px"} />
+            return <img alt="google logo" src="/google.png" height={"30px"} />
         }
         else if (provider.socialLoginProvider === SOCIAL_OIDC_PROVIDER_LINKEDIN) {
-            return <img alt="linkedin logo" src="/linkedin.png" height={"25px"} />
+            return <img alt="linkedin logo" src="/linkedin.png" height={"30px"} />
         }        
         else if (provider.socialLoginProvider === SOCIAL_OIDC_PROVIDER_SALESFORCE) {
-            return <img alt="salesforce logo" src="/salesforce.png" height={"25px"} />
+            return <img alt="salesforce logo" src="/salesforce.png" height={"30px"} />
         }
         else {
-            return <Skeleton height={"35px"} width={"35px"} />
+            return <Skeleton height={"30px"} width={"30px"} />
         }
     }
 
@@ -660,7 +660,7 @@ const Login: React.FC<LoginProps>= ({
                                                     container spacing={0}
                                                     size={{ xs: 12 }}
                                                 >
-                                                    <Grid2 size={breakPoints.isMedium ? 2 : 1.5}>
+                                                    <Grid2 display={"flex"} alignContent={"center"} size={breakPoints.isMedium ? 2 : 1.5}>
                                                         {getIconForSocialProvider(provider)}
                                                     </Grid2>
                                                     <Grid2 size={breakPoints.isMedium ? 10 : 10.5}>{intl.formatMessage({id: "SIGN_IN_WITH"})} {provider.federatedOIDCProviderName}</Grid2>
