@@ -152,7 +152,7 @@ The JSON payload for both endpoints is the same:
       "value": "value to encrypt/decrypt",
       "aad": "optional value if using AES with GCM or other mode with authentication tag"
  }
-``
+```
 
 The response for the encryption endpoint is:
 
