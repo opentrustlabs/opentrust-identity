@@ -150,7 +150,7 @@ The JSON payload for both endpoints is the same:
 ```JSON
  {
       "value": "value to encrypt/decrypt",
-      "aad": "optional value if using AES with GCM or other mode with authentication tag"
+      "aad": "optional value if using AES with GCM or other authenticated mode"
  }
 ```
 
@@ -240,29 +240,22 @@ SECURITY_EVENT_CALLBACK_URI=http://localhost:3000/api/security-events/handler
 
 The JSON payload sent to this service is:
 
-```typescript
-interface SecurityEvent {
-    securityEventType: SecurityEventType, 
-    userId: string | null,
-    email: string | null,
-    phoneNumber: string | null,
-    address: string | null,
-    city: string | null,
-    stateRegionProvince: string | null,
-    countryCode: string | null,
-    postalCode: string | null,
-    jti: string | null,
-    ipAddress: string | null,
-    geoLocation: string | null,
-    deviceFingerprint: string | null
+```JSON
+{
+	"securityEventType": "user_registered | account_locked | account_unlocked | duress_authentication | successful_authentication | ...",
+	"userId": "string | null,",
+	"email": "string | null,",
+	"phoneNumber": "string | null,",
+	"address": "string | null,",
+	"city": "string | null,",
+	"stateRegionProvince": "string | null,",
+	"countryCode": "string | null,",
+	"postalCode": "string | null,",
+	"jti": "string | null,",
+	"ipAddress": "string | null,",
+	"geoLocation": "string | null,",
+	"deviceFingerprint": "string | null",
 }
-
-type SecurityEventType = "user_registered" | "account_locked" | "account_unlocked" | "duress_authentication" | 
-                                "successful_authentication" | "reset_password" | "backup_email_authentication" | 
-                                "logout" | "device_registered" | "auth_code_exchanged" | "federated_idp_secret_viewed" | 
-                                "client_secret_viewed" | "private_key_viewed" | "private_key_password_viewed" |
-                                "recaptcha_api_key_viewed" | "secret_share_link_generated";
-
 ```
 
 This service call will be invoked with a Bearer Authorization header for the client that is defined as the root
@@ -280,7 +273,7 @@ each with its own API and authorization. This tool is not intended support any p
 provider is available in your organization, and you want to enable SMS in this tool when the feature is
 ready, then you will need to write a wrapper service around your SMS provider. 
 
-The JSON payload for the SMS service can be found in the file `/lib/models/sms.ts`.
+The JSON payload for the SMS service is: 
 
 ```JSON
 {
@@ -293,6 +286,8 @@ The JSON payload for the SMS service can be found in the file `/lib/models/sms.t
     "to": "recepient@domain.com"
 }
 ```
+
+More details can be found in the file `/lib/models/sms.ts`.
 
 This service call will be invoked with a Bearer Authorization header for the client which is defined as the root
 client for the IAM tool. This client, by default when the IAM tool is initilized, is configured with
@@ -349,7 +344,7 @@ For authentication, it uses a method of `POST` and the JSON payload is:
 }
 ```
 
-For the profile endpoint, is uses a method of `GET` and has one required query param: `email`. It returns
+For the profile endpoint, it uses a method of `GET` and has one required query param: `email`. It returns
 a JSON object of 
 
 ```JSON
