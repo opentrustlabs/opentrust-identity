@@ -283,7 +283,7 @@ The JSON payload for the SMS service is:
         "line3",
         "etc"        
     ],
-    "to": "recepient@domain.com"
+    "to": "+123456789012"
 }
 ```
 
