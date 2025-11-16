@@ -527,7 +527,7 @@ The CWE has something similar to say (source here: https://cwe.mitre.org/data/de
 > However, if admins do not change the defaults, it is easier for attackers to bypass 
 > authentication quickly across multiple organizations.
 
-And if you are running a PCI compliant application, "Requirement 2" contains this statement:
+And if you have a PCI compliant application, "Requirement 2" contains this statement:
 
 > Malicious individuals, both external and internal to an entity, often use default passwords 
 > and other vendor default settings to compromise systems. These passwords and settings 
@@ -542,7 +542,7 @@ flag indicating that the system should be initialized. During initialization, th
 performing the initialization will upload their private key, which will be used to sign a JWT. 
 That JWT will be verified by the certificate that was deployed to the server. 
 
-In this scenario, only 1 person has the key. The web admin team (or devops team), which should 
+In this scenario, only one person has the key. The web admin team (or devops team), which should 
 NOT include the person performing initialization, has access to the server configuration. And once 
 initialization is complete it cannot be re-performed, unless all of the data is truncated from the 
 database and the proper environment variables are set. After the initialization is complete, the web 
@@ -618,7 +618,7 @@ tenant is restricted to data within their tenant and the IAM management scope to
 assigned. However, a member of the Root Tenant is only restricted by the IAM management scope to 
 which they are assigned, which is applied to ALL tenants. 
 
-#### The OIDC Endpoints
+## The OIDC Endpoints
 
 All of the OIDC endpoints are relative to a tenant ID. This includes the root tenant. At the moment, there are
 no common or public tenants. 
@@ -664,6 +664,8 @@ no common or public tenants.
 ```bash
 /api/{tenant_id}/oidc/devicecode
 ```
+
+## Additional utility endpoints
 
 In addition to the standard OIDC endpoints there are several utility endpoints which clients can invoke.
 
