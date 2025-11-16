@@ -143,11 +143,46 @@ you will need to create 2 HTTP endpoints which will be used to encrypt and decry
 be wrappers around whatever vault you are using. The details on the payload and responses for encryption 
 and decryption are in the file `/lib/kms/custom-kms.ts`. 
 
+Briefly:
+
+The JSON payload for both endpoints is the same:
+
+```JSON
+ {
+      "value": "value to encrypt/decrypt",
+      "aad": "optional value if using AES with GCM or other mode with authentication tag"
+ }
+``
+
+The response for the encryption endpoint is:
+
+```JSON
+ {
+      "encrypted": "encrypted value base64 encoded"
+ }
+ ```
+
+ The response for the decription endpoint is:
+ 
+ ```JSON
+ {
+      "decrypted": "decrypted value base64 encoded"
+ }
+```
+
+This service call will be invoked with a Bearer Authorization header for the client that is defined as the root
+client for the IAM tool. This client, by default when the IAM tool is initilized, is configured with
+a scope of `custom.encryptdecrypt`. Your implementation of this service can check for the presence of this scope using
+the endpoint `/api/users/me` (see below for details) or by using PKI identities if the application is 
+configured for it (see the env.example file for details). 
+
 Future development of this tool will include support for the following KMSs
 - AWS
 - Google
 - Azure
 - Tencent
+
+
 
 ##### 3. Security Event Callback Service
 
@@ -203,6 +238,40 @@ Set the envrironment variable as follows:
 SECURITY_EVENT_CALLBACK_URI=http://localhost:3000/api/security-events/handler
 ```
 
+The JSON payload sent to this service is:
+
+```typescript
+interface SecurityEvent {
+    securityEventType: SecurityEventType, 
+    userId: string | null,
+    email: string | null,
+    phoneNumber: string | null,
+    address: string | null,
+    city: string | null,
+    stateRegionProvince: string | null,
+    countryCode: string | null,
+    postalCode: string | null,
+    jti: string | null,
+    ipAddress: string | null,
+    geoLocation: string | null,
+    deviceFingerprint: string | null
+}
+
+type SecurityEventType = "user_registered" | "account_locked" | "account_unlocked" | "duress_authentication" | 
+                                "successful_authentication" | "reset_password" | "backup_email_authentication" | 
+                                "logout" | "device_registered" | "auth_code_exchanged" | "federated_idp_secret_viewed" | 
+                                "client_secret_viewed" | "private_key_viewed" | "private_key_password_viewed" |
+                                "recaptcha_api_key_viewed" | "secret_share_link_generated";
+
+```
+
+This service call will be invoked with a Bearer Authorization header for the client that is defined as the root
+client for the IAM tool. This client, by default when the IAM tool is initilized, is configured with
+a scope of `security.event.write`. Your implementation of this service can check for the presence of this scope using
+the endpoint `/api/users/me` (see below for details) or by using PKI identities if the application is 
+configured for it (see the env.example file for details). 
+
+
 ##### 4. SMS Service Wrapper
 
 This tool does not yet support SMS (for features such as verifying phone numbers or sending one-time passcodes for
@@ -211,7 +280,25 @@ each with its own API and authorization. This tool is not intended support any p
 provider is available in your organization, and you want to enable SMS in this tool when the feature is
 ready, then you will need to write a wrapper service around your SMS provider. 
 
-The payload for the SMS service can be found in the file `/lib/models/sms.ts`.
+The JSON payload for the SMS service can be found in the file `/lib/models/sms.ts`.
+
+```JSON
+{
+    "lines": [
+        "line1",
+        "line2",
+        "line3",
+        "etc"        
+    ],
+    "to": "recepient@domain.com"
+}
+```
+
+This service call will be invoked with a Bearer Authorization header for the client which is defined as the root
+client for the IAM tool. This client, by default when the IAM tool is initilized, is configured with
+a scope of `sms.send`. Your implementation of this service can check for the presence of this scope using
+the endpoint `/api/users/me` (see below for details) or by using PKI identities if the application is 
+configured for it (see the env.example file for details).
 
 This tool has a simple implementation of the SMS handler which you can use if you are developing on localhost.
 Set the environment variable as follows:
@@ -220,6 +307,83 @@ Set the environment variable as follows:
 SMS_SERVICE_WRAPPER_URI=http://localhost:3000/api/sms-service/handler
 ```
 
+## Legacy User Migration
+
+If you have an existing, custom-built user-management system (or one to which you have some kind of access to
+the underlying credential and profile data) and you need to migrate those users to this IAM tool, 
+you have a couple of options:
+
+One, if you have a used a password hashing algorithm that exactly matches one of the hashing algorithms
+supported by this tool, then you should be able to copy the credential and profile data directly into
+the database and search engine using an ETL tool. This is not a likely scenario, however. Plus, you will
+need to make sure that the users are correctly assigned to tenants, authentication groups, authorization groups,
+and so on, which may be very difficult.
+
+Two, you can use this IAM tool to automatically migrate legacy users when they attempt to login or register. 
+In order to use this feature, (assuming you have access to the credential and profile data) you will need to 
+create 3 endpoints as wrappers (or decorators) around your existing user management system:
+
+- Username check
+- Authentication
+- User profile
+
+These service calls will be invoked with a Bearer Authorization header for the client which is defined as the root
+client for the IAM tool. This client, by default when the IAM tool is initilized, is configured with
+a scope of `legacy.user.migrate`. Your implementation of these services can check for the presence of this scope using
+the endpoint `/api/users/me` (see below for details) or by using PKI identities if the application is 
+configured for it (see the env.example file for details).
+
+
+For the username check endpoint, it uses a method of `HEAD` and has one required query param: `email`. Example:
+
+```bash
+HEAD /my/username/check?email=emailtocheck@somedomain.com
+```
+
+For authentication, it uses a method of `POST` and the JSON payload is:
+
+```JSON
+{
+    "email": "myemail@mydomain.com",
+    "password": "mypassword"
+}
+```
+
+For the profile endpoint, is uses a method of `GET` and has one required query param: `email`. It returns
+a JSON object of 
+
+```JSON
+{
+	"email": "string",
+	"emailVerified": "boolean,",
+	"firstName": "string",
+	"lastName": "string",
+	"middleName": "string | null",
+	"phoneNumber": "string | null",
+	"address": "string,",
+	"addressLine1": "string | null,",
+	"city": "string,",
+	"postalCode": "string,",
+	"stateRegionProvince": "string | null,",
+	"countryCode": "string",
+	"preferredLanguageCode": "string,    ",
+	"nameOrder": "string"
+}
+```
+
+!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!
+
+One important thing to note is that this IAM tool can also be configured as a legacy user migration service
+for other IAM tools. The endpoints are at:
+
+```bash
+/api/legacy/namecheck
+/api/legacy/login
+/api/legacy/profile
+```
+
+These endpoints require that there is a __service__ client within this application that belongs to the root tenant
+and is configured with a scope of `legacy.user.migrate`.
 
 ## Getting Started
 
@@ -555,4 +719,21 @@ Clients need to be assigned the scope
 
 If you are implementing any type of throttling for your tenants, this `GET` endpoint will return
 all of the rate limits that have been configured for the tenant. These are applicable to
-both service accounts and end users.
+both service accounts and end users. The response is object is:
+
+```typescript
+interface RateLimitResponse {
+    allowUnlimitedRate: boolean,
+    rateLimit: number | null,
+    rateLimitPeriodMinutes: number | null,
+    serviceRateLimits: Array<ServiceRateLimit>
+}
+
+interface ServiceRateLimit {
+    allowUnlimitedRate: boolean,
+    rateLimit: number | null,
+    rateLimitPeriodMinutes: number | null
+    serviceGroupId: string
+    serviceGroupName: string
+}
+```
