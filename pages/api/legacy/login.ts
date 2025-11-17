@@ -66,13 +66,13 @@ export default async function handler(
     const payload: LegacyUserAuthenticationPayload = req.body;
     const user: User | null = await identityDao.getUserBy("email", payload.email);
     if (user === null) {
-        res.status(403);
+        res.status(404);
         return;
     }
 
     const userCredential: UserCredential | null = await identityDao.getUserCredentialForAuthentication(user.userId);
     if (userCredential === null) {
-        res.status(403);
+        res.status(404);
         return;
     }
 

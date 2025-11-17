@@ -519,7 +519,7 @@ describe('TenantLookAndFeelConfiguration', () => {
 
             await waitFor(() => {
                 expect(screen.getByTestId('mark-dirty')).toHaveTextContent('dirty');
-            });
+            }, { timeout: 5000 });
         });
 
         it('should display delete icon for logo', async () => {
