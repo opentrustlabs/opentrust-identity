@@ -44,6 +44,25 @@ is that you must manually manage the certificates that are used to verfiy SAML t
 some SAML providers may provide a service to retrieve certificates dynamically, but this is not
 part of the specification and cannot be guaranteed.
 
+The following social IdPs are supported:
+
+- Google
+- LinkedIn
+- Salesforce
+
+Other social IdPs such as Facebook or Apple have NOT implemented sufficient features of the OIDC specification
+to be included at this time. Specifically, they are missing one or more of the following critical
+features:
+
+- Userinfo endpoint
+- Response type of `code` (which means they only support the implicit grant, which is deprecated)
+- Response mode of `query`
+- Scopes of `openid`, `email`, and `profile`
+- Claims of `email`, `family_name`, and `given_name`
+
+This tool does NOT limit you to just the three supported social IdPs. You can configure your own,
+but they __MUST__ support these five OIDC features.
+
 
 #### Audience for this tool
 
@@ -66,7 +85,7 @@ it removes the burden from the development team of having to develop every singl
 and spreads it around to whoever has the time and money to do that development. And
 those teams can be both inside and outside the organization.
 
-Then the problem of access control becomes paramount. Exposing your APIs to 3rd parties means
+Then the problem of access control becomes critical. Exposing your APIs to 3rd parties means
 having strict controls over who can do what:
 
 - What API services are in scope for the client.
