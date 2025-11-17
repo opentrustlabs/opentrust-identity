@@ -9,12 +9,6 @@ as it is now known) or Okta, and access control. It supports multi-factor authen
 time-based one-time-passwords and hardware security keys such as Yubikey or Titan
 or any key which supports the FIDO2 standard.
 
-Most open source IAM tools only support relational databases, and among those, frequently only
-the open source databases. This makes it difficult, if not impossible, for many organizations to adopt
-open source IAM tools, especially if the organization is running cloud-native application and 
-is using NoSQL databases, or if the organization only supports commercial databases such as MSSQL
-and Oracle.
-
 This tool is designed to support a variety of backend data stores, both SQL and NoSQL. At the moment, those include:
 
 - Oracle
@@ -24,6 +18,15 @@ This tool is designed to support a variety of backend data stores, both SQL and 
 - Cassandra
 
 Support for Mongo, Aurora, Spanner, and Cockroach is part of the future development of this tool.
+
+Since most open source IAM tools only support relational databases, and among those, frequently only
+the open source databases, this makes it difficult, if not impossible, for many organizations to adopt
+open source IAM tools, especially if the organization is running cloud-native application and 
+is using NoSQL databases, or if the organization only supports commercial databases such as MSSQL
+and Oracle.
+
+By creating a "bring-your-own-data-store" type of solution to IAM, OpenTrust Identity may 
+encourage a more wide-spread adoption of OIDC and multi-factor authentication.
 
 #### Protocols Supported
 
@@ -421,8 +424,9 @@ with the contents of the file at `/scripts/object-search-ddl.json`
 
 To create an alias:
 
+`POST /_aliases`
+
 ```JSON
-POST _aliases
 {
   "actions": [
     {
@@ -438,8 +442,9 @@ POST _aliases
 
 You can remove an alias with the following request:
 
+`POST /_aliases`
+
 ```JSON
-POST _aliases
 {
   "actions": [
     {
@@ -462,8 +467,9 @@ with the contents of the file at `/scripts/rel-search-ddl.json`
 
 To create or remove an alias:
 
+`POST /_aliases`
+
 ```JSON
-POST _aliases
 {
   "actions": [
     {
@@ -477,8 +483,9 @@ POST _aliases
 }
 ```
 
+`POST /_aliases`
+
 ```JSON
-POST _aliases
 {
   "actions": [
     {
@@ -537,9 +544,9 @@ So one obvious solution, then, is NOT to include any default credentials. But th
 identify a user who can initialize the system. One way to do that is via asymmetric keys - the identifier is in a
 public certificate, while the private key remains in the possession of the person who is performing the initialization. 
 
-To describe the process at a high level, a certificate is deployed on the server(s) along with a 
+To describe the process at a high level:  A certificate is deployed on the server(s) along with a 
 flag indicating that the system should be initialized. During initialization, the person who is 
-performing the initialization will upload their private key, which will be used to sign a JWT. 
+performing the initialization will upload their private key which will be used to sign a JWT. 
 That JWT will be verified by the certificate that was deployed to the server. 
 
 In this scenario, only one person has the key. The web admin team (or devops team), which should 
@@ -552,7 +559,7 @@ The environment variables that need to be set for system initialization are the 
 
 ```bash
 SYSTEM_INIT=true
-SYSTEM_INIT_CERTIFICATE_FILE=/path/to/system/initialization/certificate/initialization.crt
+SYSTEM_INIT_CERTIFICATE_FILE=/path/to/system/initialization/certificate.crt
 ```
 
 The `SYSTEM_INIT_CERTIFICATE_FILE` should contain the certificate that matches the private key generated
@@ -569,6 +576,8 @@ command:
 ```bash
 openssl req -x509 -newkey rsa:2048 -nodes -keyout initialization.key -out initialization.crt -days 2
 ```
+
+You should use a different key-pair for each environment that you are initializing.
 
 To start initialization, open your browser to:
 
