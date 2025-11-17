@@ -77,7 +77,7 @@ having strict controls over who can do what:
 - For abusive clients and users, can their sessions be revoked and their accounts disabled easily.
 
 The rush to build AI applications has only exacerbated these problems. This IAM tool 
-provides features for managing access to your API, in addition to other common IAM functions. 
+provides features for managing access to your API, in addition to other common IdP functions. 
 
 One potentially overlooked problem of commercial SaaS IAM providers is the question of
 whose data is it? Do you own your data? Can you easily access the raw data? Can you 
@@ -338,7 +338,10 @@ For the username check endpoint, it uses a method of `HEAD` and has one required
 HEAD /my/username/check?email=emailtocheck@somedomain.com
 ```
 
-For authentication, it uses a method of `POST` and the JSON payload is:
+It should return a status code of 403 if there is not a valid authorization token, 404 if the user is not found,
+and 200 if the user is found.
+
+For the authentication endpoint, it uses a method of `POST` and the JSON payload is:
 
 ```JSON
 {
@@ -346,6 +349,10 @@ For authentication, it uses a method of `POST` and the JSON payload is:
     "password": "mypassword"
 }
 ```
+
+It should return a status code of 403 if there is not a valid authorization token or if the credentials
+are not valid, a 404 if the user is not found, and 200 otherwise.
+
 
 For the profile endpoint, it uses a method of `GET` and has one required query param: `email`. It returns
 a JSON object of 
@@ -368,6 +375,9 @@ a JSON object of
 	"nameOrder": "string"
 }
 ```
+
+if the user is found and the authorization token is valid. Otherwise it returns a 403 for an invalid authorization
+token and 404 if the user is not found.
 
 !!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!
 
