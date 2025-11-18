@@ -87,7 +87,7 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
                 }
                 setHasSystemDefaultLookAndFeel(false);
                 setTenantLookAndFeelInput(input);
-                setRevertToInput(input);
+                setRevertToInput({...input});
             }
             else{
                 setHasSystemDefaultLookAndFeel(true);
@@ -345,9 +345,8 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
                 </Grid2>
             </Grid2>
             <DetailSectionActionHandler
-                onDiscardClickedHandler={() => {   
+                onDiscardClickedHandler={() => {
                     setTenantLookAndFeelInput({...revertToInput as TenantLookAndFeelInput});
-                    setRevertToInput({...revertToInput as TenantLookAndFeelInput});
                     setMarkDirty(false);
                 }}
                 onUpdateClickedHandler={() => {
