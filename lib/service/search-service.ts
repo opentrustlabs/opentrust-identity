@@ -184,41 +184,6 @@ class SearchService {
         return Promise.resolve(retVal);
     }
 
-    // protected async _getObjectSearchByIds(ids: Array<string>): Promise<Array<ObjectSearchResultItem>>{
-
-    //     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    //     const query: any = {
-    //         ids: {
-    //             values: ids
-    //         }
-    //     }
-    //     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    //     const searchBody: any = {
-    //         from: 0,
-    //         size: ids.length,
-    //         query: query            
-    //     }
-
-    //     // Default result list is am empty array
-    //     const items: Array<ObjectSearchResultItem> = [];
-
-    //     const searchResponse: Search_Response = await searchDao.search({
-    //         index: SEARCH_INDEX_OBJECT_SEARCH,
-    //         body: searchBody
-    //     });
-
-    //     searchResponse.body.hits.hits.forEach(
-    //         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    //         (hit: any) => {
-    //             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    //             const source: any = hit._source;
-    //             items.push(source);
-    //         }
-    //     );
-    //     return items;
-
-    // }
-
     
     protected validatePermissions(resultType: SearchResultType | null): {isPermitted: boolean, errorDetail: ErrorDetail} {
 
