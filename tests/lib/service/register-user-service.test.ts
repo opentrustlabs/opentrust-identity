@@ -82,7 +82,11 @@ jest.mock('@/lib/data-sources/dao-factory', () => {
         saveUserTermsAndConditionsAccepted: jest.fn(),
         addUserCredential: jest.fn(),
         deleteUser: jest.fn(),
-        addUserAuthenticationHistory: jest.fn()
+        addUserAuthenticationHistory: jest.fn(),
+        updateUserRegistrationState: jest.fn(),
+        getUserCredentials: jest.fn(),
+        addUserDuressCredential: jest.fn(),
+        addRecoveryEmail: jest.fn()
     };
 
     const mockTenantDaoImpl = {
@@ -122,6 +126,10 @@ jest.mock('@/lib/data-sources/dao-factory', () => {
         addChangeEvent: jest.fn()
     };
 
+    const mockSearchDaoImpl = {
+        updateObjectSearchIndex: jest.fn().mockResolvedValue(undefined)
+    };
+
     return {
         DaoFactory: {
             getInstance: jest.fn(() => ({
@@ -131,7 +139,8 @@ jest.mock('@/lib/data-sources/dao-factory', () => {
                 getAuthDao: () => mockAuthDaoImpl,
                 getClientDao: () => mockClientDaoImpl,
                 getFederatedOIDCProvicerDao: () => mockFederatedOIDCProviderDaoImpl,
-                getChangeEventDao: () => mockChangeEventDaoImpl
+                getChangeEventDao: () => mockChangeEventDaoImpl,
+                getSearchDao: () => mockSearchDaoImpl
             }))
         },
         __mockIdentityDao: mockIdentityDaoImpl,
@@ -140,7 +149,8 @@ jest.mock('@/lib/data-sources/dao-factory', () => {
         __mockAuthDao: mockAuthDaoImpl,
         __mockClientDao: mockClientDaoImpl,
         __mockFederatedOIDCProviderDao: mockFederatedOIDCProviderDaoImpl,
-        __mockChangeEventDao: mockChangeEventDaoImpl
+        __mockChangeEventDao: mockChangeEventDaoImpl,
+        __mockSearchDao: mockSearchDaoImpl
     };
 });
 
@@ -154,7 +164,15 @@ jest.mock('@/lib/service/oidc-service-utils', () => {
 
 jest.mock('@/lib/service/jwt-service-utils', () => {
     return jest.fn().mockImplementation(() => ({
-        getAuthTokenForOutboundCalls: jest.fn().mockResolvedValue('mock-auth-token')
+        getAuthTokenForOutboundCalls: jest.fn().mockResolvedValue('mock-auth-token'),
+        signIAMPortalUserJwt: jest.fn().mockResolvedValue({
+            accessToken: 'mock-portal-jwt-token',
+            principal: {
+                jti: 'mock-jti-123',
+                userId: 'user-123',
+                tenantId: 'tenant-123'
+            }
+        })
     }));
 });
 
@@ -615,6 +633,779 @@ describe('RegisterUserService', () => {
             await service.registerUser(inputWithUppercase, 'tenant-123', null, null, null);
 
             expect(inputWithUppercase.email).toBe('newuser@example.com');
+        });
+    });
+
+    describe('registerVerifyEmailAddress', () => {
+        const mockRegistrationStates = [
+            {
+                email: 'test@example.com',
+                tenantId: 'tenant-123',
+                userId: 'user-123',
+                expiresAtMs: Date.now() + 10000,
+                registrationSessionToken: 'session-token-123',
+                registrationState: 'VALIDATE_EMAIL',
+                registrationStateOrder: 1,
+                registrationStateStatus: 'INCOMPLETE'
+            },
+            {
+                email: 'test@example.com',
+                tenantId: 'tenant-123',
+                userId: 'user-123',
+                expiresAtMs: Date.now() + 10000,
+                registrationSessionToken: 'session-token-123',
+                registrationState: 'CONFIGURE_TOTP_OPTIONAL',
+                registrationStateOrder: 2,
+                registrationStateStatus: 'INCOMPLETE'
+            }
+        ];
+
+        const mockUser = {
+            userId: 'user-123',
+            email: 'test@example.com',
+            emailVerified: false
+        };
+
+        beforeEach(() => {
+            mockIdentityDao.getUserRegistrationStates.mockResolvedValue(mockRegistrationStates);
+            mockIdentityDao.updateUserRegistrationState.mockResolvedValue(undefined);
+        });
+
+        it('should verify email successfully and return next state', async () => {
+            mockIdentityDao.getUserByEmailConfirmationToken.mockResolvedValue(mockUser);
+            mockIdentityDao.deleteEmailConfirmationToken.mockResolvedValue(undefined);
+            mockIdentityDao.updateUser.mockResolvedValue(undefined);
+
+            const result = await service.registerVerifyEmailAddress('user-123', 'valid-token', 'session-token-123', null);
+
+            expect(result.userRegistrationState.registrationState).toBe('CONFIGURE_TOTP_OPTIONAL');
+            expect(mockIdentityDao.deleteEmailConfirmationToken).toHaveBeenCalledWith('valid-token');
+            expect(mockIdentityDao.updateUserRegistrationState).toHaveBeenCalled();
+        });
+
+        it('should return error when token is invalid', async () => {
+            mockIdentityDao.getUserByEmailConfirmationToken.mockResolvedValue(null);
+            mockIdentityDao.deleteEmailConfirmationToken.mockResolvedValue(undefined);
+
+            const result = await service.registerVerifyEmailAddress('user-123', 'invalid-token', 'session-token-123', null);
+
+            expect(result.userRegistrationState.registrationState).toBe('ERROR');
+            expect(result.registrationError.errorCode).toBe('EC00134');
+        });
+
+        it('should return error when user ID does not match', async () => {
+            const differentUser = { ...mockUser, userId: 'different-user' };
+            mockIdentityDao.getUserByEmailConfirmationToken.mockResolvedValue(differentUser);
+
+            const result = await service.registerVerifyEmailAddress('user-123', 'valid-token', 'session-token-123', null);
+
+            expect(result.userRegistrationState.registrationState).toBe('ERROR');
+            expect(result.registrationError.errorCode).toBe('EC00135');
+        });
+
+        it('should return error when registration states not found', async () => {
+            mockIdentityDao.getUserRegistrationStates.mockResolvedValue([]);
+
+            const result = await service.registerVerifyEmailAddress('user-123', 'valid-token', 'session-token-123', null);
+
+            expect(result.userRegistrationState.registrationState).not.toBe('CONFIGURE_TOTP_OPTIONAL');
+        });
+    });
+
+    describe('registerVerifyRecoveryEmail', () => {
+        const mockRegistrationStates = [
+            {
+                email: 'test@example.com',
+                tenantId: 'tenant-123',
+                userId: 'user-123',
+                expiresAtMs: Date.now() + 10000,
+                registrationSessionToken: 'session-token-123',
+                registrationState: 'VALIDATE_RECOVERY_EMAIL',
+                registrationStateOrder: 1,
+                registrationStateStatus: 'INCOMPLETE'
+            },
+            {
+                email: 'test@example.com',
+                tenantId: 'tenant-123',
+                userId: 'user-123',
+                expiresAtMs: Date.now() + 10000,
+                registrationSessionToken: 'session-token-123',
+                registrationState: 'REDIRECT_TO_IAM_PORTAL',
+                registrationStateOrder: 2,
+                registrationStateStatus: 'INCOMPLETE'
+            }
+        ];
+
+        const mockUser = {
+            userId: 'user-123',
+            email: 'test@example.com'
+        };
+
+        const mockRecoveryEmail = {
+            userId: 'user-123',
+            email: 'recovery@example.com',
+            emailVerified: false
+        };
+
+        beforeEach(() => {
+            mockIdentityDao.getUserRegistrationStates.mockResolvedValue(mockRegistrationStates);
+            mockIdentityDao.updateUserRegistrationState.mockResolvedValue(undefined);
+        });
+
+        it('should verify recovery email successfully', async () => {
+            mockIdentityDao.getUserByEmailConfirmationToken.mockResolvedValue(mockUser);
+            mockIdentityDao.deleteEmailConfirmationToken.mockResolvedValue(undefined);
+            mockIdentityDao.getUserRecoveryEmail.mockResolvedValue(mockRecoveryEmail);
+            mockIdentityDao.updateRecoveryEmail.mockResolvedValue(undefined);
+
+            const result = await service.registerVerifyRecoveryEmail('user-123', 'valid-token', 'session-token-123', null);
+
+            expect(mockIdentityDao.deleteEmailConfirmationToken).toHaveBeenCalledWith('valid-token');
+            expect(mockIdentityDao.updateRecoveryEmail).toHaveBeenCalledWith({
+                userId: 'user-123',
+                email: 'recovery@example.com',
+                emailVerified: true
+            });
+        });
+
+        it('should return error when token is invalid', async () => {
+            mockIdentityDao.getUserByEmailConfirmationToken.mockResolvedValue(null);
+            mockIdentityDao.deleteEmailConfirmationToken.mockResolvedValue(undefined);
+
+            const result = await service.registerVerifyRecoveryEmail('user-123', 'invalid-token', 'session-token-123', null);
+
+            expect(result.userRegistrationState.registrationState).toBe('ERROR');
+            expect(result.registrationError.errorCode).toBe('EC00134');
+        });
+
+        it('should return error when user ID does not match', async () => {
+            const differentUser = { ...mockUser, userId: 'different-user' };
+            mockIdentityDao.getUserByEmailConfirmationToken.mockResolvedValue(differentUser);
+
+            const result = await service.registerVerifyRecoveryEmail('user-123', 'valid-token', 'session-token-123', null);
+
+            expect(result.userRegistrationState.registrationState).toBe('ERROR');
+            expect(result.registrationError.errorCode).toBe('EC00135');
+        });
+
+        it('should return error when recovery email not found', async () => {
+            mockIdentityDao.getUserByEmailConfirmationToken.mockResolvedValue(mockUser);
+            mockIdentityDao.deleteEmailConfirmationToken.mockResolvedValue(undefined);
+            mockIdentityDao.getUserRecoveryEmail.mockResolvedValue(null);
+
+            const result = await service.registerVerifyRecoveryEmail('user-123', 'valid-token', 'session-token-123', null);
+
+            expect(result.userRegistrationState.registrationState).toBe('ERROR');
+            expect(result.registrationError.errorCode).toBe('EC00136');
+        });
+    });
+
+    describe('registerAddDuressPassword', () => {
+        const mockRegistrationStates = [
+            {
+                email: 'test@example.com',
+                tenantId: 'tenant-123',
+                userId: 'user-123',
+                expiresAtMs: Date.now() + 10000,
+                registrationSessionToken: 'session-token-123',
+                registrationState: 'VALIDATE_EMAIL',
+                registrationStateOrder: 0,
+                registrationStateStatus: 'COMPLETE'
+            },
+            {
+                email: 'test@example.com',
+                tenantId: 'tenant-123',
+                userId: 'user-123',
+                expiresAtMs: Date.now() + 10000,
+                registrationSessionToken: 'session-token-123',
+                registrationState: 'ADD_DURESS_PASSWORD_OPTIONAL',
+                registrationStateOrder: 1,
+                registrationStateStatus: 'INCOMPLETE'
+            },
+            {
+                email: 'test@example.com',
+                tenantId: 'tenant-123',
+                userId: 'user-123',
+                expiresAtMs: Date.now() + 10000,
+                registrationSessionToken: 'session-token-123',
+                registrationState: 'REDIRECT_TO_IAM_PORTAL',
+                registrationStateOrder: 2,
+                registrationStateStatus: 'INCOMPLETE'
+            }
+        ];
+
+        const mockCredential = {
+            userId: 'user-123',
+            password: 'hashed-password',
+            passwordHashingAlgorithm: 'BCRYPT'
+        };
+
+        const mockUser = {
+            userId: 'user-123',
+            email: 'test@example.com',
+            enabled: false
+        };
+
+        const mockTenant = {
+            tenantId: 'tenant-123',
+            tenantName: 'Test Tenant'
+        };
+
+        beforeEach(() => {
+            mockIdentityDao.getUserRegistrationStates.mockResolvedValue(mockRegistrationStates);
+            mockIdentityDao.updateUserRegistrationState.mockResolvedValue(undefined);
+            mockTenantDao.getTenantPasswordConfig.mockResolvedValue({
+                minimumPasswordLength: 8,
+                requireMfa: false
+            });
+            // Mocks for handleRegistrationCompletion
+            mockIdentityDao.getUserBy.mockResolvedValue(mockUser);
+            mockTenantDao.getTenantById.mockResolvedValue(mockTenant);
+            mockIdentityDao.updateUser.mockResolvedValue(undefined);
+            mockIdentityDao.deleteUserRegistrationState.mockResolvedValue(undefined);
+        });
+
+        it('should skip duress password when skip is true', async () => {
+            const result = await service.registerAddDuressPassword('user-123', null, true, 'session-token-123', null);
+
+            expect(result.userRegistrationState.registrationState).toBe('REDIRECT_TO_IAM_PORTAL');
+            expect(mockIdentityDao.addUserDuressCredential).not.toHaveBeenCalled();
+        });
+
+        it('should add duress password successfully', async () => {
+            mockIdentityDao.getUserCredentials.mockResolvedValue([mockCredential]);
+            mockIdentityDao.addUserDuressCredential.mockResolvedValue(undefined);
+
+            const result = await service.registerAddDuressPassword('user-123', 'DifferentPass123!', false, 'session-token-123', null);
+
+            expect(mockIdentityDao.addUserDuressCredential).toHaveBeenCalled();
+            expect(mockIdentityDao.updateUserRegistrationState).toHaveBeenCalled();
+        });
+
+        it('should return error when password is null and skip is false', async () => {
+            const result = await service.registerAddDuressPassword('user-123', null, false, 'session-token-123', null);
+
+            expect(result.registrationError?.errorCode).toBe('EC00137');
+        });
+
+        it('should return error when password is empty string and skip is false', async () => {
+            const result = await service.registerAddDuressPassword('user-123', '', false, 'session-token-123', null);
+
+            expect(result.registrationError?.errorCode).toBe('EC00137');
+        });
+
+        it('should return error when user has no credentials', async () => {
+            mockIdentityDao.getUserCredentials.mockResolvedValue([]);
+
+            const result = await service.registerAddDuressPassword('user-123', 'NewPass123!', false, 'session-token-123', null);
+
+            expect(result.registrationError?.errorCode).toBe('EC00138');
+        });
+
+        it('should return error when user has multiple credentials', async () => {
+            mockIdentityDao.getUserCredentials.mockResolvedValue([mockCredential, mockCredential]);
+
+            const result = await service.registerAddDuressPassword('user-123', 'NewPass123!', false, 'session-token-123', null);
+
+            expect(result.registrationError?.errorCode).toBe('EC00138');
+        });
+    });
+
+    describe('registerAddRecoveryEmail', () => {
+        const mockRegistrationStates = [
+            {
+                email: 'test@example.com',
+                tenantId: 'tenant-123',
+                userId: 'user-123',
+                expiresAtMs: Date.now() + 10000,
+                registrationSessionToken: 'session-token-123',
+                registrationState: 'ADD_RECOVERY_EMAIL_OPTIONAL',
+                registrationStateOrder: 1,
+                registrationStateStatus: 'INCOMPLETE'
+            },
+            {
+                email: 'test@example.com',
+                tenantId: 'tenant-123',
+                userId: 'user-123',
+                expiresAtMs: Date.now() + 10000,
+                registrationSessionToken: 'session-token-123',
+                registrationState: 'VALIDATE_RECOVERY_EMAIL',
+                registrationStateOrder: 2,
+                registrationStateStatus: 'INCOMPLETE'
+            },
+            {
+                email: 'test@example.com',
+                tenantId: 'tenant-123',
+                userId: 'user-123',
+                expiresAtMs: Date.now() + 10000,
+                registrationSessionToken: 'session-token-123',
+                registrationState: 'REDIRECT_TO_IAM_PORTAL',
+                registrationStateOrder: 3,
+                registrationStateStatus: 'INCOMPLETE'
+            }
+        ];
+
+        const mockUser = {
+            userId: 'user-123',
+            email: 'test@example.com'
+        };
+
+        const mockTenant = {
+            tenantId: 'tenant-123',
+            tenantName: 'Test Tenant',
+            verifyEmailOnSelfRegistration: false
+        };
+
+        beforeEach(() => {
+            mockIdentityDao.getUserRegistrationStates.mockResolvedValue(mockRegistrationStates);
+            mockIdentityDao.updateUserRegistrationState.mockResolvedValue(undefined);
+            // Mock getUserBy to return user when getting by ID, null when checking email conflicts
+            mockIdentityDao.getUserBy.mockImplementation((field: string, value: string) => {
+                if (field === 'id') return Promise.resolve(mockUser);
+                if (field === 'email') return Promise.resolve(null); // No conflict
+                return Promise.resolve(null);
+            });
+            mockTenantDao.getTenantById.mockResolvedValue(mockTenant);
+            // Mock recovery email validation dependencies
+            mockIdentityDao.getUserRecoveryEmail.mockResolvedValue(null);
+            mockFederatedOIDCProviderDao.getFederatedOidcProviderByDomain.mockResolvedValue(null);
+        });
+
+        it('should skip recovery email when skip is true', async () => {
+            const result = await service.registerAddRecoveryEmail('user-123', null, 'session-token-123', null, true);
+
+            expect(result.userRegistrationState.registrationState).toBe('REDIRECT_TO_IAM_PORTAL');
+            expect(mockIdentityDao.addRecoveryEmail).not.toHaveBeenCalled();
+            // Should also mark validation step as complete
+            expect(mockIdentityDao.updateUserRegistrationState).toHaveBeenCalledTimes(2);
+        });
+
+        it('should add recovery email successfully without verification', async () => {
+            mockIdentityDao.addRecoveryEmail.mockResolvedValue(undefined);
+
+            const result = await service.registerAddRecoveryEmail('user-123', 'recovery@example.com', 'session-token-123', null, false);
+
+            expect(mockIdentityDao.addRecoveryEmail).toHaveBeenCalledWith({
+                userId: 'user-123',
+                email: 'recovery@example.com',
+                emailVerified: false
+            });
+            expect(result.userRegistrationState.registrationState).toBe('VALIDATE_RECOVERY_EMAIL');
+        });
+
+        it('should add recovery email with email verification when tenant requires it', async () => {
+            const tenantWithVerification = {
+                ...mockTenant,
+                verifyEmailOnSelfRegistration: true
+            };
+            mockTenantDao.getTenantById.mockResolvedValue(tenantWithVerification);
+            mockIdentityDao.addRecoveryEmail.mockResolvedValue(undefined);
+            mockIdentityDao.saveEmailConfirmationToken.mockResolvedValue(undefined);
+
+            const result = await service.registerAddRecoveryEmail('user-123', 'recovery@example.com', 'session-token-123', null, false);
+
+            expect(mockIdentityDao.addRecoveryEmail).toHaveBeenCalled();
+            expect(mockIdentityDao.saveEmailConfirmationToken).toHaveBeenCalled();
+        });
+
+        it('should return error when email is null and skip is false', async () => {
+            const result = await service.registerAddRecoveryEmail('user-123', null, 'session-token-123', null, false);
+
+            expect(result.registrationError?.errorCode).toBe('EC00140');
+        });
+
+        it('should return error when email is empty string and skip is false', async () => {
+            const result = await service.registerAddRecoveryEmail('user-123', '', 'session-token-123', null, false);
+
+            expect(result.registrationError?.errorCode).toBe('EC00140');
+        });
+
+        it('should format recovery email to lowercase', async () => {
+            mockIdentityDao.addRecoveryEmail.mockResolvedValue(undefined);
+
+            await service.registerAddRecoveryEmail('user-123', 'RECOVERY@EXAMPLE.COM', 'session-token-123', null, false);
+
+            expect(mockIdentityDao.addRecoveryEmail).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    email: 'recovery@example.com'
+                })
+            );
+        });
+    });
+
+    describe('registerConfigureTOTP', () => {
+        const mockRegistrationStates = [
+            {
+                email: 'test@example.com',
+                tenantId: 'tenant-123',
+                userId: 'user-123',
+                expiresAtMs: Date.now() + 10000,
+                registrationSessionToken: 'session-token-123',
+                registrationState: 'VALIDATE_EMAIL',
+                registrationStateOrder: 0,
+                registrationStateStatus: 'COMPLETE'
+            },
+            {
+                email: 'test@example.com',
+                tenantId: 'tenant-123',
+                userId: 'user-123',
+                expiresAtMs: Date.now() + 10000,
+                registrationSessionToken: 'session-token-123',
+                registrationState: 'CONFIGURE_TOTP_OPTIONAL',
+                registrationStateOrder: 1,
+                registrationStateStatus: 'INCOMPLETE'
+            },
+            {
+                email: 'test@example.com',
+                tenantId: 'tenant-123',
+                userId: 'user-123',
+                expiresAtMs: Date.now() + 10000,
+                registrationSessionToken: 'session-token-123',
+                registrationState: 'VALIDATE_TOTP',
+                registrationStateOrder: 2,
+                registrationStateStatus: 'INCOMPLETE'
+            },
+            {
+                email: 'test@example.com',
+                tenantId: 'tenant-123',
+                userId: 'user-123',
+                expiresAtMs: Date.now() + 10000,
+                registrationSessionToken: 'session-token-123',
+                registrationState: 'REDIRECT_TO_IAM_PORTAL',
+                registrationStateOrder: 3,
+                registrationStateStatus: 'INCOMPLETE'
+            }
+        ];
+
+        const mockUser = {
+            userId: 'user-123',
+            email: 'test@example.com',
+            enabled: false
+        };
+
+        const mockTenant = {
+            tenantId: 'tenant-123',
+            tenantName: 'Test Tenant'
+        };
+
+        beforeEach(() => {
+            mockIdentityDao.getUserRegistrationStates.mockResolvedValue(mockRegistrationStates);
+            mockIdentityDao.updateUserRegistrationState.mockResolvedValue(undefined);
+            mockIdentityDao.getUserBy.mockResolvedValue(mockUser);
+            mockTenantDao.getTenantById.mockResolvedValue(mockTenant);
+            mockIdentityDao.updateUser.mockResolvedValue(undefined);
+            mockIdentityDao.deleteUserRegistrationState.mockResolvedValue(undefined);
+        });
+
+        it('should skip TOTP configuration when skip is true', async () => {
+            const result = await service.registerConfigureTOTP('user-123', 'session-token-123', null, true);
+
+            expect(result.userRegistrationState.registrationState).toBe('REDIRECT_TO_IAM_PORTAL');
+            expect(mockIdentityDao.updateUserRegistrationState).toHaveBeenCalled();
+            expect(result.totpSecret).toBeNull();
+        });
+
+        it('should configure TOTP successfully when skip is false', async () => {
+            const mockTotpResponse = {
+                userMFARel: {
+                    userId: 'user-123',
+                    totpSecret: 'mock-totp-secret-123',
+                    verified: false
+                },
+                uri: 'otpauth://totp/Test:user-123?secret=mock-totp-secret-123&issuer=Test'
+            };
+
+            // Mock createTOTP method
+            jest.spyOn(service as any, 'createTOTP').mockResolvedValue(mockTotpResponse);
+
+            const result = await service.registerConfigureTOTP('user-123', 'session-token-123', null, false);
+
+            expect(result.userRegistrationState.registrationState).toBe('VALIDATE_TOTP');
+            expect(result.totpSecret).toBe('mock-totp-secret-123');
+            expect(result.uri).toBe('otpauth://totp/Test:user-123?secret=mock-totp-secret-123&issuer=Test');
+            expect(mockIdentityDao.updateUserRegistrationState).toHaveBeenCalled();
+        });
+
+        it('should return error when createTOTP fails', async () => {
+            // Mock createTOTP to throw an error
+            jest.spyOn(service as any, 'createTOTP').mockRejectedValue(new Error('TOTP creation failed'));
+
+            const result = await service.registerConfigureTOTP('user-123', 'session-token-123', null, false);
+
+            expect(result.userRegistrationState.registrationState).toBe('ERROR');
+            expect(result.registrationError?.errorCode).toBe('EC00127');
+        });
+    });
+
+    describe('registerValidateTOTP', () => {
+        const mockRegistrationStates = [
+            {
+                email: 'test@example.com',
+                tenantId: 'tenant-123',
+                userId: 'user-123',
+                expiresAtMs: Date.now() + 10000,
+                registrationSessionToken: 'session-token-123',
+                registrationState: 'CONFIGURE_TOTP_OPTIONAL',
+                registrationStateOrder: 0,
+                registrationStateStatus: 'COMPLETE'
+            },
+            {
+                email: 'test@example.com',
+                tenantId: 'tenant-123',
+                userId: 'user-123',
+                expiresAtMs: Date.now() + 10000,
+                registrationSessionToken: 'session-token-123',
+                registrationState: 'VALIDATE_TOTP',
+                registrationStateOrder: 1,
+                registrationStateStatus: 'INCOMPLETE'
+            },
+            {
+                email: 'test@example.com',
+                tenantId: 'tenant-123',
+                userId: 'user-123',
+                expiresAtMs: Date.now() + 10000,
+                registrationSessionToken: 'session-token-123',
+                registrationState: 'REDIRECT_TO_IAM_PORTAL',
+                registrationStateOrder: 2,
+                registrationStateStatus: 'INCOMPLETE'
+            }
+        ];
+
+        const mockUser = {
+            userId: 'user-123',
+            email: 'test@example.com',
+            enabled: false
+        };
+
+        const mockTenant = {
+            tenantId: 'tenant-123',
+            tenantName: 'Test Tenant'
+        };
+
+        beforeEach(() => {
+            mockIdentityDao.getUserRegistrationStates.mockResolvedValue(mockRegistrationStates);
+            mockIdentityDao.updateUserRegistrationState.mockResolvedValue(undefined);
+            mockIdentityDao.getUserBy.mockResolvedValue(mockUser);
+            mockTenantDao.getTenantById.mockResolvedValue(mockTenant);
+            mockIdentityDao.updateUser.mockResolvedValue(undefined);
+            mockIdentityDao.deleteUserRegistrationState.mockResolvedValue(undefined);
+        });
+
+        it('should validate TOTP successfully with valid token', async () => {
+            // Mock validateTOTP method
+            jest.spyOn(service as any, 'validateTOTP').mockResolvedValue(true);
+
+            const result = await service.registerValidateTOTP('user-123', 'session-token-123', '123456', null);
+
+            expect(result.userRegistrationState.registrationState).toBe('REDIRECT_TO_IAM_PORTAL');
+            expect(mockIdentityDao.updateUserRegistrationState).toHaveBeenCalled();
+        });
+
+        it('should return error when token is invalid', async () => {
+            // Mock validateTOTP to return false
+            jest.spyOn(service as any, 'validateTOTP').mockResolvedValue(false);
+
+            const result = await service.registerValidateTOTP('user-123', 'session-token-123', 'invalid-token', null);
+
+            expect(result.userRegistrationState.registrationState).toBe('ERROR');
+            expect(result.registrationError?.errorCode).toBe('EC00120');
+        });
+    });
+
+    describe('registerConfigureSecurityKey', () => {
+        const mockRegistrationStates = [
+            {
+                email: 'test@example.com',
+                tenantId: 'tenant-123',
+                userId: 'user-123',
+                expiresAtMs: Date.now() + 10000,
+                registrationSessionToken: 'session-token-123',
+                registrationState: 'VALIDATE_EMAIL',
+                registrationStateOrder: 0,
+                registrationStateStatus: 'COMPLETE'
+            },
+            {
+                email: 'test@example.com',
+                tenantId: 'tenant-123',
+                userId: 'user-123',
+                expiresAtMs: Date.now() + 10000,
+                registrationSessionToken: 'session-token-123',
+                registrationState: 'CONFIGURE_SECURITY_KEY_OPTIONAL',
+                registrationStateOrder: 1,
+                registrationStateStatus: 'INCOMPLETE'
+            },
+            {
+                email: 'test@example.com',
+                tenantId: 'tenant-123',
+                userId: 'user-123',
+                expiresAtMs: Date.now() + 10000,
+                registrationSessionToken: 'session-token-123',
+                registrationState: 'VALIDATE_SECURITY_KEY',
+                registrationStateOrder: 2,
+                registrationStateStatus: 'INCOMPLETE'
+            },
+            {
+                email: 'test@example.com',
+                tenantId: 'tenant-123',
+                userId: 'user-123',
+                expiresAtMs: Date.now() + 10000,
+                registrationSessionToken: 'session-token-123',
+                registrationState: 'REDIRECT_TO_IAM_PORTAL',
+                registrationStateOrder: 3,
+                registrationStateStatus: 'INCOMPLETE'
+            }
+        ];
+
+        const mockUser = {
+            userId: 'user-123',
+            email: 'test@example.com',
+            enabled: false
+        };
+
+        const mockTenant = {
+            tenantId: 'tenant-123',
+            tenantName: 'Test Tenant'
+        };
+
+        beforeEach(() => {
+            mockIdentityDao.getUserRegistrationStates.mockResolvedValue(mockRegistrationStates);
+            mockIdentityDao.updateUserRegistrationState.mockResolvedValue(undefined);
+            mockIdentityDao.getUserBy.mockResolvedValue(mockUser);
+            mockTenantDao.getTenantById.mockResolvedValue(mockTenant);
+            mockIdentityDao.updateUser.mockResolvedValue(undefined);
+            mockIdentityDao.deleteUserRegistrationState.mockResolvedValue(undefined);
+        });
+
+        it('should skip security key configuration when skip is true', async () => {
+            const result = await service.registerConfigureSecurityKey('user-123', 'session-token-123', null, null, true);
+
+            expect(result.userRegistrationState.registrationState).toBe('REDIRECT_TO_IAM_PORTAL');
+            expect(mockIdentityDao.updateUserRegistrationState).toHaveBeenCalled();
+        });
+
+        it('should return error when fido2KeyRegistrationInput is null and skip is false', async () => {
+            const result = await service.registerConfigureSecurityKey('user-123', 'session-token-123', null, null, false);
+
+            expect(result.userRegistrationState.registrationState).toBe('ERROR');
+            expect(result.registrationError?.errorCode).toBe('EC00128');
+        });
+
+        it('should configure security key successfully', async () => {
+            const mockFido2Input = {
+                id: 'mock-credential-id',
+                rawId: 'mock-raw-id',
+                response: {
+                    clientDataJSON: 'mock-client-data',
+                    attestationObject: 'mock-attestation'
+                },
+                type: 'public-key',
+                keyName: 'My Security Key'
+            };
+
+            // Mock registerFIDO2Key method
+            jest.spyOn(service as any, 'registerFIDO2Key').mockResolvedValue(undefined);
+
+            const result = await service.registerConfigureSecurityKey('user-123', 'session-token-123', mockFido2Input, null, false);
+
+            expect(result.userRegistrationState.registrationState).toBe('VALIDATE_SECURITY_KEY');
+            expect(mockIdentityDao.updateUserRegistrationState).toHaveBeenCalled();
+        });
+    });
+
+    describe('registerValidateSecurityKey', () => {
+        const mockRegistrationStates = [
+            {
+                email: 'test@example.com',
+                tenantId: 'tenant-123',
+                userId: 'user-123',
+                expiresAtMs: Date.now() + 10000,
+                registrationSessionToken: 'session-token-123',
+                registrationState: 'CONFIGURE_SECURITY_KEY_OPTIONAL',
+                registrationStateOrder: 0,
+                registrationStateStatus: 'COMPLETE'
+            },
+            {
+                email: 'test@example.com',
+                tenantId: 'tenant-123',
+                userId: 'user-123',
+                expiresAtMs: Date.now() + 10000,
+                registrationSessionToken: 'session-token-123',
+                registrationState: 'VALIDATE_SECURITY_KEY',
+                registrationStateOrder: 1,
+                registrationStateStatus: 'INCOMPLETE'
+            },
+            {
+                email: 'test@example.com',
+                tenantId: 'tenant-123',
+                userId: 'user-123',
+                expiresAtMs: Date.now() + 10000,
+                registrationSessionToken: 'session-token-123',
+                registrationState: 'REDIRECT_TO_IAM_PORTAL',
+                registrationStateOrder: 2,
+                registrationStateStatus: 'INCOMPLETE'
+            }
+        ];
+
+        const mockUser = {
+            userId: 'user-123',
+            email: 'test@example.com',
+            enabled: false
+        };
+
+        const mockTenant = {
+            tenantId: 'tenant-123',
+            tenantName: 'Test Tenant'
+        };
+
+        beforeEach(() => {
+            mockIdentityDao.getUserRegistrationStates.mockResolvedValue(mockRegistrationStates);
+            mockIdentityDao.updateUserRegistrationState.mockResolvedValue(undefined);
+            mockIdentityDao.getUserBy.mockResolvedValue(mockUser);
+            mockTenantDao.getTenantById.mockResolvedValue(mockTenant);
+            mockIdentityDao.updateUser.mockResolvedValue(undefined);
+            mockIdentityDao.deleteUserRegistrationState.mockResolvedValue(undefined);
+        });
+
+        it('should validate security key successfully', async () => {
+            const mockFido2AuthInput = {
+                id: 'mock-credential-id',
+                rawId: 'mock-raw-id',
+                response: {
+                    clientDataJSON: 'mock-client-data',
+                    authenticatorData: 'mock-auth-data',
+                    signature: 'mock-signature'
+                },
+                type: 'public-key'
+            };
+
+            // Mock authenticateFIDO2Key method
+            jest.spyOn(service as any, 'authenticateFIDO2Key').mockResolvedValue(true);
+
+            const result = await service.registerValidateSecurityKey('user-123', 'session-token-123', mockFido2AuthInput, null);
+
+            expect(result.userRegistrationState.registrationState).toBe('REDIRECT_TO_IAM_PORTAL');
+            expect(mockIdentityDao.updateUserRegistrationState).toHaveBeenCalled();
+        });
+
+        it('should return error when security key validation fails', async () => {
+            const mockFido2AuthInput = {
+                id: 'mock-credential-id',
+                rawId: 'mock-raw-id',
+                response: {
+                    clientDataJSON: 'mock-client-data',
+                    authenticatorData: 'mock-auth-data',
+                    signature: 'mock-signature'
+                },
+                type: 'public-key'
+            };
+
+            // Mock authenticateFIDO2Key to return false
+            jest.spyOn(service as any, 'authenticateFIDO2Key').mockResolvedValue(false);
+
+            const result = await service.registerValidateSecurityKey('user-123', 'session-token-123', mockFido2AuthInput, null);
+
+            expect(result.userRegistrationState.registrationState).toBe('ERROR');
+            expect(result.registrationError?.errorCode).toBe('EC00121');
         });
     });
 });
