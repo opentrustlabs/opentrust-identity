@@ -374,7 +374,7 @@ are not valid, a 404 if the user is not found, and 200 otherwise.
 
 
 For the profile endpoint, it uses a method of `GET` and has one required query param: `email`. It returns
-a JSON object of 
+a status code of 200 and a JSON object of 
 
 ```JSON
 {
@@ -409,7 +409,7 @@ for other IAM tools. The endpoints are at:
 /api/legacy/profile
 ```
 
-These endpoints require that there is a __service__ client within this application that belongs to the root tenant
+These endpoints require that you create a __service__ client within this application that belongs to the root tenant
 and is configured with a scope of `legacy.user.migrate`.
 
 ## Getting Started
@@ -579,10 +579,11 @@ performing the initialization will upload their private key which will be used t
 That JWT will be verified by the certificate that was deployed to the server. 
 
 In this scenario, only one person has the key. The web admin team (or devops team), which should 
-NOT include the person performing initialization, has access to the server configuration. And once 
-initialization is complete it cannot be re-performed, unless all of the data is truncated from the 
-database and the proper environment variables are set. After the initialization is complete, the web 
-admin team (or devops team) should remove the environment settings for initialization and restart the server.
+NOT include the person performing initialization for non-localhost environments, has access to 
+the server configuration. And once initialization is complete it cannot be re-performed, 
+unless all of the data is truncated from the database and the proper environment variables 
+are set. After the initialization is complete, the web admin team (or devops team) should 
+remove the environment settings for initialization and restart the server.
 
 The environment variables that need to be set for system initialization are the following:
 
