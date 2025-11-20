@@ -631,7 +631,7 @@ const InnerComponent: React.FC<InnerComponentProps> = ({
                                 </Accordion>
                             }
                         </Grid2>
-                        {tenantBean.getTenantMetaData().tenant.allowSocialLogin &&
+                        {tenant.allowSocialLogin &&
                             <Grid2 size={12}>
                                 {!isMarkedForDelete && 
                                     <Accordion >

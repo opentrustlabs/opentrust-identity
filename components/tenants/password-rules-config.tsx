@@ -5,10 +5,10 @@ import React, { useContext } from "react";
 import DataLoading from "../layout/data-loading";
 import ErrorComponent from "../error/error-component";
 import { PasswordConfigInput, PortalUserProfile, TenantPasswordConfig } from "@/graphql/generated/graphql-types";
-import { DEFAULT_TENANT_PASSWORD_CONFIGURATION, MFA_AUTH_TYPE_DISPLAY, MFA_AUTH_TYPE_NONE, MFA_AUTH_TYPES, PASSWORD_HASHING_ALGORITHMS, PASSWORD_HASHING_ALGORITHMS_DISPLAY, TENANT_UPDATE_SCOPE } from "@/utils/consts";
+import { DEFAULT_TENANT_PASSWORD_CONFIGURATION, MFA_AUTH_TYPE_DISPLAY, MFA_AUTH_TYPE_NONE, MFA_AUTH_TYPES, PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS, PASSWORD_HASHING_ALGORITHMS, PASSWORD_HASHING_ALGORITHMS_DISPLAY, TENANT_UPDATE_SCOPE } from "@/utils/consts";
 import Grid2 from "@mui/material/Grid2";
 import TextField from "@mui/material/TextField";
-import { Alert, Autocomplete, Button, Checkbox, Dialog, DialogActions, DialogContent, Divider, MenuItem, Select, Typography } from "@mui/material";
+import { Alert, Autocomplete, Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, Divider, MenuItem, Select, Typography } from "@mui/material";
 import { PASSWORD_CONFIGURATION_DELETION_MUTATION, PASSWORD_CONFIGURATION_MUTATION } from "@/graphql/mutations/oidc-mutations";
 import DetailSectionActionHandler from "../layout/detail-section-action-handler";
 import { useIntl } from 'react-intl';
@@ -45,6 +45,7 @@ const PasswordRulesConfiguration: React.FC<PasswordRulesConfigurationProps> = ({
     const [revertToInput, setRevertToInput] = React.useState<PasswordConfigInput>(initInput);
     const [hasSystemDefaultPasswordRules, setHasSystemDefaultPasswordRules] = React.useState<boolean>(false);
     const [showConfirmRestorePasswordDefaultDialog, setShowConfirmRestorePasswordDefaultDialog] = React.useState<boolean>(false);
+    const [showDeprecatedHashingWarning, setShowDeprecatedHashingWarning] = React.useState<boolean>(false);
     
 
     // GRAPHQL FUNCTIONS
@@ -123,6 +124,40 @@ const PasswordRulesConfiguration: React.FC<PasswordRulesConfigurationProps> = ({
 
     return (
         <React.Fragment>
+            {showDeprecatedHashingWarning &&
+                <Dialog
+                    maxWidth="sm"
+                    fullWidth={true}
+                    open={showDeprecatedHashingWarning}
+                    onClose={() => setShowDeprecatedHashingWarning(false)}
+                >
+                    <DialogTitle>
+                        <Alert sx={{fontWeight: "bold", fontSize: "1.0em"}} severity="warning">Warning: Deprecated Password Hashing Algotirhm</Alert>
+                    </DialogTitle>
+                    <DialogContent>
+                        <Typography>
+                            
+                            <div style={{marginBottom: "8px"}}>
+                                SHA-256 is NOT suitable for password hashing, regardless of iteration count. Use Scrypt, Bcrypt, or PBKDF2 instead.
+                                This function is retained only for verifying existing passwords. New passwords should NOT use this algorithm.
+                            </div>
+                            <div style={{marginBottom: "8px"}}>
+                                SHA-256 is fast and optimized for GPUs/ASICs, making it vulnerable to brute-force attacks.
+                                A single GPU can test millions of passwords per second even with 128K iterations.
+                            </div>
+                        </Typography>
+                    </DialogContent>
+                    <DialogActions>                        
+                        <Button
+                            onClick={() => {
+                                setShowDeprecatedHashingWarning(false);
+                            }}
+                        >
+                            OK
+                        </Button>
+                    </DialogActions>
+                </Dialog>
+            }
             {showConfirmRestorePasswordDefaultDialog &&
                 <Dialog
                     open={showConfirmRestorePasswordDefaultDialog}
@@ -232,7 +267,14 @@ const PasswordRulesConfiguration: React.FC<PasswordRulesConfigurationProps> = ({
                             size="small"
                             fullWidth={true}
                             value={passwordConfigInput.passwordHashingAlgorithm}
-                            onChange={(evt) => { passwordConfigInput.passwordHashingAlgorithm = evt.target.value; setPasswordConfigInput({ ...passwordConfigInput }); setMarkDirty(true); }}
+                            onChange={(evt) => { 
+                                passwordConfigInput.passwordHashingAlgorithm = evt.target.value; 
+                                setPasswordConfigInput({ ...passwordConfigInput }); 
+                                setMarkDirty(true);
+                                if(evt.target.value === PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS || evt.target.value === PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS){
+                                    setShowDeprecatedHashingWarning(true);
+                                }
+                            }}
                         >
                             {PASSWORD_HASHING_ALGORITHMS.map(
                                 (algorithm: string) => (                                    

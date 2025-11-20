@@ -87,7 +87,7 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
                 }
                 setHasSystemDefaultLookAndFeel(false);
                 setTenantLookAndFeelInput(input);
-                setRevertToInput(input);
+                setRevertToInput({...input});
             }
             else{
                 setHasSystemDefaultLookAndFeel(true);
@@ -227,7 +227,7 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
                         <Alert onClose={() => setErrorMessage(null)} severity="error">{errorMessage}</Alert>
                     </Grid2>
                 }
-                <div style={{fontWeight: "bold", fontSize: "1.0em"}}>Preview</div>
+                <div style={{fontWeight: "bold", fontSize: "1.0em", textDecoration: "underline"}}>Header Preview</div>
                 <Grid2
                     container
                     spacing={2}
@@ -247,22 +247,60 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
                     }}
                 >
                     <Stack direction={"row"}>
-                        {tenantLookAndFeelInput.authenticationlogo &&
-                            <div>
-                            {/* <div style={{height: "45px", marginRight: "16px"}} dangerouslySetInnerHTML={{__html: tenantLookAndFeelInput.authenticationlogo}}></div> */}
-                            <img style={{height: "45px"}} src={`data:image/svg+xml;base64,${btoa(tenantLookAndFeelInput.authenticationlogo)}`}></img>
-                            </div>
-                        }
-                        {tenantLookAndFeelInput.authenticationlogouri &&                        
-                            <div style={{marginRight: "16px"}}>
-                                <img style={{height: "45px"}} src={tenantLookAndFeelInput.authenticationlogouri} loading="lazy" alt="Authentication Header Logo"></img>
-                            </div>                        
-                        }                    
+                        <div style={{marginRight: "16px"}}>
+                            {tenantLookAndFeelInput.authenticationlogo &&
+                                <img style={{height: "45px"}} src={`data:image/svg+xml;base64,${btoa(tenantLookAndFeelInput.authenticationlogo)}`}></img>
+                            }                        
+                            {tenantLookAndFeelInput.authenticationlogouri &&                        
+                                <img style={{height: "45px"}} src={tenantLookAndFeelInput.authenticationlogouri} loading="lazy" alt="Authentication Header Logo"></img>                            
+                            }
+                        </div>
                         <div style={{alignContent: "center", alignItems: "center"}}>
                             {tenantLookAndFeelInput.authenticationheadertext}
                         </div>
                     </Stack>
                 </Grid2>
+                <div style={{fontWeight: "bold", fontSize: "1.0em", textDecoration: "underline"}}>Button Preview</div>
+                <Grid2
+                    container
+                    spacing={1}
+                    margin={"8px 0px"} 
+                    size={12}
+                    height={"45px"}
+                    alignContent={"center"}
+                    alignItems={"center"}
+                    display={"flex"}
+                    padding={"8px"}
+                >
+                    <Stack direction={"row"}>
+                        <div style={{marginRight: "16px"}}>
+                            <Button
+                                variant="contained"
+                                sx={{
+                                    fontWeight: "bold",
+                                    fontSize: "0.9em",
+                                    height: "100%", 
+                                    padding: "8px 32px 8px 32px",
+                                    backgroundColor: tenantLookAndFeelInput.authenticationheaderbackgroundcolor,
+                                    color: tenantLookAndFeelInput.authenticationheadertextcolor
+                                }}
+                            >Cancel</Button>
+                        </div>
+                        <div style={{marginRight: "16px"}}>
+                            <Button
+                                variant="contained"
+                                sx={{
+                                    fontWeight: "bold",
+                                    fontSize: "0.9em",
+                                    height: "100%", 
+                                    padding: "8px 32px 8px 32px",
+                                    backgroundColor: tenantLookAndFeelInput.authenticationheaderbackgroundcolor,
+                                    color: tenantLookAndFeelInput.authenticationheadertextcolor
+                                }}
+                            >Submit</Button>
+                        </div>
+                    </Stack>
+                </Grid2>                
                 <Grid2 marginBottom={"16px"} size={{ sm: 12, xs: 12, md: 12, lg: 6, xl: 6 }} >
                     <div>Background Color</div>
                     <Grid2  container spacing={2} size={12}>
@@ -345,9 +383,8 @@ const TenantLookAndFeelConfiguration: React.FC<TenantLookAndFeelProps> = ({
                 </Grid2>
             </Grid2>
             <DetailSectionActionHandler
-                onDiscardClickedHandler={() => {   
+                onDiscardClickedHandler={() => {
                     setTenantLookAndFeelInput({...revertToInput as TenantLookAndFeelInput});
-                    setRevertToInput({...revertToInput as TenantLookAndFeelInput});
                     setMarkDirty(false);
                 }}
                 onUpdateClickedHandler={() => {

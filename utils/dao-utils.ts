@@ -1,5 +1,5 @@
 import { readFileSync, existsSync } from "node:fs";
-import { randomBytes, hash, createHash, pbkdf2Sync, scryptSync } from "node:crypto";
+import { randomBytes, hash, createHash, pbkdf2Sync, scryptSync, createHmac } from "node:crypto";
 import bcrypt from "bcrypt";
 import { UserCredential } from "@/graphql/generated/graphql-types";
 import { PASSWORD_HASHING_ALGORITHM_BCRYPT_10_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_11_ROUNDS, PASSWORD_HASHING_ALGORITHM_BCRYPT_12_ROUNDS, PASSWORD_HASHING_ALGORITHM_SHA_256_64K_ITERATIONS, PASSWORD_HASH_ITERATION_64K, PASSWORD_HASHING_ALGORITHM_SHA_256_128K_ITERATIONS, PASSWORD_HASH_ITERATION_128K, PASSWORD_HASHING_ALGORITHM_PBKDF2_128K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_PBKDF2_256K_ITERATIONS, PASSWORD_HASH_ITERATION_256K, PASSWORD_HASHING_ALGORITHM_SCRYPT_32K_ITERATIONS, PASSWORD_HASH_ITERATION_32K, PASSWORD_HASHING_ALGORITHM_SCRYPT_64K_ITERATIONS, PASSWORD_HASHING_ALGORITHM_SCRYPT_128K_ITERATIONS } from "./consts";
@@ -86,17 +86,36 @@ export function generateSalt(): string {
 }
 
 /**
- * AI Overview Implementation?
+ * @deprecated SHA-256 is NOT suitable for password hashing. Use Scrypt, Bcrypt, or PBKDF2 instead.
+ * This function is retained only for verifying existing passwords. New passwords should NOT use this algorithm.
+ * 
+ * SECURITY WARNING: SHA-256 is fast and optimized for GPUs/ASICs, making it vulnerable to brute-force attacks.
+ * A single GPU can test millions of passwords per second even with 128K iterations.
+ * 
  * @param password 
  * @param salt 
  * @param iterations 
  */
 export function sha256HashPassword(password: string, salt: string, iterations: number): string {
-    let hash = createHash("sha256").update(`${password}${salt}`).digest("base64");
+    // Use HMAC for proper key derivation
+    const hmac = createHmac('sha256', salt);
+    hmac.update(password);
+    let hash = hmac.digest(); // Binary, not base64
+    
+    // Re-hash the binary data, not base64 string
     for(let i = 1; i < iterations; i++){
-        hash = createHash("sha256").update(hash).digest("base64");
+        const hmac2 = createHmac('sha256', salt);
+        hmac2.update(hash);
+        hash = hmac2.digest();
     }
-    return hash;
+    
+    return hash.toString('base64');
+    
+    // let hash = createHash("sha256").update(`${password}${salt}`).digest("base64");
+    // for(let i = 1; i < iterations; i++){
+    //     hash = createHash("sha256").update(hash).digest("base64");
+    // }
+    // return hash;
 }
 
 /**
@@ -195,11 +214,13 @@ export function hasValidLoopbackRedirectUri(uris: Array<string>, redirectUri: st
             for(let i = 0; i < uris.length; i++){
                 try{
                     const tUrl = new URL(uris[i]);
-                    if(tUrl.hostname === rUrl.hostname){
-                        if(tUrl.pathname === rUrl.pathname){
-                            bRetVal = true;
-                            break;
-                        }
+                    if(
+                        tUrl.hostname === rUrl.hostname && 
+                        tUrl.protocol === rUrl.protocol &&
+                        tUrl.pathname === rUrl.pathname
+                    ){                        
+                        bRetVal = true;
+                        break;                        
                     }
                 }
                 catch(e){
@@ -211,6 +232,7 @@ export function hasValidLoopbackRedirectUri(uris: Array<string>, redirectUri: st
     }
     catch(ignore: any){
         // In case any parsing of the supplied redirectUri by the client
+        // we do not need to do anything but return false.
     }
     return bRetVal;
 }

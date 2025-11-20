@@ -145,8 +145,8 @@ for local development and you do not have one, you can use a free service like E
 ##### 2. Key Management Service (KMS)
 
 There is a lot of data which needs to be encrypted at rest. These include the client secret, unencrypted private keys or
-the passcode for encrypted private keys, client secrets for federated OIDC providers, and ReCaptcha API keys (if you
-are using ReCaptcha). 
+the passcode for encrypted private keys, client secrets for federated OIDC providers, and, if you are using
+ReCaptcha, ReCaptcha API keys. 
 
 Currently, this tool supports the following configuration for KMS:
 - none
@@ -160,7 +160,7 @@ Use `filesystem` for local development ONLY. Using it any other environment is a
 at `/lib/kms/fs-based-kms.ts` for details about what the contents of the key file should be.
 
 Use `custom` if you have some kind of vault for secret values (and you do not have any other KMS such as Google or AWS).
-At the moment, this tool does not support specific vaults such as HashiCorp. For the custom implementation, 
+This tool does not support specific vaults such as HashiCorp. For the custom implementation, 
 you will need to create 2 HTTP endpoints which will be used to encrypt and decrypt the data. These endpoints will essentially
 be wrappers around whatever vault you are using. The details on the payload and responses for encryption 
 and decryption are in the file `/lib/kms/custom-kms.ts`. 
@@ -208,8 +208,8 @@ Future development of this tool will include support for the following KMSs
 
 ##### 3. Security Event Callback Service
 
-First: What is a security event? Technically, it is broad category of events, which could include
-breaches of security, access control denied, or any type of anomaly that you might want to take action on (such
+Security events can include a broad category of things, such as breaches of physical or
+cyber security, access control denied, or any type of anomaly that you might want to take action on (such
 as user who normally logs in from Chicago suddenly logging in from Moscow). For the purposes of this 
 IAM tool, security events are the following:
 
@@ -374,7 +374,7 @@ are not valid, a 404 if the user is not found, and 200 otherwise.
 
 
 For the profile endpoint, it uses a method of `GET` and has one required query param: `email`. It returns
-a JSON object of 
+a status code of 200 and a JSON object of 
 
 ```JSON
 {
@@ -409,7 +409,7 @@ for other IAM tools. The endpoints are at:
 /api/legacy/profile
 ```
 
-These endpoints require that there is a __service__ client within this application that belongs to the root tenant
+These endpoints require that you create a __service__ client within this application that belongs to the root tenant
 and is configured with a scope of `legacy.user.migrate`.
 
 ## Getting Started
@@ -579,10 +579,11 @@ performing the initialization will upload their private key which will be used t
 That JWT will be verified by the certificate that was deployed to the server. 
 
 In this scenario, only one person has the key. The web admin team (or devops team), which should 
-NOT include the person performing initialization, has access to the server configuration. And once 
-initialization is complete it cannot be re-performed, unless all of the data is truncated from the 
-database and the proper environment variables are set. After the initialization is complete, the web 
-admin team (or devops team) should remove the environment settings for initialization and restart the server.
+NOT include the person performing initialization for non-localhost environments, has access to 
+the server configuration. And once initialization is complete it cannot be re-performed, 
+unless all of the data is truncated from the database and the proper environment variables 
+are set. After the initialization is complete, the web admin team (or devops team) should 
+remove the environment settings for initialization and restart the server.
 
 The environment variables that need to be set for system initialization are the following:
 
@@ -772,3 +773,16 @@ interface ServiceRateLimit {
     serviceGroupName: string
 }
 ```
+
+##### The GraphQL API
+
+The management of this IAM tool runs on a GraphQL API and is therefore a programmable interface, just like
+any REST API. Which means that if you want to develop your own GraphQL clients for certain types
+of management, such as performing reads, updates, creates, and deletes in bulk, it is entirely possible.
+You can enable GraphQL introspection and playground with a environment settings (See the `env.example` for
+details - and note that this should not be done in QA or PROD environments) and use those tools to help
+with your development. 
+
+The service clients that you use for programmatic access to the GraphQL API will need the same scope
+assigned to them as a normal user would for each of the functions you want to invoke. The same
+tenant-restriction rules (described above) apply to these clients as they do for normal users.
