@@ -41,23 +41,26 @@ const {
 class JwtServiceUtils {
 
     static SigningKeyCache = new NodeCache({
-            stdTTL: 43200, // 12 hours
-            useClones: false,
-            checkperiod: 1800, 
-        }
-    );
-
-    static OIDCPrincipalCache = new NodeCache({
-        stdTTL: 900, // 15 minutes
+        stdTTL: 21600, // 6 hours
         useClones: false,
         checkperiod: 1800, 
     });
 
+    static OIDCPrincipalCache = new NodeCache({
+        stdTTL: 600, // 10 minutes
+        useClones: false,
+        checkperiod: 1200,
+        maxKeys: 40000,
+        deleteOnExpire: true 
+    });
+
 
     static PortalUserProfileCache = new NodeCache({
-        stdTTL: 900, // 15 minutes
+        stdTTL: 600, // 10 minutes
         useClones: false,
-        checkperiod: 1800, 
+        checkperiod: 1200,
+        maxKeys: 40000,
+        deleteOnExpire: true
     });
 
     /**

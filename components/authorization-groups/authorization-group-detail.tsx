@@ -54,7 +54,6 @@ const AuthorizationGroupDetail: React.FC<AuthorizationGroupDetailProps> = ({ aut
     const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
     const [showMutationBackdrop, setShowMutationBackdrop] = React.useState<boolean>(false);
     const [showMutationSnackbar, setShowMutationSnackbar] = React.useState<boolean>(false);
-    const [renderKey, setRenderKey] = React.useState<string>(Date.now().toString());
     const [isMarkedForDelete, setIsMarkedForDelete] = React.useState<boolean>(authorizationGroup.markForDelete);
     const [disableInputs] = React.useState<boolean>(authorizationGroup.markForDelete || !containsScope(AUTHORIZATION_GROUP_UPDATE_SCOPE, profile?.scope || []));
     const [canAddUserToAuthzGroup] = React.useState<boolean>(containsScope(AUTHORIZATION_GROUP_USER_ASSIGN_SCOPE, profile?.scope || []));
@@ -82,7 +81,6 @@ const AuthorizationGroupDetail: React.FC<AuthorizationGroupDetailProps> = ({ aut
         onCompleted() {
             setShowMutationBackdrop(false);            
             setShowMutationSnackbar(true);
-            setRenderKey(Date.now().toString() + Math.random().toString());
         },
         onError(error) {
             setShowMutationBackdrop(false);
@@ -94,7 +92,6 @@ const AuthorizationGroupDetail: React.FC<AuthorizationGroupDetailProps> = ({ aut
         onCompleted() {
             setShowMutationBackdrop(false);            
             setShowMutationSnackbar(true);
-            setRenderKey( Date.now().toString() + Math.random().toString());
         },
         onError(error) {
             setShowMutationBackdrop(false);
@@ -267,7 +264,7 @@ const AuthorizationGroupDetail: React.FC<AuthorizationGroupDetailProps> = ({ aut
                                             <PersonIcon /><div style={{ marginLeft: "8px" }}>Users</div>
                                         </div>
                                     </AccordionSummary>
-                                    <AccordionDetails key={renderKey}>
+                                    <AccordionDetails>
                                         {authzGroupInput.default &&
                                             <Grid2 size={12} container spacing={2} marginTop={"16px"}>
                                                 <Grid2 size={1}>

@@ -119,8 +119,10 @@ class AuthenticateUserService extends IdentityService {
         const token: string = generateRandomToken(8, "hex").toUpperCase();        
         
         
-        // Send email to the user with the token value using either their primary email or backup email.
-        await identityDao.savePasswordResetToken(arrUserAuthenticationStates[0].userId, token);
+        // Send email to the user with the token value using either their primary email or backup email
+        // and hash the value of the token when saving it
+        const hashedToken = generateHash(token);
+        await identityDao.savePasswordResetToken(arrUserAuthenticationStates[0].userId, hashedToken);
 
         const toEmailAddr = useRecoveryEmail && userRecoveryEmail ? userRecoveryEmail.email : user.email;
         let fromEmailAddr: string = "";
@@ -171,14 +173,21 @@ class AuthenticateUserService extends IdentityService {
             response.authenticationError = ERROR_CODES.EC00095;
             return Promise.resolve(response);
         }
+
+        // TODO
+        // If an attacker is trying to guess the password reset token, which has been sent to
+        // an email address that they cannot access, then we still need to limit the number
+        // of guesses that a user can try in order to prevent account theft.
+       
         
-        const user: User | null = await identityDao.getUserByPasswordResetToken(token);
+        const hashedToken = generateHash(token);
+        const user = await identityDao.getUserByPasswordResetToken(hashedToken);
         if(user === null){
             response.authenticationError = ERROR_CODES.EC00099;
             return Promise.resolve(response);
         }
         // Make sure we delete the reset token before continuing...
-        await identityDao.deletePasswordResetToken(token);
+        await identityDao.deletePasswordResetToken(hashedToken);
         if(user.markForDelete || user.enabled === false){
             response.authenticationError = ERROR_CODES.EC00097;
             return Promise.resolve(response);

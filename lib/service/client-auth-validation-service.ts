@@ -3,6 +3,7 @@ import ClientDao from "@/lib/dao/client-dao";
 import { DaoFactory } from "../data-sources/dao-factory";
 import Kms from "../kms/kms";
 import { logWithDetails } from "../logging/logger";
+import { timingSafeEqual } from "node:crypto";
 
 
 
@@ -27,7 +28,8 @@ class ClientAuthValidationService {
             if(!decryptedClientSecret){
                 return Promise.resolve(false);
             }
-            if(decryptedClientSecret !== clientSecret){
+            const areEqual: boolean = timingSafeEqual(Buffer.from(clientSecret), Buffer.from(decryptedClientSecret));
+            if(!areEqual){
                 return Promise.resolve(false);
             }
             return Promise.resolve(true);
