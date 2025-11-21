@@ -60,7 +60,13 @@ const InnerComponent: React.FC<{token: string, name: string, tenantLookAndFeel: 
             <Body style={{fontFamily: "Arial, sans-serif", fontSize: "16px"}}>
                 <Container style={headerStyle}>
                     <Section>
-                        <Row dir='row'>
+                        <Row 
+                            dir='row'
+                            style={{
+                                backgroundColor: tenantLookAndFeel.authenticationheaderbackgroundcolor || DEFAULT_BACKGROUND_COLOR,
+                                color: tenantLookAndFeel.authenticationheadertextcolor || DEFAULT_TEXT_COLOR,
+                            }}
+                        >
                             {tenantLookAndFeel.authenticationlogo &&
                                 <Column>{tenantLookAndFeel.authenticationlogo}</Column>
                             }
