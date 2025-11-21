@@ -314,13 +314,13 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
                             </>
                         }
                         {tenantMetaData.tenant.tenantType === TENANT_TYPE_ROOT_TENANT && containsScope(SYSTEM_SETTINGS_READ_SCOPE, profile?.scope) &&
-                            <div style={{marginTop: "8px", width: "100%"}} className="left-navigation" >
+                            <div className="left-navigation" >
                                 <SettingsOutlinedIcon sx={{marginRight: "8px"}} />
                                 <Link className="undecorated" href={`/${tenantMetaData.tenant.tenantId}/system-settings`}>System Settings</Link>
                             </div>                            
                         }
                         {tenantMetaData.tenant.tenantType === TENANT_TYPE_ROOT_TENANT && containsScope([JOBS_READ_SCOPE], profile?.scope) &&
-                            <div style={{marginTop: "8px", width: "100%"}} className="left-navigation" >
+                            <div className="left-navigation" >
                                 <WorkHistoryOutlinedIcon sx={{marginRight: "8px"}} />
                                 <Link className="undecorated" href={`/${tenantMetaData.tenant.tenantId}/jobs`}>Running Jobs</Link>
                             </div>
