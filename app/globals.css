@@ -53,19 +53,22 @@ a.undecorated {
 
 .detail-page-subheader {
     font-weight: bold;
+    padding: 8px;    
+    background-color: #005288;
+    color: white;
     padding: 8px;
-    background-color: #f7f7f7;    
+    border-radius: 4px;
 }
 
 .left-navigation {
     display: inline-flex;
     align-items: center;
-    padding: 8px 2px;
-    
+    padding: 8px 2px;    
 }
 
 .left-navigation:hover {
-    background-color: #1976d2;
+    /*background-color: #1976d2; */
+    background-color: #005288;
     color: white;
     border-radius: 4px;
 }

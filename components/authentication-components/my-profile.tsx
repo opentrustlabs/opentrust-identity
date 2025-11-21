@@ -8,7 +8,7 @@ import { useLazyQuery, useMutation, useQuery } from "@apollo/client";
 import { Alert, Autocomplete, Backdrop, Button, Checkbox, CircularProgress, Dialog, DialogActions, DialogContent, Grid2, MenuItem, Paper, Select, Snackbar, Stack, TextField, Typography } from "@mui/material";
 import { ResponsiveBreakpoints, ResponsiveContext } from "../contexts/responsive-context";
 import { getDefaultLanguageCodeDef, getDefaultCountryCodeDef } from "@/utils/client-utils";
-import { NAME_ORDER_EASTERN, NAME_ORDER_DISPLAY, NAME_ORDER_WESTERN, MFA_AUTH_TYPE_TIME_BASED_OTP, MFA_AUTH_TYPE_FIDO2, QUERY_PARAM_RETURN_URI, USER_UPDATE_SCOPE } from "@/utils/consts";
+import { NAME_ORDER_EASTERN, NAME_ORDER_DISPLAY, NAME_ORDER_WESTERN, MFA_AUTH_TYPE_TIME_BASED_OTP, MFA_AUTH_TYPE_FIDO2, QUERY_PARAM_RETURN_URI, USER_UPDATE_SCOPE, DEFAULT_BACKGROUND_COLOR } from "@/utils/consts";
 import { LANGUAGE_CODES, LanguageCodeDef, COUNTRY_CODES, CountryCodeDef } from "@/utils/i18n";
 import { MuiTelInput } from "mui-tel-input";
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
@@ -553,7 +553,7 @@ const MyProfile: React.FC = () => {
                                     {!recoveryEmail && tenantBean.getTenantMetaData().systemSettings.allowRecoveryEmail === true && !profileIs3rdPartyControlled &&
                                         <Grid2 marginTop={"24px"} marginBottom={"24px"} container spacing={1}>
                                             <Grid2  size={11}>
-                                                <span style={{backgroundColor: "#1976d2", color: "white", padding: "5px 16px", borderRadius: "16px" }}>
+                                                <span style={{backgroundColor: DEFAULT_BACKGROUND_COLOR, color: "white", padding: "5px 16px", borderRadius: "16px" }}>
                                                     Add a recovery email
                                                 </span>
                                             </Grid2>

@@ -949,10 +949,18 @@ export const PROFILE_LAYOUT_PAGES =[
 export const FEDERATED_OIDC_PROVIDER_RETURN_URI_PATH = "/api/federated-auth/return";
 
 
+// ************************************************************************** //
+// 
+//                  TENANT LOOK AND FEEL CONSTANTS
+// 
+// ************************************************************************** //
+
+export const DEFAULT_BACKGROUND_COLOR = "#005288"; //#1976d2";
+export const DEFAULT_TEXT_COLOR = "white";
 
 // ************************************************************************** //
 // 
-//                  DEFAULT CONSTANTS
+//                  DEFAULT TENANT CONSTANTS
 // 
 // ************************************************************************** //
 
@@ -961,7 +969,7 @@ export const DEFAULT_TENANT_LOOK_AND_FEEL: TenantLookAndFeel = {
     adminheaderbackgroundcolor: "",
     adminheadertextcolor: "white",
     adminheadertext: "",
-    authenticationheaderbackgroundcolor: "#1976d2",
+    authenticationheaderbackgroundcolor: DEFAULT_BACKGROUND_COLOR,
     authenticationheadertextcolor: "white",
     authenticationlogo: null,
     authenticationheadertext: "",
@@ -1048,16 +1056,6 @@ export const ALLOWED_SEARCH_DIRECTIONS=["asc", "desc"];
 export const SEARCH_INDEX_OBJECT_SEARCH="iam_object_search";
 export const SEARCH_INDEX_REL_SEARCH="iam_rel_search";
 
-
-
-// ************************************************************************** //
-// 
-//                  TENANT LOOK AND FEEL CONSTANTS
-// 
-// ************************************************************************** //
-
-export const DEFAULT_BACKGROUND_COLOR = "#1976d2";
-export const DEFAULT_TEXT_COLOR = "white";
 
 export const IMAGE_EXTENSION_TYPES = [
     "svg",

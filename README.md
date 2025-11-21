@@ -156,7 +156,7 @@ Currently, this tool supports the following configuration for KMS:
 Use `none` for local development or for cases where you have column-level encryption available in your database (such
 as Oracle with TDE).
 
-Use `filesystem` for local development ONLY. Using it any other environment is absolutely NOT recommended. See the file
+Use `filesystem` for local development ONLY. Using it in any other environment is absolutely NOT recommended. See the file
 at `/lib/kms/fs-based-kms.ts` for details about what the contents of the key file should be.
 
 Use `custom` if you have some kind of vault for secret values (and you do not have any other KMS such as Google or AWS).
@@ -410,7 +410,8 @@ for other IAM tools. The endpoints are at:
 ```
 
 These endpoints require that you create a __service__ client within this application that belongs to the root tenant
-and is configured with a scope of `legacy.user.migrate`.
+and is configured with a scope of `legacy.user.migrate`. You can use the `client_credentials` flow to obtain an
+access token for this client and pass it as the Bearer Authorization header.
 
 ## Getting Started
 

@@ -1,5 +1,6 @@
 "use client";
 import { TenantMetaData } from "@/graphql/generated/graphql-types";
+import { DEFAULT_BACKGROUND_COLOR, DEFAULT_TEXT_COLOR } from "@/utils/consts";
 import { Container, Stack } from "@mui/material";
 import React from "react";
 
@@ -14,11 +15,11 @@ const AuthenticationHeader: React.FC<AuthenticationHeaderProps> = ({
     return (
         <div 
             style={{
-                backgroundColor: tenantMetaData.tenantLookAndFeel?.authenticationheaderbackgroundcolor || "#1976d2", 
+                backgroundColor: tenantMetaData.tenantLookAndFeel?.authenticationheaderbackgroundcolor || DEFAULT_BACKGROUND_COLOR, 
                 width: "100%", 
                 height: "5vh",
                 minHeight: "70px",
-                color: tenantMetaData.tenantLookAndFeel?.authenticationheadertextcolor || "white",
+                color: tenantMetaData.tenantLookAndFeel?.authenticationheadertextcolor || DEFAULT_TEXT_COLOR,
                 borderBottom: "1px solid lightgrey"
             }}
         >

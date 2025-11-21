@@ -7,7 +7,7 @@ import SessionTimerCountdown from "./session-timer-countdown";
 import Logout from '@mui/icons-material/Logout';
 import { AuthSessionProps, useAuthSessionContext } from "../contexts/auth-session-context";
 import { useRouter } from "next/navigation";
-import { DEFAULT_TENANT_META_DATA, QUERY_PARAM_AUTHENTICATE_TO_PORTAL } from "@/utils/consts";
+import { DEFAULT_BACKGROUND_COLOR, DEFAULT_TENANT_META_DATA, DEFAULT_TEXT_COLOR, QUERY_PARAM_AUTHENTICATE_TO_PORTAL } from "@/utils/consts";
 import Link from "next/link";
 import { TenantMetaDataBean } from "../contexts/tenant-context";
 import SelectLanguage from "../authentication-components/select-language";
@@ -45,12 +45,12 @@ const ManagementHeader: React.FC<ManagementHeaderProps> = ({
     return (
         <div
             style={{
-                backgroundColor: "#1976d2",
-                backgroundImage: "linear-gradient(#34111194, #1976d2)",
+                backgroundColor: DEFAULT_BACKGROUND_COLOR,
+                backgroundImage: `linear-gradient(#34111194, ${DEFAULT_BACKGROUND_COLOR})`,
                 width: "100%",
                 height: responsiveBreakpoints.isMedium ? "0vh" : "5vh",
                 minHeight: "55px",
-                color: "white",
+                color: DEFAULT_TEXT_COLOR,
                 borderBottom: "1px solid lightgray",
                 boxShadow: "0px 0px 2vh 0px grey",
                 display: responsiveBreakpoints.isMedium ? "none" : "inherit",
@@ -103,7 +103,7 @@ const ManagementHeader: React.FC<ManagementHeaderProps> = ({
                             aria-haspopup="true"
                             aria-expanded={open ? 'true' : undefined}
                         >
-                            <Avatar sx={{ fontWeight: "bold", backgroundColor: "white", color: "#1976d2" }}>
+                            <Avatar sx={{ fontWeight: "bold", backgroundColor: DEFAULT_TEXT_COLOR, color: DEFAULT_BACKGROUND_COLOR}}>
                                 {profile ? profile.firstName.toUpperCase().charAt(0) + profile.lastName.toUpperCase().charAt(0) : "X"}
                             </Avatar>
                         </IconButton>

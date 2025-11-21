@@ -6,7 +6,7 @@ import client from "@/components/apollo-client/apollo-client";
 import { usePathname } from 'next/navigation'
 import AuthenticationLayout from "@/components/layout/authentication-layout";
 import ManagementLayout from "@/components/layout/management-layout";
-import { AUTHORIZATION_LAYOUT_PAGES, PROFILE_LAYOUT_PAGES } from "@/utils/consts";
+import { AUTHORIZATION_LAYOUT_PAGES, DEFAULT_BACKGROUND_COLOR, PROFILE_LAYOUT_PAGES } from "@/utils/consts";
 import PageTitleContextProvider from "@/components/contexts/page-title-context";
 import AuthContextProvider from "@/components/contexts/auth-context";
 import ResponsiveContextProvider from "@/components/contexts/responsive-context";
@@ -38,7 +38,7 @@ const theme = createTheme({
                         }
                     ],
                     color: "white",
-                    backgroundColor: "#1976d2"                    
+                    backgroundColor: DEFAULT_BACKGROUND_COLOR
                 }                
             }
         },

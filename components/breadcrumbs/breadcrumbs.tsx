@@ -2,6 +2,7 @@
 import React from "react";
 import Breadcrumbs from "@mui/material/Breadcrumbs";
 import Link from "next/link";
+import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 
 export interface BreadcrumbDetail {
     href: string | null,
@@ -15,7 +16,10 @@ export interface BreadcrumbComponentProps {
 const BreadcrumbComponent: React.FC<BreadcrumbComponentProps> = ({breadCrumbs}) => {
 
     return (
-        <Breadcrumbs sx={{minHeight: "40px", paddingTop: "8px"}}>
+        <Breadcrumbs 
+            separator={<NavigateNextIcon fontSize="small"/>}
+            sx={{minHeight: "40px", paddingTop: "8px"}}
+        >
             {breadCrumbs.map(
                 (breadCrumb: BreadcrumbDetail) => (
                     

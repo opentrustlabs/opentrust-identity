@@ -1,6 +1,6 @@
 "use client";
 import React, { useContext, useEffect } from "react";
-import { Autocomplete, Divider, Drawer, Grid2, Paper, Popper, Stack, TextField } from "@mui/material";
+import { Autocomplete, Box, Dialog, DialogContent, Divider, Drawer, Grid2, Paper, Popper, Stack, TextField, Typography } from "@mui/material";
 import Link from "next/link";
 import MenuIcon from '@mui/icons-material/Menu';
 import GroupIcon from '@mui/icons-material/Group';
@@ -17,11 +17,12 @@ import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined';
 import { ResponsiveBreakpoints } from "@/components/contexts/responsive-context";
 import { LookaheadItem, LookaheadResult, SearchResultType, TenantMetaData } from "@/graphql/generated/graphql-types";
 import AddBoxIcon from '@mui/icons-material/AddBox';
+import LanguageIcon from '@mui/icons-material/Language';
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import Logout from '@mui/icons-material/Logout';
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
 import WorkHistoryOutlinedIcon from '@mui/icons-material/WorkHistoryOutlined';
-import { AUTHENTICATION_GROUP_CREATE_SCOPE, AUTHENTICATION_GROUP_READ_SCOPE, AUTHORIZATION_GROUP_CREATE_SCOPE, AUTHORIZATION_GROUP_READ_SCOPE, CLIENT_CREATE_SCOPE, CLIENT_READ_SCOPE, FEDERATED_OIDC_PROVIDER_CREATE_SCOPE, FEDERATED_OIDC_PROVIDER_READ_SCOPE, JOBS_READ_SCOPE, KEY_CREATE_SCOPE, KEY_READ_SCOPE, QUERY_PARAM_AUTHENTICATE_TO_PORTAL, RATE_LIMIT_CREATE_SCOPE, RATE_LIMIT_READ_SCOPE, SCOPE_CREATE_SCOPE, SCOPE_READ_SCOPE, SYSTEM_SETTINGS_READ_SCOPE, TENANT_CREATE_SCOPE, TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE, TENANT_TYPE_ROOT_TENANT, USER_READ_SCOPE } from "@/utils/consts";
+import { AUTHENTICATION_GROUP_CREATE_SCOPE, AUTHENTICATION_GROUP_READ_SCOPE, AUTHORIZATION_GROUP_CREATE_SCOPE, AUTHORIZATION_GROUP_READ_SCOPE, CLIENT_CREATE_SCOPE, CLIENT_READ_SCOPE, DEFAULT_BACKGROUND_COLOR, FEDERATED_OIDC_PROVIDER_CREATE_SCOPE, FEDERATED_OIDC_PROVIDER_READ_SCOPE, JOBS_READ_SCOPE, KEY_CREATE_SCOPE, KEY_READ_SCOPE, QUERY_PARAM_AUTHENTICATE_TO_PORTAL, RATE_LIMIT_CREATE_SCOPE, RATE_LIMIT_READ_SCOPE, SCOPE_CREATE_SCOPE, SCOPE_READ_SCOPE, SYSTEM_SETTINGS_READ_SCOPE, TENANT_CREATE_SCOPE, TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE, TENANT_TYPE_ROOT_TENANT, USER_READ_SCOPE } from "@/utils/consts";
 import CreateNewDialog from "../dialogs/create-new-dialog";
 import { TenantContext, TenantMetaDataBean } from "../contexts/tenant-context";
 import { useRouter } from "next/navigation";
@@ -33,6 +34,7 @@ import { PortalUserProfile } from "@/graphql/generated/graphql-types";
 import { containsScope } from "@/utils/authz-utils";
 import { AuthSessionProps, useAuthSessionContext } from "../contexts/auth-session-context";
 import { useIntl } from 'react-intl';
+import SelectLanguage from "../authentication-components/select-language";
 
 
 interface NavigationProps {
@@ -59,6 +61,7 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
     const [openCreateNewDialog, setOpenCreateNewDialog] = React.useState<boolean>(false);
     const [lookaheadOptions, setLookaheadOptions] = React.useState<Array<{category: SearchResultType, displayCategory: string, id: string, displayValue: string}>>([]);
     const [mobileSearchOpen, setMobileSearchOpen] = React.useState<boolean>(false);
+    const [openLanguageSelector, setOpenLanguageSelector] = React.useState<boolean>(false);
 
     // GRAPHQL FUNCTIONS
     const {} = useQuery(LOOKAHEAD_SEARCH_QUERY, {
@@ -211,7 +214,13 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
                     </Stack>
 
                     <Stack spacing={0} padding={"8px"} color={"#616161"} fontSize={"0.9em"} fontWeight={"bolder"} marginTop={"8px"} >
-                        <Divider />
+                        <Divider sx={{marginBottom: "8px"}} ></Divider>
+                        <Box sx={{ mb: 0, px: 1, py: 1, bgcolor: 'grey.50', borderRadius: 1 }}>
+                            <Typography variant="overline" color="text.secondary" sx={{ fontWeight: 600, fontSize: '0.75rem' }}>
+                                IDENTITY MANAGEMENT
+                            </Typography>
+                        </Box>
+                        <Divider></Divider>
                         {tenantMetaData.tenant.tenantType === TENANT_TYPE_ROOT_TENANT && containsScope([TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE], profile?.scope || []) &&
                             <div  className="left-navigation">
                                 <SettingsApplicationsIcon sx={{marginRight: "8px"}} />
@@ -236,16 +245,21 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
                                 <Link className="undecorated" href={`/${tenantMetaData.tenant.tenantId}?section=users`} >Users</Link>
                             </div>
                         }
+                        {containsScope([TENANT_READ_ALL_SCOPE, AUTHORIZATION_GROUP_READ_SCOPE, SCOPE_READ_SCOPE, RATE_LIMIT_READ_SCOPE], profile?.scope || []) &&
+                            <>
+                                <Box sx={{mt: 1, mb: 0, px: 1, py: 1, bgcolor: 'grey.50', borderRadius: 1 }}>
+                                    <Typography variant="overline" color="text.secondary" sx={{ fontWeight: 600, fontSize: '0.75rem' }}>
+                                        Authorization
+                                    </Typography>                                
+                                </Box>
+                                <Divider></Divider>
+                            </>
+                            
+                        }
                         {containsScope([TENANT_READ_ALL_SCOPE, AUTHORIZATION_GROUP_READ_SCOPE], profile?.scope || []) &&
                             <div className="left-navigation" >
                                 <PeopleIcon sx={{marginRight: "8px"}} />
                                 <Link className="undecorated" href={`/${tenantMetaData.tenant.tenantId}?section=authorization-groups`} >Authorization Groups</Link>
-                            </div>
-                        }
-                        {containsScope([TENANT_READ_ALL_SCOPE, AUTHENTICATION_GROUP_READ_SCOPE], profile?.scope || []) &&
-                            <div className="left-navigation" >
-                                <GroupIcon sx={{marginRight: "8px"}} />
-                                <Link className="undecorated" href={`/${tenantMetaData.tenant.tenantId}?section=authentication-groups`} >Authentication Groups</Link>
                             </div>
                         }
                         {containsScope([TENANT_READ_ALL_SCOPE, SCOPE_READ_SCOPE], profile?.scope || []) &&
@@ -254,26 +268,50 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
                                 <Link className="undecorated" href={`/${tenantMetaData.tenant.tenantId}?section=scope-access-control`} >Scope/Access Control</Link>
                             </div>
                         }
-                        {containsScope([TENANT_READ_ALL_SCOPE, FEDERATED_OIDC_PROVIDER_READ_SCOPE], profile?.scope || []) &&
-                            <div className="left-navigation" >
-                                <AutoAwesomeMosaicIcon sx={{marginRight: "8px"}} />
-                                <Link className="undecorated" href={`/${tenantMetaData.tenant.tenantId}?section=oidc-providers`} >OIDC Providers</Link>
-                            </div>
-                        }
                         {containsScope([TENANT_READ_ALL_SCOPE, RATE_LIMIT_READ_SCOPE], profile?.scope || []) &&
                             <div className="left-navigation">
                                 <SpeedIcon sx={{marginRight: "8px"}} />
                                 <Link className="undecorated" href={`/${tenantMetaData.tenant.tenantId}?section=rate-limits`} >Rate Limits</Link>
                             </div>
                         }
+                        {containsScope([TENANT_READ_ALL_SCOPE, AUTHENTICATION_GROUP_READ_SCOPE, FEDERATED_OIDC_PROVIDER_READ_SCOPE], profile?.scope || []) &&                            
+                            <>
+                                <Box sx={{mt: 1, mb: 0, px: 1, py: 1, bgcolor: 'grey.50', borderRadius: 1 }}>
+                                    <Typography variant="overline" color="text.secondary" sx={{ fontWeight: 600, fontSize: '0.75rem' }}>
+                                        Authentication
+                                    </Typography>
+                                </Box>                            
+                                <Divider></Divider>
+                            </>
+                        }
+                        {containsScope([TENANT_READ_ALL_SCOPE, AUTHENTICATION_GROUP_READ_SCOPE], profile?.scope || []) &&
+                            <div className="left-navigation" >
+                                <GroupIcon sx={{marginRight: "8px"}} />
+                                <Link className="undecorated" href={`/${tenantMetaData.tenant.tenantId}?section=authentication-groups`} >Authentication Groups</Link>
+                            </div>                        }
+                        
+                        {containsScope([TENANT_READ_ALL_SCOPE, FEDERATED_OIDC_PROVIDER_READ_SCOPE], profile?.scope || []) &&
+                            <div className="left-navigation" >
+                                <AutoAwesomeMosaicIcon sx={{marginRight: "8px"}} />
+                                <Link className="undecorated" href={`/${tenantMetaData.tenant.tenantId}?section=oidc-providers`} >OIDC Providers</Link>
+                            </div>
+                        }
+                        
                         {containsScope([TENANT_READ_ALL_SCOPE, KEY_READ_SCOPE], profile?.scope || []) &&
                             <div className="left-navigation">
                                 <KeyIcon sx={{marginRight: "8px"}} />
                                 <Link className="undecorated" href={`/${tenantMetaData.tenant.tenantId}?section=signing-keys`} >Keys</Link>
                             </div>
                         }
-                        {tenantMetaData.tenant.tenantType === TENANT_TYPE_ROOT_TENANT && containsScope([SYSTEM_SETTINGS_READ_SCOPE, JOBS_READ_SCOPE], profile?.scope) &&
-                            <Divider />
+                        {tenantMetaData.tenant.tenantType === TENANT_TYPE_ROOT_TENANT && containsScope([SYSTEM_SETTINGS_READ_SCOPE, JOBS_READ_SCOPE], profile?.scope) &&                            
+                            <>
+                                <Box sx={{mt: 1,  mb: 0, px: 1, py: 1, bgcolor: 'grey.50', borderRadius: 1 }}>
+                                    <Typography variant="overline" color="text.secondary" sx={{ fontWeight: 600, fontSize: '0.75rem' }}>
+                                        System
+                                    </Typography>
+                                </Box>
+                                <Divider></Divider>
+                            </>
                         }
                         {tenantMetaData.tenant.tenantType === TENANT_TYPE_ROOT_TENANT && containsScope(SYSTEM_SETTINGS_READ_SCOPE, profile?.scope) &&
                             <div style={{marginTop: "8px", width: "100%"}} className="left-navigation" >
@@ -301,6 +339,20 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
             }
             {breakPoints.isMedium &&
                 <>
+                    <Dialog 
+                        open={openLanguageSelector}
+                        onClose={() => setOpenLanguageSelector(false)}
+                        maxWidth="sm"
+                        fullWidth={true}
+                    >
+                        <DialogContent>
+                            <SelectLanguage 
+                                onLanguageChanged={() => setOpenLanguageSelector(false)}
+                                allowCancel={true}
+                                cancelCallback={() => setOpenLanguageSelector(false)}
+                            />
+                        </DialogContent>
+                    </Dialog>
                     <Grid2 
                         container 
                         size={12}
@@ -308,7 +360,7 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
                         padding={"8px"}
                         spacing={2}
                         alignItems={"center"}
-                        sx={{boxShadow: "0px 0px 1vh 0px grey", backgroundColor: "#1976d2", backgroundImage: "linear-gradient(#34111194, #1976d2)",}}
+                        sx={{boxShadow: "0px 0px 1vh 0px grey", backgroundColor: DEFAULT_BACKGROUND_COLOR, backgroundImage: `linear-gradient(#34111194, ${DEFAULT_BACKGROUND_COLOR})`,}}
 
                     >
                         {mobileSearchOpen === false &&
@@ -413,7 +465,12 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
                         }
                     </Grid2>
                     <Drawer open={drawerOpen} onClose={toggleDrawer(false)}>
-                        <Stack spacing={2} padding={"8px"} fontSize={"0.85em"} fontWeight={"bolder"} marginTop={"8px"} >
+                        <Stack spacing={2} padding={"8px"} fontSize={"0.85em"} fontWeight={"bolder"} marginTop={"8px"} >                            
+                            <Box sx={{borderBottom: "solid 1px lightgrey", margin: "0px", padding: "0px", bgcolor: 'grey.50'}}>
+                                <Typography variant="overline" color="text.secondary" sx={{ fontWeight: 600, fontSize: '0.75rem' }}>
+                                    IDENTITY MANAGEMENT
+                                </Typography>
+                            </Box>                            
                             {tenantMetaData.tenant.tenantType === TENANT_TYPE_ROOT_TENANT && containsScope([TENANT_READ_ALL_SCOPE, TENANT_READ_SCOPE], profile?.scope || []) &&
                                 <div style={{display: "inline-flex", alignItems: "center"}}>                
                                     <SettingsApplicationsIcon sx={{marginRight: "8px"}} />
@@ -438,16 +495,17 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
                                     <Link className="undecorated" href={`/${tenantMetaData.tenant.tenantId}?section=users`} onClick={() => setDrawerOpen(false)}>Users</Link>
                                 </div>
                             }
+                            {containsScope([TENANT_READ_ALL_SCOPE, AUTHORIZATION_GROUP_READ_SCOPE, SCOPE_READ_SCOPE, RATE_LIMIT_READ_SCOPE], profile?.scope || []) &&
+                                <Box sx={{borderBottom: "solid 1px lightgrey", margin: "0px", padding: "0px", bgcolor: 'grey.50'}}>
+                                    <Typography variant="overline" color="text.secondary" sx={{ fontWeight: 600, fontSize: '0.75rem' }}>
+                                        Authorization
+                                    </Typography>                                
+                                </Box>                            
+                            }
                             {containsScope([TENANT_READ_ALL_SCOPE, AUTHORIZATION_GROUP_READ_SCOPE], profile?.scope || []) &&
                                 <div style={{display: "inline-flex", alignItems: "center"}}>
                                     <PeopleIcon sx={{marginRight: "8px"}} />
                                     <Link className="undecorated" href={`/${tenantMetaData.tenant.tenantId}?section=authorization-groups`} onClick={() => setDrawerOpen(false)}>Authorization Groups</Link>
-                                </div>
-                            }
-                            {containsScope([TENANT_READ_ALL_SCOPE, AUTHENTICATION_GROUP_READ_SCOPE], profile?.scope || []) &&
-                                <div style={{display: "inline-flex", alignItems: "center"}}>
-                                    <GroupIcon sx={{marginRight: "8px"}} />
-                                    <Link className="undecorated" href={`/${tenantMetaData.tenant.tenantId}?section=authentication-groups`} onClick={() => setDrawerOpen(false)}>Authentication Groups</Link>
                                 </div>
                             }
                             {containsScope([TENANT_READ_ALL_SCOPE, SCOPE_READ_SCOPE], profile?.scope || []) &&
@@ -456,18 +514,33 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
                                     <Link className="undecorated" href={`/${tenantMetaData.tenant.tenantId}?section=scope-access-control`} onClick={() => setDrawerOpen(false)}>Scope/Access Control</Link>
                                 </div>
                             }
-                            {containsScope([TENANT_READ_ALL_SCOPE, FEDERATED_OIDC_PROVIDER_READ_SCOPE], profile?.scope || []) &&
-                                <div style={{display: "inline-flex", alignItems: "center"}}>
-                                    <AutoAwesomeMosaicIcon sx={{marginRight: "8px"}} />
-                                    <Link className="undecorated" href={`/${tenantMetaData.tenant.tenantId}?section=oidc-providers`} onClick={() => setDrawerOpen(false)}>OIDC Providers</Link>
-                                </div>
-                            }
                             {containsScope([TENANT_READ_ALL_SCOPE, RATE_LIMIT_READ_SCOPE], profile?.scope || []) &&
                                 <div style={{display: "inline-flex", alignItems: "center"}}>
                                     <SpeedIcon sx={{marginRight: "8px"}} />
                                     <Link className="undecorated" href={`/${tenantMetaData.tenant.tenantId}?section=rate-limits`} onClick={() => setDrawerOpen(false)}>Rate Limits</Link>
                                 </div>
                             }
+                            {containsScope([TENANT_READ_ALL_SCOPE, AUTHENTICATION_GROUP_READ_SCOPE, FEDERATED_OIDC_PROVIDER_READ_SCOPE], profile?.scope || []) &&
+                                <Box sx={{borderBottom: "solid 1px lightgrey", margin: "0px", padding: "0px", bgcolor: 'grey.50'}}>
+                                    <Typography variant="overline" color="text.secondary" sx={{ fontWeight: 600, fontSize: '0.75rem' }}>
+                                        Authentication
+                                    </Typography>                                
+                                </Box>  
+                            }
+                            {containsScope([TENANT_READ_ALL_SCOPE, AUTHENTICATION_GROUP_READ_SCOPE], profile?.scope || []) &&
+                                <div style={{display: "inline-flex", alignItems: "center"}}>
+                                    <GroupIcon sx={{marginRight: "8px"}} />
+                                    <Link className="undecorated" href={`/${tenantMetaData.tenant.tenantId}?section=authentication-groups`} onClick={() => setDrawerOpen(false)}>Authentication Groups</Link>
+                                </div>
+                            }
+                            
+                            {containsScope([TENANT_READ_ALL_SCOPE, FEDERATED_OIDC_PROVIDER_READ_SCOPE], profile?.scope || []) &&
+                                <div style={{display: "inline-flex", alignItems: "center"}}>
+                                    <AutoAwesomeMosaicIcon sx={{marginRight: "8px"}} />
+                                    <Link className="undecorated" href={`/${tenantMetaData.tenant.tenantId}?section=oidc-providers`} onClick={() => setDrawerOpen(false)}>OIDC Providers</Link>
+                                </div>
+                            }
+                            
                             {containsScope([TENANT_READ_ALL_SCOPE, KEY_READ_SCOPE], profile?.scope || []) &&
                                 <div style={{display: "inline-flex", alignItems: "center"}}> 
                                     <KeyIcon sx={{marginRight: "8px"}} />
@@ -475,7 +548,11 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
                                 </div>
                             }
                             {tenantMetaData.tenant.tenantType === TENANT_TYPE_ROOT_TENANT && containsScope([SYSTEM_SETTINGS_READ_SCOPE, JOBS_READ_SCOPE], profile?.scope) &&
-                                <Divider />
+                                <Box sx={{borderBottom: "solid 1px lightgrey", margin: "0px", padding: "0px", bgcolor: 'grey.50'}}>
+                                    <Typography variant="overline" color="text.secondary" sx={{ fontWeight: 600, fontSize: '0.75rem' }}>
+                                        System
+                                    </Typography>                                
+                                </Box> 
                             }
                             {tenantMetaData.tenant.tenantType === TENANT_TYPE_ROOT_TENANT && containsScope(SYSTEM_SETTINGS_READ_SCOPE, profile?.scope) &&
                                 <div style={{display: "inline-flex", alignItems: "center"}}> 
@@ -500,6 +577,18 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
                                 </React.Fragment>
                             }
                             <div style={{marginTop: "16px"}}>
+                                <div
+                                    onClick={() => {
+                                        setDrawerOpen(false);
+                                        setOpenLanguageSelector(true);
+                                    }}
+                                    style={{display: "flex", alignItems: "center", cursor: "pointer", marginBottom: "8px"}}
+                                >
+                                    <div>
+                                    <LanguageIcon sx={{marginRight: "8px"}} fontSize="small" />
+                                    </div>
+                                    <div>Language</div>
+                                </div>
                                 <div 
                                     onClick={() => {
                                         setDrawerOpen(false);
@@ -512,8 +601,6 @@ const TenantLeftNavigation: React.FC<NavigationProps> = ({section, tenantMetaDat
                                     <span>Logout</span>
                                 </div>
                             </div>
-
-
                         </Stack>
                     </Drawer>
                 </>            

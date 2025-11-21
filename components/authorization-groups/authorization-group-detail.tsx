@@ -126,7 +126,7 @@ const AuthorizationGroupDetail: React.FC<AuthorizationGroupDetailProps> = ({ aut
             <Grid2 container size={12} spacing={3} marginBottom={"16px"}>
                 <Grid2 size={{ xs: 12, sm: 12, md: 12, lg: 9, xl: 9 }}>
                     <Grid2 container size={12} spacing={2}>
-                        <Grid2 className="detail-page-subheader" alignItems={"center"} sx={{ backgroundColor: "#1976d2", color: "white", padding: "8px", borderRadius: "2px" }} container size={12}>
+                        <Grid2 className="detail-page-subheader" alignItems={"center"} container size={12}>
                             <Grid2 size={11}>Overview</Grid2>
                             <Grid2 size={1} display={"flex"} >
                                 {isMarkedForDelete !== true && canDeleteAuthzGroup &&

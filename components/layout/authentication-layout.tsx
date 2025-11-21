@@ -4,7 +4,7 @@ import AuthenticationHeader from "./authentication-header";
 import AuthenticationFooter from "./authentication-footer";
 import Container from "@mui/material/Container";
 import { Grid2 } from "@mui/material";
-import { DEFAULT_TENANT_META_DATA, QUERY_PARAM_TENANT_ID } from "@/utils/consts";
+import { DEFAULT_BACKGROUND_COLOR, DEFAULT_TENANT_META_DATA, DEFAULT_TEXT_COLOR, QUERY_PARAM_TENANT_ID } from "@/utils/consts";
 import { useQuery } from "@apollo/client";
 import { TENANT_META_DATA_QUERY } from "@/graphql/queries/oidc-queries";
 import { useSearchParams } from "next/navigation";
@@ -63,8 +63,8 @@ const AuthenticationLayout: React.FC<LayoutProps> = ({
                                     
                                 }
                             ],
-                            color: tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheadertextcolor || "white",
-                            backgroundColor: tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheaderbackgroundcolor || "#1976d2",
+                            color: tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheadertextcolor || DEFAULT_TEXT_COLOR,
+                            backgroundColor: tenantBean.getTenantMetaData().tenantLookAndFeel?.authenticationheaderbackgroundcolor || DEFAULT_BACKGROUND_COLOR,
                             fontWeight: "bold",
                             fontSize: "0.9em",
                             height: "100%", 
