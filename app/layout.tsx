@@ -42,6 +42,15 @@ const theme = createTheme({
                 }                
             }
         },
+        MuiCheckbox: {
+            styleOverrides: {
+                root: {
+                    "&.Mui-checked": {
+                        color: `${DEFAULT_BACKGROUND_COLOR} !important`
+                    }
+                }
+            }
+        },
         MuiAccordion: {
             styleOverrides: {
                 heading: {
