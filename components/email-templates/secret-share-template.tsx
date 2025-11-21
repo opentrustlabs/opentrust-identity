@@ -52,7 +52,13 @@ const InnerComponent: React.FC<{url: string, tenantLookAndFeel: TenantLookAndFee
             <Body style={{fontFamily: "Arial, sans-serif", fontSize: "16px"}}>
                 <Container style={headerStyle}>
                     <Section>
-                        <Row dir='row'>
+                        <Row 
+                            dir='row'
+                            style={{
+                                backgroundColor: tenantLookAndFeel.authenticationheaderbackgroundcolor || DEFAULT_BACKGROUND_COLOR,
+                                color: tenantLookAndFeel.authenticationheadertextcolor || DEFAULT_TEXT_COLOR,
+                            }}
+                        >
                             {tenantLookAndFeel.authenticationlogo &&
                                 <Column>{tenantLookAndFeel.authenticationlogo}</Column>
                             }
@@ -62,6 +68,9 @@ const InnerComponent: React.FC<{url: string, tenantLookAndFeel: TenantLookAndFee
                             
                             {tenantLookAndFeel.authenticationheadertext &&
                                 <Column>{tenantLookAndFeel.authenticationheadertext}</Column>
+                            }
+                            {!tenantLookAndFeel.authenticationheadertext &&
+                                <Column>OpenTrust Identity</Column>
                             }
                         </Row>
                     </Section>                    
