@@ -51,6 +51,16 @@ const theme = createTheme({
                 }
             }
         },
+        MuiOutlinedInput: {
+            styleOverrides: {
+                root: {
+                    // Focused
+                    "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                        borderColor: DEFAULT_BACKGROUND_COLOR,
+                    }
+                }
+            }
+        },
         MuiAccordion: {
             styleOverrides: {
                 heading: {
