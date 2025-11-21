@@ -55,6 +55,9 @@ const AuthenticationHeader: React.FC<AuthenticationHeaderProps> = ({
                     {tenantMetaData.tenantLookAndFeel?.authenticationheadertext &&                        
                         <div style={{verticalAlign: "center", fontWeight: "bold", marginLeft: "24px"}}>{tenantMetaData.tenantLookAndFeel?.authenticationheadertext}</div>                        
                     }
+                    {!tenantMetaData.tenantLookAndFeel?.authenticationheadertext &&                        
+                        <div style={{verticalAlign: "center", fontWeight: "bold", marginLeft: "24px"}}>OpenTrust Identity</div>                        
+                    }
                 </Stack>
             </Container>
         </div>
