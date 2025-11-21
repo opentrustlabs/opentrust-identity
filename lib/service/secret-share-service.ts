@@ -7,7 +7,7 @@ import { GraphQLError } from "graphql";
 import { generateHash, generateRandomToken } from "@/utils/dao-utils";
 import { OIDCContext } from "@/graphql/graphql-context";
 import { authorizeByScopeAndTenant } from "@/utils/authz-utils";
-import { DEFAULT_TENANT_LOOK_AND_FEEL, QUERY_PARAM_SECRET_ENTRY_OTP, SECRET_ENTRY_DELEGATE_SCOPE } from "@/utils/consts";
+import { DEFAULT_TENANT_LOOK_AND_FEEL, QUERY_PARAM_SECRET_ENTRY_OTP, QUERY_PARAM_TENANT_ID, SECRET_ENTRY_DELEGATE_SCOPE } from "@/utils/consts";
 import Kms from "../kms/kms";
 import { ERROR_CODES } from "../models/error";
 import JwtServiceUtils from "./jwt-service-utils";
@@ -73,7 +73,7 @@ class SecretShareService {
         
         const systemSettings: SystemSettings = await tenantDao.getSystemSettings();
         const fromEmail = systemSettings.noReplyEmail ? systemSettings.noReplyEmail : "no-reply";
-        const secretEntryLink = `${AUTH_DOMAIN}/secret-entry?${QUERY_PARAM_SECRET_ENTRY_OTP}=${otp}`;
+        const secretEntryLink = `${AUTH_DOMAIN}/secret-entry?${QUERY_PARAM_SECRET_ENTRY_OTP}=${otp}&${QUERY_PARAM_TENANT_ID}=${this.oidcContext.rootTenant.tenantId}`;
         const tenantLookAndFeel: TenantLookAndFeel = await tenantDao.getTenantLookAndFeel(this.oidcContext.rootTenant.tenantId) || DEFAULT_TENANT_LOOK_AND_FEEL;
 
         oidcServiceUtils.sendSecretEntryEmail(
